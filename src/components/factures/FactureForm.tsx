@@ -254,7 +254,7 @@ export function FactureForm() {
       while (hasMore) {
         const { data, error } = await supabase
           .from('apprenants')
-          .select('id, nom, prenom, email, telephone, adresse, ville, code_postal, civilite, formation_choisie, type_apprenant, date_debut_formation, date_fin_formation, montant_ttc')
+          .select('id, nom, prenom, email, telephone, adresse, ville, code_postal, civilite, formation_choisie, type_apprenant, date_debut_formation, date_fin_formation, montant_ttc, organisme_financeur, societe_nom, societe_siret, societe_tva_intra, societe_adresse, societe_code_postal, societe_ville, facture_contact_nom, facture_contact_email, facture_contact_telephone')
           .range(offset, offset + batchSize - 1);
         if (error) break;
         if (data && data.length > 0) {
@@ -270,6 +270,16 @@ export function FactureForm() {
             dateDebutFormation: a.date_debut_formation || a.date_debut_cours_en_ligne || '',
             dateFinFormation: a.date_fin_formation || a.date_fin_cours_en_ligne || '',
             montantTtc: Number(a.montant_ttc ?? 0),
+            organismeFinanceur: a.organisme_financeur ?? null,
+            societeNom: a.societe_nom ?? null,
+            societeSiret: a.societe_siret ?? null,
+            societeTvaIntra: a.societe_tva_intra ?? null,
+            societeAdresse: a.societe_adresse ?? null,
+            societeCodePostal: a.societe_code_postal ?? null,
+            societeVille: a.societe_ville ?? null,
+            factureContactNom: a.facture_contact_nom ?? null,
+            factureContactEmail: a.facture_contact_email ?? null,
+            factureContactTelephone: a.facture_contact_telephone ?? null,
           }));
           allData.push(...mapped);
           offset += batchSize;
