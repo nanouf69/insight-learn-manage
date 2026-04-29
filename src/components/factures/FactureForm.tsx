@@ -174,6 +174,41 @@ export function FactureForm() {
   const [isAddLineDialogOpen, setIsAddLineDialogOpen] = useState(false);
   const [addLineType, setAddLineType] = useState<"session" | "produit">("session");
   const [apprenants, setApprenants] = useState<ApprenantItem[]>([]);
+  const [sessions, setSessions] = useState<SessionItem[]>([]);
+
+  useEffect(() => {
+    const fetchSessions = async () => {
+      const allRows: any[] = [];
+      let offset = 0;
+      const batchSize = 1000;
+      while (true) {
+        const { data, error } = await supabase
+          .from('sessions')
+          .select('id, nom, date_debut, date_fin, heure_debut, heure_fin, lieu, places_disponibles, statut, type_session, formation_id, formations:formation_id(nom, prix_ht)')
+          .order('date_debut', { ascending: false })
+          .range(offset, offset + batchSize - 1);
+        if (error || !data || data.length === 0) break;
+        allRows.push(...data);
+        if (data.length < batchSize) break;
+        offset += batchSize;
+      }
+      const mapped: SessionItem[] = allRows.map((s: any) => ({
+        id: s.id,
+        title: s.nom || 'Session sans nom',
+        formation: s.formations?.nom || s.type_session || '',
+        dateDebut: s.date_debut || '',
+        dateFin: s.date_fin || s.date_debut || '',
+        horaire: s.heure_debut && s.heure_fin ? `${s.heure_debut} - ${s.heure_fin}` : '',
+        lieu: s.lieu || '',
+        participants: 0,
+        maxParticipants: s.places_disponibles ?? 0,
+        prix: Number(s.formations?.prix_ht ?? 0),
+        status: s.statut === 'confirmee' ? 'confirmed' : (s.statut === 'planifiee' ? 'pending' : (s.statut || 'pending')),
+      }));
+      setSessions(mapped);
+    };
+    fetchSessions();
+  }, []);
 
   useEffect(() => {
     const fetchApprenants = async () => {
