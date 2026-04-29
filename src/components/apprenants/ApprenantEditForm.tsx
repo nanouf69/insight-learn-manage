@@ -461,6 +461,15 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
       date_debut_cours_en_ligne: dateDebutCours ? format(dateDebutCours, 'yyyy-MM-dd') : null,
       date_fin_cours_en_ligne: dateFinCours ? format(dateFinCours, 'yyyy-MM-dd') : null,
       modules_autorises: effectiveModulesAutorises.length > 0 ? effectiveModulesAutorises : null,
+      societe_nom: formData.societe_nom?.trim() || null,
+      societe_siret: formData.societe_siret?.trim() || null,
+      societe_tva_intra: formData.societe_tva_intra?.trim() || null,
+      societe_adresse: formData.societe_adresse?.trim() || null,
+      societe_code_postal: formData.societe_code_postal?.trim() || null,
+      societe_ville: formData.societe_ville?.trim() || null,
+      facture_contact_nom: formData.facture_contact_nom?.trim() || null,
+      facture_contact_email: formData.facture_contact_email?.trim() || null,
+      facture_contact_telephone: formData.facture_contact_telephone?.trim() || null,
     };
 
     try {
