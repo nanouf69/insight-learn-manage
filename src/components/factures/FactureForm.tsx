@@ -635,31 +635,7 @@ export function FactureForm() {
         </div>
       </div>
 
-      {/* Aperçu de l'en-tête */}
-      <Card className="bg-gradient-to-r from-primary/10 to-transparent border-primary/20">
-        <CardContent className="pt-6">
-          <div className="flex justify-between items-start">
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-3xl">🚌</span>
-                <div>
-                  <h3 className="text-2xl font-bold text-primary">{entrepriseEmettrice.nom}</h3>
-                  <p className="text-muted-foreground italic">{entrepriseEmettrice.slogan}</p>
-                </div>
-              </div>
-              <div className="mt-4 text-sm space-y-1">
-                <p>{entrepriseEmettrice.adresse}</p>
-                <p>{entrepriseEmettrice.codePostal} {entrepriseEmettrice.ville}</p>
-                <p>SIRET : {entrepriseEmettrice.siret}</p>
-              </div>
-            </div>
-            <div className="text-right">
-              <h2 className="text-xl font-bold">FACTURE {data.duplicata && <span className="text-orange-500">DUPLICATA</span>} N°{data.numero}</h2>
-              <p className="text-muted-foreground">Numéro : {data.numeroInterne}</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* (Aperçu de l'en-tête déplacé plus bas) */}
 
       {/* Type de financeur (déplacé en haut) */}
       <Card>
