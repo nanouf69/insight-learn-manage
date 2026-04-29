@@ -123,6 +123,8 @@ export function ComptabilitePage() {
   const [filterStatut, setFilterStatut] = useState<string>("all");
   const [filterFinancement, setFilterFinancement] = useState<string>("all");
   const [activeTab, setActiveTab] = useState("overview");
+  const [draftPreview, setDraftPreview] = useState<Facture | null>(null);
+  const [validatingDraft, setValidatingDraft] = useState(false);
 
   // À payer state
   const [payerFilter, setPayerFilter] = useState<"tous" | "en_attente" | "paye">("tous");
