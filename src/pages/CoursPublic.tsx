@@ -13,6 +13,7 @@ import { BadgeGrid } from "@/components/cours-en-ligne/motivation/BadgeGrid";
 import { buildBadges, calculateXP } from "@/components/cours-en-ligne/motivation/badges-data";
 import { toast } from "sonner";
 import ModuleDetailView from "@/components/cours-en-ligne/ModuleDetailView";
+import BilanFinFormationFCVtc from "@/components/cours-en-ligne/BilanFinFormationFCVtc";
 import ExamensBlancsPage from "@/components/cours-en-ligne/ExamensBlancsPage";
 import NotesView from "@/components/cours-en-ligne/NotesView";
 import StudentLogin from "@/components/cours-en-ligne/StudentLogin";
@@ -1102,6 +1103,13 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
             isPresentiel={!["vtc-elearning", "taxi-elearning", "taxi-pour-vtc-elearning"].includes(selectedFormation)}
             onExamStateChange={handleExamStateChange}
           />
+        </div>
+      );
+    }
+    if (selectedModule.id === 87) {
+      return (
+        <div className="min-h-screen bg-background p-4 md:p-8">
+          <BilanFinFormationFCVtc onBack={handleBackFromModule} />
         </div>
       );
     }
