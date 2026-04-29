@@ -561,7 +561,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       if (!apprenantIdsForFinanceur.length) return {} as Record<string, any>;
       const { data, error } = await supabase
         .from('financeurs_fc' as any)
-        .select('apprenant_id, adresse, code_postal, ville, contact_telephone, contact_email, email_facturation')
+        .select('apprenant_id, type_financeur, raison_sociale, siren, siret, numero_tva, adresse, code_postal, ville, contact_nom, contact_telephone, contact_email, email_facturation, organisme_financeur, numero_dossier')
         .in('apprenant_id', apprenantIdsForFinanceur);
       if (error) {
         console.error('[SessionDetail] Erreur chargement financeurs_fc:', error);
@@ -572,6 +572,29 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       return map;
     },
     enabled: !!session?.id && open && apprenantIdsForFinanceur.length > 0,
+  });
+
+  // Charger les factures FC déjà créées pour cette session (brouillons + validées)
+  const { data: facturesFCMap = {}, refetch: refetchFacturesFC } = useQuery({
+    queryKey: ['session-factures-fc', session?.id],
+    queryFn: async () => {
+      if (!session?.id) return {} as Record<string, any>;
+      const { data, error } = await supabase
+        .from('factures')
+        .select('*')
+        .eq('session_id', session.id)
+        .order('created_at', { ascending: true });
+      if (error) {
+        console.error('[SessionDetail] Erreur chargement factures session:', error);
+        return {} as Record<string, any>;
+      }
+      const map: Record<string, any> = {};
+      (data || []).forEach((row: any) => {
+        if (row.apprenant_id) map[row.apprenant_id] = row;
+      });
+      return map;
+    },
+    enabled: !!session?.id && open,
   });
 
   // Charger les formateurs de cette session
