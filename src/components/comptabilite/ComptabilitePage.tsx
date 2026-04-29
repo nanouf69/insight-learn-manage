@@ -109,6 +109,7 @@ const financementLabels: Record<string, string> = {
   opco: "OPCO",
   france_travail: "France Travail",
   cpf: "CPF",
+  fournisseur: "Fournisseur",
 };
 
 const moyensPaiement = ["Virement", "Chèque", "Espèces", "Carte bancaire", "Prélèvement"];
@@ -577,8 +578,32 @@ export function ComptabilitePage() {
     toast.success("Déconnecté du compte bancaire");
   };
 
+  const fournisseurFacturesAsFactures = useMemo<Facture[]>(() => {
+    return (fournisseurFactures || []).map((f: any) => {
+      const ttc = Number(f.montant) || 0;
+      return {
+        id: `fournisseur-${f.id}`,
+        numero: f.numero_facture || f.reference || `FOURN-${String(f.id).slice(0, 8)}`,
+        client_nom: f.fournisseurs?.nom || "Fournisseur",
+        type_financement: "fournisseur",
+        montant_ht: ttc,
+        montant_tva: 0,
+        montant_ttc: ttc,
+        statut: f.statut === "paye" ? "payee" : (f.statut || "en_attente"),
+        date_emission: (f.date_emission || f.created_at || "").toString().split("T")[0],
+        date_echeance: f.date_echeance || null,
+        date_paiement: f.date_paiement || null,
+        client_opco: null,
+      };
+    });
+  }, [fournisseurFactures]);
+
+  const allFactures = useMemo<Facture[]>(() => {
+    return [...factures, ...fournisseurFacturesAsFactures];
+  }, [factures, fournisseurFacturesAsFactures]);
+
   const filteredFactures = useMemo(() => {
-    return factures.filter((f) => {
+    return allFactures.filter((f) => {
       const matchSearch =
         f.numero.toLowerCase().includes(search.toLowerCase()) ||
         f.client_nom.toLowerCase().includes(search.toLowerCase());
@@ -586,7 +611,7 @@ export function ComptabilitePage() {
       const matchFinancement = filterFinancement === "all" || f.type_financement === filterFinancement;
       return matchSearch && matchStatut && matchFinancement;
     });
-  }, [factures, search, filterStatut, filterFinancement]);
+  }, [allFactures, search, filterStatut, filterFinancement]);
 
   const totalCA = useMemo(() => factures.reduce((s, f) => (f.statut !== "annulee" && f.statut !== "brouillon") ? s + Number(f.montant_ttc) : s, 0), [factures]);
   const totalPaye = useMemo(() => factures.filter(f => f.statut === "payee").reduce((s, f) => s + Number(f.montant_ttc), 0), [factures]);
