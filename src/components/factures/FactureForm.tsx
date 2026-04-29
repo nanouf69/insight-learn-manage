@@ -33,7 +33,8 @@ import {
   MapPin,
   Calendar,
   Clock,
-  ShoppingCart
+  ShoppingCart,
+  Save
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -181,6 +182,23 @@ export function FactureForm() {
   const [addLineType, setAddLineType] = useState<"session" | "produit">("session");
   const [apprenants, setApprenants] = useState<ApprenantItem[]>([]);
   const [sessions, setSessions] = useState<SessionItem[]>([]);
+
+  const DRAFT_KEY = 'facture_draft_v1';
+
+  // Recharger le brouillon au montage (s'il existe)
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (raw) {
+        const draft = JSON.parse(raw);
+        setData((prev) => ({ ...prev, ...draft }));
+        toast.info("Brouillon précédent restauré");
+      }
+    } catch (e) {
+      console.warn("Impossible de charger le brouillon", e);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     const fetchSessions = async () => {
@@ -437,6 +455,16 @@ export function FactureForm() {
     return date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
   };
 
+  const handleSaveDraft = () => {
+    try {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(data));
+      toast.success("Brouillon enregistré");
+    } catch (e) {
+      console.error(e);
+      toast.error("Impossible d'enregistrer le brouillon");
+    }
+  };
+
   const handlePrint = () => {
     window.print();
     toast.success("Impression lancée");
@@ -509,6 +537,7 @@ export function FactureForm() {
           <p className="text-muted-foreground">Format conforme à votre modèle de facturation</p>
         </div>
         <div className="flex gap-2">
+          <Button onClick={handleSaveDraft} variant="outline"><Save className="w-4 h-4 mr-2" />Enregistrer comme brouillon</Button>
           <Button onClick={handleEnvoyer} variant="outline"><Send className="w-4 h-4 mr-2" />Envoyer</Button>
           <Button onClick={handlePrint} variant="outline"><Printer className="w-4 h-4 mr-2" />Imprimer</Button>
           <Button onClick={handleExport}><Download className="w-4 h-4 mr-2" />Télécharger PDF</Button>
