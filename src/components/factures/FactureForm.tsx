@@ -444,14 +444,20 @@ export function FactureForm() {
 
   const handleExport = () => {
     const factureHTML = generateFactureHTML();
-    const blob = new Blob([factureHTML], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `Facture_${data.numeroInterne}.html`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast.success("Facture exportée avec succès");
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      toast.error("Impossible d'ouvrir la fenêtre. Vérifiez le blocage des popups.");
+      return;
+    }
+    printWindow.document.write(factureHTML);
+    printWindow.document.close();
+    printWindow.onload = () => {
+      setTimeout(() => {
+        printWindow.focus();
+        printWindow.print();
+      }, 300);
+    };
+    toast.success("Téléchargement PDF lancé (choisissez « Enregistrer en PDF »)");
   };
 
   const getClientInfo = () => {
