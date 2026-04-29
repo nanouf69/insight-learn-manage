@@ -2465,6 +2465,36 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         const FC_BILAN_PARENT: Record<number, number> = { 81: 4, 82: 9 };
         const parentModuleId = FC_BILAN_PARENT[Number(module.id)];
 
+        if (shouldSyncVtcBilanFromCours(module.id) && initialData.exercices.length > 0) {
+          try {
+            const { data: sourceState } = await supabase
+              .from("module_editor_state")
+              .select("module_data, deleted_exercices")
+              .eq("module_id", BILAN_VTC_SOURCE_MODULE_ID)
+              .order("updated_at", { ascending: false })
+              .limit(1)
+              .maybeSingle();
+
+            const sourceMd = sourceState?.module_data as ModuleData | undefined;
+            if (sourceMd?.exercices && Array.isArray(sourceMd.exercices)) {
+              const sourceInitial = JSON.parse(JSON.stringify(VTC_COURS_DATA)) as ModuleData;
+              const deletedSourceIds = Array.isArray(sourceState?.deleted_exercices)
+                ? (sourceState.deleted_exercices as any[]).map((e: any) => Number(e?.id)).filter((n) => !Number.isNaN(n))
+                : [];
+              const sourceExercices = mergeSourceExercices(sourceMd.exercices, sourceInitial.exercices, deletedSourceIds);
+              const syncedModuleData = getSyncedBilanVtcModuleData(initialData, sourceExercices, Number(module.id) === 4);
+
+              setModuleData(syncedModuleData);
+              setDeletedCours([]);
+              setDeletedExercices([]);
+              setLoadedModuleEditorState(true);
+              return;
+            }
+          } catch (e) {
+            console.error(`[Bilan VTC] Erreur synchronisation depuis module ${BILAN_VTC_SOURCE_MODULE_ID}:`, e);
+          }
+        }
+
         // Modules FC: toujours refléter le bilan parent (4 VTC / 9 TAXI), même si
         // un ancien état propre au module 81/82 existe en base. Sinon les élèves
         // FC gardent des questions/réponses obsolètes.
