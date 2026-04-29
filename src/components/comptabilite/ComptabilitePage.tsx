@@ -1074,6 +1074,14 @@ export function ComptabilitePage() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input placeholder="Rechercher par numéro ou client..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
             </div>
+            <Select value={filterTypeFlux} onValueChange={(v) => setFilterTypeFlux(v as "all" | "ventes" | "achats")}>
+              <SelectTrigger className="w-[150px]"><SelectValue placeholder="Type" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Ventes & Achats</SelectItem>
+                <SelectItem value="ventes">Ventes uniquement</SelectItem>
+                <SelectItem value="achats">Achats uniquement</SelectItem>
+              </SelectContent>
+            </Select>
             <Select value={filterStatut} onValueChange={setFilterStatut}>
               <SelectTrigger className="w-[160px]"><SelectValue placeholder="Statut" /></SelectTrigger>
               <SelectContent>
