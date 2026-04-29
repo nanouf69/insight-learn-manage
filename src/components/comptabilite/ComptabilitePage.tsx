@@ -1242,8 +1242,9 @@ export function ComptabilitePage() {
                   const totalVentes = ventes.reduce((s, f) => s + Number(f.montant_ttc), 0);
                   const totalAchats = achats.reduce((s, f) => s + Number(f.montant_ttc), 0);
 
-                  const renderRows = (list: Facture[]) => list.map((f) => {
+                  const renderRows = (list: Facture[], showActions: boolean) => list.map((f) => {
                     const isDraft = f.statut === "brouillon";
+                    const isAvoir = Number(f.montant_ttc) < 0;
                     return (
                       <TableRow
                         key={f.id}
@@ -1251,21 +1252,54 @@ export function ComptabilitePage() {
                         onClick={isDraft ? () => setDraftPreview(f) : undefined}
                         title={isDraft ? "Cliquer pour prévisualiser et valider la facture" : undefined}
                       >
-                        <TableCell className="font-medium">{f.numero}</TableCell>
+                        <TableCell className="font-medium">
+                          {f.numero}
+                          {isAvoir && <Badge variant="outline" className="ml-2 border-rose-300 text-rose-700">Avoir</Badge>}
+                        </TableCell>
                         <TableCell>{f.client_nom}</TableCell>
                         <TableCell>
                           <Badge variant="outline">{financementLabels[f.type_financement] || f.type_financement}</Badge>
                         </TableCell>
-                        <TableCell className="text-right font-semibold">{formatMontant(Number(f.montant_ttc))}</TableCell>
+                        <TableCell className={cn("text-right font-semibold", isAvoir && "text-rose-600")}>{formatMontant(Number(f.montant_ttc))}</TableCell>
                         <TableCell>{getStatutBadge(f.statut)}</TableCell>
                         <TableCell>{formatDate(f.date_emission)}</TableCell>
                         <TableCell>{formatDate(f.date_echeance)}</TableCell>
                         <TableCell>{formatDate(f.date_paiement)}</TableCell>
+                        {showActions && (
+                          <TableCell onClick={(e) => e.stopPropagation()}>
+                            {!isDraft && (
+                              <div className="flex items-center gap-1">
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-7 px-2"
+                                  onClick={() => openEditFacture(f)}
+                                  title="Modifier la facture"
+                                >
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </Button>
+                                {!isAvoir && (
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-7 px-2 text-rose-600 hover:text-rose-700 hover:bg-rose-50"
+                                    onClick={() => createAvoir(f)}
+                                    disabled={creatingAvoir === f.id}
+                                    title="Créer un avoir"
+                                  >
+                                    <ArrowDownLeft className="h-3.5 w-3.5" />
+                                    <span className="ml-1 text-xs">Avoir</span>
+                                  </Button>
+                                )}
+                              </div>
+                            )}
+                          </TableCell>
+                        )}
                       </TableRow>
                     );
                   });
 
-                  const headerRow = (
+                  const headerRow = (showActions: boolean) => (
                     <TableRow>
                       <TableHead>N°</TableHead>
                       <TableHead>Client</TableHead>
@@ -1275,6 +1309,7 @@ export function ComptabilitePage() {
                       <TableHead>Émission</TableHead>
                       <TableHead>Échéance</TableHead>
                       <TableHead>Paiement</TableHead>
+                      {showActions && <TableHead>Actions</TableHead>}
                     </TableRow>
                   );
 
