@@ -162,6 +162,22 @@ interface ModuleData {
 
 const BILAN_VTC_SOURCE_MODULE_ID = 2;
 
+const shouldSyncVtcBilanFromCours = (moduleId: number | string) => [4, 81].includes(Number(moduleId));
+
+const getSyncedBilanVtcModuleData = (
+  initialData: ModuleData,
+  sourceExercices: ExerciceItem[],
+  includeGestion: boolean,
+): ModuleData => {
+  const groupedExercices = buildBilanExercicesVtcFromCours(sourceExercices);
+  return {
+    ...initialData,
+    exercices: includeGestion
+      ? groupedExercices
+      : groupedExercices.filter((exercise) => Number(exercise.id) !== 101),
+  };
+};
+
 interface ExerciseQuestionPrompt {
   question: string;
   passageTitle?: string;
