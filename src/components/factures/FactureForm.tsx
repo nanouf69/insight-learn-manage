@@ -175,6 +175,7 @@ export function FactureForm() {
   const [searchApprenant, setSearchApprenant] = useState("");
   const [searchOrganisation, setSearchOrganisation] = useState("");
   const [searchSession, setSearchSession] = useState("");
+  const [activeMainTab, setActiveMainTab] = useState<"financeur" | "prestations">("financeur");
   const [searchProduit, setSearchProduit] = useState("");
   const [isAddLineDialogOpen, setIsAddLineDialogOpen] = useState(false);
   const [addLineType, setAddLineType] = useState<"session" | "produit">("session");
