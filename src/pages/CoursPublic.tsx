@@ -451,7 +451,7 @@ const inferBilanQuizNumber = (title: string): number | null => {
   return null;
 };
 
-const BILAN_EXERCISE_MODULE_IDS = new Set([4, 5, 9, 11, 27, 28, 29, 30]);
+const BILAN_EXERCISE_MODULE_IDS = new Set([4, 5, 9, 11, 27, 28, 29, 30, 81, 82]);
 
 const getPointLabelFromExerciseTitle = (title: string, moduleId?: number): string | null => {
   if (!title) return null;
