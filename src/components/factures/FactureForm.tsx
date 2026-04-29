@@ -307,6 +307,26 @@ export function FactureForm() {
   const selectedApprenant = apprenants.find(a => a.id === data.selectedApprenantId);
   const selectedOrganisation = organisations.find(o => o.id === data.selectedOrganisationId);
 
+  // Charge le financeur (table financeurs_fc) pour l'apprenant sélectionné — fallback société
+  useEffect(() => {
+    if (!data.selectedApprenantId) {
+      setApprenantFinanceur(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const { data: fin } = await supabase
+        .from('financeurs_fc')
+        .select('*')
+        .eq('apprenant_id', data.selectedApprenantId)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (!cancelled) setApprenantFinanceur(fin || null);
+    })();
+    return () => { cancelled = true; };
+  }, [data.selectedApprenantId]);
+
   // Auto-remplit la facture (réf dossier + ligne formation) à la sélection d'un apprenant
   useEffect(() => {
     if (!selectedApprenant) return;
