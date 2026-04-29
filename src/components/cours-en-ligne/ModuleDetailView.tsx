@@ -72,7 +72,7 @@ import { TA_COURS_DATA, TA_SECTIONS } from "./ta-cours-data";
 import { VA_COURS_DATA, VA_SECTIONS } from "./va-cours-data";
 import { CONTROLE_CONNAISSANCES_TAXI_DATA } from "./controle-connaissances-taxi-data";
 import { CONNAISSANCES_VILLE_TAXI_DATA } from "./connaissances-ville-taxi-data";
-import { BILAN_EXERCICES_VTC } from "./bilan-exercices-vtc-data";
+import { BILAN_EXERCICES_VTC, buildBilanExercicesVtcFromCours } from "./bilan-exercices-vtc-data";
 import { BILAN_EXERCICES_TAXI } from "./bilan-exercices-taxi-data";
 import { BILAN_EXERCICES_TA } from "./bilan-exercices-ta-data";
 import { BILAN_EXERCICES_VA } from "./bilan-exercices-va-data";
@@ -159,6 +159,8 @@ interface ModuleData {
   cours: ContentItem[];
   exercices: ExerciceItem[];
 }
+
+const BILAN_VTC_SOURCE_MODULE_ID = 2;
 
 interface ExerciseQuestionPrompt {
   question: string;
