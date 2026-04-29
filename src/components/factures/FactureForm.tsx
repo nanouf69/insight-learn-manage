@@ -198,6 +198,7 @@ export function FactureForm() {
   const [isAddLineDialogOpen, setIsAddLineDialogOpen] = useState(false);
   const [addLineType, setAddLineType] = useState<"session" | "produit">("session");
   const [apprenants, setApprenants] = useState<ApprenantItem[]>([]);
+  const [apprenantFinanceur, setApprenantFinanceur] = useState<any | null>(null);
   const [sessions, setSessions] = useState<SessionItem[]>([]);
 
   const DRAFT_KEY = 'facture_draft_v1';
