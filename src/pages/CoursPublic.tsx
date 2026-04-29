@@ -254,8 +254,9 @@ const FORMATION_DISPLAY_LABELS: Partial<Record<FormationId, Record<number, strin
   },
   "continue-vtc": {
     81: "1.BILAN EXERCICES FORMATION CONTINUE VTC",
-    83: "2.FEUILLES D'ÉMARGEMENT SIGNÉES VTC",
-    85: "3.INFORMATIONS FINANCEUR VTC",
+    87: "2.📋 BILAN FIN DE FORMATION CONTINUE VTC",
+    83: "3.FEUILLES D'ÉMARGEMENT SIGNÉES VTC",
+    85: "4.INFORMATIONS FINANCEUR VTC",
   },
   "continue-taxi": {
     82: "1.BILAN EXERCICES FORMATION CONTINUE TAXI",
@@ -273,7 +274,7 @@ const FORMATION_DEFAULT_MODULES: Record<FormationId, number[]> = {
   "taxi-pour-vtc": [31, 40, 7, 64, 12, 3, 27, 13, 28, 37, 62, 72, 6, 52],
   "taxi-pour-vtc-elearning": [32, 40, 7, 64, 12, 3, 27, 13, 28, 37, 62, 72, 6, 52],
   "vtc-pour-taxi": [33, 41, 3, 29, 30, 38, 63, 73, 8, 53],
-  "continue-vtc": [81, 83, 85],
+  "continue-vtc": [81, 87, 83, 85],
   "continue-taxi": [82, 84, 86],
 };
 
