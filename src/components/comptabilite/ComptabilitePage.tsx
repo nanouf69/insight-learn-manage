@@ -48,6 +48,7 @@ interface Facture {
   date_echeance: string | null;
   date_paiement: string | null;
   client_opco: string | null;
+  _draftRaw?: any;
 }
 
 interface BankAccount {
