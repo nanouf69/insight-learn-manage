@@ -34,9 +34,9 @@ export function ContratLocationSection({ apprenant }: Props) {
   const [prefecturePermis, setPrefecturePermis] = useState("");
 
   // Véhicule
-  const [marqueModele, setMarqueModele] = useState("");
-  const [immatriculation, setImmatriculation] = useState("");
-  const [annee, setAnnee] = useState("");
+  const [marqueModele, setMarqueModele] = useState("Volkswagen Sharan");
+  const [immatriculation, setImmatriculation] = useState("FL-511-KH");
+  const [annee, setAnnee] = useState("2016");
   const [couleur, setCouleur] = useState("");
   const [kmDepart, setKmDepart] = useState("");
   const [carburantDepart, setCarburantDepart] = useState("Plein");
