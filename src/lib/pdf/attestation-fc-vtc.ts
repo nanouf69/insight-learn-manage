@@ -42,8 +42,14 @@ function generateCertificateNumber(dateFin: string, nom: string, formation: 'VTC
   return `${prefix}-${year}-LYON-${num}-${initials}`;
 }
 
-export async function generateAttestationFCVTC(data: AttestationFCData, options?: { returnBlob?: boolean }) {
-  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+export async function generateAttestationFCVTC(
+  data: AttestationFCData,
+  options?: { returnBlob?: boolean; existingDoc?: jsPDF; addPage?: boolean; returnDoc?: boolean }
+) {
+  const doc = options?.existingDoc ?? new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  if (options?.existingDoc && options?.addPage) {
+    doc.addPage();
+  }
   const pw = doc.internal.pageSize.getWidth();  // ~210
   const ph = doc.internal.pageSize.getHeight(); // ~297
   const marginL = 15;
@@ -245,9 +251,12 @@ export async function generateAttestationFCVTC(data: AttestationFCData, options?
   doc.text(`(*) Cette attestation peut être vérifiée en contactant ${COMPANY_INFO.email}`, pw / 2, footerY, { align: 'center' });
 
   const fileName = `Attestation_FC_${data.formation || 'VTC'}_${data.nom.toUpperCase()}_${data.prenom}.pdf`;
+  if (options?.returnDoc) {
+    return { doc, fileName };
+  }
   if (options?.returnBlob) {
     const blob = doc.output('blob');
-    return { blob, fileName };
+    return { blob, fileName, doc };
   }
   // === TELECHARGER ===
   doc.save(fileName);
