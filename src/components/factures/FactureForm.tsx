@@ -868,6 +868,49 @@ export function FactureForm() {
         </TabsContent>
       </Tabs>
 
+      {/* Infos facture (déplacé sous les onglets) */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><FileText className="w-5 h-5" />Informations de la facture</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="numero">N° Facture</Label>
+              <Input id="numero" value={data.numero} onChange={(e) => updateField('numero', e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="numeroInterne">Numéro interne</Label>
+              <Input id="numeroInterne" value={data.numeroInterne} onChange={(e) => updateField('numeroInterne', e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="date">Date de facturation</Label>
+              <Input id="date" type="date" value={data.date} onChange={(e) => updateField('date', e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="dateEcheance">Date d'échéance</Label>
+              <Input id="dateEcheance" type="date" value={data.dateEcheance} onChange={(e) => updateField('dateEcheance', e.target.value)} />
+            </div>
+          </div>
+          <div className="mt-4 flex items-center gap-4">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" checked={data.duplicata} onChange={(e) => updateField('duplicata', e.target.checked)} className="w-4 h-4" />
+              <span className="text-sm">Duplicata</span>
+            </label>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+            <div className="space-y-2">
+              <Label htmlFor="refDossier">Réf dossier</Label>
+              <Input id="refDossier" placeholder="Nom du stagiaire principal" value={data.refDossier} onChange={(e) => updateField('refDossier', e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="refConvention">Réf Convention à rappeler</Label>
+              <Input id="refConvention" placeholder="Convention num 2024..." value={data.refConvention} onChange={(e) => updateField('refConvention', e.target.value)} />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Notes et mentions légales */}
       <Card>
         <CardHeader><CardTitle>Notes et mentions légales</CardTitle></CardHeader>
