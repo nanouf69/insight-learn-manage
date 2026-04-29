@@ -13,6 +13,7 @@ import { BadgeGrid } from "@/components/cours-en-ligne/motivation/BadgeGrid";
 import { buildBadges, calculateXP } from "@/components/cours-en-ligne/motivation/badges-data";
 import { toast } from "sonner";
 import ModuleDetailView from "@/components/cours-en-ligne/ModuleDetailView";
+import BilanFinFormationFCVtc from "@/components/cours-en-ligne/BilanFinFormationFCVtc";
 import ExamensBlancsPage from "@/components/cours-en-ligne/ExamensBlancsPage";
 import NotesView from "@/components/cours-en-ligne/NotesView";
 import StudentLogin from "@/components/cours-en-ligne/StudentLogin";
@@ -254,8 +255,9 @@ const FORMATION_DISPLAY_LABELS: Partial<Record<FormationId, Record<number, strin
   },
   "continue-vtc": {
     81: "1.BILAN EXERCICES FORMATION CONTINUE VTC",
-    83: "2.FEUILLES D'ÉMARGEMENT SIGNÉES VTC",
-    85: "3.INFORMATIONS FINANCEUR VTC",
+    87: "2.📋 BILAN FIN DE FORMATION CONTINUE VTC",
+    83: "3.FEUILLES D'ÉMARGEMENT SIGNÉES VTC",
+    85: "4.INFORMATIONS FINANCEUR VTC",
   },
   "continue-taxi": {
     82: "1.BILAN EXERCICES FORMATION CONTINUE TAXI",
@@ -273,11 +275,11 @@ const FORMATION_DEFAULT_MODULES: Record<FormationId, number[]> = {
   "taxi-pour-vtc": [31, 40, 7, 64, 12, 3, 27, 13, 28, 37, 62, 72, 6, 52],
   "taxi-pour-vtc-elearning": [32, 40, 7, 64, 12, 3, 27, 13, 28, 37, 62, 72, 6, 52],
   "vtc-pour-taxi": [33, 41, 3, 29, 30, 38, 63, 73, 8, 53],
-  "continue-vtc": [81, 83, 85],
+  "continue-vtc": [81, 87, 83, 85],
   "continue-taxi": [82, 84, 86],
 };
 
-const MANAGED_MODULE_IDS = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 50, 51, 52, 53, 60, 61, 62, 63, 64, 70, 71, 72, 73]);
+const MANAGED_MODULE_IDS = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 50, 51, 52, 53, 60, 61, 62, 63, 64, 70, 71, 72, 73, 87]);
 const DASHBOARD_PARENT_MODULE_IDS: Partial<Record<number, number>> = {
   25: 2,
   14: 2,
@@ -1101,6 +1103,13 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
             isPresentiel={!["vtc-elearning", "taxi-elearning", "taxi-pour-vtc-elearning"].includes(selectedFormation)}
             onExamStateChange={handleExamStateChange}
           />
+        </div>
+      );
+    }
+    if (selectedModule.id === 87) {
+      return (
+        <div className="min-h-screen bg-background p-4 md:p-8">
+          <BilanFinFormationFCVtc onBack={handleBackFromModule} />
         </div>
       );
     }
