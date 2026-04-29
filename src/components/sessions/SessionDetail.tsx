@@ -1905,19 +1905,22 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                               className="h-8 gap-1.5 text-muted-foreground hover:text-primary"
                               title="Attestation Formation Continue VTC"
                               onClick={() => {
+                                const typeApp = `${apprenant.type_apprenant || ''} ${apprenant.formation_choisie || ''}`.toUpperCase();
+                                const formation: 'VTC' | 'TAXI' = typeApp.includes('TAXI') ? 'TAXI' : 'VTC';
                                 generateAttestationFCVTC({
                                   nom: apprenant.nom,
                                   prenom: apprenant.prenom,
-                                  dateFin: sessionApprenant.date_fin_personnalisee || session.dateFin,
-                                  dateDebut: sessionApprenant.date_debut || session.dateDebut,
+                                  dateFin: sessionApprenant.date_fin_personnalisee || session.dateFin || apprenant.date_fin_formation || apprenant.date_debut_formation || new Date().toISOString().split('T')[0],
+                                  dateDebut: sessionApprenant.date_debut || session.dateDebut || apprenant.date_debut_formation,
                                   adresse: apprenant.adresse || '',
                                   codePostal: apprenant.code_postal || '',
                                   ville: apprenant.ville || '',
                                   telephone: apprenant.telephone || '',
                                   email: apprenant.email || '',
                                   dateNaissance: apprenant.date_naissance || '',
+                                  formation,
                                 });
-                                toast({ title: "Attestation generee", description: `Attestation FC VTC pour ${apprenant.prenom} ${apprenant.nom} telechargee.` });
+                                toast({ title: "Attestation generee", description: `Attestation FC ${formation} pour ${apprenant.prenom} ${apprenant.nom} telechargee.` });
                               }}
                             >
                               <GraduationCap className="w-4 h-4" />
