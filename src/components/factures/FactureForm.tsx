@@ -264,34 +264,41 @@ export function FactureForm() {
   // Auto-remplit la facture (réf dossier + ligne formation) à la sélection d'un apprenant
   useEffect(() => {
     if (!selectedApprenant) return;
+    let injected = false;
     setData(prev => {
-      // Évite la double-injection : déjà une ligne "session" auto-créée pour cet apprenant ?
       const dejaInjecte = prev.lignes.some(
         l => l.type === "session" && l.stagiaire === selectedApprenant.name
       );
       const designation = selectedApprenant.formationChoisie || selectedApprenant.typeApprenant || "Formation";
-      const newLignes = dejaInjecte ? prev.lignes : [
-        ...prev.lignes,
-        {
-          id: crypto.randomUUID(),
-          type: "session" as const,
-          stagiaire: selectedApprenant.name,
-          designation,
-          dateDebut: selectedApprenant.dateDebutFormation || "",
-          dateFin: selectedApprenant.dateFinFormation || "",
-          lieu: "86 route de genas 69003 Lyon",
-          quantite: 1,
-          prixUnitaire: selectedApprenant.montantTtc || 0,
-          tvaType: "EXO" as const,
-          remise: 0,
-        },
-      ];
+      if (dejaInjecte) {
+        return { ...prev, refDossier: prev.refDossier || selectedApprenant.name };
+      }
+      injected = true;
       return {
         ...prev,
         refDossier: prev.refDossier || selectedApprenant.name,
-        lignes: newLignes,
+        lignes: [
+          ...prev.lignes,
+          {
+            id: crypto.randomUUID(),
+            type: "session" as const,
+            stagiaire: selectedApprenant.name,
+            designation,
+            dateDebut: selectedApprenant.dateDebutFormation || "",
+            dateFin: selectedApprenant.dateFinFormation || "",
+            lieu: "86 route de genas 69003 Lyon",
+            quantite: 1,
+            prixUnitaire: selectedApprenant.montantTtc || 0,
+            tvaType: "EXO" as const,
+            remise: 0,
+          },
+        ],
       };
     });
+    if (injected) {
+      toast.success(`Prestation pré-remplie pour ${selectedApprenant.name}`);
+      setActiveMainTab("prestations");
+    }
   }, [selectedApprenant?.id]);
 
   // Auto-remplit la réf dossier à la sélection d'une organisation (sans nom de stagiaire)
