@@ -4,7 +4,7 @@ import tamponImage from '@/assets/tampon-entreprise.png';
 import signatureImage from '@/assets/signature-dirigeant.png';
 
 const COMPANY_INFO = {
-  name: 'FTRANSPORT',
+  name: 'Services pro Ftransport',
   representant: 'GUENICHI NAOUFAL',
   address: '86 Route de Genas 69003 Lyon',
   telephone: '04 28 29 60 91',
