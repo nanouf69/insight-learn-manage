@@ -542,6 +542,29 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     enabled: !!session?.id && open,
   });
 
+  // Charger les infos financeur FC (saisies dans le portail Informations Financeur VTC/TAXI)
+  const apprenantIdsForFinanceur = (apprenantsInSession || [])
+    .map((sa: any) => sa.apprenant?.id)
+    .filter(Boolean);
+  const { data: financeursFCMap = {} } = useQuery({
+    queryKey: ['session-financeurs-fc', session?.id, apprenantIdsForFinanceur.join(',')],
+    queryFn: async () => {
+      if (!apprenantIdsForFinanceur.length) return {} as Record<string, any>;
+      const { data, error } = await supabase
+        .from('financeurs_fc' as any)
+        .select('apprenant_id, adresse, code_postal, ville, contact_telephone, contact_email, email_facturation')
+        .in('apprenant_id', apprenantIdsForFinanceur);
+      if (error) {
+        console.error('[SessionDetail] Erreur chargement financeurs_fc:', error);
+        return {} as Record<string, any>;
+      }
+      const map: Record<string, any> = {};
+      (data || []).forEach((row: any) => { map[row.apprenant_id] = row; });
+      return map;
+    },
+    enabled: !!session?.id && open && apprenantIdsForFinanceur.length > 0,
+  });
+
   // Charger les formateurs de cette session
   const { data: formateursInSession = [], isLoading: loadingFormateurs, refetch: refetchFormateurs } = useQuery({
     queryKey: ['session-formateurs', session?.id],
@@ -1057,17 +1080,18 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   const buildAttestationDataForApprenant = (apprenant: any, sessionApprenant: any) => {
     const typeApp = `${apprenant.type_apprenant || ''} ${apprenant.formation_choisie || ''}`.toUpperCase();
     const formation: 'VTC' | 'TAXI' = typeApp.includes('TAXI') ? 'TAXI' : 'VTC';
+    const fc: any = (financeursFCMap as any)?.[apprenant.id] || {};
     return {
       data: {
         nom: apprenant.nom,
         prenom: apprenant.prenom,
         dateFin: sessionApprenant?.date_fin_personnalisee || session.dateFin || apprenant.date_fin_formation || apprenant.date_debut_formation || new Date().toISOString().split('T')[0],
         dateDebut: sessionApprenant?.date_debut || session.dateDebut || apprenant.date_debut_formation,
-        adresse: apprenant.adresse || '',
-        codePostal: apprenant.code_postal || '',
-        ville: apprenant.ville || '',
-        telephone: apprenant.telephone || '',
-        email: apprenant.email || '',
+        adresse: apprenant.adresse || fc.adresse || '',
+        codePostal: apprenant.code_postal || fc.code_postal || '',
+        ville: apprenant.ville || fc.ville || '',
+        telephone: apprenant.telephone || fc.contact_telephone || '',
+        email: apprenant.email || fc.contact_email || fc.email_facturation || '',
         dateNaissance: apprenant.date_naissance || '',
         formation,
       },
@@ -1080,14 +1104,20 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     for (const sa of apprenantsInSession) {
       const a = sa.apprenant;
       if (!a) continue;
+      const fc: any = (financeursFCMap as any)?.[a.id] || {};
+      const adresse = a.adresse || fc.adresse;
+      const cp = a.code_postal || fc.code_postal;
+      const ville = a.ville || fc.ville;
+      const tel = a.telephone || fc.contact_telephone;
+      const email = a.email || fc.contact_email || fc.email_facturation;
       const fields: string[] = [];
       if (!a.nom?.trim()) fields.push('nom');
       if (!a.prenom?.trim()) fields.push('prénom');
-      if (!a.adresse?.trim()) fields.push('adresse');
-      if (!a.code_postal?.trim()) fields.push('code postal');
-      if (!a.ville?.trim()) fields.push('ville');
-      if (!a.telephone?.trim()) fields.push('téléphone');
-      if (!a.email?.trim()) fields.push('email');
+      if (!adresse?.trim()) fields.push('adresse');
+      if (!cp?.trim()) fields.push('code postal');
+      if (!ville?.trim()) fields.push('ville');
+      if (!tel?.trim()) fields.push('téléphone');
+      if (!email?.trim()) fields.push('email');
       if (fields.length) {
         missing.push(`${a.prenom || ''} ${a.nom || ''} → ${fields.join(', ')}`);
       }
