@@ -240,6 +240,42 @@ export function ComptabilitePage() {
     await Promise.all([fetchFournisseurFactures(), fetchPaiements()]);
   };
 
+  const loadDrafts = (): Facture[] => {
+    try {
+      const drafts: Facture[] = [];
+      // Brouillon courant (clé legacy)
+      const raw = localStorage.getItem("facture_draft_v1");
+      if (raw) {
+        const d = JSON.parse(raw);
+        const lignes: any[] = Array.isArray(d.lignes) ? d.lignes : [];
+        const montantHT = lignes.reduce((s, l) => s + (Number(l.prixUnitaire) || 0) * (Number(l.quantite) || 1) * (1 - (Number(l.remise) || 0) / 100), 0);
+        const montantTVA = lignes.reduce((s, l) => {
+          const ht = (Number(l.prixUnitaire) || 0) * (Number(l.quantite) || 1) * (1 - (Number(l.remise) || 0) / 100);
+          const taux = l.tvaType === "EXO" ? 0 : (Number(l.tvaTaux) || 20);
+          return s + ht * (taux / 100);
+        }, 0);
+        drafts.push({
+          id: `draft-${d.numeroInterne || "current"}`,
+          numero: d.numeroInterne || d.numero || "BROUILLON",
+          client_nom: d.refDossier || "(client non défini)",
+          type_financement: d.typeFinanceur === "particulier" ? "particulier" : "professionnel",
+          montant_ht: montantHT,
+          montant_tva: montantTVA,
+          montant_ttc: montantHT + montantTVA,
+          statut: "brouillon",
+          date_emission: d.date || new Date().toISOString().split("T")[0],
+          date_echeance: d.dateEcheance || null,
+          date_paiement: null,
+          client_opco: null,
+        });
+      }
+      return drafts;
+    } catch (e) {
+      console.warn("Erreur chargement brouillons", e);
+      return [];
+    }
+  };
+
   const fetchFactures = async () => {
     setLoading(true);
     const { data, error } = await supabase
@@ -249,7 +285,8 @@ export function ComptabilitePage() {
     if (error) {
       toast.error("Erreur lors du chargement des factures");
     } else {
-      setFactures(data || []);
+      const drafts = loadDrafts();
+      setFactures([...drafts, ...(data || [])]);
     }
     setLoading(false);
   };
