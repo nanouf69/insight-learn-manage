@@ -34,7 +34,8 @@ import {
   Calendar,
   Clock,
   ShoppingCart,
-  Save
+  Save,
+  BookCheck
 } from "lucide-react";
 import { toast } from "sonner";
 
