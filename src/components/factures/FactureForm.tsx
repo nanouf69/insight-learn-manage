@@ -444,14 +444,20 @@ export function FactureForm() {
 
   const handleExport = () => {
     const factureHTML = generateFactureHTML();
-    const blob = new Blob([factureHTML], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `Facture_${data.numeroInterne}.html`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast.success("Facture exportée avec succès");
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      toast.error("Impossible d'ouvrir la fenêtre. Vérifiez le blocage des popups.");
+      return;
+    }
+    printWindow.document.write(factureHTML);
+    printWindow.document.close();
+    printWindow.onload = () => {
+      setTimeout(() => {
+        printWindow.focus();
+        printWindow.print();
+      }, 300);
+    };
+    toast.success("Téléchargement PDF lancé (choisissez « Enregistrer en PDF »)");
   };
 
   const getClientInfo = () => {
@@ -505,7 +511,7 @@ export function FactureForm() {
         <div className="flex gap-2">
           <Button onClick={handleEnvoyer} variant="outline"><Send className="w-4 h-4 mr-2" />Envoyer</Button>
           <Button onClick={handlePrint} variant="outline"><Printer className="w-4 h-4 mr-2" />Imprimer</Button>
-          <Button onClick={handleExport}><Download className="w-4 h-4 mr-2" />Exporter</Button>
+          <Button onClick={handleExport}><Download className="w-4 h-4 mr-2" />Télécharger PDF</Button>
         </div>
       </div>
 
