@@ -127,6 +127,121 @@ export function ComptabilitePage() {
   const [activeTab, setActiveTab] = useState("overview");
   const [draftPreview, setDraftPreview] = useState<Facture | null>(null);
   const [validatingDraft, setValidatingDraft] = useState(false);
+  const [editingFacture, setEditingFacture] = useState<Facture | null>(null);
+  const [editFactureForm, setEditFactureForm] = useState<{
+    numero: string;
+    client_nom: string;
+    type_financement: string;
+    montant_ht: string;
+    tva_taux: string;
+    statut: string;
+    date_emission: string;
+    date_echeance: string;
+    date_paiement: string;
+  }>({
+    numero: "", client_nom: "", type_financement: "particulier",
+    montant_ht: "0", tva_taux: "20", statut: "en_attente",
+    date_emission: "", date_echeance: "", date_paiement: "",
+  });
+  const [savingFactureEdit, setSavingFactureEdit] = useState(false);
+  const [creatingAvoir, setCreatingAvoir] = useState<string | null>(null);
+
+  const openEditFacture = (f: Facture) => {
+    if (String(f.id).startsWith("draft-")) {
+      toast.info("Ouvrez le brouillon pour le modifier");
+      return;
+    }
+    const ht = Number(f.montant_ht) || 0;
+    const tva = Number(f.montant_tva) || 0;
+    const taux = ht > 0 ? Math.round((tva / ht) * 100) : 20;
+    setEditingFacture(f);
+    setEditFactureForm({
+      numero: f.numero,
+      client_nom: f.client_nom,
+      type_financement: f.type_financement,
+      montant_ht: String(ht),
+      tva_taux: String(taux),
+      statut: f.statut || "en_attente",
+      date_emission: f.date_emission || "",
+      date_echeance: f.date_echeance || "",
+      date_paiement: f.date_paiement || "",
+    });
+  };
+
+  const saveFactureEdit = async () => {
+    if (!editingFacture) return;
+    setSavingFactureEdit(true);
+    try {
+      const ht = Number(editFactureForm.montant_ht) || 0;
+      const taux = Number(editFactureForm.tva_taux) || 0;
+      const tva = +(ht * (taux / 100)).toFixed(2);
+      const ttc = +(ht + tva).toFixed(2);
+      const payload: any = {
+        numero: editFactureForm.numero,
+        client_nom: editFactureForm.client_nom,
+        type_financement: editFactureForm.type_financement,
+        montant_ht: ht,
+        tva_taux: taux,
+        montant_tva: tva,
+        montant_ttc: ttc,
+        statut: editFactureForm.statut,
+        date_emission: editFactureForm.date_emission || null,
+        date_echeance: editFactureForm.date_echeance || null,
+        date_paiement: editFactureForm.date_paiement || null,
+      };
+      const { error } = await supabase.from("factures").update(payload).eq("id", editingFacture.id);
+      if (error) throw error;
+      toast.success("Facture mise à jour");
+      setEditingFacture(null);
+      await fetchFactures();
+    } catch (e: any) {
+      console.error(e);
+      toast.error(`Erreur : ${e.message ?? e}`);
+    } finally {
+      setSavingFactureEdit(false);
+    }
+  };
+
+  const createAvoir = async (f: Facture) => {
+    if (String(f.id).startsWith("draft-")) {
+      toast.error("Impossible de créer un avoir sur un brouillon");
+      return;
+    }
+    if (!confirm(`Créer un avoir pour la facture ${f.numero} (montants négatifs) ?`)) return;
+    setCreatingAvoir(f.id);
+    try {
+      const today = new Date().toISOString().split("T")[0];
+      const avoirNumero = `AV-${f.numero}-${Date.now().toString().slice(-5)}`;
+      const ht = -Math.abs(Number(f.montant_ht) || 0);
+      const tva = -Math.abs(Number(f.montant_tva) || 0);
+      const ttc = -Math.abs(Number(f.montant_ttc) || 0);
+      const taux = (Number(f.montant_ht) || 0) > 0
+        ? Math.round((Number(f.montant_tva) / Number(f.montant_ht)) * 100)
+        : 0;
+      const payload: any = {
+        numero: avoirNumero,
+        client_nom: f.client_nom,
+        type_financement: f.type_financement,
+        montant_ht: ht,
+        tva_taux: taux,
+        montant_tva: tva,
+        montant_ttc: ttc,
+        statut: "payee",
+        date_emission: today,
+        date_echeance: today,
+        date_paiement: today,
+      };
+      const { error } = await supabase.from("factures").insert(payload);
+      if (error) throw error;
+      toast.success(`Avoir ${avoirNumero} créé`);
+      await fetchFactures();
+    } catch (e: any) {
+      console.error(e);
+      toast.error(`Erreur : ${e.message ?? e}`);
+    } finally {
+      setCreatingAvoir(null);
+    }
+  };
 
   // À payer state
   const [payerFilter, setPayerFilter] = useState<"tous" | "en_attente" | "paye">("tous");
@@ -1127,8 +1242,9 @@ export function ComptabilitePage() {
                   const totalVentes = ventes.reduce((s, f) => s + Number(f.montant_ttc), 0);
                   const totalAchats = achats.reduce((s, f) => s + Number(f.montant_ttc), 0);
 
-                  const renderRows = (list: Facture[]) => list.map((f) => {
+                  const renderRows = (list: Facture[], showActions: boolean) => list.map((f) => {
                     const isDraft = f.statut === "brouillon";
+                    const isAvoir = Number(f.montant_ttc) < 0;
                     return (
                       <TableRow
                         key={f.id}
@@ -1136,21 +1252,54 @@ export function ComptabilitePage() {
                         onClick={isDraft ? () => setDraftPreview(f) : undefined}
                         title={isDraft ? "Cliquer pour prévisualiser et valider la facture" : undefined}
                       >
-                        <TableCell className="font-medium">{f.numero}</TableCell>
+                        <TableCell className="font-medium">
+                          {f.numero}
+                          {isAvoir && <Badge variant="outline" className="ml-2 border-rose-300 text-rose-700">Avoir</Badge>}
+                        </TableCell>
                         <TableCell>{f.client_nom}</TableCell>
                         <TableCell>
                           <Badge variant="outline">{financementLabels[f.type_financement] || f.type_financement}</Badge>
                         </TableCell>
-                        <TableCell className="text-right font-semibold">{formatMontant(Number(f.montant_ttc))}</TableCell>
+                        <TableCell className={cn("text-right font-semibold", isAvoir && "text-rose-600")}>{formatMontant(Number(f.montant_ttc))}</TableCell>
                         <TableCell>{getStatutBadge(f.statut)}</TableCell>
                         <TableCell>{formatDate(f.date_emission)}</TableCell>
                         <TableCell>{formatDate(f.date_echeance)}</TableCell>
                         <TableCell>{formatDate(f.date_paiement)}</TableCell>
+                        {showActions && (
+                          <TableCell onClick={(e) => e.stopPropagation()}>
+                            {!isDraft && (
+                              <div className="flex items-center gap-1">
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-7 px-2"
+                                  onClick={() => openEditFacture(f)}
+                                  title="Modifier la facture"
+                                >
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </Button>
+                                {!isAvoir && (
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-7 px-2 text-rose-600 hover:text-rose-700 hover:bg-rose-50"
+                                    onClick={() => createAvoir(f)}
+                                    disabled={creatingAvoir === f.id}
+                                    title="Créer un avoir"
+                                  >
+                                    <ArrowDownLeft className="h-3.5 w-3.5" />
+                                    <span className="ml-1 text-xs">Avoir</span>
+                                  </Button>
+                                )}
+                              </div>
+                            )}
+                          </TableCell>
+                        )}
                       </TableRow>
                     );
                   });
 
-                  const headerRow = (
+                  const headerRow = (showActions: boolean) => (
                     <TableRow>
                       <TableHead>N°</TableHead>
                       <TableHead>Client</TableHead>
@@ -1160,6 +1309,7 @@ export function ComptabilitePage() {
                       <TableHead>Émission</TableHead>
                       <TableHead>Échéance</TableHead>
                       <TableHead>Paiement</TableHead>
+                      {showActions && <TableHead>Actions</TableHead>}
                     </TableRow>
                   );
 
@@ -1181,8 +1331,8 @@ export function ComptabilitePage() {
                           <p className="text-sm text-muted-foreground p-4">Aucune facture de vente</p>
                         ) : (
                           <Table>
-                            <TableHeader>{headerRow}</TableHeader>
-                            <TableBody>{renderRows(ventes)}</TableBody>
+                            <TableHeader>{headerRow(true)}</TableHeader>
+                            <TableBody>{renderRows(ventes, true)}</TableBody>
                           </Table>
                         )}
                       </div>
@@ -1203,8 +1353,8 @@ export function ComptabilitePage() {
                           <p className="text-sm text-muted-foreground p-4">Aucune facture d'achat</p>
                         ) : (
                           <Table>
-                            <TableHeader>{headerRow}</TableHeader>
-                            <TableBody>{renderRows(achats)}</TableBody>
+                            <TableHeader>{headerRow(false)}</TableHeader>
+                            <TableBody>{renderRows(achats, false)}</TableBody>
                           </Table>
                         )}
                       </div>
@@ -1752,6 +1902,122 @@ export function ComptabilitePage() {
             >
               <CheckCheck className="w-4 h-4 mr-2" />
               {validatingDraft ? "Validation..." : "Valider la facture définitivement"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog d'édition d'une facture */}
+      <Dialog open={!!editingFacture} onOpenChange={(open) => { if (!open) setEditingFacture(null); }}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Pencil className="h-4 w-4" />
+              Modifier la facture {editingFacture?.numero}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-4 py-2">
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">Numéro</label>
+              <Input
+                value={editFactureForm.numero}
+                onChange={(e) => setEditFactureForm(f => ({ ...f, numero: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">Statut</label>
+              <Select value={editFactureForm.statut} onValueChange={(v) => setEditFactureForm(f => ({ ...f, statut: v }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="brouillon">Brouillon</SelectItem>
+                  <SelectItem value="en_attente">En attente</SelectItem>
+                  <SelectItem value="payee">Payée</SelectItem>
+                  <SelectItem value="en_retard">En retard</SelectItem>
+                  <SelectItem value="annulee">Annulée</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="col-span-2 space-y-1">
+              <label className="text-xs text-muted-foreground">Client / Désignation</label>
+              <Input
+                value={editFactureForm.client_nom}
+                onChange={(e) => setEditFactureForm(f => ({ ...f, client_nom: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">Type de financement</label>
+              <Select value={editFactureForm.type_financement} onValueChange={(v) => setEditFactureForm(f => ({ ...f, type_financement: v }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="particulier">Particulier</SelectItem>
+                  <SelectItem value="professionnel">Professionnel</SelectItem>
+                  <SelectItem value="opco">OPCO</SelectItem>
+                  <SelectItem value="france_travail">France Travail</SelectItem>
+                  <SelectItem value="cpf">CPF</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">Montant HT (€)</label>
+              <Input
+                type="number"
+                step="0.01"
+                value={editFactureForm.montant_ht}
+                onChange={(e) => setEditFactureForm(f => ({ ...f, montant_ht: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">Taux TVA (%)</label>
+              <Input
+                type="number"
+                step="0.01"
+                value={editFactureForm.tva_taux}
+                onChange={(e) => setEditFactureForm(f => ({ ...f, tva_taux: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">TTC calculé</label>
+              <Input
+                disabled
+                value={(() => {
+                  const ht = Number(editFactureForm.montant_ht) || 0;
+                  const tx = Number(editFactureForm.tva_taux) || 0;
+                  return (ht + ht * tx / 100).toFixed(2) + " €";
+                })()}
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">Date émission</label>
+              <Input
+                type="date"
+                value={editFactureForm.date_emission}
+                onChange={(e) => setEditFactureForm(f => ({ ...f, date_emission: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">Date échéance</label>
+              <Input
+                type="date"
+                value={editFactureForm.date_echeance}
+                onChange={(e) => setEditFactureForm(f => ({ ...f, date_echeance: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">Date paiement</label>
+              <Input
+                type="date"
+                value={editFactureForm.date_paiement}
+                onChange={(e) => setEditFactureForm(f => ({ ...f, date_paiement: e.target.value }))}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingFacture(null)} disabled={savingFactureEdit}>
+              Annuler
+            </Button>
+            <Button onClick={saveFactureEdit} disabled={savingFactureEdit}>
+              <Check className="h-4 w-4 mr-2" />
+              {savingFactureEdit ? "Enregistrement..." : "Enregistrer"}
             </Button>
           </DialogFooter>
         </DialogContent>
