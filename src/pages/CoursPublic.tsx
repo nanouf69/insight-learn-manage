@@ -1106,13 +1106,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         </div>
       );
     }
-    if (selectedModule.id === 87) {
-      return (
-        <div className="min-h-screen bg-background p-4 md:p-8">
-          <BilanFinFormationFCVtc onBack={handleBackFromModule} />
-        </div>
-      );
-    }
+    // Module 87 (Bilan fin de formation FC VTC) est désormais rendu comme un module quiz standard via StableModuleDetailView ci-dessous.
     return (
       <div className="min-h-screen bg-background">
         <StableModuleDetailView
