@@ -1407,6 +1407,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   };
 
 
+  const normalizedSessionText = `${session.title || ''} ${session.formation || ''}`.toLowerCase();
   const isFormationContinue = normalizedSessionText.includes('continue');
 
   const getSessionTrainingFlags = (typeApprenant: string | null | undefined) => {
