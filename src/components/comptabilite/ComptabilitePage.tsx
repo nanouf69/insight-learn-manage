@@ -1095,20 +1095,28 @@ export function ComptabilitePage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredFactures.map((f) => (
-                      <TableRow key={f.id}>
-                        <TableCell className="font-medium">{f.numero}</TableCell>
-                        <TableCell>{f.client_nom}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{financementLabels[f.type_financement] || f.type_financement}</Badge>
-                        </TableCell>
-                        <TableCell className="text-right font-semibold">{formatMontant(Number(f.montant_ttc))}</TableCell>
-                        <TableCell>{getStatutBadge(f.statut)}</TableCell>
-                        <TableCell>{formatDate(f.date_emission)}</TableCell>
-                        <TableCell>{formatDate(f.date_echeance)}</TableCell>
-                        <TableCell>{formatDate(f.date_paiement)}</TableCell>
-                      </TableRow>
-                    ))}
+                    {filteredFactures.map((f) => {
+                      const isDraft = f.statut === "brouillon";
+                      return (
+                        <TableRow
+                          key={f.id}
+                          className={isDraft ? "cursor-pointer hover:bg-amber-50" : ""}
+                          onClick={isDraft ? () => setDraftPreview(f) : undefined}
+                          title={isDraft ? "Cliquer pour prévisualiser et valider la facture" : undefined}
+                        >
+                          <TableCell className="font-medium">{f.numero}</TableCell>
+                          <TableCell>{f.client_nom}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{financementLabels[f.type_financement] || f.type_financement}</Badge>
+                          </TableCell>
+                          <TableCell className="text-right font-semibold">{formatMontant(Number(f.montant_ttc))}</TableCell>
+                          <TableCell>{getStatutBadge(f.statut)}</TableCell>
+                          <TableCell>{formatDate(f.date_emission)}</TableCell>
+                          <TableCell>{formatDate(f.date_echeance)}</TableCell>
+                          <TableCell>{formatDate(f.date_paiement)}</TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               )}
