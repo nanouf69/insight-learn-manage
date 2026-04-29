@@ -149,6 +149,9 @@ interface FactureData {
   refConvention: string;
   lignes: LigneFacture[];
   notes: string;
+  acquittee: boolean;
+  datePaiement: string;
+  moyenPaiement: string;
 }
 
 // Compteur séquentiel persistant - démarre à 202604207
