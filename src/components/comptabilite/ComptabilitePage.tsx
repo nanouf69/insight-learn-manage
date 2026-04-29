@@ -270,6 +270,7 @@ export function ComptabilitePage() {
           date_echeance: d.dateEcheance || null,
           date_paiement: null,
           client_opco: null,
+          _draftRaw: d,
         });
       }
       return drafts;
