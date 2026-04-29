@@ -571,7 +571,7 @@ export function FactureForm() {
         </CardContent>
       </Card>
 
-      <Tabs defaultValue="financeur" className="space-y-4">
+      <Tabs value={activeMainTab} onValueChange={(v) => setActiveMainTab(v as "financeur" | "prestations")} className="space-y-4">
         <TabsList className="grid grid-cols-2 gap-2 h-auto">
           <TabsTrigger value="financeur" className="flex items-center gap-2"><Users className="w-4 h-4" />Financeur (Client)</TabsTrigger>
           <TabsTrigger value="prestations" className="flex items-center gap-2"><GraduationCap className="w-4 h-4" />Prestations / Formations</TabsTrigger>
