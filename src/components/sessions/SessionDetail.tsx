@@ -1287,16 +1287,36 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   };
 
   // ===== FACTURES FORMATION CONTINUE =====
-  const buildFactureDataForApprenant = (apprenant: any, sessionApprenant: any, indexInSession: number) => {
+  const FC_MONTANT_TTC = 200; // Formation continue VTC/TAXI : 200 €
+
+  // Génère le prochain numéro YYYYMMDD### selon la BDD
+  const generateNextNumeroFacture = async (): Promise<string> => {
+    const today = new Date();
+    const yyyymmdd = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, '0')}${String(today.getDate()).padStart(2, '0')}`;
+    const { data, error } = await supabase
+      .from('factures')
+      .select('numero')
+      .like('numero', `${yyyymmdd}%`)
+      .order('numero', { ascending: false })
+      .limit(1);
+    if (error) console.warn('numero seq error', error);
+    let next = 1;
+    if (data && data[0]?.numero) {
+      const seq = parseInt(String(data[0].numero).slice(8)) || 0;
+      next = seq + 1;
+    }
+    return `${yyyymmdd}${String(next).padStart(3, '0')}`;
+  };
+
+  const buildFactureDataForApprenant = (apprenant: any, sessionApprenant: any, indexInSession: number, overrides?: { numero?: string; dateEmission?: string }) => {
     const fc: any = (financeursFCMap as any)?.[apprenant.id] || null;
     const typeApp = `${apprenant.type_apprenant || ''} ${apprenant.formation_choisie || ''}`.toUpperCase();
     const formation: 'VTC' | 'TAXI' = typeApp.includes('TAXI') ? 'TAXI' : 'VTC';
-    const montantTTC = Number(sessionApprenant?.montant_total ?? apprenant.montant_ttc ?? 0) || 0;
+    const montantTTC = FC_MONTANT_TTC; // forcé à 200 €
     const tva = 0; // TVA non applicable - art 293 B
     const montantHT = montantTTC / (1 + tva / 100);
-    const yyyymmdd = new Date().toISOString().split('T')[0];
-    const sessionShort = (session.id || '').toString().slice(0, 6).toUpperCase();
-    const numero = `FC-${formation}-${yyyymmdd.replace(/-/g, '')}-${sessionShort}-${String(indexInSession + 1).padStart(2, '0')}`;
+    const yyyymmdd = overrides?.dateEmission || new Date().toISOString().split('T')[0];
+    const numero = overrides?.numero || `BR-${apprenant.id.slice(0, 6)}`;
     const dueDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
     return {
@@ -1327,12 +1347,52 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     return (fc?.email_facturation || fc?.contact_email || apprenant.email || '').trim() || null;
   };
 
+  // Upsert d'une facture en BDD comme brouillon (créée si absente, sinon retournée)
+  const ensureFactureBrouillon = async (apprenant: any, sessionApprenant: any): Promise<any> => {
+    const existing = (facturesFCMap as any)?.[apprenant.id];
+    if (existing) return existing;
+    const fc: any = (financeursFCMap as any)?.[apprenant.id] || null;
+    const isPro = fc?.type_financeur === 'professionnel';
+    const numero = await generateNextNumeroFacture();
+    const clientNom = isPro
+      ? (fc?.raison_sociale || `${apprenant.prenom} ${apprenant.nom}`)
+      : `${apprenant.prenom} ${apprenant.nom}`;
+    const clientAdresse = [
+      (apprenant.adresse || fc?.adresse) || '',
+      [(apprenant.code_postal || fc?.code_postal) || '', (apprenant.ville || fc?.ville) || ''].filter(Boolean).join(' ')
+    ].filter(Boolean).join(', ');
+    const payload: any = {
+      numero,
+      date_emission: new Date().toISOString().split('T')[0],
+      date_echeance: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      type_financement: isPro ? 'professionnel' : 'particulier',
+      client_nom: clientNom,
+      client_adresse: clientAdresse || null,
+      client_siret: isPro ? (fc?.siret || fc?.siren || null) : null,
+      montant_ht: FC_MONTANT_TTC,
+      tva_taux: 0,
+      montant_tva: 0,
+      montant_ttc: FC_MONTANT_TTC,
+      statut: 'brouillon',
+      session_id: session.id,
+      apprenant_id: apprenant.id,
+    };
+    const { data, error } = await supabase.from('factures').insert(payload).select().single();
+    if (error) throw error;
+    return data;
+  };
+
   const handleDownloadSingleFacture = async (apprenant: any, sessionApprenant: any, idx: number) => {
     try {
       setSingleFactureLoading(apprenant.id);
-      const data = buildFactureDataForApprenant(apprenant, sessionApprenant, idx);
+      const facture = await ensureFactureBrouillon(apprenant, sessionApprenant);
+      const data = buildFactureDataForApprenant(apprenant, sessionApprenant, idx, {
+        numero: facture.numero,
+        dateEmission: facture.date_emission,
+      });
       await generateFactureFC(data);
-      toast({ title: "Facture téléchargée", description: `${apprenant.prenom} ${apprenant.nom}` });
+      await refetchFacturesFC();
+      toast({ title: "Facture téléchargée", description: `${apprenant.prenom} ${apprenant.nom} (Brouillon ${facture.numero})` });
     } catch (e: any) {
       toast({ title: "Erreur", description: e?.message || "Impossible de générer la facture.", variant: "destructive" });
     } finally {
