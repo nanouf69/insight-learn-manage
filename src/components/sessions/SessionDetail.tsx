@@ -1080,22 +1080,49 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   const buildAttestationDataForApprenant = (apprenant: any, sessionApprenant: any) => {
     const typeApp = `${apprenant.type_apprenant || ''} ${apprenant.formation_choisie || ''}`.toUpperCase();
     const formation: 'VTC' | 'TAXI' = typeApp.includes('TAXI') ? 'TAXI' : 'VTC';
+    const fc: any = (financeursFCMap as any)?.[apprenant.id] || {};
     return {
       data: {
         nom: apprenant.nom,
         prenom: apprenant.prenom,
         dateFin: sessionApprenant?.date_fin_personnalisee || session.dateFin || apprenant.date_fin_formation || apprenant.date_debut_formation || new Date().toISOString().split('T')[0],
         dateDebut: sessionApprenant?.date_debut || session.dateDebut || apprenant.date_debut_formation,
-        adresse: apprenant.adresse || '',
-        codePostal: apprenant.code_postal || '',
-        ville: apprenant.ville || '',
-        telephone: apprenant.telephone || '',
-        email: apprenant.email || '',
+        adresse: apprenant.adresse || fc.adresse || '',
+        codePostal: apprenant.code_postal || fc.code_postal || '',
+        ville: apprenant.ville || fc.ville || '',
+        telephone: apprenant.telephone || fc.contact_telephone || '',
+        email: apprenant.email || fc.contact_email || fc.email_facturation || '',
         dateNaissance: apprenant.date_naissance || '',
         formation,
       },
       formation,
     };
+  };
+
+  const checkApprenantsCompleteness = (): { ok: boolean; missing: string[] } => {
+    const missing: string[] = [];
+    for (const sa of apprenantsInSession) {
+      const a = sa.apprenant;
+      if (!a) continue;
+      const fc: any = (financeursFCMap as any)?.[a.id] || {};
+      const adresse = a.adresse || fc.adresse;
+      const cp = a.code_postal || fc.code_postal;
+      const ville = a.ville || fc.ville;
+      const tel = a.telephone || fc.contact_telephone;
+      const email = a.email || fc.contact_email || fc.email_facturation;
+      const fields: string[] = [];
+      if (!a.nom?.trim()) fields.push('nom');
+      if (!a.prenom?.trim()) fields.push('prénom');
+      if (!adresse?.trim()) fields.push('adresse');
+      if (!cp?.trim()) fields.push('code postal');
+      if (!ville?.trim()) fields.push('ville');
+      if (!tel?.trim()) fields.push('téléphone');
+      if (!email?.trim()) fields.push('email');
+      if (fields.length) {
+        missing.push(`${a.prenom || ''} ${a.nom || ''} → ${fields.join(', ')}`);
+      }
+    }
+    return { ok: missing.length === 0, missing };
   };
 
   const checkApprenantsCompleteness = (): { ok: boolean; missing: string[] } => {
