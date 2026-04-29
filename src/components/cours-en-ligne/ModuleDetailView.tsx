@@ -2475,7 +2475,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               .limit(1)
               .maybeSingle();
 
-            const sourceMd = sourceState?.module_data as ModuleData | undefined;
+            const sourceMd = sourceState?.module_data as unknown as ModuleData | undefined;
             if (sourceMd?.exercices && Array.isArray(sourceMd.exercices)) {
               const sourceInitial = JSON.parse(JSON.stringify(VTC_COURS_DATA)) as ModuleData;
               const deletedSourceIds = Array.isArray(sourceState?.deleted_exercices)
