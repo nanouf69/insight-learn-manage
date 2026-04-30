@@ -254,12 +254,30 @@ export function FactureForm() {
   const DRAFT_KEY = 'facture_draft_v1';
 
   // Toujours partir d'une facture vierge — ne pas restaurer les anciens brouillons
+  // + resynchroniser le numéro de facture avec le max présent en base pour éviter les doublons
   useEffect(() => {
     try {
       localStorage.removeItem(DRAFT_KEY);
     } catch (e) {
       console.warn("Impossible de nettoyer le brouillon", e);
     }
+    (async () => {
+      try {
+        const { data: rows } = await supabase
+          .from("factures")
+          .select("numero")
+          .order("numero", { ascending: false })
+          .limit(1);
+        const maxNumero = rows?.[0]?.numero ? parseInt(String(rows[0].numero), 10) : NaN;
+        if (!isNaN(maxNumero) && maxNumero >= FACTURE_COUNTER_START) {
+          const next = maxNumero + 1;
+          try { localStorage.setItem(FACTURE_COUNTER_KEY, String(next + 1)); } catch {}
+          setData((prev) => ({ ...prev, numero: String(next), numeroInterne: String(next) }));
+        }
+      } catch (e) {
+        console.warn("Impossible de resynchroniser le numéro de facture", e);
+      }
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -587,7 +605,22 @@ export function FactureForm() {
         session_id: sessionLine?.sessionId || null,
       };
 
-      const { error } = await supabase.from("factures").insert(payload);
+      let { error } = await supabase.from("factures").insert(payload);
+      // En cas de doublon de numéro, regénère un numéro libre et retente une fois
+      if (error && (error.code === "23505" || /duplicate key|unique constraint/i.test(error.message || ""))) {
+        const { data: rows } = await supabase
+          .from("factures")
+          .select("numero")
+          .order("numero", { ascending: false })
+          .limit(1);
+        const maxNumero = rows?.[0]?.numero ? parseInt(String(rows[0].numero), 10) : FACTURE_COUNTER_START;
+        const nextNumero = String((isNaN(maxNumero) ? FACTURE_COUNTER_START : maxNumero) + 1);
+        try { localStorage.setItem(FACTURE_COUNTER_KEY, String(parseInt(nextNumero, 10) + 1)); } catch {}
+        payload.numero = nextNumero;
+        setData((prev) => ({ ...prev, numero: nextNumero, numeroInterne: nextNumero }));
+        const retry = await supabase.from("factures").insert(payload);
+        error = retry.error;
+      }
       if (error) throw error;
       toast.success("Brouillon enregistré (visible en comptabilité)");
     } catch (e: any) {
