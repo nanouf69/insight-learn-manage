@@ -55,6 +55,9 @@ export interface FactureFCData {
   duree?: string;
   refDossier?: string;
   refConvention?: string;
+  acquittee?: boolean;
+  dateAcquittement?: string; // YYYY-MM-DD
+  moyenPaiement?: string;
 }
 
 function fmtDateFR(d: string): string {
@@ -221,6 +224,42 @@ export async function generateFactureFC(
   doc.text(`Total TTC : ${eur(ttc)}`, mr, yT, { align: 'right' });
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
+
+  // Mention "ACQUITTÉE" si payée
+  if (data.acquittee) {
+    yT += 8;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(16);
+    doc.setTextColor(34, 139, 34);
+    doc.text('FACTURE ACQUITTÉE', mr, yT, { align: 'right' });
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(60, 60, 60);
+    yT += 5;
+    const details: string[] = [];
+    if (data.dateAcquittement) details.push(`le ${fmtDateFR(data.dateAcquittement)}`);
+    if (data.moyenPaiement) details.push(`par ${data.moyenPaiement}`);
+    if (details.length) doc.text(`Réglée ${details.join(' ')}`, mr, yT, { align: 'right' });
+    doc.setTextColor(0, 0, 0);
+
+    // Tampon en diagonale au centre
+    try {
+      doc.saveGraphicsState();
+      // @ts-ignore
+      doc.setGState(new (doc as any).GState({ opacity: 0.18 }));
+      doc.setTextColor(34, 139, 34);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(60);
+      const cx = pw / 2;
+      const cy = ph / 2;
+      // @ts-ignore - rotation supportée par jsPDF
+      doc.text('ACQUITTÉE', cx, cy, { align: 'center', angle: 25 } as any);
+      doc.restoreGraphicsState();
+    } catch {}
+    doc.setTextColor(0, 0, 0);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+  }
 
   // Mentions légales
   yT += 10;

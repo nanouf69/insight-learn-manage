@@ -1352,6 +1352,13 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     const numero = overrides?.numero || `BR-${apprenant.id.slice(0, 6)}`;
     const dueDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
+    // Détermine si la facture est acquittée à partir du statut + paiements
+    const facture: any = (facturesFCMap as any)?.[apprenant.id] || null;
+    const paiements: any[] = (facture?.id && (paiementsByFactureId as any)?.[facture.id]) || [];
+    const totalPaye = paiements.reduce((s: number, p: any) => s + Number(p?.montant || 0), 0);
+    const isAcquittee = facture?.statut === 'payee' || (totalPaye + 0.001 >= montantTTC && paiements.length > 0);
+    const lastPaiement = paiements.length ? paiements[paiements.length - 1] : null;
+
     return {
       numero,
       dateEmission: yyyymmdd,
@@ -1372,6 +1379,9 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       tvaTaux: tva,
       duree: '14h',
       refDossier: fc?.numero_dossier || apprenant.numero_dossier_cma || undefined,
+      acquittee: isAcquittee,
+      dateAcquittement: isAcquittee ? (facture?.date_paiement || lastPaiement?.date_paiement || undefined) : undefined,
+      moyenPaiement: isAcquittee ? (lastPaiement?.moyen_paiement || undefined) : undefined,
     };
   };
 
