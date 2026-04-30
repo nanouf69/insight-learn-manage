@@ -3175,6 +3175,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                       <SelectItem value="cpf">CPF</SelectItem>
                       <SelectItem value="opco">OPCO</SelectItem>
                       <SelectItem value="france_travail">France Travail</SelectItem>
+                      <SelectItem value="virement_especes">Virement et espèces</SelectItem>
                       <SelectItem value="autre">Autre</SelectItem>
                     </SelectContent>
                   </Select>
