@@ -390,11 +390,15 @@ export function FactureForm() {
         return { ...prev, refDossier: prev.refDossier || selectedApprenant.name };
       }
       injected = true;
+      // Remplace les lignes "session" d'autres stagiaires par celle de l'apprenant sélectionné
+      const lignesConservees = prev.lignes.filter(
+        l => l.type !== "session" || (l.stagiaire && l.stagiaire === selectedApprenant.name)
+      );
       return {
         ...prev,
         refDossier: prev.refDossier || selectedApprenant.name,
         lignes: [
-          ...prev.lignes,
+          ...lignesConservees,
           {
             id: crypto.randomUUID(),
             type: "session" as const,
