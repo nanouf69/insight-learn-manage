@@ -1605,11 +1605,12 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       if (insErr) throw insErr;
 
       // Recalculer total payé pour cette facture
-      const { data: paiements } = await supabase
+      const { data: paiementsRaw } = await supabase
         .from('facture_paiements' as any)
         .select('montant, date_paiement, moyen_paiement')
         .eq('facture_id', facture.id)
         .order('date_paiement', { ascending: true });
+      const paiements = (paiementsRaw || []) as any[];
       const total = (paiements || []).reduce((s: number, p: any) => s + Number(p.montant || 0), 0);
       const totalDu = Number(facture.montant_ttc || FC_MONTANT_FACTURE);
       const last = (paiements || [])[paiements!.length - 1];
