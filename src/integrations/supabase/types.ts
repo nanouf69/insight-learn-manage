@@ -1870,6 +1870,7 @@ export type Database = {
           nom: string
           numero_declaration: string | null
           siret: string | null
+          siret_complet: string | null
           telephone: string | null
           updated_at: string
           ville: string | null
@@ -1884,6 +1885,7 @@ export type Database = {
           nom: string
           numero_declaration?: string | null
           siret?: string | null
+          siret_complet?: string | null
           telephone?: string | null
           updated_at?: string
           ville?: string | null
@@ -1898,6 +1900,7 @@ export type Database = {
           nom?: string
           numero_declaration?: string | null
           siret?: string | null
+          siret_complet?: string | null
           telephone?: string | null
           updated_at?: string
           ville?: string | null
