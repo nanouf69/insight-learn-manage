@@ -55,6 +55,9 @@ export interface FactureFCData {
   duree?: string;
   refDossier?: string;
   refConvention?: string;
+  acquittee?: boolean;
+  dateAcquittement?: string; // YYYY-MM-DD
+  moyenPaiement?: string;
 }
 
 function fmtDateFR(d: string): string {
