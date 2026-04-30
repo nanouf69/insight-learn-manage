@@ -666,6 +666,17 @@ export function FactureForm() {
       cb: "Carte bancaire", cpf: "CPF", opco: "OPCO",
       france_travail: "France Travail", autre: "Autre",
     };
+    // Bloc spécifique France Travail (mentions obligatoires)
+    const isFranceTravail = data.moyenPaiement === "france_travail" || (data.typeFinanceur === "professionnel" && selectedOrganisation && /france.?travail/i.test(selectedOrganisation.name || ""));
+    const franceTravailLigne = data.lignes.find((l: any) => l.dateDebut || l.dateFin || l.quantite);
+    const ftDateDebut = franceTravailLigne?.dateDebut ? formatDate(franceTravailLigne.dateDebut) : '—';
+    const ftDateFin = franceTravailLigne?.dateFin ? formatDate(franceTravailLigne.dateFin) : '—';
+    const ftHeures = data.lignes.reduce((sum, l: any) => sum + (Number(l.quantite) || 0), 0);
+    const ftStagiaireNom = selectedApprenant?.name || data.lignes.map((l: any) => l.stagiaire).filter(Boolean).join(', ') || '—';
+    const franceTravailHTML = isFranceTravail
+      ? `<div style="margin-top:20px;padding:15px;background:#eff6ff;border:2px solid #2563eb;border-radius:8px;font-size:12px;"><h4 style="margin:0 0 10px 0;color:#1e40af;font-size:13px;">Mentions France Travail</h4><p style="margin:4px 0;"><strong>Nom et prénom du stagiaire :</strong> ${ftStagiaireNom}</p><p style="margin:4px 0;"><strong>Dates de formation :</strong> du ${ftDateDebut} au ${ftDateFin}</p><p style="margin:4px 0;"><strong>Nombre d'heures-stagiaire effectivement réalisé :</strong> ${ftHeures.toFixed(2)} h</p><p style="margin:4px 0;"><strong>Montant total à payer TTC :</strong> ${calculerTotalTTC().toFixed(2)} €</p></div>`
+      : '';
+
     const acquitteHTML = data.acquittee
       ? `<div style="margin-top:20px;padding:15px;background:#d1fae5;border:2px solid #059669;border-radius:8px;text-align:center;"><div style="font-size:18px;font-weight:bold;color:#065f46;">✓ FACTURE ACQUITTÉE</div><div style="margin-top:6px;font-size:12px;color:#065f46;">Payée le ${data.datePaiement ? formatDate(data.datePaiement) : '—'} par ${moyenLabels[data.moyenPaiement] || data.moyenPaiement}</div></div>`
       : '';
