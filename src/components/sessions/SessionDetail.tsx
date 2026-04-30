@@ -2960,79 +2960,98 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                     const recipient = getFactureRecipientEmail(a);
                     const facture: any = (facturesFCMap as any)?.[a.id] || null;
                     const statut = facture?.statut || null;
-                    const statutLabel = statut === 'payee' ? 'Acquittée' : statut === 'en_attente' ? 'Validée' : statut === 'brouillon' ? 'Brouillon' : 'Non générée';
+                    const paiements: any[] = (facture?.id ? (paiementsByFactureId as any)?.[facture.id] : []) || [];
+                    const totalPaye = paiements.reduce((s, p) => s + Number(p.montant || 0), 0);
+                    const montantTtc = Number(facture?.montant_ttc || 200);
+                    const restantDu = Math.max(0, montantTtc - totalPaye);
+                    const statutLabel = statut === 'payee' ? 'Acquittée' : statut === 'en_attente' ? (totalPaye > 0 ? 'Partiellement payée' : 'Validée') : statut === 'brouillon' ? 'Brouillon' : 'Non générée';
                     const statutVariant: any = statut === 'payee' ? 'default' : statut === 'en_attente' ? 'secondary' : statut === 'brouillon' ? 'outline' : 'outline';
                     return (
-                      <div key={a.id} className="flex items-center gap-3 p-3 rounded-lg border bg-card">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-medium truncate">{a.prenom} {a.nom?.toUpperCase()}</span>
-                            <Badge variant={statutVariant} className="text-xs">{statutLabel}</Badge>
-                            {facture?.numero && <span className="text-xs text-muted-foreground">N° {facture.numero}</span>}
-                            {statut === 'payee' && facture?.date_paiement && (
-                              <span className="text-xs text-emerald-600">payée le {facture.date_paiement}</span>
-                            )}
+                      <div key={a.id} className="flex flex-col gap-2 p-3 rounded-lg border bg-card">
+                        <div className="flex items-center gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-medium truncate">{a.prenom} {a.nom?.toUpperCase()}</span>
+                              <Badge variant={statutVariant} className="text-xs">{statutLabel}</Badge>
+                              {facture?.numero && <span className="text-xs text-muted-foreground">N° {facture.numero}</span>}
+                              {totalPaye > 0 && (
+                                <span className="text-xs text-emerald-600">
+                                  Payé : {totalPaye.toFixed(2)} € / {montantTtc.toFixed(2)} €
+                                  {restantDu > 0 && <span className="text-orange-600"> • Reste {restantDu.toFixed(2)} €</span>}
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-xs text-muted-foreground truncate">
+                              Financeur :{' '}
+                              {isPro ? (
+                                <span className="font-medium text-foreground">
+                                  {fc.raison_sociale || '(pro sans raison sociale)'}
+                                  {fc.siret ? ` — SIRET ${fc.siret}` : fc.siren ? ` — SIREN ${fc.siren}` : ''}
+                                </span>
+                              ) : fc ? (
+                                <span>Particulier ({fc.contact_nom || `${a.prenom} ${a.nom}`})</span>
+                              ) : (
+                                <span className="text-orange-600">Aucun financeur saisi — facturation à l'apprenant</span>
+                              )}
+                            </div>
+                            <div className="text-xs text-muted-foreground truncate">
+                              Email facturation : {recipient || <span className="text-destructive">manquant</span>}
+                              {' • '}Montant TTC : <span className="font-medium text-foreground">{montantTtc.toFixed(2)} €</span>
+                            </div>
                           </div>
-                          <div className="text-xs text-muted-foreground truncate">
-                            Financeur :{' '}
-                            {isPro ? (
-                              <span className="font-medium text-foreground">
-                                {fc.raison_sociale || '(pro sans raison sociale)'}
-                                {fc.siret ? ` — SIRET ${fc.siret}` : fc.siren ? ` — SIREN ${fc.siren}` : ''}
-                              </span>
-                            ) : fc ? (
-                              <span>Particulier ({fc.contact_nom || `${a.prenom} ${a.nom}`})</span>
-                            ) : (
-                              <span className="text-orange-600">Aucun financeur saisi — facturation à l'apprenant</span>
-                            )}
-                          </div>
-                          <div className="text-xs text-muted-foreground truncate">
-                            Email facturation : {recipient || <span className="text-destructive">manquant</span>}
-                            {' • '}Montant TTC : <span className="font-medium text-foreground">200,00 €</span>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="gap-2"
-                            onClick={() => handleDownloadSingleFacture(a, sa, idx)}
-                            disabled={singleFactureLoading === a.id}
-                          >
-                            {singleFactureLoading === a.id ? (
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <Download className="w-4 h-4" />
-                            )}
-                            PDF
-                          </Button>
-                          {statut === 'brouillon' && (
-                            <Button
-                              size="sm"
-                              variant="secondary"
-                              className="gap-2"
-                              onClick={() => handleValidateFacture(a, sa)}
-                            >
-                              <CheckCircle2 className="w-4 h-4" />
-                              Valider
-                            </Button>
-                          )}
-                          {statut && statut !== 'payee' && (
+                          <div className="flex items-center gap-2 shrink-0">
                             <Button
                               size="sm"
                               variant="outline"
                               className="gap-2"
-                              onClick={() => {
-                                setAcquittementApprenant(a);
-                                setAcquittementDate(new Date().toISOString().split('T')[0]);
-                                setAcquittementMoyen('virement');
-                              }}
+                              onClick={() => handleDownloadSingleFacture(a, sa, idx)}
+                              disabled={singleFactureLoading === a.id}
                             >
-                              <CheckCircle className="w-4 h-4" />
-                              Acquitter
+                              {singleFactureLoading === a.id ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <Download className="w-4 h-4" />
+                              )}
+                              PDF
                             </Button>
-                          )}
+                            {statut === 'brouillon' && (
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                className="gap-2"
+                                onClick={() => handleValidateFacture(a, sa)}
+                              >
+                                <CheckCircle2 className="w-4 h-4" />
+                                Valider
+                              </Button>
+                            )}
+                            {facture && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="gap-2"
+                                onClick={() => {
+                                  setAcquittementApprenant(a);
+                                  setAcquittementDate(new Date().toISOString().split('T')[0]);
+                                  setAcquittementMoyen('virement');
+                                  setAcquittementMontant(restantDu > 0 ? restantDu.toFixed(2) : montantTtc.toFixed(2));
+                                }}
+                              >
+                                <CheckCircle className="w-4 h-4" />
+                                {totalPaye > 0 ? 'Paiements' : 'Acquitter'}
+                              </Button>
+                            )}
+                          </div>
                         </div>
+                        {paiements.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 pl-1">
+                            {paiements.map((p) => (
+                              <Badge key={p.id} variant="outline" className="text-xs gap-1 font-normal">
+                                {Number(p.montant).toFixed(2)} € • {p.date_paiement} • {p.moyen_paiement}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     );
                   })}
