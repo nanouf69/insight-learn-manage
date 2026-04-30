@@ -3108,7 +3108,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                       <div key={p.id} className="flex items-center gap-2 p-2 rounded-md border bg-card text-sm">
                         <span className="font-medium">{Number(p.montant).toFixed(2)} €</span>
                         <span className="text-muted-foreground">•</span>
-                        <span>{p.date_paiement}</span>
+                        <span className="font-medium">{formatDateFR(p.date_paiement)}</span>
                         <span className="text-muted-foreground">•</span>
                         <span className="capitalize">{p.moyen_paiement?.replace('_', ' ')}</span>
                         <div className="flex-1" />
