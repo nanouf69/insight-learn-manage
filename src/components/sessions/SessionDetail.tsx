@@ -474,6 +474,10 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   const [acquittementMontant, setAcquittementMontant] = useState<string>('');
   const [acquittementSaving, setAcquittementSaving] = useState(false);
   const [acquittementDeleting, setAcquittementDeleting] = useState<string | null>(null);
+  const [bulkAcquitterOpen, setBulkAcquitterOpen] = useState(false);
+  const [bulkAcquitterDate, setBulkAcquitterDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [bulkAcquitterMoyen, setBulkAcquitterMoyen] = useState<string>('virement');
+  const [bulkAcquitterSaving, setBulkAcquitterSaving] = useState(false);
   const [bulkPreview, setBulkPreview] = useState<{ template: any; apprenants: any[]; previewBody: string; previewSubject: string; editedBody?: string; editedSubject?: string } | null>(null);
   const [bulkPreviewEditing, setBulkPreviewEditing] = useState(false);
   const [editingMailType, setEditingMailType] = useState<any | null>(null);
@@ -1668,6 +1672,48 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     }
   };
 
+  // Acquitter en bulk : solde restant de toutes les factures non payées de la session
+  const handleBulkAcquitter = async () => {
+    setBulkAcquitterSaving(true);
+    try {
+      const factures = Object.values(facturesFCMap as Record<string, any>).filter(Boolean) as any[];
+      if (factures.length === 0) {
+        toast({ title: "Aucune facture", description: "Générez d'abord les factures.", variant: "destructive" });
+        return;
+      }
+      let count = 0;
+      for (const facture of factures) {
+        const paiementsExist = (paiementsByFactureId as any)?.[facture.id] || [];
+        const totalPaye = paiementsExist.reduce((s: number, p: any) => s + Number(p.montant || 0), 0);
+        const totalDu = Number(facture.montant_ttc || FC_MONTANT_FACTURE);
+        const restant = totalDu - totalPaye;
+        if (restant <= 0.001) continue;
+
+        const { error: insErr } = await supabase
+          .from('facture_paiements' as any)
+          .insert({
+            facture_id: facture.id,
+            date_paiement: bulkAcquitterDate,
+            moyen_paiement: bulkAcquitterMoyen,
+            montant: restant,
+          });
+        if (insErr) { console.error('[bulkAcquitter]', insErr); continue; }
+
+        await supabase
+          .from('factures')
+          .update({ statut: 'payee', date_paiement: bulkAcquitterDate })
+          .eq('id', facture.id);
+        count++;
+      }
+      await Promise.all([refetchFacturesFC(), refetchPaiements()]);
+      toast({ title: "Acquittement effectué", description: `${count} facture(s) acquittée(s) le ${bulkAcquitterDate} • ${bulkAcquitterMoyen}` });
+      setBulkAcquitterOpen(false);
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e?.message || "Acquittement impossible", variant: "destructive" });
+    } finally {
+      setBulkAcquitterSaving(false);
+    }
+  };
 
 
   const normalizedSessionText = `${session.title || ''} ${session.formation || ''}`.toLowerCase();
@@ -2936,6 +2982,20 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                 </Button>
                 <Button
                   size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setBulkAcquitterDate(new Date().toISOString().split('T')[0]);
+                    setBulkAcquitterMoyen('virement');
+                    setBulkAcquitterOpen(true);
+                  }}
+                  disabled={apprenantsInSession.length === 0}
+                  className="gap-2 border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  Tout acquitter
+                </Button>
+                <Button
+                  size="sm"
                   variant="default"
                   onClick={handleBulkSendFactures}
                   disabled={bulkSendingFactures || apprenantsInSession.length === 0}
@@ -3192,6 +3252,60 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
             </div>
           );
         })()}
+      </DialogContent>
+    </Dialog>
+
+    {/* Modale Tout acquitter */}
+    <Dialog open={bulkAcquitterOpen} onOpenChange={setBulkAcquitterOpen}>
+      <DialogContent className="sm:max-w-[480px]">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <CheckCircle className="w-5 h-5 text-emerald-600" />
+            Tout acquitter
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 pt-2">
+          <p className="text-sm text-muted-foreground">
+            Le solde restant de toutes les factures non payées de cette session sera acquitté avec la même date et le même moyen de paiement.
+          </p>
+          <div className="space-y-2">
+            <Label htmlFor="bulk-acq-date">Date de paiement</Label>
+            <Input
+              id="bulk-acq-date"
+              type="date"
+              value={bulkAcquitterDate}
+              onChange={(e) => setBulkAcquitterDate(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="bulk-acq-moyen">Moyen de paiement</Label>
+            <Select value={bulkAcquitterMoyen} onValueChange={setBulkAcquitterMoyen}>
+              <SelectTrigger id="bulk-acq-moyen">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="virement">Virement</SelectItem>
+                <SelectItem value="cb">Carte bancaire</SelectItem>
+                <SelectItem value="especes">Espèces</SelectItem>
+                <SelectItem value="cheque">Chèque</SelectItem>
+                <SelectItem value="cpf">CPF</SelectItem>
+                <SelectItem value="opco">OPCO</SelectItem>
+                <SelectItem value="france_travail">France Travail</SelectItem>
+                <SelectItem value="virement_especes">Virement et espèces</SelectItem>
+                <SelectItem value="autre">Autre</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" onClick={() => setBulkAcquitterOpen(false)} disabled={bulkAcquitterSaving}>
+              Annuler
+            </Button>
+            <Button onClick={handleBulkAcquitter} disabled={bulkAcquitterSaving} className="gap-2">
+              {bulkAcquitterSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+              Tout acquitter
+            </Button>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
 
