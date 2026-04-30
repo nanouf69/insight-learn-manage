@@ -2473,7 +2473,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                   ...localParsed.moduleData,
                   exercices: mergeSourceExercices(localParsed.moduleData.exercices, initialData.exercices),
                 };
-                setModuleData(localMerged);
+                const localResolved = forceSourceExerciseTitles(module.id, localMerged, initialData);
+                setModuleData(localResolved);
                 setDeletedCours([]);
                 setDeletedExercices([]);
                 setLoadedModuleEditorState(true);
@@ -2481,7 +2482,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 supabase.from("module_editor_state").upsert(
                   [{
                     module_id: module.id,
-                    module_data: localMerged as any,
+                    module_data: localResolved as any,
                     deleted_cours: [] as any,
                     deleted_exercices: [] as any,
                     source_fingerprint: sourceFingerprint,
@@ -2623,7 +2624,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               ...md,
               exercices: mergeSourceExercices(md.exercices, initialData.exercices, deletedExerciceIdsFromDb),
             };
-            setModuleData(mergedModuleData);
+            const resolvedModuleData = forceSourceExerciseTitles(module.id, mergedModuleData, initialData);
+            setModuleData(resolvedModuleData);
             setDeletedCours(Array.isArray(latestState.deleted_cours) ? (latestState.deleted_cours as unknown as ContentItem[]) : []);
             setDeletedExercices(Array.isArray(latestState.deleted_exercices) ? (latestState.deleted_exercices as unknown as ExerciceItem[]) : []);
             setLoadedModuleEditorState(true);
@@ -2634,7 +2636,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               supabase.from("module_editor_state").upsert(
                 [{
                   module_id: module.id,
-                  module_data: mergedModuleData as any,
+                  module_data: resolvedModuleData as any,
                   deleted_cours: (latestState.deleted_cours ?? []) as any,
                   deleted_exercices: (latestState.deleted_exercices ?? []) as any,
                   source_fingerprint: sourceFingerprint,
