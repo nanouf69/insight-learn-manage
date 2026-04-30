@@ -45,6 +45,24 @@ export const BILAN_EXERCICES_TAXI = [
     ),
   },
   {
+    id: 205,
+    titre: "📒 Bilan Français",
+    sousTitre: `${FRANCAIS_EXERCICES.reduce((acc, e) => acc + (e.questions?.length || 0), 0)} questions — Compréhension et expression écrite`,
+    actif: true,
+    questions: renumberQuestions(
+      FRANCAIS_EXERCICES.flatMap(e => e.questions || [])
+    ),
+  },
+  {
+    id: 206,
+    titre: "📔 Bilan Anglais — Partie 1 + 2 + 3 + 4",
+    sousTitre: `${ANGLAIS_EXERCICES.reduce((acc, e) => acc + (e.questions?.length || 0), 0)} questions — Expression et compréhension en anglais`,
+    actif: true,
+    questions: renumberQuestions(
+      ANGLAIS_EXERCICES.flatMap(e => e.questions || [])
+    ),
+  },
+  {
     id: 203,
     titre: "📕 Bilan Réglementation Nationale",
     sousTitre: `${REGLEMENTATION_NATIONALE_EXERCICES.reduce((acc, e) => acc + (e.questions?.length || 0), 0)} questions — ADS, Carte pro, Tarification, Sanctions`,
