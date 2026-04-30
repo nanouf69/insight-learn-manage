@@ -77,7 +77,7 @@ export function OrganisationForm({ organisation, onClose }: OrganisationFormProp
     setIsLoading(true);
 
     try {
-      const payload = { nom, siret, email, telephone, adresse, code_postal: codePostal, ville, numero_declaration: numeroDeclaration, code_naf: codeNaf };
+      const payload = { nom, siret, siret_complet: siretComplet, email, telephone, adresse, code_postal: codePostal, ville, numero_declaration: numeroDeclaration, code_naf: codeNaf };
 
       if (isEdit && organisation) {
         const { error } = await supabase.from('organismes').update(payload).eq('id', organisation.id);
