@@ -3168,7 +3168,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="virement">Virement bancaire</SelectItem>
+                      <SelectItem value="virement">Virement</SelectItem>
                       <SelectItem value="cb">Carte bancaire</SelectItem>
                       <SelectItem value="especes">Espèces</SelectItem>
                       <SelectItem value="cheque">Chèque</SelectItem>
