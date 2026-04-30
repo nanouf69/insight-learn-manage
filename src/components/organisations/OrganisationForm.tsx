@@ -12,6 +12,7 @@ type Organisation = {
   id: string;
   nom: string;
   siret: string | null;
+  siret_complet?: string | null;
   email: string | null;
   telephone: string | null;
   adresse: string | null;
@@ -35,6 +36,7 @@ export function OrganisationForm({ organisation, onClose }: OrganisationFormProp
 
   const [nom, setNom] = useState("");
   const [siret, setSiret] = useState("");
+  const [siretComplet, setSiretComplet] = useState("");
   const [email, setEmail] = useState("");
   const [telephone, setTelephone] = useState("");
   const [adresse, setAdresse] = useState("");
@@ -47,6 +49,7 @@ export function OrganisationForm({ organisation, onClose }: OrganisationFormProp
     if (organisation && open) {
       setNom(organisation.nom || "");
       setSiret(organisation.siret || "");
+      setSiretComplet((organisation as any).siret_complet || "");
       setEmail(organisation.email || "");
       setTelephone(organisation.telephone || "");
       setAdresse(organisation.adresse || "");
@@ -58,7 +61,7 @@ export function OrganisationForm({ organisation, onClose }: OrganisationFormProp
   }, [organisation, open]);
 
   const resetForm = () => {
-    setNom(""); setSiret(""); setEmail(""); setTelephone("");
+    setNom(""); setSiret(""); setSiretComplet(""); setEmail(""); setTelephone("");
     setAdresse(""); setCodePostal(""); setVille("");
     setNumeroDeclaration(""); setCodeNaf("");
   };
@@ -74,7 +77,7 @@ export function OrganisationForm({ organisation, onClose }: OrganisationFormProp
     setIsLoading(true);
 
     try {
-      const payload = { nom, siret, email, telephone, adresse, code_postal: codePostal, ville, numero_declaration: numeroDeclaration, code_naf: codeNaf };
+      const payload = { nom, siret, siret_complet: siretComplet, email, telephone, adresse, code_postal: codePostal, ville, numero_declaration: numeroDeclaration, code_naf: codeNaf };
 
       if (isEdit && organisation) {
         const { error } = await supabase.from('organismes').update(payload).eq('id', organisation.id);
@@ -128,7 +131,12 @@ export function OrganisationForm({ organisation, onClose }: OrganisationFormProp
             <div className="space-y-2">
               <Label htmlFor="codeNaf">Code NAF</Label>
               <Input id="codeNaf" placeholder="8559A" value={codeNaf} onChange={(e) => setCodeNaf(e.target.value)} />
-            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="siretComplet">N° SIRET</Label>
+            <Input id="siretComplet" placeholder="123 456 789 00012" value={siretComplet} onChange={(e) => setSiretComplet(e.target.value)} />
+          </div>
           </div>
 
           <div className="space-y-2">
