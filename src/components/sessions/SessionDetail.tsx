@@ -1517,7 +1517,8 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
               subject,
               htmlBody,
               attachmentBase64: base64,
-              attachmentFileName: result.fileName,
+              attachmentName: result.fileName,
+              attachmentContentType: 'application/pdf',
             },
           });
           if (error) { failed++; continue; }
