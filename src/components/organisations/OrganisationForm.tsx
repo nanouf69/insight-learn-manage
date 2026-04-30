@@ -131,7 +131,12 @@ export function OrganisationForm({ organisation, onClose }: OrganisationFormProp
             <div className="space-y-2">
               <Label htmlFor="codeNaf">Code NAF</Label>
               <Input id="codeNaf" placeholder="8559A" value={codeNaf} onChange={(e) => setCodeNaf(e.target.value)} />
-            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="siretComplet">N° SIRET</Label>
+            <Input id="siretComplet" placeholder="123 456 789 00012" value={siretComplet} onChange={(e) => setSiretComplet(e.target.value)} />
+          </div>
           </div>
 
           <div className="space-y-2">
