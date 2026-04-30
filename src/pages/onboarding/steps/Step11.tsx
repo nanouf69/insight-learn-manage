@@ -216,6 +216,14 @@ export default function Step11() {
           </div>
 
           <div className="space-y-4">
+            <div className="bg-red-100 border-4 border-red-600 rounded-xl p-6 text-center">
+              <p className="text-red-700 font-extrabold text-2xl lg:text-3xl leading-tight">
+                ⚠️ MERCI DE NOUS CONTACTER AU<br />
+                <span className="text-3xl lg:text-4xl">04 28 29 60 91</span><br />
+                LE PREMIER JOUR DE LA PUBLICATION DES RÉSULTATS DE VOTRE EXAMEN THÉORIQUE POUR LA SUITE DES DÉMARCHES
+              </p>
+            </div>
+
             <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
               <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
               <p className="text-red-700 text-sm">
