@@ -534,11 +534,15 @@ export default function FournisseurPortal() {
       ? (factureMoisMultiples.length > 0 ? factureMoisMultiples.sort().join(', ') : null)
       : (factureMoisAnnee || null);
     if (!file) {
-      toast({ title: "Erreur", description: "Veuillez sélectionner un fichier.", variant: "destructive" });
+      toast({ title: "Fichier manquant", description: "Cliquez sur « Parcourir » et sélectionnez le PDF de votre facture avant de cliquer sur « Déposer ».", variant: "destructive" });
       return;
     }
     if (isFormateur && factureMoisMultiples.length === 0) {
       toast({ title: "Erreur", description: "Veuillez sélectionner au moins un mois.", variant: "destructive" });
+      return;
+    }
+    if (!isFormateur && !!fournisseur.factures_only && !moisValue) {
+      toast({ title: "Période manquante", description: "Indiquez le mois et l'année que cette facture couvre.", variant: "destructive" });
       return;
     }
     setIsUploadingFacture(true);
