@@ -605,7 +605,22 @@ export function FactureForm() {
         session_id: sessionLine?.sessionId || null,
       };
 
-      const { error } = await supabase.from("factures").insert(payload);
+      let { error } = await supabase.from("factures").insert(payload);
+      // En cas de doublon de numéro, regénère un numéro libre et retente une fois
+      if (error && (error.code === "23505" || /duplicate key|unique constraint/i.test(error.message || ""))) {
+        const { data: rows } = await supabase
+          .from("factures")
+          .select("numero")
+          .order("numero", { ascending: false })
+          .limit(1);
+        const maxNumero = rows?.[0]?.numero ? parseInt(String(rows[0].numero), 10) : FACTURE_COUNTER_START;
+        const nextNumero = String((isNaN(maxNumero) ? FACTURE_COUNTER_START : maxNumero) + 1);
+        try { localStorage.setItem(FACTURE_COUNTER_KEY, String(parseInt(nextNumero, 10) + 1)); } catch {}
+        payload.numero = nextNumero;
+        setData((prev) => ({ ...prev, numero: nextNumero, numeroInterne: nextNumero }));
+        const retry = await supabase.from("factures").insert(payload);
+        error = retry.error;
+      }
       if (error) throw error;
       toast.success("Brouillon enregistré (visible en comptabilité)");
     } catch (e: any) {
