@@ -534,11 +534,15 @@ export default function FournisseurPortal() {
       ? (factureMoisMultiples.length > 0 ? factureMoisMultiples.sort().join(', ') : null)
       : (factureMoisAnnee || null);
     if (!file) {
-      toast({ title: "Erreur", description: "Veuillez sélectionner un fichier.", variant: "destructive" });
+      toast({ title: "Fichier manquant", description: "Cliquez sur « Parcourir » et sélectionnez le PDF de votre facture avant de cliquer sur « Déposer ».", variant: "destructive" });
       return;
     }
     if (isFormateur && factureMoisMultiples.length === 0) {
       toast({ title: "Erreur", description: "Veuillez sélectionner au moins un mois.", variant: "destructive" });
+      return;
+    }
+    if (!isFormateur && !!fournisseur.factures_only && !moisValue) {
+      toast({ title: "Période manquante", description: "Indiquez le mois et l'année que cette facture couvre.", variant: "destructive" });
       return;
     }
     setIsUploadingFacture(true);
@@ -941,9 +945,8 @@ export default function FournisseurPortal() {
                           type="month"
                           value={factureMoisAnnee}
                           onChange={e => setFactureMoisAnnee(e.target.value)}
-                          required={!!fournisseur?.factures_only}
                         />
-                        <p className="text-xs text-muted-foreground">Indiquez le mois et l'année que cette facture couvre</p>
+                        <p className="text-xs text-muted-foreground">Indiquez le mois et l'année que cette facture couvre (ex : 04/2026)</p>
                       </div>
                     )}
                     <div className="grid grid-cols-2 gap-4">
@@ -957,8 +960,8 @@ export default function FournisseurPortal() {
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label>Fichier facture *</Label>
-                      <Input id="facture-file" type="file" accept=".pdf,.jpg,.jpeg,.png" required />
+                      <Label>Fichier facture * (PDF, JPG ou PNG)</Label>
+                      <Input id="facture-file" type="file" accept=".pdf,.jpg,.jpeg,.png" />
                     </div>
                     <Button type="submit" disabled={isUploadingFacture} className="gap-2">
                       {isUploadingFacture ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
