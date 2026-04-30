@@ -1179,6 +1179,61 @@ export function FactureForm() {
         </CardContent>
       </Card>
 
+      {/* Mentions France Travail (éditables) */}
+      {(data.moyenPaiement === "france_travail" || (data.typeFinanceur === "professionnel" && selectedOrganisation && /france.?travail/i.test(selectedOrganisation.name || ""))) && (
+        <Card className="border-blue-500 bg-blue-50/40">
+          <CardHeader>
+            <CardTitle className="text-base text-blue-900">Mentions France Travail</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="ftStagiaireNom">Nom et prénom du stagiaire</Label>
+              <Input
+                id="ftStagiaireNom"
+                placeholder={selectedApprenant?.name || "Nom Prénom"}
+                value={data.ftStagiaireNom || ""}
+                onChange={(e) => updateField('ftStagiaireNom', e.target.value)}
+              />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="ftDateDebut">Date de début de formation</Label>
+                <Input
+                  id="ftDateDebut"
+                  type="date"
+                  value={data.ftDateDebut || ""}
+                  onChange={(e) => updateField('ftDateDebut', e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="ftDateFin">Date de fin de formation</Label>
+                <Input
+                  id="ftDateFin"
+                  type="date"
+                  value={data.ftDateFin || ""}
+                  onChange={(e) => updateField('ftDateFin', e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="ftHeures">Nombre d'heures-stagiaire réalisées</Label>
+                <Input
+                  id="ftHeures"
+                  type="number"
+                  step="0.25"
+                  min="0"
+                  placeholder="Ex: 35"
+                  value={data.ftHeures || ""}
+                  onChange={(e) => updateField('ftHeures', e.target.value)}
+                />
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Laissez vide pour utiliser automatiquement les valeurs des lignes de prestation.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Acquittement de la facture */}
       <Card className={data.acquittee ? "border-emerald-500 bg-emerald-50/50" : ""}>
         <CardHeader>
