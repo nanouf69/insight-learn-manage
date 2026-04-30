@@ -1577,7 +1577,8 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     }
   };
 
-  // Marquer une facture comme acquittée
+  // Ajouter un paiement (un même apprenant peut avoir plusieurs paiements)
+  const FC_MONTANT_FACTURE = 200;
   const handleSaveAcquittement = async () => {
     if (!acquittementApprenant) return;
     setAcquittementSaving(true);
@@ -1587,23 +1588,82 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
         toast({ title: "Aucune facture", description: "Téléchargez d'abord la facture pour la créer.", variant: "destructive" });
         return;
       }
-      const { error } = await supabase
+      const montantNum = Number((acquittementMontant || '').toString().replace(',', '.'));
+      if (!isFinite(montantNum) || montantNum <= 0) {
+        toast({ title: "Montant invalide", description: "Saisissez un montant positif.", variant: "destructive" });
+        return;
+      }
+      // Insérer le paiement
+      const { error: insErr } = await supabase
+        .from('facture_paiements' as any)
+        .insert({
+          facture_id: facture.id,
+          date_paiement: acquittementDate,
+          moyen_paiement: acquittementMoyen,
+          montant: montantNum,
+        });
+      if (insErr) throw insErr;
+
+      // Recalculer total payé pour cette facture
+      const { data: paiements } = await supabase
+        .from('facture_paiements' as any)
+        .select('montant, date_paiement, moyen_paiement')
+        .eq('facture_id', facture.id)
+        .order('date_paiement', { ascending: true });
+      const total = (paiements || []).reduce((s: number, p: any) => s + Number(p.montant || 0), 0);
+      const totalDu = Number(facture.montant_ttc || FC_MONTANT_FACTURE);
+      const last = (paiements || [])[paiements!.length - 1];
+      const newStatut = total + 0.001 >= totalDu ? 'payee' : 'en_attente';
+      await supabase
         .from('factures')
         .update({
-          statut: 'payee',
-          date_paiement: acquittementDate,
+          statut: newStatut,
+          date_paiement: newStatut === 'payee' ? (last?.date_paiement || acquittementDate) : null,
         })
         .eq('id', facture.id);
-      if (error) throw error;
-      await refetchFacturesFC();
-      toast({ title: "Facture acquittée", description: `Payée le ${acquittementDate} • ${acquittementMoyen}` });
-      setAcquittementApprenant(null);
+
+      await Promise.all([refetchFacturesFC(), refetchPaiements()]);
+      toast({ title: "Paiement enregistré", description: `${montantNum.toFixed(2)} € le ${acquittementDate} • ${acquittementMoyen}` });
+      // Réinitialiser le formulaire mais garder la modale ouverte pour ajouter un autre paiement
+      setAcquittementMontant('');
+      setAcquittementDate(new Date().toISOString().split('T')[0]);
     } catch (e: any) {
-      toast({ title: "Erreur", description: e?.message || "Acquittement impossible", variant: "destructive" });
+      toast({ title: "Erreur", description: e?.message || "Enregistrement impossible", variant: "destructive" });
     } finally {
       setAcquittementSaving(false);
     }
   };
+
+  // Supprimer un paiement
+  const handleDeletePaiement = async (paiementId: string, factureId: string, montantTtc: number) => {
+    setAcquittementDeleting(paiementId);
+    try {
+      const { error } = await supabase.from('facture_paiements' as any).delete().eq('id', paiementId);
+      if (error) throw error;
+      const { data: paiements } = await supabase
+        .from('facture_paiements' as any)
+        .select('montant, date_paiement')
+        .eq('facture_id', factureId)
+        .order('date_paiement', { ascending: true });
+      const total = (paiements || []).reduce((s: number, p: any) => s + Number(p.montant || 0), 0);
+      const last = (paiements || [])[paiements!.length - 1];
+      const newStatut = total + 0.001 >= Number(montantTtc || FC_MONTANT_FACTURE) ? 'payee' : (paiements?.length ? 'en_attente' : 'en_attente');
+      await supabase
+        .from('factures')
+        .update({
+          statut: newStatut,
+          date_paiement: newStatut === 'payee' ? (last?.date_paiement || null) : null,
+        })
+        .eq('id', factureId);
+      await Promise.all([refetchFacturesFC(), refetchPaiements()]);
+      toast({ title: "Paiement supprimé" });
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e?.message || "Suppression impossible", variant: "destructive" });
+    } finally {
+      setAcquittementDeleting(null);
+    }
+  };
+
 
 
   const normalizedSessionText = `${session.title || ''} ${session.formation || ''}`.toLowerCase();
