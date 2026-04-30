@@ -3065,58 +3065,117 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
 
     {/* Modale d'acquittement */}
     <Dialog open={!!acquittementApprenant} onOpenChange={(open) => !open && setAcquittementApprenant(null)}>
-      <DialogContent className="sm:max-w-[480px]">
+      <DialogContent className="sm:max-w-[560px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <CheckCircle className="w-5 h-5 text-emerald-600" />
-            Acquittement de la facture
+            Paiements de la facture
           </DialogTitle>
         </DialogHeader>
-        {acquittementApprenant && (
-          <div className="space-y-4">
-            <div className="text-sm text-muted-foreground">
-              Marquer comme payée la facture de{' '}
-              <span className="font-medium text-foreground">
-                {acquittementApprenant.prenom} {acquittementApprenant.nom}
-              </span>{' '}
-              ({(facturesFCMap as any)?.[acquittementApprenant.id]?.numero || '—'})
+        {acquittementApprenant && (() => {
+          const _facture: any = (facturesFCMap as any)?.[acquittementApprenant.id];
+          const _paiements: any[] = (_facture?.id ? (paiementsByFactureId as any)?.[_facture.id] : []) || [];
+          const _totalPaye = _paiements.reduce((s, p) => s + Number(p.montant || 0), 0);
+          const _montantTtc = Number(_facture?.montant_ttc || 200);
+          const _restant = Math.max(0, _montantTtc - _totalPaye);
+          return (
+            <div className="space-y-4">
+              <div className="text-sm text-muted-foreground">
+                Facture de{' '}
+                <span className="font-medium text-foreground">
+                  {acquittementApprenant.prenom} {acquittementApprenant.nom}
+                </span>{' '}
+                ({_facture?.numero || '—'})
+              </div>
+
+              <div className="rounded-lg border p-3 bg-muted/30 text-sm space-y-1">
+                <div className="flex justify-between"><span>Montant TTC</span><span className="font-medium">{_montantTtc.toFixed(2)} €</span></div>
+                <div className="flex justify-between"><span>Total payé</span><span className="font-medium text-emerald-600">{_totalPaye.toFixed(2)} €</span></div>
+                <div className="flex justify-between"><span>Restant dû</span><span className={`font-medium ${_restant > 0 ? 'text-orange-600' : 'text-emerald-600'}`}>{_restant.toFixed(2)} €</span></div>
+              </div>
+
+              {_paiements.length > 0 && (
+                <div className="space-y-2">
+                  <Label>Paiements enregistrés</Label>
+                  <div className="space-y-1.5 max-h-40 overflow-auto">
+                    {_paiements.map((p) => (
+                      <div key={p.id} className="flex items-center gap-2 p-2 rounded-md border bg-card text-sm">
+                        <span className="font-medium">{Number(p.montant).toFixed(2)} €</span>
+                        <span className="text-muted-foreground">•</span>
+                        <span>{p.date_paiement}</span>
+                        <span className="text-muted-foreground">•</span>
+                        <span className="capitalize">{p.moyen_paiement?.replace('_', ' ')}</span>
+                        <div className="flex-1" />
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 px-2 text-destructive hover:text-destructive"
+                          onClick={() => handleDeletePaiement(p.id, _facture.id, _montantTtc)}
+                          disabled={acquittementDeleting === p.id}
+                        >
+                          {acquittementDeleting === p.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="border-t pt-4 space-y-3">
+                <div className="text-sm font-medium">Ajouter un paiement</div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="acq-date">Date de paiement</Label>
+                    <Input
+                      id="acq-date"
+                      type="date"
+                      value={acquittementDate}
+                      onChange={(e) => setAcquittementDate(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="acq-montant">Montant (€)</Label>
+                    <Input
+                      id="acq-montant"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={acquittementMontant}
+                      onChange={(e) => setAcquittementMontant(e.target.value)}
+                      placeholder={_restant.toFixed(2)}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="acq-moyen">Moyen de paiement</Label>
+                  <Select value={acquittementMoyen} onValueChange={setAcquittementMoyen}>
+                    <SelectTrigger id="acq-moyen">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="virement">Virement bancaire</SelectItem>
+                      <SelectItem value="cb">Carte bancaire</SelectItem>
+                      <SelectItem value="especes">Espèces</SelectItem>
+                      <SelectItem value="cheque">Chèque</SelectItem>
+                      <SelectItem value="cpf">CPF</SelectItem>
+                      <SelectItem value="opco">OPCO</SelectItem>
+                      <SelectItem value="france_travail">France Travail</SelectItem>
+                      <SelectItem value="autre">Autre</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <Button variant="outline" onClick={() => setAcquittementApprenant(null)}>Fermer</Button>
+                <Button onClick={handleSaveAcquittement} disabled={acquittementSaving} className="gap-2">
+                  {acquittementSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                  Ajouter le paiement
+                </Button>
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="acq-date">Date de paiement</Label>
-              <Input
-                id="acq-date"
-                type="date"
-                value={acquittementDate}
-                onChange={(e) => setAcquittementDate(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="acq-moyen">Moyen de paiement</Label>
-              <Select value={acquittementMoyen} onValueChange={setAcquittementMoyen}>
-                <SelectTrigger id="acq-moyen">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="virement">Virement bancaire</SelectItem>
-                  <SelectItem value="cb">Carte bancaire</SelectItem>
-                  <SelectItem value="especes">Espèces</SelectItem>
-                  <SelectItem value="cheque">Chèque</SelectItem>
-                  <SelectItem value="cpf">CPF</SelectItem>
-                  <SelectItem value="opco">OPCO</SelectItem>
-                  <SelectItem value="france_travail">France Travail</SelectItem>
-                  <SelectItem value="autre">Autre</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex justify-end gap-2 pt-2">
-              <Button variant="outline" onClick={() => setAcquittementApprenant(null)}>Annuler</Button>
-              <Button onClick={handleSaveAcquittement} disabled={acquittementSaving} className="gap-2">
-                {acquittementSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
-                Confirmer l'acquittement
-              </Button>
-            </div>
-          </div>
-        )}
+          );
+        })()}
       </DialogContent>
     </Dialog>
 
