@@ -751,8 +751,18 @@ export function FactureForm() {
       const tvaTaux = montantHT > 0 ? Math.round((montantTVA / montantHT) * 100) : 0;
 
       const sessionLine: any = data.lignes.find((l: any) => l.type === "session" && l.sessionId);
+
+      // Réservation du numéro de facture définitif UNIQUEMENT au moment de la comptabilisation.
+      // Si le formulaire affiche encore un placeholder ou un numéro provisoire BR-, on en attribue un.
+      const numeroActuel = data.numeroInterne;
+      const besoinNouveauNumero =
+        !numeroActuel ||
+        numeroActuel === NUMERO_PLACEHOLDER ||
+        numeroActuel.startsWith("BR-");
+      let numeroDefinitif = besoinNouveauNumero ? await reserveNumeroFacture() : numeroActuel;
+
       const payload: any = {
-        numero: data.numeroInterne || data.numero,
+        numero: numeroDefinitif,
         date_emission: data.date,
         date_echeance: data.dateEcheance || null,
         type_financement: data.typeFinanceur === "particulier" ? "particulier" : "professionnel",
@@ -769,10 +779,22 @@ export function FactureForm() {
         session_id: sessionLine?.sessionId || null,
       };
 
-      const { error } = await supabase.from("factures").insert(payload);
+      let { error } = await supabase.from("factures").insert(payload);
+      // Si collision (course concurrente), on régénère un numéro libre et retente
+      let attempts = 0;
+      while (error && attempts < 3 && (error.code === "23505" || /duplicate key|unique constraint/i.test(error.message || ""))) {
+        numeroDefinitif = await reserveNumeroFacture();
+        payload.numero = numeroDefinitif;
+        const retry = await supabase.from("factures").insert(payload);
+        error = retry.error;
+        attempts += 1;
+      }
       if (error) throw error;
 
-      toast.success("Facture enregistrée en comptabilité");
+      // Met à jour l'UI avec le numéro définitif réservé
+      setData((prev) => ({ ...prev, numero: numeroDefinitif, numeroInterne: numeroDefinitif }));
+
+      toast.success(`Facture N°${numeroDefinitif} enregistrée en comptabilité`);
       // Nettoyer le brouillon une fois la facture validée
       try { localStorage.removeItem(DRAFT_KEY); } catch {}
     } catch (e: any) {
