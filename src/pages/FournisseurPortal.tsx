@@ -961,8 +961,8 @@ export default function FournisseurPortal() {
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label>Fichier facture *</Label>
-                      <Input id="facture-file" type="file" accept=".pdf,.jpg,.jpeg,.png" required />
+                      <Label>Fichier facture * (PDF, JPG ou PNG)</Label>
+                      <Input id="facture-file" type="file" accept=".pdf,.jpg,.jpeg,.png" />
                     </div>
                     <Button type="submit" disabled={isUploadingFacture} className="gap-2">
                       {isUploadingFacture ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
