@@ -3255,6 +3255,60 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       </DialogContent>
     </Dialog>
 
+    {/* Modale Tout acquitter */}
+    <Dialog open={bulkAcquitterOpen} onOpenChange={setBulkAcquitterOpen}>
+      <DialogContent className="sm:max-w-[480px]">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <CheckCircle className="w-5 h-5 text-emerald-600" />
+            Tout acquitter
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 pt-2">
+          <p className="text-sm text-muted-foreground">
+            Le solde restant de toutes les factures non payées de cette session sera acquitté avec la même date et le même moyen de paiement.
+          </p>
+          <div className="space-y-2">
+            <Label htmlFor="bulk-acq-date">Date de paiement</Label>
+            <Input
+              id="bulk-acq-date"
+              type="date"
+              value={bulkAcquitterDate}
+              onChange={(e) => setBulkAcquitterDate(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="bulk-acq-moyen">Moyen de paiement</Label>
+            <Select value={bulkAcquitterMoyen} onValueChange={setBulkAcquitterMoyen}>
+              <SelectTrigger id="bulk-acq-moyen">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="virement">Virement</SelectItem>
+                <SelectItem value="cb">Carte bancaire</SelectItem>
+                <SelectItem value="especes">Espèces</SelectItem>
+                <SelectItem value="cheque">Chèque</SelectItem>
+                <SelectItem value="cpf">CPF</SelectItem>
+                <SelectItem value="opco">OPCO</SelectItem>
+                <SelectItem value="france_travail">France Travail</SelectItem>
+                <SelectItem value="virement_especes">Virement et espèces</SelectItem>
+                <SelectItem value="autre">Autre</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" onClick={() => setBulkAcquitterOpen(false)} disabled={bulkAcquitterSaving}>
+              Annuler
+            </Button>
+            <Button onClick={handleBulkAcquitter} disabled={bulkAcquitterSaving} className="gap-2">
+              {bulkAcquitterSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+              Tout acquitter
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+
     {/* Modale d'aperçu email */}
     <Dialog open={!!emailPreview} onOpenChange={(open) => !open && setEmailPreview(null)}>
       <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-hidden flex flex-col">
