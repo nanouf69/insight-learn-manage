@@ -1067,20 +1067,20 @@ export function FactureForm() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <div className="hidden md:grid grid-cols-12 gap-2 text-sm font-medium text-muted-foreground border-b pb-2">
+                  <div className="hidden md:grid grid-cols-16 gap-2 text-sm font-medium text-muted-foreground border-b pb-2">
                     <div className="col-span-2">Stagiaire</div>
                     <div className="col-span-3">Désignation</div>
-                    <div className="col-span-1">TVA</div>
-                    <div className="col-span-1">P.U. HT</div>
-                    <div className="col-span-1">Qté</div>
-                    <div className="col-span-1">Rem %</div>
+                    <div className="col-span-2">TVA</div>
+                    <div className="col-span-2">P.U. HT</div>
+                    <div className="col-span-2">Qté</div>
+                    <div className="col-span-2">Rem %</div>
                     <div className="col-span-2">Total HT</div>
                     <div className="col-span-1"></div>
                   </div>
 
                   {data.lignes.map((ligne) => (
                     <div key={ligne.id} className="p-4 border rounded-lg space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-12 gap-2 items-end">
+                      <div className="grid grid-cols-1 md:grid-cols-16 gap-2 items-end">
                         <div className="md:col-span-2 space-y-1">
                           <Label className="md:hidden">Stagiaire</Label>
                           <Input value={ligne.stagiaire} onChange={(e) => updateLigne(ligne.id, 'stagiaire', e.target.value)} placeholder="Nom Prénom" />
@@ -1092,7 +1092,7 @@ export function FactureForm() {
                             <Input value={ligne.designation} onChange={(e) => updateLigne(ligne.id, 'designation', e.target.value)} />
                           </div>
                         </div>
-                        <div className="md:col-span-1 space-y-1">
+                        <div className="md:col-span-2 space-y-1">
                           <Label className="md:hidden">TVA</Label>
                           <Select value={ligne.tvaType} onValueChange={(v) => updateLigne(ligne.id, 'tvaType', v as LigneFacture['tvaType'])}>
                             <SelectTrigger><SelectValue /></SelectTrigger>
@@ -1104,15 +1104,15 @@ export function FactureForm() {
                             </SelectContent>
                           </Select>
                         </div>
-                        <div className="md:col-span-1 space-y-1">
+                        <div className="md:col-span-2 space-y-1">
                           <Label className="md:hidden">P.U. HT</Label>
                           <Input type="number" min="0" step="0.01" value={ligne.prixUnitaire} onChange={(e) => updateLigne(ligne.id, 'prixUnitaire', parseFloat(e.target.value) || 0)} />
                         </div>
-                        <div className="md:col-span-1 space-y-1">
+                        <div className="md:col-span-2 space-y-1">
                           <Label className="md:hidden">Qté</Label>
                           <Input type="number" min="0.01" step="0.01" value={ligne.quantite} onChange={(e) => updateLigne(ligne.id, 'quantite', parseFloat(e.target.value) || 1)} />
                         </div>
-                        <div className="md:col-span-1 space-y-1">
+                        <div className="md:col-span-2 space-y-1">
                           <Label className="md:hidden">Remise %</Label>
                           <Input type="number" min="0" max="100" value={ligne.remise || ""} onChange={(e) => updateLigne(ligne.id, 'remise', parseFloat(e.target.value) || 0)} placeholder="" />
                         </div>
