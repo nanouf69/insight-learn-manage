@@ -40,7 +40,8 @@ import {
   Pencil,
   KeyRound,
   Copy,
-  Printer
+  Printer,
+  Trash2
 } from "lucide-react";
 import { MODULES_DATA } from "@/components/cours-en-ligne/formations-data";
 import { ALL_MODULES, FORMATION_MODULES, MANAGED_MODULE_IDS, DEFAULT_MODULES_BY_TYPE } from "@/components/cours-en-ligne/modules-config";
@@ -469,7 +470,9 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   const [acquittementApprenant, setAcquittementApprenant] = useState<any | null>(null);
   const [acquittementDate, setAcquittementDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [acquittementMoyen, setAcquittementMoyen] = useState<string>('virement');
+  const [acquittementMontant, setAcquittementMontant] = useState<string>('');
   const [acquittementSaving, setAcquittementSaving] = useState(false);
+  const [acquittementDeleting, setAcquittementDeleting] = useState<string | null>(null);
   const [bulkPreview, setBulkPreview] = useState<{ template: any; apprenants: any[]; previewBody: string; previewSubject: string; editedBody?: string; editedSubject?: string } | null>(null);
   const [bulkPreviewEditing, setBulkPreviewEditing] = useState(false);
   const [editingMailType, setEditingMailType] = useState<any | null>(null);
@@ -595,6 +598,31 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       return map;
     },
     enabled: !!session?.id && open,
+  });
+
+  // Charger tous les paiements pour les factures de cette session
+  const factureIdsForPaiements = Object.values(facturesFCMap as Record<string, any>).map((f: any) => f?.id).filter(Boolean);
+  const { data: paiementsByFactureId = {}, refetch: refetchPaiements } = useQuery({
+    queryKey: ['session-facture-paiements', session?.id, factureIdsForPaiements.join(',')],
+    queryFn: async () => {
+      if (!factureIdsForPaiements.length) return {} as Record<string, any[]>;
+      const { data, error } = await supabase
+        .from('facture_paiements' as any)
+        .select('*')
+        .in('facture_id', factureIdsForPaiements)
+        .order('date_paiement', { ascending: true });
+      if (error) {
+        console.error('[SessionDetail] Erreur chargement facture_paiements:', error);
+        return {} as Record<string, any[]>;
+      }
+      const map: Record<string, any[]> = {};
+      (data || []).forEach((row: any) => {
+        if (!map[row.facture_id]) map[row.facture_id] = [];
+        map[row.facture_id].push(row);
+      });
+      return map;
+    },
+    enabled: !!session?.id && open && factureIdsForPaiements.length > 0,
   });
 
   // Charger les formateurs de cette session
@@ -1550,7 +1578,8 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     }
   };
 
-  // Marquer une facture comme acquittée
+  // Ajouter un paiement (un même apprenant peut avoir plusieurs paiements)
+  const FC_MONTANT_FACTURE = 200;
   const handleSaveAcquittement = async () => {
     if (!acquittementApprenant) return;
     setAcquittementSaving(true);
@@ -1560,23 +1589,84 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
         toast({ title: "Aucune facture", description: "Téléchargez d'abord la facture pour la créer.", variant: "destructive" });
         return;
       }
-      const { error } = await supabase
+      const montantNum = Number((acquittementMontant || '').toString().replace(',', '.'));
+      if (!isFinite(montantNum) || montantNum <= 0) {
+        toast({ title: "Montant invalide", description: "Saisissez un montant positif.", variant: "destructive" });
+        return;
+      }
+      // Insérer le paiement
+      const { error: insErr } = await supabase
+        .from('facture_paiements' as any)
+        .insert({
+          facture_id: facture.id,
+          date_paiement: acquittementDate,
+          moyen_paiement: acquittementMoyen,
+          montant: montantNum,
+        });
+      if (insErr) throw insErr;
+
+      // Recalculer total payé pour cette facture
+      const { data: paiementsRaw } = await supabase
+        .from('facture_paiements' as any)
+        .select('montant, date_paiement, moyen_paiement')
+        .eq('facture_id', facture.id)
+        .order('date_paiement', { ascending: true });
+      const paiements = (paiementsRaw || []) as any[];
+      const total = (paiements || []).reduce((s: number, p: any) => s + Number(p.montant || 0), 0);
+      const totalDu = Number(facture.montant_ttc || FC_MONTANT_FACTURE);
+      const last = (paiements || [])[paiements!.length - 1];
+      const newStatut = total + 0.001 >= totalDu ? 'payee' : 'en_attente';
+      await supabase
         .from('factures')
         .update({
-          statut: 'payee',
-          date_paiement: acquittementDate,
+          statut: newStatut,
+          date_paiement: newStatut === 'payee' ? (last?.date_paiement || acquittementDate) : null,
         })
         .eq('id', facture.id);
-      if (error) throw error;
-      await refetchFacturesFC();
-      toast({ title: "Facture acquittée", description: `Payée le ${acquittementDate} • ${acquittementMoyen}` });
-      setAcquittementApprenant(null);
+
+      await Promise.all([refetchFacturesFC(), refetchPaiements()]);
+      toast({ title: "Paiement enregistré", description: `${montantNum.toFixed(2)} € le ${acquittementDate} • ${acquittementMoyen}` });
+      // Réinitialiser le formulaire mais garder la modale ouverte pour ajouter un autre paiement
+      setAcquittementMontant('');
+      setAcquittementDate(new Date().toISOString().split('T')[0]);
     } catch (e: any) {
-      toast({ title: "Erreur", description: e?.message || "Acquittement impossible", variant: "destructive" });
+      toast({ title: "Erreur", description: e?.message || "Enregistrement impossible", variant: "destructive" });
     } finally {
       setAcquittementSaving(false);
     }
   };
+
+  // Supprimer un paiement
+  const handleDeletePaiement = async (paiementId: string, factureId: string, montantTtc: number) => {
+    setAcquittementDeleting(paiementId);
+    try {
+      const { error } = await supabase.from('facture_paiements' as any).delete().eq('id', paiementId);
+      if (error) throw error;
+      const { data: paiementsRaw } = await supabase
+        .from('facture_paiements' as any)
+        .select('montant, date_paiement')
+        .eq('facture_id', factureId)
+        .order('date_paiement', { ascending: true });
+      const paiements = (paiementsRaw || []) as any[];
+      const total = paiements.reduce((s: number, p: any) => s + Number(p.montant || 0), 0);
+      const last = paiements[paiements.length - 1];
+      const newStatut = total + 0.001 >= Number(montantTtc || FC_MONTANT_FACTURE) ? 'payee' : 'en_attente';
+      await supabase
+        .from('factures')
+        .update({
+          statut: newStatut,
+          date_paiement: newStatut === 'payee' ? (last?.date_paiement || null) : null,
+        })
+        .eq('id', factureId);
+      await Promise.all([refetchFacturesFC(), refetchPaiements()]);
+      toast({ title: "Paiement supprimé" });
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e?.message || "Suppression impossible", variant: "destructive" });
+    } finally {
+      setAcquittementDeleting(null);
+    }
+  };
+
 
 
   const normalizedSessionText = `${session.title || ''} ${session.formation || ''}`.toLowerCase();
@@ -2871,79 +2961,98 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                     const recipient = getFactureRecipientEmail(a);
                     const facture: any = (facturesFCMap as any)?.[a.id] || null;
                     const statut = facture?.statut || null;
-                    const statutLabel = statut === 'payee' ? 'Acquittée' : statut === 'en_attente' ? 'Validée' : statut === 'brouillon' ? 'Brouillon' : 'Non générée';
+                    const paiements: any[] = (facture?.id ? (paiementsByFactureId as any)?.[facture.id] : []) || [];
+                    const totalPaye = paiements.reduce((s, p) => s + Number(p.montant || 0), 0);
+                    const montantTtc = Number(facture?.montant_ttc || 200);
+                    const restantDu = Math.max(0, montantTtc - totalPaye);
+                    const statutLabel = statut === 'payee' ? 'Acquittée' : statut === 'en_attente' ? (totalPaye > 0 ? 'Partiellement payée' : 'Validée') : statut === 'brouillon' ? 'Brouillon' : 'Non générée';
                     const statutVariant: any = statut === 'payee' ? 'default' : statut === 'en_attente' ? 'secondary' : statut === 'brouillon' ? 'outline' : 'outline';
                     return (
-                      <div key={a.id} className="flex items-center gap-3 p-3 rounded-lg border bg-card">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-medium truncate">{a.prenom} {a.nom?.toUpperCase()}</span>
-                            <Badge variant={statutVariant} className="text-xs">{statutLabel}</Badge>
-                            {facture?.numero && <span className="text-xs text-muted-foreground">N° {facture.numero}</span>}
-                            {statut === 'payee' && facture?.date_paiement && (
-                              <span className="text-xs text-emerald-600">payée le {facture.date_paiement}</span>
-                            )}
+                      <div key={a.id} className="flex flex-col gap-2 p-3 rounded-lg border bg-card">
+                        <div className="flex items-center gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-medium truncate">{a.prenom} {a.nom?.toUpperCase()}</span>
+                              <Badge variant={statutVariant} className="text-xs">{statutLabel}</Badge>
+                              {facture?.numero && <span className="text-xs text-muted-foreground">N° {facture.numero}</span>}
+                              {totalPaye > 0 && (
+                                <span className="text-xs text-emerald-600">
+                                  Payé : {totalPaye.toFixed(2)} € / {montantTtc.toFixed(2)} €
+                                  {restantDu > 0 && <span className="text-orange-600"> • Reste {restantDu.toFixed(2)} €</span>}
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-xs text-muted-foreground truncate">
+                              Financeur :{' '}
+                              {isPro ? (
+                                <span className="font-medium text-foreground">
+                                  {fc.raison_sociale || '(pro sans raison sociale)'}
+                                  {fc.siret ? ` — SIRET ${fc.siret}` : fc.siren ? ` — SIREN ${fc.siren}` : ''}
+                                </span>
+                              ) : fc ? (
+                                <span>Particulier ({fc.contact_nom || `${a.prenom} ${a.nom}`})</span>
+                              ) : (
+                                <span className="text-orange-600">Aucun financeur saisi — facturation à l'apprenant</span>
+                              )}
+                            </div>
+                            <div className="text-xs text-muted-foreground truncate">
+                              Email facturation : {recipient || <span className="text-destructive">manquant</span>}
+                              {' • '}Montant TTC : <span className="font-medium text-foreground">{montantTtc.toFixed(2)} €</span>
+                            </div>
                           </div>
-                          <div className="text-xs text-muted-foreground truncate">
-                            Financeur :{' '}
-                            {isPro ? (
-                              <span className="font-medium text-foreground">
-                                {fc.raison_sociale || '(pro sans raison sociale)'}
-                                {fc.siret ? ` — SIRET ${fc.siret}` : fc.siren ? ` — SIREN ${fc.siren}` : ''}
-                              </span>
-                            ) : fc ? (
-                              <span>Particulier ({fc.contact_nom || `${a.prenom} ${a.nom}`})</span>
-                            ) : (
-                              <span className="text-orange-600">Aucun financeur saisi — facturation à l'apprenant</span>
-                            )}
-                          </div>
-                          <div className="text-xs text-muted-foreground truncate">
-                            Email facturation : {recipient || <span className="text-destructive">manquant</span>}
-                            {' • '}Montant TTC : <span className="font-medium text-foreground">200,00 €</span>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="gap-2"
-                            onClick={() => handleDownloadSingleFacture(a, sa, idx)}
-                            disabled={singleFactureLoading === a.id}
-                          >
-                            {singleFactureLoading === a.id ? (
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <Download className="w-4 h-4" />
-                            )}
-                            PDF
-                          </Button>
-                          {statut === 'brouillon' && (
-                            <Button
-                              size="sm"
-                              variant="secondary"
-                              className="gap-2"
-                              onClick={() => handleValidateFacture(a, sa)}
-                            >
-                              <CheckCircle2 className="w-4 h-4" />
-                              Valider
-                            </Button>
-                          )}
-                          {statut && statut !== 'payee' && (
+                          <div className="flex items-center gap-2 shrink-0">
                             <Button
                               size="sm"
                               variant="outline"
                               className="gap-2"
-                              onClick={() => {
-                                setAcquittementApprenant(a);
-                                setAcquittementDate(new Date().toISOString().split('T')[0]);
-                                setAcquittementMoyen('virement');
-                              }}
+                              onClick={() => handleDownloadSingleFacture(a, sa, idx)}
+                              disabled={singleFactureLoading === a.id}
                             >
-                              <CheckCircle className="w-4 h-4" />
-                              Acquitter
+                              {singleFactureLoading === a.id ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <Download className="w-4 h-4" />
+                              )}
+                              PDF
                             </Button>
-                          )}
+                            {statut === 'brouillon' && (
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                className="gap-2"
+                                onClick={() => handleValidateFacture(a, sa)}
+                              >
+                                <CheckCircle2 className="w-4 h-4" />
+                                Valider
+                              </Button>
+                            )}
+                            {facture && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="gap-2"
+                                onClick={() => {
+                                  setAcquittementApprenant(a);
+                                  setAcquittementDate(new Date().toISOString().split('T')[0]);
+                                  setAcquittementMoyen('virement');
+                                  setAcquittementMontant(restantDu > 0 ? restantDu.toFixed(2) : montantTtc.toFixed(2));
+                                }}
+                              >
+                                <CheckCircle className="w-4 h-4" />
+                                {totalPaye > 0 ? 'Paiements' : 'Acquitter'}
+                              </Button>
+                            )}
+                          </div>
                         </div>
+                        {paiements.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 pl-1">
+                            {paiements.map((p) => (
+                              <Badge key={p.id} variant="outline" className="text-xs gap-1 font-normal">
+                                {Number(p.montant).toFixed(2)} € • {p.date_paiement} • {p.moyen_paiement}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     );
                   })}
@@ -2957,58 +3066,117 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
 
     {/* Modale d'acquittement */}
     <Dialog open={!!acquittementApprenant} onOpenChange={(open) => !open && setAcquittementApprenant(null)}>
-      <DialogContent className="sm:max-w-[480px]">
+      <DialogContent className="sm:max-w-[560px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <CheckCircle className="w-5 h-5 text-emerald-600" />
-            Acquittement de la facture
+            Paiements de la facture
           </DialogTitle>
         </DialogHeader>
-        {acquittementApprenant && (
-          <div className="space-y-4">
-            <div className="text-sm text-muted-foreground">
-              Marquer comme payée la facture de{' '}
-              <span className="font-medium text-foreground">
-                {acquittementApprenant.prenom} {acquittementApprenant.nom}
-              </span>{' '}
-              ({(facturesFCMap as any)?.[acquittementApprenant.id]?.numero || '—'})
+        {acquittementApprenant && (() => {
+          const _facture: any = (facturesFCMap as any)?.[acquittementApprenant.id];
+          const _paiements: any[] = (_facture?.id ? (paiementsByFactureId as any)?.[_facture.id] : []) || [];
+          const _totalPaye = _paiements.reduce((s, p) => s + Number(p.montant || 0), 0);
+          const _montantTtc = Number(_facture?.montant_ttc || 200);
+          const _restant = Math.max(0, _montantTtc - _totalPaye);
+          return (
+            <div className="space-y-4">
+              <div className="text-sm text-muted-foreground">
+                Facture de{' '}
+                <span className="font-medium text-foreground">
+                  {acquittementApprenant.prenom} {acquittementApprenant.nom}
+                </span>{' '}
+                ({_facture?.numero || '—'})
+              </div>
+
+              <div className="rounded-lg border p-3 bg-muted/30 text-sm space-y-1">
+                <div className="flex justify-between"><span>Montant TTC</span><span className="font-medium">{_montantTtc.toFixed(2)} €</span></div>
+                <div className="flex justify-between"><span>Total payé</span><span className="font-medium text-emerald-600">{_totalPaye.toFixed(2)} €</span></div>
+                <div className="flex justify-between"><span>Restant dû</span><span className={`font-medium ${_restant > 0 ? 'text-orange-600' : 'text-emerald-600'}`}>{_restant.toFixed(2)} €</span></div>
+              </div>
+
+              {_paiements.length > 0 && (
+                <div className="space-y-2">
+                  <Label>Paiements enregistrés</Label>
+                  <div className="space-y-1.5 max-h-40 overflow-auto">
+                    {_paiements.map((p) => (
+                      <div key={p.id} className="flex items-center gap-2 p-2 rounded-md border bg-card text-sm">
+                        <span className="font-medium">{Number(p.montant).toFixed(2)} €</span>
+                        <span className="text-muted-foreground">•</span>
+                        <span>{p.date_paiement}</span>
+                        <span className="text-muted-foreground">•</span>
+                        <span className="capitalize">{p.moyen_paiement?.replace('_', ' ')}</span>
+                        <div className="flex-1" />
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 px-2 text-destructive hover:text-destructive"
+                          onClick={() => handleDeletePaiement(p.id, _facture.id, _montantTtc)}
+                          disabled={acquittementDeleting === p.id}
+                        >
+                          {acquittementDeleting === p.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="border-t pt-4 space-y-3">
+                <div className="text-sm font-medium">Ajouter un paiement</div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="acq-date">Date de paiement</Label>
+                    <Input
+                      id="acq-date"
+                      type="date"
+                      value={acquittementDate}
+                      onChange={(e) => setAcquittementDate(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="acq-montant">Montant (€)</Label>
+                    <Input
+                      id="acq-montant"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={acquittementMontant}
+                      onChange={(e) => setAcquittementMontant(e.target.value)}
+                      placeholder={_restant.toFixed(2)}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="acq-moyen">Moyen de paiement</Label>
+                  <Select value={acquittementMoyen} onValueChange={setAcquittementMoyen}>
+                    <SelectTrigger id="acq-moyen">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="virement">Virement bancaire</SelectItem>
+                      <SelectItem value="cb">Carte bancaire</SelectItem>
+                      <SelectItem value="especes">Espèces</SelectItem>
+                      <SelectItem value="cheque">Chèque</SelectItem>
+                      <SelectItem value="cpf">CPF</SelectItem>
+                      <SelectItem value="opco">OPCO</SelectItem>
+                      <SelectItem value="france_travail">France Travail</SelectItem>
+                      <SelectItem value="autre">Autre</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <Button variant="outline" onClick={() => setAcquittementApprenant(null)}>Fermer</Button>
+                <Button onClick={handleSaveAcquittement} disabled={acquittementSaving} className="gap-2">
+                  {acquittementSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                  Ajouter le paiement
+                </Button>
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="acq-date">Date de paiement</Label>
-              <Input
-                id="acq-date"
-                type="date"
-                value={acquittementDate}
-                onChange={(e) => setAcquittementDate(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="acq-moyen">Moyen de paiement</Label>
-              <Select value={acquittementMoyen} onValueChange={setAcquittementMoyen}>
-                <SelectTrigger id="acq-moyen">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="virement">Virement bancaire</SelectItem>
-                  <SelectItem value="cb">Carte bancaire</SelectItem>
-                  <SelectItem value="especes">Espèces</SelectItem>
-                  <SelectItem value="cheque">Chèque</SelectItem>
-                  <SelectItem value="cpf">CPF</SelectItem>
-                  <SelectItem value="opco">OPCO</SelectItem>
-                  <SelectItem value="france_travail">France Travail</SelectItem>
-                  <SelectItem value="autre">Autre</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex justify-end gap-2 pt-2">
-              <Button variant="outline" onClick={() => setAcquittementApprenant(null)}>Annuler</Button>
-              <Button onClick={handleSaveAcquittement} disabled={acquittementSaving} className="gap-2">
-                {acquittementSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
-                Confirmer l'acquittement
-              </Button>
-            </div>
-          </div>
-        )}
+          );
+        })()}
       </DialogContent>
     </Dialog>
 
