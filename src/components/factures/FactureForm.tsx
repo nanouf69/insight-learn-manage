@@ -86,14 +86,18 @@ interface ApprenantItem {
   factureContactTelephone?: string | null;
 }
 
-// Liste des organisations
-const organisations = [
-  { id: 1, name: "Tech Solutions SARL", type: "client", contact: "Marc Dubois", email: "contact@techsolutions.fr", phone: "01 23 45 67 89", address: "15 Rue de l'Innovation, 75001 Paris", siret: "12345678901234", tvaIntra: "FR12345678901" },
-  { id: 2, name: "Groupe Industriel ABC", type: "client", contact: "Claire Moreau", email: "rh@groupe-abc.com", phone: "01 98 76 54 32", address: "Zone Industrielle Nord, 69000 Lyon", siret: "98765432101234", tvaIntra: "FR98765432101" },
-  { id: 3, name: "Caisse des Dépôts et Consignations", type: "client", contact: "Direction Formation", email: "formation@cdc.fr", phone: "01 58 50 00 00", address: "56, rue de Lille, 75356 PARIS 07 SP", siret: "180.020.026.00", tvaIntra: "FR77180020026" },
-  { id: 4, name: "OPCO Mobilités", type: "opco", contact: "Service Prise en Charge", email: "contact@opcomobilites.fr", phone: "0 800 00 99 99", address: "14 rue Scandicci, 93500 Pantin", siret: "85129986300017", tvaIntra: "FR85129986300" },
-  { id: 5, name: "Mairie de Lyon", type: "client", contact: "Jean-Pierre Martin", email: "formation@mairie-lyon.fr", phone: "04 72 10 30 30", address: "Place de la Comédie, 69001 Lyon", siret: "21690123800019", tvaIntra: "FR21690123800" },
-];
+// Liste des organisations — chargée depuis Supabase
+interface OrganisationItem {
+  id: string;
+  name: string;
+  type: string;
+  contact: string;
+  email: string;
+  phone: string;
+  address: string;
+  siret: string;
+  tvaIntra: string;
+}
 
 // Sessions de formation — chargées depuis Supabase
 interface SessionItem {
