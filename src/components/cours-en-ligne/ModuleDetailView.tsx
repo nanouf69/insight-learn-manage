@@ -2427,7 +2427,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           exercices: mergeSourceExercices(parsed.moduleData.exercices, initialData.exercices, deletedExerciceIdsLocal),
         };
 
-        setModuleData(mergedModuleData);
+        setModuleData(forceSourceExerciseTitles(module.id, mergedModuleData, initialData));
         setDeletedCours(Array.isArray(parsed.deletedCours) ? parsed.deletedCours : []);
         setDeletedExercices(Array.isArray(parsed.deletedExercices) ? parsed.deletedExercices : []);
         setLoadedModuleEditorState(false);
