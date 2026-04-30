@@ -168,6 +168,24 @@ const BILAN_VTC_SOURCE_MODULE_ID = 2;
 
 const shouldSyncVtcBilanFromCours = (moduleId: number | string) => [4, 81].includes(Number(moduleId));
 
+const forceSourceExerciseTitles = (moduleId: number | string, loadedData: ModuleData, sourceData: ModuleData): ModuleData => {
+  if (Number(moduleId) !== 9) return loadedData;
+
+  const sourceById = new Map(sourceData.exercices.map((exercise) => [Number(exercise.id), exercise]));
+  return {
+    ...loadedData,
+    exercices: loadedData.exercices.map((exercise) => {
+      const sourceExercise = sourceById.get(Number(exercise.id));
+      if (!sourceExercise) return exercise;
+      return {
+        ...exercise,
+        titre: sourceExercise.titre,
+        sousTitre: sourceExercise.sousTitre,
+      };
+    }),
+  };
+};
+
 const getSyncedBilanVtcModuleData = (
   initialData: ModuleData,
   sourceExercices: ExerciceItem[],
