@@ -474,6 +474,10 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   const [acquittementMontant, setAcquittementMontant] = useState<string>('');
   const [acquittementSaving, setAcquittementSaving] = useState(false);
   const [acquittementDeleting, setAcquittementDeleting] = useState<string | null>(null);
+  const [bulkAcquitterOpen, setBulkAcquitterOpen] = useState(false);
+  const [bulkAcquitterDate, setBulkAcquitterDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [bulkAcquitterMoyen, setBulkAcquitterMoyen] = useState<string>('virement');
+  const [bulkAcquitterSaving, setBulkAcquitterSaving] = useState(false);
   const [bulkPreview, setBulkPreview] = useState<{ template: any; apprenants: any[]; previewBody: string; previewSubject: string; editedBody?: string; editedSubject?: string } | null>(null);
   const [bulkPreviewEditing, setBulkPreviewEditing] = useState(false);
   const [editingMailType, setEditingMailType] = useState<any | null>(null);
