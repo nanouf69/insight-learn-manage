@@ -963,7 +963,23 @@ export default function FournisseurPortal() {
                     </div>
                     <div className="space-y-2">
                       <Label>Fichier facture * (PDF, JPG ou PNG)</Label>
-                      <Input id="facture-file" type="file" accept=".pdf,.jpg,.jpeg,.png" />
+                      <input
+                        ref={factureFileInputRef}
+                        id="facture-file"
+                        type="file"
+                        accept=".pdf,.jpg,.jpeg,.png,.webp"
+                        className="sr-only"
+                        onChange={(e) => setSelectedFactureFileName(e.target.files?.[0]?.name || "")}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full justify-start gap-2"
+                        onClick={() => factureFileInputRef.current?.click()}
+                      >
+                        <Upload className="w-4 h-4" />
+                        {selectedFactureFileName || "Choisir le fichier de facture"}
+                      </Button>
                     </div>
                     <Button type="submit" disabled={isUploadingFacture} className="gap-2">
                       {isUploadingFacture ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
