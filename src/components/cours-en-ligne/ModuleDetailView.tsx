@@ -168,6 +168,24 @@ const BILAN_VTC_SOURCE_MODULE_ID = 2;
 
 const shouldSyncVtcBilanFromCours = (moduleId: number | string) => [4, 81].includes(Number(moduleId));
 
+const forceSourceExerciseTitles = (moduleId: number | string, loadedData: ModuleData, sourceData: ModuleData): ModuleData => {
+  if (Number(moduleId) !== 9) return loadedData;
+
+  const sourceById = new Map(sourceData.exercices.map((exercise) => [Number(exercise.id), exercise]));
+  return {
+    ...loadedData,
+    exercices: loadedData.exercices.map((exercise) => {
+      const sourceExercise = sourceById.get(Number(exercise.id));
+      if (!sourceExercise) return exercise;
+      return {
+        ...exercise,
+        titre: sourceExercise.titre,
+        sousTitre: sourceExercise.sousTitre,
+      };
+    }),
+  };
+};
+
 const getSyncedBilanVtcModuleData = (
   initialData: ModuleData,
   sourceExercices: ExerciceItem[],
@@ -2409,7 +2427,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           exercices: mergeSourceExercices(parsed.moduleData.exercices, initialData.exercices, deletedExerciceIdsLocal),
         };
 
-        setModuleData(mergedModuleData);
+        setModuleData(forceSourceExerciseTitles(module.id, mergedModuleData, initialData));
         setDeletedCours(Array.isArray(parsed.deletedCours) ? parsed.deletedCours : []);
         setDeletedExercices(Array.isArray(parsed.deletedExercices) ? parsed.deletedExercices : []);
         setLoadedModuleEditorState(false);
@@ -2455,7 +2473,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                   ...localParsed.moduleData,
                   exercices: mergeSourceExercices(localParsed.moduleData.exercices, initialData.exercices),
                 };
-                setModuleData(localMerged);
+                const localResolved = forceSourceExerciseTitles(module.id, localMerged, initialData);
+                setModuleData(localResolved);
                 setDeletedCours([]);
                 setDeletedExercices([]);
                 setLoadedModuleEditorState(true);
@@ -2463,7 +2482,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 supabase.from("module_editor_state").upsert(
                   [{
                     module_id: module.id,
-                    module_data: localMerged as any,
+                    module_data: localResolved as any,
                     deleted_cours: [] as any,
                     deleted_exercices: [] as any,
                     source_fingerprint: sourceFingerprint,
@@ -2605,7 +2624,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               ...md,
               exercices: mergeSourceExercices(md.exercices, initialData.exercices, deletedExerciceIdsFromDb),
             };
-            setModuleData(mergedModuleData);
+            const resolvedModuleData = forceSourceExerciseTitles(module.id, mergedModuleData, initialData);
+            setModuleData(resolvedModuleData);
             setDeletedCours(Array.isArray(latestState.deleted_cours) ? (latestState.deleted_cours as unknown as ContentItem[]) : []);
             setDeletedExercices(Array.isArray(latestState.deleted_exercices) ? (latestState.deleted_exercices as unknown as ExerciceItem[]) : []);
             setLoadedModuleEditorState(true);
@@ -2616,7 +2636,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               supabase.from("module_editor_state").upsert(
                 [{
                   module_id: module.id,
-                  module_data: mergedModuleData as any,
+                  module_data: resolvedModuleData as any,
                   deleted_cours: (latestState.deleted_cours ?? []) as any,
                   deleted_exercices: (latestState.deleted_exercices ?? []) as any,
                   source_fingerprint: sourceFingerprint,
