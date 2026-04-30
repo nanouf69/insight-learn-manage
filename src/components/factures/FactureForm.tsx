@@ -584,8 +584,17 @@ export function FactureForm() {
       const tvaTaux = montantHT > 0 ? Math.round((montantTVA / montantHT) * 100) : 0;
       const sessionLine: any = data.lignes.find((l: any) => l.type === "session" && (l as any).sessionId);
 
+      // Brouillon : on n'attribue PAS de numéro de facture définitif.
+      // On utilise un numéro provisoire (BR-...) tant que la facture n'est pas comptabilisée.
+      const numeroActuel = data.numeroInterne;
+      const isProvisoire =
+        !numeroActuel ||
+        numeroActuel === NUMERO_PLACEHOLDER ||
+        numeroActuel.startsWith("BR-");
+      const numeroBrouillon = isProvisoire ? `BR-${Date.now()}` : numeroActuel;
+
       const payload: any = {
-        numero: data.numeroInterne || data.numero || `BR-${Date.now()}`,
+        numero: numeroBrouillon,
         date_emission: data.date || new Date().toISOString().split('T')[0],
         date_echeance: data.dateEcheance || null,
         type_financement: data.typeFinanceur === "particulier" ? "particulier" : "professionnel",
@@ -603,18 +612,9 @@ export function FactureForm() {
       };
 
       let { error } = await supabase.from("factures").insert(payload);
-      // En cas de doublon de numéro, regénère un numéro libre et retente une fois
+      // En cas de doublon (très rare avec BR-timestamp), régénère un suffixe et retente
       if (error && (error.code === "23505" || /duplicate key|unique constraint/i.test(error.message || ""))) {
-        const { data: rows } = await supabase
-          .from("factures")
-          .select("numero")
-          .order("numero", { ascending: false })
-          .limit(1);
-        const maxNumero = rows?.[0]?.numero ? parseInt(String(rows[0].numero), 10) : FACTURE_COUNTER_START;
-        const nextNumero = String((isNaN(maxNumero) ? FACTURE_COUNTER_START : maxNumero) + 1);
-        try { localStorage.setItem(FACTURE_COUNTER_KEY, String(parseInt(nextNumero, 10) + 1)); } catch {}
-        payload.numero = nextNumero;
-        setData((prev) => ({ ...prev, numero: nextNumero, numeroInterne: nextNumero }));
+        payload.numero = `BR-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
         const retry = await supabase.from("factures").insert(payload);
         error = retry.error;
       }
