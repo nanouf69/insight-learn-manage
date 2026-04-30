@@ -1672,6 +1672,48 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     }
   };
 
+  // Acquitter en bulk : solde restant de toutes les factures non payées de la session
+  const handleBulkAcquitter = async () => {
+    setBulkAcquitterSaving(true);
+    try {
+      const factures = Object.values(facturesFCMap as Record<string, any>).filter(Boolean) as any[];
+      if (factures.length === 0) {
+        toast({ title: "Aucune facture", description: "Générez d'abord les factures.", variant: "destructive" });
+        return;
+      }
+      let count = 0;
+      for (const facture of factures) {
+        const paiementsExist = (paiementsByFactureId as any)?.[facture.id] || [];
+        const totalPaye = paiementsExist.reduce((s: number, p: any) => s + Number(p.montant || 0), 0);
+        const totalDu = Number(facture.montant_ttc || FC_MONTANT_FACTURE);
+        const restant = totalDu - totalPaye;
+        if (restant <= 0.001) continue;
+
+        const { error: insErr } = await supabase
+          .from('facture_paiements' as any)
+          .insert({
+            facture_id: facture.id,
+            date_paiement: bulkAcquitterDate,
+            moyen_paiement: bulkAcquitterMoyen,
+            montant: restant,
+          });
+        if (insErr) { console.error('[bulkAcquitter]', insErr); continue; }
+
+        await supabase
+          .from('factures')
+          .update({ statut: 'payee', date_paiement: bulkAcquitterDate })
+          .eq('id', facture.id);
+        count++;
+      }
+      await Promise.all([refetchFacturesFC(), refetchPaiements()]);
+      toast({ title: "Acquittement effectué", description: `${count} facture(s) acquittée(s) le ${bulkAcquitterDate} • ${bulkAcquitterMoyen}` });
+      setBulkAcquitterOpen(false);
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e?.message || "Acquittement impossible", variant: "destructive" });
+    } finally {
+      setBulkAcquitterSaving(false);
+    }
+  };
 
 
   const normalizedSessionText = `${session.title || ''} ${session.formation || ''}`.toLowerCase();
