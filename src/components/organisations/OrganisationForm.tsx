@@ -61,7 +61,7 @@ export function OrganisationForm({ organisation, onClose }: OrganisationFormProp
   }, [organisation, open]);
 
   const resetForm = () => {
-    setNom(""); setSiret(""); setEmail(""); setTelephone("");
+    setNom(""); setSiret(""); setSiretComplet(""); setEmail(""); setTelephone("");
     setAdresse(""); setCodePostal(""); setVille("");
     setNumeroDeclaration(""); setCodeNaf("");
   };
