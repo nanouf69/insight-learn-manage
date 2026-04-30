@@ -206,6 +206,38 @@ export function FactureForm() {
   const [apprenants, setApprenants] = useState<ApprenantItem[]>([]);
   const [apprenantFinanceur, setApprenantFinanceur] = useState<any | null>(null);
   const [sessions, setSessions] = useState<SessionItem[]>([]);
+  const [organisations, setOrganisations] = useState<OrganisationItem[]>([]);
+
+  // Charge les organisations depuis Supabase
+  useEffect(() => {
+    (async () => {
+      const { data, error } = await supabase
+        .from('organismes')
+        .select('id, nom, email, telephone, adresse, code_postal, ville, siret, siret_complet, code_naf')
+        .order('nom', { ascending: true });
+      if (error) {
+        console.error('[FactureForm] Erreur chargement organismes:', error);
+        return;
+      }
+      const mapped: OrganisationItem[] = (data || []).map((o: any) => {
+        const nom = (o.nom || '').toLowerCase();
+        const type = nom.includes('opco') ? 'opco' : 'client';
+        const adresse = [o.adresse, o.code_postal, o.ville].filter(Boolean).join(', ');
+        return {
+          id: o.id,
+          name: o.nom || '',
+          type,
+          contact: '',
+          email: o.email || '',
+          phone: o.telephone || '',
+          address: adresse,
+          siret: o.siret_complet || o.siret || '',
+          tvaIntra: '',
+        };
+      });
+      setOrganisations(mapped);
+    })();
+  }, []);
 
   const DRAFT_KEY = 'facture_draft_v1';
 
