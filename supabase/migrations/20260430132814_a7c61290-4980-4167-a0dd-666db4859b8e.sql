@@ -1,0 +1,1 @@
+ALTER TABLE public.fournisseur_factures DROP CONSTRAINT IF EXISTS fournisseur_factures_destinataire_check;
