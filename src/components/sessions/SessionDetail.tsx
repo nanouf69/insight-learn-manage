@@ -1641,14 +1641,15 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     try {
       const { error } = await supabase.from('facture_paiements' as any).delete().eq('id', paiementId);
       if (error) throw error;
-      const { data: paiements } = await supabase
+      const { data: paiementsRaw } = await supabase
         .from('facture_paiements' as any)
         .select('montant, date_paiement')
         .eq('facture_id', factureId)
         .order('date_paiement', { ascending: true });
-      const total = (paiements || []).reduce((s: number, p: any) => s + Number(p.montant || 0), 0);
-      const last = (paiements || [])[paiements!.length - 1];
-      const newStatut = total + 0.001 >= Number(montantTtc || FC_MONTANT_FACTURE) ? 'payee' : (paiements?.length ? 'en_attente' : 'en_attente');
+      const paiements = (paiementsRaw || []) as any[];
+      const total = paiements.reduce((s: number, p: any) => s + Number(p.montant || 0), 0);
+      const last = paiements[paiements.length - 1];
+      const newStatut = total + 0.001 >= Number(montantTtc || FC_MONTANT_FACTURE) ? 'payee' : 'en_attente';
       await supabase
         .from('factures')
         .update({
