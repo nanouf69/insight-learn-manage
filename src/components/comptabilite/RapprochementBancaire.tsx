@@ -1070,6 +1070,72 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
 
   const fmt = (n: number) => new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(n);
 
+  // Totaux pour les transactions actuellement filtrées (statut + catégorie + type + ...)
+  const filteredCredits = filtered.filter(t => t.montant > 0).reduce((s, t) => s + t.montant, 0);
+  const filteredDebits = filtered.filter(t => t.montant < 0).reduce((s, t) => s + t.montant, 0);
+  const filteredNet = filteredCredits + filteredDebits;
+
+  // Libellés affichés selon les filtres
+  const statutLabel = (() => {
+    if (filterStatut === "tous") return "Tous statuts";
+    if (filterStatut === "categorise_sans_justif") return "Catégorisé sans justif";
+    return STATUTS.find(s => s.value === filterStatut)?.label || filterStatut;
+  })();
+  const categorieLabel = filterCategorie === "tous"
+    ? "Toutes catégories"
+    : filterCategorie === "sans"
+      ? "Sans catégorie"
+      : (CATEGORIES.find(c => c.value === filterCategorie)?.label || filterCategorie);
+  const typeLabel = filterType === "tous" ? "Tous" : filterType === "credit" ? "Crédits" : "Débits";
+
+  // Export PDF de la liste filtrée
+  const handleDownloadPdf = async () => {
+    try {
+      const { default: jsPDF } = await import("jspdf");
+      const autoTableMod: any = await import("jspdf-autotable");
+      const autoTable = autoTableMod.default || autoTableMod;
+      const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+
+      doc.setFontSize(14);
+      doc.text("Rapprochement bancaire — Export", 14, 14);
+      doc.setFontSize(10);
+      const filtresLigne = `Statut: ${statutLabel} | Catégorie: ${categorieLabel} | Type: ${typeLabel} | Banque: ${filterBanque === "tous" ? "Toutes" : filterBanque} | Année: ${filterAnnee === "tous" ? "Toutes" : filterAnnee} | Mois: ${filterMois === "tous" ? "Tous" : (MOIS_LABELS[parseInt(filterMois) - 1] || filterMois)}`;
+      doc.text(filtresLigne, 14, 21);
+      doc.text(`Généré le ${format(new Date(), "dd/MM/yyyy HH:mm")}`, 14, 27);
+
+      const rows = filtered.map(t => [
+        t.date_operation ? format(new Date(t.date_operation), "dd/MM/yyyy") : "",
+        t.banque || "",
+        (t.libelle || "").slice(0, 80),
+        t.categorie || "—",
+        t.statut || "",
+        fmt(t.montant),
+      ]);
+
+      autoTable(doc, {
+        startY: 32,
+        head: [["Date", "Banque", "Libellé", "Catégorie", "Statut", "Montant"]],
+        body: rows,
+        styles: { fontSize: 8, cellPadding: 1.5 },
+        headStyles: { fillColor: [99, 102, 241] },
+        columnStyles: { 5: { halign: "right" } },
+      });
+
+      const finalY = (doc as any).lastAutoTable?.finalY || 40;
+      doc.setFontSize(10);
+      doc.text(`Total crédits : ${fmt(filteredCredits)}`, 14, finalY + 8);
+      doc.text(`Total débits  : ${fmt(filteredDebits)}`, 14, finalY + 14);
+      doc.setFont(undefined, "bold");
+      doc.text(`Solde net     : ${fmt(filteredNet)}`, 14, finalY + 20);
+      doc.text(`Nombre de transactions : ${filtered.length}`, 120, finalY + 20);
+
+      doc.save(`rapprochement_${format(new Date(), "yyyyMMdd_HHmm")}.pdf`);
+      toast.success("PDF téléchargé");
+    } catch (e: any) {
+      toast.error("Erreur PDF: " + (e?.message || e));
+    }
+  };
+
   // Match apprenant from transaction libelle (search uppercase name in libelle)
   const findApprenantInLibelle = (libelle: string): ApprenantWithSession | null => {
     const upper = libelle.toUpperCase();
@@ -1290,7 +1356,32 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
         </div>
       </div>
 
+      {/* Bannière de totaux des transactions filtrées + export PDF */}
+      <Card className="border-primary/30 bg-primary/5">
+        <CardContent className="py-3 flex flex-wrap items-center gap-4 justify-between">
+          <div className="flex flex-wrap items-center gap-4 text-sm">
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-primary" />
+              <span className="font-medium">{filtered.length} transaction(s)</span>
+              <span className="text-muted-foreground">— {statutLabel} · {categorieLabel} · {typeLabel}</span>
+            </div>
+            <div className="flex items-center gap-3 ml-2">
+              <span className="text-emerald-600 font-semibold">⬆ {fmt(filteredCredits)}</span>
+              <span className="text-destructive font-semibold">⬇ {fmt(filteredDebits)}</span>
+              <span className={cn("font-bold px-2 py-0.5 rounded", filteredNet >= 0 ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700")}>
+                Net : {fmt(filteredNet)}
+              </span>
+            </div>
+          </div>
+          <Button size="sm" variant="default" onClick={handleDownloadPdf} disabled={filtered.length === 0}>
+            <Download className="h-4 w-4 mr-1.5" />
+            Télécharger PDF ({filtered.length})
+          </Button>
+        </CardContent>
+      </Card>
+
       {/* Transactions */}
+
       {loading ? (
         <div className="flex justify-center py-12"><RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" /></div>
       ) : filtered.length === 0 ? (
