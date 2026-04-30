@@ -67,6 +67,26 @@ function fmtDateFR(d: string): string {
   return `${p[2]}/${p[1]}/${p[0]}`;
 }
 
+function fmtMoyenPaiement(m?: string): string {
+  if (!m) return '';
+  const k = String(m).toLowerCase().trim();
+  const map: Record<string, string> = {
+    'virement': 'Virement',
+    'especes': 'Espèces',
+    'espèces': 'Espèces',
+    'cheque': 'Chèque',
+    'chèque': 'Chèque',
+    'cb': 'Carte bancaire',
+    'carte': 'Carte bancaire',
+    'carte_bancaire': 'Carte bancaire',
+    'virement_especes': 'Virement / Espèces',
+    'virement_cheque': 'Virement / Chèque',
+    'especes_cheque': 'Espèces / Chèque',
+  };
+  if (map[k]) return map[k];
+  return k.split('_').map(s => s ? s[0].toUpperCase() + s.slice(1) : s).join(' / ');
+}
+
 function eur(n: number): string {
   return `${(n || 0).toFixed(2).replace('.', ',')} €`;
 }
