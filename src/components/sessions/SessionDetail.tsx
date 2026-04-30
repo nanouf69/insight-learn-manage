@@ -14,6 +14,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Label } from "@/components/ui/label";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { formatDateShortFR, formatDateFR } from "@/lib/safeDateParse";
 import { 
   Calendar, 
   MapPin, 
@@ -3045,11 +3046,15 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                           </div>
                         </div>
                         {paiements.length > 0 && (
-                          <div className="flex flex-wrap gap-1.5 pl-1">
+                          <div className="flex flex-wrap gap-2 pl-1 pt-1 border-t border-dashed">
+                            <span className="text-xs font-medium text-muted-foreground self-center">Paiements :</span>
                             {paiements.map((p) => (
-                              <Badge key={p.id} variant="outline" className="text-xs gap-1 font-normal">
-                                {Number(p.montant).toFixed(2)} € • {p.date_paiement} • {p.moyen_paiement}
-                              </Badge>
+                              <span key={p.id} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-medium">
+                                <CheckCircle className="w-3 h-3 text-emerald-600" />
+                                <span className="font-semibold">{Number(p.montant).toFixed(2)} €</span>
+                                <span className="text-emerald-700">le {formatDateShortFR(p.date_paiement)}</span>
+                                <span className="text-emerald-600">• {p.moyen_paiement?.replace('_', ' ')}</span>
+                              </span>
                             ))}
                           </div>
                         )}
@@ -3066,7 +3071,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
 
     {/* Modale d'acquittement */}
     <Dialog open={!!acquittementApprenant} onOpenChange={(open) => !open && setAcquittementApprenant(null)}>
-      <DialogContent className="sm:max-w-[560px]">
+      <DialogContent className="sm:max-w-[720px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <CheckCircle className="w-5 h-5 text-emerald-600" />
@@ -3103,7 +3108,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                       <div key={p.id} className="flex items-center gap-2 p-2 rounded-md border bg-card text-sm">
                         <span className="font-medium">{Number(p.montant).toFixed(2)} €</span>
                         <span className="text-muted-foreground">•</span>
-                        <span>{p.date_paiement}</span>
+                        <span className="font-medium">{formatDateFR(p.date_paiement)}</span>
                         <span className="text-muted-foreground">•</span>
                         <span className="capitalize">{p.moyen_paiement?.replace('_', ' ')}</span>
                         <div className="flex-1" />
