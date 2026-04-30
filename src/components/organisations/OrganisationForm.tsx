@@ -49,6 +49,7 @@ export function OrganisationForm({ organisation, onClose }: OrganisationFormProp
     if (organisation && open) {
       setNom(organisation.nom || "");
       setSiret(organisation.siret || "");
+      setSiretComplet((organisation as any).siret_complet || "");
       setEmail(organisation.email || "");
       setTelephone(organisation.telephone || "");
       setAdresse(organisation.adresse || "");
