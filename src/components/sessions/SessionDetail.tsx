@@ -2982,6 +2982,20 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                 </Button>
                 <Button
                   size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setBulkAcquitterDate(new Date().toISOString().split('T')[0]);
+                    setBulkAcquitterMoyen('virement');
+                    setBulkAcquitterOpen(true);
+                  }}
+                  disabled={apprenantsInSession.length === 0}
+                  className="gap-2 border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  Tout acquitter
+                </Button>
+                <Button
+                  size="sm"
                   variant="default"
                   onClick={handleBulkSendFactures}
                   disabled={bulkSendingFactures || apprenantsInSession.length === 0}
