@@ -167,24 +167,38 @@ interface FactureData {
 // Compteur séquentiel persistant - démarre à 20260423037
 const FACTURE_COUNTER_KEY = "facture_numero_interne_counter";
 const FACTURE_COUNTER_START = 20260423037;
+// Placeholder affiché tant que la facture n'est pas comptabilisée
+const NUMERO_PLACEHOLDER = "À attribuer (brouillon)";
 
-const generateNumeroFacture = () => {
+// Réserve un numéro définitif uniquement au moment de la comptabilisation,
+// en se basant sur le max présent en base + 1 (et en respectant le compteur local).
+const reserveNumeroFacture = async (): Promise<string> => {
+  let baseLocal = FACTURE_COUNTER_START;
   try {
     const stored = localStorage.getItem(FACTURE_COUNTER_KEY);
     const current = stored ? parseInt(stored, 10) : FACTURE_COUNTER_START;
-    const next = isNaN(current) || current < FACTURE_COUNTER_START ? FACTURE_COUNTER_START : current;
-    localStorage.setItem(FACTURE_COUNTER_KEY, String(next + 1));
-    return String(next);
-  } catch {
-    return String(FACTURE_COUNTER_START);
-  }
+    if (!isNaN(current) && current >= FACTURE_COUNTER_START) baseLocal = current;
+  } catch {}
+  let maxDb = NaN;
+  try {
+    const { data: rows } = await supabase
+      .from("factures")
+      .select("numero")
+      .order("numero", { ascending: false })
+      .limit(1);
+    maxDb = rows?.[0]?.numero ? parseInt(String(rows[0].numero), 10) : NaN;
+  } catch {}
+  const next = Math.max(
+    baseLocal,
+    !isNaN(maxDb) && maxDb >= FACTURE_COUNTER_START ? maxDb + 1 : FACTURE_COUNTER_START
+  );
+  try { localStorage.setItem(FACTURE_COUNTER_KEY, String(next + 1)); } catch {}
+  return String(next);
 };
 
-const __initialNumero = generateNumeroFacture();
-
 const defaultFactureData: FactureData = {
-  numero: __initialNumero,
-  numeroInterne: __initialNumero,
+  numero: NUMERO_PLACEHOLDER,
+  numeroInterne: NUMERO_PLACEHOLDER,
   date: new Date().toISOString().split('T')[0],
   dateEcheance: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
   duplicata: false,
