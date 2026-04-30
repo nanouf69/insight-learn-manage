@@ -3071,7 +3071,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
 
     {/* Modale d'acquittement */}
     <Dialog open={!!acquittementApprenant} onOpenChange={(open) => !open && setAcquittementApprenant(null)}>
-      <DialogContent className="sm:max-w-[560px]">
+      <DialogContent className="sm:max-w-[720px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <CheckCircle className="w-5 h-5 text-emerald-600" />
