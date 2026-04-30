@@ -86,14 +86,18 @@ interface ApprenantItem {
   factureContactTelephone?: string | null;
 }
 
-// Liste des organisations
-const organisations = [
-  { id: 1, name: "Tech Solutions SARL", type: "client", contact: "Marc Dubois", email: "contact@techsolutions.fr", phone: "01 23 45 67 89", address: "15 Rue de l'Innovation, 75001 Paris", siret: "12345678901234", tvaIntra: "FR12345678901" },
-  { id: 2, name: "Groupe Industriel ABC", type: "client", contact: "Claire Moreau", email: "rh@groupe-abc.com", phone: "01 98 76 54 32", address: "Zone Industrielle Nord, 69000 Lyon", siret: "98765432101234", tvaIntra: "FR98765432101" },
-  { id: 3, name: "Caisse des Dépôts et Consignations", type: "client", contact: "Direction Formation", email: "formation@cdc.fr", phone: "01 58 50 00 00", address: "56, rue de Lille, 75356 PARIS 07 SP", siret: "180.020.026.00", tvaIntra: "FR77180020026" },
-  { id: 4, name: "OPCO Mobilités", type: "opco", contact: "Service Prise en Charge", email: "contact@opcomobilites.fr", phone: "0 800 00 99 99", address: "14 rue Scandicci, 93500 Pantin", siret: "85129986300017", tvaIntra: "FR85129986300" },
-  { id: 5, name: "Mairie de Lyon", type: "client", contact: "Jean-Pierre Martin", email: "formation@mairie-lyon.fr", phone: "04 72 10 30 30", address: "Place de la Comédie, 69001 Lyon", siret: "21690123800019", tvaIntra: "FR21690123800" },
-];
+// Liste des organisations — chargée depuis Supabase
+interface OrganisationItem {
+  id: string;
+  name: string;
+  type: string;
+  contact: string;
+  email: string;
+  phone: string;
+  address: string;
+  siret: string;
+  tvaIntra: string;
+}
 
 // Sessions de formation — chargées depuis Supabase
 interface SessionItem {
@@ -144,7 +148,7 @@ interface FactureData {
   duplicata: boolean;
   typeFinanceur: "particulier" | "professionnel";
   selectedApprenantId: string | null;
-  selectedOrganisationId: number | null;
+  selectedOrganisationId: string | null;
   refDossier: string;
   refConvention: string;
   lignes: LigneFacture[];
@@ -202,6 +206,38 @@ export function FactureForm() {
   const [apprenants, setApprenants] = useState<ApprenantItem[]>([]);
   const [apprenantFinanceur, setApprenantFinanceur] = useState<any | null>(null);
   const [sessions, setSessions] = useState<SessionItem[]>([]);
+  const [organisations, setOrganisations] = useState<OrganisationItem[]>([]);
+
+  // Charge les organisations depuis Supabase
+  useEffect(() => {
+    (async () => {
+      const { data, error } = await supabase
+        .from('organismes')
+        .select('id, nom, email, telephone, adresse, code_postal, ville, siret, siret_complet, code_naf')
+        .order('nom', { ascending: true });
+      if (error) {
+        console.error('[FactureForm] Erreur chargement organismes:', error);
+        return;
+      }
+      const mapped: OrganisationItem[] = (data || []).map((o: any) => {
+        const nom = (o.nom || '').toLowerCase();
+        const type = nom.includes('opco') ? 'opco' : 'client';
+        const adresse = [o.adresse, o.code_postal, o.ville].filter(Boolean).join(', ');
+        return {
+          id: o.id,
+          name: o.nom || '',
+          type,
+          contact: '',
+          email: o.email || '',
+          phone: o.telephone || '',
+          address: adresse,
+          siret: o.siret_complet || o.siret || '',
+          tvaIntra: '',
+        };
+      });
+      setOrganisations(mapped);
+    })();
+  }, []);
 
   const DRAFT_KEY = 'facture_draft_v1';
 
