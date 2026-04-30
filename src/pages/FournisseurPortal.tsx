@@ -945,9 +945,8 @@ export default function FournisseurPortal() {
                           type="month"
                           value={factureMoisAnnee}
                           onChange={e => setFactureMoisAnnee(e.target.value)}
-                          required={!!fournisseur?.factures_only}
                         />
-                        <p className="text-xs text-muted-foreground">Indiquez le mois et l'année que cette facture couvre</p>
+                        <p className="text-xs text-muted-foreground">Indiquez le mois et l'année que cette facture couvre (ex : 04/2026)</p>
                       </div>
                     )}
                     <div className="grid grid-cols-2 gap-4">
