@@ -202,6 +202,8 @@ const defaultFactureData: FactureData = {
   ftDateDebut: "",
   ftDateFin: "",
   ftHeures: "",
+  ftMontantHT: "",
+  ftMontantTTC: "",
 };
 
 export function FactureForm() {
