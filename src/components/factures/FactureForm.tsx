@@ -148,7 +148,7 @@ interface FactureData {
   duplicata: boolean;
   typeFinanceur: "particulier" | "professionnel";
   selectedApprenantId: string | null;
-  selectedOrganisationId: number | null;
+  selectedOrganisationId: string | null;
   refDossier: string;
   refConvention: string;
   lignes: LigneFacture[];
