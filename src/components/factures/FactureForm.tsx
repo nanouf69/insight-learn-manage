@@ -875,6 +875,36 @@ export function FactureForm() {
                     </div>
                   </div>
                 )}
+
+                {/* Sélection de l'apprenant rattaché à la facture (financée par l'organisation) */}
+                <div className="pt-4 border-t space-y-3">
+                  <h4 className="font-medium text-sm flex items-center gap-2"><User className="w-4 h-4" />Apprenant concerné (pré-remplit la formation)</h4>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input placeholder="Rechercher un apprenant..." className="pl-10" value={searchApprenant} onChange={(e) => setSearchApprenant(e.target.value)} />
+                  </div>
+                  <ScrollArea className="h-[260px] rounded-md border">
+                    <div className="p-2 space-y-2">
+                      {filteredApprenants.map((apprenant) => (
+                        <div key={apprenant.id} onClick={() => updateField('selectedApprenantId', apprenant.id)} className={`p-3 rounded-lg border cursor-pointer transition-all ${data.selectedApprenantId === apprenant.id ? "border-primary bg-primary/5" : "border-border hover:border-primary/50 hover:bg-muted/50"}`}>
+                          <div className="flex items-center gap-3">
+                            <Avatar className="w-10 h-10"><AvatarImage src={apprenant.avatar} /><AvatarFallback>{apprenant.name.split(" ").map(n => n[0]).join("")}</AvatarFallback></Avatar>
+                            <div className="flex-1">
+                              <div className="flex items-center justify-between"><h5 className="font-semibold text-sm">{apprenant.name}</h5>{data.selectedApprenantId === apprenant.id && <Check className="w-4 h-4 text-primary" />}</div>
+                              <p className="text-xs text-muted-foreground">{apprenant.email}</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                  {selectedApprenant && (
+                    <div className="p-3 bg-primary/5 rounded-lg border border-primary/20 text-sm">
+                      <span className="text-muted-foreground">Apprenant sélectionné : </span>
+                      <span className="font-semibold">{selectedApprenant.name}</span>
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
           )}
