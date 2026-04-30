@@ -286,6 +286,8 @@ export default function FournisseurPortal() {
   const [factureMoisAnnee, setFactureMoisAnnee] = useState("");
   const [factureMoisMultiples, setFactureMoisMultiples] = useState<string[]>([]);
   const [isUploadingFacture, setIsUploadingFacture] = useState(false);
+  const factureFileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedFactureFileName, setSelectedFactureFileName] = useState("");
 
   // Load fournisseur by token
   useEffect(() => {
@@ -527,7 +529,7 @@ export default function FournisseurPortal() {
   const handleUploadFacture = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fournisseur || !token) return;
-    const fileInput = document.getElementById('facture-file') as HTMLInputElement;
+    const fileInput = factureFileInputRef.current ?? (document.getElementById('facture-file') as HTMLInputElement | null);
     const file = fileInput?.files?.[0];
     const isFormateur = !!fournisseur.formateur_id;
     const moisValue = isFormateur
@@ -571,7 +573,7 @@ export default function FournisseurPortal() {
       if (!response.ok || data?.error) throw new Error(data?.error || `Erreur ${response.status}`);
 
       toast({ title: "Facture envoyée", description: `Facture envoyée avec succès.` });
-      setFactureMontant(""); setFactureDescription("Prestation de services"); setFactureMoisAnnee(""); setFactureMoisMultiples([]); fileInput.value = "";
+      setFactureMontant(""); setFactureDescription("Prestation de services"); setFactureMoisAnnee(""); setFactureMoisMultiples([]); setSelectedFactureFileName(""); if (fileInput) fileInput.value = "";
       const { data: refreshed } = await supabase.from('fournisseur_factures').select('*').eq('fournisseur_id', fournisseur.id).order('created_at', { ascending: false });
       if (refreshed) setFactures(refreshed as FournisseurFacture[]);
     } catch (err: any) {
