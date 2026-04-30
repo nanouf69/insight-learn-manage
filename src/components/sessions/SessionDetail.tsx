@@ -599,6 +599,31 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     enabled: !!session?.id && open,
   });
 
+  // Charger tous les paiements pour les factures de cette session
+  const factureIdsForPaiements = Object.values(facturesFCMap as Record<string, any>).map((f: any) => f?.id).filter(Boolean);
+  const { data: paiementsByFactureId = {}, refetch: refetchPaiements } = useQuery({
+    queryKey: ['session-facture-paiements', session?.id, factureIdsForPaiements.join(',')],
+    queryFn: async () => {
+      if (!factureIdsForPaiements.length) return {} as Record<string, any[]>;
+      const { data, error } = await supabase
+        .from('facture_paiements' as any)
+        .select('*')
+        .in('facture_id', factureIdsForPaiements)
+        .order('date_paiement', { ascending: true });
+      if (error) {
+        console.error('[SessionDetail] Erreur chargement facture_paiements:', error);
+        return {} as Record<string, any[]>;
+      }
+      const map: Record<string, any[]> = {};
+      (data || []).forEach((row: any) => {
+        if (!map[row.facture_id]) map[row.facture_id] = [];
+        map[row.facture_id].push(row);
+      });
+      return map;
+    },
+    enabled: !!session?.id && open && factureIdsForPaiements.length > 0,
+  });
+
   // Charger les formateurs de cette session
   const { data: formateursInSession = [], isLoading: loadingFormateurs, refetch: refetchFormateurs } = useQuery({
     queryKey: ['session-formateurs', session?.id],
