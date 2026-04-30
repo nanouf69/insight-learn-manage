@@ -1356,7 +1356,32 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
         </div>
       </div>
 
+      {/* Bannière de totaux des transactions filtrées + export PDF */}
+      <Card className="border-primary/30 bg-primary/5">
+        <CardContent className="py-3 flex flex-wrap items-center gap-4 justify-between">
+          <div className="flex flex-wrap items-center gap-4 text-sm">
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-primary" />
+              <span className="font-medium">{filtered.length} transaction(s)</span>
+              <span className="text-muted-foreground">— {statutLabel} · {categorieLabel} · {typeLabel}</span>
+            </div>
+            <div className="flex items-center gap-3 ml-2">
+              <span className="text-emerald-600 font-semibold">⬆ {fmt(filteredCredits)}</span>
+              <span className="text-destructive font-semibold">⬇ {fmt(filteredDebits)}</span>
+              <span className={cn("font-bold px-2 py-0.5 rounded", filteredNet >= 0 ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700")}>
+                Net : {fmt(filteredNet)}
+              </span>
+            </div>
+          </div>
+          <Button size="sm" variant="default" onClick={handleDownloadPdf} disabled={filtered.length === 0}>
+            <Download className="h-4 w-4 mr-1.5" />
+            Télécharger PDF ({filtered.length})
+          </Button>
+        </CardContent>
+      </Card>
+
       {/* Transactions */}
+
       {loading ? (
         <div className="flex justify-center py-12"><RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" /></div>
       ) : filtered.length === 0 ? (
