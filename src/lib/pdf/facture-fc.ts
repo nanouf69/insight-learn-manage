@@ -258,7 +258,8 @@ export async function generateFactureFC(
     yT += 5;
     const details: string[] = [];
     if (data.dateAcquittement) details.push(`le ${fmtDateFR(data.dateAcquittement)}`);
-    if (data.moyenPaiement) details.push(`par ${data.moyenPaiement}`);
+    const moyenLisible = fmtMoyenPaiement(data.moyenPaiement);
+    if (moyenLisible) details.push(`par ${moyenLisible}`);
     if (details.length) doc.text(`Réglée ${details.join(' ')}`, mr, yT, { align: 'right' });
     doc.setTextColor(0, 0, 0);
 
