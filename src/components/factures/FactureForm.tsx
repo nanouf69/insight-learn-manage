@@ -167,24 +167,38 @@ interface FactureData {
 // Compteur séquentiel persistant - démarre à 20260423037
 const FACTURE_COUNTER_KEY = "facture_numero_interne_counter";
 const FACTURE_COUNTER_START = 20260423037;
+// Placeholder affiché tant que la facture n'est pas comptabilisée
+const NUMERO_PLACEHOLDER = "À attribuer (brouillon)";
 
-const generateNumeroFacture = () => {
+// Réserve un numéro définitif uniquement au moment de la comptabilisation,
+// en se basant sur le max présent en base + 1 (et en respectant le compteur local).
+const reserveNumeroFacture = async (): Promise<string> => {
+  let baseLocal = FACTURE_COUNTER_START;
   try {
     const stored = localStorage.getItem(FACTURE_COUNTER_KEY);
     const current = stored ? parseInt(stored, 10) : FACTURE_COUNTER_START;
-    const next = isNaN(current) || current < FACTURE_COUNTER_START ? FACTURE_COUNTER_START : current;
-    localStorage.setItem(FACTURE_COUNTER_KEY, String(next + 1));
-    return String(next);
-  } catch {
-    return String(FACTURE_COUNTER_START);
-  }
+    if (!isNaN(current) && current >= FACTURE_COUNTER_START) baseLocal = current;
+  } catch {}
+  let maxDb = NaN;
+  try {
+    const { data: rows } = await supabase
+      .from("factures")
+      .select("numero")
+      .order("numero", { ascending: false })
+      .limit(1);
+    maxDb = rows?.[0]?.numero ? parseInt(String(rows[0].numero), 10) : NaN;
+  } catch {}
+  const next = Math.max(
+    baseLocal,
+    !isNaN(maxDb) && maxDb >= FACTURE_COUNTER_START ? maxDb + 1 : FACTURE_COUNTER_START
+  );
+  try { localStorage.setItem(FACTURE_COUNTER_KEY, String(next + 1)); } catch {}
+  return String(next);
 };
 
-const __initialNumero = generateNumeroFacture();
-
 const defaultFactureData: FactureData = {
-  numero: __initialNumero,
-  numeroInterne: __initialNumero,
+  numero: NUMERO_PLACEHOLDER,
+  numeroInterne: NUMERO_PLACEHOLDER,
   date: new Date().toISOString().split('T')[0],
   dateEcheance: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
   duplicata: false,
@@ -253,31 +267,14 @@ export function FactureForm() {
 
   const DRAFT_KEY = 'facture_draft_v1';
 
-  // Toujours partir d'une facture vierge — ne pas restaurer les anciens brouillons
-  // + resynchroniser le numéro de facture avec le max présent en base pour éviter les doublons
+  // Toujours partir d'une facture vierge — ne pas restaurer les anciens brouillons.
+  // Le numéro de facture définitif n'est attribué qu'au moment de la comptabilisation.
   useEffect(() => {
     try {
       localStorage.removeItem(DRAFT_KEY);
     } catch (e) {
       console.warn("Impossible de nettoyer le brouillon", e);
     }
-    (async () => {
-      try {
-        const { data: rows } = await supabase
-          .from("factures")
-          .select("numero")
-          .order("numero", { ascending: false })
-          .limit(1);
-        const maxNumero = rows?.[0]?.numero ? parseInt(String(rows[0].numero), 10) : NaN;
-        if (!isNaN(maxNumero) && maxNumero >= FACTURE_COUNTER_START) {
-          const next = maxNumero + 1;
-          try { localStorage.setItem(FACTURE_COUNTER_KEY, String(next + 1)); } catch {}
-          setData((prev) => ({ ...prev, numero: String(next), numeroInterne: String(next) }));
-        }
-      } catch (e) {
-        console.warn("Impossible de resynchroniser le numéro de facture", e);
-      }
-    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -587,8 +584,17 @@ export function FactureForm() {
       const tvaTaux = montantHT > 0 ? Math.round((montantTVA / montantHT) * 100) : 0;
       const sessionLine: any = data.lignes.find((l: any) => l.type === "session" && (l as any).sessionId);
 
+      // Brouillon : on n'attribue PAS de numéro de facture définitif.
+      // On utilise un numéro provisoire (BR-...) tant que la facture n'est pas comptabilisée.
+      const numeroActuel = data.numeroInterne;
+      const isProvisoire =
+        !numeroActuel ||
+        numeroActuel === NUMERO_PLACEHOLDER ||
+        numeroActuel.startsWith("BR-");
+      const numeroBrouillon = isProvisoire ? `BR-${Date.now()}` : numeroActuel;
+
       const payload: any = {
-        numero: data.numeroInterne || data.numero || `BR-${Date.now()}`,
+        numero: numeroBrouillon,
         date_emission: data.date || new Date().toISOString().split('T')[0],
         date_echeance: data.dateEcheance || null,
         type_financement: data.typeFinanceur === "particulier" ? "particulier" : "professionnel",
@@ -606,18 +612,9 @@ export function FactureForm() {
       };
 
       let { error } = await supabase.from("factures").insert(payload);
-      // En cas de doublon de numéro, regénère un numéro libre et retente une fois
+      // En cas de doublon (très rare avec BR-timestamp), régénère un suffixe et retente
       if (error && (error.code === "23505" || /duplicate key|unique constraint/i.test(error.message || ""))) {
-        const { data: rows } = await supabase
-          .from("factures")
-          .select("numero")
-          .order("numero", { ascending: false })
-          .limit(1);
-        const maxNumero = rows?.[0]?.numero ? parseInt(String(rows[0].numero), 10) : FACTURE_COUNTER_START;
-        const nextNumero = String((isNaN(maxNumero) ? FACTURE_COUNTER_START : maxNumero) + 1);
-        try { localStorage.setItem(FACTURE_COUNTER_KEY, String(parseInt(nextNumero, 10) + 1)); } catch {}
-        payload.numero = nextNumero;
-        setData((prev) => ({ ...prev, numero: nextNumero, numeroInterne: nextNumero }));
+        payload.numero = `BR-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
         const retry = await supabase.from("factures").insert(payload);
         error = retry.error;
       }
@@ -754,8 +751,18 @@ export function FactureForm() {
       const tvaTaux = montantHT > 0 ? Math.round((montantTVA / montantHT) * 100) : 0;
 
       const sessionLine: any = data.lignes.find((l: any) => l.type === "session" && l.sessionId);
+
+      // Réservation du numéro de facture définitif UNIQUEMENT au moment de la comptabilisation.
+      // Si le formulaire affiche encore un placeholder ou un numéro provisoire BR-, on en attribue un.
+      const numeroActuel = data.numeroInterne;
+      const besoinNouveauNumero =
+        !numeroActuel ||
+        numeroActuel === NUMERO_PLACEHOLDER ||
+        numeroActuel.startsWith("BR-");
+      let numeroDefinitif = besoinNouveauNumero ? await reserveNumeroFacture() : numeroActuel;
+
       const payload: any = {
-        numero: data.numeroInterne || data.numero,
+        numero: numeroDefinitif,
         date_emission: data.date,
         date_echeance: data.dateEcheance || null,
         type_financement: data.typeFinanceur === "particulier" ? "particulier" : "professionnel",
@@ -772,10 +779,22 @@ export function FactureForm() {
         session_id: sessionLine?.sessionId || null,
       };
 
-      const { error } = await supabase.from("factures").insert(payload);
+      let { error } = await supabase.from("factures").insert(payload);
+      // Si collision (course concurrente), on régénère un numéro libre et retente
+      let attempts = 0;
+      while (error && attempts < 3 && (error.code === "23505" || /duplicate key|unique constraint/i.test(error.message || ""))) {
+        numeroDefinitif = await reserveNumeroFacture();
+        payload.numero = numeroDefinitif;
+        const retry = await supabase.from("factures").insert(payload);
+        error = retry.error;
+        attempts += 1;
+      }
       if (error) throw error;
 
-      toast.success("Facture enregistrée en comptabilité");
+      // Met à jour l'UI avec le numéro définitif réservé
+      setData((prev) => ({ ...prev, numero: numeroDefinitif, numeroInterne: numeroDefinitif }));
+
+      toast.success(`Facture N°${numeroDefinitif} enregistrée en comptabilité`);
       // Nettoyer le brouillon une fois la facture validée
       try { localStorage.removeItem(DRAFT_KEY); } catch {}
     } catch (e: any) {
