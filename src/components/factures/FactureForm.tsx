@@ -1233,6 +1233,32 @@ export function FactureForm() {
                 />
               </div>
             </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="ftMontantHT">Montant total HT (€)</Label>
+                <Input
+                  id="ftMontantHT"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder={calculerTotalHT().toFixed(2)}
+                  value={data.ftMontantHT || ""}
+                  onChange={(e) => updateField('ftMontantHT', e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="ftMontantTTC">Montant total TTC (€)</Label>
+                <Input
+                  id="ftMontantTTC"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder={calculerTotalTTC().toFixed(2)}
+                  value={data.ftMontantTTC || ""}
+                  onChange={(e) => updateField('ftMontantTTC', e.target.value)}
+                />
+              </div>
+            </div>
             <p className="text-xs text-muted-foreground">
               Laissez vide pour utiliser automatiquement les valeurs des lignes de prestation.
             </p>
