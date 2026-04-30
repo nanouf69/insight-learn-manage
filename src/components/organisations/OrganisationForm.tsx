@@ -12,6 +12,7 @@ type Organisation = {
   id: string;
   nom: string;
   siret: string | null;
+  siret_complet?: string | null;
   email: string | null;
   telephone: string | null;
   adresse: string | null;
