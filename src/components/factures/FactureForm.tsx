@@ -156,6 +156,10 @@ interface FactureData {
   acquittee: boolean;
   datePaiement: string;
   moyenPaiement: string;
+  ftStagiaireNom?: string;
+  ftDateDebut?: string;
+  ftDateFin?: string;
+  ftHeures?: string;
 }
 
 // Compteur séquentiel persistant - démarre à 20260423037
@@ -192,6 +196,10 @@ const defaultFactureData: FactureData = {
   acquittee: false,
   datePaiement: "",
   moyenPaiement: "virement",
+  ftStagiaireNom: "",
+  ftDateDebut: "",
+  ftDateFin: "",
+  ftHeures: "",
 };
 
 export function FactureForm() {
@@ -669,12 +677,16 @@ export function FactureForm() {
     // Bloc spécifique France Travail (mentions obligatoires)
     const isFranceTravail = data.moyenPaiement === "france_travail" || (data.typeFinanceur === "professionnel" && selectedOrganisation && /france.?travail/i.test(selectedOrganisation.name || ""));
     const franceTravailLigne = data.lignes.find((l: any) => l.dateDebut || l.dateFin || l.quantite);
-    const ftDateDebut = franceTravailLigne?.dateDebut ? formatDate(franceTravailLigne.dateDebut) : '—';
-    const ftDateFin = franceTravailLigne?.dateFin ? formatDate(franceTravailLigne.dateFin) : '—';
-    const ftHeures = data.lignes.reduce((sum, l: any) => sum + (Number(l.quantite) || 0), 0);
-    const ftStagiaireNom = selectedApprenant?.name || data.lignes.map((l: any) => l.stagiaire).filter(Boolean).join(', ') || '—';
+    const autoDateDebut = franceTravailLigne?.dateDebut ? formatDate(franceTravailLigne.dateDebut) : '—';
+    const autoDateFin = franceTravailLigne?.dateFin ? formatDate(franceTravailLigne.dateFin) : '—';
+    const autoHeures = data.lignes.reduce((sum, l: any) => sum + (Number(l.quantite) || 0), 0);
+    const autoStagiaireNom = selectedApprenant?.name || data.lignes.map((l: any) => l.stagiaire).filter(Boolean).join(', ') || '—';
+    const ftStagiaireNom = (data.ftStagiaireNom && data.ftStagiaireNom.trim()) || autoStagiaireNom;
+    const ftDateDebut = data.ftDateDebut ? formatDate(data.ftDateDebut) : autoDateDebut;
+    const ftDateFin = data.ftDateFin ? formatDate(data.ftDateFin) : autoDateFin;
+    const ftHeures = data.ftHeures !== undefined && data.ftHeures !== "" ? Number(data.ftHeures) : autoHeures;
     const franceTravailHTML = isFranceTravail
-      ? `<div style="margin-top:20px;padding:15px;background:#eff6ff;border:2px solid #2563eb;border-radius:8px;font-size:12px;"><h4 style="margin:0 0 10px 0;color:#1e40af;font-size:13px;">Mentions France Travail</h4><p style="margin:4px 0;"><strong>Nom et prénom du stagiaire :</strong> ${ftStagiaireNom}</p><p style="margin:4px 0;"><strong>Dates de formation :</strong> du ${ftDateDebut} au ${ftDateFin}</p><p style="margin:4px 0;"><strong>Nombre d'heures-stagiaire effectivement réalisé :</strong> ${ftHeures.toFixed(2)} h</p><p style="margin:4px 0;"><strong>Montant total à payer TTC :</strong> ${calculerTotalTTC().toFixed(2)} €</p></div>`
+      ? `<div style="margin-top:20px;padding:15px;background:#eff6ff;border:2px solid #2563eb;border-radius:8px;font-size:12px;"><h4 style="margin:0 0 10px 0;color:#1e40af;font-size:13px;">Mentions France Travail</h4><p style="margin:4px 0;"><strong>Nom et prénom du stagiaire :</strong> ${ftStagiaireNom}</p><p style="margin:4px 0;"><strong>Dates de formation :</strong> du ${ftDateDebut} au ${ftDateFin}</p><p style="margin:4px 0;"><strong>Nombre d'heures-stagiaire effectivement réalisé :</strong> ${Number(ftHeures).toFixed(2)} h</p><p style="margin:4px 0;"><strong>Montant total à payer TTC :</strong> ${calculerTotalTTC().toFixed(2)} €</p></div>`
       : '';
 
     const acquitteHTML = data.acquittee
@@ -1166,6 +1178,61 @@ export function FactureForm() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Mentions France Travail (éditables) */}
+      {(data.moyenPaiement === "france_travail" || (data.typeFinanceur === "professionnel" && selectedOrganisation && /france.?travail/i.test(selectedOrganisation.name || ""))) && (
+        <Card className="border-blue-500 bg-blue-50/40">
+          <CardHeader>
+            <CardTitle className="text-base text-blue-900">Mentions France Travail</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="ftStagiaireNom">Nom et prénom du stagiaire</Label>
+              <Input
+                id="ftStagiaireNom"
+                placeholder={selectedApprenant?.name || "Nom Prénom"}
+                value={data.ftStagiaireNom || ""}
+                onChange={(e) => updateField('ftStagiaireNom', e.target.value)}
+              />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="ftDateDebut">Date de début de formation</Label>
+                <Input
+                  id="ftDateDebut"
+                  type="date"
+                  value={data.ftDateDebut || ""}
+                  onChange={(e) => updateField('ftDateDebut', e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="ftDateFin">Date de fin de formation</Label>
+                <Input
+                  id="ftDateFin"
+                  type="date"
+                  value={data.ftDateFin || ""}
+                  onChange={(e) => updateField('ftDateFin', e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="ftHeures">Nombre d'heures-stagiaire réalisées</Label>
+                <Input
+                  id="ftHeures"
+                  type="number"
+                  step="0.25"
+                  min="0"
+                  placeholder="Ex: 35"
+                  value={data.ftHeures || ""}
+                  onChange={(e) => updateField('ftHeures', e.target.value)}
+                />
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Laissez vide pour utiliser automatiquement les valeurs des lignes de prestation.
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Acquittement de la facture */}
       <Card className={data.acquittee ? "border-emerald-500 bg-emerald-50/50" : ""}>
