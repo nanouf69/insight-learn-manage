@@ -1,0 +1,1 @@
+DELETE FROM public.module_editor_state WHERE module_id = 9;
