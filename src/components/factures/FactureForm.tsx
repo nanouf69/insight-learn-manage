@@ -196,6 +196,10 @@ const defaultFactureData: FactureData = {
   acquittee: false,
   datePaiement: "",
   moyenPaiement: "virement",
+  ftStagiaireNom: "",
+  ftDateDebut: "",
+  ftDateFin: "",
+  ftHeures: "",
 };
 
 export function FactureForm() {
