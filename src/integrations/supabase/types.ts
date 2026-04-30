@@ -1062,6 +1062,47 @@ export type Database = {
         }
         Relationships: []
       }
+      facture_paiements: {
+        Row: {
+          created_at: string
+          date_paiement: string
+          facture_id: string
+          id: string
+          montant: number
+          moyen_paiement: string
+          notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date_paiement: string
+          facture_id: string
+          id?: string
+          montant?: number
+          moyen_paiement: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date_paiement?: string
+          facture_id?: string
+          id?: string
+          montant?: number
+          moyen_paiement?: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "facture_paiements_facture_id_fkey"
+            columns: ["facture_id"]
+            isOneToOne: false
+            referencedRelation: "factures"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       factures: {
         Row: {
           apprenant_id: string | null
