@@ -469,7 +469,9 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   const [acquittementApprenant, setAcquittementApprenant] = useState<any | null>(null);
   const [acquittementDate, setAcquittementDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [acquittementMoyen, setAcquittementMoyen] = useState<string>('virement');
+  const [acquittementMontant, setAcquittementMontant] = useState<string>('');
   const [acquittementSaving, setAcquittementSaving] = useState(false);
+  const [acquittementDeleting, setAcquittementDeleting] = useState<string | null>(null);
   const [bulkPreview, setBulkPreview] = useState<{ template: any; apprenants: any[]; previewBody: string; previewSubject: string; editedBody?: string; editedSubject?: string } | null>(null);
   const [bulkPreviewEditing, setBulkPreviewEditing] = useState(false);
   const [editingMailType, setEditingMailType] = useState<any | null>(null);
