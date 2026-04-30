@@ -1,8 +1,11 @@
-// Bilan Exercices TAXI — Regroupe TOUS les exercices par matière (sauf Français, Anglais, Marketing, Réglem. Spécifique VTC)
+// Bilan Exercices TAXI — 5 premières matières du Bilan VTC (T3P, Gestion, Sécurité, Français, Anglais)
+// + Réglementation Nationale & Locale (spécifique TAXI)
 
 import { T3P_EXERCICE_PARTIE_1, T3P_EXERCICE_PARTIE_2 } from "./exercices/t3p-exercices-data";
 import { GESTION_EXERCICES } from "./exercices/gestion-exercices-data";
 import { SECURITE_ROUTIERE_EXERCICES } from "./exercices/securite-routiere-exercices-data";
+import { FRANCAIS_EXERCICES } from "./exercices/francais-exercices-data";
+import { ANGLAIS_EXERCICES } from "./exercices/anglais-exercices-data";
 import {
   REGLEMENTATION_NATIONALE_EXERCICES,
   REGLEMENTATION_LOCALE_EXERCICES,
@@ -39,6 +42,24 @@ export const BILAN_EXERCICES_TAXI = [
     actif: true,
     questions: renumberQuestions(
       SECURITE_ROUTIERE_EXERCICES.flatMap(e => e.questions || [])
+    ),
+  },
+  {
+    id: 205,
+    titre: "📒 Bilan Français",
+    sousTitre: `${FRANCAIS_EXERCICES.reduce((acc, e) => acc + (e.questions?.length || 0), 0)} questions — Compréhension et expression écrite`,
+    actif: true,
+    questions: renumberQuestions(
+      FRANCAIS_EXERCICES.flatMap(e => e.questions || [])
+    ),
+  },
+  {
+    id: 206,
+    titre: "📔 Bilan Anglais — Partie 1 + 2 + 3 + 4",
+    sousTitre: `${ANGLAIS_EXERCICES.reduce((acc, e) => acc + (e.questions?.length || 0), 0)} questions — Expression et compréhension en anglais`,
+    actif: true,
+    questions: renumberQuestions(
+      ANGLAIS_EXERCICES.flatMap(e => e.questions || [])
     ),
   },
   {
