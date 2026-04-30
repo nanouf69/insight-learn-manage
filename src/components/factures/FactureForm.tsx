@@ -160,6 +160,8 @@ interface FactureData {
   ftDateDebut?: string;
   ftDateFin?: string;
   ftHeures?: string;
+  ftMontantHT?: string;
+  ftMontantTTC?: string;
 }
 
 // Compteur séquentiel persistant - démarre à 20260423037
