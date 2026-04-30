@@ -156,6 +156,10 @@ interface FactureData {
   acquittee: boolean;
   datePaiement: string;
   moyenPaiement: string;
+  ftStagiaireNom?: string;
+  ftDateDebut?: string;
+  ftDateFin?: string;
+  ftHeures?: string;
 }
 
 // Compteur séquentiel persistant - démarre à 20260423037
