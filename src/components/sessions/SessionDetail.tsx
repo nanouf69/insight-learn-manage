@@ -3045,11 +3045,15 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                           </div>
                         </div>
                         {paiements.length > 0 && (
-                          <div className="flex flex-wrap gap-1.5 pl-1">
+                          <div className="flex flex-wrap gap-2 pl-1 pt-1 border-t border-dashed">
+                            <span className="text-xs font-medium text-muted-foreground self-center">Paiements :</span>
                             {paiements.map((p) => (
-                              <Badge key={p.id} variant="outline" className="text-xs gap-1 font-normal">
-                                {Number(p.montant).toFixed(2)} € • {p.date_paiement} • {p.moyen_paiement}
-                              </Badge>
+                              <span key={p.id} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-medium">
+                                <CheckCircle className="w-3 h-3 text-emerald-600" />
+                                <span className="font-semibold">{Number(p.montant).toFixed(2)} €</span>
+                                <span className="text-emerald-700">le {formatDateShortFR(p.date_paiement)}</span>
+                                <span className="text-emerald-600">• {p.moyen_paiement?.replace('_', ' ')}</span>
+                              </span>
                             ))}
                           </div>
                         )}
