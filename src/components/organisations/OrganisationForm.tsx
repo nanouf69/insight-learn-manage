@@ -36,6 +36,7 @@ export function OrganisationForm({ organisation, onClose }: OrganisationFormProp
 
   const [nom, setNom] = useState("");
   const [siret, setSiret] = useState("");
+  const [siretComplet, setSiretComplet] = useState("");
   const [email, setEmail] = useState("");
   const [telephone, setTelephone] = useState("");
   const [adresse, setAdresse] = useState("");
