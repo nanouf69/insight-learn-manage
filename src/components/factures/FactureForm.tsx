@@ -253,17 +253,12 @@ export function FactureForm() {
 
   const DRAFT_KEY = 'facture_draft_v1';
 
-  // Recharger le brouillon au montage (s'il existe)
+  // Toujours partir d'une facture vierge — ne pas restaurer les anciens brouillons
   useEffect(() => {
     try {
-      const raw = localStorage.getItem(DRAFT_KEY);
-      if (raw) {
-        const draft = JSON.parse(raw);
-        setData((prev) => ({ ...prev, ...draft }));
-        toast.info("Brouillon précédent restauré");
-      }
+      localStorage.removeItem(DRAFT_KEY);
     } catch (e) {
-      console.warn("Impossible de charger le brouillon", e);
+      console.warn("Impossible de nettoyer le brouillon", e);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
