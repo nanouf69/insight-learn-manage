@@ -49,8 +49,9 @@ const formatDateFR = (iso: string) => {
 const normalizeDemi = (d: string) => (d || "").toLowerCase().replace(/_/g, "-").trim();
 const labelDemi = (d: string) => {
   const k = normalizeDemi(d);
-  if (k === "matin") return "Matin (09h00 — 12h00)";
+  if (k === "matin") return "Matin (08h30 — 12h00)";
   if (k === "apres-midi" || k === "après-midi") return "Après-midi (13h00 — 17h00)";
+  if (k === "soir") return "Soir (18h00 — 21h00)";
   return d;
 };
 
@@ -73,10 +74,10 @@ const formatShortDate = (iso?: string | null) => {
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 const buildEmargementHTML = (
-  groupedByDay: Array<[string, { matin?: EmargementRow; apresMidi?: EmargementRow }]>,
+  groupedByDay: Array<[string, { matin?: EmargementRow; apresMidi?: EmargementRow; soir?: EmargementRow }]>,
   apprenant: ApprenantInfo | null
 ) => {
-  const formation = apprenant?.formation_choisie || apprenant?.type_apprenant || "Formation continue";
+  const formation = apprenant?.formation_choisie || apprenant?.type_apprenant || "Formation";
   const adresse = [apprenant?.adresse, [apprenant?.code_postal, apprenant?.ville].filter(Boolean).join(" ")]
     .filter(Boolean)
     .join(" ");
@@ -87,8 +88,11 @@ const buildEmargementHTML = (
       ? `du ${formatShortDate(apprenant?.date_debut_formation)} au ${formatShortDate(apprenant?.date_fin_formation)}`
       : "—";
 
+  // Inclure la colonne soir uniquement si au moins une signature soir existe
+  const hasSoir = groupedByDay.some(([, v]) => !!v.soir);
+
   const rowsHtml = groupedByDay
-    .map(([date, { matin, apresMidi }]) => {
+    .map(([date, { matin, apresMidi, soir }]) => {
       const jourLabel = capitalize(formatDateFR(date));
       const sigImg = (r?: EmargementRow) =>
         r?.signature_data_url
@@ -97,10 +101,11 @@ const buildEmargementHTML = (
       return `
         <tr>
           <td class="jour">${jourLabel}</td>
-          <td class="horaire">09:00 - 12:00</td>
+          <td class="horaire">08:30 - 12:00</td>
           <td class="sig">${sigImg(matin)}</td>
           <td class="horaire">13:00 - 17:00</td>
           <td class="sig">${sigImg(apresMidi)}</td>
+          ${hasSoir ? `<td class="horaire">18:00 - 21:00</td><td class="sig">${sigImg(soir)}</td>` : ""}
         </tr>`;
     })
     .join("");
@@ -151,16 +156,18 @@ const buildEmargementHTML = (
         <th rowspan="2" style="width:160px;">Jour</th>
         <th colspan="2">Matin</th>
         <th colspan="2">Apres-midi</th>
+        ${hasSoir ? `<th colspan="2">Soir</th>` : ""}
       </tr>
       <tr class="sub">
         <th>Horaire</th>
         <th>Signature du stagiaire</th>
         <th>Horaire</th>
         <th>Signature du stagiaire</th>
+        ${hasSoir ? `<th>Horaire</th><th>Signature du stagiaire</th>` : ""}
       </tr>
     </thead>
     <tbody>
-      ${rowsHtml || `<tr><td colspan="5" style="padding:20px;color:#999;">Aucune signature enregistrée</td></tr>`}
+      ${rowsHtml || `<tr><td colspan="${hasSoir ? 7 : 5}" style="padding:20px;color:#999;">Aucune signature enregistrée</td></tr>`}
     </tbody>
   </table>
 
@@ -177,7 +184,7 @@ const buildEmargementHTML = (
 };
 
 const downloadAllJournees = (
-  groupedByDay: Array<[string, { matin?: EmargementRow; apresMidi?: EmargementRow }]>,
+  groupedByDay: Array<[string, { matin?: EmargementRow; apresMidi?: EmargementRow; soir?: EmargementRow }]>,
   apprenant: ApprenantInfo | null
 ) => {
   const html = buildEmargementHTML(groupedByDay, apprenant);
@@ -192,9 +199,10 @@ const downloadJournee = (
   date: string,
   matin: EmargementRow | undefined,
   apresMidi: EmargementRow | undefined,
+  soir: EmargementRow | undefined,
   apprenant: ApprenantInfo | null
 ) => {
-  downloadAllJournees([[date, { matin, apresMidi }]], apprenant);
+  downloadAllJournees([[date, { matin, apresMidi, soir }]], apprenant);
 };
 
 export default function EmargementsSignesViewer({ apprenantId, completed, onComplete }: Props) {
@@ -235,12 +243,13 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
 
   // Group by date
   const groupedByDay = useMemo(() => {
-    const map = new Map<string, { matin?: EmargementRow; apresMidi?: EmargementRow }>();
+    const map = new Map<string, { matin?: EmargementRow; apresMidi?: EmargementRow; soir?: EmargementRow }>();
     for (const r of rows) {
       const entry = map.get(r.date_emargement) || {};
       const k = normalizeDemi(r.demi_journee);
       if (k === "matin") entry.matin = r;
       else if (k === "apres-midi" || k === "après-midi") entry.apresMidi = r;
+      else if (k === "soir") entry.soir = r;
       map.set(r.date_emargement, entry);
     }
     return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b));
@@ -312,14 +321,14 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
         </Card>
       ) : (
         <div className="grid gap-3">
-          {groupedByDay.map(([date, { matin, apresMidi }]) => (
+          {groupedByDay.map(([date, { matin, apresMidi, soir }]) => (
             <Card key={date} className="p-3">
               <div className="flex items-center justify-between flex-wrap gap-2 mb-3 pb-2 border-b">
                 <p className="font-semibold capitalize text-sm">{formatDateFR(date)}</p>
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => downloadJournee(date, matin, apresMidi, apprenant)}
+                  onClick={() => downloadJournee(date, matin, apresMidi, soir, apprenant)}
                   className="h-7 text-xs"
                 >
                   <Download className="h-3.5 w-3.5 mr-1" />
@@ -327,9 +336,9 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
                 </Button>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {(["matin", "apres-midi"] as const).map((key) => {
-                  const r = key === "matin" ? matin : apresMidi;
+              <div className={`grid grid-cols-1 ${soir ? "sm:grid-cols-3" : "sm:grid-cols-2"} gap-3`}>
+                {(["matin", "apres-midi", ...(soir ? (["soir"] as const) : [])] as const).map((key) => {
+                  const r = key === "matin" ? matin : key === "apres-midi" ? apresMidi : soir;
                   const label = labelDemi(key);
                   return (
                     <div key={key} className="border rounded-md p-2 bg-slate-50/50">

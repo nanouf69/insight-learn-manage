@@ -27,6 +27,7 @@ import { useInactivityAlert } from "@/hooks/useInactivityAlert";
 import { useSessionKeepAlive } from "@/hooks/useSessionKeepAlive";
 import { PresenceCheckModal } from "@/components/cours-en-ligne/PresenceCheckModal";
 import { EmargementFCModal, isFormationContinue } from "@/components/cours-en-ligne/EmargementFCModal";
+import { isPresentielType, getTodayAgendaBlocs, getCurrentCreneau, type CreneauKey } from "@/lib/agendaSlots";
 import { useAuth } from "@/contexts/AuthContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { computeUnlockState, isModuleLocked as computeIsModuleLocked } from "@/lib/moduleUnlockLogic";
@@ -630,6 +631,8 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const [lastModuleName, setLastModuleName] = useState<string | null>(null);
   const [isInExam, setIsInExam] = useState(false);
   const [emargementFCStatus, setEmargementFCStatus] = useState<"checking" | "needed" | "signed" | "n/a">("checking");
+  const [emargementCreneau, setEmargementCreneau] = useState<CreneauKey | null>(null);
+  const [emargementMode, setEmargementMode] = useState<"fc" | "presentiel">("fc");
 
   const handleExamStateChange = useCallback((inExam: boolean) => {
     setIsInExam(inExam);
@@ -862,32 +865,63 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     fetchCompletions();
   }, [apprenant?.id]);
 
-  // Vérifier si une signature d'émargement est requise pour la demi-journée en cours (formation continue)
+  // Vérifier si une signature d'émargement est requise pour le créneau en cours
+  // - Formation continue : matin / aprem (selon l'heure)
+  // - Présentiel : matin / aprem / soir (selon l'agenda du jour)
   useEffect(() => {
     if (embedded || !user || !apprenant?.id) {
       setEmargementFCStatus("n/a");
+      setEmargementCreneau(null);
       return;
     }
-    if (!isFormationContinue(apprenant.type_apprenant, apprenant.formation_choisie)) {
+
+    const isFC = isFormationContinue(apprenant.type_apprenant, apprenant.formation_choisie);
+    const isPres = !isFC && isPresentielType(apprenant.type_apprenant, apprenant.formation_choisie);
+
+    if (!isFC && !isPres) {
       setEmargementFCStatus("n/a");
+      setEmargementCreneau(null);
       return;
     }
+
     let cancelled = false;
     setEmargementFCStatus("checking");
+
     const check = async () => {
       const now = new Date();
-      const demi = now.getHours() < 13 ? "matin" : "apres_midi";
+      let creneau: CreneauKey;
+
+      if (isFC) {
+        // FC : matin avant 13h, aprem ensuite (pas de créneau soir en FC)
+        creneau = now.getHours() < 13 ? "matin" : "apres_midi";
+        setEmargementMode("fc");
+      } else {
+        // Présentiel : on lit l'agenda du jour
+        const blocs = await getTodayAgendaBlocs(apprenant.formation_choisie);
+        if (cancelled) return;
+        const detected = getCurrentCreneau(blocs, now);
+        if (!detected) {
+          // Pas de cours présentiel prévu aujourd'hui → pas de blocage
+          setEmargementFCStatus("n/a");
+          setEmargementCreneau(null);
+          return;
+        }
+        creneau = detected;
+        setEmargementMode("presentiel");
+      }
+
+      setEmargementCreneau(creneau);
       const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
       const { data, error } = await supabase
         .from("emargements_fc" as any)
         .select("id")
         .eq("apprenant_id", apprenant.id!)
         .eq("date_emargement", today)
-        .eq("demi_journee", demi)
+        .eq("demi_journee", creneau)
         .maybeSingle();
       if (cancelled) return;
       if (error && error.code !== "PGRST116") {
-        console.warn("[Émargement FC] check error:", error.message);
+        console.warn("[Émargement] check error:", error.message);
       }
       setEmargementFCStatus(data ? "signed" : "needed");
     };
@@ -1028,15 +1062,27 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     }
   }
 
-  // Émargement obligatoire pour les apprenants en formation continue
-  // Bloque l'accès aux cours tant que la signature de la demi-journée n'est pas effectuée
+  // Émargement obligatoire :
+  //  - Formation continue (FC) : matin / après-midi
+  //  - Présentiel : matin / après-midi / soir, selon les blocs agenda du jour
+  // Bloque l'accès aux cours tant que la signature du créneau n'est pas effectuée.
   const isFC =
     !embedded &&
     !!user &&
     !!apprenant?.id &&
     isFormationContinue(apprenant?.type_apprenant, apprenant?.formation_choisie);
 
-  if (isFC && emargementFCStatus !== "signed") {
+  const isPres =
+    !embedded &&
+    !!user &&
+    !!apprenant?.id &&
+    !isFC &&
+    isPresentielType(apprenant?.type_apprenant, apprenant?.formation_choisie);
+
+  const needsEmargement = (isFC || isPres) && emargementFCStatus !== "signed" && emargementFCStatus !== "n/a";
+
+  if (needsEmargement) {
+    const formationLabel = isPres ? "formation en présentiel" : "formation continue";
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
         <div className="text-center max-w-md mb-6">
@@ -1047,7 +1093,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
           <p className="text-sm text-slate-500">
             {emargementFCStatus === "checking"
               ? "Vérification de votre émargement…"
-              : "Avant d'accéder à votre formation continue, merci de signer la feuille d'émargement de cette demi-journée."}
+              : `Avant d'accéder à votre ${formationLabel}, merci de signer la feuille d'émargement de ce créneau.`}
           </p>
         </div>
         <Button variant="outline" size="sm" onClick={handleLogout}>
@@ -1060,6 +1106,8 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
             userId={user!.id}
             apprenantNom={apprenant!.nom}
             apprenantPrenom={apprenant!.prenom}
+            creneau={emargementCreneau || undefined}
+            mode={emargementMode}
             onSigned={() => setEmargementFCStatus("signed")}
           />
         )}

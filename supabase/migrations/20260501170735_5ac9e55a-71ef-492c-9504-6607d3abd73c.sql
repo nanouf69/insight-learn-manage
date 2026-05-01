@@ -1,0 +1,2 @@
+ALTER TABLE public.emargements_fc DROP CONSTRAINT IF EXISTS emargements_fc_demi_journee_check;
+ALTER TABLE public.emargements_fc ADD CONSTRAINT emargements_fc_demi_journee_check CHECK (demi_journee IN ('matin', 'apres_midi', 'soir'));
