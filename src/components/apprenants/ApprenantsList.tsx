@@ -293,7 +293,8 @@ function ApprenantTable({
                 </DropdownMenu>
               </TableCell>
             </TableRow>
-          ))}
+            );
+          })}
         </TableBody>
       </Table>
     </div>
