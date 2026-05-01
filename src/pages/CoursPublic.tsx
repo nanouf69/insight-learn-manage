@@ -631,6 +631,8 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const [lastModuleName, setLastModuleName] = useState<string | null>(null);
   const [isInExam, setIsInExam] = useState(false);
   const [emargementFCStatus, setEmargementFCStatus] = useState<"checking" | "needed" | "signed" | "n/a">("checking");
+  const [emargementCreneau, setEmargementCreneau] = useState<CreneauKey | null>(null);
+  const [emargementMode, setEmargementMode] = useState<"fc" | "presentiel">("fc");
 
   const handleExamStateChange = useCallback((inExam: boolean) => {
     setIsInExam(inExam);
