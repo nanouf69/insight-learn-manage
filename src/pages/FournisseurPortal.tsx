@@ -1232,7 +1232,8 @@ export default function FournisseurPortal() {
                   });
                   const JOURS = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
                   const MOIS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
-                  const sortedKeys = Object.keys(grouped).sort((a, b) => b.localeCompare(a));
+                   // Tri chronologique ASCENDANT : les cours à venir (ex: Lundi 4 Mai) apparaissent en premier
+                   const sortedKeys = Object.keys(grouped).sort((a, b) => a.localeCompare(b));
                   return (
                     <div className="space-y-4">
                       {sortedKeys.map((dateKey) => {
