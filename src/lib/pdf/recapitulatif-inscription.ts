@@ -152,6 +152,29 @@ export function generateRecapitulatifPDF(data: RecapitulatifData, options?: { re
 
   yPos += 20;
 
+  // Encadré ENGAGEMENT - Contact centre (rouge, en gros)
+  doc.setFillColor(254, 226, 226); // red-100
+  doc.setDrawColor(220, 38, 38); // red-600
+  doc.setLineWidth(0.8);
+  doc.roundedRect(margin, yPos, pageWidth - 2 * margin, 42, 3, 3, 'FD');
+  doc.setLineWidth(0.2);
+
+  yPos += 9;
+  doc.setTextColor(185, 28, 28); // red-700
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'bold');
+  const engageTitle = data.responsableContactCentre
+    ? "[X] ENGAGEMENT CONFIRME PAR L'APPRENANT"
+    : "[ ] ENGAGEMENT NON CONFIRME";
+  doc.text(engageTitle, margin + 5, yPos);
+  yPos += 7;
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'bold');
+  const engageText = "Je reconnais etre responsable de contacter le centre au 04 28 29 60 91 le premier jour de la publication des resultats de mon examen theorique pour la suite des demarches.";
+  const engageLines = doc.splitTextToSize(engageText, pageWidth - 2 * margin - 10);
+  doc.text(engageLines, margin + 5, yPos);
+  yPos += engageLines.length * 5 + 8;
+
   // Encadré important
   doc.setFillColor(254, 243, 199); // amber-100
   doc.setDrawColor(251, 191, 36); // amber-400
