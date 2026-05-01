@@ -91,12 +91,14 @@ function ApprenantTable({
   onEdit,
   typeFilter,
   onTypeFilterChange,
+  emargementStatus,
 }: { 
   data: Apprenant[]; 
   onDelete: (id: string, name: string) => void;
   onEdit: (apprenant: Apprenant) => void;
   typeFilter: string[];
   onTypeFilterChange: (types: string[]) => void;
+  emargementStatus: Record<string, EmargementStatus>;
 }) {
   const toggleFilter = (type: string) => {
     if (typeFilter.includes(type)) {
