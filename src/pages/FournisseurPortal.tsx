@@ -1214,7 +1214,7 @@ export default function FournisseurPortal() {
                   });
                   const JOURS = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
                   const MOIS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
-                  const sortedKeys = Object.keys(grouped).sort((a, b) => a.localeCompare(b));
+                  const sortedKeys = Object.keys(grouped).sort((a, b) => b.localeCompare(a));
                   return (
                     <div className="space-y-4">
                       {sortedKeys.map((dateKey) => {
