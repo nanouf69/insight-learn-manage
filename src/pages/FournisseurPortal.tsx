@@ -113,6 +113,12 @@ const sortPlanningChronologically = (items: any[]) => {
   });
 };
 
+const isUpcomingPlanningBloc = (bloc: any) => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return parseAgendaDate(bloc.semaine_debut, bloc.jour).getTime() >= today.getTime();
+};
+
 interface FournisseurApprenant {
   id: string;
   nom: string;
