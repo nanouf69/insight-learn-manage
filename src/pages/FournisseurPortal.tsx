@@ -18,6 +18,8 @@ import { cn } from "@/lib/utils";
 import { parseDateRange } from "@/lib/parseDateRange";
 import { Plus, Loader2, CalendarIcon, Users, FileText, Receipt, Upload, Trash2, Eye, CalendarDays, BarChart3, Mail, Send, Inbox, PenLine, FolderOpen, Download, TrendingUp, BookOpen, GraduationCap, Search, X, ChevronRight, ClipboardSignature } from "lucide-react";
 import { generateEmargementFormateurJour } from "@/lib/pdf/emargement-formateur-jour";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { SignaturePad } from "@/components/onboarding/SignaturePad";
 import { FinancialCharts } from "@/components/comptabilite/FinancialCharts";
 import { Textarea } from "@/components/ui/textarea";
 import logoFtransport from "@/assets/logo-ftransport.png";
@@ -244,6 +246,10 @@ export default function FournisseurPortal() {
   const [crmDocuments, setCrmDocuments] = useState<any[]>([]);
   const [factures, setFactures] = useState<FournisseurFacture[]>([]);
   const [planning, setPlanning] = useState<any[]>([]);
+  const [emargements, setEmargements] = useState<Record<string, { signature_data_url: string; signed_at: string }>>({});
+  const [signatureModal, setSignatureModal] = useState<{ open: boolean; dateKey: string; date: Date | null; blocs: any[] }>({ open: false, dateKey: "", date: null, blocs: [] });
+  const [signatureDraft, setSignatureDraft] = useState<string>("");
+  const [savingSignature, setSavingSignature] = useState(false);
   const [sharedDocs, setSharedDocs] = useState<any[]>([]);
   const [isUploadingSharedDoc, setIsUploadingSharedDoc] = useState(false);
   const [sharedDocTitre, setSharedDocTitre] = useState("");
@@ -408,6 +414,17 @@ export default function FournisseurPortal() {
           .eq('formateur_id', fournisseur.formateur_id)
           .order('semaine_debut', { ascending: true });
         if (planData) setPlanning(planData.filter(isCoursBloc));
+
+        // Charger les signatures d'émargement existantes
+        const { data: emargData } = await supabase
+          .from('formateur_emargements')
+          .select('date_jour, signature_data_url, signed_at')
+          .eq('fournisseur_id', fournisseur.id);
+        if (emargData) {
+          const map: Record<string, { signature_data_url: string; signed_at: string }> = {};
+          emargData.forEach((e: any) => { map[e.date_jour] = { signature_data_url: e.signature_data_url, signed_at: e.signed_at }; });
+          setEmargements(map);
+        }
       }
     };
     load();
@@ -1229,21 +1246,41 @@ export default function FournisseurPortal() {
                               <span className="font-semibold text-sm">{label}</span>
                               <div className="flex items-center gap-2">
                                 {isPast && <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">Passé</span>}
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="h-7 text-xs gap-1"
-                                  onClick={() =>
-                                    generateEmargementFormateurJour({
-                                      formateurNom: fournisseur?.nom || "Formateur",
-                                      date: d,
-                                      blocs: blocs as any[],
-                                    })
-                                  }
-                                >
-                                  <ClipboardSignature className="w-3.5 h-3.5" />
-                                  Feuille d'émargement
-                                </Button>
+                                {emargements[dateKey] ? (
+                                  <>
+                                    <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded font-medium">✓ Signée</span>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="h-7 text-xs gap-1"
+                                      onClick={() =>
+                                        generateEmargementFormateurJour({
+                                          formateurNom: fournisseur?.nom || "Formateur",
+                                          date: d,
+                                          blocs: blocs as any[],
+                                          signatureDataUrl: emargements[dateKey].signature_data_url,
+                                          signedAt: new Date(emargements[dateKey].signed_at),
+                                        })
+                                      }
+                                    >
+                                      <Download className="w-3.5 h-3.5" />
+                                      Télécharger
+                                    </Button>
+                                  </>
+                                ) : (
+                                  <Button
+                                    size="sm"
+                                    variant="default"
+                                    className="h-7 text-xs gap-1"
+                                    onClick={() => {
+                                      setSignatureDraft("");
+                                      setSignatureModal({ open: true, dateKey, date: d, blocs: blocs as any[] });
+                                    }}
+                                  >
+                                    <PenLine className="w-3.5 h-3.5" />
+                                    Signer émargement
+                                  </Button>
+                                )}
                               </div>
                             </div>
                             <div className="divide-y">
@@ -2035,6 +2072,107 @@ export default function FournisseurPortal() {
           )}
         </Tabs>
       </div>
+
+      {/* ============ MODAL SIGNATURE ÉMARGEMENT ============ */}
+      <Dialog
+        open={signatureModal.open}
+        onOpenChange={(open) => {
+          if (!open) setSignatureModal({ open: false, dateKey: "", date: null, blocs: [] });
+        }}
+      >
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Signature de la feuille d'émargement</DialogTitle>
+            <DialogDescription>
+              {signatureModal.date && (
+                <>
+                  Vous certifiez avoir assuré les cours du{" "}
+                  <strong>
+                    {signatureModal.date.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+                  </strong>
+                  .
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+
+          {signatureModal.blocs.length > 0 && (
+            <div className="border rounded-lg p-3 bg-muted/30 max-h-48 overflow-y-auto">
+              <p className="text-xs font-semibold text-muted-foreground mb-2">Cours concernés :</p>
+              <ul className="space-y-1 text-sm">
+                {signatureModal.blocs
+                  .slice()
+                  .sort((a: any, b: any) => a.heure_debut.localeCompare(b.heure_debut))
+                  .map((b: any) => (
+                    <li key={b.id} className="flex items-start gap-2">
+                      <span className="text-muted-foreground tabular-nums">{b.heure_debut}–{b.heure_fin}</span>
+                      <span className="font-medium">{b.discipline_nom}</span>
+                      <span className="text-muted-foreground">· {b.formation}</span>
+                    </li>
+                  ))}
+              </ul>
+            </div>
+          )}
+
+          <SignaturePad value={signatureDraft} onChange={setSignatureDraft} />
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSignatureModal({ open: false, dateKey: "", date: null, blocs: [] })}>
+              Annuler
+            </Button>
+            <Button
+              disabled={!signatureDraft || savingSignature}
+              onClick={async () => {
+                if (!fournisseur || !signatureModal.date || !signatureDraft) return;
+                setSavingSignature(true);
+                try {
+                  const dateKey = signatureModal.dateKey;
+                  const blocsSnap = signatureModal.blocs.map((b: any) => ({
+                    discipline_nom: b.discipline_nom,
+                    formation: b.formation,
+                    heure_debut: b.heure_debut,
+                    heure_fin: b.heure_fin,
+                  }));
+                  const { data, error } = await supabase
+                    .from('formateur_emargements')
+                    .upsert({
+                      fournisseur_id: fournisseur.id,
+                      formateur_id: fournisseur.formateur_id,
+                      date_jour: dateKey,
+                      signature_data_url: signatureDraft,
+                      blocs_snapshot: blocsSnap,
+                      user_agent: navigator.userAgent,
+                    }, { onConflict: 'fournisseur_id,date_jour' })
+                    .select('signed_at')
+                    .single();
+                  if (error) throw error;
+                  setEmargements((prev) => ({
+                    ...prev,
+                    [dateKey]: { signature_data_url: signatureDraft, signed_at: data?.signed_at || new Date().toISOString() },
+                  }));
+                  toast({ title: "Émargement signé", description: "Votre signature a bien été enregistrée." });
+                  // Génère immédiatement le PDF signé
+                  generateEmargementFormateurJour({
+                    formateurNom: fournisseur.nom,
+                    date: signatureModal.date,
+                    blocs: signatureModal.blocs,
+                    signatureDataUrl: signatureDraft,
+                    signedAt: new Date(),
+                  });
+                  setSignatureModal({ open: false, dateKey: "", date: null, blocs: [] });
+                } catch (e: any) {
+                  toast({ title: "Erreur", description: e.message || "Impossible d'enregistrer la signature.", variant: "destructive" });
+                } finally {
+                  setSavingSignature(false);
+                }
+              }}
+            >
+              {savingSignature && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              Valider & télécharger
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
