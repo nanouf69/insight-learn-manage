@@ -16,7 +16,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { parseDateRange } from "@/lib/parseDateRange";
-import { Plus, Loader2, CalendarIcon, Users, FileText, Receipt, Upload, Trash2, Eye, CalendarDays, BarChart3, Mail, Send, Inbox, PenLine, FolderOpen, Download, TrendingUp, BookOpen, GraduationCap, Search, X, ChevronRight } from "lucide-react";
+import { Plus, Loader2, CalendarIcon, Users, FileText, Receipt, Upload, Trash2, Eye, CalendarDays, BarChart3, Mail, Send, Inbox, PenLine, FolderOpen, Download, TrendingUp, BookOpen, GraduationCap, Search, X, ChevronRight, ClipboardSignature } from "lucide-react";
+import { generateEmargementFormateurJour } from "@/lib/pdf/emargement-formateur-jour";
 import { FinancialCharts } from "@/components/comptabilite/FinancialCharts";
 import { Textarea } from "@/components/ui/textarea";
 import logoFtransport from "@/assets/logo-ftransport.png";
@@ -1224,9 +1225,26 @@ export default function FournisseurPortal() {
                         const label = `${JOURS[d.getDay()]} ${d.getDate()} ${MOIS[d.getMonth()]} ${d.getFullYear()}`;
                         return (
                           <div key={dateKey} className={`border rounded-xl overflow-hidden ${isPast ? 'opacity-75' : ''}`}>
-                            <div className="flex items-center justify-between px-4 py-2 bg-muted/40 border-b">
+                            <div className="flex items-center justify-between px-4 py-2 bg-muted/40 border-b gap-3">
                               <span className="font-semibold text-sm">{label}</span>
-                              {isPast && <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">Passé</span>}
+                              <div className="flex items-center gap-2">
+                                {isPast && <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">Passé</span>}
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-7 text-xs gap-1"
+                                  onClick={() =>
+                                    generateEmargementFormateurJour({
+                                      formateurNom: fournisseur?.nom || "Formateur",
+                                      date: d,
+                                      blocs: blocs as any[],
+                                    })
+                                  }
+                                >
+                                  <ClipboardSignature className="w-3.5 h-3.5" />
+                                  Feuille d'émargement
+                                </Button>
+                              </div>
                             </div>
                             <div className="divide-y">
                               {(blocs as any[])
