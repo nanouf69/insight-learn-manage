@@ -74,10 +74,10 @@ const formatShortDate = (iso?: string | null) => {
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 const buildEmargementHTML = (
-  groupedByDay: Array<[string, { matin?: EmargementRow; apresMidi?: EmargementRow }]>,
+  groupedByDay: Array<[string, { matin?: EmargementRow; apresMidi?: EmargementRow; soir?: EmargementRow }]>,
   apprenant: ApprenantInfo | null
 ) => {
-  const formation = apprenant?.formation_choisie || apprenant?.type_apprenant || "Formation continue";
+  const formation = apprenant?.formation_choisie || apprenant?.type_apprenant || "Formation";
   const adresse = [apprenant?.adresse, [apprenant?.code_postal, apprenant?.ville].filter(Boolean).join(" ")]
     .filter(Boolean)
     .join(" ");
@@ -88,8 +88,11 @@ const buildEmargementHTML = (
       ? `du ${formatShortDate(apprenant?.date_debut_formation)} au ${formatShortDate(apprenant?.date_fin_formation)}`
       : "—";
 
+  // Inclure la colonne soir uniquement si au moins une signature soir existe
+  const hasSoir = groupedByDay.some(([, v]) => !!v.soir);
+
   const rowsHtml = groupedByDay
-    .map(([date, { matin, apresMidi }]) => {
+    .map(([date, { matin, apresMidi, soir }]) => {
       const jourLabel = capitalize(formatDateFR(date));
       const sigImg = (r?: EmargementRow) =>
         r?.signature_data_url
@@ -98,10 +101,11 @@ const buildEmargementHTML = (
       return `
         <tr>
           <td class="jour">${jourLabel}</td>
-          <td class="horaire">09:00 - 12:00</td>
+          <td class="horaire">08:30 - 12:00</td>
           <td class="sig">${sigImg(matin)}</td>
           <td class="horaire">13:00 - 17:00</td>
           <td class="sig">${sigImg(apresMidi)}</td>
+          ${hasSoir ? `<td class="horaire">18:00 - 21:00</td><td class="sig">${sigImg(soir)}</td>` : ""}
         </tr>`;
     })
     .join("");
