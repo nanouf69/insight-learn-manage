@@ -99,9 +99,17 @@ export default function PlanningMensuelFormateurs({ open, onClose }: PlanningMen
         formateur_nom: b.formateurs ? `${b.formateurs.prenom} ${b.formateurs.nom}` : null,
       }));
       // Filtrer pour ne garder que les blocs dont la date calculée est dans le mois
+      // ⚠️ Exclure les examens pratiques individuels (ex: "Examen Ali Aksoy") — pas des cours
+      const isCoursBloc = (b: any) => {
+        const d = (b.discipline_nom ?? '').trim();
+        const f = (b.formation ?? '').trim();
+        const isExamenIndividuel = /^examen\s+(?!blanc)/i.test(d);
+        const isExamenPratique = /examen\s+pratique/i.test(d) || /examen\s+pratique/i.test(f);
+        return !isExamenIndividuel && !isExamenPratique;
+      };
       const filtered = mapped.filter((b) => {
         const date = getDateFromBloc(b.semaine_debut, b.jour);
-        return date >= startOfMonth(moisActuel) && date <= endOfMonth(moisActuel);
+        return date >= startOfMonth(moisActuel) && date <= endOfMonth(moisActuel) && isCoursBloc(b);
       });
       setBlocs(filtered);
     }
