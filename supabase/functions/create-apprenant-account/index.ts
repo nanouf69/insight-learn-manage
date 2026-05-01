@@ -296,21 +296,84 @@ serve(async (req) => {
 
     console.log(`${LOG_PREFIX}[${requestId}] Step 12 - Link auth user to apprenant (start)`);
 
-    // Détacher tout autre apprenant déjà lié à ce auth_user_id (contrainte UNIQUE)
-    const { error: detachErr } = await supabaseAdmin
+    // Détacher TOUS les autres apprenants déjà liés à ce auth_user_id (contrainte UNIQUE)
+    // On liste d'abord pour logger et garantir la suppression du lien.
+    const { data: linkedRows, error: listLinkedErr } = await supabaseAdmin
       .from("apprenants")
-      .update({ auth_user_id: null })
-      .eq("auth_user_id", authUser.user.id)
-      .neq("id", apprenant_id);
+      .select("id, nom, prenom, email")
+      .eq("auth_user_id", authUser.user.id);
 
-    if (detachErr) {
-      console.log(`${LOG_PREFIX}[${requestId}] Step 12 - Detach previous link failed`, { message: detachErr.message });
+    if (listLinkedErr) {
+      console.log(`${LOG_PREFIX}[${requestId}] Step 12 - List linked apprenants failed`, { message: listLinkedErr.message });
+    } else {
+      console.log(`${LOG_PREFIX}[${requestId}] Step 12 - Currently linked apprenants`, {
+        count: linkedRows?.length ?? 0,
+        ids: (linkedRows ?? []).map((r: any) => r.id),
+      });
     }
 
-    const { error: linkErr } = await supabaseAdmin
-      .from("apprenants")
-      .update({ auth_user_id: authUser.user.id })
-      .eq("id", apprenant_id);
+    const otherIds = (linkedRows ?? [])
+      .map((r: any) => r.id)
+      .filter((id: string) => id !== apprenant_id);
+
+    if (otherIds.length > 0) {
+      // Détacher un par un pour éviter qu'une RLS/contrainte stoppe le batch silencieusement
+      for (const otherId of otherIds) {
+        const { error: detachOneErr } = await supabaseAdmin
+          .from("apprenants")
+          .update({ auth_user_id: null })
+          .eq("id", otherId);
+        if (detachOneErr) {
+          console.log(`${LOG_PREFIX}[${requestId}] Step 12 - Detach ${otherId} failed`, { message: detachOneErr.message });
+        }
+      }
+
+      // Vérification : s'assurer qu'il ne reste plus aucune autre ligne liée
+      const { data: stillLinked } = await supabaseAdmin
+        .from("apprenants")
+        .select("id")
+        .eq("auth_user_id", authUser.user.id)
+        .neq("id", apprenant_id);
+
+      if ((stillLinked?.length ?? 0) > 0) {
+        return jsonResponse(500, {
+          error: "Impossible de libérer le compte auth",
+          details: `Apprenants encore liés: ${(stillLinked ?? []).map((r: any) => r.id).join(", ")}`,
+          requestId,
+        });
+      }
+    }
+
+    // Tentative de liaison, avec retry si la contrainte unique frappe encore (race)
+    let linkErr: any = null;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      const { error } = await supabaseAdmin
+        .from("apprenants")
+        .update({ auth_user_id: authUser.user.id })
+        .eq("id", apprenant_id);
+
+      if (!error) {
+        linkErr = null;
+        break;
+      }
+      linkErr = error;
+
+      const isDup = (error.message || "").includes("apprenants_auth_user_id_key");
+      console.log(`${LOG_PREFIX}[${requestId}] Step 12 - Link attempt ${attempt} failed`, {
+        message: error.message,
+        isDup,
+      });
+      if (!isDup) break;
+
+      // Nettoyage forcé puis nouvelle tentative
+      await supabaseAdmin
+        .from("apprenants")
+        .update({ auth_user_id: null })
+        .eq("auth_user_id", authUser.user.id)
+        .neq("id", apprenant_id);
+
+      await new Promise((r) => setTimeout(r, 150));
+    }
 
     if (linkErr) {
       return jsonResponse(500, {
