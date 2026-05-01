@@ -113,6 +113,12 @@ const sortPlanningChronologically = (items: any[]) => {
   });
 };
 
+const isUpcomingPlanningBloc = (bloc: any) => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return parseAgendaDate(bloc.semaine_debut, bloc.jour).getTime() >= today.getTime();
+};
+
 interface FournisseurApprenant {
   id: string;
   nom: string;
@@ -434,7 +440,7 @@ export default function FournisseurPortal() {
           .select('id, discipline_nom, formation, heure_debut, heure_fin, semaine_debut, jour, discipline_color, formateur_id')
           .eq('formateur_id', fournisseur.formateur_id)
           .order('semaine_debut', { ascending: true });
-        if (planData) setPlanning(sortPlanningChronologically(planData.filter(isCoursBloc)));
+        if (planData) setPlanning(sortPlanningChronologically(planData.filter(isCoursBloc).filter(isUpcomingPlanningBloc)));
 
         // Charger les signatures d'émargement existantes
         const { data: emargData } = await supabase
@@ -461,7 +467,7 @@ export default function FournisseurPortal() {
         .select('id, discipline_nom, formation, heure_debut, heure_fin, semaine_debut, jour, discipline_color, formateur_id')
         .eq('formateur_id', formateurId)
         .order('semaine_debut', { ascending: true });
-      if (planData) setPlanning(sortPlanningChronologically(planData.filter(isCoursBloc)));
+      if (planData) setPlanning(sortPlanningChronologically(planData.filter(isCoursBloc).filter(isUpcomingPlanningBloc)));
     };
     const channel = supabase
       .channel(`agenda-formateur-${formateurId}-${Date.now()}`)
