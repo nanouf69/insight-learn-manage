@@ -387,21 +387,20 @@ export default function FournisseurPortal() {
       }
 
       // Charger le planning si c'est un formateur (depuis agenda_blocs)
-      // On inclut les blocs assignés au formateur ET les blocs non-assignés (créneaux communs)
+      // ⚠️ On affiche UNIQUEMENT les COURS — pas les examens pratiques individuels
       if (fournisseur.formateur_id) {
         const { data: planData } = await supabase
           .from('agenda_blocs')
           .select('id, discipline_nom, formation, heure_debut, heure_fin, semaine_debut, jour, discipline_color, formateur_id')
           .or(`formateur_id.eq.${fournisseur.formateur_id},formateur_id.is.null`)
           .order('semaine_debut', { ascending: true });
-        if (planData) setPlanning(planData);
+        if (planData) setPlanning(planData.filter(isCoursBloc));
       }
     };
     load();
   }, [fournisseur, showForm]);
 
   // Realtime: refresh planning automatically when ANY agenda_blocs change
-  // (on filtre côté client pour inclure aussi les blocs non assignés)
   useEffect(() => {
     if (!fournisseur?.formateur_id) return;
     const formateurId = fournisseur.formateur_id;
@@ -411,7 +410,7 @@ export default function FournisseurPortal() {
         .select('id, discipline_nom, formation, heure_debut, heure_fin, semaine_debut, jour, discipline_color, formateur_id')
         .or(`formateur_id.eq.${formateurId},formateur_id.is.null`)
         .order('semaine_debut', { ascending: true });
-      if (planData) setPlanning(planData);
+      if (planData) setPlanning(planData.filter(isCoursBloc));
     };
     const channel = supabase
       .channel(`agenda-formateur-${formateurId}-${Date.now()}`)
@@ -421,7 +420,6 @@ export default function FournisseurPortal() {
         () => { reloadPlanning(); }
       )
       .subscribe();
-    // Safety net: refresh every 30s
     const interval = setInterval(reloadPlanning, 30000);
     return () => {
       supabase.removeChannel(channel);
