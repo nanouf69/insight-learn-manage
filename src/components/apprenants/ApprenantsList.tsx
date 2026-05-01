@@ -54,6 +54,12 @@ interface Apprenant {
   numero_dossier_cma: string | null;
   type_apprenant: string | null;
   organisme_financeur: string | null;
+  formation_choisie?: string | null;
+}
+
+interface EmargementStatus {
+  needsSignature: boolean;
+  creneau: CreneauKey | null;
 }
 
 const typeApprenantLabels: Record<string, { label: string; class: string }> = {
