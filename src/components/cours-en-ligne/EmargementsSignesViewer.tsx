@@ -202,7 +202,7 @@ const downloadJournee = (
   soir: EmargementRow | undefined,
   apprenant: ApprenantInfo | null
 ) => {
-  downloadAllJournees([[date, { matin, apresMidi }]], apprenant);
+  downloadAllJournees([[date, { matin, apresMidi, soir }]], apprenant);
 };
 
 export default function EmargementsSignesViewer({ apprenantId, completed, onComplete }: Props) {
