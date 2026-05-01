@@ -104,6 +104,15 @@ const timeToDecimal = (time: string): number => {
   return h + ((m || 0) / 60);
 };
 
+const sortPlanningChronologically = (items: any[]) => {
+  return [...items].sort((a, b) => {
+    const aDate = parseAgendaDate(a.semaine_debut, a.jour).getTime();
+    const bDate = parseAgendaDate(b.semaine_debut, b.jour).getTime();
+    if (aDate !== bDate) return aDate - bDate;
+    return String(a.heure_debut || '').localeCompare(String(b.heure_debut || ''));
+  });
+};
+
 interface FournisseurApprenant {
   id: string;
   nom: string;
