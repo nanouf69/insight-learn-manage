@@ -414,6 +414,17 @@ export default function FournisseurPortal() {
           .eq('formateur_id', fournisseur.formateur_id)
           .order('semaine_debut', { ascending: true });
         if (planData) setPlanning(planData.filter(isCoursBloc));
+
+        // Charger les signatures d'émargement existantes
+        const { data: emargData } = await supabase
+          .from('formateur_emargements')
+          .select('date_jour, signature_data_url, signed_at')
+          .eq('fournisseur_id', fournisseur.id);
+        if (emargData) {
+          const map: Record<string, { signature_data_url: string; signed_at: string }> = {};
+          emargData.forEach((e: any) => { map[e.date_jour] = { signature_data_url: e.signature_data_url, signed_at: e.signed_at }; });
+          setEmargements(map);
+        }
       }
     };
     load();
