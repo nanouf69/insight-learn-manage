@@ -399,6 +399,34 @@ export default function FournisseurPortal() {
     load();
   }, [fournisseur, showForm]);
 
+  // Realtime: refresh planning automatically when agenda_blocs change for this formateur
+  useEffect(() => {
+    if (!fournisseur?.formateur_id) return;
+    const formateurId = fournisseur.formateur_id;
+    const reloadPlanning = async () => {
+      const { data: planData } = await supabase
+        .from('agenda_blocs')
+        .select('id, discipline_nom, formation, heure_debut, heure_fin, semaine_debut, jour, discipline_color')
+        .eq('formateur_id', formateurId)
+        .order('semaine_debut', { ascending: true });
+      if (planData) setPlanning(planData);
+    };
+    const channel = supabase
+      .channel(`agenda-formateur-${formateurId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'agenda_blocs', filter: `formateur_id=eq.${formateurId}` },
+        () => { reloadPlanning(); }
+      )
+      .subscribe();
+    // Safety net: refresh every 60s
+    const interval = setInterval(reloadPlanning, 60000);
+    return () => {
+      supabase.removeChannel(channel);
+      clearInterval(interval);
+    };
+  }, [fournisseur?.formateur_id]);
+
   const handleFormationChange = (value: string) => {
     setSelectedFormation(value);
     if (prixFormations[value]) setMontantTtc(prixFormations[value]);
