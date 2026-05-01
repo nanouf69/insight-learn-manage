@@ -625,6 +625,7 @@ export function DocumentsInscription({ apprenant }: DocumentsInscriptionProps) {
                 lieuExamen: apprenant.lieu_examen || '',
                 b2Vierge: apprenant.b2_vierge || false,
                 motDePasseCma: apprenant.mot_de_passe_cma || '',
+                responsableContactCentre: (apprenant as any).responsable_contact_centre || false,
               });
               toast.success("Document de bienvenue téléchargé");
             }}
