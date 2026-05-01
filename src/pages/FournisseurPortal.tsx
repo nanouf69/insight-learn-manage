@@ -1242,20 +1242,18 @@ export default function FournisseurPortal() {
                     </CardContent>
                   </Card>
                 ) : (() => {
-                  // Grouper par date réelle (semaine_debut + jour)
-                  const grouped: Record<string, typeof planning> = {};
+                  // Grouper exactement comme l'agenda admin : par semaine puis par colonne jour
+                  const groupedByWeek: Record<string, typeof planning> = {};
+                  const signedDays: Record<string, typeof planning> = {};
                   planning.forEach((bloc: any) => {
-                    const [year, month, day] = bloc.semaine_debut.split('-').map(Number);
-                    const base = new Date(year, month - 1, day);
-                    base.setDate(base.getDate() + bloc.jour);
-                    const dateKey = `${base.getFullYear()}-${String(base.getMonth()+1).padStart(2,'0')}-${String(base.getDate()).padStart(2,'0')}`;
-                    if (!grouped[dateKey]) grouped[dateKey] = [];
-                    grouped[dateKey].push({ ...bloc, _dateObj: base });
+                    const realDate = parseAgendaDate(bloc.semaine_debut, bloc.jour);
+                    const dateKey = format(realDate, 'yyyy-MM-dd');
+                    if (!groupedByWeek[bloc.semaine_debut]) groupedByWeek[bloc.semaine_debut] = [];
+                    if (!signedDays[dateKey]) signedDays[dateKey] = [];
+                    groupedByWeek[bloc.semaine_debut].push({ ...bloc, _dateObj: realDate, _dateKey: dateKey });
+                    signedDays[dateKey].push({ ...bloc, _dateObj: realDate, _dateKey: dateKey });
                   });
-                  const JOURS = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
-                  const MOIS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
-                   // Tri chronologique ASCENDANT : les cours à venir (ex: Lundi 4 Mai) apparaissent en premier
-                   const sortedKeys = Object.keys(grouped).sort((a, b) => a.localeCompare(b));
+                  const sortedWeeks = Object.keys(groupedByWeek).sort((a, b) => a.localeCompare(b));
                   return (
                     <div className="space-y-4">
                       {sortedKeys.map((dateKey) => {
