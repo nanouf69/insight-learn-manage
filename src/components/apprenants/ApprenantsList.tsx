@@ -194,20 +194,34 @@ function ApprenantTable({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {data.map((apprenant) => (
-            <TableRow key={apprenant.id} className="hover:bg-muted/50">
+          {data.map((apprenant) => {
+            const status = emargementStatus[apprenant.id];
+            const missing = status?.needsSignature;
+            return (
+            <TableRow
+              key={apprenant.id}
+              className={missing ? "bg-destructive/5 hover:bg-destructive/10 border-l-4 border-l-destructive" : "hover:bg-muted/50"}
+            >
               <TableCell>
                 <div className="flex items-center gap-3">
                   <Avatar className="w-10 h-10">
-                    <AvatarFallback className="bg-primary/10 text-primary">
+                    <AvatarFallback className={missing ? "bg-destructive/15 text-destructive" : "bg-primary/10 text-primary"}>
                       {apprenant.prenom[0]}{apprenant.nom[0]}
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <span className="font-medium">
+                    <span className={`font-medium ${missing ? "text-destructive" : ""}`}>
                       {apprenant.civilite && `${apprenant.civilite} `}
                       {apprenant.prenom} {apprenant.nom}
                     </span>
+                    {missing && (
+                      <div className="mt-1">
+                        <Badge variant="destructive" className="gap-1 text-[10px] py-0.5">
+                          <AlertTriangle className="w-3 h-3" />
+                          Émargement {status?.creneau ?? ""} non signé
+                        </Badge>
+                      </div>
+                    )}
                     {apprenant.numero_dossier_cma && (
                       <div className="text-xs text-muted-foreground">
                         CMA: {apprenant.numero_dossier_cma}
