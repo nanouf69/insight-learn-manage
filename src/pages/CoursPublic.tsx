@@ -1062,15 +1062,27 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     }
   }
 
-  // Émargement obligatoire pour les apprenants en formation continue
-  // Bloque l'accès aux cours tant que la signature de la demi-journée n'est pas effectuée
+  // Émargement obligatoire :
+  //  - Formation continue (FC) : matin / après-midi
+  //  - Présentiel : matin / après-midi / soir, selon les blocs agenda du jour
+  // Bloque l'accès aux cours tant que la signature du créneau n'est pas effectuée.
   const isFC =
     !embedded &&
     !!user &&
     !!apprenant?.id &&
     isFormationContinue(apprenant?.type_apprenant, apprenant?.formation_choisie);
 
-  if (isFC && emargementFCStatus !== "signed") {
+  const isPres =
+    !embedded &&
+    !!user &&
+    !!apprenant?.id &&
+    !isFC &&
+    isPresentielType(apprenant?.type_apprenant, apprenant?.formation_choisie);
+
+  const needsEmargement = (isFC || isPres) && emargementFCStatus !== "signed" && emargementFCStatus !== "n/a";
+
+  if (needsEmargement) {
+    const formationLabel = isPres ? "formation en présentiel" : "formation continue";
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
         <div className="text-center max-w-md mb-6">
@@ -1081,7 +1093,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
           <p className="text-sm text-slate-500">
             {emargementFCStatus === "checking"
               ? "Vérification de votre émargement…"
-              : "Avant d'accéder à votre formation continue, merci de signer la feuille d'émargement de cette demi-journée."}
+              : `Avant d'accéder à votre ${formationLabel}, merci de signer la feuille d'émargement de ce créneau.`}
           </p>
         </div>
         <Button variant="outline" size="sm" onClick={handleLogout}>
@@ -1094,6 +1106,8 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
             userId={user!.id}
             apprenantNom={apprenant!.nom}
             apprenantPrenom={apprenant!.prenom}
+            creneau={emargementCreneau || undefined}
+            mode={emargementMode}
             onSigned={() => setEmargementFCStatus("signed")}
           />
         )}
