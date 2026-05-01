@@ -404,7 +404,7 @@ export default function FournisseurPortal() {
         const { data: planData } = await supabase
           .from('agenda_blocs')
           .select('id, discipline_nom, formation, heure_debut, heure_fin, semaine_debut, jour, discipline_color, formateur_id')
-          .or(`formateur_id.eq.${fournisseur.formateur_id},formateur_id.is.null`)
+          .eq('formateur_id', fournisseur.formateur_id)
           .order('semaine_debut', { ascending: true });
         if (planData) setPlanning(planData.filter(isCoursBloc));
       }
@@ -420,7 +420,7 @@ export default function FournisseurPortal() {
       const { data: planData } = await supabase
         .from('agenda_blocs')
         .select('id, discipline_nom, formation, heure_debut, heure_fin, semaine_debut, jour, discipline_color, formateur_id')
-        .or(`formateur_id.eq.${formateurId},formateur_id.is.null`)
+        .eq('formateur_id', formateurId)
         .order('semaine_debut', { ascending: true });
       if (planData) setPlanning(planData.filter(isCoursBloc));
     };
