@@ -246,8 +246,8 @@ export function SessionForm() {
 
       if (error) throw error;
 
-      // Créer les blocs agenda automatiquement
-      await createAgendaBlocs({
+      // Créer les blocs agenda automatiquement (copie depuis session précédente similaire si possible)
+      const result = await createAgendaBlocs({
         date_debut: dateDebut,
         date_fin: dateFin,
         nom: nom || null,
@@ -258,7 +258,9 @@ export function SessionForm() {
 
       toast({
         title: "Session créée",
-        description: "La session et les blocs agenda ont été créés avec succès.",
+        description: result.source
+          ? `Agenda rempli avec ${result.copied} blocs copiés depuis « ${result.source} ».`
+          : `Agenda rempli avec ${result.copied} blocs génériques.`,
       });
       resetForm();
       setOpen(false);
