@@ -129,6 +129,25 @@ export function generateEmargementFormateurJour({ formateurNom, date, blocs, sig
   doc.text("Signature du formateur :", margin, finalY);
   doc.rect(margin, finalY + 2, 80, 28);
 
+  if (signatureDataUrl) {
+    try {
+      doc.addImage(signatureDataUrl, "PNG", margin + 2, finalY + 4, 76, 24);
+    } catch {}
+    if (signedAt) {
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(7);
+      doc.setTextColor(80, 80, 80);
+      doc.text(
+        `Signé électroniquement le ${signedAt.toLocaleDateString("fr-FR")} à ${signedAt.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}`,
+        margin,
+        finalY + 34
+      );
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(10);
+    }
+  }
+
+  doc.setFont("helvetica", "bold");
   doc.text("Cachet de l'organisme :", pageWidth - margin - 80, finalY);
   doc.rect(pageWidth - margin - 80, finalY + 2, 80, 28);
 
