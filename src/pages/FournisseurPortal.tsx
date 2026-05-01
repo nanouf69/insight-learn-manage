@@ -77,6 +77,17 @@ const formationToType: Record<string, string> = {
   "anglais-17h": "anglais", "anglais-28h": "anglais", "anglais-35h": "anglais", "anglais-45h": "anglais"
 };
 
+// Filtre : on n'affiche que les COURS dans le planning fournisseur (pas les examens individuels)
+function isCoursBloc(bloc: { discipline_nom?: string | null; formation?: string | null }): boolean {
+  const d = (bloc.discipline_nom ?? '').trim();
+  const f = (bloc.formation ?? '').trim();
+  // Exclure les examens pratiques individuels (ex: "Examen Ali Aksoy", "Examen pratique CMA")
+  // mais GARDER les "Examen blanc" (qui sont des cours d'entraînement)
+  const isExamenIndividuel = /^examen\s+(?!blanc)/i.test(d) || /^examen\s+(?!blanc)/i.test(f);
+  const isExamenPratique = /examen\s+pratique/i.test(d) || /examen\s+pratique/i.test(f);
+  return !isExamenIndividuel && !isExamenPratique;
+}
+
 interface FournisseurApprenant {
   id: string;
   nom: string;
