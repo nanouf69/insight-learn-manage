@@ -31,6 +31,7 @@ export default function Step11() {
   const [numeroDossier, setNumeroDossier] = useState('');
   const [dateExamen, setDateExamen] = useState('');
   const [typeExamen, setTypeExamen] = useState('');
+  const [responsableContact, setResponsableContact] = useState(false);
   const [attempted, setAttempted] = useState(false);
 
   const selectedExam = datesExamenTheorique.find(e => e.value === dateExamen);
@@ -40,9 +41,11 @@ export default function Step11() {
     const savedNumeroDossier = localStorage.getItem('onboarding_numero_dossier');
     const savedDateExamen = localStorage.getItem('onboarding_date_examen');
     const savedTypeExamen = localStorage.getItem('onboarding_type_examen');
+    const savedResponsable = localStorage.getItem('onboarding_responsable_contact_centre');
     if (savedNumeroDossier) setNumeroDossier(savedNumeroDossier);
     if (savedDateExamen) setDateExamen(savedDateExamen);
     if (savedTypeExamen) setTypeExamen(savedTypeExamen);
+    if (savedResponsable === 'true') setResponsableContact(true);
   }, []);
 
   const handleNext = async () => {
