@@ -66,10 +66,16 @@ export default function Step11() {
       return;
     }
 
+    if (!responsableContact) {
+      toast.error("Vous devez confirmer que vous êtes responsable de contacter le centre");
+      return;
+    }
+
     // Store in localStorage
     localStorage.setItem('onboarding_numero_dossier', numeroDossier);
     localStorage.setItem('onboarding_date_examen', dateExamen);
     localStorage.setItem('onboarding_type_examen', typeExamen);
+    localStorage.setItem('onboarding_responsable_contact_centre', 'true');
 
     // Also save directly to database
     const apprenantId = localStorage.getItem('onboarding_apprenant_id');
@@ -83,6 +89,7 @@ export default function Step11() {
           date_examen_theorique: dateExamen,
           type_examen: typeExamen,
           lieu_examen: selectedExamData?.lieu || '',
+          responsable_contact_centre: true,
           ...(motDePasseCma ? { mot_de_passe_cma: motDePasseCma } : {}),
         })
         .eq('id', apprenantId);
@@ -95,7 +102,7 @@ export default function Step11() {
     navigate('/bienvenue/etape-12');
   };
 
-  const canSubmit = numeroDossier.trim() && dateExamen && typeExamen;
+  const canSubmit = numeroDossier.trim() && dateExamen && typeExamen && responsableContact;
 
   return (
     <OnboardingLayout currentStep={11} totalSteps={12} title="Numéro de dossier et examen">
