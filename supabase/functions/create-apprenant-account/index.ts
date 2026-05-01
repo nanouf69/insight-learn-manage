@@ -215,12 +215,11 @@ serve(async (req) => {
 
       if (authError.message.includes("already been registered")) {
         console.log(`${LOG_PREFIX}[${requestId}] Step 11 - Existing user flow (start)`);
-        // List users filtered by email (getUserByEmail doesn't exist in this SDK version)
+        // List users filtered by email - le filtre serveur n'est pas fiable, on filtre nous-mêmes
         const { data: listData, error: getUserErr } = await supabaseAdmin.auth.admin.listUsers({ filter: `email.eq.${email}` } as any);
-        const existingUserData = listData?.users?.[0] ? { user: listData.users[0] } : null;
 
         if (getUserErr) {
-          console.log(`${LOG_PREFIX}[${requestId}] Step 11 - getUserByEmail failed`, { message: getUserErr.message });
+          console.log(`${LOG_PREFIX}[${requestId}] Step 11 - listUsers failed`, { message: getUserErr.message });
           return jsonResponse(400, {
             error: "Utilisateur existant introuvable",
             details: getUserErr.message,
@@ -228,14 +227,34 @@ serve(async (req) => {
           });
         }
 
-        const existingUser = existingUserData?.user;
+        // Filtrage strict côté code : exact match sur l'email (insensible à la casse)
+        const normalizedEmail = email.trim().toLowerCase();
+        const matchingUsers = (listData?.users || []).filter(
+          (u: any) => (u.email || "").trim().toLowerCase() === normalizedEmail
+        );
 
-        if (!existingUser) {
+        if (matchingUsers.length === 0) {
+          console.log(`${LOG_PREFIX}[${requestId}] Step 11 - No exact email match found`, {
+            searchedEmail: normalizedEmail,
+            returnedCount: listData?.users?.length || 0,
+          });
           return jsonResponse(400, {
-            error: "Utilisateur existant introuvable",
+            error: "Utilisateur existant introuvable (email exact)",
             requestId,
           });
         }
+
+        if (matchingUsers.length > 1) {
+          console.log(`${LOG_PREFIX}[${requestId}] Step 11 - Multiple users with same email (ambigu)`, {
+            count: matchingUsers.length,
+          });
+          return jsonResponse(409, {
+            error: "Plusieurs comptes existent pour cet email, contactez l'administrateur",
+            requestId,
+          });
+        }
+
+        const existingUser = matchingUsers[0];
 
         console.log(`${LOG_PREFIX}[${requestId}] Step 11 - Update existing user password (start)`, {
           existingUserId: existingUser.id,
