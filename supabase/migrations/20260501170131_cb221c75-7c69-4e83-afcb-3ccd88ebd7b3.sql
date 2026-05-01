@@ -1,0 +1,1 @@
+ALTER TABLE public.apprenants ADD COLUMN IF NOT EXISTS responsable_contact_centre BOOLEAN NOT NULL DEFAULT false;

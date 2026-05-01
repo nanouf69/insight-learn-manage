@@ -418,6 +418,7 @@ export type Database = {
           numero_dossier_cma: string | null
           organisme_financeur: string | null
           prenom: string
+          responsable_contact_centre: boolean
           resultat_examen: string | null
           resultat_examen_pratique: string | null
           societe_adresse: string | null
@@ -472,6 +473,7 @@ export type Database = {
           numero_dossier_cma?: string | null
           organisme_financeur?: string | null
           prenom: string
+          responsable_contact_centre?: boolean
           resultat_examen?: string | null
           resultat_examen_pratique?: string | null
           societe_adresse?: string | null
@@ -526,6 +528,7 @@ export type Database = {
           numero_dossier_cma?: string | null
           organisme_financeur?: string | null
           prenom?: string
+          responsable_contact_centre?: boolean
           resultat_examen?: string | null
           resultat_examen_pratique?: string | null
           societe_adresse?: string | null
