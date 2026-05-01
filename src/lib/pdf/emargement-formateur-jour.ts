@@ -14,6 +14,8 @@ interface Params {
   formateurNom: string;
   date: Date; // jour précis
   blocs: BlocCours[];
+  signatureDataUrl?: string | null;
+  signedAt?: Date | null;
 }
 
 const JOURS = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
