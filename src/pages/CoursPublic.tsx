@@ -27,6 +27,7 @@ import { useInactivityAlert } from "@/hooks/useInactivityAlert";
 import { useSessionKeepAlive } from "@/hooks/useSessionKeepAlive";
 import { PresenceCheckModal } from "@/components/cours-en-ligne/PresenceCheckModal";
 import { EmargementFCModal, isFormationContinue } from "@/components/cours-en-ligne/EmargementFCModal";
+import { isPresentielType, getTodayAgendaBlocs, getCurrentCreneau, type CreneauKey } from "@/lib/agendaSlots";
 import { useAuth } from "@/contexts/AuthContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { computeUnlockState, isModuleLocked as computeIsModuleLocked } from "@/lib/moduleUnlockLogic";
