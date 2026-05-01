@@ -156,16 +156,18 @@ const buildEmargementHTML = (
         <th rowspan="2" style="width:160px;">Jour</th>
         <th colspan="2">Matin</th>
         <th colspan="2">Apres-midi</th>
+        ${hasSoir ? `<th colspan="2">Soir</th>` : ""}
       </tr>
       <tr class="sub">
         <th>Horaire</th>
         <th>Signature du stagiaire</th>
         <th>Horaire</th>
         <th>Signature du stagiaire</th>
+        ${hasSoir ? `<th>Horaire</th><th>Signature du stagiaire</th>` : ""}
       </tr>
     </thead>
     <tbody>
-      ${rowsHtml || `<tr><td colspan="5" style="padding:20px;color:#999;">Aucune signature enregistrée</td></tr>`}
+      ${rowsHtml || `<tr><td colspan="${hasSoir ? 7 : 5}" style="padding:20px;color:#999;">Aucune signature enregistrée</td></tr>`}
     </tbody>
   </table>
 
