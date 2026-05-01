@@ -1243,13 +1243,13 @@ export default function FournisseurPortal() {
                 ) : (() => {
                   // Liste simple et fiable : tri par date réelle puis par heure, comme dans l'agenda
                   const grouped: Record<string, typeof planning> = {};
-                  planning.forEach((bloc: any) => {
+                  sortPlanningChronologically(planning).forEach((bloc: any) => {
                     const realDate = parseAgendaDate(bloc.semaine_debut, bloc.jour);
                     const dateKey = format(realDate, 'yyyy-MM-dd');
                     if (!grouped[dateKey]) grouped[dateKey] = [];
                     grouped[dateKey].push({ ...bloc, _dateObj: realDate, _dateKey: dateKey });
                   });
-                  const sortedKeys = Object.keys(grouped).sort((a, b) => a.localeCompare(b));
+                  const sortedKeys = Object.keys(grouped).sort((a, b) => new Date(`${a}T00:00:00`).getTime() - new Date(`${b}T00:00:00`).getTime());
                   return (
                     <div className="space-y-4">
                       {sortedKeys.map((dateKey) => {
