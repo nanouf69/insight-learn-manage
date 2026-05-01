@@ -18,6 +18,8 @@ import { cn } from "@/lib/utils";
 import { parseDateRange } from "@/lib/parseDateRange";
 import { Plus, Loader2, CalendarIcon, Users, FileText, Receipt, Upload, Trash2, Eye, CalendarDays, BarChart3, Mail, Send, Inbox, PenLine, FolderOpen, Download, TrendingUp, BookOpen, GraduationCap, Search, X, ChevronRight, ClipboardSignature } from "lucide-react";
 import { generateEmargementFormateurJour } from "@/lib/pdf/emargement-formateur-jour";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { SignaturePad } from "@/components/onboarding/SignaturePad";
 import { FinancialCharts } from "@/components/comptabilite/FinancialCharts";
 import { Textarea } from "@/components/ui/textarea";
 import logoFtransport from "@/assets/logo-ftransport.png";
