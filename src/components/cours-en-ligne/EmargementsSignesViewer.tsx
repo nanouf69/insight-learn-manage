@@ -243,12 +243,13 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
 
   // Group by date
   const groupedByDay = useMemo(() => {
-    const map = new Map<string, { matin?: EmargementRow; apresMidi?: EmargementRow }>();
+    const map = new Map<string, { matin?: EmargementRow; apresMidi?: EmargementRow; soir?: EmargementRow }>();
     for (const r of rows) {
       const entry = map.get(r.date_emargement) || {};
       const k = normalizeDemi(r.demi_journee);
       if (k === "matin") entry.matin = r;
       else if (k === "apres-midi" || k === "après-midi") entry.apresMidi = r;
+      else if (k === "soir") entry.soir = r;
       map.set(r.date_emargement, entry);
     }
     return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b));
