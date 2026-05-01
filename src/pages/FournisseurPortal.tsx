@@ -92,10 +92,6 @@ function isCoursBloc(bloc: { discipline_nom?: string | null; formation?: string 
   return true;
 }
 
-const PLANNING_HOURS = Array.from({ length: 14 }, (_, i) => i + 8);
-const PLANNING_HOUR_HEIGHT = 60;
-const PLANNING_DAYS = Array.from({ length: 7 }, (_, i) => i);
-
 const parseAgendaDate = (semaineDebut: string, jour = 0): Date => {
   const [year, month, day] = semaineDebut.split('-').map(Number);
   const date = new Date(year, month - 1, day);
@@ -106,12 +102,6 @@ const parseAgendaDate = (semaineDebut: string, jour = 0): Date => {
 const timeToDecimal = (time: string): number => {
   const [h, m] = time.split(':').map(Number);
   return h + ((m || 0) / 60);
-};
-
-const formatDecimalTime = (decimal: number): string => {
-  const h = Math.floor(decimal);
-  const m = Math.round((decimal - h) * 60);
-  return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
 };
 
 interface FournisseurApprenant {
