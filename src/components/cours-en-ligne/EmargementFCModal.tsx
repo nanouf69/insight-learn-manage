@@ -2,24 +2,30 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, PenTool, ShieldCheck, Sun, Moon, AlertTriangle } from "lucide-react";
+import { Loader2, PenTool, ShieldCheck, Sun, Moon, Sunset, AlertTriangle } from "lucide-react";
 import { SignaturePad } from "@/components/onboarding/SignaturePad";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import type { CreneauKey } from "@/lib/agendaSlots";
+import { creneauLabel, creneauHoraire } from "@/lib/agendaSlots";
 
 interface EmargementFCModalProps {
   apprenantId: string;
   userId: string;
   apprenantNom: string;
   apprenantPrenom: string;
+  /** Créneau forcé (présentiel : déterminé via agenda). Sinon, calculé selon l'heure. */
+  creneau?: CreneauKey;
+  /** Mode: "fc" = formation continue, "presentiel" = cours présentiel classique */
+  mode?: "fc" | "presentiel";
   onSigned?: () => void;
 }
 
-type DemiJournee = "matin" | "apres_midi";
-
-const getCurrentDemiJournee = (): DemiJournee => {
+const getCurrentCreneauFromHour = (): CreneauKey => {
   const h = new Date().getHours();
-  return h < 13 ? "matin" : "apres_midi";
+  if (h < 13) return "matin";
+  if (h < 18) return "apres_midi";
+  return "soir";
 };
 
 const todayISO = () => {
@@ -30,17 +36,25 @@ const todayISO = () => {
   return `${yyyy}-${mm}-${dd}`;
 };
 
+const creneauIcon = (k: CreneauKey) => {
+  if (k === "matin") return <Sun className="w-5 h-5 text-amber-500" />;
+  if (k === "apres_midi") return <Moon className="w-5 h-5 text-indigo-500" />;
+  return <Sunset className="w-5 h-5 text-orange-500" />;
+};
+
 export const EmargementFCModal = ({
   apprenantId,
   userId,
   apprenantNom,
   apprenantPrenom,
+  creneau,
+  mode = "fc",
   onSigned,
 }: EmargementFCModalProps) => {
   const { toast } = useToast();
   const [signature, setSignature] = useState("");
   const [saving, setSaving] = useState(false);
-  const [demi] = useState<DemiJournee>(getCurrentDemiJournee());
+  const [demi] = useState<CreneauKey>(creneau || getCurrentCreneauFromHour());
   const [done, setDone] = useState(false);
 
   const handleSubmit = async () => {
@@ -78,13 +92,15 @@ export const EmargementFCModal = ({
     }
     toast({
       title: "Émargement validé",
-      description: `Signature ${demi === "matin" ? "du matin" : "de l'après-midi"} enregistrée. Bonne formation !`,
+      description: `Signature ${creneauLabel(demi).toLowerCase()} enregistrée. Bonne formation !`,
     });
     setDone(true);
     onSigned?.();
   };
 
   if (done) return null;
+
+  const formationLabel = mode === "presentiel" ? "formation en présentiel" : "formation continue";
 
   return (
     <Dialog open={true} onOpenChange={() => { /* non-fermable */ }}>
@@ -95,12 +111,12 @@ export const EmargementFCModal = ({
       >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            {demi === "matin" ? <Sun className="w-5 h-5 text-amber-500" /> : <Moon className="w-5 h-5 text-indigo-500" />}
-            Émargement obligatoire — {demi === "matin" ? "Matin" : "Après-midi"}
+            {creneauIcon(demi)}
+            Émargement obligatoire — {creneauLabel(demi)}
           </DialogTitle>
           <DialogDescription>
-            Bonjour <strong>{apprenantPrenom} {apprenantNom}</strong>, vous suivez une <strong>formation continue</strong>.
-            Pour accéder à vos cours, vous devez signer la feuille d'émargement de cette demi-journée.
+            Bonjour <strong>{apprenantPrenom} {apprenantNom}</strong>, vous suivez une <strong>{formationLabel}</strong>.
+            Pour accéder à vos cours, vous devez signer la feuille d'émargement de ce créneau.
           </DialogDescription>
         </DialogHeader>
 
@@ -109,7 +125,7 @@ export const EmargementFCModal = ({
           <AlertDescription className="text-sm text-amber-900">
             Date : <strong>{new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</strong>
             <br />
-            Demi-journée : <strong>{demi === "matin" ? "Matin (avant 13h)" : "Après-midi (à partir de 13h)"}</strong>
+            Créneau : <strong>{creneauLabel(demi)} ({creneauHoraire(demi)})</strong>
           </AlertDescription>
         </Alert>
 
@@ -122,7 +138,7 @@ export const EmargementFCModal = ({
 
         <p className="text-xs text-muted-foreground flex items-start gap-2">
           <ShieldCheck className="w-4 h-4 mt-0.5 shrink-0" />
-          En signant, vous attestez de votre présence effective à cette demi-journée de formation.
+          En signant, vous attestez de votre présence effective à ce créneau de formation.
           Cette signature est horodatée et conservée à des fins légales (Qualiopi / financeurs).
         </p>
 
