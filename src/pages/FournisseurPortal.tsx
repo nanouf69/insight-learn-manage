@@ -1246,21 +1246,41 @@ export default function FournisseurPortal() {
                               <span className="font-semibold text-sm">{label}</span>
                               <div className="flex items-center gap-2">
                                 {isPast && <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">Passé</span>}
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="h-7 text-xs gap-1"
-                                  onClick={() =>
-                                    generateEmargementFormateurJour({
-                                      formateurNom: fournisseur?.nom || "Formateur",
-                                      date: d,
-                                      blocs: blocs as any[],
-                                    })
-                                  }
-                                >
-                                  <ClipboardSignature className="w-3.5 h-3.5" />
-                                  Feuille d'émargement
-                                </Button>
+                                {emargements[dateKey] ? (
+                                  <>
+                                    <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded font-medium">✓ Signée</span>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="h-7 text-xs gap-1"
+                                      onClick={() =>
+                                        generateEmargementFormateurJour({
+                                          formateurNom: fournisseur?.nom || "Formateur",
+                                          date: d,
+                                          blocs: blocs as any[],
+                                          signatureDataUrl: emargements[dateKey].signature_data_url,
+                                          signedAt: new Date(emargements[dateKey].signed_at),
+                                        })
+                                      }
+                                    >
+                                      <Download className="w-3.5 h-3.5" />
+                                      Télécharger
+                                    </Button>
+                                  </>
+                                ) : (
+                                  <Button
+                                    size="sm"
+                                    variant="default"
+                                    className="h-7 text-xs gap-1"
+                                    onClick={() => {
+                                      setSignatureDraft("");
+                                      setSignatureModal({ open: true, dateKey, date: d, blocs: blocs as any[] });
+                                    }}
+                                  >
+                                    <PenLine className="w-3.5 h-3.5" />
+                                    Signer émargement
+                                  </Button>
+                                )}
                               </div>
                             </div>
                             <div className="divide-y">
