@@ -321,14 +321,14 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
         </Card>
       ) : (
         <div className="grid gap-3">
-          {groupedByDay.map(([date, { matin, apresMidi }]) => (
+          {groupedByDay.map(([date, { matin, apresMidi, soir }]) => (
             <Card key={date} className="p-3">
               <div className="flex items-center justify-between flex-wrap gap-2 mb-3 pb-2 border-b">
                 <p className="font-semibold capitalize text-sm">{formatDateFR(date)}</p>
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => downloadJournee(date, matin, apresMidi, apprenant)}
+                  onClick={() => downloadJournee(date, matin, apresMidi, soir, apprenant)}
                   className="h-7 text-xs"
                 >
                   <Download className="h-3.5 w-3.5 mr-1" />
@@ -336,9 +336,9 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
                 </Button>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {(["matin", "apres-midi"] as const).map((key) => {
-                  const r = key === "matin" ? matin : apresMidi;
+              <div className={`grid grid-cols-1 ${soir ? "sm:grid-cols-3" : "sm:grid-cols-2"} gap-3`}>
+                {(["matin", "apres-midi", ...(soir ? (["soir"] as const) : [])] as const).map((key) => {
+                  const r = key === "matin" ? matin : key === "apres-midi" ? apresMidi : soir;
                   const label = labelDemi(key);
                   return (
                     <div key={key} className="border rounded-md p-2 bg-slate-50/50">
