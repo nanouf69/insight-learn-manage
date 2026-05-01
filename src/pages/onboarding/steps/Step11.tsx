@@ -31,6 +31,7 @@ export default function Step11() {
   const [numeroDossier, setNumeroDossier] = useState('');
   const [dateExamen, setDateExamen] = useState('');
   const [typeExamen, setTypeExamen] = useState('');
+  const [responsableContact, setResponsableContact] = useState(false);
   const [attempted, setAttempted] = useState(false);
 
   const selectedExam = datesExamenTheorique.find(e => e.value === dateExamen);
@@ -40,9 +41,11 @@ export default function Step11() {
     const savedNumeroDossier = localStorage.getItem('onboarding_numero_dossier');
     const savedDateExamen = localStorage.getItem('onboarding_date_examen');
     const savedTypeExamen = localStorage.getItem('onboarding_type_examen');
+    const savedResponsable = localStorage.getItem('onboarding_responsable_contact_centre');
     if (savedNumeroDossier) setNumeroDossier(savedNumeroDossier);
     if (savedDateExamen) setDateExamen(savedDateExamen);
     if (savedTypeExamen) setTypeExamen(savedTypeExamen);
+    if (savedResponsable === 'true') setResponsableContact(true);
   }, []);
 
   const handleNext = async () => {
@@ -63,10 +66,16 @@ export default function Step11() {
       return;
     }
 
+    if (!responsableContact) {
+      toast.error("Vous devez confirmer que vous êtes responsable de contacter le centre");
+      return;
+    }
+
     // Store in localStorage
     localStorage.setItem('onboarding_numero_dossier', numeroDossier);
     localStorage.setItem('onboarding_date_examen', dateExamen);
     localStorage.setItem('onboarding_type_examen', typeExamen);
+    localStorage.setItem('onboarding_responsable_contact_centre', 'true');
 
     // Also save directly to database
     const apprenantId = localStorage.getItem('onboarding_apprenant_id');
@@ -80,6 +89,7 @@ export default function Step11() {
           date_examen_theorique: dateExamen,
           type_examen: typeExamen,
           lieu_examen: selectedExamData?.lieu || '',
+          responsable_contact_centre: true,
           ...(motDePasseCma ? { mot_de_passe_cma: motDePasseCma } : {}),
         })
         .eq('id', apprenantId);
@@ -92,7 +102,7 @@ export default function Step11() {
     navigate('/bienvenue/etape-12');
   };
 
-  const canSubmit = numeroDossier.trim() && dateExamen && typeExamen;
+  const canSubmit = numeroDossier.trim() && dateExamen && typeExamen && responsableContact;
 
   return (
     <OnboardingLayout currentStep={11} totalSteps={12} title="Numéro de dossier et examen">
@@ -222,6 +232,24 @@ export default function Step11() {
                 <span className="text-3xl lg:text-4xl">04 28 29 60 91</span><br />
                 LE PREMIER JOUR DE LA PUBLICATION DES RÉSULTATS DE VOTRE EXAMEN THÉORIQUE POUR LA SUITE DES DÉMARCHES
               </p>
+            </div>
+
+            {/* Engagement responsabilité contact centre - OBLIGATOIRE */}
+            <div className={`rounded-xl p-5 border-2 ${attempted && !responsableContact ? 'border-red-500 bg-red-50' : 'border-red-300 bg-red-50'}`}>
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={responsableContact}
+                  onChange={(e) => setResponsableContact(e.target.checked)}
+                  className="mt-1 w-6 h-6 accent-red-600 cursor-pointer flex-shrink-0"
+                />
+                <span className="text-red-800 font-bold text-base lg:text-lg leading-snug">
+                  Je reconnais être responsable de contacter le centre au <span className="underline">04 28 29 60 91</span> le premier jour de la publication des résultats de mon examen théorique pour la suite des démarches. <span className="text-red-600">*</span>
+                </span>
+              </label>
+              {attempted && !responsableContact && (
+                <p className="text-red-600 text-sm font-semibold mt-2 ml-9">Vous devez cocher cette case pour continuer.</p>
+              )}
             </div>
 
             <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
