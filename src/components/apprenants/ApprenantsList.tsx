@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Search, Filter, MoreVertical, Mail, Phone, MapPin, User, UserCheck, Trash2, Pencil, Loader2, ChevronDown } from "lucide-react";
+import { Search, Filter, MoreVertical, Mail, Phone, MapPin, User, UserCheck, Trash2, Pencil, Loader2, ChevronDown, AlertTriangle } from "lucide-react";
+import { isPresentielType, getCurrentCreneau, type AgendaBloc, type CreneauKey } from "@/lib/agendaSlots";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -53,6 +54,12 @@ interface Apprenant {
   numero_dossier_cma: string | null;
   type_apprenant: string | null;
   organisme_financeur: string | null;
+  formation_choisie?: string | null;
+}
+
+interface EmargementStatus {
+  needsSignature: boolean;
+  creneau: CreneauKey | null;
 }
 
 const typeApprenantLabels: Record<string, { label: string; class: string }> = {
@@ -84,12 +91,14 @@ function ApprenantTable({
   onEdit,
   typeFilter,
   onTypeFilterChange,
+  emargementStatus,
 }: { 
   data: Apprenant[]; 
   onDelete: (id: string, name: string) => void;
   onEdit: (apprenant: Apprenant) => void;
   typeFilter: string[];
   onTypeFilterChange: (types: string[]) => void;
+  emargementStatus: Record<string, EmargementStatus>;
 }) {
   const toggleFilter = (type: string) => {
     if (typeFilter.includes(type)) {
@@ -185,20 +194,34 @@ function ApprenantTable({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {data.map((apprenant) => (
-            <TableRow key={apprenant.id} className="hover:bg-muted/50">
+          {data.map((apprenant) => {
+            const status = emargementStatus[apprenant.id];
+            const missing = status?.needsSignature;
+            return (
+            <TableRow
+              key={apprenant.id}
+              className={missing ? "bg-destructive/5 hover:bg-destructive/10 border-l-4 border-l-destructive" : "hover:bg-muted/50"}
+            >
               <TableCell>
                 <div className="flex items-center gap-3">
                   <Avatar className="w-10 h-10">
-                    <AvatarFallback className="bg-primary/10 text-primary">
+                    <AvatarFallback className={missing ? "bg-destructive/15 text-destructive" : "bg-primary/10 text-primary"}>
                       {apprenant.prenom[0]}{apprenant.nom[0]}
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <span className="font-medium">
+                    <span className={`font-medium ${missing ? "text-destructive" : ""}`}>
                       {apprenant.civilite && `${apprenant.civilite} `}
                       {apprenant.prenom} {apprenant.nom}
                     </span>
+                    {missing && (
+                      <div className="mt-1">
+                        <Badge variant="destructive" className="gap-1 text-[10px] py-0.5">
+                          <AlertTriangle className="w-3 h-3" />
+                          Émargement {status?.creneau ?? ""} non signé
+                        </Badge>
+                      </div>
+                    )}
                     {apprenant.numero_dossier_cma && (
                       <div className="text-xs text-muted-foreground">
                         CMA: {apprenant.numero_dossier_cma}
@@ -270,7 +293,8 @@ function ApprenantTable({
                 </DropdownMenu>
               </TableCell>
             </TableRow>
-          ))}
+            );
+          })}
         </TableBody>
       </Table>
     </div>
@@ -300,6 +324,57 @@ export function ApprenantsList() {
       
       if (error) throw error;
       return data as Apprenant[];
+    }
+  });
+
+  // Fetch today's emargement status for presentiel apprenants
+  const { data: emargementStatus = {} } = useQuery({
+    queryKey: ['apprenants-emargements-today', apprenants.map(a => a.id).join(',')],
+    enabled: apprenants.length > 0,
+    refetchInterval: 60_000,
+    queryFn: async () => {
+      const result: Record<string, EmargementStatus> = {};
+      const presentielApprenants = apprenants.filter(a =>
+        isPresentielType(a.type_apprenant, (a as any).formation_choisie)
+      );
+      if (presentielApprenants.length === 0) return result;
+
+      const today = new Date();
+      const yyyy = today.getFullYear();
+      const mm = String(today.getMonth() + 1).padStart(2, "0");
+      const dd = String(today.getDate()).padStart(2, "0");
+      const todayStr = `${yyyy}-${mm}-${dd}`;
+
+      // Today's signed emargements (one query)
+      const ids = presentielApprenants.map(a => a.id);
+      const { data: signedRows } = await supabase
+        .from('emargements_fc')
+        .select('apprenant_id, demi_journee')
+        .eq('date_emargement', todayStr)
+        .in('apprenant_id', ids);
+
+      const signedMap = new Map<string, Set<string>>();
+      (signedRows || []).forEach((r: any) => {
+        if (!signedMap.has(r.apprenant_id)) signedMap.set(r.apprenant_id, new Set());
+        signedMap.get(r.apprenant_id)!.add(r.demi_journee);
+      });
+
+      // For each apprenant, compute current creneau via agenda
+      for (const a of presentielApprenants) {
+        try {
+          const { getTodayAgendaBlocs } = await import("@/lib/agendaSlots");
+          const blocs = await getTodayAgendaBlocs((a as any).formation_choisie);
+          const creneau = getCurrentCreneau(blocs);
+          if (!creneau) continue;
+          const signed = signedMap.get(a.id);
+          if (!signed?.has(creneau)) {
+            result[a.id] = { needsSignature: true, creneau };
+          }
+        } catch {
+          // ignore individual failures
+        }
+      }
+      return result;
     }
   });
 
@@ -419,6 +494,7 @@ export function ApprenantsList() {
           onEdit={setEditApprenant}
           typeFilter={typeFilter}
           onTypeFilterChange={setTypeFilter}
+          emargementStatus={emargementStatus}
         />
       )}
 
