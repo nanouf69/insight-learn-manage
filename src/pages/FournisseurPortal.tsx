@@ -1225,9 +1225,26 @@ export default function FournisseurPortal() {
                         const label = `${JOURS[d.getDay()]} ${d.getDate()} ${MOIS[d.getMonth()]} ${d.getFullYear()}`;
                         return (
                           <div key={dateKey} className={`border rounded-xl overflow-hidden ${isPast ? 'opacity-75' : ''}`}>
-                            <div className="flex items-center justify-between px-4 py-2 bg-muted/40 border-b">
+                            <div className="flex items-center justify-between px-4 py-2 bg-muted/40 border-b gap-3">
                               <span className="font-semibold text-sm">{label}</span>
-                              {isPast && <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">Passé</span>}
+                              <div className="flex items-center gap-2">
+                                {isPast && <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">Passé</span>}
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-7 text-xs gap-1"
+                                  onClick={() =>
+                                    generateEmargementFormateurJour({
+                                      formateurNom: fournisseur?.nom || "Formateur",
+                                      date: d,
+                                      blocs: blocs as any[],
+                                    })
+                                  }
+                                >
+                                  <ClipboardSignature className="w-3.5 h-3.5" />
+                                  Feuille d'émargement
+                                </Button>
+                              </div>
                             </div>
                             <div className="divide-y">
                               {(blocs as any[])
