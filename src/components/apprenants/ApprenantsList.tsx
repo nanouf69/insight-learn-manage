@@ -494,6 +494,7 @@ export function ApprenantsList() {
           onEdit={setEditApprenant}
           typeFilter={typeFilter}
           onTypeFilterChange={setTypeFilter}
+          emargementStatus={emargementStatus}
         />
       )}
 
