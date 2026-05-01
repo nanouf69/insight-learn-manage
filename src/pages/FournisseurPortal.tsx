@@ -92,6 +92,28 @@ function isCoursBloc(bloc: { discipline_nom?: string | null; formation?: string 
   return true;
 }
 
+const PLANNING_HOURS = Array.from({ length: 14 }, (_, i) => i + 8);
+const PLANNING_HOUR_HEIGHT = 60;
+const PLANNING_DAYS = Array.from({ length: 7 }, (_, i) => i);
+
+const parseAgendaDate = (semaineDebut: string, jour = 0): Date => {
+  const [year, month, day] = semaineDebut.split('-').map(Number);
+  const date = new Date(year, month - 1, day);
+  date.setDate(date.getDate() + jour);
+  return date;
+};
+
+const timeToDecimal = (time: string): number => {
+  const [h, m] = time.split(':').map(Number);
+  return h + ((m || 0) / 60);
+};
+
+const formatDecimalTime = (decimal: number): string => {
+  const h = Math.floor(decimal);
+  const m = Math.round((decimal - h) * 60);
+  return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+};
+
 interface FournisseurApprenant {
   id: string;
   nom: string;
@@ -1220,91 +1242,123 @@ export default function FournisseurPortal() {
                     </CardContent>
                   </Card>
                 ) : (() => {
-                  // Grouper par date réelle (semaine_debut + jour)
-                  const grouped: Record<string, typeof planning> = {};
+                  // Grouper exactement comme l'agenda admin : par semaine puis par colonne jour
+                  const groupedByWeek: Record<string, typeof planning> = {};
+                  const signedDays: Record<string, typeof planning> = {};
                   planning.forEach((bloc: any) => {
-                    const [year, month, day] = bloc.semaine_debut.split('-').map(Number);
-                    const base = new Date(year, month - 1, day);
-                    base.setDate(base.getDate() + bloc.jour);
-                    const dateKey = `${base.getFullYear()}-${String(base.getMonth()+1).padStart(2,'0')}-${String(base.getDate()).padStart(2,'0')}`;
-                    if (!grouped[dateKey]) grouped[dateKey] = [];
-                    grouped[dateKey].push({ ...bloc, _dateObj: base });
+                    const realDate = parseAgendaDate(bloc.semaine_debut, bloc.jour);
+                    const dateKey = format(realDate, 'yyyy-MM-dd');
+                    if (!groupedByWeek[bloc.semaine_debut]) groupedByWeek[bloc.semaine_debut] = [];
+                    if (!signedDays[dateKey]) signedDays[dateKey] = [];
+                    groupedByWeek[bloc.semaine_debut].push({ ...bloc, _dateObj: realDate, _dateKey: dateKey });
+                    signedDays[dateKey].push({ ...bloc, _dateObj: realDate, _dateKey: dateKey });
                   });
-                  const JOURS = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
-                  const MOIS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
-                   // Tri chronologique ASCENDANT : les cours à venir (ex: Lundi 4 Mai) apparaissent en premier
-                   const sortedKeys = Object.keys(grouped).sort((a, b) => a.localeCompare(b));
+                  const sortedWeeks = Object.keys(groupedByWeek).sort((a, b) => a.localeCompare(b));
                   return (
-                    <div className="space-y-4">
-                      {sortedKeys.map((dateKey) => {
-                        const blocs = grouped[dateKey];
-                        const d = blocs[0]._dateObj as Date;
-                        const isPast = d < new Date();
-                        const label = `${JOURS[d.getDay()]} ${d.getDate()} ${MOIS[d.getMonth()]} ${d.getFullYear()}`;
+                    <div className="space-y-6">
+                      {sortedWeeks.map((weekKey) => {
+                        const weekStartDate = parseAgendaDate(weekKey, 0);
+                        const weekBlocks = groupedByWeek[weekKey];
                         return (
-                          <div key={dateKey} className={`border rounded-xl overflow-hidden ${isPast ? 'opacity-75' : ''}`}>
-                            <div className="flex items-center justify-between px-4 py-2 bg-muted/40 border-b gap-3">
-                              <span className="font-semibold text-sm">{label}</span>
-                              <div className="flex items-center gap-2">
-                                {isPast && <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">Passé</span>}
-                                {emargements[dateKey] ? (
-                                  <>
-                                    <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded font-medium">✓ Signée</span>
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      className="h-7 text-xs gap-1"
-                                      onClick={() =>
-                                        generateEmargementFormateurJour({
-                                          formateurNom: fournisseur?.nom || "Formateur",
-                                          date: d,
-                                          blocs: blocs as any[],
-                                          signatureDataUrl: emargements[dateKey].signature_data_url,
-                                          signedAt: new Date(emargements[dateKey].signed_at),
-                                        })
-                                      }
-                                    >
-                                      <Download className="w-3.5 h-3.5" />
-                                      Télécharger
-                                    </Button>
-                                  </>
-                                ) : (
-                                  <Button
-                                    size="sm"
-                                    variant="default"
-                                    className="h-7 text-xs gap-1"
-                                    onClick={() => {
-                                      setSignatureDraft("");
-                                      setSignatureModal({ open: true, dateKey, date: d, blocs: blocs as any[] });
-                                    }}
-                                  >
-                                    <PenLine className="w-3.5 h-3.5" />
-                                    Signer émargement
-                                  </Button>
-                                )}
+                          <Card key={weekKey} className="overflow-hidden">
+                            <CardHeader className="py-3">
+                              <CardTitle className="text-base">Semaine du {format(weekStartDate, "d MMMM yyyy", { locale: fr })}</CardTitle>
+                            </CardHeader>
+                            <div className="overflow-x-auto border-t">
+                              <div className="min-w-[920px]">
+                                <div className="grid grid-cols-8 border-b bg-muted/20">
+                                  <div className="p-3 text-xs font-medium text-muted-foreground border-r">Heures</div>
+                                  {PLANNING_DAYS.map((dayIndex) => {
+                                    const dayDate = parseAgendaDate(weekKey, dayIndex);
+                                    const dateKey = format(dayDate, 'yyyy-MM-dd');
+                                    const dayBlocks = (signedDays[dateKey] || []).sort((a: any, b: any) => a.heure_debut.localeCompare(b.heure_debut));
+                                    const dayTotalH = dayBlocks.reduce((sum: number, bloc: any) => sum + (timeToDecimal(bloc.heure_fin) - timeToDecimal(bloc.heure_debut)), 0);
+                                    return (
+                                      <div key={dateKey} className="p-2 text-center border-r last:border-r-0 space-y-1">
+                                        <div className="font-semibold text-sm capitalize">{format(dayDate, "EEE dd/MM", { locale: fr })}</div>
+                                        {dayTotalH > 0 && <div className="text-xs text-muted-foreground">{Math.round(dayTotalH * 10) / 10}h</div>}
+                                        {dayBlocks.length > 0 && (emargements[dateKey] ? (
+                                          <Button
+                                            size="sm"
+                                            variant="outline"
+                                            className="h-7 text-xs gap-1"
+                                            onClick={() => generateEmargementFormateurJour({
+                                              formateurNom: fournisseur?.nom || "Formateur",
+                                              date: dayDate,
+                                              blocs: dayBlocks as any[],
+                                              signatureDataUrl: emargements[dateKey].signature_data_url,
+                                              signedAt: new Date(emargements[dateKey].signed_at),
+                                            })}
+                                          >
+                                            <Download className="w-3.5 h-3.5" /> Signée
+                                          </Button>
+                                        ) : (
+                                          <Button
+                                            size="sm"
+                                            variant="default"
+                                            className="h-7 text-xs gap-1"
+                                            onClick={() => {
+                                              setSignatureDraft("");
+                                              setSignatureModal({ open: true, dateKey, date: dayDate, blocs: dayBlocks as any[] });
+                                            }}
+                                          >
+                                            <PenLine className="w-3.5 h-3.5" /> Signer
+                                          </Button>
+                                        ))}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                                <div className="grid grid-cols-8">
+                                  <div className="border-r bg-muted/10">
+                                    {PLANNING_HOURS.map((hour) => (
+                                      <div key={hour} className="h-[60px] flex items-start justify-end pr-3 pt-1 text-xs font-medium text-muted-foreground border-b border-border/50">
+                                        {hour} h
+                                      </div>
+                                    ))}
+                                  </div>
+                                  {PLANNING_DAYS.map((dayIndex) => {
+                                    const dayDate = parseAgendaDate(weekKey, dayIndex);
+                                    const dateKey = format(dayDate, 'yyyy-MM-dd');
+                                    const dayBlocks = (signedDays[dateKey] || []).sort((a: any, b: any) => a.heure_debut.localeCompare(b.heure_debut));
+                                    return (
+                                      <div key={dateKey} className="relative border-r last:border-r-0" style={{ height: `${PLANNING_HOURS.length * PLANNING_HOUR_HEIGHT}px` }}>
+                                        {PLANNING_HOURS.map((hour) => (
+                                          <div key={hour} className="absolute w-full h-[60px] border-b border-border/30" style={{ top: `${(hour - 8) * PLANNING_HOUR_HEIGHT}px` }} />
+                                        ))}
+                                        {dayBlocks.map((bloc: any) => {
+                                          const startHour = timeToDecimal(bloc.heure_debut);
+                                          const endHour = timeToDecimal(bloc.heure_fin);
+                                          const topOffset = (startHour - 8) * PLANNING_HOUR_HEIGHT;
+                                          const blockHeight = (endHour - startHour) * PLANNING_HOUR_HEIGHT - 4;
+                                          return (
+                                            <div
+                                              key={bloc.id}
+                                              className="absolute left-1 right-1 rounded-lg shadow-sm overflow-hidden z-10"
+                                              style={{
+                                                top: `${topOffset + 2}px`,
+                                                height: `${Math.max(blockHeight, 44)}px`,
+                                                backgroundColor: bloc.discipline_color ? `${bloc.discipline_color}20` : 'hsl(var(--primary) / 0.12)',
+                                                borderLeft: `4px solid ${bloc.discipline_color || 'hsl(var(--primary))'}`,
+                                              }}
+                                            >
+                                              <div className="p-2 h-full flex flex-col">
+                                                <div className="text-xs font-semibold truncate" style={{ color: bloc.discipline_color || 'hsl(var(--primary))' }}>{bloc.discipline_nom}</div>
+                                                <div className="text-xs text-muted-foreground truncate mt-1">{bloc.formation}</div>
+                                                <div className="text-xs font-medium mt-auto" style={{ color: bloc.discipline_color || 'hsl(var(--primary))' }}>
+                                                  {formatDecimalTime(startHour)} - {formatDecimalTime(endHour)}
+                                                </div>
+                                              </div>
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
                               </div>
                             </div>
-                            <div className="divide-y">
-                              {(blocs as any[])
-                                .sort((a, b) => a.heure_debut.localeCompare(b.heure_debut))
-                                .map((bloc: any) => {
-                                  const [sh, sm] = bloc.heure_debut.split(':').map(Number);
-                                  const [eh, em] = bloc.heure_fin.split(':').map(Number);
-                                  const heures = (eh + em/60) - (sh + sm/60);
-                                  return (
-                                    <div key={bloc.id} className="flex items-center gap-3 px-4 py-3">
-                                      <div className="w-3 h-10 rounded-sm shrink-0" style={{ backgroundColor: bloc.discipline_color || '#6366f1' }} />
-                                      <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-medium">{bloc.discipline_nom}</p>
-                                        <p className="text-xs text-muted-foreground">
-                                          {bloc.heure_debut} – {bloc.heure_fin} · {heures.toFixed(1)}h · {bloc.formation}
-                                        </p>
-                                      </div>
-                                    </div>
-                                  );
-                                })}
-                            </div>
-                          </div>
+                          </Card>
                         );
                       })}
                     </div>
