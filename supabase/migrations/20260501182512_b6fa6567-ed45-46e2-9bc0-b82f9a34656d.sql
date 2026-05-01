@@ -1,0 +1,1 @@
+ALTER TABLE public.agenda_blocs REPLICA IDENTITY FULL;
