@@ -865,32 +865,63 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     fetchCompletions();
   }, [apprenant?.id]);
 
-  // Vérifier si une signature d'émargement est requise pour la demi-journée en cours (formation continue)
+  // Vérifier si une signature d'émargement est requise pour le créneau en cours
+  // - Formation continue : matin / aprem (selon l'heure)
+  // - Présentiel : matin / aprem / soir (selon l'agenda du jour)
   useEffect(() => {
     if (embedded || !user || !apprenant?.id) {
       setEmargementFCStatus("n/a");
+      setEmargementCreneau(null);
       return;
     }
-    if (!isFormationContinue(apprenant.type_apprenant, apprenant.formation_choisie)) {
+
+    const isFC = isFormationContinue(apprenant.type_apprenant, apprenant.formation_choisie);
+    const isPres = !isFC && isPresentielType(apprenant.type_apprenant, apprenant.formation_choisie);
+
+    if (!isFC && !isPres) {
       setEmargementFCStatus("n/a");
+      setEmargementCreneau(null);
       return;
     }
+
     let cancelled = false;
     setEmargementFCStatus("checking");
+
     const check = async () => {
       const now = new Date();
-      const demi = now.getHours() < 13 ? "matin" : "apres_midi";
+      let creneau: CreneauKey;
+
+      if (isFC) {
+        // FC : matin avant 13h, aprem ensuite (pas de créneau soir en FC)
+        creneau = now.getHours() < 13 ? "matin" : "apres_midi";
+        setEmargementMode("fc");
+      } else {
+        // Présentiel : on lit l'agenda du jour
+        const blocs = await getTodayAgendaBlocs(apprenant.formation_choisie);
+        if (cancelled) return;
+        const detected = getCurrentCreneau(blocs, now);
+        if (!detected) {
+          // Pas de cours présentiel prévu aujourd'hui → pas de blocage
+          setEmargementFCStatus("n/a");
+          setEmargementCreneau(null);
+          return;
+        }
+        creneau = detected;
+        setEmargementMode("presentiel");
+      }
+
+      setEmargementCreneau(creneau);
       const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
       const { data, error } = await supabase
         .from("emargements_fc" as any)
         .select("id")
         .eq("apprenant_id", apprenant.id!)
         .eq("date_emargement", today)
-        .eq("demi_journee", demi)
+        .eq("demi_journee", creneau)
         .maybeSingle();
       if (cancelled) return;
       if (error && error.code !== "PGRST116") {
-        console.warn("[Émargement FC] check error:", error.message);
+        console.warn("[Émargement] check error:", error.message);
       }
       setEmargementFCStatus(data ? "signed" : "needed");
     };
