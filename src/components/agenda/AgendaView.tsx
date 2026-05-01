@@ -226,7 +226,18 @@ export function AgendaView() {
     }
 
     if (data && formateursList.length > 0) {
-      const blocks: CourseBlock[] = data.map((bloc) => {
+      // Filtrer pour exclure les examens individuels (CMA / pratique) — on garde uniquement les COURS
+      const isCoursBloc = (b: any) => {
+        const d = (b.discipline_nom ?? '').trim().toLowerCase();
+        const f = (b.formation ?? '').trim().toLowerCase();
+        const text = `${d} ${f}`;
+        if (/examen\s+blanc/i.test(text)) return true;
+        if (/examen/i.test(text)) return false;
+        return true;
+      };
+      const filtered = data.filter(isCoursBloc);
+
+      const blocks: CourseBlock[] = filtered.map((bloc) => {
         const formateur = formateursList.find(f => f.id === bloc.formateur_id);
         return {
           id: bloc.id,
