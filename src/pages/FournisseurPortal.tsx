@@ -104,6 +104,15 @@ const timeToDecimal = (time: string): number => {
   return h + ((m || 0) / 60);
 };
 
+const sortPlanningChronologically = (items: any[]) => {
+  return [...items].sort((a, b) => {
+    const aDate = parseAgendaDate(a.semaine_debut, a.jour).getTime();
+    const bDate = parseAgendaDate(b.semaine_debut, b.jour).getTime();
+    if (aDate !== bDate) return aDate - bDate;
+    return String(a.heure_debut || '').localeCompare(String(b.heure_debut || ''));
+  });
+};
+
 interface FournisseurApprenant {
   id: string;
   nom: string;
@@ -425,7 +434,7 @@ export default function FournisseurPortal() {
           .select('id, discipline_nom, formation, heure_debut, heure_fin, semaine_debut, jour, discipline_color, formateur_id')
           .eq('formateur_id', fournisseur.formateur_id)
           .order('semaine_debut', { ascending: true });
-        if (planData) setPlanning(planData.filter(isCoursBloc));
+        if (planData) setPlanning(sortPlanningChronologically(planData.filter(isCoursBloc)));
 
         // Charger les signatures d'émargement existantes
         const { data: emargData } = await supabase
@@ -452,7 +461,7 @@ export default function FournisseurPortal() {
         .select('id, discipline_nom, formation, heure_debut, heure_fin, semaine_debut, jour, discipline_color, formateur_id')
         .eq('formateur_id', formateurId)
         .order('semaine_debut', { ascending: true });
-      if (planData) setPlanning(planData.filter(isCoursBloc));
+      if (planData) setPlanning(sortPlanningChronologically(planData.filter(isCoursBloc)));
     };
     const channel = supabase
       .channel(`agenda-formateur-${formateurId}-${Date.now()}`)
@@ -1234,13 +1243,13 @@ export default function FournisseurPortal() {
                 ) : (() => {
                   // Liste simple et fiable : tri par date réelle puis par heure, comme dans l'agenda
                   const grouped: Record<string, typeof planning> = {};
-                  planning.forEach((bloc: any) => {
+                  sortPlanningChronologically(planning).forEach((bloc: any) => {
                     const realDate = parseAgendaDate(bloc.semaine_debut, bloc.jour);
                     const dateKey = format(realDate, 'yyyy-MM-dd');
                     if (!grouped[dateKey]) grouped[dateKey] = [];
                     grouped[dateKey].push({ ...bloc, _dateObj: realDate, _dateKey: dateKey });
                   });
-                  const sortedKeys = Object.keys(grouped).sort((a, b) => a.localeCompare(b));
+                  const sortedKeys = Object.keys(grouped).sort((a, b) => new Date(`${a}T00:00:00`).getTime() - new Date(`${b}T00:00:00`).getTime());
                   return (
                     <div className="space-y-4">
                       {sortedKeys.map((dateKey) => {
