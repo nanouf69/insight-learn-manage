@@ -327,6 +327,57 @@ export function ApprenantsList() {
     }
   });
 
+  // Fetch today's emargement status for presentiel apprenants
+  const { data: emargementStatus = {} } = useQuery({
+    queryKey: ['apprenants-emargements-today', apprenants.map(a => a.id).join(',')],
+    enabled: apprenants.length > 0,
+    refetchInterval: 60_000,
+    queryFn: async () => {
+      const result: Record<string, EmargementStatus> = {};
+      const presentielApprenants = apprenants.filter(a =>
+        isPresentielType(a.type_apprenant, (a as any).formation_choisie)
+      );
+      if (presentielApprenants.length === 0) return result;
+
+      const today = new Date();
+      const yyyy = today.getFullYear();
+      const mm = String(today.getMonth() + 1).padStart(2, "0");
+      const dd = String(today.getDate()).padStart(2, "0");
+      const todayStr = `${yyyy}-${mm}-${dd}`;
+
+      // Today's signed emargements (one query)
+      const ids = presentielApprenants.map(a => a.id);
+      const { data: signedRows } = await supabase
+        .from('emargements_fc')
+        .select('apprenant_id, demi_journee')
+        .eq('date_emargement', todayStr)
+        .in('apprenant_id', ids);
+
+      const signedMap = new Map<string, Set<string>>();
+      (signedRows || []).forEach((r: any) => {
+        if (!signedMap.has(r.apprenant_id)) signedMap.set(r.apprenant_id, new Set());
+        signedMap.get(r.apprenant_id)!.add(r.demi_journee);
+      });
+
+      // For each apprenant, compute current creneau via agenda
+      for (const a of presentielApprenants) {
+        try {
+          const { getTodayAgendaBlocs } = await import("@/lib/agendaSlots");
+          const blocs = await getTodayAgendaBlocs((a as any).formation_choisie);
+          const creneau = getCurrentCreneau(blocs);
+          if (!creneau) continue;
+          const signed = signedMap.get(a.id);
+          if (!signed?.has(creneau)) {
+            result[a.id] = { needsSignature: true, creneau };
+          }
+        } catch {
+          // ignore individual failures
+        }
+      }
+      return result;
+    }
+  });
+
   // Delete mutation
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
