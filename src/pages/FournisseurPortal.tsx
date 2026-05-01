@@ -387,11 +387,12 @@ export default function FournisseurPortal() {
       }
 
       // Charger le planning si c'est un formateur (depuis agenda_blocs)
+      // On inclut les blocs assignés au formateur ET les blocs non-assignés (créneaux communs)
       if (fournisseur.formateur_id) {
         const { data: planData } = await supabase
           .from('agenda_blocs')
-          .select('id, discipline_nom, formation, heure_debut, heure_fin, semaine_debut, jour, discipline_color')
-          .eq('formateur_id', fournisseur.formateur_id)
+          .select('id, discipline_nom, formation, heure_debut, heure_fin, semaine_debut, jour, discipline_color, formateur_id')
+          .or(`formateur_id.eq.${fournisseur.formateur_id},formateur_id.is.null`)
           .order('semaine_debut', { ascending: true });
         if (planData) setPlanning(planData);
       }
@@ -399,28 +400,29 @@ export default function FournisseurPortal() {
     load();
   }, [fournisseur, showForm]);
 
-  // Realtime: refresh planning automatically when agenda_blocs change for this formateur
+  // Realtime: refresh planning automatically when ANY agenda_blocs change
+  // (on filtre côté client pour inclure aussi les blocs non assignés)
   useEffect(() => {
     if (!fournisseur?.formateur_id) return;
     const formateurId = fournisseur.formateur_id;
     const reloadPlanning = async () => {
       const { data: planData } = await supabase
         .from('agenda_blocs')
-        .select('id, discipline_nom, formation, heure_debut, heure_fin, semaine_debut, jour, discipline_color')
-        .eq('formateur_id', formateurId)
+        .select('id, discipline_nom, formation, heure_debut, heure_fin, semaine_debut, jour, discipline_color, formateur_id')
+        .or(`formateur_id.eq.${formateurId},formateur_id.is.null`)
         .order('semaine_debut', { ascending: true });
       if (planData) setPlanning(planData);
     };
     const channel = supabase
-      .channel(`agenda-formateur-${formateurId}`)
+      .channel(`agenda-formateur-${formateurId}-${Date.now()}`)
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'agenda_blocs', filter: `formateur_id=eq.${formateurId}` },
+        { event: '*', schema: 'public', table: 'agenda_blocs' },
         () => { reloadPlanning(); }
       )
       .subscribe();
-    // Safety net: refresh every 60s
-    const interval = setInterval(reloadPlanning, 60000);
+    // Safety net: refresh every 30s
+    const interval = setInterval(reloadPlanning, 30000);
     return () => {
       supabase.removeChannel(channel);
       clearInterval(interval);
