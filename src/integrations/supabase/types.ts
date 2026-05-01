@@ -1259,6 +1259,53 @@ export type Database = {
         }
         Relationships: []
       }
+      formateur_emargements: {
+        Row: {
+          blocs_snapshot: Json
+          created_at: string
+          date_jour: string
+          formateur_id: string | null
+          fournisseur_id: string
+          id: string
+          ip_address: string | null
+          signature_data_url: string
+          signed_at: string
+          user_agent: string | null
+        }
+        Insert: {
+          blocs_snapshot?: Json
+          created_at?: string
+          date_jour: string
+          formateur_id?: string | null
+          fournisseur_id: string
+          id?: string
+          ip_address?: string | null
+          signature_data_url: string
+          signed_at?: string
+          user_agent?: string | null
+        }
+        Update: {
+          blocs_snapshot?: Json
+          created_at?: string
+          date_jour?: string
+          formateur_id?: string | null
+          fournisseur_id?: string
+          id?: string
+          ip_address?: string | null
+          signature_data_url?: string
+          signed_at?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "formateur_emargements_fournisseur_id_fkey"
+            columns: ["fournisseur_id"]
+            isOneToOne: false
+            referencedRelation: "fournisseurs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       formateurs: {
         Row: {
           adresse: string | null
