@@ -26,7 +26,7 @@ const MOIS = [
 
 const LIEU = "86 route de Genas, 69003 Lyon";
 
-export function generateEmargementFormateurJour({ formateurNom, date, blocs }: Params) {
+export function generateEmargementFormateurJour({ formateurNom, date, blocs, signatureDataUrl, signedAt }: Params) {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 15;
