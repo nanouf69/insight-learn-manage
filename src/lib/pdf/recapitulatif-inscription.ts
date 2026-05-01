@@ -11,6 +11,7 @@ interface RecapitulatifData {
   lieuExamen?: string;
   b2Vierge: boolean;
   motDePasseCma?: string;
+  responsableContactCentre?: boolean;
 }
 
 export function generateRecapitulatifPDF(data: RecapitulatifData, options?: { returnBlob?: boolean }): Blob | void {
