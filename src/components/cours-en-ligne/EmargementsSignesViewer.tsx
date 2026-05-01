@@ -184,7 +184,7 @@ const buildEmargementHTML = (
 };
 
 const downloadAllJournees = (
-  groupedByDay: Array<[string, { matin?: EmargementRow; apresMidi?: EmargementRow }]>,
+  groupedByDay: Array<[string, { matin?: EmargementRow; apresMidi?: EmargementRow; soir?: EmargementRow }]>,
   apprenant: ApprenantInfo | null
 ) => {
   const html = buildEmargementHTML(groupedByDay, apprenant);
@@ -199,6 +199,7 @@ const downloadJournee = (
   date: string,
   matin: EmargementRow | undefined,
   apresMidi: EmargementRow | undefined,
+  soir: EmargementRow | undefined,
   apprenant: ApprenantInfo | null
 ) => {
   downloadAllJournees([[date, { matin, apresMidi }]], apprenant);
