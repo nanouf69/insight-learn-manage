@@ -276,6 +276,18 @@ serve(async (req) => {
     }
 
     console.log(`${LOG_PREFIX}[${requestId}] Step 12 - Link auth user to apprenant (start)`);
+
+    // Détacher tout autre apprenant déjà lié à ce auth_user_id (contrainte UNIQUE)
+    const { error: detachErr } = await supabaseAdmin
+      .from("apprenants")
+      .update({ auth_user_id: null })
+      .eq("auth_user_id", authUser.user.id)
+      .neq("id", apprenant_id);
+
+    if (detachErr) {
+      console.log(`${LOG_PREFIX}[${requestId}] Step 12 - Detach previous link failed`, { message: detachErr.message });
+    }
+
     const { error: linkErr } = await supabaseAdmin
       .from("apprenants")
       .update({ auth_user_id: authUser.user.id })
