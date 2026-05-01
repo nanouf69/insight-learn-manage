@@ -234,6 +234,24 @@ export default function Step11() {
               </p>
             </div>
 
+            {/* Engagement responsabilité contact centre - OBLIGATOIRE */}
+            <div className={`rounded-xl p-5 border-2 ${attempted && !responsableContact ? 'border-red-500 bg-red-50' : 'border-red-300 bg-red-50'}`}>
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={responsableContact}
+                  onChange={(e) => setResponsableContact(e.target.checked)}
+                  className="mt-1 w-6 h-6 accent-red-600 cursor-pointer flex-shrink-0"
+                />
+                <span className="text-red-800 font-bold text-base lg:text-lg leading-snug">
+                  Je reconnais être responsable de contacter le centre au <span className="underline">04 28 29 60 91</span> le premier jour de la publication des résultats de mon examen théorique pour la suite des démarches. <span className="text-red-600">*</span>
+                </span>
+              </label>
+              {attempted && !responsableContact && (
+                <p className="text-red-600 text-sm font-semibold mt-2 ml-9">Vous devez cocher cette case pour continuer.</p>
+              )}
+            </div>
+
             <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
               <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
               <p className="text-red-700 text-sm">
