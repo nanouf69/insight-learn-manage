@@ -143,7 +143,8 @@ export const FORMATION_MODULES: Record<string, FormationDefinition> = {
     { id: 61, label: "10.SOURCES JURIDIQUES TAXI" },
     { id: 71, label: "11.FICHES RÉVISIONS TAXI" },
     { id: 6, label: "12.PRATIQUE TAXI" },
-    { id: 51, label: "13.FIN DE FORMATION TAXI" },
+    { id: 84, label: "13.FEUILLES D'ÉMARGEMENT SIGNÉES TAXI" },
+    { id: 51, label: "14.FIN DE FORMATION TAXI" },
   ]},
   "taxi-e-presentiel": { label: "TAXI E-Présentiel", color: "bg-orange-100 text-orange-800 border-orange-300", modules: [
     { id: 1, label: "1.INTRODUCTION PRÉSENTIEL" },
@@ -159,7 +160,8 @@ export const FORMATION_MODULES: Record<string, FormationDefinition> = {
     { id: 61, label: "10.SOURCES JURIDIQUES TAXI" },
     { id: 71, label: "11.FICHES RÉVISIONS TAXI" },
     { id: 6, label: "12.PRATIQUE TAXI" },
-    { id: 51, label: "13.FIN DE FORMATION TAXI" },
+    { id: 84, label: "13.FEUILLES D'ÉMARGEMENT SIGNÉES TAXI" },
+    { id: 51, label: "14.FIN DE FORMATION TAXI" },
   ]},
   "taxi-e": { label: "TAXI E-learning", color: "bg-orange-50 text-orange-700 border-orange-200", modules: [
     { id: 26, label: "1.INTRODUCTION E-LEARNING" },
