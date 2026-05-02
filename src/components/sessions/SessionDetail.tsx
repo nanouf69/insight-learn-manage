@@ -1434,9 +1434,24 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
         numero: facture.numero,
         dateEmission: facture.date_emission,
       });
-      await generateFactureFC(data);
+      // Génère le PDF et récupère le blob pour archivage CRM
+      const result: any = await generateFactureFC(data, { returnBlob: true });
+      if (result?.blob && result?.fileName) {
+        // Téléchargement local
+        const url = URL.createObjectURL(result.blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = result.fileName; a.click();
+        URL.revokeObjectURL(url);
+        // Archivage dans le dossier de formation de l'apprenant
+        await saveFactureToCRM({
+          apprenantId: apprenant.id,
+          numero: facture.numero,
+          fileName: result.fileName,
+          blob: result.blob,
+        });
+      }
       await refetchFacturesFC();
-      toast({ title: "Facture téléchargée", description: `${apprenant.prenom} ${apprenant.nom} (Brouillon ${facture.numero})` });
+      toast({ title: "Facture téléchargée", description: `${apprenant.prenom} ${apprenant.nom} (Brouillon ${facture.numero}) — archivée dans le dossier de formation` });
     } catch (e: any) {
       toast({ title: "Erreur", description: e?.message || "Impossible de générer la facture.", variant: "destructive" });
     } finally {
