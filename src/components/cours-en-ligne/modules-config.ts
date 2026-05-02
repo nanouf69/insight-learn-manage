@@ -101,7 +101,8 @@ export const FORMATION_MODULES: Record<string, FormationDefinition> = {
     { id: 60, label: "7.SOURCES JURIDIQUES VTC" },
     { id: 70, label: "8.FICHES RÉVISIONS VTC" },
     { id: 8, label: "9.PRATIQUE VTC" },
-    { id: 50, label: "10.FIN DE FORMATION VTC" },
+    { id: 83, label: "10.FEUILLES D'ÉMARGEMENT SIGNÉES VTC" },
+    { id: 50, label: "11.FIN DE FORMATION VTC" },
   ]},
   "vtc-e-presentiel": { label: "VTC E-Présentiel", color: "bg-emerald-100 text-emerald-800 border-emerald-300", modules: [
     { id: 1, label: "1.INTRODUCTION PRÉSENTIEL" },
@@ -113,7 +114,8 @@ export const FORMATION_MODULES: Record<string, FormationDefinition> = {
     { id: 60, label: "7.SOURCES JURIDIQUES VTC" },
     { id: 70, label: "8.FICHES RÉVISIONS VTC" },
     { id: 8, label: "9.PRATIQUE VTC" },
-    { id: 50, label: "10.FIN DE FORMATION VTC" },
+    { id: 83, label: "10.FEUILLES D'ÉMARGEMENT SIGNÉES VTC" },
+    { id: 50, label: "11.FIN DE FORMATION VTC" },
   ]},
   "vtc-e": { label: "VTC E-learning", color: "bg-emerald-50 text-emerald-700 border-emerald-200", modules: [
     { id: 26, label: "1.INTRODUCTION E-LEARNING" },
@@ -141,7 +143,8 @@ export const FORMATION_MODULES: Record<string, FormationDefinition> = {
     { id: 61, label: "10.SOURCES JURIDIQUES TAXI" },
     { id: 71, label: "11.FICHES RÉVISIONS TAXI" },
     { id: 6, label: "12.PRATIQUE TAXI" },
-    { id: 51, label: "13.FIN DE FORMATION TAXI" },
+    { id: 84, label: "13.FEUILLES D'ÉMARGEMENT SIGNÉES TAXI" },
+    { id: 51, label: "14.FIN DE FORMATION TAXI" },
   ]},
   "taxi-e-presentiel": { label: "TAXI E-Présentiel", color: "bg-orange-100 text-orange-800 border-orange-300", modules: [
     { id: 1, label: "1.INTRODUCTION PRÉSENTIEL" },
@@ -157,7 +160,8 @@ export const FORMATION_MODULES: Record<string, FormationDefinition> = {
     { id: 61, label: "10.SOURCES JURIDIQUES TAXI" },
     { id: 71, label: "11.FICHES RÉVISIONS TAXI" },
     { id: 6, label: "12.PRATIQUE TAXI" },
-    { id: 51, label: "13.FIN DE FORMATION TAXI" },
+    { id: 84, label: "13.FEUILLES D'ÉMARGEMENT SIGNÉES TAXI" },
+    { id: 51, label: "14.FIN DE FORMATION TAXI" },
   ]},
   "taxi-e": { label: "TAXI E-learning", color: "bg-orange-50 text-orange-700 border-orange-200", modules: [
     { id: 26, label: "1.INTRODUCTION E-LEARNING" },
@@ -189,7 +193,8 @@ export const FORMATION_MODULES: Record<string, FormationDefinition> = {
     { id: 62, label: "10.SOURCES JURIDIQUES TA" },
     { id: 72, label: "11.FICHES RÉVISIONS TA" },
     { id: 6, label: "12.PRATIQUE TAXI" },
-    { id: 52, label: "13.FIN DE FORMATION TA" },
+    { id: 84, label: "13.FEUILLES D'ÉMARGEMENT SIGNÉES TAXI" },
+    { id: 52, label: "14.FIN DE FORMATION TA" },
   ]},
   "ta-e-presentiel": { label: "TA E-Présentiel", color: "bg-amber-100 text-amber-800 border-amber-300", modules: [
     { id: 31, label: "1.INTRODUCTION TA" },
@@ -205,7 +210,8 @@ export const FORMATION_MODULES: Record<string, FormationDefinition> = {
     { id: 62, label: "10.SOURCES JURIDIQUES TA" },
     { id: 72, label: "11.FICHES RÉVISIONS TA" },
     { id: 6, label: "12.PRATIQUE TAXI" },
-    { id: 52, label: "13.FIN DE FORMATION TA" },
+    { id: 84, label: "13.FEUILLES D'ÉMARGEMENT SIGNÉES TAXI" },
+    { id: 52, label: "14.FIN DE FORMATION TA" },
   ]},
   "ta-e": { label: "TA E-learning", color: "bg-amber-50 text-amber-700 border-amber-200", modules: [
     { id: 32, label: "1.INTRODUCTION TA E-LEARNING" },
@@ -233,7 +239,8 @@ export const FORMATION_MODULES: Record<string, FormationDefinition> = {
     { id: 63, label: "7.SOURCES JURIDIQUES VA" },
     { id: 73, label: "8.FICHES RÉVISIONS VA" },
     { id: 8, label: "9.PRATIQUE VTC" },
-    { id: 53, label: "10.FIN DE FORMATION VA" },
+    { id: 83, label: "10.FEUILLES D'ÉMARGEMENT SIGNÉES VTC" },
+    { id: 53, label: "11.FIN DE FORMATION VA" },
   ]},
   "va-e-presentiel": { label: "VA E-Présentiel", color: "bg-teal-100 text-teal-800 border-teal-300", modules: [
     { id: 34, label: "1.INTRODUCTION VA" },
@@ -245,7 +252,8 @@ export const FORMATION_MODULES: Record<string, FormationDefinition> = {
     { id: 63, label: "7.SOURCES JURIDIQUES VA" },
     { id: 73, label: "8.FICHES RÉVISIONS VA" },
     { id: 8, label: "9.PRATIQUE VTC" },
-    { id: 53, label: "10.FIN DE FORMATION VA" },
+    { id: 83, label: "10.FEUILLES D'ÉMARGEMENT SIGNÉES VTC" },
+    { id: 53, label: "11.FIN DE FORMATION VA" },
   ]},
   "va-e": { label: "VA E-learning", color: "bg-teal-50 text-teal-700 border-teal-200", modules: [
     { id: 34, label: "1.INTRODUCTION VA E-LEARNING" },
