@@ -125,7 +125,8 @@ const FORMATION_DISPLAY_LABELS: Partial<Record<FormationId, Record<number, strin
     60: "7.SOURCES JURIDIQUES VTC",
     70: "8.FICHES RÉVISIONS VTC",
     8: "9.PRATIQUE VTC",
-    50: "10.FIN DE FORMATION VTC",
+    83: "10.FEUILLES D'ÉMARGEMENT SIGNÉES VTC",
+    50: "11.FIN DE FORMATION VTC",
   },
   "vtc-cours-du-soir": {
     1: "1.INTRODUCTION PRÉSENTIEL",
@@ -144,7 +145,8 @@ const FORMATION_DISPLAY_LABELS: Partial<Record<FormationId, Record<number, strin
     60: "7.SOURCES JURIDIQUES VTC",
     70: "8.FICHES RÉVISIONS VTC",
     8: "9.PRATIQUE VTC",
-    50: "10.FIN DE FORMATION VTC",
+    83: "10.FEUILLES D'ÉMARGEMENT SIGNÉES VTC",
+    50: "11.FIN DE FORMATION VTC",
   },
   "vtc-elearning": {
     26: "1.INTRODUCTION E-LEARNING",
@@ -185,7 +187,8 @@ const FORMATION_DISPLAY_LABELS: Partial<Record<FormationId, Record<number, strin
     61: "10.SOURCES JURIDIQUES TAXI",
     71: "11.FICHES RÉVISIONS TAXI",
     6: "12.PRATIQUE TAXI",
-    51: "13.FIN DE FORMATION TAXI",
+    84: "13.FEUILLES D'ÉMARGEMENT SIGNÉES TAXI",
+    51: "14.FIN DE FORMATION TAXI",
   },
   "taxi-elearning": {
     26: "1.INTRODUCTION E-LEARNING",
@@ -223,7 +226,8 @@ const FORMATION_DISPLAY_LABELS: Partial<Record<FormationId, Record<number, strin
     62: "10.SOURCES JURIDIQUES TA",
     72: "11.FICHES RÉVISIONS TA",
     6: "12.PRATIQUE TAXI",
-    52: "13.FIN DE FORMATION TA",
+    84: "13.FEUILLES D'ÉMARGEMENT SIGNÉES TAXI",
+    52: "14.FIN DE FORMATION TA",
   },
   "taxi-pour-vtc-elearning": {
     32: "1.INTRODUCTION TA E-LEARNING",
@@ -252,7 +256,8 @@ const FORMATION_DISPLAY_LABELS: Partial<Record<FormationId, Record<number, strin
     63: "7.SOURCES JURIDIQUES VA",
     73: "8.FICHES RÉVISIONS VA",
     8: "9.PRATIQUE VTC",
-    53: "10.FIN DE FORMATION VA",
+    83: "10.FEUILLES D'ÉMARGEMENT SIGNÉES VTC",
+    53: "11.FIN DE FORMATION VA",
   },
   "continue-vtc": {
     81: "1.BILAN EXERCICES FORMATION CONTINUE VTC",
@@ -268,14 +273,14 @@ const FORMATION_DISPLAY_LABELS: Partial<Record<FormationId, Record<number, strin
 };
 
 const FORMATION_DEFAULT_MODULES: Record<FormationId, number[]> = {
-  "vtc": [1, 2, 3, 4, 35, 5, 60, 70, 8, 50],
-  "vtc-cours-du-soir": [1, 2, 3, 4, 35, 5, 60, 70, 8, 50],
+  "vtc": [1, 2, 3, 4, 35, 5, 60, 70, 8, 83, 50],
+  "vtc-cours-du-soir": [1, 2, 3, 4, 35, 5, 60, 70, 8, 83, 50],
   "vtc-elearning": [26, 2, 3, 4, 35, 5, 60, 70, 8, 50],
-  "taxi": [1, 10, 7, 64, 12, 3, 9, 13, 11, 36, 61, 71, 6, 51],
+  "taxi": [1, 10, 7, 64, 12, 3, 9, 13, 11, 36, 61, 71, 6, 84, 51],
   "taxi-elearning": [26, 10, 7, 64, 12, 3, 9, 13, 11, 36, 61, 71, 6, 51],
-  "taxi-pour-vtc": [31, 40, 7, 64, 12, 3, 27, 13, 28, 37, 62, 72, 6, 52],
+  "taxi-pour-vtc": [31, 40, 7, 64, 12, 3, 27, 13, 28, 37, 62, 72, 6, 84, 52],
   "taxi-pour-vtc-elearning": [32, 40, 7, 64, 12, 3, 27, 13, 28, 37, 62, 72, 6, 52],
-  "vtc-pour-taxi": [33, 41, 3, 29, 30, 38, 63, 73, 8, 53],
+  "vtc-pour-taxi": [33, 41, 3, 29, 30, 38, 63, 73, 8, 83, 53],
   "continue-vtc": [81, 87, 83, 85],
   "continue-taxi": [82, 84, 86],
 };

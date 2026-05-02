@@ -385,14 +385,14 @@ export const MODULES_DATA: ModuleInfo[] = [
   {
     id: 83,
     nom: "3.FEUILLES D'ÉMARGEMENT SIGNÉES VTC",
-    description: "Historique des feuilles d'émargement signées — Formation continue VTC",
-    formations: ["continue-vtc"],
+    description: "Historique des feuilles d'émargement signées — VTC / VA présentiel et formation continue VTC",
+    formations: ["vtc", "vtc-cours-du-soir", "vtc-pour-taxi", "continue-vtc"],
   },
   {
     id: 84,
     nom: "2.FEUILLES D'ÉMARGEMENT SIGNÉES TAXI",
-    description: "Historique des feuilles d'émargement signées — Formation continue TAXI",
-    formations: ["continue-taxi"],
+    description: "Historique des feuilles d'émargement signées — TAXI / TA présentiel et formation continue TAXI",
+    formations: ["taxi", "taxi-pour-vtc", "continue-taxi"],
   },
   {
     id: 85,
