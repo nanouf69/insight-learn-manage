@@ -311,10 +311,13 @@ export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
         .from('documents_inscription')
         .select('*')
         .eq('apprenant_id', apprenant.id)
-        .in('type_document', ['emargement', 'attestation-fin-formation']);
+        .in('type_document', ['emargement', 'attestation-fin-formation', 'facture-fc'])
+        .order('created_at', { ascending: false });
       return data || [];
     },
   });
+
+  const facturesArchivees = (uploadedDocs || []).filter((d: any) => d.type_document === 'facture-fc');
 
   const handleUploadFile = async (docId: string, file: File) => {
     setUploadingDoc(docId);
@@ -582,6 +585,39 @@ export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
             );
           })}
         </div>
+
+        {facturesArchivees.length > 0 && (
+          <div className="mt-6">
+            <h4 className="font-medium mb-3 flex items-center gap-2">
+              <FileText className="w-4 h-4" />
+              Factures Formation Continue ({facturesArchivees.length})
+            </h4>
+            <div className="space-y-2">
+              {facturesArchivees.map((f: any) => (
+                <div
+                  key={f.id}
+                  className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <FileText className="w-4 h-4 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">{f.titre}</p>
+                      <p className="text-xs text-muted-foreground">{f.nom_fichier}</p>
+                    </div>
+                  </div>
+                  <Button size="sm" variant="ghost" asChild>
+                    <a href={f.url} target="_blank" rel="noopener noreferrer">
+                      <Eye className="w-4 h-4 mr-1" />
+                      Voir
+                    </a>
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
