@@ -9,6 +9,8 @@ import { generateAttestationFinFormation } from "@/lib/pdf/attestation-fin-forma
 import { generateAttestationFranceTravail } from "@/lib/pdf/attestation-france-travail";
 import { generateBienvenueFtransport } from "@/lib/pdf/bienvenue-ftransport";
 import { generateEmargementPDF } from "@/components/sessions/EmargementGenerator";
+import { generateEmargementIndividuelPDF } from "@/components/sessions/EmargementIndividuelGenerator";
+import { buildSessionAgendaDays } from "@/lib/buildSessionAgendaDays";
 import { generateFicheProgressionGuenichi } from "@/lib/pdf/fiche-progression";
 import { generateAttestationFCVTC } from "@/lib/pdf/attestation-fc-vtc";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
