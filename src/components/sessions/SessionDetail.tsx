@@ -1468,6 +1468,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     try {
       let mergedDoc: any = null;
       let count = 0;
+      let archived = 0;
       for (let i = 0; i < apprenantsInSession.length; i++) {
         const sa = apprenantsInSession[i];
         if (!sa.apprenant) continue;
@@ -1476,6 +1477,22 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
           numero: facture.numero,
           dateEmission: facture.date_emission,
         });
+        // 1) Génère un PDF individuel pour archivage CRM
+        try {
+          const single: any = await generateFactureFC(data, { returnBlob: true });
+          if (single?.blob && single?.fileName) {
+            const ok = await saveFactureToCRM({
+              apprenantId: sa.apprenant.id,
+              numero: facture.numero,
+              fileName: single.fileName,
+              blob: single.blob,
+            });
+            if (ok) archived++;
+          }
+        } catch (archiveErr) {
+          console.error('[Factures] Archivage CRM échoué pour', sa.apprenant?.id, archiveErr);
+        }
+        // 2) Concatène pour le PDF unique de téléchargement
         const result: any = await generateFactureFC(data, {
           returnDoc: true,
           existingDoc: mergedDoc ?? undefined,
@@ -1490,7 +1507,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       }
       const safeTitle = (session.title || 'session').replace(/[^a-zA-Z0-9_-]+/g, '_');
       mergedDoc.save(`Factures_FC_${safeTitle}.pdf`);
-      toast({ title: "Factures téléchargées", description: `${count} facture(s) regroupée(s) dans un seul PDF.` });
+      toast({ title: "Factures téléchargées", description: `${count} facture(s) regroupée(s) — ${archived} archivée(s) dans les dossiers de formation.` });
     } catch (e: any) {
       toast({ title: "Erreur", description: e?.message || "Échec génération factures.", variant: "destructive" });
     } finally {
