@@ -9,6 +9,8 @@ import { generateAttestationFinFormation } from "@/lib/pdf/attestation-fin-forma
 import { generateAttestationFranceTravail } from "@/lib/pdf/attestation-france-travail";
 import { generateBienvenueFtransport } from "@/lib/pdf/bienvenue-ftransport";
 import { generateEmargementPDF } from "@/components/sessions/EmargementGenerator";
+import { generateEmargementIndividuelPDF } from "@/components/sessions/EmargementIndividuelGenerator";
+import { buildSessionAgendaDays } from "@/lib/buildSessionAgendaDays";
 import { generateFicheProgressionGuenichi } from "@/lib/pdf/fiche-progression";
 import { generateAttestationFCVTC } from "@/lib/pdf/attestation-fc-vtc";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -141,33 +143,61 @@ export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
           : (sortedSessions.length > 0 ? sortedSessions : []);
 
         if (sessionsToUse.length > 0) {
+          let generated = 0;
           for (const sa of sessionsToUse) {
             const session = sa.sessions as any;
             if (!session) continue;
+
             const formateurs = session.session_formateurs?.map((sf: any) =>
               sf.formateurs ? `${sf.formateurs.nom} ${sf.formateurs.prenom}` : ''
             ).filter(Boolean);
-            const formateursFinaux = formateurs?.length > 0 ? formateurs : ['GUENICHI Naoufal'];
+            const formateursFinaux = formateurs?.length > 0 ? formateurs : ['Naoufal GUENICHI'];
 
-            const sessionApprenants = session.session_apprenants?.map((sa: any) => sa.apprenants).filter(Boolean) || [];
-            const apprenantsList = sessionApprenants.length > 0
-              ? sessionApprenants
-              : [{ id: 0, nom: apprenant.nom, prenom: apprenant.prenom }];
+            // Construire la liste des jours d'émargement à partir de l'agenda réel
+            // (détection auto journée/soir + horaires réels)
+            const agendaDays = await buildSessionAgendaDays({
+              dateDebut: session.date_debut,
+              dateFin: session.date_fin,
+              title: session.nom,
+              type_session: session.type_session,
+              typeApprenant: apprenant.type_apprenant,
+            });
 
-            generateEmargementPDF(
+            if (agendaDays.length === 0) continue;
+
+            // Libellé formation cohérent avec le type d'apprenant
+            const t = (apprenant.type_apprenant || '').toLowerCase();
+            const isTaxi = t.includes('taxi');
+            const isVTC = !isTaxi && (t.includes('vtc') || t === 'va' || t === 'va-e');
+            const formationLabel = session.nom
+              || (isTaxi ? 'Formation TAXI' : isVTC ? 'Formation VTC' : 'Formation');
+
+            generateEmargementIndividuelPDF(
               {
-                title: session.nom || session.type_session,
-                formation: session.nom || 'FORMATION CONTINUE',
+                formation: formationLabel,
                 dateDebut: session.date_debut,
                 dateFin: session.date_fin,
                 lieu: session.lieu || '86 route de genas 69003 Lyon',
                 formateurs: formateursFinaux,
               },
-              apprenantsList
+              {
+                nom: apprenant.nom,
+                prenom: apprenant.prenom,
+                type_apprenant: apprenant.type_apprenant || '',
+                telephone: apprenant.telephone || '',
+              },
+              agendaDays,
             );
+            generated++;
+            // Petit délai entre téléchargements pour éviter blocage navigateur
+            if (sessionsToUse.length > 1) await new Promise(r => setTimeout(r, 400));
+          }
+          if (generated === 0) {
+            toast.error("Aucun jour d'émargement trouvé pour cette/ces session(s).");
+            return;
           }
         } else {
-          // Pas de session : générer depuis les dates de l'apprenant
+          // Pas de session : générer depuis les dates de l'apprenant (fallback FC)
           const dateDebut = apprenant.date_debut_formation || new Date().toISOString().split('T')[0];
           const dateFin = apprenant.date_fin_formation || dateDebut;
           const formation = apprenant.type_apprenant
@@ -181,7 +211,7 @@ export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
               dateDebut,
               dateFin,
               lieu: '86 route de genas 69003 Lyon',
-              formateurs: ['GUENICHI Naoufal'],
+              formateurs: ['Naoufal GUENICHI'],
             },
             [{ id: 0, nom: apprenant.nom, prenom: apprenant.prenom }]
           );
