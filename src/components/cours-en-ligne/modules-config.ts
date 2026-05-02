@@ -101,7 +101,8 @@ export const FORMATION_MODULES: Record<string, FormationDefinition> = {
     { id: 60, label: "7.SOURCES JURIDIQUES VTC" },
     { id: 70, label: "8.FICHES RÉVISIONS VTC" },
     { id: 8, label: "9.PRATIQUE VTC" },
-    { id: 50, label: "10.FIN DE FORMATION VTC" },
+    { id: 83, label: "10.FEUILLES D'ÉMARGEMENT SIGNÉES VTC" },
+    { id: 50, label: "11.FIN DE FORMATION VTC" },
   ]},
   "vtc-e-presentiel": { label: "VTC E-Présentiel", color: "bg-emerald-100 text-emerald-800 border-emerald-300", modules: [
     { id: 1, label: "1.INTRODUCTION PRÉSENTIEL" },
@@ -113,7 +114,8 @@ export const FORMATION_MODULES: Record<string, FormationDefinition> = {
     { id: 60, label: "7.SOURCES JURIDIQUES VTC" },
     { id: 70, label: "8.FICHES RÉVISIONS VTC" },
     { id: 8, label: "9.PRATIQUE VTC" },
-    { id: 50, label: "10.FIN DE FORMATION VTC" },
+    { id: 83, label: "10.FEUILLES D'ÉMARGEMENT SIGNÉES VTC" },
+    { id: 50, label: "11.FIN DE FORMATION VTC" },
   ]},
   "vtc-e": { label: "VTC E-learning", color: "bg-emerald-50 text-emerald-700 border-emerald-200", modules: [
     { id: 26, label: "1.INTRODUCTION E-LEARNING" },
