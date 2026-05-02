@@ -311,10 +311,13 @@ export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
         .from('documents_inscription')
         .select('*')
         .eq('apprenant_id', apprenant.id)
-        .in('type_document', ['emargement', 'attestation-fin-formation']);
+        .in('type_document', ['emargement', 'attestation-fin-formation', 'facture-fc'])
+        .order('created_at', { ascending: false });
       return data || [];
     },
   });
+
+  const facturesArchivees = (uploadedDocs || []).filter((d: any) => d.type_document === 'facture-fc');
 
   const handleUploadFile = async (docId: string, file: File) => {
     setUploadingDoc(docId);
