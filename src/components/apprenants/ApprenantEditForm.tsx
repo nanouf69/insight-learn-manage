@@ -23,29 +23,29 @@ import { parseDateRange } from "@/lib/parseDateRange";
 
 // Mapping type d'apprenant → modules par défaut
 const DEFAULT_MODULES_BY_TYPE: Record<string, number[]> = {
-  // Formation VTC — modules parents uniquement (ID 2 regroupe les matières A-G via expandModulesAutorises)
-  "vtc":               [1, 2, 3, 4, 35, 5, 8],
-  "vtc-e-presentiel":  [1, 2, 3, 4, 35, 5, 8],
-  // Formation VTC E-learning — Intro e-learning
+  // Formation VTC — présentiel inclut module 83 (feuilles d'émargement VTC)
+  "vtc":               [1, 2, 3, 4, 35, 5, 8, 83],
+  "vtc-e-presentiel":  [1, 2, 3, 4, 35, 5, 8, 83],
+  // Formation VTC E-learning — Intro e-learning (pas d'émargement)
   "vtc-e":             [26, 2, 3, 4, 35, 5, 8],
-  // Formation TAXI — module parent 10 (l'expansion en sous-matières se fait côté portail)
-  "taxi":              [1, 10, 7, 3, 9, 13, 11, 36, 6, 12],
-  "taxi-e-presentiel": [1, 10, 7, 3, 9, 13, 11, 36, 6, 12],
-  // Formation TAXI E-learning — Intro e-learning
+  // Formation TAXI — présentiel inclut module 84 (feuilles d'émargement TAXI)
+  "taxi":              [1, 10, 7, 3, 9, 13, 11, 36, 6, 12, 84],
+  "taxi-e-presentiel": [1, 10, 7, 3, 9, 13, 11, 36, 6, 12, 84],
+  // Formation TAXI E-learning — Intro e-learning (pas d'émargement)
   "taxi-e":            [26, 10, 7, 3, 9, 13, 11, 36, 6, 12],
-  // Formation TA présentiel
-  "ta":                [31, 40, 7, 3, 27, 28, 37, 6],
-  "ta-e-presentiel":   [31, 40, 7, 3, 27, 28, 37, 6],
-  // Formation TA E-learning
+  // Formation TA présentiel — passerelle TAXI inclut module 84
+  "ta":                [31, 40, 7, 3, 27, 28, 37, 6, 84],
+  "ta-e-presentiel":   [31, 40, 7, 3, 27, 28, 37, 6, 84],
+  // Formation TA E-learning (pas d'émargement)
   "ta-e":              [32, 40, 7, 3, 27, 13, 28, 37, 6],
-  // Formation VA présentiel
-  "va":                [33, 41, 3, 29, 30, 38, 8],
-  "va-e-presentiel":   [33, 41, 3, 29, 30, 38, 8],
-  // Formation VA E-learning
+  // Formation VA présentiel — passerelle VTC inclut module 83
+  "va":                [33, 41, 3, 29, 30, 38, 8, 83],
+  "va-e-presentiel":   [33, 41, 3, 29, 30, 38, 8, 83],
+  // Formation VA E-learning (pas d'émargement)
   "va-e":              [34, 41, 3, 29, 30, 38, 8],
 };
 
-const MANAGED_MODULE_IDS = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 40, 41, 50, 51, 52, 53, 60, 61, 62, 63, 64]);
+const MANAGED_MODULE_IDS = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 40, 41, 50, 51, 52, 53, 60, 61, 62, 63, 64, 83, 84]);
 
 const normalizeTypeApprenant = (rawType: string | null | undefined): string => {
   if (!rawType) return "";
