@@ -193,7 +193,8 @@ export const FORMATION_MODULES: Record<string, FormationDefinition> = {
     { id: 62, label: "10.SOURCES JURIDIQUES TA" },
     { id: 72, label: "11.FICHES RÉVISIONS TA" },
     { id: 6, label: "12.PRATIQUE TAXI" },
-    { id: 52, label: "13.FIN DE FORMATION TA" },
+    { id: 84, label: "13.FEUILLES D'ÉMARGEMENT SIGNÉES TAXI" },
+    { id: 52, label: "14.FIN DE FORMATION TA" },
   ]},
   "ta-e-presentiel": { label: "TA E-Présentiel", color: "bg-amber-100 text-amber-800 border-amber-300", modules: [
     { id: 31, label: "1.INTRODUCTION TA" },
