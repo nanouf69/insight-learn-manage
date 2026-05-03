@@ -19,10 +19,13 @@ serve(async (req) => {
     );
 
     const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+    const tomorrowDate = new Date();
+    tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+    const tomorrow = tomorrowDate.toISOString().split("T")[0];
 
-    console.log(`[auto-send-credentials] Running for date: ${today}`);
+    console.log(`[auto-send-credentials] Running for dates: today=${today}, tomorrow=${tomorrow}`);
 
-    // Find ALL apprenants whose formation starts today (with or without account)
+    // Find ALL apprenants whose formation starts today OR tomorrow (J-1 send)
     const { data: apprenants, error: fetchErr } = await supabaseAdmin
       .from("apprenants")
       .select("id, nom, prenom, email, auth_user_id, formation_choisie, date_debut_cours_en_ligne, date_fin_cours_en_ligne, date_debut_formation, date_fin_formation")
@@ -34,14 +37,15 @@ serve(async (req) => {
       throw fetchErr;
     }
 
-    // Filter: date_debut_cours_en_ligne = today OR (no cours date but date_debut_formation = today)
+    // Filter: starts today OR tomorrow (J-1 anticipated sending)
     const eligibleApprenants = (apprenants || []).filter((a: any) => {
       const coursDate = a.date_debut_cours_en_ligne;
       const formationDate = a.date_debut_formation;
-      return coursDate === today || (!coursDate && formationDate === today);
+      const effective = coursDate || formationDate;
+      return effective === today || effective === tomorrow;
     });
 
-    console.log(`[auto-send-credentials] Found ${eligibleApprenants.length} apprenants starting today`);
+    console.log(`[auto-send-credentials] Found ${eligibleApprenants.length} apprenants starting today or tomorrow`);
 
     if (eligibleApprenants.length === 0) {
       return new Response(
@@ -50,14 +54,16 @@ serve(async (req) => {
       );
     }
 
-    // Check which ones already received credentials today (avoid duplicates)
+    // Check which ones already received credentials in the last 3 days (avoid duplicates with J-1)
     const apprenantIds = eligibleApprenants.map((a: any) => a.id);
+    const sinceDate = new Date();
+    sinceDate.setDate(sinceDate.getDate() - 3);
     const { data: existingEmails } = await supabaseAdmin
       .from("emails")
       .select("apprenant_id")
       .in("apprenant_id", apprenantIds)
       .like("subject", "%identifiants%")
-      .gte("sent_at", `${today}T00:00:00`);
+      .gte("sent_at", sinceDate.toISOString());
 
     const alreadySent = new Set((existingEmails || []).map((e: any) => e.apprenant_id));
 
@@ -229,6 +235,11 @@ serve(async (req) => {
         const prenom = apprenant.prenom || "";
         const nom = apprenant.nom || "";
 
+        const effectiveStart = apprenant.date_debut_cours_en_ligne || apprenant.date_debut_formation;
+        const startsTomorrow = effectiveStart === tomorrow;
+        const startPhrase = startsTomorrow ? "Votre formation commence demain" : "Votre formation commence aujourd'hui";
+        const subjectLine = `🎓 ${startPhrase} – Vos identifiants de connexion`;
+
         const emailBody = `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <div style="background-color: #1a1a2e; padding: 20px; text-align: center;">
@@ -239,7 +250,7 @@ serve(async (req) => {
             <div style="padding: 30px; background-color: #ffffff;">
               <h2 style="color: #1a1a2e;">Bonjour ${prenom} ${nom},</h2>
               
-              <p>Votre formation commence aujourd'hui ! 🎉 Voici vos identifiants pour accéder à vos cours en ligne.</p>
+              <p>${startPhrase} ! 🎉 Voici vos identifiants pour accéder à vos cours en ligne.</p>
               
               <div style="background-color: #f0f9ff; border-left: 4px solid #3b82f6; padding: 15px; margin: 20px 0; border-radius: 4px;">
                 <h3 style="color: #1e40af; margin-top: 0;">📋 Informations de formation</h3>
@@ -287,7 +298,7 @@ serve(async (req) => {
           },
           body: JSON.stringify({
             message: {
-              subject: `🎓 Votre formation commence aujourd'hui – Vos identifiants de connexion`,
+              subject: subjectLine,
               body: { contentType: "HTML", content: emailBody },
               toRecipients: [{ emailAddress: { address: apprenant.email } }],
             },
@@ -299,8 +310,8 @@ serve(async (req) => {
           // Log email
           await supabaseAdmin.from("emails").insert({
             apprenant_id: apprenant.id,
-            subject: `🎓 Votre formation commence aujourd'hui – Vos identifiants de connexion`,
-            body_preview: `Bonjour ${prenom}, votre formation commence aujourd'hui ! Voici vos identifiants.`,
+            subject: subjectLine,
+            body_preview: `Bonjour ${prenom}, ${startPhrase.toLowerCase()} ! Voici vos identifiants.`,
             body_html: emailBody,
             sender_email: senderEmail,
             recipients: [apprenant.email],
