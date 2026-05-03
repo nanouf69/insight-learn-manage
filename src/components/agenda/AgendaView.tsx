@@ -852,6 +852,9 @@ export function AgendaView() {
                   </div>
                 </div>
 
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>De *</Label>
                     <Select
                       value={newBlock.startHour}
                       onValueChange={(value) => setNewBlock({ ...newBlock, startHour: value, endHour: "" })}
