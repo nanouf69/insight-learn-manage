@@ -1042,13 +1042,19 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   if (!embedded && user && apprenant) {
     const now = new Date();
     now.setHours(12, 0, 0, 0);
-    const debut = apprenant.date_debut_cours_en_ligne ? safeDateParse(apprenant.date_debut_cours_en_ligne) : null;
-    const fin = apprenant.date_fin_cours_en_ligne ? safeDateParse(apprenant.date_fin_cours_en_ligne) : null;
 
     // Pour les formations en présentiel (et FC), accès anticipé J-1
     const isPresentielOrFC =
       isPresentielType(apprenant?.type_apprenant, apprenant?.formation_choisie) ||
       isFormationContinue(apprenant?.type_apprenant, apprenant?.formation_choisie);
+    const startDateValue = isPresentielOrFC
+      ? apprenant.date_debut_formation || apprenant.date_debut_cours_en_ligne
+      : apprenant.date_debut_cours_en_ligne;
+    const endDateValue = isPresentielOrFC
+      ? apprenant.date_fin_formation || apprenant.date_fin_cours_en_ligne || apprenant.date_debut_formation || apprenant.date_debut_cours_en_ligne
+      : apprenant.date_fin_cours_en_ligne;
+    const debut = startDateValue ? safeDateParse(startDateValue) : null;
+    const fin = endDateValue ? safeDateParse(endDateValue) : null;
     const debutEffectif = debut && isPresentielOrFC
       ? new Date(debut.getTime() - 24 * 60 * 60 * 1000)
       : debut;
