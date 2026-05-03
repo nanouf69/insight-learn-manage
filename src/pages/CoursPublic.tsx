@@ -550,6 +550,47 @@ interface ApprenantInfo {
   date_naissance?: string | null;
 }
 
+interface SessionAccessWindow {
+  date_debut: string;
+  date_fin: string;
+  session_nom: string | null;
+}
+
+const dateOnly = (value: unknown): string | null =>
+  typeof value === "string" && value.length >= 10 ? value.slice(0, 10) : null;
+
+const fetchSessionAccessWindow = async (apprenantId?: string | null): Promise<SessionAccessWindow | null> => {
+  if (!apprenantId) return null;
+
+  const { data, error } = await supabase
+    .from("session_apprenants")
+    .select("date_debut, date_fin, sessions(id, nom, type_session, date_debut, date_fin)")
+    .eq("apprenant_id", apprenantId);
+
+  if (error || !data) return null;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const rows = (data as any[])
+    .map((row) => {
+      const session = Array.isArray(row.sessions) ? row.sessions[0] : row.sessions;
+      const label = `${session?.nom || ""} ${session?.type_session || ""}`.toLowerCase();
+      const isOnlineOnly = /e-?learning|elearning|en\s*ligne/.test(label);
+      const isPresentielSession = !isOnlineOnly && /pr[eé]sentiel|pratique|th[eé]orie|session|vtc|taxi|\bta\b|\bva\b/.test(label);
+      const start = dateOnly(row.date_debut) || dateOnly(session?.date_debut);
+      const end = dateOnly(row.date_fin) || dateOnly(session?.date_fin) || start;
+      return start && end && isPresentielSession
+        ? { date_debut: start, date_fin: end, session_nom: session?.nom || null }
+        : null;
+    })
+    .filter(Boolean) as SessionAccessWindow[];
+
+  return rows
+    .filter((row) => safeDateParse(row.date_fin) >= today)
+    .sort((a, b) => safeDateParse(a.date_debut).getTime() - safeDateParse(b.date_debut).getTime())[0] || null;
+};
+
 interface CoursPublicProps {
   embedded?: boolean;
   apprenantOverride?: ApprenantInfo | null;
@@ -640,6 +681,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const [emargementFCStatus, setEmargementFCStatus] = useState<"checking" | "needed" | "signed" | "n/a">("checking");
   const [emargementCreneau, setEmargementCreneau] = useState<CreneauKey | null>(null);
   const [emargementMode, setEmargementMode] = useState<"fc" | "presentiel">("fc");
+  const [sessionAccessWindow, setSessionAccessWindow] = useState<SessionAccessWindow | null>(null);
 
   const handleExamStateChange = useCallback((inExam: boolean) => {
     setIsInExam(inExam);
@@ -743,12 +785,16 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
 
         if (data) {
           setApprenant(data as any);
+          fetchSessionAccessWindow(data.id).then((window) => {
+            if (!cancelled) setSessionAccessWindow(window);
+          });
           const formationId = resolveFormationId(data.type_apprenant, data.formation_choisie, data.modules_autorises);
           setSelectedFormation(formationId);
           setApprenantFetchError(null);
           fetchAttemptRef.current = 0;
         } else {
           setApprenant(null);
+          setSessionAccessWindow(null);
           setSelectedFormation(null);
           setApprenantFetchError("Compte apprenant introuvable. Réessayez ou contactez le centre.");
         }
@@ -782,8 +828,12 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   useEffect(() => {
     if (!apprenantOverride) return;
 
+    let cancelled = false;
     const applyApprenant = (value: ApprenantInfo) => {
       setApprenant(value);
+      fetchSessionAccessWindow(value.id).then((window) => {
+        if (!cancelled) setSessionAccessWindow(window);
+      });
       const formationId = resolveFormationId(value.type_apprenant, value.formation_choisie, value.modules_autorises);
       setSelectedFormation(formationId);
     };
@@ -793,7 +843,6 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     // In embedded preview, force-refresh latest DB state to avoid stale search result snapshot
     if (!embedded || !apprenantOverride.id) return;
 
-    let cancelled = false;
     const refreshApprenant = async () => {
       const { data, error } = await supabase
         .from("apprenants")
@@ -1046,12 +1095,13 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     // Pour les formations en présentiel (et FC), accès anticipé J-1
     const isPresentielOrFC =
       isPresentielType(apprenant?.type_apprenant, apprenant?.formation_choisie) ||
-      isFormationContinue(apprenant?.type_apprenant, apprenant?.formation_choisie);
+      isFormationContinue(apprenant?.type_apprenant, apprenant?.formation_choisie) ||
+      !!sessionAccessWindow;
     const startDateValue = isPresentielOrFC
-      ? apprenant.date_debut_formation || apprenant.date_debut_cours_en_ligne
+      ? sessionAccessWindow?.date_debut || apprenant.date_debut_formation || apprenant.date_debut_cours_en_ligne
       : apprenant.date_debut_cours_en_ligne;
     const endDateValue = isPresentielOrFC
-      ? apprenant.date_fin_formation || apprenant.date_fin_cours_en_ligne || apprenant.date_debut_formation || apprenant.date_debut_cours_en_ligne
+      ? sessionAccessWindow?.date_fin || apprenant.date_fin_formation || apprenant.date_fin_cours_en_ligne || apprenant.date_debut_formation || apprenant.date_debut_cours_en_ligne
       : apprenant.date_fin_cours_en_ligne;
     const debut = startDateValue ? safeDateParse(startDateValue) : null;
     const fin = endDateValue ? safeDateParse(endDateValue) : null;
