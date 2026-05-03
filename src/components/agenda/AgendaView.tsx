@@ -259,6 +259,7 @@ export function AgendaView() {
           discipline: bloc.discipline_nom,
           disciplineId: bloc.discipline_id,
           disciplineColor: bloc.discipline_color,
+          publicsCibles: ((bloc as any).publics_cibles as string[] | null) ?? [],
         };
       });
       setCourseBlocks(blocks);
