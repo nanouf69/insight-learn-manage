@@ -111,7 +111,16 @@ export function usePresenceCheck({
       if (!validation) return;
 
       if (!validation.is_valid) {
-        await endSession(validation.disconnect_reason || "max_duration");
+        const reason = validation.disconnect_reason || "max_duration";
+        // Benign reasons caused by React double-mount or another tab opening:
+        // do NOT sign the user out, just silently stop polling.
+        if (reason === "replaced_by_new_session" || reason === "no_active_session" || reason === "already_closed") {
+          clearTimers();
+          setShowModal(false);
+          modalDeadlineRef.current = null;
+          return;
+        }
+        await endSession(reason);
         return;
       }
 
