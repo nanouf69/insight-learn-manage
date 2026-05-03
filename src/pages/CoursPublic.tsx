@@ -550,6 +550,47 @@ interface ApprenantInfo {
   date_naissance?: string | null;
 }
 
+interface SessionAccessWindow {
+  date_debut: string;
+  date_fin: string;
+  session_nom: string | null;
+}
+
+const dateOnly = (value: unknown): string | null =>
+  typeof value === "string" && value.length >= 10 ? value.slice(0, 10) : null;
+
+const fetchSessionAccessWindow = async (apprenantId?: string | null): Promise<SessionAccessWindow | null> => {
+  if (!apprenantId) return null;
+
+  const { data, error } = await supabase
+    .from("session_apprenants")
+    .select("date_debut, date_fin, sessions(id, nom, type_session, date_debut, date_fin)")
+    .eq("apprenant_id", apprenantId);
+
+  if (error || !data) return null;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const rows = (data as any[])
+    .map((row) => {
+      const session = Array.isArray(row.sessions) ? row.sessions[0] : row.sessions;
+      const label = `${session?.nom || ""} ${session?.type_session || ""}`.toLowerCase();
+      const isOnlineOnly = /e-?learning|elearning|en\s*ligne/.test(label);
+      const isPresentielSession = !isOnlineOnly && /pr[eé]sentiel|pratique|th[eé]orie|session|vtc|taxi|\bta\b|\bva\b/.test(label);
+      const start = dateOnly(row.date_debut) || dateOnly(session?.date_debut);
+      const end = dateOnly(row.date_fin) || dateOnly(session?.date_fin) || start;
+      return start && end && isPresentielSession
+        ? { date_debut: start, date_fin: end, session_nom: session?.nom || null }
+        : null;
+    })
+    .filter(Boolean) as SessionAccessWindow[];
+
+  return rows
+    .filter((row) => safeDateParse(row.date_fin) >= today)
+    .sort((a, b) => safeDateParse(a.date_debut).getTime() - safeDateParse(b.date_debut).getTime())[0] || null;
+};
+
 interface CoursPublicProps {
   embedded?: boolean;
   apprenantOverride?: ApprenantInfo | null;
