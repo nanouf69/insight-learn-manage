@@ -19,10 +19,13 @@ serve(async (req) => {
     );
 
     const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+    const tomorrowDate = new Date();
+    tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+    const tomorrow = tomorrowDate.toISOString().split("T")[0];
 
-    console.log(`[auto-send-credentials] Running for date: ${today}`);
+    console.log(`[auto-send-credentials] Running for dates: today=${today}, tomorrow=${tomorrow}`);
 
-    // Find ALL apprenants whose formation starts today (with or without account)
+    // Find ALL apprenants whose formation starts today OR tomorrow (J-1 send)
     const { data: apprenants, error: fetchErr } = await supabaseAdmin
       .from("apprenants")
       .select("id, nom, prenom, email, auth_user_id, formation_choisie, date_debut_cours_en_ligne, date_fin_cours_en_ligne, date_debut_formation, date_fin_formation")
@@ -34,14 +37,15 @@ serve(async (req) => {
       throw fetchErr;
     }
 
-    // Filter: date_debut_cours_en_ligne = today OR (no cours date but date_debut_formation = today)
+    // Filter: starts today OR tomorrow (J-1 anticipated sending)
     const eligibleApprenants = (apprenants || []).filter((a: any) => {
       const coursDate = a.date_debut_cours_en_ligne;
       const formationDate = a.date_debut_formation;
-      return coursDate === today || (!coursDate && formationDate === today);
+      const effective = coursDate || formationDate;
+      return effective === today || effective === tomorrow;
     });
 
-    console.log(`[auto-send-credentials] Found ${eligibleApprenants.length} apprenants starting today`);
+    console.log(`[auto-send-credentials] Found ${eligibleApprenants.length} apprenants starting today or tomorrow`);
 
     if (eligibleApprenants.length === 0) {
       return new Response(
