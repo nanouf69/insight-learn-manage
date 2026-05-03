@@ -122,6 +122,16 @@ export function usePresenceCheck({
           return;
         }
         console.error(`[PresenceCheck] Déconnexion forcée — raison: ${reason}`);
+        const reasonMessages: Record<string, string> = {
+          max_duration: "Durée maximale de session atteinte (7h). Veuillez vous reconnecter.",
+          no_response: "Vous avez été déconnecté pour inactivité (aucune réponse au contrôle de présence).",
+          no_active_session: "Aucune session active détectée.",
+          already_closed: "Votre session a déjà été fermée.",
+        };
+        toast.error(`Déconnexion : ${reasonMessages[reason] || reason}`, {
+          duration: 10000,
+          position: "top-center",
+        });
         await endSession(reason);
         return;
       }
