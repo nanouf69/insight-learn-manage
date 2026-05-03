@@ -54,14 +54,16 @@ serve(async (req) => {
       );
     }
 
-    // Check which ones already received credentials today (avoid duplicates)
+    // Check which ones already received credentials in the last 3 days (avoid duplicates with J-1)
     const apprenantIds = eligibleApprenants.map((a: any) => a.id);
+    const sinceDate = new Date();
+    sinceDate.setDate(sinceDate.getDate() - 3);
     const { data: existingEmails } = await supabaseAdmin
       .from("emails")
       .select("apprenant_id")
       .in("apprenant_id", apprenantIds)
       .like("subject", "%identifiants%")
-      .gte("sent_at", `${today}T00:00:00`);
+      .gte("sent_at", sinceDate.toISOString());
 
     const alreadySent = new Set((existingEmails || []).map((e: any) => e.apprenant_id));
 
