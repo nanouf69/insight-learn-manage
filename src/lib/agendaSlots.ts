@@ -65,29 +65,42 @@ export const getTodayAgendaBlocs = async (
 
   const { data, error } = await supabase
     .from("agenda_blocs")
-    .select("jour, heure_debut, heure_fin, formation, semaine_debut")
+    .select("jour, heure_debut, heure_fin, formation, semaine_debut, publics_cibles" as any)
     .eq("semaine_debut", weekStart)
     .eq("jour", dow);
 
   if (error || !data) return [];
 
   const fLower = (formationChoisie || "").toLowerCase();
-  // Détection des mots-clés présents dans formation_choisie
-  const wantTaxi = /taxi/.test(fLower);
-  const wantVtc = /vtc/.test(fLower);
-  const wantTa = /\bta\b|passerelle\s*ta/.test(fLower);
-  const wantVa = /\bva\b|passerelle\s*va/.test(fLower);
+  // Détecter le public de l'apprenant à partir de formation_choisie
+  const wantTaxi = /taxi/.test(fLower) && !/passerelle/.test(fLower);
+  const wantVtc = /vtc/.test(fLower) && !/passerelle/.test(fLower);
+  const wantTa = /\bta\b|passerelle\s*-?\s*ta(?!xi)|passerelle-taxi/.test(fLower);
+  const wantVa = /\bva\b|passerelle\s*-?\s*va|passerelle-vtc/.test(fLower);
 
-  return (data as AgendaBloc[]).filter((bloc) => {
+  const apprenantPublics: string[] = [];
+  if (wantTaxi) apprenantPublics.push("TAXI");
+  if (wantVtc) apprenantPublics.push("VTC");
+  if (wantTa) apprenantPublics.push("TA");
+  if (wantVa) apprenantPublics.push("VA");
+
+  return (data as any[]).filter((bloc) => {
+    const cibles: string[] = Array.isArray(bloc.publics_cibles) ? bloc.publics_cibles : [];
+
+    // Nouveau système : si publics_cibles renseigné → matching strict
+    if (cibles.length > 0) {
+      return apprenantPublics.some((p) => cibles.includes(p));
+    }
+
+    // Fallback legacy : matching par mot-clé sur le champ formation
     const bf = (bloc.formation || "").toLowerCase();
     if (wantTaxi && /taxi/.test(bf)) return true;
     if (wantVtc && /vtc/.test(bf)) return true;
     if (wantTa && /\bta\b/.test(bf)) return true;
     if (wantVa && /\bva\b/.test(bf)) return true;
-    // Si on ne reconnaît pas la formation, on prend tous les blocs du jour (mieux vaut sur-couvrir)
-    if (!wantTaxi && !wantVtc && !wantTa && !wantVa) return true;
+    if (apprenantPublics.length === 0) return true;
     return false;
-  });
+  }) as AgendaBloc[];
 };
 
 /**

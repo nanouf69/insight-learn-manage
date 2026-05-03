@@ -6,6 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+
+const PUBLICS_CIBLES = ["TAXI", "TA", "VTC", "VA"] as const;
+type PublicCible = typeof PUBLICS_CIBLES[number];
 import { ChevronLeft, ChevronRight, Plus, X, User, Clock, BookOpen, Layers, Loader2, Upload } from "lucide-react";
 import { format, addDays, startOfWeek, isSameDay } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -39,6 +43,7 @@ interface CourseBlock {
   discipline?: string;
   disciplineId?: string;
   disciplineColor?: string;
+  publicsCibles?: string[];
 }
 
 // Helper pour parser une date sans décalage de timezone
@@ -165,6 +170,7 @@ export function AgendaView() {
     startHour: "",
     endHour: "",
     discipline: "",
+    publicsCibles: [] as string[],
   });
   const [selectedSlot, setSelectedSlot] = useState<{ date: Date; hour: number } | null>(null);
   const [newBlock, setNewBlock] = useState({
@@ -174,6 +180,7 @@ export function AgendaView() {
     startHour: "",
     endHour: "",
     discipline: "",
+    publicsCibles: [] as string[],
   });
   const [newDiscipline, setNewDiscipline] = useState({
     nom: "",
@@ -252,6 +259,7 @@ export function AgendaView() {
           discipline: bloc.discipline_nom,
           disciplineId: bloc.discipline_id,
           disciplineColor: bloc.discipline_color,
+          publicsCibles: ((bloc as any).publics_cibles as string[] | null) ?? [],
         };
       });
       setCourseBlocks(blocks);
@@ -303,7 +311,7 @@ export function AgendaView() {
     const h = Math.floor(slot);
     const m = (slot % 1) * 60;
     const timeStr = `${h}:${m === 0 ? '00' : '30'}`;
-    setNewBlock({ title: "", formateur: "", formation: "", startHour: timeStr, endHour: "", discipline: "" });
+    setNewBlock({ title: "", formateur: "", formation: "", startHour: timeStr, endHour: "", discipline: "", publicsCibles: [] });
     setIsDialogOpen(true);
   };
 
@@ -340,7 +348,8 @@ export function AgendaView() {
         heure_debut: normalizeHeure(newBlock.startHour),
         heure_fin: normalizeHeure(newBlock.endHour),
         semaine_debut: weekStartDate,
-      })
+        publics_cibles: newBlock.publicsCibles,
+      } as any)
       .select()
       .single();
 
@@ -427,6 +436,7 @@ export function AgendaView() {
       startHour: decimalToTime(block.startHour),
       endHour: decimalToTime(block.endHour),
       discipline: block.disciplineId || '',
+      publicsCibles: block.publicsCibles || [],
     });
     setIsEditDialogOpen(true);
   };
@@ -451,7 +461,8 @@ export function AgendaView() {
         formation: editBlock.formation,
         heure_debut: normalizeHeure(editBlock.startHour),
         heure_fin: normalizeHeure(editBlock.endHour),
-      })
+        publics_cibles: editBlock.publicsCibles,
+      } as any)
       .eq('id', editingBlock.id);
 
     if (error) {
@@ -472,6 +483,7 @@ export function AgendaView() {
       discipline: disciplineData?.nom || b.discipline,
       disciplineId: disciplineData?.id || b.disciplineId,
       disciplineColor: disciplineData?.color || b.disciplineColor,
+      publicsCibles: editBlock.publicsCibles,
     } : b));
 
     setIsEditDialogOpen(false);
@@ -815,6 +827,31 @@ export function AgendaView() {
                   </Select>
                 </div>
 
+                <div className="space-y-2">
+                  <Label>Public concerné par ce cours *</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Seuls ces apprenants devront émarger pour ce créneau.
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {PUBLICS_CIBLES.map((p) => (
+                      <label key={p} className="flex items-center gap-2 border rounded px-3 py-2 cursor-pointer hover:bg-muted/50">
+                        <Checkbox
+                          checked={newBlock.publicsCibles.includes(p)}
+                          onCheckedChange={(checked) =>
+                            setNewBlock({
+                              ...newBlock,
+                              publicsCibles: checked
+                                ? [...newBlock.publicsCibles, p]
+                                : newBlock.publicsCibles.filter((x) => x !== p),
+                            })
+                          }
+                        />
+                        <span className="text-sm font-medium">{p}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>De *</Label>
@@ -1018,6 +1055,30 @@ export function AgendaView() {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Public concerné par ce cours *</Label>
+                <p className="text-xs text-muted-foreground">
+                  Seuls ces apprenants devront émarger pour ce créneau.
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  {PUBLICS_CIBLES.map((p) => (
+                    <label key={p} className="flex items-center gap-2 border rounded px-3 py-2 cursor-pointer hover:bg-muted/50">
+                      <Checkbox
+                        checked={editBlock.publicsCibles.includes(p)}
+                        onCheckedChange={(checked) =>
+                          setEditBlock({
+                            ...editBlock,
+                            publicsCibles: checked
+                              ? [...editBlock.publicsCibles, p]
+                              : editBlock.publicsCibles.filter((x) => x !== p),
+                          })
+                        }
+                      />
+                      <span className="text-sm font-medium">{p}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
