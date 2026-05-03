@@ -137,8 +137,12 @@ export function useConnexionTracking({ apprenantId, userId, enabled }: UseConnex
 
     const validation = await checkSessionOnServer("action");
     if (validation && !validation.is_valid) {
-      await endConnexion();
-      await supabase.auth.signOut();
+      const reason = validation.disconnect_reason || "";
+      // Skip signOut for benign reasons (double-mount, replaced session, etc.)
+      if (reason !== "replaced_by_new_session" && reason !== "no_active_session" && reason !== "already_closed") {
+        await endConnexion();
+        await supabase.auth.signOut();
+      }
       return;
     }
 
