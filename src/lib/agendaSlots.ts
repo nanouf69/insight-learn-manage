@@ -46,9 +46,9 @@ export const isPresentielType = (
 ): boolean => {
   const t = (type_apprenant || "").toLowerCase();
   const f = (formation_choisie || "").toLowerCase();
-  // Tout ce qui contient "presentiel" / "présentiel" sauf E-Présentiel pur (en ligne)
-  if (/\be-?pr[eé]sentiel\b/.test(t) || /\be-?pr[eé]sentiel\b/.test(f)) return false;
-  return /pr[eé]sentiel/.test(t) || /pr[eé]sentiel/.test(f);
+  const value = `${t} ${f}`;
+  // Les slugs CRM "*-e-presentiel" sont bien des formations présentielles avec accès e-learning.
+  return /pr[eé]sentiel/.test(value) || /\b(vtc|taxi|ta|va)(-exam)?\b/.test(value);
 };
 
 /**
