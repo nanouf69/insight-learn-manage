@@ -1095,12 +1095,13 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     // Pour les formations en présentiel (et FC), accès anticipé J-1
     const isPresentielOrFC =
       isPresentielType(apprenant?.type_apprenant, apprenant?.formation_choisie) ||
-      isFormationContinue(apprenant?.type_apprenant, apprenant?.formation_choisie);
+      isFormationContinue(apprenant?.type_apprenant, apprenant?.formation_choisie) ||
+      !!sessionAccessWindow;
     const startDateValue = isPresentielOrFC
-      ? apprenant.date_debut_formation || apprenant.date_debut_cours_en_ligne
+      ? sessionAccessWindow?.date_debut || apprenant.date_debut_formation || apprenant.date_debut_cours_en_ligne
       : apprenant.date_debut_cours_en_ligne;
     const endDateValue = isPresentielOrFC
-      ? apprenant.date_fin_formation || apprenant.date_fin_cours_en_ligne || apprenant.date_debut_formation || apprenant.date_debut_cours_en_ligne
+      ? sessionAccessWindow?.date_fin || apprenant.date_fin_formation || apprenant.date_fin_cours_en_ligne || apprenant.date_debut_formation || apprenant.date_debut_cours_en_ligne
       : apprenant.date_fin_cours_en_ligne;
     const debut = startDateValue ? safeDateParse(startDateValue) : null;
     const fin = endDateValue ? safeDateParse(endDateValue) : null;
