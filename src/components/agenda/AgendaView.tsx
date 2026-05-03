@@ -827,9 +827,31 @@ export function AgendaView() {
                   </Select>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>De *</Label>
+                <div className="space-y-2">
+                  <Label>Public concerné par ce cours *</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Seuls ces apprenants devront émarger pour ce créneau.
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {PUBLICS_CIBLES.map((p) => (
+                      <label key={p} className="flex items-center gap-2 border rounded px-3 py-2 cursor-pointer hover:bg-muted/50">
+                        <Checkbox
+                          checked={newBlock.publicsCibles.includes(p)}
+                          onCheckedChange={(checked) =>
+                            setNewBlock({
+                              ...newBlock,
+                              publicsCibles: checked
+                                ? [...newBlock.publicsCibles, p]
+                                : newBlock.publicsCibles.filter((x) => x !== p),
+                            })
+                          }
+                        />
+                        <span className="text-sm font-medium">{p}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
                     <Select
                       value={newBlock.startHour}
                       onValueChange={(value) => setNewBlock({ ...newBlock, startHour: value, endHour: "" })}
