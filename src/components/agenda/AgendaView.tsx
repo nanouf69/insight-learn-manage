@@ -461,7 +461,8 @@ export function AgendaView() {
         formation: editBlock.formation,
         heure_debut: normalizeHeure(editBlock.startHour),
         heure_fin: normalizeHeure(editBlock.endHour),
-      })
+        publics_cibles: editBlock.publicsCibles,
+      } as any)
       .eq('id', editingBlock.id);
 
     if (error) {
