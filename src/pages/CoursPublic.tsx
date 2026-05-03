@@ -681,6 +681,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const [emargementFCStatus, setEmargementFCStatus] = useState<"checking" | "needed" | "signed" | "n/a">("checking");
   const [emargementCreneau, setEmargementCreneau] = useState<CreneauKey | null>(null);
   const [emargementMode, setEmargementMode] = useState<"fc" | "presentiel">("fc");
+  const [sessionAccessWindow, setSessionAccessWindow] = useState<SessionAccessWindow | null>(null);
 
   const handleExamStateChange = useCallback((inExam: boolean) => {
     setIsInExam(inExam);
@@ -784,12 +785,16 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
 
         if (data) {
           setApprenant(data as any);
+          fetchSessionAccessWindow(data.id).then((window) => {
+            if (!cancelled) setSessionAccessWindow(window);
+          });
           const formationId = resolveFormationId(data.type_apprenant, data.formation_choisie, data.modules_autorises);
           setSelectedFormation(formationId);
           setApprenantFetchError(null);
           fetchAttemptRef.current = 0;
         } else {
           setApprenant(null);
+          setSessionAccessWindow(null);
           setSelectedFormation(null);
           setApprenantFetchError("Compte apprenant introuvable. Réessayez ou contactez le centre.");
         }
@@ -825,6 +830,9 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
 
     const applyApprenant = (value: ApprenantInfo) => {
       setApprenant(value);
+      fetchSessionAccessWindow(value.id).then((window) => {
+        if (!cancelled) setSessionAccessWindow(window);
+      });
       const formationId = resolveFormationId(value.type_apprenant, value.formation_choisie, value.modules_autorises);
       setSelectedFormation(formationId);
     };
