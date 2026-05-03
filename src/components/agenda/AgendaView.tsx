@@ -434,6 +434,7 @@ export function AgendaView() {
       startHour: decimalToTime(block.startHour),
       endHour: decimalToTime(block.endHour),
       discipline: block.disciplineId || '',
+      publicsCibles: block.publicsCibles || [],
     });
     setIsEditDialogOpen(true);
   };
