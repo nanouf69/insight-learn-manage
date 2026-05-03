@@ -235,6 +235,11 @@ serve(async (req) => {
         const prenom = apprenant.prenom || "";
         const nom = apprenant.nom || "";
 
+        const effectiveStart = apprenant.date_debut_cours_en_ligne || apprenant.date_debut_formation;
+        const startsTomorrow = effectiveStart === tomorrow;
+        const startPhrase = startsTomorrow ? "Votre formation commence demain" : "Votre formation commence aujourd'hui";
+        const subjectLine = `🎓 ${startPhrase} – Vos identifiants de connexion`;
+
         const emailBody = `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <div style="background-color: #1a1a2e; padding: 20px; text-align: center;">
@@ -245,7 +250,7 @@ serve(async (req) => {
             <div style="padding: 30px; background-color: #ffffff;">
               <h2 style="color: #1a1a2e;">Bonjour ${prenom} ${nom},</h2>
               
-              <p>Votre formation commence aujourd'hui ! 🎉 Voici vos identifiants pour accéder à vos cours en ligne.</p>
+              <p>${startPhrase} ! 🎉 Voici vos identifiants pour accéder à vos cours en ligne.</p>
               
               <div style="background-color: #f0f9ff; border-left: 4px solid #3b82f6; padding: 15px; margin: 20px 0; border-radius: 4px;">
                 <h3 style="color: #1e40af; margin-top: 0;">📋 Informations de formation</h3>
