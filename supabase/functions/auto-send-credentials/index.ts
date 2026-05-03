@@ -298,7 +298,7 @@ serve(async (req) => {
           },
           body: JSON.stringify({
             message: {
-              subject: `🎓 Votre formation commence aujourd'hui – Vos identifiants de connexion`,
+              subject: subjectLine,
               body: { contentType: "HTML", content: emailBody },
               toRecipients: [{ emailAddress: { address: apprenant.email } }],
             },
@@ -310,8 +310,8 @@ serve(async (req) => {
           // Log email
           await supabaseAdmin.from("emails").insert({
             apprenant_id: apprenant.id,
-            subject: `🎓 Votre formation commence aujourd'hui – Vos identifiants de connexion`,
-            body_preview: `Bonjour ${prenom}, votre formation commence aujourd'hui ! Voici vos identifiants.`,
+            subject: subjectLine,
+            body_preview: `Bonjour ${prenom}, ${startPhrase.toLowerCase()} ! Voici vos identifiants.`,
             body_html: emailBody,
             sender_email: senderEmail,
             recipients: [apprenant.email],
