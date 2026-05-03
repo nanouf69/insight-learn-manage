@@ -26,6 +26,7 @@ export type Database = {
           heure_fin: string
           id: string
           jour: number
+          publics_cibles: string[]
           semaine_debut: string
           updated_at: string
         }
@@ -40,6 +41,7 @@ export type Database = {
           heure_fin: string
           id?: string
           jour: number
+          publics_cibles?: string[]
           semaine_debut: string
           updated_at?: string
         }
@@ -54,6 +56,7 @@ export type Database = {
           heure_fin?: string
           id?: string
           jour?: number
+          publics_cibles?: string[]
           semaine_debut?: string
           updated_at?: string
         }
