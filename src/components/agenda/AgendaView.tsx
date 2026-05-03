@@ -6,6 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+
+const PUBLICS_CIBLES = ["TAXI", "TA", "VTC", "VA"] as const;
+type PublicCible = typeof PUBLICS_CIBLES[number];
 import { ChevronLeft, ChevronRight, Plus, X, User, Clock, BookOpen, Layers, Loader2, Upload } from "lucide-react";
 import { format, addDays, startOfWeek, isSameDay } from "date-fns";
 import { fr } from "date-fns/locale";
