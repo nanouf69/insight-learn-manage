@@ -483,6 +483,7 @@ export function AgendaView() {
       discipline: disciplineData?.nom || b.discipline,
       disciplineId: disciplineData?.id || b.disciplineId,
       disciplineColor: disciplineData?.color || b.disciplineColor,
+      publicsCibles: editBlock.publicsCibles,
     } : b));
 
     setIsEditDialogOpen(false);
