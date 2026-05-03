@@ -55,6 +55,14 @@ export async function buildSessionAgendaDays(
     .gte("semaine_debut", semaineMinStr)
     .lte("semaine_debut", dateFin);
 
+  // Détermine les publics ciblés par l'apprenant (TAXI/TA/VTC/VA)
+  const t = (ctx.typeApprenant || "").toLowerCase();
+  const apprenantPublics: string[] = [];
+  if (t === "taxi" || t === "taxi-e") apprenantPublics.push("TAXI");
+  if (t === "ta" || t === "ta-e" || t.includes("passerelle-ta") || t.includes("passerelle-taxi")) apprenantPublics.push("TA");
+  if (t === "vtc" || t === "vtc-e") apprenantPublics.push("VTC");
+  if (t === "va" || t === "va-e" || t === "pa vtc" || t.includes("passerelle-va") || t.includes("passerelle-vtc")) apprenantPublics.push("VA");
+
   const matchFormation = (f: string) => {
     const fl = (f || "").toLowerCase();
     if (fl.includes("taxi et vtc") || fl.includes("taxi & vtc")) return true;
@@ -64,7 +72,16 @@ export async function buildSessionAgendaDays(
     return false;
   };
 
-  const filtered = (blocs || []).filter((b: any) => matchFormation(b.formation));
+  const filtered = (blocs || []).filter((b: any) => {
+    const cibles: string[] = Array.isArray(b.publics_cibles) ? b.publics_cibles : [];
+    // Si publics_cibles est renseigné -> on l'utilise en priorité
+    if (cibles.length > 0) {
+      if (apprenantPublics.length === 0) return true; // type inconnu : on garde
+      return apprenantPublics.some((p) => cibles.includes(p));
+    }
+    // Sinon : fallback sur le texte de la formation (legacy)
+    return matchFormation(b.formation);
+  });
   const dayMap = new Map<string, { date: Date; slots: { debut: string; fin: string }[] }>();
 
   for (const bloc of filtered) {
