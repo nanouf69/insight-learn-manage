@@ -1043,17 +1043,25 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     const debut = apprenant.date_debut_cours_en_ligne ? safeDateParse(apprenant.date_debut_cours_en_ligne) : null;
     const fin = apprenant.date_fin_cours_en_ligne ? safeDateParse(apprenant.date_fin_cours_en_ligne) : null;
 
-    if (!debut || !fin || now < debut || now > fin) {
+    // Pour les formations en présentiel (et FC), accès anticipé J-1
+    const isPresentielOrFC =
+      isPresentielType(apprenant?.type_apprenant, apprenant?.formation_choisie) ||
+      isFormationContinue(apprenant?.type_apprenant, apprenant?.formation_choisie);
+    const debutEffectif = debut && isPresentielOrFC
+      ? new Date(debut.getTime() - 24 * 60 * 60 * 1000)
+      : debut;
+
+    if (!debutEffectif || !fin || now < debutEffectif || now > fin) {
       return (
         <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
           <div className="text-center max-w-md">
             <div className="text-6xl mb-4">🔒</div>
             <h1 className="text-2xl font-bold text-slate-900 mb-2">Accès non disponible</h1>
             <p className="text-slate-500 mb-4">
-              {!debut || !fin
+              {!debutEffectif || !fin
                 ? "Votre accès aux cours en ligne n'a pas encore été configuré. Contactez votre centre de formation."
-                : now < debut
-                  ? `Votre accès sera disponible à partir du ${debut.toLocaleDateString('fr-FR')}.`
+                : now < debutEffectif
+                  ? `Votre accès sera disponible à partir du ${debutEffectif.toLocaleDateString('fr-FR')}.`
                   : `Votre accès a expiré le ${fin.toLocaleDateString('fr-FR')}. Contactez votre centre de formation.`
               }
             </p>
