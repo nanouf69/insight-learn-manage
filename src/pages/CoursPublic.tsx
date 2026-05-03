@@ -539,6 +539,8 @@ interface ApprenantInfo {
   formation_choisie: string | null;
   date_debut_cours_en_ligne: string | null;
   date_fin_cours_en_ligne: string | null;
+  date_debut_formation?: string | null;
+  date_fin_formation?: string | null;
   modules_autorises: number[] | null;
   email?: string | null;
   telephone?: string | null;
@@ -724,7 +726,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         const { data, error: fetchError } = await withTimeout(
           supabase
             .from("apprenants")
-            .select("id, nom, prenom, type_apprenant, formation_choisie, date_debut_cours_en_ligne, date_fin_cours_en_ligne, modules_autorises, email, telephone, adresse, code_postal, ville, date_naissance")
+            .select("id, nom, prenom, type_apprenant, formation_choisie, date_debut_cours_en_ligne, date_fin_cours_en_ligne, date_debut_formation, date_fin_formation, modules_autorises, email, telephone, adresse, code_postal, ville, date_naissance")
             .eq("auth_user_id", user.id)
             .maybeSingle(),
           45000,
@@ -795,7 +797,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     const refreshApprenant = async () => {
       const { data, error } = await supabase
         .from("apprenants")
-        .select("id, nom, prenom, type_apprenant, formation_choisie, date_debut_cours_en_ligne, date_fin_cours_en_ligne, modules_autorises, email, telephone, adresse, code_postal, ville, date_naissance")
+        .select("id, nom, prenom, type_apprenant, formation_choisie, date_debut_cours_en_ligne, date_fin_cours_en_ligne, date_debut_formation, date_fin_formation, modules_autorises, email, telephone, adresse, code_postal, ville, date_naissance")
         .eq("id", apprenantOverride.id)
         .maybeSingle();
 
@@ -1040,13 +1042,19 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   if (!embedded && user && apprenant) {
     const now = new Date();
     now.setHours(12, 0, 0, 0);
-    const debut = apprenant.date_debut_cours_en_ligne ? safeDateParse(apprenant.date_debut_cours_en_ligne) : null;
-    const fin = apprenant.date_fin_cours_en_ligne ? safeDateParse(apprenant.date_fin_cours_en_ligne) : null;
 
     // Pour les formations en présentiel (et FC), accès anticipé J-1
     const isPresentielOrFC =
       isPresentielType(apprenant?.type_apprenant, apprenant?.formation_choisie) ||
       isFormationContinue(apprenant?.type_apprenant, apprenant?.formation_choisie);
+    const startDateValue = isPresentielOrFC
+      ? apprenant.date_debut_formation || apprenant.date_debut_cours_en_ligne
+      : apprenant.date_debut_cours_en_ligne;
+    const endDateValue = isPresentielOrFC
+      ? apprenant.date_fin_formation || apprenant.date_fin_cours_en_ligne || apprenant.date_debut_formation || apprenant.date_debut_cours_en_ligne
+      : apprenant.date_fin_cours_en_ligne;
+    const debut = startDateValue ? safeDateParse(startDateValue) : null;
+    const fin = endDateValue ? safeDateParse(endDateValue) : null;
     const debutEffectif = debut && isPresentielOrFC
       ? new Date(debut.getTime() - 24 * 60 * 60 * 1000)
       : debut;
