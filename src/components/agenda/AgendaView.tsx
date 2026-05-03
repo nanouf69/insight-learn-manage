@@ -170,6 +170,7 @@ export function AgendaView() {
     startHour: "",
     endHour: "",
     discipline: "",
+    publicsCibles: [] as string[],
   });
   const [selectedSlot, setSelectedSlot] = useState<{ date: Date; hour: number } | null>(null);
   const [newBlock, setNewBlock] = useState({
@@ -179,6 +180,7 @@ export function AgendaView() {
     startHour: "",
     endHour: "",
     discipline: "",
+    publicsCibles: [] as string[],
   });
   const [newDiscipline, setNewDiscipline] = useState({
     nom: "",
