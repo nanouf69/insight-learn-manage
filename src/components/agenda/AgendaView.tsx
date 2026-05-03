@@ -310,7 +310,7 @@ export function AgendaView() {
     const h = Math.floor(slot);
     const m = (slot % 1) * 60;
     const timeStr = `${h}:${m === 0 ? '00' : '30'}`;
-    setNewBlock({ title: "", formateur: "", formation: "", startHour: timeStr, endHour: "", discipline: "" });
+    setNewBlock({ title: "", formateur: "", formation: "", startHour: timeStr, endHour: "", discipline: "", publicsCibles: [] });
     setIsDialogOpen(true);
   };
 
