@@ -142,6 +142,14 @@ export function useConnexionTracking({ apprenantId, userId, enabled }: UseConnex
       // Skip signOut for benign reasons (double-mount, replaced session, etc.)
       if (reason !== "replaced_by_new_session" && reason !== "no_active_session" && reason !== "already_closed") {
         console.error(`[ConnexionTracking] Déconnexion (signOut) — raison: ${reason}`);
+        const reasonMessages: Record<string, string> = {
+          max_duration: "Durée maximale de session atteinte (7h).",
+          no_response: "Déconnexion pour inactivité (aucune réponse au contrôle de présence).",
+        };
+        toast.error(`Déconnexion : ${reasonMessages[reason] || reason}`, {
+          duration: 10000,
+          position: "top-center",
+        });
         await endConnexion();
         await supabase.auth.signOut();
       } else {
