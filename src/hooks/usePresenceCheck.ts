@@ -115,11 +115,13 @@ export function usePresenceCheck({
         // Benign reasons caused by React double-mount or another tab opening:
         // do NOT sign the user out, just silently stop polling.
         if (reason === "replaced_by_new_session" || reason === "no_active_session" || reason === "already_closed") {
+          console.warn(`[PresenceCheck] Session ignorée (raison bénigne): ${reason}`);
           clearTimers();
           setShowModal(false);
           modalDeadlineRef.current = null;
           return;
         }
+        console.error(`[PresenceCheck] Déconnexion forcée — raison: ${reason}`);
         await endSession(reason);
         return;
       }
