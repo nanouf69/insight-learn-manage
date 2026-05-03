@@ -43,6 +43,7 @@ interface CourseBlock {
   discipline?: string;
   disciplineId?: string;
   disciplineColor?: string;
+  publicsCibles?: string[];
 }
 
 // Helper pour parser une date sans décalage de timezone
