@@ -348,7 +348,8 @@ export function AgendaView() {
         heure_debut: normalizeHeure(newBlock.startHour),
         heure_fin: normalizeHeure(newBlock.endHour),
         semaine_debut: weekStartDate,
-      })
+        publics_cibles: newBlock.publicsCibles,
+      } as any)
       .select()
       .single();
 
