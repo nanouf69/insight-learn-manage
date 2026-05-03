@@ -828,6 +828,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   useEffect(() => {
     if (!apprenantOverride) return;
 
+    let cancelled = false;
     const applyApprenant = (value: ApprenantInfo) => {
       setApprenant(value);
       fetchSessionAccessWindow(value.id).then((window) => {
@@ -842,7 +843,6 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     // In embedded preview, force-refresh latest DB state to avoid stale search result snapshot
     if (!embedded || !apprenantOverride.id) return;
 
-    let cancelled = false;
     const refreshApprenant = async () => {
       const { data, error } = await supabase
         .from("apprenants")
