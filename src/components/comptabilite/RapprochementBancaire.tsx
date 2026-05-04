@@ -37,6 +37,7 @@ interface Transaction {
   justificatif_id: string | null;
   source: string;
   created_at: string;
+  tva_rate?: number | null;
 }
 
 interface Justificatif {
@@ -1149,17 +1150,19 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
     try {
       const XLSX = await import("xlsx");
       // Catégories sans TVA récupérable
-      const NO_TVA = new Set([
+      const NO_TVA_DEFAULT = new Set([
         "impots", "salaire", "salaires_formateurs", "urssaf", "retraite",
         "banque", "virement_interne", "dividendes", "compte_courant_associe",
         "frais_examen_cma", "cpf", "recette_formation",
       ]);
-      const TVA_RATE = 0.20;
       const rows = filtered.map(t => {
         const ttc = Number(t.montant) || 0;
-        const noTva = !t.categorie || NO_TVA.has(t.categorie);
-        const ht = noTva ? ttc : +(ttc / (1 + TVA_RATE)).toFixed(2);
-        const tva = noTva ? 0 : +(ttc - ht).toFixed(2);
+        const explicitRate = (t.tva_rate === 0 || t.tva_rate) ? Number(t.tva_rate) : null;
+        const rate = explicitRate !== null
+          ? explicitRate
+          : (!t.categorie || NO_TVA_DEFAULT.has(t.categorie) ? 0 : 20);
+        const ht = rate === 0 ? ttc : +(ttc / (1 + rate / 100)).toFixed(2);
+        const tva = rate === 0 ? 0 : +(ttc - ht).toFixed(2);
         return {
           Date: t.date_operation ? format(new Date(t.date_operation), "dd/MM/yyyy") : "",
           Banque: t.banque || "",
@@ -1167,17 +1170,17 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
           Catégorie: (CATEGORIES.find(c => c.value === t.categorie)?.label || t.categorie || "—"),
           Statut: STATUTS.find(s => s.value === t.statut)?.label || t.statut || "",
           "Fournisseur/Client": t.fournisseur_client || "",
+          "Taux TVA": rate === 0 ? "Exonéré" : `${rate}%`,
           "HT": ht,
-          "TVA (20%)": tva,
+          "TVA": tva,
           "TTC": ttc,
         };
       });
       const ws = XLSX.utils.json_to_sheet(rows);
-      ws["!cols"] = [{ wch: 12 }, { wch: 10 }, { wch: 50 }, { wch: 24 }, { wch: 14 }, { wch: 24 }, { wch: 12 }, { wch: 12 }, { wch: 12 }];
-      // Format monétaire €
+      ws["!cols"] = [{ wch: 12 }, { wch: 10 }, { wch: 50 }, { wch: 24 }, { wch: 14 }, { wch: 24 }, { wch: 10 }, { wch: 12 }, { wch: 12 }, { wch: 12 }];
       const range = XLSX.utils.decode_range(ws["!ref"] as string);
       for (let R = 1; R <= range.e.r; R++) {
-        for (const C of [6, 7, 8]) {
+        for (const C of [7, 8, 9]) {
           const addr = XLSX.utils.encode_cell({ r: R, c: C });
           if (ws[addr]) ws[addr].z = '#,##0.00 €;[Red]-#,##0.00 €';
         }
@@ -1187,7 +1190,7 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
 
       const totalTTC = rows.reduce((s, r) => s + r.TTC, 0);
       const totalHT = rows.reduce((s, r) => s + r.HT, 0);
-      const totalTVA = rows.reduce((s, r) => s + r["TVA (20%)"], 0);
+      const totalTVA = rows.reduce((s, r) => s + r.TVA, 0);
 
       const summary = [
         ["Filtres", `${statutLabel} · ${categorieLabel} · ${typeLabel}`],
@@ -1199,7 +1202,7 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
         ["Total débits (TTC)", filteredDebits],
         ["Solde net (TTC)", filteredNet],
         ["Total HT", totalHT],
-        ["Total TVA (20%)", totalTVA],
+        ["Total TVA", totalTVA],
         ["Total TTC", totalTTC],
         ["Généré le", format(new Date(), "dd/MM/yyyy HH:mm")],
       ];
@@ -1573,11 +1576,22 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
 
                             {/* Editing form */}
                             {isEditing ? (
-                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
+                              <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 pt-1">
                                 <Select value={editForm.categorie || ""} onValueChange={v => setEditForm(f => ({ ...f, categorie: v }))}>
                                   <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Catégorie..." /></SelectTrigger>
                                   <SelectContent>
                                     {CATEGORIES.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
+                                  </SelectContent>
+                                </Select>
+                                <Select
+                                  value={editForm.tva_rate === null || editForm.tva_rate === undefined ? "" : String(editForm.tva_rate)}
+                                  onValueChange={v => setEditForm(f => ({ ...f, tva_rate: v === "" ? null : Number(v) }))}
+                                >
+                                  <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="TVA..." /></SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="0">Exonération de TVA (0%)</SelectItem>
+                                    <SelectItem value="10">TVA 10%</SelectItem>
+                                    <SelectItem value="20">TVA 20%</SelectItem>
                                   </SelectContent>
                                 </Select>
                                 {fournisseurCustomInput ? (
@@ -1643,6 +1657,7 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
                                           categorie: tx.categorie || suggestion.categorie,
                                           fournisseur_client: tx.fournisseur_client || suggestion.fournisseur_client,
                                           notes: tx.notes,
+                                          tva_rate: tx.tva_rate ?? null,
                                         });
                                         if (!tx.categorie && suggestion.categorie) {
                                           const catLabel = CATEGORIES.find(c => c.value === suggestion.categorie)?.label || suggestion.categorie;
@@ -1711,6 +1726,7 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
                                         categorie: tx.categorie || suggestion.categorie,
                                         fournisseur_client: tx.fournisseur_client || suggestion.fournisseur_client,
                                         notes: tx.notes,
+                                        tva_rate: tx.tva_rate ?? null,
                                       });
                                       if (!tx.categorie && suggestion.categorie) {
                                         const catLabel = CATEGORIES.find(c => c.value === suggestion.categorie)?.label || suggestion.categorie;
