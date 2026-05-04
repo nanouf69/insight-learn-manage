@@ -1592,10 +1592,23 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
                                   </p>
                                 )}
                               </div>
-                              <div className="text-right flex-shrink-0">
-                                <p className={cn("font-bold text-base", isDebit ? "text-destructive" : "text-emerald-600")}>
-                                  {isDebit ? "" : "+"}{fmt(tx.montant)}
-                                </p>
+                              <div className="text-right flex-shrink-0 min-w-[140px]">
+                                {(() => {
+                                  const { ht, tva } = computeHtTva(tx);
+                                  return (
+                                    <div className="flex flex-col items-end gap-0.5 leading-tight">
+                                      <div className="text-[11px] text-muted-foreground">
+                                        HT&nbsp;<span className="font-medium text-foreground">{fmt(ht)}</span>
+                                      </div>
+                                      <div className="text-[11px] text-muted-foreground">
+                                        TVA&nbsp;<span className="font-medium text-foreground">{fmt(tva)}</span>
+                                      </div>
+                                      <p className={cn("font-bold text-base", isDebit ? "text-destructive" : "text-emerald-600")}>
+                                        TTC&nbsp;{isDebit ? "" : "+"}{fmt(tx.montant)}
+                                      </p>
+                                    </div>
+                                  );
+                                })()}
                               </div>
                             </div>
 
