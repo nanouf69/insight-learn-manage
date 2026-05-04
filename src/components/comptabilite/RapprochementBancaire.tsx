@@ -1175,19 +1175,9 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
     try {
       const XLSX = await import("xlsx");
       // Catégories sans TVA récupérable
-      const NO_TVA_DEFAULT = new Set([
-        "impots", "salaire", "salaires_formateurs", "urssaf", "retraite",
-        "banque", "virement_interne", "dividendes", "compte_courant_associe",
-        "frais_examen_cma", "cpf", "recette_formation",
-      ]);
       const rows = filtered.map(t => {
         const ttc = Number(t.montant) || 0;
-        const explicitRate = (t.tva_rate === 0 || t.tva_rate) ? Number(t.tva_rate) : null;
-        const rate = explicitRate !== null
-          ? explicitRate
-          : (!t.categorie || NO_TVA_DEFAULT.has(t.categorie) ? 0 : 20);
-        const ht = rate === 0 ? ttc : +(ttc / (1 + rate / 100)).toFixed(2);
-        const tva = rate === 0 ? 0 : +(ttc - ht).toFixed(2);
+        const { ht, tva, rate, manual } = computeHtTva(t);
         return {
           Date: t.date_operation ? format(new Date(t.date_operation), "dd/MM/yyyy") : "",
           Banque: t.banque || "",
@@ -1195,7 +1185,7 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
           Catégorie: (CATEGORIES.find(c => c.value === t.categorie)?.label || t.categorie || "—"),
           Statut: STATUTS.find(s => s.value === t.statut)?.label || t.statut || "",
           "Fournisseur/Client": t.fournisseur_client || "",
-          "Taux TVA": rate === 0 ? "Exonéré" : `${rate}%`,
+          "Taux TVA": manual ? "Manuel" : (rate === 0 ? "Exonéré" : `${rate}%`),
           "HT": ht,
           "TVA": tva,
           "TTC": ttc,
