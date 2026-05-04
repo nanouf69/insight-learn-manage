@@ -84,7 +84,7 @@ export function shouldForceBilanReset(
   // que les modifs admin se propagent automatiquement entre VTC et TAXI.
   if (Number(moduleId) === 9 && savedData?.exercices) {
     const hasLegacyTaxiIds = savedData.exercices.some((e) =>
-      [200, 201, 202, 203, 204, 205, 206].includes(Number(e.id)),
+      [200, 201, 202, 205, 206].includes(Number(e.id)),
     );
     if (hasLegacyTaxiIds) return true;
   }
