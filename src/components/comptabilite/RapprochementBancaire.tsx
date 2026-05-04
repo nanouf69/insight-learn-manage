@@ -1148,30 +1148,59 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
   const handleDownloadExcel = async () => {
     try {
       const XLSX = await import("xlsx");
-      const rows = filtered.map(t => ({
-        Date: t.date_operation ? format(new Date(t.date_operation), "dd/MM/yyyy") : "",
-        Banque: t.banque || "",
-        Libellé: t.libelle || "",
-        Catégorie: (CATEGORIES.find(c => c.value === t.categorie)?.label || t.categorie || "—"),
-        Statut: STATUTS.find(s => s.value === t.statut)?.label || t.statut || "",
-        "Fournisseur/Client": t.fournisseur_client || "",
-        Montant: t.montant,
-      }));
+      // Catégories sans TVA récupérable
+      const NO_TVA = new Set([
+        "impots", "salaire", "salaires_formateurs", "urssaf", "retraite",
+        "banque", "virement_interne", "dividendes", "compte_courant_associe",
+        "frais_examen_cma", "cpf", "recette_formation",
+      ]);
+      const TVA_RATE = 0.20;
+      const rows = filtered.map(t => {
+        const ttc = Number(t.montant) || 0;
+        const noTva = !t.categorie || NO_TVA.has(t.categorie);
+        const ht = noTva ? ttc : +(ttc / (1 + TVA_RATE)).toFixed(2);
+        const tva = noTva ? 0 : +(ttc - ht).toFixed(2);
+        return {
+          Date: t.date_operation ? format(new Date(t.date_operation), "dd/MM/yyyy") : "",
+          Banque: t.banque || "",
+          Libellé: t.libelle || "",
+          Catégorie: (CATEGORIES.find(c => c.value === t.categorie)?.label || t.categorie || "—"),
+          Statut: STATUTS.find(s => s.value === t.statut)?.label || t.statut || "",
+          "Fournisseur/Client": t.fournisseur_client || "",
+          "HT": ht,
+          "TVA (20%)": tva,
+          "TTC": ttc,
+        };
+      });
       const ws = XLSX.utils.json_to_sheet(rows);
-      ws["!cols"] = [{ wch: 12 }, { wch: 10 }, { wch: 50 }, { wch: 24 }, { wch: 14 }, { wch: 24 }, { wch: 12 }];
+      ws["!cols"] = [{ wch: 12 }, { wch: 10 }, { wch: 50 }, { wch: 24 }, { wch: 14 }, { wch: 24 }, { wch: 12 }, { wch: 12 }, { wch: 12 }];
+      // Format monétaire €
+      const range = XLSX.utils.decode_range(ws["!ref"] as string);
+      for (let R = 1; R <= range.e.r; R++) {
+        for (const C of [6, 7, 8]) {
+          const addr = XLSX.utils.encode_cell({ r: R, c: C });
+          if (ws[addr]) ws[addr].z = '#,##0.00 €;[Red]-#,##0.00 €';
+        }
+      }
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Rapprochement");
 
-      // Feuille résumé
+      const totalTTC = rows.reduce((s, r) => s + r.TTC, 0);
+      const totalHT = rows.reduce((s, r) => s + r.HT, 0);
+      const totalTVA = rows.reduce((s, r) => s + r["TVA (20%)"], 0);
+
       const summary = [
         ["Filtres", `${statutLabel} · ${categorieLabel} · ${typeLabel}`],
         ["Banque", filterBanque === "tous" ? "Toutes" : filterBanque],
         ["Année", filterAnnee === "tous" ? "Toutes" : filterAnnee],
         ["Mois", filterMois === "tous" ? "Tous" : (MOIS_LABELS[parseInt(filterMois) - 1] || filterMois)],
         ["Nombre de transactions", filtered.length],
-        ["Total crédits", filteredCredits],
-        ["Total débits", filteredDebits],
-        ["Solde net", filteredNet],
+        ["Total crédits (TTC)", filteredCredits],
+        ["Total débits (TTC)", filteredDebits],
+        ["Solde net (TTC)", filteredNet],
+        ["Total HT", totalHT],
+        ["Total TVA (20%)", totalTVA],
+        ["Total TTC", totalTTC],
         ["Généré le", format(new Date(), "dd/MM/yyyy HH:mm")],
       ];
       const ws2 = XLSX.utils.aoa_to_sheet(summary);
