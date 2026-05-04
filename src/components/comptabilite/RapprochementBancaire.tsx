@@ -75,6 +75,7 @@ const CATEGORIES = [
   { value: "entretien_locaux", label: "🧹 Entretien des locaux", color: "bg-teal-100 text-teal-700" },
   { value: "entretien_vehicule", label: "🚗 Entretien véhicule", color: "bg-blue-100 text-blue-700" },
   { value: "compte_courant_associe", label: "🏦 Compte courant associé", color: "bg-purple-100 text-purple-700" },
+  { value: "frais_postaux", label: "📮 Frais postaux", color: "bg-rose-100 text-rose-700" },
   { value: "autre", label: "📄 Autre", color: "bg-muted text-muted-foreground" },
 ];
 
