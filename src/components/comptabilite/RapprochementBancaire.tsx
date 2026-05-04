@@ -38,6 +38,8 @@ interface Transaction {
   source: string;
   created_at: string;
   tva_rate?: number | null;
+  montant_ht?: number | null;
+  montant_tva?: number | null;
 }
 
 interface Justificatif {
