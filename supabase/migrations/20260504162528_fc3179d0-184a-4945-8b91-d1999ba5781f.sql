@@ -1,0 +1,1 @@
+ALTER TABLE public.transactions_bancaires ADD COLUMN IF NOT EXISTS tva_rate numeric;

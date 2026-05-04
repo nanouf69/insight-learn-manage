@@ -2417,6 +2417,7 @@ export type Database = {
           solde: number | null
           source: string
           statut: string
+          tva_rate: number | null
           updated_at: string
         }
         Insert: {
@@ -2435,6 +2436,7 @@ export type Database = {
           solde?: number | null
           source?: string
           statut?: string
+          tva_rate?: number | null
           updated_at?: string
         }
         Update: {
@@ -2453,6 +2455,7 @@ export type Database = {
           solde?: number | null
           source?: string
           statut?: string
+          tva_rate?: number | null
           updated_at?: string
         }
         Relationships: [
