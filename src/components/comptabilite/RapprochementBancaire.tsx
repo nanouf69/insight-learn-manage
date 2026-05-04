@@ -70,6 +70,11 @@ const CATEGORIES = [
   { value: "banque", label: "🏦 Frais bancaires", color: "bg-slate-100 text-slate-700" },
   { value: "impots", label: "🏛️ Impôts & taxes", color: "bg-red-100 text-red-700" },
   { value: "virement_interne", label: "🔄 Virement interne", color: "bg-gray-100 text-gray-700" },
+  { value: "dividendes", label: "💰 Dividendes", color: "bg-amber-100 text-amber-700" },
+  { value: "electricite", label: "⚡ Électricité", color: "bg-yellow-100 text-yellow-700" },
+  { value: "entretien_locaux", label: "🧹 Entretien des locaux", color: "bg-teal-100 text-teal-700" },
+  { value: "entretien_vehicule", label: "🚗 Entretien véhicule", color: "bg-blue-100 text-blue-700" },
+  { value: "compte_courant_associe", label: "🏦 Compte courant associé", color: "bg-purple-100 text-purple-700" },
   { value: "autre", label: "📄 Autre", color: "bg-muted text-muted-foreground" },
 ];
 
