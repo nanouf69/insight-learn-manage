@@ -37,6 +37,7 @@ interface Transaction {
   justificatif_id: string | null;
   source: string;
   created_at: string;
+  tva_rate?: number | null;
 }
 
 interface Justificatif {
