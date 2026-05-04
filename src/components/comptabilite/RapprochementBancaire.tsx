@@ -1655,6 +1655,7 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
                                           categorie: tx.categorie || suggestion.categorie,
                                           fournisseur_client: tx.fournisseur_client || suggestion.fournisseur_client,
                                           notes: tx.notes,
+                                          tva_rate: tx.tva_rate ?? null,
                                         });
                                         if (!tx.categorie && suggestion.categorie) {
                                           const catLabel = CATEGORIES.find(c => c.value === suggestion.categorie)?.label || suggestion.categorie;
