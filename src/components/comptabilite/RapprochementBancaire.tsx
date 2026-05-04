@@ -38,6 +38,8 @@ interface Transaction {
   source: string;
   created_at: string;
   tva_rate?: number | null;
+  montant_ht?: number | null;
+  montant_tva?: number | null;
 }
 
 interface Justificatif {
@@ -94,6 +96,29 @@ const STATUTS = [
 
 function getStatut(value: string) {
   return STATUTS.find(s => s.value === value) || STATUTS[0];
+}
+
+const NO_TVA_DEFAULT_CATS = new Set([
+  "impots", "salaire", "salaires_formateurs", "urssaf", "retraite",
+  "banque", "virement_interne", "dividendes", "compte_courant_associe",
+  "frais_examen_cma", "cpf", "recette_formation",
+]);
+
+function computeHtTva(tx: { montant: number; categorie?: string | null; tva_rate?: number | null; montant_ht?: number | null; montant_tva?: number | null }) {
+  const ttc = Number(tx.montant) || 0;
+  // Manual override prevails
+  if (tx.montant_ht != null && tx.montant_tva != null) {
+    const ht = ttc < 0 ? -Math.abs(Number(tx.montant_ht)) : Math.abs(Number(tx.montant_ht));
+    const tva = ttc < 0 ? -Math.abs(Number(tx.montant_tva)) : Math.abs(Number(tx.montant_tva));
+    return { ht, tva, rate: null as number | null, manual: true };
+  }
+  const explicit = (tx.tva_rate === 0 || tx.tva_rate) ? Number(tx.tva_rate) : null;
+  const rate = explicit !== null
+    ? explicit
+    : (!tx.categorie || NO_TVA_DEFAULT_CATS.has(tx.categorie) ? 0 : 20);
+  const ht = rate === 0 ? ttc : +(ttc / (1 + rate / 100)).toFixed(2);
+  const tva = rate === 0 ? 0 : +(ttc - ht).toFixed(2);
+  return { ht, tva, rate, manual: false };
 }
 
 /**
@@ -1150,19 +1175,9 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
     try {
       const XLSX = await import("xlsx");
       // Catégories sans TVA récupérable
-      const NO_TVA_DEFAULT = new Set([
-        "impots", "salaire", "salaires_formateurs", "urssaf", "retraite",
-        "banque", "virement_interne", "dividendes", "compte_courant_associe",
-        "frais_examen_cma", "cpf", "recette_formation",
-      ]);
       const rows = filtered.map(t => {
         const ttc = Number(t.montant) || 0;
-        const explicitRate = (t.tva_rate === 0 || t.tva_rate) ? Number(t.tva_rate) : null;
-        const rate = explicitRate !== null
-          ? explicitRate
-          : (!t.categorie || NO_TVA_DEFAULT.has(t.categorie) ? 0 : 20);
-        const ht = rate === 0 ? ttc : +(ttc / (1 + rate / 100)).toFixed(2);
-        const tva = rate === 0 ? 0 : +(ttc - ht).toFixed(2);
+        const { ht, tva, rate, manual } = computeHtTva(t);
         return {
           Date: t.date_operation ? format(new Date(t.date_operation), "dd/MM/yyyy") : "",
           Banque: t.banque || "",
@@ -1170,7 +1185,7 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
           Catégorie: (CATEGORIES.find(c => c.value === t.categorie)?.label || t.categorie || "—"),
           Statut: STATUTS.find(s => s.value === t.statut)?.label || t.statut || "",
           "Fournisseur/Client": t.fournisseur_client || "",
-          "Taux TVA": rate === 0 ? "Exonéré" : `${rate}%`,
+          "Taux TVA": manual ? "Manuel" : (rate === 0 ? "Exonéré" : `${rate}%`),
           "HT": ht,
           "TVA": tva,
           "TTC": ttc,
@@ -1567,10 +1582,23 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
                                   </p>
                                 )}
                               </div>
-                              <div className="text-right flex-shrink-0">
-                                <p className={cn("font-bold text-base", isDebit ? "text-destructive" : "text-emerald-600")}>
-                                  {isDebit ? "" : "+"}{fmt(tx.montant)}
-                                </p>
+                              <div className="text-right flex-shrink-0 min-w-[140px]">
+                                {(() => {
+                                  const { ht, tva } = computeHtTva(tx);
+                                  return (
+                                    <div className="flex flex-col items-end gap-0.5 leading-tight">
+                                      <div className="text-[11px] text-muted-foreground">
+                                        HT&nbsp;<span className="font-medium text-foreground">{fmt(ht)}</span>
+                                      </div>
+                                      <div className="text-[11px] text-muted-foreground">
+                                        TVA&nbsp;<span className="font-medium text-foreground">{fmt(tva)}</span>
+                                      </div>
+                                      <p className={cn("font-bold text-base", isDebit ? "text-destructive" : "text-emerald-600")}>
+                                        TTC&nbsp;{isDebit ? "" : "+"}{fmt(tx.montant)}
+                                      </p>
+                                    </div>
+                                  );
+                                })()}
                               </div>
                             </div>
 
@@ -1632,6 +1660,22 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
                                   onChange={e => setEditForm(f => ({ ...f, notes: e.target.value }))}
                                   className="h-8 text-xs"
                                 />
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  placeholder="HT (auto)"
+                                  value={editForm.montant_ht ?? ""}
+                                  onChange={e => setEditForm(f => ({ ...f, montant_ht: e.target.value === "" ? null : Number(e.target.value) }))}
+                                  className="h-8 text-xs"
+                                />
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  placeholder="TVA (auto)"
+                                  value={editForm.montant_tva ?? ""}
+                                  onChange={e => setEditForm(f => ({ ...f, montant_tva: e.target.value === "" ? null : Number(e.target.value) }))}
+                                  className="h-8 text-xs"
+                                />
                               </div>
                             ) : (
                               /* Display row */
@@ -1658,6 +1702,8 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
                                           fournisseur_client: tx.fournisseur_client || suggestion.fournisseur_client,
                                           notes: tx.notes,
                                           tva_rate: tx.tva_rate ?? null,
+                                          montant_ht: tx.montant_ht ?? null,
+                                          montant_tva: tx.montant_tva ?? null,
                                         });
                                         if (!tx.categorie && suggestion.categorie) {
                                           const catLabel = CATEGORIES.find(c => c.value === suggestion.categorie)?.label || suggestion.categorie;
@@ -1727,6 +1773,8 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
                                         fournisseur_client: tx.fournisseur_client || suggestion.fournisseur_client,
                                         notes: tx.notes,
                                         tva_rate: tx.tva_rate ?? null,
+                                        montant_ht: tx.montant_ht ?? null,
+                                        montant_tva: tx.montant_tva ?? null,
                                       });
                                       if (!tx.categorie && suggestion.categorie) {
                                         const catLabel = CATEGORIES.find(c => c.value === suggestion.categorie)?.label || suggestion.categorie;
