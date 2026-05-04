@@ -1144,7 +1144,45 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
     }
   };
 
-  // Match apprenant from transaction libelle (search uppercase name in libelle)
+  // Export Excel de la liste filtrée
+  const handleDownloadExcel = async () => {
+    try {
+      const XLSX = await import("xlsx");
+      const rows = filtered.map(t => ({
+        Date: t.date_operation ? format(new Date(t.date_operation), "dd/MM/yyyy") : "",
+        Banque: t.banque || "",
+        Libellé: t.libelle || "",
+        Catégorie: (CATEGORIES.find(c => c.value === t.categorie)?.label || t.categorie || "—"),
+        Statut: STATUTS.find(s => s.value === t.statut)?.label || t.statut || "",
+        "Fournisseur/Client": t.fournisseur_client || "",
+        Montant: t.montant,
+      }));
+      const ws = XLSX.utils.json_to_sheet(rows);
+      ws["!cols"] = [{ wch: 12 }, { wch: 10 }, { wch: 50 }, { wch: 24 }, { wch: 14 }, { wch: 24 }, { wch: 12 }];
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Rapprochement");
+
+      // Feuille résumé
+      const summary = [
+        ["Filtres", `${statutLabel} · ${categorieLabel} · ${typeLabel}`],
+        ["Banque", filterBanque === "tous" ? "Toutes" : filterBanque],
+        ["Année", filterAnnee === "tous" ? "Toutes" : filterAnnee],
+        ["Mois", filterMois === "tous" ? "Tous" : (MOIS_LABELS[parseInt(filterMois) - 1] || filterMois)],
+        ["Nombre de transactions", filtered.length],
+        ["Total crédits", filteredCredits],
+        ["Total débits", filteredDebits],
+        ["Solde net", filteredNet],
+        ["Généré le", format(new Date(), "dd/MM/yyyy HH:mm")],
+      ];
+      const ws2 = XLSX.utils.aoa_to_sheet(summary);
+      XLSX.utils.book_append_sheet(wb, ws2, "Résumé");
+
+      XLSX.writeFile(wb, `rapprochement_${format(new Date(), "yyyyMMdd_HHmm")}.xlsx`);
+      toast.success("Excel téléchargé");
+    } catch (e: any) {
+      toast.error("Erreur Excel: " + (e?.message || e));
+    }
+  };
   const findApprenantInLibelle = (libelle: string): ApprenantWithSession | null => {
     const upper = libelle.toUpperCase();
     for (const a of apprenants) {
