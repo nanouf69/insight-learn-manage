@@ -44,11 +44,21 @@ export const isPresentielType = (
   type_apprenant?: string | null,
   formation_choisie?: string | null,
 ): boolean => {
-  const t = (type_apprenant || "").toLowerCase();
-  const f = (formation_choisie || "").toLowerCase();
+  const t = (type_apprenant || "").toLowerCase().trim();
+  const f = (formation_choisie || "").toLowerCase().trim();
   const value = `${t} ${f}`;
-  // Les slugs CRM "*-e-presentiel" sont bien des formations présentielles avec accès e-learning.
-  return /pr[eé]sentiel/.test(value) || /\b(vtc|taxi|ta|va)(-exam)?\b/.test(value);
+
+  // 1. Les slugs e-learning purs (suffixe "-e" non suivi de "-presentiel") ne sont JAMAIS présentiels.
+  //    Ex: "vtc-e", "taxi-e", "ta-e", "va-e" → e-learning pur, pas de signature.
+  const isPureElearning = /(^|\s)(vtc|taxi|ta|va)-e(\s|$)/.test(value)
+    && !/-e-pr[eé]sentiel/.test(value);
+  if (isPureElearning) return false;
+
+  // 2. Sinon : présentiel si mention explicite "présentiel" ou type CRM présentiel
+  //    (vtc, taxi, ta, va, pa-*, rp-*, continue-*, *-e-presentiel)
+  return /pr[eé]sentiel/.test(value)
+    || /\b(vtc|taxi|ta|va)(-exam)?\b/.test(t)
+    || /^(pa|rp|continue)[\s-]/.test(t);
 };
 
 /**
