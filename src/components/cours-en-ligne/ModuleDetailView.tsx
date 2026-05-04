@@ -165,8 +165,28 @@ interface ModuleData {
 }
 
 const BILAN_VTC_SOURCE_MODULE_ID = 2;
+const BILAN_VTC_MODULE_ID = 4;
+const BILAN_TAXI_MODULE_ID = 9;
+const SECURITE_ROUTIERE_BILAN_ID = 102;
 
 const shouldSyncVtcBilanFromCours = (moduleId: number | string) => [4, 81].includes(Number(moduleId));
+
+const getExerciseById = (data: ModuleData | null | undefined, exerciseId: number): ExerciceItem | null => {
+  return data?.exercices?.find((exercise) => Number(exercise.id) === exerciseId) ?? null;
+};
+
+const forceTaxiSecurityFromVtc = (taxiData: ModuleData, vtcSecurityExercise: ExerciceItem | null): ModuleData => {
+  if (Number(taxiData.id) !== BILAN_TAXI_MODULE_ID || !vtcSecurityExercise) return taxiData;
+
+  return {
+    ...taxiData,
+    exercices: taxiData.exercices.map((exercise) =>
+      Number(exercise.id) === SECURITE_ROUTIERE_BILAN_ID
+        ? JSON.parse(JSON.stringify(vtcSecurityExercise))
+        : exercise,
+    ),
+  };
+};
 
 const forceSourceExerciseTitles = (moduleId: number | string, loadedData: ModuleData, sourceData: ModuleData): ModuleData => {
   if (Number(moduleId) !== 9) return loadedData;
@@ -2502,6 +2522,25 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         const FC_BILAN_PARENT: Record<number, number> = { 81: 4, 82: 9 };
         const parentModuleId = FC_BILAN_PARENT[Number(module.id)];
 
+        let vtcSecurityForTaxi: ExerciceItem | null = null;
+        if (Number(module.id) === BILAN_TAXI_MODULE_ID) {
+          try {
+            const { data: vtcBilanState } = await supabase
+              .from("module_editor_state")
+              .select("module_data")
+              .eq("module_id", BILAN_VTC_MODULE_ID)
+              .order("updated_at", { ascending: false })
+              .limit(1)
+              .maybeSingle();
+
+            const vtcBilanData = vtcBilanState?.module_data as unknown as ModuleData | undefined;
+            vtcSecurityForTaxi = getExerciseById(vtcBilanData, SECURITE_ROUTIERE_BILAN_ID)
+              ?? getExerciseById(getInitialModuleDataRaw({ id: BILAN_VTC_MODULE_ID, nom: "4.BILAN EXERCICES VTC" }, apprenantType, studentOnly), SECURITE_ROUTIERE_BILAN_ID);
+          } catch (e) {
+            console.error("[Bilan TAXI] Erreur récupération Sécurité Routière VTC:", e);
+          }
+        }
+
         if (shouldSyncVtcBilanFromCours(module.id) && initialData.exercices.length > 0) {
           try {
             const { data: sourceState } = await supabase
@@ -2624,7 +2663,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               ...md,
               exercices: mergeSourceExercices(md.exercices, initialData.exercices, deletedExerciceIdsFromDb),
             };
-            const resolvedModuleData = forceSourceExerciseTitles(module.id, mergedModuleData, initialData);
+            const resolvedModuleData = forceTaxiSecurityFromVtc(
+              forceSourceExerciseTitles(module.id, mergedModuleData, initialData),
+              vtcSecurityForTaxi,
+            );
             setModuleData(resolvedModuleData);
             setDeletedCours(Array.isArray(latestState.deleted_cours) ? (latestState.deleted_cours as unknown as ContentItem[]) : []);
             setDeletedExercices(Array.isArray(latestState.deleted_exercices) ? (latestState.deleted_exercices as unknown as ExerciceItem[]) : []);
