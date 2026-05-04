@@ -1670,6 +1670,22 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
                                   onChange={e => setEditForm(f => ({ ...f, notes: e.target.value }))}
                                   className="h-8 text-xs"
                                 />
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  placeholder="HT (auto)"
+                                  value={editForm.montant_ht ?? ""}
+                                  onChange={e => setEditForm(f => ({ ...f, montant_ht: e.target.value === "" ? null : Number(e.target.value) }))}
+                                  className="h-8 text-xs"
+                                />
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  placeholder="TVA (auto)"
+                                  value={editForm.montant_tva ?? ""}
+                                  onChange={e => setEditForm(f => ({ ...f, montant_tva: e.target.value === "" ? null : Number(e.target.value) }))}
+                                  className="h-8 text-xs"
+                                />
                               </div>
                             ) : (
                               /* Display row */
