@@ -1177,11 +1177,10 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
         };
       });
       const ws = XLSX.utils.json_to_sheet(rows);
-      ws["!cols"] = [{ wch: 12 }, { wch: 10 }, { wch: 50 }, { wch: 24 }, { wch: 14 }, { wch: 24 }, { wch: 12 }, { wch: 12 }, { wch: 12 }];
-      // Format monétaire €
+      ws["!cols"] = [{ wch: 12 }, { wch: 10 }, { wch: 50 }, { wch: 24 }, { wch: 14 }, { wch: 24 }, { wch: 10 }, { wch: 12 }, { wch: 12 }, { wch: 12 }];
       const range = XLSX.utils.decode_range(ws["!ref"] as string);
       for (let R = 1; R <= range.e.r; R++) {
-        for (const C of [6, 7, 8]) {
+        for (const C of [7, 8, 9]) {
           const addr = XLSX.utils.encode_cell({ r: R, c: C });
           if (ws[addr]) ws[addr].z = '#,##0.00 €;[Red]-#,##0.00 €';
         }
@@ -1191,7 +1190,7 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
 
       const totalTTC = rows.reduce((s, r) => s + r.TTC, 0);
       const totalHT = rows.reduce((s, r) => s + r.HT, 0);
-      const totalTVA = rows.reduce((s, r) => s + r["TVA (20%)"], 0);
+      const totalTVA = rows.reduce((s, r) => s + r.TVA, 0);
 
       const summary = [
         ["Filtres", `${statutLabel} · ${categorieLabel} · ${typeLabel}`],
@@ -1203,7 +1202,7 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
         ["Total débits (TTC)", filteredDebits],
         ["Solde net (TTC)", filteredNet],
         ["Total HT", totalHT],
-        ["Total TVA (20%)", totalTVA],
+        ["Total TVA", totalTVA],
         ["Total TTC", totalTTC],
         ["Généré le", format(new Date(), "dd/MM/yyyy HH:mm")],
       ];
