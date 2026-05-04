@@ -2411,6 +2411,8 @@ export type Database = {
           justificatif_id: string | null
           libelle: string
           montant: number
+          montant_ht: number | null
+          montant_tva: number | null
           notes: string | null
           reference: string | null
           releve_id: string | null
@@ -2430,6 +2432,8 @@ export type Database = {
           justificatif_id?: string | null
           libelle: string
           montant: number
+          montant_ht?: number | null
+          montant_tva?: number | null
           notes?: string | null
           reference?: string | null
           releve_id?: string | null
@@ -2449,6 +2453,8 @@ export type Database = {
           justificatif_id?: string | null
           libelle?: string
           montant?: number
+          montant_ht?: number | null
+          montant_tva?: number | null
           notes?: string | null
           reference?: string | null
           releve_id?: string | null
