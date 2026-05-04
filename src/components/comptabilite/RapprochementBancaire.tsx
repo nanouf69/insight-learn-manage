@@ -98,6 +98,29 @@ function getStatut(value: string) {
   return STATUTS.find(s => s.value === value) || STATUTS[0];
 }
 
+const NO_TVA_DEFAULT_CATS = new Set([
+  "impots", "salaire", "salaires_formateurs", "urssaf", "retraite",
+  "banque", "virement_interne", "dividendes", "compte_courant_associe",
+  "frais_examen_cma", "cpf", "recette_formation",
+]);
+
+function computeHtTva(tx: { montant: number; categorie?: string | null; tva_rate?: number | null; montant_ht?: number | null; montant_tva?: number | null }) {
+  const ttc = Number(tx.montant) || 0;
+  // Manual override prevails
+  if (tx.montant_ht != null && tx.montant_tva != null) {
+    const ht = ttc < 0 ? -Math.abs(Number(tx.montant_ht)) : Math.abs(Number(tx.montant_ht));
+    const tva = ttc < 0 ? -Math.abs(Number(tx.montant_tva)) : Math.abs(Number(tx.montant_tva));
+    return { ht, tva, rate: null as number | null, manual: true };
+  }
+  const explicit = (tx.tva_rate === 0 || tx.tva_rate) ? Number(tx.tva_rate) : null;
+  const rate = explicit !== null
+    ? explicit
+    : (!tx.categorie || NO_TVA_DEFAULT_CATS.has(tx.categorie) ? 0 : 20);
+  const ht = rate === 0 ? ttc : +(ttc / (1 + rate / 100)).toFixed(2);
+  const tva = rate === 0 ? 0 : +(ttc - ht).toFixed(2);
+  return { ht, tva, rate, manual: false };
+}
+
 /**
  * Parse BNP CSV — format exact BNP Paribas Pro (6 colonnes) :
  * Ligne 0 : info compte (ignorée)
