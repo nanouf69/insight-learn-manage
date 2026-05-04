@@ -2409,6 +2409,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
     const loadLocalState = () => {
       if (typeof window === "undefined") return false;
+      if (Number(module.id) === BILAN_TAXI_MODULE_ID) {
+        window.localStorage.removeItem(moduleEditorStorageKey);
+        return false;
+      }
 
       try {
         const raw = window.localStorage.getItem(moduleEditorStorageKey);
@@ -2476,7 +2480,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
         // Admin: check if localStorage has NEWER data than DB (covers the case
         // where admin reloads before the debounced DB save completes)
-        if (!studentOnly && latestState?.module_data) {
+        if (!studentOnly && latestState?.module_data && Number(module.id) !== BILAN_TAXI_MODULE_ID) {
           try {
             const raw = window.localStorage.getItem(moduleEditorStorageKey);
             if (raw) {
