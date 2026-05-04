@@ -1574,11 +1574,22 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
 
                             {/* Editing form */}
                             {isEditing ? (
-                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
+                              <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 pt-1">
                                 <Select value={editForm.categorie || ""} onValueChange={v => setEditForm(f => ({ ...f, categorie: v }))}>
                                   <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Catégorie..." /></SelectTrigger>
                                   <SelectContent>
                                     {CATEGORIES.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
+                                  </SelectContent>
+                                </Select>
+                                <Select
+                                  value={editForm.tva_rate === null || editForm.tva_rate === undefined ? "" : String(editForm.tva_rate)}
+                                  onValueChange={v => setEditForm(f => ({ ...f, tva_rate: v === "" ? null : Number(v) }))}
+                                >
+                                  <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="TVA..." /></SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="0">Exonération de TVA (0%)</SelectItem>
+                                    <SelectItem value="10">TVA 10%</SelectItem>
+                                    <SelectItem value="20">TVA 20%</SelectItem>
                                   </SelectContent>
                                 </Select>
                                 {fournisseurCustomInput ? (
