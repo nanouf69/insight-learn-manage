@@ -743,9 +743,21 @@ export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
                       </p>
                     </div>
                   </div>
-                  <Badge variant={f.statut === 'paye' ? 'default' : 'secondary'}>
-                    {f.statut === 'paye' ? 'Payée' : f.statut === 'en_attente' ? 'En attente' : f.statut}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={f.statut === 'paye' ? 'default' : 'secondary'}>
+                      {f.statut === 'paye' ? 'Payée' : f.statut === 'en_attente' ? 'En attente' : f.statut}
+                    </Badge>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleSendFactureByEmail(f)}
+                      disabled={sendingEmail === `facture-${f.id}` || !apprenant.email}
+                      title={!apprenant.email ? "Aucune adresse email" : `Envoyer à ${apprenant.email}`}
+                    >
+                      <Send className="w-4 h-4 mr-2" />
+                      {sendingEmail === `facture-${f.id}` ? 'Envoi...' : 'Envoyer par email'}
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
