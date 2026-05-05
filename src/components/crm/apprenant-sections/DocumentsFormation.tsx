@@ -13,6 +13,7 @@ import { generateEmargementIndividuelPDF } from "@/components/sessions/Emargemen
 import { buildSessionAgendaDays } from "@/lib/buildSessionAgendaDays";
 import { generateFicheProgressionGuenichi } from "@/lib/pdf/fiche-progression";
 import { generateAttestationFCVTC } from "@/lib/pdf/attestation-fc-vtc";
+import { generateFactureFC } from "@/lib/pdf/facture-fc";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -298,6 +299,93 @@ export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
       toast.success(`Attestation envoyée par email à ${apprenant.email}`);
     } catch (error: any) {
       console.error('Erreur envoi email:', error);
+      toast.error(`Erreur lors de l'envoi : ${error?.message || 'inconnue'}`);
+    } finally {
+      setSendingEmail(null);
+    }
+  };
+
+  const handleSendFactureByEmail = async (facture: any) => {
+    if (!apprenant.email) {
+      toast.error("Aucun email renseigné pour cet apprenant");
+      return;
+    }
+    setSendingEmail(`facture-${facture.id}`);
+    try {
+      const t = `${apprenant.type_apprenant || ''} ${apprenant.formation_choisie || ''}`.toUpperCase();
+      const formation: 'VTC' | 'TAXI' = t.includes('TAXI') ? 'TAXI' : 'VTC';
+      const montantTTC = Number(facture.montant_ttc || 0);
+      const tvaTaux = Number(facture.tva_taux || 0);
+      const montantHT = Number(facture.montant_ht || (tvaTaux > 0 ? montantTTC / (1 + tvaTaux / 100) : montantTTC));
+
+      const result = await generateFactureFC({
+        numero: facture.numero,
+        dateEmission: facture.date_emission,
+        dateEcheance: facture.date_echeance,
+        apprenant: {
+          nom: apprenant.nom,
+          prenom: apprenant.prenom,
+          adresse: apprenant.adresse,
+          code_postal: apprenant.code_postal,
+          ville: apprenant.ville,
+          email: apprenant.email,
+          telephone: apprenant.telephone,
+        },
+        financeur: null,
+        formation,
+        designation: `Formation continue ${formation}`,
+        montantHT,
+        tvaTaux,
+        acquittee: facture.statut === 'paye',
+        dateAcquittement: facture.date_paiement,
+      }, { returnBlob: true });
+
+      if (!result?.blob) throw new Error("Impossible de générer le PDF");
+
+      const arrayBuffer = await result.blob.arrayBuffer();
+      const bytes = new Uint8Array(arrayBuffer);
+      let binary = '';
+      const chunkSize = 0x8000;
+      for (let i = 0; i < bytes.length; i += chunkSize) {
+        binary += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, i + chunkSize)));
+      }
+      const base64 = btoa(binary);
+
+      const subject = `Votre facture N° ${facture.numero}`;
+      const htmlBody = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background-color: #1a1a2e; padding: 20px; text-align: center;">
+            <h1 style="color: #ffffff; margin: 0;">FTRANSPORT</h1>
+            <p style="color: #e0e0e0; margin: 5px 0 0;">Centre de formation VTC & TAXI</p>
+          </div>
+          <div style="padding: 30px; background-color: #ffffff;">
+            <p>Bonjour ${apprenant.prenom} ${apprenant.nom},</p>
+            <p>Veuillez trouver ci-joint votre facture <strong>N° ${facture.numero}</strong> d'un montant de <strong>${montantTTC.toFixed(2).replace('.', ',')} € TTC</strong>.</p>
+            <p>Cordialement,<br/>L'équipe FTRANSPORT</p>
+          </div>
+          <div style="background-color: #f3f4f6; padding: 20px; text-align: center; font-size: 13px; color: #6b7280;">
+            <p><strong>FTRANSPORT</strong> – 86 Route de Genas, 69003 Lyon</p>
+            <p>📞 04 28 29 60 91 | 📧 contact@ftransport.fr</p>
+          </div>
+        </div>
+      `;
+
+      const { error } = await supabase.functions.invoke('send-document-email', {
+        body: {
+          apprenantId: apprenant.id,
+          recipientEmail: apprenant.email,
+          recipientName: `${apprenant.prenom} ${apprenant.nom}`,
+          subject,
+          htmlBody,
+          attachmentName: result.fileName || `Facture_${facture.numero}.pdf`,
+          attachmentBase64: base64,
+          attachmentContentType: 'application/pdf',
+        },
+      });
+      if (error) throw error;
+      toast.success(`Facture envoyée à ${apprenant.email}`);
+    } catch (error: any) {
+      console.error('Erreur envoi facture:', error);
       toast.error(`Erreur lors de l'envoi : ${error?.message || 'inconnue'}`);
     } finally {
       setSendingEmail(null);
@@ -655,9 +743,21 @@ export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
                       </p>
                     </div>
                   </div>
-                  <Badge variant={f.statut === 'paye' ? 'default' : 'secondary'}>
-                    {f.statut === 'paye' ? 'Payée' : f.statut === 'en_attente' ? 'En attente' : f.statut}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={f.statut === 'paye' ? 'default' : 'secondary'}>
+                      {f.statut === 'paye' ? 'Payée' : f.statut === 'en_attente' ? 'En attente' : f.statut}
+                    </Badge>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleSendFactureByEmail(f)}
+                      disabled={sendingEmail === `facture-${f.id}` || !apprenant.email}
+                      title={!apprenant.email ? "Aucune adresse email" : `Envoyer à ${apprenant.email}`}
+                    >
+                      <Send className="w-4 h-4 mr-2" />
+                      {sendingEmail === `facture-${f.id}` ? 'Envoi...' : 'Envoyer par email'}
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
