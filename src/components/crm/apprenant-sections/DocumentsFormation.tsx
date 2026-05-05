@@ -631,6 +631,38 @@ export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
             </div>
           </div>
         )}
+
+        {facturesEmises && facturesEmises.length > 0 && (
+          <div className="mt-6">
+            <h4 className="font-medium mb-3 flex items-center gap-2">
+              <FileText className="w-4 h-4" />
+              Factures émises ({facturesEmises.length})
+            </h4>
+            <div className="space-y-2">
+              {facturesEmises.map((f: any) => (
+                <div
+                  key={f.id}
+                  className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <FileText className="w-4 h-4 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">Facture N° {f.numero}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {f.client_nom} · {f.date_emission ? new Date(f.date_emission).toLocaleDateString('fr-FR') : ''} · {Number(f.montant_ttc || 0).toFixed(2)} € TTC
+                      </p>
+                    </div>
+                  </div>
+                  <Badge variant={f.statut === 'paye' ? 'default' : 'secondary'}>
+                    {f.statut === 'paye' ? 'Payée' : f.statut === 'en_attente' ? 'En attente' : f.statut}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
