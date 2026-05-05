@@ -202,7 +202,7 @@ const MATIERE_F: ContentItem[] = [
     titre: "F. RÉGLEMENTATION LOCALE — Partie 2",
     sousTitre: "Réglementation locale (suite)",
     fichiers: [
-      { nom: "PDF HD Partie 2", url: "/cours/vtc/F_Locale_2.pdf" },
+      { nom: "PowerPoint Partie 2", url: "/cours/vtc/F_Locale_2.pptx" },
     ],
   },
   {
