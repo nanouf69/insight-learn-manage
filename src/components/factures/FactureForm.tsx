@@ -1091,9 +1091,10 @@ export function FactureForm() {
                     <div className="col-span-3">Désignation</div>
                     <div className="col-span-2">TVA</div>
                     <div className="col-span-2">P.U. HT</div>
-                    <div className="col-span-2">Qté</div>
-                    <div className="col-span-2">Rem %</div>
+                    <div className="col-span-1">Qté</div>
+                    <div className="col-span-1">Rem %</div>
                     <div className="col-span-2">Total HT</div>
+                    <div className="col-span-2">Total TTC</div>
                     <div className="col-span-1"></div>
                   </div>
 
@@ -1127,22 +1128,27 @@ export function FactureForm() {
                           <Label className="md:hidden">P.U. HT</Label>
                           <Input type="number" min="0" step="0.01" value={ligne.prixUnitaire} onChange={(e) => updateLigne(ligne.id, 'prixUnitaire', parseFloat(e.target.value) || 0)} />
                         </div>
-                        <div className="md:col-span-2 space-y-1">
+                        <div className="md:col-span-1 space-y-1">
                           <Label className="md:hidden">Qté</Label>
                           <Input type="number" min="0.01" step="0.01" value={ligne.quantite} onChange={(e) => updateLigne(ligne.id, 'quantite', parseFloat(e.target.value) || 1)} />
                         </div>
-                        <div className="md:col-span-2 space-y-1">
+                        <div className="md:col-span-1 space-y-1">
                           <Label className="md:hidden">Remise %</Label>
                           <Input type="number" min="0" max="100" value={ligne.remise || ""} onChange={(e) => updateLigne(ligne.id, 'remise', parseFloat(e.target.value) || 0)} placeholder="" />
                         </div>
                         <div className="md:col-span-2">
+                          <Label className="md:hidden">Total HT</Label>
                           <div className="h-10 px-3 py-2 bg-muted rounded-md flex items-center font-medium justify-end">{calculerLigneHT(ligne).toFixed(2)} €</div>
+                        </div>
+                        <div className="md:col-span-2">
+                          <Label className="md:hidden">Total TTC</Label>
+                          <div className="h-10 px-3 py-2 bg-primary/10 text-primary rounded-md flex items-center font-semibold justify-end">{(calculerLigneHT(ligne) * (1 + getTvaRate(ligne.tvaType) / 100)).toFixed(2)} €</div>
                         </div>
                         <div className="md:col-span-1 flex justify-end">
                           <Button size="sm" variant="ghost" onClick={() => supprimerLigne(ligne.id)} className="text-destructive hover:text-destructive"><Trash2 className="w-4 h-4" /></Button>
                         </div>
                       </div>
-                      
+
                       {ligne.type === "session" && (
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2 border-t">
                           <div className="space-y-2">
