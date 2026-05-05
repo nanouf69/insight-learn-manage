@@ -319,6 +319,19 @@ export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
 
   const facturesArchivees = (uploadedDocs || []).filter((d: any) => d.type_document === 'facture-fc');
 
+  // Factures émises depuis le module Factures (table factures)
+  const { data: facturesEmises } = useQuery({
+    queryKey: ['apprenant-factures-emises', apprenant.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('factures')
+        .select('id, numero, date_emission, montant_ttc, statut, client_nom')
+        .eq('apprenant_id', apprenant.id)
+        .order('date_emission', { ascending: false });
+      return data || [];
+    },
+  });
+
   const handleUploadFile = async (docId: string, file: File) => {
     setUploadingDoc(docId);
     try {
