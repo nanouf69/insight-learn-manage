@@ -1788,6 +1788,11 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         disconnectReason={disconnectReason}
         onConfirm={showInactivityModal ? confirmActivity : confirmPresence}
       />
+
+      {/* Chat: ask a question to the centre */}
+      {!embedded && apprenant?.id && (
+        <ApprenantChatWidget apprenantId={apprenant.id} apprenantNom={`${apprenant.prenom || ""} ${apprenant.nom || ""}`.trim()} />
+      )}
     </div>
   );
 };
