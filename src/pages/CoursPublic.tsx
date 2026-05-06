@@ -13,6 +13,7 @@ import { BadgeGrid } from "@/components/cours-en-ligne/motivation/BadgeGrid";
 import { buildBadges, calculateXP } from "@/components/cours-en-ligne/motivation/badges-data";
 import { toast } from "sonner";
 import ModuleDetailView from "@/components/cours-en-ligne/ModuleDetailView";
+import ModuleChangeNotificationsBanner from "@/components/cours-en-ligne/ModuleChangeNotificationsBanner";
 import BilanFinFormationFCVtc from "@/components/cours-en-ligne/BilanFinFormationFCVtc";
 import ExamensBlancsPage from "@/components/cours-en-ligne/ExamensBlancsPage";
 import NotesView from "@/components/cours-en-ligne/NotesView";
