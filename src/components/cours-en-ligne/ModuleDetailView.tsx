@@ -3044,6 +3044,17 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   }) => {
     isSavingToDbRef.current = true;
     try {
+      // Snapshot ancienne version pour détecter les changements pédagogiques
+      let previousModuleData: any = null;
+      try {
+        const { data: prev } = await supabase
+          .from("module_editor_state")
+          .select("module_data")
+          .eq("module_id", dataToSave.module_id)
+          .maybeSingle();
+        previousModuleData = prev?.module_data ?? null;
+      } catch {}
+
       const { error } = await supabase.from("module_editor_state").upsert(
         [{
           ...dataToSave,
@@ -3054,6 +3065,20 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
       if (error) throw error;
       saveErrorShownRef.current = false;
+
+      // Détection et publication d'une notification de changement
+      try {
+        const summary = diffModuleData(previousModuleData, dataToSave.module_data);
+        if (summary) {
+          publishModuleChangeNotification({
+            moduleId: dataToSave.module_id,
+            moduleNom: module.nom,
+            summary,
+          });
+        }
+      } catch (e) {
+        console.error("[ModuleNotif] diff/publish error:", e);
+      }
 
       // Sync shared exercises to ALL sibling modules (handles edits, adds, deletes)
       await syncSharedExercisesToSiblingModules(
