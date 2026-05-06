@@ -1834,6 +1834,33 @@ export type Database = {
           },
         ]
       }
+      module_change_notifications: {
+        Row: {
+          change_summary: string
+          changed_at: string
+          created_at: string
+          id: string
+          module_id: number
+          module_nom: string
+        }
+        Insert: {
+          change_summary: string
+          changed_at?: string
+          created_at?: string
+          id?: string
+          module_id: number
+          module_nom: string
+        }
+        Update: {
+          change_summary?: string
+          changed_at?: string
+          created_at?: string
+          id?: string
+          module_id?: number
+          module_nom?: string
+        }
+        Relationships: []
+      }
       module_editor_state: {
         Row: {
           created_at: string
@@ -1866,6 +1893,42 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      module_notification_dismissals: {
+        Row: {
+          apprenant_id: string
+          dismissed_at: string
+          id: string
+          notification_id: string
+        }
+        Insert: {
+          apprenant_id: string
+          dismissed_at?: string
+          id?: string
+          notification_id: string
+        }
+        Update: {
+          apprenant_id?: string
+          dismissed_at?: string
+          id?: string
+          notification_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "module_notification_dismissals_apprenant_id_fkey"
+            columns: ["apprenant_id"]
+            isOneToOne: false
+            referencedRelation: "apprenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "module_notification_dismissals_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: false
+            referencedRelation: "module_change_notifications"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notes_frais: {
         Row: {
