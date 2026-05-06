@@ -1522,6 +1522,15 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         </div>
       </nav>
 
+      {/* Recommandation navigateur */}
+      <div className="bg-amber-50 border-b border-amber-200 dark:bg-amber-950/20 dark:border-amber-900/30">
+        <div className="max-w-6xl mx-auto px-4 py-2 flex items-center gap-2 text-amber-800 dark:text-amber-200 text-sm">
+          <Chrome className="w-4 h-4 shrink-0" />
+          <span className="font-medium">Conseil :</span>
+          <span>Si vous rencontrez des bugs ou des problèmes d'affichage, nous vous recommandons d'utiliser <strong>Google Chrome</strong> pour une expérience optimale.</span>
+        </div>
+      </div>
+
       <div className="max-w-6xl mx-auto px-4 py-8">
         {/* Notes tab */}
         {activeTab === "notes" && apprenant?.id && (
