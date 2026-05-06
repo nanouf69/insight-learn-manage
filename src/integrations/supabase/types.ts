@@ -316,6 +316,50 @@ export type Database = {
           },
         ]
       }
+      apprenant_questions: {
+        Row: {
+          answered_at: string | null
+          apprenant_id: string
+          apprenant_nom: string | null
+          created_at: string
+          id: string
+          question: string
+          read_by_apprenant: boolean
+          reponse: string | null
+          status: string
+        }
+        Insert: {
+          answered_at?: string | null
+          apprenant_id: string
+          apprenant_nom?: string | null
+          created_at?: string
+          id?: string
+          question: string
+          read_by_apprenant?: boolean
+          reponse?: string | null
+          status?: string
+        }
+        Update: {
+          answered_at?: string | null
+          apprenant_id?: string
+          apprenant_nom?: string | null
+          created_at?: string
+          id?: string
+          question?: string
+          read_by_apprenant?: boolean
+          reponse?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "apprenant_questions_apprenant_id_fkey"
+            columns: ["apprenant_id"]
+            isOneToOne: false
+            referencedRelation: "apprenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       apprenant_quiz_results: {
         Row: {
           apprenant_id: string
