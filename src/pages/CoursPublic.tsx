@@ -1569,6 +1569,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                   />
                    <XPBar xp={xp} moduleScores={moduleScores} />
                    <BadgeGrid badges={badges} />
+                   {apprenant?.id && <ModuleChangeNotificationsBanner apprenantId={apprenant.id} />}
                 </>
               );
             })()}
