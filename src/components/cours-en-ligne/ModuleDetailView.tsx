@@ -1671,7 +1671,7 @@ Un texte inférieur ne peut jamais contredire un texte supérieur.`,
       description: "Fiches de révision pour la formation TAXI : synthèse matières communes, spécialités TAXI et définitions.",
       cours: [
         { id: 1, titre: "Fiche Synthèse — Matières Communes", description: "Fiche de révision regroupant les matières communes à toutes les formations.", actif: true, fichiers: [{ nom: "Fiches_Revision_Matiere_Commune.pdf", url: "/cours/vtc/Fiches_Revision_Matiere_Commune.pdf" }] },
-        { id: 2, titre: "Fiche Synthèse — Spécialités TAXI", description: "Fiche de révision des spécialités propres à la formation TAXI.", actif: true, fichiers: [{ nom: "Fiche_de_Révision_Taxi.pdf", url: "/cours/vtc/Fiche_de_Révision_Taxi.pdf" }] },
+        { id: 2, titre: "Fiche Synthèse — Spécialités TAXI", description: "Fiche de révision des spécialités propres à la formation TAXI.", actif: true, fichiers: [{ nom: "Fiche_Revision_Specialites_TAXI.pdf", url: "/cours/vtc/Fiche_Revision_Specialites_TAXI.pdf" }] },
         { id: 3, titre: "Définitions TAXI", description: "Glossaire et définitions clés de la formation TAXI.", actif: true, fichiers: [{ nom: "Definitions_Taxi.docx", url: "/cours/vtc/Definitions_Taxi.docx" }] },
         { id: 4, titre: "Bilan QRC TAXI", description: "Bilan des Questions à Réponse Courte pour la formation TAXI.", actif: true, fichiers: [{ nom: "Bilan_QRC_TAXI.docx", url: "/cours/vtc/Bilan_QRC_TAXI.docx" }] },
       ],
