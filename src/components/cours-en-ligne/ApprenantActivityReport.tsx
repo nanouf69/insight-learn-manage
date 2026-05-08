@@ -151,12 +151,13 @@ function ApprenantCombobox({ apprenants, selectedId, onSelect }: {
 }
 
 interface Props {
-  onBack: () => void;
+  onBack?: () => void;
+  lockedApprenantId?: string;
 }
 
-export default function ApprenantActivityReport({ onBack }: Props) {
+export default function ApprenantActivityReport({ onBack, lockedApprenantId }: Props) {
   const [apprenants, setApprenants] = useState<Apprenant[]>([]);
-  const [selectedId, setSelectedId] = useState<string>("");
+  const [selectedId, setSelectedId] = useState<string>(lockedApprenantId || "");
   const [connexions, setConnexions] = useState<Connexion[]>([]);
   const [activites, setActivites] = useState<ModuleActivite[]>([]);
   const [completedModuleIds, setCompletedModuleIds] = useState<Set<number>>(new Set());
