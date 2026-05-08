@@ -525,9 +525,11 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={onBack}>
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
+          {onBack && (
+            <Button variant="ghost" size="icon" onClick={onBack}>
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+          )}
           <div>
             <h2 className="text-2xl font-bold">Rapport d'activité élève</h2>
             <p className="text-sm text-muted-foreground">Connexions, heures et modules consultés</p>
@@ -543,14 +545,16 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
 
       {/* Sélection apprenant + période */}
       <div className="flex flex-wrap gap-4">
-        <div className="flex-1 min-w-[250px]">
-          <label className="text-sm font-medium mb-1 block">Sélectionner un élève :</label>
-          <ApprenantCombobox
-            apprenants={apprenants}
-            selectedId={selectedId}
-            onSelect={setSelectedId}
-          />
-        </div>
+        {!lockedApprenantId && (
+          <div className="flex-1 min-w-[250px]">
+            <label className="text-sm font-medium mb-1 block">Sélectionner un élève :</label>
+            <ApprenantCombobox
+              apprenants={apprenants}
+              selectedId={selectedId}
+              onSelect={setSelectedId}
+            />
+          </div>
+        )}
         <div className="w-48">
           <label className="text-sm font-medium mb-1 block">Période :</label>
           <Select value={period} onValueChange={(v) => setPeriod(v as any)}>
