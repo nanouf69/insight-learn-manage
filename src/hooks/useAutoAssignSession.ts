@@ -129,7 +129,8 @@ export async function autoAssignToSession(
       sessionName = matchingSession.nom || `Session ${dateCatalogue}`;
     } else {
       // Créer une nouvelle session
-      const newSessionName = `Session ${typeApprenant?.toUpperCase() || ''} - ${dateCatalogue}`.trim();
+      const suffixSoir = isSoir ? ' cours du soir' : '';
+      const newSessionName = `Session ${typeApprenant?.toUpperCase() || ''}${suffixSoir} - ${dateCatalogue}`.trim();
       
       const { data: newSession, error: createError } = await supabase
         .from('sessions')
