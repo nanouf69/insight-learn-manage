@@ -97,24 +97,26 @@ export async function autoAssignToSession(
 
     if (sessionsError) throw sessionsError;
 
+    const isSoir = (creneauHoraire || '').toLowerCase().includes('soir');
+
     // Filtrer les sessions compatibles
     let matchingSession = sessions?.find(session => {
+      const nomLower = (session.nom || '').toLowerCase();
+      const sessionIsSoir = nomLower.includes('soir') || (session.creneaux || []).some((c: string) => c.includes('18:') || c.toLowerCase().includes('soir') || c.includes('17h-21'));
+
+      // Strict séparation jour/soir : un apprenant du soir ne va QUE dans une session du soir, et inversement
+      if (isSoir !== sessionIsSoir) return false;
+
       // Vérifier le type d'apprenant
       const sessionTypes = session.types_apprenant || [];
       const typeMatch = typesCompatibles.length === 0 || 
         sessionTypes.length === 0 || 
         sessionTypes.some((t: string) => typesCompatibles.includes(t.toLowerCase()) || typesCompatibles.includes(t));
 
-      // Vérifier les créneaux
-      const sessionCreneaux = session.creneaux || [];
-      const creneauMatch = creneauxSession.length === 0 || 
-        sessionCreneaux.length === 0 || 
-        creneauxSession.some(c => sessionCreneaux.includes(c));
-
       // Vérifier les places disponibles
       const placesOk = (session.places_disponibles || 18) > 0;
 
-      return typeMatch && creneauMatch && placesOk;
+      return typeMatch && placesOk;
     });
 
     let sessionId: string;
@@ -127,7 +129,8 @@ export async function autoAssignToSession(
       sessionName = matchingSession.nom || `Session ${dateCatalogue}`;
     } else {
       // Créer une nouvelle session
-      const newSessionName = `Session ${typeApprenant?.toUpperCase() || ''} - ${dateCatalogue}`.trim();
+      const suffixSoir = isSoir ? ' cours du soir' : '';
+      const newSessionName = `Session ${typeApprenant?.toUpperCase() || ''}${suffixSoir} - ${dateCatalogue}`.trim();
       
       const { data: newSession, error: createError } = await supabase
         .from('sessions')
