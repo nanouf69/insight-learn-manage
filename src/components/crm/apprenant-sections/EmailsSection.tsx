@@ -551,12 +551,46 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
     sendMutation.mutate({ subject: newEmailSubject, body: newEmailBody, attachments });
   };
 
-  const handleTemplateSelect = (templateId: string) => {
+  const fetchPdfAsAttachment = async (url: string, name: string): Promise<AttachmentFile | null> => {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const blob = await res.blob();
+      const file = new File([blob], name, { type: 'application/pdf' });
+      const buf = await blob.arrayBuffer();
+      let binary = '';
+      const bytes = new Uint8Array(buf);
+      for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
+      const contentBytes = btoa(binary);
+      return { file, name, contentType: 'application/pdf', contentBytes };
+    } catch (e) {
+      console.error('[fetchPdfAsAttachment] error:', e);
+      return null;
+    }
+  };
+
+  const handleTemplateSelect = async (templateId: string) => {
     setSelectedTemplate(templateId);
     const template = allTemplates.find(t => t.id === templateId);
     if (template) {
       setNewEmailSubject(template.getSubject(apprenant));
       setNewEmailBody(template.getBody(apprenant));
+    }
+
+    // Auto-attache les PDFs pour le template "Modèles devis & facture - Examen VTC"
+    if (templateId === 'modeles-devis-facture-examen-vtc') {
+      const [devis, facture] = await Promise.all([
+        fetchPdfAsAttachment('/templates/Modele_Devis_Examen_VTC.pdf', 'Modele_Devis_Examen_VTC.pdf'),
+        fetchPdfAsAttachment('/templates/Modele_Facture_Examen_VTC.pdf', 'Modele_Facture_Examen_VTC.pdf'),
+      ]);
+      const newOnes = [devis, facture].filter(Boolean) as AttachmentFile[];
+      setAttachments((prev) => {
+        const existingNames = new Set(prev.map((a) => a.name));
+        return [...prev, ...newOnes.filter((a) => !existingNames.has(a.name))];
+      });
+      if (newOnes.length < 2) {
+        toast({ title: 'Pièces jointes', description: 'Certaines pièces jointes n\'ont pas pu être chargées.', variant: 'destructive' });
+      }
     }
   };
 
