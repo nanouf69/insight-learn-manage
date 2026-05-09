@@ -2229,6 +2229,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   const [deletedExercices, setDeletedExercices] = useState<ExerciceItem[]>([]);
   const [editorStateHydrated, setEditorStateHydrated] = useState(false);
   const [loadedModuleEditorState, setLoadedModuleEditorState] = useState(false);
+  // Trigger pour forcer la réapplication des overrides fournisseur après chaque
+  // reload de moduleData depuis la DB (realtime, visibility, polling).
+  const [trainerOverridesReapplyKey, setTrainerOverridesReapplyKey] = useState(0);
   const moduleEditorStorageKey = `module-editor-state:${module.id}`;
   const skipInitialAutosaveRef = useRef(true);
   const saveErrorShownRef = useRef(false);
@@ -2400,7 +2403,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     }
 
     loadTrainerOverrides();
-  }, [studentOnly, module.id, apprenantType, editorStateHydrated, loadedModuleEditorState]);
+  }, [studentOnly, module.id, apprenantType, editorStateHydrated, loadedModuleEditorState, trainerOverridesReapplyKey]);
 
   useEffect(() => {
     const initialData = getInitialModuleData(module, apprenantType, studentOnly);
@@ -2797,6 +2800,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             setDeletedCours([]);
             setDeletedExercices([]);
             setLoadedModuleEditorState(true);
+            setTrainerOverridesReapplyKey((k) => k + 1);
             return;
           }
         }
@@ -2838,6 +2842,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           setDeletedCours(Array.isArray(latest.deleted_cours) ? (latest.deleted_cours as unknown as ContentItem[]) : []);
           setDeletedExercices(Array.isArray(latest.deleted_exercices) ? (latest.deleted_exercices as unknown as ExerciceItem[]) : []);
           setLoadedModuleEditorState(true);
+          // Re-apply fournisseur overrides après reload DB (sinon perdu par le merge admin)
+          setTrainerOverridesReapplyKey((k) => k + 1);
         }
       } catch (err) {
         console.error("[Realtime] Error refetching module data:", err);
@@ -3018,14 +3024,18 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         };
 
         // Only update if data actually changed
+        let didUpdate = false;
         setModuleData((prev) => {
           if (JSON.stringify(prev.exercices) === JSON.stringify(merged.exercices) &&
               JSON.stringify(prev.cours) === JSON.stringify(merged.cours)) {
             return prev;
           }
           console.log("[Visibility] Refreshed module data from DB for module", module.id);
+          didUpdate = true;
           return merged;
         });
+        // Re-apply fournisseur overrides après reload DB
+        if (didUpdate) setTrainerOverridesReapplyKey((k) => k + 1);
       } catch (err) {
         console.error("[Visibility] Error refreshing module data:", err);
       }
