@@ -13,6 +13,10 @@ import {
 import { tousLesExamens, getPointsParQuestion, type ExamenBlanc, type Matiere, type Question, type Choix } from "./examens-blancs-data";
 import { mergeQuestionsForMatiere, propagateSharedMatiereEdit, moveQuestionToPosition } from "./examens-blancs-utils";
 import { QuestionImageUpload } from "./QuestionImageUpload";
+import {
+  applyFournisseurOverridesToExamens,
+  FOURNISSEUR_QUIZ_TO_EXAM,
+} from "./fournisseur-exam-overrides";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -334,6 +338,24 @@ export async function loadSavedExamens(): Promise<ExamenBlanc[]> {
   // was already synced during persistExamens. Running sync again would overwrite
   // correctly merged admin edits with stale source data.
   repairCorrectFlags(examens);
+
+  // Apply fournisseur (formateur) overrides on top of admin's saved data.
+  // The fournisseur portal saves modifications in `quiz_questions_overrides`
+  // with quiz_id like "bilan-examen-ta". Without this step, students taking
+  // the actual exam blanc would not see the formatrice's modifications.
+  try {
+    const fournisseurQuizIds = Object.keys(FOURNISSEUR_QUIZ_TO_EXAM);
+    const { data: overridesData } = await supabase
+      .from("quiz_questions_overrides")
+      .select("quiz_id, section_id, question_id, enonce, choix, updated_at")
+      .in("quiz_id", fournisseurQuizIds)
+      .order("updated_at", { ascending: false });
+    if (overridesData && overridesData.length > 0) {
+      applyFournisseurOverridesToExamens(examens, overridesData as any);
+    }
+  } catch (err) {
+    console.error("[ExamensEditor] Error applying fournisseur overrides:", err);
+  }
 
   return examens;
 }
