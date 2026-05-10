@@ -270,6 +270,36 @@ export function ComptabilitePage() {
   const [dragOver, setDragOver] = useState(false);
   const [releveForm, setReleveForm] = useState({ mois_annee: format(new Date(), "yyyy-MM"), banque: "Revolut Bank UAB", notes: "" });
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // Filtres relevés archivés
+  const [releveFilterSearch, setReleveFilterSearch] = useState("");
+  const [releveFilterBanque, setReleveFilterBanque] = useState("tous");
+  const [releveFilterAnnee, setReleveFilterAnnee] = useState("tous");
+  const [releveFilterMois, setReleveFilterMois] = useState("tous");
+
+  const filteredReleves = useMemo(() => {
+    return releves.filter(r => {
+      if (releveFilterBanque !== "tous" && r.banque !== releveFilterBanque) return false;
+      if (releveFilterAnnee !== "tous" && (!r.mois_annee || !r.mois_annee.startsWith(releveFilterAnnee))) return false;
+      if (releveFilterMois !== "tous" && (!r.mois_annee || r.mois_annee.split("-")[1] !== releveFilterMois)) return false;
+      if (releveFilterSearch.trim()) {
+        const q = releveFilterSearch.toLowerCase();
+        const hay = `${r.nom_fichier ?? ""} ${r.notes ?? ""} ${r.banque ?? ""}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [releves, releveFilterSearch, releveFilterBanque, releveFilterAnnee, releveFilterMois]);
+
+  const releveAnnees = useMemo(() => {
+    const set = new Set<string>();
+    releves.forEach(r => { if (r.mois_annee) set.add(r.mois_annee.split("-")[0]); });
+    return Array.from(set).sort((a, b) => b.localeCompare(a));
+  }, [releves]);
+  const releveBanques = useMemo(() => {
+    const set = new Set<string>();
+    releves.forEach(r => { if (r.banque) set.add(r.banque); });
+    return Array.from(set).sort();
+  }, [releves]);
 
   const fetchFournisseurFactures = async () => {
     const { data, error } = await supabase
