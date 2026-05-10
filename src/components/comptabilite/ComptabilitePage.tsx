@@ -1729,10 +1729,47 @@ export function ComptabilitePage() {
 
           {/* Liste des relevés */}
           <Card>
-            <CardHeader>
+            <CardHeader className="space-y-4">
               <CardTitle className="text-lg flex items-center gap-2">
-                <FolderOpen className="h-5 w-5" /> Relevés archivés ({releves.length})
+                <FolderOpen className="h-5 w-5" /> Relevés archivés ({filteredReleves.length}{filteredReleves.length !== releves.length ? ` / ${releves.length}` : ""})
               </CardTitle>
+              {/* Filtres */}
+              <div className="flex flex-wrap gap-2 items-center">
+                <Input
+                  placeholder="🔎 Rechercher fichier, notes..."
+                  value={releveFilterSearch}
+                  onChange={e => setReleveFilterSearch(e.target.value)}
+                  className="h-9 w-[240px]"
+                />
+                <Select value={releveFilterBanque} onValueChange={setReleveFilterBanque}>
+                  <SelectTrigger className="h-9 w-[180px]"><SelectValue placeholder="Banque" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="tous">🏦 Toutes les banques</SelectItem>
+                    {releveBanques.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <Select value={releveFilterAnnee} onValueChange={setReleveFilterAnnee}>
+                  <SelectTrigger className="h-9 w-[130px]"><SelectValue placeholder="Année" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="tous">📅 Toutes années</SelectItem>
+                    {releveAnnees.map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <Select value={releveFilterMois} onValueChange={setReleveFilterMois}>
+                  <SelectTrigger className="h-9 w-[140px]"><SelectValue placeholder="Mois" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="tous">🗓️ Tous les mois</SelectItem>
+                    {["01","02","03","04","05","06","07","08","09","10","11","12"].map(m => (
+                      <SelectItem key={m} value={m}>{format(new Date(2000, parseInt(m) - 1, 1), "MMMM", { locale: fr })}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {(releveFilterSearch || releveFilterBanque !== "tous" || releveFilterAnnee !== "tous" || releveFilterMois !== "tous") && (
+                  <Button variant="ghost" size="sm" className="h-9" onClick={() => { setReleveFilterSearch(""); setReleveFilterBanque("tous"); setReleveFilterAnnee("tous"); setReleveFilterMois("tous"); }}>
+                    <X className="h-3 w-3 mr-1" /> Réinitialiser
+                  </Button>
+                )}
+              </div>
             </CardHeader>
             <CardContent className="p-0">
               {relevesLoading ? (
@@ -1743,6 +1780,11 @@ export function ComptabilitePage() {
                 <div className="flex flex-col items-center justify-center py-12">
                   <FolderOpen className="h-12 w-12 text-muted-foreground/30 mb-3" />
                   <p className="text-muted-foreground">Aucun relevé déposé pour l'instant</p>
+                </div>
+              ) : filteredReleves.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <FolderOpen className="h-12 w-12 text-muted-foreground/30 mb-3" />
+                  <p className="text-muted-foreground">Aucun relevé ne correspond à ces filtres</p>
                 </div>
               ) : (
                 <Table>
@@ -1757,7 +1799,7 @@ export function ComptabilitePage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {releves.map((r) => {
+                    {filteredReleves.map((r) => {
                       const isEditing = editingReleveId === r.id;
                       return (
                       <TableRow key={r.id}>
