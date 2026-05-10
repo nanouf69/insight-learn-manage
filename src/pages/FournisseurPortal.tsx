@@ -340,6 +340,35 @@ export default function FournisseurPortal() {
   const factureFileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFactureFileName, setSelectedFactureFileName] = useState("");
 
+  // Derived data for relevés filters
+  const releveAnnees = useMemo(() => {
+    const years = new Set<string>();
+    releves.forEach((r: any) => {
+      if (r.mois_annee) years.add(r.mois_annee.split('-')[0]);
+    });
+    return Array.from(years).sort((a, b) => Number(b) - Number(a));
+  }, [releves]);
+  const releveBanques = useMemo(() => {
+    const banks = new Set<string>();
+    releves.forEach((r: any) => {
+      if (r.banque) banks.add(r.banque);
+    });
+    return Array.from(banks).sort();
+  }, [releves]);
+  const filteredReleves = useMemo(() => {
+    return releves.filter((r: any) => {
+      const search = releveFilterSearch.toLowerCase();
+      const matchSearch = !search ||
+        (r.nom_fichier || '').toLowerCase().includes(search) ||
+        (r.notes || '').toLowerCase().includes(search) ||
+        (r.banque || '').toLowerCase().includes(search);
+      const matchBanque = releveFilterBanque === "all" || r.banque === releveFilterBanque;
+      const matchAnnee = releveFilterAnnee === "all" || (r.mois_annee || '').startsWith(releveFilterAnnee);
+      const matchMois = releveFilterMois === "all" || (r.mois_annee || '') === releveFilterMois;
+      return matchSearch && matchBanque && matchAnnee && matchMois;
+    });
+  }, [releves, releveFilterSearch, releveFilterBanque, releveFilterAnnee, releveFilterMois]);
+
   // Load fournisseur by token
   useEffect(() => {
     const loadFournisseur = async () => {
