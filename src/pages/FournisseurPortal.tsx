@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -283,6 +283,11 @@ export default function FournisseurPortal() {
 
   // Relevés bancaires (comptable mode)
   const [releves, setReleves] = useState<any[]>([]);
+  // Filtres relevés
+  const [releveFilterSearch, setReleveFilterSearch] = useState("");
+  const [releveFilterBanque, setReleveFilterBanque] = useState("all");
+  const [releveFilterAnnee, setReleveFilterAnnee] = useState("all");
+  const [releveFilterMois, setReleveFilterMois] = useState("all");
   // Factures ventes & achats (comptable mode)
   const [facturesVentes, setFacturesVentes] = useState<any[]>([]);
   const [facturesAchats, setFacturesAchats] = useState<any[]>([]);
@@ -334,6 +339,42 @@ export default function FournisseurPortal() {
   const [isUploadingFacture, setIsUploadingFacture] = useState(false);
   const factureFileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFactureFileName, setSelectedFactureFileName] = useState("");
+
+  // Derived data for relevés filters
+  const releveAnnees = useMemo(() => {
+    const years = new Set<string>();
+    releves.forEach((r: any) => {
+      if (r.mois_annee) years.add(r.mois_annee.split('-')[0]);
+    });
+    return Array.from(years).sort((a, b) => Number(b) - Number(a));
+  }, [releves]);
+  const releveBanques = useMemo(() => {
+    const banks = new Set<string>();
+    releves.forEach((r: any) => {
+      if (r.banque) banks.add(r.banque);
+    });
+    return Array.from(banks).sort();
+  }, [releves]);
+  const releveMois = useMemo(() => {
+    const months = new Set<string>();
+    releves.forEach((r: any) => {
+      if (r.mois_annee) months.add(r.mois_annee);
+    });
+    return Array.from(months).sort((a, b) => b.localeCompare(a));
+  }, [releves]);
+  const filteredReleves = useMemo(() => {
+    return releves.filter((r: any) => {
+      const search = releveFilterSearch.toLowerCase();
+      const matchSearch = !search ||
+        (r.nom_fichier || '').toLowerCase().includes(search) ||
+        (r.notes || '').toLowerCase().includes(search) ||
+        (r.banque || '').toLowerCase().includes(search);
+      const matchBanque = releveFilterBanque === "all" || r.banque === releveFilterBanque;
+      const matchAnnee = releveFilterAnnee === "all" || (r.mois_annee || '').startsWith(releveFilterAnnee);
+      const matchMois = releveFilterMois === "all" || (r.mois_annee || '') === releveFilterMois;
+      return matchSearch && matchBanque && matchAnnee && matchMois;
+    });
+  }, [releves, releveFilterSearch, releveFilterBanque, releveFilterAnnee, releveFilterMois]);
 
   // Load fournisseur by token
   useEffect(() => {
@@ -1821,21 +1862,65 @@ export default function FournisseurPortal() {
               <div className="space-y-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <FolderOpen className="w-5 h-5 text-primary" />
-                      Relevés de comptes
-                    </CardTitle>
-                    <CardDescription>Téléchargez les relevés bancaires mis à disposition</CardDescription>
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                      <div>
+                        <CardTitle className="flex items-center gap-2">
+                          <FolderOpen className="w-5 h-5 text-primary" />
+                          Relevés de comptes
+                        </CardTitle>
+                        <CardDescription>Téléchargez les relevés bancaires mis à disposition</CardDescription>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <div className="relative">
+                          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                          <Input
+                            placeholder="Rechercher..."
+                            value={releveFilterSearch}
+                            onChange={(e) => setReleveFilterSearch(e.target.value)}
+                            className="pl-9 w-40"
+                          />
+                        </div>
+                        <Select value={releveFilterBanque} onValueChange={setReleveFilterBanque}>
+                          <SelectTrigger className="w-36"><SelectValue placeholder="Banque" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">Toutes les banques</SelectItem>
+                            {releveBanques.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                        <Select value={releveFilterAnnee} onValueChange={setReleveFilterAnnee}>
+                          <SelectTrigger className="w-28"><SelectValue placeholder="Année" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">Toutes</SelectItem>
+                            {releveAnnees.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                        <Select value={releveFilterMois} onValueChange={setReleveFilterMois}>
+                          <SelectTrigger className="w-36"><SelectValue placeholder="Mois" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">Tous les mois</SelectItem>
+                            {releveMois.map(m => {
+                              const label = new Date(m + "-01").toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
+                              return <SelectItem key={m} value={m}>{label}</SelectItem>;
+                            })}
+                          </SelectContent>
+                        </Select>
+                        {(releveFilterSearch || releveFilterBanque !== "all" || releveFilterAnnee !== "all" || releveFilterMois !== "all") && (
+                          <Button variant="ghost" size="sm" onClick={() => { setReleveFilterSearch(""); setReleveFilterBanque("all"); setReleveFilterAnnee("all"); setReleveFilterMois("all"); }}>
+                            <X className="w-4 h-4 mr-1" />Réinitialiser
+                          </Button>
+                        )}
+                      </div>
+                    </div>
                   </CardHeader>
                   <CardContent>
-                    {releves.length === 0 ? (
+                    {filteredReleves.length === 0 ? (
                       <div className="text-center py-10 text-muted-foreground">
                         <FolderOpen className="w-10 h-10 mx-auto mb-3 opacity-30" />
-                        <p>Aucun relevé disponible pour le moment.</p>
+                        <p>Aucun relevé ne correspond aux filtres.</p>
                       </div>
                     ) : (
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                        {releves.map((releve: any) => {
+                        {filteredReleves.map((releve: any) => {
                           const moisLabel = releve.mois_annee
                             ? new Date(releve.mois_annee + "-01").toLocaleDateString("fr-FR", { month: "long", year: "numeric" })
                             : releve.mois_annee;
