@@ -1450,12 +1450,13 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
           <Button size="sm" variant={filterBanque === "tous" ? "secondary" : "ghost"} onClick={() => setFilterBanque("tous")}>
             🏦 Toutes
           </Button>
-          {["BNP Paribas", "Revolut Pro"].map(b => {
+          {["BNP Paribas", "Revolut Pro", "American Express"].map(b => {
             const normB = (s: string) => s.toLowerCase().replace(/\s+/g, "");
             const count = transactions.filter(t => normB(t.banque) === normB(b)).length;
+            const label = b === "BNP Paribas" ? "🔵 BNP" : b === "Revolut Pro" ? "🟣 Revolut" : "🟢 Amex";
             return (
               <Button key={b} size="sm" variant={filterBanque === b ? "secondary" : "ghost"} onClick={() => setFilterBanque(filterBanque === b ? "tous" : b)}>
-                {b === "BNP Paribas" ? "🔵 BNP" : "🟣 Revolut"}
+                {label}
                 <Badge className="ml-1.5 h-4 px-1 text-[10px]">{count}</Badge>
               </Button>
             );
