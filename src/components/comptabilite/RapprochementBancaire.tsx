@@ -1359,13 +1359,13 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
                 {importing ? <RefreshCw className="h-6 w-6 text-primary animate-spin" /> : <Upload className="h-6 w-6 text-primary" />}
               </div>
               <div>
-                <p className="font-semibold">Importer un relevé CSV — BNP Paribas ou Revolut Pro</p>
-                <p className="text-sm text-muted-foreground">Le format est détecté automatiquement (BNP : export CSV / Revolut : Transaction statement CSV)</p>
+                <p className="font-semibold">Importer un relevé CSV ou PDF — BNP, Revolut Pro ou autre</p>
+                <p className="text-sm text-muted-foreground">CSV : détection auto BNP/Revolut · PDF : extraction par IA (toutes banques)</p>
               </div>
             </div>
             <Button variant="outline" size="sm" disabled={importing} className="flex-shrink-0">
               <Upload className="h-4 w-4 mr-2" />
-              {importing ? "Import en cours..." : "Choisir un fichier CSV"}
+              {importing ? "Import en cours..." : "Choisir CSV ou PDF"}
             </Button>
             <Button
               variant="outline"
@@ -1381,9 +1381,9 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
           <input
             ref={fileInputRef}
             type="file"
-            accept=".csv,.txt"
+            accept=".csv,.txt,.pdf,application/pdf"
             className="hidden"
-            onChange={e => { const f = e.target.files?.[0]; if (f) handleImportCSV(f); }}
+            onChange={e => { const f = e.target.files?.[0]; if (f) handleImportFile(f); }}
           />
           {transactions.length > 0 && (
             <div className="mt-3 flex justify-end">
