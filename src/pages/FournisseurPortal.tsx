@@ -283,6 +283,11 @@ export default function FournisseurPortal() {
 
   // Relevés bancaires (comptable mode)
   const [releves, setReleves] = useState<any[]>([]);
+  // Filtres relevés
+  const [releveFilterSearch, setReleveFilterSearch] = useState("");
+  const [releveFilterBanque, setReleveFilterBanque] = useState("all");
+  const [releveFilterAnnee, setReleveFilterAnnee] = useState("all");
+  const [releveFilterMois, setReleveFilterMois] = useState("all");
   // Factures ventes & achats (comptable mode)
   const [facturesVentes, setFacturesVentes] = useState<any[]>([]);
   const [facturesAchats, setFacturesAchats] = useState<any[]>([]);
