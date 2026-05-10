@@ -81,6 +81,7 @@ const CATEGORIES = [
   { value: "frais_postaux", label: "📮 Frais postaux", color: "bg-rose-100 text-rose-700" },
   { value: "urssaf", label: "🏛️ URSSAF", color: "bg-red-100 text-red-700" },
   { value: "retraite", label: "👴 Retraite", color: "bg-stone-100 text-stone-700" },
+  { value: "inconnu", label: "❓ Inconnu", color: "bg-zinc-100 text-zinc-700" },
   { value: "autre", label: "📄 Autre", color: "bg-muted text-muted-foreground" },
 ];
 
