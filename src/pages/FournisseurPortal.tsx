@@ -355,6 +355,13 @@ export default function FournisseurPortal() {
     });
     return Array.from(banks).sort();
   }, [releves]);
+  const releveMois = useMemo(() => {
+    const months = new Set<string>();
+    releves.forEach((r: any) => {
+      if (r.mois_annee) months.add(r.mois_annee);
+    });
+    return Array.from(months).sort((a, b) => b.localeCompare(a));
+  }, [releves]);
   const filteredReleves = useMemo(() => {
     return releves.filter((r: any) => {
       const search = releveFilterSearch.toLowerCase();
