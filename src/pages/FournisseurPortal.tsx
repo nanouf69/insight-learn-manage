@@ -1862,21 +1862,65 @@ export default function FournisseurPortal() {
               <div className="space-y-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <FolderOpen className="w-5 h-5 text-primary" />
-                      Relevés de comptes
-                    </CardTitle>
-                    <CardDescription>Téléchargez les relevés bancaires mis à disposition</CardDescription>
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                      <div>
+                        <CardTitle className="flex items-center gap-2">
+                          <FolderOpen className="w-5 h-5 text-primary" />
+                          Relevés de comptes
+                        </CardTitle>
+                        <CardDescription>Téléchargez les relevés bancaires mis à disposition</CardDescription>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <div className="relative">
+                          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                          <Input
+                            placeholder="Rechercher..."
+                            value={releveFilterSearch}
+                            onChange={(e) => setReleveFilterSearch(e.target.value)}
+                            className="pl-9 w-40"
+                          />
+                        </div>
+                        <Select value={releveFilterBanque} onValueChange={setReleveFilterBanque}>
+                          <SelectTrigger className="w-36"><SelectValue placeholder="Banque" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">Toutes les banques</SelectItem>
+                            {releveBanques.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                        <Select value={releveFilterAnnee} onValueChange={setReleveFilterAnnee}>
+                          <SelectTrigger className="w-28"><SelectValue placeholder="Année" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">Toutes</SelectItem>
+                            {releveAnnees.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                        <Select value={releveFilterMois} onValueChange={setReleveFilterMois}>
+                          <SelectTrigger className="w-36"><SelectValue placeholder="Mois" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">Tous les mois</SelectItem>
+                            {releveMois.map(m => {
+                              const label = new Date(m + "-01").toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
+                              return <SelectItem key={m} value={m}>{label}</SelectItem>;
+                            })}
+                          </SelectContent>
+                        </Select>
+                        {(releveFilterSearch || releveFilterBanque !== "all" || releveFilterAnnee !== "all" || releveFilterMois !== "all") && (
+                          <Button variant="ghost" size="sm" onClick={() => { setReleveFilterSearch(""); setReleveFilterBanque("all"); setReleveFilterAnnee("all"); setReleveFilterMois("all"); }}>
+                            <X className="w-4 h-4 mr-1" />Réinitialiser
+                          </Button>
+                        )}
+                      </div>
+                    </div>
                   </CardHeader>
                   <CardContent>
-                    {releves.length === 0 ? (
+                    {filteredReleves.length === 0 ? (
                       <div className="text-center py-10 text-muted-foreground">
                         <FolderOpen className="w-10 h-10 mx-auto mb-3 opacity-30" />
-                        <p>Aucun relevé disponible pour le moment.</p>
+                        <p>Aucun relevé ne correspond aux filtres.</p>
                       </div>
                     ) : (
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                        {releves.map((releve: any) => {
+                        {filteredReleves.map((releve: any) => {
                           const moisLabel = releve.mois_annee
                             ? new Date(releve.mois_annee + "-01").toLocaleDateString("fr-FR", { month: "long", year: "numeric" })
                             : releve.mois_annee;
