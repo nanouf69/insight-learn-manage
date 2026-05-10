@@ -1758,6 +1758,7 @@ export function ComptabilitePage() {
                                 <SelectItem value="LCL">LCL</SelectItem>
                                 <SelectItem value="Caisse d'Épargne">Caisse d'Épargne</SelectItem>
                                 <SelectItem value="Banque Postale">Banque Postale</SelectItem>
+                                <SelectItem value="American Express">American Express</SelectItem>
                                 <SelectItem value="Autre">Autre</SelectItem>
                               </SelectContent>
                             </Select>
