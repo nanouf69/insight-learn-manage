@@ -613,6 +613,62 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
   }, [transactions, apprenants, loading]);
 
 
+  const handleImportPDF = async (file: File) => {
+    setImporting(true);
+    try {
+      toast.info("Analyse du PDF par l'IA en cours… (peut prendre 30s)");
+      const buf = await file.arrayBuffer();
+      const bytes = new Uint8Array(buf);
+      let binary = "";
+      const chunk = 0x8000;
+      for (let i = 0; i < bytes.length; i += chunk) {
+        binary += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, i + chunk)) as any);
+      }
+      const fileBase64 = btoa(binary);
+      const { data, error } = await supabase.functions.invoke("parse-bank-pdf", {
+        body: { fileBase64, fileName: file.name },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      const txs = (data?.transactions || []) as Array<{ date_operation: string; libelle: string; montant: number; solde: number | null }>;
+      if (txs.length === 0) {
+        toast.error("Aucune transaction extraite du PDF.");
+        setImporting(false);
+        return;
+      }
+      const banque = data?.banque || "Inconnue";
+      const dates = [...new Set(txs.map(r => r.date_operation))];
+      const { data: existingRows } = await supabase
+        .from("transactions_bancaires")
+        .select("date_operation, montant, libelle")
+        .in("date_operation", dates)
+        .eq("banque", banque);
+      const existingSet = new Set((existingRows || []).map(e => `${e.date_operation}|${e.montant}|${(e.libelle || "").trim().toLowerCase()}`));
+      const newRows = txs.filter(r => !existingSet.has(`${r.date_operation}|${r.montant}|${(r.libelle || "").trim().toLowerCase()}`));
+      const skipped = txs.length - newRows.length;
+      if (newRows.length === 0) {
+        toast.info(`Toutes les ${txs.length} transactions sont déjà en base.`);
+        setImporting(false);
+        return;
+      }
+      const inserts = newRows.map(r => ({ ...r, banque, statut: "non_justifie", source: "import_pdf" }));
+      const { error: insErr } = await supabase.from("transactions_bancaires").insert(inserts);
+      if (insErr) throw insErr;
+      toast.success(`${newRows.length} transactions importées depuis le PDF${skipped > 0 ? ` (${skipped} doublons ignorés)` : ""}.`);
+      await fetchAll();
+    } catch (err) {
+      toast.error("Erreur import PDF : " + (err instanceof Error ? err.message : "Erreur"));
+    }
+    setImporting(false);
+  };
+
+  const handleImportFile = async (file: File) => {
+    if (file.name.toLowerCase().endsWith(".pdf") || file.type === "application/pdf") {
+      return handleImportPDF(file);
+    }
+    return handleImportCSV(file);
+  };
+
   const handleImportCSV = async (file: File) => {
     setImporting(true);
     try {
