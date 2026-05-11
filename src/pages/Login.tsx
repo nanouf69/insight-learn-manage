@@ -53,23 +53,30 @@ export default function Login() {
   useEffect(() => {
     let isActive = true;
 
+    const redirectFromSession = (userId?: string) => {
+      if (!isActive || !userId) return;
+      void redirectByRole(userId).catch(() => {
+        // On reste sur /login en cas d'erreur réseau temporaire
+      });
+    };
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      redirectFromSession(session?.user?.id);
+    });
+
     withTimeout(
       supabase.auth.getSession(),
       8000,
       'Session temporairement indisponible',
     ).then(async ({ data: { session } }) => {
-      if (!isActive || !session?.user?.id) return;
-      try {
-        await redirectByRole(session.user.id);
-      } catch {
-        // On reste sur /login en cas d'erreur réseau temporaire
-      }
+      redirectFromSession(session?.user?.id);
     }).catch(() => {
       // On laisse l'utilisateur se connecter manuellement si la session tarde à répondre
     });
 
     return () => {
       isActive = false;
+      subscription.unsubscribe();
     };
   }, [redirectByRole]);
 
@@ -93,6 +100,17 @@ export default function Login() {
 
       await redirectByRole(userId);
     } catch (error: unknown) {
+      const { data: { session } } = await withTimeout(
+        supabase.auth.getSession(),
+        3000,
+        'Session temporairement indisponible',
+      ).catch(() => ({ data: { session: null } }));
+
+      if (session?.user?.id) {
+        await redirectByRole(session.user.id).catch(() => undefined);
+        return;
+      }
+
       setLoading(false);
       toast({
         title: 'Erreur de connexion',
