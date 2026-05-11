@@ -5017,6 +5017,20 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                           <div className="flex flex-col gap-2">
                             <Button variant="outline" size="sm" className="gap-2" onClick={() => {
               const exoKeys = questionsSafe.map((q: any) => `${exo.id}-${q.id}`);
+                              // Save snapshot to history before clearing
+                              const snapshot: Record<string, string | string[]> = {};
+                              let snapCorrect = 0;
+                              questionsSafe.forEach((q: any) => {
+                                const k = `${exo.id}-${q.id}`;
+                                if (selectedAnswers[k] !== undefined) snapshot[k] = selectedAnswers[k];
+                                if (isAnswerCorrect(selectedAnswers[k], q)) snapCorrect++;
+                              });
+                              if (Object.keys(snapshot).length > 0) {
+                                setAttemptHistoryFor(prev => ({
+                                  ...prev,
+                                  [exo.id]: [...(prev[exo.id] ?? []), { at: Date.now(), total: questionsSafe.length, correct: snapCorrect, mode: "complet", answers: snapshot }],
+                                }));
+                              }
                               setSelectedAnswers(prev => {
                                 const next = { ...prev };
                                 exoKeys.forEach(k => delete next[k]);
@@ -5025,16 +5039,32 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                               });
                               setShowResultsFor(prev => { const next = new Set(prev); next.delete(exo.id); return next; });
                               setPendingResultRestore((prev) => (prev?.exoId === exo.id ? null : prev));
+                              setRevisionQuestionsFor(prev => { const next = { ...prev }; delete next[exo.id]; return next; });
                             }}>
                               🔄 Recommencer tout
                             </Button>
                             <Button variant="outline" size="sm" className="gap-2 border-amber-300 text-amber-700 hover:bg-amber-50" onClick={() => {
-                              // Only clear wrong answers, keep correct ones
+                              // Snapshot before revision
+                              const snapshot: Record<string, string | string[]> = {};
+                              let snapCorrect = 0;
+                              const wrongIds: (number | string)[] = [];
                               const wrongKeys: string[] = [];
                               questionsSafe.forEach((q: any) => {
                                 const key = `${exo.id}-${q.id}`;
-                                if (!isAnswerCorrect(selectedAnswers[key], q)) wrongKeys.push(key);
+                                if (selectedAnswers[key] !== undefined) snapshot[key] = selectedAnswers[key];
+                                if (isAnswerCorrect(selectedAnswers[key], q)) {
+                                  snapCorrect++;
+                                } else {
+                                  wrongKeys.push(key);
+                                  wrongIds.push(q.id);
+                                }
                               });
+                              if (Object.keys(snapshot).length > 0) {
+                                setAttemptHistoryFor(prev => ({
+                                  ...prev,
+                                  [exo.id]: [...(prev[exo.id] ?? []), { at: Date.now(), total: questionsSafe.length, correct: snapCorrect, mode: "complet", answers: snapshot }],
+                                }));
+                              }
                               setSelectedAnswers(prev => {
                                 const next = { ...prev };
                                 wrongKeys.forEach(k => delete next[k]);
@@ -5043,8 +5073,13 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                               });
                               setShowResultsFor(prev => { const next = new Set(prev); next.delete(exo.id); return next; });
                               setPendingResultRestore((prev) => (prev?.exoId === exo.id ? null : prev));
+                              setRevisionQuestionsFor(prev => ({ ...prev, [exo.id]: new Set(wrongIds) }));
                               const nbWrong = wrongKeys.length;
-                              toast.info(`🎯 ${nbWrong} question${nbWrong > 1 ? "s" : ""} à refaire`);
+                              if (nbWrong === 0) {
+                                toast.success("🎉 Aucune question fausse à refaire !");
+                              } else {
+                                toast.info(`🎯 ${nbWrong} question${nbWrong > 1 ? "s" : ""} à refaire — seules celles-ci sont affichées`);
+                              }
                             }}>
                               🎯 Refaire les fausses ({(() => {
                                 let count = 0;
