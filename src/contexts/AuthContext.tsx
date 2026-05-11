@@ -19,6 +19,19 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const withTimeout = async <T,>(operation: PromiseLike<T> | T, ms: number): Promise<T> => {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error('timeout')), ms);
+  });
+
+  try {
+    return await Promise.race<T>([Promise.resolve(operation), timeout]);
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
+};
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -104,7 +117,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (event === 'SIGNED_OUT' && !manualSignOutRef.current) {
         setTimeout(async () => {
           if (!isActive) return;
-          const { data: { session: recoveredSession } } = await supabase.auth.getSession();
+          const { data: { session: recoveredSession } } = await withTimeout(
+            supabase.auth.getSession(),
+            4000,
+          ).catch(() => ({ data: { session: null } }));
           if (!isActive) return;
 
           if (recoveredSession?.user) {
@@ -133,13 +149,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       handleResolvedAuthState(event, nextSession);
     });
 
-    supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
+    withTimeout(supabase.auth.getSession(), 6000).then(({ data: { session: initialSession } }) => {
       if (!isActive) return;
 
       authInitializedRef.current = true;
       const restoredSession = pendingSessionRef.current !== undefined ? pendingSessionRef.current : initialSession;
       pendingSessionRef.current = undefined;
       applySession(restoredSession ?? null);
+      setLoading(false);
+    }).catch(() => {
+      if (!isActive) return;
+      authInitializedRef.current = true;
+      pendingSessionRef.current = undefined;
+      clearAuthState();
       setLoading(false);
     });
 
