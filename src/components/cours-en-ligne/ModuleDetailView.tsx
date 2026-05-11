@@ -1856,6 +1856,7 @@ function ExerciceCard({
   moduleId: number;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const [fullscreenOpen, setFullscreenOpen] = useState(false);
   const [editingQId, setEditingQId] = useState<number | null>(null);
 
   const hasQuestions = item.questions && item.questions.length > 0;
