@@ -126,7 +126,8 @@ export function useConnexionTracking({ apprenantId, userId, enabled }: UseConnex
       window.removeEventListener("beforeunload", handleBeforeUnload);
       void endConnexion();
     };
-  }, [enabled, apprenantId, userId, closeConnexionServerSide, endConnexion, resetLocalSession]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enabled, apprenantId, userId]);
 
   const trackModuleActivity = async (
     moduleId: number,
