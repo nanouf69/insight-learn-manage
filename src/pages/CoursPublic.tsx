@@ -771,9 +771,12 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
             _user_id: user.id,
             _role: "admin",
           }),
-          45000,
+          5000,
           "Temps d'attente dépassé pendant la vérification du profil.",
-        );
+        ).catch((error) => {
+          console.warn("CoursPublic: role check skipped", error);
+          return { data: false, error: null };
+        });
 
         if (!cancelled && !roleError && isAdmin === true) {
           navigate("/", { replace: true });
@@ -786,7 +789,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
             .select("id, nom, prenom, type_apprenant, formation_choisie, date_debut_cours_en_ligne, date_fin_cours_en_ligne, date_debut_formation, date_fin_formation, modules_autorises, email, telephone, adresse, code_postal, ville, date_naissance")
             .eq("auth_user_id", user.id)
             .maybeSingle(),
-          45000,
+          12000,
           "Temps d'attente dépassé pendant le chargement du dossier apprenant.",
         );
 
@@ -819,10 +822,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
 
         const errorMessage = typeof err?.message === "string" ? err.message : "";
         if (errorMessage.includes("Temps d'attente dépassé")) {
-          console.warn("CoursPublic: timeout, auto-retrying...");
-          setTimeout(() => {
-            if (!cancelled) setFetchNonce((v) => v + 1);
-          }, 2000);
+          setApprenantFetchError("Le chargement du dossier prend trop de temps. Cliquez sur Réessayer.");
           return;
         }
 
