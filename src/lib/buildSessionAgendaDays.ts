@@ -105,11 +105,12 @@ export async function buildSessionAgendaDays(
       const result: AgendaDaySlot = { date: val.date };
 
       if (isSoir) {
-        // SOIR : plage unique 17:00 - 21:00 (affichée en après-midi)
-        result.matinDebut = undefined;
-        result.matinFin = undefined;
-        result.apremDebut = "17:00";
+        // SOIR : 2 créneaux 17:00-18:30 et 18:30-21:00
+        result.matinDebut = "17:00";
+        result.matinFin = "18:30";
+        result.apremDebut = "18:30";
         result.apremFin = "21:00";
+        result.isSoir = true;
       } else {
         const morning = slots.filter((s) => s.debut < "12:30");
         const afternoon = slots.filter((s) => s.debut >= "12:30");
@@ -138,8 +139,11 @@ export async function buildSessionAgendaDays(
   while (cur <= endD) {
     const day: AgendaDaySlot = { date: new Date(cur) };
     if (isCoursDuSoir) {
-      day.apremDebut = "17:00";
+      day.matinDebut = "17:00";
+      day.matinFin = "18:30";
+      day.apremDebut = "18:30";
       day.apremFin = "21:00";
+      day.isSoir = true;
     } else if (isPratique) {
       day.matinDebut = "09:00";
       day.matinFin = "12:00";

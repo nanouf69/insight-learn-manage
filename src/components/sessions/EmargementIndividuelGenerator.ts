@@ -17,6 +17,7 @@ export interface AgendaDaySlot {
   matinFin?: string;
   apremDebut?: string;
   apremFin?: string;
+  isSoir?: boolean;
 }
 
 interface SessionData {
@@ -199,10 +200,11 @@ function generateIndividualPage(
   const footerZoneHeight = 45; // signature (30) + footer (15)
   const maxTableBottom = pageHeight - footerZoneHeight;
 
+  const allSoir = days.length > 0 && days.every((d) => d.isSoir);
   const headRow1: any[] = [
     { content: "Jour", rowSpan: 2, styles: { halign: "center", valign: "middle" } },
-    { content: "Matin", colSpan: 2, styles: { halign: "center" } },
-    { content: "Apres-midi", colSpan: 2, styles: { halign: "center" } },
+    { content: allSoir ? "Soir (1ere partie)" : "Matin", colSpan: 2, styles: { halign: "center" } },
+    { content: allSoir ? "Soir (2eme partie)" : "Apres-midi", colSpan: 2, styles: { halign: "center" } },
   ];
 
   const headRow2: any[] = [
