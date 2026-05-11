@@ -4433,16 +4433,23 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                   <Button
                     size="sm"
                     disabled={!isAcknowledged}
-                    onClick={() => {
+                    onClick={async () => {
                       markPageCompleted(currentPage);
                       if (currentPage < totalPages - 1) {
                         goToPage(currentPage + 1);
+                      } else {
+                        // Last page of intro module: persist completion to DB
+                        const ok = await persistModuleCompletion();
+                        if (ok) {
+                          toast.success("✅ Module enregistré !");
+                          onBack();
+                        }
                       }
                     }}
                     className="w-full gap-2"
                   >
                     <CheckCircle2 className="w-4 h-4" />
-                    Valider et continuer
+                    {currentPage === totalPages - 1 ? "Valider et terminer le module" : "Valider et continuer"}
                   </Button>
                 </CardContent>
               </Card>
