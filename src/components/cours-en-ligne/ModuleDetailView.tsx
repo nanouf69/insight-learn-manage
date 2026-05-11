@@ -2188,6 +2188,13 @@ const ContentCard = ({
 const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, onModuleCompleted, apprenantType, apprenantInfo, isPresentiel = false, hideFormulaires = false, onTrackCours }: ModuleDetailViewProps) => {
   console.log("[ModuleDetailView] Rendering module:", module.id, module.nom, "studentOnly:", studentOnly, "apprenantType:", apprenantType, "isPresentiel:", isPresentiel);
 
+  // Cleanup mode plein écran à la sortie du composant
+  useEffect(() => {
+    return () => {
+      document.body.classList.remove("app-fullscreen");
+    };
+  }, []);
+
   const createInitialSlidesByKey = (): Record<string, Slide[]> => ({
     "t3p-partie1": [...T3P_PARTIE1_SLIDES],
     "t3p-partie2": [...T3P_PARTIE2_SLIDES],
@@ -5705,11 +5712,25 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center gap-3">
-        <Button variant="outline" size="icon" onClick={onBack}>
-          <ArrowLeft className="w-4 h-4" />
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <Button variant="outline" size="icon" onClick={onBack}>
+            <ArrowLeft className="w-4 h-4" />
+          </Button>
+          <h2 className="text-2xl font-bold">Détail du module</h2>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-2"
+          onClick={() => {
+            const isFs = document.body.classList.toggle("app-fullscreen");
+            if (!isFs) document.body.classList.remove("app-fullscreen");
+          }}
+        >
+          <Maximize className="w-4 h-4" />
+          Plein écran
         </Button>
-        <h2 className="text-2xl font-bold">Détail du module</h2>
       </div>
 
       <Tabs defaultValue="edition" className="w-full">
