@@ -574,6 +574,17 @@ interface SessionAccessWindow {
 const dateOnly = (value: unknown): string | null =>
   typeof value === "string" && value.length >= 10 ? value.slice(0, 10) : null;
 
+const parseAccessDate = (value: unknown): Date | null => {
+  const valueDateOnly = dateOnly(value);
+  return valueDateOnly ? safeDateParse(valueDateOnly) : null;
+};
+
+const getEarliestDate = (dates: Date[]): Date | null =>
+  dates.length > 0 ? dates.reduce((earliest, date) => (date < earliest ? date : earliest), dates[0]) : null;
+
+const getLatestDate = (dates: Date[]): Date | null =>
+  dates.length > 0 ? dates.reduce((latest, date) => (date > latest ? date : latest), dates[0]) : null;
+
 const fetchSessionAccessWindow = async (apprenantId?: string | null): Promise<SessionAccessWindow | null> => {
   if (!apprenantId) return null;
 
@@ -1125,32 +1136,42 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     const now = new Date();
     now.setHours(12, 0, 0, 0);
 
-    // Pour les formations en présentiel (et FC), accès anticipé J-1
+    // Pour les formations en présentiel (et FC), on garde la fenêtre formation,
+    // mais la fenêtre e-learning configurée dans le CRM reste prioritaire si elle est active.
     const isPresentielOrFC =
       isPresentielType(apprenant?.type_apprenant, apprenant?.formation_choisie) ||
       isFormationContinue(apprenant?.type_apprenant, apprenant?.formation_choisie) ||
       !!sessionAccessWindow;
-    const startDateValue = isPresentielOrFC
-      ? sessionAccessWindow?.date_debut || apprenant.date_debut_formation || apprenant.date_debut_cours_en_ligne
-      : apprenant.date_debut_cours_en_ligne;
-    const endDateValue = isPresentielOrFC
-      ? sessionAccessWindow?.date_fin || apprenant.date_fin_formation || apprenant.date_fin_cours_en_ligne || apprenant.date_debut_formation || apprenant.date_debut_cours_en_ligne
-      : apprenant.date_fin_cours_en_ligne;
-    const debut = startDateValue ? safeDateParse(startDateValue) : null;
-    let fin = endDateValue ? safeDateParse(endDateValue) : null;
-    // Pour les présentiels : si une extension d'accès e-learning a été configurée
-    // (date_fin_cours_en_ligne postérieure à date_fin_formation), on l'utilise.
-    if (isPresentielOrFC && apprenant.date_fin_cours_en_ligne) {
-      const finElearning = safeDateParse(apprenant.date_fin_cours_en_ligne);
-      if (finElearning && (!fin || finElearning > fin)) {
-        fin = finElearning;
-      }
-    }
-    const debutEffectif = debut && isPresentielOrFC
-      ? new Date(debut.getTime() - 24 * 60 * 60 * 1000)
-      : debut;
+    const accessWindows = [
+      ...(isPresentielOrFC
+        ? [{
+          start: sessionAccessWindow?.date_debut || apprenant.date_debut_formation || apprenant.date_debut_cours_en_ligne,
+          end: sessionAccessWindow?.date_fin || apprenant.date_fin_formation || apprenant.date_debut_formation || apprenant.date_debut_cours_en_ligne,
+          allowDayBefore: true,
+        }]
+        : []),
+      {
+        start: apprenant.date_debut_cours_en_ligne || apprenant.date_debut_formation,
+        end: apprenant.date_fin_cours_en_ligne,
+        allowDayBefore: false,
+      },
+    ]
+      .map((window) => {
+        const start = parseAccessDate(window.start);
+        const end = parseAccessDate(window.end);
+        if (!start || !end) return null;
+        return {
+          start: window.allowDayBefore ? new Date(start.getTime() - 24 * 60 * 60 * 1000) : start,
+          end,
+        };
+      })
+      .filter((window): window is { start: Date; end: Date } => Boolean(window));
 
-    if (!debutEffectif || !fin || now < debutEffectif || now > fin) {
+    const isAccessAllowed = accessWindows.some((window) => now >= window.start && now <= window.end);
+    const debutEffectif = getEarliestDate(accessWindows.map((window) => window.start));
+    const fin = getLatestDate(accessWindows.map((window) => window.end));
+
+    if (!isAccessAllowed) {
       return (
         <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
           <div className="text-center max-w-md">
