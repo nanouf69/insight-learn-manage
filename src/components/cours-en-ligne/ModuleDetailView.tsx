@@ -5114,6 +5114,23 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                           </div>
                         </div>
                       </div>
+                      {(attemptHistoryFor[exo.id]?.length ?? 0) > 0 && (
+                        <div className="mt-4 rounded-lg border bg-muted/30 p-4">
+                          <h4 className="font-semibold text-sm mb-2">📜 Historique des tentatives</h4>
+                          <ul className="space-y-1 text-xs text-muted-foreground">
+                            {attemptHistoryFor[exo.id].map((att, idx) => {
+                              const pct = att.total > 0 ? Math.round((att.correct / att.total) * 100) : 0;
+                              const dt = new Date(att.at);
+                              return (
+                                <li key={idx} className="flex items-center justify-between gap-2">
+                                  <span>Tentative {idx + 1} — {dt.toLocaleDateString("fr-FR")} {dt.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}</span>
+                                  <span className="font-medium">{att.correct}/{att.total} ({pct}%)</span>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        </div>
+                      )}
                     </div>
                   );
                   })()}
