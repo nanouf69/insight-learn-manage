@@ -816,11 +816,11 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
           setSelectedFormation(null);
           setApprenantFetchError("Compte apprenant introuvable. Réessayez ou contactez le centre.");
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         if (cancelled) return;
         console.error("CoursPublic: unexpected error", err);
 
-        const errorMessage = typeof err?.message === "string" ? err.message : "";
+        const errorMessage = err instanceof Error ? err.message : "";
         if (errorMessage.includes("Temps d'attente dépassé")) {
           setApprenantFetchError("Le chargement du dossier prend trop de temps. Cliquez sur Réessayer.");
           return;
