@@ -2005,6 +2005,61 @@ function ExerciceCard({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Vue plein écran des questions */}
+      <Dialog open={fullscreenOpen} onOpenChange={setFullscreenOpen}>
+        <DialogContent className="max-w-[98vw] w-[98vw] h-[95vh] p-0 flex flex-col">
+          <DialogHeader className="px-6 py-4 border-b">
+            <DialogTitle className="flex items-center gap-2">
+              📝 {item.titre}
+              {hasQuestions && <Badge variant="secondary">{item.questions!.length} questions</Badge>}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto px-6 py-4">
+            <div className="flex items-center gap-2 mb-4">
+              <Button size="sm" className="gap-1" onClick={addQuestion}>
+                <Plus className="w-4 h-4" /> Ajouter une question
+              </Button>
+            </div>
+            {hasQuestions ? (
+              <div className="space-y-3">
+                {item.questions!.map((q, qi) => (
+                  <div key={q.id}>
+                    {editingQId === q.id ? (
+                      <QuestionEditor
+                        question={q}
+                        onSave={saveQuestion}
+                        onDelete={() => deleteQuestion(q.id)}
+                        onCancel={() => setEditingQId(null)}
+                        moduleId={moduleId}
+                      />
+                    ) : (
+                      <div className="flex items-start gap-3 p-4 border rounded-lg hover:bg-muted/20 group transition-colors">
+                        <Badge className="text-sm shrink-0 mt-0.5">Q{qi + 1}</Badge>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-base font-medium mb-2">{q.enonce}</p>
+                          <div className="flex flex-wrap gap-2">
+                            {q.choix.map(c => (
+                              <span key={c.lettre} className={`text-sm px-3 py-1 rounded-full ${c.correct ? "bg-emerald-100 text-emerald-700 font-semibold" : "bg-muted text-muted-foreground"}`}>
+                                {c.lettre}. {c.texte} {c.correct ? "✓" : ""}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                        <Button size="sm" variant="outline" className="gap-1" onClick={() => setEditingQId(q.id)}>
+                          <Pencil className="w-3 h-3" /> Modifier
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-center text-muted-foreground py-8">Aucune question. Cliquez sur « Ajouter une question » pour commencer.</p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
