@@ -9,6 +9,23 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import logoFtransport from '@/assets/logo-ftransport.png';
 
+const withTimeout = async <T,>(operation: PromiseLike<T> | T, ms: number, message: string): Promise<T> => {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error(message)), ms);
+  });
+
+  try {
+    return await Promise.race<T>([Promise.resolve(operation), timeout]);
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
+};
+
+const getErrorMessage = (error: unknown, fallback: string) => {
+  return error instanceof Error ? error.message : fallback;
+};
+
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -20,10 +37,14 @@ export default function Login() {
   const navigate = useNavigate();
 
   const redirectByRole = useCallback(async (userId: string) => {
-    const { data: isAdmin, error } = await supabase.rpc('has_role', {
-      _user_id: userId,
-      _role: 'admin',
-    });
+    const { data: isAdmin, error } = await withTimeout(
+      supabase.rpc('has_role', {
+        _user_id: userId,
+        _role: 'admin',
+      }),
+      10000,
+      'La vérification du rôle prend trop de temps. Réessayez dans quelques secondes.',
+    );
 
     if (error) throw error;
     navigate(isAdmin ? '/' : '/cours', { replace: true });
@@ -32,13 +53,19 @@ export default function Login() {
   useEffect(() => {
     let isActive = true;
 
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    withTimeout(
+      supabase.auth.getSession(),
+      8000,
+      'Session temporairement indisponible',
+    ).then(async ({ data: { session } }) => {
       if (!isActive || !session?.user?.id) return;
       try {
         await redirectByRole(session.user.id);
       } catch {
         // On reste sur /login en cas d'erreur réseau temporaire
       }
+    }).catch(() => {
+      // On laisse l'utilisateur se connecter manuellement si la session tarde à répondre
     });
 
     return () => {
@@ -51,21 +78,25 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password,
-      });
+      const { data, error } = await withTimeout(
+        supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password,
+        }),
+        15000,
+        'La connexion prend trop de temps. Vérifiez internet puis réessayez.',
+      );
       if (error) throw error;
 
       const userId = data.user?.id;
       if (!userId) throw new Error('Session utilisateur introuvable');
 
       await redirectByRole(userId);
-    } catch (error: any) {
+    } catch (error: unknown) {
       setLoading(false);
       toast({
         title: 'Erreur de connexion',
-        description: error.message || 'Email ou mot de passe incorrect',
+        description: getErrorMessage(error, 'Email ou mot de passe incorrect'),
         variant: 'destructive',
       });
     }
@@ -81,8 +112,8 @@ export default function Login() {
       if (error) throw error;
       toast({ title: "📧 Email envoyé", description: "Vérifiez votre boîte mail pour réinitialiser votre mot de passe" });
       setMode('login');
-    } catch (error: any) {
-      toast({ title: "Erreur", description: error.message || "Impossible d'envoyer l'email", variant: "destructive" });
+    } catch (error: unknown) {
+      toast({ title: "Erreur", description: getErrorMessage(error, "Impossible d'envoyer l'email"), variant: "destructive" });
     } finally {
       setLoading(false);
     }
