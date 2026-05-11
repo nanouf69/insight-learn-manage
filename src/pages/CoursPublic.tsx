@@ -1137,7 +1137,15 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
       ? sessionAccessWindow?.date_fin || apprenant.date_fin_formation || apprenant.date_fin_cours_en_ligne || apprenant.date_debut_formation || apprenant.date_debut_cours_en_ligne
       : apprenant.date_fin_cours_en_ligne;
     const debut = startDateValue ? safeDateParse(startDateValue) : null;
-    const fin = endDateValue ? safeDateParse(endDateValue) : null;
+    let fin = endDateValue ? safeDateParse(endDateValue) : null;
+    // Pour les présentiels : si une extension d'accès e-learning a été configurée
+    // (date_fin_cours_en_ligne postérieure à date_fin_formation), on l'utilise.
+    if (isPresentielOrFC && apprenant.date_fin_cours_en_ligne) {
+      const finElearning = safeDateParse(apprenant.date_fin_cours_en_ligne);
+      if (finElearning && (!fin || finElearning > fin)) {
+        fin = finElearning;
+      }
+    }
     const debutEffectif = debut && isPresentielOrFC
       ? new Date(debut.getTime() - 24 * 60 * 60 * 1000)
       : debut;
