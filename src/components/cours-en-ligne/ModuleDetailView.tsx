@@ -2946,20 +2946,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         9: ["bilan-exercices-taxi"],
         11: ["bilan-examen-taxi"],
       };
-      let targetQuizIds = trainerQuizIdsByModuleId[module.id] || [];
-
-      // Découverte dynamique: aussi récupérer les quiz_ids depuis la DB
-      // pour les modules pas dans le mapping hardcodé
-      try {
-        const { data: dynamicMappings } = await supabase
-          .from("quiz_questions_overrides" as any)
-          .select("quiz_id")
-          .limit(100);
-        if (dynamicMappings && dynamicMappings.length > 0) {
-          const dynamicIds = [...new Set((dynamicMappings as any[]).map((r: any) => r.quiz_id))];
-          targetQuizIds = [...new Set([...targetQuizIds, ...dynamicIds])];
-        }
-      } catch (_) {}
+      const targetQuizIds = trainerQuizIdsByModuleId[module.id] || [];
 
       if (targetQuizIds.length === 0) return;
 
