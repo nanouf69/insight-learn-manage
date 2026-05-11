@@ -3,6 +3,19 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
+const withTimeout = async <T,>(operation: PromiseLike<T> | T, ms: number): Promise<T> => {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error('timeout')), ms);
+  });
+
+  try {
+    return await Promise.race<T>([Promise.resolve(operation), timeout]);
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
+};
+
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
@@ -23,10 +36,13 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
       setChecking(true);
       setIsAdmin(null);
 
-      const { data, error } = await supabase.rpc('has_role', {
-        _user_id: user.id,
-        _role: 'admin',
-      });
+      const { data, error } = await withTimeout(
+        supabase.rpc('has_role', {
+          _user_id: user.id,
+          _role: 'admin',
+        }),
+        8000,
+      ).catch(() => ({ data: false, error: null }));
 
       if (!isActive) return;
 
