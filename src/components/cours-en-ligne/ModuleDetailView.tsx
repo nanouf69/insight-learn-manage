@@ -3385,6 +3385,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       return JSON.stringify([...selectedLetters].sort()) === JSON.stringify(correctLetters);
     };
     const [showResultsFor, setShowResultsFor] = useState<Set<number>>(new Set());
+    // Revision mode: per exo, set of question IDs to display (only the wrong ones)
+    const [revisionQuestionsFor, setRevisionQuestionsFor] = useState<Record<number, Set<number | string>>>({});
+    // History of past attempts per exo (snapshot of selectedAnswers + score)
+    type AttemptRecord = { at: number; total: number; correct: number; mode: "complet" | "revision"; answers: Record<string, string | string[]> };
+    const [attemptHistoryFor, setAttemptHistoryFor] = useState<Record<number, AttemptRecord[]>>({});
     const [currentPage, setCurrentPage] = useState(0);
     const [completedPages, setCompletedPages] = useState<Set<number>>(new Set());
     const [inlineQuizAnswers, setInlineQuizAnswers] = useState<Record<string, string>>({});
