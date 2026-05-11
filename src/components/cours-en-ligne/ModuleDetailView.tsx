@@ -1933,6 +1933,11 @@ function ExerciceCard({
               {expanded ? "Fermer" : "Modifier les questions"}
             </Button>
           )}
+          {hasQuestions && (
+            <Button variant="outline" size="sm" className="gap-1" onClick={() => setFullscreenOpen(true)}>
+              <Maximize className="w-3 h-3" /> Ouvrir en plein écran
+            </Button>
+          )}
           <Button variant="outline" size="sm" className="gap-1" onClick={addQuestion}>
             <Plus className="w-3 h-3" /> Ajouter question
           </Button>
