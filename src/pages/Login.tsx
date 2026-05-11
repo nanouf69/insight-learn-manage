@@ -9,14 +9,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import logoFtransport from '@/assets/logo-ftransport.png';
 
-const withTimeout = async <T,>(promise: Promise<T>, ms: number, message: string): Promise<T> => {
+const withTimeout = async <T,>(operation: PromiseLike<T> | T, ms: number, message: string): Promise<T> => {
   let timeoutId: ReturnType<typeof setTimeout> | undefined;
   const timeout = new Promise<never>((_, reject) => {
     timeoutId = setTimeout(() => reject(new Error(message)), ms);
   });
 
   try {
-    return await Promise.race([promise, timeout]);
+    return await Promise.race<T>([Promise.resolve(operation), timeout]);
   } finally {
     if (timeoutId) clearTimeout(timeoutId);
   }
