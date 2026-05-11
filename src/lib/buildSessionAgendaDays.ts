@@ -139,8 +139,11 @@ export async function buildSessionAgendaDays(
   while (cur <= endD) {
     const day: AgendaDaySlot = { date: new Date(cur) };
     if (isCoursDuSoir) {
-      day.apremDebut = "17:00";
+      day.matinDebut = "17:00";
+      day.matinFin = "18:30";
+      day.apremDebut = "18:30";
       day.apremFin = "21:00";
+      day.isSoir = true;
     } else if (isPratique) {
       day.matinDebut = "09:00";
       day.matinFin = "12:00";
