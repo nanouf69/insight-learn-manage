@@ -36,32 +36,20 @@ export default function Login() {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const redirectByRole = useCallback(async (userId: string) => {
-    const { data: isAdmin, error } = await withTimeout(
-      supabase.rpc('has_role', {
-        _user_id: userId,
-        _role: 'admin',
-      }),
-      10000,
-      'La vérification du rôle prend trop de temps. Réessayez dans quelques secondes.',
-    );
-
-    if (error) throw error;
-    navigate(isAdmin ? '/' : '/cours', { replace: true });
+  const redirectAfterLogin = useCallback(() => {
+    navigate('/', { replace: true });
   }, [navigate]);
 
   useEffect(() => {
     let isActive = true;
 
-    const redirectFromSession = (userId?: string) => {
-      if (!isActive || !userId) return;
-      void redirectByRole(userId).catch(() => {
-        // On reste sur /login en cas d'erreur réseau temporaire
-      });
+    const redirectFromSession = (hasSession: boolean) => {
+      if (!isActive || !hasSession) return;
+      redirectAfterLogin();
     };
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      redirectFromSession(session?.user?.id);
+      redirectFromSession(!!session?.user?.id);
     });
 
     withTimeout(
@@ -69,7 +57,7 @@ export default function Login() {
       8000,
       'Session temporairement indisponible',
     ).then(async ({ data: { session } }) => {
-      redirectFromSession(session?.user?.id);
+      redirectFromSession(!!session?.user?.id);
     }).catch(() => {
       // On laisse l'utilisateur se connecter manuellement si la session tarde à répondre
     });
@@ -78,7 +66,7 @@ export default function Login() {
       isActive = false;
       subscription.unsubscribe();
     };
-  }, [redirectByRole]);
+  }, [redirectAfterLogin]);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -98,7 +86,7 @@ export default function Login() {
       const userId = data.user?.id;
       if (!userId) throw new Error('Session utilisateur introuvable');
 
-      await redirectByRole(userId);
+      redirectAfterLogin();
     } catch (error: unknown) {
       const { data: { session } } = await withTimeout(
         supabase.auth.getSession(),
@@ -107,7 +95,7 @@ export default function Login() {
       ).catch(() => ({ data: { session: null } }));
 
       if (session?.user?.id) {
-        await redirectByRole(session.user.id).catch(() => undefined);
+        redirectAfterLogin();
         return;
       }
 
