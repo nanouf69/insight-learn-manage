@@ -838,7 +838,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     return () => {
       cancelled = true;
     };
-  }, [user?.id, embedded, navigate, fetchNonce]);
+  }, [user?.id, !!session, embedded, navigate, fetchNonce]);
 
   // Use apprenantOverride when provided (admin preview of specific student)
   useEffect(() => {
