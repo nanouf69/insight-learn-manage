@@ -744,7 +744,10 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const fetchAttemptRef = useRef(0);
   const lastFetchedUserIdRef = useRef<string | null>(null);
   useEffect(() => {
-    if (!user || !session || embedded) return;
+    if (!user || !session || embedded) {
+      setApprenantLoading(false);
+      return;
+    }
 
     if (lastFetchedUserIdRef.current !== user.id) {
       lastFetchedUserIdRef.current = user.id;
@@ -766,24 +769,6 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
 
     const fetchApprenant = async () => {
       try {
-        const { data: isAdmin, error: roleError } = await withTimeout(
-          supabase.rpc("has_role", {
-            _user_id: user.id,
-            _role: "admin",
-          }),
-          5000,
-          "Temps d'attente dépassé pendant la vérification du profil.",
-        ).catch((error) => {
-          console.warn("CoursPublic: role check skipped", error);
-          return { data: false, error: null };
-        });
-
-        if (!cancelled && !roleError && isAdmin === true) {
-          setApprenantLoading(false);
-          navigate("/", { replace: true });
-          return;
-        }
-
         const { data, error: fetchError } = await withTimeout(
           supabase
             .from("apprenants")
@@ -812,6 +797,24 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
           setApprenantFetchError(null);
           fetchAttemptRef.current = 0;
         } else {
+          const { data: isAdmin, error: roleError } = await withTimeout(
+            supabase.rpc("has_role", {
+              _user_id: user.id,
+              _role: "admin",
+            }),
+            5000,
+            "Temps d'attente dépassé pendant la vérification du profil.",
+          ).catch((error) => {
+            console.warn("CoursPublic: role check skipped", error);
+            return { data: false, error: null };
+          });
+
+          if (!cancelled && !roleError && isAdmin === true) {
+            setApprenantLoading(false);
+            navigate("/", { replace: true });
+            return;
+          }
+
           setApprenant(null);
           setSessionAccessWindow(null);
           setSelectedFormation(null);
