@@ -4725,7 +4725,26 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                   })}
                 </div>
               )}
-              {questionsSafe.map((q: any, qi: number) => {
+              {(() => {
+                const revisionSet = revisionQuestionsFor[exo.id];
+                const isRevisionMode = revisionSet && revisionSet.size > 0;
+                if (isRevisionMode) {
+                  return (
+                    <div className="rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/20 p-3 text-sm text-amber-800 dark:text-amber-300 flex items-center justify-between gap-3">
+                      <span>🎯 Mode révision — vous ne voyez que les {revisionSet.size} question{revisionSet.size > 1 ? "s" : ""} fausse{revisionSet.size > 1 ? "s" : ""}.</span>
+                      <Button size="sm" variant="ghost" onClick={() => {
+                        setRevisionQuestionsFor(prev => { const next = { ...prev }; delete next[exo.id]; return next; });
+                      }}>Voir toutes les questions</Button>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+              {questionsSafe.filter((q: any) => {
+                const revisionSet = revisionQuestionsFor[exo.id];
+                if (!revisionSet || revisionSet.size === 0) return true;
+                return revisionSet.has(q.id);
+              }).map((q: any, qi: number) => {
                 const key = `${exo.id}-${q.id}`;
                 const isQrc = q?.type === "qrc" || (q.choix?.length === 0 && q.reponsesAttendues);
                 const selected = selectedAnswers[key];
