@@ -70,8 +70,8 @@ export const SECURITE_ROUTIERE_EXERCICES: {
       ]},
       { id: 11, enonce: "Ce panneau signifie :", image: "/cours/exercices/securite/image11.png", choix: [
         { lettre: "A", texte: "Passage d'animaux sauvages" },
-        { lettre: "B", texte: "Endroit fréquenté par les enfants", correct: true },
-        { lettre: "C", texte: "Chemin obligatoire pour cavaliers" },
+        { lettre: "B", texte: "Endroit fréquenté par les enfants" },
+        { lettre: "C", texte: "Chemin obligatoire pour cavaliers", correct: true },
       ]},
       { id: 12, enonce: "Ce panneau signifie :", image: "/cours/exercices/securite/image12.png", choix: [
         { lettre: "A", texte: "Passage pour piétons", correct: true },
