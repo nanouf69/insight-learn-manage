@@ -3385,6 +3385,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       return JSON.stringify([...selectedLetters].sort()) === JSON.stringify(correctLetters);
     };
     const [showResultsFor, setShowResultsFor] = useState<Set<number>>(new Set());
+    // Revision mode: per exo, set of question IDs to display (only the wrong ones)
+    const [revisionQuestionsFor, setRevisionQuestionsFor] = useState<Record<number, Set<number | string>>>({});
+    // History of past attempts per exo (snapshot of selectedAnswers + score)
+    type AttemptRecord = { at: number; total: number; correct: number; mode: "complet" | "revision"; answers: Record<string, string | string[]> };
+    const [attemptHistoryFor, setAttemptHistoryFor] = useState<Record<number, AttemptRecord[]>>({});
     const [currentPage, setCurrentPage] = useState(0);
     const [completedPages, setCompletedPages] = useState<Set<number>>(new Set());
     const [inlineQuizAnswers, setInlineQuizAnswers] = useState<Record<string, string>>({});
@@ -4720,7 +4725,27 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                   })}
                 </div>
               )}
-              {questionsSafe.map((q: any, qi: number) => {
+              {(() => {
+                const revisionSet = revisionQuestionsFor[exo.id];
+                const isRevisionMode = revisionSet && revisionSet.size > 0;
+                if (isRevisionMode) {
+                  return (
+                    <div className="rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/20 p-3 text-sm text-amber-800 dark:text-amber-300 flex items-center justify-between gap-3">
+                      <span>🎯 Mode révision — vous ne voyez que les {revisionSet.size} question{revisionSet.size > 1 ? "s" : ""} fausse{revisionSet.size > 1 ? "s" : ""}.</span>
+                      <Button size="sm" variant="ghost" onClick={() => {
+                        setRevisionQuestionsFor(prev => { const next = { ...prev }; delete next[exo.id]; return next; });
+                      }}>Voir toutes les questions</Button>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+              {questionsSafe.map((q: any, originalIdx: number) => ({ q, originalIdx })).filter(({ q }: any) => {
+                const revisionSet = revisionQuestionsFor[exo.id];
+                if (!revisionSet || revisionSet.size === 0) return true;
+                return revisionSet.has(q.id);
+              }).map(({ q, originalIdx }: any, _filteredIdx: number) => {
+                const qi = originalIdx;
                 const key = `${exo.id}-${q.id}`;
                 const isQrc = q?.type === "qrc" || (q.choix?.length === 0 && q.reponsesAttendues);
                 const selected = selectedAnswers[key];
@@ -4992,6 +5017,20 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                           <div className="flex flex-col gap-2">
                             <Button variant="outline" size="sm" className="gap-2" onClick={() => {
               const exoKeys = questionsSafe.map((q: any) => `${exo.id}-${q.id}`);
+                              // Save snapshot to history before clearing
+                              const snapshot: Record<string, string | string[]> = {};
+                              let snapCorrect = 0;
+                              questionsSafe.forEach((q: any) => {
+                                const k = `${exo.id}-${q.id}`;
+                                if (selectedAnswers[k] !== undefined) snapshot[k] = selectedAnswers[k];
+                                if (isAnswerCorrect(selectedAnswers[k], q)) snapCorrect++;
+                              });
+                              if (Object.keys(snapshot).length > 0) {
+                                setAttemptHistoryFor(prev => ({
+                                  ...prev,
+                                  [exo.id]: [...(prev[exo.id] ?? []), { at: Date.now(), total: questionsSafe.length, correct: snapCorrect, mode: "complet", answers: snapshot }],
+                                }));
+                              }
                               setSelectedAnswers(prev => {
                                 const next = { ...prev };
                                 exoKeys.forEach(k => delete next[k]);
@@ -5000,16 +5039,32 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                               });
                               setShowResultsFor(prev => { const next = new Set(prev); next.delete(exo.id); return next; });
                               setPendingResultRestore((prev) => (prev?.exoId === exo.id ? null : prev));
+                              setRevisionQuestionsFor(prev => { const next = { ...prev }; delete next[exo.id]; return next; });
                             }}>
                               🔄 Recommencer tout
                             </Button>
                             <Button variant="outline" size="sm" className="gap-2 border-amber-300 text-amber-700 hover:bg-amber-50" onClick={() => {
-                              // Only clear wrong answers, keep correct ones
+                              // Snapshot before revision
+                              const snapshot: Record<string, string | string[]> = {};
+                              let snapCorrect = 0;
+                              const wrongIds: (number | string)[] = [];
                               const wrongKeys: string[] = [];
                               questionsSafe.forEach((q: any) => {
                                 const key = `${exo.id}-${q.id}`;
-                                if (!isAnswerCorrect(selectedAnswers[key], q)) wrongKeys.push(key);
+                                if (selectedAnswers[key] !== undefined) snapshot[key] = selectedAnswers[key];
+                                if (isAnswerCorrect(selectedAnswers[key], q)) {
+                                  snapCorrect++;
+                                } else {
+                                  wrongKeys.push(key);
+                                  wrongIds.push(q.id);
+                                }
                               });
+                              if (Object.keys(snapshot).length > 0) {
+                                setAttemptHistoryFor(prev => ({
+                                  ...prev,
+                                  [exo.id]: [...(prev[exo.id] ?? []), { at: Date.now(), total: questionsSafe.length, correct: snapCorrect, mode: "complet", answers: snapshot }],
+                                }));
+                              }
                               setSelectedAnswers(prev => {
                                 const next = { ...prev };
                                 wrongKeys.forEach(k => delete next[k]);
@@ -5018,8 +5073,13 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                               });
                               setShowResultsFor(prev => { const next = new Set(prev); next.delete(exo.id); return next; });
                               setPendingResultRestore((prev) => (prev?.exoId === exo.id ? null : prev));
+                              setRevisionQuestionsFor(prev => ({ ...prev, [exo.id]: new Set(wrongIds) }));
                               const nbWrong = wrongKeys.length;
-                              toast.info(`🎯 ${nbWrong} question${nbWrong > 1 ? "s" : ""} à refaire`);
+                              if (nbWrong === 0) {
+                                toast.success("🎉 Aucune question fausse à refaire !");
+                              } else {
+                                toast.info(`🎯 ${nbWrong} question${nbWrong > 1 ? "s" : ""} à refaire — seules celles-ci sont affichées`);
+                              }
                             }}>
                               🎯 Refaire les fausses ({(() => {
                                 let count = 0;
@@ -5054,6 +5114,23 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                           </div>
                         </div>
                       </div>
+                      {(attemptHistoryFor[exo.id]?.length ?? 0) > 0 && (
+                        <div className="mt-4 rounded-lg border bg-muted/30 p-4">
+                          <h4 className="font-semibold text-sm mb-2">📜 Historique des tentatives</h4>
+                          <ul className="space-y-1 text-xs text-muted-foreground">
+                            {attemptHistoryFor[exo.id].map((att, idx) => {
+                              const pct = att.total > 0 ? Math.round((att.correct / att.total) * 100) : 0;
+                              const dt = new Date(att.at);
+                              return (
+                                <li key={idx} className="flex items-center justify-between gap-2">
+                                  <span>Tentative {idx + 1} — {dt.toLocaleDateString("fr-FR")} {dt.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}</span>
+                                  <span className="font-medium">{att.correct}/{att.total} ({pct}%)</span>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        </div>
+                      )}
                     </div>
                   );
                   })()}
