@@ -1056,6 +1056,20 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-3">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
         <p className="text-sm text-muted-foreground">Chargement de votre espace apprenant…</p>
+        {apprenantLoading && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              fetchAttemptRef.current = 0;
+              setApprenantLoading(false);
+              setApprenantFetchError("Chargement interrompu. Cliquez sur Réessayer.");
+            }}
+          >
+            Arrêter le chargement
+          </Button>
+        )}
       </div>
     );
   }
