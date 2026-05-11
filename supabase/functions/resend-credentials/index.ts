@@ -100,10 +100,19 @@ serve(async (req) => {
       newPassword += chars[randomBytes[i] % chars.length];
     }
 
-    // Update password
+    // Sync auth email with apprenant email + update password
+    // (évite que l'email reçu affiche un email différent de celui du compte de connexion)
+    const { data: authUserData } = await supabaseAdmin.auth.admin.getUserById(apprenant.auth_user_id);
+    const currentAuthEmail = authUserData?.user?.email?.toLowerCase().trim();
+    const targetEmail = apprenant.email.toLowerCase().trim();
+    const updatePayload: { password: string; email?: string; email_confirm?: boolean } = { password: newPassword };
+    if (currentAuthEmail && currentAuthEmail !== targetEmail) {
+      updatePayload.email = targetEmail;
+      updatePayload.email_confirm = true;
+    }
     const { error: updateErr } = await supabaseAdmin.auth.admin.updateUserById(
       apprenant.auth_user_id,
-      { password: newPassword }
+      updatePayload
     );
 
     if (updateErr) {
