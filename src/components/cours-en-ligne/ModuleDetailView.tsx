@@ -4740,11 +4740,12 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 }
                 return null;
               })()}
-              {questionsSafe.filter((q: any) => {
+              {questionsSafe.map((q: any, originalIdx: number) => ({ q, originalIdx })).filter(({ q }: any) => {
                 const revisionSet = revisionQuestionsFor[exo.id];
                 if (!revisionSet || revisionSet.size === 0) return true;
                 return revisionSet.has(q.id);
-              }).map((q: any, qi: number) => {
+              }).map(({ q, originalIdx }: any, _filteredIdx: number) => {
+                const qi = originalIdx;
                 const key = `${exo.id}-${q.id}`;
                 const isQrc = q?.type === "qrc" || (q.choix?.length === 0 && q.reponsesAttendues);
                 const selected = selectedAnswers[key];
