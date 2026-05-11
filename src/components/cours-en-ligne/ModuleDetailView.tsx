@@ -2188,6 +2188,13 @@ const ContentCard = ({
 const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, onModuleCompleted, apprenantType, apprenantInfo, isPresentiel = false, hideFormulaires = false, onTrackCours }: ModuleDetailViewProps) => {
   console.log("[ModuleDetailView] Rendering module:", module.id, module.nom, "studentOnly:", studentOnly, "apprenantType:", apprenantType, "isPresentiel:", isPresentiel);
 
+  // Cleanup mode plein écran à la sortie du composant
+  useEffect(() => {
+    return () => {
+      document.body.classList.remove("app-fullscreen");
+    };
+  }, []);
+
   const createInitialSlidesByKey = (): Record<string, Slide[]> => ({
     "t3p-partie1": [...T3P_PARTIE1_SLIDES],
     "t3p-partie2": [...T3P_PARTIE2_SLIDES],
