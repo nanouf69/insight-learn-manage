@@ -2388,8 +2388,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
     async function loadTrainerOverrides() {
       try {
-        // BUG #9 FIX: hardcoded fallback mapping kept for backwards compatibility,
-        // but also fetch ALL overrides for this module dynamically from DB
+        // Appliquer uniquement les overrides des quiz explicitement liés au module.
+        // Ne jamais charger tous les quiz_ids dynamiquement : des section_id/question_id
+        // identiques existent entre modules et peuvent écraser les réponses admin.
         const trainerQuizIdsByModuleId: Record<number, string[]> = {
           12: ["cas-pratique-taxi"],
           7: ["connaissance-ville"],
@@ -2403,19 +2404,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           11: ["bilan-examen-taxi"],
         };
 
-        // BUG #9 FIX: also query DB for dynamic quiz_id mappings for this module
         let targetQuizIds = trainerQuizIdsByModuleId[module.id] || [];
-        try {
-          const { data: dynamicMappings } = await supabase
-            .from("quiz_questions_overrides" as any)
-            .select("quiz_id")
-            .limit(100);
-          if (dynamicMappings && dynamicMappings.length > 0) {
-            const dynamicIds = [...new Set((dynamicMappings as any[]).map((r: any) => r.quiz_id))];
-            targetQuizIds = [...new Set([...targetQuizIds, ...dynamicIds])];
-          }
-        } catch (_) {}
-
         if (!targetQuizIds || targetQuizIds.length === 0) return;
 
         const { data } = await supabase
