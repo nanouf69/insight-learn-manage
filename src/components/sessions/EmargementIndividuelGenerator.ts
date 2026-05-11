@@ -17,6 +17,7 @@ export interface AgendaDaySlot {
   matinFin?: string;
   apremDebut?: string;
   apremFin?: string;
+  isSoir?: boolean;
 }
 
 interface SessionData {
