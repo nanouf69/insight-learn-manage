@@ -98,17 +98,29 @@ const ResultatsSessionPage = () => {
     return () => document.body.classList.remove("app-fullscreen");
   }, [fullscreen]);
 
-  // Load sessions
+  // Load sessions (with realtime sync so newly created/updated sessions appear immediately)
+  const fetchSessions = async () => {
+    const { data } = await supabase
+      .from("sessions")
+      .select("id, nom, date_debut, date_fin, type_session")
+      .order("date_debut", { ascending: false })
+      .limit(2000);
+    setSessions((data as SessionOption[]) || []);
+    setLoading(false);
+  };
+
   useEffect(() => {
-    const fetchSessions = async () => {
-      const { data } = await supabase
-        .from("sessions")
-        .select("id, nom, date_debut, date_fin, type_session")
-        .order("date_debut", { ascending: false });
-      setSessions((data as SessionOption[]) || []);
-      setLoading(false);
-    };
     fetchSessions();
+    const channel = supabase
+      .channel("resultats-sessions-list")
+      .on("postgres_changes", { event: "*", schema: "public", table: "sessions" }, () => {
+        fetchSessions();
+      })
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Load data for selected session
