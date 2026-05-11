@@ -779,6 +779,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         });
 
         if (!cancelled && !roleError && isAdmin === true) {
+          setApprenantLoading(false);
           navigate("/", { replace: true });
           return;
         }
