@@ -4102,6 +4102,13 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
     const isPageUnlocked = (pageIndex: number): boolean => {
       if (pageIndex === 0) return true;
+      // Introduction modules: ALWAYS sequential — must complete each step before next
+      if (isIntroModule) {
+        for (let i = 0; i < pageIndex; i++) {
+          if (!completedPages.has(i)) return false;
+        }
+        return true;
+      }
       // E-learning: navigation libre sans obligation de défiler toutes les slides
       if (!isPresentiel) return true;
       // Présentiel formations: all pages freely accessible (no slide gate)
