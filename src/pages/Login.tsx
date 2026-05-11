@@ -22,6 +22,10 @@ const withTimeout = async <T,>(operation: PromiseLike<T> | T, ms: number, messag
   }
 };
 
+const getErrorMessage = (error: unknown, fallback: string) => {
+  return error instanceof Error ? error.message : fallback;
+};
+
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -88,11 +92,11 @@ export default function Login() {
       if (!userId) throw new Error('Session utilisateur introuvable');
 
       await redirectByRole(userId);
-    } catch (error: any) {
+    } catch (error: unknown) {
       setLoading(false);
       toast({
         title: 'Erreur de connexion',
-        description: error.message || 'Email ou mot de passe incorrect',
+        description: getErrorMessage(error, 'Email ou mot de passe incorrect'),
         variant: 'destructive',
       });
     }
@@ -108,8 +112,8 @@ export default function Login() {
       if (error) throw error;
       toast({ title: "📧 Email envoyé", description: "Vérifiez votre boîte mail pour réinitialiser votre mot de passe" });
       setMode('login');
-    } catch (error: any) {
-      toast({ title: "Erreur", description: error.message || "Impossible d'envoyer l'email", variant: "destructive" });
+    } catch (error: unknown) {
+      toast({ title: "Erreur", description: getErrorMessage(error, "Impossible d'envoyer l'email"), variant: "destructive" });
     } finally {
       setLoading(false);
     }
