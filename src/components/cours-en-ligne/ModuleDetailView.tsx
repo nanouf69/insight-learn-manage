@@ -1793,7 +1793,7 @@ function QuestionEditor({
         <div className="flex gap-2">
           <Button size="sm" variant="ghost" onClick={onCancel}><X className="w-4 h-4" /></Button>
           <Button size="sm" variant="destructive" onClick={onDelete}><Trash2 className="w-3 h-3" /></Button>
-          <Button size="sm" onClick={() => onSave({ ...question, enonce, choix, image: image ?? undefined, imageSize })} className="gap-1">
+          <Button size="sm" onClick={() => onSave({ ...question, enonce, choix, image: image ?? undefined, imageSize, _editedAt: new Date().toISOString() } as ExerciceQuestion)} className="gap-1">
             <Save className="w-3 h-3" /> Enregistrer
           </Button>
         </div>
@@ -2550,50 +2550,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
         const latestState = Array.isArray(data) ? data[0] : null;
 
-        // Admin: check if localStorage has NEWER data than DB (covers the case
-        // where admin reloads before the debounced DB save completes)
-        if (!studentOnly && latestState?.module_data && Number(module.id) !== BILAN_TAXI_MODULE_ID) {
-          try {
-            const raw = window.localStorage.getItem(moduleEditorStorageKey);
-            if (raw) {
-              const localParsed = JSON.parse(raw) as {
-                moduleData?: ModuleData;
-                savedAt?: string;
-                sourceFingerprint?: string;
-              };
-              const localSavedAt = localParsed.savedAt ? new Date(localParsed.savedAt).getTime() : 0;
-              const dbUpdatedAt = latestState.updated_at ? new Date(latestState.updated_at).getTime() : 0;
-              if (localSavedAt > dbUpdatedAt && localParsed.moduleData && localParsed.sourceFingerprint === sourceFingerprint) {
-                console.log("[ModuleEditor] localStorage is newer than DB — using local state and re-saving to DB");
-                const localMerged: ModuleData = {
-                  ...localParsed.moduleData,
-                  exercices: mergeSourceExercices(localParsed.moduleData.exercices, initialData.exercices),
-                };
-                const localResolved = forceSourceExerciseTitles(module.id, localMerged, initialData);
-                setModuleData(localResolved);
-                setDeletedCours([]);
-                setDeletedExercices([]);
-                setLoadedModuleEditorState(true);
-                // Re-save to DB immediately so students see the changes
-                supabase.from("module_editor_state").upsert(
-                  [{
-                    module_id: module.id,
-                    module_data: localResolved as any,
-                    deleted_cours: [] as any,
-                    deleted_exercices: [] as any,
-                    source_fingerprint: sourceFingerprint,
-                    updated_at: new Date().toISOString(),
-                  }],
-                  { onConflict: "module_id" }
-                ).then(({ error: e }) => {
-                  if (e) console.error("[ModuleEditor] Re-save from localStorage error:", e);
-                  else console.log("[ModuleEditor] ✅ Re-saved localStorage data to DB");
-                });
-                return;
-              }
-            }
-          } catch {}
-        }
+        // DB is the source of truth. Never let an admin browser cache overwrite
+        // module_editor_state, otherwise old answers from localStorage can restore
+        // previous corrections after a reload or a stale tab.
 
         const FC_BILAN_PARENT: Record<number, number> = { 81: 4, 82: 9 };
         const parentModuleId = FC_BILAN_PARENT[Number(module.id)];
