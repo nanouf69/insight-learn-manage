@@ -175,22 +175,22 @@ export const FRANCAIS_EXERCICES: {
         { lettre: "B", texte: "5 ans", correct: true },
         { lettre: "C", texte: "10 ans" },
       ]},
-      { id: 34, enonce: "Que vérifie M. Dupont chaque matin ?", choix: [
+      { id: 34, enonce: "TEXTE 1 — Le quotidien d'un chauffeur VTC\n\nM. Dupont est chauffeur VTC à Lyon depuis 5 ans. Chaque matin, il vérifie son véhicule : niveaux, pneus, propreté intérieure et extérieure. Il commence ses courses à 7 h et termine rarement avant 20 h. Sa priorité est la satisfaction du client. Il accueille toujours ses passagers avec le sourire, confirme la destination et propose son aide pour les bagages. Pendant le trajet, il reste discret et ne parle que si le client engage la conversation. À la fin de chaque course, il remercie le client et lui remet sa carte de visite.\n\nQue vérifie M. Dupont chaque matin ?", choix: [
         { lettre: "A", texte: "Uniquement les pneus" },
         { lettre: "B", texte: "Les niveaux, pneus, propreté intérieure et extérieure", correct: true },
         { lettre: "C", texte: "Rien, il part directement" },
       ]},
-      { id: 35, enonce: "Quelle est la priorité de M. Dupont ?", choix: [
+      { id: 35, enonce: "TEXTE 1 — Le quotidien d'un chauffeur VTC\n\nM. Dupont est chauffeur VTC à Lyon depuis 5 ans. Chaque matin, il vérifie son véhicule : niveaux, pneus, propreté intérieure et extérieure. Il commence ses courses à 7 h et termine rarement avant 20 h. Sa priorité est la satisfaction du client. Il accueille toujours ses passagers avec le sourire, confirme la destination et propose son aide pour les bagages. Pendant le trajet, il reste discret et ne parle que si le client engage la conversation. À la fin de chaque course, il remercie le client et lui remet sa carte de visite.\n\nQuelle est la priorité de M. Dupont ?", choix: [
         { lettre: "A", texte: "Gagner le plus d'argent possible" },
         { lettre: "B", texte: "La satisfaction du client", correct: true },
         { lettre: "C", texte: "Finir le plus tôt possible" },
       ]},
-      { id: 36, enonce: "Pendant le trajet, M. Dupont :", choix: [
+      { id: 36, enonce: "TEXTE 1 — Le quotidien d'un chauffeur VTC\n\nM. Dupont est chauffeur VTC à Lyon depuis 5 ans. Chaque matin, il vérifie son véhicule : niveaux, pneus, propreté intérieure et extérieure. Il commence ses courses à 7 h et termine rarement avant 20 h. Sa priorité est la satisfaction du client. Il accueille toujours ses passagers avec le sourire, confirme la destination et propose son aide pour les bagages. Pendant le trajet, il reste discret et ne parle que si le client engage la conversation. À la fin de chaque course, il remercie le client et lui remet sa carte de visite.\n\nPendant le trajet, M. Dupont :", choix: [
         { lettre: "A", texte: "Parle beaucoup de sa vie personnelle" },
         { lettre: "B", texte: "Reste discret et ne parle que si le client engage la conversation", correct: true },
         { lettre: "C", texte: "Écoute la radio très fort" },
       ]},
-      { id: 37, enonce: "Que fait M. Dupont à la fin de chaque course ?", choix: [
+      { id: 37, enonce: "TEXTE 1 — Le quotidien d'un chauffeur VTC\n\nM. Dupont est chauffeur VTC à Lyon depuis 5 ans. Chaque matin, il vérifie son véhicule : niveaux, pneus, propreté intérieure et extérieure. Il commence ses courses à 7 h et termine rarement avant 20 h. Sa priorité est la satisfaction du client. Il accueille toujours ses passagers avec le sourire, confirme la destination et propose son aide pour les bagages. Pendant le trajet, il reste discret et ne parle que si le client engage la conversation. À la fin de chaque course, il remercie le client et lui remet sa carte de visite.\n\nQue fait M. Dupont à la fin de chaque course ?", choix: [
         { lettre: "A", texte: "Il part sans rien dire" },
         { lettre: "B", texte: "Il remercie le client et lui remet sa carte de visite", correct: true },
         { lettre: "C", texte: "Il demande un pourboire" },
@@ -201,20 +201,20 @@ export const FRANCAIS_EXERCICES: {
         { lettre: "B", texte: "Service", correct: true },
         { lettre: "C", texte: "Production" },
       ]},
-      { id: 39, enonce: "Quelles qualités relationnelles sont citées dans le texte ?", choix: [
+      { id: 39, enonce: "TEXTE 2 — Le métier de service\n\nLe transport de personnes est un métier de service. Le conducteur VTC ou taxi doit posséder des qualités relationnelles : patience, courtoisie, discrétion. Il doit s'adapter à chaque client : un homme d'affaires pressé n'a pas les mêmes attentes qu'un touriste en visite. La ponctualité est essentielle : arriver en avance montre du professionnalisme. Le véhicule doit être irréprochable : propre, climatisé, bien entretenu. Enfin, le conducteur doit respecter le code de la route en toute circonstance, même sous la pression d'un client pressé.\n\nQuelles qualités relationnelles sont citées dans le texte ?", choix: [
         { lettre: "A", texte: "Rapidité, agressivité, indifférence" },
         { lettre: "B", texte: "Patience, courtoisie, discrétion", correct: true },
         { lettre: "C", texte: "Bavardage, familiarité" },
       ]},
-      { id: 40, enonce: "Pourquoi le conducteur doit-il s'adapter à chaque client ?", choix: [
+      { id: 40, enonce: "TEXTE 2 — Le métier de service\n\nLe transport de personnes est un métier de service. Le conducteur VTC ou taxi doit posséder des qualités relationnelles : patience, courtoisie, discrétion. Il doit s'adapter à chaque client : un homme d'affaires pressé n'a pas les mêmes attentes qu'un touriste en visite. La ponctualité est essentielle : arriver en avance montre du professionnalisme. Le véhicule doit être irréprochable : propre, climatisé, bien entretenu. Enfin, le conducteur doit respecter le code de la route en toute circonstance, même sous la pression d'un client pressé.\n\nPourquoi le conducteur doit-il s'adapter à chaque client ?", choix: [
         { lettre: "A", texte: "Car tous les clients sont identiques" },
         { lettre: "B", texte: "Car un homme d'affaires pressé et un touriste n'ont pas les mêmes attentes", correct: true },
       ]},
-      { id: 41, enonce: "Que montre la ponctualité du conducteur ?", choix: [
+      { id: 41, enonce: "TEXTE 2 — Le métier de service\n\nLe transport de personnes est un métier de service. Le conducteur VTC ou taxi doit posséder des qualités relationnelles : patience, courtoisie, discrétion. Il doit s'adapter à chaque client : un homme d'affaires pressé n'a pas les mêmes attentes qu'un touriste en visite. La ponctualité est essentielle : arriver en avance montre du professionnalisme. Le véhicule doit être irréprochable : propre, climatisé, bien entretenu. Enfin, le conducteur doit respecter le code de la route en toute circonstance, même sous la pression d'un client pressé.\n\nQue montre la ponctualité du conducteur ?", choix: [
         { lettre: "A", texte: "Qu'il n'a pas beaucoup de clients" },
         { lettre: "B", texte: "Du professionnalisme", correct: true },
       ]},
-      { id: 42, enonce: "Si un client pressé demande de rouler plus vite, le conducteur doit :", choix: [
+      { id: 42, enonce: "TEXTE 2 — Le métier de service\n\nLe transport de personnes est un métier de service. Le conducteur VTC ou taxi doit posséder des qualités relationnelles : patience, courtoisie, discrétion. Il doit s'adapter à chaque client : un homme d'affaires pressé n'a pas les mêmes attentes qu'un touriste en visite. La ponctualité est essentielle : arriver en avance montre du professionnalisme. Le véhicule doit être irréprochable : propre, climatisé, bien entretenu. Enfin, le conducteur doit respecter le code de la route en toute circonstance, même sous la pression d'un client pressé.\n\nSi un client pressé demande de rouler plus vite, le conducteur doit :", choix: [
         { lettre: "A", texte: "Accélérer pour satisfaire le client" },
         { lettre: "B", texte: "Respecter le code de la route en toute circonstance", correct: true },
       ]},
@@ -224,27 +224,27 @@ export const FRANCAIS_EXERCICES: {
         { lettre: "B", texte: "À l'aéroport Saint-Exupéry", correct: true },
         { lettre: "C", texte: "À son bureau" },
       ]},
-      { id: 44, enonce: "Combien de temps avant l'heure prévue Karim arrive-t-il ?", choix: [
+      { id: 44, enonce: "TEXTE 3 — Une course vers l'aéroport\n\nCe matin, Mme Lefèvre a réservé un VTC pour se rendre à l'aéroport Saint-Exupéry. Le chauffeur, Karim, arrive 10 minutes avant l'heure prévue. Il sort du véhicule, salue la cliente avec un sourire et prend ses deux valises pour les ranger dans le coffre. « Bonjour Madame Lefèvre, je suis Karim, votre chauffeur. Nous allons à l'aéroport, c'est bien cela ? » La cliente confirme et s'installe. Karim lui demande si la température lui convient et si elle souhaite de la musique. Pendant le trajet, Mme Lefèvre reçoit plusieurs appels téléphoniques professionnels. Karim reste silencieux et concentré sur la route. À l'arrivée, il aide la cliente avec ses bagages, lui souhaite un bon vol et lui remet deux cartes de visite : « N'hésitez pas à me recontacter ou à donner ma carte à vos collègues. » Mme Lefèvre le remercie chaleureusement.\n\nCombien de temps avant l'heure prévue Karim arrive-t-il ?", choix: [
         { lettre: "A", texte: "5 minutes" },
         { lettre: "B", texte: "10 minutes", correct: true },
         { lettre: "C", texte: "Pile à l'heure" },
       ]},
-      { id: 45, enonce: "Que fait Karim en premier en arrivant ?", choix: [
+      { id: 45, enonce: "TEXTE 3 — Une course vers l'aéroport\n\nCe matin, Mme Lefèvre a réservé un VTC pour se rendre à l'aéroport Saint-Exupéry. Le chauffeur, Karim, arrive 10 minutes avant l'heure prévue. Il sort du véhicule, salue la cliente avec un sourire et prend ses deux valises pour les ranger dans le coffre. « Bonjour Madame Lefèvre, je suis Karim, votre chauffeur. Nous allons à l'aéroport, c'est bien cela ? » La cliente confirme et s'installe. Karim lui demande si la température lui convient et si elle souhaite de la musique. Pendant le trajet, Mme Lefèvre reçoit plusieurs appels téléphoniques professionnels. Karim reste silencieux et concentré sur la route. À l'arrivée, il aide la cliente avec ses bagages, lui souhaite un bon vol et lui remet deux cartes de visite : « N'hésitez pas à me recontacter ou à donner ma carte à vos collègues. » Mme Lefèvre le remercie chaleureusement.\n\nQue fait Karim en premier en arrivant ?", choix: [
         { lettre: "A", texte: "Il klaxonne pour prévenir la cliente" },
         { lettre: "B", texte: "Il sort du véhicule, salue la cliente et prend ses valises", correct: true },
         { lettre: "C", texte: "Il reste dans la voiture et attend" },
       ]},
-      { id: 46, enonce: "Quelles questions de confort Karim pose-t-il ?", choix: [
+      { id: 46, enonce: "TEXTE 3 — Une course vers l'aéroport\n\nCe matin, Mme Lefèvre a réservé un VTC pour se rendre à l'aéroport Saint-Exupéry. Le chauffeur, Karim, arrive 10 minutes avant l'heure prévue. Il sort du véhicule, salue la cliente avec un sourire et prend ses deux valises pour les ranger dans le coffre. « Bonjour Madame Lefèvre, je suis Karim, votre chauffeur. Nous allons à l'aéroport, c'est bien cela ? » La cliente confirme et s'installe. Karim lui demande si la température lui convient et si elle souhaite de la musique. Pendant le trajet, Mme Lefèvre reçoit plusieurs appels téléphoniques professionnels. Karim reste silencieux et concentré sur la route. À l'arrivée, il aide la cliente avec ses bagages, lui souhaite un bon vol et lui remet deux cartes de visite : « N'hésitez pas à me recontacter ou à donner ma carte à vos collègues. » Mme Lefèvre le remercie chaleureusement.\n\nQuelles questions de confort Karim pose-t-il ?", choix: [
         { lettre: "A", texte: "Il demande si la température convient et si elle souhaite de la musique", correct: true },
         { lettre: "B", texte: "Il ne pose aucune question" },
         { lettre: "C", texte: "Il demande combien elle gagne" },
       ]},
-      { id: 47, enonce: "Pendant que Mme Lefèvre téléphone, Karim :", choix: [
+      { id: 47, enonce: "TEXTE 3 — Une course vers l'aéroport\n\nCe matin, Mme Lefèvre a réservé un VTC pour se rendre à l'aéroport Saint-Exupéry. Le chauffeur, Karim, arrive 10 minutes avant l'heure prévue. Il sort du véhicule, salue la cliente avec un sourire et prend ses deux valises pour les ranger dans le coffre. « Bonjour Madame Lefèvre, je suis Karim, votre chauffeur. Nous allons à l'aéroport, c'est bien cela ? » La cliente confirme et s'installe. Karim lui demande si la température lui convient et si elle souhaite de la musique. Pendant le trajet, Mme Lefèvre reçoit plusieurs appels téléphoniques professionnels. Karim reste silencieux et concentré sur la route. À l'arrivée, il aide la cliente avec ses bagages, lui souhaite un bon vol et lui remet deux cartes de visite : « N'hésitez pas à me recontacter ou à donner ma carte à vos collègues. » Mme Lefèvre le remercie chaleureusement.\n\nPendant que Mme Lefèvre téléphone, Karim :", choix: [
         { lettre: "A", texte: "Écoute la conversation et fait des commentaires" },
         { lettre: "B", texte: "Reste silencieux et concentré sur la route", correct: true },
         { lettre: "C", texte: "Monte le volume de la radio" },
       ]},
-      { id: 48, enonce: "Pourquoi Karim donne-t-il DEUX cartes de visite ?", choix: [
+      { id: 48, enonce: "TEXTE 3 — Une course vers l'aéroport\n\nCe matin, Mme Lefèvre a réservé un VTC pour se rendre à l'aéroport Saint-Exupéry. Le chauffeur, Karim, arrive 10 minutes avant l'heure prévue. Il sort du véhicule, salue la cliente avec un sourire et prend ses deux valises pour les ranger dans le coffre. « Bonjour Madame Lefèvre, je suis Karim, votre chauffeur. Nous allons à l'aéroport, c'est bien cela ? » La cliente confirme et s'installe. Karim lui demande si la température lui convient et si elle souhaite de la musique. Pendant le trajet, Mme Lefèvre reçoit plusieurs appels téléphoniques professionnels. Karim reste silencieux et concentré sur la route. À l'arrivée, il aide la cliente avec ses bagages, lui souhaite un bon vol et lui remet deux cartes de visite : « N'hésitez pas à me recontacter ou à donner ma carte à vos collègues. » Mme Lefèvre le remercie chaleureusement.\n\nPourquoi Karim donne-t-il DEUX cartes de visite ?", choix: [
         { lettre: "A", texte: "Parce qu'il s'est trompé" },
         { lettre: "B", texte: "Pour que la cliente puisse en donner une à ses collègues (bouche-à-oreille)", correct: true },
         { lettre: "C", texte: "Parce que c'est obligatoire" },
@@ -255,22 +255,22 @@ export const FRANCAIS_EXERCICES: {
         { lettre: "B", texte: "Parce qu'il pense que Fatima est en retard, alors qu'il était sorti trop tôt", correct: true },
         { lettre: "C", texte: "Parce que le véhicule est sale" },
       ]},
-      { id: 50, enonce: "Comment Fatima réagit-elle face au reproche du client ?", choix: [
+      { id: 50, enonce: "TEXTE 4 — Le client mécontent\n\nSamedi soir, un client monte dans le taxi de Fatima. Il semble très agacé : « Vous êtes en retard, j'attends depuis dix minutes ! » En réalité, Fatima est arrivée exactement à l'heure convenue, mais le client était sorti cinq minutes plus tôt. Fatima reste calme et répond poliment : « Je suis désolée pour l'attente, Monsieur. Nous allons bien au restaurant Le Bouchon Lyonnais, c'est cela ? » Le client confirme sèchement. Pendant le trajet, il se plaint des embouteillages. Fatima ne se justifie pas et propose une alternative : « Je connais un itinéraire par les petites rues, nous devrions gagner quelques minutes. » Le client accepte. À l'arrivée, il est visiblement plus détendu. « Merci, vous avez bien conduit. » Fatima lui souhaite un bon dîner et lui tend sa carte.\n\nComment Fatima réagit-elle face au reproche du client ?", choix: [
         { lettre: "A", texte: "Elle s'énerve et conteste" },
         { lettre: "B", texte: "Elle reste calme et répond poliment", correct: true },
         { lettre: "C", texte: "Elle ne dit rien et démarre en silence" },
       ]},
-      { id: 51, enonce: "Que propose Fatima quand le client se plaint des embouteillages ?", choix: [
+      { id: 51, enonce: "TEXTE 4 — Le client mécontent\n\nSamedi soir, un client monte dans le taxi de Fatima. Il semble très agacé : « Vous êtes en retard, j'attends depuis dix minutes ! » En réalité, Fatima est arrivée exactement à l'heure convenue, mais le client était sorti cinq minutes plus tôt. Fatima reste calme et répond poliment : « Je suis désolée pour l'attente, Monsieur. Nous allons bien au restaurant Le Bouchon Lyonnais, c'est cela ? » Le client confirme sèchement. Pendant le trajet, il se plaint des embouteillages. Fatima ne se justifie pas et propose une alternative : « Je connais un itinéraire par les petites rues, nous devrions gagner quelques minutes. » Le client accepte. À l'arrivée, il est visiblement plus détendu. « Merci, vous avez bien conduit. » Fatima lui souhaite un bon dîner et lui tend sa carte.\n\nQue propose Fatima quand le client se plaint des embouteillages ?", choix: [
         { lettre: "A", texte: "Elle s'excuse et ne fait rien" },
         { lettre: "B", texte: "Elle propose un itinéraire alternatif par les petites rues", correct: true },
         { lettre: "C", texte: "Elle demande au client de se taire" },
       ]},
-      { id: 52, enonce: "Comment évolue l'attitude du client pendant la course ?", choix: [
+      { id: 52, enonce: "TEXTE 4 — Le client mécontent\n\nSamedi soir, un client monte dans le taxi de Fatima. Il semble très agacé : « Vous êtes en retard, j'attends depuis dix minutes ! » En réalité, Fatima est arrivée exactement à l'heure convenue, mais le client était sorti cinq minutes plus tôt. Fatima reste calme et répond poliment : « Je suis désolée pour l'attente, Monsieur. Nous allons bien au restaurant Le Bouchon Lyonnais, c'est cela ? » Le client confirme sèchement. Pendant le trajet, il se plaint des embouteillages. Fatima ne se justifie pas et propose une alternative : « Je connais un itinéraire par les petites rues, nous devrions gagner quelques minutes. » Le client accepte. À l'arrivée, il est visiblement plus détendu. « Merci, vous avez bien conduit. » Fatima lui souhaite un bon dîner et lui tend sa carte.\n\nComment évolue l'attitude du client pendant la course ?", choix: [
         { lettre: "A", texte: "Il reste agacé du début à la fin" },
         { lettre: "B", texte: "Il se détend progressivement grâce au professionnalisme de Fatima", correct: true },
         { lettre: "C", texte: "Il demande à descendre en route" },
       ]},
-      { id: 53, enonce: "Quelle leçon peut-on tirer du texte sur le client mécontent ?", choix: [
+      { id: 53, enonce: "TEXTE 4 — Le client mécontent\n\nSamedi soir, un client monte dans le taxi de Fatima. Il semble très agacé : « Vous êtes en retard, j'attends depuis dix minutes ! » En réalité, Fatima est arrivée exactement à l'heure convenue, mais le client était sorti cinq minutes plus tôt. Fatima reste calme et répond poliment : « Je suis désolée pour l'attente, Monsieur. Nous allons bien au restaurant Le Bouchon Lyonnais, c'est cela ? » Le client confirme sèchement. Pendant le trajet, il se plaint des embouteillages. Fatima ne se justifie pas et propose une alternative : « Je connais un itinéraire par les petites rues, nous devrions gagner quelques minutes. » Le client accepte. À l'arrivée, il est visiblement plus détendu. « Merci, vous avez bien conduit. » Fatima lui souhaite un bon dîner et lui tend sa carte.\n\nQuelle leçon peut-on tirer du texte sur le client mécontent ?", choix: [
         { lettre: "A", texte: "Il faut se justifier face à un client mécontent" },
         { lettre: "B", texte: "Le calme, la politesse et les propositions d'alternatives permettent de désamorcer un conflit", correct: true },
         { lettre: "C", texte: "Il vaut mieux ne pas parler du tout" },
@@ -281,22 +281,22 @@ export const FRANCAIS_EXERCICES: {
         { lettre: "B", texte: "La préfecture", correct: true },
         { lettre: "C", texte: "L'auto-école" },
       ]},
-      { id: 55, enonce: "Quelles épreuves comprend l'examen VTC selon le texte ?", choix: [
+      { id: 55, enonce: "TEXTE 5 — La réglementation du transport de personnes\n\nEn France, pour exercer le métier de chauffeur VTC, il faut obtenir une carte professionnelle délivrée par la préfecture. Le candidat doit passer un examen comprenant plusieurs épreuves : réglementation des transports, gestion, sécurité routière, français et anglais. Le véhicule utilisé doit respecter des critères stricts : moins de 6 ans d'ancienneté, 4 portes minimum, et un contrôle technique à jour. Le chauffeur doit également disposer d'une assurance RC professionnelle. Toute infraction à ces règles peut entraîner le retrait de la carte professionnelle et une amende pouvant aller jusqu'à 15 000 euros. La formation continue est obligatoire tous les 5 ans.\n\nQuelles épreuves comprend l'examen VTC selon le texte ?", choix: [
         { lettre: "A", texte: "Uniquement le code de la route" },
         { lettre: "B", texte: "Réglementation, gestion, sécurité routière, français et anglais", correct: true },
         { lettre: "C", texte: "Uniquement la conduite" },
       ]},
-      { id: 56, enonce: "Quelle est l'ancienneté maximale du véhicule VTC ?", choix: [
+      { id: 56, enonce: "TEXTE 5 — La réglementation du transport de personnes\n\nEn France, pour exercer le métier de chauffeur VTC, il faut obtenir une carte professionnelle délivrée par la préfecture. Le candidat doit passer un examen comprenant plusieurs épreuves : réglementation des transports, gestion, sécurité routière, français et anglais. Le véhicule utilisé doit respecter des critères stricts : moins de 6 ans d'ancienneté, 4 portes minimum, et un contrôle technique à jour. Le chauffeur doit également disposer d'une assurance RC professionnelle. Toute infraction à ces règles peut entraîner le retrait de la carte professionnelle et une amende pouvant aller jusqu'à 15 000 euros. La formation continue est obligatoire tous les 5 ans.\n\nQuelle est l'ancienneté maximale du véhicule VTC ?", choix: [
         { lettre: "A", texte: "3 ans" },
         { lettre: "B", texte: "6 ans", correct: true },
         { lettre: "C", texte: "10 ans" },
       ]},
-      { id: 57, enonce: "Quelle sanction est prévue en cas d'infraction aux règles du transport VTC ?", choix: [
+      { id: 57, enonce: "TEXTE 5 — La réglementation du transport de personnes\n\nEn France, pour exercer le métier de chauffeur VTC, il faut obtenir une carte professionnelle délivrée par la préfecture. Le candidat doit passer un examen comprenant plusieurs épreuves : réglementation des transports, gestion, sécurité routière, français et anglais. Le véhicule utilisé doit respecter des critères stricts : moins de 6 ans d'ancienneté, 4 portes minimum, et un contrôle technique à jour. Le chauffeur doit également disposer d'une assurance RC professionnelle. Toute infraction à ces règles peut entraîner le retrait de la carte professionnelle et une amende pouvant aller jusqu'à 15 000 euros. La formation continue est obligatoire tous les 5 ans.\n\nQuelle sanction est prévue en cas d'infraction aux règles du transport VTC ?", choix: [
         { lettre: "A", texte: "Un simple avertissement" },
         { lettre: "B", texte: "Le retrait de la carte professionnelle et une amende jusqu'à 15 000 euros", correct: true },
         { lettre: "C", texte: "Rien de particulier" },
       ]},
-      { id: 58, enonce: "Tous les combien la formation continue est-elle obligatoire ?", choix: [
+      { id: 58, enonce: "TEXTE 5 — La réglementation du transport de personnes\n\nEn France, pour exercer le métier de chauffeur VTC, il faut obtenir une carte professionnelle délivrée par la préfecture. Le candidat doit passer un examen comprenant plusieurs épreuves : réglementation des transports, gestion, sécurité routière, français et anglais. Le véhicule utilisé doit respecter des critères stricts : moins de 6 ans d'ancienneté, 4 portes minimum, et un contrôle technique à jour. Le chauffeur doit également disposer d'une assurance RC professionnelle. Toute infraction à ces règles peut entraîner le retrait de la carte professionnelle et une amende pouvant aller jusqu'à 15 000 euros. La formation continue est obligatoire tous les 5 ans.\n\nTous les combien la formation continue est-elle obligatoire ?", choix: [
         { lettre: "A", texte: "Tous les 2 ans" },
         { lettre: "B", texte: "Tous les 5 ans", correct: true },
         { lettre: "C", texte: "Tous les 10 ans" },
@@ -307,22 +307,22 @@ export const FRANCAIS_EXERCICES: {
         { lettre: "B", texte: "15 à 20 %", correct: true },
         { lettre: "C", texte: "30 à 40 %" },
       ]},
-      { id: 60, enonce: "Pourquoi l'éco-conduite est-elle plus confortable pour les passagers ?", choix: [
+      { id: 60, enonce: "TEXTE 6 — Les avantages de l'éco-conduite pour un VTC\n\nL'éco-conduite présente de nombreux avantages pour un chauffeur VTC. En adoptant une conduite souple — accélérations progressives, anticipation du trafic, utilisation du frein moteur — le conducteur peut réduire sa consommation de carburant de 15 à 20 %. Sur une année, cela représente une économie de plusieurs centaines d'euros. Mais l'éco-conduite n'est pas seulement économique : elle est aussi plus confortable pour les passagers. Une conduite sans à-coups, sans freinages brusques, rassure le client et lui offre un trajet agréable. De plus, un véhicule conduit en douceur s'use moins vite : les freins, les pneus et l'embrayage durent plus longtemps. Enfin, l'éco-conduite réduit les émissions de CO2, ce qui est un argument commercial de plus en plus important pour les clients sensibles à l'environnement.\n\nPourquoi l'éco-conduite est-elle plus confortable pour les passagers ?", choix: [
         { lettre: "A", texte: "Parce qu'elle permet de rouler plus vite" },
         { lettre: "B", texte: "Parce qu'elle est sans à-coups ni freinages brusques", correct: true },
         { lettre: "C", texte: "Parce qu'elle permet de parler au téléphone" },
       ]},
-      { id: 61, enonce: "Quelles pièces du véhicule durent plus longtemps grâce à l'éco-conduite ?", choix: [
+      { id: 61, enonce: "TEXTE 6 — Les avantages de l'éco-conduite pour un VTC\n\nL'éco-conduite présente de nombreux avantages pour un chauffeur VTC. En adoptant une conduite souple — accélérations progressives, anticipation du trafic, utilisation du frein moteur — le conducteur peut réduire sa consommation de carburant de 15 à 20 %. Sur une année, cela représente une économie de plusieurs centaines d'euros. Mais l'éco-conduite n'est pas seulement économique : elle est aussi plus confortable pour les passagers. Une conduite sans à-coups, sans freinages brusques, rassure le client et lui offre un trajet agréable. De plus, un véhicule conduit en douceur s'use moins vite : les freins, les pneus et l'embrayage durent plus longtemps. Enfin, l'éco-conduite réduit les émissions de CO2, ce qui est un argument commercial de plus en plus important pour les clients sensibles à l'environnement.\n\nQuelles pièces du véhicule durent plus longtemps grâce à l'éco-conduite ?", choix: [
         { lettre: "A", texte: "Les vitres et les sièges" },
         { lettre: "B", texte: "Les freins, les pneus et l'embrayage", correct: true },
         { lettre: "C", texte: "La radio et le GPS" },
       ]},
-      { id: 62, enonce: "Quel argument commercial est de plus en plus important selon le texte ?", choix: [
+      { id: 62, enonce: "TEXTE 6 — Les avantages de l'éco-conduite pour un VTC\n\nL'éco-conduite présente de nombreux avantages pour un chauffeur VTC. En adoptant une conduite souple — accélérations progressives, anticipation du trafic, utilisation du frein moteur — le conducteur peut réduire sa consommation de carburant de 15 à 20 %. Sur une année, cela représente une économie de plusieurs centaines d'euros. Mais l'éco-conduite n'est pas seulement économique : elle est aussi plus confortable pour les passagers. Une conduite sans à-coups, sans freinages brusques, rassure le client et lui offre un trajet agréable. De plus, un véhicule conduit en douceur s'use moins vite : les freins, les pneus et l'embrayage durent plus longtemps. Enfin, l'éco-conduite réduit les émissions de CO2, ce qui est un argument commercial de plus en plus important pour les clients sensibles à l'environnement.\n\nQuel argument commercial est de plus en plus important selon le texte ?", choix: [
         { lettre: "A", texte: "La vitesse du trajet" },
         { lettre: "B", texte: "La réduction des émissions de CO2", correct: true },
         { lettre: "C", texte: "Le nombre de passagers transportés" },
       ]},
-      { id: 63, enonce: "L'éco-conduite est à la fois :", choix: [
+      { id: 63, enonce: "TEXTE 6 — Les avantages de l'éco-conduite pour un VTC\n\nL'éco-conduite présente de nombreux avantages pour un chauffeur VTC. En adoptant une conduite souple — accélérations progressives, anticipation du trafic, utilisation du frein moteur — le conducteur peut réduire sa consommation de carburant de 15 à 20 %. Sur une année, cela représente une économie de plusieurs centaines d'euros. Mais l'éco-conduite n'est pas seulement économique : elle est aussi plus confortable pour les passagers. Une conduite sans à-coups, sans freinages brusques, rassure le client et lui offre un trajet agréable. De plus, un véhicule conduit en douceur s'use moins vite : les freins, les pneus et l'embrayage durent plus longtemps. Enfin, l'éco-conduite réduit les émissions de CO2, ce qui est un argument commercial de plus en plus important pour les clients sensibles à l'environnement.\n\nL'éco-conduite est à la fois :", choix: [
         { lettre: "A", texte: "Économique, confortable, écologique et bonne pour le véhicule", correct: true },
         { lettre: "B", texte: "Dangereuse et lente" },
         { lettre: "C", texte: "Uniquement écologique" },
@@ -333,22 +333,22 @@ export const FRANCAIS_EXERCICES: {
         { lettre: "B", texte: "Il est japonais et en déplacement professionnel pour 3 jours", correct: true },
         { lettre: "C", texte: "Il est lyonnais et rentre chez lui" },
       ]},
-      { id: 65, enonce: "Comment Youssef accueille-t-il M. Tanaka à la gare ?", choix: [
+      { id: 65, enonce: "TEXTE 7 — Un client étranger à Lyon\n\nM. Tanaka est un homme d'affaires japonais en déplacement à Lyon pour trois jours. Il ne parle pas français mais comprend un peu l'anglais. Son chauffeur VTC, Youssef, l'accueille à la gare Part-Dieu avec une pancarte portant son nom. Youssef lui dit lentement en français : « Bonjour Monsieur Tanaka, bienvenue à Lyon. Je suis votre chauffeur. » Puis il ajoute en anglais simple : « Welcome to Lyon. » M. Tanaka sourit et monte dans le véhicule. Pendant le trajet vers l'hôtel, Youssef conduit en douceur et reste silencieux, voyant que son client consulte des documents sur sa tablette. À l'arrivée à l'hôtel, Youssef aide M. Tanaka avec ses bagages et lui remet une carte de visite en disant : « Si vous avez besoin d'un chauffeur pendant votre séjour, appelez-moi. » M. Tanaka le remercie d'un signe de tête respectueux et prend la carte.\n\nComment Youssef accueille-t-il M. Tanaka à la gare ?", choix: [
         { lettre: "A", texte: "Il attend dans la voiture" },
         { lettre: "B", texte: "Il l'accueille avec une pancarte portant son nom", correct: true },
         { lettre: "C", texte: "Il l'appelle au téléphone" },
       ]},
-      { id: 66, enonce: "Comment Youssef adapte-t-il sa communication ?", choix: [
+      { id: 66, enonce: "TEXTE 7 — Un client étranger à Lyon\n\nM. Tanaka est un homme d'affaires japonais en déplacement à Lyon pour trois jours. Il ne parle pas français mais comprend un peu l'anglais. Son chauffeur VTC, Youssef, l'accueille à la gare Part-Dieu avec une pancarte portant son nom. Youssef lui dit lentement en français : « Bonjour Monsieur Tanaka, bienvenue à Lyon. Je suis votre chauffeur. » Puis il ajoute en anglais simple : « Welcome to Lyon. » M. Tanaka sourit et monte dans le véhicule. Pendant le trajet vers l'hôtel, Youssef conduit en douceur et reste silencieux, voyant que son client consulte des documents sur sa tablette. À l'arrivée à l'hôtel, Youssef aide M. Tanaka avec ses bagages et lui remet une carte de visite en disant : « Si vous avez besoin d'un chauffeur pendant votre séjour, appelez-moi. » M. Tanaka le remercie d'un signe de tête respectueux et prend la carte.\n\nComment Youssef adapte-t-il sa communication ?", choix: [
         { lettre: "A", texte: "Il parle très vite en français" },
         { lettre: "B", texte: "Il parle lentement en français puis ajoute quelques mots en anglais", correct: true },
         { lettre: "C", texte: "Il ne dit rien du tout" },
       ]},
-      { id: 67, enonce: "Pourquoi Youssef reste-t-il silencieux pendant le trajet ?", choix: [
+      { id: 67, enonce: "TEXTE 7 — Un client étranger à Lyon\n\nM. Tanaka est un homme d'affaires japonais en déplacement à Lyon pour trois jours. Il ne parle pas français mais comprend un peu l'anglais. Son chauffeur VTC, Youssef, l'accueille à la gare Part-Dieu avec une pancarte portant son nom. Youssef lui dit lentement en français : « Bonjour Monsieur Tanaka, bienvenue à Lyon. Je suis votre chauffeur. » Puis il ajoute en anglais simple : « Welcome to Lyon. » M. Tanaka sourit et monte dans le véhicule. Pendant le trajet vers l'hôtel, Youssef conduit en douceur et reste silencieux, voyant que son client consulte des documents sur sa tablette. À l'arrivée à l'hôtel, Youssef aide M. Tanaka avec ses bagages et lui remet une carte de visite en disant : « Si vous avez besoin d'un chauffeur pendant votre séjour, appelez-moi. » M. Tanaka le remercie d'un signe de tête respectueux et prend la carte.\n\nPourquoi Youssef reste-t-il silencieux pendant le trajet ?", choix: [
         { lettre: "A", texte: "Parce qu'il est impoli" },
         { lettre: "B", texte: "Parce qu'il voit que M. Tanaka consulte des documents sur sa tablette", correct: true },
         { lettre: "C", texte: "Parce qu'il ne sait pas conduire et parler en même temps" },
       ]},
-      { id: 68, enonce: "Quelle bonne pratique de fidélisation Youssef applique-t-il à la fin ?", choix: [
+      { id: 68, enonce: "TEXTE 7 — Un client étranger à Lyon\n\nM. Tanaka est un homme d'affaires japonais en déplacement à Lyon pour trois jours. Il ne parle pas français mais comprend un peu l'anglais. Son chauffeur VTC, Youssef, l'accueille à la gare Part-Dieu avec une pancarte portant son nom. Youssef lui dit lentement en français : « Bonjour Monsieur Tanaka, bienvenue à Lyon. Je suis votre chauffeur. » Puis il ajoute en anglais simple : « Welcome to Lyon. » M. Tanaka sourit et monte dans le véhicule. Pendant le trajet vers l'hôtel, Youssef conduit en douceur et reste silencieux, voyant que son client consulte des documents sur sa tablette. À l'arrivée à l'hôtel, Youssef aide M. Tanaka avec ses bagages et lui remet une carte de visite en disant : « Si vous avez besoin d'un chauffeur pendant votre séjour, appelez-moi. » M. Tanaka le remercie d'un signe de tête respectueux et prend la carte.\n\nQuelle bonne pratique de fidélisation Youssef applique-t-il à la fin ?", choix: [
         { lettre: "A", texte: "Il demande un pourboire" },
         { lettre: "B", texte: "Il remet sa carte de visite et propose ses services pour le séjour", correct: true },
         { lettre: "C", texte: "Il ne fait rien" },
