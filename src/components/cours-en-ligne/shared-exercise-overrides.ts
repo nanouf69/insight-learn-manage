@@ -505,12 +505,13 @@ export async function syncSharedExercisesToSiblingModules(
         const savedVersion = savedExoMap.get(exo.id);
         if (!savedVersion) return exo; // Not a shared exercise
 
-        // Check if the saved version is different
-        const savedQJson = JSON.stringify(savedVersion.questions || []);
+        const mergedVersion = mergeSharedExerciseWithoutRegressing(exo, savedVersion);
+        // Check if the timestamp-aware merged version is different
+        const mergedQJson = JSON.stringify(mergedVersion.questions || []);
         const currentQJson = JSON.stringify(exo.questions || []);
-        if (savedQJson !== currentQJson || savedVersion.titre !== exo.titre || savedVersion.actif !== exo.actif) {
+        if (mergedQJson !== currentQJson || mergedVersion.titre !== exo.titre || mergedVersion.actif !== exo.actif || mergedVersion.sousTitre !== exo.sousTitre) {
           hasChanges = true;
-          return { ...exo, questions: savedVersion.questions, titre: savedVersion.titre, sousTitre: savedVersion.sousTitre, actif: savedVersion.actif };
+          return mergedVersion;
         }
         return exo;
       });
