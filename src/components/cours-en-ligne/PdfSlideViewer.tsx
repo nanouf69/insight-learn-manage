@@ -198,6 +198,23 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
   const zoomOut = () => setZoom((z) => Math.max(z - 0.25, 0.5));
   const resetZoom = () => setZoom(1);
 
+  // Watchdog: si react-pdf n'a pas chargé en 8s, bascule auto en iframe natif
+  useEffect(() => {
+    if (renderMode !== "react-pdf" || loadError) return;
+    if (numPages > 0) return;
+    if (loadingTimerRef.current) clearTimeout(loadingTimerRef.current);
+    loadingTimerRef.current = setTimeout(() => {
+      setLoadError(true);
+      setRenderMode("native");
+    }, 8000);
+    return () => {
+      if (loadingTimerRef.current) {
+        clearTimeout(loadingTimerRef.current);
+        loadingTimerRef.current = null;
+      }
+    };
+  }, [renderMode, loadError, numPages, retryCount, url]);
+
   const handleViewerScroll = useCallback((el: HTMLDivElement) => {
     if (renderMode === "native" || loadError) {
       handleNativeBottomCheck(el);
