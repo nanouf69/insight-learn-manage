@@ -4562,11 +4562,20 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                               <span className="w-7 h-7 rounded-full border-2 flex items-center justify-center text-xs font-bold shrink-0">
                                 {c.lettre}
                               </span>
-                              <span className="text-sm">{c.texte}</span>
-                              {isValidated && c.correct && <CheckCircle2 className="w-4 h-4 text-emerald-600 ml-auto shrink-0" />}
+                              <span className="text-sm flex-1">{c.texte}</span>
+                              {isValidated && c.correct && <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />}
                             </button>
                           );
                         })}
+                        {isValidated && q.choix.some(c => c.explication) && (
+                          <div className="mt-2 space-y-1.5">
+                            {q.choix.filter(c => c.explication).map(c => (
+                              <div key={`exp-${c.lettre}`} className={`p-2 rounded-md text-xs border ${c.correct ? "bg-emerald-50 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-800" : "bg-muted/50 border-border"}`}>
+                                <span className="font-semibold">{c.lettre}.</span> {c.explication}
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                       {/* Explanation after validation */}
                       {isValidated && q.explication && (
