@@ -96,11 +96,13 @@ const ModuleChangeNotificationsBanner = ({ apprenantId, moduleId }: Props) => {
     });
   };
 
-  const visible = notifications.filter((n) => {
-    if (dismissedIds.has(n.id)) return false;
-    if (moduleId !== undefined) return n.module_id === moduleId;
-    return accessedModuleIds.has(Number(n.module_id));
-  });
+  const visible = notifications
+    .filter((n) => {
+      if (dismissedIds.has(n.id)) return false;
+      if (moduleId !== undefined) return n.module_id === moduleId;
+      return accessedModuleIds.has(Number(n.module_id));
+    })
+    .slice(0, 2);
 
   if (visible.length === 0) return null;
 
