@@ -418,6 +418,41 @@ function deduplicateExerciseQuestions(exercices: any[]): any[] {
   });
 }
 
+const getQuestionEditedTime = (q: any): number => {
+  const raw = q?._editedAt;
+  if (!raw) return 0;
+  const time = new Date(raw).getTime();
+  return Number.isFinite(time) ? time : 0;
+};
+
+function mergeSharedExerciseWithoutRegressing(currentExo: any, savedVersion: any): any {
+  const currentQuestions = Array.isArray(currentExo?.questions) ? currentExo.questions : [];
+  const savedQuestions = Array.isArray(savedVersion?.questions) ? savedVersion.questions : [];
+  const currentById = new Map(currentQuestions.map((q: any) => [Number(q.id), q]));
+
+  const questions = savedQuestions.map((savedQ: any) => {
+    const currentQ = currentById.get(Number(savedQ.id));
+    if (!currentQ) return savedQ;
+
+    const savedEditedAt = getQuestionEditedTime(savedQ);
+    const currentEditedAt = getQuestionEditedTime(currentQ);
+    if (currentEditedAt > 0 && savedEditedAt === 0) return currentQ;
+    if (currentEditedAt > savedEditedAt) return currentQ;
+    return savedQ;
+  });
+
+  const savedIds = new Set(savedQuestions.map((q: any) => Number(q.id)));
+  const adminAddedCurrentQuestions = currentQuestions.filter((q: any) => !savedIds.has(Number(q.id)) && getQuestionEditedTime(q) > 0);
+
+  return {
+    ...currentExo,
+    questions: [...questions, ...adminAddedCurrentQuestions],
+    titre: savedVersion.titre,
+    sousTitre: savedVersion.sousTitre,
+    actif: savedVersion.actif,
+  };
+}
+
 // ======================================================================
 // FULL CROSS-MODULE EXERCISE SYNC (handles edits, adds, AND deletes)
 // ======================================================================
