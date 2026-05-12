@@ -844,13 +844,24 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         if (cancelled) return;
         console.error("CoursPublic: unexpected error", err);
 
-        const errorMessage = err instanceof Error ? err.message : "";
+        const errorMessage = err instanceof Error ? err.message : String(err);
         if (errorMessage.includes("Temps d'attente dépassé")) {
-          setApprenantFetchError("Le chargement du dossier prend trop de temps. Cliquez sur Réessayer.");
+          setApprenantFetchError(
+            `Le chargement du dossier prend trop de temps (>12s)${onlineStatus}. Raison probable : connexion lente, serveur saturé ou Wi-Fi instable. Cliquez sur Réessayer.`
+          );
           return;
         }
 
-        setApprenantFetchError("Une erreur inattendue est survenue. Cliquez sur Réessayer.");
+        if (errorMessage.toLowerCase().includes("failed to fetch") || errorMessage.toLowerCase().includes("networkerror")) {
+          setApprenantFetchError(
+            `Connexion réseau impossible${onlineStatus}. Raison : ${errorMessage}. Vérifiez votre Wi-Fi / 4G puis cliquez sur Réessayer.`
+          );
+          return;
+        }
+
+        setApprenantFetchError(
+          `Une erreur inattendue est survenue${onlineStatus}. Raison : ${errorMessage || "inconnue"}. Cliquez sur Réessayer.`
+        );
       } finally {
         if (!cancelled) setApprenantLoading(false);
       }
