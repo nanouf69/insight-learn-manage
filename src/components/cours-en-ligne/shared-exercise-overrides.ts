@@ -7,6 +7,7 @@
 import { supabase } from "@/integrations/supabase/client";
 
 const STORAGE_KEY = "shared-exercise-overrides-v1";
+const LOCAL_CONTENT_OVERRIDES_DISABLED = true;
 const ENONCE_OVERRIDE_BLOCKED_EXERCISE_IDS = new Set([80]);
 
 function canApplyEnonceBasedOverrides(exerciceId?: number): boolean {
@@ -37,6 +38,7 @@ function normalizeEnonce(text: string): string {
 
 /** Load all shared overrides from localStorage */
 export function loadSharedOverrides(): OverridesStore {
+  if (LOCAL_CONTENT_OVERRIDES_DISABLED) return {};
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     return raw ? JSON.parse(raw) : {};
@@ -47,6 +49,12 @@ export function loadSharedOverrides(): OverridesStore {
 
 /** Save shared overrides to localStorage */
 function saveSharedOverrides(overrides: OverridesStore): void {
+  if (LOCAL_CONTENT_OVERRIDES_DISABLED) {
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch {}
+    return;
+  }
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(overrides));
   } catch (e) {
@@ -56,6 +64,7 @@ function saveSharedOverrides(overrides: OverridesStore): void {
 
 /** Get a fingerprint of current overrides for cache invalidation */
 export function getOverridesFingerprint(): string {
+  if (LOCAL_CONTENT_OVERRIDES_DISABLED) return "db-only";
   const overrides = loadSharedOverrides();
   const keys = Object.keys(overrides).sort();
   if (keys.length === 0) return "none";
@@ -75,6 +84,11 @@ export function detectAndSaveOverrides(
   currentModuleId: number,
   allModulesInitialData?: ModuleInitialData[],
 ): void {
+  if (LOCAL_CONTENT_OVERRIDES_DISABLED) {
+    invalidateOtherModuleCaches(currentModuleId);
+    saveSharedOverrides({});
+    return;
+  }
   const overrides = loadSharedOverrides();
   let changed = false;
   const changedOverrides: OverridesStore = {};
