@@ -96,44 +96,37 @@ const ModuleChangeNotificationsBanner = ({ apprenantId, moduleId }: Props) => {
     });
   };
 
-  const visible = notifications.filter((n) => {
-    if (dismissedIds.has(n.id)) return false;
-    if (moduleId !== undefined) return n.module_id === moduleId;
-    return accessedModuleIds.has(Number(n.module_id));
-  });
+  const visible = notifications
+    .filter((n) => {
+      if (dismissedIds.has(n.id)) return false;
+      if (moduleId !== undefined) return n.module_id === moduleId;
+      return accessedModuleIds.has(Number(n.module_id));
+    })
+    .slice(0, 2);
 
   if (visible.length === 0) return null;
 
   return (
     <div className="space-y-3 mb-4">
       {visible.map((n) => (
-        <Alert key={n.id} className="border-primary/40 bg-primary/5">
+        <Alert key={n.id} className="border-primary/40 bg-primary/5 py-2">
           <Bell className="h-4 w-4 text-primary" />
-          <div className="flex justify-between items-start gap-3 w-full">
-            <div className="flex-1">
-              <AlertTitle className="text-primary">
-                Mise à jour du module : {n.module_nom}
+          <div className="flex justify-between items-center gap-2 w-full">
+            <div className="flex-1 min-w-0">
+              <AlertTitle className="text-primary text-sm truncate">
+                MAJ : {n.module_nom}
               </AlertTitle>
-              <AlertDescription>
-                <div className="text-xs text-muted-foreground mb-2">
-                  {new Date(n.changed_at).toLocaleString("fr-FR")}
-                </div>
-                <pre className="whitespace-pre-wrap text-sm font-sans">
-                  {n.change_summary}
-                </pre>
-                <p className="mt-2 text-xs italic text-muted-foreground">
-                  Pensez à supprimer ce message une fois lu.
-                </p>
+              <AlertDescription className="text-xs truncate">
+                {n.change_summary.split("\n")[0]}
               </AlertDescription>
             </div>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => handleDismiss(n.id)}
-              className="shrink-0"
+              className="shrink-0 h-7 px-2"
             >
-              <Trash2 className="h-4 w-4 mr-1" />
-              Supprimer
+              <Trash2 className="h-3.5 w-3.5" />
             </Button>
           </div>
         </Alert>
