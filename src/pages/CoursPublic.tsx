@@ -767,10 +767,16 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
 
     fetchAttemptRef.current += 1;
     const currentAttempt = fetchAttemptRef.current;
+    const onlineStatus = typeof navigator !== "undefined" && navigator.onLine === false
+      ? " (Aucune connexion internet détectée)"
+      : "";
+
     if (currentAttempt > 8) {
       console.warn("CoursPublic: too many fetch attempts, stopping");
       setApprenantLoading(false);
-      setApprenantFetchError("Connexion instable détectée. Cliquez sur Réessayer.");
+      setApprenantFetchError(
+        `Connexion instable détectée après ${currentAttempt} tentatives${onlineStatus}. Vérifiez votre connexion internet (Wi-Fi / 4G), puis cliquez sur Réessayer.`
+      );
       return;
     }
 
