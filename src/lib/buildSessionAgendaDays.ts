@@ -105,23 +105,18 @@ export async function buildSessionAgendaDays(
       const result: AgendaDaySlot = { date: val.date };
 
       if (isSoir) {
-        // SOIR : 2 créneaux 17:00-18:30 et 18:30-21:00
+        // SOIR : 2 créneaux fixes 17:00-18:30 et 18:30-21:00
         result.matinDebut = "17:00";
         result.matinFin = "18:30";
         result.apremDebut = "18:30";
         result.apremFin = "21:00";
         result.isSoir = true;
       } else {
-        const morning = slots.filter((s) => s.debut < "12:30");
-        const afternoon = slots.filter((s) => s.debut >= "12:30");
-        if (morning.length > 0) {
-          result.matinDebut = morning.reduce((min, s) => (s.debut < min ? s.debut : min), morning[0].debut);
-          result.matinFin = morning.reduce((max, s) => (s.fin > max ? s.fin : max), morning[0].fin);
-        }
-        if (afternoon.length > 0) {
-          result.apremDebut = afternoon.reduce((min, s) => (s.debut < min ? s.debut : min), afternoon[0].debut);
-          result.apremFin = afternoon.reduce((max, s) => (s.fin > max ? s.fin : max), afternoon[0].fin);
-        }
+        // JOURNÉE : 2 créneaux fixes 09:00-12:00 et 13:00-16:00 (VTC / TAXI / TA)
+        result.matinDebut = "09:00";
+        result.matinFin = "12:00";
+        result.apremDebut = "13:00";
+        result.apremFin = "16:00";
       }
       return result;
     });
@@ -144,16 +139,12 @@ export async function buildSessionAgendaDays(
       day.apremDebut = "18:30";
       day.apremFin = "21:00";
       day.isSoir = true;
-    } else if (isPratique) {
-      day.matinDebut = "09:00";
-      day.matinFin = "12:00";
-      day.apremDebut = "13:00";
-      day.apremFin = isTaxi ? "17:30" : "16:00";
     } else {
+      // JOURNÉE (théorie ou pratique) : 9h-12h / 13h-16h pour VTC, TAXI, TA
       day.matinDebut = "09:00";
       day.matinFin = "12:00";
       day.apremDebut = "13:00";
-      day.apremFin = isVTC ? "16:00" : "17:00";
+      day.apremFin = "16:00";
     }
     fallback.push(day);
     cur.setDate(cur.getDate() + 1);
