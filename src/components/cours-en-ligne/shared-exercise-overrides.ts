@@ -316,24 +316,38 @@ export function applyOverridesToModuleExercices<T extends { questions?: { enonce
  */
 export async function loadCrossModuleOverridesFromDb(): Promise<OverridesStore> {
   try {
+    // CRITICAL: order by updated_at ASC so the most recently updated module
+    // is iterated LAST, ensuring its (newest) version of a shared question
+    // wins via last-write in the overrides map. Without this ordering,
+    // a freshly edited answer could be overwritten by a stale sibling module
+    // that wasn't synced yet when realtime echoed back.
     const { data, error } = await supabase
       .from("module_editor_state")
-      .select("module_id, module_data");
+      .select("module_id, module_data, updated_at")
+      .order("updated_at", { ascending: true });
 
     if (error || !data || data.length === 0) return {};
 
     const overrides: OverridesStore = {};
+    // Track per-key timestamp so newer always wins, even with mixed ordering
+    const overrideTimestamps: Record<string, number> = {};
 
     for (const row of data) {
       const md = row.module_data as any;
       if (!md?.exercices || !Array.isArray(md.exercices)) continue;
+      const rowTs = row.updated_at ? new Date(row.updated_at).getTime() : 0;
 
       for (const exo of md.exercices) {
         if (!exo.questions || !Array.isArray(exo.questions)) continue;
         for (const q of exo.questions) {
           if (q.enonce && q.choix) {
             const key = normalizeEnonce(q.enonce);
-            overrides[key] = { enonce: q.enonce, choix: q.choix };
+            // Prefer per-question _editedAt if available, else fallback to row updated_at
+            const qTs = (q as any)._editedAt ? new Date((q as any)._editedAt).getTime() : rowTs;
+            if (qTs >= (overrideTimestamps[key] ?? 0)) {
+              overrides[key] = { enonce: q.enonce, choix: q.choix };
+              overrideTimestamps[key] = qTs;
+            }
           }
         }
       }
