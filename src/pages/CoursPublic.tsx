@@ -1099,7 +1099,9 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
             onClick={() => {
               fetchAttemptRef.current = 0;
               setApprenantLoading(false);
-              setApprenantFetchError("Chargement interrompu. Cliquez sur Réessayer.");
+              setApprenantFetchError(
+                `Chargement interrompu manuellement${typeof navigator !== "undefined" && !navigator.onLine ? " (Aucune connexion internet détectée)" : ""}. Raison probable : connexion lente ou serveur injoignable. Cliquez sur Réessayer.`
+              );
             }}
           >
             Arrêter le chargement
