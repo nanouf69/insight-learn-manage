@@ -115,7 +115,7 @@ import {
 interface InlineQuizQuestion {
   id: number;
   enonce: string;
-  choix: { lettre: string; texte: string; correct?: boolean }[];
+  choix: { lettre: string; texte: string; correct?: boolean; explication?: string }[];
   explication?: string;
 }
 
