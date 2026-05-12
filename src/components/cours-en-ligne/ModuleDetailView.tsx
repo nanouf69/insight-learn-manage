@@ -137,6 +137,7 @@ interface ExerciceChoix {
   lettre: string;
   texte: string;
   correct?: boolean;
+  explication?: string;
 }
 
 type ImageSize = "sm" | "md" | "lg" | "xl" | "2xl";
