@@ -564,7 +564,8 @@ export function generateDocumentIndividuelPdf(
   }
 
   // ---- Signatures section ----
-  y = ensureSpace(doc, y, 40);
+  const SIG_BLOCK_HEIGHT = 50; // header + box
+  y = ensureSpace(doc, y, SIG_BLOCK_HEIGHT + 6);
   y += 8;
   doc.setDrawColor(200, 200, 200);
   doc.line(margin, y, pw - margin, y);
@@ -574,47 +575,73 @@ export function generateDocumentIndividuelPdf(
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(13, 37, 64);
   doc.text('SIGNATURES', margin, y);
-  y += 8;
+  y += 6;
 
-  // Check for signatures in donnees
-  const hasApprenantSig = document.donnees?.signature && isBase64(document.donnees.signature);
-  const hasResponsableSig = document.donnees?.signatureResponsable && isBase64(document.donnees.signatureResponsable);
+  // Two columns side-by-side, each with a framed signature box
+  const colGap = 8;
+  const colW = (pw - margin * 2 - colGap) / 2;
+  const boxH = 32;
+  const sigImgH = 24;
+  const sigImgW = Math.min(colW - 8, 60);
 
-  // Apprenant signature
-  doc.setFontSize(8);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(80, 80, 80);
-  doc.text('Signature du stagiaire :', margin + 4, y);
-  if (hasApprenantSig) {
-    try {
-      doc.addImage(document.donnees.signature, 'PNG', margin + 4, y + 2, 50, 20);
-      y += 24;
-    } catch (_) {
+  const drawSignatureBlock = (
+    label: string,
+    sigData: string | undefined,
+    x: number,
+    yTop: number,
+  ) => {
+    // Label
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(80, 80, 80);
+    doc.text(label, x, yTop);
+
+    // Box
+    doc.setDrawColor(180, 180, 180);
+    doc.setLineWidth(0.3);
+    doc.roundedRect(x, yTop + 2, colW, boxH, 2, 2);
+
+    const present = sigData && isBase64(sigData);
+    if (present) {
+      try {
+        doc.addImage(
+          sigData!,
+          'PNG',
+          x + (colW - sigImgW) / 2,
+          yTop + 2 + (boxH - sigImgH) / 2,
+          sigImgW,
+          sigImgH,
+        );
+        return;
+      } catch (e) {
+        // fall through to text fallback
+      }
       doc.setTextColor(34, 150, 60);
       doc.setFont('helvetica', 'italic');
-      doc.text('[Signature numerique presente]', margin + 4, y + 6);
-      y += 10;
-    }
-  } else {
-    doc.setTextColor(150, 150, 150);
-    doc.setFont('helvetica', 'italic');
-    doc.text('(Non signe)', margin + 4, y + 6);
-    y += 10;
-  }
-
-  // Responsable signature
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(80, 80, 80);
-  doc.text('Signature du responsable pedagogique :', pw / 2, y - (hasApprenantSig ? 24 : 10) + 0);
-  if (hasResponsableSig) {
-    try {
-      doc.addImage(document.donnees.signatureResponsable, 'PNG', pw / 2, y - (hasApprenantSig ? 22 : 8), 50, 20);
-    } catch (_) {
-      doc.setTextColor(34, 150, 60);
+      doc.setFontSize(8);
+      doc.text('[Signature numerique enregistree]', x + 4, yTop + 2 + boxH / 2);
+    } else {
+      doc.setTextColor(170, 170, 170);
       doc.setFont('helvetica', 'italic');
-      doc.text('[Signature presente]', pw / 2, y - (hasApprenantSig ? 16 : 2));
+      doc.setFontSize(8);
+      doc.text('(Non signe)', x + 4, yTop + 2 + boxH / 2);
     }
-  }
+  };
+
+  drawSignatureBlock(
+    'Signature du stagiaire :',
+    document.donnees?.signature,
+    margin,
+    y,
+  );
+  drawSignatureBlock(
+    'Signature du responsable pedagogique :',
+    document.donnees?.signatureResponsable,
+    margin + colW + colGap,
+    y,
+  );
+
+  y += boxH + 6;
 
   // ---- Footer ----
   const totalPages = doc.getNumberOfPages();
