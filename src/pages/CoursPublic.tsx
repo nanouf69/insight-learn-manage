@@ -767,10 +767,16 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
 
     fetchAttemptRef.current += 1;
     const currentAttempt = fetchAttemptRef.current;
+    const onlineStatus = typeof navigator !== "undefined" && navigator.onLine === false
+      ? " (Aucune connexion internet détectée)"
+      : "";
+
     if (currentAttempt > 8) {
       console.warn("CoursPublic: too many fetch attempts, stopping");
       setApprenantLoading(false);
-      setApprenantFetchError("Connexion instable détectée. Cliquez sur Réessayer.");
+      setApprenantFetchError(
+        `Connexion instable détectée après ${currentAttempt} tentatives${onlineStatus}. Vérifiez votre connexion internet (Wi-Fi / 4G), puis cliquez sur Réessayer.`
+      );
       return;
     }
 
@@ -794,7 +800,10 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
 
         if (fetchError) {
           console.error("CoursPublic: fetch apprenant error", fetchError.message);
-          setApprenantFetchError("Impossible de charger vos modules pour le moment.");
+          const code = (fetchError as any).code ? ` [code ${(fetchError as any).code}]` : "";
+          setApprenantFetchError(
+            `Impossible de charger vos modules${onlineStatus}. Raison : ${fetchError.message || "erreur inconnue"}${code}. Cliquez sur Réessayer.`
+          );
           return;
         }
 
@@ -835,13 +844,24 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         if (cancelled) return;
         console.error("CoursPublic: unexpected error", err);
 
-        const errorMessage = err instanceof Error ? err.message : "";
+        const errorMessage = err instanceof Error ? err.message : String(err);
         if (errorMessage.includes("Temps d'attente dépassé")) {
-          setApprenantFetchError("Le chargement du dossier prend trop de temps. Cliquez sur Réessayer.");
+          setApprenantFetchError(
+            `Le chargement du dossier prend trop de temps (>12s)${onlineStatus}. Raison probable : connexion lente, serveur saturé ou Wi-Fi instable. Cliquez sur Réessayer.`
+          );
           return;
         }
 
-        setApprenantFetchError("Une erreur inattendue est survenue. Cliquez sur Réessayer.");
+        if (errorMessage.toLowerCase().includes("failed to fetch") || errorMessage.toLowerCase().includes("networkerror")) {
+          setApprenantFetchError(
+            `Connexion réseau impossible${onlineStatus}. Raison : ${errorMessage}. Vérifiez votre Wi-Fi / 4G puis cliquez sur Réessayer.`
+          );
+          return;
+        }
+
+        setApprenantFetchError(
+          `Une erreur inattendue est survenue${onlineStatus}. Raison : ${errorMessage || "inconnue"}. Cliquez sur Réessayer.`
+        );
       } finally {
         if (!cancelled) setApprenantLoading(false);
       }
@@ -1079,7 +1099,9 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
             onClick={() => {
               fetchAttemptRef.current = 0;
               setApprenantLoading(false);
-              setApprenantFetchError("Chargement interrompu. Cliquez sur Réessayer.");
+              setApprenantFetchError(
+                `Chargement interrompu manuellement${typeof navigator !== "undefined" && !navigator.onLine ? " (Aucune connexion internet détectée)" : ""}. Raison probable : connexion lente ou serveur injoignable. Cliquez sur Réessayer.`
+              );
             }}
           >
             Arrêter le chargement
