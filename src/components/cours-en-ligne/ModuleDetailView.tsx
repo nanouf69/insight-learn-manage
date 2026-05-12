@@ -115,7 +115,7 @@ import {
 interface InlineQuizQuestion {
   id: number;
   enonce: string;
-  choix: { lettre: string; texte: string; correct?: boolean }[];
+  choix: { lettre: string; texte: string; correct?: boolean; explication?: string }[];
   explication?: string;
 }
 
@@ -137,6 +137,7 @@ interface ExerciceChoix {
   lettre: string;
   texte: string;
   correct?: boolean;
+  explication?: string;
 }
 
 type ImageSize = "sm" | "md" | "lg" | "xl" | "2xl";
@@ -1774,6 +1775,9 @@ function QuestionEditor({
   const handleChoixCorrect = (i: number, val: boolean) => {
     setChoix(prev => prev.map((c, idx) => idx === i ? { ...c, correct: val } : c));
   };
+  const handleChoixExplication = (i: number, val: string) => {
+    setChoix(prev => prev.map((c, idx) => idx === i ? { ...c, explication: val } : c));
+  };
   const addChoix = () => {
     const lettres = ["A", "B", "C", "D", "E", "F"];
     setChoix(prev => [...prev, { lettre: lettres[prev.length] || String(prev.length + 1), texte: "" }]);
@@ -1808,23 +1812,29 @@ function QuestionEditor({
         questionId={question.id}
         onImageChange={setImage}
       />
-      <div className="space-y-2">
+      <div className="space-y-3">
         <label className="text-xs font-semibold">Réponses (cochez les bonnes réponses — plusieurs possibles)</label>
         {choix.map((c, i) => (
-          <div key={i} className="flex items-center gap-2">
-            <span className="w-6 text-xs font-bold text-muted-foreground">{c.lettre}</span>
-            <Input value={c.texte} onChange={e => handleChoixTexte(i, e.target.value)} className="text-sm flex-1" placeholder={`Choix ${c.lettre}`} />
-            <div className="flex items-center gap-1 shrink-0">
+          <div key={i} className="space-y-1.5 p-2 rounded-md border bg-background/60">
+            <div className="flex items-center gap-2">
               <input
                 type="checkbox"
                 checked={!!c.correct}
                 onChange={e => handleChoixCorrect(i, e.target.checked)}
-                className="w-4 h-4"
+                className="w-4 h-4 shrink-0"
                 title="Bonne réponse"
               />
-              <span className="text-xs text-emerald-600 font-bold">{c.correct ? "✓" : ""}</span>
+              <span className="w-6 text-xs font-bold text-muted-foreground">{c.lettre}</span>
+              <Input value={c.texte} onChange={e => handleChoixTexte(i, e.target.value)} className="text-sm flex-1" placeholder={`Choix ${c.lettre}`} />
+              <Button size="sm" variant="ghost" onClick={() => removeChoix(i)}><X className="w-3 h-3" /></Button>
             </div>
-            <Button size="sm" variant="ghost" onClick={() => removeChoix(i)}><X className="w-3 h-3" /></Button>
+            <Textarea
+              value={c.explication ?? ""}
+              onChange={e => handleChoixExplication(i, e.target.value)}
+              placeholder="Saisir une explication (optionnel)"
+              rows={2}
+              className="text-xs ml-6"
+            />
           </div>
         ))}
         <Button size="sm" variant="outline" onClick={addChoix} className="gap-1">
@@ -4552,11 +4562,20 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                               <span className="w-7 h-7 rounded-full border-2 flex items-center justify-center text-xs font-bold shrink-0">
                                 {c.lettre}
                               </span>
-                              <span className="text-sm">{c.texte}</span>
-                              {isValidated && c.correct && <CheckCircle2 className="w-4 h-4 text-emerald-600 ml-auto shrink-0" />}
+                              <span className="text-sm flex-1">{c.texte}</span>
+                              {isValidated && c.correct && <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />}
                             </button>
                           );
                         })}
+                        {isValidated && q.choix.some(c => c.explication) && (
+                          <div className="mt-2 space-y-1.5">
+                            {q.choix.filter(c => c.explication).map(c => (
+                              <div key={`exp-${c.lettre}`} className={`p-2 rounded-md text-xs border ${c.correct ? "bg-emerald-50 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-800" : "bg-muted/50 border-border"}`}>
+                                <span className="font-semibold">{c.lettre}.</span> {c.explication}
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                       {/* Explanation after validation */}
                       {isValidated && q.explication && (

@@ -2,6 +2,7 @@ export interface ExerciceChoix {
   lettre: string;
   texte: string;
   correct?: boolean;
+  explication?: string;
 }
 
 export interface ExerciceQuestion {
