@@ -257,9 +257,13 @@ function generatePage(
   // ===== HORAIRES =====
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
-  const isFC = session.formation.toLowerCase().includes('continue');
-  const apremFin = isFC ? '17h00' : '16h00';
-  doc.text(`Horaires : Matin 09h00 - 12h00 / Apres-midi 13h00 - ${apremFin}`, margin, yPos);
+  const titleLower = (session.title || "").toLowerCase();
+  const formationLower = (session.formation || "").toLowerCase();
+  const isSoir = titleLower.includes("soir") || formationLower.includes("soir");
+  const horairesLine = isSoir
+    ? "Horaires : 1ere partie 17h00 - 18h30 / 2eme partie 18h30 - 21h00"
+    : "Horaires : Matin 09h00 - 12h00 / Apres-midi 13h00 - 16h00";
+  doc.text(horairesLine, margin, yPos);
 
   // ===== ZONE DE SIGNATURE =====
   yPos += 8;
