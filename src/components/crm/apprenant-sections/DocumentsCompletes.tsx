@@ -140,7 +140,7 @@ function getLabel(key: string): string {
   return key.replace(/_/g, ' ').replace(/([a-z])([A-Z])/g, '$1 $2').replace(/^./, s => s.toUpperCase());
 }
 
-const SKIP_KEYS = new Set(['_status', '_signature_image', 'signature', 'signatureResponsable', 'apprenant_nom', 'apprenant_prenom']);
+const SKIP_KEYS = new Set(['_status', '_signature_image', 'apprenant_nom', 'apprenant_prenom']);
 
 export function DocumentsCompletes({ apprenant }: Props) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
