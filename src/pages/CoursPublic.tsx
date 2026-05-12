@@ -800,7 +800,10 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
 
         if (fetchError) {
           console.error("CoursPublic: fetch apprenant error", fetchError.message);
-          setApprenantFetchError("Impossible de charger vos modules pour le moment.");
+          const code = (fetchError as any).code ? ` [code ${(fetchError as any).code}]` : "";
+          setApprenantFetchError(
+            `Impossible de charger vos modules${onlineStatus}. Raison : ${fetchError.message || "erreur inconnue"}${code}. Cliquez sur Réessayer.`
+          );
           return;
         }
 
