@@ -412,8 +412,18 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
           <Document
             key={retryCount}
             file={url}
-            onLoadSuccess={onDocumentLoadSuccess}
+            onLoadSuccess={(pdf) => {
+              if (loadingTimerRef.current) {
+                clearTimeout(loadingTimerRef.current);
+                loadingTimerRef.current = null;
+              }
+              onDocumentLoadSuccess(pdf);
+            }}
             onLoadError={() => {
+              if (loadingTimerRef.current) {
+                clearTimeout(loadingTimerRef.current);
+                loadingTimerRef.current = null;
+              }
               setLoadError(true);
               setRenderMode("native");
             }}
