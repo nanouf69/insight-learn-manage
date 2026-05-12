@@ -1978,6 +1978,15 @@ function ExerciceCard({
                 ) : (
                   <div className="flex items-start gap-3 p-3 border rounded-lg hover:bg-muted/20 group transition-colors">
                     <Badge className="text-xs shrink-0 mt-0.5">Q{qi + 1}</Badge>
+                    {q.image && (
+                      <img
+                        src={q.image}
+                        alt={`Illustration Q${qi + 1}`}
+                        loading="lazy"
+                        className="w-20 h-20 object-contain rounded border shrink-0 bg-white"
+                        onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                      />
+                    )}
                     <div className="flex-1">
                       <p className="text-sm text-muted-foreground line-clamp-2">{q.enonce}</p>
                       <div className="flex flex-wrap gap-1 mt-1">
@@ -2049,6 +2058,15 @@ function ExerciceCard({
                         <Badge className="text-base shrink-0 mt-0.5 px-3 py-1">Q{qi + 1}</Badge>
                         <div className="flex-1 min-w-0">
                           <p className="text-xl font-semibold mb-3 leading-snug">{q.enonce}</p>
+                          {q.image && (
+                            <img
+                              src={q.image}
+                              alt={`Illustration Q${qi + 1}`}
+                              loading="lazy"
+                              className="max-h-48 object-contain rounded border mb-3 bg-white"
+                              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                            />
+                          )}
                           <div className="flex flex-wrap gap-2">
                             {q.choix.map(c => (
                               <span key={c.lettre} className={`text-lg px-4 py-1.5 rounded-full ${c.correct ? "bg-emerald-100 text-emerald-700 font-semibold" : "bg-muted text-muted-foreground"}`}>
