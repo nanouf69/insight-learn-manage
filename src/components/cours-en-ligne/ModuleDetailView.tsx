@@ -147,6 +147,7 @@ interface ExerciceQuestion {
   enonce: string;
   image?: string;
   imageSize?: ImageSize;
+  _editedAt?: string;
   choix: ExerciceChoix[];
 }
 
