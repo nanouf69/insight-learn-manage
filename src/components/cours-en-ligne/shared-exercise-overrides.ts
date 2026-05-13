@@ -222,6 +222,8 @@ function applyOverridesToExercicesArray(
 
     let exoChanged = false;
     const updatedQuestions = exo.questions.map((q: any) => {
+      // PROTECTION: never overwrite a question that an admin manually edited
+      if (q?.manually_edited === true) return q;
       const key = normalizeEnonce(q.enonce);
       const override = changedOverrides[key];
       if (override) {
