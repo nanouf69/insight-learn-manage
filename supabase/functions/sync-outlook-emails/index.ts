@@ -98,6 +98,40 @@ interface EmailAttachment {
   contentBytes: string; // base64
 }
 
+async function waitForDeliveryFailure(
+  accessToken: string,
+  userEmail: string,
+  to: string,
+  subject: string
+): Promise<string | null> {
+  await new Promise((resolve) => setTimeout(resolve, 3500));
+
+  const recentInbox = await fetchEmails(accessToken, userEmail, "inbox");
+  const normalizedTo = to.toLowerCase();
+  const normalizedSubject = subject.toLowerCase();
+
+  const bounce = recentInbox.find((email) => {
+    const bounceSubject = (email.subject || "").toLowerCase();
+    const body = `${email.bodyPreview || ""} ${email.body?.content || ""}`.toLowerCase();
+    return (
+      (bounceSubject.startsWith("non remis") || bounceSubject.includes("undeliver") || bounceSubject.includes("delivery failure")) &&
+      body.includes(normalizedTo) &&
+      (bounceSubject.includes(normalizedSubject.slice(0, 60)) || body.includes(normalizedSubject.slice(0, 60)))
+    );
+  });
+
+  if (!bounce) return null;
+
+  const bounceText = `${bounce.bodyPreview || ""} ${bounce.body?.content || ""}`;
+  const rateLimitMatch = bounceText.match(/550\s+5\.7\.233[^'<\n\r]*/i);
+  if (rateLimitMatch) {
+    return "Limite quotidienne Microsoft atteinte pour les destinataires externes. Réessayez demain ou augmentez la limite/licence Microsoft.";
+  }
+
+  const remoteServerMatch = bounceText.match(/Remote server returned ['"]?([^'<\n\r]+)/i);
+  return remoteServerMatch?.[1]?.trim() || "Microsoft a retourné un avis de non-remise pour ce destinataire.";
+}
+
 async function sendEmail(
   accessToken: string,
   userEmail: string,
@@ -404,8 +438,13 @@ Deno.serve(async (req) => {
 
       const attachments: EmailAttachment[] = reqBody.attachments || [];
       const success = await sendEmail(accessToken, userEmail, to, subject, bodyWithSignature, requestReadReceipt === true, attachments);
+      let deliveryError: string | null = null;
 
       if (success) {
+        deliveryError = await waitForDeliveryFailure(accessToken, userEmail, to, subject);
+      }
+
+      if (success && !deliveryError) {
         await supabase.from("emails").insert({
           apprenant_id: apprenantId || null,
           subject,
@@ -421,17 +460,17 @@ Deno.serve(async (req) => {
       }
 
       // Log failure as system alert
-      if (!success) {
+      if (!success || deliveryError) {
         await supabase.from("alertes_systeme").insert({
           type: "email_error",
           titre: `Échec envoi email à ${to}`,
-          message: `L'envoi de l'email "${subject}" à ${to} a échoué.`,
-          details: `Expéditeur: ${userEmail}\nDestinataire: ${to}\nObjet: ${subject}\nDate: ${new Date().toISOString()}`,
+          message: deliveryError || `L'envoi de l'email "${subject}" à ${to} a échoué.`,
+          details: `Expéditeur: ${userEmail}\nDestinataire: ${to}\nObjet: ${subject}\nDate: ${new Date().toISOString()}${deliveryError ? `\nErreur: ${deliveryError}` : ""}`,
         });
       }
 
       return new Response(
-        JSON.stringify({ success }),
+        JSON.stringify({ success: success && !deliveryError, error: deliveryError }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
