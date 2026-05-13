@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
+import { RealtimeStatusIndicator } from "./RealtimeStatusIndicator";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
