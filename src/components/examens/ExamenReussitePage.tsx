@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ClipboardCheck, CheckCircle2, XCircle, UserX, Search, RotateCcw, Plus, X, Upload, FileText, Trash2, Download, Users, Mail, GraduationCap, Calendar, MessageSquare, CalendarPlus, Maximize2, Minimize2 } from "lucide-react";
+import { ClipboardCheck, CheckCircle2, XCircle, UserX, Search, RotateCcw, Plus, X, Upload, FileText, Trash2, Download, Users, Mail, GraduationCap, Calendar, MessageSquare, CalendarPlus, Maximize2, Minimize2, ZoomIn, ZoomOut } from "lucide-react";
 import { toast } from "sonner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
@@ -163,6 +163,10 @@ export function ExamenReussitePage() {
   const [search, setSearch] = useState("");
   const [fullscreen, setFullscreen] = useState(false);
   const [pratiqueFullscreen, setPratiqueFullscreen] = useState(false);
+  const [zoom, setZoom] = useState(1);
+  const zoomIn = () => setZoom(z => Math.min(z + 0.1, 2));
+  const zoomOut = () => setZoom(z => Math.max(z - 0.1, 0.5));
+  const resetZoom = () => setZoom(1);
 
   useEffect(() => {
     if (fullscreen || pratiqueFullscreen) {
