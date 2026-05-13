@@ -94,7 +94,7 @@ export default function ReservationCarteVtc() {
                 <li>Justificatif de domicile (- 3 mois)</li>
                 <li>Attestation de réussite CMA</li>
                 <li>Certificat médical (médecin agréé)</li>
-                <li>30 € (espèces ou CB)</li>
+                <li>30 € en espèces uniquement (CB non acceptée)</li>
               </ul>
             </div>
           </CardContent>
