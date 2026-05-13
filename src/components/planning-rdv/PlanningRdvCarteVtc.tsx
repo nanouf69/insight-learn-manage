@@ -177,16 +177,10 @@ export function PlanningRdvCarteVtc() {
                 <Input type="time" value={bulkEnd} onChange={(e) => setBulkEnd(e.target.value)} />
               </div>
               <div>
-                <Label>Intervalle (min)</Label>
-                <Select value={bulkInterval} onValueChange={setBulkInterval}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="15">15 min</SelectItem>
-                    <SelectItem value="30">30 min</SelectItem>
-                    <SelectItem value="45">45 min</SelectItem>
-                    <SelectItem value="60">1 heure</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label>Durée</Label>
+                <div className="h-10 px-3 flex items-center rounded-md border bg-muted text-sm">
+                  30 min (fixe)
+                </div>
               </div>
             </>
           )}
