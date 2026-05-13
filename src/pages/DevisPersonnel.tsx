@@ -16,6 +16,32 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { sendAdminNotification } from "@/lib/sendAdminNotification";
 
+/* ─── HELPER: parse "Du 12 au 25 janvier 2026" / "Du 26 octobre au 16 novembre 2026" ─── */
+const FR_MONTHS: Record<string, number> = {
+  janvier: 1, fevrier: 2, "février": 2, mars: 3, avril: 4, mai: 5, juin: 6,
+  juillet: 7, aout: 8, "août": 8, septembre: 9, octobre: 10, novembre: 11, decembre: 12, "décembre": 12,
+};
+function parseFrenchDateRange(label: string): { date_debut: string; date_fin: string } | null {
+  if (!label) return null;
+  const s = label.toLowerCase().normalize("NFD").replace(/\u0300|\u0301|\u0302|\u0308/g, "");
+  // Try "du D1 [M1] au D2 M2 YYYY"
+  const m = s.match(/du\s+(\d{1,2})(?:\s+([a-zéûôî]+))?\s+au\s+(\d{1,2})\s+([a-zéûôî]+)\s+(\d{4})/);
+  if (!m) return null;
+  const d1 = parseInt(m[1], 10);
+  const mo1 = m[2] ? FR_MONTHS[m[2]] : undefined;
+  const d2 = parseInt(m[3], 10);
+  const mo2 = FR_MONTHS[m[4]];
+  const yyyy = parseInt(m[5], 10);
+  if (!mo2) return null;
+  // If first month missing, assume same as second; if first month given and != second, find the right year (cross-year unlikely here)
+  const month1 = mo1 ?? mo2;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return {
+    date_debut: `${yyyy}-${pad(month1)}-${pad(d1)}`,
+    date_fin: `${yyyy}-${pad(mo2)}-${pad(d2)}`,
+  };
+}
+
 /* ─── DATES DE FORMATION CATALOGUE ─── */
 const DATES_VTC = [
   "Du 12 au 25 janvier 2026",
