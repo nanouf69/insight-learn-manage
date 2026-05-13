@@ -1371,8 +1371,10 @@ export function ExamenReussitePage() {
           }
         };
 
+        const fsLettre = sectionFullscreen('lettre');
+
         return (
-          <Card className="border-l-4 border-l-teal-500">
+          <Card className={fsLettre.className("border-l-4 border-l-teal-500")}>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <span className="flex items-center gap-2">
@@ -1380,6 +1382,7 @@ export function ExamenReussitePage() {
                   Lettre CMA — Candidats reçus
                 </span>
                 <div className="flex items-center gap-2">
+                  {fsLettre.button}
                   <Button onClick={handlePrintLettre} disabled={reussisLettre.length === 0 || resultatsIncomplets} variant="outline" className="gap-2">
                     <FileText className="h-4 w-4" />
                     Imprimer ({reussisLettre.length})
