@@ -5555,6 +5555,13 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             };
             return parentMap[module.id] || moduleData.nom;
           })()}</h2>
+          <RealtimeStatusIndicator
+            status={realtimeStatus}
+            onReconnect={() => {
+              setRealtimeStatus("CONNECTING");
+              setRealtimeReconnectKey((k) => k + 1);
+            }}
+          />
         </div>
         <LearnerPreview secureMode />
       </div>
