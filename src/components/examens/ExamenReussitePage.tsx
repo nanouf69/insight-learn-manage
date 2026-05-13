@@ -163,19 +163,39 @@ export function ExamenReussitePage() {
   const [search, setSearch] = useState("");
   const [fullscreen, setFullscreen] = useState(false);
   const [pratiqueFullscreen, setPratiqueFullscreen] = useState(false);
+  const [activeFs, setActiveFs] = useState<string | null>(null);
   const [zoom, setZoom] = useState(1);
   const zoomIn = () => setZoom(z => Math.min(z + 0.1, 2));
   const zoomOut = () => setZoom(z => Math.max(z - 0.1, 0.5));
   const resetZoom = () => setZoom(1);
 
   useEffect(() => {
-    if (fullscreen || pratiqueFullscreen) {
+    if (fullscreen || pratiqueFullscreen || activeFs) {
       document.body.classList.add("app-fullscreen");
     } else {
       document.body.classList.remove("app-fullscreen");
     }
     return () => document.body.classList.remove("app-fullscreen");
-  }, [fullscreen, pratiqueFullscreen]);
+  }, [fullscreen, pratiqueFullscreen, activeFs]);
+
+  function sectionFullscreen(key: string) {
+    const isActive = activeFs === key;
+    return {
+      isActive,
+      toggle: () => setActiveFs(f => f === key ? null : key),
+      className: (base: string) => isActive ? `fixed inset-0 z-50 bg-background overflow-auto p-6 rounded-none ${base}` : base,
+      button: (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setActiveFs(f => f === key ? null : key)}
+          title={isActive ? "Réduire" : "Plein écran"}
+        >
+          {isActive ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+        </Button>
+      ),
+    };
+  }
   const [repassageSearch, setRepassageSearch] = useState("");
   const [repassageList, setRepassageList] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -858,6 +878,9 @@ export function ExamenReussitePage() {
     );
   }
 
+  const fsRepassage = sectionFullscreen('repassage');
+  const fsPdf = sectionFullscreen('pdf-resultats');
+
   return (
     <div className={fullscreen ? "fixed inset-0 z-50 bg-background overflow-auto p-6 space-y-6 animate-fade-in" : "space-y-6 animate-fade-in"} style={{ zoom }}>
       {/* Header */}
@@ -1351,8 +1374,10 @@ export function ExamenReussitePage() {
           }
         };
 
+        const fsLettre = sectionFullscreen('lettre');
+
         return (
-          <Card className="border-l-4 border-l-teal-500">
+          <Card className={fsLettre.className("border-l-4 border-l-teal-500")}>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <span className="flex items-center gap-2">
@@ -1360,6 +1385,7 @@ export function ExamenReussitePage() {
                   Lettre CMA — Candidats reçus
                 </span>
                 <div className="flex items-center gap-2">
+                  {fsLettre.button}
                   <Button onClick={handlePrintLettre} disabled={reussisLettre.length === 0 || resultatsIncomplets} variant="outline" className="gap-2">
                     <FileText className="h-4 w-4" />
                     Imprimer ({reussisLettre.length})
@@ -1697,15 +1723,19 @@ export function ExamenReussitePage() {
         const vtcPreviewBookingUrl = vtcList[0]?.id ? getBookingUrl(vtcList[0].id, 'vtc') : '';
         const taxiPreviewBookingUrl = taxiList[0]?.id ? getBookingUrl(taxiList[0].id, 'taxi') : '';
 
+        const fsCandidats = sectionFullscreen('candidats');
+
         return (
-          <Card className="border-l-4 border-l-indigo-500">
+          <Card className={fsCandidats.className("border-l-4 border-l-indigo-500")}>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <span className="flex items-center gap-2">
                   <GraduationCap className="h-5 w-5 text-indigo-600" />
                   Candidats à former
                 </span>
-                <Popover>
+                <div className="flex items-center gap-2">
+                  {fsCandidats.button}
+                  <Popover>
                   <PopoverTrigger asChild>
                     <Button size="sm" variant="outline" className="gap-1.5 text-xs">
                       <Plus className="h-3.5 w-3.5" />
@@ -1761,6 +1791,7 @@ export function ExamenReussitePage() {
                     )}
                   </PopoverContent>
                 </Popover>
+                </div>
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -2643,13 +2674,18 @@ export function ExamenReussitePage() {
           return `${dayNames[d.getDay()]} ${d.getDate()} ${monthNames[d.getMonth()]}`;
         };
 
+        const fsPlanning = sectionFullscreen('planning');
+
         return (
-          <Card className="border-l-4 border-l-emerald-500">
+          <Card className={fsPlanning.className("border-l-4 border-l-emerald-500")}>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center justify-between">
+                <span className="flex items-center gap-2">
                   <Calendar className="h-5 w-5 text-emerald-600" />
                   Planning formation pratique
-                </CardTitle>
+                </span>
+                {fsPlanning.button}
+              </CardTitle>
               <p className="text-sm text-muted-foreground">
                 VTC : {totalVTC} candidats ({vtcDaysNeeded}j) • TAXI : {totalTAXI} candidats ({taxiDaysNeeded}j) • {weekdays.length} jours disponibles • {totalReserved} réservation(s) • {vtcPlaces} places VTC / {taxiPlaces} places TAXI
               </p>
@@ -2936,15 +2972,20 @@ export function ExamenReussitePage() {
 
         if (!selectedExamDate) return null;
 
+        const fsDecales = sectionFullscreen('decales');
+
         return (
-          <Card className="border-orange-200 bg-orange-50/30">
+          <Card className={fsDecales.className("border-orange-200 bg-orange-50/30")}>
             <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-orange-700">
-                <CalendarPlus className="h-5 w-5" />
-                Décalés à la prochaine session
-                {deplacesAff.length > 0 && (
-                  <Badge className="bg-orange-100 text-orange-800 ml-2">{deplacesAff.length}</Badge>
-                )}
+              <CardTitle className="flex items-center justify-between text-orange-700">
+                <span className="flex items-center gap-2">
+                  <CalendarPlus className="h-5 w-5" />
+                  Décalés à la prochaine session
+                  {deplacesAff.length > 0 && (
+                    <Badge className="bg-orange-100 text-orange-800 ml-2">{deplacesAff.length}</Badge>
+                  )}
+                </span>
+                {fsDecales.button}
               </CardTitle>
               <p className="text-xs text-orange-600 mt-1">
                 Ces candidats sont automatiquement inclus dans la lettre CMA et dans les « Candidats à former » de la prochaine session.
@@ -3512,11 +3553,14 @@ export function ExamenReussitePage() {
         </CardContent>
       </Card>
       {/* Repassage examen théorique */}
-      <Card className="border-l-4 border-l-violet-500">
+      <Card className={fsRepassage.className("border-l-4 border-l-violet-500")}>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <RotateCcw className="h-5 w-5 text-violet-500" />
-            Repassage examen théorique
+          <CardTitle className="flex items-center justify-between">
+            <span className="flex items-center gap-2">
+              <RotateCcw className="h-5 w-5 text-violet-500" />
+              Repassage examen théorique
+            </span>
+            {fsRepassage.button}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -3566,11 +3610,14 @@ export function ExamenReussitePage() {
         </CardContent>
       </Card>
       {/* PDF Résultats d'examen */}
-      <Card className="border-l-4 border-l-sky-500">
+      <Card className={fsPdf.className("border-l-4 border-l-sky-500")}>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5 text-sky-500" />
-            Dossier PDF - Résultats d'examen
+          <CardTitle className="flex items-center justify-between">
+            <span className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-sky-500" />
+              Dossier PDF - Résultats d'examen
+            </span>
+            {fsPdf.button}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
