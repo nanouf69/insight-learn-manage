@@ -1172,6 +1172,7 @@ export function ExamenReussitePage() {
         return null;
       })()}
 
+      <div id="anchor-lettre-cma" className="scroll-mt-24" />
       {/* Lettre CMA - Réussite examen */}
       {(() => {
         const totalInscrits = apprenants?.length || 0;
