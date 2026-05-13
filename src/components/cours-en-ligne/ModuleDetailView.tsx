@@ -2069,7 +2069,7 @@ function ExerciceCard({
                       <div className="flex items-start gap-3 p-4 border rounded-lg hover:bg-muted/20 group transition-colors">
                         <Badge className="text-base shrink-0 mt-0.5 px-3 py-1">Q{qi + 1}</Badge>
                         <div className="flex-1 min-w-0">
-                          <p className="text-xl font-semibold mb-3 leading-snug">{q.enonce}</p>
+                          <p className="text-xl font-semibold mb-3 leading-snug"><RichText value={q.enonce} /></p>
                           {q.image && (
                             <img
                               src={q.image}
@@ -2082,7 +2082,7 @@ function ExerciceCard({
                           <div className="flex flex-wrap gap-2">
                             {q.choix.map(c => (
                               <span key={c.lettre} className={`text-lg px-4 py-1.5 rounded-full ${c.correct ? "bg-emerald-100 text-emerald-700 font-semibold" : "bg-muted text-muted-foreground"}`}>
-                                {c.lettre}. {c.texte} {c.correct ? "✓" : ""}
+                                {c.lettre}. <RichText value={c.texte} /> {c.correct ? "✓" : ""}
                               </span>
                             ))}
                           </div>
