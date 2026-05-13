@@ -1819,35 +1819,25 @@ function QuestionEditor({
         <label className="text-xs font-semibold">Réponses (cochez les bonnes réponses — plusieurs possibles)</label>
         {choix.map((c, i) => (
           <div key={i} className="space-y-1.5 p-2 rounded-md border bg-background/60">
-            <div className="flex items-start gap-2">
+            <div className="flex items-center gap-2">
               <input
                 type="checkbox"
                 checked={!!c.correct}
                 onChange={e => handleChoixCorrect(i, e.target.checked)}
-                className="w-4 h-4 shrink-0 mt-2"
+                className="w-4 h-4 shrink-0"
                 title="Bonne réponse"
               />
-              <span className="w-6 text-xs font-bold text-muted-foreground mt-2">{c.lettre}</span>
-              <div className="flex-1">
-                <ColoredTextField
-                  value={c.texte}
-                  onChange={(v) => handleChoixTexte(i, v)}
-                  multiline={false}
-                  className="text-sm"
-                  placeholder={`Choix ${c.lettre}`}
-                />
-              </div>
+              <span className="w-6 text-xs font-bold text-muted-foreground">{c.lettre}</span>
+              <Input value={c.texte} onChange={e => handleChoixTexte(i, e.target.value)} className="text-sm flex-1" placeholder={`Choix ${c.lettre}`} />
               <Button size="sm" variant="ghost" onClick={() => removeChoix(i)}><X className="w-3 h-3" /></Button>
             </div>
-            <div className="ml-6">
-              <ColoredTextField
-                value={c.explication ?? ""}
-                onChange={(v) => handleChoixExplication(i, v)}
-                placeholder="Saisir une explication (optionnel)"
-                rows={2}
-                className="text-xs"
-              />
-            </div>
+            <Textarea
+              value={c.explication ?? ""}
+              onChange={e => handleChoixExplication(i, e.target.value)}
+              placeholder="Saisir une explication (optionnel)"
+              rows={2}
+              className="text-xs ml-6"
+            />
           </div>
         ))}
         <Button size="sm" variant="outline" onClick={addChoix} className="gap-1">
