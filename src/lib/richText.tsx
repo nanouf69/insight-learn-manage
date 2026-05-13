@@ -5,7 +5,7 @@ import React from "react";
 //   size:  [s=18]text[/s]   (size in px, 8..96)
 // Backward compatible: plain text without markers renders normally.
 
-const TOKEN_RE = /\[(c|s)=([^\]]+)\]([\s\S]*?)\[\/\1\]/g;
+const makeTokenRe = () => /\[(c|s)=([^\]]+)\]([\s\S]*?)\[\/\1\]/g;
 
 export function renderRichText(input: string | null | undefined): React.ReactNode {
   const text = String(input ?? "");
@@ -14,8 +14,8 @@ export function renderRichText(input: string | null | undefined): React.ReactNod
   const nodes: React.ReactNode[] = [];
   let lastIndex = 0;
   let m: RegExpExecArray | null;
-  TOKEN_RE.lastIndex = 0;
-  while ((m = TOKEN_RE.exec(text)) !== null) {
+  const re = makeTokenRe();
+  while ((m = re.exec(text)) !== null) {
     if (m.index > lastIndex) nodes.push(text.slice(lastIndex, m.index));
     const tag = m[1];
     const arg = m[2];
