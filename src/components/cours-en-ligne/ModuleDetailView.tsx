@@ -5727,7 +5727,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                                     </span>
                                     <div className="flex-1 min-w-0">
                                       <p className={`text-sm ${q.correct ? 'text-emerald-800 dark:text-emerald-300' : 'text-red-800 dark:text-red-300'}`}>
-                                        {q.enonce}
+                                        <RichText value={q.enonce} />
                                       </p>
                                       {!q.correct && q.reponseCorrecte && (
                                         <p className="text-xs text-muted-foreground mt-1">
