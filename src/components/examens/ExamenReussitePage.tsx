@@ -2978,6 +2978,7 @@ export function ExamenReussitePage() {
         );
       })()}
 
+      <div id="anchor-decales" className="scroll-mt-24" />
       {/* Décalés à la prochaine session */}
       {(() => {
         const deplacesAff = (allApprenants || []).filter(a =>
