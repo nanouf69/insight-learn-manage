@@ -3200,7 +3200,7 @@ export function ExamenReussitePage() {
                           }`}>
                             <SelectValue />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent className="z-[100]">
                             <SelectItem value="non_renseigne">-</SelectItem>
                             <SelectItem value="oui">✅ Oui</SelectItem>
                             <SelectItem value="non">❌ Non</SelectItem>
