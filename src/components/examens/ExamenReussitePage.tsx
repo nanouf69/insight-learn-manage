@@ -163,19 +163,39 @@ export function ExamenReussitePage() {
   const [search, setSearch] = useState("");
   const [fullscreen, setFullscreen] = useState(false);
   const [pratiqueFullscreen, setPratiqueFullscreen] = useState(false);
+  const [activeFs, setActiveFs] = useState<string | null>(null);
   const [zoom, setZoom] = useState(1);
   const zoomIn = () => setZoom(z => Math.min(z + 0.1, 2));
   const zoomOut = () => setZoom(z => Math.max(z - 0.1, 0.5));
   const resetZoom = () => setZoom(1);
 
   useEffect(() => {
-    if (fullscreen || pratiqueFullscreen) {
+    if (fullscreen || pratiqueFullscreen || activeFs) {
       document.body.classList.add("app-fullscreen");
     } else {
       document.body.classList.remove("app-fullscreen");
     }
     return () => document.body.classList.remove("app-fullscreen");
-  }, [fullscreen, pratiqueFullscreen]);
+  }, [fullscreen, pratiqueFullscreen, activeFs]);
+
+  function sectionFullscreen(key: string) {
+    const isActive = activeFs === key;
+    return {
+      isActive,
+      toggle: () => setActiveFs(f => f === key ? null : key),
+      className: (base: string) => isActive ? `fixed inset-0 z-50 bg-background overflow-auto p-6 rounded-none ${base}` : base,
+      button: (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setActiveFs(f => f === key ? null : key)}
+          title={isActive ? "Réduire" : "Plein écran"}
+        >
+          {isActive ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+        </Button>
+      ),
+    };
+  }
   const [repassageSearch, setRepassageSearch] = useState("");
   const [repassageList, setRepassageList] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
