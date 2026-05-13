@@ -2066,7 +2066,7 @@ function ExerciceCard({
                               alt={`Illustration Q${qi + 1}`}
                               loading="lazy"
                               className="max-h-48 object-contain rounded border mb-3 bg-white cursor-zoom-in"
-                              onError={(e: any) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                              onError={() => {}}
                             />
                           )}
                           <div className="flex flex-wrap gap-2">
