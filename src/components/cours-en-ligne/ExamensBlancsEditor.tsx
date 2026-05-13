@@ -532,15 +532,18 @@ function QuestionEditor({
           <Label className="text-xs font-semibold">Choix de réponses</Label>
           {choix.map((c, i) => (
             <div key={i} className="space-y-1">
-              <div className="flex items-center gap-2">
-                <span className="w-6 text-xs font-bold text-muted-foreground">{c.lettre}</span>
-                <Input
-                  value={c.texte}
-                  onChange={e => handleChoixTexte(i, e.target.value)}
-                  className="text-sm flex-1"
-                  placeholder={`Choix ${c.lettre}`}
-                />
-                <div className="flex items-center gap-1 shrink-0">
+              <div className="flex items-start gap-2">
+                <span className="w-6 text-xs font-bold text-muted-foreground mt-2">{c.lettre}</span>
+                <div className="flex-1">
+                  <ColoredTextField
+                    value={c.texte}
+                    onChange={(v) => handleChoixTexte(i, v)}
+                    multiline={false}
+                    className="text-sm"
+                    placeholder={`Choix ${c.lettre}`}
+                  />
+                </div>
+                <div className="flex items-center gap-1 shrink-0 mt-2">
                   <input
                     type="checkbox"
                     checked={!!c.correct}
@@ -555,10 +558,11 @@ function QuestionEditor({
                 </Button>
               </div>
               <div className="ml-6">
-                <Input
+                <ColoredTextField
                   value={c.explication || ""}
-                  onChange={e => handleChoixExplication(i, e.target.value)}
-                  className="text-xs h-7"
+                  onChange={(v) => handleChoixExplication(i, v)}
+                  multiline={false}
+                  className="text-xs"
                   placeholder="Explication (optionnel, affiché en correction)"
                 />
               </div>
