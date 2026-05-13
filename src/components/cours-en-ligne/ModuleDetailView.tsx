@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
+import { RealtimeStatusIndicator } from "./RealtimeStatusIndicator";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -2332,6 +2333,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   // Trigger pour forcer la réapplication des overrides fournisseur après chaque
   // reload de moduleData depuis la DB (realtime, visibility, polling).
   const [trainerOverridesReapplyKey, setTrainerOverridesReapplyKey] = useState(0);
+  // Statut de la connexion Realtime (visible uniquement côté apprenant)
+  const [realtimeStatus, setRealtimeStatus] = useState<string>("CONNECTING");
+  const [realtimeReconnectKey, setRealtimeReconnectKey] = useState(0);
   const moduleEditorStorageKey = `module-editor-state:${module.id}`;
   const skipInitialAutosaveRef = useRef(true);
   const saveErrorShownRef = useRef(false);
@@ -3011,12 +3015,13 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       )
       .subscribe((status) => {
         console.log(`[Realtime] Channel module-editor-live-${module.id} status:`, status);
+        setRealtimeStatus(status);
       });
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [module.id, studentOnly]);
+  }, [module.id, studentOnly, realtimeReconnectKey]);
 
   // Polling fallback for students: if realtime subscription fails or misses events,
   // re-fetch from DB when the tab becomes visible again (e.g. student switches back).
@@ -5551,6 +5556,13 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             };
             return parentMap[module.id] || moduleData.nom;
           })()}</h2>
+          <RealtimeStatusIndicator
+            status={realtimeStatus}
+            onReconnect={() => {
+              setRealtimeStatus("CONNECTING");
+              setRealtimeReconnectKey((k) => k + 1);
+            }}
+          />
         </div>
         <LearnerPreview secureMode />
       </div>
