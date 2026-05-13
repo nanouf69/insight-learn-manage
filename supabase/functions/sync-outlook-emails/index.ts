@@ -249,7 +249,7 @@ Deno.serve(async (req) => {
           return {
             apprenant_id: emailToApprenant.get(senderEmail) || null,
             outlook_message_id: email.id,
-            subject: email.subject,
+            subject: email.subject || "(sans objet)",
             body_preview: email.bodyPreview,
             body_html: email.body?.content,
             sender_email: email.from?.emailAddress?.address,
@@ -266,7 +266,7 @@ Deno.serve(async (req) => {
           return {
             apprenant_id: emailToApprenant.get(recipientEmail) || null,
             outlook_message_id: email.id,
-            subject: email.subject,
+            subject: email.subject || "(sans objet)",
             body_preview: email.bodyPreview,
             body_html: email.body?.content,
             sender_email: syncUserEmail,
@@ -337,7 +337,7 @@ Deno.serve(async (req) => {
         ...relevantInbox.map((email) => ({
           apprenant_id: apprenantId,
           outlook_message_id: email.id,
-          subject: email.subject,
+            subject: email.subject || "(sans objet)",
           body_preview: email.bodyPreview,
           body_html: email.body?.content,
           sender_email: email.from?.emailAddress?.address,
@@ -351,7 +351,7 @@ Deno.serve(async (req) => {
         ...relevantSent.map((email) => ({
           apprenant_id: apprenantId,
           outlook_message_id: email.id,
-          subject: email.subject,
+            subject: email.subject || "(sans objet)",
           body_preview: email.bodyPreview,
           body_html: email.body?.content,
           sender_email: userEmail,
@@ -405,9 +405,9 @@ Deno.serve(async (req) => {
       const attachments: EmailAttachment[] = reqBody.attachments || [];
       const success = await sendEmail(accessToken, userEmail, to, subject, bodyWithSignature, requestReadReceipt === true, attachments);
 
-      if (success && apprenantId) {
+      if (success) {
         await supabase.from("emails").insert({
-          apprenant_id: apprenantId,
+          apprenant_id: apprenantId || null,
           subject,
           body_preview: body.substring(0, 200),
           body_html: body,
