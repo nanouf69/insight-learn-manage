@@ -66,7 +66,7 @@ export function PlanningRdvCarteVtc() {
     if (bulkMode) {
       const [sh, sm] = bulkStart.split(":").map(Number);
       const [eh, em] = bulkEnd.split(":").map(Number);
-      const interval = parseInt(bulkInterval, 10);
+      const interval = SLOT_DURATION_MIN;
       const startMin = sh * 60 + sm;
       const endMin = eh * 60 + em;
       const rows: { date: string; heure: string }[] = [];
