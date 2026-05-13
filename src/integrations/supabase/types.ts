@@ -2231,6 +2231,39 @@ export type Database = {
         }
         Relationships: []
       }
+      rdv_carte_vtc_slots_audit: {
+        Row: {
+          action: string
+          actor_role: string | null
+          actor_user_id: string | null
+          changed_at: string
+          id: string
+          new_data: Json | null
+          old_data: Json | null
+          slot_id: string
+        }
+        Insert: {
+          action: string
+          actor_role?: string | null
+          actor_user_id?: string | null
+          changed_at?: string
+          id?: string
+          new_data?: Json | null
+          old_data?: Json | null
+          slot_id: string
+        }
+        Update: {
+          action?: string
+          actor_role?: string | null
+          actor_user_id?: string | null
+          changed_at?: string
+          id?: string
+          new_data?: Json | null
+          old_data?: Json | null
+          slot_id?: string
+        }
+        Relationships: []
+      }
       releves_bancaires: {
         Row: {
           banque: string
