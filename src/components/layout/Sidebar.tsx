@@ -42,6 +42,7 @@ const menuItems = [
   { id: "organisations", label: "Organisations", icon: Building2 },
   { id: "crm", label: "Apprenants", icon: Users },
   { id: "examens", label: "Examen et Réussite", icon: ClipboardCheck },
+  { id: "rdv-carte-vtc", label: "Planning RDV Carte VTC", icon: Truck },
   { id: "documents", label: "Documents", icon: FileText },
   { id: "factures", label: "Factures", icon: Receipt },
   { id: "comptabilite", label: "Comptabilité", icon: Calculator },

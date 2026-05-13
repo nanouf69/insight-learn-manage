@@ -22,6 +22,7 @@ import { ComptabilitePage } from "@/components/comptabilite/ComptabilitePage";
 import { FinancialCharts } from "@/components/comptabilite/FinancialCharts";
 import { AgendaView } from "@/components/agenda/AgendaView";
 import { ExamenReussitePage } from "@/components/examens/ExamenReussitePage";
+import { PlanningRdvCarteVtc } from "@/components/planning-rdv/PlanningRdvCarteVtc";
 import CoursEnLignePage from "@/components/cours-en-ligne/CoursEnLignePage";
 import { FournisseursPage } from "@/components/fournisseurs/FournisseursPage";
 import { ApprenantsCorbeille } from "@/components/apprenants/ApprenantsCorbeille";
@@ -45,6 +46,7 @@ const pageConfig = {
   organisations: { title: "Organisations", subtitle: "Gérez vos organisations clientes" },
   apprenants: { title: "Apprenants", subtitle: "Suivez vos apprenants" },
   examens: { title: "Examen et Réussite", subtitle: "Suivi des examens théoriques" },
+  "rdv-carte-vtc": { title: "Planning RDV Carte VTC", subtitle: "Disponibilités pour les rendez-vous de création de carte professionnelle" },
   crm: { title: "CRM", subtitle: "Gérez vos contacts et prospects" },
   documents: { title: "Documents", subtitle: "Gérez vos documents administratifs" },
   factures: { title: "Factures", subtitle: "Créez et gérez vos factures" },
@@ -258,6 +260,8 @@ const Index = () => {
         return <ApprenantsList />;
       case "examens":
         return <ExamenReussitePage />;
+      case "rdv-carte-vtc":
+        return <PlanningRdvCarteVtc />;
       case "crm":
         return <CRMDashboard initialApprenantId={initialApprenantId} onApprenantClosed={() => setInitialApprenantId(null)} />;
       case "planning":

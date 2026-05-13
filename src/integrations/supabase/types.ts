@@ -2189,6 +2189,48 @@ export type Database = {
           },
         ]
       }
+      rdv_carte_vtc_slots: {
+        Row: {
+          created_at: string
+          date: string
+          email: string | null
+          heure: string
+          id: string
+          nom: string | null
+          notes: string | null
+          prenom: string | null
+          statut: string
+          telephone: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          email?: string | null
+          heure: string
+          id?: string
+          nom?: string | null
+          notes?: string | null
+          prenom?: string | null
+          statut?: string
+          telephone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          email?: string | null
+          heure?: string
+          id?: string
+          nom?: string | null
+          notes?: string | null
+          prenom?: string | null
+          statut?: string
+          telephone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       releves_bancaires: {
         Row: {
           banque: string
