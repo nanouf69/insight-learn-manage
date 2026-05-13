@@ -774,7 +774,7 @@ function MatiereEditor({
                         {q?.type} — Q{q.id}
                       </Badge>
                       <div className="flex-1 min-w-0">
-                        <p className="text-base font-medium text-foreground leading-relaxed">{q.enonce}</p>
+                        <p className="text-base font-medium text-foreground leading-relaxed"><RichText value={q.enonce} /></p>
                         {q.image && (
                           <img src={q.image} alt={`Question ${q.id}`} className="mt-2 max-h-32 rounded border" />
                         )}
