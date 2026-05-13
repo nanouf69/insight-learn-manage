@@ -317,7 +317,9 @@ export function PlanningRdvCarteVtc() {
 
         <Button onClick={addSlot} disabled={saving} className="gap-2">
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-          {bulkMode ? "Générer les créneaux" : "Ajouter le créneau"}
+          {bulkMode
+            ? `Générer les créneaux${dates.length > 0 ? ` (${dates.length} date${dates.length > 1 ? "s" : ""})` : ""}`
+            : "Ajouter le créneau"}
         </Button>
       </Card>
 
