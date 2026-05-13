@@ -2538,6 +2538,7 @@ export function ExamenReussitePage() {
         );
       })()}
 
+      <div id="anchor-planning" className="scroll-mt-24" />
       {/* Planning formation pratique - from reservations + computed fallback */}
       {(() => {
         const totalInscritsP = apprenants?.length || 0;
