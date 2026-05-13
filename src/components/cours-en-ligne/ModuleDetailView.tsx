@@ -3014,12 +3014,13 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       )
       .subscribe((status) => {
         console.log(`[Realtime] Channel module-editor-live-${module.id} status:`, status);
+        setRealtimeStatus(status);
       });
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [module.id, studentOnly]);
+  }, [module.id, studentOnly, realtimeReconnectKey]);
 
   // Polling fallback for students: if realtime subscription fails or misses events,
   // re-fetch from DB when the tab becomes visible again (e.g. student switches back).
