@@ -38,7 +38,7 @@ export function PlanningRdvCarteVtc() {
   const [bulkMode, setBulkMode] = useState(false);
   const [bulkStart, setBulkStart] = useState("09:00");
   const [bulkEnd, setBulkEnd] = useState("17:00");
-  const [bulkInterval, setBulkInterval] = useState("30");
+  const SLOT_DURATION_MIN = 30;
   const [saving, setSaving] = useState(false);
 
   const load = async () => {
@@ -66,7 +66,7 @@ export function PlanningRdvCarteVtc() {
     if (bulkMode) {
       const [sh, sm] = bulkStart.split(":").map(Number);
       const [eh, em] = bulkEnd.split(":").map(Number);
-      const interval = parseInt(bulkInterval, 10);
+      const interval = SLOT_DURATION_MIN;
       const startMin = sh * 60 + sm;
       const endMin = eh * 60 + em;
       const rows: { date: string; heure: string }[] = [];
@@ -177,16 +177,10 @@ export function PlanningRdvCarteVtc() {
                 <Input type="time" value={bulkEnd} onChange={(e) => setBulkEnd(e.target.value)} />
               </div>
               <div>
-                <Label>Intervalle (min)</Label>
-                <Select value={bulkInterval} onValueChange={setBulkInterval}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="15">15 min</SelectItem>
-                    <SelectItem value="30">30 min</SelectItem>
-                    <SelectItem value="45">45 min</SelectItem>
-                    <SelectItem value="60">1 heure</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label>Durée</Label>
+                <div className="h-10 px-3 flex items-center rounded-md border bg-muted text-sm">
+                  30 min (fixe)
+                </div>
               </div>
             </>
           )}
@@ -225,7 +219,14 @@ export function PlanningRdvCarteVtc() {
                   >
                     <div className="flex items-center gap-2 text-sm">
                       <Clock className="h-3.5 w-3.5" />
-                      <span className="font-medium">{s.heure.slice(0, 5)}</span>
+                      <span className="font-medium">
+                        {s.heure.slice(0, 5)}
+                        {(() => {
+                          const [h, m] = s.heure.split(":").map(Number);
+                          const end = h * 60 + m + 30;
+                          return ` – ${String(Math.floor(end / 60)).padStart(2, "0")}:${String(end % 60).padStart(2, "0")}`;
+                        })()}
+                      </span>
                       {s.statut === "reserve" && (
                         <span className="text-xs flex items-center gap-1">
                           <User className="h-3 w-3" />
