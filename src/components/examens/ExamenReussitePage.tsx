@@ -3405,7 +3405,10 @@ export function ExamenReussitePage() {
                             <Badge className="bg-red-100 text-red-800 text-[10px]">{echouesEmail.length}</Badge>
                           </div>
                           <Button size="sm" variant="destructive" disabled={echouesEmail.length === 0 || sendingRepassagePratique || sentRepassagePratique} className={`gap-1.5 text-xs ${sentRepassagePratique ? 'bg-green-600' : ''}`}
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              console.log('[MAIL TYPE] Clic Repassage', { count: echouesEmail.length });
                               const defaultSubject = `Réinscription à l'examen pratique T3P`;
                               const defaultBody = `Bonjour {{prenom}},\n\nSuite à votre précédent examen pratique, vous devez procéder à une nouvelle inscription pour repasser l'examen pratique.\n\n📌 ÉTAPES À SUIVRE :\n\n1️⃣ Rendez-vous sur le site :\n👉 www.exament3p.fr\n\n2️⃣ Connectez-vous avec :\n• Login : votre adresse email\n• Mot de passe : cliquez sur "Mot de passe oublié" pour en créer un nouveau\n\n3️⃣ Une fois connecté(e), procédez à votre réinscription à l'examen pratique en suivant les instructions du site.\n\n⚠️ IMPORTANT — Département 69 obligatoire :\n🔴 ATTENTION : Lors de votre réinscription, vous devez IMPÉRATIVEMENT sélectionner le département 69 (Rhône), même si vous résidez dans un autre département. Si vous choisissez un autre département, nous ne pourrons pas vous former ni vous louer un véhicule pour l'examen pratique.\n\n⚠️ IMPORTANT : Une fois votre réinscription effectuée sur le site, merci de nous recontacter immédiatement afin que nous puissions finaliser votre dossier et vous accompagner pour la suite.\n\n📞 Tél : 04 28 29 60 91\n📧 Email : contact@ftransport.fr\n\nN'hésitez pas à nous contacter si vous rencontrez des difficultés lors de votre réinscription.\n\nCordialement,\nL'équipe Ftransport\n86 Route de Genas, 69003 Lyon`;
                               setPreviewMailType('repassage_pratique');
