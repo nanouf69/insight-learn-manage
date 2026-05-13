@@ -879,7 +879,7 @@ export default function DevisPersonnel() {
       try {
         const alerteCritique = reponsesCritiques.length > 0;
         await supabase.from("alertes_systeme").insert({
-          type: alerteCritique ? "warning" : "info",
+          type: alerteCritique ? "warning" : "devis_signe",
           titre: alerteCritique
             ? `⚠️ Devis signé avec alertes — ${prenom} ${nom}`
             : `🖋️ Nouveau devis signé — ${prenom} ${nom}`,
