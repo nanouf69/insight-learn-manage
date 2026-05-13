@@ -437,11 +437,58 @@ Deno.serve(async (req) => {
       const bodyWithSignature = body.includes("FTRANSPORT") ? body : body + signatureHtml;
 
       const attachments: EmailAttachment[] = reqBody.attachments || [];
-      const success = await sendEmail(accessToken, userEmail, to, subject, bodyWithSignature, requestReadReceipt === true, attachments);
+
+      // Send via Resend (migrated from Microsoft Graph)
+      const resendApiKey = Deno.env.get("RESEND_API_KEY");
+      let success = false;
       let deliveryError: string | null = null;
 
-      if (success) {
-        deliveryError = await waitForDeliveryFailure(accessToken, userEmail, to, subject);
+      if (!resendApiKey) {
+        deliveryError = "RESEND_API_KEY non configurée";
+      } else {
+        const fromAddress = "FTRANSPORT <contact@ftransport.fr>";
+        const resendPayload: any = {
+          from: fromAddress,
+          to: [to],
+          subject,
+          html: bodyWithSignature,
+          reply_to: userEmail && userEmail !== "contact@ftransport.fr" ? userEmail : undefined,
+        };
+
+        if (attachments.length > 0) {
+          resendPayload.attachments = attachments.map((att) => ({
+            filename: att.name,
+            content: att.contentBytes, // base64
+            content_type: att.contentType,
+          }));
+        }
+
+        try {
+          const resendRes = await fetch("https://api.resend.com/emails", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${resendApiKey}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(resendPayload),
+          });
+
+          if (resendRes.ok) {
+            success = true;
+          } else {
+            const errText = await resendRes.text();
+            console.error("Resend error:", resendRes.status, errText);
+            try {
+              const errJson = JSON.parse(errText);
+              deliveryError = errJson.message || errJson.error || `Resend ${resendRes.status}`;
+            } catch {
+              deliveryError = `Resend ${resendRes.status}: ${errText.slice(0, 200)}`;
+            }
+          }
+        } catch (e: any) {
+          console.error("Resend network error:", e);
+          deliveryError = e?.message || "Erreur réseau Resend";
+        }
       }
 
       if (success && !deliveryError) {
@@ -450,7 +497,7 @@ Deno.serve(async (req) => {
           subject,
           body_preview: body.substring(0, 200),
           body_html: body,
-          sender_email: userEmail,
+          sender_email: "contact@ftransport.fr",
           recipients: [to],
           type: "sent",
           is_read: true,
@@ -465,7 +512,7 @@ Deno.serve(async (req) => {
           type: "email_error",
           titre: `Échec envoi email à ${to}`,
           message: deliveryError || `L'envoi de l'email "${subject}" à ${to} a échoué.`,
-          details: `Expéditeur: ${userEmail}\nDestinataire: ${to}\nObjet: ${subject}\nDate: ${new Date().toISOString()}${deliveryError ? `\nErreur: ${deliveryError}` : ""}`,
+          details: `Expéditeur: contact@ftransport.fr (Resend)\nDestinataire: ${to}\nObjet: ${subject}\nDate: ${new Date().toISOString()}${deliveryError ? `\nErreur: ${deliveryError}` : ""}`,
         });
       }
 
