@@ -235,8 +235,8 @@ export function RecentActivity({ onNavigateToApprenant }: RecentActivityProps) {
           });
         });
         // Alerts stay on top, sort rest by most recent
-        const alerts = activityList.filter(a => a.type === 'alert');
-        const rest = activityList.filter(a => a.type !== 'alert');
+        const alerts = activityList.filter(a => a.type === 'alert' || a.type === 'devis_signe');
+        const rest = activityList.filter(a => a.type !== 'alert' && a.type !== 'devis_signe');
         setActivities([...alerts, ...rest].slice(0, 10));
       } catch (err) {
         console.error('Error fetching activities:', err);
