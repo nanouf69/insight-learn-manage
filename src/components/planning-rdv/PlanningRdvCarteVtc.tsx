@@ -219,7 +219,14 @@ export function PlanningRdvCarteVtc() {
                   >
                     <div className="flex items-center gap-2 text-sm">
                       <Clock className="h-3.5 w-3.5" />
-                      <span className="font-medium">{s.heure.slice(0, 5)}</span>
+                      <span className="font-medium">
+                        {s.heure.slice(0, 5)}
+                        {(() => {
+                          const [h, m] = s.heure.split(":").map(Number);
+                          const end = h * 60 + m + 30;
+                          return ` – ${String(Math.floor(end / 60)).padStart(2, "0")}:${String(end % 60).padStart(2, "0")}`;
+                        })()}
+                      </span>
                       {s.statut === "reserve" && (
                         <span className="text-xs flex items-center gap-1">
                           <User className="h-3 w-3" />
