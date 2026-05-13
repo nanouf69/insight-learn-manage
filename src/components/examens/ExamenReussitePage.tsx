@@ -3549,12 +3549,17 @@ export function ExamenReussitePage() {
           )}
         </CardContent>
       </Card>
+      const fsRepassage = sectionFullscreen('repassage');
+
       {/* Repassage examen théorique */}
-      <Card className="border-l-4 border-l-violet-500">
+      <Card className={fsRepassage.className("border-l-4 border-l-violet-500")}>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <RotateCcw className="h-5 w-5 text-violet-500" />
-            Repassage examen théorique
+          <CardTitle className="flex items-center justify-between">
+            <span className="flex items-center gap-2">
+              <RotateCcw className="h-5 w-5 text-violet-500" />
+              Repassage examen théorique
+            </span>
+            {fsRepassage.button}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -3603,12 +3608,17 @@ export function ExamenReussitePage() {
           )}
         </CardContent>
       </Card>
+      const fsPdf = sectionFullscreen('pdf-resultats');
+
       {/* PDF Résultats d'examen */}
-      <Card className="border-l-4 border-l-sky-500">
+      <Card className={fsPdf.className("border-l-4 border-l-sky-500")}>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5 text-sky-500" />
-            Dossier PDF - Résultats d'examen
+          <CardTitle className="flex items-center justify-between">
+            <span className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-sky-500" />
+              Dossier PDF - Résultats d'examen
+            </span>
+            {fsPdf.button}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
