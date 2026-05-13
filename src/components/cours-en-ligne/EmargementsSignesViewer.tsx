@@ -101,11 +101,11 @@ const buildEmargementHTML = (
       return `
         <tr>
           <td class="jour">${jourLabel}</td>
-          <td class="horaire">08:30 - 12:00</td>
+          <td class="horaire">09:00 - 12:00</td>
           <td class="sig">${sigImg(matin)}</td>
-          <td class="horaire">13:00 - 17:00</td>
+          <td class="horaire">13:00 - 16:00</td>
           <td class="sig">${sigImg(apresMidi)}</td>
-          ${hasSoir ? `<td class="horaire">18:00 - 21:00</td><td class="sig">${sigImg(soir)}</td>` : ""}
+          ${hasSoir ? `<td class="horaire">17:00 - 21:00</td><td class="sig">${sigImg(soir)}</td>` : ""}
         </tr>`;
     })
     .join("");
