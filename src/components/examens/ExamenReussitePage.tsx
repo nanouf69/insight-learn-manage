@@ -878,6 +878,9 @@ export function ExamenReussitePage() {
     );
   }
 
+  const fsRepassage = sectionFullscreen('repassage');
+  const fsPdf = sectionFullscreen('pdf-resultats');
+
   return (
     <div className={fullscreen ? "fixed inset-0 z-50 bg-background overflow-auto p-6 space-y-6 animate-fade-in" : "space-y-6 animate-fade-in"} style={{ zoom }}>
       {/* Header */}
