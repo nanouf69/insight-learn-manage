@@ -161,6 +161,16 @@ function buildPratiqueReservationUrl(apprenantId: string, type: 'vtc' | 'taxi', 
 
 export function ExamenReussitePage() {
   const [search, setSearch] = useState("");
+  const [fullscreen, setFullscreen] = useState(false);
+
+  useEffect(() => {
+    if (fullscreen) {
+      document.body.classList.add("app-fullscreen");
+    } else {
+      document.body.classList.remove("app-fullscreen");
+    }
+    return () => document.body.classList.remove("app-fullscreen");
+  }, [fullscreen]);
   const [repassageSearch, setRepassageSearch] = useState("");
   const [repassageList, setRepassageList] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
