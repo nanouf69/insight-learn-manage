@@ -3789,10 +3789,15 @@ export function ExamenReussitePage() {
               className="gap-1.5"
               onClick={async () => {
                 const recipients = previewRecipients;
-                const linkify = (txt: string) => txt.replace(
-                  /(https?:\/\/[^\s<]+)/g,
-                  '<a href="$1" target="_blank" style="color:#2563eb;text-decoration:underline">$1</a>'
-                );
+                const linkify = (txt: string) => txt
+                  .replace(
+                    /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
+                    '<a href="$2" target="_blank" style="color:#2563eb;text-decoration:underline;font-weight:600">$1</a>'
+                  )
+                  .replace(
+                    /(?<!["'>=])(https?:\/\/[^\s<]+)/g,
+                    '<a href="$1" target="_blank" style="color:#2563eb;text-decoration:underline;font-weight:600">Cliquez ici</a>'
+                  );
                 const buildBody = (a: any) => linkify(
                   previewBody
                     .replace(/{{prenom}}/g, a.prenom || '')
