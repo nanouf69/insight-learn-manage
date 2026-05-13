@@ -24,9 +24,9 @@ serve(async (req) => {
       attachmentContentType,
     } = await req.json();
 
-    if (!recipientEmail || !subject || !attachmentBase64 || !attachmentName) {
+    if (!recipientEmail || !subject) {
       return new Response(
-        JSON.stringify({ error: "Champs requis manquants (recipientEmail, subject, attachmentBase64, attachmentName)" }),
+        JSON.stringify({ error: "Champs requis manquants (recipientEmail, subject)" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -83,6 +83,20 @@ serve(async (req) => {
       </div>
     `;
 
+    const cleanedAttachmentBase64 = typeof attachmentBase64 === "string"
+      ? attachmentBase64.replace(/^data:[^;]+;base64,/, "").replace(/\s/g, "")
+      : "";
+    const attachments = attachmentName && cleanedAttachmentBase64
+      ? [
+          {
+            "@odata.type": "#microsoft.graph.fileAttachment",
+            name: attachmentName,
+            contentType: attachmentContentType || "application/pdf",
+            contentBytes: cleanedAttachmentBase64,
+          },
+        ]
+      : undefined;
+
     const sendUrl = `https://graph.microsoft.com/v1.0/users/${senderEmail}/sendMail`;
     const sendRes = await fetch(sendUrl, {
       method: "POST",
@@ -95,14 +109,7 @@ serve(async (req) => {
           subject,
           body: { contentType: "HTML", content: finalHtml },
           toRecipients: [{ emailAddress: { address: recipientEmail } }],
-          attachments: [
-            {
-              "@odata.type": "#microsoft.graph.fileAttachment",
-              name: attachmentName,
-              contentType: attachmentContentType || "application/pdf",
-              contentBytes: attachmentBase64,
-            },
-          ],
+          ...(attachments ? { attachments } : {}),
         },
         saveToSentItems: true,
       }),
@@ -126,13 +133,13 @@ serve(async (req) => {
       await supabaseAdmin.from("emails").insert({
         apprenant_id: apprenantId,
         subject,
-        body_preview: `Document envoyé : ${attachmentName}`,
+        body_preview: attachments ? `Document envoyé : ${attachmentName}` : "Email envoyé sans pièce jointe",
         body_html: finalHtml,
         sender_email: senderEmail,
         recipients: [recipientEmail],
         type: "sent",
         is_read: true,
-        has_attachments: true,
+        has_attachments: !!attachments,
         sent_at: new Date().toISOString(),
       });
     }
