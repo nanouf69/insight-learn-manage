@@ -1803,7 +1803,7 @@ function QuestionEditor({
       </div>
       <div className="space-y-1">
         <label className="text-xs font-semibold">Énoncé</label>
-        <Textarea value={enonce} onChange={e => setEnonce(e.target.value)} rows={2} className="text-sm" />
+        <ColoredTextField value={enonce} onChange={setEnonce} rows={2} className="text-sm" />
       </div>
       {/* Image (optionnel) */}
       <QuestionImageUpload
