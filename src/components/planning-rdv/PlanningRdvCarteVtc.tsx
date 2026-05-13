@@ -34,12 +34,47 @@ export function PlanningRdvCarteVtc() {
   const [slots, setSlots] = useState<Slot[]>([]);
   const [loading, setLoading] = useState(true);
   const [date, setDate] = useState("");
+  const [dates, setDates] = useState<string[]>([]);
+  const [dateInput, setDateInput] = useState("");
+  const [rangeFrom, setRangeFrom] = useState("");
+  const [rangeTo, setRangeTo] = useState("");
+  const [includeWeekends, setIncludeWeekends] = useState(false);
   const [heure, setHeure] = useState("09:00");
   const [bulkMode, setBulkMode] = useState(false);
   const [bulkStart, setBulkStart] = useState("09:00");
   const [bulkEnd, setBulkEnd] = useState("17:00");
   const SLOT_DURATION_MIN = 30;
   const [saving, setSaving] = useState(false);
+
+  const addDateToList = (d: string) => {
+    if (!d) return;
+    setDates((prev) => (prev.includes(d) ? prev : [...prev, d].sort()));
+  };
+  const removeDate = (d: string) => setDates((prev) => prev.filter((x) => x !== d));
+  const addRange = () => {
+    if (!rangeFrom || !rangeTo) {
+      toast.error("Indiquez la plage de dates");
+      return;
+    }
+    const start = new Date(rangeFrom + "T00:00:00");
+    const end = new Date(rangeTo + "T00:00:00");
+    if (end < start) {
+      toast.error("Date de fin avant date de début");
+      return;
+    }
+    const out: string[] = [];
+    const cur = new Date(start);
+    while (cur <= end) {
+      const dow = cur.getDay();
+      if (includeWeekends || (dow !== 0 && dow !== 6)) {
+        out.push(cur.toISOString().slice(0, 10));
+      }
+      cur.setDate(cur.getDate() + 1);
+    }
+    setDates((prev) => Array.from(new Set([...prev, ...out])).sort());
+    setRangeFrom("");
+    setRangeTo("");
+  };
 
   const load = async () => {
     setLoading(true);
@@ -58,27 +93,39 @@ export function PlanningRdvCarteVtc() {
   }, []);
 
   const addSlot = async () => {
-    if (!date) {
-      toast.error("Sélectionnez une date");
-      return;
-    }
     setSaving(true);
     if (bulkMode) {
+      const targetDates = dates.length > 0 ? dates : date ? [date] : [];
+      if (targetDates.length === 0) {
+        toast.error("Ajoutez au moins une date");
+        setSaving(false);
+        return;
+      }
       const [sh, sm] = bulkStart.split(":").map(Number);
       const [eh, em] = bulkEnd.split(":").map(Number);
       const interval = SLOT_DURATION_MIN;
       const startMin = sh * 60 + sm;
       const endMin = eh * 60 + em;
       const rows: { date: string; heure: string }[] = [];
-      for (let m = startMin; m <= endMin; m += interval) {
-        const h = Math.floor(m / 60);
-        const mm = m % 60;
-        rows.push({ date, heure: `${String(h).padStart(2, "0")}:${String(mm).padStart(2, "0")}:00` });
+      for (const d of targetDates) {
+        for (let m = startMin; m <= endMin; m += interval) {
+          const h = Math.floor(m / 60);
+          const mm = m % 60;
+          rows.push({ date: d, heure: `${String(h).padStart(2, "0")}:${String(mm).padStart(2, "0")}:00` });
+        }
       }
       const { error } = await supabase.from("rdv_carte_vtc_slots").insert(rows);
       if (error) toast.error("Erreur: " + error.message);
-      else toast.success(`${rows.length} créneaux ajoutés`);
+      else {
+        toast.success(`${rows.length} créneaux ajoutés sur ${targetDates.length} date(s)`);
+        setDates([]);
+      }
     } else {
+      if (!date) {
+        toast.error("Sélectionnez une date");
+        setSaving(false);
+        return;
+      }
       const { error } = await supabase.from("rdv_carte_vtc_slots").insert({ date, heure: `${heure}:00` });
       if (error) toast.error("Erreur: " + error.message);
       else toast.success("Créneau ajouté");
@@ -148,13 +195,12 @@ export function PlanningRdvCarteVtc() {
           </div>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-4">
-          <div>
-            <Label>Date</Label>
-            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-          </div>
-
-          {!bulkMode ? (
+        {!bulkMode ? (
+          <div className="grid gap-4 md:grid-cols-4">
+            <div>
+              <Label>Date</Label>
+              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+            </div>
             <div>
               <Label>Heure</Label>
               <Select value={heure} onValueChange={setHeure}>
@@ -166,14 +212,16 @@ export function PlanningRdvCarteVtc() {
                 </SelectContent>
               </Select>
             </div>
-          ) : (
-            <>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-3">
               <div>
-                <Label>De</Label>
+                <Label>De (heure)</Label>
                 <Input type="time" value={bulkStart} onChange={(e) => setBulkStart(e.target.value)} />
               </div>
               <div>
-                <Label>À</Label>
+                <Label>À (heure)</Label>
                 <Input type="time" value={bulkEnd} onChange={(e) => setBulkEnd(e.target.value)} />
               </div>
               <div>
@@ -182,13 +230,96 @@ export function PlanningRdvCarteVtc() {
                   30 min (fixe)
                 </div>
               </div>
-            </>
-          )}
-        </div>
+            </div>
+
+            <div className="border-t pt-4 space-y-3">
+              <Label className="text-sm font-semibold">Dates à planifier</Label>
+
+              <div className="flex flex-wrap items-end gap-2">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Ajouter une date</Label>
+                  <Input
+                    type="date"
+                    value={dateInput}
+                    onChange={(e) => setDateInput(e.target.value)}
+                    className="w-44"
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => {
+                    addDateToList(dateInput);
+                    setDateInput("");
+                  }}
+                >
+                  <Plus className="h-4 w-4 mr-1" /> Ajouter
+                </Button>
+              </div>
+
+              <div className="flex flex-wrap items-end gap-2">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Plage du</Label>
+                  <Input type="date" value={rangeFrom} onChange={(e) => setRangeFrom(e.target.value)} className="w-44" />
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">au</Label>
+                  <Input type="date" value={rangeTo} onChange={(e) => setRangeTo(e.target.value)} className="w-44" />
+                </div>
+                <label className="flex items-center gap-2 text-xs h-10">
+                  <input
+                    type="checkbox"
+                    checked={includeWeekends}
+                    onChange={(e) => setIncludeWeekends(e.target.checked)}
+                  />
+                  Inclure week-ends
+                </label>
+                <Button type="button" variant="secondary" onClick={addRange}>
+                  <Plus className="h-4 w-4 mr-1" /> Ajouter la plage
+                </Button>
+              </div>
+
+              {dates.length > 0 && (
+                <div className="flex flex-wrap gap-2 pt-2">
+                  {dates.map((d) => (
+                    <span
+                      key={d}
+                      className="inline-flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary text-xs rounded-md"
+                    >
+                      {new Date(d + "T00:00:00").toLocaleDateString("fr-FR", {
+                        weekday: "short",
+                        day: "numeric",
+                        month: "short",
+                      })}
+                      <button
+                        type="button"
+                        onClick={() => removeDate(d)}
+                        className="ml-1 hover:text-destructive"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => setDates([])}
+                  >
+                    Tout effacer
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         <Button onClick={addSlot} disabled={saving} className="gap-2">
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-          {bulkMode ? "Générer les créneaux" : "Ajouter le créneau"}
+          {bulkMode
+            ? `Générer les créneaux${dates.length > 0 ? ` (${dates.length} date${dates.length > 1 ? "s" : ""})` : ""}`
+            : "Ajouter le créneau"}
         </Button>
       </Card>
 
