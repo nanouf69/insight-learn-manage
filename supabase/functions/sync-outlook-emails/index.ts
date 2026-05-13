@@ -438,8 +438,13 @@ Deno.serve(async (req) => {
 
       const attachments: EmailAttachment[] = reqBody.attachments || [];
       const success = await sendEmail(accessToken, userEmail, to, subject, bodyWithSignature, requestReadReceipt === true, attachments);
+      let deliveryError: string | null = null;
 
       if (success) {
+        deliveryError = await waitForDeliveryFailure(accessToken, userEmail, to, subject);
+      }
+
+      if (success && !deliveryError) {
         await supabase.from("emails").insert({
           apprenant_id: apprenantId || null,
           subject,
@@ -455,17 +460,17 @@ Deno.serve(async (req) => {
       }
 
       // Log failure as system alert
-      if (!success) {
+      if (!success || deliveryError) {
         await supabase.from("alertes_systeme").insert({
           type: "email_error",
           titre: `Échec envoi email à ${to}`,
-          message: `L'envoi de l'email "${subject}" à ${to} a échoué.`,
-          details: `Expéditeur: ${userEmail}\nDestinataire: ${to}\nObjet: ${subject}\nDate: ${new Date().toISOString()}`,
+          message: deliveryError || `L'envoi de l'email "${subject}" à ${to} a échoué.`,
+          details: `Expéditeur: ${userEmail}\nDestinataire: ${to}\nObjet: ${subject}\nDate: ${new Date().toISOString()}${deliveryError ? `\nErreur: ${deliveryError}` : ""}`,
         });
       }
 
       return new Response(
-        JSON.stringify({ success }),
+        JSON.stringify({ success: success && !deliveryError, error: deliveryError }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
