@@ -452,6 +452,10 @@ function mergeSharedExerciseWithoutRegressing(currentExo: any, savedVersion: any
     const currentQ = currentById.get(Number(savedQ.id));
     if (!currentQ) return savedQ;
 
+    // PROTECTION: never overwrite a question that an admin manually edited locally,
+    // unless the incoming saved version is also flagged as manually edited (newer admin edit from another module).
+    if ((currentQ as any)?.manually_edited === true && savedQ?.manually_edited !== true) return currentQ;
+
     const savedEditedAt = getQuestionEditedTime(savedQ);
     const currentEditedAt = getQuestionEditedTime(currentQ);
     if (currentEditedAt > 0 && savedEditedAt === 0) return currentQ;
