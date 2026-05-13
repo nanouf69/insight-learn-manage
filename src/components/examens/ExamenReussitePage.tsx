@@ -3596,6 +3596,7 @@ export function ExamenReussitePage() {
           )}
         </CardContent>
       </Card>
+      <div id="anchor-repassage" className="scroll-mt-24" />
       {/* Repassage examen théorique */}
       <Card className={fsRepassage.className("border-l-4 border-l-violet-500")}>
         <CardHeader>
