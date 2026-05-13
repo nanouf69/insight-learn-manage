@@ -22,6 +22,7 @@ import { ComptabilitePage } from "@/components/comptabilite/ComptabilitePage";
 import { FinancialCharts } from "@/components/comptabilite/FinancialCharts";
 import { AgendaView } from "@/components/agenda/AgendaView";
 import { ExamenReussitePage } from "@/components/examens/ExamenReussitePage";
+import { PlanningRdvCarteVtc } from "@/components/planning-rdv/PlanningRdvCarteVtc";
 import CoursEnLignePage from "@/components/cours-en-ligne/CoursEnLignePage";
 import { FournisseursPage } from "@/components/fournisseurs/FournisseursPage";
 import { ApprenantsCorbeille } from "@/components/apprenants/ApprenantsCorbeille";
