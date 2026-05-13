@@ -3500,6 +3500,7 @@ export function ExamenReussitePage() {
         );
       })()}
 
+      <div id="anchor-inscrits-theorique" className="scroll-mt-24" />
       {/* Main table */}
       <Card>
         <CardHeader>
