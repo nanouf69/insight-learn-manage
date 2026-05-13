@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { tousLesExamens, getPointsParQuestion, isCalculQuestion, type ExamenBlanc, type Matiere, type Question } from "./examens-blancs-data";
 import { supabase } from "@/integrations/supabase/client";
+import { RichText } from "@/lib/richText";
 import { toast } from "sonner";
 import { TimerBadge } from "./ExamenBlancsTimer";
 import { ExamQuestionImage } from "./ExamQuestionImage";
@@ -552,7 +553,7 @@ function PassageMatiere({
                 {question?.type || "QCM"}
               </Badge>
               <div>
-                <p className="font-medium leading-relaxed">{question?.enonce || "Question indisponible"}</p>
+                <p className="font-medium leading-relaxed">{question?.enonce ? <RichText value={question.enonce} /> : "Question indisponible"}</p>
                 {currentQuestionImage && (
                   <ExamQuestionImage
                     image={currentQuestionImage}
@@ -587,7 +588,7 @@ function PassageMatiere({
                       onClick={(e) => e.stopPropagation()}
                     />
                     <span className="font-mono text-sm font-bold w-6 shrink-0">{choix.lettre})</span>
-                    <span className="text-sm">{choix.texte}</span>
+                    <span className="text-sm"><RichText value={choix.texte} /></span>
                   </div>
                 );
               })}

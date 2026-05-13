@@ -14,6 +14,8 @@ import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { diffModuleData, publishModuleChangeNotification } from "@/lib/moduleChangeNotifications";
+import { RichText } from "@/lib/richText";
+import { ColoredTextField } from "./ColoredTextField";
 
 import SlideViewer from "./slides/SlideViewer";
 import PdfSlideViewer from "./PdfSlideViewer";
@@ -1801,7 +1803,7 @@ function QuestionEditor({
       </div>
       <div className="space-y-1">
         <label className="text-xs font-semibold">Énoncé</label>
-        <Textarea value={enonce} onChange={e => setEnonce(e.target.value)} rows={2} className="text-sm" />
+        <ColoredTextField value={enonce} onChange={setEnonce} rows={2} className="text-sm" />
       </div>
       {/* Image (optionnel) */}
       <QuestionImageUpload
@@ -1817,25 +1819,35 @@ function QuestionEditor({
         <label className="text-xs font-semibold">Réponses (cochez les bonnes réponses — plusieurs possibles)</label>
         {choix.map((c, i) => (
           <div key={i} className="space-y-1.5 p-2 rounded-md border bg-background/60">
-            <div className="flex items-center gap-2">
+            <div className="flex items-start gap-2">
               <input
                 type="checkbox"
                 checked={!!c.correct}
                 onChange={e => handleChoixCorrect(i, e.target.checked)}
-                className="w-4 h-4 shrink-0"
+                className="w-4 h-4 shrink-0 mt-2"
                 title="Bonne réponse"
               />
-              <span className="w-6 text-xs font-bold text-muted-foreground">{c.lettre}</span>
-              <Input value={c.texte} onChange={e => handleChoixTexte(i, e.target.value)} className="text-sm flex-1" placeholder={`Choix ${c.lettre}`} />
+              <span className="w-6 text-xs font-bold text-muted-foreground mt-2">{c.lettre}</span>
+              <div className="flex-1">
+                <ColoredTextField
+                  value={c.texte}
+                  onChange={(v) => handleChoixTexte(i, v)}
+                  multiline={false}
+                  className="text-sm"
+                  placeholder={`Choix ${c.lettre}`}
+                />
+              </div>
               <Button size="sm" variant="ghost" onClick={() => removeChoix(i)}><X className="w-3 h-3" /></Button>
             </div>
-            <Textarea
-              value={c.explication ?? ""}
-              onChange={e => handleChoixExplication(i, e.target.value)}
-              placeholder="Saisir une explication (optionnel)"
-              rows={2}
-              className="text-xs ml-6"
-            />
+            <div className="ml-6">
+              <ColoredTextField
+                value={c.explication ?? ""}
+                onChange={(v) => handleChoixExplication(i, v)}
+                placeholder="Saisir une explication (optionnel)"
+                rows={2}
+                className="text-xs"
+              />
+            </div>
           </div>
         ))}
         <Button size="sm" variant="outline" onClick={addChoix} className="gap-1">
@@ -1988,11 +2000,11 @@ function ExerciceCard({
                       />
                     )}
                     <div className="flex-1">
-                      <p className="text-sm text-muted-foreground line-clamp-2">{q.enonce}</p>
+                      <p className="text-sm text-muted-foreground line-clamp-2"><RichText value={q.enonce} /></p>
                       <div className="flex flex-wrap gap-1 mt-1">
                         {q.choix.map(c => (
                           <span key={c.lettre} className={`text-xs px-2 py-0.5 rounded-full ${c.correct ? "bg-emerald-100 text-emerald-700 font-semibold" : "bg-muted text-muted-foreground"}`}>
-                            {c.lettre}. {c.texte.slice(0, 30)}{c.texte.length > 30 ? "…" : ""} {c.correct ? "✓" : ""}
+                            {c.lettre}. <RichText value={c.texte.slice(0, 30) + (c.texte.length > 30 ? "…" : "")} /> {c.correct ? "✓" : ""}
                           </span>
                         ))}
                       </div>
@@ -2057,7 +2069,7 @@ function ExerciceCard({
                       <div className="flex items-start gap-3 p-4 border rounded-lg hover:bg-muted/20 group transition-colors">
                         <Badge className="text-base shrink-0 mt-0.5 px-3 py-1">Q{qi + 1}</Badge>
                         <div className="flex-1 min-w-0">
-                          <p className="text-xl font-semibold mb-3 leading-snug">{q.enonce}</p>
+                          <p className="text-xl font-semibold mb-3 leading-snug"><RichText value={q.enonce} /></p>
                           {q.image && (
                             <img
                               src={q.image}
@@ -2070,7 +2082,7 @@ function ExerciceCard({
                           <div className="flex flex-wrap gap-2">
                             {q.choix.map(c => (
                               <span key={c.lettre} className={`text-lg px-4 py-1.5 rounded-full ${c.correct ? "bg-emerald-100 text-emerald-700 font-semibold" : "bg-muted text-muted-foreground"}`}>
-                                {c.lettre}. {c.texte} {c.correct ? "✓" : ""}
+                                {c.lettre}. <RichText value={c.texte} /> {c.correct ? "✓" : ""}
                               </span>
                             ))}
                           </div>
@@ -5715,7 +5727,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                                     </span>
                                     <div className="flex-1 min-w-0">
                                       <p className={`text-sm ${q.correct ? 'text-emerald-800 dark:text-emerald-300' : 'text-red-800 dark:text-red-300'}`}>
-                                        {q.enonce}
+                                        <RichText value={q.enonce} />
                                       </p>
                                       {!q.correct && q.reponseCorrecte && (
                                         <p className="text-xs text-muted-foreground mt-1">
