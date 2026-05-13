@@ -2000,11 +2000,11 @@ function ExerciceCard({
                       />
                     )}
                     <div className="flex-1">
-                      <p className="text-sm text-muted-foreground line-clamp-2">{q.enonce}</p>
+                      <p className="text-sm text-muted-foreground line-clamp-2"><RichText value={q.enonce} /></p>
                       <div className="flex flex-wrap gap-1 mt-1">
                         {q.choix.map(c => (
                           <span key={c.lettre} className={`text-xs px-2 py-0.5 rounded-full ${c.correct ? "bg-emerald-100 text-emerald-700 font-semibold" : "bg-muted text-muted-foreground"}`}>
-                            {c.lettre}. {c.texte.slice(0, 30)}{c.texte.length > 30 ? "…" : ""} {c.correct ? "✓" : ""}
+                            {c.lettre}. <RichText value={c.texte.slice(0, 30) + (c.texte.length > 30 ? "…" : "")} /> {c.correct ? "✓" : ""}
                           </span>
                         ))}
                       </div>
