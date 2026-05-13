@@ -2061,12 +2061,12 @@ function ExerciceCard({
                         <div className="flex-1 min-w-0">
                           <p className="text-xl font-semibold mb-3 leading-snug"><RichText value={q.enonce} /></p>
                           {q.image && (
-                            <img
+                            <ImageLightbox
                               src={q.image}
                               alt={`Illustration Q${qi + 1}`}
                               loading="lazy"
-                              className="max-h-48 object-contain rounded border mb-3 bg-white"
-                              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                              className="max-h-48 object-contain rounded border mb-3 bg-white cursor-zoom-in"
+                              onError={(e: any) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
                             />
                           )}
                           <div className="flex flex-wrap gap-2">
