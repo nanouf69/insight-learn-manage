@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ClipboardCheck, CheckCircle2, XCircle, UserX, Search, RotateCcw, Plus, X, Upload, FileText, Trash2, Download, Users, Mail, GraduationCap, Calendar, MessageSquare, CalendarPlus } from "lucide-react";
+import { ClipboardCheck, CheckCircle2, XCircle, UserX, Search, RotateCcw, Plus, X, Upload, FileText, Trash2, Download, Users, Mail, GraduationCap, Calendar, MessageSquare, CalendarPlus, Maximize2, Minimize2 } from "lucide-react";
 import { toast } from "sonner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
@@ -161,6 +161,16 @@ function buildPratiqueReservationUrl(apprenantId: string, type: 'vtc' | 'taxi', 
 
 export function ExamenReussitePage() {
   const [search, setSearch] = useState("");
+  const [fullscreen, setFullscreen] = useState(false);
+
+  useEffect(() => {
+    if (fullscreen) {
+      document.body.classList.add("app-fullscreen");
+    } else {
+      document.body.classList.remove("app-fullscreen");
+    }
+    return () => document.body.classList.remove("app-fullscreen");
+  }, [fullscreen]);
   const [repassageSearch, setRepassageSearch] = useState("");
   const [repassageList, setRepassageList] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -844,7 +854,7 @@ export function ExamenReussitePage() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className={fullscreen ? "fixed inset-0 z-50 bg-background overflow-auto p-6 space-y-6 animate-fade-in" : "space-y-6 animate-fade-in"}>
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
@@ -852,6 +862,15 @@ export function ExamenReussitePage() {
           <p className="text-sm text-muted-foreground">Suivi des examens théoriques</p>
         </div>
         <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setFullscreen(f => !f)}
+            title={fullscreen ? "Quitter le plein écran" : "Plein écran"}
+          >
+            {fullscreen ? <Minimize2 className="w-4 h-4 mr-2" /> : <Maximize2 className="w-4 h-4 mr-2" />}
+            {fullscreen ? "Réduire" : "Plein écran"}
+          </Button>
           <Select value={selectedExamDate} onValueChange={handleExamDateChange}>
             <SelectTrigger className="w-64">
               <SelectValue placeholder="Date d'examen" />
