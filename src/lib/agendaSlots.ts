@@ -175,8 +175,8 @@ export const creneauLabel = (k: CreneauKey): string => {
 
 export const creneauHoraire = (k: CreneauKey): string => {
   switch (k) {
-    case "matin": return "08h30 — 12h00";
-    case "apres_midi": return "13h00 — 17h00";
-    case "soir": return "18h00 — 21h00";
+    case "matin": return "09h00 — 12h00";
+    case "apres_midi": return "13h00 — 16h00";
+    case "soir": return "17h00 — 21h00";
   }
 };
