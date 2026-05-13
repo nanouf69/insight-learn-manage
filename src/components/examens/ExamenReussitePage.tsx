@@ -3214,7 +3214,7 @@ export function ExamenReussitePage() {
         const enAttentePratique = candidatsPratique.filter(a => !(a as any).resultat_examen_pratique).length;
 
         return (
-          <Card className="border-l-4 border-l-rose-500">
+          <Card className={pratiqueFullscreen ? "fixed inset-0 z-[60] overflow-auto rounded-none border-l-4 border-l-rose-500 bg-background p-6" : "border-l-4 border-l-rose-500"}>
             <CardHeader>
                <CardTitle className="flex flex-col gap-3">
                  <div className="flex items-center justify-between">
@@ -3223,6 +3223,15 @@ export function ExamenReussitePage() {
                      Résultats examen pratique — Inscrits CMA
                    </span>
                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPratiqueFullscreen(f => !f)}
+                        title={pratiqueFullscreen ? "Quitter le plein écran" : "Plein écran"}
+                      >
+                        {pratiqueFullscreen ? <Minimize2 className="w-4 h-4 mr-2" /> : <Maximize2 className="w-4 h-4 mr-2" />}
+                        {pratiqueFullscreen ? "Réduire" : "Plein écran"}
+                      </Button>
                      <Badge className="bg-emerald-100 text-emerald-800">✅ {reussisPratique}</Badge>
                      <Badge className="bg-red-100 text-red-800">❌ {echouesPratique}</Badge>
                      {deplacesPratique > 0 && (
@@ -3247,7 +3256,7 @@ export function ExamenReussitePage() {
                </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 gap-6">
+              <div className={pratiqueFullscreen ? "grid grid-cols-1 xl:grid-cols-2 gap-6" : "grid grid-cols-2 gap-6"}>
                 <div className="space-y-3">
                   <h4 className="text-sm font-bold text-amber-700">TAXI ({taxiPratique.length})</h4>
                   {taxiPratique.length > 0 ? renderPratiqueTable(taxiPratique) : (
