@@ -3155,6 +3155,7 @@ export function ExamenReussitePage() {
                 <TableRow>
                   <TableHead className="w-8">#</TableHead>
                   <TableHead>Nom Prénom</TableHead>
+                  <TableHead>N° Dossier</TableHead>
                   <TableHead>Date</TableHead>
                   <TableHead>Heure</TableHead>
                   <TableHead className="text-center w-44">Résultat / Action</TableHead>
