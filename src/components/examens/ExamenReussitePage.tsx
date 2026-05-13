@@ -862,6 +862,15 @@ export function ExamenReussitePage() {
           <p className="text-sm text-muted-foreground">Suivi des examens théoriques</p>
         </div>
         <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setFullscreen(f => !f)}
+            title={fullscreen ? "Quitter le plein écran" : "Plein écran"}
+          >
+            {fullscreen ? <Minimize2 className="w-4 h-4 mr-2" /> : <Maximize2 className="w-4 h-4 mr-2" />}
+            {fullscreen ? "Réduire" : "Plein écran"}
+          </Button>
           <Select value={selectedExamDate} onValueChange={handleExamDateChange}>
             <SelectTrigger className="w-64">
               <SelectValue placeholder="Date d'examen" />
