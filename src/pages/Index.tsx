@@ -30,6 +30,7 @@ import { DiagnosticAccesGlobal } from "@/components/diagnostic/DiagnosticAccesGl
 import { FournisseurInvoiceAlerts } from "@/components/dashboard/FournisseurInvoiceAlerts";
 import { SmallTransfersTable } from "@/components/dashboard/SmallTransfersTable";
 import { ApprenantQuestionsPanel } from "@/components/dashboard/ApprenantQuestionsPanel";
+import { EmargementsManquants } from "@/components/dashboard/EmargementsManquants";
 import { GraduationCap, Users, ArrowDownCircle, ArrowUpCircle, Menu, X, Send, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -234,6 +235,7 @@ const Index = () => {
               <UpcomingSessions />
               <RecentActivity onNavigateToApprenant={handleNavigateToApprenant} />
               <div className="space-y-4">
+                <EmargementsManquants onNavigateToApprenant={handleNavigateToApprenant} />
                 <PaymentReminders />
                 <FournisseurInvoiceAlerts onNavigateToComptabilite={() => handleNavigate("comptabilite")} />
               </div>
