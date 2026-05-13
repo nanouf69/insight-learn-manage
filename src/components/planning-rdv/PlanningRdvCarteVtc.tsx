@@ -38,7 +38,7 @@ export function PlanningRdvCarteVtc() {
   const [bulkMode, setBulkMode] = useState(false);
   const [bulkStart, setBulkStart] = useState("09:00");
   const [bulkEnd, setBulkEnd] = useState("17:00");
-  const [bulkInterval, setBulkInterval] = useState("30");
+  const SLOT_DURATION_MIN = 30;
   const [saving, setSaving] = useState(false);
 
   const load = async () => {
