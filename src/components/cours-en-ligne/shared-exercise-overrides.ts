@@ -390,6 +390,8 @@ export function applyCrossModuleOverrides<T extends { questions?: { enonce: stri
     if (!exo.questions || exo.questions.length === 0 || !canApplyEnonceBasedOverrides(exo.id)) return exo;
     let changed = false;
     const updatedQuestions = exo.questions.map((q) => {
+      // PROTECTION: never overwrite a question that an admin manually edited
+      if ((q as any)?.manually_edited === true) return q;
       const key = normalizeEnonce(q.enonce);
       const override = dbOverrides[key];
       if (override && (override.enonce !== q.enonce || JSON.stringify(override.choix) !== JSON.stringify(q.choix))) {
