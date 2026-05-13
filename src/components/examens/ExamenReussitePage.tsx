@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ClipboardCheck, CheckCircle2, XCircle, UserX, Search, RotateCcw, Plus, X, Upload, FileText, Trash2, Download, Users, Mail, GraduationCap, Calendar, MessageSquare, CalendarPlus, Maximize2, Minimize2 } from "lucide-react";
+import { ClipboardCheck, CheckCircle2, XCircle, UserX, Search, RotateCcw, Plus, X, Upload, FileText, Trash2, Download, Users, Mail, GraduationCap, Calendar, MessageSquare, CalendarPlus, Maximize2, Minimize2, ZoomIn, ZoomOut } from "lucide-react";
 import { toast } from "sonner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
@@ -163,6 +163,10 @@ export function ExamenReussitePage() {
   const [search, setSearch] = useState("");
   const [fullscreen, setFullscreen] = useState(false);
   const [pratiqueFullscreen, setPratiqueFullscreen] = useState(false);
+  const [zoom, setZoom] = useState(1);
+  const zoomIn = () => setZoom(z => Math.min(z + 0.1, 2));
+  const zoomOut = () => setZoom(z => Math.max(z - 0.1, 0.5));
+  const resetZoom = () => setZoom(1);
 
   useEffect(() => {
     if (fullscreen || pratiqueFullscreen) {
@@ -855,7 +859,7 @@ export function ExamenReussitePage() {
   }
 
   return (
-    <div className={fullscreen ? "fixed inset-0 z-50 bg-background overflow-auto p-6 space-y-6 animate-fade-in" : "space-y-6 animate-fade-in"}>
+    <div className={fullscreen ? "fixed inset-0 z-50 bg-background overflow-auto p-6 space-y-6 animate-fade-in" : "space-y-6 animate-fade-in"} style={{ zoom }}>
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
@@ -863,6 +867,20 @@ export function ExamenReussitePage() {
           <p className="text-sm text-muted-foreground">Suivi des examens théoriques</p>
         </div>
         <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1 bg-muted/50 border rounded-md px-1.5 py-0.5">
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={zoomOut} title="Dézoomer">
+              <ZoomOut className="w-3.5 h-3.5" />
+            </Button>
+            <span className="text-xs font-medium text-muted-foreground min-w-[2.5rem] text-center">
+              {Math.round(zoom * 100)}%
+            </span>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={zoomIn} title="Zoomer">
+              <ZoomIn className="w-3.5 h-3.5" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={resetZoom} title="Réinitialiser">
+              <RotateCcw className="w-3.5 h-3.5" />
+            </Button>
+          </div>
           <Button
             variant="outline"
             size="sm"
@@ -3222,7 +3240,7 @@ export function ExamenReussitePage() {
         const enAttentePratique = candidatsPratique.filter(a => !(a as any).resultat_examen_pratique).length;
 
         return (
-          <Card className={pratiqueFullscreen ? "fixed inset-0 z-[60] overflow-auto rounded-none border-l-4 border-l-rose-500 bg-background p-6" : "border-l-4 border-l-rose-500"}>
+          <Card className={pratiqueFullscreen ? "fixed inset-0 z-[60] overflow-auto rounded-none border-l-4 border-l-rose-500 bg-background p-6" : "border-l-4 border-l-rose-500"} style={{ zoom }}>
             <CardHeader>
                <CardTitle className="flex flex-col gap-3">
                  <div className="flex items-center justify-between">
