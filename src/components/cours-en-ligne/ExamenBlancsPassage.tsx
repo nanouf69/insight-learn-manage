@@ -588,7 +588,7 @@ function PassageMatiere({
                       onClick={(e) => e.stopPropagation()}
                     />
                     <span className="font-mono text-sm font-bold w-6 shrink-0">{choix.lettre})</span>
-                    <span className="text-sm">{choix.texte}</span>
+                    <span className="text-sm"><RichText value={choix.texte} /></span>
                   </div>
                 );
               })}
