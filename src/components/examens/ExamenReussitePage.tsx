@@ -935,6 +935,35 @@ export function ExamenReussitePage() {
         </div>
       </div>
 
+      {/* Quick navigation tabs */}
+      <div className="sticky top-0 z-30 -mx-2 px-2 py-2 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b">
+        <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-thin">
+          {[
+            { id: "anchor-recap", label: "Récapitulatif" },
+            { id: "anchor-lettre-cma", label: "Lettre CMA" },
+            { id: "anchor-candidats", label: "Candidats à former" },
+            { id: "anchor-planning", label: "Planning pratique" },
+            { id: "anchor-decales", label: "Décalés" },
+            { id: "anchor-resultats-pratique", label: "Résultats pratique" },
+            { id: "anchor-inscrits-theorique", label: "Inscrits théorique" },
+            { id: "anchor-repassage", label: "Repassage" },
+            { id: "anchor-pdf", label: "Dossier PDF" },
+          ].map((t) => (
+            <Button
+              key={t.id}
+              variant="outline"
+              size="sm"
+              className="h-7 px-2.5 text-xs whitespace-nowrap shrink-0"
+              onClick={() => {
+                document.getElementById(t.id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+              }}
+            >
+              {t.label}
+            </Button>
+          ))}
+        </div>
+      </div>
+
       {/* Summary cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="border-l-4 border-l-emerald-500">
@@ -1029,6 +1058,7 @@ export function ExamenReussitePage() {
         </Card>
       </div>
 
+      <div id="anchor-recap" className="scroll-mt-24" />
       {/* Récapitulatif par catégorie */}
       {(() => {
         const inscrits = apprenants || [];
@@ -1142,6 +1172,7 @@ export function ExamenReussitePage() {
         return null;
       })()}
 
+      <div id="anchor-lettre-cma" className="scroll-mt-24" />
       {/* Lettre CMA - Réussite examen */}
       {(() => {
         const totalInscrits = apprenants?.length || 0;
@@ -1576,6 +1607,7 @@ export function ExamenReussitePage() {
         );
       })()}
 
+      <div id="anchor-candidats" className="scroll-mt-24" />
       {/* Récapitulatif formation pratique */}
       {(() => {
         // Block access if not all exam results are filled
@@ -2506,6 +2538,7 @@ export function ExamenReussitePage() {
         );
       })()}
 
+      <div id="anchor-planning" className="scroll-mt-24" />
       {/* Planning formation pratique - from reservations + computed fallback */}
       {(() => {
         const totalInscritsP = apprenants?.length || 0;
@@ -2945,6 +2978,7 @@ export function ExamenReussitePage() {
         );
       })()}
 
+      <div id="anchor-decales" className="scroll-mt-24" />
       {/* Décalés à la prochaine session */}
       {(() => {
         const deplacesAff = (allApprenants || []).filter(a =>
@@ -3089,7 +3123,7 @@ export function ExamenReussitePage() {
         );
       })()}
 
-
+      <div id="anchor-resultats-pratique" className="scroll-mt-24" />
        {(() => {
         // Filter candidates by selected practical exam period
         const selectedPeriodBounds = parsePratiquePeriod(selectedResultsPratiqueDate);
@@ -3466,6 +3500,7 @@ export function ExamenReussitePage() {
         );
       })()}
 
+      <div id="anchor-inscrits-theorique" className="scroll-mt-24" />
       {/* Main table */}
       <Card>
         <CardHeader>
@@ -3561,6 +3596,7 @@ export function ExamenReussitePage() {
           )}
         </CardContent>
       </Card>
+      <div id="anchor-repassage" className="scroll-mt-24" />
       {/* Repassage examen théorique */}
       <Card className={fsRepassage.className("border-l-4 border-l-violet-500")}>
         <CardHeader>
@@ -3618,6 +3654,7 @@ export function ExamenReussitePage() {
           )}
         </CardContent>
       </Card>
+      <div id="anchor-pdf" className="scroll-mt-24" />
       {/* PDF Résultats d'examen */}
       <Card className={fsPdf.className("border-l-4 border-l-sky-500")}>
         <CardHeader>
