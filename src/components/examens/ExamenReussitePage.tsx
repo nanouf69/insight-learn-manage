@@ -2969,15 +2969,20 @@ export function ExamenReussitePage() {
 
         if (!selectedExamDate) return null;
 
+        const fsDecales = sectionFullscreen('decales');
+
         return (
-          <Card className="border-orange-200 bg-orange-50/30">
+          <Card className={fsDecales.className("border-orange-200 bg-orange-50/30")}>
             <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-orange-700">
-                <CalendarPlus className="h-5 w-5" />
-                Décalés à la prochaine session
-                {deplacesAff.length > 0 && (
-                  <Badge className="bg-orange-100 text-orange-800 ml-2">{deplacesAff.length}</Badge>
-                )}
+              <CardTitle className="flex items-center justify-between text-orange-700">
+                <span className="flex items-center gap-2">
+                  <CalendarPlus className="h-5 w-5" />
+                  Décalés à la prochaine session
+                  {deplacesAff.length > 0 && (
+                    <Badge className="bg-orange-100 text-orange-800 ml-2">{deplacesAff.length}</Badge>
+                  )}
+                </span>
+                {fsDecales.button}
               </CardTitle>
               <p className="text-xs text-orange-600 mt-1">
                 Ces candidats sont automatiquement inclus dans la lettre CMA et dans les « Candidats à former » de la prochaine session.
