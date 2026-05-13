@@ -1720,15 +1720,19 @@ export function ExamenReussitePage() {
         const vtcPreviewBookingUrl = vtcList[0]?.id ? getBookingUrl(vtcList[0].id, 'vtc') : '';
         const taxiPreviewBookingUrl = taxiList[0]?.id ? getBookingUrl(taxiList[0].id, 'taxi') : '';
 
+        const fsCandidats = sectionFullscreen('candidats');
+
         return (
-          <Card className="border-l-4 border-l-indigo-500">
+          <Card className={fsCandidats.className("border-l-4 border-l-indigo-500")}>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <span className="flex items-center gap-2">
                   <GraduationCap className="h-5 w-5 text-indigo-600" />
                   Candidats à former
                 </span>
-                <Popover>
+                <div className="flex items-center gap-2">
+                  {fsCandidats.button}
+                  <Popover>
                   <PopoverTrigger asChild>
                     <Button size="sm" variant="outline" className="gap-1.5 text-xs">
                       <Plus className="h-3.5 w-3.5" />
