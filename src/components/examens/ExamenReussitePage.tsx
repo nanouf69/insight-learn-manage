@@ -3240,7 +3240,7 @@ export function ExamenReussitePage() {
         const enAttentePratique = candidatsPratique.filter(a => !(a as any).resultat_examen_pratique).length;
 
         return (
-          <Card className={pratiqueFullscreen ? "fixed inset-0 z-[60] overflow-auto rounded-none border-l-4 border-l-rose-500 bg-background p-6" : "border-l-4 border-l-rose-500"}>
+          <Card className={pratiqueFullscreen ? "fixed inset-0 z-[60] overflow-auto rounded-none border-l-4 border-l-rose-500 bg-background p-6" : "border-l-4 border-l-rose-500"} style={{ zoom }}>
             <CardHeader>
                <CardTitle className="flex flex-col gap-3">
                  <div className="flex items-center justify-between">
