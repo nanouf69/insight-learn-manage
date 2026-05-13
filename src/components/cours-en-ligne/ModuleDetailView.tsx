@@ -3350,7 +3350,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             prevQ.enonce !== q.enonce ||
             JSON.stringify(prevQ.choix) !== JSON.stringify(q.choix) ||
             (prevQ as any).image !== (q as any).image;
-          return changed ? { ...q, _editedAt: now } : (q as any)._editedAt ? q : { ...q };
+          // Mark as manually_edited when admin changes the question, so the cross-module
+          // propagation system never overwrites it. Once true, the flag is preserved.
+          if (changed) return { ...q, _editedAt: now, manually_edited: true } as any;
+          return (q as any)._editedAt ? q : { ...q };
         });
         const updated: any = { ...e, questions: stampedQuestions };
         // Track deleted question IDs so mergeSourceExercices won't restore them from source
