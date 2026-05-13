@@ -859,7 +859,7 @@ export function ExamenReussitePage() {
   }
 
   return (
-    <div className={fullscreen ? "fixed inset-0 z-50 bg-background overflow-auto p-6 space-y-6 animate-fade-in" : "space-y-6 animate-fade-in"}>
+    <div className={fullscreen ? "fixed inset-0 z-50 bg-background overflow-auto p-6 space-y-6 animate-fade-in" : "space-y-6 animate-fade-in"} style={{ zoom }}>
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
