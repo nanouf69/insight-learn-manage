@@ -1788,6 +1788,7 @@ export function ExamenReussitePage() {
                     )}
                   </PopoverContent>
                 </Popover>
+                </div>
               </CardTitle>
             </CardHeader>
             <CardContent>
