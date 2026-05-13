@@ -2671,13 +2671,18 @@ export function ExamenReussitePage() {
           return `${dayNames[d.getDay()]} ${d.getDate()} ${monthNames[d.getMonth()]}`;
         };
 
+        const fsPlanning = sectionFullscreen('planning');
+
         return (
-          <Card className="border-l-4 border-l-emerald-500">
+          <Card className={fsPlanning.className("border-l-4 border-l-emerald-500")}>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center justify-between">
+                <span className="flex items-center gap-2">
                   <Calendar className="h-5 w-5 text-emerald-600" />
                   Planning formation pratique
-                </CardTitle>
+                </span>
+                {fsPlanning.button}
+              </CardTitle>
               <p className="text-sm text-muted-foreground">
                 VTC : {totalVTC} candidats ({vtcDaysNeeded}j) • TAXI : {totalTAXI} candidats ({taxiDaysNeeded}j) • {weekdays.length} jours disponibles • {totalReserved} réservation(s) • {vtcPlaces} places VTC / {taxiPlaces} places TAXI
               </p>
