@@ -194,6 +194,19 @@ Deno.serve(async (req) => {
           { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
+
+      // Admin role check — only admins can use the company Outlook mailbox
+      const adminClient = createClient(supabaseUrl, supabaseServiceKey);
+      const { data: isAdmin } = await adminClient.rpc('has_role', {
+        _user_id: claimsData.claims.sub,
+        _role: 'admin',
+      });
+      if (!isAdmin) {
+        return new Response(
+          JSON.stringify({ error: "Réservé aux administrateurs" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
     }
 
     // Use service role client for database operations
