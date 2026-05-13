@@ -3385,7 +3385,7 @@ export function ExamenReussitePage() {
                             {sendingFelicitations ? 'Envoi...' : sentFelicitations ? 'Envoyé ✓' : `Envoyer (${reussisEmail.length})`}
                           </Button>
                         </div>
-                        <p className="text-[11px] text-emerald-700">Avis Google + évaluation CPF + carte professionnelle</p>
+                        <p className="text-[11px] text-emerald-700">Avis Google + évaluation CPF + carte pro 30 € au centre (médecin agréé + RDV)</p>
                       </div>
                     );
                   })()}
