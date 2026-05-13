@@ -260,6 +260,8 @@ const Index = () => {
         return <ApprenantsList />;
       case "examens":
         return <ExamenReussitePage />;
+      case "rdv-carte-vtc":
+        return <PlanningRdvCarteVtc />;
       case "crm":
         return <CRMDashboard initialApprenantId={initialApprenantId} onApprenantClosed={() => setInitialApprenantId(null)} />;
       case "planning":
