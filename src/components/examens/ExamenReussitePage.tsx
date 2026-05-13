@@ -183,7 +183,7 @@ export function ExamenReussitePage() {
     return {
       isActive,
       toggle: () => setActiveFs(f => f === key ? null : key),
-      className: (base: string) => isActive ? `fixed inset-0 z-50 bg-background overflow-auto p-6 rounded-none ${base}` : base,
+      className: (base: string) => isActive ? `fixed inset-0 z-40 bg-background overflow-auto p-6 rounded-none ${base}` : base,
       button: (
         <Button
           variant="outline"
