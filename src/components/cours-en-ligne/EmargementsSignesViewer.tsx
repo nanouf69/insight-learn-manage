@@ -50,8 +50,8 @@ const normalizeDemi = (d: string) => (d || "").toLowerCase().replace(/_/g, "-").
 const labelDemi = (d: string) => {
   const k = normalizeDemi(d);
   if (k === "matin") return "Matin (09h00 — 12h00)";
-  if (k === "apres-midi" || k === "après-midi") return "Après-midi (13h00 — 17h00)";
-  if (k === "soir") return "Soir (18h00 — 21h00)";
+  if (k === "apres-midi" || k === "après-midi") return "Après-midi (13h00 — 16h00)";
+  if (k === "soir") return "Soir (17h00 — 21h00)";
   return d;
 };
 
