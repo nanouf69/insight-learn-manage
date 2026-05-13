@@ -553,7 +553,7 @@ function PassageMatiere({
                 {question?.type || "QCM"}
               </Badge>
               <div>
-                <p className="font-medium leading-relaxed">{question?.enonce || "Question indisponible"}</p>
+                <p className="font-medium leading-relaxed">{question?.enonce ? <RichText value={question.enonce} /> : "Question indisponible"}</p>
                 {currentQuestionImage && (
                   <ExamQuestionImage
                     image={currentQuestionImage}
