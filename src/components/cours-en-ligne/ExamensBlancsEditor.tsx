@@ -482,9 +482,9 @@ function QuestionEditor({
       {/* Énoncé */}
       <div className="space-y-1">
         <Label className="text-xs font-semibold">Énoncé de la question</Label>
-        <Textarea
+        <ColoredTextField
           value={enonce}
-          onChange={e => setEnonce(e.target.value)}
+          onChange={setEnonce}
           rows={3}
           className="text-sm"
         />
