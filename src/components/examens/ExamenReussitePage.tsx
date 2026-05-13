@@ -3439,7 +3439,10 @@ export function ExamenReussitePage() {
                           <Badge className="bg-orange-100 text-orange-800 text-[10px]">{echouesRelance.length}</Badge>
                         </div>
                         <Button size="sm" variant="outline" disabled={echouesRelance.length === 0 || sendingDerniereRelance || sentDerniereRelance} className={`gap-1.5 text-xs ${sentDerniereRelance ? 'text-green-700 border-green-300' : 'border-orange-300 text-orange-700'}`}
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            console.log('[MAIL TYPE] Clic Dernière relance', { count: echouesRelance.length });
                             if (echouesRelance.length === 0) return;
                             const defaultSubject = `DERNIÈRE RELANCE — Réinscription examen pratique T3P`;
                             const defaultBody = `Bonjour {{prenom}},\n\nCe message constitue une dernière relance concernant votre réinscription à l'examen pratique T3P.\n\nSi vous souhaitez vous réinscrire, voici les deux options :\n\n📌 Option 1 — En ligne :\n👉 Rendez-vous sur www.exament3p.fr\n• Cliquez sur "Examen VTC" ou "Examen TAXI" selon votre formation\n• Créez un compte\n• Sélectionnez le département 69 - Rhône (⚠️ ATTENTION : choisissez toujours le département 69 même si vous habitez dans un autre département)\n• Cochez la case "J'ai échoué à mon épreuve pratique VTC/TAXI et je souhaite la repasser"\n• Remplissez les informations demandées\n• Cliquez sur "Mot de passe oublié" si vous avez déjà un compte pour réinitialiser votre accès\n\n📌 Option 2 — Sur place :\nRendez-vous à notre bureau dans les 48 heures avec les documents suivants :\n• Votre ancienne convocation\n• Un justificatif de domicile de moins de 3 mois\n• Votre carte bleue (pour le règlement)\n\n🕐 Horaires du bureau : ouvert toute la journée, fermé entre 12h et 13h.\n\n⚠️ Il n'est pas nécessaire d'appeler le bureau, présentez-vous directement.\n\n📍 Si vous êtes déjà réinscrit(e), merci de ne pas tenir compte de ce message.\n\nCordialement,\nL'équipe Ftransport\n86 Route de Genas, 69003 Lyon\n📞 04 28 29 60 91 — 📧 contact@ftransport.fr`;
