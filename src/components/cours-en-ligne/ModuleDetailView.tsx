@@ -2332,6 +2332,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   // Trigger pour forcer la réapplication des overrides fournisseur après chaque
   // reload de moduleData depuis la DB (realtime, visibility, polling).
   const [trainerOverridesReapplyKey, setTrainerOverridesReapplyKey] = useState(0);
+  // Statut de la connexion Realtime (visible uniquement côté apprenant)
+  const [realtimeStatus, setRealtimeStatus] = useState<string>("CONNECTING");
+  const [realtimeReconnectKey, setRealtimeReconnectKey] = useState(0);
   const moduleEditorStorageKey = `module-editor-state:${module.id}`;
   const skipInitialAutosaveRef = useRef(true);
   const saveErrorShownRef = useRef(false);
