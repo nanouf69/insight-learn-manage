@@ -1058,6 +1058,7 @@ export function ExamenReussitePage() {
         </Card>
       </div>
 
+      <div id="anchor-recap" className="scroll-mt-24" />
       {/* Récapitulatif par catégorie */}
       {(() => {
         const inscrits = apprenants || [];
