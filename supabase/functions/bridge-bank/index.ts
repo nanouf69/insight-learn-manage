@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "npm:@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -11,6 +12,35 @@ const GC_BASE_URL = "https://bankaccountdata.gocardless.com/api/v2";
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // ============ AUTH: admin only ============
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+  const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader?.startsWith("Bearer ")) {
+    return new Response(JSON.stringify({ error: "Non autorisé" }), {
+      status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+  const token = authHeader.replace("Bearer ", "");
+  const authClient = createClient(supabaseUrl, supabaseAnonKey);
+  const { data: claimsData, error: claimsError } = await authClient.auth.getClaims(token);
+  if (claimsError || !claimsData?.claims?.sub) {
+    return new Response(JSON.stringify({ error: "Token invalide" }), {
+      status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+  const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+  const { data: isAdmin } = await supabaseAdmin.rpc('has_role', {
+    _user_id: claimsData.claims.sub,
+    _role: 'admin',
+  });
+  if (!isAdmin) {
+    return new Response(JSON.stringify({ error: "Accès réservé aux administrateurs" }), {
+      status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 
   const secretId = Deno.env.get("GOCARDLESS_SECRET_ID");
