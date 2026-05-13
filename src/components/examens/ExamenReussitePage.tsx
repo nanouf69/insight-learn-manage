@@ -3123,7 +3123,7 @@ export function ExamenReussitePage() {
         );
       })()}
 
-
+      <div id="anchor-resultats-pratique" className="scroll-mt-24" />
        {(() => {
         // Filter candidates by selected practical exam period
         const selectedPeriodBounds = parsePratiquePeriod(selectedResultsPratiqueDate);
