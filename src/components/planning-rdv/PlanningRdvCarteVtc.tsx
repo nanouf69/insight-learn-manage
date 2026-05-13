@@ -195,13 +195,12 @@ export function PlanningRdvCarteVtc() {
           </div>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-4">
-          <div>
-            <Label>Date</Label>
-            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-          </div>
-
-          {!bulkMode ? (
+        {!bulkMode ? (
+          <div className="grid gap-4 md:grid-cols-4">
+            <div>
+              <Label>Date</Label>
+              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+            </div>
             <div>
               <Label>Heure</Label>
               <Select value={heure} onValueChange={setHeure}>
@@ -213,14 +212,16 @@ export function PlanningRdvCarteVtc() {
                 </SelectContent>
               </Select>
             </div>
-          ) : (
-            <>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-3">
               <div>
-                <Label>De</Label>
+                <Label>De (heure)</Label>
                 <Input type="time" value={bulkStart} onChange={(e) => setBulkStart(e.target.value)} />
               </div>
               <div>
-                <Label>À</Label>
+                <Label>À (heure)</Label>
                 <Input type="time" value={bulkEnd} onChange={(e) => setBulkEnd(e.target.value)} />
               </div>
               <div>
@@ -229,9 +230,90 @@ export function PlanningRdvCarteVtc() {
                   30 min (fixe)
                 </div>
               </div>
-            </>
-          )}
-        </div>
+            </div>
+
+            <div className="border-t pt-4 space-y-3">
+              <Label className="text-sm font-semibold">Dates à planifier</Label>
+
+              <div className="flex flex-wrap items-end gap-2">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Ajouter une date</Label>
+                  <Input
+                    type="date"
+                    value={dateInput}
+                    onChange={(e) => setDateInput(e.target.value)}
+                    className="w-44"
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => {
+                    addDateToList(dateInput);
+                    setDateInput("");
+                  }}
+                >
+                  <Plus className="h-4 w-4 mr-1" /> Ajouter
+                </Button>
+              </div>
+
+              <div className="flex flex-wrap items-end gap-2">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Plage du</Label>
+                  <Input type="date" value={rangeFrom} onChange={(e) => setRangeFrom(e.target.value)} className="w-44" />
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">au</Label>
+                  <Input type="date" value={rangeTo} onChange={(e) => setRangeTo(e.target.value)} className="w-44" />
+                </div>
+                <label className="flex items-center gap-2 text-xs h-10">
+                  <input
+                    type="checkbox"
+                    checked={includeWeekends}
+                    onChange={(e) => setIncludeWeekends(e.target.checked)}
+                  />
+                  Inclure week-ends
+                </label>
+                <Button type="button" variant="secondary" onClick={addRange}>
+                  <Plus className="h-4 w-4 mr-1" /> Ajouter la plage
+                </Button>
+              </div>
+
+              {dates.length > 0 && (
+                <div className="flex flex-wrap gap-2 pt-2">
+                  {dates.map((d) => (
+                    <span
+                      key={d}
+                      className="inline-flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary text-xs rounded-md"
+                    >
+                      {new Date(d + "T00:00:00").toLocaleDateString("fr-FR", {
+                        weekday: "short",
+                        day: "numeric",
+                        month: "short",
+                      })}
+                      <button
+                        type="button"
+                        onClick={() => removeDate(d)}
+                        className="ml-1 hover:text-destructive"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => setDates([])}
+                  >
+                    Tout effacer
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         <Button onClick={addSlot} disabled={saving} className="gap-2">
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
