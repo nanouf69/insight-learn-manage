@@ -3807,47 +3807,59 @@ export function ExamenReussitePage() {
                   setSendingFelicitations(true);
                   setPreviewOpen(false);
                   let sent = 0;
+                  let failed = 0;
                   for (const a of recipients) {
                     const subject = `${previewSubject} - ${a.prenom} ${a.nom}`;
                     const body = buildBody(a);
                     try {
-                      await supabase.functions.invoke('sync-outlook-emails', { body: { action: 'send', userEmail: 'contact@ftransport.fr', to: a.email, subject, body, apprenantId: a.id } });
+                      const { data, error } = await supabase.functions.invoke('sync-outlook-emails', { body: { action: 'send', userEmail: 'contact@ftransport.fr', to: a.email, subject, body, apprenantId: a.id } });
+                      if (error || data?.success !== true) throw error || new Error(data?.error || 'Envoi non confirmé');
                       sent++;
-                    } catch (e) { console.error(e); }
+                    } catch (e) { failed++; console.error(e); }
                   }
                   setSendingFelicitations(false);
-                  setSentFelicitations(true);
-                  toast.success(`📧 ${sent}/${recipients.length} email(s) "Félicitations" envoyé(s)`);
+                  setSentFelicitations(failed === 0);
+                  failed === 0
+                    ? toast.success(`📧 ${sent}/${recipients.length} email(s) "Félicitations" envoyé(s)`)
+                    : toast.error(`⚠️ ${sent}/${recipients.length} email(s) envoyé(s), ${failed} échec(s)`);
                 } else if (previewMailType === 'derniere_relance') {
                   setSendingDerniereRelance(true);
                   setPreviewOpen(false);
                   let sent = 0;
+                  let failed = 0;
                   for (const a of recipients) {
                     const subject = `${previewSubject} - ${a.prenom} ${a.nom}`;
                     const body = buildBody(a);
                     try {
-                      await supabase.functions.invoke('sync-outlook-emails', { body: { action: 'send', userEmail: 'contact@ftransport.fr', to: a.email, subject, body, apprenantId: a.id } });
+                      const { data, error } = await supabase.functions.invoke('sync-outlook-emails', { body: { action: 'send', userEmail: 'contact@ftransport.fr', to: a.email, subject, body, apprenantId: a.id } });
+                      if (error || data?.success !== true) throw error || new Error(data?.error || 'Envoi non confirmé');
                       sent++;
-                    } catch (e) { console.error(e); }
+                    } catch (e) { failed++; console.error(e); }
                   }
                   setSendingDerniereRelance(false);
-                  setSentDerniereRelance(true);
-                  toast.success(`📧 ${sent}/${recipients.length} email(s) "Dernière relance" envoyé(s)`);
+                  setSentDerniereRelance(failed === 0);
+                  failed === 0
+                    ? toast.success(`📧 ${sent}/${recipients.length} email(s) "Dernière relance" envoyé(s)`)
+                    : toast.error(`⚠️ ${sent}/${recipients.length} email(s) envoyé(s), ${failed} échec(s)`);
                 } else {
                   setSendingRepassagePratique(true);
                   setPreviewOpen(false);
                   let sent = 0;
+                  let failed = 0;
                   for (const a of recipients) {
                     const subject = `${previewSubject} - ${a.prenom} ${a.nom}`;
                     const body = buildBody(a);
                     try {
-                      await supabase.functions.invoke('sync-outlook-emails', { body: { action: 'send', userEmail: 'contact@ftransport.fr', to: a.email, subject, body, apprenantId: a.id } });
+                      const { data, error } = await supabase.functions.invoke('sync-outlook-emails', { body: { action: 'send', userEmail: 'contact@ftransport.fr', to: a.email, subject, body, apprenantId: a.id } });
+                      if (error || data?.success !== true) throw error || new Error(data?.error || 'Envoi non confirmé');
                       sent++;
-                    } catch (e) { console.error(e); }
+                    } catch (e) { failed++; console.error(e); }
                   }
                   setSendingRepassagePratique(false);
-                  setSentRepassagePratique(true);
-                  toast.success(`📧 ${sent}/${recipients.length} email(s) "Repassage pratique" envoyé(s)`);
+                  setSentRepassagePratique(failed === 0);
+                  failed === 0
+                    ? toast.success(`📧 ${sent}/${recipients.length} email(s) "Repassage pratique" envoyé(s)`)
+                    : toast.error(`⚠️ ${sent}/${recipients.length} email(s) envoyé(s), ${failed} échec(s)`);
                 }
               }}
             >
