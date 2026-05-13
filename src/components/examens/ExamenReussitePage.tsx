@@ -3179,6 +3179,13 @@ export function ExamenReussitePage() {
                           {a.telephone && <div>📞 {a.telephone}</div>}
                         </div>
                       </TableCell>
+                      <TableCell className="text-xs">
+                        {(a as any).numero_dossier_cma ? (
+                          <Badge variant="outline" className="font-mono text-[11px]">{(a as any).numero_dossier_cma}</Badge>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
                       <TableCell className="text-xs">{a.date_examen_pratique ? formatDateShortFR(a.date_examen_pratique) : '-'}</TableCell>
                       <TableCell className="text-xs">{(a as any).heure_examen_pratique || '-'}</TableCell>
                       <TableCell className="text-center">
