@@ -71,3 +71,5 @@ verify_jwt = false
 
 [functions.relance-inactifs]
 verify_jwt = false
+[functions.rdv-carte-vtc-public]
+verify_jwt = false
