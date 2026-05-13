@@ -34,12 +34,47 @@ export function PlanningRdvCarteVtc() {
   const [slots, setSlots] = useState<Slot[]>([]);
   const [loading, setLoading] = useState(true);
   const [date, setDate] = useState("");
+  const [dates, setDates] = useState<string[]>([]);
+  const [dateInput, setDateInput] = useState("");
+  const [rangeFrom, setRangeFrom] = useState("");
+  const [rangeTo, setRangeTo] = useState("");
+  const [includeWeekends, setIncludeWeekends] = useState(false);
   const [heure, setHeure] = useState("09:00");
   const [bulkMode, setBulkMode] = useState(false);
   const [bulkStart, setBulkStart] = useState("09:00");
   const [bulkEnd, setBulkEnd] = useState("17:00");
   const SLOT_DURATION_MIN = 30;
   const [saving, setSaving] = useState(false);
+
+  const addDateToList = (d: string) => {
+    if (!d) return;
+    setDates((prev) => (prev.includes(d) ? prev : [...prev, d].sort()));
+  };
+  const removeDate = (d: string) => setDates((prev) => prev.filter((x) => x !== d));
+  const addRange = () => {
+    if (!rangeFrom || !rangeTo) {
+      toast.error("Indiquez la plage de dates");
+      return;
+    }
+    const start = new Date(rangeFrom + "T00:00:00");
+    const end = new Date(rangeTo + "T00:00:00");
+    if (end < start) {
+      toast.error("Date de fin avant date de début");
+      return;
+    }
+    const out: string[] = [];
+    const cur = new Date(start);
+    while (cur <= end) {
+      const dow = cur.getDay();
+      if (includeWeekends || (dow !== 0 && dow !== 6)) {
+        out.push(cur.toISOString().slice(0, 10));
+      }
+      cur.setDate(cur.getDate() + 1);
+    }
+    setDates((prev) => Array.from(new Set([...prev, ...out])).sort());
+    setRangeFrom("");
+    setRangeTo("");
+  };
 
   const load = async () => {
     setLoading(true);
