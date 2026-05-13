@@ -93,27 +93,39 @@ export function PlanningRdvCarteVtc() {
   }, []);
 
   const addSlot = async () => {
-    if (!date) {
-      toast.error("Sélectionnez une date");
-      return;
-    }
     setSaving(true);
     if (bulkMode) {
+      const targetDates = dates.length > 0 ? dates : date ? [date] : [];
+      if (targetDates.length === 0) {
+        toast.error("Ajoutez au moins une date");
+        setSaving(false);
+        return;
+      }
       const [sh, sm] = bulkStart.split(":").map(Number);
       const [eh, em] = bulkEnd.split(":").map(Number);
       const interval = SLOT_DURATION_MIN;
       const startMin = sh * 60 + sm;
       const endMin = eh * 60 + em;
       const rows: { date: string; heure: string }[] = [];
-      for (let m = startMin; m <= endMin; m += interval) {
-        const h = Math.floor(m / 60);
-        const mm = m % 60;
-        rows.push({ date, heure: `${String(h).padStart(2, "0")}:${String(mm).padStart(2, "0")}:00` });
+      for (const d of targetDates) {
+        for (let m = startMin; m <= endMin; m += interval) {
+          const h = Math.floor(m / 60);
+          const mm = m % 60;
+          rows.push({ date: d, heure: `${String(h).padStart(2, "0")}:${String(mm).padStart(2, "0")}:00` });
+        }
       }
       const { error } = await supabase.from("rdv_carte_vtc_slots").insert(rows);
       if (error) toast.error("Erreur: " + error.message);
-      else toast.success(`${rows.length} créneaux ajoutés`);
+      else {
+        toast.success(`${rows.length} créneaux ajoutés sur ${targetDates.length} date(s)`);
+        setDates([]);
+      }
     } else {
+      if (!date) {
+        toast.error("Sélectionnez une date");
+        setSaving(false);
+        return;
+      }
       const { error } = await supabase.from("rdv_carte_vtc_slots").insert({ date, heure: `${heure}:00` });
       if (error) toast.error("Erreur: " + error.message);
       else toast.success("Créneau ajouté");
