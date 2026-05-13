@@ -88,16 +88,17 @@ export function RecentActivity({ onNavigateToApprenant }: RecentActivityProps) {
         alertes?.forEach((a) => {
           const isConnexion = a.type === 'connexion_apprenant';
           const isDocUpload = a.type === 'document_upload';
+          const isDevisSigne = a.type === 'devis_signe';
           activityList.push({
             apprenantId: '',
             id: `alert-${a.id}`,
-            type: isConnexion ? "connexion" : isDocUpload ? "document" : "alert",
+            type: isConnexion ? "connexion" : isDocUpload ? "document" : isDevisSigne ? "devis_signe" : "alert",
             message: a.titre,
             target: a.message,
             time: formatDistanceToNow(new Date(a.created_at), { addSuffix: true, locale: fr }),
-            icon: isConnexion ? LogIn : isDocUpload ? FileUp : AlertTriangle,
-            iconBg: isConnexion ? "bg-green-500/10" : isDocUpload ? "bg-blue-500/10" : "bg-destructive/10",
-            iconColor: isConnexion ? "text-green-600" : isDocUpload ? "text-blue-600" : "text-destructive",
+            icon: isConnexion ? LogIn : isDocUpload ? FileUp : isDevisSigne ? FileSignature : AlertTriangle,
+            iconBg: isConnexion ? "bg-green-500/10" : isDocUpload ? "bg-blue-500/10" : isDevisSigne ? "bg-violet-500/10" : "bg-destructive/10",
+            iconColor: isConnexion ? "text-green-600" : isDocUpload ? "text-blue-600" : isDevisSigne ? "text-violet-600" : "text-destructive",
           });
         });
 
