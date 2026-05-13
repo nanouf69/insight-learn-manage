@@ -3552,8 +3552,6 @@ export function ExamenReussitePage() {
           )}
         </CardContent>
       </Card>
-      const fsRepassage = sectionFullscreen('repassage');
-
       {/* Repassage examen théorique */}
       <Card className={fsRepassage.className("border-l-4 border-l-violet-500")}>
         <CardHeader>
@@ -3611,8 +3609,6 @@ export function ExamenReussitePage() {
           )}
         </CardContent>
       </Card>
-      const fsPdf = sectionFullscreen('pdf-resultats');
-
       {/* PDF Résultats d'examen */}
       <Card className={fsPdf.className("border-l-4 border-l-sky-500")}>
         <CardHeader>
