@@ -3654,6 +3654,7 @@ export function ExamenReussitePage() {
           )}
         </CardContent>
       </Card>
+      <div id="anchor-pdf" className="scroll-mt-24" />
       {/* PDF Résultats d'examen */}
       <Card className={fsPdf.className("border-l-4 border-l-sky-500")}>
         <CardHeader>
