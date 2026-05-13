@@ -183,7 +183,7 @@ export function ExamenReussitePage() {
     return {
       isActive,
       toggle: () => setActiveFs(f => f === key ? null : key),
-      className: (base: string) => isActive ? `fixed inset-0 z-50 bg-background overflow-auto p-6 rounded-none ${base}` : base,
+      className: (base: string) => isActive ? `fixed inset-0 z-40 bg-background overflow-auto p-6 rounded-none ${base}` : base,
       button: (
         <Button
           variant="outline"
@@ -882,7 +882,7 @@ export function ExamenReussitePage() {
   const fsPdf = sectionFullscreen('pdf-resultats');
 
   return (
-    <div className={fullscreen ? "fixed inset-0 z-50 bg-background overflow-auto p-6 space-y-6 animate-fade-in" : "space-y-6 animate-fade-in"} style={{ zoom }}>
+    <div className={fullscreen ? "fixed inset-0 z-40 bg-background overflow-auto p-6 space-y-6 animate-fade-in" : "space-y-6 animate-fade-in"} style={{ zoom }}>
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
@@ -3281,7 +3281,7 @@ export function ExamenReussitePage() {
         const enAttentePratique = candidatsPratique.filter(a => !(a as any).resultat_examen_pratique).length;
 
         return (
-          <Card className={pratiqueFullscreen ? "fixed inset-0 z-[60] overflow-auto rounded-none border-l-4 border-l-rose-500 bg-background p-6" : "border-l-4 border-l-rose-500"} style={{ zoom }}>
+          <Card className={pratiqueFullscreen ? "fixed inset-0 z-40 overflow-auto rounded-none border-l-4 border-l-rose-500 bg-background p-6" : "border-l-4 border-l-rose-500"} style={{ zoom }}>
             <CardHeader>
                <CardTitle className="flex flex-col gap-3">
                  <div className="flex items-center justify-between">
