@@ -3789,16 +3789,22 @@ export function ExamenReussitePage() {
               className="gap-1.5"
               onClick={async () => {
                 const recipients = previewRecipients;
+                const linkify = (txt: string) => txt.replace(
+                  /(https?:\/\/[^\s<]+)/g,
+                  '<a href="$1" target="_blank" style="color:#2563eb;text-decoration:underline">$1</a>'
+                );
+                const buildBody = (a: any) => linkify(
+                  previewBody
+                    .replace(/{{prenom}}/g, a.prenom || '')
+                    .replace(/{{nom}}/g, a.nom || '')
+                ).replace(/\n/g, '<br>');
                 if (previewMailType === 'felicitations') {
                   setSendingFelicitations(true);
                   setPreviewOpen(false);
                   let sent = 0;
                   for (const a of recipients) {
                     const subject = `${previewSubject} - ${a.prenom} ${a.nom}`;
-                    const body = previewBody
-                      .replace(/{{prenom}}/g, a.prenom)
-                      .replace(/{{nom}}/g, a.nom)
-                      .replace(/\n/g, '<br>');
+                    const body = buildBody(a);
                     try {
                       await supabase.functions.invoke('sync-outlook-emails', { body: { action: 'send', userEmail: 'contact@ftransport.fr', to: a.email, subject, body, apprenantId: a.id } });
                       sent++;
@@ -3813,10 +3819,7 @@ export function ExamenReussitePage() {
                   let sent = 0;
                   for (const a of recipients) {
                     const subject = `${previewSubject} - ${a.prenom} ${a.nom}`;
-                    const body = previewBody
-                      .replace(/{{prenom}}/g, a.prenom)
-                      .replace(/{{nom}}/g, a.nom)
-                      .replace(/\n/g, '<br>');
+                    const body = buildBody(a);
                     try {
                       await supabase.functions.invoke('sync-outlook-emails', { body: { action: 'send', userEmail: 'contact@ftransport.fr', to: a.email, subject, body, apprenantId: a.id } });
                       sent++;
@@ -3831,10 +3834,7 @@ export function ExamenReussitePage() {
                   let sent = 0;
                   for (const a of recipients) {
                     const subject = `${previewSubject} - ${a.prenom} ${a.nom}`;
-                    const body = previewBody
-                      .replace(/{{prenom}}/g, a.prenom)
-                      .replace(/{{nom}}/g, a.nom)
-                      .replace(/\n/g, '<br>');
+                    const body = buildBody(a);
                     try {
                       await supabase.functions.invoke('sync-outlook-emails', { body: { action: 'send', userEmail: 'contact@ftransport.fr', to: a.email, subject, body, apprenantId: a.id } });
                       sent++;
