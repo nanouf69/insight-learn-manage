@@ -19,6 +19,8 @@ import {
 } from "./fournisseur-exam-overrides";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { RichText } from "@/lib/richText";
+import { ColoredTextField } from "./ColoredTextField";
 
 // Virtual module_id range for examens blancs: 90000+
 // Stable mapping from exam ID → module_id (survives reordering / additions)
