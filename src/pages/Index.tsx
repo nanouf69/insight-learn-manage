@@ -46,6 +46,7 @@ const pageConfig = {
   organisations: { title: "Organisations", subtitle: "Gérez vos organisations clientes" },
   apprenants: { title: "Apprenants", subtitle: "Suivez vos apprenants" },
   examens: { title: "Examen et Réussite", subtitle: "Suivi des examens théoriques" },
+  "rdv-carte-vtc": { title: "Planning RDV Carte VTC", subtitle: "Disponibilités pour les rendez-vous de création de carte professionnelle" },
   crm: { title: "CRM", subtitle: "Gérez vos contacts et prospects" },
   documents: { title: "Documents", subtitle: "Gérez vos documents administratifs" },
   factures: { title: "Factures", subtitle: "Créez et gérez vos factures" },
