@@ -21,6 +21,7 @@ import RevolutTransactions from "./pages/RevolutTransactions";
 import RevolutConnect from "./pages/RevolutConnect";
 import DevisPublic from "./pages/DevisPublic";
 import DevisPersonnel from "./pages/DevisPersonnel";
+import ReservationCarteVtc from "./pages/ReservationCarteVtc";
 
 // Onboarding pages
 import OnboardingWelcome from "./pages/onboarding/OnboardingWelcome";
@@ -76,6 +77,8 @@ function App() {
                 
                 {/* Reservation pratique - public */}
                 <Route path="/reservation-pratique" element={<ErrorBoundary><ReservationPratique /></ErrorBoundary>} />
+                <Route path="/reservation-carte-vtc" element={<ErrorBoundary><ReservationCarteVtc /></ErrorBoundary>} />
+                <Route path="/rdv-carte-vtc-public" element={<ErrorBoundary><ReservationCarteVtc /></ErrorBoundary>} />
                 <Route path="/inscription-formation-continue" element={<ErrorBoundary><InscriptionFormationContinue /></ErrorBoundary>} />
                 <Route path="/pre-information" element={<ErrorBoundary><PreInformationPublic /></ErrorBoundary>} />
                 <Route path="/cours" element={<ErrorBoundary><CoursPublic /></ErrorBoundary>} />
