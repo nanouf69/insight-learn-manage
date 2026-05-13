@@ -1607,6 +1607,7 @@ export function ExamenReussitePage() {
         );
       })()}
 
+      <div id="anchor-candidats" className="scroll-mt-24" />
       {/* Récapitulatif formation pratique */}
       {(() => {
         // Block access if not all exam results are filled
