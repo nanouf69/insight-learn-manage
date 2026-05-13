@@ -881,16 +881,16 @@ export default function DevisPersonnel() {
         await supabase.from("alertes_systeme").insert({
           type: alerteCritique ? "warning" : "info",
           titre: alerteCritique
-            ? `⚠️ Devis téléchargé avec alertes — ${prenom} ${nom}`
-            : `📄 Nouveau devis téléchargé — ${prenom} ${nom}`,
-          message: `${formation.label} • ${formation.prix} € • ${typeFinancement === "organisme" ? `Financeur : ${financeurNom}` : "Financement personnel"}${alerteCritique ? ` • ⚠️ ${reponsesCritiques.join(", ")}` : ""}`,
+            ? `⚠️ Devis signé avec alertes — ${prenom} ${nom}`
+            : `🖋️ Nouveau devis signé — ${prenom} ${nom}`,
+          message: `${formation.label} • ${formation.prix} € • ${typeFinancement === "organisme" ? `Financeur : ${financeurNom}` : "Financement personnel"}${dateDebutSouhaitee ? ` • Session : ${dateDebutSouhaitee}` : ""}${alerteCritique ? ` • ⚠️ ${reponsesCritiques.join(", ")}` : ""}`,
           details: `Devis ${numDevis}\nEmail: ${email}\nTéléphone: ${telephone}`,
         } as any);
       } catch (alertErr) {
         console.warn("Insertion alerte système échouée (non-bloquant):", alertErr);
       }
 
-      // ── Auto-save devis to storage + DB ──
+      // ── Auto-save devis to storage + DB + lien session ──
       try {
         const pdfBlob = doc.output("blob");
         const storagePath = `public/${numDevis}_${fileName}`;
@@ -913,31 +913,9 @@ export default function DevisPersonnel() {
             .limit(1)
             .maybeSingle();
 
-          if (matchedApprenant?.id) {
-            await supabase.from("devis_envois").insert({
-              apprenant_id: matchedApprenant.id,
-              modele: "devis_personnel",
-              montant: `${formation.prix} €`,
-              formation: formation.label,
-              fichier_url: fichierUrl,
-              statut: "telecharge",
-            } as any);
-            console.log("Devis saved to apprenant:", matchedApprenant.id);
-          } else {
-            // Save as organisation/contact if financeur, or create apprenant-linked record via edge function
-            const contactInfo = {
-              civilite, prenom, nom, email, telephone, adresse, codePostal, ville, dateNaissance,
-              formation: formation.label,
-              montant: `${formation.prix} €`,
-              fichierUrl,
-              numDevis,
-              typeFinancement,
-              ...(typeFinancement === "organisme" ? {
-                financeurNom, financeurAdresse, financeurCodePostal, financeurVille,
-                financeurSiret, financeurEmail, financeurTelephone, financeurContactNom, financeurType,
-              } : {}),
-            };
-            // Create the apprenant automatically
+          let apprenantId: string | null = matchedApprenant?.id ?? null;
+
+          if (!apprenantId) {
             const { data: newApprenant, error: insertErr } = await supabase
               .from("apprenants")
               .insert({
@@ -962,17 +940,69 @@ export default function DevisPersonnel() {
               .single();
 
             if (!insertErr && newApprenant?.id) {
-              await supabase.from("devis_envois").insert({
-                apprenant_id: newApprenant.id,
-                modele: "devis_personnel",
-                montant: `${formation.prix} €`,
-                formation: formation.label,
-                fichier_url: fichierUrl,
-                statut: "telecharge",
-              } as any);
-              console.log("New apprenant + devis saved:", newApprenant.id);
+              apprenantId = newApprenant.id;
+              console.log("New apprenant created:", apprenantId);
             } else {
               console.warn("Could not create apprenant for devis:", insertErr);
+            }
+          }
+
+          if (apprenantId) {
+            // Devis dans le tab "Formulaires" + "Devis"
+            await supabase.from("devis_envois").insert({
+              apprenant_id: apprenantId,
+              modele: "devis_personnel",
+              montant: `${formation.prix} €`,
+              formation: formation.label,
+              fichier_url: fichierUrl,
+              devis_signe_url: hasSigned ? fichierUrl : null,
+              signed_at: hasSigned ? new Date().toISOString() : null,
+              statut: hasSigned ? "signe" : "telecharge",
+            } as any);
+
+            // ── Lier à la session de formation choisie ──
+            try {
+              const range = parseFrenchDateRange(dateDebutSouhaitee);
+              if (range) {
+                const typeApp = formation.type === "taxi" ? "TAXI" : "VTC";
+                const { data: sessionMatch } = await supabase
+                  .from("sessions")
+                  .select("id, types_apprenant, type_session")
+                  .eq("date_debut", range.date_debut)
+                  .eq("date_fin", range.date_fin)
+                  .limit(20);
+
+                const session = (sessionMatch || []).find((s: any) =>
+                  Array.isArray(s.types_apprenant) ? s.types_apprenant.includes(typeApp) : true
+                ) || (sessionMatch || [])[0];
+
+                if (session?.id) {
+                  // Évite les doublons
+                  const { data: existing } = await supabase
+                    .from("session_apprenants")
+                    .select("id")
+                    .eq("session_id", session.id)
+                    .eq("apprenant_id", apprenantId)
+                    .maybeSingle();
+
+                  if (!existing) {
+                    await supabase.from("session_apprenants").insert({
+                      session_id: session.id,
+                      apprenant_id: apprenantId,
+                      date_debut: range.date_debut,
+                      date_fin: range.date_fin,
+                      mode_financement: typeFinancement === "organisme" ? "organisme" : "personnel",
+                      montant_total: formation.prix,
+                      notes: `Inscription via devis ${numDevis} (${creneauSouhaite || "créneau non précisé"})`,
+                    } as any);
+                    console.log("Apprenant lié à la session", session.id);
+                  }
+                } else {
+                  console.warn("Aucune session trouvée pour", range, typeApp);
+                }
+              }
+            } catch (sessionErr) {
+              console.warn("Lien session_apprenants échoué (non-bloquant):", sessionErr);
             }
           }
         }
