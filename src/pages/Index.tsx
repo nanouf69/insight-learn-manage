@@ -235,6 +235,7 @@ const Index = () => {
               <UpcomingSessions />
               <RecentActivity onNavigateToApprenant={handleNavigateToApprenant} />
               <div className="space-y-4">
+                <EmargementsManquants onNavigateToApprenant={handleNavigateToApprenant} />
                 <PaymentReminders />
                 <FournisseurInvoiceAlerts onNavigateToComptabilite={() => handleNavigate("comptabilite")} />
               </div>
