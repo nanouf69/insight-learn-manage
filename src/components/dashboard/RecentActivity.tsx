@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { GraduationCap, UserPlus, FileCheck, CreditCard, CheckCircle, AlertTriangle, CalendarCheck, Receipt, Mail, Send, LogIn, FileUp } from "lucide-react";
+import { GraduationCap, UserPlus, FileCheck, CreditCard, CheckCircle, AlertTriangle, CalendarCheck, Receipt, Mail, Send, LogIn, FileUp, FileSignature } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -88,16 +88,17 @@ export function RecentActivity({ onNavigateToApprenant }: RecentActivityProps) {
         alertes?.forEach((a) => {
           const isConnexion = a.type === 'connexion_apprenant';
           const isDocUpload = a.type === 'document_upload';
+          const isDevisSigne = a.type === 'devis_signe';
           activityList.push({
             apprenantId: '',
             id: `alert-${a.id}`,
-            type: isConnexion ? "connexion" : isDocUpload ? "document" : "alert",
+            type: isConnexion ? "connexion" : isDocUpload ? "document" : isDevisSigne ? "devis_signe" : "alert",
             message: a.titre,
             target: a.message,
             time: formatDistanceToNow(new Date(a.created_at), { addSuffix: true, locale: fr }),
-            icon: isConnexion ? LogIn : isDocUpload ? FileUp : AlertTriangle,
-            iconBg: isConnexion ? "bg-green-500/10" : isDocUpload ? "bg-blue-500/10" : "bg-destructive/10",
-            iconColor: isConnexion ? "text-green-600" : isDocUpload ? "text-blue-600" : "text-destructive",
+            icon: isConnexion ? LogIn : isDocUpload ? FileUp : isDevisSigne ? FileSignature : AlertTriangle,
+            iconBg: isConnexion ? "bg-green-500/10" : isDocUpload ? "bg-blue-500/10" : isDevisSigne ? "bg-violet-500/10" : "bg-destructive/10",
+            iconColor: isConnexion ? "text-green-600" : isDocUpload ? "text-blue-600" : isDevisSigne ? "text-violet-600" : "text-destructive",
           });
         });
 
@@ -234,8 +235,8 @@ export function RecentActivity({ onNavigateToApprenant }: RecentActivityProps) {
           });
         });
         // Alerts stay on top, sort rest by most recent
-        const alerts = activityList.filter(a => a.type === 'alert');
-        const rest = activityList.filter(a => a.type !== 'alert');
+        const alerts = activityList.filter(a => a.type === 'alert' || a.type === 'devis_signe');
+        const rest = activityList.filter(a => a.type !== 'alert' && a.type !== 'devis_signe');
         setActivities([...alerts, ...rest].slice(0, 10));
       } catch (err) {
         console.error('Error fetching activities:', err);

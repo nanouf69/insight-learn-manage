@@ -16,6 +16,32 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { sendAdminNotification } from "@/lib/sendAdminNotification";
 
+/* ─── HELPER: parse "Du 12 au 25 janvier 2026" / "Du 26 octobre au 16 novembre 2026" ─── */
+const FR_MONTHS: Record<string, number> = {
+  janvier: 1, fevrier: 2, "février": 2, mars: 3, avril: 4, mai: 5, juin: 6,
+  juillet: 7, aout: 8, "août": 8, septembre: 9, octobre: 10, novembre: 11, decembre: 12, "décembre": 12,
+};
+function parseFrenchDateRange(label: string): { date_debut: string; date_fin: string } | null {
+  if (!label) return null;
+  const s = label.toLowerCase().normalize("NFD").replace(/\u0300|\u0301|\u0302|\u0308/g, "");
+  // Try "du D1 [M1] au D2 M2 YYYY"
+  const m = s.match(/du\s+(\d{1,2})(?:\s+([a-zéûôî]+))?\s+au\s+(\d{1,2})\s+([a-zéûôî]+)\s+(\d{4})/);
+  if (!m) return null;
+  const d1 = parseInt(m[1], 10);
+  const mo1 = m[2] ? FR_MONTHS[m[2]] : undefined;
+  const d2 = parseInt(m[3], 10);
+  const mo2 = FR_MONTHS[m[4]];
+  const yyyy = parseInt(m[5], 10);
+  if (!mo2) return null;
+  // If first month missing, assume same as second; if first month given and != second, find the right year (cross-year unlikely here)
+  const month1 = mo1 ?? mo2;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return {
+    date_debut: `${yyyy}-${pad(month1)}-${pad(d1)}`,
+    date_fin: `${yyyy}-${pad(mo2)}-${pad(d2)}`,
+  };
+}
+
 /* ─── DATES DE FORMATION CATALOGUE ─── */
 const DATES_VTC = [
   "Du 12 au 25 janvier 2026",
@@ -853,18 +879,18 @@ export default function DevisPersonnel() {
       try {
         const alerteCritique = reponsesCritiques.length > 0;
         await supabase.from("alertes_systeme").insert({
-          type: alerteCritique ? "warning" : "info",
+          type: alerteCritique ? "warning" : "devis_signe",
           titre: alerteCritique
-            ? `⚠️ Devis téléchargé avec alertes — ${prenom} ${nom}`
-            : `📄 Nouveau devis téléchargé — ${prenom} ${nom}`,
-          message: `${formation.label} • ${formation.prix} € • ${typeFinancement === "organisme" ? `Financeur : ${financeurNom}` : "Financement personnel"}${alerteCritique ? ` • ⚠️ ${reponsesCritiques.join(", ")}` : ""}`,
+            ? `⚠️ Devis signé avec alertes — ${prenom} ${nom}`
+            : `🖋️ Nouveau devis signé — ${prenom} ${nom}`,
+          message: `${formation.label} • ${formation.prix} € • ${typeFinancement === "organisme" ? `Financeur : ${financeurNom}` : "Financement personnel"}${dateDebutSouhaitee ? ` • Session : ${dateDebutSouhaitee}` : ""}${alerteCritique ? ` • ⚠️ ${reponsesCritiques.join(", ")}` : ""}`,
           details: `Devis ${numDevis}\nEmail: ${email}\nTéléphone: ${telephone}`,
         } as any);
       } catch (alertErr) {
         console.warn("Insertion alerte système échouée (non-bloquant):", alertErr);
       }
 
-      // ── Auto-save devis to storage + DB ──
+      // ── Auto-save devis to storage + DB + lien session ──
       try {
         const pdfBlob = doc.output("blob");
         const storagePath = `public/${numDevis}_${fileName}`;
@@ -887,31 +913,9 @@ export default function DevisPersonnel() {
             .limit(1)
             .maybeSingle();
 
-          if (matchedApprenant?.id) {
-            await supabase.from("devis_envois").insert({
-              apprenant_id: matchedApprenant.id,
-              modele: "devis_personnel",
-              montant: `${formation.prix} €`,
-              formation: formation.label,
-              fichier_url: fichierUrl,
-              statut: "telecharge",
-            } as any);
-            console.log("Devis saved to apprenant:", matchedApprenant.id);
-          } else {
-            // Save as organisation/contact if financeur, or create apprenant-linked record via edge function
-            const contactInfo = {
-              civilite, prenom, nom, email, telephone, adresse, codePostal, ville, dateNaissance,
-              formation: formation.label,
-              montant: `${formation.prix} €`,
-              fichierUrl,
-              numDevis,
-              typeFinancement,
-              ...(typeFinancement === "organisme" ? {
-                financeurNom, financeurAdresse, financeurCodePostal, financeurVille,
-                financeurSiret, financeurEmail, financeurTelephone, financeurContactNom, financeurType,
-              } : {}),
-            };
-            // Create the apprenant automatically
+          let apprenantId: string | null = matchedApprenant?.id ?? null;
+
+          if (!apprenantId) {
             const { data: newApprenant, error: insertErr } = await supabase
               .from("apprenants")
               .insert({
@@ -936,17 +940,69 @@ export default function DevisPersonnel() {
               .single();
 
             if (!insertErr && newApprenant?.id) {
-              await supabase.from("devis_envois").insert({
-                apprenant_id: newApprenant.id,
-                modele: "devis_personnel",
-                montant: `${formation.prix} €`,
-                formation: formation.label,
-                fichier_url: fichierUrl,
-                statut: "telecharge",
-              } as any);
-              console.log("New apprenant + devis saved:", newApprenant.id);
+              apprenantId = newApprenant.id;
+              console.log("New apprenant created:", apprenantId);
             } else {
               console.warn("Could not create apprenant for devis:", insertErr);
+            }
+          }
+
+          if (apprenantId) {
+            // Devis dans le tab "Formulaires" + "Devis"
+            await supabase.from("devis_envois").insert({
+              apprenant_id: apprenantId,
+              modele: "devis_personnel",
+              montant: `${formation.prix} €`,
+              formation: formation.label,
+              fichier_url: fichierUrl,
+              devis_signe_url: hasSigned ? fichierUrl : null,
+              signed_at: hasSigned ? new Date().toISOString() : null,
+              statut: hasSigned ? "signe" : "telecharge",
+            } as any);
+
+            // ── Lier à la session de formation choisie ──
+            try {
+              const range = parseFrenchDateRange(dateDebutSouhaitee);
+              if (range) {
+                const typeApp = formation.type === "taxi" ? "TAXI" : "VTC";
+                const { data: sessionMatch } = await supabase
+                  .from("sessions")
+                  .select("id, types_apprenant, type_session")
+                  .eq("date_debut", range.date_debut)
+                  .eq("date_fin", range.date_fin)
+                  .limit(20);
+
+                const session = (sessionMatch || []).find((s: any) =>
+                  Array.isArray(s.types_apprenant) ? s.types_apprenant.includes(typeApp) : true
+                ) || (sessionMatch || [])[0];
+
+                if (session?.id) {
+                  // Évite les doublons
+                  const { data: existing } = await supabase
+                    .from("session_apprenants")
+                    .select("id")
+                    .eq("session_id", session.id)
+                    .eq("apprenant_id", apprenantId)
+                    .maybeSingle();
+
+                  if (!existing) {
+                    await supabase.from("session_apprenants").insert({
+                      session_id: session.id,
+                      apprenant_id: apprenantId,
+                      date_debut: range.date_debut,
+                      date_fin: range.date_fin,
+                      mode_financement: typeFinancement === "organisme" ? "organisme" : "personnel",
+                      montant_total: formation.prix,
+                      notes: `Inscription via devis ${numDevis} (${creneauSouhaite || "créneau non précisé"})`,
+                    } as any);
+                    console.log("Apprenant lié à la session", session.id);
+                  }
+                } else {
+                  console.warn("Aucune session trouvée pour", range, typeApp);
+                }
+              }
+            } catch (sessionErr) {
+              console.warn("Lien session_apprenants échoué (non-bloquant):", sessionErr);
             }
           }
         }
