@@ -867,6 +867,20 @@ export function ExamenReussitePage() {
           <p className="text-sm text-muted-foreground">Suivi des examens théoriques</p>
         </div>
         <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1 bg-muted/50 border rounded-md px-1.5 py-0.5">
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={zoomOut} title="Dézoomer">
+              <ZoomOut className="w-3.5 h-3.5" />
+            </Button>
+            <span className="text-xs font-medium text-muted-foreground min-w-[2.5rem] text-center">
+              {Math.round(zoom * 100)}%
+            </span>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={zoomIn} title="Zoomer">
+              <ZoomIn className="w-3.5 h-3.5" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={resetZoom} title="Réinitialiser">
+              <RotateCcw className="w-3.5 h-3.5" />
+            </Button>
+          </div>
           <Button
             variant="outline"
             size="sm"
