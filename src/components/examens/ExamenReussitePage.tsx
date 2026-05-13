@@ -3189,24 +3189,36 @@ export function ExamenReussitePage() {
                       <TableCell className="text-xs">{a.date_examen_pratique ? formatDateShortFR(a.date_examen_pratique) : '-'}</TableCell>
                       <TableCell className="text-xs">{(a as any).heure_examen_pratique || '-'}</TableCell>
                       <TableCell className="text-center">
-                        <Select
-                          value={resultatP || "non_renseigne"}
-                          onValueChange={(val) => updateResultatPratique(a.id, val === "non_renseigne" ? null : val)}
-                        >
-                          <SelectTrigger className={`w-36 mx-auto text-xs ${
-                            resultatP === 'oui' ? 'border-emerald-500 text-emerald-700 bg-emerald-50' :
-                            resultatP === 'non' ? 'border-red-500 text-red-700 bg-red-50' :
-                            resultatP === 'deplace' ? 'border-orange-500 text-orange-700 bg-orange-50' : ''
-                          }`}>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="non_renseigne">-</SelectItem>
-                            <SelectItem value="oui">✅ Oui</SelectItem>
-                            <SelectItem value="non">❌ Non</SelectItem>
-                            <SelectItem value="deplace">📅 Déplacé prochaine session</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <div className="flex items-center justify-center gap-1">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={resultatP === 'oui' ? 'default' : 'outline'}
+                            className={`h-7 px-2 text-xs ${resultatP === 'oui' ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'border-emerald-300 text-emerald-700 hover:bg-emerald-50'}`}
+                            onClick={() => updateResultatPratique(a.id, resultatP === 'oui' ? null : 'oui')}
+                          >
+                            ✅ Oui
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={resultatP === 'non' ? 'default' : 'outline'}
+                            className={`h-7 px-2 text-xs ${resultatP === 'non' ? 'bg-red-600 hover:bg-red-700 text-white' : 'border-red-300 text-red-700 hover:bg-red-50'}`}
+                            onClick={() => updateResultatPratique(a.id, resultatP === 'non' ? null : 'non')}
+                          >
+                            ❌ Non
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={resultatP === 'deplace' ? 'default' : 'outline'}
+                            className={`h-7 px-2 text-xs ${resultatP === 'deplace' ? 'bg-orange-600 hover:bg-orange-700 text-white' : 'border-orange-300 text-orange-700 hover:bg-orange-50'}`}
+                            onClick={() => updateResultatPratique(a.id, resultatP === 'deplace' ? null : 'deplace')}
+                            title="Déplacé prochaine session"
+                          >
+                            📅
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
