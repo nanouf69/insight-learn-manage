@@ -5570,6 +5570,37 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               setRealtimeReconnectKey((k) => k + 1);
             }}
           />
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            disabled={isManualSyncing}
+            onClick={async () => {
+              setIsManualSyncing(true);
+              try {
+                if (refetchModuleFromDbRef.current) {
+                  await refetchModuleFromDbRef.current();
+                }
+                setRealtimeStatus("CONNECTING");
+                setRealtimeReconnectKey((k) => k + 1);
+                toast.success("Module synchronisé depuis la base");
+              } catch {
+                toast.error("Erreur lors de la synchronisation");
+              } finally {
+                setIsManualSyncing(false);
+              }
+            }}
+            title={lastDbUpdatedAt ? `Dernière modification serveur : ${new Date(lastDbUpdatedAt).toLocaleString("fr-FR")}` : "Forcer la synchro"}
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isManualSyncing ? "animate-spin" : ""}`} />
+            Vérifier la synchro
+          </Button>
+          <span className="text-xs text-muted-foreground">
+            {lastDbUpdatedAt
+              ? `Dernière MAJ serveur : ${new Date(lastDbUpdatedAt).toLocaleString("fr-FR")}`
+              : "Pas encore synchronisé"}
+            {lastSyncAt && ` · vérifié à ${lastSyncAt.toLocaleTimeString("fr-FR")}`}
+          </span>
         </div>
         <LearnerPreview secureMode />
       </div>
