@@ -2336,6 +2336,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   // Statut de la connexion Realtime (visible uniquement côté apprenant)
   const [realtimeStatus, setRealtimeStatus] = useState<string>("CONNECTING");
   const [realtimeReconnectKey, setRealtimeReconnectKey] = useState(0);
+  const [lastSyncAt, setLastSyncAt] = useState<Date | null>(null);
+  const [lastDbUpdatedAt, setLastDbUpdatedAt] = useState<string | null>(null);
+  const [isManualSyncing, setIsManualSyncing] = useState(false);
+  const refetchModuleFromDbRef = useRef<(() => Promise<void>) | null>(null);
   const moduleEditorStorageKey = `module-editor-state:${module.id}`;
   const skipInitialAutosaveRef = useRef(true);
   const saveErrorShownRef = useRef(false);
