@@ -876,138 +876,42 @@ export default function DevisPersonnel() {
         },
       });
 
-      try {
-        const alerteCritique = reponsesCritiques.length > 0;
-        await supabase.from("alertes_systeme").insert({
-          type: alerteCritique ? "warning" : "devis_signe",
-          titre: alerteCritique
-            ? `⚠️ Devis signé avec alertes — ${prenom} ${nom}`
-            : `🖋️ Nouveau devis signé — ${prenom} ${nom}`,
-          message: `${formation.label} • ${formation.prix} € • ${typeFinancement === "organisme" ? `Financeur : ${financeurNom}` : "Financement personnel"}${dateDebutSouhaitee ? ` • Session : ${dateDebutSouhaitee}` : ""}${alerteCritique ? ` • ⚠️ ${reponsesCritiques.join(", ")}` : ""}`,
-          details: `Devis ${numDevis}\nEmail: ${email}\nTéléphone: ${telephone}`,
-        } as any);
-      } catch (alertErr) {
-        console.warn("Insertion alerte système échouée (non-bloquant):", alertErr);
-      }
-
-      // ── Auto-save devis to storage + DB + lien session ──
+      // ── Persistance serveur (apprenant + devis + session + alerte) via edge function (service_role) ──
       try {
         const pdfBlob = doc.output("blob");
-        const storagePath = `public/${numDevis}_${fileName}`;
-        const { data: uploadData, error: uploadErr } = await supabase.storage
-          .from("devis")
-          .upload(storagePath, pdfBlob, { contentType: "application/pdf", upsert: true });
+        const pdfArrayBuffer = await pdfBlob.arrayBuffer();
+        // Convert to base64
+        let binary = "";
+        const bytes = new Uint8Array(pdfArrayBuffer);
+        const chunk = 0x8000;
+        for (let i = 0; i < bytes.length; i += chunk) {
+          binary += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, i + chunk)) as any);
+        }
+        const pdfBase64 = btoa(binary);
 
-        if (uploadErr) {
-          console.error("Devis upload error:", uploadErr);
-        } else {
-          const { data: urlData } = supabase.storage.from("devis").getPublicUrl(storagePath);
-          const fichierUrl = urlData?.publicUrl || "";
-
-          // Try to find matching apprenant
-          const { data: matchedApprenant } = await supabase
-            .from("apprenants")
-            .select("id")
-            .ilike("nom", nom.trim())
-            .ilike("prenom", prenom.trim())
-            .limit(1)
-            .maybeSingle();
-
-          let apprenantId: string | null = matchedApprenant?.id ?? null;
-
-          if (!apprenantId) {
-            const { data: newApprenant, error: insertErr } = await supabase
-              .from("apprenants")
-              .insert({
-                nom: nom.trim(),
-                prenom: prenom.trim(),
-                civilite,
-                email: email.trim(),
-                telephone: telephone.trim(),
-                adresse: adresse.trim() || null,
-                code_postal: codePostal.trim() || null,
-                ville: ville.trim() || null,
-                date_naissance: dateNaissance || null,
-                formation_choisie: formation.label,
-                montant_ttc: formation.prix,
-                mode_financement: typeFinancement === "organisme" ? "organisme" : "personnel",
-                organisme_financeur: typeFinancement === "organisme" ? financeurNom : null,
-                statut: "particulier",
-                type_apprenant: formation.type === "taxi" ? "TAXI" : "VTC",
-                notes: `Devis ${numDevis} généré le ${dateToday}` + (typeFinancement === "organisme" ? `\nFinanceur: ${financeurNom} (${financeurSiret})` : ""),
-              } as any)
-              .select("id")
-              .single();
-
-            if (!insertErr && newApprenant?.id) {
-              apprenantId = newApprenant.id;
-              console.log("New apprenant created:", apprenantId);
-            } else {
-              console.warn("Could not create apprenant for devis:", insertErr);
-            }
-          }
-
-          if (apprenantId) {
-            // Devis dans le tab "Formulaires" + "Devis"
-            await supabase.from("devis_envois").insert({
-              apprenant_id: apprenantId,
-              modele: "devis_personnel",
-              montant: `${formation.prix} €`,
-              formation: formation.label,
-              fichier_url: fichierUrl,
-              devis_signe_url: hasSigned ? fichierUrl : null,
-              signed_at: hasSigned ? new Date().toISOString() : null,
-              statut: hasSigned ? "signe" : "telecharge",
-            } as any);
-
-            // ── Lier à la session de formation choisie ──
-            try {
-              const range = parseFrenchDateRange(dateDebutSouhaitee);
-              if (range) {
-                const typeApp = formation.type === "taxi" ? "TAXI" : "VTC";
-                const { data: sessionMatch } = await supabase
-                  .from("sessions")
-                  .select("id, types_apprenant, type_session")
-                  .eq("date_debut", range.date_debut)
-                  .eq("date_fin", range.date_fin)
-                  .limit(20);
-
-                const session = (sessionMatch || []).find((s: any) =>
-                  Array.isArray(s.types_apprenant) ? s.types_apprenant.includes(typeApp) : true
-                ) || (sessionMatch || [])[0];
-
-                if (session?.id) {
-                  // Évite les doublons
-                  const { data: existing } = await supabase
-                    .from("session_apprenants")
-                    .select("id")
-                    .eq("session_id", session.id)
-                    .eq("apprenant_id", apprenantId)
-                    .maybeSingle();
-
-                  if (!existing) {
-                    await supabase.from("session_apprenants").insert({
-                      session_id: session.id,
-                      apprenant_id: apprenantId,
-                      date_debut: range.date_debut,
-                      date_fin: range.date_fin,
-                      mode_financement: typeFinancement === "organisme" ? "organisme" : "personnel",
-                      montant_total: formation.prix,
-                      notes: `Inscription via devis ${numDevis} (${creneauSouhaite || "créneau non précisé"})`,
-                    } as any);
-                    console.log("Apprenant lié à la session", session.id);
-                  }
-                } else {
-                  console.warn("Aucune session trouvée pour", range, typeApp);
-                }
-              }
-            } catch (sessionErr) {
-              console.warn("Lien session_apprenants échoué (non-bloquant):", sessionErr);
-            }
-          }
+        const baseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const apikey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+        const resp = await fetch(`${baseUrl}/functions/v1/submit-devis-personnel`, {
+          method: "POST",
+          headers: { apikey, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            civilite, prenom, nom, email, telephone,
+            adresse, codePostal, ville, dateNaissance,
+            numDevis, dateToday, fileName, hasSigned,
+            typeFinancement, financeurNom, financeurSiret,
+            formation: {
+              id: formation.id, label: formation.label, prix: formation.prix, type: formation.type,
+            },
+            dateDebutSouhaitee, creneauSouhaite,
+            reponsesCritiques,
+            pdfBase64,
+          }),
+        });
+        if (!resp.ok) {
+          console.error("submit-devis-personnel failed:", resp.status, await resp.text());
         }
       } catch (saveErr) {
-        console.warn("Auto-save devis failed (non-blocking):", saveErr);
+        console.warn("Auto-save devis (edge) failed (non-blocking):", saveErr);
       }
     } catch (err) {
       console.error(err);
