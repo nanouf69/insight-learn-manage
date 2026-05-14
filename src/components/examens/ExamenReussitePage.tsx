@@ -19,7 +19,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Eye, Edit } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Eye, Edit, IdCard, Car } from "lucide-react";
 
 // Trouve la date d'examen la plus récente passée (ou la première à venir)
 function getDefaultExamDate(): string {
@@ -231,11 +232,16 @@ export function ExamenReussitePage() {
   const [sentFelicitations, setSentFelicitations] = useState(false);
   const [sendingRepassagePratique, setSendingRepassagePratique] = useState(false);
   const [sentRepassagePratique, setSentRepassagePratique] = useState(false);
+  const [sendingCarteVtc, setSendingCarteVtc] = useState(false);
+  const [sentCarteVtc, setSentCarteVtc] = useState(false);
+  const [sendingCarteTaxi, setSendingCarteTaxi] = useState(false);
+  const [sentCarteTaxi, setSentCarteTaxi] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
-  const [previewMailType, setPreviewMailType] = useState<'felicitations' | 'repassage_pratique' | 'derniere_relance'>('felicitations');
+  const [previewMailType, setPreviewMailType] = useState<'felicitations' | 'repassage_pratique' | 'derniere_relance' | 'carte_pro_vtc' | 'carte_pro_taxi'>('felicitations');
   const [previewSubject, setPreviewSubject] = useState('');
   const [previewBody, setPreviewBody] = useState('');
   const [previewRecipients, setPreviewRecipients] = useState<any[]>([]);
+  const [selectedRecipientIds, setSelectedRecipientIds] = useState<Set<string>>(new Set());
   const [previewTab, setPreviewTab] = useState<string>('preview');
   const [extraCandidatsCMA, setExtraCandidatsCMA] = useState<string[]>([]);
   const [searchCMA, setSearchCMA] = useState("");
@@ -3494,6 +3500,169 @@ export function ExamenReussitePage() {
                     </div>
                   );
                 })()}
+
+                {/* Carte pro VTC & TAXI — sélection des candidats */}
+                {(() => {
+                  const admisVtc = candidatsPratique.filter(a => (a as any).resultat_examen_pratique === 'oui' && a.email && getCategoriePratique(a.type_apprenant) === 'VTC');
+                  const admisTaxi = candidatsPratique.filter(a => (a as any).resultat_examen_pratique === 'oui' && a.email && getCategoriePratique(a.type_apprenant) === 'TAXI');
+
+                  const carteVtcSubject = `Demande de carte professionnelle VTC`;
+                  const carteVtcBody = `Bonjour {{prenom}},
+
+Félicitations, vous êtes maintenant chauffeur VTC. Nous tenions encore une fois à vous féliciter et à vous remercier pour votre persévérance, votre patience et toute la confiance que vous nous avez accordée.
+
+Il faudra maintenant attendre l'attestation de réussite que vous enverra la chambre des métiers et de l'artisanat par voie postale, et demander votre carte professionnelle en cliquant sur le lien correspondant à votre département de résidence :
+
+🔗 Demande de carte VTC — Rhône (69) :
+[Cliquez ici pour la démarche officielle](https://www.service-public.fr/particuliers/vosdroits/F31482)
+
+🔗 Demande de carte VTC — Isère (38) :
+[Cliquez ici pour la démarche officielle](https://www.service-public.fr/particuliers/vosdroits/F31482)
+
+🔗 Demande de carte VTC — Loire (42) :
+[Cliquez ici pour la démarche officielle](https://www.service-public.fr/particuliers/vosdroits/F31482)
+
+🔗 Demande de carte VTC — Haute-Savoie (74) :
+[Cliquez ici pour la démarche officielle](https://www.service-public.fr/particuliers/vosdroits/F31482)
+
+⚠️ Si vous résidez dans un autre département, contactez la préfecture de votre département.
+
+⚠️ Avant d'effectuer votre demande de carte professionnelle, vous devez obtenir un rendez-vous auprès d'un médecin agréé conduite pour l'obtention d'un certificat médical.
+
+📋 Liste officielle des médecins agréés :
+[Cliquez ici](https://gestion.ftransport.fr/documents/Liste_medecins_agrees.pdf)
+
+Vous devez également répondre au mail envoyé par l'Imprimerie Nationale en envoyant une photo et une signature depuis votre téléphone portable ou ordinateur.
+
+N'oubliez pas de faire tamponner votre certificat médical après réception de la carte professionnelle.
+
+⭐ Nous vous serions très reconnaissants de laisser un avis Google sur notre page :
+[Cliquez ici pour laisser un avis](https://www.google.fr/search?q=ftransport)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🚖 Si vous trouvez des difficultés pour demander votre carte professionnelle, nous pouvons le faire à votre place. Nous procédons aussi à l'inscription au registre des VTC, le tout pour 30 €.
+📞 Contactez-nous directement par téléphone au 04.28.29.60.91
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Nous vous souhaitons prospérité et bonheur dans votre nouvelle activité.
+
+Cordialement,
+FTRANSPORT
+Centre de formation
+86 Route de Genas 69003 Lyon
+📞 04.28.29.60.91
+De 9h à 17h sur rendez-vous`;
+
+                  const carteTaxiSubject = `Demande de carte professionnelle TAXI`;
+                  const carteTaxiBody = `Bonjour {{prenom}},
+
+Félicitations, vous êtes maintenant chauffeur TAXI. Nous tenions encore une fois à vous féliciter et à vous remercier pour votre persévérance, votre patience et toute la confiance que vous nous avez accordée.
+
+Il faudra maintenant attendre l'attestation de réussite que vous enverra la chambre des métiers et de l'artisanat par voie postale, et demander votre carte professionnelle en cliquant sur le lien suivant :
+
+🔗 Demande de carte TAXI — Rhône (69) :
+[Cliquez ici pour la démarche officielle](https://www.service-public.fr/particuliers/vosdroits/F2010)
+
+⚠️ Vous devez demander votre carte TAXI sur le département du Rhône, même si vous résidez dans un autre département. Votre carte professionnelle est rattachée au département où vous passez l'examen et n'est valide que pour exercer votre activité dans ce département.
+
+⚠️ Avant d'effectuer votre demande de carte professionnelle, vous devez :
+1️⃣ Obtenir un rendez-vous auprès d'un médecin agréé conduite pour un certificat médical
+2️⃣ Passer une formation PSC1
+
+🔗 Réserver une formation PSC1 — Croix Rouge :
+[Cliquez ici](https://www.croix-rouge.fr/formation/psc1)
+
+🔗 Réserver une formation PSC1 — Protection Civile :
+[Cliquez ici](https://www.protection-civile.org/formations/grand-public/premiers-secours-psc1/)
+
+📋 Liste officielle des médecins agréés :
+[Cliquez ici](https://gestion.ftransport.fr/documents/Liste_medecins_agrees.pdf)
+
+Vous devez également répondre au mail envoyé par l'Imprimerie Nationale en envoyant une photo et une signature depuis votre téléphone portable ou ordinateur.
+
+N'oubliez pas de faire tamponner votre certificat médical après réception de la carte professionnelle.
+
+⭐ Nous vous serions très reconnaissants de laisser un avis Google sur notre page :
+[Cliquez ici pour laisser un avis](https://www.google.fr/search?q=ftransport)
+
+🚖 Pour l'achat ou la location d'une licence TAXI, n'hésitez pas à vous renseigner auprès de :
+• Le Bon Coin
+• Mingat (Vaulx-en-Velin)
+• Taxi Lyonnais
+• Allo Taxi Genas
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🚕 Sachez que nous pouvons vous aider pour l'attribution de la carte professionnelle.
+📞 Contactez-nous directement au 04.28.29.60.91
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Nous vous souhaitons un excellent début d'aventure !
+
+Cordialement,
+FTRANSPORT
+Centre de formation
+86 Route de Genas 69003 Lyon
+📞 04.28.29.60.91
+De 9h à 17h sur rendez-vous`;
+
+                  return (
+                    <div className="mt-3 grid grid-cols-2 gap-3">
+                      {/* Carte pro VTC */}
+                      <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Car className="h-4 w-4 text-blue-600" />
+                            <span className="text-sm font-semibold text-blue-800">Carte Pro — VTC</span>
+                            <Badge className="bg-blue-100 text-blue-800 text-[10px]">{admisVtc.length}</Badge>
+                          </div>
+                          <Button size="sm" disabled={admisVtc.length === 0 || sendingCarteVtc || sentCarteVtc}
+                            className={`gap-1.5 text-xs ${sentCarteVtc ? 'bg-blue-600' : 'bg-blue-600 hover:bg-blue-700'}`}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setPreviewMailType('carte_pro_vtc');
+                              setPreviewSubject(carteVtcSubject);
+                              setPreviewBody(carteVtcBody);
+                              setPreviewRecipients(admisVtc);
+                              setSelectedRecipientIds(new Set(admisVtc.map(a => a.id)));
+                              setPreviewOpen(true);
+                            }}>
+                            {sentCarteVtc ? <CheckCircle2 className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                            {sendingCarteVtc ? 'Envoi...' : sentCarteVtc ? 'Envoyé ✓' : `Envoyer (${admisVtc.length})`}
+                          </Button>
+                        </div>
+                        <p className="text-[11px] text-blue-700">Procédure carte pro VTC + médecin agréé + département de résidence (sélection candidats)</p>
+                      </div>
+
+                      {/* Carte pro TAXI */}
+                      <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <IdCard className="h-4 w-4 text-amber-600" />
+                            <span className="text-sm font-semibold text-amber-800">Carte Pro — TAXI</span>
+                            <Badge className="bg-amber-100 text-amber-800 text-[10px]">{admisTaxi.length}</Badge>
+                          </div>
+                          <Button size="sm" disabled={admisTaxi.length === 0 || sendingCarteTaxi || sentCarteTaxi}
+                            className={`gap-1.5 text-xs ${sentCarteTaxi ? 'bg-amber-600' : 'bg-amber-600 hover:bg-amber-700 text-white'}`}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setPreviewMailType('carte_pro_taxi');
+                              setPreviewSubject(carteTaxiSubject);
+                              setPreviewBody(carteTaxiBody);
+                              setPreviewRecipients(admisTaxi);
+                              setSelectedRecipientIds(new Set(admisTaxi.map(a => a.id)));
+                              setPreviewOpen(true);
+                            }}>
+                            {sentCarteTaxi ? <CheckCircle2 className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                            {sendingCarteTaxi ? 'Envoi...' : sentCarteTaxi ? 'Envoyé ✓' : `Envoyer (${admisTaxi.length})`}
+                          </Button>
+                        </div>
+                        <p className="text-[11px] text-amber-700">Procédure carte pro TAXI (Rhône) + PSC1 + médecin agréé (sélection candidats)</p>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             </CardContent>
           </Card>
@@ -3760,23 +3929,60 @@ export function ExamenReussitePage() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Mail className="h-5 w-5" />
-              {previewMailType === 'felicitations' ? '📧 Aperçu — Félicitations (Admis)' : previewMailType === 'derniere_relance' ? '📧 Aperçu — Dernière relance (Repassage)' : '📧 Aperçu — Repassage pratique (Ajourné)'}
+              {previewMailType === 'felicitations' ? '📧 Aperçu — Félicitations (Admis)'
+                : previewMailType === 'derniere_relance' ? '📧 Aperçu — Dernière relance (Repassage)'
+                : previewMailType === 'carte_pro_vtc' ? '📧 Aperçu — Carte Pro VTC (Admis)'
+                : previewMailType === 'carte_pro_taxi' ? '📧 Aperçu — Carte Pro TAXI (Admis)'
+                : '📧 Aperçu — Repassage pratique (Ajourné)'}
             </DialogTitle>
           </DialogHeader>
 
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Users className="h-4 w-4" />
-            <span><strong>{previewRecipients.length}</strong> destinataire(s)</span>
-          </div>
+          {(() => {
+            const isCartePro = previewMailType === 'carte_pro_vtc' || previewMailType === 'carte_pro_taxi';
+            const selectedCount = isCartePro ? selectedRecipientIds.size : previewRecipients.length;
+            const allSelected = isCartePro && selectedRecipientIds.size === previewRecipients.length && previewRecipients.length > 0;
+            return (
+              <>
+                <div className="flex items-center justify-between gap-2 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4" />
+                    <span><strong>{selectedCount}</strong> / {previewRecipients.length} destinataire(s){isCartePro ? ' sélectionné(s)' : ''}</span>
+                  </div>
+                  {isCartePro && (
+                    <div className="flex items-center gap-2">
+                      <Button size="sm" variant="outline" className="h-7 text-xs"
+                        onClick={() => setSelectedRecipientIds(allSelected ? new Set() : new Set(previewRecipients.map(r => r.id)))}>
+                        {allSelected ? 'Tout désélectionner' : 'Tout sélectionner'}
+                      </Button>
+                    </div>
+                  )}
+                </div>
 
-          <ScrollArea className="max-h-24 border rounded-md p-2 text-xs space-y-0.5">
-            {previewRecipients.map(a => (
-              <div key={a.id} className="flex justify-between py-0.5">
-                <span className="font-medium">{a.nom} {a.prenom}</span>
-                <span className="text-muted-foreground">{a.email}</span>
-              </div>
-            ))}
-          </ScrollArea>
+                <ScrollArea className={`${isCartePro ? 'max-h-48' : 'max-h-24'} border rounded-md p-2 text-xs space-y-0.5`}>
+                  {previewRecipients.map(a => {
+                    const checked = selectedRecipientIds.has(a.id);
+                    return (
+                      <div key={a.id} className={`flex items-center justify-between py-1 px-1 rounded ${isCartePro ? 'hover:bg-accent cursor-pointer' : ''}`}
+                        onClick={() => {
+                          if (!isCartePro) return;
+                          setSelectedRecipientIds(prev => {
+                            const next = new Set(prev);
+                            if (next.has(a.id)) next.delete(a.id); else next.add(a.id);
+                            return next;
+                          });
+                        }}>
+                        <div className="flex items-center gap-2">
+                          {isCartePro && <Checkbox checked={checked} />}
+                          <span className="font-medium">{a.nom} {a.prenom}</span>
+                        </div>
+                        <span className="text-muted-foreground">{a.email}</span>
+                      </div>
+                    );
+                  })}
+                </ScrollArea>
+              </>
+            );
+          })()}
 
           <Tabs value={previewTab} onValueChange={setPreviewTab} className="flex-1 flex flex-col min-h-0">
             <TabsList className="w-fit">
@@ -3820,12 +4026,17 @@ export function ExamenReussitePage() {
               disabled={
                 (previewMailType === 'felicitations' && (sendingFelicitations || sentFelicitations)) ||
                 (previewMailType === 'repassage_pratique' && (sendingRepassagePratique || sentRepassagePratique)) ||
-                (previewMailType === 'derniere_relance' && (sendingDerniereRelance || sentDerniereRelance))
+                (previewMailType === 'derniere_relance' && (sendingDerniereRelance || sentDerniereRelance)) ||
+                (previewMailType === 'carte_pro_vtc' && (sendingCarteVtc || sentCarteVtc || selectedRecipientIds.size === 0)) ||
+                (previewMailType === 'carte_pro_taxi' && (sendingCarteTaxi || sentCarteTaxi || selectedRecipientIds.size === 0))
               }
-              variant={previewMailType === 'repassage_pratique' ? 'destructive' : previewMailType === 'derniere_relance' ? 'destructive' : 'default'}
+              variant={previewMailType === 'repassage_pratique' || previewMailType === 'derniere_relance' ? 'destructive' : 'default'}
               className="gap-1.5"
               onClick={async () => {
-                const recipients = previewRecipients;
+                const isCartePro = previewMailType === 'carte_pro_vtc' || previewMailType === 'carte_pro_taxi';
+                const recipients = isCartePro
+                  ? previewRecipients.filter(r => selectedRecipientIds.has(r.id))
+                  : previewRecipients;
                 const linkify = (txt: string) => txt
                   .replace(
                     /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
@@ -3840,8 +4051,9 @@ export function ExamenReussitePage() {
                     .replace(/{{prenom}}/g, a.prenom || '')
                     .replace(/{{nom}}/g, a.nom || '')
                 ).replace(/\n/g, '<br>');
-                if (previewMailType === 'felicitations') {
-                  setSendingFelicitations(true);
+
+                const sendBatch = async (label: string, setSending: (b: boolean) => void, setSent: (b: boolean) => void) => {
+                  setSending(true);
                   setPreviewOpen(false);
                   let sent = 0;
                   let failed = 0;
@@ -3854,54 +4066,22 @@ export function ExamenReussitePage() {
                       sent++;
                     } catch (e) { failed++; console.error(e); }
                   }
-                  setSendingFelicitations(false);
-                  setSentFelicitations(failed === 0);
+                  setSending(false);
+                  setSent(failed === 0);
                   failed === 0
-                    ? toast.success(`📧 ${sent}/${recipients.length} email(s) "Félicitations" envoyé(s)`)
+                    ? toast.success(`📧 ${sent}/${recipients.length} email(s) "${label}" envoyé(s)`)
                     : toast.error(`⚠️ ${sent}/${recipients.length} email(s) envoyé(s), ${failed} échec(s)`);
-                } else if (previewMailType === 'derniere_relance') {
-                  setSendingDerniereRelance(true);
-                  setPreviewOpen(false);
-                  let sent = 0;
-                  let failed = 0;
-                  for (const a of recipients) {
-                    const subject = `${previewSubject} - ${a.prenom} ${a.nom}`;
-                    const body = buildBody(a);
-                    try {
-                      const { data, error } = await supabase.functions.invoke('sync-outlook-emails', { body: { action: 'send', userEmail: 'contact@ftransport.fr', to: a.email, subject, body, apprenantId: a.id } });
-                      if (error || data?.success !== true) throw error || new Error(data?.error || 'Envoi non confirmé');
-                      sent++;
-                    } catch (e) { failed++; console.error(e); }
-                  }
-                  setSendingDerniereRelance(false);
-                  setSentDerniereRelance(failed === 0);
-                  failed === 0
-                    ? toast.success(`📧 ${sent}/${recipients.length} email(s) "Dernière relance" envoyé(s)`)
-                    : toast.error(`⚠️ ${sent}/${recipients.length} email(s) envoyé(s), ${failed} échec(s)`);
-                } else {
-                  setSendingRepassagePratique(true);
-                  setPreviewOpen(false);
-                  let sent = 0;
-                  let failed = 0;
-                  for (const a of recipients) {
-                    const subject = `${previewSubject} - ${a.prenom} ${a.nom}`;
-                    const body = buildBody(a);
-                    try {
-                      const { data, error } = await supabase.functions.invoke('sync-outlook-emails', { body: { action: 'send', userEmail: 'contact@ftransport.fr', to: a.email, subject, body, apprenantId: a.id } });
-                      if (error || data?.success !== true) throw error || new Error(data?.error || 'Envoi non confirmé');
-                      sent++;
-                    } catch (e) { failed++; console.error(e); }
-                  }
-                  setSendingRepassagePratique(false);
-                  setSentRepassagePratique(failed === 0);
-                  failed === 0
-                    ? toast.success(`📧 ${sent}/${recipients.length} email(s) "Repassage pratique" envoyé(s)`)
-                    : toast.error(`⚠️ ${sent}/${recipients.length} email(s) envoyé(s), ${failed} échec(s)`);
-                }
+                };
+
+                if (previewMailType === 'felicitations') await sendBatch('Félicitations', setSendingFelicitations, setSentFelicitations);
+                else if (previewMailType === 'derniere_relance') await sendBatch('Dernière relance', setSendingDerniereRelance, setSentDerniereRelance);
+                else if (previewMailType === 'carte_pro_vtc') await sendBatch('Carte Pro VTC', setSendingCarteVtc, setSentCarteVtc);
+                else if (previewMailType === 'carte_pro_taxi') await sendBatch('Carte Pro TAXI', setSendingCarteTaxi, setSentCarteTaxi);
+                else await sendBatch('Repassage pratique', setSendingRepassagePratique, setSentRepassagePratique);
               }}
             >
               <Mail className="h-4 w-4" />
-              Confirmer l'envoi ({previewRecipients.length})
+              Confirmer l'envoi ({(previewMailType === 'carte_pro_vtc' || previewMailType === 'carte_pro_taxi') ? selectedRecipientIds.size : previewRecipients.length})
             </Button>
           </DialogFooter>
         </DialogContent>
