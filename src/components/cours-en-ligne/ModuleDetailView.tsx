@@ -2907,6 +2907,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         console.error("[Realtime] Error refetching module data:", err);
       }
     };
+    refetchModuleFromDbRef.current = refetchModuleFromDb;
 
     const handleRealtimeChange = async (payload: any) => {
       const newData = payload.new as any;
