@@ -151,6 +151,72 @@ Deno.serve(async (req) => {
       }
     }
 
+    // ── Emails bienvenue + pré-information ──
+    if (apprenantId) {
+      try {
+        const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+        const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+        const onboardingUrl = "https://insight-learn-manage.lovable.app/bienvenue";
+        const preInfoTemplateId = formation.type === "taxi" ? "pre-information-taxi" : "pre-information-vtc";
+
+        const sendTemplate = async (templateId: string) => {
+          const { data: tpl } = await supabase
+            .from("email_templates")
+            .select("subject_template, body_template")
+            .eq("id", templateId)
+            .single();
+          if (!tpl) {
+            console.warn("Template introuvable:", templateId);
+            return;
+          }
+          const fill = (s: string) => (s || "")
+            .replace(/\{\{prenom\}\}/g, prenom || "")
+            .replace(/\{\{nom\}\}/g, nom || "")
+            .replace(/\{\{email\}\}/g, email || "")
+            .replace(/\{\{formation\}\}/g, formation.label || "")
+            .replace(/\{\{apprenant_id\}\}/g, apprenantId || "")
+            .replace(/\{\{onboarding_url\}\}/g, onboardingUrl)
+            .replace(/\{\{civilite\}\}/g, civilite || "")
+            .replace(/\{\{adresse\}\}/g, adresse || "")
+            .replace(/\{\{code_postal\}\}/g, codePostal || "")
+            .replace(/\{\{ville\}\}/g, ville || "");
+          const subject = fill(tpl.subject_template);
+          const body = fill(tpl.body_template);
+
+          const sendRes = await fetch(`${supabaseUrl}/functions/v1/sync-outlook-emails`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${serviceKey}` },
+            body: JSON.stringify({
+              action: "send",
+              userEmail: "contact@ftransport.fr",
+              to: email,
+              subject,
+              body,
+            }),
+          });
+          const sendData = await sendRes.json().catch(() => ({}));
+          if (sendData?.success) {
+            await supabase.from("emails").insert({
+              apprenant_id: apprenantId,
+              type: "sent",
+              subject,
+              body_html: body,
+              sender_email: "contact@ftransport.fr",
+              recipients: [email],
+              sent_at: new Date().toISOString(),
+            } as any);
+          } else {
+            console.warn(`Envoi ${templateId} échoué:`, sendData);
+          }
+        };
+
+        await sendTemplate("bienvenue");
+        await sendTemplate(preInfoTemplateId);
+      } catch (e) {
+        console.warn("Envoi emails bienvenue/pré-info échoué:", e);
+      }
+    }
+
     // ── alerte système ──
     try {
       const alerteCritique = Array.isArray(reponsesCritiques) && reponsesCritiques.length > 0;
