@@ -3929,23 +3929,60 @@ De 9h à 17h sur rendez-vous`;
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Mail className="h-5 w-5" />
-              {previewMailType === 'felicitations' ? '📧 Aperçu — Félicitations (Admis)' : previewMailType === 'derniere_relance' ? '📧 Aperçu — Dernière relance (Repassage)' : '📧 Aperçu — Repassage pratique (Ajourné)'}
+              {previewMailType === 'felicitations' ? '📧 Aperçu — Félicitations (Admis)'
+                : previewMailType === 'derniere_relance' ? '📧 Aperçu — Dernière relance (Repassage)'
+                : previewMailType === 'carte_pro_vtc' ? '📧 Aperçu — Carte Pro VTC (Admis)'
+                : previewMailType === 'carte_pro_taxi' ? '📧 Aperçu — Carte Pro TAXI (Admis)'
+                : '📧 Aperçu — Repassage pratique (Ajourné)'}
             </DialogTitle>
           </DialogHeader>
 
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Users className="h-4 w-4" />
-            <span><strong>{previewRecipients.length}</strong> destinataire(s)</span>
-          </div>
+          {(() => {
+            const isCartePro = previewMailType === 'carte_pro_vtc' || previewMailType === 'carte_pro_taxi';
+            const selectedCount = isCartePro ? selectedRecipientIds.size : previewRecipients.length;
+            const allSelected = isCartePro && selectedRecipientIds.size === previewRecipients.length && previewRecipients.length > 0;
+            return (
+              <>
+                <div className="flex items-center justify-between gap-2 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4" />
+                    <span><strong>{selectedCount}</strong> / {previewRecipients.length} destinataire(s){isCartePro ? ' sélectionné(s)' : ''}</span>
+                  </div>
+                  {isCartePro && (
+                    <div className="flex items-center gap-2">
+                      <Button size="sm" variant="outline" className="h-7 text-xs"
+                        onClick={() => setSelectedRecipientIds(allSelected ? new Set() : new Set(previewRecipients.map(r => r.id)))}>
+                        {allSelected ? 'Tout désélectionner' : 'Tout sélectionner'}
+                      </Button>
+                    </div>
+                  )}
+                </div>
 
-          <ScrollArea className="max-h-24 border rounded-md p-2 text-xs space-y-0.5">
-            {previewRecipients.map(a => (
-              <div key={a.id} className="flex justify-between py-0.5">
-                <span className="font-medium">{a.nom} {a.prenom}</span>
-                <span className="text-muted-foreground">{a.email}</span>
-              </div>
-            ))}
-          </ScrollArea>
+                <ScrollArea className={`${isCartePro ? 'max-h-48' : 'max-h-24'} border rounded-md p-2 text-xs space-y-0.5`}>
+                  {previewRecipients.map(a => {
+                    const checked = selectedRecipientIds.has(a.id);
+                    return (
+                      <div key={a.id} className={`flex items-center justify-between py-1 px-1 rounded ${isCartePro ? 'hover:bg-accent cursor-pointer' : ''}`}
+                        onClick={() => {
+                          if (!isCartePro) return;
+                          setSelectedRecipientIds(prev => {
+                            const next = new Set(prev);
+                            if (next.has(a.id)) next.delete(a.id); else next.add(a.id);
+                            return next;
+                          });
+                        }}>
+                        <div className="flex items-center gap-2">
+                          {isCartePro && <Checkbox checked={checked} />}
+                          <span className="font-medium">{a.nom} {a.prenom}</span>
+                        </div>
+                        <span className="text-muted-foreground">{a.email}</span>
+                      </div>
+                    );
+                  })}
+                </ScrollArea>
+              </>
+            );
+          })()}
 
           <Tabs value={previewTab} onValueChange={setPreviewTab} className="flex-1 flex flex-col min-h-0">
             <TabsList className="w-fit">
