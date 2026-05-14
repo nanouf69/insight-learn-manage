@@ -4115,6 +4115,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         return false;
       }
     };
+    refetchModuleFromDbRef.current = refetchModuleFromDb;
 
 
     // Introduction module IDs that require acknowledgment before quiz
