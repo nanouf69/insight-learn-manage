@@ -1,28 +1,26 @@
 // ======================================================================
-// Système de propagation des modifications d'exercices
-// Les modifications admin se propagent automatiquement à tous les modules
-// utilisant les mêmes questions, à la fois en localStorage ET en base.
+// ⚠️ PROPAGATION AUTOMATIQUE DÉSACTIVÉE (urgence — décision admin)
+// ----------------------------------------------------------------------
+// Toutes les fonctions de ce module sont volontairement neutralisées :
+// elles renvoient les données telles quelles et ne touchent plus jamais
+// à Supabase ni au localStorage.
+//
+// Raison : la propagation cross-module réécrasait les bonnes réponses
+// modifiées par l'admin. On préfère perdre la propagation entre modules
+// plutôt que de risquer une régression sur les corrections.
+//
+// Les signatures sont conservées pour la compatibilité ascendante.
 // ======================================================================
 
-import { supabase } from "@/integrations/supabase/client";
-
 const STORAGE_KEY = "shared-exercise-overrides-v1";
-const LOCAL_CONTENT_OVERRIDES_DISABLED = true;
-const ENONCE_OVERRIDE_BLOCKED_EXERCISE_IDS = new Set([80]);
-
-function canApplyEnonceBasedOverrides(exerciceId?: number): boolean {
-  return exerciceId == null || !ENONCE_OVERRIDE_BLOCKED_EXERCISE_IDS.has(Number(exerciceId));
-}
 
 interface QuestionOverride {
   enonce: string;
   choix: { lettre: string; texte: string; correct?: boolean }[];
 }
 
-// Map: normalized original enonce → updated question data
 type OverridesStore = Record<string, QuestionOverride>;
 
-/** Type for a module's initial data used for cross-module propagation */
 export interface ModuleInitialData {
   id: number;
   nom: string;
@@ -31,557 +29,73 @@ export interface ModuleInitialData {
   exercices: { id: number; titre?: string; sousTitre?: string; actif?: boolean; questions?: { id?: number; enonce: string; choix: any[] }[] }[];
 }
 
-/** Normalize enonce for stable matching across modules */
-function normalizeEnonce(text: string): string {
-  return text.trim().replace(/\s+/g, " ");
-}
+// Best-effort cleanup of the legacy localStorage cache so old overrides
+// can never resurface after this kill-switch is shipped.
+try {
+  if (typeof localStorage !== "undefined") {
+    localStorage.removeItem(STORAGE_KEY);
+  }
+} catch {}
 
-/** Load all shared overrides from localStorage */
 export function loadSharedOverrides(): OverridesStore {
-  if (LOCAL_CONTENT_OVERRIDES_DISABLED) return {};
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : {};
-  } catch {
-    return {};
-  }
+  return {};
 }
 
-/** Save shared overrides to localStorage */
-function saveSharedOverrides(overrides: OverridesStore): void {
-  if (LOCAL_CONTENT_OVERRIDES_DISABLED) {
-    try {
-      localStorage.removeItem(STORAGE_KEY);
-    } catch {}
-    return;
-  }
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(overrides));
-  } catch (e) {
-    console.error("[shared-overrides] Error saving:", e);
-  }
-}
-
-/** Get a fingerprint of current overrides for cache invalidation */
 export function getOverridesFingerprint(): string {
-  if (LOCAL_CONTENT_OVERRIDES_DISABLED) return "db-only";
-  const overrides = loadSharedOverrides();
-  const keys = Object.keys(overrides).sort();
-  if (keys.length === 0) return "none";
-  return `${keys.length}:${keys[0]?.slice(0, 20)}:${keys[keys.length - 1]?.slice(0, 20)}`;
+  return "disabled";
 }
 
-/**
- * Detect question changes between original (source) and edited questions,
- * save them to the shared overrides store, and propagate to other modules in DB.
- * 
- * @param allModulesInitialData - initial data for ALL known modules, used to create
- *   records for modules that don't have a module_editor_state row yet.
- */
 export function detectAndSaveOverrides(
-  originalQuestions: { enonce: string; choix: { lettre: string; texte: string; correct?: boolean }[] }[],
-  editedQuestions: { enonce: string; choix: { lettre: string; texte: string; correct?: boolean }[] }[],
-  currentModuleId: number,
-  allModulesInitialData?: ModuleInitialData[],
+  _originalQuestions: { enonce: string; choix: { lettre: string; texte: string; correct?: boolean }[] }[],
+  _editedQuestions: { enonce: string; choix: { lettre: string; texte: string; correct?: boolean }[] }[],
+  _currentModuleId: number,
+  _allModulesInitialData?: ModuleInitialData[],
 ): void {
-  if (LOCAL_CONTENT_OVERRIDES_DISABLED) {
-    invalidateOtherModuleCaches(currentModuleId);
-    saveSharedOverrides({});
-    return;
-  }
-  const overrides = loadSharedOverrides();
-  let changed = false;
-  const changedOverrides: OverridesStore = {};
-
-  for (let i = 0; i < originalQuestions.length && i < editedQuestions.length; i++) {
-    const orig = originalQuestions[i];
-    const edited = editedQuestions[i];
-
-    const origNorm = normalizeEnonce(orig.enonce);
-    const editedNorm = normalizeEnonce(edited.enonce);
-
-    const enonceChanged = origNorm !== editedNorm;
-    const choixChanged = JSON.stringify(orig.choix) !== JSON.stringify(edited.choix);
-
-    if (enonceChanged || choixChanged) {
-      const override = { enonce: edited.enonce, choix: edited.choix };
-      overrides[origNorm] = override;
-      changedOverrides[origNorm] = override;
-      changed = true;
-    }
-  }
-
-  if (changed) {
-    saveSharedOverrides(overrides);
-    invalidateOtherModuleCaches(currentModuleId);
-    // DB propagation is handled by syncSharedExercisesToSiblingModules (called after
-    // the debounced module save) which uses exercise IDs instead of enonce matching.
-    // Calling propagateOverridesToAllModules here would race with that system and
-    // cause TOCTOU data loss when both write to the same sibling record concurrently.
-  }
+  // no-op: propagation désactivée
 }
 
-/**
- * Propagate question overrides to ALL modules that share modified questions.
- * - UPDATE existing module_editor_state records
- * - INSERT new records for modules that don't have one yet but contain matching questions
- */
-async function propagateOverridesToAllModules(
-  changedOverrides: OverridesStore,
-  currentModuleId: number,
-  allModulesInitialData: ModuleInitialData[],
-): Promise<void> {
-  try {
-    const overrideKeys = Object.keys(changedOverrides);
-    if (overrideKeys.length === 0) return;
-
-    // 1. Fetch all existing module_editor_state records (except current)
-    const { data: existingRecords, error } = await supabase
-      .from("module_editor_state")
-      .select("module_id, module_data, deleted_cours, deleted_exercices, source_fingerprint")
-      .neq("module_id", currentModuleId);
-
-    if (error) {
-      console.error("[shared-overrides] Error fetching module records:", error);
-    }
-
-    const recordedModuleIds = new Set<number>();
-    recordedModuleIds.add(currentModuleId); // Don't re-process the current module
-
-    // 2. Update existing records
-    if (existingRecords && existingRecords.length > 0) {
-      for (const row of existingRecords) {
-        recordedModuleIds.add(row.module_id);
-        const md = row.module_data as any;
-        if (!md?.exercices || !Array.isArray(md.exercices)) continue;
-
-        const { updatedExercices, hasChanges } = applyOverridesToExercicesArray(md.exercices, changedOverrides);
-
-        if (hasChanges) {
-          const updatedModuleData = { ...md, exercices: deduplicateExerciseQuestions(updatedExercices) };
-          await supabase.from("module_editor_state").upsert(
-            [{
-              module_id: row.module_id,
-              module_data: updatedModuleData,
-              deleted_cours: row.deleted_cours,
-              deleted_exercices: row.deleted_exercices,
-              source_fingerprint: row.source_fingerprint,
-              updated_at: new Date().toISOString(),
-            }],
-            { onConflict: "module_id" }
-          );
-          console.log(`[shared-overrides] Updated module ${row.module_id} with ${overrideKeys.length} override(s)`);
-        }
-      }
-    }
-
-    // 3. Create records for unrecorded modules that contain matching questions
-    for (const moduleData of allModulesInitialData) {
-      if (recordedModuleIds.has(moduleData.id)) continue; // Already processed
-      if (!moduleData.exercices || moduleData.exercices.length === 0) continue;
-
-      const { updatedExercices, hasChanges } = applyOverridesToExercicesArray(moduleData.exercices, changedOverrides);
-
-      if (hasChanges) {
-        const newModuleData = { ...moduleData, exercices: deduplicateExerciseQuestions(updatedExercices) };
-        const { error: insertError } = await supabase.from("module_editor_state").upsert(
-          [{
-            module_id: moduleData.id,
-            module_data: newModuleData as any,
-            deleted_cours: [] as any,
-            deleted_exercices: [] as any,
-            source_fingerprint: null,
-            updated_at: new Date().toISOString(),
-          }],
-          { onConflict: "module_id" }
-        );
-
-        if (insertError) {
-          console.error(`[shared-overrides] Error creating record for module ${moduleData.id}:`, insertError);
-        } else {
-          console.log(`[shared-overrides] CREATED record for module ${moduleData.id} with ${overrideKeys.length} override(s)`);
-        }
-      }
-    }
-  } catch (err) {
-    console.error("[shared-overrides] Error propagating to modules:", err);
-  }
-}
-
-/**
- * Apply overrides to an array of exercices, returning updated exercices and a change flag.
- */
-function applyOverridesToExercicesArray(
-  exercices: any[],
-  changedOverrides: OverridesStore,
-): { updatedExercices: any[]; hasChanges: boolean } {
-  let hasChanges = false;
-
-  const updatedExercices = exercices.map((exo: any) => {
-    if (!exo.questions || !Array.isArray(exo.questions) || !canApplyEnonceBasedOverrides(exo.id)) return exo;
-
-    let exoChanged = false;
-    const updatedQuestions = exo.questions.map((q: any) => {
-      // PROTECTION: never overwrite a question that an admin manually edited
-      if (q?.manually_edited === true) return q;
-      const key = normalizeEnonce(q.enonce);
-      const override = changedOverrides[key];
-      if (override) {
-        exoChanged = true;
-        return { ...q, enonce: override.enonce, choix: override.choix };
-      }
-      return q;
-    });
-
-    if (exoChanged) {
-      hasChanges = true;
-      return { ...exo, questions: updatedQuestions };
-    }
-    return exo;
-  });
-
-  return { updatedExercices, hasChanges };
-}
-
-/**
- * Apply shared overrides to an array of exercise questions.
- * Matches by normalized enonce text.
- */
 export function applySharedOverrides<T extends { enonce: string; choix: any[] }>(
   questions: T[],
 ): T[] {
-  const overrides = loadSharedOverrides();
-  if (Object.keys(overrides).length === 0) return questions;
-
-  return questions.map((q) => {
-    const key = normalizeEnonce(q.enonce);
-    const override = overrides[key];
-    if (override) {
-      return { ...q, enonce: override.enonce, choix: override.choix };
-    }
-    return q;
-  });
+  return questions;
 }
 
-/**
- * Apply DB overrides (from quiz_questions_overrides table) to exercise questions.
- */
 export function applyDbOverrides<T extends { enonce: string; choix: any[] }>(
   questions: T[],
-  dbOverrides: { enonce: string; choix: { lettre: string; texte: string; correct?: boolean }[] }[],
+  _dbOverrides: { enonce: string; choix: { lettre: string; texte: string; correct?: boolean }[] }[],
 ): T[] {
-  if (!dbOverrides || dbOverrides.length === 0) return questions;
-  // BUG #9 FIX: actually apply overrides by matching enonce
-  return questions.map((q) => {
-    const override = dbOverrides.find((o) => normalizeEnonce(o.enonce) === normalizeEnonce(q.enonce));
-    if (override) {
-      return { ...q, enonce: override.enonce, choix: override.choix };
-    }
-    return q;
-  });
+  return questions;
 }
 
-/**
- * Apply DB overrides by matching section_id and question_id.
- */
 export function applyDbOverridesByKey<T extends { id: number; enonce: string; choix: any[] }>(
   questions: T[],
-  dbOverrideMap: Map<string, { enonce: string; choix: { lettre: string; texte: string; correct?: boolean }[] }>,
-  sectionId: number,
+  _dbOverrideMap: Map<string, { enonce: string; choix: { lettre: string; texte: string; correct?: boolean }[] }>,
+  _sectionId: number,
 ): T[] {
-  if (!dbOverrideMap || dbOverrideMap.size === 0) return questions;
-
-  return questions
-    .filter((q) => {
-      const key = `${sectionId}-${q.id}`;
-      const override = dbOverrideMap.get(key);
-      return !override || override.enonce !== "__DELETED__";
-    })
-    .map((q) => {
-      const key = `${sectionId}-${q.id}`;
-      const override = dbOverrideMap.get(key);
-      if (override) {
-        return { ...q, enonce: override.enonce, choix: override.choix };
-      }
-      return q;
-    });
+  return questions;
 }
 
-/**
- * Apply shared overrides to all exercises in a module data structure.
- */
 export function applyOverridesToModuleExercices<T extends { questions?: { enonce: string; choix: any[] }[] }>(
   exercices: (T & { id?: number })[],
 ): T[] {
-  const overrides = loadSharedOverrides();
-  if (Object.keys(overrides).length === 0) return exercices;
-
-  return exercices.map((exo) => {
-    if (!exo.questions || exo.questions.length === 0 || !canApplyEnonceBasedOverrides(exo.id)) return exo;
-    return {
-      ...exo,
-      questions: applySharedOverrides(exo.questions),
-    };
-  });
+  return exercices;
 }
 
-/**
- * Load cross-module overrides from ALL module_editor_state records in DB.
- * Builds a map of normalized enonce → updated question data from all stored modules.
- * This ensures that when a module has no record, edits made in other modules still apply.
- */
 export async function loadCrossModuleOverridesFromDb(): Promise<OverridesStore> {
-  try {
-    // CRITICAL: order by updated_at ASC so the most recently updated module
-    // is iterated LAST, ensuring its (newest) version of a shared question
-    // wins via last-write in the overrides map. Without this ordering,
-    // a freshly edited answer could be overwritten by a stale sibling module
-    // that wasn't synced yet when realtime echoed back.
-    const { data, error } = await supabase
-      .from("module_editor_state")
-      .select("module_id, module_data, updated_at")
-      .order("updated_at", { ascending: true });
-
-    if (error || !data || data.length === 0) return {};
-
-    const overrides: OverridesStore = {};
-    // Track per-key timestamp so newer always wins, even with mixed ordering
-    const overrideTimestamps: Record<string, number> = {};
-
-    for (const row of data) {
-      const md = row.module_data as any;
-      if (!md?.exercices || !Array.isArray(md.exercices)) continue;
-      const rowTs = row.updated_at ? new Date(row.updated_at).getTime() : 0;
-
-      for (const exo of md.exercices) {
-        if (!exo.questions || !Array.isArray(exo.questions)) continue;
-        for (const q of exo.questions) {
-          if (q.enonce && q.choix) {
-            const key = normalizeEnonce(q.enonce);
-            // Prefer per-question _editedAt if available, else fallback to row updated_at
-            const qTs = (q as any)._editedAt ? new Date((q as any)._editedAt).getTime() : rowTs;
-            if (qTs >= (overrideTimestamps[key] ?? 0)) {
-              overrides[key] = { enonce: q.enonce, choix: q.choix };
-              overrideTimestamps[key] = qTs;
-            }
-          }
-        }
-      }
-    }
-
-    return overrides;
-  } catch (err) {
-    console.error("[shared-overrides] Error loading cross-module overrides from DB:", err);
-    return {};
-  }
+  return {};
 }
 
-/**
- * Apply cross-module DB overrides to exercises.
- * Used when a module has no module_editor_state record but other modules have edited shared questions.
- */
 export function applyCrossModuleOverrides<T extends { questions?: { enonce: string; choix: any[] }[] }>(
   exercices: (T & { id?: number })[],
-  dbOverrides: OverridesStore,
+  _dbOverrides: OverridesStore,
 ): T[] {
-  if (Object.keys(dbOverrides).length === 0) return exercices;
-
-  return exercices.map((exo) => {
-    if (!exo.questions || exo.questions.length === 0 || !canApplyEnonceBasedOverrides(exo.id)) return exo;
-    let changed = false;
-    const updatedQuestions = exo.questions.map((q) => {
-      // PROTECTION: never overwrite a question that an admin manually edited
-      if ((q as any)?.manually_edited === true) return q;
-      const key = normalizeEnonce(q.enonce);
-      const override = dbOverrides[key];
-      if (override && (override.enonce !== q.enonce || JSON.stringify(override.choix) !== JSON.stringify(q.choix))) {
-        changed = true;
-        return { ...q, enonce: override.enonce, choix: override.choix };
-      }
-      return q;
-    });
-    return changed ? { ...exo, questions: updatedQuestions } : exo;
-  });
+  return exercices;
 }
 
-/** Invalidate localStorage caches for all modules except the current one */
-function invalidateOtherModuleCaches(currentModuleId: number): void {
-  const keys = Object.keys(localStorage);
-  for (const key of keys) {
-    if (key.startsWith("module-editor-state:")) {
-      const moduleIdStr = key.replace("module-editor-state:", "");
-      if (moduleIdStr !== String(currentModuleId)) {
-        localStorage.removeItem(key);
-      }
-    }
-  }
-  console.log(`[shared-overrides] Invalidated all module caches except module ${currentModuleId}`);
-}
-
-/**
- * Deduplicate questions within each exercise by enonce text.
- * Keeps only the first occurrence of each unique enonce.
- */
-function deduplicateExerciseQuestions(exercices: any[]): any[] {
-  return exercices.map((exo: any) => {
-    if (!exo.questions || !Array.isArray(exo.questions)) return exo;
-    const seen = new Set<string>();
-    const deduped = exo.questions.filter((q: any) => {
-      const key = (q.enonce || "").trim();
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
-    return deduped.length < exo.questions.length ? { ...exo, questions: deduped } : exo;
-  });
-}
-
-const getQuestionEditedTime = (q: any): number => {
-  const raw = q?._editedAt;
-  if (!raw) return 0;
-  const time = new Date(raw).getTime();
-  return Number.isFinite(time) ? time : 0;
-};
-
-function mergeSharedExerciseWithoutRegressing(currentExo: any, savedVersion: any): any {
-  const currentQuestions = Array.isArray(currentExo?.questions) ? currentExo.questions : [];
-  const savedQuestions = Array.isArray(savedVersion?.questions) ? savedVersion.questions : [];
-  const currentById = new Map(currentQuestions.map((q: any) => [Number(q.id), q]));
-
-  const questions = savedQuestions.map((savedQ: any) => {
-    const currentQ = currentById.get(Number(savedQ.id));
-    if (!currentQ) return savedQ;
-
-    // PROTECTION: never overwrite a question that an admin manually edited locally,
-    // unless the incoming saved version is also flagged as manually edited (newer admin edit from another module).
-    if ((currentQ as any)?.manually_edited === true && savedQ?.manually_edited !== true) return currentQ;
-
-    const savedEditedAt = getQuestionEditedTime(savedQ);
-    const currentEditedAt = getQuestionEditedTime(currentQ);
-    if (currentEditedAt > 0 && savedEditedAt === 0) return currentQ;
-    if (currentEditedAt > savedEditedAt) return currentQ;
-    return savedQ;
-  });
-
-  const savedIds = new Set(savedQuestions.map((q: any) => Number(q.id)));
-  const adminAddedCurrentQuestions = currentQuestions.filter((q: any) => !savedIds.has(Number(q.id)) && getQuestionEditedTime(q) > 0);
-
-  return {
-    ...currentExo,
-    questions: [...questions, ...adminAddedCurrentQuestions],
-    titre: savedVersion.titre,
-    sousTitre: savedVersion.sousTitre,
-    actif: savedVersion.actif,
-  };
-}
-
-// ======================================================================
-// FULL CROSS-MODULE EXERCISE SYNC (handles edits, adds, AND deletes)
-// ======================================================================
-
-/**
- * After saving a module to DB, sync ALL shared exercises to sibling modules.
- * Matching is by exercise ID — exercises with the same ID across modules are
- * considered shared and will receive the same questions/state.
- *
- * This replaces the partial enonce-based propagation for the common case.
- */
 export async function syncSharedExercisesToSiblingModules(
-  savedModuleId: number,
-  savedExercices: { id: number; titre?: string; sousTitre?: string; actif?: boolean; questions?: any[] }[],
-  deletedExerciceIds: number[],
+  _savedModuleId: number,
+  _savedExercices: { id: number; titre?: string; sousTitre?: string; actif?: boolean; questions?: any[] }[],
+  _deletedExerciceIds: number[],
 ): Promise<void> {
-  try {
-    if (!savedExercices || savedExercices.length === 0) return;
-
-    // Build a map of exercise ID → exercise data from the saved module
-    const savedExoMap = new Map<number, any>();
-    for (const exo of savedExercices) {
-      savedExoMap.set(exo.id, exo);
-    }
-    const deletedSet = new Set(deletedExerciceIds);
-
-    // Fetch ALL other module_editor_state records
-    const { data: siblingRecords, error } = await supabase
-      .from("module_editor_state")
-      .select("module_id, module_data, deleted_cours, deleted_exercices, source_fingerprint")
-      .neq("module_id", savedModuleId);
-
-    if (error) {
-      console.error("[sync-shared] Error fetching sibling modules:", error);
-      return;
-    }
-
-    if (!siblingRecords || siblingRecords.length === 0) return;
-
-    for (const row of siblingRecords) {
-      const md = row.module_data as any;
-      if (!md?.exercices || !Array.isArray(md.exercices)) continue;
-
-      let hasChanges = false;
-      const deletedExos = (row.deleted_exercices as number[]) || [];
-      let updatedDeletedExos = [...deletedExos];
-
-      // Update matching exercises
-      const updatedExercices = md.exercices.map((exo: any) => {
-        const savedVersion = savedExoMap.get(exo.id);
-        if (!savedVersion) return exo; // Not a shared exercise
-
-        const mergedVersion = mergeSharedExerciseWithoutRegressing(exo, savedVersion);
-        // Check if the timestamp-aware merged version is different
-        const mergedQJson = JSON.stringify(mergedVersion.questions || []);
-        const currentQJson = JSON.stringify(exo.questions || []);
-        if (mergedQJson !== currentQJson || mergedVersion.titre !== exo.titre || mergedVersion.actif !== exo.actif || mergedVersion.sousTitre !== exo.sousTitre) {
-          hasChanges = true;
-          return mergedVersion;
-        }
-        return exo;
-      });
-
-      // Propagate deletions: if an exercise was deleted in the source, delete it in siblings too
-      for (const delId of deletedExerciceIds) {
-        // Check if this exercise existed in the sibling (by ID in initial data)
-        if (!updatedDeletedExos.includes(delId)) {
-          const existsInSibling = md.exercices.some((e: any) => e.id === delId);
-          if (existsInSibling) {
-            updatedDeletedExos.push(delId);
-            hasChanges = true;
-          }
-        }
-      }
-
-      // Important: no automatic cross-module additions.
-      // We only sync exercises that already exist in both modules to avoid
-      // leaking TAXI-only content into VTC (and inversement).
-
-      if (hasChanges) {
-        // Deduplicate questions within each exercise before saving
-        const deduplicatedExercices = deduplicateExerciseQuestions(updatedExercices);
-        const updatedModuleData = { ...md, exercices: deduplicatedExercices };
-        const { error: upsertError } = await supabase.from("module_editor_state").upsert(
-          [{
-            module_id: row.module_id,
-            module_data: updatedModuleData,
-            deleted_cours: row.deleted_cours,
-            deleted_exercices: updatedDeletedExos as any,
-            source_fingerprint: row.source_fingerprint,
-            updated_at: new Date().toISOString(),
-          }],
-          { onConflict: "module_id" }
-        );
-
-        if (upsertError) {
-          console.error(`[sync-shared] Error updating module ${row.module_id}:`, upsertError);
-        } else {
-          console.log(`[sync-shared] ✅ Synced shared exercises to module ${row.module_id}`);
-        }
-      }
-    }
-
-    // Also sync to modules that DON'T have a DB record yet but share exercises
-    // We need to check source data for all known modules
-    invalidateOtherModuleCaches(savedModuleId);
-  } catch (err) {
-    console.error("[sync-shared] Error in syncSharedExercisesToSiblingModules:", err);
-  }
+  // no-op: la sauvegarde admin n'écrase plus les modules voisins.
 }
