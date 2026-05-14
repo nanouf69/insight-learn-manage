@@ -4026,12 +4026,17 @@ De 9h à 17h sur rendez-vous`;
               disabled={
                 (previewMailType === 'felicitations' && (sendingFelicitations || sentFelicitations)) ||
                 (previewMailType === 'repassage_pratique' && (sendingRepassagePratique || sentRepassagePratique)) ||
-                (previewMailType === 'derniere_relance' && (sendingDerniereRelance || sentDerniereRelance))
+                (previewMailType === 'derniere_relance' && (sendingDerniereRelance || sentDerniereRelance)) ||
+                (previewMailType === 'carte_pro_vtc' && (sendingCarteVtc || sentCarteVtc || selectedRecipientIds.size === 0)) ||
+                (previewMailType === 'carte_pro_taxi' && (sendingCarteTaxi || sentCarteTaxi || selectedRecipientIds.size === 0))
               }
-              variant={previewMailType === 'repassage_pratique' ? 'destructive' : previewMailType === 'derniere_relance' ? 'destructive' : 'default'}
+              variant={previewMailType === 'repassage_pratique' || previewMailType === 'derniere_relance' ? 'destructive' : 'default'}
               className="gap-1.5"
               onClick={async () => {
-                const recipients = previewRecipients;
+                const isCartePro = previewMailType === 'carte_pro_vtc' || previewMailType === 'carte_pro_taxi';
+                const recipients = isCartePro
+                  ? previewRecipients.filter(r => selectedRecipientIds.has(r.id))
+                  : previewRecipients;
                 const linkify = (txt: string) => txt
                   .replace(
                     /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
@@ -4046,8 +4051,9 @@ De 9h à 17h sur rendez-vous`;
                     .replace(/{{prenom}}/g, a.prenom || '')
                     .replace(/{{nom}}/g, a.nom || '')
                 ).replace(/\n/g, '<br>');
-                if (previewMailType === 'felicitations') {
-                  setSendingFelicitations(true);
+
+                const sendBatch = async (label: string, setSending: (b: boolean) => void, setSent: (b: boolean) => void) => {
+                  setSending(true);
                   setPreviewOpen(false);
                   let sent = 0;
                   let failed = 0;
@@ -4060,54 +4066,22 @@ De 9h à 17h sur rendez-vous`;
                       sent++;
                     } catch (e) { failed++; console.error(e); }
                   }
-                  setSendingFelicitations(false);
-                  setSentFelicitations(failed === 0);
+                  setSending(false);
+                  setSent(failed === 0);
                   failed === 0
-                    ? toast.success(`📧 ${sent}/${recipients.length} email(s) "Félicitations" envoyé(s)`)
+                    ? toast.success(`📧 ${sent}/${recipients.length} email(s) "${label}" envoyé(s)`)
                     : toast.error(`⚠️ ${sent}/${recipients.length} email(s) envoyé(s), ${failed} échec(s)`);
-                } else if (previewMailType === 'derniere_relance') {
-                  setSendingDerniereRelance(true);
-                  setPreviewOpen(false);
-                  let sent = 0;
-                  let failed = 0;
-                  for (const a of recipients) {
-                    const subject = `${previewSubject} - ${a.prenom} ${a.nom}`;
-                    const body = buildBody(a);
-                    try {
-                      const { data, error } = await supabase.functions.invoke('sync-outlook-emails', { body: { action: 'send', userEmail: 'contact@ftransport.fr', to: a.email, subject, body, apprenantId: a.id } });
-                      if (error || data?.success !== true) throw error || new Error(data?.error || 'Envoi non confirmé');
-                      sent++;
-                    } catch (e) { failed++; console.error(e); }
-                  }
-                  setSendingDerniereRelance(false);
-                  setSentDerniereRelance(failed === 0);
-                  failed === 0
-                    ? toast.success(`📧 ${sent}/${recipients.length} email(s) "Dernière relance" envoyé(s)`)
-                    : toast.error(`⚠️ ${sent}/${recipients.length} email(s) envoyé(s), ${failed} échec(s)`);
-                } else {
-                  setSendingRepassagePratique(true);
-                  setPreviewOpen(false);
-                  let sent = 0;
-                  let failed = 0;
-                  for (const a of recipients) {
-                    const subject = `${previewSubject} - ${a.prenom} ${a.nom}`;
-                    const body = buildBody(a);
-                    try {
-                      const { data, error } = await supabase.functions.invoke('sync-outlook-emails', { body: { action: 'send', userEmail: 'contact@ftransport.fr', to: a.email, subject, body, apprenantId: a.id } });
-                      if (error || data?.success !== true) throw error || new Error(data?.error || 'Envoi non confirmé');
-                      sent++;
-                    } catch (e) { failed++; console.error(e); }
-                  }
-                  setSendingRepassagePratique(false);
-                  setSentRepassagePratique(failed === 0);
-                  failed === 0
-                    ? toast.success(`📧 ${sent}/${recipients.length} email(s) "Repassage pratique" envoyé(s)`)
-                    : toast.error(`⚠️ ${sent}/${recipients.length} email(s) envoyé(s), ${failed} échec(s)`);
-                }
+                };
+
+                if (previewMailType === 'felicitations') await sendBatch('Félicitations', setSendingFelicitations, setSentFelicitations);
+                else if (previewMailType === 'derniere_relance') await sendBatch('Dernière relance', setSendingDerniereRelance, setSentDerniereRelance);
+                else if (previewMailType === 'carte_pro_vtc') await sendBatch('Carte Pro VTC', setSendingCarteVtc, setSentCarteVtc);
+                else if (previewMailType === 'carte_pro_taxi') await sendBatch('Carte Pro TAXI', setSendingCarteTaxi, setSentCarteTaxi);
+                else await sendBatch('Repassage pratique', setSendingRepassagePratique, setSentRepassagePratique);
               }}
             >
               <Mail className="h-4 w-4" />
-              Confirmer l'envoi ({previewRecipients.length})
+              Confirmer l'envoi ({(previewMailType === 'carte_pro_vtc' || previewMailType === 'carte_pro_taxi') ? selectedRecipientIds.size : previewRecipients.length})
             </Button>
           </DialogFooter>
         </DialogContent>
