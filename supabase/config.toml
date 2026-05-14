@@ -73,3 +73,6 @@ verify_jwt = false
 verify_jwt = false
 [functions.rdv-carte-vtc-public]
 verify_jwt = false
+
+[functions.submit-devis-personnel]
+verify_jwt = false
