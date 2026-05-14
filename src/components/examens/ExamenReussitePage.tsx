@@ -232,11 +232,16 @@ export function ExamenReussitePage() {
   const [sentFelicitations, setSentFelicitations] = useState(false);
   const [sendingRepassagePratique, setSendingRepassagePratique] = useState(false);
   const [sentRepassagePratique, setSentRepassagePratique] = useState(false);
+  const [sendingCarteVtc, setSendingCarteVtc] = useState(false);
+  const [sentCarteVtc, setSentCarteVtc] = useState(false);
+  const [sendingCarteTaxi, setSendingCarteTaxi] = useState(false);
+  const [sentCarteTaxi, setSentCarteTaxi] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
-  const [previewMailType, setPreviewMailType] = useState<'felicitations' | 'repassage_pratique' | 'derniere_relance'>('felicitations');
+  const [previewMailType, setPreviewMailType] = useState<'felicitations' | 'repassage_pratique' | 'derniere_relance' | 'carte_pro_vtc' | 'carte_pro_taxi'>('felicitations');
   const [previewSubject, setPreviewSubject] = useState('');
   const [previewBody, setPreviewBody] = useState('');
   const [previewRecipients, setPreviewRecipients] = useState<any[]>([]);
+  const [selectedRecipientIds, setSelectedRecipientIds] = useState<Set<string>>(new Set());
   const [previewTab, setPreviewTab] = useState<string>('preview');
   const [extraCandidatsCMA, setExtraCandidatsCMA] = useState<string[]>([]);
   const [searchCMA, setSearchCMA] = useState("");
