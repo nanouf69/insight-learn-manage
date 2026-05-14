@@ -2898,6 +2898,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           setDeletedCours(Array.isArray(latest.deleted_cours) ? (latest.deleted_cours as unknown as ContentItem[]) : []);
           setDeletedExercices(Array.isArray(latest.deleted_exercices) ? (latest.deleted_exercices as unknown as ExerciceItem[]) : []);
           setLoadedModuleEditorState(true);
+          if (latest.updated_at) setLastDbUpdatedAt(String(latest.updated_at));
+          setLastSyncAt(new Date());
           // Re-apply fournisseur overrides après reload DB (sinon perdu par le merge admin)
           setTrainerOverridesReapplyKey((k) => k + 1);
         }
