@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, ArrowUp, ArrowDown, Pencil, Trash2, Plus, ToggleLeft, ToggleRight, Save, X, CheckCircle2, Eye, Settings, Download, FileText, Upload, Loader2, ZoomIn, ZoomOut, RotateCcw, Maximize, Users, ChevronDown, ChevronUp, Lock, Printer } from "lucide-react";
+import { ArrowLeft, ArrowUp, ArrowDown, Pencil, Trash2, Plus, ToggleLeft, ToggleRight, Save, X, CheckCircle2, Eye, Settings, Download, FileText, Upload, Loader2, ZoomIn, ZoomOut, RotateCcw, Maximize, Users, ChevronDown, ChevronUp, Lock, Printer, RefreshCw } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
@@ -2336,6 +2336,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   // Statut de la connexion Realtime (visible uniquement côté apprenant)
   const [realtimeStatus, setRealtimeStatus] = useState<string>("CONNECTING");
   const [realtimeReconnectKey, setRealtimeReconnectKey] = useState(0);
+  const [lastSyncAt, setLastSyncAt] = useState<Date | null>(null);
+  const [lastDbUpdatedAt, setLastDbUpdatedAt] = useState<string | null>(null);
+  const [isManualSyncing, setIsManualSyncing] = useState(false);
+  const refetchModuleFromDbRef = useRef<(() => Promise<void>) | null>(null);
   const moduleEditorStorageKey = `module-editor-state:${module.id}`;
   const skipInitialAutosaveRef = useRef(true);
   const saveErrorShownRef = useRef(false);
@@ -2894,6 +2898,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           setDeletedCours(Array.isArray(latest.deleted_cours) ? (latest.deleted_cours as unknown as ContentItem[]) : []);
           setDeletedExercices(Array.isArray(latest.deleted_exercices) ? (latest.deleted_exercices as unknown as ExerciceItem[]) : []);
           setLoadedModuleEditorState(true);
+          if (latest.updated_at) setLastDbUpdatedAt(String(latest.updated_at));
+          setLastSyncAt(new Date());
           // Re-apply fournisseur overrides après reload DB (sinon perdu par le merge admin)
           setTrainerOverridesReapplyKey((k) => k + 1);
         }
@@ -2901,6 +2907,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         console.error("[Realtime] Error refetching module data:", err);
       }
     };
+    refetchModuleFromDbRef.current = refetchModuleFromDb;
 
     const handleRealtimeChange = async (payload: any) => {
       const newData = payload.new as any;
@@ -5563,6 +5570,37 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               setRealtimeReconnectKey((k) => k + 1);
             }}
           />
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            disabled={isManualSyncing}
+            onClick={async () => {
+              setIsManualSyncing(true);
+              try {
+                if (refetchModuleFromDbRef.current) {
+                  await refetchModuleFromDbRef.current();
+                }
+                setRealtimeStatus("CONNECTING");
+                setRealtimeReconnectKey((k) => k + 1);
+                toast.success("Module synchronisé depuis la base");
+              } catch {
+                toast.error("Erreur lors de la synchronisation");
+              } finally {
+                setIsManualSyncing(false);
+              }
+            }}
+            title={lastDbUpdatedAt ? `Dernière modification serveur : ${new Date(lastDbUpdatedAt).toLocaleString("fr-FR")}` : "Forcer la synchro"}
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isManualSyncing ? "animate-spin" : ""}`} />
+            Vérifier la synchro
+          </Button>
+          <span className="text-xs text-muted-foreground">
+            {lastDbUpdatedAt
+              ? `Dernière MAJ serveur : ${new Date(lastDbUpdatedAt).toLocaleString("fr-FR")}`
+              : "Pas encore synchronisé"}
+            {lastSyncAt && ` · vérifié à ${lastSyncAt.toLocaleTimeString("fr-FR")}`}
+          </span>
         </div>
         <LearnerPreview secureMode />
       </div>
