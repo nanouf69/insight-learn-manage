@@ -75,14 +75,19 @@ const formatShortDate = (iso?: string | null) => {
 
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
+type DayGroup = {
+  matin?: EmargementRow;
+  apresMidi?: EmargementRow;
+  soir?: EmargementRow;       // legacy : ancienne signature unique
+  soir1?: EmargementRow;      // 17h - 18h30
+  soir2?: EmargementRow;      // 18h30 - 21h
+};
+
 const buildEmargementHTML = (
-  groupedByDay: Array<[string, { matin?: EmargementRow; apresMidi?: EmargementRow; soir?: EmargementRow }]>,
+  groupedByDay: Array<[string, DayGroup]>,
   apprenant: ApprenantInfo | null
 ) => {
   const formation = apprenant?.formation_choisie || apprenant?.type_apprenant || "Formation";
-  const adresse = [apprenant?.adresse, [apprenant?.code_postal, apprenant?.ville].filter(Boolean).join(" ")]
-    .filter(Boolean)
-    .join(" ");
   const lieu = "86 route de Genas 69003 Lyon";
   const formateur = "Naoufal GUENICHI";
   const datesFormation =
@@ -90,16 +95,20 @@ const buildEmargementHTML = (
       ? `du ${formatShortDate(apprenant?.date_debut_formation)} au ${formatShortDate(apprenant?.date_fin_formation)}`
       : "—";
 
-  // Inclure la colonne soir uniquement si au moins une signature soir existe
-  const hasSoir = groupedByDay.some(([, v]) => !!v.soir);
+  // Inclure les colonnes soir uniquement si au moins une signature soir existe
+  const hasSoir = groupedByDay.some(([, v]) => !!v.soir || !!v.soir1 || !!v.soir2);
 
   const rowsHtml = groupedByDay
-    .map(([date, { matin, apresMidi, soir }]) => {
+    .map(([date, { matin, apresMidi, soir, soir1, soir2 }]) => {
       const jourLabel = capitalize(formatDateFR(date));
       const sigImg = (r?: EmargementRow) =>
         r?.signature_data_url
           ? `<img src="${r.signature_data_url}" alt="Signature" style="max-height:55px;max-width:95%;"/>`
           : "";
+      // Pour le soir : on affiche 2 cases (17h-18h30 / 18h30-21h).
+      // Si seul l'ancien "soir" existe (legacy), on l'affiche dans la 1ère case.
+      const evening1 = soir1 || soir;
+      const evening2 = soir2;
       return `
         <tr>
           <td class="jour">${jourLabel}</td>
@@ -107,7 +116,7 @@ const buildEmargementHTML = (
           <td class="sig">${sigImg(matin)}</td>
           <td class="horaire">13:00 - 16:00</td>
           <td class="sig">${sigImg(apresMidi)}</td>
-          ${hasSoir ? `<td class="horaire">17:00 - 21:00</td><td class="sig">${sigImg(soir)}</td>` : ""}
+          ${hasSoir ? `<td class="horaire">17:00 - 18:30</td><td class="sig">${sigImg(evening1)}</td><td class="horaire">18:30 - 21:00</td><td class="sig">${sigImg(evening2)}</td>` : ""}
         </tr>`;
     })
     .join("");
@@ -131,7 +140,7 @@ const buildEmargementHTML = (
   thead .sub th { background: #8a9bd4; color: #fff; font-weight: normal; padding: 6px; text-align: center; border: 1px solid #6b7fc7; font-size: 10px; }
   tbody td { border: 1px solid #6b7fc7; padding: 10px 8px; text-align: center; height: 70px; vertical-align: middle; }
   tbody td.jour { font-weight: bold; text-align: left; padding-left: 12px; background: #fff; }
-  tbody td.horaire { font-size: 10px; color: #444; width: 90px; }
+  tbody td.horaire { font-size: 10px; color: #444; width: 80px; }
   tbody td.sig { background: #fff; }
   .cachet { margin-top: 18px; }
   .cachet .label { font-weight: bold; font-size: 11px; margin-bottom: 4px; }
@@ -155,21 +164,21 @@ const buildEmargementHTML = (
   <table>
     <thead>
       <tr class="top">
-        <th rowspan="2" style="width:160px;">Jour</th>
+        <th rowspan="2" style="width:140px;">Jour</th>
         <th colspan="2">Matin</th>
         <th colspan="2">Apres-midi</th>
-        ${hasSoir ? `<th colspan="2">Soir</th>` : ""}
+        ${hasSoir ? `<th colspan="2">Soir (1ère partie)</th><th colspan="2">Soir (2ème partie)</th>` : ""}
       </tr>
       <tr class="sub">
         <th>Horaire</th>
         <th>Signature du stagiaire</th>
         <th>Horaire</th>
         <th>Signature du stagiaire</th>
-        ${hasSoir ? `<th>Horaire</th><th>Signature du stagiaire</th>` : ""}
+        ${hasSoir ? `<th>Horaire</th><th>Signature du stagiaire</th><th>Horaire</th><th>Signature du stagiaire</th>` : ""}
       </tr>
     </thead>
     <tbody>
-      ${rowsHtml || `<tr><td colspan="${hasSoir ? 7 : 5}" style="padding:20px;color:#999;">Aucune signature enregistrée</td></tr>`}
+      ${rowsHtml || `<tr><td colspan="${hasSoir ? 9 : 5}" style="padding:20px;color:#999;">Aucune signature enregistrée</td></tr>`}
     </tbody>
   </table>
 
@@ -186,7 +195,7 @@ const buildEmargementHTML = (
 };
 
 const downloadAllJournees = (
-  groupedByDay: Array<[string, { matin?: EmargementRow; apresMidi?: EmargementRow; soir?: EmargementRow }]>,
+  groupedByDay: Array<[string, DayGroup]>,
   apprenant: ApprenantInfo | null
 ) => {
   const html = buildEmargementHTML(groupedByDay, apprenant);
@@ -199,12 +208,10 @@ const downloadAllJournees = (
 
 const downloadJournee = (
   date: string,
-  matin: EmargementRow | undefined,
-  apresMidi: EmargementRow | undefined,
-  soir: EmargementRow | undefined,
+  group: DayGroup,
   apprenant: ApprenantInfo | null
 ) => {
-  downloadAllJournees([[date, { matin, apresMidi, soir }]], apprenant);
+  downloadAllJournees([[date, group]], apprenant);
 };
 
 export default function EmargementsSignesViewer({ apprenantId, completed, onComplete }: Props) {
