@@ -448,9 +448,12 @@ const CorrectionQRCTab = () => {
   const pendingCount = items.filter(i => !i.corrigeManuel).length;
   const doneCount = items.filter(i => i.corrigeManuel).length;
 
+  const getExamNum = (titre: string) => (titre.match(/N°\s*(\d+)/)?.[1]) || "";
+
   const filtered = items.filter(item => {
     if (filter === "pending" && item.corrigeManuel) return false;
     if (filter === "done" && !item.corrigeManuel) return false;
+    if (examenFilter !== "all" && getExamNum(item.quizTitre) !== examenFilter) return false;
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       return (
@@ -463,6 +466,19 @@ const CorrectionQRCTab = () => {
     }
     return true;
   });
+
+  // Available exam numbers from items
+  const availableExams = Array.from(new Set(items.map(i => getExamNum(i.quizTitre)).filter(Boolean)))
+    .sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
+
+  // Pending count per exam (respects current pending filter intent)
+  const pendingByExam: Record<string, number> = {};
+  for (const i of items) {
+    if (i.corrigeManuel) continue;
+    const n = getExamNum(i.quizTitre);
+    if (!n) continue;
+    pendingByExam[n] = (pendingByExam[n] || 0) + 1;
+  }
 
   const sortedFiltered = [...filtered].sort((a, b) => {
     const dateA = new Date(a.completedAt).getTime() || 0;
