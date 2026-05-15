@@ -1276,6 +1276,28 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     );
   }
 
+  // Force trainee to sign any documents previously completed without signature
+  if (apprenant?.id && !embedded && !pendingSignaturesDone) {
+    return (
+      <>
+        <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
+          <div className="text-center max-w-md">
+            <div className="text-5xl mb-3">✍️</div>
+            <h1 className="text-xl font-bold text-slate-900 mb-1">
+              Signature de vos documents
+            </h1>
+            <p className="text-sm text-slate-500">
+              Merci de signer vos documents avant d'accéder à la formation.
+            </p>
+          </div>
+        </div>
+        <SignatureDocumentsRequiredModal
+          apprenantId={apprenant.id}
+          onAllSigned={() => setPendingSignaturesDone(true)}
+        />
+      </>
+    );
+
   // Module detail view
   if (selectedModule) {
     const bilanId = BILAN_MODULE_IDS[selectedModule.id];
