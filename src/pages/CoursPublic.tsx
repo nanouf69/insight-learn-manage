@@ -704,7 +704,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const [examBlancCompletedIds, setExamBlancCompletedIds] = useState<Set<string>>(new Set());
   const [lastModuleName, setLastModuleName] = useState<string | null>(null);
   const [isInExam, setIsInExam] = useState(false);
-  const [emargementFCStatus, setEmargementFCStatus] = useState<"checking" | "needed" | "signed" | "n/a">("checking");
+  const [emargementFCStatus, setEmargementFCStatus] = useState<"checking" | "needed" | "signed" | "skipped" | "n/a">("checking");
   const [emargementCreneau, setEmargementCreneau] = useState<CreneauKey | null>(null);
   const [emargementMode, setEmargementMode] = useState<"fc" | "presentiel">("fc");
   const [sessionAccessWindow, setSessionAccessWindow] = useState<SessionAccessWindow | null>(null);
@@ -1234,7 +1234,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     !isFC &&
     isPresentielType(apprenant?.type_apprenant, apprenant?.formation_choisie);
 
-  const needsEmargement = (isFC || isPres) && emargementFCStatus !== "signed" && emargementFCStatus !== "n/a";
+  const needsEmargement = (isFC || isPres) && emargementFCStatus !== "signed" && emargementFCStatus !== "skipped" && emargementFCStatus !== "n/a";
 
   if (needsEmargement) {
     const formationLabel = isPres ? "formation en présentiel" : "formation continue";
@@ -1264,6 +1264,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
             creneau={emargementCreneau || undefined}
             mode={emargementMode}
             onSigned={() => setEmargementFCStatus("signed")}
+            onSkipped={() => setEmargementFCStatus("skipped")}
           />
         )}
       </div>

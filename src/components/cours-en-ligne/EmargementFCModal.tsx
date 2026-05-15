@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, PenTool, ShieldCheck, Sun, Moon, Sunset, AlertTriangle } from "lucide-react";
+import { Loader2, PenTool, ShieldCheck, Sun, Moon, Sunset, AlertTriangle, X } from "lucide-react";
 import { SignaturePad } from "@/components/onboarding/SignaturePad";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -19,6 +19,8 @@ interface EmargementFCModalProps {
   /** Mode: "fc" = formation continue, "presentiel" = cours présentiel classique */
   mode?: "fc" | "presentiel";
   onSigned?: () => void;
+  /** Appelé si l'apprenant ferme/refuse de signer. La signature reste optionnelle. */
+  onSkipped?: () => void;
 }
 
 const getCurrentCreneauFromHour = (): CreneauKey => {
@@ -50,6 +52,7 @@ export const EmargementFCModal = ({
   creneau,
   mode = "fc",
   onSigned,
+  onSkipped,
 }: EmargementFCModalProps) => {
   const { toast } = useToast();
   const [signature, setSignature] = useState("");
@@ -102,21 +105,22 @@ export const EmargementFCModal = ({
 
   const formationLabel = mode === "presentiel" ? "formation en présentiel" : "formation continue";
 
+  const handleClose = () => {
+    setDone(true);
+    onSkipped?.();
+  };
+
   return (
-    <Dialog open={true} onOpenChange={() => { /* non-fermable */ }}>
-      <DialogContent
-        className="max-w-lg"
-        onInteractOutside={(e) => e.preventDefault()}
-        onEscapeKeyDown={(e) => e.preventDefault()}
-      >
+    <Dialog open={true} onOpenChange={(open) => { if (!open) handleClose(); }}>
+      <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {creneauIcon(demi)}
-            Émargement obligatoire — {creneauLabel(demi)}
+            Émargement — {creneauLabel(demi)}
           </DialogTitle>
           <DialogDescription>
             Bonjour <strong>{apprenantPrenom} {apprenantNom}</strong>, vous suivez une <strong>{formationLabel}</strong>.
-            Pour accéder à vos cours, vous devez signer la feuille d'émargement de ce créneau.
+            Vous pouvez signer la feuille d'émargement de ce créneau ou passer cette étape.
           </DialogDescription>
         </DialogHeader>
 
@@ -138,21 +142,29 @@ export const EmargementFCModal = ({
 
         <p className="text-xs text-muted-foreground flex items-start gap-2">
           <ShieldCheck className="w-4 h-4 mt-0.5 shrink-0" />
-          En signant, vous attestez de votre présence effective à ce créneau de formation.
-          Cette signature est horodatée et conservée à des fins légales (Qualiopi / financeurs).
+          En signant, vous attestez de votre présence effective à ce créneau. La signature est facultative,
+          mais en cas d'absence non signée vous devrez fournir un justificatif (financeur CPF / Qualiopi).
         </p>
 
-        <DialogFooter>
+        <DialogFooter className="gap-2 sm:gap-2">
+          <Button
+            variant="outline"
+            onClick={handleClose}
+            disabled={saving}
+            size="lg"
+          >
+            <X className="w-4 h-4 mr-2" /> Plus tard
+          </Button>
           <Button
             onClick={handleSubmit}
             disabled={saving || !signature}
-            className="w-full"
             size="lg"
+            className="flex-1"
           >
             {saving ? (
               <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Enregistrement…</>
             ) : (
-              <>Valider mon émargement et accéder aux cours</>
+              <>Valider mon émargement</>
             )}
           </Button>
         </DialogFooter>
