@@ -333,6 +333,7 @@ function PassageMatiere({
               continue;
             }
           } else {
+            hasSavedOnceRef.current = true;
             setSaveStatus("saved");
             if (saveStatusTimerRef.current) clearTimeout(saveStatusTimerRef.current);
             saveStatusTimerRef.current = setTimeout(() => setSaveStatus("idle"), 2000);
