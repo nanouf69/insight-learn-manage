@@ -6130,6 +6130,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 onToggle={(id) => toggleItem("exercices", id)}
                 onUpdateQuestions={(id, questions) => updateExerciceQuestions(id, questions)}
                 moduleId={moduleData.id}
+                overrideWarnings={trainerOverrideWarnings}
               />
             ))}
           </div>
