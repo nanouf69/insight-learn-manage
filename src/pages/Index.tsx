@@ -267,7 +267,7 @@ const Index = () => {
 
   const config = pageConfig[currentPage as keyof typeof pageConfig];
 
-  if (loading || isAdmin === null) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
@@ -275,7 +275,7 @@ const Index = () => {
     );
   }
 
-  if (!user || isAdmin === false) {
+  if (!user) {
     return null;
   }
 
