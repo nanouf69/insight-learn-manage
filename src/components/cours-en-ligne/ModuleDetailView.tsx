@@ -2720,14 +2720,20 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           try {
             const { data: sourceState } = await supabase
               .from("module_editor_state")
-              .select("module_data, deleted_exercices")
+              .select("module_data, deleted_exercices, updated_at")
               .eq("module_id", BILAN_VTC_SOURCE_MODULE_ID)
               .order("updated_at", { ascending: false })
               .limit(1)
               .maybeSingle();
 
             const sourceMd = sourceState?.module_data as unknown as ModuleData | undefined;
-            if (sourceMd?.exercices && Array.isArray(sourceMd.exercices)) {
+            const sourceIsNewerThanCurrent = toSafeTimestamp(sourceState?.updated_at) > toSafeTimestamp(latestState?.updated_at);
+            if (sourceMd?.exercices && Array.isArray(sourceMd.exercices) && (!latestState?.module_data || sourceIsNewerThanCurrent)) {
+              if (shouldSkipFetchedQuestionState(sourceState.updated_at, fetchStartedAt, "initial generated bilan source sync")) {
+                setEditorStateHydrated(true);
+                return;
+              }
+
               const sourceInitial = JSON.parse(JSON.stringify(VTC_COURS_DATA)) as ModuleData;
               const deletedSourceIds = Array.isArray(sourceState?.deleted_exercices)
                 ? (sourceState.deleted_exercices as any[]).map((e: any) => Number(e?.id)).filter((n) => !Number.isNaN(n))
@@ -2735,10 +2741,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               const sourceExercices = mergeSourceExercices(sourceMd.exercices, sourceInitial.exercices, deletedSourceIds);
               const syncedModuleData = getSyncedBilanVtcModuleData(initialData, sourceExercices, Number(module.id) === 4);
 
-              setModuleData(syncedModuleData);
+              setModuleData((prev) => preserveNewerLocalQuestionEdits(syncedModuleData, prev, "initial generated bilan source sync"));
               setDeletedCours([]);
               setDeletedExercices([]);
               setLoadedModuleEditorState(true);
+              markDbSnapshotApplied(sourceState.updated_at);
               return;
             }
           } catch (e) {
