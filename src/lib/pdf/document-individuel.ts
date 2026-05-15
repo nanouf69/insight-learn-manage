@@ -102,7 +102,27 @@ const TYPE_TITLES: Record<string, string> = {
   'devis-formation-continue': 'DEVIS DE FORMATION CONTINUE',
 };
 
+// Mapping demi-journee -> plage horaire (feuilles d'emargement)
+// On ne sait pas si "soir" = 1ere ou 2eme partie -> on affiche la plage globale
+const DEMI_JOURNEE_HORAIRES: Record<string, string> = {
+  'matin': '09H - 12H',
+  'apres_midi': '13H - 16H',
+  'apres-midi': '13H - 16H',
+  'apresmidi': '13H - 16H',
+  'soir': '17H - 21H',
+  'soir_1': '17H - 18H30',
+  'soir_2': '18H30 - 21H',
+};
+
+function formatDemiJournee(value: string): string {
+  const k = String(value || '').toLowerCase().trim();
+  return DEMI_JOURNEE_HORAIRES[k] || value;
+}
+
+const DEMI_LABEL_KEYS = new Set(['demi_journee', 'demiJournee', 'demi-journee']);
+
 function getLabel(key: string): string {
+  if (DEMI_LABEL_KEYS.has(key)) return 'Horaire';
   if (FIELD_LABELS[key]) return FIELD_LABELS[key];
   return key.replace(/_/g, ' ').replace(/([a-z])([A-Z])/g, '$1 $2').replace(/^./, s => s.toUpperCase());
 }
