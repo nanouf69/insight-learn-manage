@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, ArrowUp, ArrowDown, Pencil, Trash2, Plus, ToggleLeft, ToggleRight, Save, X, CheckCircle2, Eye, Settings, Download, FileText, Upload, Loader2, ZoomIn, ZoomOut, RotateCcw, Maximize, Users, ChevronDown, ChevronUp, Lock, Printer, RefreshCw } from "lucide-react";
+import { ArrowLeft, ArrowUp, ArrowDown, Pencil, Trash2, Plus, ToggleLeft, ToggleRight, Save, X, CheckCircle2, Eye, Settings, Download, FileText, Upload, Loader2, ZoomIn, ZoomOut, RotateCcw, Maximize, Users, ChevronDown, ChevronUp, Lock, Printer, RefreshCw, AlertTriangle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
@@ -171,10 +171,56 @@ interface ModuleData {
   exercices: ExerciceItem[];
 }
 
+interface TrainerOverrideInfo {
+  quiz_id: string;
+  fournisseur_id?: string | null;
+  section_id: number;
+  question_id: number;
+  enonce: string;
+  choix: ExerciceChoix[];
+  updated_at: string;
+}
+
 const BILAN_VTC_SOURCE_MODULE_ID = 2;
 const BILAN_VTC_MODULE_ID = 4;
 const BILAN_TAXI_MODULE_ID = 9;
 const SECURITE_ROUTIERE_BILAN_ID = 102;
+
+const TRAINER_QUIZ_IDS_BY_MODULE_ID: Record<number, string[]> = {
+  7: ["connaissance-ville"],
+  9: ["bilan-exercices-taxi"],
+  10: ["reglementation-nationale", "reglementation-locale"],
+  11: ["bilan-examen-taxi"],
+  12: ["cas-pratique-taxi"],
+  13: ["controle-connaissances-taxi"],
+  24: ["reglementation-nationale", "reglementation-locale"],
+  27: ["bilan-exercices-ta"],
+  28: ["bilan-examen-ta"],
+  40: ["reglementation-nationale", "reglementation-locale"],
+  42: ["reglementation-locale"],
+  64: ["equipements-taxi"],
+};
+
+const getTrainerQuizIdsForModule = (moduleId: number | string) => TRAINER_QUIZ_IDS_BY_MODULE_ID[Number(moduleId)] || [];
+
+const buildTrainerOverrideMap = (rows: any[] | null | undefined) => {
+  const overrideMap = new Map<string, TrainerOverrideInfo>();
+  for (const ov of rows ?? []) {
+    const key = `${ov.section_id}-${ov.question_id}`;
+    if (!overrideMap.has(key)) {
+      overrideMap.set(key, {
+        quiz_id: ov.quiz_id,
+        fournisseur_id: ov.fournisseur_id ?? null,
+        section_id: ov.section_id,
+        question_id: ov.question_id,
+        enonce: ov.enonce,
+        choix: ov.choix as ExerciceChoix[],
+        updated_at: ov.updated_at,
+      });
+    }
+  }
+  return overrideMap;
+};
 
 const shouldSyncVtcBilanFromCours = (moduleId: number | string) => [4, 81].includes(Number(moduleId));
 
@@ -1859,6 +1905,7 @@ function ExerciceCard({
   onToggle,
   onUpdateQuestions,
   moduleId,
+  overrideWarnings,
 }: {
   item: ExerciceItem;
   index: number;
@@ -1868,12 +1915,15 @@ function ExerciceCard({
   onToggle: (id: number) => void;
   onUpdateQuestions: (id: number, questions: ExerciceQuestion[], deletedQuestionId?: number) => void;
   moduleId: number;
+  overrideWarnings?: Map<string, TrainerOverrideInfo>;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [fullscreenOpen, setFullscreenOpen] = useState(false);
   const [editingQId, setEditingQId] = useState<number | null>(null);
 
   const hasQuestions = item.questions && item.questions.length > 0;
+  const getOverrideWarning = (questionId: number) => overrideWarnings?.get(`${item.id}-${questionId}`);
+  const overrideWarningCount = (item.questions ?? []).filter(q => getOverrideWarning(q.id)).length;
 
   const saveQuestion = (updated: ExerciceQuestion) => {
     if (!item.questions) return;
@@ -1921,6 +1971,11 @@ function ExerciceCard({
             <h4 className="font-bold text-base">{item.titre}</h4>
             {hasQuestions && (
               <Badge variant="secondary" className="text-xs">{item.questions!.length} questions</Badge>
+            )}
+            {overrideWarningCount > 0 && (
+              <span className="badge-warning ml-2 inline-flex items-center gap-1">
+                <AlertTriangle className="w-3 h-3" /> {overrideWarningCount} override formateur
+              </span>
             )}
           </div>
           {item.sousTitre && <p className="text-sm text-muted-foreground">{item.sousTitre}</p>}
@@ -1992,6 +2047,14 @@ function ExerciceCard({
                     )}
                     <div className="flex-1">
                       <p className="text-sm text-muted-foreground line-clamp-2"><RichText value={q.enonce} /></p>
+                      {getOverrideWarning(q.id) && (
+                        <div className="mt-2 flex items-start gap-2 rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning">
+                          <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                          <span>
+                            Override formateur détecté ({getOverrideWarning(q.id)?.quiz_id}) — les réponses admin restent prioritaires.
+                          </span>
+                        </div>
+                      )}
                       <div className="flex flex-wrap gap-1 mt-1">
                         {q.choix.map(c => (
                           <span key={c.lettre} className={`text-xs px-2 py-0.5 rounded-full ${c.correct ? "bg-emerald-100 text-emerald-700 font-semibold" : "bg-muted text-muted-foreground"}`}>
@@ -2061,6 +2124,14 @@ function ExerciceCard({
                         <Badge className="text-base shrink-0 mt-0.5 px-3 py-1">Q{qi + 1}</Badge>
                         <div className="flex-1 min-w-0">
                           <p className="text-xl font-semibold mb-3 leading-snug"><RichText value={q.enonce} /></p>
+                          {getOverrideWarning(q.id) && (
+                            <div className="mb-3 flex items-start gap-2 rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-sm text-warning">
+                              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                              <span>
+                                Override formateur détecté ({getOverrideWarning(q.id)?.quiz_id}) — les réponses admin restent prioritaires.
+                              </span>
+                            </div>
+                          )}
                           {q.image && (
                             <ImageLightbox
                               src={q.image}
@@ -2330,6 +2401,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   const [deletedExercices, setDeletedExercices] = useState<ExerciceItem[]>([]);
   const [editorStateHydrated, setEditorStateHydrated] = useState(false);
   const [loadedModuleEditorState, setLoadedModuleEditorState] = useState(false);
+  const [trainerOverrideWarnings, setTrainerOverrideWarnings] = useState<Map<string, TrainerOverrideInfo>>(new Map());
   // Trigger pour forcer la réapplication des overrides fournisseur après chaque
   // reload de moduleData depuis la DB (realtime, visibility, polling).
   const [trainerOverridesReapplyKey, setTrainerOverridesReapplyKey] = useState(0);
@@ -2526,42 +2598,18 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         // Appliquer uniquement les overrides des quiz explicitement liés au module.
         // Ne jamais charger tous les quiz_ids dynamiquement : des section_id/question_id
         // identiques existent entre modules et peuvent écraser les réponses admin.
-        const trainerQuizIdsByModuleId: Record<number, string[]> = {
-          12: ["cas-pratique-taxi"],
-          7: ["connaissance-ville"],
-          64: ["equipements-taxi"],
-          13: ["controle-connaissances-taxi"],
-          40: ["reglementation-nationale", "reglementation-locale"],
-          10: ["reglementation-nationale", "reglementation-locale"],
-          27: ["bilan-exercices-ta"],
-          28: ["bilan-examen-ta"],
-          9: ["bilan-exercices-taxi"],
-          11: ["bilan-examen-taxi"],
-        };
-
-        let targetQuizIds = trainerQuizIdsByModuleId[module.id] || [];
+        let targetQuizIds = getTrainerQuizIdsForModule(module.id);
         if (!targetQuizIds || targetQuizIds.length === 0) return;
 
         const { data } = await supabase
           .from("quiz_questions_overrides")
-          .select("quiz_id, section_id, question_id, enonce, choix, updated_at")
+          .select("quiz_id, fournisseur_id, section_id, question_id, enonce, choix, updated_at")
           .in("quiz_id", targetQuizIds)
           .order("updated_at", { ascending: false });
 
         if (!data || data.length === 0) return;
 
-        const overrideMap = new Map<string, { enonce: string; choix: { lettre: string; texte: string; correct?: boolean }[]; updated_at: string }>();
-        for (const ov of data) {
-          const key = `${ov.section_id}-${ov.question_id}`;
-          // Keep latest override only (query is ordered by updated_at desc)
-          if (!overrideMap.has(key)) {
-            overrideMap.set(key, {
-              enonce: ov.enonce,
-              choix: ov.choix as { lettre: string; texte: string; correct?: boolean }[],
-              updated_at: ov.updated_at,
-            });
-          }
-        }
+        const overrideMap = buildTrainerOverrideMap(data);
 
         setModuleData((prev) => {
           if (shouldSkipFetchedQuestionState(lastDbUpdatedAtRef.current, fetchStartedAt, "trainer override reload")) return prev;
@@ -2574,10 +2622,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 .map((q) => {
                   const override = overrideMap.get(`${exo.id}-${q.id}`);
                   if (!override) return q;
-                  // Dernière modification gagne: comparer _editedAt (admin) vs updated_at (fournisseur)
-                  // Fallback sur l'updated_at global du module si la question n'a pas de _editedAt
-                  // (sinon une vieille override formateur écrase une correction admin récente).
-                  const adminTs = (q as any)._editedAt ?? lastDbUpdatedAtRef.current ?? lastDbUpdatedAt ?? undefined;
+                  // Règle dure: si la question a été modifiée par l'admin (_editedAt),
+                  // les réponses correctes admin gagnent toujours, sans comparer les timestamps.
+                  const adminTs = (q as any)._editedAt ?? undefined;
                   const winner = resolveOverrideConflict(adminTs, override.updated_at);
                   if (winner === "admin") return q;
                   return { ...q, enonce: override.enonce, choix: override.choix };
@@ -2604,6 +2651,33 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   }, [studentOnly, module.id, apprenantType, editorStateHydrated, loadedModuleEditorState, trainerOverridesReapplyKey, lastDbUpdatedAt]);
 
   useEffect(() => {
+    if (studentOnly || !editorStateHydrated) return;
+
+    async function loadTrainerOverrideWarnings() {
+      const targetQuizIds = getTrainerQuizIdsForModule(module.id);
+      if (targetQuizIds.length === 0) {
+        setTrainerOverrideWarnings(new Map());
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("quiz_questions_overrides")
+        .select("quiz_id, fournisseur_id, section_id, question_id, enonce, choix, updated_at")
+        .in("quiz_id", targetQuizIds)
+        .order("updated_at", { ascending: false });
+
+      if (error) {
+        console.error("[ModuleDetailView] Error loading trainer override warnings:", error);
+        return;
+      }
+
+      setTrainerOverrideWarnings(buildTrainerOverrideMap(data));
+    }
+
+    loadTrainerOverrideWarnings();
+  }, [studentOnly, module.id, editorStateHydrated, trainerOverridesReapplyKey]);
+
+  useEffect(() => {
     const initialData = getInitialModuleData(module, apprenantType, studentOnly);
     const sourceFingerprint = buildSourceFingerprint(initialData);
     setLoadedModuleEditorState(false);
@@ -2616,6 +2690,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       lastAppliedDbUpdatedAtRef.current = 0;
       lastDbUpdatedAtRef.current = null;
       setLastDbUpdatedAt(null);
+      setTrainerOverrideWarnings(new Map());
     }
 
     const loadLocalState = () => {
@@ -3087,19 +3162,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     // Handle trainer quiz_questions_overrides changes in realtime
     const handleTrainerOverrideChange = async (payload: any) => {
       const fetchStartedAt = Date.now();
-      const trainerQuizIdsByModuleId: Record<number, string[]> = {
-        12: ["cas-pratique-taxi"],
-        7: ["connaissance-ville"],
-        64: ["equipements-taxi"],
-        13: ["controle-connaissances-taxi"],
-        40: ["reglementation-nationale", "reglementation-locale"],
-        10: ["reglementation-nationale", "reglementation-locale"],
-        27: ["bilan-exercices-ta"],
-        28: ["bilan-examen-ta"],
-        9: ["bilan-exercices-taxi"],
-        11: ["bilan-examen-taxi"],
-      };
-      const targetQuizIds = trainerQuizIdsByModuleId[module.id] || [];
+      const targetQuizIds = getTrainerQuizIdsForModule(module.id);
 
       if (targetQuizIds.length === 0) return;
 
@@ -3112,23 +3175,13 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       // Reload all overrides for this quiz
       const { data } = await supabase
         .from("quiz_questions_overrides")
-        .select("quiz_id, section_id, question_id, enonce, choix, updated_at")
+        .select("quiz_id, fournisseur_id, section_id, question_id, enonce, choix, updated_at")
         .in("quiz_id", targetQuizIds)
         .order("updated_at", { ascending: false });
 
       if (!data || data.length === 0) return;
 
-      const overrideMap = new Map<string, { enonce: string; choix: { lettre: string; texte: string; correct?: boolean }[]; updated_at: string }>();
-      for (const ov of data) {
-        const key = `${ov.section_id}-${ov.question_id}`;
-        if (!overrideMap.has(key)) {
-          overrideMap.set(key, {
-            enonce: ov.enonce,
-            choix: ov.choix as { lettre: string; texte: string; correct?: boolean }[],
-            updated_at: ov.updated_at,
-          });
-        }
-      }
+      const overrideMap = buildTrainerOverrideMap(data);
 
       setModuleData((prev) => {
         if (shouldSkipFetchedQuestionState(lastDbUpdatedAtRef.current, fetchStartedAt, "realtime trainer override reload")) return prev;
@@ -3140,10 +3193,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               .map((q) => {
                 const override = overrideMap.get(`${exo.id}-${q.id}`);
                 if (!override) return q;
-                // Dernière modification gagne — fallback sur updated_at du module si la
-                // question n'a pas de _editedAt explicite (évite qu'une vieille override
-                // formateur ne ré-écrase une correction admin récente).
-                const adminTs = (q as any)._editedAt ?? lastDbUpdatedAtRef.current ?? lastDbUpdatedAt ?? undefined;
+                // Règle dure: si la question a été modifiée par l'admin (_editedAt),
+                // les réponses correctes admin gagnent toujours, sans comparer les timestamps.
+                const adminTs = (q as any)._editedAt ?? undefined;
                 const winner = resolveOverrideConflict(adminTs, override.updated_at);
                 if (winner === "admin") return q;
                 return { ...q, enonce: override.enonce, choix: override.choix };
@@ -6078,6 +6130,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 onToggle={(id) => toggleItem("exercices", id)}
                 onUpdateQuestions={(id, questions) => updateExerciceQuestions(id, questions)}
                 moduleId={moduleData.id}
+                overrideWarnings={trainerOverrideWarnings}
               />
             ))}
           </div>

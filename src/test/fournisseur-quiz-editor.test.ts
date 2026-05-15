@@ -188,18 +188,18 @@ describe("Override application logic", () => {
 });
 
 // ─── Résolution conflit admin vs fournisseur ─────────────────────
-describe("resolveOverrideConflict: dernière modification gagne", () => {
+describe("resolveOverrideConflict: l'admin gagne toujours si _editedAt existe", () => {
   it("fournisseur gagne si admin n'a pas de _editedAt", () => {
     const result = resolveOverrideConflict(undefined, "2026-04-06T15:00:00Z");
     expect(result).toBe("fournisseur");
   });
 
-  it("fournisseur gagne si sa modif est plus récente", () => {
+  it("admin gagne même si la modif fournisseur est plus récente", () => {
     const result = resolveOverrideConflict(
       "2026-04-06T10:00:00Z", // admin a modifié à 10h
       "2026-04-06T15:00:00Z", // fournisseur a modifié à 15h
     );
-    expect(result).toBe("fournisseur");
+    expect(result).toBe("admin");
   });
 
   it("admin gagne si sa modif est plus récente", () => {
@@ -210,20 +210,20 @@ describe("resolveOverrideConflict: dernière modification gagne", () => {
     expect(result).toBe("admin");
   });
 
-  it("fournisseur gagne si même timestamp (ex aequo)", () => {
+  it("admin gagne si même timestamp (ex aequo)", () => {
     const result = resolveOverrideConflict(
       "2026-04-06T15:00:00Z",
       "2026-04-06T15:00:00Z",
     );
-    expect(result).toBe("fournisseur");
+    expect(result).toBe("admin");
   });
 
-  it("scénario réel: admin modifie Q1 lundi, fournisseur modifie Q1 mardi → fournisseur gagne", () => {
+  it("scénario réel: admin modifie Q1 lundi, fournisseur modifie Q1 mardi → admin gagne", () => {
     const result = resolveOverrideConflict(
       "2026-04-01T09:00:00Z", // lundi
       "2026-04-02T14:30:00Z", // mardi
     );
-    expect(result).toBe("fournisseur");
+    expect(result).toBe("admin");
   });
 
   it("scénario réel: fournisseur modifie Q1 lundi, admin corrige Q1 mardi → admin gagne", () => {
