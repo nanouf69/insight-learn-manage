@@ -1020,7 +1020,7 @@ export default function ExamensBlancsPage({
             <span className="text-xs text-muted-foreground">Matière {matiereIndex + 1}/{examenChoisi.matieres.length}</span>
             {/* Bouton recharger retiré pendant l'examen pour éviter le décalage des questions */}
           </div>
-          <PassageMatiere key={`${examenChoisi.id}_${matiere.id}`} matiere={matiere} numero={matiereIndex + 1} total={examenChoisi.matieres.length} onTerminer={handleTerminerMatiere} isBilan={examenChoisi.id.startsWith("bilan-")} apprenantId={apprenantId} examenId={examenChoisi.id} examenTitre={examenChoisi.titre} />
+          <PassageMatiere key={`${examenChoisi.id}_${matiere.id}`} matiere={matiere} numero={matiereIndex + 1} total={examenChoisi.matieres.length} onTerminer={handleTerminerMatiere} isBilan={examenChoisi.id.startsWith("bilan-")} apprenantId={apprenantId} examenId={examenChoisi.id} />
         </div>
         <div className="hidden min-[520px]:block w-36 sm:w-40 md:w-48 lg:w-56 shrink-0">
           <div className="sticky top-4 space-y-2">

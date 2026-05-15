@@ -16,11 +16,7 @@ import { toast } from "sonner";
 import { TimerBadge } from "./ExamenBlancsTimer";
 import { ExamQuestionImage } from "./ExamQuestionImage";
 import type { Reponses, ReponseQCM, ReponseQRC } from "./examens-blancs-types";
-import {
-  safeStr, safeArray, getQuestionImageValue, normalizeReponses as normalizeReponsesUtil,
-  computeIsMultiple, applyQCMChange,
-  evaluateQrcDeterministic, computeAdmisForMatiere, normalizeNoteSur20, toFiniteNumber, clamp,
-} from "./examens-blancs-utils";
+import { safeStr, safeArray, getQuestionImageValue, normalizeReponses as normalizeReponsesUtil, computeIsMultiple, applyQCMChange } from "./examens-blancs-utils";
 
 function CalculatriceExamen({ onClose }: { onClose: () => void }) {
   const [display, setDisplay] = useState("0");
@@ -152,7 +148,6 @@ function PassageMatiere({
   isBilan = false,
   apprenantId,
   examenId,
-  examenTitre,
 }: {
   matiere: Matiere;
   numero: number;
@@ -161,7 +156,6 @@ function PassageMatiere({
   isBilan?: boolean;
   apprenantId?: string | null;
   examenId?: string;
-  examenTitre?: string;
 }) {
   const [reponses, setReponses] = useState<Reponses>({});
   const [questionIndex, setQuestionIndex] = useState(0);
@@ -379,82 +373,12 @@ function PassageMatiere({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialLoaded]);
 
-  // Track whether the matière was terminated normally (Terminer / timer expire).
-  // Used to avoid creating a duplicate auto-finalized result on disconnect.
-  const terminatedRef = useRef(false);
-  const autoFinalizedRef = useRef(false);
-  const examStartRef = useRef<number>(Date.now());
-
-  // Compute score row from current responses (used for disconnect auto-finalize)
-  const buildAutoResultRow = (current: Reponses) => {
-    if (!apprenantId || !userIdRef.current || !examenId) return null;
-    const qSafe = (questionsSafe || []).filter((q): q is Question => !!q && !!q?.type);
-    if (qSafe.length === 0) return null;
-
-    let totalPoints = 0;
-    let maxPoints = 0;
-    const frozenCorrections: Record<string, any> = {};
-    const questionDetails = qSafe.map((q) => {
-      const pts = getPointsParQuestion(matiere.id, q?.type || "QCM", matiere);
-      maxPoints += pts;
-      const rep = current?.[q.id] ?? current?.[String(q.id)];
-      if (q?.type === "QCM" && q.choix) {
-        const correctes = safeArray<string>(q.choix.filter((c) => c.correct).map((c) => c.lettre)).sort();
-        const donnees = safeArray<string>(rep).sort();
-        if (JSON.stringify(correctes) === JSON.stringify(donnees)) totalPoints += pts;
-      } else if (q?.type === "QRC") {
-        const correction = evaluateQrcDeterministic(q, rep, pts);
-        frozenCorrections[q.id] = correction;
-        totalPoints += correction.pointsObtenus;
-      }
-      return {
-        questionId: q.id, enonce: q.enonce || "", type: q?.type || "QCM",
-        reponseEleve: rep ?? null,
-        reponseCorrecte: q?.type === "QCM" && q.choix
-          ? q.choix.filter((c) => c.correct).map((c) => c.lettre)
-          : (q.reponseQRC || (q.reponses_possibles || []).join(" / ")),
-      };
-    });
-
-    const safeMax = Math.max(toFiniteNumber(maxPoints, 0), 0);
-    const safeScore = safeMax > 0 ? clamp(toFiniteNumber(totalPoints, 0), 0, safeMax) : Math.max(toFiniteNumber(totalPoints, 0), 0);
-    const noteSur20 = normalizeNoteSur20(safeScore, safeMax);
-    const elapsed = Math.max(Math.round((Date.now() - examStartRef.current) / 1000), 0);
-
-    return {
-      apprenant_id: apprenantId,
-      user_id: userIdRef.current,
-      quiz_type: isBilan ? "bilan" : "examen_blanc",
-      quiz_id: examenId,
-      quiz_titre: examenTitre || examenId,
-      matiere_id: matiere.id,
-      matiere_nom: matiere.nom,
-      score_obtenu: safeScore,
-      score_max: safeMax,
-      note_sur_20: noteSur20,
-      reussi: computeAdmisForMatiere(safeScore, safeMax, matiere.noteEliminatoire, matiere.noteSur, false),
-      duree_secondes: elapsed,
-      details: {
-        questions: questionDetails,
-        reponses: current,
-        correctionsIA: Object.keys(frozenCorrections).length > 0 ? frozenCorrections : undefined,
-        auto_saved_on_disconnect: true,
-      },
-    };
-  };
-
-  // beforeunload / pagehide: flush pending save AND auto-finalize result if not yet terminated
+  // beforeunload: flush pending save immediately
   useEffect(() => {
     const flushSave = () => {
       if (!apprenantId || !userIdRef.current) return;
       const current = latestReponsesRef.current;
       if (Object.keys(current).length === 0) return;
-
-      const apikey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-      const token = jwtTokenRef.current || apikey;
-      const baseUrl = import.meta.env.VITE_SUPABASE_URL;
-
-      // 1) Flush partial responses (resume support)
       const row = {
         apprenant_id: apprenantId,
         user_id: userIdRef.current,
@@ -465,48 +389,27 @@ function PassageMatiere({
         updated_at: new Date().toISOString(),
       };
       try {
-        const url = `${baseUrl}/rest/v1/reponses_apprenants?on_conflict=apprenant_id,exercice_id`;
+        const url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/reponses_apprenants?on_conflict=apprenant_id,exercice_id`;
+        const token = jwtTokenRef.current || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
         const xhr = new XMLHttpRequest();
         xhr.open("POST", url, false);
         xhr.setRequestHeader("Content-Type", "application/json");
-        xhr.setRequestHeader("apikey", apikey);
+        xhr.setRequestHeader("apikey", import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY);
         xhr.setRequestHeader("Authorization", `Bearer ${token}`);
         xhr.setRequestHeader("Prefer", "resolution=merge-duplicates");
         xhr.send(JSON.stringify([row]));
       } catch (_) {}
-
-      // 2) Auto-finalize the matière as a quiz result (wrong/empty answers count as 0)
-      // Skip if user terminated normally or already auto-finalized in this session.
-      if (terminatedRef.current || autoFinalizedRef.current) return;
-      const resultRow = buildAutoResultRow(current);
-      if (!resultRow) return;
-      try {
-        const url = `${baseUrl}/rest/v1/apprenant_quiz_results`;
-        const xhr = new XMLHttpRequest();
-        xhr.open("POST", url, false);
-        xhr.setRequestHeader("Content-Type", "application/json");
-        xhr.setRequestHeader("apikey", apikey);
-        xhr.setRequestHeader("Authorization", `Bearer ${token}`);
-        xhr.setRequestHeader("Prefer", "return=minimal");
-        xhr.send(JSON.stringify([resultRow]));
-        autoFinalizedRef.current = true;
-        console.log(`[AutoFinalize] Disconnect-saved result for ${matiere.id}`);
-      } catch (e) {
-        console.warn("[AutoFinalize] Failed to send result on disconnect:", e);
-      }
     };
     window.addEventListener("beforeunload", flushSave);
-    window.addEventListener("pagehide", flushSave);
     return () => {
       window.removeEventListener("beforeunload", flushSave);
-      window.removeEventListener("pagehide", flushSave);
       // BUG #8 FIX: flush instead of cancel — don't lose pending saves on unmount
       if (debounceRef.current) {
         clearTimeout(debounceRef.current);
         flushSave(); // flush pending data instead of discarding
       }
     };
-  }, [apprenantId, exerciceKey, isBilan, examenId, examenTitre, matiere.id]);
+  }, [apprenantId, exerciceKey, isBilan]);
 
   // Core logic extracted to applyQCMChange in examens-blancs-utils.ts (BUG #10 FIX)
   const handleQCMChange = (qId: number, lettre: string, checked: boolean, isMultipleQ: boolean) => {
@@ -543,10 +446,9 @@ function PassageMatiere({
       toast.error("Veuillez répondre à toutes les questions avant de terminer la matière.");
       return;
     }
-    terminatedRef.current = true;
     onTerminer(reponses);
   };
-  const handleExpire = () => { terminatedRef.current = true; setExpire(true); onTerminer(reponses); };
+  const handleExpire = () => { setExpire(true); onTerminer(reponses); };
 
   // Extracted to examens-blancs-utils.ts for testability (BUG #10 FIX)
   const isMultiple = computeIsMultiple;
@@ -798,7 +700,6 @@ function PassageMatiere({
                   variant="destructive"
                   onClick={() => {
                     setShowInterruptConfirm(false);
-                    terminatedRef.current = true;
                     onTerminer(reponses);
                   }}
                   className="gap-2"
