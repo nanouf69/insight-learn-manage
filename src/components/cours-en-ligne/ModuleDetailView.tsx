@@ -3231,6 +3231,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   }) => {
     isSavingToDbRef.current = true;
     try {
+      const savedAt = new Date().toISOString();
       // Snapshot ancienne version pour détecter les changements pédagogiques
       let previousModuleData: any = null;
       try {
@@ -3245,13 +3246,14 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       const { error } = await supabase.from("module_editor_state").upsert(
         [{
           ...dataToSave,
-          updated_at: new Date().toISOString(),
+          updated_at: savedAt,
         }],
         { onConflict: "module_id" }
       );
 
       if (error) throw error;
       saveErrorShownRef.current = false;
+      markDbSnapshotApplied(savedAt);
 
       // Détection et publication d'une notification de changement
       try {
