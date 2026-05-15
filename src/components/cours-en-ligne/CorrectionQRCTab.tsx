@@ -564,15 +564,22 @@ const CorrectionQRCTab = () => {
                 </span>
               )}
             </SelectItem>
-            {availableExams.map((n) => (
-              <SelectItem key={n} value={n}>
-                Examen Blanc N°{n}
-                {pendingByExam[n] > 0 && (
-                  <span className="ml-2 inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-800 border border-amber-300">
-                    {pendingByExam[n]}
-                  </span>
-                )}
-              </SelectItem>
+            {examOptionGroups.map((group) => (
+              <div key={group.key}>
+                <div className="px-2 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  {group.label}
+                </div>
+                {group.options.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                    {opt.pending > 0 && (
+                      <span className="ml-2 inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-800 border border-amber-300">
+                        {opt.pending}
+                      </span>
+                    )}
+                  </SelectItem>
+                ))}
+              </div>
             ))}
           </SelectContent>
         </Select>
