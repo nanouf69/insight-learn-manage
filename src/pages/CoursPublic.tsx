@@ -1234,7 +1234,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     !isFC &&
     isPresentielType(apprenant?.type_apprenant, apprenant?.formation_choisie);
 
-  const needsEmargement = (isFC || isPres) && emargementFCStatus !== "signed" && emargementFCStatus !== "n/a";
+  const needsEmargement = (isFC || isPres) && emargementFCStatus !== "signed" && emargementFCStatus !== "skipped" && emargementFCStatus !== "n/a";
 
   if (needsEmargement) {
     const formationLabel = isPres ? "formation en présentiel" : "formation continue";
