@@ -271,6 +271,10 @@ function PassageMatiere({
 
   // BUG #7 FIX: generation counter to cancel stale retry loops when a new save starts
   const saveGenerationRef = useRef(0);
+  // FIRST-ANSWER FIX: track whether at least one save has succeeded for this exercise.
+  // If not yet, we flush immediately (no debounce) so the very first answer reaches the DB
+  // even if the user closes the tab right after.
+  const hasSavedOnceRef = useRef(false);
 
   const persistReponses = (updated: Reponses) => {
     // BUG #7 FIX: don't silently return when userId is null — wait for session inside debounce
@@ -279,6 +283,7 @@ function PassageMatiere({
     // BUG #7 FIX: increment generation to cancel any in-flight retry loop
     saveGenerationRef.current++;
     const myGeneration = saveGenerationRef.current;
+    const flushImmediately = !hasSavedOnceRef.current;
     debounceRef.current = setTimeout(async () => {
       setSaveStatus("saving");
       const MAX_RETRIES = 3;
@@ -328,6 +333,7 @@ function PassageMatiere({
               continue;
             }
           } else {
+            hasSavedOnceRef.current = true;
             setSaveStatus("saved");
             if (saveStatusTimerRef.current) clearTimeout(saveStatusTimerRef.current);
             saveStatusTimerRef.current = setTimeout(() => setSaveStatus("idle"), 2000);
@@ -356,8 +362,16 @@ function PassageMatiere({
         "⚠️ Sauvegarde impossible après 3 tentatives. Vos réponses sont conservées localement. Ne fermez pas la page et contactez l'administration.",
         { duration: Infinity, id: "autosave-error" }
       );
-    }, 300);
+    }, flushImmediately ? 0 : 300);
   };
+
+  // Mark first save as done if we successfully loaded existing answers from DB
+  useEffect(() => {
+    if (initialLoaded && Object.keys(reponses).length > 0) {
+      hasSavedOnceRef.current = true;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialLoaded]);
 
   // beforeunload: flush pending save immediately
   useEffect(() => {

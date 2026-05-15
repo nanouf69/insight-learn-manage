@@ -41,6 +41,9 @@ export function useAutoSaveReponses<T = Record<string, any>>({
   const jwtTokenRef = useRef<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latestReponsesRef = useRef<any>(null);
+  // FIRST-ANSWER FIX: flush immediately on the very first save so a single answer
+  // is persisted to DB even if the user closes the tab right after.
+  const hasSavedOnceRef = useRef(false);
 
   // Get user ID and JWT once — and keep them fresh via onAuthStateChange
   useEffect(() => {
@@ -76,6 +79,10 @@ export function useAutoSaveReponses<T = Record<string, any>>({
 
         if (!error && data && !(data as any).completed) {
           setLoadedReponses((data as any).reponses as T);
+          // Existing data in DB → don't force the immediate flush again
+          hasSavedOnceRef.current = true;
+        } else if (!error && data && (data as any).completed) {
+          hasSavedOnceRef.current = true;
         }
       } catch (e) {
         console.error("[AutoSaveReponses] Load error:", e);
@@ -92,6 +99,7 @@ export function useAutoSaveReponses<T = Record<string, any>>({
       latestReponsesRef.current = { reponses, score, completed };
 
       if (debounceRef.current) clearTimeout(debounceRef.current);
+      const flushImmediately = !hasSavedOnceRef.current;
       debounceRef.current = setTimeout(async () => {
         const latest = latestReponsesRef.current;
         if (!latest) return;
@@ -147,6 +155,7 @@ export function useAutoSaveReponses<T = Record<string, any>>({
 
             if (response.ok) {
               succeeded = true;
+              hasSavedOnceRef.current = true;
               break;
             }
 
@@ -178,7 +187,7 @@ export function useAutoSaveReponses<T = Record<string, any>>({
             console.warn("[AutoSaveReponses] All retries failed — saved to localStorage:", backupKey);
           } catch (_) {}
         }
-      }, 300);
+      }, flushImmediately ? 0 : 300);
     },
     [apprenantId, exerciceId, exerciceType]
   );
