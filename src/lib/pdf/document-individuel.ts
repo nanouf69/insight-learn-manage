@@ -109,7 +109,7 @@ const DEMI_JOURNEE_HORAIRES: Record<string, string> = {
   'apres_midi': '13H - 16H',
   'apres-midi': '13H - 16H',
   'apresmidi': '13H - 16H',
-  'soir': '17H - 21H',
+  'soir': '17H - 18H30 / 18H30 - 21H',
   'soir_1': '17H - 18H30',
   'soir_2': '18H30 - 21H',
 };
