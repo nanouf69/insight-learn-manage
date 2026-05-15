@@ -481,18 +481,27 @@ const CorrectionQRCTab = () => {
     return true;
   });
 
-  // Available exam numbers from items
-  const availableExams = Array.from(new Set(items.map(i => getExamNum(i.quizTitre)).filter(Boolean)))
-    .sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
-
-  // Pending count per exam (respects current pending filter intent)
-  const pendingByExam: Record<string, number> = {};
+  // Build available exam list grouped by category (VTC / TAXI / TA / VA), each with its numbers
+  type ExamOption = { value: string; label: string; pending: number };
+  const examOptionsByCat: Record<string, { label: string; numbers: Map<string, number> }> = {};
   for (const i of items) {
-    if (i.corrigeManuel) continue;
+    const cat = getExamCategory(i.quizTitre, i.quizId);
     const n = getExamNum(i.quizTitre);
     if (!n) continue;
-    pendingByExam[n] = (pendingByExam[n] || 0) + 1;
+    if (!examOptionsByCat[cat.key]) examOptionsByCat[cat.key] = { label: cat.label, numbers: new Map() };
+    const prev = examOptionsByCat[cat.key].numbers.get(n) || 0;
+    examOptionsByCat[cat.key].numbers.set(n, prev + (i.corrigeManuel ? 0 : 1));
   }
+  const CAT_ORDER = ["vtc", "taxi", "ta", "va"];
+  const examOptionGroups: { key: string; label: string; options: ExamOption[] }[] = CAT_ORDER
+    .filter(k => examOptionsByCat[k])
+    .map(k => ({
+      key: k,
+      label: examOptionsByCat[k].label,
+      options: Array.from(examOptionsByCat[k].numbers.entries())
+        .sort(([a], [b]) => parseInt(a, 10) - parseInt(b, 10))
+        .map(([n, pending]) => ({ value: `${k}:${n}`, label: `Examen Blanc N°${n} — ${examOptionsByCat[k].label}`, pending })),
+    }));
 
   const sortedFiltered = [...filtered].sort((a, b) => {
     const dateA = new Date(a.completedAt).getTime() || 0;
