@@ -30,6 +30,7 @@ import { PresenceCheckModal } from "@/components/cours-en-ligne/PresenceCheckMod
 import { ApprenantChatWidget } from "@/components/chat/ApprenantChatWidget";
 import { EmargementFCModal, isFormationContinue } from "@/components/cours-en-ligne/EmargementFCModal";
 import { SignatureDocumentsRequiredModal } from "@/components/cours-en-ligne/SignatureDocumentsRequiredModal";
+import { SignaturesSoirManquantesModal } from "@/components/cours-en-ligne/SignaturesSoirManquantesModal";
 import { isPresentielType, getTodayAgendaBlocs, getCurrentCreneau, type CreneauKey } from "@/lib/agendaSlots";
 import { useAuth } from "@/contexts/AuthContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
