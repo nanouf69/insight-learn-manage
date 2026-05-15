@@ -525,6 +525,23 @@ const CorrectionQRCTab = () => {
         </div>
       </div>
 
+      {/* Onglets par examen blanc */}
+      <Tabs value={examenFilter} onValueChange={setExamenFilter}>
+        <TabsList className="flex flex-wrap h-auto gap-1">
+          <TabsTrigger value="all">Tous les examens</TabsTrigger>
+          {availableExams.map((n) => (
+            <TabsTrigger key={n} value={n} className="gap-2">
+              Examen Blanc N°{n}
+              {pendingByExam[n] > 0 && (
+                <Badge variant="secondary" className="h-5 px-1.5 text-[10px] bg-amber-100 text-amber-800 border border-amber-300">
+                  {pendingByExam[n]}
+                </Badge>
+              )}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
+
       {/* Filters */}
       <div className="flex items-center gap-3 flex-wrap">
         <div className="relative flex-1 min-w-[200px] max-w-sm">
