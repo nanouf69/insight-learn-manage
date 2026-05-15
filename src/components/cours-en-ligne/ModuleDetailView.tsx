@@ -2376,6 +2376,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   const [deletedExercices, setDeletedExercices] = useState<ExerciceItem[]>([]);
   const [editorStateHydrated, setEditorStateHydrated] = useState(false);
   const [loadedModuleEditorState, setLoadedModuleEditorState] = useState(false);
+  const [trainerOverrideWarnings, setTrainerOverrideWarnings] = useState<Map<string, TrainerOverrideInfo>>(new Map());
   // Trigger pour forcer la réapplication des overrides fournisseur après chaque
   // reload de moduleData depuis la DB (realtime, visibility, polling).
   const [trainerOverridesReapplyKey, setTrainerOverridesReapplyKey] = useState(0);
@@ -2662,6 +2663,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       lastAppliedDbUpdatedAtRef.current = 0;
       lastDbUpdatedAtRef.current = null;
       setLastDbUpdatedAt(null);
+      setTrainerOverrideWarnings(new Map());
     }
 
     const loadLocalState = () => {
