@@ -79,6 +79,10 @@ export function useAutoSaveReponses<T = Record<string, any>>({
 
         if (!error && data && !(data as any).completed) {
           setLoadedReponses((data as any).reponses as T);
+          // Existing data in DB → don't force the immediate flush again
+          hasSavedOnceRef.current = true;
+        } else if (!error && data && (data as any).completed) {
+          hasSavedOnceRef.current = true;
         }
       } catch (e) {
         console.error("[AutoSaveReponses] Load error:", e);
