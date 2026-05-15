@@ -196,11 +196,16 @@ const CorrectionQRCTab = () => {
     const apprenantIds = [...new Set(results.map((r: any) => r.apprenant_id))];
     const { data: apprenants } = await supabase
       .from("apprenants")
-      .select("id, nom, prenom")
+      .select("id, nom, prenom, type_apprenant")
       .in("id", apprenantIds);
 
-    const apprenantMap: Record<string, { nom: string; prenom: string }> = {};
-    (apprenants || []).forEach((a: any) => { apprenantMap[a.id] = { nom: a.nom, prenom: a.prenom }; });
+    const apprenantMap: Record<string, { nom: string; prenom: string; mode: "presentiel" | "elearning" }> = {};
+    (apprenants || []).forEach((a: any) => {
+      const t = String(a.type_apprenant || "").toLowerCase();
+      const mode: "presentiel" | "elearning" = t.endsWith("-e") || t.includes("-e-") ? "elearning"
+        : (t === "vtc-e-presentiel" ? "presentiel" : (t.endsWith("-e") ? "elearning" : "presentiel"));
+      apprenantMap[a.id] = { nom: a.nom, prenom: a.prenom, mode };
+    });
 
     const qrcItems: QrcItem[] = [];
     const seenQrcKeys = new Set<string>();
