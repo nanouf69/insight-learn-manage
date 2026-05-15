@@ -96,7 +96,7 @@ export const SignaturesSoirManquantesModal = ({ apprenantId, userId, onAllSigned
 
   return (
     <Dialog open={true} onOpenChange={() => {}}>
-      <DialogContent className="max-w-lg" onInteractOutside={(e) => e.preventDefault()}>
+      <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sunset className="w-5 h-5 text-orange-500" />
@@ -104,7 +104,7 @@ export const SignaturesSoirManquantesModal = ({ apprenantId, userId, onAllSigned
           </DialogTitle>
           <DialogDescription>
             Il manque {datesManquantes.length - idx} signature(s) du soir (2ème partie 18h30-21h00) depuis le 11 mai.
-            Merci de régulariser pour valider votre présence.
+            Vous pouvez régulariser maintenant ou plus tard.
           </DialogDescription>
         </DialogHeader>
 
@@ -129,9 +129,19 @@ export const SignaturesSoirManquantesModal = ({ apprenantId, userId, onAllSigned
           En signant, vous attestez de votre présence effective sur ce créneau.
         </p>
 
-        <DialogFooter>
+        <DialogFooter className="flex-col sm:flex-col gap-2">
           <Button onClick={handleSubmit} disabled={saving || !signature} size="lg" className="w-full">
             {saving ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Enregistrement…</>) : "Valider cette signature"}
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="w-full text-muted-foreground"
+            disabled={saving}
+            onClick={() => onAllSigned()}
+          >
+            Signer plus tard
           </Button>
         </DialogFooter>
       </DialogContent>
