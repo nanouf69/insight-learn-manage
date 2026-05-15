@@ -2567,11 +2567,15 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     const sourceFingerprint = buildSourceFingerprint(initialData);
     skipInitialAutosaveRef.current = true;
     setLoadedModuleEditorState(false);
-    hydratedModuleIdRef.current = null;
-    adminLocalEditAtRef.current = 0;
-    lastAppliedDbUpdatedAtRef.current = 0;
-    lastDbUpdatedAtRef.current = null;
-    setLastDbUpdatedAt(null);
+    const moduleIdNumber = Number(module.id);
+    const isNewModuleHydration = hydratedModuleIdRef.current !== moduleIdNumber;
+    if (isNewModuleHydration) {
+      hydratedModuleIdRef.current = null;
+      adminLocalEditAtRef.current = 0;
+      lastAppliedDbUpdatedAtRef.current = 0;
+      lastDbUpdatedAtRef.current = null;
+      setLastDbUpdatedAt(null);
+    }
 
     const loadLocalState = () => {
       if (typeof window === "undefined") return false;
