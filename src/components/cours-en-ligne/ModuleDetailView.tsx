@@ -3010,6 +3010,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
     // Handle trainer quiz_questions_overrides changes in realtime
     const handleTrainerOverrideChange = async (payload: any) => {
+      const fetchStartedAt = Date.now();
       const trainerQuizIdsByModuleId: Record<number, string[]> = {
         12: ["cas-pratique-taxi"],
         7: ["connaissance-ville"],
@@ -3054,6 +3055,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       }
 
       setModuleData((prev) => {
+        if (shouldSkipFetchedQuestionState(lastDbUpdatedAtRef.current, fetchStartedAt, "realtime trainer override reload")) return prev;
+
         const updatedExercices = prev.exercices
           .map((exo) => {
             if (!exo.questions || exo.questions.length === 0) return exo;
@@ -3064,7 +3067,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 // Dernière modification gagne — fallback sur updated_at du module si la
                 // question n'a pas de _editedAt explicite (évite qu'une vieille override
                 // formateur ne ré-écrase une correction admin récente).
-                const adminTs = (q as any)._editedAt ?? lastDbUpdatedAt ?? undefined;
+                const adminTs = (q as any)._editedAt ?? lastDbUpdatedAtRef.current ?? lastDbUpdatedAt ?? undefined;
                 const winner = resolveOverrideConflict(adminTs, override.updated_at);
                 if (winner === "admin") return q;
                 return { ...q, enonce: override.enonce, choix: override.choix };
