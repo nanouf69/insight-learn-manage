@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { resolveExamQuestionImageUrl, addCacheBuster } from "./examens-blancs-utils";
+import { useState, useEffect, useRef } from "react";
+import { resolveExamQuestionImageUrl } from "./examens-blancs-utils";
 import { ImageLightbox } from "./ImageLightbox";
 
 export function ExamQuestionImage({
@@ -14,13 +14,13 @@ export function ExamQuestionImage({
   fallbackClassName?: string;
 }) {
   const resolvedUrl = resolveExamQuestionImageUrl(image);
-  const [cacheToken, setCacheToken] = useState<number>(() => Date.now());
+  const previousUrlRef = useRef<string | null>(resolvedUrl);
   const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
-    setHasError(false);
-    if (resolvedUrl) {
-      setCacheToken(Date.now());
+    if (previousUrlRef.current !== resolvedUrl) {
+      previousUrlRef.current = resolvedUrl;
+      setHasError(false);
     }
   }, [resolvedUrl]);
 
@@ -28,7 +28,7 @@ export function ExamQuestionImage({
     return <p className={fallbackClassName ?? "mt-2 text-xs text-muted-foreground italic"}>Image non disponible</p>;
   }
 
-  const src = addCacheBuster(resolvedUrl, cacheToken);
+  const src = resolvedUrl;
   return (
     <ImageLightbox
       src={src}
