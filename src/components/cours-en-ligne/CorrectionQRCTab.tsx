@@ -244,7 +244,7 @@ const CorrectionQRCTab = () => {
       }
     };
 
-    const BATCH_SIZE = 50;
+    const BATCH_SIZE = 10;
 
     for (let idx = 0; idx < allResults.length; idx++) {
       const r: any = allResults[idx];
