@@ -37,6 +37,7 @@ interface QrcItem {
   scoreMatiereMax: number;
   commentaire: string;
   correctedAt: string | null;
+  apprenantTypeMode: "presentiel" | "elearning";
 }
 
 function safeStr(v: unknown): string {
