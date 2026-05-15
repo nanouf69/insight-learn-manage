@@ -576,7 +576,7 @@ export default function ExamensBlancsPage({
 
         await supabase
           .from("apprenant_quiz_results" as any)
-          .upsert([{
+          .insert([{
             apprenant_id: apprenantId,
             user_id: userId,
             quiz_type: quizType,
@@ -589,7 +589,7 @@ export default function ExamensBlancsPage({
             note_sur_20: noteSur20,
             reussi: admis,
             details: { reponses },
-          }] as any, { onConflict: "apprenant_id,quiz_id,matiere_id" } as any);
+          }] as any);
 
         rebuiltResults.push({
           matiereId: matiere.id,
