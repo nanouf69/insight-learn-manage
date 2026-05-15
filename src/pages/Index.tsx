@@ -66,7 +66,8 @@ const fmt = (n: number) =>
 const Index = () => {
   const { profile, user, loading } = useAuth();
   const navigate = useNavigate();
-  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  // Note: l'autorisation admin est déjà vérifiée par ProtectedRoute en amont.
+  // Ne pas refaire le check ici pour éviter un 2e spinner plein écran (clignotement initial).
   const [currentPage, setCurrentPage] = useState("dashboard");
   const [pageHistory, setPageHistory] = useState<string[]>([]);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
