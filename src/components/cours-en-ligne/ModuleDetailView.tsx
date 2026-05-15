@@ -3473,6 +3473,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   };
 
   const handleFileUploaded = (type: "cours" | "exercices", itemId: number, fichier: { nom: string; url: string }) => {
+    markAdminLocalEdit();
     setModuleData((prev) => ({
       ...prev,
       [type]: prev[type].map((item) =>
@@ -3484,6 +3485,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   };
 
   const handleFileDeleted = async (type: "cours" | "exercices", itemId: number, fichierIndex: number, url: string) => {
+    markAdminLocalEdit();
     setModuleData((prev) => ({
       ...prev,
       [type]: prev[type].map((item) => {
