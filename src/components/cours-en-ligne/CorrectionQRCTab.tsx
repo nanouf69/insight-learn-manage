@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { CheckCircle2, Clock, Pencil, Search, User, FileText, Filter, MessageSquare, ChevronLeft, ChevronRight, ArrowUpDown } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { tousLesExamens, getPointsParQuestion, type ExamenBlanc, type Matiere } from "./examens-blancs-data";
 import { loadSavedExamens } from "./ExamensBlancsEditor";
@@ -152,6 +153,7 @@ const CorrectionQRCTab = () => {
   const [editingComments, setEditingComments] = useState<Record<string, string>>({});
   const [currentIndex, setCurrentIndex] = useState(0);
   const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
+  const [examenFilter, setExamenFilter] = useState<string>("all");
 
   const QUICK_COMMENTS = [
     "Précisez !!!",
@@ -446,9 +448,12 @@ const CorrectionQRCTab = () => {
   const pendingCount = items.filter(i => !i.corrigeManuel).length;
   const doneCount = items.filter(i => i.corrigeManuel).length;
 
+  const getExamNum = (titre: string) => (titre.match(/N°\s*(\d+)/)?.[1]) || "";
+
   const filtered = items.filter(item => {
     if (filter === "pending" && item.corrigeManuel) return false;
     if (filter === "done" && !item.corrigeManuel) return false;
+    if (examenFilter !== "all" && getExamNum(item.quizTitre) !== examenFilter) return false;
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       return (
@@ -461,6 +466,19 @@ const CorrectionQRCTab = () => {
     }
     return true;
   });
+
+  // Available exam numbers from items
+  const availableExams = Array.from(new Set(items.map(i => getExamNum(i.quizTitre)).filter(Boolean)))
+    .sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
+
+  // Pending count per exam (respects current pending filter intent)
+  const pendingByExam: Record<string, number> = {};
+  for (const i of items) {
+    if (i.corrigeManuel) continue;
+    const n = getExamNum(i.quizTitre);
+    if (!n) continue;
+    pendingByExam[n] = (pendingByExam[n] || 0) + 1;
+  }
 
   const sortedFiltered = [...filtered].sort((a, b) => {
     const dateA = new Date(a.completedAt).getTime() || 0;
@@ -476,7 +494,7 @@ const CorrectionQRCTab = () => {
   // Reset index when filter/search/sort changes
   useEffect(() => {
     setCurrentIndex(0);
-  }, [filter, searchQuery, sortOrder]);
+  }, [filter, searchQuery, sortOrder, examenFilter]);
 
   if (loading) {
     return (
@@ -506,6 +524,23 @@ const CorrectionQRCTab = () => {
           </Badge>
         </div>
       </div>
+
+      {/* Onglets par examen blanc */}
+      <Tabs value={examenFilter} onValueChange={setExamenFilter}>
+        <TabsList className="flex flex-wrap h-auto gap-1">
+          <TabsTrigger value="all">Tous les examens</TabsTrigger>
+          {availableExams.map((n) => (
+            <TabsTrigger key={n} value={n} className="gap-2">
+              Examen Blanc N°{n}
+              {pendingByExam[n] > 0 && (
+                <Badge variant="secondary" className="h-5 px-1.5 text-[10px] bg-amber-100 text-amber-800 border border-amber-300">
+                  {pendingByExam[n]}
+                </Badge>
+              )}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
 
       {/* Filters */}
       <div className="flex items-center gap-3 flex-wrap">
