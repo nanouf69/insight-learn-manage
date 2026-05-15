@@ -2626,6 +2626,33 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   }, [studentOnly, module.id, apprenantType, editorStateHydrated, loadedModuleEditorState, trainerOverridesReapplyKey, lastDbUpdatedAt]);
 
   useEffect(() => {
+    if (studentOnly || !editorStateHydrated) return;
+
+    async function loadTrainerOverrideWarnings() {
+      const targetQuizIds = getTrainerQuizIdsForModule(module.id);
+      if (targetQuizIds.length === 0) {
+        setTrainerOverrideWarnings(new Map());
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("quiz_questions_overrides")
+        .select("quiz_id, fournisseur_id, section_id, question_id, enonce, choix, updated_at")
+        .in("quiz_id", targetQuizIds)
+        .order("updated_at", { ascending: false });
+
+      if (error) {
+        console.error("[ModuleDetailView] Error loading trainer override warnings:", error);
+        return;
+      }
+
+      setTrainerOverrideWarnings(buildTrainerOverrideMap(data));
+    }
+
+    loadTrainerOverrideWarnings();
+  }, [studentOnly, module.id, editorStateHydrated, trainerOverridesReapplyKey]);
+
+  useEffect(() => {
     const initialData = getInitialModuleData(module, apprenantType, studentOnly);
     const sourceFingerprint = buildSourceFingerprint(initialData);
     setLoadedModuleEditorState(false);
