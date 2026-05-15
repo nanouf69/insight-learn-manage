@@ -3208,7 +3208,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           }
           console.log("[Visibility] Refreshed module data from DB for module", module.id);
           didUpdate = true;
-          return merged;
+          return preserveNewerLocalQuestionEdits(merged, prev, "visibility module_editor_state refresh");
         });
         markDbSnapshotApplied(latest.updated_at);
         // Re-apply fournisseur overrides après reload DB
