@@ -186,6 +186,42 @@ const BILAN_VTC_MODULE_ID = 4;
 const BILAN_TAXI_MODULE_ID = 9;
 const SECURITE_ROUTIERE_BILAN_ID = 102;
 
+const TRAINER_QUIZ_IDS_BY_MODULE_ID: Record<number, string[]> = {
+  7: ["connaissance-ville"],
+  9: ["bilan-exercices-taxi"],
+  10: ["reglementation-nationale", "reglementation-locale"],
+  11: ["bilan-examen-taxi"],
+  12: ["cas-pratique-taxi"],
+  13: ["controle-connaissances-taxi"],
+  24: ["reglementation-nationale", "reglementation-locale"],
+  27: ["bilan-exercices-ta"],
+  28: ["bilan-examen-ta"],
+  40: ["reglementation-nationale", "reglementation-locale"],
+  42: ["reglementation-locale"],
+  64: ["equipements-taxi"],
+};
+
+const getTrainerQuizIdsForModule = (moduleId: number | string) => TRAINER_QUIZ_IDS_BY_MODULE_ID[Number(moduleId)] || [];
+
+const buildTrainerOverrideMap = (rows: any[] | null | undefined) => {
+  const overrideMap = new Map<string, TrainerOverrideInfo>();
+  for (const ov of rows ?? []) {
+    const key = `${ov.section_id}-${ov.question_id}`;
+    if (!overrideMap.has(key)) {
+      overrideMap.set(key, {
+        quiz_id: ov.quiz_id,
+        fournisseur_id: ov.fournisseur_id ?? null,
+        section_id: ov.section_id,
+        question_id: ov.question_id,
+        enonce: ov.enonce,
+        choix: ov.choix as ExerciceChoix[],
+        updated_at: ov.updated_at,
+      });
+    }
+  }
+  return overrideMap;
+};
+
 const shouldSyncVtcBilanFromCours = (moduleId: number | string) => [4, 81].includes(Number(moduleId));
 
 const getExerciseById = (data: ModuleData | null | undefined, exerciseId: number): ExerciceItem | null => {
