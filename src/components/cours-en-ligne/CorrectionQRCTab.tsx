@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { CheckCircle2, Clock, Pencil, Search, User, FileText, Filter, MessageSquare, ChevronLeft, ChevronRight, ArrowUpDown } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 import { toast } from "sonner";
 import { tousLesExamens, getPointsParQuestion, type ExamenBlanc, type Matiere } from "./examens-blancs-data";
 import { loadSavedExamens } from "./ExamensBlancsEditor";
@@ -525,22 +525,35 @@ const CorrectionQRCTab = () => {
         </div>
       </div>
 
-      {/* Onglets par examen blanc */}
-      <Tabs value={examenFilter} onValueChange={setExamenFilter}>
-        <TabsList className="flex flex-wrap h-auto gap-1">
-          <TabsTrigger value="all">Tous les examens</TabsTrigger>
-          {availableExams.map((n) => (
-            <TabsTrigger key={n} value={n} className="gap-2">
-              Examen Blanc N°{n}
-              {pendingByExam[n] > 0 && (
-                <Badge variant="secondary" className="h-5 px-1.5 text-[10px] bg-amber-100 text-amber-800 border border-amber-300">
-                  {pendingByExam[n]}
-                </Badge>
+      {/* Sélecteur d'examen blanc (menu déroulant) */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <span className="text-sm font-medium text-muted-foreground">Examen :</span>
+        <Select value={examenFilter} onValueChange={setExamenFilter}>
+          <SelectTrigger className="w-[280px]">
+            <SelectValue placeholder="Choisir un examen" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">
+              Tous les examens
+              {pendingCount > 0 && (
+                <span className="ml-2 inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-800 border border-amber-300">
+                  {pendingCount}
+                </span>
               )}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </Tabs>
+            </SelectItem>
+            {availableExams.map((n) => (
+              <SelectItem key={n} value={n}>
+                Examen Blanc N°{n}
+                {pendingByExam[n] > 0 && (
+                  <span className="ml-2 inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-800 border border-amber-300">
+                    {pendingByExam[n]}
+                  </span>
+                )}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
       {/* Filters */}
       <div className="flex items-center gap-3 flex-wrap">
