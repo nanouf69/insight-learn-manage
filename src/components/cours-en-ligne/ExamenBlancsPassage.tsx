@@ -798,6 +798,7 @@ function PassageMatiere({
                   variant="destructive"
                   onClick={() => {
                     setShowInterruptConfirm(false);
+                    terminatedRef.current = true;
                     onTerminer(reponses);
                   }}
                   className="gap-2"
