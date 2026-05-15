@@ -2477,7 +2477,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                   const override = overrideMap.get(`${exo.id}-${q.id}`);
                   if (!override) return q;
                   // Dernière modification gagne: comparer _editedAt (admin) vs updated_at (fournisseur)
-                  const winner = resolveOverrideConflict((q as any)._editedAt, override.updated_at);
+                  // Fallback sur l'updated_at global du module si la question n'a pas de _editedAt
+                  // (sinon une vieille override formateur écrase une correction admin récente).
+                  const adminTs = (q as any)._editedAt ?? lastDbUpdatedAt ?? undefined;
+                  const winner = resolveOverrideConflict(adminTs, override.updated_at);
                   if (winner === "admin") return q;
                   return { ...q, enonce: override.enonce, choix: override.choix };
                 })
@@ -2500,7 +2503,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     }
 
     loadTrainerOverrides();
-  }, [studentOnly, module.id, apprenantType, editorStateHydrated, loadedModuleEditorState, trainerOverridesReapplyKey]);
+  }, [studentOnly, module.id, apprenantType, editorStateHydrated, loadedModuleEditorState, trainerOverridesReapplyKey, lastDbUpdatedAt]);
 
   useEffect(() => {
     const initialData = getInitialModuleData(module, apprenantType, studentOnly);
@@ -2735,6 +2738,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             setDeletedCours(Array.isArray(latestState.deleted_cours) ? (latestState.deleted_cours as unknown as ContentItem[]) : []);
             setDeletedExercices(Array.isArray(latestState.deleted_exercices) ? (latestState.deleted_exercices as unknown as ExerciceItem[]) : []);
             setLoadedModuleEditorState(true);
+            if (latestState.updated_at) setLastDbUpdatedAt(String(latestState.updated_at));
 
             // Admin: also re-save with updated fingerprint so future loads match
             if (!studentOnly && !hasMatchingSourceFingerprint) {
@@ -2986,8 +2990,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               .map((q) => {
                 const override = overrideMap.get(`${exo.id}-${q.id}`);
                 if (!override) return q;
-                // Dernière modification gagne: comparer _editedAt (admin) vs updated_at (fournisseur)
-                const winner = resolveOverrideConflict((q as any)._editedAt, override.updated_at);
+                // Dernière modification gagne — fallback sur updated_at du module si la
+                // question n'a pas de _editedAt explicite (évite qu'une vieille override
+                // formateur ne ré-écrase une correction admin récente).
+                const adminTs = (q as any)._editedAt ?? lastDbUpdatedAt ?? undefined;
+                const winner = resolveOverrideConflict(adminTs, override.updated_at);
                 if (winner === "admin") return q;
                 return { ...q, enonce: override.enonce, choix: override.choix };
               })
