@@ -2788,6 +2788,29 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         }
 
         if (latestState?.module_data) {
+          // 🔎 DEBUG carte grise : log what we just READ from DB on initial load
+          try {
+            const exos = ((latestState.module_data as any)?.exercices ?? []) as any[];
+            for (const exo of exos) {
+              for (const q of (exo?.questions ?? [])) {
+                const enonce = String(q?.enonce ?? "").toLowerCase();
+                if (enonce.includes("carte grise")) {
+                  console.log("[CarteGriseDebug][INITIAL LOAD READ]", {
+                    module_id: module.id,
+                    exo_id: exo?.id,
+                    exo_titre: exo?.titre,
+                    q_id: q?.id,
+                    enonce: q?.enonce,
+                    choix: JSON.parse(JSON.stringify(q?.choix ?? [])),
+                    db_updated_at: latestState.updated_at,
+                  });
+                }
+              }
+            }
+          } catch (e) {
+            console.warn("[CarteGriseDebug] initial-load log failed", e);
+          }
+
           if (shouldSkipFetchedQuestionState(latestState.updated_at, fetchStartedAt, "initial module_editor_state load")) {
             setEditorStateHydrated(true);
             return;
