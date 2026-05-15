@@ -138,8 +138,10 @@ export const getCurrentCreneau = (
 
   const classify = (startMin: number): CreneauKey => {
     if (startMin < 12 * 60) return "matin";
-    if (startMin < 18 * 60) return "apres_midi";
-    return "soir";
+    if (startMin < 17 * 60) return "apres_midi";
+    // Soir : 2 créneaux distincts (17h-18h30 et 18h30-21h)
+    // -> on retourne celui qui correspond à l'heure courante
+    return nowMin < 18 * 60 + 30 ? "soir_1" : "soir_2";
   };
 
   // 1. Bloc actuellement en cours (avec tolérance) → priorité
@@ -154,22 +156,26 @@ export const getCurrentCreneau = (
   if (nowMin < 12 * 60) {
     if (blocs.some((b) => timeToMin(b.heure_debut) < 12 * 60)) return "matin";
   }
-  if (nowMin < 18 * 60) {
+  if (nowMin < 17 * 60) {
     if (blocs.some((b) => {
       const s = timeToMin(b.heure_debut);
-      return s >= 12 * 60 && s < 18 * 60;
+      return s >= 12 * 60 && s < 17 * 60;
     })) return "apres_midi";
   }
-  if (blocs.some((b) => timeToMin(b.heure_debut) >= 18 * 60)) return "soir";
+  if (blocs.some((b) => timeToMin(b.heure_debut) >= 17 * 60)) {
+    return nowMin < 18 * 60 + 30 ? "soir_1" : "soir_2";
+  }
 
   return null;
-};
+}
 
 export const creneauLabel = (k: CreneauKey): string => {
   switch (k) {
     case "matin": return "Matin";
     case "apres_midi": return "Après-midi";
     case "soir": return "Soir";
+    case "soir_1": return "Soir (1ère partie)";
+    case "soir_2": return "Soir (2ème partie)";
   }
 };
 
@@ -178,5 +184,7 @@ export const creneauHoraire = (k: CreneauKey): string => {
     case "matin": return "09h00 — 12h00";
     case "apres_midi": return "13h00 — 16h00";
     case "soir": return "17h00 — 21h00";
+    case "soir_1": return "17h00 — 18h30";
+    case "soir_2": return "18h30 — 21h00";
   }
 };
