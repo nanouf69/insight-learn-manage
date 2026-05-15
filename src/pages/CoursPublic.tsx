@@ -1297,6 +1297,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         />
       </>
     );
+  }
 
   // Module detail view
   if (selectedModule) {
