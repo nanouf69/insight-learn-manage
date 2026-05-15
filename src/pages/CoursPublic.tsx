@@ -704,7 +704,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const [examBlancCompletedIds, setExamBlancCompletedIds] = useState<Set<string>>(new Set());
   const [lastModuleName, setLastModuleName] = useState<string | null>(null);
   const [isInExam, setIsInExam] = useState(false);
-  const [emargementFCStatus, setEmargementFCStatus] = useState<"checking" | "needed" | "signed" | "n/a">("checking");
+  const [emargementFCStatus, setEmargementFCStatus] = useState<"checking" | "needed" | "signed" | "skipped" | "n/a">("checking");
   const [emargementCreneau, setEmargementCreneau] = useState<CreneauKey | null>(null);
   const [emargementMode, setEmargementMode] = useState<"fc" | "presentiel">("fc");
   const [sessionAccessWindow, setSessionAccessWindow] = useState<SessionAccessWindow | null>(null);
