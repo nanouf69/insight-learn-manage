@@ -228,8 +228,28 @@ const CorrectionQRCTab = () => {
     }
 
     // 3. Build QRC items progressively in batches so the UI displays the first questions quickly
-    const seenApprenantQuizMatiere = new Set<string>();
+    // IMPORTANT: dedupe per-QRC (apprenant+quiz+matiere+questionId), NOT per-result.
+    // A retake creates a new result row with empty correctionsIA → if we kept only the
+    // latest row, already-corrected QRCs would reappear as "pending". We sort results so
+    // that rows containing a manual correction for a given question are processed first.
     const seenQrcKeys = new Set<string>();
+
+    // Pre-compute which questions are manually corrected per result so we can sort.
+    const resultHasManual = (r: any): boolean => {
+      const c = r?.details?.correctionsIA;
+      if (!c || typeof c !== "object") return false;
+      return Object.values(c).some((v: any) =>
+        v && typeof v === "object" && typeof v.explication === "string" && v.explication.includes("manuelle")
+      );
+    };
+    allResults.sort((a: any, b: any) => {
+      const am = resultHasManual(a) ? 1 : 0;
+      const bm = resultHasManual(b) ? 1 : 0;
+      if (am !== bm) return bm - am; // corrected rows first
+      const ta = a.completed_at ? new Date(a.completed_at).getTime() : 0;
+      const tb = b.completed_at ? new Date(b.completed_at).getTime() : 0;
+      return tb - ta;
+    });
     let buffer: QrcItem[] = [];
     let firstFlush = true;
 
