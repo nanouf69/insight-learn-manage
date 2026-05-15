@@ -774,18 +774,21 @@ export default function ExamensBlancsPage({
       details: { questions: questionDetails, reponses: resultat.reponses, correctionsIA: Object.keys(frozenCorrections).length > 0 ? frozenCorrections : undefined },
     };
 
-    // Save with retry logic to prevent silent data loss
+    // Save each attempt as a NEW row (history of retakes). The DB trigger
+    // `set_next_quiz_tentative` auto-increments `tentative` when a row already
+    // exists for (apprenant_id, quiz_id, matiere_id). We therefore use INSERT
+    // (not upsert) so that the 2nd, 3rd... attempt is stored alongside the 1st.
     let saved = false;
     for (let attempt = 0; attempt < 3 && !saved; attempt++) {
       if (attempt > 0) await new Promise(r => setTimeout(r, 1000 * attempt));
       const { error } = await supabase
         .from("apprenant_quiz_results" as any)
-        .upsert([payload] as any, { onConflict: "apprenant_id,quiz_id,matiere_id" } as any);
+        .insert([payload] as any);
       if (!error) {
         saved = true;
         console.log(`[ExamSubmission][EB] Saved ${resultat.matiereId} (attempt ${attempt + 1})`);
       } else {
-        console.error(`[ExamSubmission][EB][UpsertError] attempt ${attempt + 1}:`, error);
+        console.error(`[ExamSubmission][EB][InsertError] attempt ${attempt + 1}:`, error);
       }
     }
     if (!saved) {
