@@ -19,6 +19,8 @@ interface EmargementFCModalProps {
   /** Mode: "fc" = formation continue, "presentiel" = cours présentiel classique */
   mode?: "fc" | "presentiel";
   onSigned?: () => void;
+  /** Appelé si l'apprenant ferme/refuse de signer. La signature reste optionnelle. */
+  onSkipped?: () => void;
 }
 
 const getCurrentCreneauFromHour = (): CreneauKey => {
