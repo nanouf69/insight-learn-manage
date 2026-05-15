@@ -155,6 +155,7 @@ export function useAutoSaveReponses<T = Record<string, any>>({
 
             if (response.ok) {
               succeeded = true;
+              hasSavedOnceRef.current = true;
               break;
             }
 
