@@ -3110,19 +3110,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     // Handle trainer quiz_questions_overrides changes in realtime
     const handleTrainerOverrideChange = async (payload: any) => {
       const fetchStartedAt = Date.now();
-      const trainerQuizIdsByModuleId: Record<number, string[]> = {
-        12: ["cas-pratique-taxi"],
-        7: ["connaissance-ville"],
-        64: ["equipements-taxi"],
-        13: ["controle-connaissances-taxi"],
-        40: ["reglementation-nationale", "reglementation-locale"],
-        10: ["reglementation-nationale", "reglementation-locale"],
-        27: ["bilan-exercices-ta"],
-        28: ["bilan-examen-ta"],
-        9: ["bilan-exercices-taxi"],
-        11: ["bilan-examen-taxi"],
-      };
-      const targetQuizIds = trainerQuizIdsByModuleId[module.id] || [];
+      const targetQuizIds = getTrainerQuizIdsForModule(module.id);
 
       if (targetQuizIds.length === 0) return;
 
@@ -3135,23 +3123,13 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       // Reload all overrides for this quiz
       const { data } = await supabase
         .from("quiz_questions_overrides")
-        .select("quiz_id, section_id, question_id, enonce, choix, updated_at")
+        .select("quiz_id, fournisseur_id, section_id, question_id, enonce, choix, updated_at")
         .in("quiz_id", targetQuizIds)
         .order("updated_at", { ascending: false });
 
       if (!data || data.length === 0) return;
 
-      const overrideMap = new Map<string, { enonce: string; choix: { lettre: string; texte: string; correct?: boolean }[]; updated_at: string }>();
-      for (const ov of data) {
-        const key = `${ov.section_id}-${ov.question_id}`;
-        if (!overrideMap.has(key)) {
-          overrideMap.set(key, {
-            enonce: ov.enonce,
-            choix: ov.choix as { lettre: string; texte: string; correct?: boolean }[],
-            updated_at: ov.updated_at,
-          });
-        }
-      }
+      const overrideMap = buildTrainerOverrideMap(data);
 
       setModuleData((prev) => {
         if (shouldSkipFetchedQuestionState(lastDbUpdatedAtRef.current, fetchStartedAt, "realtime trainer override reload")) return prev;
@@ -3163,10 +3141,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               .map((q) => {
                 const override = overrideMap.get(`${exo.id}-${q.id}`);
                 if (!override) return q;
-                // Dernière modification gagne — fallback sur updated_at du module si la
-                // question n'a pas de _editedAt explicite (évite qu'une vieille override
-                // formateur ne ré-écrase une correction admin récente).
-                const adminTs = (q as any)._editedAt ?? lastDbUpdatedAtRef.current ?? lastDbUpdatedAt ?? undefined;
+                // Règle dure: si la question a été modifiée par l'admin (_editedAt),
+                // les réponses correctes admin gagnent toujours, sans comparer les timestamps.
+                const adminTs = (q as any)._editedAt ?? undefined;
                 const winner = resolveOverrideConflict(adminTs, override.updated_at);
                 if (winner === "admin") return q;
                 return { ...q, enonce: override.enonce, choix: override.choix };
