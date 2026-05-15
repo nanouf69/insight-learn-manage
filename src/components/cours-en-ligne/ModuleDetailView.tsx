@@ -5914,6 +5914,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                   key={cours.id}
                   item={cours}
                   onSave={(updated) => {
+                    markAdminLocalEdit();
                     setModuleData((prev) => ({
                       ...prev,
                       cours: prev.cours.map(c => c.id === updated.id ? updated : c),
