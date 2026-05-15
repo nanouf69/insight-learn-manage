@@ -52,6 +52,7 @@ export const EmargementFCModal = ({
   creneau,
   mode = "fc",
   onSigned,
+  onSkipped,
 }: EmargementFCModalProps) => {
   const { toast } = useToast();
   const [signature, setSignature] = useState("");
