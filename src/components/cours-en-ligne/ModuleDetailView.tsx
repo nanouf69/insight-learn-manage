@@ -3355,6 +3355,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   const isPratique = module.id === 6 || module.id === 8;
 
   const moveItem = (type: "cours" | "exercices", index: number, direction: "up" | "down") => {
+    markAdminLocalEdit();
     setModuleData((prev) => {
       const items = [...prev[type]];
       const swapIndex = direction === "up" ? index - 1 : index + 1;
@@ -3365,6 +3366,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   };
 
   const deleteItem = (type: "cours" | "exercices", id: number) => {
+    markAdminLocalEdit();
     setModuleData((prev) => {
       if (type === "cours") {
         const item = prev.cours.find((i) => i.id === id);
@@ -3379,6 +3381,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   };
 
   const restoreItem = (type: "cours" | "exercices", id: number) => {
+    markAdminLocalEdit();
     if (type === "cours") {
       const item = deletedCours.find((i) => i.id === id);
       if (item) {
@@ -3396,6 +3399,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   };
 
   const toggleItem = (type: "cours" | "exercices", id: number) => {
+    markAdminLocalEdit();
     setModuleData((prev) => ({
       ...prev,
       [type]: prev[type].map((i) => i.id === id ? { ...i, actif: !i.actif } : i),
@@ -3403,6 +3407,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   };
 
   const addItem = (type: "cours" | "exercices") => {
+    markAdminLocalEdit();
     const newId = Date.now();
     setModuleData((prev) => {
       if (type === "exercices" && isPratique) {
@@ -3423,6 +3428,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   };
 
   const updateExerciceQuestions = (exerciceId: number, questions: ExerciceQuestion[], deletedQuestionId?: number) => {
+    markAdminLocalEdit();
     // Save enonce-based overrides to localStorage for same-session cross-module cache invalidation.
     // DB propagation to sibling modules is handled by syncSharedExercisesToSiblingModules
     // (called after the debounced DB save) to avoid concurrent write races.
