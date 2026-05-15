@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, PenTool, ShieldCheck, Sun, Moon, Sunset, AlertTriangle } from "lucide-react";
+import { Loader2, PenTool, ShieldCheck, Sun, Moon, Sunset, AlertTriangle, X } from "lucide-react";
 import { SignaturePad } from "@/components/onboarding/SignaturePad";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
