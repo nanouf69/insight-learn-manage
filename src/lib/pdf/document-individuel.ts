@@ -484,7 +484,10 @@ function renderGenericContent(doc: jsPDF, donnees: any, y: number, margin: numbe
         y = renderObjectFields(doc, value, y, margin, pw);
       }
     } else {
-      y = renderQA(doc, getLabel(key), value === null || value === undefined ? '(Non renseigne)' : String(value), y, margin, pw);
+      const displayValue = DEMI_LABEL_KEYS.has(key) && typeof value === 'string'
+        ? formatDemiJournee(value)
+        : (value === null || value === undefined ? '(Non renseigne)' : String(value));
+      y = renderQA(doc, getLabel(key), displayValue, y, margin, pw);
     }
   }
   return y;
