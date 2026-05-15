@@ -3283,8 +3283,6 @@ export function ExamenReussitePage() {
                           <span className="text-muted-foreground">-</span>
                         )}
                       </TableCell>
-                      <TableCell className="text-xs">{a.date_examen_pratique ? formatDateShortFR(a.date_examen_pratique) : '-'}</TableCell>
-                      <TableCell className="text-xs">{(a as any).heure_examen_pratique || '-'}</TableCell>
                       <TableCell className="text-center">
                         <Select
                           value={resultatP || "non_renseigne"}
