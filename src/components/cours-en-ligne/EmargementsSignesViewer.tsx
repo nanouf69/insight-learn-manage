@@ -390,8 +390,9 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
                     </div>
                   ))}
                 </div>
-            </Card>
-          ))}
+              </Card>
+            );
+          })}
         </div>
       )}
 
