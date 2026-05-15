@@ -41,6 +41,9 @@ export function useAutoSaveReponses<T = Record<string, any>>({
   const jwtTokenRef = useRef<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latestReponsesRef = useRef<any>(null);
+  // FIRST-ANSWER FIX: flush immediately on the very first save so a single answer
+  // is persisted to DB even if the user closes the tab right after.
+  const hasSavedOnceRef = useRef(false);
 
   // Get user ID and JWT once — and keep them fresh via onAuthStateChange
   useEffect(() => {
