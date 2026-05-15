@@ -99,6 +99,7 @@ export function useAutoSaveReponses<T = Record<string, any>>({
       latestReponsesRef.current = { reponses, score, completed };
 
       if (debounceRef.current) clearTimeout(debounceRef.current);
+      const flushImmediately = !hasSavedOnceRef.current;
       debounceRef.current = setTimeout(async () => {
         const latest = latestReponsesRef.current;
         if (!latest) return;
