@@ -153,6 +153,7 @@ const CorrectionQRCTab = () => {
   const [editingComments, setEditingComments] = useState<Record<string, string>>({});
   const [currentIndex, setCurrentIndex] = useState(0);
   const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
+  const [examenFilter, setExamenFilter] = useState<string>("all");
 
   const QUICK_COMMENTS = [
     "Précisez !!!",
