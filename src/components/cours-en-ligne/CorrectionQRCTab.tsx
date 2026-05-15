@@ -178,49 +178,76 @@ const CorrectionQRCTab = () => {
   const fetchData = useCallback(async () => {
     if (Object.keys(examenMap).length === 0) return;
     setLoading(true);
+    setItems([]);
 
-    // Fetch all exam_blanc results that have QRC questions
-    const { data: results, error } = await supabase
-      .from("apprenant_quiz_results")
-      .select("id, apprenant_id, quiz_id, quiz_type, quiz_titre, matiere_id, matiere_nom, details, completed_at, score_obtenu, score_max, note_sur_20")
-      .in("quiz_type", ["examen_blanc", "bilan"])
-      .order("completed_at", { ascending: false });
-
-    if (error || !results) {
-      console.error("Erreur chargement résultats:", error);
-      setLoading(false);
-      return;
+    // 1. Paginate apprenant_quiz_results (Supabase caps at 1000 rows per request)
+    const PAGE = 1000;
+    const allResults: any[] = [];
+    let from = 0;
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      const { data, error } = await supabase
+        .from("apprenant_quiz_results")
+        .select("id, apprenant_id, quiz_id, quiz_type, quiz_titre, matiere_id, matiere_nom, details, completed_at, score_obtenu, score_max, note_sur_20")
+        .in("quiz_type", ["examen_blanc", "bilan"])
+        .order("completed_at", { ascending: false })
+        .range(from, from + PAGE - 1);
+      if (error) {
+        console.error("Erreur chargement résultats:", error);
+        break;
+      }
+      if (!data || data.length === 0) break;
+      allResults.push(...data);
+      if (data.length < PAGE) break;
+      from += PAGE;
     }
 
-    // Fetch apprenant names
-    const apprenantIds = [...new Set(results.map((r: any) => r.apprenant_id))];
-    const { data: apprenants } = await supabase
-      .from("apprenants")
-      .select("id, nom, prenom, type_apprenant")
-      .in("id", apprenantIds);
-
+    // 2. Fetch apprenants in chunks of 500 (avoid huge .in() lists)
+    const apprenantIds = [...new Set(allResults.map((r: any) => r.apprenant_id))];
     const apprenantMap: Record<string, { nom: string; prenom: string; mode: "presentiel" | "elearning" }> = {};
-    (apprenants || []).forEach((a: any) => {
-      const t = String(a.type_apprenant || "").toLowerCase();
-      const mode: "presentiel" | "elearning" = t.endsWith("-e") || t.includes("-e-") ? "elearning"
-        : (t === "vtc-e-presentiel" ? "presentiel" : (t.endsWith("-e") ? "elearning" : "presentiel"));
-      apprenantMap[a.id] = { nom: a.nom, prenom: a.prenom, mode };
-    });
+    const CHUNK = 500;
+    for (let i = 0; i < apprenantIds.length; i += CHUNK) {
+      const slice = apprenantIds.slice(i, i + CHUNK);
+      const { data: apprenants } = await supabase
+        .from("apprenants")
+        .select("id, nom, prenom, type_apprenant")
+        .in("id", slice);
+      (apprenants || []).forEach((a: any) => {
+        const t = String(a.type_apprenant || "").toLowerCase();
+        const mode: "presentiel" | "elearning" = t.endsWith("-e") || t.includes("-e-") ? "elearning"
+          : (t === "vtc-e-presentiel" ? "presentiel" : (t.endsWith("-e") ? "elearning" : "presentiel"));
+        apprenantMap[a.id] = { nom: a.nom, prenom: a.prenom, mode };
+      });
+    }
 
-    const qrcItems: QrcItem[] = [];
-    const seenQrcKeys = new Set<string>();
-
-    // Count how many results exist per apprenant + quiz + matiere (to detect retakes)
-    // Must include matiere_id because each exam has ~7 matiere rows per attempt
+    // Count attempts (for retake detection) across the full dataset
     const attemptCounts: Record<string, number> = {};
-    for (const r of results as any[]) {
+    for (const r of allResults as any[]) {
       const countKey = `${r.apprenant_id}__${r.quiz_id}__${r.matiere_id || ""}`;
       attemptCounts[countKey] = (attemptCounts[countKey] || 0) + 1;
     }
 
-    // Deduplicate: keep only the latest result per apprenant + quiz + matière
+    // 3. Build QRC items progressively in batches so the UI displays the first questions quickly
     const seenApprenantQuizMatiere = new Set<string>();
-    for (const r of results as any[]) {
+    const seenQrcKeys = new Set<string>();
+    let buffer: QrcItem[] = [];
+    let firstFlush = true;
+
+    const flush = () => {
+      if (buffer.length === 0) return;
+      const chunk = buffer;
+      buffer = [];
+      setItems(prev => [...prev, ...chunk]);
+      if (firstFlush) {
+        setLoading(false);
+        firstFlush = false;
+      }
+    };
+
+    const BATCH_SIZE = 50;
+
+    for (let idx = 0; idx < allResults.length; idx++) {
+      const r: any = allResults[idx];
       const dedupeKey = `${r.apprenant_id}__${r.quiz_id}__${r.matiere_id || ""}`;
       if (seenApprenantQuizMatiere.has(dedupeKey)) continue;
       seenApprenantQuizMatiere.add(dedupeKey);
@@ -228,19 +255,14 @@ const CorrectionQRCTab = () => {
       if (details == null) continue;
 
       const matiere = findMatiereWithFallback(examenMap, tousLesExamens, r.quiz_id, r.matiere_id || "");
-
       const correctionsIA = details.correctionsIA || {};
-
-      // Detect if this is a retake (more than one result for same apprenant + quiz + matiere)
       const countKey = `${r.apprenant_id}__${r.quiz_id}__${r.matiere_id || ""}`;
       const isRetake = (attemptCounts[countKey] || 1) > 1;
 
-      // Build question list: prefer details.questions, but fall back to examen definition + correctionsIA
       let questionList = Array.isArray(details.questions) && details.questions.length > 0
         ? details.questions
         : null;
 
-      // If questions array is empty, reconstruct from examen definition + reponses/correctionsIA
       const reponses = details.reponses || {};
       if (!questionList && matiere && (Object.keys(correctionsIA).length > 0 || Object.keys(reponses).length > 0)) {
         const sourceQuestions = getSourceQuestions(matiere, tousLesExamens);
@@ -262,22 +284,16 @@ const CorrectionQRCTab = () => {
 
       for (const q of questionList) {
         if (q.type !== "QRC") continue;
-
-        // Deduplicate per apprenant + quiz + matière + question
         const qrcKey = `${r.apprenant_id}__${r.quiz_id}__${r.matiere_id || ""}__${q.questionId}`;
         if (seenQrcKeys.has(qrcKey)) continue;
         seenQrcKeys.add(qrcKey);
 
         const pts = getPointsParQuestion(r.matiere_id || "", "QRC", matiere || undefined);
-
         const correction = correctionsIA[q.questionId];
         const hasManualCorrection = correction && typeof correction === "object" && correction.explication?.includes("manuelle");
-
         const app = apprenantMap[r.apprenant_id] || { nom: "Inconnu", prenom: "", mode: "presentiel" as const };
-
         const questionDef = matiere?.questions?.find((mq: any) => mq && mq.id === q.questionId);
 
-        // Auto score: if manual correction exists, use it; otherwise recompute deterministically
         let autoScore = 0;
         let autoExplication: string | null = null;
         if (correction && typeof correction === "object" && hasManualCorrection) {
@@ -292,10 +308,9 @@ const CorrectionQRCTab = () => {
           autoExplication = correction.explication || null;
         }
 
-        // If this is a retake and no manual correction yet, auto-score with keywords and mark as corrected
         const isAutoScoredRetake = isRetake && !hasManualCorrection;
 
-        qrcItems.push({
+        buffer.push({
           resultId: r.id,
           apprenantId: r.apprenant_id,
           apprenantNom: app.nom,
@@ -325,9 +340,15 @@ const CorrectionQRCTab = () => {
           apprenantTypeMode: app.mode,
         });
       }
+
+      if (buffer.length >= BATCH_SIZE) {
+        flush();
+        // Yield to the browser so the UI can paint between batches
+        await new Promise<void>(resolve => setTimeout(resolve, 0));
+      }
     }
 
-    setItems(qrcItems);
+    flush();
     setLoading(false);
   }, [examenMap]);
 
