@@ -494,7 +494,7 @@ const CorrectionQRCTab = () => {
   // Reset index when filter/search/sort changes
   useEffect(() => {
     setCurrentIndex(0);
-  }, [filter, searchQuery, sortOrder]);
+  }, [filter, searchQuery, sortOrder, examenFilter]);
 
   if (loading) {
     return (
