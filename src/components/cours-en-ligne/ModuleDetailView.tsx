@@ -2353,6 +2353,60 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     deleted_exercices: any;
     source_fingerprint: string;
   } | null>(null);
+  const hydratedModuleIdRef = useRef<number | null>(null);
+  const adminLocalEditAtRef = useRef(0);
+  const lastAppliedDbUpdatedAtRef = useRef(0);
+  const lastDbUpdatedAtRef = useRef<string | null>(null);
+
+  const toSafeTimestamp = (value: unknown) => {
+    const ts = new Date(String(value ?? "")).getTime();
+    return Number.isFinite(ts) ? ts : 0;
+  };
+
+  const markAdminLocalEdit = () => {
+    if (!studentOnly) adminLocalEditAtRef.current = Date.now();
+  };
+
+  const markDbSnapshotApplied = (updatedAt: unknown) => {
+    const updatedAtString = typeof updatedAt === "string" ? updatedAt : updatedAt ? String(updatedAt) : null;
+    const updatedAtTs = toSafeTimestamp(updatedAtString);
+    if (updatedAtTs > lastAppliedDbUpdatedAtRef.current) {
+      lastAppliedDbUpdatedAtRef.current = updatedAtTs;
+    }
+    if (updatedAtString) {
+      lastDbUpdatedAtRef.current = updatedAtString;
+      setLastDbUpdatedAt(updatedAtString);
+    }
+  };
+
+  const shouldSkipFetchedQuestionState = (remoteUpdatedAt: unknown, fetchStartedAt: number, context: string) => {
+    const remoteTs = toSafeTimestamp(remoteUpdatedAt);
+
+    if (remoteTs > 0 && remoteTs < lastAppliedDbUpdatedAtRef.current) {
+      console.warn(`[ModuleDetailView] Ignoring stale ${context} snapshot`, {
+        moduleId: module.id,
+        remoteUpdatedAt,
+        lastApplied: lastDbUpdatedAtRef.current,
+      });
+      return true;
+    }
+
+    if (!studentOnly && adminLocalEditAtRef.current > 0) {
+      const localEditHappenedAfterFetchStarted = adminLocalEditAtRef.current > fetchStartedAt;
+      const remotePredatesLocalEdit = remoteTs === 0 || remoteTs < adminLocalEditAtRef.current;
+
+      if (localEditHappenedAfterFetchStarted || remotePredatesLocalEdit) {
+        console.warn(`[ModuleDetailView] Preserving newer admin edits over ${context} snapshot`, {
+          moduleId: module.id,
+          remoteUpdatedAt,
+          adminLocalEditAt: new Date(adminLocalEditAtRef.current).toISOString(),
+        });
+        return true;
+      }
+    }
+
+    return false;
+  };
 
   const GENERATED_BILAN_MODULE_IDS = new Set([4, 9, 27, 29, 81, 82]);
 
