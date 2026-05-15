@@ -347,10 +347,7 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
                         {r ? (
                           <span className="inline-flex items-center gap-1 text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded">
                             <CheckCircle2 className="h-2.5 w-2.5" />
-                            {new Date(r.signed_at).toLocaleTimeString("fr-FR", {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
+                            Signé
                           </span>
                         ) : (
                           <span className="text-[10px] text-muted-foreground italic">Non signé</span>
