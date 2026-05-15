@@ -3123,6 +3123,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       lastCheckedAt = Date.now();
 
       try {
+        const fetchStartedAt = Date.now();
         const { data, error } = await supabase
           .from("module_editor_state")
           .select("module_data, deleted_cours, deleted_exercices, updated_at")
@@ -3134,6 +3135,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
         const latest = data[0];
         if (!latest?.module_data) return;
+        if (shouldSkipFetchedQuestionState(latest.updated_at, fetchStartedAt, "visibility module_editor_state refresh")) return;
 
         const md = latest.module_data as unknown as ModuleData;
         if (!Array.isArray(md.cours) || !Array.isArray(md.exercices)) return;
@@ -3159,6 +3161,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           didUpdate = true;
           return merged;
         });
+        markDbSnapshotApplied(latest.updated_at);
         // Re-apply fournisseur overrides après reload DB
         if (didUpdate) setTrainerOverridesReapplyKey((k) => k + 1);
       } catch (err) {
