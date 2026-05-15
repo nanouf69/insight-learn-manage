@@ -543,9 +543,10 @@ function PassageMatiere({
       toast.error("Veuillez répondre à toutes les questions avant de terminer la matière.");
       return;
     }
+    terminatedRef.current = true;
     onTerminer(reponses);
   };
-  const handleExpire = () => { setExpire(true); onTerminer(reponses); };
+  const handleExpire = () => { terminatedRef.current = true; setExpire(true); onTerminer(reponses); };
 
   // Extracted to examens-blancs-utils.ts for testability (BUG #10 FIX)
   const isMultiple = computeIsMultiple;
