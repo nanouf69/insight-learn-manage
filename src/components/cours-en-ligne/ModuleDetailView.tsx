@@ -2481,6 +2481,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
     async function loadTrainerOverrides() {
       try {
+        const fetchStartedAt = Date.now();
         // Appliquer uniquement les overrides des quiz explicitement liés au module.
         // Ne jamais charger tous les quiz_ids dynamiquement : des section_id/question_id
         // identiques existent entre modules et peuvent écraser les réponses admin.
@@ -2522,6 +2523,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         }
 
         setModuleData((prev) => {
+          if (shouldSkipFetchedQuestionState(lastDbUpdatedAtRef.current, fetchStartedAt, "trainer override reload")) return prev;
+
           const updatedExercices = prev.exercices
             .map((exo) => {
               if (!exo.questions || exo.questions.length === 0) return exo;
@@ -2533,7 +2536,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                   // Dernière modification gagne: comparer _editedAt (admin) vs updated_at (fournisseur)
                   // Fallback sur l'updated_at global du module si la question n'a pas de _editedAt
                   // (sinon une vieille override formateur écrase une correction admin récente).
-                  const adminTs = (q as any)._editedAt ?? lastDbUpdatedAt ?? undefined;
+                  const adminTs = (q as any)._editedAt ?? lastDbUpdatedAtRef.current ?? lastDbUpdatedAt ?? undefined;
                   const winner = resolveOverrideConflict(adminTs, override.updated_at);
                   if (winner === "admin") return q;
                   return { ...q, enonce: override.enonce, choix: override.choix };
