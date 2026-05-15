@@ -2353,6 +2353,101 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     deleted_exercices: any;
     source_fingerprint: string;
   } | null>(null);
+  const hydratedModuleIdRef = useRef<number | null>(null);
+  const adminLocalEditAtRef = useRef(0);
+  const lastAppliedDbUpdatedAtRef = useRef(0);
+  const lastDbUpdatedAtRef = useRef<string | null>(null);
+
+  const toSafeTimestamp = (value: unknown) => {
+    const ts = new Date(String(value ?? "")).getTime();
+    return Number.isFinite(ts) ? ts : 0;
+  };
+
+  const markAdminLocalEdit = () => {
+    if (!studentOnly) adminLocalEditAtRef.current = Date.now();
+  };
+
+  const markDbSnapshotApplied = (updatedAt: unknown) => {
+    const updatedAtString = typeof updatedAt === "string" ? updatedAt : updatedAt ? String(updatedAt) : null;
+    const updatedAtTs = toSafeTimestamp(updatedAtString);
+    if (updatedAtTs > lastAppliedDbUpdatedAtRef.current) {
+      lastAppliedDbUpdatedAtRef.current = updatedAtTs;
+    }
+    if (updatedAtString) {
+      lastDbUpdatedAtRef.current = updatedAtString;
+      setLastDbUpdatedAt(updatedAtString);
+    }
+  };
+
+  const shouldSkipFetchedQuestionState = (remoteUpdatedAt: unknown, fetchStartedAt: number, context: string) => {
+    const remoteTs = toSafeTimestamp(remoteUpdatedAt);
+
+    if (remoteTs > 0 && remoteTs < lastAppliedDbUpdatedAtRef.current) {
+      console.warn(`[ModuleDetailView] Ignoring stale ${context} snapshot`, {
+        moduleId: module.id,
+        remoteUpdatedAt,
+        lastApplied: lastDbUpdatedAtRef.current,
+      });
+      return true;
+    }
+
+    if (!studentOnly && adminLocalEditAtRef.current > 0) {
+      const localEditHappenedAfterFetchStarted = adminLocalEditAtRef.current > fetchStartedAt;
+      const remotePredatesLocalEdit = remoteTs === 0 || remoteTs < adminLocalEditAtRef.current;
+
+      if (localEditHappenedAfterFetchStarted || remotePredatesLocalEdit) {
+        console.warn(`[ModuleDetailView] Preserving newer admin edits over ${context} snapshot`, {
+          moduleId: module.id,
+          remoteUpdatedAt,
+          adminLocalEditAt: new Date(adminLocalEditAtRef.current).toISOString(),
+        });
+        return true;
+      }
+    }
+
+    return false;
+  };
+
+  const preserveNewerLocalQuestionEdits = (incoming: ModuleData, previous: ModuleData, context: string): ModuleData => {
+    if (studentOnly || adminLocalEditAtRef.current === 0) return incoming;
+
+    let preserved = false;
+    const previousExerciseMap = new Map((previous.exercices ?? []).map((exo) => [Number(exo.id), exo]));
+    const incomingExercices = (incoming.exercices ?? []).map((incomingExo) => {
+      const previousExo = previousExerciseMap.get(Number(incomingExo.id));
+      if (!previousExo?.questions || !incomingExo.questions) return incomingExo;
+
+      const incomingQuestionIds = new Set(incomingExo.questions.map((q) => Number(q.id)));
+      const previousQuestionMap = new Map(previousExo.questions.map((q) => [Number(q.id), q]));
+      const mergedQuestions = incomingExo.questions.map((incomingQ) => {
+        const previousQ = previousQuestionMap.get(Number(incomingQ.id));
+        if (!previousQ) return incomingQ;
+
+        const previousEditedAt = toSafeTimestamp((previousQ as any)._editedAt);
+        const incomingEditedAt = toSafeTimestamp((incomingQ as any)._editedAt);
+        if (previousEditedAt > incomingEditedAt) {
+          preserved = true;
+          return previousQ;
+        }
+
+        return incomingQ;
+      });
+
+      const locallyAddedQuestions = previousExo.questions.filter((previousQ) => {
+        if (incomingQuestionIds.has(Number(previousQ.id))) return false;
+        return toSafeTimestamp((previousQ as any)._editedAt) > 0;
+      });
+
+      if (locallyAddedQuestions.length > 0) preserved = true;
+      return { ...incomingExo, questions: [...mergedQuestions, ...locallyAddedQuestions] };
+    });
+
+    if (preserved) {
+      console.warn(`[ModuleDetailView] Preserved newer local admin question edits during ${context}`, { moduleId: module.id });
+    }
+
+    return preserved ? { ...incoming, exercices: incomingExercices } : incoming;
+  };
 
   const GENERATED_BILAN_MODULE_IDS = new Set([4, 9, 27, 29, 81, 82]);
 
@@ -2427,6 +2522,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
     async function loadTrainerOverrides() {
       try {
+        const fetchStartedAt = Date.now();
         // Appliquer uniquement les overrides des quiz explicitement liés au module.
         // Ne jamais charger tous les quiz_ids dynamiquement : des section_id/question_id
         // identiques existent entre modules et peuvent écraser les réponses admin.
@@ -2468,6 +2564,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         }
 
         setModuleData((prev) => {
+          if (shouldSkipFetchedQuestionState(lastDbUpdatedAtRef.current, fetchStartedAt, "trainer override reload")) return prev;
+
           const updatedExercices = prev.exercices
             .map((exo) => {
               if (!exo.questions || exo.questions.length === 0) return exo;
@@ -2479,7 +2577,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                   // Dernière modification gagne: comparer _editedAt (admin) vs updated_at (fournisseur)
                   // Fallback sur l'updated_at global du module si la question n'a pas de _editedAt
                   // (sinon une vieille override formateur écrase une correction admin récente).
-                  const adminTs = (q as any)._editedAt ?? lastDbUpdatedAt ?? undefined;
+                  const adminTs = (q as any)._editedAt ?? lastDbUpdatedAtRef.current ?? lastDbUpdatedAt ?? undefined;
                   const winner = resolveOverrideConflict(adminTs, override.updated_at);
                   if (winner === "admin") return q;
                   return { ...q, enonce: override.enonce, choix: override.choix };
@@ -2508,8 +2606,17 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   useEffect(() => {
     const initialData = getInitialModuleData(module, apprenantType, studentOnly);
     const sourceFingerprint = buildSourceFingerprint(initialData);
-    skipInitialAutosaveRef.current = true;
     setLoadedModuleEditorState(false);
+    const moduleIdNumber = Number(module.id);
+    const isNewModuleHydration = hydratedModuleIdRef.current !== moduleIdNumber;
+    skipInitialAutosaveRef.current = isNewModuleHydration;
+    if (isNewModuleHydration) {
+      hydratedModuleIdRef.current = null;
+      adminLocalEditAtRef.current = 0;
+      lastAppliedDbUpdatedAtRef.current = 0;
+      lastDbUpdatedAtRef.current = null;
+      setLastDbUpdatedAt(null);
+    }
 
     const loadLocalState = () => {
       if (typeof window === "undefined") return false;
@@ -2569,6 +2676,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
     (async () => {
       try {
+        const fetchStartedAt = Date.now();
         const requestTimestamp = new Date().toISOString();
         const { data, error } = await supabase
           .from("module_editor_state")
@@ -2612,14 +2720,20 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           try {
             const { data: sourceState } = await supabase
               .from("module_editor_state")
-              .select("module_data, deleted_exercices")
+              .select("module_data, deleted_exercices, updated_at")
               .eq("module_id", BILAN_VTC_SOURCE_MODULE_ID)
               .order("updated_at", { ascending: false })
               .limit(1)
               .maybeSingle();
 
             const sourceMd = sourceState?.module_data as unknown as ModuleData | undefined;
-            if (sourceMd?.exercices && Array.isArray(sourceMd.exercices)) {
+            const sourceIsNewerThanCurrent = toSafeTimestamp(sourceState?.updated_at) > toSafeTimestamp(latestState?.updated_at);
+            if (sourceMd?.exercices && Array.isArray(sourceMd.exercices) && (!latestState?.module_data || sourceIsNewerThanCurrent)) {
+              if (shouldSkipFetchedQuestionState(sourceState.updated_at, fetchStartedAt, "initial generated bilan source sync")) {
+                setEditorStateHydrated(true);
+                return;
+              }
+
               const sourceInitial = JSON.parse(JSON.stringify(VTC_COURS_DATA)) as ModuleData;
               const deletedSourceIds = Array.isArray(sourceState?.deleted_exercices)
                 ? (sourceState.deleted_exercices as any[]).map((e: any) => Number(e?.id)).filter((n) => !Number.isNaN(n))
@@ -2627,10 +2741,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               const sourceExercices = mergeSourceExercices(sourceMd.exercices, sourceInitial.exercices, deletedSourceIds);
               const syncedModuleData = getSyncedBilanVtcModuleData(initialData, sourceExercices, Number(module.id) === 4);
 
-              setModuleData(syncedModuleData);
+              setModuleData((prev) => preserveNewerLocalQuestionEdits(syncedModuleData, prev, "initial generated bilan source sync"));
               setDeletedCours([]);
               setDeletedExercices([]);
               setLoadedModuleEditorState(true);
+              markDbSnapshotApplied(sourceState.updated_at);
               return;
             }
           } catch (e) {
@@ -2673,6 +2788,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         }
 
         if (latestState?.module_data) {
+          if (shouldSkipFetchedQuestionState(latestState.updated_at, fetchStartedAt, "initial module_editor_state load")) {
+            setEditorStateHydrated(true);
+            return;
+          }
+
           const md = latestState.module_data as unknown as ModuleData;
           const hasMatchingSourceFingerprint = latestState.source_fingerprint === sourceFingerprint;
           // Reset uniquement sur doublons réels (corruption de données).
@@ -2734,11 +2854,12 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               forceSourceExerciseTitles(module.id, mergedModuleData, initialData),
               vtcSecurityForTaxi,
             );
-            setModuleData(resolvedModuleData);
+            setModuleData((prev) => preserveNewerLocalQuestionEdits(resolvedModuleData, prev, "initial module_editor_state load"));
             setDeletedCours(Array.isArray(latestState.deleted_cours) ? (latestState.deleted_cours as unknown as ContentItem[]) : []);
             setDeletedExercices(Array.isArray(latestState.deleted_exercices) ? (latestState.deleted_exercices as unknown as ExerciceItem[]) : []);
             setLoadedModuleEditorState(true);
-            if (latestState.updated_at) setLastDbUpdatedAt(String(latestState.updated_at));
+            hydratedModuleIdRef.current = Number(module.id);
+            markDbSnapshotApplied(latestState.updated_at);
 
             // Admin: also re-save with updated fingerprint so future loads match
             if (!studentOnly && !hasMatchingSourceFingerprint) {
@@ -2841,6 +2962,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     // Refetch from DB instead of trusting the payload (which can be truncated for large JSONB)
     const refetchModuleFromDb = async () => {
       try {
+        const fetchStartedAt = Date.now();
         if (shouldSyncVtcBilanFromCours(module.id)) {
           const { data: sourceState } = await supabase
             .from("module_editor_state")
@@ -2875,6 +2997,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         if (error) throw error;
         const latest = Array.isArray(data) ? data[0] : null;
         if (!latest?.module_data) return;
+        if (shouldSkipFetchedQuestionState(latest.updated_at, fetchStartedAt, "realtime module_editor_state refetch")) return;
 
         const md = latest.module_data as unknown as ModuleData;
         const hasValidModuleData =
@@ -2895,14 +3018,15 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           const deletedExoIdsRt = Array.isArray(latest.deleted_exercices)
             ? (latest.deleted_exercices as any[]).map((e: any) => Number(e?.id)).filter((n) => !Number.isNaN(n))
             : [];
-          setModuleData({
+          const mergedRealtimeModuleData: ModuleData = {
             ...md,
             exercices: mergeSourceExercices(md.exercices, sourceModuleData.exercices, deletedExoIdsRt),
-          });
+          };
+          setModuleData((prev) => preserveNewerLocalQuestionEdits(mergedRealtimeModuleData, prev, "realtime module_editor_state refetch"));
           setDeletedCours(Array.isArray(latest.deleted_cours) ? (latest.deleted_cours as unknown as ContentItem[]) : []);
           setDeletedExercices(Array.isArray(latest.deleted_exercices) ? (latest.deleted_exercices as unknown as ExerciceItem[]) : []);
           setLoadedModuleEditorState(true);
-          if (latest.updated_at) setLastDbUpdatedAt(String(latest.updated_at));
+          markDbSnapshotApplied(latest.updated_at);
           setLastSyncAt(new Date());
           // Re-apply fournisseur overrides après reload DB (sinon perdu par le merge admin)
           setTrainerOverridesReapplyKey((k) => k + 1);
@@ -2939,6 +3063,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
     // Handle trainer quiz_questions_overrides changes in realtime
     const handleTrainerOverrideChange = async (payload: any) => {
+      const fetchStartedAt = Date.now();
       const trainerQuizIdsByModuleId: Record<number, string[]> = {
         12: ["cas-pratique-taxi"],
         7: ["connaissance-ville"],
@@ -2983,6 +3108,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       }
 
       setModuleData((prev) => {
+        if (shouldSkipFetchedQuestionState(lastDbUpdatedAtRef.current, fetchStartedAt, "realtime trainer override reload")) return prev;
+
         const updatedExercices = prev.exercices
           .map((exo) => {
             if (!exo.questions || exo.questions.length === 0) return exo;
@@ -2993,7 +3120,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 // Dernière modification gagne — fallback sur updated_at du module si la
                 // question n'a pas de _editedAt explicite (évite qu'une vieille override
                 // formateur ne ré-écrase une correction admin récente).
-                const adminTs = (q as any)._editedAt ?? lastDbUpdatedAt ?? undefined;
+                const adminTs = (q as any)._editedAt ?? lastDbUpdatedAtRef.current ?? lastDbUpdatedAt ?? undefined;
                 const winner = resolveOverrideConflict(adminTs, override.updated_at);
                 if (winner === "admin") return q;
                 return { ...q, enonce: override.enonce, choix: override.choix };
@@ -3052,6 +3179,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       lastCheckedAt = Date.now();
 
       try {
+        const fetchStartedAt = Date.now();
         const { data, error } = await supabase
           .from("module_editor_state")
           .select("module_data, deleted_cours, deleted_exercices, updated_at")
@@ -3063,6 +3191,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
         const latest = data[0];
         if (!latest?.module_data) return;
+        if (shouldSkipFetchedQuestionState(latest.updated_at, fetchStartedAt, "visibility module_editor_state refresh")) return;
 
         const md = latest.module_data as unknown as ModuleData;
         if (!Array.isArray(md.cours) || !Array.isArray(md.exercices)) return;
@@ -3086,8 +3215,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           }
           console.log("[Visibility] Refreshed module data from DB for module", module.id);
           didUpdate = true;
-          return merged;
+          return preserveNewerLocalQuestionEdits(merged, prev, "visibility module_editor_state refresh");
         });
+        markDbSnapshotApplied(latest.updated_at);
         // Re-apply fournisseur overrides après reload DB
         if (didUpdate) setTrainerOverridesReapplyKey((k) => k + 1);
       } catch (err) {
@@ -3108,6 +3238,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   }) => {
     isSavingToDbRef.current = true;
     try {
+      const savedAt = new Date().toISOString();
       // Snapshot ancienne version pour détecter les changements pédagogiques
       let previousModuleData: any = null;
       try {
@@ -3122,13 +3253,14 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       const { error } = await supabase.from("module_editor_state").upsert(
         [{
           ...dataToSave,
-          updated_at: new Date().toISOString(),
+          updated_at: savedAt,
         }],
         { onConflict: "module_id" }
       );
 
       if (error) throw error;
       saveErrorShownRef.current = false;
+      markDbSnapshotApplied(savedAt);
 
       // Détection et publication d'une notification de changement
       try {
@@ -3274,6 +3406,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   const isPratique = module.id === 6 || module.id === 8;
 
   const moveItem = (type: "cours" | "exercices", index: number, direction: "up" | "down") => {
+    markAdminLocalEdit();
     setModuleData((prev) => {
       const items = [...prev[type]];
       const swapIndex = direction === "up" ? index - 1 : index + 1;
@@ -3284,6 +3417,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   };
 
   const deleteItem = (type: "cours" | "exercices", id: number) => {
+    markAdminLocalEdit();
     setModuleData((prev) => {
       if (type === "cours") {
         const item = prev.cours.find((i) => i.id === id);
@@ -3298,6 +3432,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   };
 
   const restoreItem = (type: "cours" | "exercices", id: number) => {
+    markAdminLocalEdit();
     if (type === "cours") {
       const item = deletedCours.find((i) => i.id === id);
       if (item) {
@@ -3315,6 +3450,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   };
 
   const toggleItem = (type: "cours" | "exercices", id: number) => {
+    markAdminLocalEdit();
     setModuleData((prev) => ({
       ...prev,
       [type]: prev[type].map((i) => i.id === id ? { ...i, actif: !i.actif } : i),
@@ -3322,6 +3458,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   };
 
   const addItem = (type: "cours" | "exercices") => {
+    markAdminLocalEdit();
     const newId = Date.now();
     setModuleData((prev) => {
       if (type === "exercices" && isPratique) {
@@ -3342,6 +3479,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   };
 
   const updateExerciceQuestions = (exerciceId: number, questions: ExerciceQuestion[], deletedQuestionId?: number) => {
+    markAdminLocalEdit();
     // Save enonce-based overrides to localStorage for same-session cross-module cache invalidation.
     // DB propagation to sibling modules is handled by syncSharedExercisesToSiblingModules
     // (called after the debounced DB save) to avoid concurrent write races.
@@ -3386,6 +3524,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   };
 
   const handleFileUploaded = (type: "cours" | "exercices", itemId: number, fichier: { nom: string; url: string }) => {
+    markAdminLocalEdit();
     setModuleData((prev) => ({
       ...prev,
       [type]: prev[type].map((item) =>
@@ -3397,6 +3536,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   };
 
   const handleFileDeleted = async (type: "cours" | "exercices", itemId: number, fichierIndex: number, url: string) => {
+    markAdminLocalEdit();
     setModuleData((prev) => ({
       ...prev,
       [type]: prev[type].map((item) => {
@@ -5825,6 +5965,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                   key={cours.id}
                   item={cours}
                   onSave={(updated) => {
+                    markAdminLocalEdit();
                     setModuleData((prev) => ({
                       ...prev,
                       cours: prev.cours.map(c => c.id === updated.id ? updated : c),
