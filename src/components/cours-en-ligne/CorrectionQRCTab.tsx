@@ -273,7 +273,7 @@ const CorrectionQRCTab = () => {
         const correction = correctionsIA[q.questionId];
         const hasManualCorrection = correction && typeof correction === "object" && correction.explication?.includes("manuelle");
 
-        const app = apprenantMap[r.apprenant_id] || { nom: "Inconnu", prenom: "" };
+        const app = apprenantMap[r.apprenant_id] || { nom: "Inconnu", prenom: "", mode: "presentiel" as const };
 
         const questionDef = matiere?.questions?.find((mq: any) => mq && mq.id === q.questionId);
 
