@@ -30,6 +30,7 @@ import { PresenceCheckModal } from "@/components/cours-en-ligne/PresenceCheckMod
 import { ApprenantChatWidget } from "@/components/chat/ApprenantChatWidget";
 import { EmargementFCModal, isFormationContinue } from "@/components/cours-en-ligne/EmargementFCModal";
 import { SignatureDocumentsRequiredModal } from "@/components/cours-en-ligne/SignatureDocumentsRequiredModal";
+import { SignaturesSoirManquantesModal } from "@/components/cours-en-ligne/SignaturesSoirManquantesModal";
 import { isPresentielType, getTodayAgendaBlocs, getCurrentCreneau, type CreneauKey } from "@/lib/agendaSlots";
 import { useAuth } from "@/contexts/AuthContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -707,6 +708,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const [isInExam, setIsInExam] = useState(false);
   const [emargementFCStatus, setEmargementFCStatus] = useState<"checking" | "needed" | "signed" | "skipped" | "n/a">("checking");
   const [pendingSignaturesDone, setPendingSignaturesDone] = useState(false);
+  const [pendingSoirSignaturesDone, setPendingSoirSignaturesDone] = useState(false);
   const [emargementCreneau, setEmargementCreneau] = useState<CreneauKey | null>(null);
   const [emargementMode, setEmargementMode] = useState<"fc" | "presentiel">("fc");
   const [sessionAccessWindow, setSessionAccessWindow] = useState<SessionAccessWindow | null>(null);
@@ -1274,6 +1276,30 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
           />
         )}
       </div>
+    );
+  }
+
+  // Force trainee to sign any missing evening signatures (soir 18h30-21h) since 2026-05-11
+  if (apprenant?.id && user?.id && !embedded && !pendingSoirSignaturesDone) {
+    return (
+      <>
+        <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
+          <div className="text-center max-w-md">
+            <div className="text-5xl mb-3">🌆</div>
+            <h1 className="text-xl font-bold text-slate-900 mb-1">
+              Régularisation des signatures du soir
+            </h1>
+            <p className="text-sm text-slate-500">
+              Merci de signer les créneaux 18h30 — 21h00 manquants depuis le 11 mai.
+            </p>
+          </div>
+        </div>
+        <SignaturesSoirManquantesModal
+          apprenantId={apprenant.id}
+          userId={user.id}
+          onAllSigned={() => setPendingSoirSignaturesDone(true)}
+        />
+      </>
     );
   }
 
