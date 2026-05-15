@@ -268,9 +268,6 @@ const CorrectionQRCTab = () => {
 
     for (let idx = 0; idx < allResults.length; idx++) {
       const r: any = allResults[idx];
-      const dedupeKey = `${r.apprenant_id}__${r.quiz_id}__${r.matiere_id || ""}`;
-      if (seenApprenantQuizMatiere.has(dedupeKey)) continue;
-      seenApprenantQuizMatiere.add(dedupeKey);
       const details = r.details as any;
       if (details == null) continue;
 
