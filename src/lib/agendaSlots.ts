@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 
-export type CreneauKey = "matin" | "apres_midi" | "soir";
+export type CreneauKey = "matin" | "apres_midi" | "soir" | "soir_1" | "soir_2";
 
 export interface AgendaBloc {
   jour: number;          // 0 = lundi
