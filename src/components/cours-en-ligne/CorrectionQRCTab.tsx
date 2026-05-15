@@ -450,10 +450,24 @@ const CorrectionQRCTab = () => {
 
   const getExamNum = (titre: string) => (titre.match(/N°\s*(\d+)/)?.[1]) || "";
 
+  // Categorise by examen variant (VTC / TAXI / Passerelle TA / Passerelle VA / autre)
+  const getExamCategory = (titre: string, quizId: string): { key: string; label: string } => {
+    const t = (titre || "").toLowerCase();
+    const id = (quizId || "").toLowerCase();
+    if (t.includes("taxi") || id.includes("taxi")) return { key: "taxi", label: "TAXI" };
+    if (t.includes("passerelle ta") || id.startsWith("eb") && id.endsWith("-ta")) return { key: "ta", label: "Passerelle TA" };
+    if (t.includes("passerelle va") || id.startsWith("eb") && id.endsWith("-va")) return { key: "va", label: "Passerelle VA" };
+    return { key: "vtc", label: "VTC (E-learning)" };
+  };
+
   const filtered = items.filter(item => {
     if (filter === "pending" && item.corrigeManuel) return false;
     if (filter === "done" && !item.corrigeManuel) return false;
-    if (examenFilter !== "all" && getExamNum(item.quizTitre) !== examenFilter) return false;
+    if (examenFilter !== "all") {
+      const [cat, num] = examenFilter.split(":");
+      if (getExamCategory(item.quizTitre, item.quizId).key !== cat) return false;
+      if (num && getExamNum(item.quizTitre) !== num) return false;
+    }
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       return (
