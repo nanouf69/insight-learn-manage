@@ -550,14 +550,24 @@ const CorrectionQRCTab = () => {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Badge variant="outline" className="gap-1 py-1.5 px-3">
+          <button
+            type="button"
+            onClick={() => setFilter("pending")}
+            aria-pressed={filter === "pending"}
+            className={`inline-flex items-center gap-1 py-1.5 px-3 rounded-md border text-xs font-semibold transition-colors ${filter === "pending" ? "bg-amber-100 border-amber-400 text-amber-900" : "bg-background hover:bg-accent border-border text-foreground"}`}
+          >
             <Clock className="w-3.5 h-3.5 text-amber-500" />
             {pendingCount} en attente
-          </Badge>
-          <Badge variant="outline" className="gap-1 py-1.5 px-3">
+          </button>
+          <button
+            type="button"
+            onClick={() => setFilter("done")}
+            aria-pressed={filter === "done"}
+            className={`inline-flex items-center gap-1 py-1.5 px-3 rounded-md border text-xs font-semibold transition-colors ${filter === "done" ? "bg-green-100 border-green-400 text-green-900" : "bg-background hover:bg-accent border-border text-foreground"}`}
+          >
             <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
             {doneCount} corrigées
-          </Badge>
+          </button>
         </div>
       </div>
 
