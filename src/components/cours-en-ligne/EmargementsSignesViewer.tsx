@@ -46,12 +46,14 @@ const formatDateFR = (iso: string) => {
   }
 };
 
-const normalizeDemi = (d: string) => (d || "").toLowerCase().replace(/_/g, "-").trim();
+const normalizeDemi = (d: string) => (d || "").toLowerCase().replace(/-/g, "_").trim();
 const labelDemi = (d: string) => {
   const k = normalizeDemi(d);
   if (k === "matin") return "Matin (09h00 — 12h00)";
-  if (k === "apres-midi" || k === "après-midi") return "Après-midi (13h00 — 16h00)";
+  if (k === "apres_midi") return "Après-midi (13h00 — 16h00)";
   if (k === "soir") return "Soir (17h00 — 21h00)";
+  if (k === "soir_1") return "Soir 1ère partie (17h00 — 18h30)";
+  if (k === "soir_2") return "Soir 2ème partie (18h30 — 21h00)";
   return d;
 };
 
