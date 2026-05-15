@@ -2565,10 +2565,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   useEffect(() => {
     const initialData = getInitialModuleData(module, apprenantType, studentOnly);
     const sourceFingerprint = buildSourceFingerprint(initialData);
-    skipInitialAutosaveRef.current = true;
     setLoadedModuleEditorState(false);
     const moduleIdNumber = Number(module.id);
     const isNewModuleHydration = hydratedModuleIdRef.current !== moduleIdNumber;
+    skipInitialAutosaveRef.current = isNewModuleHydration;
     if (isNewModuleHydration) {
       hydratedModuleIdRef.current = null;
       adminLocalEditAtRef.current = 0;
