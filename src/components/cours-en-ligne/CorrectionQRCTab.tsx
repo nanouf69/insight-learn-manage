@@ -450,10 +450,24 @@ const CorrectionQRCTab = () => {
 
   const getExamNum = (titre: string) => (titre.match(/N°\s*(\d+)/)?.[1]) || "";
 
+  // Categorise by examen variant (VTC / TAXI / Passerelle TA / Passerelle VA / autre)
+  const getExamCategory = (titre: string, quizId: string): { key: string; label: string } => {
+    const t = (titre || "").toLowerCase();
+    const id = (quizId || "").toLowerCase();
+    if (t.includes("taxi") || id.includes("taxi")) return { key: "taxi", label: "TAXI" };
+    if (t.includes("passerelle ta") || id.startsWith("eb") && id.endsWith("-ta")) return { key: "ta", label: "Passerelle TA" };
+    if (t.includes("passerelle va") || id.startsWith("eb") && id.endsWith("-va")) return { key: "va", label: "Passerelle VA" };
+    return { key: "vtc", label: "VTC (E-learning)" };
+  };
+
   const filtered = items.filter(item => {
     if (filter === "pending" && item.corrigeManuel) return false;
     if (filter === "done" && !item.corrigeManuel) return false;
-    if (examenFilter !== "all" && getExamNum(item.quizTitre) !== examenFilter) return false;
+    if (examenFilter !== "all") {
+      const [cat, num] = examenFilter.split(":");
+      if (getExamCategory(item.quizTitre, item.quizId).key !== cat) return false;
+      if (num && getExamNum(item.quizTitre) !== num) return false;
+    }
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       return (
@@ -467,18 +481,27 @@ const CorrectionQRCTab = () => {
     return true;
   });
 
-  // Available exam numbers from items
-  const availableExams = Array.from(new Set(items.map(i => getExamNum(i.quizTitre)).filter(Boolean)))
-    .sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
-
-  // Pending count per exam (respects current pending filter intent)
-  const pendingByExam: Record<string, number> = {};
+  // Build available exam list grouped by category (VTC / TAXI / TA / VA), each with its numbers
+  type ExamOption = { value: string; label: string; pending: number };
+  const examOptionsByCat: Record<string, { label: string; numbers: Map<string, number> }> = {};
   for (const i of items) {
-    if (i.corrigeManuel) continue;
+    const cat = getExamCategory(i.quizTitre, i.quizId);
     const n = getExamNum(i.quizTitre);
     if (!n) continue;
-    pendingByExam[n] = (pendingByExam[n] || 0) + 1;
+    if (!examOptionsByCat[cat.key]) examOptionsByCat[cat.key] = { label: cat.label, numbers: new Map() };
+    const prev = examOptionsByCat[cat.key].numbers.get(n) || 0;
+    examOptionsByCat[cat.key].numbers.set(n, prev + (i.corrigeManuel ? 0 : 1));
   }
+  const CAT_ORDER = ["vtc", "taxi", "ta", "va"];
+  const examOptionGroups: { key: string; label: string; options: ExamOption[] }[] = CAT_ORDER
+    .filter(k => examOptionsByCat[k])
+    .map(k => ({
+      key: k,
+      label: examOptionsByCat[k].label,
+      options: Array.from(examOptionsByCat[k].numbers.entries())
+        .sort(([a], [b]) => parseInt(a, 10) - parseInt(b, 10))
+        .map(([n, pending]) => ({ value: `${k}:${n}`, label: `Examen Blanc N°${n} — ${examOptionsByCat[k].label}`, pending })),
+    }));
 
   const sortedFiltered = [...filtered].sort((a, b) => {
     const dateA = new Date(a.completedAt).getTime() || 0;
@@ -541,15 +564,22 @@ const CorrectionQRCTab = () => {
                 </span>
               )}
             </SelectItem>
-            {availableExams.map((n) => (
-              <SelectItem key={n} value={n}>
-                Examen Blanc N°{n}
-                {pendingByExam[n] > 0 && (
-                  <span className="ml-2 inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-800 border border-amber-300">
-                    {pendingByExam[n]}
-                  </span>
-                )}
-              </SelectItem>
+            {examOptionGroups.map((group) => (
+              <div key={group.key}>
+                <div className="px-2 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  {group.label}
+                </div>
+                {group.options.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                    {opt.pending > 0 && (
+                      <span className="ml-2 inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-800 border border-amber-300">
+                        {opt.pending}
+                      </span>
+                    )}
+                  </SelectItem>
+                ))}
+              </div>
             ))}
           </SelectContent>
         </Select>
