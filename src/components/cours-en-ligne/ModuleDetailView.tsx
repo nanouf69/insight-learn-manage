@@ -2564,6 +2564,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     const sourceFingerprint = buildSourceFingerprint(initialData);
     skipInitialAutosaveRef.current = true;
     setLoadedModuleEditorState(false);
+    hydratedModuleIdRef.current = null;
+    adminLocalEditAtRef.current = 0;
+    lastAppliedDbUpdatedAtRef.current = 0;
+    lastDbUpdatedAtRef.current = null;
+    setLastDbUpdatedAt(null);
 
     const loadLocalState = () => {
       if (typeof window === "undefined") return false;
@@ -2623,6 +2628,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
     (async () => {
       try {
+        const fetchStartedAt = Date.now();
         const requestTimestamp = new Date().toISOString();
         const { data, error } = await supabase
           .from("module_editor_state")
@@ -2727,6 +2733,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         }
 
         if (latestState?.module_data) {
+          if (shouldSkipFetchedQuestionState(latestState.updated_at, fetchStartedAt, "initial module_editor_state load")) {
+            setEditorStateHydrated(true);
+            return;
+          }
+
           const md = latestState.module_data as unknown as ModuleData;
           const hasMatchingSourceFingerprint = latestState.source_fingerprint === sourceFingerprint;
           // Reset uniquement sur doublons réels (corruption de données).
@@ -2792,7 +2803,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             setDeletedCours(Array.isArray(latestState.deleted_cours) ? (latestState.deleted_cours as unknown as ContentItem[]) : []);
             setDeletedExercices(Array.isArray(latestState.deleted_exercices) ? (latestState.deleted_exercices as unknown as ExerciceItem[]) : []);
             setLoadedModuleEditorState(true);
-            if (latestState.updated_at) setLastDbUpdatedAt(String(latestState.updated_at));
+            hydratedModuleIdRef.current = Number(module.id);
+            markDbSnapshotApplied(latestState.updated_at);
 
             // Admin: also re-save with updated fingerprint so future loads match
             if (!studentOnly && !hasMatchingSourceFingerprint) {
