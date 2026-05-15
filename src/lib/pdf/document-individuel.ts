@@ -512,9 +512,10 @@ export function generateDocumentIndividuelPdf(
 
   let completedDateStr = '';
   try {
-    completedDateStr = format(new Date(document.completed_at), 'dd MMMM yyyy a HH:mm', { locale: fr });
+    // Pas d'heure de signature — uniquement la date (ex: emargements)
+    completedDateStr = format(new Date(document.completed_at), 'dd MMMM yyyy', { locale: fr });
   } catch (_) {
-    completedDateStr = document.completed_at;
+    completedDateStr = (document.completed_at || '').split('T')[0] || document.completed_at;
   }
   doc.text(`Complete le : ${completedDateStr}`, pw - margin - 4, y + 2, { align: 'right' });
 
