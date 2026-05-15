@@ -173,6 +173,8 @@ function renderQA(doc: jsPDF, question: string, answer: string, y: number, margi
 }
 
 function renderField(doc: jsPDF, key: string, value: any, y: number, margin: number, pw: number): number {
+  // Demi-journee -> plage horaire
+  if (DEMI_LABEL_KEYS.has(key) && typeof value === 'string') value = formatDemiJournee(value);
   if (value === null || value === undefined || value === '') return y;
 
   if (typeof value === 'string' && isBase64(value)) {
