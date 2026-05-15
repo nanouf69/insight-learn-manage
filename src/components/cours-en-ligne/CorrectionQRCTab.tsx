@@ -37,6 +37,7 @@ interface QrcItem {
   scoreMatiereMax: number;
   commentaire: string;
   correctedAt: string | null;
+  apprenantTypeMode: "presentiel" | "elearning";
 }
 
 function safeStr(v: unknown): string {
@@ -195,11 +196,16 @@ const CorrectionQRCTab = () => {
     const apprenantIds = [...new Set(results.map((r: any) => r.apprenant_id))];
     const { data: apprenants } = await supabase
       .from("apprenants")
-      .select("id, nom, prenom")
+      .select("id, nom, prenom, type_apprenant")
       .in("id", apprenantIds);
 
-    const apprenantMap: Record<string, { nom: string; prenom: string }> = {};
-    (apprenants || []).forEach((a: any) => { apprenantMap[a.id] = { nom: a.nom, prenom: a.prenom }; });
+    const apprenantMap: Record<string, { nom: string; prenom: string; mode: "presentiel" | "elearning" }> = {};
+    (apprenants || []).forEach((a: any) => {
+      const t = String(a.type_apprenant || "").toLowerCase();
+      const mode: "presentiel" | "elearning" = t.endsWith("-e") || t.includes("-e-") ? "elearning"
+        : (t === "vtc-e-presentiel" ? "presentiel" : (t.endsWith("-e") ? "elearning" : "presentiel"));
+      apprenantMap[a.id] = { nom: a.nom, prenom: a.prenom, mode };
+    });
 
     const qrcItems: QrcItem[] = [];
     const seenQrcKeys = new Set<string>();
@@ -267,7 +273,7 @@ const CorrectionQRCTab = () => {
         const correction = correctionsIA[q.questionId];
         const hasManualCorrection = correction && typeof correction === "object" && correction.explication?.includes("manuelle");
 
-        const app = apprenantMap[r.apprenant_id] || { nom: "Inconnu", prenom: "" };
+        const app = apprenantMap[r.apprenant_id] || { nom: "Inconnu", prenom: "", mode: "presentiel" as const };
 
         const questionDef = matiere?.questions?.find((mq: any) => mq && mq.id === q.questionId);
 
@@ -316,6 +322,7 @@ const CorrectionQRCTab = () => {
           scoreMatiereMax: r.score_max ?? 20,
           commentaire: isAutoScoredRetake ? "Notation automatique par mots-clés (examen refait)" : (correction && typeof correction === "object" ? (correction.commentaire || "") : ""),
           correctedAt: (hasManualCorrection || isAutoScoredRetake) ? (correction?.correctedAt || r.completed_at || null) : null,
+          apprenantTypeMode: app.mode,
         });
       }
     }
@@ -450,14 +457,20 @@ const CorrectionQRCTab = () => {
 
   const getExamNum = (titre: string) => (titre.match(/N°\s*(\d+)/)?.[1]) || "";
 
-  // Categorise by examen variant (VTC / TAXI / Passerelle TA / Passerelle VA / autre)
-  const getExamCategory = (titre: string, quizId: string): { key: string; label: string } => {
+  // Categorise by examen variant + mode (VTC/TAXI splittés en présentiel vs e-learning)
+  const getExamCategory = (titre: string, quizId: string, mode: "presentiel" | "elearning"): { key: string; label: string } => {
     const t = (titre || "").toLowerCase();
     const id = (quizId || "").toLowerCase();
-    if (t.includes("taxi") || id.includes("taxi")) return { key: "taxi", label: "TAXI" };
-    if (t.includes("passerelle ta") || id.startsWith("eb") && id.endsWith("-ta")) return { key: "ta", label: "Passerelle TA" };
-    if (t.includes("passerelle va") || id.startsWith("eb") && id.endsWith("-va")) return { key: "va", label: "Passerelle VA" };
-    return { key: "vtc", label: "VTC (E-learning)" };
+    if (t.includes("passerelle ta") || (id.startsWith("eb") && id.endsWith("-ta"))) return { key: "ta", label: "Passerelle TA" };
+    if (t.includes("passerelle va") || (id.startsWith("eb") && id.endsWith("-va"))) return { key: "va", label: "Passerelle VA" };
+    if (t.includes("taxi") || id.includes("taxi")) {
+      return mode === "elearning"
+        ? { key: "taxi-e", label: "TAXI E-learning" }
+        : { key: "taxi-p", label: "TAXI Présentiel" };
+    }
+    return mode === "elearning"
+      ? { key: "vtc-e", label: "VTC E-learning" }
+      : { key: "vtc-p", label: "VTC Présentiel" };
   };
 
   const filtered = items.filter(item => {
@@ -465,7 +478,7 @@ const CorrectionQRCTab = () => {
     if (filter === "done" && !item.corrigeManuel) return false;
     if (examenFilter !== "all") {
       const [cat, num] = examenFilter.split(":");
-      if (getExamCategory(item.quizTitre, item.quizId).key !== cat) return false;
+      if (getExamCategory(item.quizTitre, item.quizId, item.apprenantTypeMode).key !== cat) return false;
       if (num && getExamNum(item.quizTitre) !== num) return false;
     }
     if (searchQuery) {
@@ -481,18 +494,18 @@ const CorrectionQRCTab = () => {
     return true;
   });
 
-  // Build available exam list grouped by category (VTC / TAXI / TA / VA), each with its numbers
+  // Build available exam list grouped by category, each with its numbers
   type ExamOption = { value: string; label: string; pending: number };
   const examOptionsByCat: Record<string, { label: string; numbers: Map<string, number> }> = {};
   for (const i of items) {
-    const cat = getExamCategory(i.quizTitre, i.quizId);
+    const cat = getExamCategory(i.quizTitre, i.quizId, i.apprenantTypeMode);
     const n = getExamNum(i.quizTitre);
     if (!n) continue;
     if (!examOptionsByCat[cat.key]) examOptionsByCat[cat.key] = { label: cat.label, numbers: new Map() };
     const prev = examOptionsByCat[cat.key].numbers.get(n) || 0;
     examOptionsByCat[cat.key].numbers.set(n, prev + (i.corrigeManuel ? 0 : 1));
   }
-  const CAT_ORDER = ["vtc", "taxi", "ta", "va"];
+  const CAT_ORDER = ["vtc-p", "vtc-e", "taxi-p", "taxi-e", "ta", "va"];
   const examOptionGroups: { key: string; label: string; options: ExamOption[] }[] = CAT_ORDER
     .filter(k => examOptionsByCat[k])
     .map(k => ({
