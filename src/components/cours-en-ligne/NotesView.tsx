@@ -20,6 +20,7 @@ interface QuizResult {
   duree_secondes: number | null;
   completed_at: string;
   details: any;
+  tentative?: number | null;
 }
 
 interface ModuleCompletion {
