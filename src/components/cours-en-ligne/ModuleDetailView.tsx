@@ -2477,7 +2477,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                   const override = overrideMap.get(`${exo.id}-${q.id}`);
                   if (!override) return q;
                   // Dernière modification gagne: comparer _editedAt (admin) vs updated_at (fournisseur)
-                  const winner = resolveOverrideConflict((q as any)._editedAt, override.updated_at);
+                  // Fallback sur l'updated_at global du module si la question n'a pas de _editedAt
+                  // (sinon une vieille override formateur écrase une correction admin récente).
+                  const adminTs = (q as any)._editedAt ?? lastDbUpdatedAt ?? undefined;
+                  const winner = resolveOverrideConflict(adminTs, override.updated_at);
                   if (winner === "admin") return q;
                   return { ...q, enonce: override.enonce, choix: override.choix };
                 })
