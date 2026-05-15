@@ -2910,6 +2910,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     // Refetch from DB instead of trusting the payload (which can be truncated for large JSONB)
     const refetchModuleFromDb = async () => {
       try {
+        const fetchStartedAt = Date.now();
         if (shouldSyncVtcBilanFromCours(module.id)) {
           const { data: sourceState } = await supabase
             .from("module_editor_state")
@@ -2944,6 +2945,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         if (error) throw error;
         const latest = Array.isArray(data) ? data[0] : null;
         if (!latest?.module_data) return;
+        if (shouldSkipFetchedQuestionState(latest.updated_at, fetchStartedAt, "realtime module_editor_state refetch")) return;
 
         const md = latest.module_data as unknown as ModuleData;
         const hasValidModuleData =
@@ -2971,7 +2973,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           setDeletedCours(Array.isArray(latest.deleted_cours) ? (latest.deleted_cours as unknown as ContentItem[]) : []);
           setDeletedExercices(Array.isArray(latest.deleted_exercices) ? (latest.deleted_exercices as unknown as ExerciceItem[]) : []);
           setLoadedModuleEditorState(true);
-          if (latest.updated_at) setLastDbUpdatedAt(String(latest.updated_at));
+          markDbSnapshotApplied(latest.updated_at);
           setLastSyncAt(new Date());
           // Re-apply fournisseur overrides après reload DB (sinon perdu par le merge admin)
           setTrainerOverridesReapplyKey((k) => k + 1);
