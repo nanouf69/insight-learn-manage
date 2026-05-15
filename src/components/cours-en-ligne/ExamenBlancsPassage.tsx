@@ -362,8 +362,16 @@ function PassageMatiere({
         "⚠️ Sauvegarde impossible après 3 tentatives. Vos réponses sont conservées localement. Ne fermez pas la page et contactez l'administration.",
         { duration: Infinity, id: "autosave-error" }
       );
-    }, 300);
+    }, flushImmediately ? 0 : 300);
   };
+
+  // Mark first save as done if we successfully loaded existing answers from DB
+  useEffect(() => {
+    if (initialLoaded && Object.keys(reponses).length > 0) {
+      hasSavedOnceRef.current = true;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialLoaded]);
 
   // beforeunload: flush pending save immediately
   useEffect(() => {
