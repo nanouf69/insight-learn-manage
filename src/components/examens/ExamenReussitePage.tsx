@@ -3255,8 +3255,6 @@ export function ExamenReussitePage() {
                   <TableHead className="w-8">#</TableHead>
                   <TableHead>Nom Prénom</TableHead>
                   <TableHead>N° Dossier</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Heure</TableHead>
                   <TableHead className="text-center w-44">Résultat / Action</TableHead>
                 </TableRow>
               </TableHeader>
@@ -3285,8 +3283,6 @@ export function ExamenReussitePage() {
                           <span className="text-muted-foreground">-</span>
                         )}
                       </TableCell>
-                      <TableCell className="text-xs">{a.date_examen_pratique ? formatDateShortFR(a.date_examen_pratique) : '-'}</TableCell>
-                      <TableCell className="text-xs">{(a as any).heure_examen_pratique || '-'}</TableCell>
                       <TableCell className="text-center">
                         <Select
                           value={resultatP || "non_renseigne"}
