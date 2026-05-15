@@ -271,6 +271,10 @@ function PassageMatiere({
 
   // BUG #7 FIX: generation counter to cancel stale retry loops when a new save starts
   const saveGenerationRef = useRef(0);
+  // FIRST-ANSWER FIX: track whether at least one save has succeeded for this exercise.
+  // If not yet, we flush immediately (no debounce) so the very first answer reaches the DB
+  // even if the user closes the tab right after.
+  const hasSavedOnceRef = useRef(false);
 
   const persistReponses = (updated: Reponses) => {
     // BUG #7 FIX: don't silently return when userId is null — wait for session inside debounce
@@ -279,6 +283,7 @@ function PassageMatiere({
     // BUG #7 FIX: increment generation to cancel any in-flight retry loop
     saveGenerationRef.current++;
     const myGeneration = saveGenerationRef.current;
+    const flushImmediately = !hasSavedOnceRef.current;
     debounceRef.current = setTimeout(async () => {
       setSaveStatus("saving");
       const MAX_RETRIES = 3;
