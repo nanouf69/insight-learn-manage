@@ -1905,6 +1905,7 @@ function ExerciceCard({
   onToggle,
   onUpdateQuestions,
   moduleId,
+  overrideWarnings,
 }: {
   item: ExerciceItem;
   index: number;
@@ -1914,12 +1915,15 @@ function ExerciceCard({
   onToggle: (id: number) => void;
   onUpdateQuestions: (id: number, questions: ExerciceQuestion[], deletedQuestionId?: number) => void;
   moduleId: number;
+  overrideWarnings?: Map<string, TrainerOverrideInfo>;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [fullscreenOpen, setFullscreenOpen] = useState(false);
   const [editingQId, setEditingQId] = useState<number | null>(null);
 
   const hasQuestions = item.questions && item.questions.length > 0;
+  const getOverrideWarning = (questionId: number) => overrideWarnings?.get(`${item.id}-${questionId}`);
+  const overrideWarningCount = (item.questions ?? []).filter(q => getOverrideWarning(q.id)).length;
 
   const saveQuestion = (updated: ExerciceQuestion) => {
     if (!item.questions) return;
@@ -1967,6 +1971,11 @@ function ExerciceCard({
             <h4 className="font-bold text-base">{item.titre}</h4>
             {hasQuestions && (
               <Badge variant="secondary" className="text-xs">{item.questions!.length} questions</Badge>
+            )}
+            {overrideWarningCount > 0 && (
+              <span className="badge-warning ml-2 inline-flex items-center gap-1">
+                <AlertTriangle className="w-3 h-3" /> {overrideWarningCount} override formateur
+              </span>
             )}
           </div>
           {item.sousTitre && <p className="text-sm text-muted-foreground">{item.sousTitre}</p>}
