@@ -2408,6 +2408,47 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     return false;
   };
 
+  const preserveNewerLocalQuestionEdits = (incoming: ModuleData, previous: ModuleData, context: string): ModuleData => {
+    if (studentOnly || adminLocalEditAtRef.current === 0) return incoming;
+
+    let preserved = false;
+    const previousExerciseMap = new Map((previous.exercices ?? []).map((exo) => [Number(exo.id), exo]));
+    const incomingExercices = (incoming.exercices ?? []).map((incomingExo) => {
+      const previousExo = previousExerciseMap.get(Number(incomingExo.id));
+      if (!previousExo?.questions || !incomingExo.questions) return incomingExo;
+
+      const incomingQuestionIds = new Set(incomingExo.questions.map((q) => Number(q.id)));
+      const previousQuestionMap = new Map(previousExo.questions.map((q) => [Number(q.id), q]));
+      const mergedQuestions = incomingExo.questions.map((incomingQ) => {
+        const previousQ = previousQuestionMap.get(Number(incomingQ.id));
+        if (!previousQ) return incomingQ;
+
+        const previousEditedAt = toSafeTimestamp((previousQ as any)._editedAt);
+        const incomingEditedAt = toSafeTimestamp((incomingQ as any)._editedAt);
+        if (previousEditedAt > incomingEditedAt) {
+          preserved = true;
+          return previousQ;
+        }
+
+        return incomingQ;
+      });
+
+      const locallyAddedQuestions = previousExo.questions.filter((previousQ) => {
+        if (incomingQuestionIds.has(Number(previousQ.id))) return false;
+        return toSafeTimestamp((previousQ as any)._editedAt) > 0;
+      });
+
+      if (locallyAddedQuestions.length > 0) preserved = true;
+      return { ...incomingExo, questions: [...mergedQuestions, ...locallyAddedQuestions] };
+    });
+
+    if (preserved) {
+      console.warn(`[ModuleDetailView] Preserved newer local admin question edits during ${context}`, { moduleId: module.id });
+    }
+
+    return preserved ? { ...incoming, exercices: incomingExercices } : incoming;
+  };
+
   const GENERATED_BILAN_MODULE_IDS = new Set([4, 9, 27, 29, 81, 82]);
 
   const hasDuplicateGeneratedBilanQuestions = (data: ModuleData | null | undefined) => {
