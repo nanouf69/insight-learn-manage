@@ -187,7 +187,7 @@ export function useAutoSaveReponses<T = Record<string, any>>({
             console.warn("[AutoSaveReponses] All retries failed — saved to localStorage:", backupKey);
           } catch (_) {}
         }
-      }, 300);
+      }, flushImmediately ? 0 : 300);
     },
     [apprenantId, exerciceId, exerciceType]
   );
