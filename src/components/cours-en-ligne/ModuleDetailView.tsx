@@ -3262,6 +3262,50 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       saveErrorShownRef.current = false;
       markDbSnapshotApplied(savedAt);
 
+      // 🔎 DEBUG carte grise : log the exact choix array we just wrote to DB
+      try {
+        const exos = (dataToSave.module_data?.exercices ?? []) as any[];
+        for (const exo of exos) {
+          for (const q of (exo?.questions ?? [])) {
+            const enonce = String(q?.enonce ?? "").toLowerCase();
+            if (enonce.includes("carte grise")) {
+              console.log("[CarteGriseDebug][UPSERT WRITTEN]", {
+                module_id: dataToSave.module_id,
+                exo_id: exo?.id,
+                exo_titre: exo?.titre,
+                q_id: q?.id,
+                enonce: q?.enonce,
+                choix: JSON.parse(JSON.stringify(q?.choix ?? [])),
+                savedAt,
+              });
+            }
+          }
+        }
+        // Re-read immediately to confirm what is actually stored
+        const { data: verifyRow } = await supabase
+          .from("module_editor_state")
+          .select("module_data, updated_at")
+          .eq("module_id", dataToSave.module_id)
+          .maybeSingle();
+        const vexos = ((verifyRow?.module_data as any)?.exercices ?? []) as any[];
+        for (const exo of vexos) {
+          for (const q of (exo?.questions ?? [])) {
+            const enonce = String(q?.enonce ?? "").toLowerCase();
+            if (enonce.includes("carte grise")) {
+              console.log("[CarteGriseDebug][UPSERT VERIFY READBACK]", {
+                module_id: dataToSave.module_id,
+                exo_id: exo?.id,
+                q_id: q?.id,
+                choix: JSON.parse(JSON.stringify(q?.choix ?? [])),
+                db_updated_at: verifyRow?.updated_at,
+              });
+            }
+          }
+        }
+      } catch (e) {
+        console.warn("[CarteGriseDebug] log failed", e);
+      }
+
       // Détection et publication d'une notification de changement
       try {
         const summary = diffModuleData(previousModuleData, dataToSave.module_data);
