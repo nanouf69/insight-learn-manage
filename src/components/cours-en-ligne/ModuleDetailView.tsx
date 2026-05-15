@@ -2738,6 +2738,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             setDeletedCours(Array.isArray(latestState.deleted_cours) ? (latestState.deleted_cours as unknown as ContentItem[]) : []);
             setDeletedExercices(Array.isArray(latestState.deleted_exercices) ? (latestState.deleted_exercices as unknown as ExerciceItem[]) : []);
             setLoadedModuleEditorState(true);
+            if (latestState.updated_at) setLastDbUpdatedAt(String(latestState.updated_at));
 
             // Admin: also re-save with updated fingerprint so future loads match
             if (!studentOnly && !hasMatchingSourceFingerprint) {
