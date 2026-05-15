@@ -2047,6 +2047,14 @@ function ExerciceCard({
                     )}
                     <div className="flex-1">
                       <p className="text-sm text-muted-foreground line-clamp-2"><RichText value={q.enonce} /></p>
+                      {getOverrideWarning(q.id) && (
+                        <div className="mt-2 flex items-start gap-2 rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning">
+                          <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                          <span>
+                            Override formateur détecté ({getOverrideWarning(q.id)?.quiz_id}) — les réponses admin restent prioritaires.
+                          </span>
+                        </div>
+                      )}
                       <div className="flex flex-wrap gap-1 mt-1">
                         {q.choix.map(c => (
                           <span key={c.lettre} className={`text-xs px-2 py-0.5 rounded-full ${c.correct ? "bg-emerald-100 text-emerald-700 font-semibold" : "bg-muted text-muted-foreground"}`}>
@@ -2116,6 +2124,14 @@ function ExerciceCard({
                         <Badge className="text-base shrink-0 mt-0.5 px-3 py-1">Q{qi + 1}</Badge>
                         <div className="flex-1 min-w-0">
                           <p className="text-xl font-semibold mb-3 leading-snug"><RichText value={q.enonce} /></p>
+                          {getOverrideWarning(q.id) && (
+                            <div className="mb-3 flex items-start gap-2 rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-sm text-warning">
+                              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                              <span>
+                                Override formateur détecté ({getOverrideWarning(q.id)?.quiz_id}) — les réponses admin restent prioritaires.
+                              </span>
+                            </div>
+                          )}
                           {q.image && (
                             <ImageLightbox
                               src={q.image}
