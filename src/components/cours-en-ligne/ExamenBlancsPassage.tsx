@@ -16,7 +16,11 @@ import { toast } from "sonner";
 import { TimerBadge } from "./ExamenBlancsTimer";
 import { ExamQuestionImage } from "./ExamQuestionImage";
 import type { Reponses, ReponseQCM, ReponseQRC } from "./examens-blancs-types";
-import { safeStr, safeArray, getQuestionImageValue, normalizeReponses as normalizeReponsesUtil, computeIsMultiple, applyQCMChange } from "./examens-blancs-utils";
+import {
+  safeStr, safeArray, getQuestionImageValue, normalizeReponses as normalizeReponsesUtil,
+  computeIsMultiple, applyQCMChange,
+  evaluateQrcDeterministic, computeAdmisForMatiere, normalizeNoteSur20, toFiniteNumber, clamp,
+} from "./examens-blancs-utils";
 
 function CalculatriceExamen({ onClose }: { onClose: () => void }) {
   const [display, setDisplay] = useState("0");
