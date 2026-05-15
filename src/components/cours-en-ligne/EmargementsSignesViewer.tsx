@@ -332,26 +332,37 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
         </Card>
       ) : (
         <div className="grid gap-3">
-          {groupedByDay.map(([date, { matin, apresMidi, soir }]) => (
-            <Card key={date} className="p-3">
-              <div className="flex items-center justify-between flex-wrap gap-2 mb-3 pb-2 border-b">
-                <p className="font-semibold capitalize text-sm">{formatDateFR(date)}</p>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => downloadJournee(date, matin, apresMidi, soir, apprenant)}
-                  className="h-7 text-xs"
-                >
-                  <Download className="h-3.5 w-3.5 mr-1" />
-                  Télécharger la journée
-                </Button>
-              </div>
+          {groupedByDay.map(([date, group]) => {
+            const { matin, apresMidi, soir, soir1, soir2 } = group;
+            const evening1 = soir1 || soir;
+            const evening2 = soir2;
+            const hasAnySoir = !!(evening1 || evening2);
+            const cells: Array<{ key: string; label: string; r?: EmargementRow }> = [
+              { key: "matin", label: labelDemi("matin"), r: matin },
+              { key: "apres_midi", label: labelDemi("apres_midi"), r: apresMidi },
+            ];
+            if (hasAnySoir) {
+              cells.push({ key: "soir_1", label: labelDemi("soir_1"), r: evening1 });
+              cells.push({ key: "soir_2", label: labelDemi("soir_2"), r: evening2 });
+            }
+            const colsClass = cells.length === 4 ? "sm:grid-cols-4" : "sm:grid-cols-2";
+            return (
+              <Card key={date} className="p-3">
+                <div className="flex items-center justify-between flex-wrap gap-2 mb-3 pb-2 border-b">
+                  <p className="font-semibold capitalize text-sm">{formatDateFR(date)}</p>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => downloadJournee(date, group, apprenant)}
+                    className="h-7 text-xs"
+                  >
+                    <Download className="h-3.5 w-3.5 mr-1" />
+                    Télécharger la journée
+                  </Button>
+                </div>
 
-              <div className={`grid grid-cols-1 ${soir ? "sm:grid-cols-3" : "sm:grid-cols-2"} gap-3`}>
-                {(["matin", "apres-midi", ...(soir ? (["soir"] as const) : [])] as const).map((key) => {
-                  const r = key === "matin" ? matin : key === "apres-midi" ? apresMidi : soir;
-                  const label = labelDemi(key);
-                  return (
+                <div className={`grid grid-cols-1 ${colsClass} gap-3`}>
+                  {cells.map(({ key, label, r }) => (
                     <div key={key} className="border rounded-md p-2 bg-slate-50/50">
                       <div className="flex items-center justify-between mb-1.5">
                         <span className="text-xs font-medium">{label}</span>
@@ -377,9 +388,8 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
                         )}
                       </div>
                     </div>
-                  );
-                })}
-              </div>
+                  ))}
+                </div>
             </Card>
           ))}
         </div>
