@@ -2503,7 +2503,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     }
 
     loadTrainerOverrides();
-  }, [studentOnly, module.id, apprenantType, editorStateHydrated, loadedModuleEditorState, trainerOverridesReapplyKey]);
+  }, [studentOnly, module.id, apprenantType, editorStateHydrated, loadedModuleEditorState, trainerOverridesReapplyKey, lastDbUpdatedAt]);
 
   useEffect(() => {
     const initialData = getInitialModuleData(module, apprenantType, studentOnly);
