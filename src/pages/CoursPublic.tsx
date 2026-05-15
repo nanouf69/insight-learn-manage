@@ -1032,8 +1032,12 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
       setEmargementFCStatus(data ? "signed" : "needed");
     };
     check();
+    // Re-vérifier toutes les minutes : permet de déclencher la 2e signature soir
+    // (passage automatique de soir_1 à soir_2 à 18h30) sans refresh manuel.
+    const interval = setInterval(check, 60_000);
     return () => {
       cancelled = true;
+      clearInterval(interval);
     };
   }, [embedded, user?.id, apprenant?.id, apprenant?.type_apprenant, apprenant?.formation_choisie]);
 
