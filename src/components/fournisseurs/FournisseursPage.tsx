@@ -558,6 +558,14 @@ export function FournisseursPage() {
                 <p className="text-muted-foreground py-4">Aucune adresse email renseignée pour ce fournisseur.</p>
               )}
             </TabsContent>
+
+            <TabsContent value="contrats">
+              <ContratsFranchiseTab
+                fournisseurId={selectedFournisseur.id}
+                fournisseurEmail={selectedFournisseur.email}
+                fournisseurNom={selectedFournisseur.nom}
+              />
+            </TabsContent>
           </Tabs>
         </div>
       ) : globalPageTab === "liste" ? (
