@@ -634,12 +634,12 @@ export function mergeSourceExercices<T extends MergeExerciceBase>(
       if (hasAdminEdit(loadedQ as any)) {
         // L'admin a édité : son objet entier gagne, on ne laisse pas
         // la source écraser énoncé / choix / _editedAt via le spread.
-        return {
+        return ({
           ...sourceQ,
           ...loadedQ,
           image: mergedImage,
           choix: resolvedChoix,
-        } as T;
+        } as unknown) as T;
       }
 
       return ({
