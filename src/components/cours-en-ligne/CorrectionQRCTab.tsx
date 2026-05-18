@@ -980,6 +980,18 @@ const CorrectionQRCTab = () => {
                     </div>
                   </div>
 
+                  {/* Bandeau "à vérifier" pour les examens refaits */}
+                  {item.isRetake && (
+                    <div className="rounded-lg border-2 border-amber-500 bg-amber-100 px-4 py-3 text-center">
+                      <p className="text-lg font-extrabold uppercase tracking-wide text-amber-900">
+                        ⚠️ Vérifier les réponses des QRC
+                      </p>
+                      <p className="text-xs text-amber-800 mt-1">
+                        Examen refait — notation automatique par mots-clés. Validez ou ajustez si besoin.
+                      </p>
+                    </div>
+                  )}
+
                   {/* Question */}
                   <div>
                     <p className="text-sm font-bold text-foreground">{item.enonce}</p>
