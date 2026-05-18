@@ -24,6 +24,7 @@ import { AgendaView } from "@/components/agenda/AgendaView";
 import { ExamenReussitePage } from "@/components/examens/ExamenReussitePage";
 import { PlanningRdvCarteVtc } from "@/components/planning-rdv/PlanningRdvCarteVtc";
 import CoursEnLignePage from "@/components/cours-en-ligne/CoursEnLignePage";
+import CorrecteurReponsesPage from "@/components/cours-en-ligne/CorrecteurReponsesPage";
 import { FournisseursPage } from "@/components/fournisseurs/FournisseursPage";
 import { ApprenantsCorbeille } from "@/components/apprenants/ApprenantsCorbeille";
 import { DiagnosticAccesGlobal } from "@/components/diagnostic/DiagnosticAccesGlobal";
