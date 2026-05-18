@@ -157,6 +157,7 @@ export default function ContratSignature() {
           representantNom: representantNom.trim(),
           lieu: lieu || "London",
           signatureDataUrl: sigDataUrl,
+          initiales: initiales.trim().toUpperCase(),
           pdfBase64,
         }),
       });
