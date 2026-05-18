@@ -38,6 +38,7 @@ interface QrcItem {
   commentaire: string;
   correctedAt: string | null;
   apprenantTypeMode: "presentiel" | "elearning";
+  isRetake: boolean;
 }
 
 function safeStr(v: unknown): string {
@@ -252,6 +253,9 @@ const CorrectionQRCTab = () => {
     });
     let buffer: QrcItem[] = [];
     let firstFlush = true;
+    // Collecte des QRC de repasse à persister en DB pour qu'elles ne réapparaissent plus
+    // en "En attente" au prochain chargement.
+    const retakePersistByResult: Record<string, { items: QrcItem[] }> = {};
 
     const flush = () => {
       if (buffer.length === 0) return;
@@ -355,7 +359,12 @@ const CorrectionQRCTab = () => {
           commentaire: isAutoScoredRetake ? "Notation automatique par mots-clés (examen refait)" : (correction && typeof correction === "object" ? (correction.commentaire || "") : ""),
           correctedAt: (hasManualCorrection || isAutoScoredRetake) ? (correction?.correctedAt || r.completed_at || null) : null,
           apprenantTypeMode: app.mode,
+          isRetake,
         });
+
+        if (isAutoScoredRetake) {
+          (retakePersistByResult[r.id] ||= { items: [] }).items.push(buffer[buffer.length - 1]);
+        }
       }
 
       if (buffer.length >= BATCH_SIZE) {
@@ -367,6 +376,86 @@ const CorrectionQRCTab = () => {
 
     flush();
     setLoading(false);
+
+    // === Persistance silencieuse des QRC de repasse ===
+    // Pour chaque résultat contenant des QRC auto-notées (examen refait),
+    // on écrit `correctionsIA` en DB avec le marqueur "manuelle" afin que ces
+    // questions ne réapparaissent plus jamais dans "En attente".
+    void (async () => {
+      const resultIds = Object.keys(retakePersistByResult);
+      if (resultIds.length === 0) return;
+
+      for (const resultId of resultIds) {
+        try {
+          const { data: row, error: fErr } = await supabase
+            .from("apprenant_quiz_results")
+            .select("details, score_obtenu, score_max, quiz_id, matiere_id")
+            .eq("id", resultId)
+            .single();
+          if (fErr || !row) continue;
+
+          const details: any = (row as any).details || {};
+          const correctionsIA = { ...(details.correctionsIA || {}) };
+          const nowIso = new Date().toISOString();
+          let touched = false;
+
+          for (const qrc of retakePersistByResult[resultId].items) {
+            const existing = correctionsIA[qrc.questionId];
+            if (existing && typeof existing === "object" && typeof existing.explication === "string" && existing.explication.includes("manuelle")) {
+              continue;
+            }
+            const clamped = clampToHalfStep(qrc.autoScore, qrc.pointsMax);
+            correctionsIA[qrc.questionId] = {
+              estCorrect: clamped >= qrc.pointsMax,
+              pointsObtenus: clamped,
+              nombrefautes: 0,
+              explication: `Correction manuelle (auto repasse) : ${clamped}/${qrc.pointsMax} pts — À VÉRIFIER`,
+              commentaire: "Notation automatique par mots-clés (examen refait) — à vérifier",
+              correctedAt: nowIso,
+              autoRetake: true,
+            };
+            touched = true;
+          }
+
+          if (!touched) continue;
+
+          // Recalcul score matière (sans toucher au score si déjà > 0 et nouveau = 0)
+          const examen = examenMap[(row as any).quiz_id];
+          const matiere = examen?.matieres?.find((m: Matiere) => m.id === (row as any).matiere_id);
+          const questions = details.questions || [];
+          const reponses = details.reponses || {};
+          let newScore = 0;
+          for (const qq of questions) {
+            if (!qq) continue;
+            const ptsQ = getPointsParQuestion(matiere?.id || "", qq.type || "QCM", matiere || undefined);
+            if (qq.type === "QCM" && qq.reponseCorrecte) {
+              const correctes = Array.isArray(qq.reponseCorrecte) ? [...qq.reponseCorrecte].sort() : [qq.reponseCorrecte];
+              const donnees = Array.isArray(reponses[qq.questionId]) ? [...reponses[qq.questionId]].sort() : (reponses[qq.questionId] ? [reponses[qq.questionId]] : []);
+              if (JSON.stringify(correctes) === JSON.stringify(donnees)) newScore += ptsQ;
+            } else if (qq.type === "QRC") {
+              const corr = correctionsIA[qq.questionId];
+              if (corr && typeof corr === "object") newScore += clampToHalfStep(corr.pointsObtenus || 0, ptsQ);
+            }
+          }
+          const scoreMax = (row as any).score_max || 20;
+          const safeClamped = Math.min(Math.max(newScore, 0), scoreMax);
+          const existingScore = Math.max(Number((row as any).score_obtenu) || 0, 0);
+          const protectedScore = safeClamped <= 0 && existingScore > 0 ? existingScore : safeClamped;
+          const noteSur20 = scoreMax > 0 ? Number(((protectedScore / scoreMax) * 20).toFixed(1)) : 0;
+
+          await supabase
+            .from("apprenant_quiz_results")
+            .update({
+              score_obtenu: protectedScore,
+              note_sur_20: noteSur20,
+              details: { ...details, correctionsIA },
+            } as any)
+            .eq("id", resultId);
+        } catch (e) {
+          console.warn("Persistance retake QRC échouée pour", resultId, e);
+        }
+      }
+    })();
   }, [examenMap]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
@@ -890,6 +979,18 @@ const CorrectionQRCTab = () => {
                       </Button>
                     </div>
                   </div>
+
+                  {/* Bandeau "à vérifier" pour les examens refaits */}
+                  {item.isRetake && (
+                    <div className="rounded-lg border-2 border-amber-500 bg-amber-100 px-4 py-3 text-center">
+                      <p className="text-lg font-extrabold uppercase tracking-wide text-amber-900">
+                        ⚠️ Vérifier les réponses des QRC
+                      </p>
+                      <p className="text-xs text-amber-800 mt-1">
+                        Examen refait — notation automatique par mots-clés. Validez ou ajustez si besoin.
+                      </p>
+                    </div>
+                  )}
 
                   {/* Question */}
                   <div>
