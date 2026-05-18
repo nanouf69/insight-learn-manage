@@ -1,5 +1,6 @@
 import { getPointsParQuestion, isCalculQuestion } from "./examens-blancs-data";
 import type { ExamenBlanc, Matiere, Question, CorrectionQRC, ExamScoreItem, Reponses, ReponseQCM, ReponseQRC, ResultatMatiere } from "./examens-blancs-types";
+import { hasAdminEdit, resolveCorrectAnswers } from "./resolve-correct-answers";
 
 /** Safely coerce any value to string */
 export function safeStr(v: unknown): string {
