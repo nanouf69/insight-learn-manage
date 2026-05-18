@@ -470,6 +470,29 @@ const CorrecteurReponsesPage = () => {
           </Card>
         ))}
 
+      {!loading && confirmations.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-primary" /> Confirmation DB
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {confirmations.map((item) => (
+              <div key={`${item.moduleId}-${item.exerciceId}-${item.questionId}`} className="border border-border rounded-lg p-3 text-sm">
+                <div className="font-medium">
+                  Module {item.moduleId} — Exercice {item.exerciceId} — Q{item.questionId}
+                </div>
+                <div className="text-muted-foreground mb-2">admin_locked question : {String(item.questionAdminLocked)}</div>
+                <pre className="overflow-auto rounded-md bg-muted p-3 text-xs">
+                  {JSON.stringify(item.choix, null, 2)}
+                </pre>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
       {!loading && moduleId != null && exercices.length === 0 && row && (
         <p className="text-sm text-muted-foreground">
           Aucun exercice trouvé dans la sauvegarde DB de ce module.
