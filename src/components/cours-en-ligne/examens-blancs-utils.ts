@@ -625,7 +625,7 @@ export function mergeSourceExercices<T extends MergeExerciceBase>(
       // la merger avec la source : ni l'énoncé ni les `choix.correct` ne peuvent
       // être réintroduits par la source / un override / un autre flux.
       if (isAdminLocked(loadedQ as any)) {
-        return loadedQ as T;
+        return loadedQ as unknown as T;
       }
 
       // Saved (admin edit) takes priority over source.
