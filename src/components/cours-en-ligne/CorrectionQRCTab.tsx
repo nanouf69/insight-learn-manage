@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { tousLesExamens, getPointsParQuestion, type ExamenBlanc, type Matiere } from "./examens-blancs-data";
 import { loadSavedExamens } from "./ExamensBlancsEditor";
-import { buildExamenMap, findMatiereWithFallback, getSourceQuestions } from "./exam-helpers";
+import { buildExamenMap, buildQrcDedupeKey, findMatiereWithFallback, getSourceQuestions } from "./exam-helpers";
 
 interface QrcItem {
   resultId: string;
@@ -308,11 +308,9 @@ const CorrectionQRCTab = () => {
 
       for (const q of questionList) {
         if (q.type !== "QRC") continue;
-        // Dédup volontairement SANS matiere_id : certaines matières ont des id
-        // legacy dupliqués (ex: "reglementation_taxi" vs "reglementation_taxi2")
-        // qui désignent la même matière. Une même question dans un même examen
-        // pour un même apprenant ne doit jamais apparaître deux fois.
-        const qrcKey = `${r.apprenant_id}__${r.quiz_id}__${q.questionId}`;
+        // Dédup par question réelle (id + énoncé) : les matières réutilisent souvent
+        // les ids 1, 2, 3... mais une même question legacy ne doit pas apparaître deux fois.
+        const qrcKey = buildQrcDedupeKey(r.apprenant_id, r.quiz_id, q);
         if (seenQrcKeys.has(qrcKey)) continue;
         seenQrcKeys.add(qrcKey);
 
