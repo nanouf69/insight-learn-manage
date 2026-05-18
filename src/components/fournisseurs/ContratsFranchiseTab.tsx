@@ -22,6 +22,7 @@ interface Contrat {
   sent_at: string | null;
   signed_at: string | null;
   signed_pdf_url: string | null;
+  sent_pdf_url: string | null;
   created_at: string;
 }
 
