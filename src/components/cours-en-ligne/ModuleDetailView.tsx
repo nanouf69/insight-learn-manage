@@ -2816,7 +2816,24 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               const sourceExercices = mergeSourceExercices(sourceMd.exercices, sourceInitial.exercices, deletedSourceIds);
               const syncedModuleData = getSyncedBilanVtcModuleData(initialData, sourceExercices, Number(module.id) === 4);
 
-              setModuleData((prev) => preserveNewerLocalQuestionEdits(syncedModuleData, prev, "initial generated bilan source sync"));
+              // ✅ BUGFIX revert : superposer les éditions admin sauvegardées sur le bilan lui-même
+              // (module 4/81) par-dessus les exercices reconstruits depuis le module source.
+              // Sans cela, toute édition admin (ex: Bilan Gestion Q43) est écrasée au prochain
+              // reload dès que le module source (2) a un updated_at plus récent.
+              const bilanSavedExos = Array.isArray((latestState?.module_data as any)?.exercices)
+                ? ((latestState!.module_data as any).exercices as ExerciceItem[])
+                : [];
+              const bilanDeletedExoIds = Array.isArray(latestState?.deleted_exercices)
+                ? (latestState!.deleted_exercices as any[]).map((e: any) => Number(e?.id)).filter((n) => !Number.isNaN(n))
+                : [];
+              const syncedWithBilanEdits: ModuleData = {
+                ...syncedModuleData,
+                exercices: bilanSavedExos.length > 0
+                  ? mergeSourceExercices(bilanSavedExos, syncedModuleData.exercices, bilanDeletedExoIds)
+                  : syncedModuleData.exercices,
+              };
+
+              setModuleData((prev) => preserveNewerLocalQuestionEdits(syncedWithBilanEdits, prev, "initial generated bilan source sync"));
               setDeletedCours([]);
               setDeletedExercices([]);
               setLoadedModuleEditorState(true);
@@ -3076,7 +3093,39 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               ? (sourceState.deleted_exercices as any[]).map((e: any) => Number(e?.id)).filter((n) => !Number.isNaN(n))
               : [];
             const sourceExercices = mergeSourceExercices(sourceMd.exercices, sourceInitial.exercices, deletedSourceIds);
-            setModuleData((prev) => getSyncedBilanVtcModuleData(prev, sourceExercices, Number(module.id) === 4));
+
+            // ✅ BUGFIX revert : récupérer aussi les éditions sauvegardées sur le bilan lui-même
+            // (module 4/81) et les superposer sur la reconstruction depuis le module source.
+            let bilanSavedExos: ExerciceItem[] = [];
+            let bilanDeletedExoIds: number[] = [];
+            try {
+              const { data: bilanOwnState } = await supabase
+                .from("module_editor_state")
+                .select("module_data, deleted_exercices")
+                .eq("module_id", module.id)
+                .order("updated_at", { ascending: false })
+                .limit(1)
+                .maybeSingle();
+              if (Array.isArray((bilanOwnState?.module_data as any)?.exercices)) {
+                bilanSavedExos = (bilanOwnState!.module_data as any).exercices as ExerciceItem[];
+              }
+              if (Array.isArray(bilanOwnState?.deleted_exercices)) {
+                bilanDeletedExoIds = (bilanOwnState!.deleted_exercices as any[])
+                  .map((e: any) => Number(e?.id))
+                  .filter((n) => !Number.isNaN(n));
+              }
+            } catch (e) {
+              console.warn("[Bilan VTC realtime] lecture état bilan échouée", e);
+            }
+
+            setModuleData((prev) => {
+              const synced = getSyncedBilanVtcModuleData(prev, sourceExercices, Number(module.id) === 4);
+              if (bilanSavedExos.length === 0) return synced;
+              return {
+                ...synced,
+                exercices: mergeSourceExercices(bilanSavedExos, synced.exercices, bilanDeletedExoIds),
+              };
+            });
             setDeletedCours([]);
             setDeletedExercices([]);
             setLoadedModuleEditorState(true);
