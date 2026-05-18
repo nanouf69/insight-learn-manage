@@ -498,6 +498,7 @@ const CorrectionQRCTab = () => {
   }, [examenMap, fetchData]);
 
   const handleSaveCorrection = async (item: QrcItem, newPoints: number) => {
+    lastLocalMutationRef.current = Date.now();
     const uniqueKey = `${item.resultId}-${item.questionId}`;
     setSavingId(uniqueKey);
 
