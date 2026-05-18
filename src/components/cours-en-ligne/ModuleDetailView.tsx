@@ -3093,7 +3093,39 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               ? (sourceState.deleted_exercices as any[]).map((e: any) => Number(e?.id)).filter((n) => !Number.isNaN(n))
               : [];
             const sourceExercices = mergeSourceExercices(sourceMd.exercices, sourceInitial.exercices, deletedSourceIds);
-            setModuleData((prev) => getSyncedBilanVtcModuleData(prev, sourceExercices, Number(module.id) === 4));
+
+            // ✅ BUGFIX revert : récupérer aussi les éditions sauvegardées sur le bilan lui-même
+            // (module 4/81) et les superposer sur la reconstruction depuis le module source.
+            let bilanSavedExos: ExerciceItem[] = [];
+            let bilanDeletedExoIds: number[] = [];
+            try {
+              const { data: bilanOwnState } = await supabase
+                .from("module_editor_state")
+                .select("module_data, deleted_exercices")
+                .eq("module_id", module.id)
+                .order("updated_at", { ascending: false })
+                .limit(1)
+                .maybeSingle();
+              if (Array.isArray((bilanOwnState?.module_data as any)?.exercices)) {
+                bilanSavedExos = (bilanOwnState!.module_data as any).exercices as ExerciceItem[];
+              }
+              if (Array.isArray(bilanOwnState?.deleted_exercices)) {
+                bilanDeletedExoIds = (bilanOwnState!.deleted_exercices as any[])
+                  .map((e: any) => Number(e?.id))
+                  .filter((n) => !Number.isNaN(n));
+              }
+            } catch (e) {
+              console.warn("[Bilan VTC realtime] lecture état bilan échouée", e);
+            }
+
+            setModuleData((prev) => {
+              const synced = getSyncedBilanVtcModuleData(prev, sourceExercices, Number(module.id) === 4);
+              if (bilanSavedExos.length === 0) return synced;
+              return {
+                ...synced,
+                exercices: mergeSourceExercices(bilanSavedExos, synced.exercices, bilanDeletedExoIds),
+              };
+            });
             setDeletedCours([]);
             setDeletedExercices([]);
             setLoadedModuleEditorState(true);
