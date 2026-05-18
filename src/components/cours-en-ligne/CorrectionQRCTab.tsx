@@ -315,7 +315,7 @@ const CorrectionQRCTab = () => {
 
         const pts = getPointsParQuestion(r.matiere_id || "", "QRC", matiere || undefined);
         const correction = correctionsIA[q.questionId];
-        const hasManualCorrection = correction && typeof correction === "object" && correction.explication?.includes("manuelle");
+        const hasManualCorrection = correction && typeof correction === "object" && (correction.manuel === true || correction.explication?.includes("manuelle") || correction.explication?.includes("masqué par admin"));
         const app = apprenantMap[r.apprenant_id] || { nom: "Inconnu", prenom: "", mode: "presentiel" as const };
         const questionDef = matiere?.questions?.find((mq: any) => mq && mq.id === q.questionId);
 
@@ -628,8 +628,9 @@ const CorrectionQRCTab = () => {
           estCorrect: clamped >= q.pointsMax,
           pointsObtenus: clamped,
           nombrefautes: 0,
-          explication: `Validation auto (masqué par admin) : ${clamped}/${q.pointsMax} pts`,
+          explication: `Validation manuelle (masqué par admin) : ${clamped}/${q.pointsMax} pts`,
           commentaire: "",
+          manuel: true,
           correctedAt: nowIso,
         };
       }
