@@ -22,6 +22,7 @@ const RevolutConnect = lazy(() => import("./pages/RevolutConnect"));
 const DevisPublic = lazy(() => import("./pages/DevisPublic"));
 const DevisPersonnel = lazy(() => import("./pages/DevisPersonnel"));
 const ReservationCarteVtc = lazy(() => import("./pages/ReservationCarteVtc"));
+const ContratSignature = lazy(() => import("./pages/ContratSignature"));
 const OnboardingWelcome = lazy(() => import("./pages/onboarding/OnboardingWelcome"));
 const Step1 = lazy(() => import("./pages/onboarding/steps/Step1"));
 const Step2 = lazy(() => import("./pages/onboarding/steps/Step2"));
