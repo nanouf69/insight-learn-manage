@@ -620,6 +620,14 @@ export function mergeSourceExercices<T extends MergeExerciceBase>(
       const loadedQ = loadedQuestionMap.get(Number(sourceQ.id));
       if (!loadedQ) return sourceQ;
 
+      // ⛔ Verrou permanent posé par la page « Correcteur de réponses ».
+      // Si la question DB est marquée `admin_locked`, on la renvoie SANS jamais
+      // la merger avec la source : ni l'énoncé ni les `choix.correct` ne peuvent
+      // être réintroduits par la source / un override / un autre flux.
+      if (isAdminLocked(loadedQ as any)) {
+        return loadedQ as T;
+      }
+
       // Saved (admin edit) takes priority over source.
       // For image: null means "admin explicitly deleted it" (must stay null).
       // undefined / key absent means "never set" → fall back to source image.
