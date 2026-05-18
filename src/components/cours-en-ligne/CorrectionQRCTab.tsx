@@ -361,6 +361,10 @@ const CorrectionQRCTab = () => {
           apprenantTypeMode: app.mode,
           isRetake,
         });
+
+        if (isAutoScoredRetake) {
+          (retakePersistByResult[r.id] ||= { items: [] }).items.push(buffer[buffer.length - 1]);
+        }
       }
 
       if (buffer.length >= BATCH_SIZE) {
