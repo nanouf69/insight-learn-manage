@@ -5,6 +5,7 @@ export interface ContratFranchiseData {
   lieu: string;
   date: string; // dd/mm/yyyy
   signatureDataUrl: string; // base64 PNG
+  initiales?: string; // ex: "JS"
 }
 
 /**
