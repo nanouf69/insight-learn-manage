@@ -80,6 +80,7 @@ serve(async (req) => {
                 </a>
               </p>
               <p style="font-size:13px;color:#666;">Lien sécurisé personnel — à ne pas partager : <br/><a href="${signUrl}">${signUrl}</a></p>
+              ${sentPdfUrl ? `<p style="font-size:13px;color:#666;">📄 <a href="${sentPdfUrl}">Télécharger le PDF du contrat à signer</a></p>` : ""}
               <p>Cordialement,<br/>M. Guenichi Naoufal — Gérant FTRANSPORT</p>
             </div>
             <div style="background:#f3f4f6;padding:16px;text-align:center;font-size:12px;color:#6b7280;">
