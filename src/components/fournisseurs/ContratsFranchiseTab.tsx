@@ -93,8 +93,14 @@ export function ContratsFranchiseTab({
       initiales: "—",
     });
     const url = URL.createObjectURL(blob);
-    window.open(url, "_blank");
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `Apercu-Contrat-Franchise-${new Date().toISOString().slice(0, 10)}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
     setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    toast({ title: "Aperçu téléchargé", description: "Ouvrez le PDF pour visualiser le contrat." });
   };
 
   return (
