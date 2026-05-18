@@ -1,5 +1,6 @@
 import { getPointsParQuestion, isCalculQuestion } from "./examens-blancs-data";
 import type { ExamenBlanc, Matiere, Question, CorrectionQRC, ExamScoreItem, Reponses, ReponseQCM, ReponseQRC, ResultatMatiere } from "./examens-blancs-types";
+import { hasAdminEdit, resolveCorrectAnswers } from "./resolve-correct-answers";
 
 /** Safely coerce any value to string */
 export function safeStr(v: unknown): string {
@@ -623,17 +624,30 @@ export function mergeSourceExercices<T extends MergeExerciceBase>(
       // For image: null means "admin explicitly deleted it" (must stay null).
       // undefined / key absent means "never set" → fall back to source image.
       const mergedImage = "image" in loadedQ
-        ? (loadedQ.image === null ? null : (loadedQ.image || sourceQ.image))
-        : sourceQ.image;
+        ? ((loadedQ as any).image === null ? null : ((loadedQ as any).image || (sourceQ as any).image))
+        : (sourceQ as any).image;
 
-      return {
+      // Règle dure centralisée : si la question chargée porte `_editedAt`,
+      // ses `choix` (et le `correct`) gagnent toujours sur la source.
+      const resolvedChoix = resolveCorrectAnswers(loadedQ as any, sourceQ as any);
+
+      if (hasAdminEdit(loadedQ as any)) {
+        // L'admin a édité : son objet entier gagne, on ne laisse pas
+        // la source écraser énoncé / choix / _editedAt via le spread.
+        return ({
+          ...sourceQ,
+          ...loadedQ,
+          image: mergedImage,
+          choix: resolvedChoix,
+        } as unknown) as T;
+      }
+
+      return ({
         ...sourceQ,
         ...loadedQ,
         image: mergedImage,
-        choix: Array.isArray(loadedQ.choix) && loadedQ.choix.length > 0
-          ? loadedQ.choix
-          : sourceQ.choix,
-      };
+        choix: resolvedChoix,
+      } as unknown) as T;
     });
 
     // Préserver les questions ajoutées par l'admin (IDs présents dans loaded mais pas dans source)

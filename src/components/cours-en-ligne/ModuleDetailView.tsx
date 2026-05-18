@@ -48,6 +48,7 @@ import { VILLE_STATIONS_TAXI_SLIDES } from "./slides/ville-stations-taxi-data";
 import { QuestionImageUpload } from "./QuestionImageUpload";
 import { ImageLightbox } from "./ImageLightbox";
 import { mergeSourceExercices } from "./examens-blancs-utils";
+import { hasAdminEdit, resolveCorrectAnswers } from "./resolve-correct-answers";
 
 // Images des monuments et lieux de Lyon
 import imgCathedraleStJean from "@/assets/pratique/cathedrale-st-jean.jpg";
@@ -2497,9 +2498,27 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
         const previousEditedAt = toSafeTimestamp((previousQ as any)._editedAt);
         const incomingEditedAt = toSafeTimestamp((incomingQ as any)._editedAt);
+
+        // Règle dure centralisée : si la version locale porte _editedAt
+        // alors que la version incoming ne le porte pas (ou est plus ancienne),
+        // on garde la version locale et surtout ses choix admin.
         if (previousEditedAt > incomingEditedAt) {
           preserved = true;
           return previousQ;
+        }
+
+        // Cas: les deux portent _editedAt. Même si l'incoming est plus récent,
+        // on garantit que les choix admin de la version qui a le timestamp
+        // le plus à jour gagnent — via le résolveur centralisé — pour qu'aucun
+        // autre source ne puisse jamais réinjecter les anciens `correct`.
+        if (hasAdminEdit(incomingQ as any) || hasAdminEdit(previousQ as any)) {
+          const winner = previousEditedAt > incomingEditedAt ? previousQ : incomingQ;
+          const other  = previousEditedAt > incomingEditedAt ? incomingQ : previousQ;
+          return {
+            ...incomingQ,
+            ...winner,
+            choix: resolveCorrectAnswers(winner as any, other as any),
+          } as any;
         }
 
         return incomingQ;
@@ -2624,10 +2643,17 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                   if (!override) return q;
                   // Règle dure: si la question a été modifiée par l'admin (_editedAt),
                   // les réponses correctes admin gagnent toujours, sans comparer les timestamps.
+                  if (hasAdminEdit(q as any)) return q;
                   const adminTs = (q as any)._editedAt ?? undefined;
                   const winner = resolveOverrideConflict(adminTs, override.updated_at);
                   if (winner === "admin") return q;
-                  return { ...q, enonce: override.enonce, choix: override.choix };
+                  // L'override fournisseur gagne, mais on passe quand même par le
+                  // résolveur centralisé pour garantir l'invariant admin-wins.
+                  return {
+                    ...q,
+                    enonce: override.enonce,
+                    choix: resolveCorrectAnswers(q as any, { choix: override.choix } as any),
+                  };
                 })
                 .filter((q) => q.enonce !== "__DELETED__");
 
@@ -3242,12 +3268,17 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               .map((q) => {
                 const override = overrideMap.get(`${exo.id}-${q.id}`);
                 if (!override) return q;
-                // Règle dure: si la question a été modifiée par l'admin (_editedAt),
-                // les réponses correctes admin gagnent toujours, sans comparer les timestamps.
+                // Règle dure centralisée : si la question a été modifiée par l'admin
+                // (_editedAt), ses choix gagnent TOUJOURS, sans exception.
+                if (hasAdminEdit(q as any)) return q;
                 const adminTs = (q as any)._editedAt ?? undefined;
                 const winner = resolveOverrideConflict(adminTs, override.updated_at);
                 if (winner === "admin") return q;
-                return { ...q, enonce: override.enonce, choix: override.choix };
+                return {
+                  ...q,
+                  enonce: override.enonce,
+                  choix: resolveCorrectAnswers(q as any, { choix: override.choix } as any),
+                };
               })
               .filter((q) => q.enonce !== "__DELETED__");
             if (exo.questions.length > 0 && updatedQuestions.length === 0) return null;
