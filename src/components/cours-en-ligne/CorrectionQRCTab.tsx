@@ -464,6 +464,32 @@ const CorrectionQRCTab = () => {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  // Realtime: rafraîchir automatiquement dès qu'un élève termine/modifie un examen
+  // (évite de devoir recharger la page pour voir les nouvelles QRC à corriger).
+  useEffect(() => {
+    if (Object.keys(examenMap).length === 0) return;
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+    const scheduleRefetch = () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => { fetchData(); }, 1500);
+    };
+    const channel = supabase
+      .channel("correction-qrc-results")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "apprenant_quiz_results" },
+        (payload: any) => {
+          const qt = payload?.new?.quiz_type ?? payload?.old?.quiz_type;
+          if (qt === "examen_blanc" || qt === "bilan") scheduleRefetch();
+        }
+      )
+      .subscribe();
+    return () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      supabase.removeChannel(channel);
+    };
+  }, [examenMap, fetchData]);
+
   const handleSaveCorrection = async (item: QrcItem, newPoints: number) => {
     const uniqueKey = `${item.resultId}-${item.questionId}`;
     setSavingId(uniqueKey);
