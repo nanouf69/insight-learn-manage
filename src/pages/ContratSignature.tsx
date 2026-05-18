@@ -139,6 +139,7 @@ export default function ContratSignature() {
     if (!initiales.trim()) { toast({ title: "Initiales requises", variant: "destructive" }); return; }
     if (!hasSignatureRef.current) { toast({ title: "Signature requise", variant: "destructive" }); return; }
     if (!accepted) { toast({ title: "Vous devez cocher 'Lu et approuvé'", variant: "destructive" }); return; }
+    if (!mentionValide) { toast({ title: "Mention manuscrite incorrecte", description: `Recopiez exactement : « ${MENTION_REQUISE} »`, variant: "destructive" }); return; }
     setSubmitting(true);
     try {
       const sigDataUrl = canvasRef.current!.toDataURL("image/png");
