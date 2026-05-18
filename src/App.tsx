@@ -102,6 +102,7 @@ function App() {
                 <Route path="/fournisseur/:token" element={<ErrorBoundary><FournisseurPortal /></ErrorBoundary>} />
                 <Route path="/devis" element={<ErrorBoundary><DevisPublic /></ErrorBoundary>} />
                 <Route path="/devis-personnel" element={<ErrorBoundary><DevisPersonnel /></ErrorBoundary>} />
+                <Route path="/contrat-signature/:token" element={<ErrorBoundary><ContratSignature /></ErrorBoundary>} />
                 
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
