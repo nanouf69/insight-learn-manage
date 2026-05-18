@@ -24,6 +24,7 @@ import { AgendaView } from "@/components/agenda/AgendaView";
 import { ExamenReussitePage } from "@/components/examens/ExamenReussitePage";
 import { PlanningRdvCarteVtc } from "@/components/planning-rdv/PlanningRdvCarteVtc";
 import CoursEnLignePage from "@/components/cours-en-ligne/CoursEnLignePage";
+import CorrecteurReponsesPage from "@/components/cours-en-ligne/CorrecteurReponsesPage";
 import { FournisseursPage } from "@/components/fournisseurs/FournisseursPage";
 import { ApprenantsCorbeille } from "@/components/apprenants/ApprenantsCorbeille";
 import { DiagnosticAccesGlobal } from "@/components/diagnostic/DiagnosticAccesGlobal";
@@ -58,6 +59,7 @@ const pageConfig = {
   fournisseurs: { title: "Fournisseurs", subtitle: "Gérez vos fournisseurs et leurs espaces" },
   corbeille: { title: "Corbeille", subtitle: "Éléments supprimés — restaurer ou supprimer définitivement" },
   "diagnostic-acces": { title: "Diagnostic accès", subtitle: "État d'accès e-learning de tous les apprenants" },
+  "correcteur-reponses": { title: "Correcteur de réponses", subtitle: "Verrouillage permanent des bonnes réponses par module" },
 };
 
 const fmt = (n: number) =>
@@ -258,6 +260,8 @@ const Index = () => {
         return <ApprenantsCorbeille />;
       case "diagnostic-acces":
         return <DiagnosticAccesGlobal onOpenApprenant={handleNavigateToApprenant} />;
+      case "correcteur-reponses":
+        return <CorrecteurReponsesPage />;
       case "settings":
         return <SettingsPage />;
       default:

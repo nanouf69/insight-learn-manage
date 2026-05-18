@@ -1,0 +1,364 @@
+import { useEffect, useMemo, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { MODULES_DATA } from "./formations-data";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Loader2, Lock, Save, ShieldCheck } from "lucide-react";
+import { toast } from "sonner";
+
+interface Choix {
+  lettre: string;
+  texte: string;
+  correct?: boolean;
+  explication?: string;
+  admin_locked?: boolean;
+}
+
+interface Question {
+  id: number;
+  enonce: string;
+  choix: Choix[];
+  image?: string | null;
+  _editedAt?: string;
+  admin_locked?: boolean;
+  [k: string]: any;
+}
+
+interface Exercice {
+  id: number;
+  titre: string;
+  sousTitre?: string;
+  actif?: boolean;
+  questions?: Question[];
+  [k: string]: any;
+}
+
+interface ModuleData {
+  id: number;
+  nom: string;
+  description?: string;
+  cours?: any[];
+  exercices?: Exercice[];
+  [k: string]: any;
+}
+
+interface EditorRow {
+  module_data: ModuleData;
+  deleted_cours: any[] | null;
+  deleted_exercices: any[] | null;
+  updated_at: string;
+}
+
+const sortedModules = [...MODULES_DATA].sort((a, b) => a.id - b.id);
+
+const CorrecteurReponsesPage = () => {
+  const [moduleId, setModuleId] = useState<number | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [row, setRow] = useState<EditorRow | null>(null);
+  const [exercices, setExercices] = useState<Exercice[]>([]);
+
+  const selectedModule = useMemo(
+    () => sortedModules.find((m) => m.id === moduleId) ?? null,
+    [moduleId],
+  );
+
+  const loadModule = async (id: number) => {
+    setLoading(true);
+    setRow(null);
+    setExercices([]);
+    try {
+      const { data, error } = await supabase
+        .from("module_editor_state")
+        .select("module_data, deleted_cours, deleted_exercices, updated_at")
+        .eq("module_id", id)
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      if (!data?.module_data) {
+        toast.warning(
+          "Aucune donnée sauvegardée en base pour ce module. Ouvrez-le d'abord via Cours en ligne pour initialiser, puis revenez ici.",
+        );
+        return;
+      }
+      const md = data.module_data as unknown as ModuleData;
+      setRow(data as EditorRow);
+      setExercices(Array.isArray(md.exercices) ? md.exercices : []);
+    } catch (err: any) {
+      console.error("[CorrecteurReponses] load error", err);
+      toast.error(err?.message || "Impossible de charger le module");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (moduleId != null) loadModule(moduleId);
+  }, [moduleId]);
+
+  const updateChoix = (
+    exoId: number,
+    qId: number,
+    cIdx: number,
+    patch: Partial<Choix>,
+  ) => {
+    setExercices((prev) =>
+      prev.map((exo) => {
+        if (Number(exo.id) !== Number(exoId)) return exo;
+        return {
+          ...exo,
+          questions: (exo.questions ?? []).map((q) => {
+            if (Number(q.id) !== Number(qId)) return q;
+            return {
+              ...q,
+              choix: q.choix.map((c, i) =>
+                i === cIdx ? { ...c, ...patch } : c,
+              ),
+            };
+          }),
+        };
+      }),
+    );
+  };
+
+  const updateQuestionEnonce = (exoId: number, qId: number, enonce: string) => {
+    setExercices((prev) =>
+      prev.map((exo) => {
+        if (Number(exo.id) !== Number(exoId)) return exo;
+        return {
+          ...exo,
+          questions: (exo.questions ?? []).map((q) =>
+            Number(q.id) === Number(qId) ? { ...q, enonce } : q,
+          ),
+        };
+      }),
+    );
+  };
+
+  const handleSave = async () => {
+    if (!moduleId || !row) return;
+    setSaving(true);
+    try {
+      const now = new Date().toISOString();
+      const lockedExercices: Exercice[] = exercices.map((exo) => ({
+        ...exo,
+        questions: (exo.questions ?? []).map((q) => ({
+          ...q,
+          admin_locked: true,
+          _editedAt: now,
+          choix: (q.choix ?? []).map((c) => ({
+            ...c,
+            admin_locked: true,
+          })),
+        })),
+      }));
+
+      const nextModuleData: ModuleData = {
+        ...(row.module_data || {}),
+        id: moduleId,
+        nom: selectedModule?.nom || row.module_data?.nom || `Module ${moduleId}`,
+        exercices: lockedExercices,
+      };
+
+      const { error } = await supabase
+        .from("module_editor_state")
+        .upsert(
+          {
+            module_id: moduleId,
+            module_data: nextModuleData as any,
+            deleted_cours: row.deleted_cours ?? [],
+            deleted_exercices: row.deleted_exercices ?? [],
+            source_fingerprint: `correcteur:${now}`,
+          },
+          { onConflict: "module_id" },
+        );
+      if (error) throw error;
+
+      toast.success("Réponses verrouillées et enregistrées ✅");
+      await loadModule(moduleId);
+    } catch (err: any) {
+      console.error("[CorrecteurReponses] save error", err);
+      toast.error(err?.message || "Échec de la sauvegarde");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const totalQuestions = exercices.reduce(
+    (acc, e) => acc + (e.questions?.length || 0),
+    0,
+  );
+
+  return (
+    <div className="space-y-6 max-w-5xl">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <ShieldCheck className="w-5 h-5 text-primary" />
+            Correcteur de réponses — verrouillage permanent
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Cette page lit directement la base de données et écrit chaque
+            réponse avec le flag <code>admin_locked: true</code>. Toutes les
+            fonctions de merge / rehydration ignorent ces questions et
+            n'écraseront plus jamais leurs <code>choix.correct</code>.
+          </p>
+
+          <div className="space-y-2">
+            <Label>Module</Label>
+            <Select
+              value={moduleId != null ? String(moduleId) : ""}
+              onValueChange={(v) => setModuleId(Number(v))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Sélectionner un module…" />
+              </SelectTrigger>
+              <SelectContent>
+                {sortedModules.map((m) => (
+                  <SelectItem key={m.id} value={String(m.id)}>
+                    [{m.id}] {m.nom}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {moduleId != null && (
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">
+                {loading
+                  ? "Chargement…"
+                  : `${exercices.length} exercice(s) — ${totalQuestions} question(s)`}
+              </span>
+              <Button
+                onClick={handleSave}
+                disabled={saving || loading || exercices.length === 0}
+                className="gap-2"
+              >
+                {saving ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Save className="w-4 h-4" />
+                )}
+                Verrouiller & enregistrer
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {loading && (
+        <div className="flex items-center justify-center py-12 text-muted-foreground">
+          <Loader2 className="w-5 h-5 animate-spin mr-2" /> Chargement du module…
+        </div>
+      )}
+
+      {!loading &&
+        exercices.map((exo) => (
+          <Card key={exo.id}>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <span>
+                  Exercice [{exo.id}] — {exo.titre}
+                </span>
+                {exo.sousTitre && (
+                  <Badge variant="secondary">{exo.sousTitre}</Badge>
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {(exo.questions ?? []).map((q) => {
+                const locked = q.admin_locked === true;
+                return (
+                  <div
+                    key={q.id}
+                    className="border border-border rounded-lg p-4 space-y-3 bg-card"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs text-muted-foreground">
+                        Q#{q.id}
+                      </span>
+                      {locked && (
+                        <Badge className="gap-1 bg-green-600 hover:bg-green-600">
+                          <Lock className="w-3 h-3" /> Verrouillé
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Énoncé</Label>
+                      <Textarea
+                        value={q.enonce ?? ""}
+                        onChange={(e) =>
+                          updateQuestionEnonce(exo.id, q.id, e.target.value)
+                        }
+                        rows={2}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs">Choix (cocher = correct)</Label>
+                      {(q.choix ?? []).map((c, idx) => (
+                        <div
+                          key={`${q.id}-${idx}`}
+                          className="flex items-start gap-3 p-2 rounded-md bg-muted/40"
+                        >
+                          <Checkbox
+                            checked={c.correct === true}
+                            onCheckedChange={(v) =>
+                              updateChoix(exo.id, q.id, idx, {
+                                correct: v === true,
+                              })
+                            }
+                            className="mt-2"
+                          />
+                          <div className="w-8 pt-1 font-mono text-sm text-muted-foreground">
+                            {c.lettre}
+                          </div>
+                          <Input
+                            value={c.texte ?? ""}
+                            onChange={(e) =>
+                              updateChoix(exo.id, q.id, idx, {
+                                texte: e.target.value,
+                              })
+                            }
+                            className="flex-1"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+              {(exo.questions ?? []).length === 0 && (
+                <p className="text-sm text-muted-foreground italic">
+                  Aucune question dans cet exercice.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        ))}
+
+      {!loading && moduleId != null && exercices.length === 0 && row && (
+        <p className="text-sm text-muted-foreground">
+          Aucun exercice trouvé dans la sauvegarde DB de ce module.
+        </p>
+      )}
+    </div>
+  );
+};
+
+export default CorrecteurReponsesPage;

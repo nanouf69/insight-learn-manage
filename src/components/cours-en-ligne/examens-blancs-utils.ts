@@ -1,6 +1,6 @@
 import { getPointsParQuestion, isCalculQuestion } from "./examens-blancs-data";
 import type { ExamenBlanc, Matiere, Question, CorrectionQRC, ExamScoreItem, Reponses, ReponseQCM, ReponseQRC, ResultatMatiere } from "./examens-blancs-types";
-import { hasAdminEdit, resolveCorrectAnswers } from "./resolve-correct-answers";
+import { hasAdminEdit, isAdminLocked, resolveCorrectAnswers } from "./resolve-correct-answers";
 
 /** Safely coerce any value to string */
 export function safeStr(v: unknown): string {
@@ -619,6 +619,14 @@ export function mergeSourceExercices<T extends MergeExerciceBase>(
       .map((sourceQ) => {
       const loadedQ = loadedQuestionMap.get(Number(sourceQ.id));
       if (!loadedQ) return sourceQ;
+
+      // ⛔ Verrou permanent posé par la page « Correcteur de réponses ».
+      // Si la question DB est marquée `admin_locked`, on la renvoie SANS jamais
+      // la merger avec la source : ni l'énoncé ni les `choix.correct` ne peuvent
+      // être réintroduits par la source / un override / un autre flux.
+      if (isAdminLocked(loadedQ as any)) {
+        return loadedQ as unknown as T;
+      }
 
       // Saved (admin edit) takes priority over source.
       // For image: null means "admin explicitly deleted it" (must stay null).

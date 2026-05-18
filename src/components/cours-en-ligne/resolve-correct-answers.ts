@@ -18,6 +18,10 @@ export interface ChoixLike {
   texte: string;
   correct?: boolean;
   explication?: string;
+  /** Verrou permanent posé par la page "Correcteur de réponses".
+   *  Toute fonction de merge / rehydration DOIT renvoyer la question telle quelle
+   *  sans jamais écraser ses `choix` ni son `correct` quand cette valeur est `true`. */
+  admin_locked?: boolean;
 }
 
 export interface QuestionLike {
@@ -27,6 +31,9 @@ export interface QuestionLike {
   image?: string | null;
   _editedAt?: string;
   manually_edited?: boolean;
+  /** Verrou permanent au niveau question (alias du flag sur les choix).
+   *  Si présent et true, la question gagne sans exception. */
+  admin_locked?: boolean;
 }
 
 /**
@@ -38,6 +45,19 @@ export function hasAdminEdit(q: QuestionLike | null | undefined): boolean {
   if (!q) return false;
   if (typeof q._editedAt === "string" && q._editedAt.trim().length > 0) return true;
   if (q.manually_edited === true) return true;
+  if (isAdminLocked(q)) return true;
+  return false;
+}
+
+/**
+ * True si la question (ou au moins un de ses choix) porte `admin_locked: true`.
+ * Quand c'est le cas, AUCUN merge ne doit modifier la question : elle est gelée
+ * définitivement par la page "Correcteur de réponses".
+ */
+export function isAdminLocked(q: QuestionLike | null | undefined): boolean {
+  if (!q) return false;
+  if (q.admin_locked === true) return true;
+  if (Array.isArray(q.choix) && q.choix.some((c) => c?.admin_locked === true)) return true;
   return false;
 }
 

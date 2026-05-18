@@ -19,7 +19,8 @@ import {
   Monitor,
   Package,
   Trash2,
-  ShieldCheck
+  ShieldCheck,
+  Lock
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -50,6 +51,7 @@ const menuItems = [
   { id: "cours-en-ligne", label: "Cours en ligne", icon: Monitor },
   { id: "fournisseurs", label: "Fournisseurs", icon: Package },
   { id: "diagnostic-acces", label: "Diagnostic accès", icon: ShieldCheck },
+  { id: "correcteur-reponses", label: "Correcteur de réponses", icon: Lock },
   { id: "corbeille", label: "Corbeille", icon: Trash2 },
 ];
 

@@ -48,7 +48,7 @@ import { VILLE_STATIONS_TAXI_SLIDES } from "./slides/ville-stations-taxi-data";
 import { QuestionImageUpload } from "./QuestionImageUpload";
 import { ImageLightbox } from "./ImageLightbox";
 import { mergeSourceExercices } from "./examens-blancs-utils";
-import { hasAdminEdit, resolveCorrectAnswers } from "./resolve-correct-answers";
+import { hasAdminEdit, isAdminLocked, resolveCorrectAnswers } from "./resolve-correct-answers";
 
 // Images des monuments et lieux de Lyon
 import imgCathedraleStJean from "@/assets/pratique/cathedrale-st-jean.jpg";
@@ -2494,6 +2494,18 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       const previousQuestionMap = new Map(previousExo.questions.map((q) => [Number(q.id), q]));
       const mergedQuestions = incomingExo.questions.map((incomingQ) => {
         const previousQ = previousQuestionMap.get(Number(incomingQ.id));
+
+        // ⛔ Verrou permanent : si la version locale (ou la version incoming)
+        // porte `admin_locked`, on gèle la question dans son état verrouillé
+        // sans jamais merger avec l'autre source.
+        if (isAdminLocked(previousQ as any)) {
+          preserved = true;
+          return previousQ;
+        }
+        if (isAdminLocked(incomingQ as any)) {
+          return incomingQ;
+        }
+
         if (!previousQ) return incomingQ;
 
         const previousEditedAt = toSafeTimestamp((previousQ as any)._editedAt);
