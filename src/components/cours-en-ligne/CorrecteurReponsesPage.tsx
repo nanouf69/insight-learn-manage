@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { MODULES_DATA } from "./formations-data";
 import { Button } from "@/components/ui/button";
@@ -124,11 +124,6 @@ const CorrecteurReponsesPage = () => {
   const [row, setRow] = useState<EditorRow | null>(null);
   const [exercices, setExercices] = useState<Exercice[]>([]);
   const [confirmations, setConfirmations] = useState<SaveConfirmation[]>([]);
-
-  const selectedModule = useMemo(
-    () => sortedModules.find((m) => m.id === moduleId) ?? null,
-    [moduleId],
-  );
 
   const loadModule = async (id: number, clearConfirmations = true) => {
     setLoading(true);
