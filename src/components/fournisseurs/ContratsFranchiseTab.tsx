@@ -38,6 +38,7 @@ export function ContratsFranchiseTab({
   const [sending, setSending] = useState(false);
   const [email, setEmail] = useState(fournisseurEmail || "");
   const [destNom, setDestNom] = useState(fournisseurNom);
+  const [pdfOnly, setPdfOnly] = useState(false);
 
   const load = async () => {
     setLoading(true);
