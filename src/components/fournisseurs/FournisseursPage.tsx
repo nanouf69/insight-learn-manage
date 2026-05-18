@@ -291,6 +291,7 @@ export function FournisseursPage() {
             <Button variant="outline" size="sm" className="gap-1 ml-auto" onClick={() => openEdit(selectedFournisseur)}>
               <Pencil className="w-3.5 h-3.5" />Modifier
             </Button>
+          </div>
 
           <Tabs value={detailTab} onValueChange={setDetailTab}>
             <TabsList className="flex-wrap">
