@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -156,6 +156,9 @@ const CorrectionQRCTab = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
   const [examenFilter, setExamenFilter] = useState<string>("all");
+  // Garde anti-écrasement : ignore les refetch Realtime juste après une action locale
+  // (sauvegarde / masquage), le temps que Supabase propage le `manuel: true`.
+  const lastLocalMutationRef = useRef<number>(0);
 
   const QUICK_COMMENTS = [
     "Précisez !!!",
@@ -471,7 +474,11 @@ const CorrectionQRCTab = () => {
     let debounceTimer: ReturnType<typeof setTimeout> | null = null;
     const scheduleRefetch = () => {
       if (debounceTimer) clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(() => { fetchData(); }, 1500);
+      debounceTimer = setTimeout(() => {
+        // Ignore les events provoqués par nos propres updates locaux (8 s de garde)
+        if (Date.now() - lastLocalMutationRef.current < 8000) return;
+        fetchData();
+      }, 1500);
     };
     const channel = supabase
       .channel("correction-qrc-results")
@@ -491,6 +498,7 @@ const CorrectionQRCTab = () => {
   }, [examenMap, fetchData]);
 
   const handleSaveCorrection = async (item: QrcItem, newPoints: number) => {
+    lastLocalMutationRef.current = Date.now();
     const uniqueKey = `${item.resultId}-${item.questionId}`;
     setSavingId(uniqueKey);
 
@@ -622,6 +630,7 @@ const CorrectionQRCTab = () => {
       `Masquer les ${pendingForApp.length} QRC en attente de ${apprenantLabel} ?\n\nElles seront marquées comme corrigées avec leur note auto et déplacées dans "Déjà corrigées".`
     );
     if (!ok) return;
+    lastLocalMutationRef.current = Date.now();
 
     setSavingId(`hide-${apprenantId}`);
 
