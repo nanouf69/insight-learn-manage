@@ -10,7 +10,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { fournisseurId, destinataireEmail, destinataireNom, titre } = await req.json();
+    const { fournisseurId, destinataireEmail, destinataireNom, titre, sentPdfUrl } = await req.json();
     if (!fournisseurId || !destinataireEmail) {
       return new Response(JSON.stringify({ error: "fournisseurId et destinataireEmail requis" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -33,6 +33,7 @@ serve(async (req) => {
         destinataire_email: destinataireEmail,
         destinataire_nom: destinataireNom || null,
         sent_at: new Date().toISOString(),
+        sent_pdf_url: sentPdfUrl || null,
       })
       .select()
       .single();
