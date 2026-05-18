@@ -172,9 +172,26 @@ export function ContratsFranchiseTab({
               <Label>Email destinataire *</Label>
               <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="contact@finallyacademy.com" />
             </div>
+
+            <div className="rounded-md border bg-muted/40 p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">À remplir par le franchiseur</p>
+                <Button type="button" size="sm" variant="ghost" onClick={previewContract} className="h-7 gap-1 text-xs">
+                  <FileText className="w-3 h-3" />Aperçu PDF
+                </Button>
+              </div>
+              <ul className="text-xs space-y-1 list-disc pl-4 text-muted-foreground">
+                <li>Nom complet du représentant légal de Finally Academy</li>
+                <li>Initiales (paraphe apposé sur chaque page)</li>
+                <li>Lieu de signature (défaut : London)</li>
+                <li>Signature manuscrite (souris ou doigt)</li>
+                <li>Validation de la case « Lu et approuvé — Bon pour accord »</li>
+              </ul>
+            </div>
+
             <p className="text-xs text-muted-foreground">
               Un email contenant un lien sécurisé sera envoyé. Le destinataire pourra consulter le contrat,
-              renseigner le nom du représentant et signer en ligne. Vous serez notifié à la signature.
+              renseigner les champs ci-dessus et signer en ligne. Vous serez notifié à la signature et retrouverez le PDF signé ici.
             </p>
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setOpen(false)} disabled={sending}>Annuler</Button>
