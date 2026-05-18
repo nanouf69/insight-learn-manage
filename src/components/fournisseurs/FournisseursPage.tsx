@@ -288,7 +288,9 @@ export function FournisseursPage() {
             <Button variant="outline" size="sm" onClick={() => setSelectedFournisseur(null)}>← Retour</Button>
             <h3 className="text-lg font-semibold">{selectedFournisseur.nom}</h3>
             <Badge variant={selectedFournisseur.actif ? "default" : "secondary"}>{selectedFournisseur.actif ? "Actif" : "Inactif"}</Badge>
-          </div>
+            <Button variant="outline" size="sm" className="gap-1 ml-auto" onClick={() => openEdit(selectedFournisseur)}>
+              <Pencil className="w-3.5 h-3.5" />Modifier
+            </Button>
 
           <Tabs value={detailTab} onValueChange={setDetailTab}>
             <TabsList className="flex-wrap">
