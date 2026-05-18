@@ -283,16 +283,18 @@ const CorrectionQRCTab = () => {
       const countKey = `${r.apprenant_id}__${r.quiz_id}__${r.matiere_id || ""}`;
       const isRetake = (attemptCounts[countKey] || 1) > 1;
 
-      let questionList = Array.isArray(details.questions) && details.questions.length > 0
-        ? details.questions
+      const reponses = details.reponses || {};
+      let questionList: any[] | null = Array.isArray(details.questions) && details.questions.length > 0
+        ? [...details.questions]
         : null;
 
-      const reponses = details.reponses || {};
-      if (!questionList && matiere && (Object.keys(correctionsIA).length > 0 || Object.keys(reponses).length > 0)) {
+      // Build/augment from source so we NEVER miss a QRC question (legacy rows
+      // sometimes saved only QCM entries, or saved details.questions=[] entirely).
+      if (matiere && (Object.keys(correctionsIA).length > 0 || Object.keys(reponses).length > 0)) {
         const sourceQuestions = getSourceQuestions(matiere, tousLesExamens);
-        questionList = sourceQuestions.map((mq: any) => {
-          if (!mq) return null;
-          return {
+        if (sourceQuestions.length > 0) {
+          const existingIds = new Set<number>((questionList || []).map((q: any) => Number(q?.questionId)).filter(n => Number.isFinite(n)));
+          const buildFromSource = (mq: any) => ({
             questionId: mq.id,
             enonce: mq.enonce || "",
             type: mq.type || "QCM",
@@ -300,11 +302,34 @@ const CorrectionQRCTab = () => {
             reponseCorrecte: mq.type === "QCM" && mq.choix
               ? mq.choix.filter((c: any) => c.correct).map((c: any) => c.lettre)
               : (mq.reponseQRC || (mq.reponses_possibles || []).join(" / ")),
-          };
-        }).filter(Boolean);
+          });
+          if (!questionList) {
+            questionList = sourceQuestions.map((mq: any) => mq ? buildFromSource(mq) : null).filter(Boolean) as any[];
+          } else {
+            for (const mq of sourceQuestions) {
+              if (!mq) continue;
+              const qid = Number(mq.id);
+              if (Number.isFinite(qid) && !existingIds.has(qid)) {
+                questionList.push(buildFromSource(mq));
+                existingIds.add(qid);
+              }
+            }
+          }
+        }
       }
 
-      if (!questionList) continue;
+      if (!questionList || questionList.length === 0) {
+        if (Object.keys(reponses).length > 0 || Object.keys(correctionsIA).length > 0) {
+          console.warn("[CorrectionQRC] Row skipped (no questions resolvable)", {
+            resultId: r.id,
+            apprenant: `${apprenantMap[r.apprenant_id]?.nom || "?"} ${apprenantMap[r.apprenant_id]?.prenom || ""}`,
+            quizId: r.quiz_id,
+            matiereId: r.matiere_id,
+            matiereFound: !!matiere,
+          });
+        }
+        continue;
+      }
 
       for (const q of questionList) {
         if (q.type !== "QRC") continue;
