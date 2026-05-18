@@ -313,7 +313,7 @@ export default function ContratSignature() {
               <p className="text-xs text-muted-foreground mt-1">Ces initiales seront apposées en pied de chaque page du contrat.</p>
             </div>
             <div>
-              <Label>Lieu de signature</Label>
+              <Label>Lieu de signature *</Label>
               <Input value={lieu} onChange={(e) => setLieu(e.target.value)} placeholder="London" />
             </div>
             <div>
