@@ -553,6 +553,7 @@ const CorrectionQRCTab = () => {
       explication: `Correction manuelle par l'administrateur : ${clamped}/${item.pointsMax} pts`,
       commentaire: commentaire || "",
       correctedAt: new Date().toISOString(),
+      manuel: true,
     };
 
     // Recalculate total score for this matiere
