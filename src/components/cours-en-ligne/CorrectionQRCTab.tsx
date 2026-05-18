@@ -877,6 +877,17 @@ const CorrectionQRCTab = () => {
                       <Badge variant="outline" className="font-bold text-sm">
                         📊 {item.noteSur20 != null ? `${item.noteSur20}/20` : `${item.scoreMatiereObtenu}/${item.scoreMatiereMax}`}
                       </Badge>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 px-2 text-xs gap-1 border-amber-300 text-amber-800 hover:bg-amber-50"
+                        disabled={savingId === `hide-${item.apprenantId}`}
+                        onClick={() => handleHideApprenant(item.apprenantId, `${item.apprenantPrenom} ${item.apprenantNom}`.trim())}
+                        title="Marque toutes les QRC en attente de cet apprenant comme corrigées (note auto) et les déplace dans Déjà corrigées."
+                      >
+                        <EyeOff className="w-3.5 h-3.5" />
+                        {savingId === `hide-${item.apprenantId}` ? "..." : "Ne plus afficher cet apprenant"}
+                      </Button>
                     </div>
                   </div>
 
