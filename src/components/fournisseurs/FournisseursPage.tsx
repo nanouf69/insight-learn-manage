@@ -303,6 +303,7 @@ export function FournisseursPage() {
               <TabsTrigger value="documents" className="gap-2"><FileText className="w-4 h-4" />Docs apprenants ({detailDocuments.length})</TabsTrigger>
               <TabsTrigger value="factures" className="gap-2"><Receipt className="w-4 h-4" />Factures ({detailFactures.length})</TabsTrigger>
               <TabsTrigger value="messages" className="gap-2"><Mail className="w-4 h-4" />Messages</TabsTrigger>
+              <TabsTrigger value="contrats" className="gap-2"><FileSignature className="w-4 h-4" />Contrats</TabsTrigger>
             </TabsList>
 
             <TabsContent value="coordonnees">
