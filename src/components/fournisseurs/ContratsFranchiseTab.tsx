@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { FileSignature, Send, Loader2, Eye, Copy, CheckCircle2, Clock } from "lucide-react";
+import { FileSignature, Send, Loader2, Eye, Copy, CheckCircle2, Clock, FileText } from "lucide-react";
+import { generateContratFranchisePdf } from "@/lib/pdf/contrat-franchise";
 
 interface Contrat {
   id: string;
