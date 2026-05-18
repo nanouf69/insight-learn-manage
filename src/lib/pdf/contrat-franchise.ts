@@ -233,5 +233,43 @@ export function generateContratFranchisePdf(data: ContratFranchiseData): Blob {
   doc.setFontSize(9);
   doc.text("Mention manuscrite : « Lu et approuvé — Bon pour accord »", margin, y);
 
+  // Paraphes (initiales) sur chaque page
+  const initiales = (data.initiales || data.representantNom || "")
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((w) => w[0]?.toUpperCase() || "")
+    .join("")
+    .slice(0, 4) || "—";
+  const totalPages = doc.getNumberOfPages();
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
+    const py = pageH - 10;
+    // Paraphe Franchiseur (droite)
+    doc.setDrawColor(150);
+    doc.setLineWidth(0.2);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(90);
+    doc.text("Paraphe Franchiseur :", pageW - margin - 28, py - 1);
+    doc.rect(pageW - margin - 14, py - 6, 14, 8);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(20);
+    doc.text(initiales, pageW - margin - 7, py - 0.5, { align: "center" });
+    // Paraphe Franchisé (gauche)
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(90);
+    doc.text("Paraphe Franchisé :", margin, py - 1);
+    doc.rect(margin + 28, py - 6, 14, 8);
+    doc.setTextColor(20);
+    // pagination centrale
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(8);
+    doc.setTextColor(120);
+    doc.text(`Page ${i} / ${totalPages}`, pageW / 2, py, { align: "center" });
+    doc.setTextColor(0);
+  }
+
   return doc.output("blob");
 }
