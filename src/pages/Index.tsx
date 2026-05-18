@@ -260,6 +260,8 @@ const Index = () => {
         return <ApprenantsCorbeille />;
       case "diagnostic-acces":
         return <DiagnosticAccesGlobal onOpenApprenant={handleNavigateToApprenant} />;
+      case "correcteur-reponses":
+        return <CorrecteurReponsesPage />;
       case "settings":
         return <SettingsPage />;
       default:
