@@ -828,6 +828,7 @@ export type Database = {
           metadata: Json | null
           representant_nom: string | null
           sent_at: string | null
+          sent_pdf_url: string | null
           signature_data_url: string | null
           signed_at: string | null
           signed_pdf_path: string | null
@@ -848,6 +849,7 @@ export type Database = {
           metadata?: Json | null
           representant_nom?: string | null
           sent_at?: string | null
+          sent_pdf_url?: string | null
           signature_data_url?: string | null
           signed_at?: string | null
           signed_pdf_path?: string | null
@@ -868,6 +870,7 @@ export type Database = {
           metadata?: Json | null
           representant_nom?: string | null
           sent_at?: string | null
+          sent_pdf_url?: string | null
           signature_data_url?: string | null
           signed_at?: string | null
           signed_pdf_path?: string | null
