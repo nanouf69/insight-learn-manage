@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, CheckCircle2, FileText, Eraser } from "lucide-react";
-import { generateContratFranchisePdf } from "@/lib/pdf/contrat-franchise";
+import { buildContratFranchiseContent, generateContratFranchisePdf, type ContratFranchiseBlock } from "@/lib/pdf/contrat-franchise";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -216,6 +216,58 @@ export default function ContratSignature() {
     setTimeout(() => URL.revokeObjectURL(url), 60_000);
   };
 
+  const contratBlocks = buildContratFranchiseContent({
+    representantNom: representantNom.trim() || "______________",
+    lieu: lieu || "London",
+    date: new Date().toLocaleDateString("fr-FR"),
+    signatureDataUrl: "",
+    initiales: initiales || "—",
+  });
+
+  const renderContractBlock = (block: ContratFranchiseBlock, index: number) => {
+    const text = "text" in block ? (typeof block.text === "function" ? block.text({ representantNom, lieu, date: new Date().toLocaleDateString("fr-FR"), signatureDataUrl: "", initiales }) : block.text) : "";
+    if (block.type === "title") return <p key={index} className="font-bold text-center text-base">{text}</p>;
+    if (block.type === "subtitle") return <p key={index} className="text-center">{text}</p>;
+    if (block.type === "italic") return <p key={index} className="italic text-center text-muted-foreground text-xs">{text}</p>;
+    if (block.type === "heading2") return <p key={index} className="font-bold mt-4">{text}</p>;
+    if (block.type === "heading3") return <p key={index} className="font-semibold mt-3">{text}</p>;
+    if (block.type === "noteHeading") return <p key={index} className="font-bold italic mt-4">{text}</p>;
+    if (block.type === "box") return <p key={index} className="bg-muted/60 border rounded p-2 font-semibold whitespace-pre-line">{text}</p>;
+    if (block.type === "paragraph") return <p key={index} className="whitespace-pre-line">{text}</p>;
+    if (block.type === "bullets") {
+      return (
+        <ul key={index} className="list-disc pl-5 space-y-1">
+          {block.items.map((item, itemIndex) => (
+            <li key={itemIndex}>{typeof item === "function" ? item({ representantNom, lieu, date: new Date().toLocaleDateString("fr-FR"), signatureDataUrl: "", initiales }) : item}</li>
+          ))}
+        </ul>
+      );
+    }
+    if (block.type === "table") {
+      return (
+        <div key={index} className="overflow-x-auto">
+          <table className="w-full border-collapse text-xs">
+            <tbody>
+              {block.rows.map((row, rowIndex) => (
+                <tr key={rowIndex}>
+                  {row.map((cell, cellIndex) => {
+                    const content = typeof cell === "function" ? cell({ representantNom, lieu, date: new Date().toLocaleDateString("fr-FR"), signatureDataUrl: "", initiales }) : cell;
+                    return (
+                      <td key={cellIndex} className={`border p-2 align-top whitespace-pre-line ${rowIndex < (block.headerRows || 0) || rowIndex >= block.rows.length - 2 ? "font-semibold bg-muted/60" : ""}`}>
+                        {content}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
     <div className="min-h-screen bg-muted/30 py-8 px-4">
       <div className="max-w-3xl mx-auto space-y-6">
@@ -232,109 +284,7 @@ export default function ContratSignature() {
             </Button>
           </CardHeader>
           <CardContent className="text-sm leading-relaxed max-h-[600px] overflow-y-auto space-y-3 bg-card border rounded p-4">
-            <p className="font-bold text-center text-base">CONTRAT DE FRANCHISE</p>
-            <p className="text-center">FINALLY ACADEMY LTD / FTRANSPORT SERVICES PRO</p>
-            <p className="italic text-center text-muted-foreground text-xs">Version protégée — applicable depuis le début du partenariat</p>
-
-            <p className="font-bold mt-4">ARTICLE PRÉLIMINAIRE — ANNULATION DU CONTRAT PRÉCÉDENT</p>
-            <p className="bg-muted/60 border rounded p-2 font-semibold">CLAUSE D'ANNULATION : Le présent contrat annule et remplace intégralement tout accord, contrat de franchise ou document contractuel antérieur conclu entre FTRANSPORT SERVICES PRO et la société RSTARTR (SIRET 913 343 489), ainsi que toute entité liée à RSTARTR (notamment SASU THE BUILDERY). Aucune clause, obligation ou condition financière issue de ces accords ne subsiste à compter de la signature des présentes.</p>
-            <ul className="list-disc pl-5 space-y-1">
-              <li>L'ancien contrat RSTARTR est réputé nul et sans effet.</li>
-              <li>Aucune somme calculée sur la base des conditions de l'ancien contrat n'est due.</li>
-              <li>Le présent contrat constitue le seul accord régissant les relations entre les parties.</li>
-            </ul>
-
-            <p className="font-bold mt-3">ENTRE LES SOUSSIGNÉS</p>
-            <p><strong>Le Franchiseur :</strong></p>
-            <p>FINALLY ACADEMY LTD — Société de droit britannique<br/>124-128 City Road, London EC1V 2NX, United Kingdom<br/>Company registration number : 16512432<br/>Non assujettie à la TVA (below UK VAT threshold)<br/>Représentée par : {representantNom || "______________"}<br/><em>Ci-après désignée « le Franchiseur »</em></p>
-            <p><strong>Le Franchisé :</strong></p>
-            <p>FTRANSPORT SERVICES PRO — SASU au capital de 5 000 €<br/>SIRET : 823 461 561 000 18 — NDA : 84 69 15114 69<br/>86 route de Genas, 69003 Lyon<br/>Certifiée Qualiopi — Référencée MonCompteFormation (EDOF)<br/>Représentée par M. Guenichi Naoufal, en qualité de Gérant<br/><em>Ci-après désignée « le Franchisé »</em></p>
-
-            <p className="font-bold mt-3">PRÉAMBULE</p>
-            <p>FINALLY ACADEMY LTD propose un concept de franchise dans la formation professionnelle. Le Franchisé, titulaire d'un référencement actif sur MonCompteFormation et certifié Qualiopi, souhaite bénéficier de l'accompagnement du Franchiseur. Le présent contrat est conclu en remplacement intégral de tout accord antérieur (notamment RSTARTR) et définit les nouvelles conditions financières et opérationnelles applicables depuis le début du partenariat.</p>
-            <p>Le Franchisé demeure l'unique responsable vis-à-vis de la CDC et de tout organisme de contrôle français. Le Franchiseur, société de droit britannique, ne peut être tenu responsable des obligations réglementaires françaises incombant au Franchisé.</p>
-
-            <p className="font-bold mt-3">ARTICLE 1 — OBJET DU CONTRAT</p>
-            <p>Le Franchiseur concède au Franchisé le droit d'utiliser le concept, savoir-faire et outils FINALLY ACADEMY LTD :</p>
-            <ul className="list-disc pl-5 space-y-1">
-              <li>Mise à disposition d'outils pédagogiques et administratifs</li>
-              <li>Apport de prospects / leads qualifiés (conditions Article 5)</li>
-              <li>Assistance commerciale et administrative</li>
-              <li>Accès à la plateforme e-learning FINALLY ACADEMY</li>
-            </ul>
-            <p>Le Franchisé conserve son indépendance totale dans la gestion de son activité, de son référencement MCF et de sa certification Qualiopi.</p>
-
-            <p className="font-bold mt-3">ARTICLE 2 — CONDITIONS FINANCIÈRES</p>
-            <p><strong>2.1 — Répartition des encaissements</strong></p>
-            <p className="bg-muted/60 border rounded p-2 font-semibold">Sur chaque encaissement perçu par FTRANSPORT SERVICES PRO au titre des formations : 50% sont reversés au Franchiseur (FINALLY ACADEMY LTD) et 50% restent acquis au Franchisé. Ces conditions remplacent toute condition antérieure (notamment les 90% prévus dans l'ancien contrat RSTARTR).</p>
-            <p>Répartition indicative des 50% Franchiseur :</p>
-            <ul className="list-disc pl-5 space-y-1">
-              <li>Redevance de franchise (marque, savoir-faire) : 15%</li>
-              <li>Redevance d'assistance et accompagnement : 10%</li>
-              <li>Redevance plateforme et outils : 10%</li>
-              <li>Redevance apport de clients / leads : 15%</li>
-            </ul>
-            <p><strong>2.2 — Modalités de paiement</strong></p>
-            <p>Paiement par virement bancaire dans un délai de 30 jours à compter de l'encaissement effectif des fonds par le Franchisé. Aucun paiement anticipé exigible. Virements en euros, frais à charge du Franchiseur.</p>
-            <p><strong>2.3 — Application rétroactive</strong></p>
-            <p>Les conditions 50/50 s'appliquent à toutes les factures émises et encaissements perçus à compter du 1er mai 2025. Les factures antérieures restent soumises à l'ancien régime (10% Franchisé / 90% Franchiseur). Les Articles 3, 4 et 5 s'appliquent depuis le début du partenariat. Toute somme perçue au-delà de 50% à compter du 1er mai 2025 constitue un trop-perçu restituable.</p>
-
-            <p className="font-bold mt-3">ARTICLE 3 — RESPONSABILITÉ</p>
-            <p className="bg-muted/60 border rounded p-2 font-semibold">LE FRANCHISÉ N'EST PAS RESPONSABLE DES AGISSEMENTS DU FRANCHISEUR. Toute fraude, pratique déloyale ou manquement commis par FINALLY ACADEMY LTD engage sa seule responsabilité.</p>
-            <p><strong>3.1 — Indemnisation obligatoire</strong></p>
-            <p>Si FTRANSPORT subit une sanction CDC/DGCCRF/DREETS du fait du Franchiseur, ce dernier indemnise intégralement le Franchisé :</p>
-            <ul className="list-disc pl-5 space-y-1">
-              <li>Remboursement des sommes restituées à la CDC</li>
-              <li>Pénalités et amendes infligées</li>
-              <li>Perte de CA liée à un déréférencement MCF / suspension Qualiopi</li>
-              <li>Frais d'avocat, procédure, expertise</li>
-              <li>Préjudice d'image et commercial</li>
-            </ul>
-            <p><strong>3.2 — Garantie de conformité des leads</strong></p>
-            <p>Le Franchiseur garantit que tous les leads sont obtenus conformément à la réglementation française (Art. L.6323-8-1 Code du travail, RGPD, interdiction d'avantages indus). En cas de non-conformité, il assume seul la responsabilité civile et pénale.</p>
-
-            <p className="font-bold mt-3">ARTICLE 4 — OBLIGATIONS ET INTERDICTIONS DU FRANCHISEUR</p>
-            <ul className="list-disc pl-5 space-y-1">
-              <li>Tout démarchage sans mandat écrit préalable</li>
-              <li>Toute utilisation du référencement MCF / Qualiopi de FTRANSPORT à des fins non prévues</li>
-              <li>Toute sous-traitance sans accord écrit</li>
-              <li>Toute communication aux apprenants non validée</li>
-              <li>Tout acte engageant la responsabilité du Franchisé vis-à-vis de la CDC ou DGCCRF</li>
-              <li>Toute cession du contrat sans accord écrit</li>
-            </ul>
-
-            <p className="font-bold mt-3">ARTICLE 5 — SUSPENSION ET BLOCAGE DES PAIEMENTS</p>
-            <p>Le Franchisé peut suspendre immédiatement tout paiement sans mise en demeure préalable en cas de :</p>
-            <ul className="list-disc pl-5 space-y-1">
-              <li>Manquement aux interdictions de l'Article 4</li>
-              <li>Notification CDC/DGCCRF en lien avec le Franchiseur</li>
-              <li>Non-conformité avérée ou présumée des leads</li>
-              <li>Ouverture d'un contrôle MCF / Qualiopi</li>
-              <li>Litige en cours relatif à l'exécution du contrat</li>
-            </ul>
-
-            <p className="font-bold mt-3">ARTICLE 6 — RÉSILIATION</p>
-            <p><strong>6.1 — Faute grave (sans préavis)</strong></p>
-            <p>Résiliation immédiate sans préavis ni indemnité par email ou LRAR en cas de violation Article 4, non-conformité leads, fausse déclaration ou manquement grave.</p>
-            <p><strong>6.2 — Sans faute</strong></p>
-            <p>Chaque partie peut résilier à tout moment par LRAR avec préavis de 15 jours calendaires, sans indemnité.</p>
-            <p><strong>6.3 — Effets de la résiliation</strong></p>
-            <ul className="list-disc pl-5 space-y-1">
-              <li>Le Franchisé cesse d'utiliser la marque et outils FINALLY ACADEMY</li>
-              <li>Le Franchiseur restitue sous 30 jours toute somme perçue en trop</li>
-              <li>Les formations en cours sont menées à terme</li>
-              <li>Les sommes dues au titre de l'Article 3 restent exigibles</li>
-            </ul>
-
-            <p className="font-bold mt-3">ARTICLE 7 — CONFIDENTIALITÉ ET PROPRIÉTÉ INTELLECTUELLE</p>
-            <p>Le Franchiseur s'engage à la plus stricte confidentialité (apprenants, processus, données financières) pendant le contrat et 5 ans après. Les données apprenants sont propriété exclusive du Franchisé. Tout support pédagogique produit dans le cadre du contrat appartient à FTRANSPORT SERVICES PRO.</p>
-
-            <p className="font-bold mt-3">ARTICLE 8 — DROIT APPLICABLE ET JURIDICTION</p>
-            <p>Contrat régi exclusivement par le droit français. Recherche d'une solution amiable sous 30 jours, à défaut compétence exclusive du Tribunal de Commerce de Lyon. Langue : français.</p>
-
-            <p className="font-bold mt-3">ARTICLE 9 — DURÉE ET ENTRÉE EN VIGUEUR</p>
-            <p>Entrée en vigueur à la signature, durée indéterminée sous réserve de l'Article 6. Conditions financières 50/50 applicables à compter du 1er mai 2025. Articles 3, 4 et 5 applicables depuis le début du partenariat.</p>
-            <p>Exception : la facture n° 1546A du 11 mai 2026 (15 461,40 €) reste soumise à l'ancien régime 10% Franchisé / 90% Franchiseur.</p>
+            {contratBlocks.map(renderContractBlock)}
           </CardContent>
         </Card>
 
