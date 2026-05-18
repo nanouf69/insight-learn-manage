@@ -2498,9 +2498,27 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
         const previousEditedAt = toSafeTimestamp((previousQ as any)._editedAt);
         const incomingEditedAt = toSafeTimestamp((incomingQ as any)._editedAt);
+
+        // Règle dure centralisée : si la version locale porte _editedAt
+        // alors que la version incoming ne le porte pas (ou est plus ancienne),
+        // on garde la version locale et surtout ses choix admin.
         if (previousEditedAt > incomingEditedAt) {
           preserved = true;
           return previousQ;
+        }
+
+        // Cas: les deux portent _editedAt. Même si l'incoming est plus récent,
+        // on garantit que les choix admin de la version qui a le timestamp
+        // le plus à jour gagnent — via le résolveur centralisé — pour qu'aucun
+        // autre source ne puisse jamais réinjecter les anciens `correct`.
+        if (hasAdminEdit(incomingQ as any) || hasAdminEdit(previousQ as any)) {
+          const winner = previousEditedAt > incomingEditedAt ? previousQ : incomingQ;
+          const other  = previousEditedAt > incomingEditedAt ? incomingQ : previousQ;
+          return {
+            ...incomingQ,
+            ...winner,
+            choix: resolveCorrectAnswers(winner as any, other as any),
+          } as any;
         }
 
         return incomingQ;
