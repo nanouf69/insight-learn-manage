@@ -1682,7 +1682,9 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
       <div className="max-w-6xl mx-auto px-4 py-8">
         {/* Notes tab */}
         {activeTab === "notes" && apprenant?.id && (
-          <NotesView apprenantId={apprenant.id} studentName={studentName} moduleCompletionsSeed={moduleCompletionsForNotes} />
+          <Suspense fallback={<SectionLoading />}>
+            <NotesView apprenantId={apprenant.id} studentName={studentName} moduleCompletionsSeed={moduleCompletionsForNotes} />
+          </Suspense>
         )}
 
         {/* Examens tab - Examens Blancs */}
@@ -1694,13 +1696,15 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
               </div>
             }
           >
-            <ExamensBlancsPage
-              apprenantId={apprenant?.id || null}
-              userId={user?.id || null}
-              apprenantType={apprenant?.type_apprenant || null}
-              isPresentiel={!["vtc-elearning", "taxi-elearning", "taxi-pour-vtc-elearning"].includes(selectedFormation)}
-              onExamStateChange={handleExamStateChange}
-            />
+            <Suspense fallback={<SectionLoading />}>
+              <ExamensBlancsPage
+                apprenantId={apprenant?.id || null}
+                userId={user?.id || null}
+                apprenantType={apprenant?.type_apprenant || null}
+                isPresentiel={!['vtc-elearning', 'taxi-elearning', 'taxi-pour-vtc-elearning'].includes(selectedFormation)}
+                onExamStateChange={handleExamStateChange}
+              />
+            </Suspense>
           </ErrorBoundary>
         )}
 
