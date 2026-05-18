@@ -55,13 +55,67 @@ interface ModuleData {
 }
 
 interface EditorRow {
+  module_id?: number;
   module_data: ModuleData;
   deleted_cours: any[] | null;
   deleted_exercices: any[] | null;
   updated_at: string;
 }
 
+interface SaveConfirmation {
+  moduleId: number;
+  exerciceId: number | string;
+  questionId: number;
+  enonce: string;
+  choix: Choix[];
+  questionAdminLocked: boolean;
+}
+
 const sortedModules = [...MODULES_DATA].sort((a, b) => a.id - b.id);
+
+const normalizeText = (value: unknown) =>
+  String(value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+
+const sameExercise = (a: Exercice, b: Exercice) => {
+  if (a?.id != null && b?.id != null && Number(a.id) === Number(b.id)) return true;
+  return normalizeText(a?.titre) === normalizeText(b?.titre) && normalizeText(a?.sousTitre) === normalizeText(b?.sousTitre);
+};
+
+const sameQuestion = (a: Question, b: Question) => {
+  if (a?.id != null && b?.id != null && Number(a.id) === Number(b.id)) return true;
+  return normalizeText(a?.enonce) === normalizeText(b?.enonce);
+};
+
+const lockQuestionFromEditor = (dbQuestion: Question, editedQuestion: Question, editedAt: string): Question => {
+  const editedChoixByLetter = new Map(
+    (editedQuestion.choix ?? []).map((choice) => [String(choice.lettre ?? ""), choice]),
+  );
+  const sourceChoix = (dbQuestion.choix?.length ? dbQuestion.choix : editedQuestion.choix) ?? [];
+
+  return {
+    ...dbQuestion,
+    ...editedQuestion,
+    id: dbQuestion.id ?? editedQuestion.id,
+    enonce: editedQuestion.enonce ?? dbQuestion.enonce,
+    admin_locked: true,
+    _editedAt: editedAt,
+    choix: sourceChoix.map((dbChoice, index) => {
+      const editedChoice =
+        editedChoixByLetter.get(String(dbChoice.lettre ?? "")) ?? editedQuestion.choix?.[index] ?? dbChoice;
+      return {
+        ...dbChoice,
+        ...editedChoice,
+        correct: editedChoice.correct === true,
+        admin_locked: true,
+      };
+    }),
+  };
+};
 
 const CorrecteurReponsesPage = () => {
   const [moduleId, setModuleId] = useState<number | null>(null);
