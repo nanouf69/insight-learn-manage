@@ -38,9 +38,23 @@ export default function ContratSignature() {
   const [err, setErr] = useState<string | null>(null);
 
   const [representantNom, setRepresentantNom] = useState("");
+  const [initiales, setInitiales] = useState("");
+  const [initialesTouched, setInitialesTouched] = useState(false);
   const [lieu, setLieu] = useState("London");
   const [accepted, setAccepted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  // Auto-derive initiales depuis le nom
+  useEffect(() => {
+    if (initialesTouched) return;
+    const auto = representantNom
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((w) => w[0]?.toUpperCase() || "")
+      .join("")
+      .slice(0, 4);
+    setInitiales(auto);
+  }, [representantNom, initialesTouched]);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const drawingRef = useRef(false);
@@ -118,6 +132,7 @@ export default function ContratSignature() {
 
   const handleSign = async () => {
     if (!representantNom.trim()) { toast({ title: "Nom du représentant requis", variant: "destructive" }); return; }
+    if (!initiales.trim()) { toast({ title: "Initiales requises", variant: "destructive" }); return; }
     if (!hasSignatureRef.current) { toast({ title: "Signature requise", variant: "destructive" }); return; }
     if (!accepted) { toast({ title: "Vous devez cocher 'Lu et approuvé'", variant: "destructive" }); return; }
     setSubmitting(true);
@@ -130,6 +145,7 @@ export default function ContratSignature() {
         lieu: lieu || "London",
         date: dateStr,
         signatureDataUrl: sigDataUrl,
+        initiales: initiales.trim().toUpperCase(),
       });
       const pdfBase64 = await blobToBase64(pdfBlob);
 
@@ -141,6 +157,7 @@ export default function ContratSignature() {
           representantNom: representantNom.trim(),
           lieu: lieu || "London",
           signatureDataUrl: sigDataUrl,
+          initiales: initiales.trim().toUpperCase(),
           pdfBase64,
         }),
       });
@@ -213,6 +230,17 @@ export default function ContratSignature() {
             <div>
               <Label>Nom complet du représentant *</Label>
               <Input value={representantNom} onChange={(e) => setRepresentantNom(e.target.value)} placeholder="Ex : John Smith" />
+            </div>
+            <div>
+              <Label>Initiales (paraphe sur chaque page) *</Label>
+              <Input
+                value={initiales}
+                onChange={(e) => { setInitiales(e.target.value.toUpperCase().slice(0, 4)); setInitialesTouched(true); }}
+                placeholder="Ex : JS"
+                maxLength={4}
+                className="uppercase font-bold tracking-widest"
+              />
+              <p className="text-xs text-muted-foreground mt-1">Ces initiales seront apposées en pied de chaque page du contrat.</p>
             </div>
             <div>
               <Label>Lieu de signature</Label>
