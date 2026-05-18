@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, memo, useRef } from "react";
+import { useState, useEffect, useCallback, lazy, Suspense, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,11 +12,7 @@ import { XPBar } from "@/components/cours-en-ligne/motivation/XPBar";
 import { BadgeGrid } from "@/components/cours-en-ligne/motivation/BadgeGrid";
 import { buildBadges, calculateXP } from "@/components/cours-en-ligne/motivation/badges-data";
 import { toast } from "sonner";
-import ModuleDetailView from "@/components/cours-en-ligne/ModuleDetailView";
 import ModuleChangeNotificationsBanner from "@/components/cours-en-ligne/ModuleChangeNotificationsBanner";
-import BilanFinFormationFCVtc from "@/components/cours-en-ligne/BilanFinFormationFCVtc";
-import ExamensBlancsPage from "@/components/cours-en-ligne/ExamensBlancsPage";
-import NotesView from "@/components/cours-en-ligne/NotesView";
 import StudentLogin from "@/components/cours-en-ligne/StudentLogin";
 import { FORMATIONS, MODULES_DATA, expandModulesAutorises, type FormationId } from "@/components/cours-en-ligne/formations-data";
 import { EXAMENS_BLANCS_VTC, EXAMENS_BLANCS_TAXI, EXAMENS_BLANCS_TA, EXAMENS_BLANCS_VA } from "@/components/cours-en-ligne/examens-blancs-data";
@@ -36,7 +32,15 @@ import { useAuth } from "@/contexts/AuthContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { computeUnlockState, isModuleLocked as computeIsModuleLocked } from "@/lib/moduleUnlockLogic";
 
-const StableModuleDetailView = memo(ModuleDetailView);
+const StableModuleDetailView = lazy(() => import("@/components/cours-en-ligne/ModuleDetailView"));
+const ExamensBlancsPage = lazy(() => import("@/components/cours-en-ligne/ExamensBlancsPage"));
+const NotesView = lazy(() => import("@/components/cours-en-ligne/NotesView"));
+
+const SectionLoading = () => (
+  <div className="flex items-center justify-center py-12 text-sm text-muted-foreground">
+    Chargement…
+  </div>
+);
 
 // Map CRM values to formation IDs (supports lowercase, aliases and multi-selection values like "x + y")
 const FORMATION_ALIASES: Record<string, FormationId> = {
@@ -1337,14 +1341,16 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
           <Button variant="ghost" size="sm" className="mb-4" onClick={() => setSelectedModule(null)}>
             <ChevronRight className="w-4 h-4 mr-1 rotate-180" /> Retour
           </Button>
-          <ExamensBlancsPage
-            defaultBilanId={bilanId}
-            apprenantId={apprenant?.id || null}
-            userId={user?.id || null}
-            apprenantType={apprenant?.type_apprenant || null}
-            isPresentiel={!["vtc-elearning", "taxi-elearning", "taxi-pour-vtc-elearning"].includes(selectedFormation)}
-            onExamStateChange={handleExamStateChange}
-          />
+          <Suspense fallback={<SectionLoading />}>
+            <ExamensBlancsPage
+              defaultBilanId={bilanId}
+              apprenantId={apprenant?.id || null}
+              userId={user?.id || null}
+              apprenantType={apprenant?.type_apprenant || null}
+              isPresentiel={!['vtc-elearning', 'taxi-elearning', 'taxi-pour-vtc-elearning'].includes(selectedFormation)}
+              onExamStateChange={handleExamStateChange}
+            />
+          </Suspense>
         </div>
       );
     }
@@ -1355,43 +1361,47 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
           <Button variant="ghost" size="sm" className="mb-4" onClick={() => setSelectedModule(null)}>
             <ChevronRight className="w-4 h-4 mr-1 rotate-180" /> Retour
           </Button>
-          <ExamensBlancsPage
-            apprenantId={apprenant?.id || null}
-            userId={user?.id || null}
-            apprenantType={examenBlancType}
-            isPresentiel={!["vtc-elearning", "taxi-elearning", "taxi-pour-vtc-elearning"].includes(selectedFormation)}
-            onExamStateChange={handleExamStateChange}
-          />
+          <Suspense fallback={<SectionLoading />}>
+            <ExamensBlancsPage
+              apprenantId={apprenant?.id || null}
+              userId={user?.id || null}
+              apprenantType={examenBlancType}
+              isPresentiel={!['vtc-elearning', 'taxi-elearning', 'taxi-pour-vtc-elearning'].includes(selectedFormation)}
+              onExamStateChange={handleExamStateChange}
+            />
+          </Suspense>
         </div>
       );
     }
     // Module 87 (Bilan fin de formation FC VTC) est désormais rendu comme un module quiz standard via StableModuleDetailView ci-dessous.
     return (
       <div className="min-h-screen bg-background">
-        <StableModuleDetailView
-          module={selectedModule}
-          onBack={handleBackFromModule}
-          studentOnly
-          apprenantId={apprenant?.id || null}
-          onModuleCompleted={handleModuleCompleted}
-          apprenantType={apprenant?.type_apprenant || null}
-          isPresentiel={!["vtc-elearning", "taxi-elearning", "taxi-pour-vtc-elearning"].includes(selectedFormation)}
-          hideFormulaires={apprenant?.email === "demo-vtc@ftransport.fr"}
-          onTrackCours={(moduleId, coursTitle) => {
-            trackModuleActivity(moduleId, coursTitle, "open_cours");
-          }}
-          apprenantInfo={apprenant ? {
-            nom: apprenant.nom,
-            prenom: apprenant.prenom,
-            email: apprenant.email || undefined,
-            telephone: apprenant.telephone || undefined,
-            adresse: apprenant.adresse || undefined,
-            code_postal: apprenant.code_postal || undefined,
-            ville: apprenant.ville || undefined,
-            date_naissance: apprenant.date_naissance || undefined,
-            formation_choisie: apprenant.formation_choisie || null,
-          } : null}
-        />
+        <Suspense fallback={<SectionLoading />}>
+          <StableModuleDetailView
+            module={selectedModule}
+            onBack={handleBackFromModule}
+            studentOnly
+            apprenantId={apprenant?.id || null}
+            onModuleCompleted={handleModuleCompleted}
+            apprenantType={apprenant?.type_apprenant || null}
+            isPresentiel={!['vtc-elearning', 'taxi-elearning', 'taxi-pour-vtc-elearning'].includes(selectedFormation)}
+            hideFormulaires={apprenant?.email === "demo-vtc@ftransport.fr"}
+            onTrackCours={(moduleId, coursTitle) => {
+              trackModuleActivity(moduleId, coursTitle, "open_cours");
+            }}
+            apprenantInfo={apprenant ? {
+              nom: apprenant.nom,
+              prenom: apprenant.prenom,
+              email: apprenant.email || undefined,
+              telephone: apprenant.telephone || undefined,
+              adresse: apprenant.adresse || undefined,
+              code_postal: apprenant.code_postal || undefined,
+              ville: apprenant.ville || undefined,
+              date_naissance: apprenant.date_naissance || undefined,
+              formation_choisie: apprenant.formation_choisie || null,
+            } : null}
+          />
+        </Suspense>
       </div>
     );
   }
@@ -1672,7 +1682,9 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
       <div className="max-w-6xl mx-auto px-4 py-8">
         {/* Notes tab */}
         {activeTab === "notes" && apprenant?.id && (
-          <NotesView apprenantId={apprenant.id} studentName={studentName} moduleCompletionsSeed={moduleCompletionsForNotes} />
+          <Suspense fallback={<SectionLoading />}>
+            <NotesView apprenantId={apprenant.id} studentName={studentName} moduleCompletionsSeed={moduleCompletionsForNotes} />
+          </Suspense>
         )}
 
         {/* Examens tab - Examens Blancs */}
@@ -1684,13 +1696,15 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
               </div>
             }
           >
-            <ExamensBlancsPage
-              apprenantId={apprenant?.id || null}
-              userId={user?.id || null}
-              apprenantType={apprenant?.type_apprenant || null}
-              isPresentiel={!["vtc-elearning", "taxi-elearning", "taxi-pour-vtc-elearning"].includes(selectedFormation)}
-              onExamStateChange={handleExamStateChange}
-            />
+            <Suspense fallback={<SectionLoading />}>
+              <ExamensBlancsPage
+                apprenantId={apprenant?.id || null}
+                userId={user?.id || null}
+                apprenantType={apprenant?.type_apprenant || null}
+                isPresentiel={!['vtc-elearning', 'taxi-elearning', 'taxi-pour-vtc-elearning'].includes(selectedFormation)}
+                onExamStateChange={handleExamStateChange}
+              />
+            </Suspense>
           </ErrorBoundary>
         )}
 

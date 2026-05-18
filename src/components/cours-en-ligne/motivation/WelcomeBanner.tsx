@@ -57,7 +57,7 @@ export function WelcomeBanner({ prenom, formationLabel, xp, xpToday, streak, com
             { icon: "🎯", val: `${globalProgress}%`, sub: "progression", colorClass: "text-primary" },
             { icon: "✨", val: `+${xpToday} XP`, sub: "aujourd'hui", colorClass: "text-emerald-400" },
           ].map((stat, i) => (
-            <div key={i} className="bg-white/10 backdrop-blur-sm rounded-xl px-4 py-2.5 border border-white/10">
+            <div key={i} className="bg-white/10 rounded-xl px-4 py-2.5 border border-white/10 shadow-sm">
               <div className={`font-extrabold text-[17px] ${stat.colorClass}`}>
                 {stat.icon} {stat.val}
               </div>
