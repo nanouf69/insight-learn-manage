@@ -135,8 +135,9 @@ export default function ContratSignature() {
   };
 
   const handleSign = async () => {
-    if (!representantNom.trim()) { toast({ title: "Nom du représentant requis", variant: "destructive" }); return; }
+    if (!representantNom.trim()) { toast({ title: "Nom complet du représentant requis", variant: "destructive" }); return; }
     if (!initiales.trim()) { toast({ title: "Initiales requises", variant: "destructive" }); return; }
+    if (!lieu.trim()) { toast({ title: "Lieu de signature requis", variant: "destructive" }); return; }
     if (!hasSignatureRef.current) { toast({ title: "Signature requise", variant: "destructive" }); return; }
     if (!accepted) { toast({ title: "Vous devez cocher 'Lu et approuvé'", variant: "destructive" }); return; }
     if (!mentionValide) { toast({ title: "Mention manuscrite incorrecte", description: `Recopiez exactement : « ${MENTION_REQUISE} »`, variant: "destructive" }); return; }
