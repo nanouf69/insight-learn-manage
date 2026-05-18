@@ -2816,7 +2816,24 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               const sourceExercices = mergeSourceExercices(sourceMd.exercices, sourceInitial.exercices, deletedSourceIds);
               const syncedModuleData = getSyncedBilanVtcModuleData(initialData, sourceExercices, Number(module.id) === 4);
 
-              setModuleData((prev) => preserveNewerLocalQuestionEdits(syncedModuleData, prev, "initial generated bilan source sync"));
+              // ✅ BUGFIX revert : superposer les éditions admin sauvegardées sur le bilan lui-même
+              // (module 4/81) par-dessus les exercices reconstruits depuis le module source.
+              // Sans cela, toute édition admin (ex: Bilan Gestion Q43) est écrasée au prochain
+              // reload dès que le module source (2) a un updated_at plus récent.
+              const bilanSavedExos = Array.isArray((latestState?.module_data as any)?.exercices)
+                ? ((latestState!.module_data as any).exercices as ExerciceItem[])
+                : [];
+              const bilanDeletedExoIds = Array.isArray(latestState?.deleted_exercices)
+                ? (latestState!.deleted_exercices as any[]).map((e: any) => Number(e?.id)).filter((n) => !Number.isNaN(n))
+                : [];
+              const syncedWithBilanEdits: ModuleData = {
+                ...syncedModuleData,
+                exercices: bilanSavedExos.length > 0
+                  ? mergeSourceExercices(bilanSavedExos, syncedModuleData.exercices, bilanDeletedExoIds)
+                  : syncedModuleData.exercices,
+              };
+
+              setModuleData((prev) => preserveNewerLocalQuestionEdits(syncedWithBilanEdits, prev, "initial generated bilan source sync"));
               setDeletedCours([]);
               setDeletedExercices([]);
               setLoadedModuleEditorState(true);
