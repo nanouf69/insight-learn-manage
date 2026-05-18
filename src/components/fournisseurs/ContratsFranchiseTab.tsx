@@ -22,6 +22,7 @@ interface Contrat {
   sent_at: string | null;
   signed_at: string | null;
   signed_pdf_url: string | null;
+  sent_pdf_url: string | null;
   created_at: string;
 }
 
@@ -64,11 +65,30 @@ export function ContratsFranchiseTab({
     if (!email) { toast({ title: "Email requis", variant: "destructive" }); return; }
     setSending(true);
     try {
+      // 1. Génère le PDF du contrat envoyé (version blanche, à compléter)
+      const blob = generateContratFranchisePdf({
+        representantNom: "[À COMPLÉTER PAR LE FRANCHISEUR]",
+        lieu: "London",
+        date: new Date().toLocaleDateString("fr-FR"),
+        signatureDataUrl: "",
+        initiales: "—",
+      });
+
+      // 2. Upload dans le bucket public pour garder une trace
+      const fileName = `contrats-envoyes/${fournisseurId}/${Date.now()}-contrat-franchise.pdf`;
+      const { error: upErr } = await supabase.storage
+        .from("fournisseur-shared-docs")
+        .upload(fileName, blob, { contentType: "application/pdf", upsert: false });
+      if (upErr) throw upErr;
+      const { data: pub } = supabase.storage.from("fournisseur-shared-docs").getPublicUrl(fileName);
+      const sentPdfUrl = pub.publicUrl;
+
+      // 3. Crée le contrat + envoie l'email (avec lien vers le PDF envoyé)
       const { data, error } = await supabase.functions.invoke("envoyer-contrat-franchise", {
-        body: { fournisseurId, destinataireEmail: email, destinataireNom: destNom, titre: "Contrat de Franchise FINALLY ACADEMY / FTRANSPORT" },
+        body: { fournisseurId, destinataireEmail: email, destinataireNom: destNom, titre: "Contrat de Franchise FINALLY ACADEMY / FTRANSPORT", sentPdfUrl },
       });
       if (error || data?.error) throw new Error(error?.message || data?.error);
-      toast({ title: "Contrat envoyé ✓", description: `Lien de signature envoyé à ${email}` });
+      toast({ title: "Contrat envoyé ✓", description: `Lien de signature envoyé à ${email} — PDF archivé` });
       setOpen(false);
       load();
     } catch (e: any) {
@@ -148,10 +168,15 @@ export function ContratsFranchiseTab({
                       </p>
                     )}
                   </div>
-                  <div className="flex gap-2 shrink-0">
+                  <div className="flex flex-wrap gap-2 shrink-0">
+                    {c.sent_pdf_url && (
+                      <a href={c.sent_pdf_url} target="_blank" rel="noreferrer">
+                        <Button size="sm" variant="outline" className="gap-1"><FileText className="w-3 h-3" />PDF envoyé</Button>
+                      </a>
+                    )}
                     {c.signed_pdf_url ? (
                       <a href={c.signed_pdf_url} target="_blank" rel="noreferrer">
-                        <Button size="sm" variant="outline" className="gap-1"><Eye className="w-3 h-3" />Voir PDF signé</Button>
+                        <Button size="sm" variant="outline" className="gap-1"><Eye className="w-3 h-3" />PDF signé</Button>
                       </a>
                     ) : (
                       <Button size="sm" variant="outline" className="gap-1" onClick={() => copyLink(c.token)}>

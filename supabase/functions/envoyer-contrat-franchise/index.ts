@@ -10,7 +10,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { fournisseurId, destinataireEmail, destinataireNom, titre } = await req.json();
+    const { fournisseurId, destinataireEmail, destinataireNom, titre, sentPdfUrl } = await req.json();
     if (!fournisseurId || !destinataireEmail) {
       return new Response(JSON.stringify({ error: "fournisseurId et destinataireEmail requis" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -33,6 +33,7 @@ serve(async (req) => {
         destinataire_email: destinataireEmail,
         destinataire_nom: destinataireNom || null,
         sent_at: new Date().toISOString(),
+        sent_pdf_url: sentPdfUrl || null,
       })
       .select()
       .single();
@@ -79,6 +80,7 @@ serve(async (req) => {
                 </a>
               </p>
               <p style="font-size:13px;color:#666;">Lien sécurisé personnel — à ne pas partager : <br/><a href="${signUrl}">${signUrl}</a></p>
+              ${sentPdfUrl ? `<p style="font-size:13px;color:#666;">📄 <a href="${sentPdfUrl}">Télécharger le PDF du contrat à signer</a></p>` : ""}
               <p>Cordialement,<br/>M. Guenichi Naoufal — Gérant FTRANSPORT</p>
             </div>
             <div style="background:#f3f4f6;padding:16px;text-align:center;font-size:12px;color:#6b7280;">
