@@ -474,7 +474,11 @@ const CorrectionQRCTab = () => {
     let debounceTimer: ReturnType<typeof setTimeout> | null = null;
     const scheduleRefetch = () => {
       if (debounceTimer) clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(() => { fetchData(); }, 1500);
+      debounceTimer = setTimeout(() => {
+        // Ignore les events provoqués par nos propres updates locaux (8 s de garde)
+        if (Date.now() - lastLocalMutationRef.current < 8000) return;
+        fetchData();
+      }, 1500);
     };
     const channel = supabase
       .channel("correction-qrc-results")
