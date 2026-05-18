@@ -38,9 +38,23 @@ export default function ContratSignature() {
   const [err, setErr] = useState<string | null>(null);
 
   const [representantNom, setRepresentantNom] = useState("");
+  const [initiales, setInitiales] = useState("");
+  const [initialesTouched, setInitialesTouched] = useState(false);
   const [lieu, setLieu] = useState("London");
   const [accepted, setAccepted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  // Auto-derive initiales depuis le nom
+  useEffect(() => {
+    if (initialesTouched) return;
+    const auto = representantNom
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((w) => w[0]?.toUpperCase() || "")
+      .join("")
+      .slice(0, 4);
+    setInitiales(auto);
+  }, [representantNom, initialesTouched]);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const drawingRef = useRef(false);
