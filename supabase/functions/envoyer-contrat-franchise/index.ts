@@ -10,7 +10,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { fournisseurId, destinataireEmail, destinataireNom, titre, sentPdfUrl, pdfOnly } = await req.json();
+    const { fournisseurId, destinataireEmail, destinataireNom, titre, sentPdfUrl } = await req.json();
     if (!fournisseurId || !destinataireEmail) {
       return new Response(JSON.stringify({ error: "fournisseurId et destinataireEmail requis" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -29,7 +29,7 @@ serve(async (req) => {
         fournisseur_id: fournisseurId,
         type: "franchise",
         titre: titre || "Contrat de Franchise FINALLY ACADEMY / FTRANSPORT",
-        status: pdfOnly ? "pdf_envoye" : "envoye",
+        status: "envoye",
         destinataire_email: destinataireEmail,
         destinataire_nom: destinataireNom || null,
         sent_at: new Date().toISOString(),
@@ -44,6 +44,9 @@ serve(async (req) => {
       });
     }
 
+    // IMPORTANT : toujours utiliser le domaine de production publié.
+    // Sinon le lien pointe vers le preview Lovable (lovable.app) qui exige
+    // un compte Lovable → le destinataire voit "Access denied".
     const baseUrl = "https://gestion.ftransport.fr";
     const signUrl = `${baseUrl}/contrat-signature/${contrat.token}`;
 
@@ -66,43 +69,7 @@ serve(async (req) => {
 
       if (accessToken) {
         const senderEmail = "contact@ftransport.fr";
-
-        // Si pdfOnly : on télécharge le PDF et on l'attache au mail (pas de lien de signature)
-        let attachments: any[] = [];
-        if (pdfOnly && sentPdfUrl) {
-          try {
-            const pdfRes = await fetch(sentPdfUrl);
-            const buf = new Uint8Array(await pdfRes.arrayBuffer());
-            // base64 encode
-            let binary = "";
-            for (let i = 0; i < buf.length; i++) binary += String.fromCharCode(buf[i]);
-            const b64 = btoa(binary);
-            attachments.push({
-              "@odata.type": "#microsoft.graph.fileAttachment",
-              name: "Contrat-Franchise-FTRANSPORT.pdf",
-              contentType: "application/pdf",
-              contentBytes: b64,
-            });
-          } catch (e) {
-            console.error("[envoyer-contrat-franchise] PDF fetch failed:", e);
-          }
-        }
-
-        const html = pdfOnly ? `
-          <div style="font-family: Arial, sans-serif; max-width: 620px; margin: 0 auto;">
-            <div style="background:#1a1a2e;padding:24px;text-align:center;">
-              <h1 style="color:#fff;margin:0;">FTRANSPORT SERVICES PRO</h1>
-            </div>
-            <div style="padding:30px;background:#fff;">
-              <p>Bonjour${destinataireNom ? " " + destinataireNom : ""},</p>
-              <p>Veuillez trouver ci-joint le <strong>Contrat de Franchise FINALLY ACADEMY / FTRANSPORT SERVICES PRO</strong> à compléter et à nous retourner signé.</p>
-              ${sentPdfUrl ? `<p style="font-size:13px;color:#666;">📄 Lien de secours : <a href="${sentPdfUrl}">télécharger le PDF</a></p>` : ""}
-              <p>Cordialement,<br/>M. Guenichi Naoufal — Gérant FTRANSPORT</p>
-            </div>
-            <div style="background:#f3f4f6;padding:16px;text-align:center;font-size:12px;color:#6b7280;">
-              FTRANSPORT — 86 Route de Genas, 69003 Lyon
-            </div>
-          </div>` : `
+        const html = `
           <div style="font-family: Arial, sans-serif; max-width: 620px; margin: 0 auto;">
             <div style="background:#1a1a2e;padding:24px;text-align:center;">
               <h1 style="color:#fff;margin:0;">FTRANSPORT SERVICES PRO</h1>
@@ -124,19 +91,17 @@ serve(async (req) => {
             </div>
           </div>`;
 
-        const message: any = {
-          subject: pdfOnly
-            ? "Contrat de franchise FTRANSPORT — PDF à compléter"
-            : "Signature du contrat de franchise FTRANSPORT",
-          body: { contentType: "HTML", content: html },
-          toRecipients: [{ emailAddress: { address: destinataireEmail } }],
-        };
-        if (attachments.length > 0) message.attachments = attachments;
-
         const sendRes = await fetch(`https://graph.microsoft.com/v1.0/users/${senderEmail}/sendMail`, {
           method: "POST",
           headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
-          body: JSON.stringify({ message, saveToSentItems: true }),
+          body: JSON.stringify({
+            message: {
+              subject: "Signature du contrat de franchise FTRANSPORT",
+              body: { contentType: "HTML", content: html },
+              toRecipients: [{ emailAddress: { address: destinataireEmail } }],
+            },
+            saveToSentItems: true,
+          }),
         });
         if (!sendRes.ok) {
           const errText = await sendRes.text();
