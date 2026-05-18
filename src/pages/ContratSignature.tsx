@@ -74,7 +74,7 @@ export default function ContratSignature() {
         const json = await res.json();
         if (!res.ok) throw new Error(json.error || "Contrat introuvable");
         setContrat(json.contrat);
-        setRepresentantNom(json.contrat.representant_nom || json.contrat.destinataire_nom || "");
+        setRepresentantNom(json.contrat.representant_nom || "");
       } catch (e: any) {
         setErr(e.message);
       } finally {
