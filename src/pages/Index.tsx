@@ -59,6 +59,7 @@ const pageConfig = {
   fournisseurs: { title: "Fournisseurs", subtitle: "Gérez vos fournisseurs et leurs espaces" },
   corbeille: { title: "Corbeille", subtitle: "Éléments supprimés — restaurer ou supprimer définitivement" },
   "diagnostic-acces": { title: "Diagnostic accès", subtitle: "État d'accès e-learning de tous les apprenants" },
+  "correcteur-reponses": { title: "Correcteur de réponses", subtitle: "Verrouillage permanent des bonnes réponses par module" },
 };
 
 const fmt = (n: number) =>
