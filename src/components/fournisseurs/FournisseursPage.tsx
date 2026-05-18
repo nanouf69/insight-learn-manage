@@ -58,6 +58,41 @@ export function FournisseursPage() {
   const [emailTarget, setEmailTarget] = useState<Fournisseur | null>(null);
   const [sendLinkOpen, setSendLinkOpen] = useState(false);
   const [sendLinkTarget, setSendLinkTarget] = useState<Fournisseur | null>(null);
+  const [editTarget, setEditTarget] = useState<Fournisseur | null>(null);
+  const [editForm, setEditForm] = useState<Partial<Fournisseur>>({});
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+
+  const openEdit = (f: Fournisseur) => {
+    setEditTarget(f);
+    setEditForm({
+      nom: f.nom, email: f.email, telephone: f.telephone,
+      adresse: f.adresse, code_postal: f.code_postal, ville: f.ville, pays: f.pays,
+      siren: f.siren, siret: f.siret, numero_tva: f.numero_tva,
+      iban: f.iban, bic: f.bic, banque: f.banque, site_web: f.site_web,
+    });
+  };
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editTarget) return;
+    setIsSavingEdit(true);
+    try {
+      const payload: any = {};
+      Object.entries(editForm).forEach(([k, v]) => { payload[k] = v === "" ? null : v; });
+      const { error } = await supabase.from('fournisseurs').update(payload).eq('id', editTarget.id);
+      if (error) throw error;
+      toast({ title: "Fournisseur mis à jour" });
+      setEditTarget(null);
+      loadFournisseurs();
+      if (selectedFournisseur?.id === editTarget.id) {
+        setSelectedFournisseur({ ...selectedFournisseur, ...payload } as Fournisseur);
+      }
+    } catch (err: any) {
+      toast({ title: "Erreur", description: err.message, variant: "destructive" });
+    } finally {
+      setIsSavingEdit(false);
+    }
+  };
 
   // Global docs from suppliers (uploaded_by = 'fournisseur')
   const [globalPageTab, setGlobalPageTab] = useState("liste");
