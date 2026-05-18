@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, memo, useRef } from "react";
+import { useState, useEffect, useCallback, lazy, Suspense, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,11 +12,7 @@ import { XPBar } from "@/components/cours-en-ligne/motivation/XPBar";
 import { BadgeGrid } from "@/components/cours-en-ligne/motivation/BadgeGrid";
 import { buildBadges, calculateXP } from "@/components/cours-en-ligne/motivation/badges-data";
 import { toast } from "sonner";
-import ModuleDetailView from "@/components/cours-en-ligne/ModuleDetailView";
 import ModuleChangeNotificationsBanner from "@/components/cours-en-ligne/ModuleChangeNotificationsBanner";
-import BilanFinFormationFCVtc from "@/components/cours-en-ligne/BilanFinFormationFCVtc";
-import ExamensBlancsPage from "@/components/cours-en-ligne/ExamensBlancsPage";
-import NotesView from "@/components/cours-en-ligne/NotesView";
 import StudentLogin from "@/components/cours-en-ligne/StudentLogin";
 import { FORMATIONS, MODULES_DATA, expandModulesAutorises, type FormationId } from "@/components/cours-en-ligne/formations-data";
 import { EXAMENS_BLANCS_VTC, EXAMENS_BLANCS_TAXI, EXAMENS_BLANCS_TA, EXAMENS_BLANCS_VA } from "@/components/cours-en-ligne/examens-blancs-data";
@@ -36,7 +32,15 @@ import { useAuth } from "@/contexts/AuthContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { computeUnlockState, isModuleLocked as computeIsModuleLocked } from "@/lib/moduleUnlockLogic";
 
-const StableModuleDetailView = memo(ModuleDetailView);
+const StableModuleDetailView = lazy(() => import("@/components/cours-en-ligne/ModuleDetailView"));
+const ExamensBlancsPage = lazy(() => import("@/components/cours-en-ligne/ExamensBlancsPage"));
+const NotesView = lazy(() => import("@/components/cours-en-ligne/NotesView"));
+
+const SectionLoading = () => (
+  <div className="flex items-center justify-center py-12 text-sm text-muted-foreground">
+    Chargement…
+  </div>
+);
 
 // Map CRM values to formation IDs (supports lowercase, aliases and multi-selection values like "x + y")
 const FORMATION_ALIASES: Record<string, FormationId> = {
