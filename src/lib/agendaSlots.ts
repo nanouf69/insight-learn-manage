@@ -73,13 +73,30 @@ export const getTodayAgendaBlocs = async (
   const weekStart = formatISO(startOfWeek(now));
   const dow = todayDow(now);
 
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from("agenda_blocs")
     .select("jour, heure_debut, heure_fin, formation, semaine_debut, publics_cibles" as any)
     .eq("semaine_debut", weekStart)
     .eq("jour", dow);
 
   if (error || !data) return [];
+
+  // Fallback : si l'agenda de cette semaine n'a pas été rempli pour aujourd'hui,
+  // on reprend la dernière semaine connue qui a des blocs pour ce jour.
+  // Sinon les apprenants ne sont jamais invités à émarger.
+  if (data.length === 0) {
+    const { data: fallback } = await supabase
+      .from("agenda_blocs")
+      .select("jour, heure_debut, heure_fin, formation, semaine_debut, publics_cibles" as any)
+      .eq("jour", dow)
+      .lt("semaine_debut", weekStart)
+      .order("semaine_debut", { ascending: false })
+      .limit(50);
+    if (fallback && fallback.length > 0) {
+      const latestWeek = (fallback[0] as any).semaine_debut;
+      data = (fallback as any[]).filter((b) => b.semaine_debut === latestWeek);
+    }
+  }
 
   const fLower = (formationChoisie || "").toLowerCase();
   // Détecter le public de l'apprenant à partir de formation_choisie
