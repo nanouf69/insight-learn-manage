@@ -630,6 +630,7 @@ const CorrectionQRCTab = () => {
       `Masquer les ${pendingForApp.length} QRC en attente de ${apprenantLabel} ?\n\nElles seront marquées comme corrigées avec leur note auto et déplacées dans "Déjà corrigées".`
     );
     if (!ok) return;
+    lastLocalMutationRef.current = Date.now();
 
     setSavingId(`hide-${apprenantId}`);
 
