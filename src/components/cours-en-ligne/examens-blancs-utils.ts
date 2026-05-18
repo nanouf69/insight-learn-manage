@@ -642,12 +642,12 @@ export function mergeSourceExercices<T extends MergeExerciceBase>(
         } as T;
       }
 
-      return {
+      return ({
         ...sourceQ,
         ...loadedQ,
         image: mergedImage,
         choix: resolvedChoix,
-      };
+      } as unknown) as T;
     });
 
     // Préserver les questions ajoutées par l'admin (IDs présents dans loaded mais pas dans source)
