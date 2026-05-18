@@ -305,7 +305,11 @@ const CorrectionQRCTab = () => {
 
       for (const q of questionList) {
         if (q.type !== "QRC") continue;
-        const qrcKey = `${r.apprenant_id}__${r.quiz_id}__${r.matiere_id || ""}__${q.questionId}`;
+        // Dédup volontairement SANS matiere_id : certaines matières ont des id
+        // legacy dupliqués (ex: "reglementation_taxi" vs "reglementation_taxi2")
+        // qui désignent la même matière. Une même question dans un même examen
+        // pour un même apprenant ne doit jamais apparaître deux fois.
+        const qrcKey = `${r.apprenant_id}__${r.quiz_id}__${q.questionId}`;
         if (seenQrcKeys.has(qrcKey)) continue;
         seenQrcKeys.add(qrcKey);
 
