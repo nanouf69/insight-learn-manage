@@ -19,7 +19,8 @@ import {
   Monitor,
   Package,
   Trash2,
-  ShieldCheck
+  ShieldCheck,
+  Lock
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
