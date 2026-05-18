@@ -583,6 +583,7 @@ export function FournisseursPage() {
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" onClick={() => copyLink(f.token)} className="gap-1"><Copy className="w-3.5 h-3.5" />Copier le lien</Button>
                     <Button variant="outline" size="sm" onClick={() => viewDetails(f)} className="gap-1"><Eye className="w-3.5 h-3.5" />Voir</Button>
+                    <Button variant="outline" size="sm" onClick={() => openEdit(f)} className="gap-1"><Pencil className="w-3.5 h-3.5" />Modifier</Button>
                     {f.email && (
                       <Button variant="default" size="sm" onClick={() => { setSendLinkTarget(f); setSendLinkOpen(true); }} className="gap-1">
                         <SendHorizonal className="w-3.5 h-3.5" />Envoyer le lien
