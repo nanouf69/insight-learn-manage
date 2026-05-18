@@ -628,8 +628,9 @@ const CorrectionQRCTab = () => {
           estCorrect: clamped >= q.pointsMax,
           pointsObtenus: clamped,
           nombrefautes: 0,
-          explication: `Validation auto (masqué par admin) : ${clamped}/${q.pointsMax} pts`,
+          explication: `Validation manuelle (masqué par admin) : ${clamped}/${q.pointsMax} pts`,
           commentaire: "",
+          manuel: true,
           correctedAt: nowIso,
         };
       }
