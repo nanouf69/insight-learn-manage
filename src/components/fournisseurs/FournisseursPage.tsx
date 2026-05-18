@@ -593,10 +593,14 @@ export function FournisseursPage() {
                       <p className="text-xs font-mono text-muted-foreground">IBAN : {f.iban}</p>
                     )}
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <Button variant="outline" size="sm" onClick={() => copyLink(f.token)} className="gap-1"><Copy className="w-3.5 h-3.5" />Copier le lien</Button>
-                    <Button variant="outline" size="sm" onClick={() => viewDetails(f)} className="gap-1"><Eye className="w-3.5 h-3.5" />Voir</Button>
-                    <Button variant="outline" size="sm" onClick={() => openEdit(f)} className="gap-1"><Pencil className="w-3.5 h-3.5" />Modifier</Button>
+                    <Button variant="outline" size="sm" onClick={() => { viewDetails(f); setDetailTab("coordonnees"); }} className="gap-1">
+                      <Eye className="w-3.5 h-3.5" />Voir / Modifier
+                    </Button>
+                    <Button variant="secondary" size="sm" onClick={() => { viewDetails(f); setDetailTab("contrats"); }} className="gap-1">
+                      <FileSignature className="w-3.5 h-3.5" />Envoyer le contrat
+                    </Button>
                     {f.email && (
                       <Button variant="default" size="sm" onClick={() => { setSendLinkTarget(f); setSendLinkOpen(true); }} className="gap-1">
                         <SendHorizonal className="w-3.5 h-3.5" />Envoyer le lien
