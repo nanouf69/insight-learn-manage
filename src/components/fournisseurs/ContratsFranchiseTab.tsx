@@ -65,11 +65,30 @@ export function ContratsFranchiseTab({
     if (!email) { toast({ title: "Email requis", variant: "destructive" }); return; }
     setSending(true);
     try {
+      // 1. Génère le PDF du contrat envoyé (version blanche, à compléter)
+      const blob = generateContratFranchisePdf({
+        representantNom: "[À COMPLÉTER PAR LE FRANCHISEUR]",
+        lieu: "London",
+        date: new Date().toLocaleDateString("fr-FR"),
+        signatureDataUrl: "",
+        initiales: "—",
+      });
+
+      // 2. Upload dans le bucket public pour garder une trace
+      const fileName = `contrats-envoyes/${fournisseurId}/${Date.now()}-contrat-franchise.pdf`;
+      const { error: upErr } = await supabase.storage
+        .from("fournisseur-shared-docs")
+        .upload(fileName, blob, { contentType: "application/pdf", upsert: false });
+      if (upErr) throw upErr;
+      const { data: pub } = supabase.storage.from("fournisseur-shared-docs").getPublicUrl(fileName);
+      const sentPdfUrl = pub.publicUrl;
+
+      // 3. Crée le contrat + envoie l'email (avec lien vers le PDF envoyé)
       const { data, error } = await supabase.functions.invoke("envoyer-contrat-franchise", {
-        body: { fournisseurId, destinataireEmail: email, destinataireNom: destNom, titre: "Contrat de Franchise FINALLY ACADEMY / FTRANSPORT" },
+        body: { fournisseurId, destinataireEmail: email, destinataireNom: destNom, titre: "Contrat de Franchise FINALLY ACADEMY / FTRANSPORT", sentPdfUrl },
       });
       if (error || data?.error) throw new Error(error?.message || data?.error);
-      toast({ title: "Contrat envoyé ✓", description: `Lien de signature envoyé à ${email}` });
+      toast({ title: "Contrat envoyé ✓", description: `Lien de signature envoyé à ${email} — PDF archivé` });
       setOpen(false);
       load();
     } catch (e: any) {
