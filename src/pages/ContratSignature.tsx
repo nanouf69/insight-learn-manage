@@ -354,7 +354,7 @@ export default function ContratSignature() {
             </div>
             <Button
               onClick={handleSign}
-              disabled={submitting || !accepted || !mentionValide || !representantNom.trim() || !initiales.trim()}
+              disabled={submitting || !accepted || !mentionValide || !representantNom.trim() || !initiales.trim() || !lieu.trim() || !hasSignatureRef.current}
               className="w-full"
               size="lg"
             >
