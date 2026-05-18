@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Copy, Loader2, Users, FileText, Receipt, Eye, Building2, CreditCard, Mail, RefreshCw, SendHorizonal, Upload, Trash2, FolderOpen } from "lucide-react";
+import { Plus, Copy, Loader2, Users, FileText, Receipt, Eye, Building2, CreditCard, Mail, RefreshCw, SendHorizonal, Upload, Trash2, FolderOpen, Pencil } from "lucide-react";
 import { EmailDialog } from "@/components/shared/EmailDialog";
 import { BulkEmailSender } from "@/components/shared/BulkEmailSender";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -58,6 +58,41 @@ export function FournisseursPage() {
   const [emailTarget, setEmailTarget] = useState<Fournisseur | null>(null);
   const [sendLinkOpen, setSendLinkOpen] = useState(false);
   const [sendLinkTarget, setSendLinkTarget] = useState<Fournisseur | null>(null);
+  const [editTarget, setEditTarget] = useState<Fournisseur | null>(null);
+  const [editForm, setEditForm] = useState<Partial<Fournisseur>>({});
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+
+  const openEdit = (f: Fournisseur) => {
+    setEditTarget(f);
+    setEditForm({
+      nom: f.nom, email: f.email, telephone: f.telephone,
+      adresse: f.adresse, code_postal: f.code_postal, ville: f.ville, pays: f.pays,
+      siren: f.siren, siret: f.siret, numero_tva: f.numero_tva,
+      iban: f.iban, bic: f.bic, banque: f.banque, site_web: f.site_web,
+    });
+  };
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editTarget) return;
+    setIsSavingEdit(true);
+    try {
+      const payload: any = {};
+      Object.entries(editForm).forEach(([k, v]) => { payload[k] = v === "" ? null : v; });
+      const { error } = await supabase.from('fournisseurs').update(payload).eq('id', editTarget.id);
+      if (error) throw error;
+      toast({ title: "Fournisseur mis à jour" });
+      setEditTarget(null);
+      loadFournisseurs();
+      if (selectedFournisseur?.id === editTarget.id) {
+        setSelectedFournisseur({ ...selectedFournisseur, ...payload } as Fournisseur);
+      }
+    } catch (err: any) {
+      toast({ title: "Erreur", description: err.message, variant: "destructive" });
+    } finally {
+      setIsSavingEdit(false);
+    }
+  };
 
   // Global docs from suppliers (uploaded_by = 'fournisseur')
   const [globalPageTab, setGlobalPageTab] = useState("liste");
@@ -253,6 +288,9 @@ export function FournisseursPage() {
             <Button variant="outline" size="sm" onClick={() => setSelectedFournisseur(null)}>← Retour</Button>
             <h3 className="text-lg font-semibold">{selectedFournisseur.nom}</h3>
             <Badge variant={selectedFournisseur.actif ? "default" : "secondary"}>{selectedFournisseur.actif ? "Actif" : "Inactif"}</Badge>
+            <Button variant="outline" size="sm" className="gap-1 ml-auto" onClick={() => openEdit(selectedFournisseur)}>
+              <Pencil className="w-3.5 h-3.5" />Modifier
+            </Button>
           </div>
 
           <Tabs value={detailTab} onValueChange={setDetailTab}>
@@ -548,6 +586,7 @@ export function FournisseursPage() {
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" onClick={() => copyLink(f.token)} className="gap-1"><Copy className="w-3.5 h-3.5" />Copier le lien</Button>
                     <Button variant="outline" size="sm" onClick={() => viewDetails(f)} className="gap-1"><Eye className="w-3.5 h-3.5" />Voir</Button>
+                    <Button variant="outline" size="sm" onClick={() => openEdit(f)} className="gap-1"><Pencil className="w-3.5 h-3.5" />Modifier</Button>
                     {f.email && (
                       <Button variant="default" size="sm" onClick={() => { setSendLinkTarget(f); setSendLinkOpen(true); }} className="gap-1">
                         <SendHorizonal className="w-3.5 h-3.5" />Envoyer le lien
@@ -743,6 +782,37 @@ export function FournisseursPage() {
           }}
         />
       )}
+
+      {/* Dialog modification fournisseur */}
+      <Dialog open={!!editTarget} onOpenChange={(o) => { if (!o) setEditTarget(null); }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Modifier le fournisseur</DialogTitle></DialogHeader>
+          <form onSubmit={handleSaveEdit} className="space-y-4 mt-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2 col-span-2"><Label>Nom / Raison sociale *</Label><Input required value={editForm.nom ?? ""} onChange={e => setEditForm({ ...editForm, nom: e.target.value })} /></div>
+              <div className="space-y-2"><Label>Email</Label><Input type="email" value={editForm.email ?? ""} onChange={e => setEditForm({ ...editForm, email: e.target.value })} /></div>
+              <div className="space-y-2"><Label>Téléphone</Label><Input value={editForm.telephone ?? ""} onChange={e => setEditForm({ ...editForm, telephone: e.target.value })} /></div>
+              <div className="space-y-2 col-span-2"><Label>Adresse</Label><Input value={editForm.adresse ?? ""} onChange={e => setEditForm({ ...editForm, adresse: e.target.value })} /></div>
+              <div className="space-y-2"><Label>Code postal</Label><Input value={editForm.code_postal ?? ""} onChange={e => setEditForm({ ...editForm, code_postal: e.target.value })} /></div>
+              <div className="space-y-2"><Label>Ville</Label><Input value={editForm.ville ?? ""} onChange={e => setEditForm({ ...editForm, ville: e.target.value })} /></div>
+              <div className="space-y-2"><Label>Pays</Label><Input value={editForm.pays ?? ""} onChange={e => setEditForm({ ...editForm, pays: e.target.value })} /></div>
+              <div className="space-y-2"><Label>Site web</Label><Input value={editForm.site_web ?? ""} onChange={e => setEditForm({ ...editForm, site_web: e.target.value })} /></div>
+              <div className="space-y-2"><Label>SIREN</Label><Input value={editForm.siren ?? ""} onChange={e => setEditForm({ ...editForm, siren: e.target.value })} /></div>
+              <div className="space-y-2"><Label>SIRET</Label><Input value={editForm.siret ?? ""} onChange={e => setEditForm({ ...editForm, siret: e.target.value })} /></div>
+              <div className="space-y-2 col-span-2"><Label>N° TVA</Label><Input value={editForm.numero_tva ?? ""} onChange={e => setEditForm({ ...editForm, numero_tva: e.target.value })} /></div>
+              <div className="space-y-2 col-span-2"><Label>IBAN</Label><Input value={editForm.iban ?? ""} onChange={e => setEditForm({ ...editForm, iban: e.target.value })} /></div>
+              <div className="space-y-2"><Label>BIC</Label><Input value={editForm.bic ?? ""} onChange={e => setEditForm({ ...editForm, bic: e.target.value })} /></div>
+              <div className="space-y-2"><Label>Banque</Label><Input value={editForm.banque ?? ""} onChange={e => setEditForm({ ...editForm, banque: e.target.value })} /></div>
+            </div>
+            <div className="flex justify-end gap-3 pt-2">
+              <Button type="button" variant="outline" onClick={() => setEditTarget(null)}>Annuler</Button>
+              <Button type="submit" disabled={isSavingEdit}>
+                {isSavingEdit && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}Enregistrer
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
