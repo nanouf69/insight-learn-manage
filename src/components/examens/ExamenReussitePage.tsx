@@ -245,6 +245,7 @@ export function ExamenReussitePage() {
   const [previewTab, setPreviewTab] = useState<string>('preview');
   const [extraCandidatsCMA, setExtraCandidatsCMA] = useState<string[]>([]);
   const [searchCMA, setSearchCMA] = useState("");
+  const [searchDecales, setSearchDecales] = useState("");
   const [extraCandidatsFormation, setExtraCandidatsFormation] = useState<string[]>([]);
   const [searchFormation, setSearchFormation] = useState("");
   // Planning pratique - dates configurables
