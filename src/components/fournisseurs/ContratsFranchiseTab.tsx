@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { FileSignature, Send, Loader2, Eye, Copy, CheckCircle2, Clock } from "lucide-react";
+import { FileSignature, Send, Loader2, Eye, Copy, CheckCircle2, Clock, FileText } from "lucide-react";
+import { generateContratFranchisePdf } from "@/lib/pdf/contrat-franchise";
 
 interface Contrat {
   id: string;
@@ -83,13 +84,31 @@ export function ContratsFranchiseTab({
     toast({ title: "Lien copié" });
   };
 
+  const previewContract = () => {
+    const blob = generateContratFranchisePdf({
+      representantNom: "[À COMPLÉTER PAR LE FRANCHISEUR]",
+      lieu: "London",
+      date: new Date().toLocaleDateString("fr-FR"),
+      signatureDataUrl: "",
+      initiales: "—",
+    });
+    const url = URL.createObjectURL(blob);
+    window.open(url, "_blank");
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  };
+
   return (
     <div className="space-y-4 mt-2">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <p className="text-sm text-muted-foreground">Contrats envoyés pour signature électronique</p>
-        <Button onClick={() => setOpen(true)} className="gap-2">
-          <FileSignature className="w-4 h-4" />Envoyer le contrat de franchise
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={previewContract} className="gap-2">
+            <FileText className="w-4 h-4" />Aperçu du contrat
+          </Button>
+          <Button onClick={() => setOpen(true)} className="gap-2">
+            <FileSignature className="w-4 h-4" />Envoyer le contrat de franchise
+          </Button>
+        </div>
       </div>
 
       {loading ? (
@@ -153,9 +172,26 @@ export function ContratsFranchiseTab({
               <Label>Email destinataire *</Label>
               <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="contact@finallyacademy.com" />
             </div>
+
+            <div className="rounded-md border bg-muted/40 p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">À remplir par le franchiseur</p>
+                <Button type="button" size="sm" variant="ghost" onClick={previewContract} className="h-7 gap-1 text-xs">
+                  <FileText className="w-3 h-3" />Aperçu PDF
+                </Button>
+              </div>
+              <ul className="text-xs space-y-1 list-disc pl-4 text-muted-foreground">
+                <li>Nom complet du représentant légal de Finally Academy</li>
+                <li>Initiales (paraphe apposé sur chaque page)</li>
+                <li>Lieu de signature (défaut : London)</li>
+                <li>Signature manuscrite (souris ou doigt)</li>
+                <li>Validation de la case « Lu et approuvé — Bon pour accord »</li>
+              </ul>
+            </div>
+
             <p className="text-xs text-muted-foreground">
               Un email contenant un lien sécurisé sera envoyé. Le destinataire pourra consulter le contrat,
-              renseigner le nom du représentant et signer en ligne. Vous serez notifié à la signature.
+              renseigner les champs ci-dessus et signer en ligne. Vous serez notifié à la signature et retrouverez le PDF signé ici.
             </p>
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setOpen(false)} disabled={sending}>Annuler</Button>
