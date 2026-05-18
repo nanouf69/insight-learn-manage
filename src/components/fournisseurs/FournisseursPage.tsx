@@ -782,6 +782,37 @@ export function FournisseursPage() {
           }}
         />
       )}
+
+      {/* Dialog modification fournisseur */}
+      <Dialog open={!!editTarget} onOpenChange={(o) => { if (!o) setEditTarget(null); }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Modifier le fournisseur</DialogTitle></DialogHeader>
+          <form onSubmit={handleSaveEdit} className="space-y-4 mt-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2 col-span-2"><Label>Nom / Raison sociale *</Label><Input required value={editForm.nom ?? ""} onChange={e => setEditForm({ ...editForm, nom: e.target.value })} /></div>
+              <div className="space-y-2"><Label>Email</Label><Input type="email" value={editForm.email ?? ""} onChange={e => setEditForm({ ...editForm, email: e.target.value })} /></div>
+              <div className="space-y-2"><Label>Téléphone</Label><Input value={editForm.telephone ?? ""} onChange={e => setEditForm({ ...editForm, telephone: e.target.value })} /></div>
+              <div className="space-y-2 col-span-2"><Label>Adresse</Label><Input value={editForm.adresse ?? ""} onChange={e => setEditForm({ ...editForm, adresse: e.target.value })} /></div>
+              <div className="space-y-2"><Label>Code postal</Label><Input value={editForm.code_postal ?? ""} onChange={e => setEditForm({ ...editForm, code_postal: e.target.value })} /></div>
+              <div className="space-y-2"><Label>Ville</Label><Input value={editForm.ville ?? ""} onChange={e => setEditForm({ ...editForm, ville: e.target.value })} /></div>
+              <div className="space-y-2"><Label>Pays</Label><Input value={editForm.pays ?? ""} onChange={e => setEditForm({ ...editForm, pays: e.target.value })} /></div>
+              <div className="space-y-2"><Label>Site web</Label><Input value={editForm.site_web ?? ""} onChange={e => setEditForm({ ...editForm, site_web: e.target.value })} /></div>
+              <div className="space-y-2"><Label>SIREN</Label><Input value={editForm.siren ?? ""} onChange={e => setEditForm({ ...editForm, siren: e.target.value })} /></div>
+              <div className="space-y-2"><Label>SIRET</Label><Input value={editForm.siret ?? ""} onChange={e => setEditForm({ ...editForm, siret: e.target.value })} /></div>
+              <div className="space-y-2 col-span-2"><Label>N° TVA</Label><Input value={editForm.numero_tva ?? ""} onChange={e => setEditForm({ ...editForm, numero_tva: e.target.value })} /></div>
+              <div className="space-y-2 col-span-2"><Label>IBAN</Label><Input value={editForm.iban ?? ""} onChange={e => setEditForm({ ...editForm, iban: e.target.value })} /></div>
+              <div className="space-y-2"><Label>BIC</Label><Input value={editForm.bic ?? ""} onChange={e => setEditForm({ ...editForm, bic: e.target.value })} /></div>
+              <div className="space-y-2"><Label>Banque</Label><Input value={editForm.banque ?? ""} onChange={e => setEditForm({ ...editForm, banque: e.target.value })} /></div>
+            </div>
+            <div className="flex justify-end gap-3 pt-2">
+              <Button type="button" variant="outline" onClick={() => setEditTarget(null)}>Annuler</Button>
+              <Button type="submit" disabled={isSavingEdit}>
+                {isSavingEdit && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}Enregistrer
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
