@@ -168,10 +168,15 @@ export function ContratsFranchiseTab({
                       </p>
                     )}
                   </div>
-                  <div className="flex gap-2 shrink-0">
+                  <div className="flex flex-wrap gap-2 shrink-0">
+                    {c.sent_pdf_url && (
+                      <a href={c.sent_pdf_url} target="_blank" rel="noreferrer">
+                        <Button size="sm" variant="outline" className="gap-1"><FileText className="w-3 h-3" />PDF envoyé</Button>
+                      </a>
+                    )}
                     {c.signed_pdf_url ? (
                       <a href={c.signed_pdf_url} target="_blank" rel="noreferrer">
-                        <Button size="sm" variant="outline" className="gap-1"><Eye className="w-3 h-3" />Voir PDF signé</Button>
+                        <Button size="sm" variant="outline" className="gap-1"><Eye className="w-3 h-3" />PDF signé</Button>
                       </a>
                     ) : (
                       <Button size="sm" variant="outline" className="gap-1" onClick={() => copyLink(c.token)}>
