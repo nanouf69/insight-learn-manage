@@ -335,7 +335,7 @@ export function generateContratFranchisePdf(data: ContratFranchiseData): Blob {
     doc.setFont("helvetica", fontStyle);
     doc.setFontSize(fontSize);
     const width = opts.align === "center" ? maxW : maxW - (opts.box ? 6 : 0);
-    const lines = text.flatMap((part) => doc.splitTextToSize(part, width));
+    const lines = text.split("\n").flatMap((part) => doc.splitTextToSize(part, width));
     const lineH = fontSize >= 13 ? 6 : 5;
     const h = lines.length * lineH + (opts.box ? 7 : 0);
     ensureSpace(h + 2);
@@ -355,9 +355,10 @@ export function generateContratFranchisePdf(data: ContratFranchiseData): Blob {
   const drawTable = (rows: string[][], headerRows = 0) => {
     const colCount = Math.max(...rows.map((r) => r.length));
     const colW = maxW / colCount;
+    const isSignatureTable = rows.length === 1 && rows[0]?.[0]?.startsWith("Pour le Franchiseur");
     for (const [rowIndex, row] of rows.entries()) {
       const cells = row.map((cell) => String(cell).split("\n").flatMap((part) => doc.splitTextToSize(part, colW - 6)));
-      const rowH = Math.max(...cells.map((lines) => lines.length * 5 + 8), 14);
+      const rowH = Math.max(...cells.map((lines) => lines.length * 5 + 8), isSignatureTable ? 64 : 14);
       ensureSpace(rowH);
       for (let i = 0; i < colCount; i++) {
         const x = margin + i * colW;
@@ -368,6 +369,13 @@ export function generateContratFranchisePdf(data: ContratFranchiseData): Blob {
         doc.setFont("helvetica", rowIndex < headerRows || rowIndex >= rows.length - 2 ? "bold" : "normal");
         doc.setFontSize(9);
         doc.text(cells[i] || [], x + 3, y + 2);
+        if (isSignatureTable && i === 0 && data.signatureDataUrl) {
+          try {
+            doc.addImage(data.signatureDataUrl, "PNG", x + 3, y + 32, colW - 8, 24);
+          } catch {
+            // ignore image errors
+          }
+        }
       }
       y += rowH;
     }
@@ -387,23 +395,6 @@ export function generateContratFranchisePdf(data: ContratFranchiseData): Blob {
       for (const item of block.items) drawText(`• ${value(item, data)}`);
     }
     if (block.type === "table") drawTable(block.rows.map((row) => row.map((cell) => value(cell, data))), block.headerRows || 0);
-  }
-
-  const signaturePage = doc.getNumberOfPages();
-  doc.setPage(signaturePage);
-  const sigDataUrl = data.signatureDataUrl;
-  if (sigDataUrl) {
-    try {
-      const sigLabel = "Signature :";
-      const pages = doc.getNumberOfPages();
-      for (let i = pages; i >= 1; i--) {
-        doc.setPage(i);
-        const pageText = (doc as any).getTextDimensions ? undefined : undefined;
-      }
-      doc.addImage(sigDataUrl, "PNG", margin + 3, Math.min(y, pageH - 60), 70, 28);
-    } catch {
-      // ignore image errors
-    }
   }
 
   const initiales =
