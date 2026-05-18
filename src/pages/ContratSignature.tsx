@@ -42,6 +42,10 @@ export default function ContratSignature() {
   const [initialesTouched, setInitialesTouched] = useState(false);
   const [lieu, setLieu] = useState("London");
   const [accepted, setAccepted] = useState(false);
+  const [mentionManuscrite, setMentionManuscrite] = useState("");
+  const MENTION_REQUISE = "Lu et approuvé - Bon pour accord";
+  const normalize = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ").replace(/[''`]/g, "'");
+  const mentionValide = normalize(mentionManuscrite) === normalize(MENTION_REQUISE);
   const [submitting, setSubmitting] = useState(false);
 
   // Auto-derive initiales depuis le nom
@@ -135,6 +139,7 @@ export default function ContratSignature() {
     if (!initiales.trim()) { toast({ title: "Initiales requises", variant: "destructive" }); return; }
     if (!hasSignatureRef.current) { toast({ title: "Signature requise", variant: "destructive" }); return; }
     if (!accepted) { toast({ title: "Vous devez cocher 'Lu et approuvé'", variant: "destructive" }); return; }
+    if (!mentionValide) { toast({ title: "Mention manuscrite incorrecte", description: `Recopiez exactement : « ${MENTION_REQUISE} »`, variant: "destructive" }); return; }
     setSubmitting(true);
     try {
       const sigDataUrl = canvasRef.current!.toDataURL("image/png");
@@ -328,7 +333,30 @@ export default function ContratSignature() {
               <input type="checkbox" checked={accepted} onChange={(e) => setAccepted(e.target.checked)} className="mt-1" />
               <span>J'ai lu l'intégralité du contrat et je l'approuve — <strong>« Lu et approuvé — Bon pour accord »</strong></span>
             </label>
-            <Button onClick={handleSign} disabled={submitting} className="w-full" size="lg">
+            <div>
+              <Label>Mention manuscrite obligatoire *</Label>
+              <Input
+                value={mentionManuscrite}
+                onChange={(e) => setMentionManuscrite(e.target.value)}
+                placeholder={MENTION_REQUISE}
+                className={mentionManuscrite && !mentionValide ? "border-destructive" : ""}
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Recopiez exactement : <strong>« {MENTION_REQUISE} »</strong>
+                {mentionManuscrite && (mentionValide
+                  ? <span className="text-green-600 ml-2">✓ Validé</span>
+                  : <span className="text-destructive ml-2">✗ Texte non conforme</span>)}
+              </p>
+            </div>
+            <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">
+              ⚠️ <strong>Sans signature ET sans mention manuscrite recopiée à l'identique, le contrat ne sera PAS validé.</strong>
+            </div>
+            <Button
+              onClick={handleSign}
+              disabled={submitting || !accepted || !mentionValide || !representantNom.trim() || !initiales.trim()}
+              className="w-full"
+              size="lg"
+            >
               {submitting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Signature en cours...</> : "Signer et envoyer le contrat"}
             </Button>
           </CardContent>
