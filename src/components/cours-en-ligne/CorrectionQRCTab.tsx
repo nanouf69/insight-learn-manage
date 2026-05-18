@@ -253,6 +253,9 @@ const CorrectionQRCTab = () => {
     });
     let buffer: QrcItem[] = [];
     let firstFlush = true;
+    // Collecte des QRC de repasse à persister en DB pour qu'elles ne réapparaissent plus
+    // en "En attente" au prochain chargement.
+    const retakePersistByResult: Record<string, { items: QrcItem[] }> = {};
 
     const flush = () => {
       if (buffer.length === 0) return;
