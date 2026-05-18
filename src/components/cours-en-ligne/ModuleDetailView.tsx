@@ -3261,9 +3261,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       setModuleData((prev) => {
         if (shouldSkipFetchedQuestionState(lastDbUpdatedAtRef.current, fetchStartedAt, "realtime trainer override reload")) return prev;
 
+        let mutated = false;
         const updatedExercices = prev.exercices
           .map((exo) => {
             if (!exo.questions || exo.questions.length === 0) return exo;
+            let exoMutated = false;
             const updatedQuestions = exo.questions
               .map((q) => {
                 const override = overrideMap.get(`${exo.id}-${q.id}`);
@@ -3274,17 +3276,28 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 const adminTs = (q as any)._editedAt ?? undefined;
                 const winner = resolveOverrideConflict(adminTs, override.updated_at);
                 if (winner === "admin") return q;
+                const newChoix = resolveCorrectAnswers(q as any, { choix: override.choix } as any);
+                if (q.enonce === override.enonce && JSON.stringify(q.choix) === JSON.stringify(newChoix)) {
+                  return q;
+                }
+                exoMutated = true;
                 return {
                   ...q,
                   enonce: override.enonce,
-                  choix: resolveCorrectAnswers(q as any, { choix: override.choix } as any),
+                  choix: newChoix,
                 };
               })
               .filter((q) => q.enonce !== "__DELETED__");
-            if (exo.questions.length > 0 && updatedQuestions.length === 0) return null;
+            if (exo.questions.length > 0 && updatedQuestions.length === 0) {
+              mutated = true;
+              return null;
+            }
+            if (!exoMutated && updatedQuestions.length === exo.questions.length) return exo;
+            mutated = true;
             return { ...exo, questions: updatedQuestions };
           })
           .filter((exo): exo is ExerciceItem => exo !== null);
+        if (!mutated) return prev;
         return { ...prev, exercices: updatedExercices };
       });
     };
