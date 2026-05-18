@@ -490,6 +490,120 @@ const CorrectionQRCTab = () => {
     setEditingId(null);
   };
 
+  // Masquer toutes les QRC en attente d'un apprenant : on les valide avec leur autoScore
+  // et on les marque comme corrigées manuellement pour qu'elles disparaissent de la liste
+  // "En attente" et basculent dans "Déjà corrigées".
+  const handleHideApprenant = async (apprenantId: string, apprenantLabel: string) => {
+    const pendingForApp = items.filter(i => i.apprenantId === apprenantId && !i.corrigeManuel);
+    if (pendingForApp.length === 0) {
+      toast.info("Aucune QRC en attente pour cet apprenant.");
+      return;
+    }
+    const ok = window.confirm(
+      `Masquer les ${pendingForApp.length} QRC en attente de ${apprenantLabel} ?\n\nElles seront marquées comme corrigées avec leur note auto et déplacées dans "Déjà corrigées".`
+    );
+    if (!ok) return;
+
+    setSavingId(`hide-${apprenantId}`);
+
+    // Regrouper par resultId pour ne faire qu'un update par ligne DB
+    const byResult: Record<string, QrcItem[]> = {};
+    for (const it of pendingForApp) {
+      (byResult[it.resultId] ||= []).push(it);
+    }
+
+    const updatedResultScores: Record<string, { score: number; note: number; max: number }> = {};
+    let okCount = 0;
+    let errCount = 0;
+
+    for (const [resultId, qrcs] of Object.entries(byResult)) {
+      const { data: row, error: fetchErr } = await supabase
+        .from("apprenant_quiz_results")
+        .select("details, score_obtenu, score_max, quiz_id, matiere_id")
+        .eq("id", resultId)
+        .single();
+
+      if (fetchErr || !row) { errCount += qrcs.length; continue; }
+
+      const details: any = (row as any).details || {};
+      const correctionsIA = details.correctionsIA || {};
+      const nowIso = new Date().toISOString();
+
+      for (const q of qrcs) {
+        const clamped = clampToHalfStep(q.autoScore, q.pointsMax);
+        correctionsIA[q.questionId] = {
+          estCorrect: clamped >= q.pointsMax,
+          pointsObtenus: clamped,
+          nombrefautes: 0,
+          explication: `Validation auto (masqué par admin) : ${clamped}/${q.pointsMax} pts`,
+          commentaire: "",
+          correctedAt: nowIso,
+        };
+      }
+
+      // Recalcul du score matière
+      const examen = examenMap[(row as any).quiz_id];
+      const matiere = examen?.matieres?.find((m: Matiere) => m.id === (row as any).matiere_id);
+      const questions = details.questions || [];
+      const reponses = details.reponses || {};
+      let newScore = 0;
+      for (const qq of questions) {
+        if (!qq) continue;
+        const pts = getPointsParQuestion(matiere?.id || "", qq.type || "QCM", matiere || undefined);
+        if (qq.type === "QCM" && qq.reponseCorrecte) {
+          const correctes = Array.isArray(qq.reponseCorrecte) ? [...qq.reponseCorrecte].sort() : [qq.reponseCorrecte];
+          const donnees = Array.isArray(reponses[qq.questionId]) ? [...reponses[qq.questionId]].sort() : (reponses[qq.questionId] ? [reponses[qq.questionId]] : []);
+          if (JSON.stringify(correctes) === JSON.stringify(donnees)) newScore += pts;
+        } else if (qq.type === "QRC") {
+          const corr = correctionsIA[qq.questionId];
+          if (corr && typeof corr === "object") newScore += clampToHalfStep(corr.pointsObtenus || 0, pts);
+        }
+      }
+
+      const scoreMax = (row as any).score_max || 20;
+      const safeClamped = Math.min(Math.max(newScore, 0), scoreMax);
+      const existingScore = Math.max(Number((row as any).score_obtenu) || 0, 0);
+      const protectedScore = safeClamped <= 0 && existingScore > 0 ? existingScore : safeClamped;
+      const noteSur20 = scoreMax > 0 ? Number(((protectedScore / scoreMax) * 20).toFixed(1)) : 0;
+
+      const { error: updErr } = await supabase
+        .from("apprenant_quiz_results")
+        .update({
+          score_obtenu: protectedScore,
+          note_sur_20: noteSur20,
+          details: { ...details, correctionsIA },
+        } as any)
+        .eq("id", resultId);
+
+      if (updErr) { errCount += qrcs.length; continue; }
+      okCount += qrcs.length;
+      updatedResultScores[resultId] = { score: protectedScore, note: noteSur20, max: scoreMax };
+    }
+
+    setItems(prev => prev.map(i => {
+      if (i.apprenantId !== apprenantId) return i;
+      const upd = updatedResultScores[i.resultId];
+      const base = upd ? { ...i, noteSur20: upd.note, scoreMatiereObtenu: upd.score, scoreMatiereMax: upd.max } : i;
+      if (!i.corrigeManuel && updatedResultScores[i.resultId]) {
+        return {
+          ...base,
+          pointsObtenus: clampToHalfStep(i.autoScore, i.pointsMax),
+          corrigeManuel: true,
+          commentaire: "",
+          correctedAt: new Date().toISOString(),
+        };
+      }
+      return base;
+    }));
+
+    setSavingId(null);
+    setEditingId(null);
+    setCurrentIndex(0);
+
+    if (errCount === 0) toast.success(`${okCount} QRC masquées pour ${apprenantLabel}.`);
+    else toast.warning(`${okCount} masquées, ${errCount} en erreur.`);
+  };
+
   const pendingCount = items.filter(i => !i.corrigeManuel).length;
   const doneCount = items.filter(i => i.corrigeManuel).length;
 
