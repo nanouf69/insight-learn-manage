@@ -232,6 +232,17 @@ export default function ContratSignature() {
               <Input value={representantNom} onChange={(e) => setRepresentantNom(e.target.value)} placeholder="Ex : John Smith" />
             </div>
             <div>
+              <Label>Initiales (paraphe sur chaque page) *</Label>
+              <Input
+                value={initiales}
+                onChange={(e) => { setInitiales(e.target.value.toUpperCase().slice(0, 4)); setInitialesTouched(true); }}
+                placeholder="Ex : JS"
+                maxLength={4}
+                className="uppercase font-bold tracking-widest"
+              />
+              <p className="text-xs text-muted-foreground mt-1">Ces initiales seront apposées en pied de chaque page du contrat.</p>
+            </div>
+            <div>
               <Label>Lieu de signature</Label>
               <Input value={lieu} onChange={(e) => setLieu(e.target.value)} placeholder="London" />
             </div>
