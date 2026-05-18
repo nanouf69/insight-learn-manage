@@ -3268,12 +3268,17 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               .map((q) => {
                 const override = overrideMap.get(`${exo.id}-${q.id}`);
                 if (!override) return q;
-                // Règle dure: si la question a été modifiée par l'admin (_editedAt),
-                // les réponses correctes admin gagnent toujours, sans comparer les timestamps.
+                // Règle dure centralisée : si la question a été modifiée par l'admin
+                // (_editedAt), ses choix gagnent TOUJOURS, sans exception.
+                if (hasAdminEdit(q as any)) return q;
                 const adminTs = (q as any)._editedAt ?? undefined;
                 const winner = resolveOverrideConflict(adminTs, override.updated_at);
                 if (winner === "admin") return q;
-                return { ...q, enonce: override.enonce, choix: override.choix };
+                return {
+                  ...q,
+                  enonce: override.enonce,
+                  choix: resolveCorrectAnswers(q as any, { choix: override.choix } as any),
+                };
               })
               .filter((q) => q.enonce !== "__DELETED__");
             if (exo.questions.length > 0 && updatedQuestions.length === 0) return null;
