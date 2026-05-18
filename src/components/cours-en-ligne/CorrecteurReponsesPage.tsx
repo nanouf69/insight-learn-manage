@@ -123,6 +123,7 @@ const CorrecteurReponsesPage = () => {
   const [saving, setSaving] = useState(false);
   const [row, setRow] = useState<EditorRow | null>(null);
   const [exercices, setExercices] = useState<Exercice[]>([]);
+  const [confirmations, setConfirmations] = useState<SaveConfirmation[]>([]);
 
   const selectedModule = useMemo(
     () => sortedModules.find((m) => m.id === moduleId) ?? null,
@@ -136,7 +137,7 @@ const CorrecteurReponsesPage = () => {
     try {
       const { data, error } = await supabase
         .from("module_editor_state")
-        .select("module_data, deleted_cours, deleted_exercices, updated_at")
+        .select("module_id, module_data, deleted_cours, deleted_exercices, updated_at")
         .eq("module_id", id)
         .order("updated_at", { ascending: false })
         .limit(1)
@@ -151,6 +152,7 @@ const CorrecteurReponsesPage = () => {
       const md = data.module_data as unknown as ModuleData;
       setRow(data as EditorRow);
       setExercices(Array.isArray(md.exercices) ? md.exercices : []);
+      setConfirmations([]);
     } catch (err: any) {
       console.error("[CorrecteurReponses] load error", err);
       toast.error(err?.message || "Impossible de charger le module");
@@ -207,41 +209,104 @@ const CorrecteurReponsesPage = () => {
     setSaving(true);
     try {
       const now = new Date().toISOString();
-      const lockedExercices: Exercice[] = exercices.map((exo) => ({
-        ...exo,
-        questions: (exo.questions ?? []).map((q) => ({
-          ...q,
-          admin_locked: true,
-          _editedAt: now,
-          choix: (q.choix ?? []).map((c) => ({
-            ...c,
-            admin_locked: true,
-          })),
-        })),
-      }));
+      const { data: rows, error: rowsError } = await supabase
+        .from("module_editor_state")
+        .select("module_id, module_data, deleted_cours, deleted_exercices, updated_at")
+        .order("module_id", { ascending: true });
+      if (rowsError) throw rowsError;
 
-      const nextModuleData: ModuleData = {
-        ...(row.module_data || {}),
-        id: moduleId,
-        nom: selectedModule?.nom || row.module_data?.nom || `Module ${moduleId}`,
-        exercices: lockedExercices,
-      };
+      const editorQuestions = exercices.flatMap((exo) =>
+        (exo.questions ?? []).map((question) => ({ exo, question })),
+      );
+
+      const affectedRows = ((rows as EditorRow[]) ?? [])
+        .map((dbRow) => {
+          const moduleData = dbRow.module_data as ModuleData;
+          const dbExercices = Array.isArray(moduleData?.exercices) ? moduleData.exercices : [];
+          let changed = false;
+
+          const nextExercices = dbExercices.map((dbExo) => {
+            const matchingEditorExo = exercices.find((editedExo) => sameExercise(editedExo, dbExo));
+            if (!matchingEditorExo) return dbExo;
+
+            const nextQuestions = (dbExo.questions ?? []).map((dbQuestion) => {
+              const editedQuestion = (matchingEditorExo.questions ?? []).find((q) => sameQuestion(q, dbQuestion));
+              if (!editedQuestion) return dbQuestion;
+              changed = true;
+              return lockQuestionFromEditor(dbQuestion, editedQuestion, now);
+            });
+
+            return { ...dbExo, questions: nextQuestions };
+          });
+
+          return changed
+            ? {
+                dbRow,
+                nextModuleData: {
+                  ...(moduleData || {}),
+                  id: Number(dbRow.module_id),
+                  nom: moduleData?.nom || sortedModules.find((m) => m.id === Number(dbRow.module_id))?.nom || `Module ${dbRow.module_id}`,
+                  exercices: nextExercices,
+                } as ModuleData,
+              }
+            : null;
+        })
+        .filter(Boolean) as Array<{ dbRow: EditorRow; nextModuleData: ModuleData }>;
+
+      if (affectedRows.length === 0 && editorQuestions.length > 0) {
+        throw new Error("Aucun module partagé trouvé pour ces exercices/questions.");
+      }
+
+      const upserts = affectedRows.map(({ dbRow, nextModuleData }) => ({
+        module_id: Number(dbRow.module_id),
+        module_data: nextModuleData as any,
+        deleted_cours: dbRow.deleted_cours ?? [],
+        deleted_exercices: dbRow.deleted_exercices ?? [],
+        source_fingerprint: `correcteur:${now}`,
+      }));
 
       const { error } = await supabase
         .from("module_editor_state")
-        .upsert(
-          {
-            module_id: moduleId,
-            module_data: nextModuleData as any,
-            deleted_cours: row.deleted_cours ?? [],
-            deleted_exercices: row.deleted_exercices ?? [],
-            source_fingerprint: `correcteur:${now}`,
-          },
-          { onConflict: "module_id" },
-        );
+        .upsert(upserts, { onConflict: "module_id" });
       if (error) throw error;
 
-      toast.success("Réponses verrouillées et enregistrées ✅");
+      const affectedModuleIds = affectedRows.map(({ dbRow }) => Number(dbRow.module_id));
+      const { data: readBackRows, error: readBackError } = await supabase
+        .from("module_editor_state")
+        .select("module_id, module_data")
+        .in("module_id", affectedModuleIds)
+        .order("module_id", { ascending: true });
+      if (readBackError) throw readBackError;
+
+      const readBackConfirmations = ((readBackRows as EditorRow[]) ?? []).flatMap((dbRow) => {
+        const moduleData = dbRow.module_data as ModuleData;
+        const dbExercices = Array.isArray(moduleData?.exercices) ? moduleData.exercices : [];
+        return dbExercices.flatMap((dbExo) => {
+          const matchingEditorExo = exercices.find((editedExo) => sameExercise(editedExo, dbExo));
+          if (!matchingEditorExo) return [];
+          return (dbExo.questions ?? [])
+            .filter((dbQuestion) => (matchingEditorExo.questions ?? []).some((q) => sameQuestion(q, dbQuestion)))
+            .map((dbQuestion) => ({
+              moduleId: Number(dbRow.module_id),
+              exerciceId: dbExo.id,
+              questionId: Number(dbQuestion.id),
+              enonce: dbQuestion.enonce,
+              choix: dbQuestion.choix ?? [],
+              questionAdminLocked: dbQuestion.admin_locked === true,
+            }));
+        });
+      });
+
+      const missingLock = readBackConfirmations.find(
+        (item) => !item.questionAdminLocked || item.choix.some((choice) => choice.admin_locked !== true),
+      );
+      if (missingLock) {
+        throw new Error(`Écriture non confirmée pour module ${missingLock.moduleId}, Q${missingLock.questionId}`);
+      }
+
+      setConfirmations(readBackConfirmations);
+
+      toast.success(`Réponses verrouillées sur ${affectedRows.length} module(s) ✅`);
       await loadModule(moduleId);
     } catch (err: any) {
       console.error("[CorrecteurReponses] save error", err);
