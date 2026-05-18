@@ -86,10 +86,10 @@ export function ContratsFranchiseTab({
 
       // 3. Crée le contrat + envoie l'email (avec lien vers le PDF envoyé)
       const { data, error } = await supabase.functions.invoke("envoyer-contrat-franchise", {
-        body: { fournisseurId, destinataireEmail: email, destinataireNom: destNom, titre: "Contrat de Franchise FINALLY ACADEMY / FTRANSPORT", sentPdfUrl },
+        body: { fournisseurId, destinataireEmail: email, destinataireNom: destNom, titre: "Contrat de Franchise FINALLY ACADEMY / FTRANSPORT", sentPdfUrl, pdfOnly },
       });
       if (error || data?.error) throw new Error(error?.message || data?.error);
-      toast({ title: "Contrat envoyé ✓", description: `Lien de signature envoyé à ${email} — PDF archivé` });
+      toast({ title: "Contrat envoyé ✓", description: pdfOnly ? `PDF envoyé à ${email} en pièce jointe` : `Lien de signature envoyé à ${email} — PDF archivé` });
       setOpen(false);
       load();
     } catch (e: any) {
