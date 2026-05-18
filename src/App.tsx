@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -7,36 +7,40 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import Index from "./pages/Index";
-import Login from "./pages/Login";
-import NotFound from "./pages/NotFound";
-import ReservationPratique from "./pages/ReservationPratique";
-import InscriptionFormationContinue from "./pages/InscriptionFormationContinue";
-import FournisseurPortal from "./pages/FournisseurPortal";
-import CoursPublic from "./pages/CoursPublic";
-import ResetPassword from "./pages/ResetPassword";
-import PreInformationPublic from "./pages/PreInformationPublic";
-import AuthCallback from "./pages/AuthCallback";
-import RevolutTransactions from "./pages/RevolutTransactions";
-import RevolutConnect from "./pages/RevolutConnect";
-import DevisPublic from "./pages/DevisPublic";
-import DevisPersonnel from "./pages/DevisPersonnel";
-import ReservationCarteVtc from "./pages/ReservationCarteVtc";
+const Index = lazy(() => import("./pages/Index"));
+const Login = lazy(() => import("./pages/Login"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const ReservationPratique = lazy(() => import("./pages/ReservationPratique"));
+const InscriptionFormationContinue = lazy(() => import("./pages/InscriptionFormationContinue"));
+const FournisseurPortal = lazy(() => import("./pages/FournisseurPortal"));
+const CoursPublic = lazy(() => import("./pages/CoursPublic"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const PreInformationPublic = lazy(() => import("./pages/PreInformationPublic"));
+const AuthCallback = lazy(() => import("./pages/AuthCallback"));
+const RevolutTransactions = lazy(() => import("./pages/RevolutTransactions"));
+const RevolutConnect = lazy(() => import("./pages/RevolutConnect"));
+const DevisPublic = lazy(() => import("./pages/DevisPublic"));
+const DevisPersonnel = lazy(() => import("./pages/DevisPersonnel"));
+const ReservationCarteVtc = lazy(() => import("./pages/ReservationCarteVtc"));
+const OnboardingWelcome = lazy(() => import("./pages/onboarding/OnboardingWelcome"));
+const Step1 = lazy(() => import("./pages/onboarding/steps/Step1"));
+const Step2 = lazy(() => import("./pages/onboarding/steps/Step2"));
+const Step3 = lazy(() => import("./pages/onboarding/steps/Step3"));
+const Step4 = lazy(() => import("./pages/onboarding/steps/Step4"));
+const Step5 = lazy(() => import("./pages/onboarding/steps/Step5"));
+const Step6 = lazy(() => import("./pages/onboarding/steps/Step6"));
+const Step7 = lazy(() => import("./pages/onboarding/steps/Step7"));
+const Step8 = lazy(() => import("./pages/onboarding/steps/Step8"));
+const Step9 = lazy(() => import("./pages/onboarding/steps/Step9"));
+const Step10 = lazy(() => import("./pages/onboarding/steps/Step10"));
+const Step11 = lazy(() => import("./pages/onboarding/steps/Step11"));
+const Step12 = lazy(() => import("./pages/onboarding/steps/Step12"));
 
-// Onboarding pages
-import OnboardingWelcome from "./pages/onboarding/OnboardingWelcome";
-import Step1 from "./pages/onboarding/steps/Step1";
-import Step2 from "./pages/onboarding/steps/Step2";
-import Step3 from "./pages/onboarding/steps/Step3";
-import Step4 from "./pages/onboarding/steps/Step4";
-import Step5 from "./pages/onboarding/steps/Step5";
-import Step6 from "./pages/onboarding/steps/Step6";
-import Step7 from "./pages/onboarding/steps/Step7";
-import Step8 from "./pages/onboarding/steps/Step8";
-import Step9 from "./pages/onboarding/steps/Step9";
-import Step10 from "./pages/onboarding/steps/Step10";
-import Step11 from "./pages/onboarding/steps/Step11";
-import Step12 from "./pages/onboarding/steps/Step12";
+const PageLoading = () => (
+  <div className="min-h-screen flex items-center justify-center bg-background">
+    <div className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+  </div>
+);
 
 function App() {
   const [queryClient] = useState(() => new QueryClient());
@@ -49,6 +53,7 @@ function App() {
           <Sonner />
           <BrowserRouter>
             <ErrorBoundary>
+              <Suspense fallback={<PageLoading />}>
               <Routes>
                 <Route path="/login" element={<ErrorBoundary><Login /></ErrorBoundary>} />
                 <Route
@@ -100,6 +105,7 @@ function App() {
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
+              </Suspense>
             </ErrorBoundary>
           </BrowserRouter>
         </TooltipProvider>
