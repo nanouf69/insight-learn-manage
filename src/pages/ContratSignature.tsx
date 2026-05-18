@@ -42,6 +42,10 @@ export default function ContratSignature() {
   const [initialesTouched, setInitialesTouched] = useState(false);
   const [lieu, setLieu] = useState("London");
   const [accepted, setAccepted] = useState(false);
+  const [mentionManuscrite, setMentionManuscrite] = useState("");
+  const MENTION_REQUISE = "Lu et approuvé - Bon pour accord";
+  const normalize = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ").replace(/[''`]/g, "'");
+  const mentionValide = normalize(mentionManuscrite) === normalize(MENTION_REQUISE);
   const [submitting, setSubmitting] = useState(false);
 
   // Auto-derive initiales depuis le nom
