@@ -7,10 +7,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Copy, Loader2, Users, FileText, Receipt, Eye, Building2, CreditCard, Mail, RefreshCw, SendHorizonal, Upload, Trash2, FolderOpen, Pencil } from "lucide-react";
+import { Plus, Copy, Loader2, Users, FileText, Receipt, Eye, Building2, CreditCard, Mail, RefreshCw, SendHorizonal, Upload, Trash2, FolderOpen, Pencil, FileSignature } from "lucide-react";
 import { EmailDialog } from "@/components/shared/EmailDialog";
 import { BulkEmailSender } from "@/components/shared/BulkEmailSender";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ContratsFranchiseTab } from "./ContratsFranchiseTab";
 
 interface Fournisseur {
   id: string;
@@ -302,6 +303,7 @@ export function FournisseursPage() {
               <TabsTrigger value="documents" className="gap-2"><FileText className="w-4 h-4" />Docs apprenants ({detailDocuments.length})</TabsTrigger>
               <TabsTrigger value="factures" className="gap-2"><Receipt className="w-4 h-4" />Factures ({detailFactures.length})</TabsTrigger>
               <TabsTrigger value="messages" className="gap-2"><Mail className="w-4 h-4" />Messages</TabsTrigger>
+              <TabsTrigger value="contrats" className="gap-2"><FileSignature className="w-4 h-4" />Contrats</TabsTrigger>
             </TabsList>
 
             <TabsContent value="coordonnees">
@@ -555,6 +557,14 @@ export function FournisseursPage() {
               ) : (
                 <p className="text-muted-foreground py-4">Aucune adresse email renseignée pour ce fournisseur.</p>
               )}
+            </TabsContent>
+
+            <TabsContent value="contrats">
+              <ContratsFranchiseTab
+                fournisseurId={selectedFournisseur.id}
+                fournisseurEmail={selectedFournisseur.email}
+                fournisseurNom={selectedFournisseur.nom}
+              />
             </TabsContent>
           </Tabs>
         </div>
