@@ -84,13 +84,31 @@ export function ContratsFranchiseTab({
     toast({ title: "Lien copié" });
   };
 
+  const previewContract = () => {
+    const blob = generateContratFranchisePdf({
+      representantNom: "[À COMPLÉTER PAR LE FRANCHISEUR]",
+      lieu: "London",
+      date: new Date().toLocaleDateString("fr-FR"),
+      signatureDataUrl: "",
+      initiales: "—",
+    });
+    const url = URL.createObjectURL(blob);
+    window.open(url, "_blank");
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  };
+
   return (
     <div className="space-y-4 mt-2">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <p className="text-sm text-muted-foreground">Contrats envoyés pour signature électronique</p>
-        <Button onClick={() => setOpen(true)} className="gap-2">
-          <FileSignature className="w-4 h-4" />Envoyer le contrat de franchise
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={previewContract} className="gap-2">
+            <FileText className="w-4 h-4" />Aperçu du contrat
+          </Button>
+          <Button onClick={() => setOpen(true)} className="gap-2">
+            <FileSignature className="w-4 h-4" />Envoyer le contrat de franchise
+          </Button>
+        </div>
       </div>
 
       {loading ? (
