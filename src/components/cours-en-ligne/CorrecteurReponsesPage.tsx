@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { MODULES_DATA } from "./formations-data";
 import { Button } from "@/components/ui/button";
@@ -55,13 +55,67 @@ interface ModuleData {
 }
 
 interface EditorRow {
+  module_id?: number;
   module_data: ModuleData;
   deleted_cours: any[] | null;
   deleted_exercices: any[] | null;
   updated_at: string;
 }
 
+interface SaveConfirmation {
+  moduleId: number;
+  exerciceId: number | string;
+  questionId: number;
+  enonce: string;
+  choix: Choix[];
+  questionAdminLocked: boolean;
+}
+
 const sortedModules = [...MODULES_DATA].sort((a, b) => a.id - b.id);
+
+const normalizeText = (value: unknown) =>
+  String(value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+
+const sameExercise = (a: Exercice, b: Exercice) => {
+  if (a?.id != null && b?.id != null && Number(a.id) === Number(b.id)) return true;
+  return normalizeText(a?.titre) === normalizeText(b?.titre) && normalizeText(a?.sousTitre) === normalizeText(b?.sousTitre);
+};
+
+const sameQuestion = (a: Question, b: Question) => {
+  if (a?.id != null && b?.id != null && Number(a.id) === Number(b.id)) return true;
+  return normalizeText(a?.enonce) === normalizeText(b?.enonce);
+};
+
+const lockQuestionFromEditor = (dbQuestion: Question, editedQuestion: Question, editedAt: string): Question => {
+  const editedChoixByLetter = new Map(
+    (editedQuestion.choix ?? []).map((choice) => [String(choice.lettre ?? ""), choice]),
+  );
+  const sourceChoix = (dbQuestion.choix?.length ? dbQuestion.choix : editedQuestion.choix) ?? [];
+
+  return {
+    ...dbQuestion,
+    ...editedQuestion,
+    id: dbQuestion.id ?? editedQuestion.id,
+    enonce: editedQuestion.enonce ?? dbQuestion.enonce,
+    admin_locked: true,
+    _editedAt: editedAt,
+    choix: sourceChoix.map((dbChoice, index) => {
+      const editedChoice =
+        editedChoixByLetter.get(String(dbChoice.lettre ?? "")) ?? editedQuestion.choix?.[index] ?? dbChoice;
+      return {
+        ...dbChoice,
+        ...editedChoice,
+        correct: editedChoice.correct === true,
+        admin_locked: true,
+      };
+    }),
+  };
+};
 
 const CorrecteurReponsesPage = () => {
   const [moduleId, setModuleId] = useState<number | null>(null);
@@ -69,20 +123,16 @@ const CorrecteurReponsesPage = () => {
   const [saving, setSaving] = useState(false);
   const [row, setRow] = useState<EditorRow | null>(null);
   const [exercices, setExercices] = useState<Exercice[]>([]);
+  const [confirmations, setConfirmations] = useState<SaveConfirmation[]>([]);
 
-  const selectedModule = useMemo(
-    () => sortedModules.find((m) => m.id === moduleId) ?? null,
-    [moduleId],
-  );
-
-  const loadModule = async (id: number) => {
+  const loadModule = async (id: number, clearConfirmations = true) => {
     setLoading(true);
     setRow(null);
     setExercices([]);
     try {
       const { data, error } = await supabase
         .from("module_editor_state")
-        .select("module_data, deleted_cours, deleted_exercices, updated_at")
+        .select("module_id, module_data, deleted_cours, deleted_exercices, updated_at")
         .eq("module_id", id)
         .order("updated_at", { ascending: false })
         .limit(1)
@@ -97,6 +147,7 @@ const CorrecteurReponsesPage = () => {
       const md = data.module_data as unknown as ModuleData;
       setRow(data as EditorRow);
       setExercices(Array.isArray(md.exercices) ? md.exercices : []);
+      if (clearConfirmations) setConfirmations([]);
     } catch (err: any) {
       console.error("[CorrecteurReponses] load error", err);
       toast.error(err?.message || "Impossible de charger le module");
@@ -153,42 +204,104 @@ const CorrecteurReponsesPage = () => {
     setSaving(true);
     try {
       const now = new Date().toISOString();
-      const lockedExercices: Exercice[] = exercices.map((exo) => ({
-        ...exo,
-        questions: (exo.questions ?? []).map((q) => ({
-          ...q,
-          admin_locked: true,
-          _editedAt: now,
-          choix: (q.choix ?? []).map((c) => ({
-            ...c,
-            admin_locked: true,
-          })),
-        })),
-      }));
+      const { data: rows, error: rowsError } = await supabase
+        .from("module_editor_state")
+        .select("module_id, module_data, deleted_cours, deleted_exercices, updated_at")
+        .order("module_id", { ascending: true });
+      if (rowsError) throw rowsError;
 
-      const nextModuleData: ModuleData = {
-        ...(row.module_data || {}),
-        id: moduleId,
-        nom: selectedModule?.nom || row.module_data?.nom || `Module ${moduleId}`,
-        exercices: lockedExercices,
-      };
+      const editorQuestions = exercices.flatMap((exo) =>
+        (exo.questions ?? []).map((question) => ({ exo, question })),
+      );
+
+      const affectedRows = ((rows as EditorRow[]) ?? [])
+        .map((dbRow) => {
+          const moduleData = dbRow.module_data as ModuleData;
+          const dbExercices = Array.isArray(moduleData?.exercices) ? moduleData.exercices : [];
+          let changed = false;
+
+          const nextExercices = dbExercices.map((dbExo) => {
+            const matchingEditorExo = exercices.find((editedExo) => sameExercise(editedExo, dbExo));
+            if (!matchingEditorExo) return dbExo;
+
+            const nextQuestions = (dbExo.questions ?? []).map((dbQuestion) => {
+              const editedQuestion = (matchingEditorExo.questions ?? []).find((q) => sameQuestion(q, dbQuestion));
+              if (!editedQuestion) return dbQuestion;
+              changed = true;
+              return lockQuestionFromEditor(dbQuestion, editedQuestion, now);
+            });
+
+            return { ...dbExo, questions: nextQuestions };
+          });
+
+          return changed
+            ? {
+                dbRow,
+                nextModuleData: {
+                  ...(moduleData || {}),
+                  id: Number(dbRow.module_id),
+                  nom: moduleData?.nom || sortedModules.find((m) => m.id === Number(dbRow.module_id))?.nom || `Module ${dbRow.module_id}`,
+                  exercices: nextExercices,
+                } as ModuleData,
+              }
+            : null;
+        })
+        .filter(Boolean) as Array<{ dbRow: EditorRow; nextModuleData: ModuleData }>;
+
+      if (affectedRows.length === 0 && editorQuestions.length > 0) {
+        throw new Error("Aucun module partagé trouvé pour ces exercices/questions.");
+      }
+
+      const upserts = affectedRows.map(({ dbRow, nextModuleData }) => ({
+        module_id: Number(dbRow.module_id),
+        module_data: nextModuleData as any,
+        deleted_cours: dbRow.deleted_cours ?? [],
+        deleted_exercices: dbRow.deleted_exercices ?? [],
+        source_fingerprint: `correcteur:${now}`,
+      }));
 
       const { error } = await supabase
         .from("module_editor_state")
-        .upsert(
-          {
-            module_id: moduleId,
-            module_data: nextModuleData as any,
-            deleted_cours: row.deleted_cours ?? [],
-            deleted_exercices: row.deleted_exercices ?? [],
-            source_fingerprint: `correcteur:${now}`,
-          },
-          { onConflict: "module_id" },
-        );
+        .upsert(upserts, { onConflict: "module_id" });
       if (error) throw error;
 
-      toast.success("Réponses verrouillées et enregistrées ✅");
-      await loadModule(moduleId);
+      const affectedModuleIds = affectedRows.map(({ dbRow }) => Number(dbRow.module_id));
+      const { data: readBackRows, error: readBackError } = await supabase
+        .from("module_editor_state")
+        .select("module_id, module_data")
+        .in("module_id", affectedModuleIds)
+        .order("module_id", { ascending: true });
+      if (readBackError) throw readBackError;
+
+      const readBackConfirmations = ((readBackRows as EditorRow[]) ?? []).flatMap((dbRow) => {
+        const moduleData = dbRow.module_data as ModuleData;
+        const dbExercices = Array.isArray(moduleData?.exercices) ? moduleData.exercices : [];
+        return dbExercices.flatMap((dbExo) => {
+          const matchingEditorExo = exercices.find((editedExo) => sameExercise(editedExo, dbExo));
+          if (!matchingEditorExo) return [];
+          return (dbExo.questions ?? [])
+            .filter((dbQuestion) => (matchingEditorExo.questions ?? []).some((q) => sameQuestion(q, dbQuestion)))
+            .map((dbQuestion) => ({
+              moduleId: Number(dbRow.module_id),
+              exerciceId: dbExo.id,
+              questionId: Number(dbQuestion.id),
+              enonce: dbQuestion.enonce,
+              choix: dbQuestion.choix ?? [],
+              questionAdminLocked: dbQuestion.admin_locked === true,
+            }));
+        });
+      });
+
+      const missingLock = readBackConfirmations.find(
+        (item) => !item.questionAdminLocked || item.choix.some((choice) => choice.admin_locked !== true),
+      );
+      if (missingLock) {
+        throw new Error(`Écriture non confirmée pour module ${missingLock.moduleId}, Q${missingLock.questionId}`);
+      }
+
+      toast.success(`Réponses verrouillées sur ${affectedRows.length} module(s) ✅`);
+      await loadModule(moduleId, false);
+      setConfirmations(readBackConfirmations);
     } catch (err: any) {
       console.error("[CorrecteurReponses] save error", err);
       toast.error(err?.message || "Échec de la sauvegarde");
@@ -351,6 +464,29 @@ const CorrecteurReponsesPage = () => {
             </CardContent>
           </Card>
         ))}
+
+      {!loading && confirmations.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-primary" /> Confirmation DB
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {confirmations.map((item) => (
+              <div key={`${item.moduleId}-${item.exerciceId}-${item.questionId}`} className="border border-border rounded-lg p-3 text-sm">
+                <div className="font-medium">
+                  Module {item.moduleId} — Exercice {item.exerciceId} — Q{item.questionId}
+                </div>
+                <div className="text-muted-foreground mb-2">admin_locked question : {String(item.questionAdminLocked)}</div>
+                <pre className="overflow-auto rounded-md bg-muted p-3 text-xs">
+                  {JSON.stringify(item.choix, null, 2)}
+                </pre>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
 
       {!loading && moduleId != null && exercices.length === 0 && row && (
         <p className="text-sm text-muted-foreground">
