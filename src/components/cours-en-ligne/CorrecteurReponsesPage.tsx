@@ -130,7 +130,7 @@ const CorrecteurReponsesPage = () => {
     [moduleId],
   );
 
-  const loadModule = async (id: number) => {
+  const loadModule = async (id: number, clearConfirmations = true) => {
     setLoading(true);
     setRow(null);
     setExercices([]);
@@ -152,7 +152,7 @@ const CorrecteurReponsesPage = () => {
       const md = data.module_data as unknown as ModuleData;
       setRow(data as EditorRow);
       setExercices(Array.isArray(md.exercices) ? md.exercices : []);
-      setConfirmations([]);
+      if (clearConfirmations) setConfirmations([]);
     } catch (err: any) {
       console.error("[CorrecteurReponses] load error", err);
       toast.error(err?.message || "Impossible de charger le module");
@@ -304,10 +304,9 @@ const CorrecteurReponsesPage = () => {
         throw new Error(`Écriture non confirmée pour module ${missingLock.moduleId}, Q${missingLock.questionId}`);
       }
 
-      setConfirmations(readBackConfirmations);
-
       toast.success(`Réponses verrouillées sur ${affectedRows.length} module(s) ✅`);
-      await loadModule(moduleId);
+      await loadModule(moduleId, false);
+      setConfirmations(readBackConfirmations);
     } catch (err: any) {
       console.error("[CorrecteurReponses] save error", err);
       toast.error(err?.message || "Échec de la sauvegarde");
