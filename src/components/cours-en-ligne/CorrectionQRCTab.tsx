@@ -156,6 +156,9 @@ const CorrectionQRCTab = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
   const [examenFilter, setExamenFilter] = useState<string>("all");
+  // Garde anti-écrasement : ignore les refetch Realtime juste après une action locale
+  // (sauvegarde / masquage), le temps que Supabase propage le `manuel: true`.
+  const lastLocalMutationRef = useRef<number>(0);
 
   const QUICK_COMMENTS = [
     "Précisez !!!",
