@@ -612,6 +612,10 @@ const CorrectionQRCTab = () => {
     }));
 
   const sortedFiltered = [...filtered].sort((a, b) => {
+    // PRIORITÉ : présentiel d'abord (toujours, indépendamment du tri date)
+    const prioA = a.apprenantTypeMode === "presentiel" ? 0 : 1;
+    const prioB = b.apprenantTypeMode === "presentiel" ? 0 : 1;
+    if (prioA !== prioB) return prioA - prioB;
     const dateA = new Date(a.completedAt).getTime() || 0;
     const dateB = new Date(b.completedAt).getTime() || 0;
     if (dateA !== dateB) return sortOrder === "desc" ? dateB - dateA : dateA - dateB;
