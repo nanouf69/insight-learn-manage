@@ -595,17 +595,15 @@ const CorrectionQRCTab = () => {
       }
 
       const questions = buildQuestionListFromMatiere(matiere, (autosaveRow as any).reponses || {});
-      const correctionsIA: Record<string, any> = {
-        [item.questionId]: {
-          estCorrect: clamped >= item.pointsMax,
-          pointsObtenus: clamped,
-          nombrefautes: 0,
-          explication: `Correction manuelle par l'administrateur : ${clamped}/${item.pointsMax} pts`,
-          commentaire: editingComments[uniqueKey] ?? item.commentaire ?? "",
-          correctedAt: new Date().toISOString(),
-          manuel: true,
-          validatedByAdmin: true,
-        },
+      const newCorrection = {
+        estCorrect: clamped >= item.pointsMax,
+        pointsObtenus: clamped,
+        nombrefautes: 0,
+        explication: `Correction manuelle par l'administrateur : ${clamped}/${item.pointsMax} pts`,
+        commentaire: editingComments[uniqueKey] ?? item.commentaire ?? "",
+        correctedAt: new Date().toISOString(),
+        manuel: true,
+        validatedByAdmin: true,
       };
 
       const { data: existing } = await supabase
@@ -618,16 +616,26 @@ const CorrectionQRCTab = () => {
         .eq("tentative", 1)
         .maybeSingle();
 
-      if ((existing as any)?.details?.correctionsIA) {
-        Object.assign(correctionsIA, (existing as any).details.correctionsIA, correctionsIA);
-      }
+      // FIX: merge correctement — les corrections existantes en base d'abord,
+      // puis la NOUVELLE correction admin écrase pour cette question précise.
+      // (L'ancien Object.assign était bugué : la cible étant aussi source, la nouvelle valeur était écrasée par l'ancienne.)
+      const correctionsIA: Record<string, any> = {
+        ...(((existing as any)?.details?.correctionsIA) || {}),
+        [item.questionId]: newCorrection,
+      };
+
+      // Préserve les réponses existantes (si une tentative était déjà enregistrée)
+      // et complète avec celles de l'autosave si elles manquent.
+      const existingReponses = ((existing as any)?.details?.reponses) || {};
+      const autosaveReponses = (autosaveRow as any).reponses || {};
+      const mergedReponses = { ...autosaveReponses, ...existingReponses };
 
       let newScore = 0;
       for (const q of questions) {
         const pts = getPointsParQuestion(item.matiereId, q.type || "QCM", matiere);
         if (q.type === "QCM" && q.reponseCorrecte) {
           const correctes = Array.isArray(q.reponseCorrecte) ? [...q.reponseCorrecte].sort() : [q.reponseCorrecte];
-          const donnees = Array.isArray((autosaveRow as any).reponses?.[q.questionId]) ? [...(autosaveRow as any).reponses[q.questionId]].sort() : ((autosaveRow as any).reponses?.[q.questionId] ? [(autosaveRow as any).reponses[q.questionId]] : []);
+          const donnees = Array.isArray(mergedReponses?.[q.questionId]) ? [...mergedReponses[q.questionId]].sort() : (mergedReponses?.[q.questionId] ? [mergedReponses[q.questionId]] : []);
           if (JSON.stringify(correctes) === JSON.stringify(donnees)) newScore += pts;
         } else if (q.type === "QRC") {
           const corr = correctionsIA[q.questionId];
@@ -650,8 +658,15 @@ const CorrectionQRCTab = () => {
         score_max: scoreMax,
         note_sur_20: noteSur20,
         reussi: noteSur20 >= 10,
-        completed_at: (autosaveRow as any).updated_at || new Date().toISOString(),
-        details: { questions, reponses: (autosaveRow as any).reponses || {}, correctionsIA },
+        completed_at: (existing as any)?.details
+          ? ((existing as any).completed_at || (autosaveRow as any).updated_at || new Date().toISOString())
+          : ((autosaveRow as any).updated_at || new Date().toISOString()),
+        details: {
+          ...((existing as any)?.details || {}),
+          questions,
+          reponses: mergedReponses,
+          correctionsIA,
+        },
       };
 
       let savedResultId = (existing as any)?.id || null;
