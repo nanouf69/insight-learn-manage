@@ -684,9 +684,9 @@ const CorrectionQRCTab = () => {
                 {group.options.map((opt) => (
                   <SelectItem key={opt.value} value={opt.value}>
                     {opt.label}
-                    {opt.pending > 0 && (
+                    {opt.total > 0 && (
                       <span className="ml-2 inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-800 border border-amber-300">
-                        {opt.pending}
+                        {opt.total}
                       </span>
                     )}
                   </SelectItem>
