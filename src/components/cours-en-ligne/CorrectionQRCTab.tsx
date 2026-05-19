@@ -611,10 +611,14 @@ const CorrectionQRCTab = () => {
     return dt.getFullYear() === now.getFullYear() && dt.getMonth() === now.getMonth() && dt.getDate() === now.getDate();
   };
 
+  const todayPendingItems = items.filter(i => !i.corrigeManuel && isToday(i.completedAt));
+  const todayPendingCount = todayPendingItems.length;
+
   const filtered = items.filter(item => {
     if (filter === "pending" && item.corrigeManuel) return false;
     if (filter === "done" && !item.corrigeManuel) return false;
     if (filter === "today" && !isToday(item.completedAt)) return false;
+    if (filter === "today-pending" && (!isToday(item.completedAt) || item.corrigeManuel)) return false;
     if (examenFilter !== "all") {
       const [cat, num] = examenFilter.split(":");
       if (getExamCategory(item.quizTitre, item.quizId, item.apprenantTypeMode).key !== cat) return false;
