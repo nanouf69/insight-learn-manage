@@ -179,16 +179,186 @@ function syncTaxiTaMatieres(examens: ExamenBlanc[]): void {
   }
 }
 
-// ⚠️ SOURCE CODE = SINGLE SOURCE OF TRUTH for all examens blancs (EB1→EB6, VTC & TAXI).
-// All DB overrides (module_editor_state, quiz_questions_overrides) are intentionally
-// IGNORED here. Admin/fournisseur edits in those tables will NOT alter what students see.
-// To change exam questions, edit the source data files.
+// Load saved exam overrides from DB — NO CACHE, always fresh from DB
 export async function loadSavedExamens(): Promise<ExamenBlanc[]> {
   const examens = cloneExamens(tousLesExamens);
+  
+  try {
+    const moduleIds = examens.map((ex) => getModuleIdForExamId(ex.id));
+    const { data, error } = await supabase
+      .from("module_editor_state")
+      .select("module_id, module_data, updated_at")
+      .order("updated_at", { ascending: true })
+      .in("module_id", moduleIds);
+    
+    if (error) {
+      console.error("[ExamensEditor] Error loading saved exams:", error);
+      // On error, return source data (no stale cache)
+      repairCorrectFlags(examens);
+      syncVtcTaxiMatieres(examens);
+      syncVtcVaMatieres(examens);
+      syncTaxiTaMatieres(examens);
+      return examens;
+    }
+
+    if (data && data.length > 0) {
+      // Build moduleId → exam index lookup
+      const moduleIdToIdx: Record<number, number> = {};
+      examens.forEach((ex, i) => { moduleIdToIdx[getModuleIdForExamId(ex.id)] = i; });
+
+      for (const row of data) {
+        const idx = moduleIdToIdx[row.module_id];
+        if (idx === undefined || idx < 0 || idx >= examens.length || !row.module_data) continue;
+        const saved = row.module_data as unknown as ExamenBlanc;
+        if (saved.matieres && Array.isArray(saved.matieres)) {
+          const normalizeQuestionType = (value: unknown) => String(value ?? "").trim().toUpperCase();
+          const normalizeQuestionText = (value: unknown) =>
+            String(value ?? "")
+              .trim()
+              .replace(/\s+/g, " ")
+              .toLowerCase();
+
+          const normalizeChoicesSignature = (value: unknown) => {
+            if (!Array.isArray(value)) return "[]";
+            return JSON.stringify(
+              value.map((choice, index) => ({
+                lettre: String(choice?.lettre ?? String.fromCharCode(65 + index)).trim().toUpperCase(),
+                texte: normalizeQuestionText(choice?.texte),
+                correct: Boolean(choice?.correct ?? choice?.correcte),
+              }))
+            );
+          };
+
+          const buildQuestionSignature = (question: any) => {
+            const type = normalizeQuestionType(question?.type);
+            const enonce = normalizeQuestionText(question?.enonce);
+
+            if (type === "QCM") {
+              const choices = normalizeChoicesSignature(question?.choix);
+              if (enonce || choices !== "[]") return `${type}::${enonce}::${choices}`;
+            } else {
+              const reponseQrc = normalizeQuestionText(question?.reponseQRC);
+              const motsCles = Array.isArray(question?.reponses_possibles)
+                ? question.reponses_possibles
+                    .map((item: unknown) => normalizeQuestionText(item))
+                    .filter(Boolean)
+                    .sort()
+                    .join("|")
+                : "";
+              if (enonce || reponseQrc || motsCles) return `${type}::${enonce}::${reponseQrc}::${motsCles}`;
+            }
+
+            const numericId = Number(question?.id);
+            return `${type}::id:${Number.isFinite(numericId) ? numericId : "na"}`;
+          };
+
+          const deduplicateQuestions = (questions: any[]): Question[] => {
+            const seen = new Set<string>();
+            const deduped: Question[] = [];
+
+            questions.forEach((question) => {
+              const signature = buildQuestionSignature(question);
+              if (seen.has(signature)) return;
+              seen.add(signature);
+              deduped.push(question as Question);
+            });
+
+            return deduped;
+          };
+
+          // FIX: include enonce to prevent cross-exam collisions
+          const getQuestionKey = (value: any) => {
+            const id = Number(value?.id);
+            const type = normalizeQuestionType(value?.type);
+            const enonce = normalizeQuestionText(value?.enonce);
+            if (enonce) return `${id}::${type}::${enonce}`;
+            return `${id}::${type}`;
+          };
+
+          const sourceMatieres = examens[idx].matieres;
+          const mergedMatieres = saved.matieres.map((savedMat) => {
+            const sourceMat = sourceMatieres.find(sm => sm.id === savedMat.id);
+            if (sourceMat) {
+              const sourceQuestions = Array.isArray(sourceMat.questions) ? sourceMat.questions : [];
+              const savedQuestions = Array.isArray(savedMat.questions) ? savedMat.questions : [];
+
+              // Build lookup maps from SOURCE questions (keyed by key and by id)
+              const sourceByKey = new Map<string, any>();
+              const sourceById = new Map<number, any[]>();
+
+              sourceQuestions.forEach((srcQ) => {
+                const key = getQuestionKey(srcQ);
+                sourceByKey.set(key, srcQ);
+                const numericId = Number(srcQ?.id);
+                if (!Number.isNaN(numericId)) {
+                  const current = sourceById.get(numericId) ?? [];
+                  current.push(srcQ);
+                  sourceById.set(numericId, current);
+                }
+              });
+
+              // Use mergeQuestionsForMatiere: saved is source of truth,
+              // deleted questions are NOT re-added from source.
+              const mergedQuestions = mergeQuestionsForMatiere(sourceQuestions, savedQuestions);
+
+              const merged = {
+                ...sourceMat,
+                ...savedMat,
+                questions: deduplicateQuestions(mergedQuestions),
+              };
+              // Saved (admin edit) takes priority; fall back to source if saved is empty
+              merged.texteSupport = savedMat.texteSupport || sourceMat.texteSupport;
+              merged.texteSource = savedMat.texteSource || sourceMat.texteSource;
+              return merged;
+            }
+            // No matching source matiere — still try to find texteSupport from source by nom
+            const fallbackSource = sourceMatieres.find((sm: any) => sm.nom === savedMat.nom);
+            if (fallbackSource?.texteSupport && !savedMat.texteSupport) {
+              return {
+                ...savedMat,
+                questions: deduplicateQuestions(Array.isArray(savedMat.questions) ? savedMat.questions : []),
+                texteSupport: fallbackSource.texteSupport,
+                texteSource: fallbackSource.texteSource,
+              };
+            }
+            return {
+              ...savedMat,
+              questions: deduplicateQuestions(Array.isArray(savedMat.questions) ? savedMat.questions : []),
+            };
+          });
+          examens[idx] = { ...examens[idx], matieres: mergedMatieres };
+        }
+      }
+    }
+  } catch (err) {
+    console.error("[ExamensEditor] Error loading saved exams:", err);
+    // On error, return source data (no stale cache)
+  }
+  
+  // Repair any missing correct flags (serialization safety net).
+  // NOTE: sync functions are NOT run here after merge — the saved data in DB
+  // was already synced during persistExamens. Running sync again would overwrite
+  // correctly merged admin edits with stale source data.
   repairCorrectFlags(examens);
-  syncVtcTaxiMatieres(examens);
-  syncVtcVaMatieres(examens);
-  syncTaxiTaMatieres(examens);
+
+  // Apply fournisseur (formateur) overrides on top of admin's saved data.
+  // The fournisseur portal saves modifications in `quiz_questions_overrides`
+  // with quiz_id like "bilan-examen-ta". Without this step, students taking
+  // the actual exam blanc would not see the formatrice's modifications.
+  try {
+    const fournisseurQuizIds = Object.keys(FOURNISSEUR_QUIZ_TO_EXAM);
+    const { data: overridesData } = await supabase
+      .from("quiz_questions_overrides")
+      .select("quiz_id, section_id, question_id, enonce, choix, updated_at")
+      .in("quiz_id", fournisseurQuizIds)
+      .order("updated_at", { ascending: false });
+    if (overridesData && overridesData.length > 0) {
+      applyFournisseurOverridesToExamens(examens, overridesData as any);
+    }
+  } catch (err) {
+    console.error("[ExamensEditor] Error applying fournisseur overrides:", err);
+  }
+
   return examens;
 }
 
