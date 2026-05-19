@@ -788,9 +788,6 @@ export default function ExamensBlancsPage({
         console.error(`[ExamSubmission][EB][UpsertError] attempt ${attempt + 1}:`, error);
       }
     }
-    if (!saved) {
-      toast.error("⚠️ Erreur d'enregistrement du résultat après 3 tentatives. Vos réponses sont sauvegardées, contactez l'administration.", { duration: 15000 });
-    }
     return saved;
   };
 
