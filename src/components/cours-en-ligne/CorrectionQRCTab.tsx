@@ -590,7 +590,7 @@ const CorrectionQRCTab = () => {
   });
 
   // Build available exam list grouped by category, each with its numbers
-  type ExamOption = { value: string; label: string; pending: number };
+  type ExamOption = { value: string; label: string; total: number };
   const examOptionsByCat: Record<string, { label: string; numbers: Map<string, number> }> = {};
   for (const i of items) {
     const cat = getExamCategory(i.quizTitre, i.quizId, i.apprenantTypeMode);
@@ -598,7 +598,7 @@ const CorrectionQRCTab = () => {
     if (!n) continue;
     if (!examOptionsByCat[cat.key]) examOptionsByCat[cat.key] = { label: cat.label, numbers: new Map() };
     const prev = examOptionsByCat[cat.key].numbers.get(n) || 0;
-    examOptionsByCat[cat.key].numbers.set(n, prev + (i.corrigeManuel ? 0 : 1));
+    examOptionsByCat[cat.key].numbers.set(n, prev + 1);
   }
   const CAT_ORDER = ["vtc-p", "vtc-e", "taxi-p", "taxi-e", "ta", "va"];
   const examOptionGroups: { key: string; label: string; options: ExamOption[] }[] = CAT_ORDER
@@ -608,7 +608,7 @@ const CorrectionQRCTab = () => {
       label: examOptionsByCat[k].label,
       options: Array.from(examOptionsByCat[k].numbers.entries())
         .sort(([a], [b]) => parseInt(a, 10) - parseInt(b, 10))
-        .map(([n, pending]) => ({ value: `${k}:${n}`, label: `Examen Blanc N°${n} — ${examOptionsByCat[k].label}`, pending })),
+        .map(([n, total]) => ({ value: `${k}:${n}`, label: `Examen Blanc N°${n} — ${examOptionsByCat[k].label}`, total })),
     }));
 
   const sortedFiltered = [...filtered].sort((a, b) => {
