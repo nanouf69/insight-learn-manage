@@ -319,9 +319,10 @@ const CorrectionQRCTab = () => {
       const details = r.details as any;
       if (details == null) continue;
 
-      const matiere = findMatiereWithFallback(examenMap, tousLesExamens, r.quiz_id, r.matiere_id || "");
-
       const correctionsIA = details.correctionsIA || {};
+      const reponses = details.reponses || {};
+      const defaultMatiere = findMatiereWithFallback(examenMap, tousLesExamens, r.quiz_id, r.matiere_id || "");
+      const matiere = chooseMatiereMatchingResponses(defaultMatiere, examenMap, r.matiere_id || "", reponses);
 
       // Detect if this is a retake (more than one result for same apprenant + quiz + matiere)
       const countKey = `${r.apprenant_id}__${r.quiz_id}__${r.matiere_id || ""}`;
@@ -333,21 +334,8 @@ const CorrectionQRCTab = () => {
         : null;
 
       // If questions array is empty, reconstruct from examen definition + reponses/correctionsIA
-      const reponses = details.reponses || {};
       if (!questionList && matiere && (Object.keys(correctionsIA).length > 0 || Object.keys(reponses).length > 0)) {
-        const sourceQuestions = getSourceQuestions(matiere, tousLesExamens);
-        questionList = sourceQuestions.map((mq: any) => {
-          if (!mq) return null;
-          return {
-            questionId: mq.id,
-            enonce: mq.enonce || "",
-            type: mq.type || "QCM",
-            reponseEleve: reponses[mq.id] ?? reponses[String(mq.id)] ?? null,
-            reponseCorrecte: mq.type === "QCM" && mq.choix
-              ? mq.choix.filter((c: any) => c.correct).map((c: any) => c.lettre)
-              : (mq.reponseQRC || (mq.reponses_possibles || []).join(" / ")),
-          };
-        }).filter(Boolean);
+        questionList = buildQuestionListFromMatiere(matiere, reponses);
       }
 
       if (!questionList) continue;
