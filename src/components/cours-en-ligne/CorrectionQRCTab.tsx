@@ -663,6 +663,7 @@ const CorrectionQRCTab = () => {
       commentaire: commentaire || "",
       correctedAt: new Date().toISOString(),
       manuel: true,
+      validatedByAdmin: true,
     };
 
     // Recalculate total score for this matiere
