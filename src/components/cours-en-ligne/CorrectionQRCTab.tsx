@@ -239,7 +239,7 @@ function chooseMatiereMatchingResponses(
 const CorrectionQRCTab = () => {
   const [items, setItems] = useState<QrcItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"all" | "pending" | "done" | "today">("pending");
+  const [filter, setFilter] = useState<"all" | "pending" | "done" | "today" | "today-pending">("today-pending");
   const [searchQuery, setSearchQuery] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingPoints, setEditingPoints] = useState(0);
@@ -611,10 +611,14 @@ const CorrectionQRCTab = () => {
     return dt.getFullYear() === now.getFullYear() && dt.getMonth() === now.getMonth() && dt.getDate() === now.getDate();
   };
 
+  const todayPendingItems = items.filter(i => !i.corrigeManuel && isToday(i.completedAt));
+  const todayPendingCount = todayPendingItems.length;
+
   const filtered = items.filter(item => {
     if (filter === "pending" && item.corrigeManuel) return false;
     if (filter === "done" && !item.corrigeManuel) return false;
     if (filter === "today" && !isToday(item.completedAt)) return false;
+    if (filter === "today-pending" && (!isToday(item.completedAt) || item.corrigeManuel)) return false;
     if (examenFilter !== "all") {
       const [cat, num] = examenFilter.split(":");
       if (getExamCategory(item.quizTitre, item.quizId, item.apprenantTypeMode).key !== cat) return false;
@@ -758,6 +762,7 @@ const CorrectionQRCTab = () => {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value="today-pending">🔥 En attente aujourd'hui ({todayPendingCount})</SelectItem>
             <SelectItem value="pending">⏳ En attente uniquement</SelectItem>
             <SelectItem value="today">📅 Répondues aujourd'hui</SelectItem>
             <SelectItem value="done">✅ Déjà corrigées</SelectItem>
