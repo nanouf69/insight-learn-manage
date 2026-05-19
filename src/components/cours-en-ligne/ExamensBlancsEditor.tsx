@@ -11,7 +11,7 @@ import {
   Save, CheckCircle2, X, Clock, Layers, Loader2, ArrowUp, ArrowDown, ArrowLeftRight, Pause, Play, AlertTriangle
 } from "lucide-react";
 import { tousLesExamens, getPointsParQuestion, type ExamenBlanc, type Matiere, type Question, type Choix } from "./examens-blancs-data";
-import { mergeQuestionsForMatiere, propagateSharedMatiereEdit, moveQuestionToPosition } from "./examens-blancs-utils";
+import { mergeQuestionsForMatiere, moveQuestionToPosition } from "./examens-blancs-utils";
 import { QuestionImageUpload } from "./QuestionImageUpload";
 import {
   applyFournisseurOverridesToExamens,
@@ -988,9 +988,15 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
 
   const handleMatiereChange = (matiereId: string, updated: Matiere) => {
     setExamens(prev => {
-      // Propagate the edit to ALL exams that share this matière ID.
-      // This replaces the old VTC→TAXI sync that could overwrite saved data.
-      return propagateSharedMatiereEdit(prev, matiereId, updated);
+      return prev.map((ex) => {
+        if (ex.id !== examenSelId) return ex;
+        return {
+          ...ex,
+          matieres: ex.matieres.map((m) =>
+            m.id === matiereId ? { ...m, ...updated } : m,
+          ),
+        };
+      });
     });
   };
 
