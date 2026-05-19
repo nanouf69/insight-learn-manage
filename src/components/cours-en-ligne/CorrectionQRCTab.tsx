@@ -762,6 +762,7 @@ const CorrectionQRCTab = () => {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value="today-pending">🔥 En attente aujourd'hui ({todayPendingCount})</SelectItem>
             <SelectItem value="pending">⏳ En attente uniquement</SelectItem>
             <SelectItem value="today">📅 Répondues aujourd'hui</SelectItem>
             <SelectItem value="done">✅ Déjà corrigées</SelectItem>
