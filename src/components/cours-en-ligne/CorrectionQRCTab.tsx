@@ -371,6 +371,9 @@ const CorrectionQRCTab = () => {
         const app = apprenantMap[r.apprenant_id] || { nom: "Inconnu", prenom: "", mode: "presentiel" as const };
 
         const questionDef = matiere?.questions?.find((mq: any) => mq && mq.id === q.questionId);
+        const savedQuestionText = normalizeText(safeStr(q.enonce));
+        const currentQuestionText = normalizeText(safeStr(questionDef?.enonce));
+        const questionSupprimee = !questionDef || (!!savedQuestionText && !!currentQuestionText && savedQuestionText !== currentQuestionText);
 
         // Auto score: if manual correction exists, use it; otherwise recompute deterministically
         let autoScore = 0;
@@ -418,7 +421,7 @@ const CorrectionQRCTab = () => {
           commentaire: isAutoScoredRetake ? "Notation automatique par mots-clés (examen refait)" : (correction && typeof correction === "object" ? (correction.commentaire || "") : ""),
           correctedAt: (hasManualCorrection || isAutoScoredRetake) ? (correction?.correctedAt || r.completed_at || null) : null,
           apprenantTypeMode: app.mode,
-          questionSupprimee: !questionDef,
+          questionSupprimee,
         });
       }
     }
