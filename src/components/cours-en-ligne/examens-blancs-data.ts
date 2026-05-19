@@ -5773,7 +5773,7 @@ L'interaction entre voitures autonomes et véhicule classique est l'autre grand 
         type: "QCM",
         enonce: "Qui sont les poids lourds qui dépensent des milliards de dollars pour développer cette technologie ?",
         choix: [
-          { lettre: "A", texte: "Google, General Motors, Tesla", correct: true },
+          { lettre: "A", texte: "Google, General Motors, Tesla" },
           { lettre: "B", texte: "Google, Uber, Tesla", correct: true },
           { lettre: "C", texte: "Google, Amazon, Elon Musk" },
         ],
@@ -5783,7 +5783,7 @@ L'interaction entre voitures autonomes et véhicule classique est l'autre grand 
         type: "QCM",
         enonce: "Les dispositifs d'assistance à la conduite permettent au véhicule automatisé de :",
         choix: [
-          { lettre: "A", texte: "se garer tout seul", correct: true },
+          { lettre: "A", texte: "se garer tout seul" },
           { lettre: "B", texte: "rouler devant les écoles" },
           { lettre: "C", texte: "rouler sur certaines portions d'autoroute", correct: true },
         ],
