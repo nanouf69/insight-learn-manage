@@ -604,6 +604,35 @@ const CorrectionQRCTab = () => {
     } else {
       toast.success(`QRC corrigée : ${clamped}/${item.pointsMax} pts — Note matière : ${noteSur20}/20`);
 
+      // Notifier l'apprenant via la messagerie quand toutes les QRC de cet examen sont corrigées
+      try {
+        const stillPending = items.some(
+          i => i.resultId === item.resultId && i.questionId !== item.questionId && !i.corrigeManuel
+        );
+        if (!stillPending) {
+          const marker = `[examen-corrige:${item.resultId}]`;
+          const { data: existing } = await supabase
+            .from("apprenant_questions")
+            .select("id")
+            .eq("apprenant_id", item.apprenantId)
+            .ilike("question", `%${marker}%`)
+            .limit(1);
+          if (!existing || existing.length === 0) {
+            await supabase.from("apprenant_questions").insert({
+              apprenant_id: item.apprenantId,
+              apprenant_nom: `${item.apprenantPrenom} ${item.apprenantNom}`.trim() || null,
+              question: `${marker} Correction de votre examen`,
+              reponse: `Bonjour, votre examen « ${item.quizTitre} » vient d'être corrigé par le centre. Note finale : ${noteSur20}/20. Vous pouvez consulter le détail depuis votre espace « Résultats ».`,
+              status: "answered",
+              answered_at: new Date().toISOString(),
+              read_by_apprenant: false,
+            } as any);
+          }
+        }
+      } catch (e) {
+        console.warn("[CorrectionQRC] Notification apprenant échouée:", e);
+      }
+
       setItems(prev => {
         const updated = prev.map(i => {
           if (i.resultId === item.resultId) {
