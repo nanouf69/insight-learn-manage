@@ -291,7 +291,15 @@ const CorrectionQRCTab = () => {
       // Build/augment from source so we NEVER miss a QRC question (legacy rows
       // sometimes saved only QCM entries, or saved details.questions=[] entirely).
       if (matiere && (Object.keys(correctionsIA).length > 0 || Object.keys(reponses).length > 0)) {
-        const sourceQuestions = getSourceQuestions(matiere, tousLesExamens);
+        // SCOPE STRICT: ne chercher les questions sources que dans l'examen r.quiz_id,
+        // pour éviter de récupérer des questions d'un autre examen partageant un matiere_id.
+        const examenDuQuiz = examenMap[r.quiz_id] || tousLesExamens.find((e) => e.id === r.quiz_id);
+        const matiereDuQuiz = examenDuQuiz?.matieres?.find((m: Matiere) => m.id === matiere.id) || matiere;
+        let sourceQuestions: any[] = Array.isArray(matiereDuQuiz?.questions) ? matiereDuQuiz.questions : [];
+        if (sourceQuestions.length === 0) {
+          // Fallback large uniquement si l'examen r.quiz_id n'a aucune question pour cette matière.
+          sourceQuestions = getSourceQuestions(matiere, tousLesExamens);
+        }
         if (sourceQuestions.length > 0) {
           const existingIds = new Set<number>((questionList || []).map((q: any) => Number(q?.questionId)).filter(n => Number.isFinite(n)));
           const buildFromSource = (mq: any) => ({
