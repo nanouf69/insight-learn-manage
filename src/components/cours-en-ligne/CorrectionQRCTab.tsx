@@ -242,7 +242,7 @@ function chooseMatiereMatchingResponses(
 const CorrectionQRCTab = () => {
   const [items, setItems] = useState<QrcItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"all" | "pending" | "done" | "today" | "today-pending">("today");
+  const [filter, setFilter] = useState<"all" | "pending" | "done" | "today" | "today-pending">("today-pending");
   const [searchQuery, setSearchQuery] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingPoints, setEditingPoints] = useState(0);
@@ -801,15 +801,12 @@ const CorrectionQRCTab = () => {
         setTimeout(() => {
           setCurrentIndex(prev => {
             const newFiltered = updated.filter(i => {
-              if (filter === "pending") return !i.corrigeManuel;
-              if (filter === "done") return i.corrigeManuel;
+              if (filter === "pending" && i.corrigeManuel) return false;
+              if (filter === "done" && !i.corrigeManuel) return false;
+              if (filter === "today" && !isToday(i.completedAt)) return false;
+              if (filter === "today-pending" && (!isToday(i.completedAt) || i.corrigeManuel)) return false;
               return true;
             });
-
-            if (filter === "pending") {
-              // Keep same index so the next pending QRC naturally takes the current slot
-              return Math.min(prev, Math.max(0, newFiltered.length - 1));
-            }
 
             return Math.min(prev, Math.max(0, newFiltered.length - 1));
           });
