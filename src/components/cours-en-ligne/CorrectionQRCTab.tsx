@@ -901,6 +901,16 @@ const CorrectionQRCTab = () => {
                     >
                       {isSaving ? "..." : "✓ Valider"}
                     </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-6 px-2 text-xs border-red-300 text-red-700 hover:bg-red-100"
+                      onClick={() => handleSaveCorrection(item, item.pointsMax)}
+                      disabled={isSaving}
+                      title="Attribue le maximum de points (question non comptabilisée dans la note)"
+                    >
+                      🚫 Ne pas comptabiliser
+                    </Button>
                     {item.corrigeManuel && !isSaving && (
                       <Badge className="bg-green-100 text-green-700 border-green-300 text-xs ml-1">✅ Corrigé</Badge>
                     )}
