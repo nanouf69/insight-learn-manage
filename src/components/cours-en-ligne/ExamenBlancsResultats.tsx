@@ -263,7 +263,7 @@ function EcranResultats({
       // Recalculate score with IA corrections
       const resultat = resultats[mi];
       if (!resultat) continue;
-      const questionsSafe = (matiere.questions || []).filter(q => q && q?.type !== undefined);
+      const questionsSafe = ((resultats[mi]?.details?.questions?.length > 0 ? resultats[mi].details.questions : matiere.questions) || []).filter(q => q && q?.type !== undefined);
       let noteRecalculee = 0;
       questionsSafe.forEach(q => {
         if (!q) return;
