@@ -377,6 +377,7 @@ export type Database = {
           reussi: boolean | null
           score_max: number
           score_obtenu: number
+          tentative: number
           user_id: string
         }
         Insert: {
@@ -395,6 +396,7 @@ export type Database = {
           reussi?: boolean | null
           score_max?: number
           score_obtenu?: number
+          tentative?: number
           user_id: string
         }
         Update: {
@@ -413,6 +415,7 @@ export type Database = {
           reussi?: boolean | null
           score_max?: number
           score_obtenu?: number
+          tentative?: number
           user_id?: string
         }
         Relationships: [
@@ -813,6 +816,80 @@ export type Database = {
           valeur_estimee?: number | null
         }
         Relationships: []
+      }
+      contrats_fournisseurs: {
+        Row: {
+          created_at: string
+          destinataire_email: string | null
+          destinataire_nom: string | null
+          fournisseur_id: string
+          id: string
+          lieu_signature: string | null
+          metadata: Json | null
+          representant_nom: string | null
+          sent_at: string | null
+          sent_pdf_url: string | null
+          signature_data_url: string | null
+          signed_at: string | null
+          signed_pdf_path: string | null
+          signed_pdf_url: string | null
+          status: string
+          titre: string
+          token: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          destinataire_email?: string | null
+          destinataire_nom?: string | null
+          fournisseur_id: string
+          id?: string
+          lieu_signature?: string | null
+          metadata?: Json | null
+          representant_nom?: string | null
+          sent_at?: string | null
+          sent_pdf_url?: string | null
+          signature_data_url?: string | null
+          signed_at?: string | null
+          signed_pdf_path?: string | null
+          signed_pdf_url?: string | null
+          status?: string
+          titre: string
+          token?: string
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          destinataire_email?: string | null
+          destinataire_nom?: string | null
+          fournisseur_id?: string
+          id?: string
+          lieu_signature?: string | null
+          metadata?: Json | null
+          representant_nom?: string | null
+          sent_at?: string | null
+          sent_pdf_url?: string | null
+          signature_data_url?: string | null
+          signed_at?: string | null
+          signed_pdf_path?: string | null
+          signed_pdf_url?: string | null
+          status?: string
+          titre?: string
+          token?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contrats_fournisseurs_fournisseur_id_fkey"
+            columns: ["fournisseur_id"]
+            isOneToOne: false
+            referencedRelation: "fournisseurs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       devis_envois: {
         Row: {
