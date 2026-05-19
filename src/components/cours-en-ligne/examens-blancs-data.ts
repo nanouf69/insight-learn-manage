@@ -4495,7 +4495,7 @@ Il y a quelque chose de mystique dans la voiture autonome. Des dizaines de milli
         type: "QRC",
         enonce: 'Que veut dire "de spectaculaires démonstrations dont les médias sont friands" ? (QRC)',
         reponseQRC:
-          "Les médias aiment le sensationnel .Ils montrent toujours plus d'images fortes, divulguent des \"informations - choc\" pour faire le buzz, souhaitent marquer les esprits voire même dépasser leurs concurrents dans l'immédiateté de l'information. De nos jours, les spectateurs sont aussi en attente de ces images souvent relayées de manière instantanée, sans recul .Cela fait partie d'un \"voyeurisme \"ambiant.",
+          "Les médias aiment le sensationnel. Ils montrent toujours plus d'images fortes, divulguent des informations-choc pour faire le buzz, souhaitent marquer les esprits voire même dépasser leurs concurrents dans l'immédiateté de l'information. De nos jours, les spectateurs sont aussi en attente de ces images souvent relayées de manière instantanée, sans recul. Cela fait partie d'un \"voyeurisme\" ambiant.",
       },
       {
         id: 2,
@@ -4503,7 +4503,7 @@ Il y a quelque chose de mystique dans la voiture autonome. Des dizaines de milli
         enonce:
           'Que veut dire "des piétons moins soucieux des règles" d\'après vous (phrase non présente dans le texte) ? (QRC)',
         reponseQRC:
-          "Certains piétons renoncent ou ne veulent pas à respecter les règles du code de la route et font ce qu'ils veulent sur les chaussées (traversent en dehors des passages piétons) au risque de mettre leur vie en danger.",
+          "Certains piétons renoncent ou ne veulent pas respecter les règles du code de la route et font ce qu'ils veulent sur les chaussées (traversent en dehors des passages piétons) au risque de mettre leur vie en danger.",
       },
       {
         id: 3,
@@ -4521,7 +4521,7 @@ Il y a quelque chose de mystique dans la voiture autonome. Des dizaines de milli
         type: "QCM",
         enonce: 'Donnez un synonyme du verbe " titiller":',
         choix: [
-          { lettre: "A", texte: "tracasser", correct: true },
+          { lettre: "A", texte: "tracasser" },
           { lettre: "B", texte: "interpeller" },
           { lettre: "C", texte: "taquiner", correct: true },
         ],
@@ -4561,7 +4561,7 @@ Il y a quelque chose de mystique dans la voiture autonome. Des dizaines de milli
         type: "QCM",
         enonce: "Un comportement erratique, c’est :",
         choix: [
-          { lettre: "A", texte: "un comportement instable", correct: true },
+          { lettre: "A", texte: "un comportement instable" },
           { lettre: "B", texte: "un comportement sans cohérence", correct: true },
           { lettre: "C", texte: "un comportement dangereux" },
         ],
@@ -4587,11 +4587,11 @@ Il y a quelque chose de mystique dans la voiture autonome. Des dizaines de milli
       {
         id: 10,
         type: "QCM",
-        enonce: "« Elles sera forcément mue par l’électricité » signifie :",
+        enonce: "« Elle sera forcément mue par l’électricité » signifie :",
         choix: [
           { lettre: "A", texte: "elle se déplacera avec l’électricité comme source d’énergie", correct: true },
-          { lettre: "B", texte: "elle se sera débarrassée de l’électricité pour se déplacer", correct: true },
-          { lettre: "C", texte: "pour se mouvoir, elle utilisera l’électricité", correct: true },
+          { lettre: "B", texte: "elle se sera débarrassée de l’électricité pour se déplacer" },
+          { lettre: "C", texte: "pour se mouvoir, elle utilisera l’électricité" },
         ],
       },
     ],
