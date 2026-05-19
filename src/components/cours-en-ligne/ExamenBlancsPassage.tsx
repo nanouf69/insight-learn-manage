@@ -328,7 +328,7 @@ function PassageMatiere({
           jwtTokenRef.current = sessionRes.data.session.access_token;
         }
       }
-      if (!userIdRef.current) {
+      if (!userIdRef.current && !userId) {
         console.error("[AutoSave] No user session available after wait, cannot save");
         setSaveStatus("error");
         return;
@@ -366,12 +366,6 @@ function PassageMatiere({
       // All retries exhausted — silent fallback (no toast to avoid disturbing students)
       console.error("[AutoSave] All retries failed:", lastError);
       setSaveStatus("error");
-      // BUG #7 FIX: save to localStorage as fallback
-      try {
-        const backupKey = `exam_backup_${exerciceKey}_${apprenantId}`;
-        localStorage.setItem(backupKey, JSON.stringify(updated));
-        console.warn("[AutoSave] Saved to localStorage fallback:", backupKey);
-      } catch (_) {}
       // Intentionally no toast: errors are handled silently during exams.
     }, flushImmediately ? 0 : 300);
   };
