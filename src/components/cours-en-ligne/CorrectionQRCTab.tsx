@@ -476,6 +476,22 @@ const CorrectionQRCTab = () => {
       .lt("updated_at", todayEnd.toISOString())
       .order("updated_at", { ascending: false });
 
+    const missingAutosaveApprenantIds = [...new Set(((autosaves || []) as any[]).map(row => row.apprenant_id))]
+      .filter((id) => id && !apprenantMap[id]);
+    if (missingAutosaveApprenantIds.length > 0) {
+      for (let i = 0; i < missingAutosaveApprenantIds.length; i += 500) {
+        const { data } = await supabase
+          .from("apprenants")
+          .select("id, nom, prenom, type_apprenant")
+          .in("id", missingAutosaveApprenantIds.slice(i, i + 500));
+        (data || []).forEach((a: any) => {
+          const t = String(a.type_apprenant || "").toLowerCase();
+          const mode: "presentiel" | "elearning" = t.endsWith("-e") || t.includes("-e-") ? "elearning" : "presentiel";
+          apprenantMap[a.id] = { nom: a.nom, prenom: a.prenom, mode };
+        });
+      }
+    }
+
     for (const row of (autosaves || []) as any[]) {
       const [quizId, matiereId] = safeStr(row.exercice_id).split("__");
       if (!quizId || !matiereId) continue;
@@ -491,7 +507,14 @@ const CorrectionQRCTab = () => {
         const reponseEleveStr = safeStr(reponses?.[q.id] ?? reponses?.[String(q.id)] ?? "");
         if (!reponseEleveStr.trim()) continue;
         const qrcKey = `${row.apprenant_id}__${quizId}__${matiereId}__${q.id}`;
-        if (seenQrcKeys.has(qrcKey)) continue;
+        const alreadyHasTodayResult = qrcItems.some(i =>
+          i.apprenantId === row.apprenant_id &&
+          i.quizId === quizId &&
+          i.matiereId === matiereId &&
+          i.questionId === q.id &&
+          isToday(i.completedAt)
+        );
+        if (alreadyHasTodayResult || seenQrcKeys.has(qrcKey)) continue;
         seenQrcKeys.add(qrcKey);
 
         const pts = getPointsParQuestion(matiereId, "QRC", matiere);
