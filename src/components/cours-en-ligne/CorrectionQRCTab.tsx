@@ -558,7 +558,8 @@ const CorrectionQRCTab = () => {
     setEditingId(null);
   };
 
-  const pendingCount = items.filter(i => !i.corrigeManuel).length;
+  const pendingItems = items.filter(i => !i.corrigeManuel);
+  const pendingCount = pendingItems.length;
   const doneCount = items.filter(i => i.corrigeManuel).length;
 
   const getExamNum = (titre: string) => (titre.match(/N°\s*(\d+)/)?.[1]) || "";
@@ -611,7 +612,7 @@ const CorrectionQRCTab = () => {
   // Build available exam list grouped by category, each with its numbers
   type ExamOption = { value: string; label: string; total: number };
   const examOptionsByCat: Record<string, { label: string; numbers: Map<string, number> }> = {};
-  for (const i of items) {
+  for (const i of (filter === "pending" ? pendingItems : items)) {
     const cat = getExamCategory(i.quizTitre, i.quizId, i.apprenantTypeMode);
     const n = getExamNum(i.quizTitre);
     if (!n) continue;
