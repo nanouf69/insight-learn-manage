@@ -371,9 +371,14 @@ const CorrectionQRCTab = () => {
         const app = apprenantMap[r.apprenant_id] || { nom: "Inconnu", prenom: "", mode: "presentiel" as const };
 
         const questionDef = matiere?.questions?.find((mq: any) => mq && mq.id === q.questionId);
+        // Compare against the CURRENT canonical matiere (from examenMap) to detect
+        // questions removed/replaced in the live exam — not the legacy matched variant.
+        const currentExamen = examenMap[r.quiz_id];
+        const currentMatiere = currentExamen?.matieres?.find((m: any) => m.id === (r.matiere_id || ""));
+        const currentQuestionDef = currentMatiere?.questions?.find((mq: any) => mq && mq.id === q.questionId);
         const savedQuestionText = normalizeText(safeStr(q.enonce));
-        const currentQuestionText = normalizeText(safeStr(questionDef?.enonce));
-        const questionSupprimee = !questionDef || (!!savedQuestionText && !!currentQuestionText && savedQuestionText !== currentQuestionText);
+        const currentQuestionText = normalizeText(safeStr(currentQuestionDef?.enonce));
+        const questionSupprimee = !currentQuestionDef || (!!savedQuestionText && !!currentQuestionText && savedQuestionText !== currentQuestionText);
 
         // Auto score: if manual correction exists, use it; otherwise recompute deterministically
         let autoScore = 0;
