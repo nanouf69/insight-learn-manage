@@ -150,16 +150,17 @@ function getQuestionResponse(reponses: Record<string | number, any>, questionId:
   return reponses?.[questionId] ?? reponses?.[String(questionId)] ?? null;
 }
 
-function isAdminValidatedCorrection(correction: any): boolean {
+function isAdminValidatedCorrection(correction: unknown): boolean {
   if (!correction || typeof correction !== "object") return false;
-  if (correction.validatedByAdmin === true) return true;
+  const correctionRecord = correction as Record<string, unknown>;
+  if (correctionRecord.validatedByAdmin === true) return true;
 
-  const explication = safeStr(correction.explication).toLowerCase();
+  const explication = safeStr(correctionRecord.explication).toLowerCase();
   const hasLegacyAdminMarker =
     explication.includes("correction manuelle par l'administrateur") ||
     explication.includes("validation manuelle (masqué par admin)");
 
-  return correction.manuel === true && !!correction.correctedAt && hasLegacyAdminMarker;
+  return correctionRecord.manuel === true && !!correctionRecord.correctedAt && hasLegacyAdminMarker;
 }
 
 function buildQuestionListFromMatiere(matiere: Matiere, reponses: Record<string | number, any>): any[] {
