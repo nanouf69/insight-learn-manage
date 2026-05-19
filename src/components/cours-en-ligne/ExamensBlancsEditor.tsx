@@ -946,7 +946,7 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
         lastSavedFingerprintRef.current = JSON.stringify(synced);
         if (showSuccessToast) {
           setSaved(true);
-          toast.success("Aucune modification à sauvegarder.");
+          toast.success("✅ Tout est déjà sauvegardé (auto-save actif).");
           setTimeout(() => setSaved(false), 2500);
         }
         return true;
