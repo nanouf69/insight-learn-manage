@@ -739,6 +739,19 @@ const CorrectionQRCTab = () => {
           <ArrowUpDown className="w-4 h-4" />
           {sortOrder === "desc" ? "Plus récent" : "Plus ancien"}
         </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-1.5"
+          onClick={() => {
+            setIsRefreshing(true);
+            fetchData({ silent: true }).finally(() => setIsRefreshing(false));
+          }}
+          disabled={isRefreshing || loading}
+        >
+          <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} />
+          Réactualiser
+        </Button>
       </div>
 
       {sortedFiltered.length === 0 ? (
