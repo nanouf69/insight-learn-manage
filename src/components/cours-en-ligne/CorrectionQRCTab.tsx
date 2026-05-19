@@ -734,7 +734,7 @@ const CorrectionQRCTab = () => {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="pending">⏳ En attente</SelectItem>
+            <SelectItem value="pending">⏳ En attente uniquement</SelectItem>
             <SelectItem value="today">📅 Répondues aujourd'hui</SelectItem>
             <SelectItem value="done">✅ Déjà corrigées</SelectItem>
             <SelectItem value="all">Toutes</SelectItem>
@@ -765,7 +765,7 @@ const CorrectionQRCTab = () => {
       </div>
 
       {sortedFiltered.length === 0 ? (
-        filter === "pending" && !searchQuery.trim() ? (
+        filter === "pending" && !searchQuery.trim() && examenFilter === "all" ? (
           <div className="min-h-[340px] rounded-xl border bg-background flex items-center justify-center">
             <p className="text-lg font-semibold">Plus de correction actuellement</p>
           </div>
