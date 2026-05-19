@@ -38,6 +38,7 @@ interface QrcItem {
   commentaire: string;
   correctedAt: string | null;
   apprenantTypeMode: "presentiel" | "elearning";
+  questionSupprimee: boolean;
 }
 
 function safeStr(v: unknown): string {
@@ -417,6 +418,7 @@ const CorrectionQRCTab = () => {
           commentaire: isAutoScoredRetake ? "Notation automatique par mots-clés (examen refait)" : (correction && typeof correction === "object" ? (correction.commentaire || "") : ""),
           correctedAt: (hasManualCorrection || isAutoScoredRetake) ? (correction?.correctedAt || r.completed_at || null) : null,
           apprenantTypeMode: app.mode,
+          questionSupprimee: !questionDef,
         });
       }
     }
@@ -819,10 +821,16 @@ const CorrectionQRCTab = () => {
 
                   {/* Question */}
                   <div>
-                    <p className="text-sm font-bold text-foreground">
-                      <span className="text-primary mr-1">Q{item.questionId} —</span>
-                      {item.enonce}
-                    </p>
+                    {item.questionSupprimee ? (
+                      <div className="flex items-center gap-2 p-2 rounded-md bg-red-50 border border-red-200">
+                        <span className="text-sm font-bold text-red-700">⚠️ Q{item.questionId} — QUESTION SUPPRIMÉE</span>
+                      </div>
+                    ) : (
+                      <p className="text-sm font-bold text-foreground">
+                        <span className="text-primary mr-1">Q{item.questionId} —</span>
+                        {item.enonce}
+                      </p>
+                    )}
                   </div>
 
                   {/* Réponse élève */}
