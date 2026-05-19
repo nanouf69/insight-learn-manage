@@ -271,10 +271,7 @@ const CorrectionQRCTab = () => {
         const pts = getPointsParQuestion(r.matiere_id || "", "QRC", matiere || undefined);
 
         const correction = correctionsIA[q.questionId];
-        const hasManualCorrection = correction && typeof correction === "object" && (
-          correction.manuel === true ||
-          correction.explication?.includes("Correction manuelle par l'administrateur")
-        );
+        const hasManualCorrection = correction && typeof correction === "object" && correction.explication?.includes("manuelle");
 
         const app = apprenantMap[r.apprenant_id] || { nom: "Inconnu", prenom: "", mode: "presentiel" as const };
 
@@ -554,24 +551,14 @@ const CorrectionQRCTab = () => {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => { setFilter("pending"); setExamenFilter("all"); setSearchQuery(""); setCurrentIndex(0); }}
-            className={`inline-flex items-center gap-1 py-1.5 px-3 rounded-full border text-sm transition-colors hover:bg-amber-50 ${filter === "pending" ? "border-amber-400 bg-amber-50" : "border-input bg-background"}`}
-            aria-pressed={filter === "pending"}
-          >
+          <Badge variant="outline" className="gap-1 py-1.5 px-3">
             <Clock className="w-3.5 h-3.5 text-amber-500" />
             {pendingCount} en attente
-          </button>
-          <button
-            type="button"
-            onClick={() => { setFilter("done"); setExamenFilter("all"); setSearchQuery(""); setCurrentIndex(0); }}
-            className={`inline-flex items-center gap-1 py-1.5 px-3 rounded-full border text-sm transition-colors hover:bg-green-50 ${filter === "done" ? "border-green-400 bg-green-50" : "border-input bg-background"}`}
-            aria-pressed={filter === "done"}
-          >
+          </Badge>
+          <Badge variant="outline" className="gap-1 py-1.5 px-3">
             <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
             {doneCount} corrigées
-          </button>
+          </Badge>
         </div>
       </div>
 
