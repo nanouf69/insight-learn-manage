@@ -579,9 +579,17 @@ const CorrectionQRCTab = () => {
       : { key: "vtc-p", label: "VTC Présentiel" };
   };
 
+  const isToday = (d?: string | null) => {
+    if (!d) return false;
+    const dt = new Date(d);
+    const now = new Date();
+    return dt.getFullYear() === now.getFullYear() && dt.getMonth() === now.getMonth() && dt.getDate() === now.getDate();
+  };
+
   const filtered = items.filter(item => {
     if (filter === "pending" && item.corrigeManuel) return false;
     if (filter === "done" && !item.corrigeManuel) return false;
+    if (filter === "today" && !(isToday((item as any).correctedAt) || isToday(item.completedAt))) return false;
     if (examenFilter !== "all") {
       const [cat, num] = examenFilter.split(":");
       if (getExamCategory(item.quizTitre, item.quizId, item.apprenantTypeMode).key !== cat) return false;
