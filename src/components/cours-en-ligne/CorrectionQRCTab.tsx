@@ -269,9 +269,9 @@ const CorrectionQRCTab = () => {
     load();
   }, []);
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (opts?: { silent?: boolean }) => {
     if (Object.keys(examenMap).length === 0) return;
-    setLoading(true);
+    if (!opts?.silent) setLoading(true);
 
     // Fetch all exam_blanc results that have QRC questions (Supabase client is capped at 1000 rows per request)
     const pageSize = 1000;
@@ -286,7 +286,7 @@ const CorrectionQRCTab = () => {
 
       if (error) {
         console.error("Erreur chargement résultats:", error);
-        setLoading(false);
+        if (!opts?.silent) setLoading(false);
         return;
       }
       results.push(...(data || []));
