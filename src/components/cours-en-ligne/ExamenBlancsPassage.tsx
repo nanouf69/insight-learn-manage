@@ -147,6 +147,7 @@ function PassageMatiere({
   onTerminer,
   isBilan = false,
   apprenantId,
+  userId,
   examenId,
 }: {
   matiere: Matiere;
@@ -155,6 +156,7 @@ function PassageMatiere({
   onTerminer: (reponses: Reponses) => void;
   isBilan?: boolean;
   apprenantId?: string | null;
+  userId?: string | null;
   examenId?: string;
 }) {
   const [reponses, setReponses] = useState<Reponses>({});
@@ -205,11 +207,12 @@ function PassageMatiere({
   const jwtTokenRef = useRef<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
+    userIdRef.current = userId ?? userIdRef.current;
     supabase.auth.getSession().then(({ data }) => {
-      userIdRef.current = data?.session?.user?.id ?? null;
+      userIdRef.current = data?.session?.user?.id ?? userId ?? null;
       jwtTokenRef.current = data?.session?.access_token ?? null;
     });
-  }, []);
+  }, [userId]);
 
   // Load saved responses on mount
   // FIX: use double underscore `__` to match handleTerminerMatiere in ExamensBlancsPage.tsx
@@ -276,6 +279,33 @@ function PassageMatiere({
   // even if the user closes the tab right after.
   const hasSavedOnceRef = useRef(false);
 
+  const buildAutosavePayload = (updated: Reponses, completed = false) => ({
+    apprenant_id: apprenantId,
+    user_id: userIdRef.current || userId,
+    exercice_id: exerciceKey,
+    exercice_type: isBilan ? "bilan" : "examen_blanc",
+    reponses: updated,
+    completed,
+    updated_at: new Date().toISOString(),
+  });
+
+  const saveViaEdgeFunction = async (payload: Record<string, any>, keepalive = false) => {
+    const baseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const apikey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+    if (!baseUrl || !apikey) throw new Error("Configuration de sauvegarde manquante");
+
+    const headers: Record<string, string> = { apikey, "Content-Type": "application/json" };
+    if (jwtTokenRef.current) headers.Authorization = `Bearer ${jwtTokenRef.current}`;
+
+    const response = await fetch(`${baseUrl}/functions/v1/upsert-reponse-apprenant`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(payload),
+      keepalive,
+    });
+    if (!response.ok) throw new Error(await response.text());
+  };
+
   const persistReponses = (updated: Reponses) => {
     // BUG #7 FIX: don't silently return when userId is null — wait for session inside debounce
     if (!apprenantId) return;
@@ -298,7 +328,7 @@ function PassageMatiere({
           jwtTokenRef.current = sessionRes.data.session.access_token;
         }
       }
-      if (!userIdRef.current) {
+      if (!userIdRef.current && !userId) {
         console.error("[AutoSave] No user session available after wait, cannot save");
         setSaveStatus("error");
         return;
@@ -315,30 +345,14 @@ function PassageMatiere({
             jwtTokenRef.current = sessionRes.data.session.access_token;
           }
 
-          const { error } = await supabase.from("reponses_apprenants" as any).upsert({
-            apprenant_id: apprenantId,
-            user_id: userIdRef.current,
-            exercice_id: exerciceKey,
-            exercice_type: isBilan ? "bilan" : "examen_blanc",
-            reponses: updated,
-            completed: false,
-            updated_at: new Date().toISOString(),
-          } as any, { onConflict: "apprenant_id,exercice_id" });
+          const payload = buildAutosavePayload(updated, false);
+          await saveViaEdgeFunction(payload);
 
-          if (error) {
-            lastError = error;
-            console.warn(`[AutoSave] Attempt ${attempt}/${MAX_RETRIES} failed:`, error.message);
-            if (attempt < MAX_RETRIES) {
-              await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
-              continue;
-            }
-          } else {
-            hasSavedOnceRef.current = true;
-            setSaveStatus("saved");
-            if (saveStatusTimerRef.current) clearTimeout(saveStatusTimerRef.current);
-            saveStatusTimerRef.current = setTimeout(() => setSaveStatus("idle"), 2000);
-            return; // success
-          }
+          hasSavedOnceRef.current = true;
+          setSaveStatus("saved");
+          if (saveStatusTimerRef.current) clearTimeout(saveStatusTimerRef.current);
+          saveStatusTimerRef.current = setTimeout(() => setSaveStatus("idle"), 2000);
+          return; // success
         } catch (e) {
           lastError = e;
           console.warn(`[AutoSave] Attempt ${attempt}/${MAX_RETRIES} exception:`, e);
@@ -352,12 +366,6 @@ function PassageMatiere({
       // All retries exhausted — silent fallback (no toast to avoid disturbing students)
       console.error("[AutoSave] All retries failed:", lastError);
       setSaveStatus("error");
-      // BUG #7 FIX: save to localStorage as fallback
-      try {
-        const backupKey = `exam_backup_${exerciceKey}_${apprenantId}`;
-        localStorage.setItem(backupKey, JSON.stringify(updated));
-        console.warn("[AutoSave] Saved to localStorage fallback:", backupKey);
-      } catch (_) {}
       // Intentionally no toast: errors are handled silently during exams.
     }, flushImmediately ? 0 : 300);
   };
@@ -373,28 +381,21 @@ function PassageMatiere({
   // beforeunload: flush pending save immediately
   useEffect(() => {
     const flushSave = () => {
-      if (!apprenantId || !userIdRef.current) return;
+      if (!apprenantId) return;
       const current = latestReponsesRef.current;
       if (Object.keys(current).length === 0) return;
-      const row = {
-        apprenant_id: apprenantId,
-        user_id: userIdRef.current,
-        exercice_id: exerciceKey,
-        exercice_type: isBilan ? "bilan" : "examen_blanc",
-        reponses: current,
-        completed: false,
-        updated_at: new Date().toISOString(),
-      };
+      const row = buildAutosavePayload(current, false);
       try {
-        const url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/reponses_apprenants?on_conflict=apprenant_id,exercice_id`;
-        const token = jwtTokenRef.current || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+        if (!row.user_id) {
+          return;
+        }
+        const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/upsert-reponse-apprenant`;
         const xhr = new XMLHttpRequest();
         xhr.open("POST", url, false);
         xhr.setRequestHeader("Content-Type", "application/json");
         xhr.setRequestHeader("apikey", import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY);
-        xhr.setRequestHeader("Authorization", `Bearer ${token}`);
-        xhr.setRequestHeader("Prefer", "resolution=merge-duplicates");
-        xhr.send(JSON.stringify([row]));
+        if (jwtTokenRef.current) xhr.setRequestHeader("Authorization", `Bearer ${jwtTokenRef.current}`);
+        xhr.send(JSON.stringify(row));
       } catch (_) {}
     };
     window.addEventListener("beforeunload", flushSave);
@@ -406,7 +407,7 @@ function PassageMatiere({
         flushSave(); // flush pending data instead of discarding
       }
     };
-  }, [apprenantId, exerciceKey, isBilan]);
+  }, [apprenantId, exerciceKey, isBilan, userId]);
 
   // Core logic extracted to applyQCMChange in examens-blancs-utils.ts (BUG #10 FIX)
   const handleQCMChange = (qId: number, lettre: string, checked: boolean, isMultipleQ: boolean) => {
@@ -438,14 +439,82 @@ function PassageMatiere({
 
   const allAnswered = questionsSafe.every(q => isQuestionAnswered(q));
 
-  const handleTerminer = () => {
+  const handleTerminer = async () => {
     if (!allAnswered) {
       toast.error("Veuillez répondre à toutes les questions avant de terminer la matière.");
       return;
     }
+    if (!apprenantId) {
+      onTerminer(reponses);
+      return;
+    }
+    try {
+      setSaveStatus("saving");
+      if (!userIdRef.current) {
+        const sessionRes = await supabase.auth.getSession();
+        userIdRef.current = sessionRes.data?.session?.user?.id ?? userId ?? null;
+        jwtTokenRef.current = sessionRes.data?.session?.access_token ?? jwtTokenRef.current;
+      }
+      if (!userIdRef.current && !userId) throw new Error("Session apprenant indisponible");
+      await saveViaEdgeFunction(buildAutosavePayload(reponses, true));
+      setSaveStatus("saved");
+    } catch (error) {
+      console.error("[AutoSave] Validation bloquée: réponses non sauvegardées", error);
+      setSaveStatus("error");
+      toast.error("Sauvegarde impossible. Les réponses ne sont pas perdues, réessayez avant de quitter.");
+      return;
+    }
     onTerminer(reponses);
   };
-  const handleExpire = () => { setExpire(true); onTerminer(reponses); };
+  const handleExpire = async () => {
+    setExpire(true);
+    if (!apprenantId) {
+      onTerminer(reponses);
+      return;
+    }
+    try {
+      setSaveStatus("saving");
+      if (!userIdRef.current) {
+        const sessionRes = await supabase.auth.getSession();
+        userIdRef.current = sessionRes.data?.session?.user?.id ?? userId ?? null;
+        jwtTokenRef.current = sessionRes.data?.session?.access_token ?? jwtTokenRef.current;
+      }
+      if (!userIdRef.current && !userId) throw new Error("Session apprenant indisponible");
+      await saveViaEdgeFunction(buildAutosavePayload(reponses, true));
+      setSaveStatus("saved");
+      onTerminer(reponses);
+    } catch (error) {
+      console.error("[AutoSave] Expiration bloquée: réponses non sauvegardées", error);
+      setSaveStatus("error");
+      toast.error("Temps écoulé mais sauvegarde impossible. Ne quittez pas, réessayez dans quelques secondes.");
+      setExpire(false);
+    }
+  };
+
+  const handleInterruption = async () => {
+    if (!apprenantId) {
+      setShowInterruptConfirm(false);
+      onTerminer(reponses);
+      return;
+    }
+    try {
+      setSaveStatus("saving");
+      if (!userIdRef.current) {
+        const sessionRes = await supabase.auth.getSession();
+        userIdRef.current = sessionRes.data?.session?.user?.id ?? userId ?? null;
+        jwtTokenRef.current = sessionRes.data?.session?.access_token ?? jwtTokenRef.current;
+      }
+      if (!userIdRef.current && !userId) throw new Error("Session apprenant indisponible");
+      await saveViaEdgeFunction(buildAutosavePayload(reponses, true));
+      setSaveStatus("saved");
+      setShowInterruptConfirm(false);
+      onTerminer(reponses);
+    } catch (error) {
+      console.error("[AutoSave] Interruption bloquée: réponses non sauvegardées", error);
+      setSaveStatus("error");
+      toast.error("Sauvegarde impossible. Les réponses ne sont pas perdues, réessayez avant de quitter.");
+    }
+  };
 
   // Extracted to examens-blancs-utils.ts for testability (BUG #10 FIX)
   const isMultiple = computeIsMultiple;
@@ -695,10 +764,7 @@ function PassageMatiere({
                 </Button>
                 <Button
                   variant="destructive"
-                  onClick={() => {
-                    setShowInterruptConfirm(false);
-                    onTerminer(reponses);
-                  }}
+                  onClick={handleInterruption}
                   className="gap-2"
                 >
                   <Ban className="w-4 h-4" />
