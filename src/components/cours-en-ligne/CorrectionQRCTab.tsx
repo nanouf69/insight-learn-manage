@@ -830,8 +830,19 @@ const CorrectionQRCTab = () => {
                   {/* Question */}
                   <div>
                     {item.questionSupprimee ? (
-                      <div className="flex items-center gap-2 p-2 rounded-md bg-red-50 border border-red-200">
+                      <div className="flex items-center gap-2 p-2 rounded-md bg-red-50 border border-red-200 flex-wrap">
                         <span className="text-sm font-bold text-red-700">⚠️ Q{item.questionId} — QUESTION SUPPRIMÉE</span>
+                        {!item.corrigeManuel && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs border-red-300 text-red-700 hover:bg-red-100"
+                            disabled={savingId === `${item.resultId}-${item.questionId}`}
+                            onClick={() => handleSaveCorrection(item, item.pointsMax)}
+                          >
+                            Ne pas comptabiliser
+                          </Button>
+                        )}
                       </div>
                     ) : (
                       <p className="text-sm font-bold text-foreground">
