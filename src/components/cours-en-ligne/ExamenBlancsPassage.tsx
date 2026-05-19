@@ -468,7 +468,26 @@ function PassageMatiere({
     }
     onTerminer(reponses);
   };
-  const handleExpire = () => { setExpire(true); onTerminer(reponses); };
+  const handleExpire = async () => {
+    setExpire(true);
+    try {
+      setSaveStatus("saving");
+      if (!userIdRef.current) {
+        const sessionRes = await supabase.auth.getSession();
+        userIdRef.current = sessionRes.data?.session?.user?.id ?? userId ?? null;
+        jwtTokenRef.current = sessionRes.data?.session?.access_token ?? jwtTokenRef.current;
+      }
+      if (!userIdRef.current && !userId) throw new Error("Session apprenant indisponible");
+      await saveViaEdgeFunction(buildAutosavePayload(reponses, true));
+      setSaveStatus("saved");
+      onTerminer(reponses);
+    } catch (error) {
+      console.error("[AutoSave] Expiration bloquée: réponses non sauvegardées", error);
+      setSaveStatus("error");
+      toast.error("Temps écoulé mais sauvegarde impossible. Ne quittez pas, réessayez dans quelques secondes.");
+      setExpire(false);
+    }
+  };
 
   // Extracted to examens-blancs-utils.ts for testability (BUG #10 FIX)
   const isMultiple = computeIsMultiple;
