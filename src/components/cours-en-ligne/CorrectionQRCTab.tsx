@@ -819,7 +819,10 @@ const CorrectionQRCTab = () => {
 
                   {/* Question */}
                   <div>
-                    <p className="text-sm font-bold text-foreground">{item.enonce}</p>
+                    <p className="text-sm font-bold text-foreground">
+                      <span className="text-primary mr-1">Q{item.questionId} —</span>
+                      {item.enonce}
+                    </p>
                   </div>
 
                   {/* Réponse élève */}
