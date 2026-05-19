@@ -530,7 +530,7 @@ function EcranResultats({
       const matiere = examen.matieres[mi];
       if (!matiere) continue;
       const resultatMatiere = resultatsAvecIA[mi];
-      const questionsSafe = (matiere.questions || []).filter((q): q is Question => q != null && q?.type !== undefined);
+      const questionsSafe = (((resultats[mi] as any)?.details?.questions?.length > 0 ? (resultats[mi] as any).details.questions : matiere.questions) || []).filter((q): q is Question => q != null && q?.type !== undefined);
       const qrcQuestions = questionsSafe.filter(q => q?.type === "QRC");
       if (qrcQuestions.length === 0) continue;
       const cacheMatiere = correctionsIA[mi] || {};
