@@ -698,9 +698,27 @@ const CorrectionQRCTab = () => {
         toast.error("Erreur lors de la sauvegarde");
       } else {
         toast.success(`QRC corrigée : ${clamped}/${item.pointsMax} pts`);
-        setItems(prev => prev.map(i => i.resultId === item.resultId && i.questionId === item.questionId
-          ? { ...i, resultId: savedResultId || i.resultId, source: "result", pointsObtenus: clamped, corrigeManuel: true, commentaire: editingComments[uniqueKey] ?? item.commentaire ?? "", correctedAt: new Date().toISOString(), noteSur20, scoreMatiereObtenu: payload.score_obtenu }
-          : i));
+        setItems(prev => {
+          const updated = prev.map(i => i.resultId === item.resultId && i.questionId === item.questionId
+            ? { ...i, resultId: savedResultId || i.resultId, source: "result" as const, pointsObtenus: clamped, corrigeManuel: true, commentaire: editingComments[uniqueKey] ?? item.commentaire ?? "", correctedAt: new Date().toISOString(), noteSur20, scoreMatiereObtenu: payload.score_obtenu }
+            : i);
+
+          setTimeout(() => {
+            setCurrentIndex(prevIndex => {
+              const newFiltered = updated.filter(i => {
+                if (filter === "pending" && i.corrigeManuel) return false;
+                if (filter === "done" && !i.corrigeManuel) return false;
+                if (filter === "today" && !isToday(i.completedAt)) return false;
+                if (filter === "today-pending" && (!isToday(i.completedAt) || i.corrigeManuel)) return false;
+                return true;
+              });
+
+              return Math.min(prevIndex, Math.max(0, newFiltered.length - 1));
+            });
+          }, 0);
+
+          return updated;
+        });
       }
 
       setSavingId(null);
