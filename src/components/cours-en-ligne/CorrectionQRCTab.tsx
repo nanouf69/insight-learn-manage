@@ -242,7 +242,7 @@ function chooseMatiereMatchingResponses(
 const CorrectionQRCTab = () => {
   const [items, setItems] = useState<QrcItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"all" | "pending" | "done" | "today" | "today-pending">("today");
+  const [filter, setFilter] = useState<"all" | "pending" | "done" | "today" | "today-pending">("today-pending");
   const [searchQuery, setSearchQuery] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingPoints, setEditingPoints] = useState(0);
@@ -698,9 +698,27 @@ const CorrectionQRCTab = () => {
         toast.error("Erreur lors de la sauvegarde");
       } else {
         toast.success(`QRC corrigée : ${clamped}/${item.pointsMax} pts`);
-        setItems(prev => prev.map(i => i.resultId === item.resultId && i.questionId === item.questionId
-          ? { ...i, resultId: savedResultId || i.resultId, source: "result", pointsObtenus: clamped, corrigeManuel: true, commentaire: editingComments[uniqueKey] ?? item.commentaire ?? "", correctedAt: new Date().toISOString(), noteSur20, scoreMatiereObtenu: payload.score_obtenu }
-          : i));
+        setItems(prev => {
+          const updated = prev.map(i => i.resultId === item.resultId && i.questionId === item.questionId
+            ? { ...i, resultId: savedResultId || i.resultId, source: "result" as const, pointsObtenus: clamped, corrigeManuel: true, commentaire: editingComments[uniqueKey] ?? item.commentaire ?? "", correctedAt: new Date().toISOString(), noteSur20, scoreMatiereObtenu: payload.score_obtenu }
+            : i);
+
+          setTimeout(() => {
+            setCurrentIndex(prevIndex => {
+              const newFiltered = updated.filter(i => {
+                if (filter === "pending" && i.corrigeManuel) return false;
+                if (filter === "done" && !i.corrigeManuel) return false;
+                if (filter === "today" && !isToday(i.completedAt)) return false;
+                if (filter === "today-pending" && (!isToday(i.completedAt) || i.corrigeManuel)) return false;
+                return true;
+              });
+
+              return Math.min(prevIndex, Math.max(0, newFiltered.length - 1));
+            });
+          }, 0);
+
+          return updated;
+        });
       }
 
       setSavingId(null);
@@ -801,15 +819,12 @@ const CorrectionQRCTab = () => {
         setTimeout(() => {
           setCurrentIndex(prev => {
             const newFiltered = updated.filter(i => {
-              if (filter === "pending") return !i.corrigeManuel;
-              if (filter === "done") return i.corrigeManuel;
+              if (filter === "pending" && i.corrigeManuel) return false;
+              if (filter === "done" && !i.corrigeManuel) return false;
+              if (filter === "today" && !isToday(i.completedAt)) return false;
+              if (filter === "today-pending" && (!isToday(i.completedAt) || i.corrigeManuel)) return false;
               return true;
             });
-
-            if (filter === "pending") {
-              // Keep same index so the next pending QRC naturally takes the current slot
-              return Math.min(prev, Math.max(0, newFiltered.length - 1));
-            }
 
             return Math.min(prev, Math.max(0, newFiltered.length - 1));
           });
@@ -1071,45 +1086,9 @@ const CorrectionQRCTab = () => {
               size="sm"
               onClick={() => {
                 setEditingId(null);
-                if (currentIndex > 0) {
-                  setCurrentIndex(currentIndex - 1);
-                  return;
-                }
-                // Au bord : basculer sur "all" et aller à l'item précédent dans la liste globale
-                const currentItem = sortedFiltered[0];
-                const sortedAll = [...items].sort((a, b) => {
-                  const prioA = a.apprenantTypeMode === "presentiel" ? 0 : 1;
-                  const prioB = b.apprenantTypeMode === "presentiel" ? 0 : 1;
-                  if (prioA !== prioB) return prioA - prioB;
-                  const dateA = new Date(a.completedAt).getTime() || 0;
-                  const dateB = new Date(b.completedAt).getTime() || 0;
-                  if (dateA !== dateB) return sortOrder === "desc" ? dateB - dateA : dateA - dateB;
-                  const numA = parseInt((a.quizTitre.match(/N°(\d+)/)?.[1]) || "0", 10);
-                  const numB = parseInt((b.quizTitre.match(/N°(\d+)/)?.[1]) || "0", 10);
-                  if (numA !== numB) return numA - numB;
-                  if (a.matiereId !== b.matiereId) return a.matiereId.localeCompare(b.matiereId);
-                  return a.questionId - b.questionId;
-                });
-                const globalIdx = currentItem
-                  ? sortedAll.findIndex(i => i.resultId === currentItem.resultId && i.questionId === currentItem.questionId)
-                  : -1;
-                if (globalIdx > 0 && filter !== "all") {
-                  setFilter("all");
-                  setTimeout(() => setCurrentIndex(globalIdx - 1), 0);
-                }
+                setCurrentIndex(prev => Math.max(0, prev - 1));
               }}
-              disabled={(() => {
-                if (currentIndex > 0) return false;
-                if (filter === "all") return true;
-                const currentItem = sortedFiltered[0];
-                if (!currentItem) return true;
-                // Y a-t-il un item antérieur dans items ?
-                return !items.some(i => {
-                  const t = new Date(i.completedAt).getTime() || 0;
-                  const c = new Date(currentItem.completedAt).getTime() || 0;
-                  return t > c || (t === c && i.questionId < currentItem.questionId);
-                }) && !items.some(i => i.apprenantTypeMode === "presentiel" && currentItem.apprenantTypeMode !== "presentiel");
-              })()}
+              disabled={currentIndex <= 0}
               className="gap-1"
             >
               <ChevronLeft className="w-4 h-4" />
@@ -1123,34 +1102,9 @@ const CorrectionQRCTab = () => {
               size="sm"
               onClick={() => {
                 setEditingId(null);
-                if (currentIndex < sortedFiltered.length - 1) {
-                  setCurrentIndex(currentIndex + 1);
-                  return;
-                }
-                // Au bord : basculer sur "all" et aller à l'item suivant global
-                const currentItem = sortedFiltered[sortedFiltered.length - 1];
-                const sortedAll = [...items].sort((a, b) => {
-                  const prioA = a.apprenantTypeMode === "presentiel" ? 0 : 1;
-                  const prioB = b.apprenantTypeMode === "presentiel" ? 0 : 1;
-                  if (prioA !== prioB) return prioA - prioB;
-                  const dateA = new Date(a.completedAt).getTime() || 0;
-                  const dateB = new Date(b.completedAt).getTime() || 0;
-                  if (dateA !== dateB) return sortOrder === "desc" ? dateB - dateA : dateA - dateB;
-                  const numA = parseInt((a.quizTitre.match(/N°(\d+)/)?.[1]) || "0", 10);
-                  const numB = parseInt((b.quizTitre.match(/N°(\d+)/)?.[1]) || "0", 10);
-                  if (numA !== numB) return numA - numB;
-                  if (a.matiereId !== b.matiereId) return a.matiereId.localeCompare(b.matiereId);
-                  return a.questionId - b.questionId;
-                });
-                const globalIdx = currentItem
-                  ? sortedAll.findIndex(i => i.resultId === currentItem.resultId && i.questionId === currentItem.questionId)
-                  : -1;
-                if (globalIdx >= 0 && globalIdx < sortedAll.length - 1 && filter !== "all") {
-                  setFilter("all");
-                  setTimeout(() => setCurrentIndex(globalIdx + 1), 0);
-                }
+                setCurrentIndex(prev => Math.min(sortedFiltered.length - 1, prev + 1));
               }}
-              disabled={currentIndex >= sortedFiltered.length - 1 && filter === "all"}
+              disabled={currentIndex >= sortedFiltered.length - 1}
               className="gap-1"
             >
               Suivant
