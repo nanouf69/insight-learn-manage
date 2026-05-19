@@ -393,7 +393,6 @@ function PassageMatiere({
       const row = buildAutosavePayload(current, false);
       try {
         if (!row.user_id) {
-          localStorage.setItem(`exam_backup_${exerciceKey}_${apprenantId}`, JSON.stringify(current));
           return;
         }
         const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/upsert-reponse-apprenant`;
@@ -403,12 +402,7 @@ function PassageMatiere({
         xhr.setRequestHeader("apikey", import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY);
         if (jwtTokenRef.current) xhr.setRequestHeader("Authorization", `Bearer ${jwtTokenRef.current}`);
         xhr.send(JSON.stringify(row));
-        if (xhr.status >= 400) {
-          localStorage.setItem(`exam_backup_${exerciceKey}_${apprenantId}`, JSON.stringify(current));
-        }
-      } catch (_) {
-        try { localStorage.setItem(`exam_backup_${exerciceKey}_${apprenantId}`, JSON.stringify(current)); } catch {}
-      }
+      } catch (_) {}
     };
     window.addEventListener("beforeunload", flushSave);
     return () => {
@@ -470,7 +464,6 @@ function PassageMatiere({
       console.error("[AutoSave] Validation bloquée: réponses non sauvegardées", error);
       setSaveStatus("error");
       toast.error("Sauvegarde impossible. Les réponses ne sont pas perdues, réessayez avant de quitter.");
-      try { localStorage.setItem(`exam_backup_${exerciceKey}_${apprenantId}`, JSON.stringify(reponses)); } catch {}
       return;
     }
     onTerminer(reponses);
