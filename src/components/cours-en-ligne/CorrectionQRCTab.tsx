@@ -614,7 +614,9 @@ const CorrectionQRCTab = () => {
     return dt.getFullYear() === now.getFullYear() && dt.getMonth() === now.getMonth() && dt.getDate() === now.getDate();
   };
 
-  const todayPendingItems = items.filter(i => !i.corrigeManuel && isToday(i.completedAt));
+  const todayItems = items.filter(i => isToday(i.completedAt));
+  const todayCount = todayItems.length;
+  const todayPendingItems = todayItems.filter(i => !i.corrigeManuel);
   const todayPendingCount = todayPendingItems.length;
 
   const filtered = items.filter(item => {
@@ -643,7 +645,13 @@ const CorrectionQRCTab = () => {
   // Build available exam list grouped by category, each with its numbers
   type ExamOption = { value: string; label: string; total: number };
   const examOptionsByCat: Record<string, { label: string; numbers: Map<string, number> }> = {};
-  for (const i of (filter === "pending" ? pendingItems : items)) {
+  const examOptionSource = filter === "pending" ? pendingItems
+    : filter === "today" ? todayItems
+    : filter === "today-pending" ? todayPendingItems
+    : filter === "done" ? items.filter(i => i.corrigeManuel)
+    : items;
+
+  for (const i of examOptionSource) {
     const cat = getExamCategory(i.quizTitre, i.quizId, i.apprenantTypeMode);
     const n = getExamNum(i.quizTitre);
     if (!n) continue;
@@ -765,9 +773,9 @@ const CorrectionQRCTab = () => {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="today-pending">🔥 En attente aujourd'hui ({todayPendingCount})</SelectItem>
+            <SelectItem value="today">🔥 QRC répondues aujourd'hui ({todayCount})</SelectItem>
+            <SelectItem value="today-pending">⏳ À corriger aujourd'hui ({todayPendingCount})</SelectItem>
             <SelectItem value="pending">⏳ En attente uniquement</SelectItem>
-            <SelectItem value="today">📅 Répondues aujourd'hui</SelectItem>
             <SelectItem value="done">✅ Déjà corrigées</SelectItem>
             <SelectItem value="all">Toutes</SelectItem>
           </SelectContent>
