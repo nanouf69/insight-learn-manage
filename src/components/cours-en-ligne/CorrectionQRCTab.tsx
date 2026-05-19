@@ -239,7 +239,7 @@ function chooseMatiereMatchingResponses(
 const CorrectionQRCTab = () => {
   const [items, setItems] = useState<QrcItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"all" | "pending" | "done" | "today" | "today-pending">("today-pending");
+  const [filter, setFilter] = useState<"all" | "pending" | "done" | "today" | "today-pending">("today");
   const [searchQuery, setSearchQuery] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingPoints, setEditingPoints] = useState(0);
@@ -803,7 +803,11 @@ const CorrectionQRCTab = () => {
             <CardContent className="py-12 text-center text-muted-foreground">
               <FileText className="w-12 h-12 mx-auto mb-3 opacity-30" />
               <p className="font-medium">
-                {filter === "pending" ? "Aucune QRC en attente de correction" : "Aucune QRC trouvée"}
+                {filter === "today-pending"
+                  ? "Aucune QRC en attente aujourd'hui — toutes corrigées ✅"
+                  : filter === "pending"
+                  ? "Aucune QRC en attente de correction"
+                  : "Aucune QRC trouvée"}
               </p>
               <p className="text-sm mt-1">Les réponses QRC apparaîtront ici au fur et à mesure des examens</p>
             </CardContent>
