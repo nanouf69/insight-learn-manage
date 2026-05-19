@@ -433,7 +433,7 @@ const CorrectionQRCTab = () => {
     }
 
     setItems(qrcItems);
-    setLoading(false);
+    if (!opts?.silent) setLoading(false);
   }, [examenMap]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
