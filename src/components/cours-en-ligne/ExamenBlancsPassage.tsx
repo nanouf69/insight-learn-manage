@@ -147,6 +147,7 @@ function PassageMatiere({
   onTerminer,
   isBilan = false,
   apprenantId,
+  userId,
   examenId,
 }: {
   matiere: Matiere;
@@ -155,6 +156,7 @@ function PassageMatiere({
   onTerminer: (reponses: Reponses) => void;
   isBilan?: boolean;
   apprenantId?: string | null;
+  userId?: string | null;
   examenId?: string;
 }) {
   const [reponses, setReponses] = useState<Reponses>({});
@@ -205,11 +207,12 @@ function PassageMatiere({
   const jwtTokenRef = useRef<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
+    userIdRef.current = userId ?? userIdRef.current;
     supabase.auth.getSession().then(({ data }) => {
-      userIdRef.current = data?.session?.user?.id ?? null;
+      userIdRef.current = data?.session?.user?.id ?? userId ?? null;
       jwtTokenRef.current = data?.session?.access_token ?? null;
     });
-  }, []);
+  }, [userId]);
 
   // Load saved responses on mount
   // FIX: use double underscore `__` to match handleTerminerMatiere in ExamensBlancsPage.tsx
