@@ -646,7 +646,7 @@ function EcranResultats({
           const pctScore = safeMaxPoints > 0 ? Math.min((noteObtenueSafe / safeMaxPoints) * 100, 100) : 0;
           const matiere = examen.matieres[mi];
           const cacheMatiere = correctionsIA[mi] || {};
-          const questionsSafe = matiere ? (matiere.questions || []).filter(q => q && q?.type !== undefined) : [];
+          const questionsSafe = matiere ? (((resultats[mi] as any)?.details?.questions?.length > 0 ? (resultats[mi] as any).details.questions : matiere.questions) || []).filter(q => q && q?.type !== undefined) : [];
           const isExpanded = !!expandedMatieres[mi];
           return (
             <Card key={r.matiereId} className="border-l-4 overflow-hidden" style={{ borderLeftColor: r.admis ? '#00B4D8' : '#ef4444' }}>
