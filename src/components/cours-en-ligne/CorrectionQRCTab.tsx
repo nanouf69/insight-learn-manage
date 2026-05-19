@@ -638,7 +638,6 @@ const CorrectionQRCTab = () => {
       const scoreMax = matiere.noteSur || 20;
       const noteSur20 = scoreMax > 0 ? Number(((Math.min(Math.max(newScore, 0), scoreMax) / scoreMax) * 20).toFixed(1)) : 0;
       const payload = {
-        id: (existing as any)?.id,
         apprenant_id: item.apprenantId,
         user_id: item.userId || (autosaveRow as any).user_id,
         quiz_id: item.quizId,
@@ -655,16 +654,52 @@ const CorrectionQRCTab = () => {
         details: { questions, reponses: (autosaveRow as any).reponses || {}, correctionsIA },
       };
 
-      const { error: upsertErr } = await supabase
-        .from("apprenant_quiz_results")
-        .upsert(payload as any, { onConflict: "apprenant_id,quiz_id,matiere_id,tentative" });
+      let savedResultId = (existing as any)?.id || null;
+      let saveErr: any = null;
 
-      if (upsertErr) {
+      if (savedResultId) {
+        const { error } = await supabase
+          .from("apprenant_quiz_results")
+          .update(payload as any)
+          .eq("id", savedResultId);
+        saveErr = error;
+      } else {
+        const { data: inserted, error } = await supabase
+          .from("apprenant_quiz_results")
+          .insert(payload as any)
+          .select("id")
+          .single();
+        savedResultId = (inserted as any)?.id || null;
+        saveErr = error;
+      }
+
+      if (saveErr?.code === "23505") {
+        const { data: latest } = await supabase
+          .from("apprenant_quiz_results")
+          .select("id")
+          .eq("apprenant_id", item.apprenantId)
+          .eq("quiz_id", item.quizId)
+          .eq("quiz_type", item.quizType)
+          .eq("matiere_id", item.matiereId)
+          .eq("tentative", 1)
+          .maybeSingle();
+        if ((latest as any)?.id) {
+          savedResultId = (latest as any).id;
+          const { error } = await supabase
+            .from("apprenant_quiz_results")
+            .update(payload as any)
+            .eq("id", savedResultId);
+          saveErr = error;
+        }
+      }
+
+      if (saveErr) {
+        console.error("Erreur sauvegarde correction QRC:", saveErr);
         toast.error("Erreur lors de la sauvegarde");
       } else {
         toast.success(`QRC corrigée : ${clamped}/${item.pointsMax} pts`);
         setItems(prev => prev.map(i => i.resultId === item.resultId && i.questionId === item.questionId
-          ? { ...i, resultId: (existing as any)?.id || i.resultId, source: "result", pointsObtenus: clamped, corrigeManuel: true, commentaire: editingComments[uniqueKey] ?? item.commentaire ?? "", correctedAt: new Date().toISOString(), noteSur20, scoreMatiereObtenu: payload.score_obtenu }
+          ? { ...i, resultId: savedResultId || i.resultId, source: "result", pointsObtenus: clamped, corrigeManuel: true, commentaire: editingComments[uniqueKey] ?? item.commentaire ?? "", correctedAt: new Date().toISOString(), noteSur20, scoreMatiereObtenu: payload.score_obtenu }
           : i));
       }
 
