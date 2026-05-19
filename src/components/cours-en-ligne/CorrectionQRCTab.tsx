@@ -239,7 +239,7 @@ function chooseMatiereMatchingResponses(
 const CorrectionQRCTab = () => {
   const [items, setItems] = useState<QrcItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"all" | "pending" | "done">("pending");
+  const [filter, setFilter] = useState<"all" | "pending" | "done" | "today">("pending");
   const [searchQuery, setSearchQuery] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingPoints, setEditingPoints] = useState(0);
@@ -579,9 +579,17 @@ const CorrectionQRCTab = () => {
       : { key: "vtc-p", label: "VTC Présentiel" };
   };
 
+  const isToday = (d?: string | null) => {
+    if (!d) return false;
+    const dt = new Date(d);
+    const now = new Date();
+    return dt.getFullYear() === now.getFullYear() && dt.getMonth() === now.getMonth() && dt.getDate() === now.getDate();
+  };
+
   const filtered = items.filter(item => {
     if (filter === "pending" && item.corrigeManuel) return false;
     if (filter === "done" && !item.corrigeManuel) return false;
+    if (filter === "today" && !(isToday((item as any).correctedAt) || isToday(item.completedAt))) return false;
     if (examenFilter !== "all") {
       const [cat, num] = examenFilter.split(":");
       if (getExamCategory(item.quizTitre, item.quizId, item.apprenantTypeMode).key !== cat) return false;
@@ -726,6 +734,7 @@ const CorrectionQRCTab = () => {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="pending">⏳ En attente</SelectItem>
+            <SelectItem value="today">📅 Répondues aujourd'hui</SelectItem>
             <SelectItem value="done">✅ Déjà corrigées</SelectItem>
             <SelectItem value="all">Toutes</SelectItem>
           </SelectContent>
