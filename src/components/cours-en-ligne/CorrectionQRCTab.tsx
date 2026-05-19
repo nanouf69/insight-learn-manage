@@ -357,29 +357,53 @@ const CorrectionQRCTab = () => {
       if (!questionList) continue;
 
       for (const q of questionList) {
-        if (q.type !== "QRC") continue;
+        // FIX 19/05 : tolère l'absence de champ `type` (nouvelles lignes bilan
+        // qui agrègent toutes les matières) en inférant le type depuis l'énoncé.
+        const enonceStr = safeStr(q.enonce);
+        const inferredType = q.type
+          ? String(q.type).toUpperCase()
+          : (/\(qrc\)/i.test(enonceStr) ? "QRC" : "QCM");
+        if (inferredType !== "QRC") continue;
 
-        // Deduplicate per apprenant + quiz + matière + question
-        const qrcKey = `${r.apprenant_id}__${r.quiz_id}__${r.matiere_id || ""}__${q.questionId}`;
+        // Pour les lignes bilan agrégées (matiere_id vide), on résout la matière
+        // au niveau de la question (chaque question porte son propre matiereId).
+        const effectiveMatiereId = (r.matiere_id || "") || safeStr(q.matiereId);
+        const perQuestionMatiere = matiere
+          || findMatiereWithFallback(examenMap, tousLesExamens, r.quiz_id, effectiveMatiereId);
+
+        // Deduplicate per apprenant + quiz + matière effective + question
+        const qrcKey = `${r.apprenant_id}__${r.quiz_id}__${effectiveMatiereId}__${q.questionId}`;
         if (seenQrcKeys.has(qrcKey)) continue;
         seenQrcKeys.add(qrcKey);
 
-        const pts = getPointsParQuestion(r.matiere_id || "", "QRC", matiere || undefined);
+        const pts = getPointsParQuestion(effectiveMatiereId, "QRC", perQuestionMatiere || undefined);
 
         const correction = correctionsIA[q.questionId];
         const hasManualCorrection = correction && typeof correction === "object" && correction.explication?.includes("manuelle");
 
         const app = apprenantMap[r.apprenant_id] || { nom: "Inconnu", prenom: "", mode: "presentiel" as const };
 
-        const questionDef = matiere?.questions?.find((mq: any) => mq && mq.id === q.questionId);
+        const questionDef = perQuestionMatiere?.questions?.find((mq: any) => mq && mq.id === q.questionId);
         // Compare against the CURRENT canonical matiere (from examenMap) to detect
         // questions removed/replaced in the live exam — not the legacy matched variant.
         const currentExamen = examenMap[r.quiz_id];
-        const currentMatiere = currentExamen?.matieres?.find((m: any) => m.id === (r.matiere_id || ""));
+        const currentMatiere = currentExamen?.matieres?.find((m: any) => m.id === effectiveMatiereId);
         const currentQuestionDef = currentMatiere?.questions?.find((mq: any) => mq && mq.id === q.questionId);
-        const savedQuestionText = normalizeText(safeStr(q.enonce));
+        const savedQuestionText = normalizeText(enonceStr);
         const currentQuestionText = normalizeText(safeStr(currentQuestionDef?.enonce));
         const questionSupprimee = !currentQuestionDef || (!!savedQuestionText && !!currentQuestionText && savedQuestionText !== currentQuestionText);
+
+        // Réponse élève : si absente du champ q.reponseEleve (cas des lignes bilan),
+        // on la récupère depuis details.reponses[questionId].
+        const reponseEleveRaw = q.reponseEleve != null && q.reponseEleve !== ""
+          ? q.reponseEleve
+          : (reponses?.[q.questionId] ?? reponses?.[String(q.questionId)] ?? "");
+        const reponseEleveStr = safeStr(reponseEleveRaw);
+
+        // Réponse correcte : si absente, on la reconstruit depuis la définition.
+        const reponseCorrecteStr = q.reponseCorrecte
+          ? safeStr(q.reponseCorrecte)
+          : safeStr(questionDef?.reponseQRC || (questionDef?.reponses_possibles || []).join(" / "));
 
         // Auto score: if manual correction exists, use it; otherwise recompute deterministically
         let autoScore = 0;
@@ -388,7 +412,7 @@ const CorrectionQRCTab = () => {
           autoScore = clampToHalfStep(correction.pointsObtenus ?? 0, pts);
           autoExplication = correction.explication || null;
         } else if (questionDef) {
-          const recomputed = recomputeQrcAutoScore(questionDef, safeStr(q.reponseEleve), pts);
+          const recomputed = recomputeQrcAutoScore(questionDef, reponseEleveStr, pts);
           autoScore = recomputed.autoScore;
           autoExplication = recomputed.explication;
         } else if (correction && typeof correction === "object") {
@@ -407,12 +431,12 @@ const CorrectionQRCTab = () => {
           quizTitre: r.quiz_titre,
           quizId: r.quiz_id,
           quizType: r.quiz_type,
-          matiereId: r.matiere_id || "",
-          matiereNom: r.matiere_nom || "",
+          matiereId: effectiveMatiereId,
+          matiereNom: r.matiere_nom || safeStr(q.matiereNom) || perQuestionMatiere?.nom || "",
           questionId: q.questionId,
-          enonce: safeStr(q.enonce),
-          reponseEleve: safeStr(q.reponseEleve),
-          reponseCorrecte: safeStr(q.reponseCorrecte),
+          enonce: enonceStr,
+          reponseEleve: reponseEleveStr,
+          reponseCorrecte: reponseCorrecteStr,
           pointsMax: pts,
           pointsObtenus: (hasManualCorrection || isAutoScoredRetake)
             ? clampToHalfStep(hasManualCorrection ? (correction.pointsObtenus ?? 0) : autoScore, pts)
