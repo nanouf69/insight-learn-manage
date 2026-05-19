@@ -14,6 +14,9 @@ import { buildExamenMap, findMatiereWithFallback, getSourceQuestions } from "./e
 
 interface QrcItem {
   resultId: string;
+  source: "result" | "autosave";
+  autosaveId?: string;
+  userId?: string;
   apprenantId: string;
   apprenantNom: string;
   apprenantPrenom: string;
@@ -379,10 +382,10 @@ const CorrectionQRCTab = () => {
         const pts = getPointsParQuestion(effectiveMatiereId, "QRC", perQuestionMatiere || undefined);
 
         const correction = correctionsIA[q.questionId];
-        // STRICT : on exige le flag `manuel:true` posé explicitement par handleSaveCorrection.
-        // Sinon, toute correction héritée (IA, recalcul, ancienne version) reste "en attente"
-        // pour que l'admin puisse valider lui-même.
-        const hasManualCorrection = !!(correction && typeof correction === "object" && correction.manuel === true);
+        // STRICT : seules les validations faites depuis cet onglet admin comptent.
+        // Les anciens `manuel:true` ont pu être écrits automatiquement côté résultats élève,
+        // donc ils ne doivent plus masquer les réponses du jour à corriger.
+        const hasManualCorrection = !!(correction && typeof correction === "object" && correction.validatedByAdmin === true);
 
         const app = apprenantMap[r.apprenant_id] || { nom: "Inconnu", prenom: "", mode: "presentiel" as const };
 
@@ -428,6 +431,7 @@ const CorrectionQRCTab = () => {
 
         qrcItems.push({
           resultId: r.id,
+          source: "result",
           apprenantId: r.apprenant_id,
           apprenantNom: app.nom,
           apprenantPrenom: app.prenom,
@@ -455,6 +459,73 @@ const CorrectionQRCTab = () => {
           correctedAt: (hasManualCorrection || isAutoScoredRetake) ? (correction?.correctedAt || r.completed_at || null) : null,
           apprenantTypeMode: app.mode,
           questionSupprimee,
+        });
+      }
+    }
+
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayEnd = new Date(todayStart);
+    todayEnd.setDate(todayEnd.getDate() + 1);
+    const { data: autosaves } = await supabase
+      .from("reponses_apprenants" as any)
+      .select("id, apprenant_id, user_id, exercice_id, exercice_type, reponses, completed, updated_at")
+      .eq("exercice_type", "examen_blanc")
+      .like("exercice_id", "%__%")
+      .gte("updated_at", todayStart.toISOString())
+      .lt("updated_at", todayEnd.toISOString())
+      .order("updated_at", { ascending: false });
+
+    for (const row of (autosaves || []) as any[]) {
+      const [quizId, matiereId] = safeStr(row.exercice_id).split("__");
+      if (!quizId || !matiereId) continue;
+      const matiere = findMatiereWithFallback(examenMap, tousLesExamens, quizId, matiereId);
+      if (!matiere) continue;
+      const questions = getSourceQuestions(matiere, tousLesExamens);
+      const reponses = row.reponses || {};
+      const app = apprenantMap[row.apprenant_id] || { nom: "Inconnu", prenom: "", mode: "presentiel" as const };
+      const examen = examenMap[quizId];
+
+      for (const q of questions) {
+        if (!q || String(q.type).toUpperCase() !== "QRC") continue;
+        const reponseEleveStr = safeStr(reponses?.[q.id] ?? reponses?.[String(q.id)] ?? "");
+        if (!reponseEleveStr.trim()) continue;
+        const qrcKey = `${row.apprenant_id}__${quizId}__${matiereId}__${q.id}`;
+        if (seenQrcKeys.has(qrcKey)) continue;
+        seenQrcKeys.add(qrcKey);
+
+        const pts = getPointsParQuestion(matiereId, "QRC", matiere);
+        const recomputed = recomputeQrcAutoScore(q, reponseEleveStr, pts);
+        qrcItems.push({
+          resultId: `autosave:${row.id}:${quizId}:${matiereId}`,
+          source: "autosave",
+          autosaveId: row.id,
+          userId: row.user_id,
+          apprenantId: row.apprenant_id,
+          apprenantNom: app.nom,
+          apprenantPrenom: app.prenom,
+          quizTitre: examen?.titre || quizId,
+          quizId,
+          quizType: "examen_blanc",
+          matiereId,
+          matiereNom: matiere.nom,
+          questionId: q.id,
+          enonce: safeStr(q.enonce),
+          reponseEleve: reponseEleveStr,
+          reponseCorrecte: safeStr(q.reponseQRC || (q.reponses_possibles || []).join(" / ")),
+          pointsMax: pts,
+          pointsObtenus: null,
+          corrigeManuel: false,
+          completedAt: row.updated_at,
+          autoScore: recomputed.autoScore,
+          autoExplication: `Réponse auto-sauvegardée : ${recomputed.explication}`,
+          noteSur20: null,
+          scoreMatiereObtenu: 0,
+          scoreMatiereMax: matiere.noteSur || 20,
+          commentaire: "",
+          correctedAt: null,
+          apprenantTypeMode: app.mode,
+          questionSupprimee: false,
         });
       }
     }
