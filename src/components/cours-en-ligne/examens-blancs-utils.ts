@@ -590,13 +590,10 @@ export function mergeSourceExercices<T extends MergeExerciceBase>(
   loadedExercices: T[],
   sourceExercices: T[],
   deletedExerciceIds?: number[],
-  options?: { preserveAdminAddedQuestions?: boolean; preserveAdminAddedExercices?: boolean },
 ): T[] {
   const loadedExerciseMap = new Map(loadedExercices.map((exo) => [Number(exo.id), exo]));
   const sourceExerciseIds = new Set(sourceExercices.map((exo) => Number(exo.id)));
   const deletedSet = new Set((deletedExerciceIds ?? []).map(Number));
-  const preserveAdminAddedQuestions = options?.preserveAdminAddedQuestions ?? true;
-  const preserveAdminAddedExercices = options?.preserveAdminAddedExercices ?? true;
 
   const mergedFromSource = sourceExercices
     .filter((sourceExo) => !deletedSet.has(Number(sourceExo.id)))
@@ -641,11 +638,9 @@ export function mergeSourceExercices<T extends MergeExerciceBase>(
 
     // Préserver les questions ajoutées par l'admin (IDs présents dans loaded mais pas dans source)
     const sourceQuestionIds = new Set(sourceExo.questions.map((q) => Number(q.id)));
-    const adminAddedQuestions = preserveAdminAddedQuestions
-      ? loadedExo.questions.filter(
-          (loadedQ) => !sourceQuestionIds.has(Number(loadedQ.id)) && !deletedIds.has(Number(loadedQ.id)),
-        )
-      : [];
+    const adminAddedQuestions = loadedExo.questions.filter(
+      (loadedQ) => !sourceQuestionIds.has(Number(loadedQ.id)) && !deletedIds.has(Number(loadedQ.id)),
+    );
 
     return {
       ...sourceExo,
@@ -656,12 +651,10 @@ export function mergeSourceExercices<T extends MergeExerciceBase>(
 
   // Préserver les exercices ajoutés par l'admin (IDs présents dans loaded mais pas dans source)
   // Filtrer aussi ceux qui ont été supprimés
-  const adminAddedExercices = preserveAdminAddedExercices
-    ? loadedExercices.filter(
-        (loadedExo) =>
-          !sourceExerciseIds.has(Number(loadedExo.id)) && !deletedSet.has(Number(loadedExo.id)),
-      )
-    : [];
+  const adminAddedExercices = loadedExercices.filter(
+    (loadedExo) =>
+      !sourceExerciseIds.has(Number(loadedExo.id)) && !deletedSet.has(Number(loadedExo.id)),
+  );
 
   return [...mergedFromSource, ...adminAddedExercices];
 }
