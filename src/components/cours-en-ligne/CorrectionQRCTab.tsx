@@ -379,7 +379,10 @@ const CorrectionQRCTab = () => {
         const pts = getPointsParQuestion(effectiveMatiereId, "QRC", perQuestionMatiere || undefined);
 
         const correction = correctionsIA[q.questionId];
-        const hasManualCorrection = correction && typeof correction === "object" && correction.explication?.includes("manuelle");
+        // STRICT : on exige le flag `manuel:true` posé explicitement par handleSaveCorrection.
+        // Sinon, toute correction héritée (IA, recalcul, ancienne version) reste "en attente"
+        // pour que l'admin puisse valider lui-même.
+        const hasManualCorrection = !!(correction && typeof correction === "object" && correction.manuel === true);
 
         const app = apprenantMap[r.apprenant_id] || { nom: "Inconnu", prenom: "", mode: "presentiel" as const };
 
