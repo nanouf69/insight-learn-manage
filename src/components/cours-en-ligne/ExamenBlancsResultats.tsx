@@ -917,7 +917,7 @@ function EcranResultats({
           if (r.matiereId === "francais" || r.matiereId === "bilan_francais") return;
           const matiere = examen.matieres[mi];
           if (!matiere) return;
-          const qSafe = (matiere.questions || []).filter((q): q is Question => !!q && q?.type !== undefined);
+          const qSafe = (((resultats[mi] as any)?.details?.questions?.length > 0 ? (resultats[mi] as any).details.questions : matiere.questions) || []).filter((q): q is Question => !!q && q?.type !== undefined);
           qSafe.forEach(q => {
             const rep = r.reponses?.[q.id];
             if (q?.type === "QCM" && q.choix) {
