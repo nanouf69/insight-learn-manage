@@ -249,6 +249,7 @@ const CorrectionQRCTab = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
   const [examenFilter, setExamenFilter] = useState<string>("all");
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const QUICK_COMMENTS = [
     "Précisez !!!",
