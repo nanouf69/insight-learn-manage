@@ -271,7 +271,10 @@ const CorrectionQRCTab = () => {
         const pts = getPointsParQuestion(r.matiere_id || "", "QRC", matiere || undefined);
 
         const correction = correctionsIA[q.questionId];
-        const hasManualCorrection = correction && typeof correction === "object" && correction.explication?.includes("manuelle");
+        const hasManualCorrection = correction && typeof correction === "object" && (
+          correction.manuel === true ||
+          correction.explication?.includes("Correction manuelle par l'administrateur")
+        );
 
         const app = apprenantMap[r.apprenant_id] || { nom: "Inconnu", prenom: "", mode: "presentiel" as const };
 
