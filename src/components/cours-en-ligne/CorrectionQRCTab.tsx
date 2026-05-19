@@ -239,7 +239,7 @@ function chooseMatiereMatchingResponses(
 const CorrectionQRCTab = () => {
   const [items, setItems] = useState<QrcItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"all" | "pending" | "done">("pending");
+  const [filter, setFilter] = useState<"all" | "pending" | "done" | "today">("pending");
   const [searchQuery, setSearchQuery] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingPoints, setEditingPoints] = useState(0);
