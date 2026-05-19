@@ -5783,7 +5783,7 @@ L'interaction entre voitures autonomes et véhicule classique est l'autre grand 
         type: "QCM",
         enonce: "Les dispositifs d'assistance à la conduite permettent au véhicule automatisé de :",
         choix: [
-          { lettre: "A", texte: "se garer tout seul", correct: true },
+          { lettre: "A", texte: "se garer tout seul" },
           { lettre: "B", texte: "rouler devant les écoles" },
           { lettre: "C", texte: "rouler sur certaines portions d'autoroute", correct: true },
         ],
