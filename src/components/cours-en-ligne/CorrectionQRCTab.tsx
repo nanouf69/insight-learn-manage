@@ -272,25 +272,38 @@ const CorrectionQRCTab = () => {
     if (Object.keys(examenMap).length === 0) return;
     setLoading(true);
 
-    // Fetch all exam_blanc results that have QRC questions
-    const { data: results, error } = await supabase
-      .from("apprenant_quiz_results")
-      .select("id, apprenant_id, quiz_id, quiz_type, quiz_titre, matiere_id, matiere_nom, details, completed_at, score_obtenu, score_max, note_sur_20")
-      .in("quiz_type", ["examen_blanc", "bilan"])
-      .order("completed_at", { ascending: false });
+    // Fetch all exam_blanc results that have QRC questions (Supabase client is capped at 1000 rows per request)
+    const pageSize = 1000;
+    const results: any[] = [];
+    for (let from = 0; ; from += pageSize) {
+      const { data, error } = await supabase
+        .from("apprenant_quiz_results")
+        .select("id, apprenant_id, quiz_id, quiz_type, quiz_titre, matiere_id, matiere_nom, details, completed_at, score_obtenu, score_max, note_sur_20")
+        .in("quiz_type", ["examen_blanc", "bilan"])
+        .order("completed_at", { ascending: false })
+        .range(from, from + pageSize - 1);
 
-    if (error || !results) {
-      console.error("Erreur chargement résultats:", error);
-      setLoading(false);
-      return;
+      if (error) {
+        console.error("Erreur chargement résultats:", error);
+        setLoading(false);
+        return;
+      }
+      results.push(...(data || []));
+      if (!data || data.length < pageSize) break;
     }
 
     // Fetch apprenant names
     const apprenantIds = [...new Set(results.map((r: any) => r.apprenant_id))];
-    const { data: apprenants } = await supabase
-      .from("apprenants")
-      .select("id, nom, prenom, type_apprenant")
-      .in("id", apprenantIds);
+    const apprenants: any[] = [];
+    for (let i = 0; i < apprenantIds.length; i += 500) {
+      const chunk = apprenantIds.slice(i, i + 500);
+      if (chunk.length === 0) continue;
+      const { data } = await supabase
+        .from("apprenants")
+        .select("id, nom, prenom, type_apprenant")
+        .in("id", chunk);
+      apprenants.push(...(data || []));
+    }
 
     const apprenantMap: Record<string, { nom: string; prenom: string; mode: "presentiel" | "elearning" }> = {};
     (apprenants || []).forEach((a: any) => {
