@@ -142,6 +142,99 @@ function recomputeQrcAutoScore(questionDef: any, reponseEleve: string, pointsMax
   };
 }
 
+function getQuestionResponse(reponses: Record<string | number, any>, questionId: number): any {
+  return reponses?.[questionId] ?? reponses?.[String(questionId)] ?? null;
+}
+
+function buildQuestionListFromMatiere(matiere: Matiere, reponses: Record<string | number, any>): any[] {
+  const sourceQuestions = getSourceQuestions(matiere, tousLesExamens);
+  return sourceQuestions.map((mq: any) => {
+    if (!mq) return null;
+    return {
+      questionId: mq.id,
+      enonce: mq.enonce || "",
+      type: mq.type || "QCM",
+      reponseEleve: getQuestionResponse(reponses, mq.id),
+      reponseCorrecte: mq.type === "QCM" && mq.choix
+        ? mq.choix.filter((c: any) => c.correct).map((c: any) => c.lettre)
+        : (mq.reponseQRC || (mq.reponses_possibles || []).join(" / ")),
+    };
+  }).filter(Boolean);
+}
+
+function scoreQuestionResponseMatch(question: any, response: string): number {
+  const responseWords = normalizeText(response).split(" ").filter(w => w.length >= 4 && !STOPWORDS.has(w));
+  if (responseWords.length === 0) return 0;
+
+  const questionText = normalizeText([
+    question?.enonce,
+    question?.reponseQRC,
+    ...(Array.isArray(question?.reponses_possibles) ? question.reponses_possibles : []),
+  ].filter(Boolean).join(" "));
+
+  const synonyms: Record<string, string[]> = {
+    cible: ["niche", "marche"],
+    benefice: ["marge", "resultat"],
+    benifice: ["marge", "resultat"],
+    intermediaire: ["apporteur", "affaires", "relation"],
+    intermidiaire: ["apporteur", "affaires", "relation"],
+    charge: ["cout", "revient"],
+    charges: ["cout", "revient"],
+  };
+
+  return responseWords.reduce((score, word) => {
+    if (fuzzyContainsLocal(questionText, word)) return score + 2;
+    const aliases = synonyms[word] || [];
+    return score + aliases.filter(alias => fuzzyContainsLocal(questionText, alias)).length;
+  }, 0);
+}
+
+function chooseMatiereMatchingResponses(
+  defaultMatiere: Matiere | undefined,
+  examenMap: Record<string, ExamenBlanc>,
+  matiereId: string,
+  reponses: Record<string | number, any>,
+): Matiere | undefined {
+  if (!matiereId || !reponses || Object.keys(reponses).length === 0) return defaultMatiere;
+
+  const candidateMap = new Map<string, Matiere>();
+  if (defaultMatiere) candidateMap.set("default", defaultMatiere);
+  [...Object.values(examenMap), ...tousLesExamens].forEach((exam) => {
+    exam.matieres?.forEach((m) => {
+      if (m.id === matiereId && Array.isArray(m.questions) && m.questions.length > 0) {
+        const qrcSignature = m.questions
+          .filter((q: any) => q?.type === "QRC")
+          .map((q: any) => `${q.id}:${normalizeText(q.enonce || "")}`)
+          .join("|");
+        candidateMap.set(qrcSignature || `${exam.id}:${m.id}`, m);
+      }
+    });
+  });
+
+  const scoreMatiere = (matiere: Matiere | undefined) => {
+    if (!matiere?.questions?.length) return 0;
+    return Object.entries(reponses).reduce((total, [key, value]) => {
+      if (Array.isArray(value) || value == null || String(value).trim().length < 2) return total;
+      const question = matiere.questions.find((q: any) => Number(q?.id) === Number(key));
+      if (!question || question.type !== "QRC") return total;
+      return total + scoreQuestionResponseMatch(question, safeStr(value));
+    }, 0);
+  };
+
+  const defaultScore = scoreMatiere(defaultMatiere);
+  let bestMatiere = defaultMatiere;
+  let bestScore = defaultScore;
+  candidateMap.forEach((candidate) => {
+    const score = scoreMatiere(candidate);
+    if (score > bestScore) {
+      bestScore = score;
+      bestMatiere = candidate;
+    }
+  });
+
+  return bestScore >= Math.max(defaultScore + 2, 3) ? bestMatiere : defaultMatiere;
+}
+
 const CorrectionQRCTab = () => {
   const [items, setItems] = useState<QrcItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -227,9 +320,10 @@ const CorrectionQRCTab = () => {
       const details = r.details as any;
       if (details == null) continue;
 
-      const matiere = findMatiereWithFallback(examenMap, tousLesExamens, r.quiz_id, r.matiere_id || "");
-
       const correctionsIA = details.correctionsIA || {};
+      const reponses = details.reponses || {};
+      const defaultMatiere = findMatiereWithFallback(examenMap, tousLesExamens, r.quiz_id, r.matiere_id || "");
+      const matiere = chooseMatiereMatchingResponses(defaultMatiere, examenMap, r.matiere_id || "", reponses);
 
       // Detect if this is a retake (more than one result for same apprenant + quiz + matiere)
       const countKey = `${r.apprenant_id}__${r.quiz_id}__${r.matiere_id || ""}`;
@@ -241,21 +335,8 @@ const CorrectionQRCTab = () => {
         : null;
 
       // If questions array is empty, reconstruct from examen definition + reponses/correctionsIA
-      const reponses = details.reponses || {};
       if (!questionList && matiere && (Object.keys(correctionsIA).length > 0 || Object.keys(reponses).length > 0)) {
-        const sourceQuestions = getSourceQuestions(matiere, tousLesExamens);
-        questionList = sourceQuestions.map((mq: any) => {
-          if (!mq) return null;
-          return {
-            questionId: mq.id,
-            enonce: mq.enonce || "",
-            type: mq.type || "QCM",
-            reponseEleve: reponses[mq.id] ?? reponses[String(mq.id)] ?? null,
-            reponseCorrecte: mq.type === "QCM" && mq.choix
-              ? mq.choix.filter((c: any) => c.correct).map((c: any) => c.lettre)
-              : (mq.reponseQRC || (mq.reponses_possibles || []).join(" / ")),
-          };
-        }).filter(Boolean);
+        questionList = buildQuestionListFromMatiere(matiere, reponses);
       }
 
       if (!questionList) continue;
