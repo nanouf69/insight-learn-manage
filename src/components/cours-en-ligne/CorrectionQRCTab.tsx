@@ -589,7 +589,7 @@ const CorrectionQRCTab = () => {
   const filtered = items.filter(item => {
     if (filter === "pending" && item.corrigeManuel) return false;
     if (filter === "done" && !item.corrigeManuel) return false;
-    if (filter === "today" && !(isToday((item as any).correctedAt) || isToday(item.completedAt))) return false;
+    if (filter === "today" && (item.corrigeManuel || !isToday(item.completedAt))) return false;
     if (examenFilter !== "all") {
       const [cat, num] = examenFilter.split(":");
       if (getExamCategory(item.quizTitre, item.quizId, item.apprenantTypeMode).key !== cat) return false;
