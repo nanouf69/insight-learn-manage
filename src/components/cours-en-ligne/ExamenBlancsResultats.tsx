@@ -263,7 +263,7 @@ function EcranResultats({
       // Recalculate score with IA corrections
       const resultat = resultats[mi];
       if (!resultat) continue;
-      const questionsSafe = (matiere.questions || []).filter(q => q && q?.type !== undefined);
+      const questionsSafe = (((resultats[mi] as any)?.details?.questions?.length > 0 ? (resultats[mi] as any).details.questions : matiere.questions) || []).filter(q => q && q?.type !== undefined);
       let noteRecalculee = 0;
       questionsSafe.forEach(q => {
         if (!q) return;
@@ -329,7 +329,7 @@ function EcranResultats({
         if (!matiere) return;
         const resultat = resultats[mi];
         if (!resultat) return;
-        const questionsSafe = (matiere.questions || []).filter(q => q && q?.type !== undefined);
+        const questionsSafe = (((resultats[mi] as any)?.details?.questions?.length > 0 ? (resultats[mi] as any).details.questions : matiere.questions) || []).filter(q => q && q?.type !== undefined);
         questionsSafe.forEach(q => {
           if (!q || q?.type !== "QRC") return;
           const rep = safeStr(resultat.reponses?.[q.id]);
@@ -432,7 +432,7 @@ function EcranResultats({
     const safeMaxPoints = Math.max(toFiniteNumber(r.maxPoints, 0), 0);
     // Find matière by ID instead of relying on index alignment (resultats may have been filtered)
     const matiere = examen.matieres.find(m => m?.id === r.matiereId) ?? examen.matieres[mi];
-    const questionsSafe = matiere ? (matiere.questions || []).filter((q): q is Question => q != null && q?.type !== undefined) : [];
+    const questionsSafe = matiere ? (((resultats[mi] as any)?.details?.questions?.length > 0 ? (resultats[mi] as any).details.questions : matiere.questions) || []).filter((q): q is Question => q != null && q?.type !== undefined) : [];
     const cacheMatiere = correctionsIA[mi] || {};
 
     const recalculatedFromDetails = questionsSafe.reduce((acc, q) => {
@@ -530,7 +530,7 @@ function EcranResultats({
       const matiere = examen.matieres[mi];
       if (!matiere) continue;
       const resultatMatiere = resultatsAvecIA[mi];
-      const questionsSafe = (matiere.questions || []).filter((q): q is Question => q != null && q?.type !== undefined);
+      const questionsSafe = (((resultats[mi] as any)?.details?.questions?.length > 0 ? (resultats[mi] as any).details.questions : matiere.questions) || []).filter((q): q is Question => q != null && q?.type !== undefined);
       const qrcQuestions = questionsSafe.filter(q => q?.type === "QRC");
       if (qrcQuestions.length === 0) continue;
       const cacheMatiere = correctionsIA[mi] || {};
@@ -646,7 +646,7 @@ function EcranResultats({
           const pctScore = safeMaxPoints > 0 ? Math.min((noteObtenueSafe / safeMaxPoints) * 100, 100) : 0;
           const matiere = examen.matieres[mi];
           const cacheMatiere = correctionsIA[mi] || {};
-          const questionsSafe = matiere ? (matiere.questions || []).filter(q => q && q?.type !== undefined) : [];
+          const questionsSafe = matiere ? (((resultats[mi] as any)?.details?.questions?.length > 0 ? (resultats[mi] as any).details.questions : matiere.questions) || []).filter(q => q && q?.type !== undefined) : [];
           const isExpanded = !!expandedMatieres[mi];
           return (
             <Card key={r.matiereId} className="border-l-4 overflow-hidden" style={{ borderLeftColor: r.admis ? '#00B4D8' : '#ef4444' }}>
@@ -917,7 +917,7 @@ function EcranResultats({
           if (r.matiereId === "francais" || r.matiereId === "bilan_francais") return;
           const matiere = examen.matieres[mi];
           if (!matiere) return;
-          const qSafe = (matiere.questions || []).filter((q): q is Question => !!q && q?.type !== undefined);
+          const qSafe = (((resultats[mi] as any)?.details?.questions?.length > 0 ? (resultats[mi] as any).details.questions : matiere.questions) || []).filter((q): q is Question => !!q && q?.type !== undefined);
           qSafe.forEach(q => {
             const rep = r.reponses?.[q.id];
             if (q?.type === "QCM" && q.choix) {
