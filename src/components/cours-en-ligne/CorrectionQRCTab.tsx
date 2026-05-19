@@ -542,6 +542,100 @@ const CorrectionQRCTab = () => {
 
     const clamped = clampToHalfStep(newPoints, item.pointsMax);
 
+    if (item.source === "autosave") {
+      const examen = examenMap[item.quizId];
+      const matiere = findMatiereWithFallback(examenMap, tousLesExamens, item.quizId, item.matiereId);
+      const { data: autosaveRow, error: autosaveErr } = await supabase
+        .from("reponses_apprenants" as any)
+        .select("reponses, user_id, updated_at")
+        .eq("id", item.autosaveId)
+        .single();
+
+      if (autosaveErr || !autosaveRow || !matiere) {
+        toast.error("Erreur lors de la récupération de la réponse sauvegardée");
+        setSavingId(null);
+        return;
+      }
+
+      const questions = buildQuestionListFromMatiere(matiere, (autosaveRow as any).reponses || {});
+      const correctionsIA: Record<string, any> = {
+        [item.questionId]: {
+          estCorrect: clamped >= item.pointsMax,
+          pointsObtenus: clamped,
+          nombrefautes: 0,
+          explication: `Correction manuelle par l'administrateur : ${clamped}/${item.pointsMax} pts`,
+          commentaire: editingComments[uniqueKey] ?? item.commentaire ?? "",
+          correctedAt: new Date().toISOString(),
+          manuel: true,
+          validatedByAdmin: true,
+        },
+      };
+
+      const { data: existing } = await supabase
+        .from("apprenant_quiz_results")
+        .select("id, details")
+        .eq("apprenant_id", item.apprenantId)
+        .eq("quiz_id", item.quizId)
+        .eq("quiz_type", item.quizType)
+        .eq("matiere_id", item.matiereId)
+        .eq("tentative", 1)
+        .maybeSingle();
+
+      if ((existing as any)?.details?.correctionsIA) {
+        Object.assign(correctionsIA, (existing as any).details.correctionsIA, correctionsIA);
+      }
+
+      let newScore = 0;
+      for (const q of questions) {
+        const pts = getPointsParQuestion(item.matiereId, q.type || "QCM", matiere);
+        if (q.type === "QCM" && q.reponseCorrecte) {
+          const correctes = Array.isArray(q.reponseCorrecte) ? [...q.reponseCorrecte].sort() : [q.reponseCorrecte];
+          const donnees = Array.isArray((autosaveRow as any).reponses?.[q.questionId]) ? [...(autosaveRow as any).reponses[q.questionId]].sort() : ((autosaveRow as any).reponses?.[q.questionId] ? [(autosaveRow as any).reponses[q.questionId]] : []);
+          if (JSON.stringify(correctes) === JSON.stringify(donnees)) newScore += pts;
+        } else if (q.type === "QRC") {
+          const corr = correctionsIA[q.questionId];
+          if (corr && typeof corr === "object") newScore += clampToHalfStep(corr.pointsObtenus || 0, pts);
+        }
+      }
+
+      const scoreMax = matiere.noteSur || 20;
+      const noteSur20 = scoreMax > 0 ? Number(((Math.min(Math.max(newScore, 0), scoreMax) / scoreMax) * 20).toFixed(1)) : 0;
+      const payload = {
+        id: (existing as any)?.id,
+        apprenant_id: item.apprenantId,
+        user_id: item.userId || (autosaveRow as any).user_id,
+        quiz_id: item.quizId,
+        quiz_type: item.quizType,
+        quiz_titre: examen?.titre || item.quizTitre,
+        matiere_id: item.matiereId,
+        matiere_nom: item.matiereNom,
+        tentative: 1,
+        score_obtenu: Math.min(Math.max(newScore, 0), scoreMax),
+        score_max: scoreMax,
+        note_sur_20: noteSur20,
+        reussi: noteSur20 >= 10,
+        completed_at: (autosaveRow as any).updated_at || new Date().toISOString(),
+        details: { questions, reponses: (autosaveRow as any).reponses || {}, correctionsIA },
+      };
+
+      const { error: upsertErr } = await supabase
+        .from("apprenant_quiz_results")
+        .upsert(payload as any, { onConflict: "apprenant_id,quiz_id,matiere_id,tentative" });
+
+      if (upsertErr) {
+        toast.error("Erreur lors de la sauvegarde");
+      } else {
+        toast.success(`QRC corrigée : ${clamped}/${item.pointsMax} pts`);
+        setItems(prev => prev.map(i => i.resultId === item.resultId && i.questionId === item.questionId
+          ? { ...i, resultId: (existing as any)?.id || i.resultId, source: "result", pointsObtenus: clamped, corrigeManuel: true, commentaire: editingComments[uniqueKey] ?? item.commentaire ?? "", correctedAt: new Date().toISOString(), noteSur20, scoreMatiereObtenu: payload.score_obtenu }
+          : i));
+      }
+
+      setSavingId(null);
+      setEditingId(null);
+      return;
+    }
+
     // Fetch current details
     const { data: row, error: fetchErr } = await supabase
       .from("apprenant_quiz_results")
