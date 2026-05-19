@@ -432,7 +432,7 @@ function EcranResultats({
     const safeMaxPoints = Math.max(toFiniteNumber(r.maxPoints, 0), 0);
     // Find matière by ID instead of relying on index alignment (resultats may have been filtered)
     const matiere = examen.matieres.find(m => m?.id === r.matiereId) ?? examen.matieres[mi];
-    const questionsSafe = matiere ? (matiere.questions || []).filter((q): q is Question => q != null && q?.type !== undefined) : [];
+    const questionsSafe = matiere ? (((resultats[mi] as any)?.details?.questions?.length > 0 ? (resultats[mi] as any).details.questions : matiere.questions) || []).filter((q): q is Question => q != null && q?.type !== undefined) : [];
     const cacheMatiere = correctionsIA[mi] || {};
 
     const recalculatedFromDetails = questionsSafe.reduce((acc, q) => {
