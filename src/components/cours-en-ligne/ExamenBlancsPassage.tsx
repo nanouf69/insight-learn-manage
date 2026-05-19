@@ -279,6 +279,33 @@ function PassageMatiere({
   // even if the user closes the tab right after.
   const hasSavedOnceRef = useRef(false);
 
+  const buildAutosavePayload = (updated: Reponses, completed = false) => ({
+    apprenant_id: apprenantId,
+    user_id: userIdRef.current || userId,
+    exercice_id: exerciceKey,
+    exercice_type: isBilan ? "bilan" : "examen_blanc",
+    reponses: updated,
+    completed,
+    updated_at: new Date().toISOString(),
+  });
+
+  const saveViaEdgeFunction = async (payload: Record<string, any>, keepalive = false) => {
+    const baseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const apikey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+    if (!baseUrl || !apikey) throw new Error("Configuration de sauvegarde manquante");
+
+    const headers: Record<string, string> = { apikey, "Content-Type": "application/json" };
+    if (jwtTokenRef.current) headers.Authorization = `Bearer ${jwtTokenRef.current}`;
+
+    const response = await fetch(`${baseUrl}/functions/v1/upsert-reponse-apprenant`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(payload),
+      keepalive,
+    });
+    if (!response.ok) throw new Error(await response.text());
+  };
+
   const persistReponses = (updated: Reponses) => {
     // BUG #7 FIX: don't silently return when userId is null — wait for session inside debounce
     if (!apprenantId) return;
@@ -318,30 +345,14 @@ function PassageMatiere({
             jwtTokenRef.current = sessionRes.data.session.access_token;
           }
 
-          const { error } = await supabase.from("reponses_apprenants" as any).upsert({
-            apprenant_id: apprenantId,
-            user_id: userIdRef.current,
-            exercice_id: exerciceKey,
-            exercice_type: isBilan ? "bilan" : "examen_blanc",
-            reponses: updated,
-            completed: false,
-            updated_at: new Date().toISOString(),
-          } as any, { onConflict: "apprenant_id,exercice_id" });
+          const payload = buildAutosavePayload(updated, false);
+          await saveViaEdgeFunction(payload);
 
-          if (error) {
-            lastError = error;
-            console.warn(`[AutoSave] Attempt ${attempt}/${MAX_RETRIES} failed:`, error.message);
-            if (attempt < MAX_RETRIES) {
-              await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
-              continue;
-            }
-          } else {
-            hasSavedOnceRef.current = true;
-            setSaveStatus("saved");
-            if (saveStatusTimerRef.current) clearTimeout(saveStatusTimerRef.current);
-            saveStatusTimerRef.current = setTimeout(() => setSaveStatus("idle"), 2000);
-            return; // success
-          }
+          hasSavedOnceRef.current = true;
+          setSaveStatus("saved");
+          if (saveStatusTimerRef.current) clearTimeout(saveStatusTimerRef.current);
+          saveStatusTimerRef.current = setTimeout(() => setSaveStatus("idle"), 2000);
+          return; // success
         } catch (e) {
           lastError = e;
           console.warn(`[AutoSave] Attempt ${attempt}/${MAX_RETRIES} exception:`, e);
