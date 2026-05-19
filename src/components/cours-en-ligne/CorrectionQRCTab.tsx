@@ -177,6 +177,7 @@ function scoreQuestionResponseMatch(question: any, response: string): number {
     benefice: ["marge", "resultat"],
     benifice: ["marge", "resultat"],
     intermediaire: ["apporteur", "affaires", "relation"],
+    intermidiaire: ["apporteur", "affaires", "relation"],
     charge: ["cout", "revient"],
     charges: ["cout", "revient"],
   };
