@@ -329,7 +329,7 @@ function EcranResultats({
         if (!matiere) return;
         const resultat = resultats[mi];
         if (!resultat) return;
-        const questionsSafe = (matiere.questions || []).filter(q => q && q?.type !== undefined);
+        const questionsSafe = (((resultats[mi] as any)?.details?.questions?.length > 0 ? (resultats[mi] as any).details.questions : matiere.questions) || []).filter(q => q && q?.type !== undefined);
         questionsSafe.forEach(q => {
           if (!q || q?.type !== "QRC") return;
           const rep = safeStr(resultat.reponses?.[q.id]);
