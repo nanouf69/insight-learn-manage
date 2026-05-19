@@ -349,7 +349,7 @@ function PassageMatiere({
         }
       }
 
-      // All retries exhausted
+      // All retries exhausted — silent fallback (no toast to avoid disturbing students)
       console.error("[AutoSave] All retries failed:", lastError);
       setSaveStatus("error");
       // BUG #7 FIX: save to localStorage as fallback
@@ -358,10 +358,7 @@ function PassageMatiere({
         localStorage.setItem(backupKey, JSON.stringify(updated));
         console.warn("[AutoSave] Saved to localStorage fallback:", backupKey);
       } catch (_) {}
-      toast.error(
-        "⚠️ Sauvegarde impossible après 3 tentatives. Vos réponses sont conservées localement. Ne fermez pas la page et contactez l'administration.",
-        { duration: Infinity, id: "autosave-error" }
-      );
+      // Intentionally no toast: errors are handled silently during exams.
     }, flushImmediately ? 0 : 300);
   };
 
