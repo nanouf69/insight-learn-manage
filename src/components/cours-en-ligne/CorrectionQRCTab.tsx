@@ -418,6 +418,7 @@ const CorrectionQRCTab = () => {
           commentaire: isAutoScoredRetake ? "Notation automatique par mots-clés (examen refait)" : (correction && typeof correction === "object" ? (correction.commentaire || "") : ""),
           correctedAt: (hasManualCorrection || isAutoScoredRetake) ? (correction?.correctedAt || r.completed_at || null) : null,
           apprenantTypeMode: app.mode,
+          questionSupprimee: !questionDef,
         });
       }
     }
