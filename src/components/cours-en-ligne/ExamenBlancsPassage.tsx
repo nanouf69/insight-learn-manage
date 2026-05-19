@@ -489,6 +489,26 @@ function PassageMatiere({
     }
   };
 
+  const handleInterruption = async () => {
+    try {
+      setSaveStatus("saving");
+      if (!userIdRef.current) {
+        const sessionRes = await supabase.auth.getSession();
+        userIdRef.current = sessionRes.data?.session?.user?.id ?? userId ?? null;
+        jwtTokenRef.current = sessionRes.data?.session?.access_token ?? jwtTokenRef.current;
+      }
+      if (!userIdRef.current && !userId) throw new Error("Session apprenant indisponible");
+      await saveViaEdgeFunction(buildAutosavePayload(reponses, true));
+      setSaveStatus("saved");
+      setShowInterruptConfirm(false);
+      onTerminer(reponses);
+    } catch (error) {
+      console.error("[AutoSave] Interruption bloquée: réponses non sauvegardées", error);
+      setSaveStatus("error");
+      toast.error("Sauvegarde impossible. Les réponses ne sont pas perdues, réessayez avant de quitter.");
+    }
+  };
+
   // Extracted to examens-blancs-utils.ts for testability (BUG #10 FIX)
   const isMultiple = computeIsMultiple;
 
@@ -737,10 +757,7 @@ function PassageMatiere({
                 </Button>
                 <Button
                   variant="destructive"
-                  onClick={() => {
-                    setShowInterruptConfirm(false);
-                    onTerminer(reponses);
-                  }}
+                  onClick={handleInterruption}
                   className="gap-2"
                 >
                   <Ban className="w-4 h-4" />
