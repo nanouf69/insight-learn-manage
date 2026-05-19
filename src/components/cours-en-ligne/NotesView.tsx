@@ -20,7 +20,6 @@ interface QuizResult {
   duree_secondes: number | null;
   completed_at: string;
   details: any;
-  tentative?: number | null;
 }
 
 interface ModuleCompletion {
@@ -595,49 +594,31 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
               <div className="hidden md:grid grid-cols-12 gap-2 px-6 py-3 bg-slate-50 border-b text-xs font-semibold text-slate-500 uppercase tracking-wide">
                 <div className="col-span-3">Examen</div>
                 <div className="col-span-2">Matière</div>
-                <div className="col-span-1 text-center">Tentative</div>
                 <div className="col-span-2 text-center">Note</div>
-                <div className="col-span-1 text-center">Résultat</div>
+                <div className="col-span-2 text-center">Résultat</div>
                 <div className="col-span-1 text-center">Durée</div>
                 <div className="col-span-2 text-center">Date</div>
               </div>
-              {(() => {
-                // Compute tentative number per (quiz_id + matiere_id) chronologically
-                const sorted = [...quizResults].sort((a, b) =>
-                  new Date(a.completed_at).getTime() - new Date(b.completed_at).getTime()
-                );
-                const counter: Record<string, number> = {};
-                const withTentative = sorted.map(r => {
-                  const key = `${r.quiz_id}::${r.matiere_id ?? ""}`;
-                  counter[key] = (counter[key] || 0) + 1;
-                  const computed = r.tentative && r.tentative > 0 ? r.tentative : counter[key];
-                  return { ...r, _tentative: computed };
-                });
-                return withTentative.slice().reverse().map((r) => {
-                  const noteSur20 = normalizeQuizNoteSur20(r as QuizResult);
-                  const tNum = (r as any)._tentative as number;
+              {quizResults.slice().reverse().map((r) => (
+                (() => {
+                  const noteSur20 = normalizeQuizNoteSur20(r);
                   return (
                     <div key={r.id} className="grid grid-cols-1 md:grid-cols-12 gap-2 px-6 py-3 border-b last:border-b-0 hover:bg-slate-50/50 transition-colors items-center text-sm">
                       <div className="md:col-span-3 font-medium text-slate-800">{r.quiz_titre}</div>
                       <div className="md:col-span-2 text-slate-500 text-xs">{r.matiere_nom || "—"}</div>
-                      <div className="md:col-span-1 text-center">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${tNum > 1 ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-600"}`}>
-                          n°{tNum}
-                        </span>
-                      </div>
                       <div className="md:col-span-2 text-center">
                         <span className={`font-bold ${(noteSur20 ?? 0) >= 10 ? "text-emerald-600" : "text-red-500"}`}>
                           {noteSur20 != null ? `${noteSur20.toFixed(1)}/20` : "—"}
                         </span>
                       </div>
-                      <div className="md:col-span-1 text-center">
+                      <div className="md:col-span-2 text-center">
                         {r.quiz_type === "revision_fausses" ? (
                           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600">
                             Révision
                           </span>
                         ) : (
                           <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${r.reussi ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"}`}>
-                            {r.reussi ? "✅" : "❌"}
+                            {r.reussi ? "✅ Réussi" : "❌ Échoué"}
                           </span>
                         )}
                       </div>
@@ -649,8 +630,8 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
                       </div>
                     </div>
                   );
-                });
-              })()}
+                })()
+              ))}
             </>
           )}
         </div>
