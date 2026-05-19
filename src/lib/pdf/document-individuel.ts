@@ -102,27 +102,7 @@ const TYPE_TITLES: Record<string, string> = {
   'devis-formation-continue': 'DEVIS DE FORMATION CONTINUE',
 };
 
-// Mapping demi-journee -> plage horaire (feuilles d'emargement)
-// On ne sait pas si "soir" = 1ere ou 2eme partie -> on affiche la plage globale
-const DEMI_JOURNEE_HORAIRES: Record<string, string> = {
-  'matin': '09H - 12H',
-  'apres_midi': '13H - 16H',
-  'apres-midi': '13H - 16H',
-  'apresmidi': '13H - 16H',
-  'soir': '17H - 18H30 / 18H30 - 21H',
-  'soir_1': '17H - 18H30',
-  'soir_2': '18H30 - 21H',
-};
-
-function formatDemiJournee(value: string): string {
-  const k = String(value || '').toLowerCase().trim();
-  return DEMI_JOURNEE_HORAIRES[k] || value;
-}
-
-const DEMI_LABEL_KEYS = new Set(['demi_journee', 'demiJournee', 'demi-journee']);
-
 function getLabel(key: string): string {
-  if (DEMI_LABEL_KEYS.has(key)) return 'Horaire';
   if (FIELD_LABELS[key]) return FIELD_LABELS[key];
   return key.replace(/_/g, ' ').replace(/([a-z])([A-Z])/g, '$1 $2').replace(/^./, s => s.toUpperCase());
 }
@@ -173,8 +153,6 @@ function renderQA(doc: jsPDF, question: string, answer: string, y: number, margi
 }
 
 function renderField(doc: jsPDF, key: string, value: any, y: number, margin: number, pw: number): number {
-  // Demi-journee -> plage horaire
-  if (DEMI_LABEL_KEYS.has(key) && typeof value === 'string') value = formatDemiJournee(value);
   if (value === null || value === undefined || value === '') return y;
 
   if (typeof value === 'string' && isBase64(value)) {
@@ -484,10 +462,7 @@ function renderGenericContent(doc: jsPDF, donnees: any, y: number, margin: numbe
         y = renderObjectFields(doc, value, y, margin, pw);
       }
     } else {
-      const displayValue = DEMI_LABEL_KEYS.has(key) && typeof value === 'string'
-        ? formatDemiJournee(value)
-        : (value === null || value === undefined ? '(Non renseigne)' : String(value));
-      y = renderQA(doc, getLabel(key), displayValue, y, margin, pw);
+      y = renderQA(doc, getLabel(key), value === null || value === undefined ? '(Non renseigne)' : String(value), y, margin, pw);
     }
   }
   return y;
@@ -537,10 +512,9 @@ export function generateDocumentIndividuelPdf(
 
   let completedDateStr = '';
   try {
-    // Pas d'heure de signature — uniquement la date (ex: emargements)
-    completedDateStr = format(new Date(document.completed_at), 'dd MMMM yyyy', { locale: fr });
+    completedDateStr = format(new Date(document.completed_at), 'dd MMMM yyyy a HH:mm', { locale: fr });
   } catch (_) {
-    completedDateStr = (document.completed_at || '').split('T')[0] || document.completed_at;
+    completedDateStr = document.completed_at;
   }
   doc.text(`Complete le : ${completedDateStr}`, pw - margin - 4, y + 2, { align: 'right' });
 

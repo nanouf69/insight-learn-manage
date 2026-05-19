@@ -245,7 +245,6 @@ export function ExamenReussitePage() {
   const [previewTab, setPreviewTab] = useState<string>('preview');
   const [extraCandidatsCMA, setExtraCandidatsCMA] = useState<string[]>([]);
   const [searchCMA, setSearchCMA] = useState("");
-  const [searchDecales, setSearchDecales] = useState("");
   const [extraCandidatsFormation, setExtraCandidatsFormation] = useState<string[]>([]);
   const [searchFormation, setSearchFormation] = useState("");
   // Planning pratique - dates configurables
@@ -3033,63 +3032,6 @@ export function ExamenReussitePage() {
               </p>
             </CardHeader>
             <CardContent>
-              <div className="mb-4">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button size="sm" variant="outline" className="gap-1.5 text-xs">
-                      <Plus className="h-3.5 w-3.5" />
-                      Ajouter un candidat décalé
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-80 p-3" align="start">
-                    <p className="text-xs font-medium mb-2">Rechercher un apprenant :</p>
-                    <Input
-                      placeholder="Nom ou prénom..."
-                      value={searchDecales}
-                      onChange={(e) => setSearchDecales(e.target.value)}
-                      className="h-8 text-sm mb-2"
-                    />
-                    {searchDecales.trim().length >= 2 && (
-                      <ScrollArea className="max-h-48">
-                        <div className="space-y-1">
-                          {(allApprenants || [])
-                            .filter(a =>
-                              !deplacesAff.some(d => d.id === a.id) &&
-                              !(a as any).deleted_at &&
-                              (a as any).resultat_examen_pratique !== 'oui' &&
-                              `${a.nom} ${a.prenom}`.toLowerCase().includes(searchDecales.toLowerCase())
-                            )
-                            .slice(0, 10)
-                            .map(a => (
-                              <Button
-                                key={a.id}
-                                variant="ghost"
-                                size="sm"
-                                className="w-full justify-start text-xs h-auto py-1.5"
-                                onClick={async () => {
-                                  await handleDecalerProchaineSession(a.id, `${a.nom} ${a.prenom}`);
-                                  setSearchDecales("");
-                                }}
-                              >
-                                <Plus className="h-3 w-3 mr-1.5 text-orange-600" />
-                                {a.nom} {a.prenom}
-                                <Badge className="ml-auto text-[10px] bg-muted text-muted-foreground">{a.type_apprenant || '-'}</Badge>
-                              </Button>
-                            ))}
-                          {(allApprenants || []).filter(a =>
-                            !deplacesAff.some(d => d.id === a.id) &&
-                            !(a as any).deleted_at &&
-                            (a as any).resultat_examen_pratique !== 'oui' &&
-                            `${a.nom} ${a.prenom}`.toLowerCase().includes(searchDecales.toLowerCase())
-                          ).length === 0 && (
-                            <p className="text-xs text-muted-foreground py-2 text-center">Aucun résultat</p>
-                          )}
-                        </div>
-                      </ScrollArea>
-                    )}
-                  </PopoverContent>
-                </Popover>
-              </div>
               {deplacesAff.length === 0 ? (
                 <p className="text-sm text-muted-foreground italic text-center py-4">Aucun candidat décalé pour cette session.</p>
               ) : (
@@ -3313,6 +3255,8 @@ export function ExamenReussitePage() {
                   <TableHead className="w-8">#</TableHead>
                   <TableHead>Nom Prénom</TableHead>
                   <TableHead>N° Dossier</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Heure</TableHead>
                   <TableHead className="text-center w-44">Résultat / Action</TableHead>
                 </TableRow>
               </TableHeader>
@@ -3341,6 +3285,8 @@ export function ExamenReussitePage() {
                           <span className="text-muted-foreground">-</span>
                         )}
                       </TableCell>
+                      <TableCell className="text-xs">{a.date_examen_pratique ? formatDateShortFR(a.date_examen_pratique) : '-'}</TableCell>
+                      <TableCell className="text-xs">{(a as any).heure_examen_pratique || '-'}</TableCell>
                       <TableCell className="text-center">
                         <Select
                           value={resultatP || "non_renseigne"}

@@ -1,1 +1,0 @@
-ALTER TABLE public.contrats_fournisseurs ADD COLUMN IF NOT EXISTS sent_pdf_url text;

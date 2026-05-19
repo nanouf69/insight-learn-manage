@@ -24,7 +24,6 @@ import { AgendaView } from "@/components/agenda/AgendaView";
 import { ExamenReussitePage } from "@/components/examens/ExamenReussitePage";
 import { PlanningRdvCarteVtc } from "@/components/planning-rdv/PlanningRdvCarteVtc";
 import CoursEnLignePage from "@/components/cours-en-ligne/CoursEnLignePage";
-import CorrecteurReponsesPage from "@/components/cours-en-ligne/CorrecteurReponsesPage";
 import { FournisseursPage } from "@/components/fournisseurs/FournisseursPage";
 import { ApprenantsCorbeille } from "@/components/apprenants/ApprenantsCorbeille";
 import { DiagnosticAccesGlobal } from "@/components/diagnostic/DiagnosticAccesGlobal";
@@ -59,7 +58,6 @@ const pageConfig = {
   fournisseurs: { title: "Fournisseurs", subtitle: "Gérez vos fournisseurs et leurs espaces" },
   corbeille: { title: "Corbeille", subtitle: "Éléments supprimés — restaurer ou supprimer définitivement" },
   "diagnostic-acces": { title: "Diagnostic accès", subtitle: "État d'accès e-learning de tous les apprenants" },
-  "correcteur-reponses": { title: "Correcteur de réponses", subtitle: "Verrouillage permanent des bonnes réponses par module" },
 };
 
 const fmt = (n: number) =>
@@ -68,8 +66,7 @@ const fmt = (n: number) =>
 const Index = () => {
   const { profile, user, loading } = useAuth();
   const navigate = useNavigate();
-  // Note: l'autorisation admin est déjà vérifiée par ProtectedRoute en amont.
-  // Ne pas refaire le check ici pour éviter un 2e spinner plein écran (clignotement initial).
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [currentPage, setCurrentPage] = useState("dashboard");
   const [pageHistory, setPageHistory] = useState<string[]>([]);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -98,6 +95,39 @@ const Index = () => {
   };
 
   useEffect(() => {
+    let isMounted = true;
+
+    const checkAdminAccess = async () => {
+      if (!user) {
+        if (isMounted) setIsAdmin(false);
+        return;
+      }
+
+      const { data, error } = await supabase.rpc("has_role", {
+        _user_id: user.id,
+        _role: "admin",
+      });
+
+      if (!isMounted) return;
+      setIsAdmin(!error && data === true);
+    };
+
+    checkAdminAccess();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!loading && isAdmin === false) {
+      navigate("/cours", { replace: true });
+    }
+  }, [isAdmin, loading, navigate]);
+
+  useEffect(() => {
+    if (isAdmin !== true) return;
+
     const fetchFlux = async () => {
       const { data } = await supabase
         .from("transactions_bancaires")
@@ -127,8 +157,8 @@ const Index = () => {
       }
     };
 
-    if (user) fetchFlux();
-  }, [user?.id]);
+    fetchFlux();
+  }, [isAdmin]);
 
   const handleNavigate = (page: string) => {
     if (page !== currentPage) {
@@ -260,8 +290,6 @@ const Index = () => {
         return <ApprenantsCorbeille />;
       case "diagnostic-acces":
         return <DiagnosticAccesGlobal onOpenApprenant={handleNavigateToApprenant} />;
-      case "correcteur-reponses":
-        return <CorrecteurReponsesPage />;
       case "settings":
         return <SettingsPage />;
       default:
@@ -271,7 +299,7 @@ const Index = () => {
 
   const config = pageConfig[currentPage as keyof typeof pageConfig];
 
-  if (loading) {
+  if (loading || isAdmin === null) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
@@ -279,7 +307,7 @@ const Index = () => {
     );
   }
 
-  if (!user) {
+  if (!user || isAdmin === false) {
     return null;
   }
 

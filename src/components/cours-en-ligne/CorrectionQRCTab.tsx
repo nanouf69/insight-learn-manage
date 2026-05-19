@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
-import { CheckCircle2, Clock, Pencil, Search, User, FileText, Filter, MessageSquare, ChevronLeft, ChevronRight, ArrowUpDown, EyeOff } from "lucide-react";
+import { CheckCircle2, Clock, Pencil, Search, User, FileText, Filter, MessageSquare, ChevronLeft, ChevronRight, ArrowUpDown } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 import { toast } from "sonner";
@@ -38,7 +38,6 @@ interface QrcItem {
   commentaire: string;
   correctedAt: string | null;
   apprenantTypeMode: "presentiel" | "elearning";
-  isRetake: boolean;
 }
 
 function safeStr(v: unknown): string {
@@ -179,111 +178,69 @@ const CorrectionQRCTab = () => {
   const fetchData = useCallback(async () => {
     if (Object.keys(examenMap).length === 0) return;
     setLoading(true);
-    setItems([]);
 
-    // 1. Paginate apprenant_quiz_results (Supabase caps at 1000 rows per request)
-    const PAGE = 1000;
-    const allResults: any[] = [];
-    let from = 0;
-    // eslint-disable-next-line no-constant-condition
-    while (true) {
-      const { data, error } = await supabase
-        .from("apprenant_quiz_results")
-        .select("id, apprenant_id, quiz_id, quiz_type, quiz_titre, matiere_id, matiere_nom, details, completed_at, score_obtenu, score_max, note_sur_20")
-        .in("quiz_type", ["examen_blanc", "bilan"])
-        .order("completed_at", { ascending: false })
-        .range(from, from + PAGE - 1);
-      if (error) {
-        console.error("Erreur chargement résultats:", error);
-        break;
-      }
-      if (!data || data.length === 0) break;
-      allResults.push(...data);
-      if (data.length < PAGE) break;
-      from += PAGE;
+    // Fetch all exam_blanc results that have QRC questions
+    const { data: results, error } = await supabase
+      .from("apprenant_quiz_results")
+      .select("id, apprenant_id, quiz_id, quiz_type, quiz_titre, matiere_id, matiere_nom, details, completed_at, score_obtenu, score_max, note_sur_20")
+      .in("quiz_type", ["examen_blanc", "bilan"])
+      .order("completed_at", { ascending: false });
+
+    if (error || !results) {
+      console.error("Erreur chargement résultats:", error);
+      setLoading(false);
+      return;
     }
 
-    // 2. Fetch apprenants in chunks of 500 (avoid huge .in() lists)
-    const apprenantIds = [...new Set(allResults.map((r: any) => r.apprenant_id))];
+    // Fetch apprenant names
+    const apprenantIds = [...new Set(results.map((r: any) => r.apprenant_id))];
+    const { data: apprenants } = await supabase
+      .from("apprenants")
+      .select("id, nom, prenom, type_apprenant")
+      .in("id", apprenantIds);
+
     const apprenantMap: Record<string, { nom: string; prenom: string; mode: "presentiel" | "elearning" }> = {};
-    const CHUNK = 500;
-    for (let i = 0; i < apprenantIds.length; i += CHUNK) {
-      const slice = apprenantIds.slice(i, i + CHUNK);
-      const { data: apprenants } = await supabase
-        .from("apprenants")
-        .select("id, nom, prenom, type_apprenant")
-        .in("id", slice);
-      (apprenants || []).forEach((a: any) => {
-        const t = String(a.type_apprenant || "").toLowerCase();
-        const mode: "presentiel" | "elearning" = t.endsWith("-e") || t.includes("-e-") ? "elearning"
-          : (t === "vtc-e-presentiel" ? "presentiel" : (t.endsWith("-e") ? "elearning" : "presentiel"));
-        apprenantMap[a.id] = { nom: a.nom, prenom: a.prenom, mode };
-      });
-    }
+    (apprenants || []).forEach((a: any) => {
+      const t = String(a.type_apprenant || "").toLowerCase();
+      const mode: "presentiel" | "elearning" = t.endsWith("-e") || t.includes("-e-") ? "elearning"
+        : (t === "vtc-e-presentiel" ? "presentiel" : (t.endsWith("-e") ? "elearning" : "presentiel"));
+      apprenantMap[a.id] = { nom: a.nom, prenom: a.prenom, mode };
+    });
 
-    // Count attempts (for retake detection) across the full dataset
+    const qrcItems: QrcItem[] = [];
+    const seenQrcKeys = new Set<string>();
+
+    // Count how many results exist per apprenant + quiz + matiere (to detect retakes)
+    // Must include matiere_id because each exam has ~7 matiere rows per attempt
     const attemptCounts: Record<string, number> = {};
-    for (const r of allResults as any[]) {
+    for (const r of results as any[]) {
       const countKey = `${r.apprenant_id}__${r.quiz_id}__${r.matiere_id || ""}`;
       attemptCounts[countKey] = (attemptCounts[countKey] || 0) + 1;
     }
 
-    // 3. Build QRC items progressively in batches so the UI displays the first questions quickly
-    // IMPORTANT: dedupe per-QRC (apprenant+quiz+matiere+questionId), NOT per-result.
-    // A retake creates a new result row with empty correctionsIA → if we kept only the
-    // latest row, already-corrected QRCs would reappear as "pending". We sort results so
-    // that rows containing a manual correction for a given question are processed first.
-    const seenQrcKeys = new Set<string>();
-
-    // Pre-compute which questions are manually corrected per result so we can sort.
-    const resultHasManual = (r: any): boolean => {
-      const c = r?.details?.correctionsIA;
-      if (!c || typeof c !== "object") return false;
-      return Object.values(c).some((v: any) =>
-        v && typeof v === "object" && typeof v.explication === "string" && v.explication.includes("manuelle")
-      );
-    };
-    allResults.sort((a: any, b: any) => {
-      const am = resultHasManual(a) ? 1 : 0;
-      const bm = resultHasManual(b) ? 1 : 0;
-      if (am !== bm) return bm - am; // corrected rows first
-      const ta = a.completed_at ? new Date(a.completed_at).getTime() : 0;
-      const tb = b.completed_at ? new Date(b.completed_at).getTime() : 0;
-      return tb - ta;
-    });
-    let buffer: QrcItem[] = [];
-    let firstFlush = true;
-    // Collecte des QRC de repasse à persister en DB pour qu'elles ne réapparaissent plus
-    // en "En attente" au prochain chargement.
-    const retakePersistByResult: Record<string, { items: QrcItem[] }> = {};
-
-    const flush = () => {
-      if (buffer.length === 0) return;
-      const chunk = buffer;
-      buffer = [];
-      setItems(prev => [...prev, ...chunk]);
-      if (firstFlush) {
-        setLoading(false);
-        firstFlush = false;
-      }
-    };
-
-    const BATCH_SIZE = 10;
-
-    for (let idx = 0; idx < allResults.length; idx++) {
-      const r: any = allResults[idx];
+    // Deduplicate: keep only the latest result per apprenant + quiz + matière
+    const seenApprenantQuizMatiere = new Set<string>();
+    for (const r of results as any[]) {
+      const dedupeKey = `${r.apprenant_id}__${r.quiz_id}__${r.matiere_id || ""}`;
+      if (seenApprenantQuizMatiere.has(dedupeKey)) continue;
+      seenApprenantQuizMatiere.add(dedupeKey);
       const details = r.details as any;
       if (details == null) continue;
 
       const matiere = findMatiereWithFallback(examenMap, tousLesExamens, r.quiz_id, r.matiere_id || "");
+
       const correctionsIA = details.correctionsIA || {};
+
+      // Detect if this is a retake (more than one result for same apprenant + quiz + matiere)
       const countKey = `${r.apprenant_id}__${r.quiz_id}__${r.matiere_id || ""}`;
       const isRetake = (attemptCounts[countKey] || 1) > 1;
 
+      // Build question list: prefer details.questions, but fall back to examen definition + correctionsIA
       let questionList = Array.isArray(details.questions) && details.questions.length > 0
         ? details.questions
         : null;
 
+      // If questions array is empty, reconstruct from examen definition + reponses/correctionsIA
       const reponses = details.reponses || {};
       if (!questionList && matiere && (Object.keys(correctionsIA).length > 0 || Object.keys(reponses).length > 0)) {
         const sourceQuestions = getSourceQuestions(matiere, tousLesExamens);
@@ -305,20 +262,22 @@ const CorrectionQRCTab = () => {
 
       for (const q of questionList) {
         if (q.type !== "QRC") continue;
-        // Dédup volontairement SANS matiere_id : certaines matières ont des id
-        // legacy dupliqués (ex: "reglementation_taxi" vs "reglementation_taxi2")
-        // qui désignent la même matière. Une même question dans un même examen
-        // pour un même apprenant ne doit jamais apparaître deux fois.
-        const qrcKey = `${r.apprenant_id}__${r.quiz_id}__${q.questionId}`;
+
+        // Deduplicate per apprenant + quiz + matière + question
+        const qrcKey = `${r.apprenant_id}__${r.quiz_id}__${r.matiere_id || ""}__${q.questionId}`;
         if (seenQrcKeys.has(qrcKey)) continue;
         seenQrcKeys.add(qrcKey);
 
         const pts = getPointsParQuestion(r.matiere_id || "", "QRC", matiere || undefined);
+
         const correction = correctionsIA[q.questionId];
-        const hasManualCorrection = correction && typeof correction === "object" && (correction.manuel === true || correction.explication?.includes("manuelle") || correction.explication?.includes("masqué par admin"));
+        const hasManualCorrection = correction && typeof correction === "object" && correction.explication?.includes("manuelle");
+
         const app = apprenantMap[r.apprenant_id] || { nom: "Inconnu", prenom: "", mode: "presentiel" as const };
+
         const questionDef = matiere?.questions?.find((mq: any) => mq && mq.id === q.questionId);
 
+        // Auto score: if manual correction exists, use it; otherwise recompute deterministically
         let autoScore = 0;
         let autoExplication: string | null = null;
         if (correction && typeof correction === "object" && hasManualCorrection) {
@@ -333,9 +292,10 @@ const CorrectionQRCTab = () => {
           autoExplication = correction.explication || null;
         }
 
+        // If this is a retake and no manual correction yet, auto-score with keywords and mark as corrected
         const isAutoScoredRetake = isRetake && !hasManualCorrection;
 
-        buffer.push({
+        qrcItems.push({
           resultId: r.id,
           apprenantId: r.apprenant_id,
           apprenantNom: app.nom,
@@ -363,103 +323,12 @@ const CorrectionQRCTab = () => {
           commentaire: isAutoScoredRetake ? "Notation automatique par mots-clés (examen refait)" : (correction && typeof correction === "object" ? (correction.commentaire || "") : ""),
           correctedAt: (hasManualCorrection || isAutoScoredRetake) ? (correction?.correctedAt || r.completed_at || null) : null,
           apprenantTypeMode: app.mode,
-          isRetake,
         });
-
-        if (isAutoScoredRetake) {
-          (retakePersistByResult[r.id] ||= { items: [] }).items.push(buffer[buffer.length - 1]);
-        }
-      }
-
-      if (buffer.length >= BATCH_SIZE) {
-        flush();
-        // Yield to the browser so the UI can paint between batches
-        await new Promise<void>(resolve => setTimeout(resolve, 0));
       }
     }
 
-    flush();
+    setItems(qrcItems);
     setLoading(false);
-
-    // === Persistance silencieuse des QRC de repasse ===
-    // Pour chaque résultat contenant des QRC auto-notées (examen refait),
-    // on écrit `correctionsIA` en DB avec le marqueur "manuelle" afin que ces
-    // questions ne réapparaissent plus jamais dans "En attente".
-    void (async () => {
-      const resultIds = Object.keys(retakePersistByResult);
-      if (resultIds.length === 0) return;
-
-      for (const resultId of resultIds) {
-        try {
-          const { data: row, error: fErr } = await supabase
-            .from("apprenant_quiz_results")
-            .select("details, score_obtenu, score_max, quiz_id, matiere_id")
-            .eq("id", resultId)
-            .single();
-          if (fErr || !row) continue;
-
-          const details: any = (row as any).details || {};
-          const correctionsIA = { ...(details.correctionsIA || {}) };
-          const nowIso = new Date().toISOString();
-          let touched = false;
-
-          for (const qrc of retakePersistByResult[resultId].items) {
-            const existing = correctionsIA[qrc.questionId];
-            if (existing && typeof existing === "object" && typeof existing.explication === "string" && existing.explication.includes("manuelle")) {
-              continue;
-            }
-            const clamped = clampToHalfStep(qrc.autoScore, qrc.pointsMax);
-            correctionsIA[qrc.questionId] = {
-              estCorrect: clamped >= qrc.pointsMax,
-              pointsObtenus: clamped,
-              nombrefautes: 0,
-              explication: `Correction manuelle (auto repasse) : ${clamped}/${qrc.pointsMax} pts — À VÉRIFIER`,
-              commentaire: "Notation automatique par mots-clés (examen refait) — à vérifier",
-              correctedAt: nowIso,
-              autoRetake: true,
-            };
-            touched = true;
-          }
-
-          if (!touched) continue;
-
-          // Recalcul score matière (sans toucher au score si déjà > 0 et nouveau = 0)
-          const examen = examenMap[(row as any).quiz_id];
-          const matiere = examen?.matieres?.find((m: Matiere) => m.id === (row as any).matiere_id);
-          const questions = details.questions || [];
-          const reponses = details.reponses || {};
-          let newScore = 0;
-          for (const qq of questions) {
-            if (!qq) continue;
-            const ptsQ = getPointsParQuestion(matiere?.id || "", qq.type || "QCM", matiere || undefined);
-            if (qq.type === "QCM" && qq.reponseCorrecte) {
-              const correctes = Array.isArray(qq.reponseCorrecte) ? [...qq.reponseCorrecte].sort() : [qq.reponseCorrecte];
-              const donnees = Array.isArray(reponses[qq.questionId]) ? [...reponses[qq.questionId]].sort() : (reponses[qq.questionId] ? [reponses[qq.questionId]] : []);
-              if (JSON.stringify(correctes) === JSON.stringify(donnees)) newScore += ptsQ;
-            } else if (qq.type === "QRC") {
-              const corr = correctionsIA[qq.questionId];
-              if (corr && typeof corr === "object") newScore += clampToHalfStep(corr.pointsObtenus || 0, ptsQ);
-            }
-          }
-          const scoreMax = (row as any).score_max || 20;
-          const safeClamped = Math.min(Math.max(newScore, 0), scoreMax);
-          const existingScore = Math.max(Number((row as any).score_obtenu) || 0, 0);
-          const protectedScore = safeClamped <= 0 && existingScore > 0 ? existingScore : safeClamped;
-          const noteSur20 = scoreMax > 0 ? Number(((protectedScore / scoreMax) * 20).toFixed(1)) : 0;
-
-          await supabase
-            .from("apprenant_quiz_results")
-            .update({
-              score_obtenu: protectedScore,
-              note_sur_20: noteSur20,
-              details: { ...details, correctionsIA },
-            } as any)
-            .eq("id", resultId);
-        } catch (e) {
-          console.warn("Persistance retake QRC échouée pour", resultId, e);
-        }
-      }
-    })();
   }, [examenMap]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
@@ -583,121 +452,6 @@ const CorrectionQRCTab = () => {
     setEditingId(null);
   };
 
-  // Masquer toutes les QRC en attente d'un apprenant : on les valide avec leur autoScore
-  // et on les marque comme corrigées manuellement pour qu'elles disparaissent de la liste
-  // "En attente" et basculent dans "Déjà corrigées".
-  const handleHideApprenant = async (apprenantId: string, apprenantLabel: string) => {
-    const pendingForApp = items.filter(i => i.apprenantId === apprenantId && !i.corrigeManuel);
-    if (pendingForApp.length === 0) {
-      toast.info("Aucune QRC en attente pour cet apprenant.");
-      return;
-    }
-    const ok = window.confirm(
-      `Masquer les ${pendingForApp.length} QRC en attente de ${apprenantLabel} ?\n\nElles seront marquées comme corrigées avec leur note auto et déplacées dans "Déjà corrigées".`
-    );
-    if (!ok) return;
-
-    setSavingId(`hide-${apprenantId}`);
-
-    // Regrouper par resultId pour ne faire qu'un update par ligne DB
-    const byResult: Record<string, QrcItem[]> = {};
-    for (const it of pendingForApp) {
-      (byResult[it.resultId] ||= []).push(it);
-    }
-
-    const updatedResultScores: Record<string, { score: number; note: number; max: number }> = {};
-    let okCount = 0;
-    let errCount = 0;
-
-    for (const [resultId, qrcs] of Object.entries(byResult)) {
-      const { data: row, error: fetchErr } = await supabase
-        .from("apprenant_quiz_results")
-        .select("details, score_obtenu, score_max, quiz_id, matiere_id")
-        .eq("id", resultId)
-        .single();
-
-      if (fetchErr || !row) { errCount += qrcs.length; continue; }
-
-      const details: any = (row as any).details || {};
-      const correctionsIA = details.correctionsIA || {};
-      const nowIso = new Date().toISOString();
-
-      for (const q of qrcs) {
-        const clamped = clampToHalfStep(q.autoScore, q.pointsMax);
-        correctionsIA[q.questionId] = {
-          estCorrect: clamped >= q.pointsMax,
-          pointsObtenus: clamped,
-          nombrefautes: 0,
-          explication: `Validation manuelle (masqué par admin) : ${clamped}/${q.pointsMax} pts`,
-          commentaire: "",
-          manuel: true,
-          correctedAt: nowIso,
-        };
-      }
-
-      // Recalcul du score matière
-      const examen = examenMap[(row as any).quiz_id];
-      const matiere = examen?.matieres?.find((m: Matiere) => m.id === (row as any).matiere_id);
-      const questions = details.questions || [];
-      const reponses = details.reponses || {};
-      let newScore = 0;
-      for (const qq of questions) {
-        if (!qq) continue;
-        const pts = getPointsParQuestion(matiere?.id || "", qq.type || "QCM", matiere || undefined);
-        if (qq.type === "QCM" && qq.reponseCorrecte) {
-          const correctes = Array.isArray(qq.reponseCorrecte) ? [...qq.reponseCorrecte].sort() : [qq.reponseCorrecte];
-          const donnees = Array.isArray(reponses[qq.questionId]) ? [...reponses[qq.questionId]].sort() : (reponses[qq.questionId] ? [reponses[qq.questionId]] : []);
-          if (JSON.stringify(correctes) === JSON.stringify(donnees)) newScore += pts;
-        } else if (qq.type === "QRC") {
-          const corr = correctionsIA[qq.questionId];
-          if (corr && typeof corr === "object") newScore += clampToHalfStep(corr.pointsObtenus || 0, pts);
-        }
-      }
-
-      const scoreMax = (row as any).score_max || 20;
-      const safeClamped = Math.min(Math.max(newScore, 0), scoreMax);
-      const existingScore = Math.max(Number((row as any).score_obtenu) || 0, 0);
-      const protectedScore = safeClamped <= 0 && existingScore > 0 ? existingScore : safeClamped;
-      const noteSur20 = scoreMax > 0 ? Number(((protectedScore / scoreMax) * 20).toFixed(1)) : 0;
-
-      const { error: updErr } = await supabase
-        .from("apprenant_quiz_results")
-        .update({
-          score_obtenu: protectedScore,
-          note_sur_20: noteSur20,
-          details: { ...details, correctionsIA },
-        } as any)
-        .eq("id", resultId);
-
-      if (updErr) { errCount += qrcs.length; continue; }
-      okCount += qrcs.length;
-      updatedResultScores[resultId] = { score: protectedScore, note: noteSur20, max: scoreMax };
-    }
-
-    setItems(prev => prev.map(i => {
-      if (i.apprenantId !== apprenantId) return i;
-      const upd = updatedResultScores[i.resultId];
-      const base = upd ? { ...i, noteSur20: upd.note, scoreMatiereObtenu: upd.score, scoreMatiereMax: upd.max } : i;
-      if (!i.corrigeManuel && updatedResultScores[i.resultId]) {
-        return {
-          ...base,
-          pointsObtenus: clampToHalfStep(i.autoScore, i.pointsMax),
-          corrigeManuel: true,
-          commentaire: "",
-          correctedAt: new Date().toISOString(),
-        };
-      }
-      return base;
-    }));
-
-    setSavingId(null);
-    setEditingId(null);
-    setCurrentIndex(0);
-
-    if (errCount === 0) toast.success(`${okCount} QRC masquées pour ${apprenantLabel}.`);
-    else toast.warning(`${okCount} masquées, ${errCount} en erreur.`);
-  };
-
   const pendingCount = items.filter(i => !i.corrigeManuel).length;
   const doneCount = items.filter(i => i.corrigeManuel).length;
 
@@ -796,24 +550,14 @@ const CorrectionQRCTab = () => {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => setFilter("pending")}
-            aria-pressed={filter === "pending"}
-            className={`inline-flex items-center gap-1 py-1.5 px-3 rounded-md border text-xs font-semibold transition-colors ${filter === "pending" ? "bg-amber-100 border-amber-400 text-amber-900" : "bg-background hover:bg-accent border-border text-foreground"}`}
-          >
+          <Badge variant="outline" className="gap-1 py-1.5 px-3">
             <Clock className="w-3.5 h-3.5 text-amber-500" />
             {pendingCount} en attente
-          </button>
-          <button
-            type="button"
-            onClick={() => setFilter("done")}
-            aria-pressed={filter === "done"}
-            className={`inline-flex items-center gap-1 py-1.5 px-3 rounded-md border text-xs font-semibold transition-colors ${filter === "done" ? "bg-green-100 border-green-400 text-green-900" : "bg-background hover:bg-accent border-border text-foreground"}`}
-          >
+          </Badge>
+          <Badge variant="outline" className="gap-1 py-1.5 px-3">
             <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
             {doneCount} corrigées
-          </button>
+          </Badge>
         </div>
       </div>
 
@@ -971,31 +715,8 @@ const CorrectionQRCTab = () => {
                       <Badge variant="outline" className="font-bold text-sm">
                         📊 {item.noteSur20 != null ? `${item.noteSur20}/20` : `${item.scoreMatiereObtenu}/${item.scoreMatiereMax}`}
                       </Badge>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 px-2 text-xs gap-1 border-amber-300 text-amber-800 hover:bg-amber-50"
-                        disabled={savingId === `hide-${item.apprenantId}`}
-                        onClick={() => handleHideApprenant(item.apprenantId, `${item.apprenantPrenom} ${item.apprenantNom}`.trim())}
-                        title="Marque toutes les QRC en attente de cet apprenant comme corrigées (note auto) et les déplace dans Déjà corrigées."
-                      >
-                        <EyeOff className="w-3.5 h-3.5" />
-                        {savingId === `hide-${item.apprenantId}` ? "..." : "Ne plus afficher cet apprenant"}
-                      </Button>
                     </div>
                   </div>
-
-                  {/* Bandeau "à vérifier" pour les examens refaits */}
-                  {item.isRetake && (
-                    <div className="rounded-lg border-2 border-amber-500 bg-amber-100 px-4 py-3 text-center">
-                      <p className="text-lg font-extrabold uppercase tracking-wide text-amber-900">
-                        ⚠️ Vérifier les réponses des QRC
-                      </p>
-                      <p className="text-xs text-amber-800 mt-1">
-                        Examen refait — notation automatique par mots-clés. Validez ou ajustez si besoin.
-                      </p>
-                    </div>
-                  )}
 
                   {/* Question */}
                   <div>

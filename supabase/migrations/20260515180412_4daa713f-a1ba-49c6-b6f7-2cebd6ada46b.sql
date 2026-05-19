@@ -1,2 +1,0 @@
-ALTER TABLE public.emargements_fc DROP CONSTRAINT IF EXISTS emargements_fc_demi_journee_check;
-ALTER TABLE public.emargements_fc ADD CONSTRAINT emargements_fc_demi_journee_check CHECK (demi_journee = ANY (ARRAY['matin'::text, 'apres_midi'::text, 'soir'::text, 'soir_1'::text, 'soir_2'::text]));

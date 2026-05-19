@@ -48,7 +48,6 @@ import { VILLE_STATIONS_TAXI_SLIDES } from "./slides/ville-stations-taxi-data";
 import { QuestionImageUpload } from "./QuestionImageUpload";
 import { ImageLightbox } from "./ImageLightbox";
 import { mergeSourceExercices } from "./examens-blancs-utils";
-import { hasAdminEdit, isAdminLocked, resolveCorrectAnswers } from "./resolve-correct-answers";
 
 // Images des monuments et lieux de Lyon
 import imgCathedraleStJean from "@/assets/pratique/cathedrale-st-jean.jpg";
@@ -2494,43 +2493,13 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       const previousQuestionMap = new Map(previousExo.questions.map((q) => [Number(q.id), q]));
       const mergedQuestions = incomingExo.questions.map((incomingQ) => {
         const previousQ = previousQuestionMap.get(Number(incomingQ.id));
-
-        // ⛔ Verrou permanent : si la version locale (ou la version incoming)
-        // porte `admin_locked`, on gèle la question dans son état verrouillé
-        // sans jamais merger avec l'autre source.
-        if (isAdminLocked(previousQ as any)) {
-          preserved = true;
-          return previousQ;
-        }
-        if (isAdminLocked(incomingQ as any)) {
-          return incomingQ;
-        }
-
         if (!previousQ) return incomingQ;
 
         const previousEditedAt = toSafeTimestamp((previousQ as any)._editedAt);
         const incomingEditedAt = toSafeTimestamp((incomingQ as any)._editedAt);
-
-        // Règle dure centralisée : si la version locale porte _editedAt
-        // alors que la version incoming ne le porte pas (ou est plus ancienne),
-        // on garde la version locale et surtout ses choix admin.
         if (previousEditedAt > incomingEditedAt) {
           preserved = true;
           return previousQ;
-        }
-
-        // Cas: les deux portent _editedAt. Même si l'incoming est plus récent,
-        // on garantit que les choix admin de la version qui a le timestamp
-        // le plus à jour gagnent — via le résolveur centralisé — pour qu'aucun
-        // autre source ne puisse jamais réinjecter les anciens `correct`.
-        if (hasAdminEdit(incomingQ as any) || hasAdminEdit(previousQ as any)) {
-          const winner = previousEditedAt > incomingEditedAt ? previousQ : incomingQ;
-          const other  = previousEditedAt > incomingEditedAt ? incomingQ : previousQ;
-          return {
-            ...incomingQ,
-            ...winner,
-            choix: resolveCorrectAnswers(winner as any, other as any),
-          } as any;
         }
 
         return incomingQ;
@@ -2645,50 +2614,32 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         setModuleData((prev) => {
           if (shouldSkipFetchedQuestionState(lastDbUpdatedAtRef.current, fetchStartedAt, "trainer override reload")) return prev;
 
-          let mutated = false;
           const updatedExercices = prev.exercices
             .map((exo) => {
               if (!exo.questions || exo.questions.length === 0) return exo;
 
-              let exoMutated = false;
               const updatedQuestions = exo.questions
                 .map((q) => {
                   const override = overrideMap.get(`${exo.id}-${q.id}`);
                   if (!override) return q;
                   // Règle dure: si la question a été modifiée par l'admin (_editedAt),
                   // les réponses correctes admin gagnent toujours, sans comparer les timestamps.
-                  if (hasAdminEdit(q as any)) return q;
                   const adminTs = (q as any)._editedAt ?? undefined;
                   const winner = resolveOverrideConflict(adminTs, override.updated_at);
                   if (winner === "admin") return q;
-                  const newChoix = resolveCorrectAnswers(q as any, { choix: override.choix } as any);
-                  if (q.enonce === override.enonce && JSON.stringify(q.choix) === JSON.stringify(newChoix)) {
-                    return q;
-                  }
-                  exoMutated = true;
-                  // L'override fournisseur gagne, mais on passe quand même par le
-                  // résolveur centralisé pour garantir l'invariant admin-wins.
-                  return {
-                    ...q,
-                    enonce: override.enonce,
-                    choix: newChoix,
-                  };
+                  return { ...q, enonce: override.enonce, choix: override.choix };
                 })
                 .filter((q) => q.enonce !== "__DELETED__");
 
               // If trainer deleted all questions of this quiz, hide the whole exercise for students
               if (exo.questions.length > 0 && updatedQuestions.length === 0) {
-                mutated = true;
                 return null;
               }
 
-              if (!exoMutated && updatedQuestions.length === exo.questions.length) return exo;
-              mutated = true;
               return { ...exo, questions: updatedQuestions };
             })
             .filter((exo): exo is ExerciceItem => exo !== null);
 
-          if (!mutated) return prev;
           return { ...prev, exercices: updatedExercices };
         });
       } catch (err) {
@@ -2865,24 +2816,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               const sourceExercices = mergeSourceExercices(sourceMd.exercices, sourceInitial.exercices, deletedSourceIds);
               const syncedModuleData = getSyncedBilanVtcModuleData(initialData, sourceExercices, Number(module.id) === 4);
 
-              // ✅ BUGFIX revert : superposer les éditions admin sauvegardées sur le bilan lui-même
-              // (module 4/81) par-dessus les exercices reconstruits depuis le module source.
-              // Sans cela, toute édition admin (ex: Bilan Gestion Q43) est écrasée au prochain
-              // reload dès que le module source (2) a un updated_at plus récent.
-              const bilanSavedExos = Array.isArray((latestState?.module_data as any)?.exercices)
-                ? ((latestState!.module_data as any).exercices as ExerciceItem[])
-                : [];
-              const bilanDeletedExoIds = Array.isArray(latestState?.deleted_exercices)
-                ? (latestState!.deleted_exercices as any[]).map((e: any) => Number(e?.id)).filter((n) => !Number.isNaN(n))
-                : [];
-              const syncedWithBilanEdits: ModuleData = {
-                ...syncedModuleData,
-                exercices: bilanSavedExos.length > 0
-                  ? mergeSourceExercices(bilanSavedExos, syncedModuleData.exercices, bilanDeletedExoIds)
-                  : syncedModuleData.exercices,
-              };
-
-              setModuleData((prev) => preserveNewerLocalQuestionEdits(syncedWithBilanEdits, prev, "initial generated bilan source sync"));
+              setModuleData((prev) => preserveNewerLocalQuestionEdits(syncedModuleData, prev, "initial generated bilan source sync"));
               setDeletedCours([]);
               setDeletedExercices([]);
               setLoadedModuleEditorState(true);
@@ -3142,39 +3076,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               ? (sourceState.deleted_exercices as any[]).map((e: any) => Number(e?.id)).filter((n) => !Number.isNaN(n))
               : [];
             const sourceExercices = mergeSourceExercices(sourceMd.exercices, sourceInitial.exercices, deletedSourceIds);
-
-            // ✅ BUGFIX revert : récupérer aussi les éditions sauvegardées sur le bilan lui-même
-            // (module 4/81) et les superposer sur la reconstruction depuis le module source.
-            let bilanSavedExos: ExerciceItem[] = [];
-            let bilanDeletedExoIds: number[] = [];
-            try {
-              const { data: bilanOwnState } = await supabase
-                .from("module_editor_state")
-                .select("module_data, deleted_exercices")
-                .eq("module_id", module.id)
-                .order("updated_at", { ascending: false })
-                .limit(1)
-                .maybeSingle();
-              if (Array.isArray((bilanOwnState?.module_data as any)?.exercices)) {
-                bilanSavedExos = (bilanOwnState!.module_data as any).exercices as ExerciceItem[];
-              }
-              if (Array.isArray(bilanOwnState?.deleted_exercices)) {
-                bilanDeletedExoIds = (bilanOwnState!.deleted_exercices as any[])
-                  .map((e: any) => Number(e?.id))
-                  .filter((n) => !Number.isNaN(n));
-              }
-            } catch (e) {
-              console.warn("[Bilan VTC realtime] lecture état bilan échouée", e);
-            }
-
-            setModuleData((prev) => {
-              const synced = getSyncedBilanVtcModuleData(prev, sourceExercices, Number(module.id) === 4);
-              if (bilanSavedExos.length === 0) return synced;
-              return {
-                ...synced,
-                exercices: mergeSourceExercices(bilanSavedExos, synced.exercices, bilanDeletedExoIds),
-              };
-            });
+            setModuleData((prev) => getSyncedBilanVtcModuleData(prev, sourceExercices, Number(module.id) === 4));
             setDeletedCours([]);
             setDeletedExercices([]);
             setLoadedModuleEditorState(true);
@@ -3284,43 +3186,25 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       setModuleData((prev) => {
         if (shouldSkipFetchedQuestionState(lastDbUpdatedAtRef.current, fetchStartedAt, "realtime trainer override reload")) return prev;
 
-        let mutated = false;
         const updatedExercices = prev.exercices
           .map((exo) => {
             if (!exo.questions || exo.questions.length === 0) return exo;
-            let exoMutated = false;
             const updatedQuestions = exo.questions
               .map((q) => {
                 const override = overrideMap.get(`${exo.id}-${q.id}`);
                 if (!override) return q;
-                // Règle dure centralisée : si la question a été modifiée par l'admin
-                // (_editedAt), ses choix gagnent TOUJOURS, sans exception.
-                if (hasAdminEdit(q as any)) return q;
+                // Règle dure: si la question a été modifiée par l'admin (_editedAt),
+                // les réponses correctes admin gagnent toujours, sans comparer les timestamps.
                 const adminTs = (q as any)._editedAt ?? undefined;
                 const winner = resolveOverrideConflict(adminTs, override.updated_at);
                 if (winner === "admin") return q;
-                const newChoix = resolveCorrectAnswers(q as any, { choix: override.choix } as any);
-                if (q.enonce === override.enonce && JSON.stringify(q.choix) === JSON.stringify(newChoix)) {
-                  return q;
-                }
-                exoMutated = true;
-                return {
-                  ...q,
-                  enonce: override.enonce,
-                  choix: newChoix,
-                };
+                return { ...q, enonce: override.enonce, choix: override.choix };
               })
               .filter((q) => q.enonce !== "__DELETED__");
-            if (exo.questions.length > 0 && updatedQuestions.length === 0) {
-              mutated = true;
-              return null;
-            }
-            if (!exoMutated && updatedQuestions.length === exo.questions.length) return exo;
-            mutated = true;
+            if (exo.questions.length > 0 && updatedQuestions.length === 0) return null;
             return { ...exo, questions: updatedQuestions };
           })
           .filter((exo): exo is ExerciceItem => exo !== null);
-        if (!mutated) return prev;
         return { ...prev, exercices: updatedExercices };
       });
     };

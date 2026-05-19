@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, lazy, Suspense, useRef } from "react";
+import { useState, useEffect, useCallback, memo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,7 +12,11 @@ import { XPBar } from "@/components/cours-en-ligne/motivation/XPBar";
 import { BadgeGrid } from "@/components/cours-en-ligne/motivation/BadgeGrid";
 import { buildBadges, calculateXP } from "@/components/cours-en-ligne/motivation/badges-data";
 import { toast } from "sonner";
+import ModuleDetailView from "@/components/cours-en-ligne/ModuleDetailView";
 import ModuleChangeNotificationsBanner from "@/components/cours-en-ligne/ModuleChangeNotificationsBanner";
+import BilanFinFormationFCVtc from "@/components/cours-en-ligne/BilanFinFormationFCVtc";
+import ExamensBlancsPage from "@/components/cours-en-ligne/ExamensBlancsPage";
+import NotesView from "@/components/cours-en-ligne/NotesView";
 import StudentLogin from "@/components/cours-en-ligne/StudentLogin";
 import { FORMATIONS, MODULES_DATA, expandModulesAutorises, type FormationId } from "@/components/cours-en-ligne/formations-data";
 import { EXAMENS_BLANCS_VTC, EXAMENS_BLANCS_TAXI, EXAMENS_BLANCS_TA, EXAMENS_BLANCS_VA } from "@/components/cours-en-ligne/examens-blancs-data";
@@ -25,22 +29,12 @@ import { useSessionKeepAlive } from "@/hooks/useSessionKeepAlive";
 import { PresenceCheckModal } from "@/components/cours-en-ligne/PresenceCheckModal";
 import { ApprenantChatWidget } from "@/components/chat/ApprenantChatWidget";
 import { EmargementFCModal, isFormationContinue } from "@/components/cours-en-ligne/EmargementFCModal";
-import { SignatureDocumentsRequiredModal } from "@/components/cours-en-ligne/SignatureDocumentsRequiredModal";
-import { SignaturesSoirManquantesModal } from "@/components/cours-en-ligne/SignaturesSoirManquantesModal";
 import { isPresentielType, getTodayAgendaBlocs, getCurrentCreneau, type CreneauKey } from "@/lib/agendaSlots";
 import { useAuth } from "@/contexts/AuthContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { computeUnlockState, isModuleLocked as computeIsModuleLocked } from "@/lib/moduleUnlockLogic";
 
-const StableModuleDetailView = lazy(() => import("@/components/cours-en-ligne/ModuleDetailView"));
-const ExamensBlancsPage = lazy(() => import("@/components/cours-en-ligne/ExamensBlancsPage"));
-const NotesView = lazy(() => import("@/components/cours-en-ligne/NotesView"));
-
-const SectionLoading = () => (
-  <div className="flex items-center justify-center py-12 text-sm text-muted-foreground">
-    Chargement…
-  </div>
-);
+const StableModuleDetailView = memo(ModuleDetailView);
 
 // Map CRM values to formation IDs (supports lowercase, aliases and multi-selection values like "x + y")
 const FORMATION_ALIASES: Record<string, FormationId> = {
@@ -711,8 +705,6 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const [lastModuleName, setLastModuleName] = useState<string | null>(null);
   const [isInExam, setIsInExam] = useState(false);
   const [emargementFCStatus, setEmargementFCStatus] = useState<"checking" | "needed" | "signed" | "skipped" | "n/a">("checking");
-  const [pendingSignaturesDone, setPendingSignaturesDone] = useState(false);
-  const [pendingSoirSignaturesDone, setPendingSoirSignaturesDone] = useState(false);
   const [emargementCreneau, setEmargementCreneau] = useState<CreneauKey | null>(null);
   const [emargementMode, setEmargementMode] = useState<"fc" | "presentiel">("fc");
   const [sessionAccessWindow, setSessionAccessWindow] = useState<SessionAccessWindow | null>(null);
@@ -1040,12 +1032,8 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
       setEmargementFCStatus(data ? "signed" : "needed");
     };
     check();
-    // Re-vérifier toutes les minutes : permet de déclencher la 2e signature soir
-    // (passage automatique de soir_1 à soir_2 à 18h30) sans refresh manuel.
-    const interval = setInterval(check, 60_000);
     return () => {
       cancelled = true;
-      clearInterval(interval);
     };
   }, [embedded, user?.id, apprenant?.id, apprenant?.type_apprenant, apprenant?.formation_choisie]);
 
@@ -1283,53 +1271,6 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     );
   }
 
-  // Force trainee to sign any missing evening signatures (soir 18h30-21h) since 2026-05-11
-  if (apprenant?.id && user?.id && !embedded && !pendingSoirSignaturesDone) {
-    return (
-      <>
-        <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
-          <div className="text-center max-w-md">
-            <div className="text-5xl mb-3">🌆</div>
-            <h1 className="text-xl font-bold text-slate-900 mb-1">
-              Régularisation des signatures du soir
-            </h1>
-            <p className="text-sm text-slate-500">
-              Merci de signer les créneaux 18h30 — 21h00 manquants depuis le 11 mai.
-            </p>
-          </div>
-        </div>
-        <SignaturesSoirManquantesModal
-          apprenantId={apprenant.id}
-          userId={user.id}
-          onAllSigned={() => setPendingSoirSignaturesDone(true)}
-        />
-      </>
-    );
-  }
-
-  // Force trainee to sign any documents previously completed without signature
-  if (apprenant?.id && !embedded && !pendingSignaturesDone) {
-    return (
-      <>
-        <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
-          <div className="text-center max-w-md">
-            <div className="text-5xl mb-3">✍️</div>
-            <h1 className="text-xl font-bold text-slate-900 mb-1">
-              Signature de vos documents
-            </h1>
-            <p className="text-sm text-slate-500">
-              Merci de signer vos documents avant d'accéder à la formation.
-            </p>
-          </div>
-        </div>
-        <SignatureDocumentsRequiredModal
-          apprenantId={apprenant.id}
-          onAllSigned={() => setPendingSignaturesDone(true)}
-        />
-      </>
-    );
-  }
-
   // Module detail view
   if (selectedModule) {
     const bilanId = BILAN_MODULE_IDS[selectedModule.id];
@@ -1341,16 +1282,14 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
           <Button variant="ghost" size="sm" className="mb-4" onClick={() => setSelectedModule(null)}>
             <ChevronRight className="w-4 h-4 mr-1 rotate-180" /> Retour
           </Button>
-          <Suspense fallback={<SectionLoading />}>
-            <ExamensBlancsPage
-              defaultBilanId={bilanId}
-              apprenantId={apprenant?.id || null}
-              userId={user?.id || null}
-              apprenantType={apprenant?.type_apprenant || null}
-              isPresentiel={!['vtc-elearning', 'taxi-elearning', 'taxi-pour-vtc-elearning'].includes(selectedFormation)}
-              onExamStateChange={handleExamStateChange}
-            />
-          </Suspense>
+          <ExamensBlancsPage
+            defaultBilanId={bilanId}
+            apprenantId={apprenant?.id || null}
+            userId={user?.id || null}
+            apprenantType={apprenant?.type_apprenant || null}
+            isPresentiel={!["vtc-elearning", "taxi-elearning", "taxi-pour-vtc-elearning"].includes(selectedFormation)}
+            onExamStateChange={handleExamStateChange}
+          />
         </div>
       );
     }
@@ -1361,47 +1300,43 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
           <Button variant="ghost" size="sm" className="mb-4" onClick={() => setSelectedModule(null)}>
             <ChevronRight className="w-4 h-4 mr-1 rotate-180" /> Retour
           </Button>
-          <Suspense fallback={<SectionLoading />}>
-            <ExamensBlancsPage
-              apprenantId={apprenant?.id || null}
-              userId={user?.id || null}
-              apprenantType={examenBlancType}
-              isPresentiel={!['vtc-elearning', 'taxi-elearning', 'taxi-pour-vtc-elearning'].includes(selectedFormation)}
-              onExamStateChange={handleExamStateChange}
-            />
-          </Suspense>
+          <ExamensBlancsPage
+            apprenantId={apprenant?.id || null}
+            userId={user?.id || null}
+            apprenantType={examenBlancType}
+            isPresentiel={!["vtc-elearning", "taxi-elearning", "taxi-pour-vtc-elearning"].includes(selectedFormation)}
+            onExamStateChange={handleExamStateChange}
+          />
         </div>
       );
     }
     // Module 87 (Bilan fin de formation FC VTC) est désormais rendu comme un module quiz standard via StableModuleDetailView ci-dessous.
     return (
       <div className="min-h-screen bg-background">
-        <Suspense fallback={<SectionLoading />}>
-          <StableModuleDetailView
-            module={selectedModule}
-            onBack={handleBackFromModule}
-            studentOnly
-            apprenantId={apprenant?.id || null}
-            onModuleCompleted={handleModuleCompleted}
-            apprenantType={apprenant?.type_apprenant || null}
-            isPresentiel={!['vtc-elearning', 'taxi-elearning', 'taxi-pour-vtc-elearning'].includes(selectedFormation)}
-            hideFormulaires={apprenant?.email === "demo-vtc@ftransport.fr"}
-            onTrackCours={(moduleId, coursTitle) => {
-              trackModuleActivity(moduleId, coursTitle, "open_cours");
-            }}
-            apprenantInfo={apprenant ? {
-              nom: apprenant.nom,
-              prenom: apprenant.prenom,
-              email: apprenant.email || undefined,
-              telephone: apprenant.telephone || undefined,
-              adresse: apprenant.adresse || undefined,
-              code_postal: apprenant.code_postal || undefined,
-              ville: apprenant.ville || undefined,
-              date_naissance: apprenant.date_naissance || undefined,
-              formation_choisie: apprenant.formation_choisie || null,
-            } : null}
-          />
-        </Suspense>
+        <StableModuleDetailView
+          module={selectedModule}
+          onBack={handleBackFromModule}
+          studentOnly
+          apprenantId={apprenant?.id || null}
+          onModuleCompleted={handleModuleCompleted}
+          apprenantType={apprenant?.type_apprenant || null}
+          isPresentiel={!["vtc-elearning", "taxi-elearning", "taxi-pour-vtc-elearning"].includes(selectedFormation)}
+          hideFormulaires={apprenant?.email === "demo-vtc@ftransport.fr"}
+          onTrackCours={(moduleId, coursTitle) => {
+            trackModuleActivity(moduleId, coursTitle, "open_cours");
+          }}
+          apprenantInfo={apprenant ? {
+            nom: apprenant.nom,
+            prenom: apprenant.prenom,
+            email: apprenant.email || undefined,
+            telephone: apprenant.telephone || undefined,
+            adresse: apprenant.adresse || undefined,
+            code_postal: apprenant.code_postal || undefined,
+            ville: apprenant.ville || undefined,
+            date_naissance: apprenant.date_naissance || undefined,
+            formation_choisie: apprenant.formation_choisie || null,
+          } : null}
+        />
       </div>
     );
   }
@@ -1682,9 +1617,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
       <div className="max-w-6xl mx-auto px-4 py-8">
         {/* Notes tab */}
         {activeTab === "notes" && apprenant?.id && (
-          <Suspense fallback={<SectionLoading />}>
-            <NotesView apprenantId={apprenant.id} studentName={studentName} moduleCompletionsSeed={moduleCompletionsForNotes} />
-          </Suspense>
+          <NotesView apprenantId={apprenant.id} studentName={studentName} moduleCompletionsSeed={moduleCompletionsForNotes} />
         )}
 
         {/* Examens tab - Examens Blancs */}
@@ -1696,15 +1629,13 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
               </div>
             }
           >
-            <Suspense fallback={<SectionLoading />}>
-              <ExamensBlancsPage
-                apprenantId={apprenant?.id || null}
-                userId={user?.id || null}
-                apprenantType={apprenant?.type_apprenant || null}
-                isPresentiel={!['vtc-elearning', 'taxi-elearning', 'taxi-pour-vtc-elearning'].includes(selectedFormation)}
-                onExamStateChange={handleExamStateChange}
-              />
-            </Suspense>
+            <ExamensBlancsPage
+              apprenantId={apprenant?.id || null}
+              userId={user?.id || null}
+              apprenantType={apprenant?.type_apprenant || null}
+              isPresentiel={!["vtc-elearning", "taxi-elearning", "taxi-pour-vtc-elearning"].includes(selectedFormation)}
+              onExamStateChange={handleExamStateChange}
+            />
           </ErrorBoundary>
         )}
 
