@@ -13,7 +13,6 @@ import {
   buildExerciceKeyFlush,
   isExamPhaseProtected,
   getQuestionKey,
-  buildQrcDedupeKey,
   findMatiereWithFallback,
   getSourceQuestions,
 } from "../components/cours-en-ligne/exam-helpers";
@@ -372,25 +371,5 @@ describe("Bug GESTION-3: getQuestionKey must prevent cross-exam collision", () =
     const qcm = { id: 1, type: "QCM", enonce: "Question test" };
     const qrc = { id: 1, type: "QRC", enonce: "Question test" };
     expect(getQuestionKey(qcm)).not.toBe(getQuestionKey(qrc));
-  });
-});
-
-// ═══════════════════════════════════════════════════════════════════════════
-// Bug QRC-4: Correction queue dedupe must not hide other matières
-// ═══════════════════════════════════════════════════════════════════════════
-
-describe("Bug QRC-4: QRC dedupe key must keep distinct matières visible", () => {
-  it("same question id with different enonce must produce DIFFERENT keys", () => {
-    const t3p = { questionId: 1, type: "QRC", enonce: "Citez trois conditions d'accès T3P" };
-    const gestion = { questionId: 1, type: "QRC", enonce: "Citez deux régimes sociaux" };
-
-    expect(buildQrcDedupeKey("apprenant-1", "EB2", t3p)).not.toBe(buildQrcDedupeKey("apprenant-1", "EB2", gestion));
-  });
-
-  it("legacy duplicate question with same id and enonce must produce SAME key", () => {
-    const q1 = { questionId: 2, type: "QRC", enonce: "Définissez la marge" };
-    const q2 = { questionId: 2, type: "QRC", enonce: "  Définissez   la marge  " };
-
-    expect(buildQrcDedupeKey("apprenant-1", "EB2", q1)).toBe(buildQrcDedupeKey("apprenant-1", "EB2", q2));
   });
 });

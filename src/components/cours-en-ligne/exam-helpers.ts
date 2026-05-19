@@ -93,25 +93,6 @@ export function shouldSkipResultRow(details: any): boolean {
   return false;
 }
 
-// ─── From CorrectionQRCTab.tsx: per-QRC deduplication key ────────────────
-
-const normalizeQuestionTextForKey = (value: unknown) =>
-  String(value ?? "")
-    .trim()
-    .replace(/\s+/g, " ")
-    .toLowerCase();
-
-/**
- * Dedupe the same QRC across legacy duplicate matière ids without hiding
- * distinct matières that reuse question ids 1, 2, 3, etc.
- */
-export function buildQrcDedupeKey(apprenantId: string, quizId: string, question: any): string {
-  const questionId = Number(question?.questionId ?? question?.id);
-  const enonce = normalizeQuestionTextForKey(question?.enonce);
-  if (enonce) return `${apprenantId}__${quizId}__${Number.isFinite(questionId) ? questionId : "na"}__${enonce}`;
-  return `${apprenantId}__${quizId}__${Number.isFinite(questionId) ? questionId : "na"}`;
-}
-
 // ─── From ExamensBlancsPage.tsx:681-695 ──────────────────────────────────
 
 /**

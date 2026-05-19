@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { tousLesExamens, getPointsParQuestion, type ExamenBlanc, type Matiere } from "./examens-blancs-data";
 import { loadSavedExamens } from "./ExamensBlancsEditor";
-import { buildExamenMap, buildQrcDedupeKey, findMatiereWithFallback, getSourceQuestions } from "./exam-helpers";
+import { buildExamenMap, findMatiereWithFallback, getSourceQuestions } from "./exam-helpers";
 
 interface QrcItem {
   resultId: string;
@@ -156,9 +156,6 @@ const CorrectionQRCTab = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
   const [examenFilter, setExamenFilter] = useState<string>("all");
-  // Garde anti-écrasement : ignore les refetch Realtime juste après une action locale
-  // (sauvegarde / masquage), le temps que Supabase propage le `manuel: true`.
-  const lastLocalMutationRef = useRef<number>(0);
 
   const QUICK_COMMENTS = [
     "Précisez !!!",
@@ -283,26 +280,16 @@ const CorrectionQRCTab = () => {
       const countKey = `${r.apprenant_id}__${r.quiz_id}__${r.matiere_id || ""}`;
       const isRetake = (attemptCounts[countKey] || 1) > 1;
 
-      const reponses = details.reponses || {};
-      let questionList: any[] | null = Array.isArray(details.questions) && details.questions.length > 0
-        ? [...details.questions]
+      let questionList = Array.isArray(details.questions) && details.questions.length > 0
+        ? details.questions
         : null;
 
-      // Build/augment from source so we NEVER miss a QRC question (legacy rows
-      // sometimes saved only QCM entries, or saved details.questions=[] entirely).
-      if (matiere && (Object.keys(correctionsIA).length > 0 || Object.keys(reponses).length > 0)) {
-        // SCOPE STRICT: ne chercher les questions sources que dans l'examen r.quiz_id,
-        // pour éviter de récupérer des questions d'un autre examen partageant un matiere_id.
-        const examenDuQuiz = examenMap[r.quiz_id] || tousLesExamens.find((e) => e.id === r.quiz_id);
-        const matiereDuQuiz = examenDuQuiz?.matieres?.find((m: Matiere) => m.id === matiere.id) || matiere;
-        let sourceQuestions: any[] = Array.isArray(matiereDuQuiz?.questions) ? matiereDuQuiz.questions : [];
-        if (sourceQuestions.length === 0) {
-          // Fallback large uniquement si l'examen r.quiz_id n'a aucune question pour cette matière.
-          sourceQuestions = getSourceQuestions(matiere, tousLesExamens);
-        }
-        if (sourceQuestions.length > 0) {
-          const existingIds = new Set<number>((questionList || []).map((q: any) => Number(q?.questionId)).filter(n => Number.isFinite(n)));
-          const buildFromSource = (mq: any) => ({
+      const reponses = details.reponses || {};
+      if (!questionList && matiere && (Object.keys(correctionsIA).length > 0 || Object.keys(reponses).length > 0)) {
+        const sourceQuestions = getSourceQuestions(matiere, tousLesExamens);
+        questionList = sourceQuestions.map((mq: any) => {
+          if (!mq) return null;
+          return {
             questionId: mq.id,
             enonce: mq.enonce || "",
             type: mq.type || "QCM",
@@ -310,40 +297,19 @@ const CorrectionQRCTab = () => {
             reponseCorrecte: mq.type === "QCM" && mq.choix
               ? mq.choix.filter((c: any) => c.correct).map((c: any) => c.lettre)
               : (mq.reponseQRC || (mq.reponses_possibles || []).join(" / ")),
-          });
-          if (!questionList) {
-            questionList = sourceQuestions.map((mq: any) => mq ? buildFromSource(mq) : null).filter(Boolean) as any[];
-          } else {
-            for (const mq of sourceQuestions) {
-              if (!mq) continue;
-              const qid = Number(mq.id);
-              if (Number.isFinite(qid) && !existingIds.has(qid)) {
-                questionList.push(buildFromSource(mq));
-                existingIds.add(qid);
-              }
-            }
-          }
-        }
+          };
+        }).filter(Boolean);
       }
 
-      if (!questionList || questionList.length === 0) {
-        if (Object.keys(reponses).length > 0 || Object.keys(correctionsIA).length > 0) {
-          console.warn("[CorrectionQRC] Row skipped (no questions resolvable)", {
-            resultId: r.id,
-            apprenant: `${apprenantMap[r.apprenant_id]?.nom || "?"} ${apprenantMap[r.apprenant_id]?.prenom || ""}`,
-            quizId: r.quiz_id,
-            matiereId: r.matiere_id,
-            matiereFound: !!matiere,
-          });
-        }
-        continue;
-      }
+      if (!questionList) continue;
 
       for (const q of questionList) {
         if (q.type !== "QRC") continue;
-        // Dédup par question réelle (id + énoncé) : les matières réutilisent souvent
-        // les ids 1, 2, 3... mais une même question legacy ne doit pas apparaître deux fois.
-        const qrcKey = buildQrcDedupeKey(r.apprenant_id, r.quiz_id, q);
+        // Dédup volontairement SANS matiere_id : certaines matières ont des id
+        // legacy dupliqués (ex: "reglementation_taxi" vs "reglementation_taxi2")
+        // qui désignent la même matière. Une même question dans un même examen
+        // pour un même apprenant ne doit jamais apparaître deux fois.
+        const qrcKey = `${r.apprenant_id}__${r.quiz_id}__${q.questionId}`;
         if (seenQrcKeys.has(qrcKey)) continue;
         seenQrcKeys.add(qrcKey);
 
@@ -498,38 +464,7 @@ const CorrectionQRCTab = () => {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  // Realtime: rafraîchir automatiquement dès qu'un élève termine/modifie un examen
-  // (évite de devoir recharger la page pour voir les nouvelles QRC à corriger).
-  useEffect(() => {
-    if (Object.keys(examenMap).length === 0) return;
-    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
-    const scheduleRefetch = () => {
-      if (debounceTimer) clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(() => {
-        // Ignore les events provoqués par nos propres updates locaux (8 s de garde)
-        if (Date.now() - lastLocalMutationRef.current < 8000) return;
-        fetchData();
-      }, 1500);
-    };
-    const channel = supabase
-      .channel("correction-qrc-results")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "apprenant_quiz_results" },
-        (payload: any) => {
-          const qt = payload?.new?.quiz_type ?? payload?.old?.quiz_type;
-          if (qt === "examen_blanc" || qt === "bilan") scheduleRefetch();
-        }
-      )
-      .subscribe();
-    return () => {
-      if (debounceTimer) clearTimeout(debounceTimer);
-      supabase.removeChannel(channel);
-    };
-  }, [examenMap, fetchData]);
-
   const handleSaveCorrection = async (item: QrcItem, newPoints: number) => {
-    lastLocalMutationRef.current = Date.now();
     const uniqueKey = `${item.resultId}-${item.questionId}`;
     setSavingId(uniqueKey);
 
@@ -561,7 +496,6 @@ const CorrectionQRCTab = () => {
       explication: `Correction manuelle par l'administrateur : ${clamped}/${item.pointsMax} pts`,
       commentaire: commentaire || "",
       correctedAt: new Date().toISOString(),
-      manuel: true,
     };
 
     // Recalculate total score for this matiere
@@ -611,35 +545,6 @@ const CorrectionQRCTab = () => {
       toast.error("Erreur lors de la sauvegarde");
     } else {
       toast.success(`QRC corrigée : ${clamped}/${item.pointsMax} pts — Note matière : ${noteSur20}/20`);
-
-      // Notifier l'apprenant via la messagerie quand toutes les QRC de cet examen sont corrigées
-      try {
-        const stillPending = items.some(
-          i => i.resultId === item.resultId && i.questionId !== item.questionId && !i.corrigeManuel
-        );
-        if (!stillPending) {
-          const marker = `[examen-corrige:${item.resultId}]`;
-          const { data: existing } = await supabase
-            .from("apprenant_questions")
-            .select("id")
-            .eq("apprenant_id", item.apprenantId)
-            .ilike("question", `%${marker}%`)
-            .limit(1);
-          if (!existing || existing.length === 0) {
-            await supabase.from("apprenant_questions").insert({
-              apprenant_id: item.apprenantId,
-              apprenant_nom: `${item.apprenantPrenom} ${item.apprenantNom}`.trim() || null,
-              question: `${marker} Correction de votre examen`,
-              reponse: `Bonjour, votre examen « ${item.quizTitre} » vient d'être corrigé par le centre. Note finale : ${noteSur20}/20. Vous pouvez consulter le détail depuis votre espace « Résultats ».`,
-              status: "answered",
-              answered_at: new Date().toISOString(),
-              read_by_apprenant: false,
-            } as any);
-          }
-        }
-      } catch (e) {
-        console.warn("[CorrectionQRC] Notification apprenant échouée:", e);
-      }
 
       setItems(prev => {
         const updated = prev.map(i => {
@@ -691,7 +596,6 @@ const CorrectionQRCTab = () => {
       `Masquer les ${pendingForApp.length} QRC en attente de ${apprenantLabel} ?\n\nElles seront marquées comme corrigées avec leur note auto et déplacées dans "Déjà corrigées".`
     );
     if (!ok) return;
-    lastLocalMutationRef.current = Date.now();
 
     setSavingId(`hide-${apprenantId}`);
 

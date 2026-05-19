@@ -44,10 +44,7 @@ serve(async (req) => {
       });
     }
 
-    // IMPORTANT : toujours utiliser le domaine de production publié.
-    // Sinon le lien pointe vers le preview Lovable (lovable.app) qui exige
-    // un compte Lovable → le destinataire voit "Access denied".
-    const baseUrl = "https://gestion.ftransport.fr";
+    const baseUrl = req.headers.get("origin") || "https://gestion.ftransport.fr";
     const signUrl = `${baseUrl}/contrat-signature/${contrat.token}`;
 
     // Envoi email via MS Graph

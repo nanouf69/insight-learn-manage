@@ -99,8 +99,7 @@ export function ContratsFranchiseTab({
   };
 
   const copyLink = (token: string) => {
-    // Toujours utiliser le domaine public, jamais le preview Lovable.
-    const url = `https://gestion.ftransport.fr/contrat-signature/${token}`;
+    const url = `${window.location.origin}/contrat-signature/${token}`;
     navigator.clipboard.writeText(url);
     toast({ title: "Lien copié" });
   };

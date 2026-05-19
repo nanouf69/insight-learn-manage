@@ -25,11 +25,26 @@ export function useAppVersionCheck(isAuthenticated: boolean, isAdmin: boolean) {
       }
     };
 
-    const notifyUpdateAvailable = () => {
+    const forceLogout = async () => {
       toast.info(
-        "Une mise à jour est disponible. Vous pouvez actualiser la page quand vous avez terminé votre action en cours.",
+        "Une mise à jour a été effectuée. Veuillez vous reconnecter pour bénéficier des dernières améliorations.",
         { duration: 8000 }
       );
+      // Clear all local state
+      try { sessionStorage.clear(); } catch {}
+      try {
+        const keys = Object.keys(localStorage);
+        for (const key of keys) {
+          if (key.startsWith('sb-') || key.startsWith('supabase')) {
+            localStorage.removeItem(key);
+          }
+        }
+      } catch {}
+      await supabase.auth.signOut();
+      // Small delay to let toast show before redirect
+      setTimeout(() => {
+        window.location.href = '/connexion';
+      }, 1500);
     };
 
     // Capture initial version on mount
@@ -43,7 +58,7 @@ export function useAppVersionCheck(isAuthenticated: boolean, isAdmin: boolean) {
       if (!currentVersion || !initialVersionRef.current) return;
       if (currentVersion !== initialVersionRef.current) {
         if (intervalRef.current) clearInterval(intervalRef.current);
-        notifyUpdateAvailable();
+        await forceLogout();
       }
     }, POLL_INTERVAL);
 
