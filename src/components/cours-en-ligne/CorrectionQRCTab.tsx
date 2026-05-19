@@ -38,6 +38,7 @@ interface QrcItem {
   commentaire: string;
   correctedAt: string | null;
   apprenantTypeMode: "presentiel" | "elearning";
+  questionSupprimee: boolean;
 }
 
 function safeStr(v: unknown): string {
