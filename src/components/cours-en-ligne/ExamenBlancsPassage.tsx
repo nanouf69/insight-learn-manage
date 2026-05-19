@@ -444,6 +444,10 @@ function PassageMatiere({
       toast.error("Veuillez répondre à toutes les questions avant de terminer la matière.");
       return;
     }
+    if (!apprenantId) {
+      onTerminer(reponses);
+      return;
+    }
     try {
       setSaveStatus("saving");
       if (!userIdRef.current) {
@@ -464,6 +468,10 @@ function PassageMatiere({
   };
   const handleExpire = async () => {
     setExpire(true);
+    if (!apprenantId) {
+      onTerminer(reponses);
+      return;
+    }
     try {
       setSaveStatus("saving");
       if (!userIdRef.current) {
@@ -484,6 +492,11 @@ function PassageMatiere({
   };
 
   const handleInterruption = async () => {
+    if (!apprenantId) {
+      setShowInterruptConfirm(false);
+      onTerminer(reponses);
+      return;
+    }
     try {
       setSaveStatus("saving");
       if (!userIdRef.current) {
