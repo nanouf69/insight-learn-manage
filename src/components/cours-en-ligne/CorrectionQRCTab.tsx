@@ -1086,45 +1086,9 @@ const CorrectionQRCTab = () => {
               size="sm"
               onClick={() => {
                 setEditingId(null);
-                if (currentIndex > 0) {
-                  setCurrentIndex(currentIndex - 1);
-                  return;
-                }
-                // Au bord : basculer sur "all" et aller à l'item précédent dans la liste globale
-                const currentItem = sortedFiltered[0];
-                const sortedAll = [...items].sort((a, b) => {
-                  const prioA = a.apprenantTypeMode === "presentiel" ? 0 : 1;
-                  const prioB = b.apprenantTypeMode === "presentiel" ? 0 : 1;
-                  if (prioA !== prioB) return prioA - prioB;
-                  const dateA = new Date(a.completedAt).getTime() || 0;
-                  const dateB = new Date(b.completedAt).getTime() || 0;
-                  if (dateA !== dateB) return sortOrder === "desc" ? dateB - dateA : dateA - dateB;
-                  const numA = parseInt((a.quizTitre.match(/N°(\d+)/)?.[1]) || "0", 10);
-                  const numB = parseInt((b.quizTitre.match(/N°(\d+)/)?.[1]) || "0", 10);
-                  if (numA !== numB) return numA - numB;
-                  if (a.matiereId !== b.matiereId) return a.matiereId.localeCompare(b.matiereId);
-                  return a.questionId - b.questionId;
-                });
-                const globalIdx = currentItem
-                  ? sortedAll.findIndex(i => i.resultId === currentItem.resultId && i.questionId === currentItem.questionId)
-                  : -1;
-                if (globalIdx > 0 && filter !== "all") {
-                  setFilter("all");
-                  setTimeout(() => setCurrentIndex(globalIdx - 1), 0);
-                }
+                setCurrentIndex(prev => Math.max(0, prev - 1));
               }}
-              disabled={(() => {
-                if (currentIndex > 0) return false;
-                if (filter === "all") return true;
-                const currentItem = sortedFiltered[0];
-                if (!currentItem) return true;
-                // Y a-t-il un item antérieur dans items ?
-                return !items.some(i => {
-                  const t = new Date(i.completedAt).getTime() || 0;
-                  const c = new Date(currentItem.completedAt).getTime() || 0;
-                  return t > c || (t === c && i.questionId < currentItem.questionId);
-                }) && !items.some(i => i.apprenantTypeMode === "presentiel" && currentItem.apprenantTypeMode !== "presentiel");
-              })()}
+              disabled={currentIndex <= 0}
               className="gap-1"
             >
               <ChevronLeft className="w-4 h-4" />
@@ -1138,34 +1102,9 @@ const CorrectionQRCTab = () => {
               size="sm"
               onClick={() => {
                 setEditingId(null);
-                if (currentIndex < sortedFiltered.length - 1) {
-                  setCurrentIndex(currentIndex + 1);
-                  return;
-                }
-                // Au bord : basculer sur "all" et aller à l'item suivant global
-                const currentItem = sortedFiltered[sortedFiltered.length - 1];
-                const sortedAll = [...items].sort((a, b) => {
-                  const prioA = a.apprenantTypeMode === "presentiel" ? 0 : 1;
-                  const prioB = b.apprenantTypeMode === "presentiel" ? 0 : 1;
-                  if (prioA !== prioB) return prioA - prioB;
-                  const dateA = new Date(a.completedAt).getTime() || 0;
-                  const dateB = new Date(b.completedAt).getTime() || 0;
-                  if (dateA !== dateB) return sortOrder === "desc" ? dateB - dateA : dateA - dateB;
-                  const numA = parseInt((a.quizTitre.match(/N°(\d+)/)?.[1]) || "0", 10);
-                  const numB = parseInt((b.quizTitre.match(/N°(\d+)/)?.[1]) || "0", 10);
-                  if (numA !== numB) return numA - numB;
-                  if (a.matiereId !== b.matiereId) return a.matiereId.localeCompare(b.matiereId);
-                  return a.questionId - b.questionId;
-                });
-                const globalIdx = currentItem
-                  ? sortedAll.findIndex(i => i.resultId === currentItem.resultId && i.questionId === currentItem.questionId)
-                  : -1;
-                if (globalIdx >= 0 && globalIdx < sortedAll.length - 1 && filter !== "all") {
-                  setFilter("all");
-                  setTimeout(() => setCurrentIndex(globalIdx + 1), 0);
-                }
+                setCurrentIndex(prev => Math.min(sortedFiltered.length - 1, prev + 1));
               }}
-              disabled={currentIndex >= sortedFiltered.length - 1 && filter === "all"}
+              disabled={currentIndex >= sortedFiltered.length - 1}
               className="gap-1"
             >
               Suivant
