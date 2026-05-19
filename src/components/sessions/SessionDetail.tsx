@@ -42,7 +42,9 @@ import {
   KeyRound,
   Copy,
   Printer,
-  Trash2
+  Trash2,
+  Maximize2,
+  Minimize2
 } from "lucide-react";
 import { MODULES_DATA } from "@/components/cours-en-ligne/formations-data";
 import { ALL_MODULES, FORMATION_MODULES, MANAGED_MODULE_IDS, DEFAULT_MODULES_BY_TYPE } from "@/components/cours-en-ligne/modules-config";
@@ -494,6 +496,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   const [generatedPassword, setGeneratedPassword] = useState("");
   const [creatingAccount, setCreatingAccount] = useState(false);
   const [resendingCredentials, setResendingCredentials] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -2117,14 +2120,28 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   return (
     <>
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto flex flex-col">
+      <DialogContent className={cn(
+        "flex flex-col overflow-y-auto",
+        isFullscreen
+          ? "max-w-none w-screen h-screen sm:max-w-none sm:rounded-none max-h-screen p-6"
+          : "sm:max-w-[800px] max-h-[90vh]"
+      )}>
         <DialogHeader>
           <div className="flex items-center justify-between">
             <DialogTitle className="flex items-center gap-3">
               {session.title}
               {getStatusBadge(session.status)}
             </DialogTitle>
-            <div className="flex gap-2 flex-wrap">
+            <div className="flex gap-2 flex-wrap items-center">
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setIsFullscreen(v => !v)}
+                className="gap-2"
+                title={isFullscreen ? "Quitter le plein écran" : "Plein écran"}
+              >
+                {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+              </Button>
               <Button
                 size="sm"
                 variant="outline"
