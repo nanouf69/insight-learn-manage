@@ -150,6 +150,18 @@ function getQuestionResponse(reponses: Record<string | number, any>, questionId:
   return reponses?.[questionId] ?? reponses?.[String(questionId)] ?? null;
 }
 
+function isAdminValidatedCorrection(correction: any): boolean {
+  if (!correction || typeof correction !== "object") return false;
+  if (correction.validatedByAdmin === true) return true;
+
+  const explication = safeStr(correction.explication).toLowerCase();
+  const hasLegacyAdminMarker =
+    explication.includes("correction manuelle par l'administrateur") ||
+    explication.includes("validation manuelle (masqué par admin)");
+
+  return correction.manuel === true && !!correction.correctedAt && hasLegacyAdminMarker;
+}
+
 function buildQuestionListFromMatiere(matiere: Matiere, reponses: Record<string | number, any>): any[] {
   const sourceQuestions = getSourceQuestions(matiere, tousLesExamens);
   return sourceQuestions.map((mq: any) => {
@@ -382,10 +394,9 @@ const CorrectionQRCTab = () => {
         const pts = getPointsParQuestion(effectiveMatiereId, "QRC", perQuestionMatiere || undefined);
 
         const correction = correctionsIA[q.questionId];
-        // STRICT : seules les validations faites depuis cet onglet admin comptent.
-        // Les anciens `manuel:true` ont pu être écrits automatiquement côté résultats élève,
-        // donc ils ne doivent plus masquer les réponses du jour à corriger.
-        const hasManualCorrection = !!(correction && typeof correction === "object" && correction.validatedByAdmin === true);
+        // STRICT : seules les validations admin comptent, y compris l'ancien format
+        // écrit avant l'ajout de `validatedByAdmin`.
+        const hasManualCorrection = isAdminValidatedCorrection(correction);
 
         const app = apprenantMap[r.apprenant_id] || { nom: "Inconnu", prenom: "", mode: "presentiel" as const };
 
