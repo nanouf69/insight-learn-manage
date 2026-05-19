@@ -514,7 +514,21 @@ const CorrectionQRCTab = () => {
           i.questionId === q.id &&
           isToday(i.completedAt)
         );
-        if (alreadyHasTodayResult || seenQrcKeys.has(qrcKey)) continue;
+        if (alreadyHasTodayResult) continue;
+        if (seenQrcKeys.has(qrcKey)) {
+          const oldIndex = qrcItems.findIndex(i =>
+            i.apprenantId === row.apprenant_id &&
+            i.quizId === quizId &&
+            i.matiereId === matiereId &&
+            i.questionId === q.id
+          );
+          if (oldIndex >= 0 && !isToday(qrcItems[oldIndex].completedAt)) {
+            qrcItems.splice(oldIndex, 1);
+            seenQrcKeys.delete(qrcKey);
+          } else {
+            continue;
+          }
+        }
         seenQrcKeys.add(qrcKey);
 
         const pts = getPointsParQuestion(matiereId, "QRC", matiere);
