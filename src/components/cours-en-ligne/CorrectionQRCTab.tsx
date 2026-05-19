@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
-import { CheckCircle2, Clock, Pencil, Search, User, FileText, Filter, MessageSquare, ChevronLeft, ChevronRight, ArrowUpDown } from "lucide-react";
+import { CheckCircle2, Clock, Pencil, Search, User, FileText, Filter, MessageSquare, ChevronLeft, ChevronRight, ArrowUpDown, RefreshCw } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 import { toast } from "sonner";
@@ -249,6 +249,7 @@ const CorrectionQRCTab = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
   const [examenFilter, setExamenFilter] = useState<string>("all");
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const QUICK_COMMENTS = [
     "Précisez !!!",
@@ -269,9 +270,9 @@ const CorrectionQRCTab = () => {
     load();
   }, []);
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (opts?: { silent?: boolean }) => {
     if (Object.keys(examenMap).length === 0) return;
-    setLoading(true);
+    if (!opts?.silent) setLoading(true);
 
     // Fetch all exam_blanc results that have QRC questions (Supabase client is capped at 1000 rows per request)
     const pageSize = 1000;
@@ -286,7 +287,7 @@ const CorrectionQRCTab = () => {
 
       if (error) {
         console.error("Erreur chargement résultats:", error);
-        setLoading(false);
+        if (!opts?.silent) setLoading(false);
         return;
       }
       results.push(...(data || []));
@@ -432,7 +433,7 @@ const CorrectionQRCTab = () => {
     }
 
     setItems(qrcItems);
-    setLoading(false);
+    if (!opts?.silent) setLoading(false);
   }, [examenMap]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
@@ -737,6 +738,19 @@ const CorrectionQRCTab = () => {
         >
           <ArrowUpDown className="w-4 h-4" />
           {sortOrder === "desc" ? "Plus récent" : "Plus ancien"}
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-1.5"
+          onClick={() => {
+            setIsRefreshing(true);
+            fetchData({ silent: true }).finally(() => setIsRefreshing(false));
+          }}
+          disabled={isRefreshing || loading}
+        >
+          <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} />
+          Réactualiser
         </Button>
       </div>
 
