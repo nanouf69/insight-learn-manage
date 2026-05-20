@@ -26,6 +26,7 @@ const TYPE_LABELS: Record<string, string> = {
   "devis-formation-continue": "Devis Formation Continue",
   "devis-envoi": "Devis envoyé / signé",
   "emargement-fc": "Feuille d'émargement",
+  "emargement-fc-semaine": "Émargement hebdomadaire",
   "doc-fournisseur": "Document fournisseur",
 };
 
