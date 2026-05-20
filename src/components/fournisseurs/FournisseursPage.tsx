@@ -486,43 +486,37 @@ export function FournisseursPage() {
                                       const defaultTo = selectedFournisseur?.email || '';
                                       const to = window.prompt("Adresse email du destinataire :", defaultTo);
                                       if (!to) return;
-                                      try {
-                                        toast({ title: "Envoi en cours...", description: `Envoi à ${to}` });
-                                        // Download PDF and convert to base64
-                                        const fileRes = await fetch(doc.url);
-                                        if (!fileRes.ok) throw new Error("Impossible de récupérer le fichier");
-                                        const blob = await fileRes.blob();
-                                        const base64: string = await new Promise((resolve, reject) => {
-                                          const reader = new FileReader();
-                                          reader.onloadend = () => resolve((reader.result as string).split(',')[1] || '');
-                                          reader.onerror = reject;
-                                          reader.readAsDataURL(blob);
-                                        });
-                                        const htmlBody = `
-                                          <div style="font-family: Arial, sans-serif; max-width:600px; margin:0 auto;">
-                                            <div style="background:#1a1a2e; padding:20px; text-align:center;">
-                                              <h1 style="color:#fff; margin:0;">FTRANSPORT</h1>
-                                            </div>
-                                            <div style="padding:30px; background:#fff;">
-                                              <p>Bonjour,</p>
-                                              <p>Veuillez trouver ci-joint le document : <strong>${doc.titre}</strong>.</p>
-                                              <p>Cordialement,<br/>L'équipe FTRANSPORT</p>
-                                            </div>
-                                            <div style="background:#f3f4f6; padding:15px; text-align:center; font-size:12px; color:#6b7280;">
-                                              FTRANSPORT – 86 Route de Genas, 69003 Lyon · 📧 contact@ftransport.fr
-                                            </div>
-                                          </div>`;
-                                        const { error: sendErr } = await supabase.functions.invoke('send-document-email', {
-                                          body: {
-                                            recipientEmail: to,
-                                            subject: `Document : ${doc.titre}`,
-                                            htmlBody,
-                                            attachmentName: doc.nom_fichier || `${doc.titre}.pdf`,
-                                            attachmentBase64: base64,
-                                            attachmentContentType: blob.type || 'application/pdf',
-                                          }
-                                        });
-                                        if (sendErr) throw sendErr;
+                                       try {
+                                         toast({ title: "Envoi en cours...", description: `Envoi à ${to}` });
+                                         const htmlBody = `
+                                           <div style="font-family: Arial, sans-serif; max-width:600px; margin:0 auto;">
+                                             <div style="background:#1a1a2e; padding:20px; text-align:center;">
+                                               <h1 style="color:#fff; margin:0;">FTRANSPORT</h1>
+                                             </div>
+                                             <div style="padding:30px; background:#fff;">
+                                               <p>Bonjour,</p>
+                                               <p>Veuillez trouver ci-joint le document : <strong>${doc.titre}</strong>.</p>
+                                               <p>Cordialement,<br/>L'équipe FTRANSPORT</p>
+                                             </div>
+                                             <div style="background:#f3f4f6; padding:15px; text-align:center; font-size:12px; color:#6b7280;">
+                                               FTRANSPORT – 86 Route de Genas, 69003 Lyon · 📧 contact@ftransport.fr
+                                             </div>
+                                           </div>`;
+                                         const { data: sendData, error: sendErr } = await supabase.functions.invoke('send-document-email', {
+                                           body: {
+                                             recipientEmail: to,
+                                             subject: `Document : ${doc.titre}`,
+                                             htmlBody,
+                                             attachmentName: doc.nom_fichier || `${doc.titre}.pdf`,
+                                             attachmentUrl: doc.url,
+                                             attachmentBucket: 'fournisseur-shared-docs',
+                                             attachmentPath: doc.chemin_fichier || doc.file_path || null,
+                                             attachmentContentType: 'application/pdf',
+                                           }
+                                         });
+                                         if (sendErr) throw sendErr;
+                                         if ((sendData as any)?.error) throw new Error((sendData as any).error);
+
                                         await supabase
                                           .from('fournisseur_shared_docs')
                                           .update({ sent_at: new Date().toISOString(), sent_to: to })
