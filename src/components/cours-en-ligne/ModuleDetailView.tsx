@@ -3309,17 +3309,18 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           ...md,
           exercices: mergeSourceExercices(md.exercices, sourceModuleData.exercices, deletedExoIdsPoll),
         };
+        const resolved = forceBilanExamGestionFromSource(module.id, merged, sourceModuleData);
 
         // Only update if data actually changed
         let didUpdate = false;
         setModuleData((prev) => {
-          if (JSON.stringify(prev.exercices) === JSON.stringify(merged.exercices) &&
-              JSON.stringify(prev.cours) === JSON.stringify(merged.cours)) {
+          if (JSON.stringify(prev.exercices) === JSON.stringify(resolved.exercices) &&
+              JSON.stringify(prev.cours) === JSON.stringify(resolved.cours)) {
             return prev;
           }
           console.log("[Visibility] Refreshed module data from DB for module", module.id);
           didUpdate = true;
-          return preserveNewerLocalQuestionEdits(merged, prev, "visibility module_editor_state refresh");
+          return preserveNewerLocalQuestionEdits(resolved, prev, "visibility module_editor_state refresh");
         });
         markDbSnapshotApplied(latest.updated_at);
         // Re-apply fournisseur overrides après reload DB
