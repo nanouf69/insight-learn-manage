@@ -273,12 +273,13 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
               const mRows = byMatiere.get(mKey) || [];
               mRows.sort((a: any, b: any) => toTimestamp(b.created_at) - toTimestamp(a.created_at));
               const coef = m.coefficient || 1;
-              totalCoef += coef;
+              // BUG 4 fix: only count coef when prior attempt data exists, otherwise dilutes the average
               if (mRows.length >= 2) {
                 hasPrev = true;
                 const prev = mRows[1];
                 const note = normalizeNoteSur20(prev.score_obtenu, prev.score_max, prev.note_sur_20);
                 weightedSum += note * coef;
+                totalCoef += coef;
               }
             });
             if (hasPrev && totalCoef > 0) {
