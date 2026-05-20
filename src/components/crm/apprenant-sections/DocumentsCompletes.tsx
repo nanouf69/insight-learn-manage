@@ -225,6 +225,44 @@ export function DocumentsCompletes({ apprenant }: Props) {
         completed_at: e.signed_at,
       }));
 
+      // Build weekly aggregated emargement docs (one per ISO week)
+      const weekMap = new Map<string, { weekStart: Date; weekEnd: Date; year: number; week: number; sigs: any[] }>();
+      for (const e of ((emargRes.data as any[]) || [])) {
+        const d = new Date(e.date_emargement + "T00:00:00");
+        const ws = startOfWeek(d, { weekStartsOn: 1 });
+        const we = endOfWeek(d, { weekStartsOn: 1 });
+        const year = getYear(ws);
+        const week = getISOWeek(d);
+        const key = `${year}-W${String(week).padStart(2, "0")}`;
+        if (!weekMap.has(key)) weekMap.set(key, { weekStart: ws, weekEnd: we, year, week, sigs: [] });
+        weekMap.get(key)!.sigs.push({
+          date: e.date_emargement,
+          demi_journee: e.demi_journee,
+          signed_at: e.signed_at,
+          signature: e.signature_data_url,
+        });
+      }
+      const weekDocs = Array.from(weekMap.entries()).map(([key, w]) => {
+        const wsStr = format(w.weekStart, "yyyy-MM-dd");
+        const weStr = format(w.weekEnd, "yyyy-MM-dd");
+        const latest = w.sigs
+          .map((s) => new Date(s.signed_at).getTime())
+          .reduce((a, b) => Math.max(a, b), 0);
+        return {
+          id: `emarg-semaine-${key}`,
+          type_document: "emargement-fc-semaine",
+          titre: `Semaine ${w.week} (${format(w.weekStart, "dd/MM")} → ${format(w.weekEnd, "dd/MM/yyyy")}) — ${w.sigs.length} signature(s)`,
+          donnees: {
+            week_label: `Semaine ${w.week} - ${w.year}`,
+            week_start: wsStr,
+            week_end: weStr,
+            signatures: w.sigs.sort((a, b) => a.date.localeCompare(b.date)),
+          },
+          completed_at: new Date(latest).toISOString(),
+        };
+      });
+
+
       // Fournisseur documents linked via matching fournisseur_apprenant by name
       let fournDocs: any[] = [];
       const matchingIds = ((fournApprRes as any)?.data as any[] || []).map((x: any) => x.id);
