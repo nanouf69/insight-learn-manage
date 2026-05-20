@@ -390,7 +390,8 @@ export default function ExamensBlancsPage({
       const validMatieres = (latestExamen.matieres || []).filter((m): m is Matiere => Boolean(m));
       const matieresTotal = Math.max(validMatieres.length || 1, 1);
 
-      // Secondary fallback: ONLY completed=true responses can mark exam as completed
+      // Secondary fallback: STRICT — every matiere must have at least one completed=true response,
+      // and NO matiere may have any completed=false/missing response. Otherwise the exam is not done.
       let responseFallbackCompleted = false;
       if (completedRows.length < validMatieres.length) {
         const { data: savedResponses } = await supabase
@@ -401,20 +402,30 @@ export default function ExamensBlancsPage({
           .like("exercice_id", `${latestExamen.id}_%`);
 
         const completedResponseLookupKeys = new Set<string>();
+        const notCompletedResponseLookupKeys = new Set<string>();
         ((savedResponses as any[]) || []).forEach((r: any) => {
-          if (r?.completed !== true) return;
           const exerciceId = safeStr(r?.exercice_id);
           const matiereKey = extractMatiereKeyFromExerciceId(exerciceId, latestExamen.id);
           if (!matiereKey) return;
-          buildMatiereLookupKeys(matiereKey, matiereKey).forEach((k) => completedResponseLookupKeys.add(k));
+          const keys = buildMatiereLookupKeys(matiereKey, matiereKey);
+          if (r?.completed === true) {
+            keys.forEach((k) => completedResponseLookupKeys.add(k));
+          } else {
+            keys.forEach((k) => notCompletedResponseLookupKeys.add(k));
+          }
         });
 
         responseFallbackCompleted =
           validMatieres.length > 0 &&
-          validMatieres.every((m) =>
-            buildMatiereLookupKeys(m.id, m.nom).some((k) => completedResponseLookupKeys.has(k))
-          );
+          validMatieres.every((m) => {
+            const keys = buildMatiereLookupKeys(m.id, m.nom);
+            const hasCompleted = keys.some((k) => completedResponseLookupKeys.has(k));
+            const hasNotCompleted = keys.some((k) => notCompletedResponseLookupKeys.has(k));
+            // Strict: must have completed=true AND no completed=false/missing on this matiere
+            return hasCompleted && !hasNotCompleted;
+          });
       }
+
 
       const latestByCanonicalKey = new Map<string, any>();
       completedRows.forEach((row: any) => {
