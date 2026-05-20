@@ -184,7 +184,13 @@ interface TrainerOverrideInfo {
 const BILAN_VTC_SOURCE_MODULE_ID = 2;
 const BILAN_VTC_MODULE_ID = 4;
 const BILAN_TAXI_MODULE_ID = 9;
+const BILAN_EXAMEN_VTC_MODULE_ID = 5;
+const BILAN_EXAMEN_TAXI_MODULE_ID = 11;
 const SECURITE_ROUTIERE_BILAN_ID = 102;
+const BILAN_EXAMEN_GESTION_EXERCISE_IDS: Record<number, number> = {
+  [BILAN_EXAMEN_VTC_MODULE_ID]: 501,
+  [BILAN_EXAMEN_TAXI_MODULE_ID]: 601,
+};
 
 const TRAINER_QUIZ_IDS_BY_MODULE_ID: Record<number, string[]> = {
   7: ["connaissance-ville"],
@@ -257,6 +263,24 @@ const forceSourceExerciseTitles = (moduleId: number | string, loadedData: Module
       };
     }),
   };
+};
+
+const isBilanExamGestionExercise = (moduleId: number | string, exerciseId: number | string) =>
+  BILAN_EXAMEN_GESTION_EXERCISE_IDS[Number(moduleId)] === Number(exerciseId);
+
+const forceBilanExamGestionFromSource = (moduleId: number | string, loadedData: ModuleData, sourceData: ModuleData): ModuleData => {
+  const gestionExerciseId = BILAN_EXAMEN_GESTION_EXERCISE_IDS[Number(moduleId)];
+  if (!gestionExerciseId) return loadedData;
+
+  const sourceGestionIndex = sourceData.exercices.findIndex((exercise) => Number(exercise.id) === gestionExerciseId);
+  const sourceGestion = sourceData.exercices[sourceGestionIndex];
+  if (!sourceGestion) return loadedData;
+
+  const nextExercices = loadedData.exercices.filter((exercise) => Number(exercise.id) !== gestionExerciseId);
+  const insertAt = Math.max(0, Math.min(sourceGestionIndex, nextExercices.length));
+  nextExercices.splice(insertAt, 0, JSON.parse(JSON.stringify(sourceGestion)));
+
+  return { ...loadedData, exercices: nextExercices };
 };
 
 const getSyncedBilanVtcModuleData = (
