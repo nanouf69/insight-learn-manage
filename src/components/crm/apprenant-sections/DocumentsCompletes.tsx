@@ -302,12 +302,54 @@ export function DocumentsCompletes({ apprenant }: Props) {
   };
 
   const downloadPDF = (doc: any) => {
+    if (doc.type_document === "emargement-fc-semaine") {
+      generateEmargementSemainePdf(
+        apprenant,
+        doc.donnees?.week_label || doc.titre,
+        doc.donnees?.week_start,
+        doc.donnees?.week_end,
+        doc.donnees?.signatures || [],
+      );
+      return;
+    }
     generateDocumentIndividuelPdf(apprenant, {
       type_document: doc.type_document,
       titre: doc.titre,
       donnees: doc.donnees,
       completed_at: doc.completed_at,
     });
+  };
+
+  const renderEmargementSemaine = (donnees: any) => {
+    const sigs: any[] = donnees?.signatures || [];
+    const DEMI: Record<string, string> = {
+      matin: "Matin",
+      apres_midi: "Après-midi",
+      soir: "Soir",
+      soir_1: "Soir 1 (17h-18h30)",
+      soir_2: "Soir 2 (18h30-21h)",
+    };
+    if (sigs.length === 0) return <p className="text-sm text-muted-foreground">Aucune signature pour cette semaine.</p>;
+    return (
+      <div className="space-y-2">
+        <p className="text-sm"><strong>Période :</strong> du {donnees.week_start} au {donnees.week_end}</p>
+        <div className="grid gap-2">
+          {sigs.map((s, i) => (
+            <div key={i} className="flex items-center gap-3 border rounded p-2">
+              <div className="text-xs text-muted-foreground w-40 shrink-0">
+                <p className="font-medium text-foreground">{s.date}</p>
+                <p>{DEMI[s.demi_journee] || s.demi_journee}</p>
+              </div>
+              {s.signature?.startsWith?.("data:image") ? (
+                <img src={s.signature} alt="Signature" className="border rounded h-16 bg-white" />
+              ) : (
+                <span className="text-xs italic text-muted-foreground">(Non signé)</span>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
   };
 
   const renderTestCompetences = (donnees: any) => {
