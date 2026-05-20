@@ -3221,6 +3221,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         const updatedExercices = prev.exercices
           .map((exo) => {
             if (!exo.questions || exo.questions.length === 0) return exo;
+            if (isBilanExamGestionExercise(module.id, exo.id)) return exo;
             const updatedQuestions = exo.questions
               .map((q) => {
                 const override = overrideMap.get(`${exo.id}-${q.id}`);
