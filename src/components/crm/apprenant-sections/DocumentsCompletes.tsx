@@ -156,6 +156,22 @@ export function DocumentsCompletes({ apprenant }: Props) {
       const norm = (s: string) => (s || "").toString().trim().toLowerCase();
       const apprNom = norm(apprenant.nom);
       const apprPrenom = norm(apprenant.prenom);
+      const apprEmail = norm(apprenant.email);
+
+      // Build a permissive OR filter: match by email, by (nom,prenom), or inverted (prenom,nom)
+      const orParts: string[] = [];
+      if (apprEmail) orParts.push(`email.ilike.${apprEmail}`);
+      // PostgREST OR doesn't support AND grouping easily; fetch broadly and filter client-side
+      const fournApprPromise = (apprNom || apprPrenom || apprEmail)
+        ? supabase
+            .from("fournisseur_apprenants" as any)
+            .select("id, nom, prenom, email")
+            .or([
+              apprEmail ? `email.ilike.${apprEmail}` : null,
+              apprNom ? `nom.ilike.${apprNom}` : null,
+              apprNom ? `prenom.ilike.${apprNom}` : null,
+            ].filter(Boolean).join(","))
+        : Promise.resolve({ data: [], error: null } as any);
 
       const [docsRes, devisRes, emargRes, fournApprRes] = await Promise.all([
         supabase
@@ -173,14 +189,7 @@ export function DocumentsCompletes({ apprenant }: Props) {
           .select("*")
           .eq("apprenant_id", apprenant.id)
           .order("signed_at", { ascending: false }),
-        // Find matching fournisseur_apprenants by nom + prenom (case insensitive)
-        apprNom && apprPrenom
-          ? supabase
-              .from("fournisseur_apprenants" as any)
-              .select("id, nom, prenom")
-              .ilike("nom", apprNom)
-              .ilike("prenom", apprPrenom)
-          : Promise.resolve({ data: [], error: null } as any),
+        fournApprPromise,
       ]);
 
       if (docsRes.error) throw docsRes.error;
@@ -263,9 +272,20 @@ export function DocumentsCompletes({ apprenant }: Props) {
       });
 
 
-      // Fournisseur documents linked via matching fournisseur_apprenant by name
+      // Fournisseur documents linked via matching fournisseur_apprenant (email or nom+prenom, either order)
       let fournDocs: any[] = [];
-      const matchingIds = ((fournApprRes as any)?.data as any[] || []).map((x: any) => x.id);
+      const fournApprCandidates = ((fournApprRes as any)?.data as any[]) || [];
+      const matchingIds = fournApprCandidates
+        .filter((x: any) => {
+          const n = norm(x.nom);
+          const p = norm(x.prenom);
+          const e = norm(x.email);
+          if (apprEmail && e && e === apprEmail) return true;
+          if (apprNom && apprPrenom && n === apprNom && p === apprPrenom) return true;
+          if (apprNom && apprPrenom && n === apprPrenom && p === apprNom) return true;
+          return false;
+        })
+        .map((x: any) => x.id);
       if (matchingIds.length > 0) {
         const fdRes = await supabase
           .from("fournisseur_documents" as any)
