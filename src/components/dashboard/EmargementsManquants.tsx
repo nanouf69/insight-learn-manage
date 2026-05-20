@@ -55,7 +55,7 @@ export function EmargementsManquants({ onNavigateToApprenant }: Props) {
       // 2. Émargements signés aujourd'hui pour ce créneau
       const ids = apprenants.map((a) => a.id);
       const { data: signes, error: errS } = await supabase
-        .from("emargements_fc" as any)
+        .from("emargements_fc")
         .select("apprenant_id")
         .eq("date_emargement", today)
         .eq("demi_journee", demi)
