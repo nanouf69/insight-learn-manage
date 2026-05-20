@@ -56,7 +56,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return () => {
       isActive = false;
     };
-  }, [user?.id]);
+  }, [user]);
 
   if (loading || checking) {
     return (
