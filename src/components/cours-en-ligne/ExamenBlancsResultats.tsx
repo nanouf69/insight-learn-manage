@@ -95,9 +95,13 @@ function EcranResultats({
     const matieresDetails: { nom: string; note: number; coef: number; noteElim: number; isElim: boolean }[] = [];
 
     resultats.forEach((r) => {
-      const coef = examen.matieres.find(m => m.id === r.matiereId)?.coefficient || 1;
-      const noteElim = examen.matieres.find(m => m.id === r.matiereId)?.noteEliminatoire || 6;
+      const m = examen.matieres.find(mm => mm.id === r.matiereId);
+      const coef = m?.coefficient || 1;
+      const noteElim = m?.noteEliminatoire || 6;
+      const noteSur = m?.noteSur || r.noteSur || 20;
       const note = r.maxPoints > 0 ? Math.round(((r.noteObtenue / r.maxPoints) * 20) * 10) / 10 : 0;
+      // BUG 4 fix: use the shared computeAdmisForMatiere helper (same as list view)
+      const isElim = !computeAdmisForMatiere(r.noteObtenue, r.maxPoints, noteElim, noteSur, true);
       weightedSum += note * coef;
       totalCoef += coef;
       matieresDetails.push({
@@ -105,7 +109,7 @@ function EcranResultats({
         note,
         coef,
         noteElim,
-        isElim: note < noteElim,
+        isElim,
       });
     });
 
