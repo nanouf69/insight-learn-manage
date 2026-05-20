@@ -553,8 +553,20 @@ export function FournisseursPage() {
               {detailDocuments.length === 0 ? <p className="text-muted-foreground py-4">Aucun document apprenant</p> : (
                 <div className="grid gap-3">
                   {detailDocuments.map((d: any) => (
-                    <Card key={d.id}><CardContent className="pt-4 flex justify-between items-center">
-                      <div><p className="font-medium">{d.titre}</p><p className="text-sm text-muted-foreground">{d.nom_fichier}</p></div>
+                    <Card key={d.id}><CardContent className="pt-4 flex justify-between items-center gap-4">
+                      <div className="min-w-0 flex-1"><p className="font-medium truncate">{d.titre}</p><p className="text-sm text-muted-foreground truncate">{d.nom_fichier}</p></div>
+                      {d.url && (
+                        <div className="flex gap-2 shrink-0">
+                          <Button size="sm" variant="outline" onClick={() => window.open(d.url, '_blank')}>
+                            <Eye className="w-4 h-4 mr-1" />Voir
+                          </Button>
+                          <Button size="sm" variant="outline" asChild>
+                            <a href={d.url} download={d.nom_fichier || d.titre} target="_blank" rel="noreferrer">
+                              <FolderOpen className="w-4 h-4 mr-1" />Télécharger
+                            </a>
+                          </Button>
+                        </div>
+                      )}
                     </CardContent></Card>
                   ))}
                 </div>
