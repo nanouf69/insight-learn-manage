@@ -156,6 +156,22 @@ export function DocumentsCompletes({ apprenant }: Props) {
       const norm = (s: string) => (s || "").toString().trim().toLowerCase();
       const apprNom = norm(apprenant.nom);
       const apprPrenom = norm(apprenant.prenom);
+      const apprEmail = norm(apprenant.email);
+
+      // Build a permissive OR filter: match by email, by (nom,prenom), or inverted (prenom,nom)
+      const orParts: string[] = [];
+      if (apprEmail) orParts.push(`email.ilike.${apprEmail}`);
+      // PostgREST OR doesn't support AND grouping easily; fetch broadly and filter client-side
+      const fournApprPromise = (apprNom || apprPrenom || apprEmail)
+        ? supabase
+            .from("fournisseur_apprenants" as any)
+            .select("id, nom, prenom, email")
+            .or([
+              apprEmail ? `email.ilike.${apprEmail}` : null,
+              apprNom ? `nom.ilike.${apprNom}` : null,
+              apprNom ? `prenom.ilike.${apprNom}` : null,
+            ].filter(Boolean).join(","))
+        : Promise.resolve({ data: [], error: null } as any);
 
       const [docsRes, devisRes, emargRes, fournApprRes] = await Promise.all([
         supabase
@@ -173,14 +189,7 @@ export function DocumentsCompletes({ apprenant }: Props) {
           .select("*")
           .eq("apprenant_id", apprenant.id)
           .order("signed_at", { ascending: false }),
-        // Find matching fournisseur_apprenants by nom + prenom (case insensitive)
-        apprNom && apprPrenom
-          ? supabase
-              .from("fournisseur_apprenants" as any)
-              .select("id, nom, prenom")
-              .ilike("nom", apprNom)
-              .ilike("prenom", apprPrenom)
-          : Promise.resolve({ data: [], error: null } as any),
+        fournApprPromise,
       ]);
 
       if (docsRes.error) throw docsRes.error;
