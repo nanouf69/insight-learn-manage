@@ -41,6 +41,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const manualSignOutRef = useRef(false);
   const authInitializedRef = useRef(false);
   const pendingSessionRef = useRef<Session | null | undefined>(undefined);
+  const sessionRef = useRef<Session | null>(null);
 
   const fetchProfile = useCallback(async (userId: string, retryCount = 0) => {
     try {
@@ -66,6 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const clearAuthState = useCallback(() => {
+    sessionRef.current = null;
     setUser(null);
     setSession(null);
     setProfile(null);
@@ -73,6 +75,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const applySession = useCallback((nextSession: Session | null) => {
+    sessionRef.current = nextSession;
+
     setSession(prev => {
       // Skip update if it's just a token refresh for the same user.
       // This prevents re-rendering the entire component tree (including active exams)
@@ -106,6 +110,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let isActive = true;
 
+    const recoverSessionBeforeClearing = (delayMs = 1200) => {
+      setLoading(true);
+      setTimeout(() => {
+        if (!isActive) return;
+        void withTimeout(supabase.auth.getSession(), 6000)
+          .then(({ data: { session: recoveredSession } }) => {
+            if (!isActive) return;
+            if (recoveredSession?.user) {
+              applySession(recoveredSession);
+            } else {
+              clearAuthState();
+            }
+            setLoading(false);
+          })
+          .catch(() => {
+            if (!isActive) return;
+            clearAuthState();
+            setLoading(false);
+          });
+      }, delayMs);
+    };
+
     const handleResolvedAuthState = (event: string, nextSession: Session | null) => {
       if (nextSession?.user) {
         manualSignOutRef.current = false;
@@ -115,21 +141,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       if (event === 'SIGNED_OUT' && !manualSignOutRef.current) {
-        setTimeout(async () => {
-          if (!isActive) return;
-          const { data: { session: recoveredSession } } = await withTimeout(
-            supabase.auth.getSession(),
-            4000,
-          ).catch(() => ({ data: { session: null } }));
-          if (!isActive) return;
+        recoverSessionBeforeClearing();
+        return;
+      }
 
-          if (recoveredSession?.user) {
-            applySession(recoveredSession);
-          } else {
-            clearAuthState();
-          }
-          setLoading(false);
-        }, 350);
+      if ((event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') && !nextSession?.user && sessionRef.current?.user) {
+        recoverSessionBeforeClearing();
         return;
       }
 
@@ -153,7 +170,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!isActive) return;
 
       authInitializedRef.current = true;
-      const restoredSession = pendingSessionRef.current !== undefined ? pendingSessionRef.current : initialSession;
+      const restoredSession = pendingSessionRef.current?.user ? pendingSessionRef.current : initialSession;
       pendingSessionRef.current = undefined;
       applySession(restoredSession ?? null);
       setLoading(false);
@@ -173,11 +190,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [applySession, clearAuthState]);
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     manualSignOutRef.current = true;
     await supabase.auth.signOut();
     clearAuthState();
-  };
+  }, [clearAuthState]);
 
   const isAdmin = profile?.role === 'admin';
   useAppVersionCheck(!!user, isAdmin);

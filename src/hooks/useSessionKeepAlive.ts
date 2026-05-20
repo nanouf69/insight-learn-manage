@@ -33,7 +33,10 @@ export function useSessionKeepAlive(enabled: boolean, forceAlways = false) {
         }
       }
       try {
-        const { error } = await supabase.auth.refreshSession();
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.refresh_token) return;
+
+        const { error } = await supabase.auth.refreshSession(session);
         if (error) {
           console.warn("[KeepAlive] Token refresh failed:", error.message);
         } else {
