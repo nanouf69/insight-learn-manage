@@ -2121,10 +2121,10 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={cn(
-        "flex flex-col overflow-y-auto",
+        "flex flex-col overflow-hidden",
         isFullscreen
           ? "max-w-none w-screen h-screen sm:max-w-none sm:rounded-none max-h-screen p-6"
-          : "sm:max-w-[800px] max-h-[90vh]"
+          : "sm:max-w-[800px] h-[90vh] max-h-[90vh]"
       )}>
         <DialogHeader>
           <div className="flex items-center justify-between">
