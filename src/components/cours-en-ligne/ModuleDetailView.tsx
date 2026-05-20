@@ -2510,6 +2510,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     let preserved = false;
     const previousExerciseMap = new Map((previous.exercices ?? []).map((exo) => [Number(exo.id), exo]));
     const incomingExercices = (incoming.exercices ?? []).map((incomingExo) => {
+      if (isBilanExamGestionExercise(module.id, incomingExo.id)) return incomingExo;
+
       const previousExo = previousExerciseMap.get(Number(incomingExo.id));
       if (!previousExo?.questions || !incomingExo.questions) return incomingExo;
 
@@ -2641,6 +2643,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           const updatedExercices = prev.exercices
             .map((exo) => {
               if (!exo.questions || exo.questions.length === 0) return exo;
+              if (isBilanExamGestionExercise(module.id, exo.id)) return exo;
 
               const updatedQuestions = exo.questions
                 .map((q) => {
