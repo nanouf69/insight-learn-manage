@@ -190,11 +190,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [applySession, clearAuthState]);
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     manualSignOutRef.current = true;
     await supabase.auth.signOut();
     clearAuthState();
-  };
+  }, [clearAuthState]);
 
   const isAdmin = profile?.role === 'admin';
   useAppVersionCheck(!!user, isAdmin);
