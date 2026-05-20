@@ -3627,9 +3627,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     // DB propagation to sibling modules is handled by syncSharedExercisesToSiblingModules
     // (called after the debounced DB save) to avoid concurrent write races.
     if (!studentOnly) {
-      const sourceData = getInitialModuleDataRaw(module, apprenantType, studentOnly);
-      const sourceExo = sourceData.exercices.find(e => e.id === exerciceId);
-      if (sourceExo?.questions) {
+        const sourceData = getInitialModuleDataRaw(module, apprenantType, studentOnly);
+        const sourceExo = sourceData.exercices.find(e => e.id === exerciceId);
+        if (sourceExo?.questions && !isBilanExamGestionExercise(module.id, exerciceId)) {
         detectAndSaveOverrides(
           sourceExo.questions as { enonce: string; choix: { lettre: string; texte: string; correct?: boolean }[] }[],
           questions,
@@ -3644,7 +3644,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       exercices: prev.exercices.map(e => {
         if (e.id !== exerciceId) return e;
         // Stamp _editedAt on questions that actually changed (for admin vs fournisseur conflict resolution)
-        const stampedQuestions = questions.map(q => {
+          const shouldKeepSourcePriority = isBilanExamGestionExercise(module.id, exerciceId);
+          const stampedQuestions = questions.map(q => {
           const prevQ = e.questions?.find(pq => pq.id === q.id);
           const changed = !prevQ ||
             prevQ.enonce !== q.enonce ||
@@ -3652,7 +3653,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             (prevQ as any).image !== (q as any).image;
           // Mark as manually_edited when admin changes the question, so the cross-module
           // propagation system never overwrites it. Once true, the flag is preserved.
-          if (changed) return { ...q, _editedAt: now, manually_edited: true } as any;
+            if (changed && !shouldKeepSourcePriority) return { ...q, _editedAt: now, manually_edited: true } as any;
           return (q as any)._editedAt ? q : { ...q };
         });
         const updated: any = { ...e, questions: stampedQuestions };
