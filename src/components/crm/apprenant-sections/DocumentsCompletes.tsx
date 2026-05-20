@@ -272,9 +272,20 @@ export function DocumentsCompletes({ apprenant }: Props) {
       });
 
 
-      // Fournisseur documents linked via matching fournisseur_apprenant by name
+      // Fournisseur documents linked via matching fournisseur_apprenant (email or nom+prenom, either order)
       let fournDocs: any[] = [];
-      const matchingIds = ((fournApprRes as any)?.data as any[] || []).map((x: any) => x.id);
+      const fournApprCandidates = ((fournApprRes as any)?.data as any[]) || [];
+      const matchingIds = fournApprCandidates
+        .filter((x: any) => {
+          const n = norm(x.nom);
+          const p = norm(x.prenom);
+          const e = norm(x.email);
+          if (apprEmail && e && e === apprEmail) return true;
+          if (apprNom && apprPrenom && n === apprNom && p === apprPrenom) return true;
+          if (apprNom && apprPrenom && n === apprPrenom && p === apprNom) return true;
+          return false;
+        })
+        .map((x: any) => x.id);
       if (matchingIds.length > 0) {
         const fdRes = await supabase
           .from("fournisseur_documents" as any)
