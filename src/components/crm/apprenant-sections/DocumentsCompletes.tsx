@@ -285,7 +285,7 @@ export function DocumentsCompletes({ apprenant }: Props) {
         }));
       }
 
-      const all = [...baseDocs, ...devisDocs, ...emargDocs, ...fournDocs];
+      const all = [...baseDocs, ...devisDocs, ...emargDocs, ...weekDocs, ...fournDocs];
       all.sort((a, b) => new Date(b.completed_at).getTime() - new Date(a.completed_at).getTime());
       return all;
     },
