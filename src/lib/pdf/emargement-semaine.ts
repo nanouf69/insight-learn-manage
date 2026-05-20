@@ -1,0 +1,185 @@
+import jsPDF from 'jspdf';
+import { format, parseISO } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import logoImage from '@/assets/logo-ftransport.png';
+
+const COMPANY = {
+  name: 'Ftransport',
+  address: '86 Route de Genas 69003 Lyon',
+  siret: '53516371400044',
+};
+
+const DEMI_LABELS: Record<string, string> = {
+  matin: 'Matin (09h-12h)',
+  apres_midi: 'Après-midi (13h-16h)',
+  soir: 'Soir (17h-21h)',
+  soir_1: 'Soir 1 (17h-18h30)',
+  soir_2: 'Soir 2 (18h30-21h)',
+};
+
+const DEMI_ORDER = ['matin', 'apres_midi', 'soir', 'soir_1', 'soir_2'];
+
+export interface WeekEmargementSignature {
+  date: string; // YYYY-MM-DD
+  demi_journee: string;
+  signed_at: string;
+  signature: string;
+}
+
+export function generateEmargementSemainePdf(
+  apprenant: { nom: string; prenom: string; civilite?: string; type_apprenant?: string },
+  weekLabel: string,
+  weekStart: string,
+  weekEnd: string,
+  signatures: WeekEmargementSignature[],
+) {
+  const doc = new jsPDF();
+  const pw = doc.internal.pageSize.getWidth();
+  const ph = doc.internal.pageSize.getHeight();
+  const margin = 15;
+
+  // Header
+  try { doc.addImage(logoImage, 'PNG', margin, 8, 45, 16); } catch {}
+  doc.setFontSize(7);
+  doc.setTextColor(120, 120, 120);
+  doc.text(COMPANY.name, pw - margin, 12, { align: 'right' });
+  doc.text(COMPANY.address, pw - margin, 16, { align: 'right' });
+  doc.text(`SIRET : ${COMPANY.siret}`, pw - margin, 20, { align: 'right' });
+
+  // Title banner
+  doc.setFillColor(13, 37, 64);
+  doc.rect(0, 28, pw, 18, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(13);
+  doc.setFont('helvetica', 'bold');
+  doc.text(`FEUILLE D'ÉMARGEMENT HEBDOMADAIRE`, pw / 2, 39, { align: 'center' });
+
+  // Apprenant box
+  let y = 56;
+  const fullName = `${apprenant.civilite || ''} ${apprenant.prenom} ${apprenant.nom}`.trim();
+  doc.setFillColor(240, 245, 250);
+  doc.rect(margin, y - 4, pw - margin * 2, 24, 'F');
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(13, 37, 64);
+  doc.text(`Stagiaire : ${fullName}`, margin + 4, y + 2);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(80, 80, 80);
+  doc.text(`Formation : ${(apprenant.type_apprenant || '-').toUpperCase()}`, margin + 4, y + 9);
+  doc.text(`Période : du ${format(parseISO(weekStart), 'dd/MM/yyyy')} au ${format(parseISO(weekEnd), 'dd/MM/yyyy')}`, margin + 4, y + 16);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(13, 37, 64);
+  doc.text(weekLabel, pw - margin - 4, y + 2, { align: 'right' });
+  y += 28;
+
+  // Group signatures by date
+  const byDate = new Map<string, WeekEmargementSignature[]>();
+  for (const sig of signatures) {
+    if (!byDate.has(sig.date)) byDate.set(sig.date, []);
+    byDate.get(sig.date)!.push(sig);
+  }
+  const sortedDates = Array.from(byDate.keys()).sort();
+
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(13, 37, 64);
+  doc.text(`Signatures (${signatures.length})`, margin, y);
+  y += 6;
+
+  const rowH = 36;
+  const dateColW = 38;
+  const demiColW = 36;
+  const sigColW = pw - margin * 2 - dateColW - demiColW;
+
+  // Table header
+  doc.setFillColor(13, 37, 64);
+  doc.rect(margin, y, pw - margin * 2, 8, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Jour', margin + 2, y + 5.5);
+  doc.text('Demi-journée', margin + dateColW + 2, y + 5.5);
+  doc.text('Signature du stagiaire', margin + dateColW + demiColW + 2, y + 5.5);
+  y += 8;
+
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(40, 40, 40);
+
+  for (const date of sortedDates) {
+    const sigs = byDate.get(date)!.sort((a, b) => DEMI_ORDER.indexOf(a.demi_journee) - DEMI_ORDER.indexOf(b.demi_journee));
+    for (let i = 0; i < sigs.length; i++) {
+      const sig = sigs[i];
+      // Page break
+      if (y + rowH > ph - 20) {
+        doc.addPage();
+        y = 20;
+      }
+      // Row border
+      doc.setDrawColor(200, 200, 200);
+      doc.setLineWidth(0.2);
+      doc.rect(margin, y, pw - margin * 2, rowH);
+      doc.line(margin + dateColW, y, margin + dateColW, y + rowH);
+      doc.line(margin + dateColW + demiColW, y, margin + dateColW + demiColW, y + rowH);
+
+      // Date (only on first row of day)
+      doc.setFontSize(8);
+      doc.setTextColor(40, 40, 40);
+      if (i === 0) {
+        doc.setFont('helvetica', 'bold');
+        const dayLabel = format(parseISO(date), 'EEEE', { locale: fr });
+        const dateStr = format(parseISO(date), 'dd/MM/yyyy');
+        doc.text(dayLabel.charAt(0).toUpperCase() + dayLabel.slice(1), margin + 2, y + 8);
+        doc.setFont('helvetica', 'normal');
+        doc.text(dateStr, margin + 2, y + 14);
+      }
+      // Demi-journée
+      doc.setFont('helvetica', 'normal');
+      doc.text(DEMI_LABELS[sig.demi_journee] || sig.demi_journee, margin + dateColW + 2, y + 8);
+      doc.setFontSize(7);
+      doc.setTextColor(120, 120, 120);
+      try {
+        doc.text(`Signé le ${format(new Date(sig.signed_at), 'dd/MM HH:mm', { locale: fr })}`, margin + dateColW + 2, y + 14);
+      } catch {}
+
+      // Signature image
+      if (sig.signature && sig.signature.startsWith('data:image')) {
+        try {
+          const sigH = rowH - 6;
+          const sigW = Math.min(sigColW - 6, 60);
+          doc.addImage(
+            sig.signature,
+            'PNG',
+            margin + dateColW + demiColW + (sigColW - sigW) / 2,
+            y + 3,
+            sigW,
+            sigH,
+          );
+        } catch {}
+      } else {
+        doc.setFont('helvetica', 'italic');
+        doc.setFontSize(8);
+        doc.setTextColor(170, 170, 170);
+        doc.text('(Non signé)', margin + dateColW + demiColW + 4, y + rowH / 2);
+      }
+
+      y += rowH;
+    }
+  }
+
+  // Footer
+  const totalPages = doc.getNumberOfPages();
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
+    doc.setFontSize(7);
+    doc.setTextColor(150, 150, 150);
+    doc.text(
+      `${COMPANY.name} - ${COMPANY.address} | Généré le ${format(new Date(), 'dd/MM/yyyy à HH:mm', { locale: fr })}`,
+      pw / 2, ph - 8, { align: 'center' }
+    );
+    doc.text(`Page ${i}/${totalPages}`, pw - margin, ph - 8, { align: 'right' });
+  }
+
+  const fileName = `emargement-semaine_${apprenant.nom}_${apprenant.prenom}_${weekStart}.pdf`
+    .replace(/\s+/g, '-').toLowerCase();
+  doc.save(fileName);
+}

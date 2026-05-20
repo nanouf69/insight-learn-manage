@@ -5,8 +5,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { FileText, Download, Eye, ChevronDown, ChevronUp, FileDown, ExternalLink } from "lucide-react";
 import { generateDocumentIndividuelPdf } from "@/lib/pdf/document-individuel";
+import { generateEmargementSemainePdf } from "@/lib/pdf/emargement-semaine";
 import { useState } from "react";
-import { format } from "date-fns";
+import { format, startOfWeek, endOfWeek, getISOWeek, getYear } from "date-fns";
 import { fr } from "date-fns/locale";
 
 interface Props {
@@ -25,6 +26,7 @@ const TYPE_LABELS: Record<string, string> = {
   "devis-formation-continue": "Devis Formation Continue",
   "devis-envoi": "Devis envoyé / signé",
   "emargement-fc": "Feuille d'émargement",
+  "emargement-fc-semaine": "Émargement hebdomadaire",
   "doc-fournisseur": "Document fournisseur",
 };
 
@@ -40,6 +42,7 @@ const TYPE_COLORS: Record<string, string> = {
   "devis-formation-continue": "bg-indigo-100 text-indigo-800",
   "devis-envoi": "bg-cyan-100 text-cyan-800",
   "emargement-fc": "bg-rose-100 text-rose-800",
+  "emargement-fc-semaine": "bg-rose-200 text-rose-900",
   "doc-fournisseur": "bg-violet-100 text-violet-800",
 };
 
@@ -222,6 +225,44 @@ export function DocumentsCompletes({ apprenant }: Props) {
         completed_at: e.signed_at,
       }));
 
+      // Build weekly aggregated emargement docs (one per ISO week)
+      const weekMap = new Map<string, { weekStart: Date; weekEnd: Date; year: number; week: number; sigs: any[] }>();
+      for (const e of ((emargRes.data as any[]) || [])) {
+        const d = new Date(e.date_emargement + "T00:00:00");
+        const ws = startOfWeek(d, { weekStartsOn: 1 });
+        const we = endOfWeek(d, { weekStartsOn: 1 });
+        const year = getYear(ws);
+        const week = getISOWeek(d);
+        const key = `${year}-W${String(week).padStart(2, "0")}`;
+        if (!weekMap.has(key)) weekMap.set(key, { weekStart: ws, weekEnd: we, year, week, sigs: [] });
+        weekMap.get(key)!.sigs.push({
+          date: e.date_emargement,
+          demi_journee: e.demi_journee,
+          signed_at: e.signed_at,
+          signature: e.signature_data_url,
+        });
+      }
+      const weekDocs = Array.from(weekMap.entries()).map(([key, w]) => {
+        const wsStr = format(w.weekStart, "yyyy-MM-dd");
+        const weStr = format(w.weekEnd, "yyyy-MM-dd");
+        const latest = w.sigs
+          .map((s) => new Date(s.signed_at).getTime())
+          .reduce((a, b) => Math.max(a, b), 0);
+        return {
+          id: `emarg-semaine-${key}`,
+          type_document: "emargement-fc-semaine",
+          titre: `Semaine ${w.week} (${format(w.weekStart, "dd/MM")} → ${format(w.weekEnd, "dd/MM/yyyy")}) — ${w.sigs.length} signature(s)`,
+          donnees: {
+            week_label: `Semaine ${w.week} - ${w.year}`,
+            week_start: wsStr,
+            week_end: weStr,
+            signatures: w.sigs.sort((a, b) => a.date.localeCompare(b.date)),
+          },
+          completed_at: new Date(latest).toISOString(),
+        };
+      });
+
+
       // Fournisseur documents linked via matching fournisseur_apprenant by name
       let fournDocs: any[] = [];
       const matchingIds = ((fournApprRes as any)?.data as any[] || []).map((x: any) => x.id);
@@ -244,7 +285,7 @@ export function DocumentsCompletes({ apprenant }: Props) {
         }));
       }
 
-      const all = [...baseDocs, ...devisDocs, ...emargDocs, ...fournDocs];
+      const all = [...baseDocs, ...devisDocs, ...emargDocs, ...weekDocs, ...fournDocs];
       all.sort((a, b) => new Date(b.completed_at).getTime() - new Date(a.completed_at).getTime());
       return all;
     },
@@ -261,12 +302,54 @@ export function DocumentsCompletes({ apprenant }: Props) {
   };
 
   const downloadPDF = (doc: any) => {
+    if (doc.type_document === "emargement-fc-semaine") {
+      generateEmargementSemainePdf(
+        apprenant,
+        doc.donnees?.week_label || doc.titre,
+        doc.donnees?.week_start,
+        doc.donnees?.week_end,
+        doc.donnees?.signatures || [],
+      );
+      return;
+    }
     generateDocumentIndividuelPdf(apprenant, {
       type_document: doc.type_document,
       titre: doc.titre,
       donnees: doc.donnees,
       completed_at: doc.completed_at,
     });
+  };
+
+  const renderEmargementSemaine = (donnees: any) => {
+    const sigs: any[] = donnees?.signatures || [];
+    const DEMI: Record<string, string> = {
+      matin: "Matin",
+      apres_midi: "Après-midi",
+      soir: "Soir",
+      soir_1: "Soir 1 (17h-18h30)",
+      soir_2: "Soir 2 (18h30-21h)",
+    };
+    if (sigs.length === 0) return <p className="text-sm text-muted-foreground">Aucune signature pour cette semaine.</p>;
+    return (
+      <div className="space-y-2">
+        <p className="text-sm"><strong>Période :</strong> du {donnees.week_start} au {donnees.week_end}</p>
+        <div className="grid gap-2">
+          {sigs.map((s, i) => (
+            <div key={i} className="flex items-center gap-3 border rounded p-2">
+              <div className="text-xs text-muted-foreground w-40 shrink-0">
+                <p className="font-medium text-foreground">{s.date}</p>
+                <p>{DEMI[s.demi_journee] || s.demi_journee}</p>
+              </div>
+              {s.signature?.startsWith?.("data:image") ? (
+                <img src={s.signature} alt="Signature" className="border rounded h-16 bg-white" />
+              ) : (
+                <span className="text-xs italic text-muted-foreground">(Non signé)</span>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
   };
 
   const renderTestCompetences = (donnees: any) => {
@@ -449,6 +532,8 @@ export function DocumentsCompletes({ apprenant }: Props) {
         return renderSatisfaction(donnees);
       case 'evaluation-acquis':
         return renderEvaluationAcquis(donnees);
+      case 'emargement-fc-semaine':
+        return renderEmargementSemaine(donnees);
       default:
         return renderFieldsDocument(donnees);
     }
