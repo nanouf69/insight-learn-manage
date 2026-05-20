@@ -62,6 +62,8 @@ const pageConfig = {
 const fmt = (n: number) =>
   new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n);
 
+const getErrorMessage = (err: unknown, fallback: string) => err instanceof Error ? err.message : fallback;
+
 const Index = () => {
   const { profile, user, loading } = useAuth();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
@@ -85,8 +87,8 @@ const Index = () => {
       } else {
         toast.error(data?.error || "Erreur lors de l'envoi");
       }
-    } catch (err: any) {
-      toast.error(err.message || "Erreur lors de l'envoi des relances");
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err, "Erreur lors de l'envoi des relances"));
     } finally {
       setSendingRelance(false);
     }
@@ -115,7 +117,7 @@ const Index = () => {
     return () => {
       isMounted = false;
     };
-  }, [user?.id]);
+  }, [user]);
 
   useEffect(() => {
     if (isAdmin !== true) return;
