@@ -642,6 +642,8 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
         {(() => {
           const examGroups: Record<string, QuizResult[]> = {};
           quizResults.forEach(r => {
+            // BUG 5: never group revision_fausses as échoué
+            if ((r as any).quiz_type === "revision_fausses") return;
             if (!examGroups[r.quiz_id]) examGroups[r.quiz_id] = [];
             examGroups[r.quiz_id].push(r);
           });
