@@ -32,6 +32,16 @@ const withTimeout = async <T,>(operation: PromiseLike<T> | T, ms: number): Promi
   }
 };
 
+const isInvalidRefreshTokenError = (error: unknown) => {
+  if (!error || typeof error !== 'object') return false;
+  const maybeError = error as { code?: string; message?: string };
+  return (
+    maybeError.code === 'refresh_token_not_found' ||
+    maybeError.message?.toLowerCase().includes('invalid refresh token') ||
+    maybeError.message?.toLowerCase().includes('refresh token not found')
+  );
+};
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -111,7 +121,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let isActive = true;
 
     const recoverSessionBeforeClearing = (delayMs = 1200) => {
-      setLoading(true);
+      const hadVisibleSession = !!sessionRef.current?.user;
+      if (!hadVisibleSession) setLoading(true);
       setTimeout(() => {
         if (!isActive) return;
         void withTimeout(supabase.auth.getSession(), 6000)
@@ -124,8 +135,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
             setLoading(false);
           })
-          .catch(() => {
+          .catch(async (error) => {
             if (!isActive) return;
+            if (isInvalidRefreshTokenError(error)) {
+              manualSignOutRef.current = true;
+              await supabase.auth.signOut({ scope: 'local' }).catch(() => undefined);
+              if (!isActive) return;
+              clearAuthState();
+              setLoading(false);
+              return;
+            }
+            if (hadVisibleSession) {
+              setLoading(false);
+              return;
+            }
             clearAuthState();
             setLoading(false);
           });
@@ -174,8 +197,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       pendingSessionRef.current = undefined;
       applySession(restoredSession ?? null);
       setLoading(false);
-    }).catch(() => {
+    }).catch(async (error) => {
       if (!isActive) return;
+      if (isInvalidRefreshTokenError(error)) {
+        manualSignOutRef.current = true;
+        await supabase.auth.signOut({ scope: 'local' }).catch(() => undefined);
+        if (!isActive) return;
+      }
       authInitializedRef.current = true;
       pendingSessionRef.current = undefined;
       clearAuthState();
