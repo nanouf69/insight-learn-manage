@@ -15,11 +15,11 @@ export function useAppVersionCheck(isAuthenticated: boolean, isAdmin: boolean) {
     const fetchVersion = async (): Promise<string | null> => {
       try {
         const { data } = await supabase
-          .from('app_version' as any)
+          .from('app_version')
           .select('version')
           .limit(1)
           .maybeSingle();
-        return (data as any)?.version ?? null;
+        return data?.version ?? null;
       } catch {
         return null;
       }
