@@ -123,19 +123,20 @@ serve(async (req) => {
       </div>
     `;
 
-    const cleanedAttachmentBase64 = typeof attachmentBase64 === "string"
-      ? attachmentBase64.replace(/^data:[^;]+;base64,/, "").replace(/\s/g, "")
+    const cleanedAttachmentBase64 = typeof resolvedBase64 === "string"
+      ? resolvedBase64.replace(/^data:[^;]+;base64,/, "").replace(/\s/g, "")
       : "";
     const attachments = attachmentName && cleanedAttachmentBase64
       ? [
           {
             "@odata.type": "#microsoft.graph.fileAttachment",
             name: attachmentName,
-            contentType: attachmentContentType || "application/pdf",
+            contentType: resolvedContentType || "application/pdf",
             contentBytes: cleanedAttachmentBase64,
           },
         ]
       : undefined;
+    console.log(`[send-document-email] attachment included: ${!!attachments}, size base64: ${cleanedAttachmentBase64.length}`);
 
     const sendUrl = `https://graph.microsoft.com/v1.0/users/${senderEmail}/sendMail`;
     const sendRes = await fetch(sendUrl, {
