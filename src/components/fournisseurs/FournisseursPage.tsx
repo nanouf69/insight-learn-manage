@@ -560,10 +560,23 @@ export function FournisseursPage() {
                           <Button size="sm" variant="outline" onClick={() => window.open(d.url, '_blank')}>
                             <Eye className="w-4 h-4 mr-1" />Voir
                           </Button>
-                          <Button size="sm" variant="outline" asChild>
-                            <a href={d.url} download={d.nom_fichier || d.titre} target="_blank" rel="noreferrer">
-                              <FolderOpen className="w-4 h-4 mr-1" />Télécharger
-                            </a>
+                          <Button size="sm" variant="outline" onClick={async () => {
+                            try {
+                              const res = await fetch(d.url);
+                              const blob = await res.blob();
+                              const blobUrl = URL.createObjectURL(blob);
+                              const a = document.createElement('a');
+                              a.href = blobUrl;
+                              a.download = d.nom_fichier || d.titre || 'document';
+                              document.body.appendChild(a);
+                              a.click();
+                              a.remove();
+                              setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+                            } catch {
+                              window.open(d.url, '_blank');
+                            }
+                          }}>
+                            <FolderOpen className="w-4 h-4 mr-1" />Télécharger
                           </Button>
                         </div>
                       )}
