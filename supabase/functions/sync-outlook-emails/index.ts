@@ -432,6 +432,33 @@ Deno.serve(async (req) => {
         );
       }
 
+      // ── Anti-doublon : ne pas réenvoyer le même type d'email au même destinataire dans les dernières 24h ──
+      // Override possible via `forceSend: true` dans le body (envois manuels admin légitimes).
+      const forceSend = reqBody?.forceSend === true;
+      if (!forceSend) {
+        try {
+          const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+          const { data: recentDup } = await supabase
+            .from("emails")
+            .select("id")
+            .eq("type", "sent")
+            .eq("subject", subject)
+            .contains("recipients", [to])
+            .gte("sent_at", since)
+            .limit(1)
+            .maybeSingle();
+          if (recentDup?.id) {
+            console.log(`[anti-doublon] Skip email "${subject}" -> ${to} (déjà envoyé < 24h, id=${recentDup.id})`);
+            return new Response(
+              JSON.stringify({ success: true, skipped: true, reason: "duplicate_within_24h" }),
+              { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+          }
+        } catch (dedupErr) {
+          console.warn("[anti-doublon] check failed (non-blocking):", dedupErr);
+        }
+      }
+
       // Append company signature if not already present
       const signatureHtml = `<br><br>---<br><strong>FTRANSPORT</strong><br>Centre de formation VTC &amp; TAXI<br>86 Route de Genas, 69003 Lyon<br>📞 04.28.29.60.91<br>📧 contact@ftransport.fr<br>🕐 Du lundi au vendredi, 9h - 18h<br>🌐 <a href="https://insight-learn-manage.lovable.app">insight-learn-manage.lovable.app</a>`;
       const bodyWithSignature = body.includes("FTRANSPORT") ? body : body + signatureHtml;
