@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -65,7 +64,6 @@ const fmt = (n: number) =>
 
 const Index = () => {
   const { profile, user, loading } = useAuth();
-  const navigate = useNavigate();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [currentPage, setCurrentPage] = useState("dashboard");
   const [pageHistory, setPageHistory] = useState<string[]>([]);
@@ -118,12 +116,6 @@ const Index = () => {
       isMounted = false;
     };
   }, [user?.id]);
-
-  useEffect(() => {
-    if (!loading && isAdmin === false) {
-      navigate("/cours", { replace: true });
-    }
-  }, [isAdmin, loading, navigate]);
 
   useEffect(() => {
     if (isAdmin !== true) return;
@@ -184,7 +176,7 @@ const Index = () => {
     switch (currentPage) {
       case "dashboard":
         return (
-          <div className="space-y-6 animate-fade-in">
+            <div className="space-y-6">
             {/* Stats Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
               <StatCard 
