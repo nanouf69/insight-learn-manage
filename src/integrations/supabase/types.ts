@@ -1782,6 +1782,8 @@ export type Database = {
           fournisseur_id: string
           id: string
           nom_fichier: string
+          sent_at: string | null
+          sent_to: string | null
           titre: string
           uploaded_by: string
           url: string
@@ -1792,6 +1794,8 @@ export type Database = {
           fournisseur_id: string
           id?: string
           nom_fichier: string
+          sent_at?: string | null
+          sent_to?: string | null
           titre: string
           uploaded_by?: string
           url: string
@@ -1802,6 +1806,8 @@ export type Database = {
           fournisseur_id?: string
           id?: string
           nom_fichier?: string
+          sent_at?: string | null
+          sent_to?: string | null
           titre?: string
           uploaded_by?: string
           url?: string

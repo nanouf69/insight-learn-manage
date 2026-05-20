@@ -437,34 +437,84 @@ export function FournisseursPage() {
                   </CardContent>
                 </Card>
 
-                {/* Liste des documents */}
-                {detailSharedDocs.length === 0 ? <p className="text-muted-foreground py-4">Aucun document partagé</p> : (
-                  <div className="grid gap-3">
-                    {detailSharedDocs.map((doc: any) => (
-                      <div key={doc.id} className="flex items-center justify-between p-3 border rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <FileText className="w-5 h-5 text-primary shrink-0" />
-                          <div>
-                            <p className="font-medium text-sm">{doc.titre}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {doc.uploaded_by === 'admin' ? '📤 Envoyé par admin' : '📁 Du fournisseur'} · {new Date(doc.created_at).toLocaleDateString('fr-FR')}
-                            </p>
+                {/* Liste des documents - sous-onglets Tous / Envoyés */}
+                <Tabs defaultValue="tous" className="w-full">
+                  <TabsList>
+                    <TabsTrigger value="tous">Tous ({detailSharedDocs.length})</TabsTrigger>
+                    <TabsTrigger value="envoyes" className="gap-1">
+                      <SendHorizonal className="w-3 h-3" />
+                      Envoyés ({detailSharedDocs.filter((d: any) => d.sent_at).length})
+                    </TabsTrigger>
+                  </TabsList>
+                  {(["tous", "envoyes"] as const).map((subTab) => {
+                    const docs = subTab === "envoyes"
+                      ? detailSharedDocs.filter((d: any) => d.sent_at)
+                      : detailSharedDocs;
+                    return (
+                      <TabsContent key={subTab} value={subTab}>
+                        {docs.length === 0 ? (
+                          <p className="text-muted-foreground py-4">
+                            {subTab === "envoyes" ? "Aucun document envoyé par email" : "Aucun document partagé"}
+                          </p>
+                        ) : (
+                          <div className="grid gap-3">
+                            {docs.map((doc: any) => (
+                              <div key={doc.id} className="flex items-center justify-between p-3 border rounded-lg">
+                                <div className="flex items-center gap-3">
+                                  <FileText className="w-5 h-5 text-primary shrink-0" />
+                                  <div>
+                                    <p className="font-medium text-sm">{doc.titre}</p>
+                                    <p className="text-xs text-muted-foreground">
+                                      {doc.uploaded_by === 'admin' ? '📤 Envoyé par admin' : '📁 Du fournisseur'} · {new Date(doc.created_at).toLocaleDateString('fr-FR')}
+                                    </p>
+                                    {doc.sent_at && (
+                                      <p className="text-xs text-green-600 mt-0.5">
+                                        ✉️ Envoyé le {new Date(doc.sent_at).toLocaleDateString('fr-FR')} {doc.sent_to ? `à ${doc.sent_to}` : ''}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="flex gap-2 flex-wrap justify-end">
+                                  <a href={doc.url} target="_blank" rel="noopener noreferrer">
+                                    <Button variant="outline" size="sm" className="gap-1"><Eye className="w-3 h-3" />Voir</Button>
+                                  </a>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="gap-1"
+                                    onClick={async () => {
+                                      const to = selectedFournisseur?.email || '';
+                                      const subject = encodeURIComponent(`Document : ${doc.titre}`);
+                                      const body = encodeURIComponent(
+                                        `Bonjour,\n\nVeuillez trouver ci-joint le document "${doc.titre}" :\n${doc.url}\n\nCordialement,\nFTRANSPORT`
+                                      );
+                                      window.open(`mailto:${to}?subject=${subject}&body=${body}`, '_blank');
+                                      await supabase
+                                        .from('fournisseur_shared_docs')
+                                        .update({ sent_at: new Date().toISOString(), sent_to: to || null })
+                                        .eq('id', doc.id);
+                                      const { data } = await supabase.from('fournisseur_shared_docs').select('*').eq('fournisseur_id', selectedFournisseur!.id).order('created_at', { ascending: false });
+                                      if (data) setDetailSharedDocs(data);
+                                      toast({ title: "Marqué comme envoyé", description: to ? `Email pré-rempli pour ${to}` : "Document marqué comme envoyé" });
+                                    }}
+                                  >
+                                    <Mail className="w-3 h-3" />
+                                    {doc.sent_at ? 'Renvoyer' : 'Envoyer'}
+                                  </Button>
+                                  <Button variant="ghost" size="sm" className="text-destructive gap-1" onClick={async () => {
+                                    await supabase.from('fournisseur_shared_docs').delete().eq('id', doc.id);
+                                    const { data } = await supabase.from('fournisseur_shared_docs').select('*').eq('fournisseur_id', selectedFournisseur!.id).order('created_at', { ascending: false });
+                                    if (data) setDetailSharedDocs(data);
+                                  }}><Trash2 className="w-3 h-3" /></Button>
+                                </div>
+                              </div>
+                            ))}
                           </div>
-                        </div>
-                        <div className="flex gap-2">
-                          <a href={doc.url} target="_blank" rel="noopener noreferrer">
-                            <Button variant="outline" size="sm" className="gap-1"><Eye className="w-3 h-3" />Voir</Button>
-                          </a>
-                          <Button variant="ghost" size="sm" className="text-destructive gap-1" onClick={async () => {
-                            await supabase.from('fournisseur_shared_docs').delete().eq('id', doc.id);
-                            const { data } = await supabase.from('fournisseur_shared_docs').select('*').eq('fournisseur_id', selectedFournisseur!.id).order('created_at', { ascending: false });
-                            if (data) setDetailSharedDocs(data);
-                          }}><Trash2 className="w-3 h-3" /></Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                        )}
+                      </TabsContent>
+                    );
+                  })}
+                </Tabs>
               </div>
             </TabsContent>
 
