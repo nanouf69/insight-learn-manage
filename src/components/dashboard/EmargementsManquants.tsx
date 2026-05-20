@@ -21,7 +21,7 @@ export function EmargementsManquants({ onNavigateToApprenant }: Props) {
 
   const { data: manquants = [], isLoading } = useQuery({
     queryKey: ["emargements-manquants", today, demi],
-    refetchInterval: 60_000,
+    refetchOnWindowFocus: false,
     queryFn: async () => {
       // 1. Apprenants en présentiel ACTUELLEMENT en formation
       // (today entre date_debut_cours_en_ligne et date_fin_cours_en_ligne)
