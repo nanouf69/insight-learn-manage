@@ -41,6 +41,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const manualSignOutRef = useRef(false);
   const authInitializedRef = useRef(false);
   const pendingSessionRef = useRef<Session | null | undefined>(undefined);
+  const sessionRef = useRef<Session | null>(null);
 
   const fetchProfile = useCallback(async (userId: string, retryCount = 0) => {
     try {
@@ -66,6 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const clearAuthState = useCallback(() => {
+    sessionRef.current = null;
     setUser(null);
     setSession(null);
     setProfile(null);
@@ -73,6 +75,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const applySession = useCallback((nextSession: Session | null) => {
+    sessionRef.current = nextSession;
+
     setSession(prev => {
       // Skip update if it's just a token refresh for the same user.
       // This prevents re-rendering the entire component tree (including active exams)
