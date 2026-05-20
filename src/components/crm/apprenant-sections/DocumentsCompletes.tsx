@@ -25,6 +25,7 @@ const TYPE_LABELS: Record<string, string> = {
   "devis-formation-continue": "Devis Formation Continue",
   "devis-envoi": "Devis envoyé / signé",
   "emargement-fc": "Feuille d'émargement",
+  "doc-fournisseur": "Document fournisseur",
 };
 
 const TYPE_COLORS: Record<string, string> = {
@@ -39,6 +40,7 @@ const TYPE_COLORS: Record<string, string> = {
   "devis-formation-continue": "bg-indigo-100 text-indigo-800",
   "devis-envoi": "bg-cyan-100 text-cyan-800",
   "emargement-fc": "bg-rose-100 text-rose-800",
+  "doc-fournisseur": "bg-violet-100 text-violet-800",
 };
 
 const FIELD_LABELS: Record<string, string> = {
