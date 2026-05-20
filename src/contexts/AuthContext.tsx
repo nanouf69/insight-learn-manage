@@ -110,6 +110,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let isActive = true;
 
+    const recoverSessionBeforeClearing = (delayMs = 1200) => {
+      setLoading(true);
+      setTimeout(() => {
+        if (!isActive) return;
+        void withTimeout(supabase.auth.getSession(), 6000)
+          .then(({ data: { session: recoveredSession } }) => {
+            if (!isActive) return;
+            if (recoveredSession?.user) {
+              applySession(recoveredSession);
+            } else {
+              clearAuthState();
+            }
+            setLoading(false);
+          })
+          .catch(() => {
+            if (!isActive) return;
+            clearAuthState();
+            setLoading(false);
+          });
+      }, delayMs);
+    };
+
     const handleResolvedAuthState = (event: string, nextSession: Session | null) => {
       if (nextSession?.user) {
         manualSignOutRef.current = false;
@@ -119,21 +141,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       if (event === 'SIGNED_OUT' && !manualSignOutRef.current) {
-        setTimeout(async () => {
-          if (!isActive) return;
-          const { data: { session: recoveredSession } } = await withTimeout(
-            supabase.auth.getSession(),
-            4000,
-          ).catch(() => ({ data: { session: null } }));
-          if (!isActive) return;
+        recoverSessionBeforeClearing();
+        return;
+      }
 
-          if (recoveredSession?.user) {
-            applySession(recoveredSession);
-          } else {
-            clearAuthState();
-          }
-          setLoading(false);
-        }, 350);
+      if ((event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') && !nextSession?.user && sessionRef.current?.user) {
+        recoverSessionBeforeClearing();
         return;
       }
 
