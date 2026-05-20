@@ -637,7 +637,8 @@ export default function ExamensBlancsPage({
       setTousResultats(rebuiltResults);
       setIsViewingSavedResults(true);
       setPhase("resultats");
-      persistExamSession("resultats", null, 0);
+      // BUG #2 FIX: purge any stale exam sessionStorage immediately on entering results phase
+      try { sessionStorage.removeItem(EXAM_SESSION_KEY); } catch {}
       return;
     }
 
