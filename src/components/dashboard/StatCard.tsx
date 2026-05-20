@@ -22,7 +22,7 @@ export function StatCard({ title, value, change, icon: Icon, iconColor = "primar
   const isNegative = change && change < 0;
 
   return (
-    <div className="stat-card animate-fade-in">
+    <div className="stat-card">
       <div className="flex items-start justify-between">
         <div>
           <p className="text-sm font-medium text-muted-foreground">{title}</p>

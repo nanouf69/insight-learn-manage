@@ -39,7 +39,15 @@ import Step11 from "./pages/onboarding/steps/Step11";
 import Step12 from "./pages/onboarding/steps/Step12";
 
 function App() {
-  const [queryClient] = useState(() => new QueryClient());
+  const [queryClient] = useState(() => new QueryClient({
+    defaultOptions: {
+      queries: {
+        staleTime: 60_000,
+        refetchOnWindowFocus: false,
+        refetchOnReconnect: false,
+      },
+    },
+  }));
 
   return (
     <QueryClientProvider client={queryClient}>

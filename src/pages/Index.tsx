@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -63,9 +62,10 @@ const pageConfig = {
 const fmt = (n: number) =>
   new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n);
 
+const getErrorMessage = (err: unknown, fallback: string) => err instanceof Error ? err.message : fallback;
+
 const Index = () => {
   const { profile, user, loading } = useAuth();
-  const navigate = useNavigate();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [currentPage, setCurrentPage] = useState("dashboard");
   const [pageHistory, setPageHistory] = useState<string[]>([]);
@@ -87,8 +87,8 @@ const Index = () => {
       } else {
         toast.error(data?.error || "Erreur lors de l'envoi");
       }
-    } catch (err: any) {
-      toast.error(err.message || "Erreur lors de l'envoi des relances");
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err, "Erreur lors de l'envoi des relances"));
     } finally {
       setSendingRelance(false);
     }
@@ -117,13 +117,7 @@ const Index = () => {
     return () => {
       isMounted = false;
     };
-  }, [user?.id]);
-
-  useEffect(() => {
-    if (!loading && isAdmin === false) {
-      navigate("/cours", { replace: true });
-    }
-  }, [isAdmin, loading, navigate]);
+  }, [user]);
 
   useEffect(() => {
     if (isAdmin !== true) return;
@@ -184,7 +178,7 @@ const Index = () => {
     switch (currentPage) {
       case "dashboard":
         return (
-          <div className="space-y-6 animate-fade-in">
+            <div className="space-y-6">
             {/* Stats Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
               <StatCard 

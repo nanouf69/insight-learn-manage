@@ -15,20 +15,36 @@ interface Props {
   onNavigateToApprenant?: (id: string) => void;
 }
 
+interface ApprenantPresentiel {
+  id: string;
+  nom: string | null;
+  prenom: string | null;
+  email: string | null;
+  telephone: string | null;
+  type_apprenant: string | null;
+  formation_choisie: string | null;
+  date_debut_cours_en_ligne: string | null;
+  date_fin_cours_en_ligne: string | null;
+}
+
+interface EmargementSigne {
+  apprenant_id: string;
+}
+
 export function EmargementsManquants({ onNavigateToApprenant }: Props) {
   const demi = currentDemi();
   const today = todayISO();
 
   const { data: manquants = [], isLoading } = useQuery({
     queryKey: ["emargements-manquants", today, demi],
-    refetchInterval: 60_000,
+    refetchOnWindowFocus: false,
     queryFn: async () => {
       // 1. Apprenants en présentiel ACTUELLEMENT en formation
       // (today entre date_debut_cours_en_ligne et date_fin_cours_en_ligne)
       const { data: apprenants, error: errA } = await supabase
         .from("apprenants")
         .select("id, nom, prenom, email, telephone, type_apprenant, formation_choisie, date_debut_cours_en_ligne, date_fin_cours_en_ligne")
-        .is("deleted_at" as any, null)
+        .is("deleted_at", null)
         .ilike("type_apprenant", "%presentiel%")
         .lte("date_debut_cours_en_ligne", today)
         .gte("date_fin_cours_en_ligne", today);
@@ -39,14 +55,14 @@ export function EmargementsManquants({ onNavigateToApprenant }: Props) {
       // 2. Émargements signés aujourd'hui pour ce créneau
       const ids = apprenants.map((a) => a.id);
       const { data: signes, error: errS } = await supabase
-        .from("emargements_fc" as any)
+        .from("emargements_fc")
         .select("apprenant_id")
         .eq("date_emargement", today)
         .eq("demi_journee", demi)
         .in("apprenant_id", ids);
 
       if (errS) throw errS;
-      const signedSet = new Set((signes || []).map((s: any) => s.apprenant_id));
+      const signedSet = new Set(((signes || []) as EmargementSigne[]).map((s) => s.apprenant_id));
 
       return apprenants.filter((a) => !signedSet.has(a.id));
     },
@@ -105,7 +121,7 @@ export function EmargementsManquants({ onNavigateToApprenant }: Props) {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-2">
-        {manquants.slice(0, 8).map((a: any) => (
+        {(manquants as ApprenantPresentiel[]).slice(0, 8).map((a) => (
           <div
             key={a.id}
             className="p-3 rounded-lg bg-amber-50 border border-amber-200 space-y-1 cursor-pointer hover:bg-amber-100 transition-colors"
