@@ -879,7 +879,8 @@ export default function ExamensBlancsPage({
         setIsViewingSavedResults(false);
         setPhase("resultats");
         setSelectionRefreshKey(k => k + 1);
-        persistExamSession("resultats", null, 0);
+        // BUG #2 FIX: purge any stale exam sessionStorage immediately on entering results phase
+        try { sessionStorage.removeItem(EXAM_SESSION_KEY); } catch {}
       }
     } catch (err) {
       console.error("[ExamenBlanc] Erreur dans handleTerminerMatiere:", err);
