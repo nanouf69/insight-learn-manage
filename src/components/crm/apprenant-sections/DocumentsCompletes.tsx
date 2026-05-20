@@ -150,7 +150,11 @@ export function DocumentsCompletes({ apprenant }: Props) {
   const { data: documents, isLoading } = useQuery({
     queryKey: ["apprenant-documents-completes", apprenant.id],
     queryFn: async () => {
-      const [docsRes, devisRes, emargRes] = await Promise.all([
+      const norm = (s: string) => (s || "").toString().trim().toLowerCase();
+      const apprNom = norm(apprenant.nom);
+      const apprPrenom = norm(apprenant.prenom);
+
+      const [docsRes, devisRes, emargRes, fournApprRes] = await Promise.all([
         supabase
           .from("apprenant_documents_completes" as any)
           .select("*")
@@ -166,6 +170,14 @@ export function DocumentsCompletes({ apprenant }: Props) {
           .select("*")
           .eq("apprenant_id", apprenant.id)
           .order("signed_at", { ascending: false }),
+        // Find matching fournisseur_apprenants by nom + prenom (case insensitive)
+        apprNom && apprPrenom
+          ? supabase
+              .from("fournisseur_apprenants" as any)
+              .select("id, nom, prenom")
+              .ilike("nom", apprNom)
+              .ilike("prenom", apprPrenom)
+          : Promise.resolve({ data: [], error: null } as any),
       ]);
 
       if (docsRes.error) throw docsRes.error;
@@ -210,7 +222,29 @@ export function DocumentsCompletes({ apprenant }: Props) {
         completed_at: e.signed_at,
       }));
 
-      const all = [...baseDocs, ...devisDocs, ...emargDocs];
+      // Fournisseur documents linked via matching fournisseur_apprenant by name
+      let fournDocs: any[] = [];
+      const matchingIds = ((fournApprRes as any)?.data as any[] || []).map((x: any) => x.id);
+      if (matchingIds.length > 0) {
+        const fdRes = await supabase
+          .from("fournisseur_documents" as any)
+          .select("*")
+          .in("fournisseur_apprenant_id", matchingIds)
+          .order("created_at", { ascending: false });
+        fournDocs = ((fdRes.data as any[]) || []).map((d) => ({
+          id: `fourn-doc-${d.id}`,
+          type_document: "doc-fournisseur",
+          titre: d.titre || d.nom_fichier || "Document",
+          donnees: {
+            nom_fichier: d.nom_fichier,
+            type_document: d.type_document,
+            fichier_url: d.url,
+          },
+          completed_at: d.created_at,
+        }));
+      }
+
+      const all = [...baseDocs, ...devisDocs, ...emargDocs, ...fournDocs];
       all.sort((a, b) => new Date(b.completed_at).getTime() - new Date(a.completed_at).getTime());
       return all;
     },
