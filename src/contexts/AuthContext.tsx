@@ -170,7 +170,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!isActive) return;
 
       authInitializedRef.current = true;
-      const restoredSession = pendingSessionRef.current !== undefined ? pendingSessionRef.current : initialSession;
+      const restoredSession = pendingSessionRef.current?.user ? pendingSessionRef.current : initialSession;
       pendingSessionRef.current = undefined;
       applySession(restoredSession ?? null);
       setLoading(false);
