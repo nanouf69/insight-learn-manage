@@ -22,6 +22,9 @@ serve(async (req) => {
       attachmentName,
       attachmentBase64,
       attachmentContentType,
+      attachmentUrl,
+      attachmentPath,
+      attachmentBucket,
     } = await req.json();
 
     if (!recipientEmail || !subject) {
@@ -29,6 +32,43 @@ serve(async (req) => {
         JSON.stringify({ error: "Champs requis manquants (recipientEmail, subject)" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
+    }
+
+    // Server-side fetch fallback (avoids client CORS/size issues)
+    let resolvedBase64: string | undefined = typeof attachmentBase64 === "string" && attachmentBase64.length > 0
+      ? attachmentBase64
+      : undefined;
+    let resolvedContentType: string | undefined = attachmentContentType;
+    if (!resolvedBase64) {
+      try {
+        const supabaseAdminDl = createClient(
+          Deno.env.get("SUPABASE_URL")!,
+          Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+        );
+        let buf: Uint8Array | null = null;
+        if (attachmentBucket && attachmentPath) {
+          const { data, error } = await supabaseAdminDl.storage.from(attachmentBucket).download(attachmentPath);
+          if (error) throw error;
+          buf = new Uint8Array(await data.arrayBuffer());
+          resolvedContentType = resolvedContentType || data.type || "application/pdf";
+        } else if (attachmentUrl) {
+          const r = await fetch(attachmentUrl);
+          if (!r.ok) throw new Error(`fetch ${r.status}`);
+          buf = new Uint8Array(await r.arrayBuffer());
+          resolvedContentType = resolvedContentType || r.headers.get("content-type") || "application/pdf";
+        }
+        if (buf) {
+          let bin = "";
+          const chunk = 0x8000;
+          for (let i = 0; i < buf.length; i += chunk) {
+            bin += String.fromCharCode.apply(null, Array.from(buf.subarray(i, i + chunk)) as any);
+          }
+          resolvedBase64 = btoa(bin);
+          console.log(`[send-document-email] Fetched ${buf.length} bytes for attachment`);
+        }
+      } catch (e) {
+        console.error("[send-document-email] Failed to fetch attachment server-side:", e);
+      }
     }
 
     const tenantId = Deno.env.get("MS_GRAPH_TENANT_ID");
