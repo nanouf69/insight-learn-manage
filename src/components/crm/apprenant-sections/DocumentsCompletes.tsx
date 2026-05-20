@@ -5,8 +5,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { FileText, Download, Eye, ChevronDown, ChevronUp, FileDown, ExternalLink } from "lucide-react";
 import { generateDocumentIndividuelPdf } from "@/lib/pdf/document-individuel";
+import { generateEmargementSemainePdf } from "@/lib/pdf/emargement-semaine";
 import { useState } from "react";
-import { format } from "date-fns";
+import { format, startOfWeek, endOfWeek, getISOWeek, getYear } from "date-fns";
 import { fr } from "date-fns/locale";
 
 interface Props {
