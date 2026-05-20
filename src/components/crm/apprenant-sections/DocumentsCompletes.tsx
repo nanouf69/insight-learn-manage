@@ -532,6 +532,8 @@ export function DocumentsCompletes({ apprenant }: Props) {
         return renderSatisfaction(donnees);
       case 'evaluation-acquis':
         return renderEvaluationAcquis(donnees);
+      case 'emargement-fc-semaine':
+        return renderEmargementSemaine(donnees);
       default:
         return renderFieldsDocument(donnees);
     }
