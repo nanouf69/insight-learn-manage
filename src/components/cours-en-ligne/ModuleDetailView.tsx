@@ -2972,9 +2972,13 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               ...md,
               exercices: mergeSourceExercices(md.exercices, initialData.exercices, deletedExerciceIdsFromDb),
             };
-            const resolvedModuleData = forceTaxiSecurityFromVtc(
-              forceSourceExerciseTitles(module.id, mergedModuleData, initialData),
-              vtcSecurityForTaxi,
+            const resolvedModuleData = forceBilanExamGestionFromSource(
+              module.id,
+              forceTaxiSecurityFromVtc(
+                forceSourceExerciseTitles(module.id, mergedModuleData, initialData),
+                vtcSecurityForTaxi,
+              ),
+              initialData,
             );
             setModuleData((prev) => preserveNewerLocalQuestionEdits(resolvedModuleData, prev, "initial module_editor_state load"));
             setDeletedCours(Array.isArray(latestState.deleted_cours) ? (latestState.deleted_cours as unknown as ContentItem[]) : []);
@@ -3144,7 +3148,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             ...md,
             exercices: mergeSourceExercices(md.exercices, sourceModuleData.exercices, deletedExoIdsRt),
           };
-          setModuleData((prev) => preserveNewerLocalQuestionEdits(mergedRealtimeModuleData, prev, "realtime module_editor_state refetch"));
+          const resolvedRealtimeModuleData = forceBilanExamGestionFromSource(module.id, mergedRealtimeModuleData, sourceModuleData);
+          setModuleData((prev) => preserveNewerLocalQuestionEdits(resolvedRealtimeModuleData, prev, "realtime module_editor_state refetch"));
           setDeletedCours(Array.isArray(latest.deleted_cours) ? (latest.deleted_cours as unknown as ContentItem[]) : []);
           setDeletedExercices(Array.isArray(latest.deleted_exercices) ? (latest.deleted_exercices as unknown as ExerciceItem[]) : []);
           setLoadedModuleEditorState(true);
