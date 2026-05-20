@@ -182,6 +182,8 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
     const allScores: { score: number; max: number }[] = [];
     
     quizResults.forEach(r => {
+      // BUG 5: revision_fausses lines must not contribute to Réussi/Échoué stats
+      if ((r as any).quiz_type === "revision_fausses") return;
       const noteSur20 = normalizeQuizNoteSur20(r);
       if (noteSur20 != null) allScores.push({ score: noteSur20, max: 20 });
     });
