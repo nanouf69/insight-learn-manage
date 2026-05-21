@@ -363,7 +363,7 @@ export function ApprenantsList() {
       for (const a of presentielApprenants) {
         try {
           const { getTodayAgendaBlocs } = await import("@/lib/agendaSlots");
-          const blocs = await getTodayAgendaBlocs((a as any).formation_choisie);
+          const blocs = await getTodayAgendaBlocs((a as any).formation_choisie, a.id);
           const creneau = getCurrentCreneau(blocs);
           if (!creneau) continue;
           const signed = signedMap.get(a.id);
