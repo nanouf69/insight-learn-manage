@@ -547,49 +547,35 @@ export default function FournisseurPortal() {
 
   const handleSubmitApprenant = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!fournisseur || isSubmitting) return;
+    if (!fournisseur || !token || isSubmitting) return;
     setIsSubmitting(true);
     try {
-      // Generate UUID client-side to avoid RLS SELECT check on RETURNING
-      const apprenantId = (typeof crypto !== 'undefined' && 'randomUUID' in crypto)
-        ? crypto.randomUUID()
-        : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-
-      // Insert into main apprenants table so it appears in CRM (no .select() to skip RLS SELECT check)
-      const { error: apprenantError } = await supabase
-        .from('apprenants')
-        .insert({
-          id: apprenantId,
-          civilite: civilite || null,
-          nom: nom.trim(), prenom: prenom.trim(),
-          email: email.trim() || null, telephone: telephone.trim() || null,
-          adresse: adresse.trim() || null, code_postal: codePostal.trim() || null,
-          ville: ville.trim() || null, formation_choisie: selectedFormation,
-          type_apprenant: typeApprenantFormation, montant_ttc: parseFloat(montantTtc) || null,
-          date_debut_formation: dateDebutFormation ? format(dateDebutFormation, "yyyy-MM-dd") : null,
-          date_fin_formation: dateFinFormation ? format(dateFinFormation, "yyyy-MM-dd") : null,
-          inscrit_france_travail: inscritFranceTravail,
-          mode_financement: financement, organisme_financeur: organismeFinanceur || null,
-          statut: 'fournisseur',
-          notes: `Via fournisseur: ${fournisseur.nom}`,
-        });
-
-      if (apprenantError) throw apprenantError;
-
-      // Also insert into fournisseur_apprenants for supplier portal tracking
-      await supabase.from('fournisseur_apprenants').insert({
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      const response = await fetch(`${supabaseUrl}/functions/v1/create-fournisseur-apprenant`, {
+        method: 'POST',
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${supabaseKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+        token,
         fournisseur_id: fournisseur.id,
         civilite, nom: nom.trim(), prenom: prenom.trim(),
         email: email.trim() || null, telephone: telephone.trim() || null,
         adresse: adresse.trim() || null, code_postal: codePostal.trim() || null,
         ville: ville.trim() || null, formation_choisie: selectedFormation,
         type_apprenant: typeApprenantFormation, montant_ttc: parseFloat(montantTtc) || null,
-        date_formation_catalogue: dateDebutFormation ? format(dateDebutFormation, "yyyy-MM-dd") : null,
-        date_examen_pratique: dateFinFormation ? format(dateFinFormation, "yyyy-MM-dd") : null,
+        date_debut_formation: dateDebutFormation ? format(dateDebutFormation, "yyyy-MM-dd") : null,
+        date_fin_formation: dateFinFormation ? format(dateFinFormation, "yyyy-MM-dd") : null,
         inscrit_france_travail: inscritFranceTravail,
         mode_financement: financement, organisme_financeur: organismeFinanceur || null,
-        notes: `apprenant_id:${apprenantId}`,
+        }),
       });
+
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Impossible d'ajouter l'apprenant");
 
       toast({ title: "Apprenant ajouté", description: `${prenom} ${nom} a été enregistré avec succès.` });
       resetForm();

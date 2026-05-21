@@ -42,6 +42,9 @@ verify_jwt = false
 [functions.upload-fournisseur-document]
 verify_jwt = false
 
+[functions.create-fournisseur-apprenant]
+verify_jwt = false
+
 [functions.save-public-form]
 verify_jwt = false
 
