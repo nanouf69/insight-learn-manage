@@ -23,6 +23,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const [checking, setChecking] = useState(true);
   const [retryNonce, setRetryNonce] = useState(0);
   const lastKnownAdminRef = useRef<boolean | null>(null);
+  const lastKnownUserIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     let isActive = true;
@@ -30,12 +31,17 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
     const checkRole = async () => {
       if (!user) {
         if (isActive) {
+          lastKnownAdminRef.current = null;
+          lastKnownUserIdRef.current = null;
           setIsAdmin(null);
           setChecking(false);
         }
         return;
       }
 
+      if (lastKnownUserIdRef.current !== user.id) {
+        setIsAdmin(null);
+      }
       setChecking(true);
 
       const { data, error } = await withTimeout(
@@ -51,7 +57,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
       if (error) {
         // A transient backend/network timeout must not be treated as “non admin”,
         // otherwise the dashboard bounces to the learner portal and flickers.
-        if (lastKnownAdminRef.current !== null) {
+        if (lastKnownUserIdRef.current === user.id && lastKnownAdminRef.current !== null) {
           setIsAdmin(lastKnownAdminRef.current);
           setChecking(false);
           return;
@@ -62,6 +68,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
         return;
       }
 
+      lastKnownUserIdRef.current = user.id;
       lastKnownAdminRef.current = data === true;
       setIsAdmin(data === true);
       setChecking(false);
