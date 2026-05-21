@@ -1155,34 +1155,43 @@ export type Database = {
       }
       emargements_fc: {
         Row: {
+          absent: boolean
           apprenant_id: string
           created_at: string
           date_emargement: string
           demi_journee: string
           id: string
-          signature_data_url: string
+          justificatif_url: string | null
+          motif_absence: string | null
+          signature_data_url: string | null
           signed_at: string
           user_agent: string | null
           user_id: string
         }
         Insert: {
+          absent?: boolean
           apprenant_id: string
           created_at?: string
           date_emargement?: string
           demi_journee: string
           id?: string
-          signature_data_url: string
+          justificatif_url?: string | null
+          motif_absence?: string | null
+          signature_data_url?: string | null
           signed_at?: string
           user_agent?: string | null
           user_id: string
         }
         Update: {
+          absent?: boolean
           apprenant_id?: string
           created_at?: string
           date_emargement?: string
           demi_journee?: string
           id?: string
-          signature_data_url?: string
+          justificatif_url?: string | null
+          motif_absence?: string | null
+          signature_data_url?: string | null
           signed_at?: string
           user_agent?: string | null
           user_id?: string
