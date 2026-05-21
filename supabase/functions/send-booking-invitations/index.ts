@@ -25,25 +25,49 @@ function isElearning(type: string | null | undefined, creneau: string | null | u
 }
 
 function buildHtml(appUrl: string, prenom: string, nom: string): string {
-  return `<!DOCTYPE html><html lang="fr"><body style="margin:0;padding:0;background:#f3f4f6;font-family:Arial,sans-serif">
+  const slots = [
+    ["11h00 — 11h15","11h15 — 11h30"],
+    ["11h30 — 11h45","11h45 — 12h00"],
+    ["12h00 — 12h15","12h15 — 12h30"],
+    ["12h30 — 12h45","12h45 — 13h00"],
+    ["13h00 — 13h15","13h15 — 13h30"],
+    ["13h30 — 13h45",""],
+  ];
+  const slotsHtml = slots.map(row => `
+    <tr>
+      ${row.map(s => s ? `<td style="padding:6px;width:50%"><div style="border:1px solid #dbeafe;border-radius:8px;padding:10px 12px;color:#1e3a8a;font-size:14px;background:#fff">🕐 ${s}</div></td>` : `<td style="padding:6px;width:50%"></td>`).join("")}
+    </tr>`).join("");
+
+  return `<!DOCTYPE html><html lang="fr"><body style="margin:0;padding:0;background:#f3f4f6;font-family:Arial,sans-serif;color:#1f2937">
   <table width="100%" cellpadding="0" cellspacing="0" style="padding:24px 0">
     <tr><td align="center">
-      <table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08)">
-        <tr><td style="background:#0D2540;padding:24px;text-align:center">
-          <h1 style="color:#fff;margin:0;font-size:22px">FTRANSPORT</h1>
+      <table width="640" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08)">
+        <tr><td style="background:#0D2540;padding:22px;text-align:center">
+          <h1 style="color:#fff;margin:0;font-size:20px;letter-spacing:0.5px">FTRANSPORT — Formation professionnelle VTC / TAXI</h1>
         </td></tr>
-        <tr><td style="padding:32px 28px;color:#1f2937;font-size:15px;line-height:1.6">
-          <p>Bonjour ${prenom} ${nom},</p>
-          <p>Votre <strong>examen théorique est planifié le 26 mai</strong>.</p>
-          <p>Afin de préparer au mieux votre examen, nous vous proposons un <strong>créneau individuel de questions/réponses le lundi 25 mai</strong> (la veille).</p>
-          <p>Merci de réserver votre créneau de 15 minutes en cliquant sur le bouton ci-dessous :</p>
-          <p style="text-align:center;margin:32px 0">
-            <a href="${appUrl}" style="background:#F4A227;color:#fff;text-decoration:none;padding:14px 28px;border-radius:8px;font-weight:bold;display:inline-block">Réserver mon créneau</a>
+        <tr><td style="padding:24px 28px 0 28px">
+          <div style="background:#fef3c7;border-left:4px solid #d97706;border-radius:6px;padding:14px 16px;font-size:14px;color:#7c2d12">
+            ⚠️ Ce message s'adresse uniquement aux apprenants dont l'examen e-learning est planifié le <strong>mardi 26 mai 2026</strong>. Si ce n'est pas votre cas, merci de ne pas en tenir compte.
+          </div>
+        </td></tr>
+        <tr><td style="padding:24px 28px;font-size:15px;line-height:1.6">
+          <p style="margin:0 0 14px">Bonjour ${prenom} ${nom},</p>
+          <p style="margin:0 0 14px">Votre examen e-learning approche — il est programmé <strong>mardi 26 mai</strong>. Pour que vous puissiez l'aborder sereinement, nous vous proposons un <strong>créneau individuel de 15 minutes</strong> le lundi 25 mai, de 11h à 14h.</p>
+          <p style="margin:0 0 14px">Posez toutes vos questions : contenu du cours, déroulement de l'examen, accès à la plateforme, conseils de dernière minute…</p>
+          <div style="background:#ecfdf5;border-left:4px solid #059669;border-radius:6px;padding:12px 16px;font-size:14px;color:#065f46;margin:18px 0">
+            💡 <strong>Conseil :</strong> notez vos questions à l'avance pour que votre créneau soit le plus utile possible.
+          </div>
+          <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:16px;margin:20px 0">
+            <p style="margin:0 0 10px;font-weight:bold;color:#1e3a8a">📅 Réservez votre créneau — lundi 25 mai, 11h-14h</p>
+            <table width="100%" cellpadding="0" cellspacing="0">${slotsHtml}</table>
+          </div>
+          <p style="text-align:center;margin:28px 0">
+            <a href="${appUrl}" style="background:#F4A227;color:#fff;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:bold;display:inline-block;font-size:16px">Réserver mon créneau</a>
           </p>
-          <p style="font-size:13px;color:#6b7280">Les créneaux sont limités (12 places, premier arrivé premier servi). Dépêchez-vous !</p>
-          <p style="margin-top:32px">L'équipe FTRANSPORT</p>
+          <p style="font-size:13px;color:#6b7280;text-align:center">Les créneaux sont limités (12 places, premier arrivé premier servi). Dépêchez-vous !</p>
+          <p style="margin-top:28px">L'équipe FTRANSPORT</p>
         </td></tr>
-        <tr><td style="background:#f9fafb;padding:16px;text-align:center;font-size:12px;color:#6b7280">
+        <tr><td style="background:#f9fafb;padding:14px;text-align:center;font-size:12px;color:#6b7280">
           formation@ftransport.fr
         </td></tr>
       </table>
