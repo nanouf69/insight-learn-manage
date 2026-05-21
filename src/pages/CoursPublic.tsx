@@ -1064,7 +1064,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     return () => {
       cancelled = true;
     };
-  }, [embedded, user?.id, apprenant?.id, apprenant?.type_apprenant, apprenant?.formation_choisie]);
+  }, [embedded, user?.id, apprenant?.id, apprenant?.type_apprenant, apprenant?.formation_choisie, emargementRefreshTick]);
 
 
   const handleModuleCompleted = useCallback((moduleId: number) => {
