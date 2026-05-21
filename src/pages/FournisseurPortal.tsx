@@ -550,10 +550,16 @@ export default function FournisseurPortal() {
     if (!fournisseur || isSubmitting) return;
     setIsSubmitting(true);
     try {
-      // Insert into main apprenants table so it appears in CRM
-      const { data: newApprenant, error: apprenantError } = await supabase
+      // Generate UUID client-side to avoid RLS SELECT check on RETURNING
+      const apprenantId = (typeof crypto !== 'undefined' && 'randomUUID' in crypto)
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+      // Insert into main apprenants table so it appears in CRM (no .select() to skip RLS SELECT check)
+      const { error: apprenantError } = await supabase
         .from('apprenants')
         .insert({
+          id: apprenantId,
           civilite: civilite || null,
           nom: nom.trim(), prenom: prenom.trim(),
           email: email.trim() || null, telephone: telephone.trim() || null,
@@ -566,9 +572,7 @@ export default function FournisseurPortal() {
           mode_financement: financement, organisme_financeur: organismeFinanceur || null,
           statut: 'fournisseur',
           notes: `Via fournisseur: ${fournisseur.nom}`,
-        })
-        .select('id')
-        .single();
+        });
 
       if (apprenantError) throw apprenantError;
 
@@ -584,7 +588,7 @@ export default function FournisseurPortal() {
         date_examen_pratique: dateFinFormation ? format(dateFinFormation, "yyyy-MM-dd") : null,
         inscrit_france_travail: inscritFranceTravail,
         mode_financement: financement, organisme_financeur: organismeFinanceur || null,
-        notes: `apprenant_id:${newApprenant.id}`,
+        notes: `apprenant_id:${apprenantId}`,
       });
 
       toast({ title: "Apprenant ajouté", description: `${prenom} ${nom} a été enregistré avec succès.` });
