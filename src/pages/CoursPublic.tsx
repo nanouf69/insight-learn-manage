@@ -690,7 +690,7 @@ const ChangePasswordDialog = () => {
 
 const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const navigate = useNavigate();
-  const { user, session, loading: authLoading, signOut } = useAuth();
+  const { user, session, loading: authLoading, profile, signOut } = useAuth();
   const [apprenantLoading, setApprenantLoading] = useState(false);
   const [apprenant, setApprenant] = useState<ApprenantInfo | null>(null);
   const [apprenantFetchError, setApprenantFetchError] = useState<string | null>(null);
@@ -757,6 +757,14 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   useEffect(() => {
     if (!user || !session || embedded) {
       setApprenantLoading(false);
+      return;
+    }
+
+    if (profile?.role === "admin") {
+      setApprenantLoading(false);
+      setApprenant(null);
+      setApprenantFetchError(null);
+      navigate("/", { replace: true });
       return;
     }
 
@@ -872,7 +880,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     return () => {
       cancelled = true;
     };
-  }, [user?.id, !!session, embedded, navigate, fetchNonce]);
+  }, [user?.id, !!session, embedded, navigate, fetchNonce, profile?.role]);
 
   // Use apprenantOverride when provided (admin preview of specific student)
   useEffect(() => {
@@ -1086,6 +1094,10 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   };
 
   // Loading state
+  if (!embedded && user && profile?.role === "admin") {
+    return null;
+  }
+
   if ((!embedded && (authLoading || (!!user && !session))) || apprenantLoading) {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-3">
