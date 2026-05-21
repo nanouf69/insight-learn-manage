@@ -623,6 +623,8 @@ export default function FournisseurPortal() {
         if (match) mainApprenantId = match[1];
       }
 
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
       let successCount = 0;
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
@@ -634,11 +636,16 @@ export default function FournisseurPortal() {
         formData.append('fournisseur_apprenant_id', selectedApprenantForDoc);
         if (mainApprenantId) formData.append('main_apprenant_id', mainApprenantId);
 
-        const { data, error } = await supabase.functions.invoke('upload-fournisseur-document', {
+        const response = await fetch(`${supabaseUrl}/functions/v1/upload-fournisseur-document`, {
+          method: 'POST',
+          headers: {
+            'apikey': supabaseKey,
+            'Authorization': `Bearer ${supabaseKey}`,
+          },
           body: formData,
         });
-        if (error) throw new Error(error.message || "Erreur lors de l'upload");
-        if (data?.error) throw new Error(data.error);
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || data?.error) throw new Error(data?.error || `Erreur ${response.status} sur "${file.name}"`);
         successCount++;
       }
       toast({ title: "Documents envoyés", description: `${successCount} document(s) uploadé(s) avec succès.` });
