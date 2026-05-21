@@ -1289,13 +1289,14 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
           <LogOut className="w-3.5 h-3.5 mr-1" />
           Se déconnecter
         </Button>
-        {emargementFCStatus === "needed" && (
+        {emargementFCStatus === "needed" && emargementCreneau && (
           <EmargementFCModal
+            key={emargementCreneau}
             apprenantId={apprenant!.id!}
             userId={user!.id}
             apprenantNom={apprenant!.nom}
             apprenantPrenom={apprenant!.prenom}
-            creneau={emargementCreneau || undefined}
+            creneau={emargementCreneau}
             mode={emargementMode}
             onSigned={() => setEmargementRefreshTick((t) => t + 1)}
             onSkipped={() => setEmargementFCStatus("skipped")}
