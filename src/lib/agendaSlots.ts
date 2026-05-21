@@ -62,24 +62,81 @@ export const isPresentielType = (
 };
 
 /**
+ * Détecte si une session est un cours du soir, à partir de son nom
+ * et de son tableau `creneaux`.
+ */
+const isEveningSession = (
+  session: { nom?: string | null; creneaux?: string[] | null } | null | undefined,
+): boolean => {
+  if (!session) return false;
+  const nom = (session.nom || "").toLowerCase();
+  if (/soir/.test(nom)) return true;
+  const cren = Array.isArray(session.creneaux) ? session.creneaux : [];
+  return cren.some((c) => {
+    const v = (c || "").toLowerCase();
+    if (/soir/.test(v)) return true;
+    // Détecte "17h-21h", "17:00-21:00", "18:00-21:00"…
+    const m = v.match(/(\d{1,2})\s*[h:]/);
+    if (m) {
+      const h = parseInt(m[1], 10);
+      if (!isNaN(h) && h >= 17) return true;
+    }
+    return false;
+  });
+};
+
+/**
  * Récupère les blocs agenda d'aujourd'hui qui correspondent à la formation de l'apprenant.
  * On filtre côté client par mot-clé (TAXI / VTC / TA / VA) car la chaîne `formation`
  * dans agenda_blocs n'est pas un slug strict.
+ *
+ * Si `apprenantId` est fourni, on filtre AUSSI par le profil de la session active
+ * (cours du jour vs cours du soir) afin d'éviter qu'un apprenant inscrit en session
+ * de jour ne soit poussé à signer un créneau du soir (et inversement).
  */
 export const getTodayAgendaBlocs = async (
   formationChoisie: string | null | undefined,
+  apprenantId?: string | null,
 ): Promise<AgendaBloc[]> => {
   const now = new Date();
   const weekStart = formatISO(startOfWeek(now));
   const dow = todayDow(now);
+  const todayISOStr = formatISO(now);
 
-  const { data, error } = await supabase
+  const blocsPromise = supabase
     .from("agenda_blocs")
     .select("jour, heure_debut, heure_fin, formation, semaine_debut, publics_cibles" as any)
     .eq("semaine_debut", weekStart)
     .eq("jour", dow);
 
-  if (error || !data) return [];
+  // Détecte la session active de l'apprenant (couvrant aujourd'hui).
+  const sessionPromise = apprenantId
+    ? supabase
+        .from("session_apprenants")
+        .select("session_id, sessions:session_id(nom, creneaux, date_debut, date_fin)" as any)
+        .eq("apprenant_id", apprenantId)
+    : (Promise.resolve({ data: null, error: null }) as any);
+
+  const [blocsRes, sessionRes] = await Promise.all([blocsPromise, sessionPromise]);
+  if (blocsRes.error || !blocsRes.data) return [];
+  const data = blocsRes.data;
+
+  let activeSession: { nom?: string | null; creneaux?: string[] | null } | null = null;
+  const sessRows = (sessionRes as any)?.data as any[] | null;
+  if (Array.isArray(sessRows)) {
+    for (const row of sessRows) {
+      const s = row?.sessions;
+      if (!s) continue;
+      const debut = s.date_debut as string | undefined;
+      const fin = s.date_fin as string | undefined;
+      if (debut && fin && todayISOStr >= debut && todayISOStr <= fin) {
+        activeSession = s;
+        break;
+      }
+    }
+  }
+  const hasActiveSession = !!activeSession;
+  const wantEvening = isEveningSession(activeSession);
 
   const fLower = (formationChoisie || "").toLowerCase();
   // Détecter le public de l'apprenant à partir de formation_choisie
@@ -95,6 +152,14 @@ export const getTodayAgendaBlocs = async (
   if (wantVa) apprenantPublics.push("VA");
 
   return (data as any[]).filter((bloc) => {
+    // Filtrage jour/soir selon la session active (priorité absolue)
+    if (hasActiveSession) {
+      const startMin = timeToMin(bloc.heure_debut);
+      const isEveningBloc = startMin >= 17 * 60;
+      if (wantEvening && !isEveningBloc) return false;
+      if (!wantEvening && isEveningBloc) return false;
+    }
+
     const cibles: string[] = Array.isArray(bloc.publics_cibles) ? bloc.publics_cibles : [];
 
     // Nouveau système : si publics_cibles renseigné → matching strict
