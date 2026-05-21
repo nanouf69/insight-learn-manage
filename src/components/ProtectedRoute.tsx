@@ -24,6 +24,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const [retryNonce, setRetryNonce] = useState(0);
   const lastKnownAdminRef = useRef<boolean | null>(null);
   const lastKnownUserIdRef = useRef<string | null>(null);
+  const consecutiveNegativeChecksRef = useRef(0);
 
   useEffect(() => {
     let isActive = true;
@@ -33,6 +34,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
         if (isActive) {
           lastKnownAdminRef.current = null;
           lastKnownUserIdRef.current = null;
+          consecutiveNegativeChecksRef.current = 0;
           setIsAdmin(null);
           setChecking(false);
         }
@@ -40,6 +42,9 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
       }
 
       if (lastKnownUserIdRef.current !== user.id) {
+        lastKnownUserIdRef.current = user.id;
+        lastKnownAdminRef.current = null;
+        consecutiveNegativeChecksRef.current = 0;
         setIsAdmin(null);
       }
       setChecking(true);
@@ -66,6 +71,21 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
           if (isActive) setRetryNonce((value) => value + 1);
         }, 1500);
         return;
+      }
+
+      if (data !== true) {
+        consecutiveNegativeChecksRef.current += 1;
+
+        // Avoid a single stale/temporary “false” role response bouncing an admin
+        // to /cours-public, which then redirects back here and causes flicker.
+        if (consecutiveNegativeChecksRef.current < 2) {
+          setTimeout(() => {
+            if (isActive) setRetryNonce((value) => value + 1);
+          }, 500);
+          return;
+        }
+      } else {
+        consecutiveNegativeChecksRef.current = 0;
       }
 
       lastKnownUserIdRef.current = user.id;
