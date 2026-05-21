@@ -2368,22 +2368,22 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                     return (
                       <div 
                         key={sessionApprenant.id}
-                        className="block static p-4 rounded-xl border bg-card hover:shadow-md transition-shadow"
+                        className="block static p-3 rounded-xl border bg-card hover:shadow-md transition-shadow"
                       >
                         {/* Ligne 1: Checkbox + Avatar + Nom + Badge */}
-                        <div className="flex items-center gap-3 mb-2">
+                        <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                           <Checkbox 
                             checked={selectedApprenants.has(apprenant.id)}
                             onCheckedChange={() => toggleSelectApprenant(apprenant.id)}
                             onClick={(e) => e.stopPropagation()}
                           />
-                          <Avatar className="w-9 h-9 shrink-0">
-                            <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">
+                          <Avatar className="w-7 h-7 shrink-0">
+                            <AvatarFallback className="bg-primary/10 text-primary font-semibold text-xs">
                               {apprenant.prenom?.[0] || ""}{apprenant.nom?.[0] || ""}
                             </AvatarFallback>
                           </Avatar>
                           <span 
-                            className="font-semibold text-foreground hover:text-primary hover:underline cursor-pointer transition-colors"
+                            className="font-semibold text-sm text-foreground hover:text-primary hover:underline cursor-pointer transition-colors"
                             onClick={(e) => {
                               e.stopPropagation();
                               if (onNavigateToApprenant) {
@@ -2392,34 +2392,35 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                               }
                             }}
                           >{apprenant.prenom} {apprenant.nom}</span>
-                          <Badge className={`text-xs shrink-0 ${getTypeBadgeColor(apprenant.type_apprenant)}`}>
+                          <Badge className={`text-[10px] shrink-0 ${getTypeBadgeColor(apprenant.type_apprenant)}`}>
                             {apprenant.type_apprenant?.toUpperCase() || "N/A"}
                           </Badge>
                           <Button 
                             size="sm" 
                             variant="ghost" 
-                            className="text-destructive hover:text-destructive hover:bg-destructive/10 h-7 w-7 p-0 ml-auto"
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10 h-6 w-6 p-0 ml-auto"
                             onClick={() => removeApprenant(sessionApprenant.id)}
                           >
-                            <X className="w-4 h-4" />
+                            <X className="w-3.5 h-3.5" />
                           </Button>
                         </div>
 
-                        {/* Ligne 2: Coordonnées complètes */}
-                        <div className="space-y-1 mb-3 pl-[52px]">
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <FileText className="w-3.5 h-3.5 shrink-0" />
-                            <span>{apprenant.numero_dossier_cma || "CMA non défini"}</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Mail className="w-3.5 h-3.5 shrink-0" />
-                            <span>{apprenant.email || "Email non défini"}</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Phone className="w-3.5 h-3.5 shrink-0" />
-                            <span>{apprenant.telephone || "Téléphone non défini"}</span>
-                          </div>
+                        {/* Ligne 2: Coordonnées compactes sur une seule ligne */}
+                        <div className="flex items-center gap-x-3 gap-y-1 mb-2 pl-[36px] text-xs text-muted-foreground flex-wrap">
+                          <span className="flex items-center gap-1">
+                            <FileText className="w-3 h-3 shrink-0" />
+                            {apprenant.numero_dossier_cma || "CMA n/d"}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Mail className="w-3 h-3 shrink-0" />
+                            {apprenant.email || "—"}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Phone className="w-3 h-3 shrink-0" />
+                            {apprenant.telephone || "—"}
+                          </span>
                         </div>
+
 
                         {/* Ligne 3: Badges statut */}
                         <div className="flex items-center gap-1.5 mb-3 pl-[52px] flex-wrap">
