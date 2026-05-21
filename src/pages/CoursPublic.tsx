@@ -1099,10 +1099,11 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     lastFetchedUserIdRef.current = null;
   };
 
-  // Loading state
+  // Admin should never see the learner portal — redirect to dashboard
   if (!embedded && user && profile?.role === "admin") {
-    return null;
+    return <Navigate to="/" replace />;
   }
+
 
   if ((!embedded && (authLoading || (!!user && !session))) || apprenantLoading) {
     return (
