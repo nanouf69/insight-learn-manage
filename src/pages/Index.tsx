@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -66,8 +66,6 @@ const getErrorMessage = (err: unknown, fallback: string) => err instanceof Error
 
 const Index = () => {
   const { profile, user, loading } = useAuth();
-  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
-  const lastCheckedUserIdRef = useRef<string | null>(null);
   const [currentPage, setCurrentPage] = useState("dashboard");
   const [pageHistory, setPageHistory] = useState<string[]>([]);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -96,36 +94,7 @@ const Index = () => {
   };
 
   useEffect(() => {
-    let isMounted = true;
-
-    const checkAdminAccess = async () => {
-      if (!user) {
-        lastCheckedUserIdRef.current = null;
-        if (isMounted) setIsAdmin(false);
-        return;
-      }
-
-      if (lastCheckedUserIdRef.current === user.id && isAdmin !== null) return;
-      lastCheckedUserIdRef.current = user.id;
-
-      const { data, error } = await supabase.rpc("has_role", {
-        _user_id: user.id,
-        _role: "admin",
-      });
-
-      if (!isMounted) return;
-      if (!error) setIsAdmin(data === true);
-    };
-
-    checkAdminAccess();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [user, isAdmin]);
-
-  useEffect(() => {
-    if (isAdmin !== true) return;
+    if (!user) return;
 
     const fetchFlux = async () => {
       const { data } = await supabase
@@ -157,7 +126,7 @@ const Index = () => {
     };
 
     fetchFlux();
-  }, [isAdmin]);
+  }, [user]);
 
   const handleNavigate = (page: string) => {
     if (page !== currentPage) {
@@ -298,7 +267,7 @@ const Index = () => {
 
   const config = pageConfig[currentPage as keyof typeof pageConfig];
 
-  if (loading || isAdmin === null) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
@@ -306,7 +275,7 @@ const Index = () => {
     );
   }
 
-  if (!user || isAdmin === false) {
+  if (!user) {
     return null;
   }
 
