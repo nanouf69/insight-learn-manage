@@ -754,6 +754,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
 
   const fetchAttemptRef = useRef(0);
   const lastFetchedUserIdRef = useRef<string | null>(null);
+  const adminRedirectedRef = useRef(false);
   useEffect(() => {
     if (!user || !session || embedded) {
       setApprenantLoading(false);
@@ -764,9 +765,14 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
       setApprenantLoading(false);
       setApprenant(null);
       setApprenantFetchError(null);
-      navigate("/", { replace: true });
+      if (!adminRedirectedRef.current) {
+        adminRedirectedRef.current = true;
+        navigate("/", { replace: true });
+      }
       return;
     }
+
+    adminRedirectedRef.current = false;
 
     if (lastFetchedUserIdRef.current !== user.id) {
       lastFetchedUserIdRef.current = user.id;
