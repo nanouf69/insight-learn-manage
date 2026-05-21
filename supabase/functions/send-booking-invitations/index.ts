@@ -48,7 +48,7 @@ function buildHtml(appUrl: string, prenom: string, nom: string): string {
         </td></tr>
         <tr><td style="padding:24px 28px 0 28px">
           <div style="background:#fef3c7;border-left:4px solid #d97706;border-radius:6px;padding:14px 16px;font-size:14px;color:#7c2d12">
-            ⚠️ Ce message s'adresse uniquement aux apprenants en <strong>formation e-learning</strong> dont l'examen est planifié le <strong>mardi 26 mai 2025</strong>. Si ce n'est pas votre cas, merci de ne pas en tenir compte.
+            ⚠️ Ce message s'adresse uniquement aux apprenants dont l'examen est planifié le <strong>mardi 26 mai 2025</strong>. Si ce n'est pas votre cas, merci de ne pas en tenir compte.
           </div>
         </td></tr>
         <tr><td style="padding:24px 28px;font-size:15px;line-height:1.6">
