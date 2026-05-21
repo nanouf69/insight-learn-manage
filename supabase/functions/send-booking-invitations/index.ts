@@ -48,12 +48,12 @@ function buildHtml(appUrl: string, prenom: string, nom: string): string {
         </td></tr>
         <tr><td style="padding:24px 28px 0 28px">
           <div style="background:#fef3c7;border-left:4px solid #d97706;border-radius:6px;padding:14px 16px;font-size:14px;color:#7c2d12">
-            ⚠️ Ce message s'adresse uniquement aux apprenants dont l'examen e-learning est planifié le <strong>mardi 26 mai 2025</strong>. Si ce n'est pas votre cas, merci de ne pas en tenir compte.
+            ⚠️ Ce message s'adresse uniquement aux apprenants en <strong>formation e-learning</strong> dont l'examen est planifié le <strong>mardi 26 mai 2025</strong>. Si ce n'est pas votre cas, merci de ne pas en tenir compte.
           </div>
         </td></tr>
         <tr><td style="padding:24px 28px;font-size:15px;line-height:1.6">
           <p style="margin:1rem 0 14px 1.4rem">Bonjour,</p>
-          <p style="margin:0 0 14px">Votre examen e-learning approche — il est programmé <strong>mardi 26 mai</strong>. Pour que vous puissiez l'aborder sereinement, nous vous proposons un <strong>créneau individuel de 15 minutes</strong> le lundi 25 mai, de 11h à 14h.</p>
+          <p style="margin:0 0 14px">Votre examen approche — il est programmé <strong>mardi 26 mai</strong>. Pour que vous puissiez l'aborder sereinement, nous vous proposons un <strong>créneau individuel de 15 minutes</strong> le lundi 25 mai, de 11h à 14h.</p>
           <p style="margin:0 0 14px">Posez toutes vos questions : contenu du cours, déroulement de l'examen, accès à la plateforme, conseils de dernière minute…</p>
           <div style="background:#ecfdf5;border-left:4px solid #059669;border-radius:6px;padding:12px 16px;font-size:14px;color:#065f46;margin:18px 0">
             💡 <strong>Conseil :</strong> notez vos questions à l'avance pour que votre créneau soit le plus utile possible.
