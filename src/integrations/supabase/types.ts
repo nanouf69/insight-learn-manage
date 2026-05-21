@@ -891,6 +891,41 @@ export type Database = {
           },
         ]
       }
+      creneaux_rdv: {
+        Row: {
+          apprenant_id: string | null
+          created_at: string
+          id: string
+          nom: string
+          slot: string
+          telephone: string
+        }
+        Insert: {
+          apprenant_id?: string | null
+          created_at?: string
+          id?: string
+          nom: string
+          slot: string
+          telephone: string
+        }
+        Update: {
+          apprenant_id?: string | null
+          created_at?: string
+          id?: string
+          nom?: string
+          slot?: string
+          telephone?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creneaux_rdv_apprenant_id_fkey"
+            columns: ["apprenant_id"]
+            isOneToOne: true
+            referencedRelation: "apprenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       devis_envois: {
         Row: {
           apprenant_id: string

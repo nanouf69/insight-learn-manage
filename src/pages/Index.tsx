@@ -30,6 +30,7 @@ import { FournisseurInvoiceAlerts } from "@/components/dashboard/FournisseurInvo
 import { SmallTransfersTable } from "@/components/dashboard/SmallTransfersTable";
 import { ApprenantQuestionsPanel } from "@/components/dashboard/ApprenantQuestionsPanel";
 import { EmargementsManquants } from "@/components/dashboard/EmargementsManquants";
+import { CreneauxRdvAdmin } from "@/components/dashboard/CreneauxRdvAdmin";
 import { GraduationCap, Users, ArrowDownCircle, ArrowUpCircle, Menu, X, Send, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -57,6 +58,7 @@ const pageConfig = {
   fournisseurs: { title: "Fournisseurs", subtitle: "Gérez vos fournisseurs et leurs espaces" },
   corbeille: { title: "Corbeille", subtitle: "Éléments supprimés — restaurer ou supprimer définitivement" },
   "diagnostic-acces": { title: "Diagnostic accès", subtitle: "État d'accès e-learning de tous les apprenants" },
+  "creneaux-25-mai": { title: "Créneaux lundi 25 mai", subtitle: "Q/R avant l'examen du 26 mai — temps réel" },
 };
 
 const fmt = (n: number) =>
@@ -258,6 +260,8 @@ const Index = () => {
         return <ApprenantsCorbeille />;
       case "diagnostic-acces":
         return <DiagnosticAccesGlobal onOpenApprenant={handleNavigateToApprenant} />;
+      case "creneaux-25-mai":
+        return <CreneauxRdvAdmin />;
       case "settings":
         return <SettingsPage />;
       default:
