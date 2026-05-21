@@ -224,12 +224,15 @@ export function DocumentsCompletes({ apprenant }: Props) {
       const emargDocs = ((emargRes.data as any[]) || []).map((e) => ({
         id: `emarg-${e.id}`,
         type_document: "emargement-fc",
-        titre: `Émargement — ${e.date_emargement} (${e.demi_journee})`,
+        titre: `Émargement — ${e.date_emargement} (${e.demi_journee}) — ${e.absent ? "ABSENT" : "Présent"}`,
         donnees: {
           date_emargement: e.date_emargement,
           demi_journee: e.demi_journee,
           signed_at: e.signed_at,
           signature: e.signature_data_url,
+          absent: !!e.absent,
+          motif_absence: e.motif_absence || null,
+          justificatif_url: e.justificatif_url || null,
         },
         completed_at: e.signed_at,
       }));
@@ -554,6 +557,47 @@ export function DocumentsCompletes({ apprenant }: Props) {
         return renderEvaluationAcquis(donnees);
       case 'emargement-fc-semaine':
         return renderEmargementSemaine(donnees);
+      case 'emargement-fc':
+        return (
+          <div className="space-y-3 text-sm">
+            <div className="flex items-center gap-2">
+              <Badge className={donnees.absent ? "bg-destructive text-destructive-foreground" : "bg-emerald-100 text-emerald-800"}>
+                {donnees.absent ? "Absent" : "Présent"}
+              </Badge>
+              <span className="text-muted-foreground">
+                {donnees.date_emargement} — {donnees.demi_journee}
+              </span>
+            </div>
+            {donnees.absent ? (
+              <>
+                <div>
+                  <p className="font-medium">Motif de l'absence :</p>
+                  <p className="text-muted-foreground whitespace-pre-wrap">
+                    {donnees.motif_absence || "—"}
+                  </p>
+                </div>
+                {donnees.justificatif_url ? (
+                  <a
+                    href={donnees.justificatif_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-primary underline"
+                  >
+                    <FileDown className="w-4 h-4" />
+                    Voir le justificatif
+                  </a>
+                ) : (
+                  <p className="text-xs text-destructive">Aucun justificatif fourni</p>
+                )}
+              </>
+            ) : donnees.signature ? (
+              <div>
+                <p className="font-medium mb-1">Signature :</p>
+                <img src={donnees.signature} alt="Signature" className="border rounded max-h-32" />
+              </div>
+            ) : null}
+          </div>
+        );
       default:
         return renderFieldsDocument(donnees);
     }
