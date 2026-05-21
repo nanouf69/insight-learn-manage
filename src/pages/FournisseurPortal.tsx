@@ -67,7 +67,7 @@ const prixFormations: Record<string, string> = {
   "vtc-e-presentiel": "1599", "taxi-e-presentiel": "1799", "ta-e-presentiel": "999",
   "continue-vtc": "200", "continue-taxi": "299",
   "marketing-digital-24h": "1500", "marketing-digital-26h": "2100", "marketing-digital-28h": "3300",
-  "anglais-17h": "1200", "anglais-28h": "2000", "anglais-35h": "3000", "anglais-45h": "4500"
+  "anglais-14h": "1200", "anglais-24h": "1500", "anglais-34h": "1900"
 };
 
 const formationToType: Record<string, string> = {
@@ -867,10 +867,9 @@ export default function FournisseurPortal() {
                               <SelectItem value="marketing-digital-28h">Marketing Digital 28H - 3 300 €</SelectItem>
                             </SelectGroup>
                             <SelectGroup><SelectLabel>Anglais Professionnel</SelectLabel>
-                              <SelectItem value="anglais-17h">Anglais Professionnel 17H - 1 200 €</SelectItem>
-                              <SelectItem value="anglais-28h">Anglais Professionnel 28H - 2 000 €</SelectItem>
-                              <SelectItem value="anglais-35h">Anglais Professionnel 35H - 3 000 €</SelectItem>
-                              <SelectItem value="anglais-45h">Anglais Professionnel 45H - 4 500 €</SelectItem>
+                              <SelectItem value="anglais-14h">Anglais Professionnel 14H - 1 200 €</SelectItem>
+                              <SelectItem value="anglais-24h">Anglais Professionnel 24H - 1 500 €</SelectItem>
+                              <SelectItem value="anglais-34h">Anglais Professionnel 34H - 1 900 €</SelectItem>
                             </SelectGroup>
                           </SelectContent>
                         </Select>
