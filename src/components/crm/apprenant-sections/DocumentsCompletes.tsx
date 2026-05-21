@@ -224,12 +224,15 @@ export function DocumentsCompletes({ apprenant }: Props) {
       const emargDocs = ((emargRes.data as any[]) || []).map((e) => ({
         id: `emarg-${e.id}`,
         type_document: "emargement-fc",
-        titre: `Émargement — ${e.date_emargement} (${e.demi_journee})`,
+        titre: `Émargement — ${e.date_emargement} (${e.demi_journee}) — ${e.absent ? "ABSENT" : "Présent"}`,
         donnees: {
           date_emargement: e.date_emargement,
           demi_journee: e.demi_journee,
           signed_at: e.signed_at,
           signature: e.signature_data_url,
+          absent: !!e.absent,
+          motif_absence: e.motif_absence || null,
+          justificatif_url: e.justificatif_url || null,
         },
         completed_at: e.signed_at,
       }));
