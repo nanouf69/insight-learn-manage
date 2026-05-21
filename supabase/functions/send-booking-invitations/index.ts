@@ -166,6 +166,9 @@ serve(async (req) => {
     for (const t of recipientsToSend) {
       const link = `${baseUrl.replace(/\/+$/, "")}/booking?id=${t.id}`;
       const html = buildHtml(link, t.prenom, t.nom);
+      const subject = testMode
+        ? "[TEST] Votre examen du 26 mai — réservez votre créneau de questions lundi 25 mai"
+        : "Votre examen du 26 mai — réservez votre créneau de questions lundi 25 mai";
       const res = await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: {
@@ -175,16 +178,35 @@ serve(async (req) => {
         body: JSON.stringify({
           from: "FTRANSPORT <formation@ftransport.fr>",
           to: [t.email],
-          subject: testMode
-            ? "[TEST] Votre examen du 26 mai — réservez votre créneau de questions lundi 25 mai"
-            : "Votre examen du 26 mai — réservez votre créneau de questions lundi 25 mai",
+          subject,
           html,
         }),
       });
-      if (res.ok) sent++;
+      const okSend = res.ok;
+      let errText = "";
+      if (okSend) sent++;
       else {
-        const errText = await res.text();
+        errText = await res.text();
         failures.push({ email: t.email, error: errText });
+      }
+
+      // Trace dans la table emails (visible dans le CRM apprenant)
+      try {
+        await supabase.from("emails").insert({
+          apprenant_id: t.id && t.id !== "00000000-0000-0000-0000-000000000000" ? t.id : null,
+          type: okSend ? "sent_booking_invitation" : "failed_booking_invitation",
+          subject,
+          body_html: html,
+          body_preview: `Invitation créneau 25 mai (examen 26 mai)${okSend ? "" : " — ÉCHEC: " + errText.slice(0, 200)}`,
+          sender_email: "formation@ftransport.fr",
+          sender_name: "FTRANSPORT",
+          recipients: [t.email],
+          has_attachments: false,
+          is_read: true,
+          sent_at: new Date().toISOString(),
+        });
+      } catch (logErr) {
+        console.error("Failed to log email trace:", logErr);
       }
     }
 
