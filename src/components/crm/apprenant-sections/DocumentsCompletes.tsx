@@ -147,6 +147,12 @@ function getLabel(key: string): string {
 
 const SKIP_KEYS = new Set(['_status', '_signature_image', 'apprenant_nom', 'apprenant_prenom']);
 
+const isEveningSignature = (demiJournee?: string | null) =>
+  (demiJournee || "").toLowerCase().startsWith("soir");
+
+const isDayLearner = (apprenant: any) =>
+  (apprenant?.creneau_horaire || "").toString().toLowerCase().includes("jour");
+
 export function DocumentsCompletes({ apprenant }: Props) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -221,7 +227,11 @@ export function DocumentsCompletes({ apprenant }: Props) {
         };
       });
 
-      const emargDocs = ((emargRes.data as any[]) || []).map((e) => ({
+      const emargements = (((emargRes.data as any[]) || [])).filter(
+        (e) => !(isDayLearner(apprenant) && isEveningSignature(e.demi_journee))
+      );
+
+      const emargDocs = emargements.map((e) => ({
         id: `emarg-${e.id}`,
         type_document: "emargement-fc",
         titre: `Émargement — ${e.date_emargement} (${e.demi_journee}) — ${e.absent ? "ABSENT" : "Présent"}`,
@@ -239,7 +249,7 @@ export function DocumentsCompletes({ apprenant }: Props) {
 
       // Build weekly aggregated emargement docs (one per ISO week)
       const weekMap = new Map<string, { weekStart: Date; weekEnd: Date; year: number; week: number; sigs: any[] }>();
-      for (const e of ((emargRes.data as any[]) || [])) {
+      for (const e of emargements) {
         const d = new Date(e.date_emargement + "T00:00:00");
         const ws = startOfWeek(d, { weekStartsOn: 1 });
         const we = endOfWeek(d, { weekStartsOn: 1 });
