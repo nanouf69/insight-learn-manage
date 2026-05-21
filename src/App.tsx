@@ -22,6 +22,7 @@ import RevolutConnect from "./pages/RevolutConnect";
 import DevisPublic from "./pages/DevisPublic";
 import DevisPersonnel from "./pages/DevisPersonnel";
 import ReservationCarteVtc from "./pages/ReservationCarteVtc";
+import Booking from "./pages/Booking";
 
 // Onboarding pages
 import OnboardingWelcome from "./pages/onboarding/OnboardingWelcome";
@@ -104,6 +105,7 @@ function App() {
                 <Route path="/fournisseur/:token" element={<ErrorBoundary><FournisseurPortal /></ErrorBoundary>} />
                 <Route path="/devis" element={<ErrorBoundary><DevisPublic /></ErrorBoundary>} />
                 <Route path="/devis-personnel" element={<ErrorBoundary><DevisPersonnel /></ErrorBoundary>} />
+                <Route path="/booking" element={<ErrorBoundary><Booking /></ErrorBoundary>} />
                 
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />

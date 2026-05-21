@@ -19,7 +19,8 @@ import {
   Monitor,
   Package,
   Trash2,
-  ShieldCheck
+  ShieldCheck,
+  CalendarClock
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -42,6 +43,7 @@ const menuItems = [
   { id: "organisations", label: "Organisations", icon: Building2 },
   { id: "crm", label: "Apprenants", icon: Users },
   { id: "examens", label: "Examen et Réussite", icon: ClipboardCheck },
+  { id: "creneaux-25-mai", label: "Créneaux 25 mai", icon: CalendarClock },
   { id: "rdv-carte-vtc", label: "Planning RDV Carte VTC", icon: Truck },
   { id: "documents", label: "Documents", icon: FileText },
   { id: "factures", label: "Factures", icon: Receipt },
