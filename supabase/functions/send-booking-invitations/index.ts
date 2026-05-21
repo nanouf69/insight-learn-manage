@@ -21,8 +21,8 @@ function hasExam26Mai(date: string | null | undefined): boolean {
 function isElearning(type: string | null | undefined, creneau: string | null | undefined): boolean {
   const t = (type ?? "").toLowerCase().trim();
   const c = (creneau ?? "").toLowerCase().trim();
-  // VTC e-learning uniquement (exclut TAXI / TA)
-  return t === "vtc-e" || (t === "vtc" && c === "en-ligne");
+  // E-learning : VTC-e, TAXI-e, TA (toujours e-learning), ou créneau "en-ligne"
+  return t.endsWith("-e") || t === "ta" || c === "en-ligne";
 }
 
 function buildHtml(appUrl: string, prenom: string, nom: string): string {
