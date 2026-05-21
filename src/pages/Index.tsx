@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -67,6 +67,7 @@ const getErrorMessage = (err: unknown, fallback: string) => err instanceof Error
 const Index = () => {
   const { profile, user, loading } = useAuth();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const lastCheckedUserIdRef = useRef<string | null>(null);
   const [currentPage, setCurrentPage] = useState("dashboard");
   const [pageHistory, setPageHistory] = useState<string[]>([]);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -99,9 +100,13 @@ const Index = () => {
 
     const checkAdminAccess = async () => {
       if (!user) {
+        lastCheckedUserIdRef.current = null;
         if (isMounted) setIsAdmin(false);
         return;
       }
+
+      if (lastCheckedUserIdRef.current === user.id && isAdmin !== null) return;
+      lastCheckedUserIdRef.current = user.id;
 
       const { data, error } = await supabase.rpc("has_role", {
         _user_id: user.id,
@@ -109,7 +114,7 @@ const Index = () => {
       });
 
       if (!isMounted) return;
-      setIsAdmin(!error && data === true);
+      if (!error) setIsAdmin(data === true);
     };
 
     checkAdminAccess();
@@ -117,7 +122,7 @@ const Index = () => {
     return () => {
       isMounted = false;
     };
-  }, [user]);
+  }, [user, isAdmin]);
 
   useEffect(() => {
     if (isAdmin !== true) return;
