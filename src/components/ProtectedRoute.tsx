@@ -16,6 +16,9 @@ const withTimeout = async <T,>(operation: PromiseLike<T> | T, ms: number): Promi
   }
 };
 
+const adminRoleCache = new Map<string, boolean>();
+const negativeRoleChecks = new Map<string, number>();
+
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const location = useLocation();
@@ -43,9 +46,17 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
       if (lastKnownUserIdRef.current !== user.id) {
         lastKnownUserIdRef.current = user.id;
-        lastKnownAdminRef.current = null;
+        lastKnownAdminRef.current = adminRoleCache.get(user.id) ?? null;
         consecutiveNegativeChecksRef.current = 0;
-        setIsAdmin(null);
+        setIsAdmin(lastKnownAdminRef.current);
+      }
+
+      const cachedAdmin = adminRoleCache.get(user.id);
+      if (cachedAdmin === true) {
+        lastKnownAdminRef.current = true;
+        setIsAdmin(true);
+        setChecking(false);
+        return;
       }
       setChecking(true);
 
@@ -75,10 +86,12 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
       if (data !== true) {
         consecutiveNegativeChecksRef.current += 1;
+        const globalNegativeChecks = (negativeRoleChecks.get(user.id) ?? 0) + 1;
+        negativeRoleChecks.set(user.id, globalNegativeChecks);
 
         // Avoid a single stale/temporary “false” role response bouncing an admin
         // to /cours-public, which then redirects back here and causes flicker.
-        if (consecutiveNegativeChecksRef.current < 2) {
+        if (consecutiveNegativeChecksRef.current < 3 || globalNegativeChecks < 3) {
           setTimeout(() => {
             if (isActive) setRetryNonce((value) => value + 1);
           }, 500);
@@ -86,6 +99,8 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
         }
       } else {
         consecutiveNegativeChecksRef.current = 0;
+        negativeRoleChecks.delete(user.id);
+        adminRoleCache.set(user.id, true);
       }
 
       lastKnownUserIdRef.current = user.id;
