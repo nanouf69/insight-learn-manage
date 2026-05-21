@@ -18,6 +18,12 @@ function hasExam26Mai(date: string | null | undefined): boolean {
   );
 }
 
+function isElearning(type: string | null | undefined, creneau: string | null | undefined): boolean {
+  const t = (type ?? "").toLowerCase().trim();
+  const c = (creneau ?? "").toLowerCase().trim();
+  return t.endsWith("-e") || c === "en-ligne";
+}
+
 function buildHtml(appUrl: string, prenom: string, nom: string): string {
   return `<!DOCTYPE html><html lang="fr"><body style="margin:0;padding:0;background:#f3f4f6;font-family:Arial,sans-serif">
   <table width="100%" cellpadding="0" cellspacing="0" style="padding:24px 0">
@@ -34,7 +40,7 @@ function buildHtml(appUrl: string, prenom: string, nom: string): string {
           <p style="text-align:center;margin:32px 0">
             <a href="${appUrl}" style="background:#F4A227;color:#fff;text-decoration:none;padding:14px 28px;border-radius:8px;font-weight:bold;display:inline-block">Réserver mon créneau</a>
           </p>
-          <p style="font-size:13px;color:#6b7280">Les créneaux sont attribués par ordre d'arrivée, dépêchez-vous !</p>
+          <p style="font-size:13px;color:#6b7280">Les créneaux sont limités (12 places, premier arrivé premier servi). Dépêchez-vous !</p>
           <p style="margin-top:32px">L'équipe FTRANSPORT</p>
         </td></tr>
         <tr><td style="background:#f9fafb;padding:16px;text-align:center;font-size:12px;color:#6b7280">
@@ -60,7 +66,6 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Auth: only admins
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -77,31 +82,63 @@ serve(async (req) => {
 
     const body = await req.json().catch(() => ({}));
     const baseUrl: string = body.baseUrl || "https://gestion.ftransport.fr";
+    const testMode: boolean = !!body.testMode;
+    const testEmail: string = (body.testEmail || "").trim();
+    const elearningOnly: boolean = body.elearningOnly !== false; // default true
+    const dryRun: boolean = !!body.dryRun;
 
-    // Fetch all apprenants with paging
+    if (testMode && !testEmail) {
+      return new Response(JSON.stringify({ error: "testEmail required in testMode" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     const PAGE = 1000;
     let from = 0;
-    const targets: Array<{ id: string; nom: string; prenom: string; email: string }> = [];
+    const targets: Array<{ id: string; nom: string; prenom: string; email: string; type: string; creneau: string }> = [];
     while (true) {
       const { data, error } = await supabase
         .from("apprenants")
-        .select("id, nom, prenom, email, date_examen_theorique")
+        .select("id, nom, prenom, email, date_examen_theorique, type_apprenant, creneau_horaire")
         .range(from, from + PAGE - 1);
       if (error) throw error;
       if (!data || data.length === 0) break;
       for (const a of data) {
-        if (a.email && hasExam26Mai(a.date_examen_theorique as any)) {
-          targets.push({ id: a.id, nom: a.nom ?? "", prenom: a.prenom ?? "", email: a.email });
-        }
+        if (!a.email) continue;
+        if (!hasExam26Mai(a.date_examen_theorique as any)) continue;
+        if (elearningOnly && !isElearning(a.type_apprenant as any, a.creneau_horaire as any)) continue;
+        targets.push({
+          id: a.id,
+          nom: a.nom ?? "",
+          prenom: a.prenom ?? "",
+          email: a.email,
+          type: a.type_apprenant ?? "",
+          creneau: a.creneau_horaire ?? "",
+        });
       }
       if (data.length < PAGE) break;
       from += PAGE;
     }
 
+    if (dryRun) {
+      return new Response(JSON.stringify({
+        ok: true,
+        dryRun: true,
+        total: targets.length,
+        elearningOnly,
+        recipients: targets.map((t) => ({ id: t.id, nom: t.nom, prenom: t.prenom, email: t.email, type: t.type })),
+      }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     let sent = 0;
     const failures: Array<{ email: string; error: string }> = [];
 
-    for (const t of targets) {
+    // In test mode: take the first target apprenant for {prenom,nom,id} and redirect email to testEmail
+    const recipientsToSend = testMode
+      ? (targets.length > 0
+          ? [{ ...targets[0], email: testEmail }]
+          : [{ id: "00000000-0000-0000-0000-000000000000", nom: "TEST", prenom: "Apprenant", email: testEmail, type: "", creneau: "" }])
+      : targets;
+
+    for (const t of recipientsToSend) {
       const link = `${baseUrl.replace(/\/+$/, "")}/booking?id=${t.id}`;
       const html = buildHtml(link, t.prenom, t.nom);
       const res = await fetch("https://api.resend.com/emails", {
@@ -113,7 +150,9 @@ serve(async (req) => {
         body: JSON.stringify({
           from: "FTRANSPORT <formation@ftransport.fr>",
           to: [t.email],
-          subject: "Votre examen du 26 mai — réservez votre créneau de questions lundi 25 mai",
+          subject: testMode
+            ? "[TEST] Votre examen du 26 mai — réservez votre créneau de questions lundi 25 mai"
+            : "Votre examen du 26 mai — réservez votre créneau de questions lundi 25 mai",
           html,
         }),
       });
@@ -124,9 +163,14 @@ serve(async (req) => {
       }
     }
 
-    return new Response(JSON.stringify({ ok: true, total: targets.length, sent, failures }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(JSON.stringify({
+      ok: true,
+      testMode,
+      elearningOnly,
+      eligibleCount: targets.length,
+      sent,
+      failures,
+    }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
     return new Response(JSON.stringify({ error: String(e) }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
