@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, memo, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Navigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
@@ -1099,10 +1099,11 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     lastFetchedUserIdRef.current = null;
   };
 
-  // Loading state
+  // Admin should never see the learner portal — redirect to dashboard
   if (!embedded && user && profile?.role === "admin") {
-    return null;
+    return <Navigate to="/" replace />;
   }
+
 
   if ((!embedded && (authLoading || (!!user && !session))) || apprenantLoading) {
     return (
