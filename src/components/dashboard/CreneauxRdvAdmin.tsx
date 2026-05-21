@@ -50,11 +50,13 @@ export function CreneauxRdvAdmin() {
     return () => { supabase.removeChannel(ch); };
   }, []);
 
+  const PUBLIC_BASE_URL = "https://gestion.ftransport.fr";
+
   const previewTargets = async () => {
     setSending(true);
     try {
       const { data, error } = await supabase.functions.invoke("send-booking-invitations", {
-        body: { dryRun: true, elearningOnly, baseUrl: window.location.origin },
+        body: { dryRun: true, elearningOnly, baseUrl: PUBLIC_BASE_URL },
       });
       if (error) throw error;
       setEligible(data?.total ?? 0);
@@ -74,7 +76,7 @@ export function CreneauxRdvAdmin() {
     setSending(true);
     try {
       const { data, error } = await supabase.functions.invoke("send-booking-invitations", {
-        body: { testMode: true, testEmail, elearningOnly, baseUrl: window.location.origin },
+        body: { testMode: true, testEmail, elearningOnly, baseUrl: PUBLIC_BASE_URL },
       });
       if (error) throw error;
       if ((data?.sent ?? 0) > 0) toast.success(`Email test envoyé à ${testEmail} ✅`);
@@ -91,7 +93,7 @@ export function CreneauxRdvAdmin() {
     setSending(true);
     try {
       const { data, error } = await supabase.functions.invoke("send-booking-invitations", {
-        body: { elearningOnly, baseUrl: window.location.origin },
+        body: { elearningOnly, baseUrl: PUBLIC_BASE_URL },
       });
       if (error) throw error;
       toast.success(`${data?.sent ?? 0} email(s) envoyé(s) sur ${data?.eligibleCount ?? 0} apprenant(s) ciblé(s).`);
