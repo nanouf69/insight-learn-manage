@@ -93,7 +93,13 @@ Deno.serve(async (req) => {
       .select("id, auth_user_id, formation_choisie, type_apprenant, date_debut_formation, date_fin_formation")
       .eq("id", apprenantId)
       .maybeSingle();
-    if (apprenantError || !apprenant || apprenant.auth_user_id !== user.id) {
+
+    const { data: isAdmin } = await supabase.rpc("has_role", {
+      _user_id: user.id,
+      _role: "admin",
+    });
+
+    if (apprenantError || !apprenant || (apprenant.auth_user_id !== user.id && isAdmin !== true)) {
       return json({ error: "Accès apprenant refusé" }, 403);
     }
 
