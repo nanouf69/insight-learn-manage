@@ -90,7 +90,7 @@ Deno.serve(async (req) => {
 
     const { data: apprenant, error: apprenantError } = await supabase
       .from("apprenants")
-      .select("id, auth_user_id, formation_choisie, type_apprenant, date_debut_formation, date_fin_formation")
+      .select("id, auth_user_id, formation_choisie, type_apprenant, date_debut_formation, date_fin_formation, date_debut_cours_en_ligne, date_fin_cours_en_ligne")
       .eq("id", apprenantId)
       .maybeSingle();
 
@@ -105,67 +105,14 @@ Deno.serve(async (req) => {
 
     const signedDate = parseDate(dateEmargement);
     const today = parseDate(formatISO(new Date()));
-    const start = parseDate(apprenant.date_debut_formation);
-    const end = parseDate(apprenant.date_fin_formation);
+    const start = parseDate(apprenant.date_debut_formation || apprenant.date_debut_cours_en_ligne);
+    const end = parseDate(apprenant.date_fin_formation || apprenant.date_fin_cours_en_ligne);
     if (!signedDate || !today || signedDate.getTime() > today.getTime()) return json({ error: "Date d'émargement non autorisée" }, 403);
     if (start && signedDate.getTime() < start.getTime()) return json({ error: "Signature avant le début de formation interdite" }, 403);
     if (end && signedDate.getTime() > end.getTime()) return json({ error: "Signature après la fin de formation interdite" }, 403);
-
     const isFC = isFormationContinue(apprenant.type_apprenant, apprenant.formation_choisie);
     const isPres = isPresentielType(apprenant.type_apprenant, apprenant.formation_choisie);
-    const expected = new Set<CreneauKey>();
-
-    if (isFC) {
-      if (dowMonday0(signedDate) <= 4) {
-        expected.add("matin");
-        expected.add("apres_midi");
-      }
-    } else if (isPres) {
-      const iso = dateEmargement;
-      const { data: sessionsRows } = await supabase
-        .from("session_apprenants")
-        .select("date_debut, date_fin, sessions:session_id(nom, creneaux, date_debut, date_fin)")
-        .eq("apprenant_id", apprenantId);
-      const activeSession = (sessionsRows || []).map((r: any) => r.sessions).find((s: any) => {
-        const d = s?.date_debut;
-        const f = s?.date_fin;
-        return d && f && iso >= d && iso <= f;
-      });
-      const wantEvening = isEveningSession(activeSession);
-      const fLower = String(apprenant.formation_choisie || "").toLowerCase();
-      const publics = [
-        /taxi/.test(fLower) && !/passerelle/.test(fLower) ? "TAXI" : null,
-        /vtc/.test(fLower) && !/passerelle/.test(fLower) ? "VTC" : null,
-        /\bta\b|passerelle\s*-?\s*ta(?!xi)|passerelle-taxi/.test(fLower) ? "TA" : null,
-        /\bva\b|passerelle\s*-?\s*va|passerelle-vtc/.test(fLower) ? "VA" : null,
-      ].filter(Boolean) as string[];
-      const { data: blocs } = await supabase
-        .from("agenda_blocs")
-        .select("jour, heure_debut, heure_fin, formation, semaine_debut, publics_cibles")
-        .eq("semaine_debut", startOfWeekISO(signedDate))
-        .eq("jour", dowMonday0(signedDate));
-
-      for (const bloc of blocs || []) {
-        const startMin = timeToMin((bloc as any).heure_debut);
-        const isEveningBloc = startMin >= 17 * 60;
-        if (activeSession && wantEvening && !isEveningBloc) continue;
-        if (activeSession && !wantEvening && isEveningBloc) continue;
-        const cibles = Array.isArray((bloc as any).publics_cibles) ? (bloc as any).publics_cibles : [];
-        const matchesPublic = cibles.length > 0
-          ? publics.some((p) => cibles.includes(p))
-          : publics.length === 0 || publics.some((p) => String((bloc as any).formation || "").toLowerCase().includes(p.toLowerCase()));
-        if (!matchesPublic) continue;
-        if (startMin < 12 * 60) expected.add("matin");
-        else if (startMin < 17 * 60) expected.add("apres_midi");
-        else expected.add("soir");
-      }
-      if (expected.size === 0 && dowMonday0(signedDate) <= 4) {
-        if (wantEvening) expected.add("soir");
-        else { expected.add("matin"); expected.add("apres_midi"); }
-      }
-    }
-
-    if (!expected.has(demi)) return json({ error: "Créneau non prévu pour cette formation" }, 403);
+    if (!isFC && !isPres) return json({ error: "Émargement non prévu pour cette formation" }, 403);
 
     const row = {
       apprenant_id: apprenantId,
