@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 
-export type CreneauKey = "matin" | "apres_midi" | "soir";
+export type CreneauKey = "matin" | "apres_midi" | "soir" | "soir_1" | "soir_2";
 
 export interface AgendaBloc {
   jour: number;          // 0 = lundi
@@ -13,6 +13,24 @@ export interface AgendaBloc {
 const timeToMin = (t: string) => {
   const [h, m] = (t || "0:0").split(":").map((x) => parseInt(x, 10) || 0);
   return h * 60 + m;
+};
+
+const isEveningCreneau = (creneau: CreneauKey) => creneau === "soir" || creneau === "soir_1" || creneau === "soir_2";
+
+const isEveningText = (value?: string | null): boolean => {
+  const v = (value || "").toLowerCase();
+  if (/soir/.test(v) || /vtc-s|cours-du-soir/.test(v)) return true;
+  const m = v.match(/(\d{1,2})\s*[h:]/);
+  if (m) {
+    const h = parseInt(m[1], 10);
+    if (!isNaN(h) && h >= 17) return true;
+  }
+  return false;
+};
+
+const splitEveningCreneau = (now: Date = new Date()): CreneauKey => {
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+  return nowMin < 18 * 60 + 30 ? "soir_1" : "soir_2";
 };
 
 // Lundi = 0, Mardi = 1, … Dimanche = 6 (cohérent avec agenda_blocs.jour)
