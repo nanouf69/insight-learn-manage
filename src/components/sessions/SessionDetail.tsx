@@ -2823,7 +2823,6 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                   )}
                 </div>
               )}
-            </div>
             {/* Récapitulatif par type de formation */}
             <div className="shrink-0 mt-4 p-3 rounded-lg bg-muted/50 border">
               <div className="flex flex-wrap items-center justify-center gap-4 text-sm">
@@ -2853,6 +2852,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                   <span className="text-muted-foreground">/ 18 max</span>
                 </div>
               </div>
+            </div>
             </div>
 
           </TabsContent>
