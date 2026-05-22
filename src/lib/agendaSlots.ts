@@ -33,6 +33,18 @@ const splitEveningCreneau = (now: Date = new Date()): CreneauKey => {
   return nowMin < 18 * 60 + 30 ? "soir_1" : "soir_2";
 };
 
+const isCreneauDue = (iso: string, creneau: CreneauKey, todayISO: string, nowMin: number) => {
+  if (iso < todayISO) return true;
+  if (iso > todayISO) return false;
+  switch (creneau) {
+    case "matin": return nowMin >= 8 * 60 + 30;
+    case "apres_midi": return nowMin >= 12 * 60 + 30;
+    case "soir":
+    case "soir_1": return nowMin >= 16 * 60 + 30;
+    case "soir_2": return nowMin >= 18 * 60 + 30;
+  }
+};
+
 // Lundi = 0, Mardi = 1, … Dimanche = 6 (cohérent avec agenda_blocs.jour)
 const todayDow = (d = new Date()) => {
   const js = d.getDay(); // 0 = Sunday
