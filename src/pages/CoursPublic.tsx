@@ -1310,13 +1310,14 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         </Button>
         {emargementFCStatus === "needed" && emargementCreneau && (
           <EmargementFCModal
-            key={emargementCreneau}
+            key={`${emargementDate || "today"}|${emargementCreneau}`}
             apprenantId={apprenant!.id!}
             userId={user!.id}
             apprenantNom={apprenant!.nom}
             apprenantPrenom={apprenant!.prenom}
             creneau={emargementCreneau}
             mode={emargementMode}
+            dateEmargement={emargementDate || undefined}
             onSigned={() => setEmargementRefreshTick((t) => t + 1)}
             onSkipped={() => setEmargementFCStatus("skipped")}
           />
