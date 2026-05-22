@@ -306,6 +306,7 @@ export default function FournisseurPortal() {
   const [civilite, setCivilite] = useState("");
   const [prenom, setPrenom] = useState("");
   const [nom, setNom] = useState("");
+  const [apprenantSearch, setApprenantSearch] = useState("");
   const [email, setEmail] = useState("");
   const [telephone, setTelephone] = useState("");
   const [adresse, setAdresse] = useState("");
