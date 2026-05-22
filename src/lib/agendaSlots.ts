@@ -339,6 +339,9 @@ export const getExpectedEmargements = async (params: {
     const weekStart = formatISO(startOfWeek(cur2));
     const dow = todayDow(cur2);
 
+    // Pas de cours le week-end (sauf si la session indique le contraire)
+    if (dow > 4) { cur2.setDate(cur2.getDate() + 1); continue; }
+
     let activeSession: any = null;
     for (const s of sessions) {
       const d = s?.date_debut as string | undefined;
@@ -376,6 +379,19 @@ export const getExpectedEmargements = async (params: {
       else if (startMin < 17 * 60) set.add("apres_midi");
       else set.add("soir");
     }
+
+    // Fallback : si aucune feuille d'agenda n'est planifiée pour ce jour,
+    // on propose quand même les demi-journées standard pour que l'apprenant
+    // puisse régulariser ses signatures manquantes depuis son compte en ligne.
+    if (set.size === 0) {
+      if (wantEvening) {
+        set.add("soir");
+      } else {
+        set.add("matin");
+        set.add("apres_midi");
+      }
+    }
+
     for (const k of ["matin", "apres_midi", "soir"] as CreneauKey[]) {
       if (set.has(k)) out.push({ date: iso, creneau: k });
     }
