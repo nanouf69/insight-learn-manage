@@ -902,12 +902,13 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   const maxHeuresSession = isSessionSoir ? 40 : 60;
 
   // Poids horaire par demi-journée
+  // Cours du soir : soir_1 = 17h00-18h30 (1.5h), soir_2 = 18h30-21h00 (2.5h)
   const DEMI_HEURES: Record<string, number> = {
     matin: 3,
     apres_midi: 3,
     soir: 4,
-    soir_1: 2,
-    soir_2: 2,
+    soir_1: 1.5,
+    soir_2: 2.5,
   };
 
   // Charger les émargements pour calculer les heures de présence par apprenant
