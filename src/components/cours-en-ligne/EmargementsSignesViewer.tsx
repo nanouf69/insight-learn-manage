@@ -366,7 +366,13 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
         </Card>
       ) : (
         <div className="grid gap-3">
-          {groupedByDay.map(([date, { matin, apresMidi, soir }]) => (
+          {groupedByDay.map(([date, { matin, apresMidi, soir, expectedSet }]) => {
+            const keys: CreneauKey[] = [];
+            if (matin || expectedSet.has("matin")) keys.push("matin");
+            if (apresMidi || expectedSet.has("apres_midi")) keys.push("apres_midi");
+            if (soir || expectedSet.has("soir")) keys.push("soir");
+            const colsClass = keys.length >= 3 ? "sm:grid-cols-3" : keys.length === 2 ? "sm:grid-cols-2" : "sm:grid-cols-1";
+            return (
             <Card key={date} className="p-3">
               <div className="flex items-center justify-between flex-wrap gap-2 mb-3 pb-2 border-b">
                 <p className="font-semibold capitalize text-sm">{formatDateFR(date)}</p>
@@ -381,10 +387,10 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
                 </Button>
               </div>
 
-              <div className={`grid grid-cols-1 ${soir ? "sm:grid-cols-3" : "sm:grid-cols-2"} gap-3`}>
-                {(["matin", "apres-midi", ...(soir ? (["soir"] as const) : [])] as const).map((key) => {
-                  const r = key === "matin" ? matin : key === "apres-midi" ? apresMidi : soir;
-                  const label = labelDemi(key);
+              <div className={`grid grid-cols-1 ${colsClass} gap-3`}>
+                {keys.map((key) => {
+                  const r = key === "matin" ? matin : key === "apres_midi" ? apresMidi : soir;
+                  const label = labelDemi(key === "apres_midi" ? "apres-midi" : key);
                   return (
                     <div key={key} className="border rounded-md p-2 bg-slate-50/50">
                       <div className="flex items-center justify-between mb-1.5">
@@ -413,13 +419,38 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
                           <span className="text-[10px] text-muted-foreground italic">—</span>
                         )}
                       </div>
+                      {!r && userId && apprenantId && (
+                        <Button
+                          size="sm"
+                          className="w-full mt-2 h-7 text-xs"
+                          onClick={() => setSignTarget({ date, creneau: key })}
+                        >
+                          <PenTool className="h-3 w-3 mr-1" />
+                          Signer ce créneau
+                        </Button>
+                      )}
                     </div>
                   );
                 })}
               </div>
             </Card>
-          ))}
+            );
+          })}
         </div>
+      )}
+
+      {signTarget && userId && apprenantId && (
+        <EmargementFCModal
+          apprenantId={apprenantId}
+          userId={userId}
+          apprenantNom={apprenant?.nom || ""}
+          apprenantPrenom={apprenant?.prenom || ""}
+          creneau={signTarget.creneau}
+          mode={isFormationContinue(apprenant?.type_apprenant, apprenant?.formation_choisie) ? "fc" : "presentiel"}
+          dateEmargement={signTarget.date}
+          onSigned={() => { setSignTarget(null); setRefreshTick((t) => t + 1); }}
+          onSkipped={() => setSignTarget(null)}
+        />
       )}
 
       {!completed && (
