@@ -2121,11 +2121,12 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={cn(
-        "flex flex-col overflow-hidden",
+        "!flex flex-col overflow-hidden !gap-0",
         isFullscreen
           ? "max-w-none w-screen h-screen sm:max-w-none sm:rounded-none max-h-screen p-6"
           : "sm:max-w-[800px] h-[90vh] max-h-[90vh]"
       )}>
+
         <DialogHeader>
           <div className="flex items-center justify-between">
             <DialogTitle className="flex items-center gap-3">
@@ -2352,7 +2353,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                 <Loader2 className="h-6 w-6 animate-spin text-primary" />
               </div>
             ) : (
-              <div className="learners-list flex-1 overflow-y-auto min-h-[350px] pb-6">
+              <div className="learners-list flex-1 min-h-0 overflow-y-auto pr-2 pb-6">
                 <div className="space-y-3 p-1">
                   {apprenantsInSession.map((sessionApprenant: any) => {
                     const apprenant = sessionApprenant.apprenant ?? allApprenants.find((a) => a.id === sessionApprenant.apprenant_id);
