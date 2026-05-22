@@ -29,7 +29,7 @@ import { useSessionKeepAlive } from "@/hooks/useSessionKeepAlive";
 import { PresenceCheckModal } from "@/components/cours-en-ligne/PresenceCheckModal";
 import { ApprenantChatWidget } from "@/components/chat/ApprenantChatWidget";
 import { EmargementFCModal, isFormationContinue } from "@/components/cours-en-ligne/EmargementFCModal";
-import { isPresentielType, getTodayAgendaBlocs, type CreneauKey } from "@/lib/agendaSlots";
+import { isPresentielType, getTodayAgendaBlocs, getExpectedEmargements, type CreneauKey } from "@/lib/agendaSlots";
 import { useAuth } from "@/contexts/AuthContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { computeUnlockState, isModuleLocked as computeIsModuleLocked } from "@/lib/moduleUnlockLogic";
