@@ -309,8 +309,10 @@ export const getExpectedEmargements = async (params: {
       const dow = todayDow(cur);
       if (dow <= 4) {
         const iso = formatISO(cur);
-        out.push({ date: iso, creneau: "matin" });
-        out.push({ date: iso, creneau: "apres_midi" });
+        const candidates: CreneauKey[] = ["matin", "apres_midi"];
+        for (const creneau of candidates) {
+          if (isCreneauDue(iso, creneau, formatISO(new Date()), new Date().getHours() * 60 + new Date().getMinutes())) out.push({ date: iso, creneau });
+        }
       }
       cur.setDate(cur.getDate() + 1);
     }
@@ -340,12 +342,12 @@ export const getExpectedEmargements = async (params: {
     const iso = formatISO(cur2);
     const dow = todayDow(cur2);
     if (dow <= 4) {
-      if (wantEvening) {
-        out.push({ date: iso, creneau: "soir_1" });
-        out.push({ date: iso, creneau: "soir_2" });
-      } else {
-        out.push({ date: iso, creneau: "matin" });
-        out.push({ date: iso, creneau: "apres_midi" });
+      const candidates: CreneauKey[] = wantEvening ? ["soir_1", "soir_2"] : ["matin", "apres_midi"];
+      const today = formatISO(new Date());
+      const now = new Date();
+      const nowMin = now.getHours() * 60 + now.getMinutes();
+      for (const creneau of candidates) {
+        if (isCreneauDue(iso, creneau, today, nowMin)) out.push({ date: iso, creneau });
       }
     }
     cur2.setDate(cur2.getDate() + 1);
