@@ -349,6 +349,8 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
     );
   }
 
+  const hasEveningEmargements = groupedByDay.some(([, day]) => day.expectedSet?.has("soir_1") || day.expectedSet?.has("soir_2") || day.soir1 || day.soir2 || day.soir);
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -357,7 +359,7 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
           <div>
             <h2 className="text-xl font-bold">Mes feuilles d'émargement signées</h2>
             <p className="text-xs text-muted-foreground">
-              Regroupées par journée — matin et après-midi sur la même feuille.
+              {hasEveningEmargements ? "Regroupées par journée — 17h00-18h30 et 18h30-21h00." : "Regroupées par journée — matin et après-midi sur la même feuille."}
             </p>
           </div>
         </div>
