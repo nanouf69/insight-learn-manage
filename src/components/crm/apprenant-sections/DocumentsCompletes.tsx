@@ -150,8 +150,24 @@ const SKIP_KEYS = new Set(['_status', '_signature_image', 'apprenant_nom', 'appr
 const isEveningSignature = (demiJournee?: string | null) =>
   (demiJournee || "").toLowerCase().startsWith("soir");
 
-const isDayLearner = (apprenant: any) =>
-  (apprenant?.creneau_horaire || "").toString().toLowerCase().includes("jour");
+// Une session est considérée comme "soir" si son nom contient "soir"
+// ou si son tableau `creneaux` contient une plage démarrant >= 17h.
+const isEveningSession = (s: any): boolean => {
+  if (!s) return false;
+  const nom = (s.nom || "").toLowerCase();
+  if (/soir/.test(nom)) return true;
+  const cren = Array.isArray(s.creneaux) ? s.creneaux : [];
+  return cren.some((c: string) => {
+    const v = (c || "").toLowerCase();
+    if (/soir/.test(v)) return true;
+    const m = v.match(/(\d{1,2})\s*[h:]/);
+    if (m) {
+      const h = parseInt(m[1], 10);
+      if (!isNaN(h) && h >= 17) return true;
+    }
+    return false;
+  });
+};
 
 export function DocumentsCompletes({ apprenant }: Props) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
