@@ -2252,7 +2252,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                     Envoyer un mail type ({selectedApprenants.size})
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="max-h-80 overflow-y-auto w-72">
+                <DropdownMenuContent align="end" className="max-h-80 w-72">
                   {emailTemplates.map((t: any) => (
                     <DropdownMenuItem
                       key={t.id}
@@ -2302,13 +2302,12 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
             <div className="learners-list flex-1 min-h-0 overflow-y-auto px-2 pb-6">
               {showAddApprenant && (
                 <div className="mb-4 p-3 border rounded-lg bg-muted/30">
-                  <div className="relative mb-3">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <div className="flex items-center gap-2 mb-3">
+                    <Search className="w-4 h-4 shrink-0 text-muted-foreground" />
                     <Input
                       placeholder="Rechercher un apprenant..."
                       value={searchApprenant}
                       onChange={(e) => setSearchApprenant(e.target.value)}
-                      className="pl-10"
                     />
                   </div>
                   <div className="space-y-2">
