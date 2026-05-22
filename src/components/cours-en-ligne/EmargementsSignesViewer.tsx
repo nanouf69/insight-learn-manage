@@ -367,11 +367,11 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
       ) : (
         <div className="grid gap-3">
           {groupedByDay.map(([date, { matin, apresMidi, soir, expectedSet }]) => {
-            const keys: CreneauKey[] = [];
-            if (matin || expectedSet.has("matin")) keys.push("matin");
-            if (apresMidi || expectedSet.has("apres_midi")) keys.push("apres_midi");
+            // Toujours afficher matin + après-midi pour permettre la signature des créneaux manquants.
+            // La colonne soir n'apparaît que si une signature existe ou est attendue.
+            const keys: CreneauKey[] = ["matin", "apres_midi"];
             if (soir || expectedSet.has("soir")) keys.push("soir");
-            const colsClass = keys.length >= 3 ? "sm:grid-cols-3" : keys.length === 2 ? "sm:grid-cols-2" : "sm:grid-cols-1";
+            const colsClass = keys.length >= 3 ? "sm:grid-cols-3" : "sm:grid-cols-2";
             return (
             <Card key={date} className="p-3">
               <div className="flex items-center justify-between flex-wrap gap-2 mb-3 pb-2 border-b">
