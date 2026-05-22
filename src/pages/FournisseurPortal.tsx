@@ -870,6 +870,7 @@ export default function FournisseurPortal() {
                               <SelectItem value="anglais-14h">Anglais Professionnel 14H - 1 200 €</SelectItem>
                               <SelectItem value="anglais-24h">Anglais Professionnel 24H - 1 500 €</SelectItem>
                               <SelectItem value="anglais-34h">Anglais Professionnel 34H - 1 900 €</SelectItem>
+                              <SelectItem value="anglais-55h">Anglais Professionnel 55H - 4 500 €</SelectItem>
                             </SelectGroup>
                           </SelectContent>
                         </Select>
