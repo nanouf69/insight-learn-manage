@@ -40,7 +40,7 @@ const isCreneauDue = (iso: string, creneau: CreneauKey, todayISO: string, nowMin
     case "matin": return nowMin >= 8 * 60 + 30;
     case "apres_midi": return nowMin >= 12 * 60 + 30;
     case "soir":
-    case "soir_1": return nowMin >= 16 * 60 + 30;
+    case "soir_1": return nowMin >= 17 * 60;
     case "soir_2": return nowMin >= 18 * 60 + 30;
   }
 };

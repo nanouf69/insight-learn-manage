@@ -114,14 +114,15 @@ const buildEmargementHTML = (
         r?.signature_data_url
           ? `<img src="${r.signature_data_url}" alt="Signature" style="max-height:55px;max-width:95%;"/>`
           : "";
+      const cells = hasSoirSplit
+        ? `<td class="horaire">17:00 - 18:30</td><td class="sig">${sigImg(soir1)}</td><td class="horaire">18:30 - 21:00</td><td class="sig">${sigImg(soir2)}</td>`
+        : hasSoir
+          ? `<td class="horaire">17:00 - 21:00</td><td class="sig">${sigImg(soir)}</td>`
+          : `<td class="horaire">09:00 - 12:00</td><td class="sig">${sigImg(matin)}</td><td class="horaire">13:00 - 16:00</td><td class="sig">${sigImg(apresMidi)}</td>`;
       return `
         <tr>
           <td class="jour">${jourLabel}</td>
-          <td class="horaire">09:00 - 12:00</td>
-          <td class="sig">${sigImg(matin)}</td>
-          <td class="horaire">13:00 - 16:00</td>
-          <td class="sig">${sigImg(apresMidi)}</td>
-          ${hasSoirSplit ? `<td class="horaire">17:00 - 18:30</td><td class="sig">${sigImg(soir1)}</td><td class="horaire">18:30 - 21:00</td><td class="sig">${sigImg(soir2)}</td>` : hasSoir ? `<td class="horaire">17:00 - 21:00</td><td class="sig">${sigImg(soir)}</td>` : ""}
+          ${cells}
         </tr>`;
     })
     .join("");
@@ -170,20 +171,14 @@ const buildEmargementHTML = (
     <thead>
       <tr class="top">
         <th rowspan="2" style="width:160px;">Jour</th>
-        <th colspan="2">Matin</th>
-        <th colspan="2">Apres-midi</th>
-        ${hasSoirSplit ? `<th colspan="2">Soir 1</th><th colspan="2">Soir 2</th>` : hasSoir ? `<th colspan="2">Soir</th>` : ""}
+        ${hasSoirSplit ? `<th colspan="2">Soir 1</th><th colspan="2">Soir 2</th>` : hasSoir ? `<th colspan="2">Soir</th>` : `<th colspan="2">Matin</th><th colspan="2">Apres-midi</th>`}
       </tr>
       <tr class="sub">
-        <th>Horaire</th>
-        <th>Signature du stagiaire</th>
-        <th>Horaire</th>
-        <th>Signature du stagiaire</th>
-        ${hasSoirSplit ? `<th>Horaire</th><th>Signature du stagiaire</th><th>Horaire</th><th>Signature du stagiaire</th>` : hasSoir ? `<th>Horaire</th><th>Signature du stagiaire</th>` : ""}
+        ${hasSoir ? `<th>Horaire</th><th>Signature du stagiaire</th>${hasSoirSplit ? `<th>Horaire</th><th>Signature du stagiaire</th>` : ""}` : `<th>Horaire</th><th>Signature du stagiaire</th><th>Horaire</th><th>Signature du stagiaire</th>`}
       </tr>
     </thead>
     <tbody>
-      ${rowsHtml || `<tr><td colspan="${hasSoirSplit ? 9 : hasSoir ? 7 : 5}" style="padding:20px;color:#999;">Aucune signature enregistrée</td></tr>`}
+      ${rowsHtml || `<tr><td colspan="${hasSoir ? (hasSoirSplit ? 5 : 3) : 5}" style="padding:20px;color:#999;">Aucune signature enregistrée</td></tr>`}
     </tbody>
   </table>
 
@@ -354,6 +349,8 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
     );
   }
 
+  const hasEveningEmargements = groupedByDay.some(([, day]) => day.expectedSet?.has("soir_1") || day.expectedSet?.has("soir_2") || day.soir1 || day.soir2 || day.soir);
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -362,7 +359,7 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
           <div>
             <h2 className="text-xl font-bold">Mes feuilles d'émargement signées</h2>
             <p className="text-xs text-muted-foreground">
-              Regroupées par journée — matin et après-midi sur la même feuille.
+              {hasEveningEmargements ? "Regroupées par journée — 17h00-18h30 et 18h30-21h00." : "Regroupées par journée — matin et après-midi sur la même feuille."}
             </p>
           </div>
         </div>

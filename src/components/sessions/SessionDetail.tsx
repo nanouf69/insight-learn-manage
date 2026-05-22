@@ -176,13 +176,22 @@ type SessionApprenantSchedule = {
   heure_fin_personnalisee?: string | null;
 };
 
-const buildDefaultFCVTCDay = (date: Date): AgendaDaySlot => ({
-  date: new Date(date),
-  matinDebut: '09:00',
-  matinFin: '12:00',
-  apremDebut: '13:00',
-  apremFin: '17:00',
-});
+const buildDefaultFCVTCDay = (date: Date, isCoursDuSoir = false): AgendaDaySlot => isCoursDuSoir
+  ? {
+      date: new Date(date),
+      matinDebut: '17:00',
+      matinFin: '18:30',
+      apremDebut: '18:30',
+      apremFin: '21:00',
+      isSoir: true,
+    }
+  : {
+      date: new Date(date),
+      matinDebut: '09:00',
+      matinFin: '12:00',
+      apremDebut: '13:00',
+      apremFin: '17:00',
+    };
 
 /**
  * Fallback : génère une liste de jours d'émargement basés uniquement sur les
@@ -208,13 +217,22 @@ const buildFallbackAgendaDays = (
   const cur = new Date(start);
   while (cur <= end) {
     const day: AgendaDaySlot = { date: new Date(cur) };
-    if (options.heureDebutPersonnalisee && options.heureFinPersonnalisee) {
+    const dayOfWeek = cur.getDay();
+    if (dayOfWeek === 0 || dayOfWeek === 6) {
+      cur.setDate(cur.getDate() + 1);
+      continue;
+    }
+
+    if (options.isCoursDuSoir) {
+      day.matinDebut = '17:00';
+      day.matinFin = '18:30';
+      day.apremDebut = '18:30';
+      day.apremFin = '21:00';
+      day.isSoir = true;
+    } else if (options.heureDebutPersonnalisee && options.heureFinPersonnalisee) {
       // Une seule plage personnalisée : on l'affiche en matin
       day.matinDebut = options.heureDebutPersonnalisee.slice(0, 5);
       day.matinFin = options.heureFinPersonnalisee.slice(0, 5);
-    } else if (options.isCoursDuSoir) {
-      day.apremDebut = '17:00';
-      day.apremFin = '21:00';
     } else if (options.isPratique) {
       day.matinDebut = '09:00';
       day.matinFin = '12:00';
@@ -244,6 +262,7 @@ const applyFCVTCPersonalizedSchedule = (
   sessionStart: string,
   sessionEnd: string,
   schedule?: SessionApprenantSchedule,
+  isCoursDuSoir = false,
 ) => {
   const effectiveEnd = schedule?.date_fin_personnalisee || sessionEnd;
   const startDate = new Date(`${sessionStart}T00:00:00`);
@@ -276,14 +295,14 @@ const applyFCVTCPersonalizedSchedule = (
     const isCustomEndDay = key === schedule?.date_fin_personnalisee;
 
     if (!dayMap.has(key) && (shouldBackfillAllDays || isBeyondSessionEnd || isCustomEndDay)) {
-      dayMap.set(key, buildDefaultFCVTCDay(new Date(d)));
+      dayMap.set(key, buildDefaultFCVTCDay(new Date(d), isCoursDuSoir));
     }
   }
 
   if (schedule?.date_fin_personnalisee && dayMap.has(schedule.date_fin_personnalisee)) {
     const customDay = dayMap.get(schedule.date_fin_personnalisee)!;
 
-    if (schedule.heure_debut_personnalisee && schedule.heure_fin_personnalisee) {
+    if (!isCoursDuSoir && schedule.heure_debut_personnalisee && schedule.heure_fin_personnalisee) {
       customDay.matinDebut = undefined;
       customDay.matinFin = undefined;
       customDay.apremDebut = schedule.heure_debut_personnalisee;
@@ -2118,6 +2137,8 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
         const { isTA, isVA, isTaxi, isVTC } = getSessionTrainingFlags(apprenant.type_apprenant);
         const isFCVTC = isFormationContinue && isVTC;
         const isPratique = session.type_session === 'pratique';
+        const creneauxText = Array.isArray((session as any).creneaux) ? (session as any).creneaux.join(' ') : String((session as any).creneaux || '');
+        const isCoursDuSoir = isEveningTrainingValue(session.title, (session as any).nom, creneauxText);
         const formationLabel = isFCVTC ? 'Formation Continue VTC' : isPratique ? (isTaxi ? 'Formation pratique TAXI' : 'Formation pratique VTC') : isTaxi ? 'Formation TAXI' : 'Formation VTC';
         const formateurNames = isPratique
           ? (isTaxi ? ["Rim TOUIL"] : ["Naoufal GUENICHI"])
@@ -2176,12 +2197,12 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
               result.apremFin = afternoonSlots.reduce((max, s) => s.fin > max ? s.fin : max, afternoonSlots[0].fin);
             }
             if (isVTC) {
-              const isCoursDuSoir = (session.title || '').toLowerCase().includes('soir');
               if (isCoursDuSoir) {
-                result.matinDebut = undefined;
-                result.matinFin = undefined;
-                result.apremDebut = '17:00';
+                result.matinDebut = '17:00';
+                result.matinFin = '18:30';
+                result.apremDebut = '18:30';
                 result.apremFin = '21:00';
+                result.isSoir = true;
               } else {
                 const apremFinHeure = isFCVTC ? '17:00' : '16:00';
                 if (result.matinDebut) { result.matinDebut = '09:00'; result.matinFin = '12:00'; }
@@ -2201,13 +2222,14 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
               session.dateDebut,
               session.dateFin,
               saForEmargement,
+              isCoursDuSoir,
             )
           : agendaDays.length === 0
             ? buildFallbackAgendaDays(session.dateDebut, session.dateFin, {
                 isPratique,
                 isVTC,
                 isTaxi,
-                isCoursDuSoir: (session.title || '').toLowerCase().includes('soir'),
+                isCoursDuSoir,
                 heureDebutPersonnalisee: saForEmargement.heure_debut_personnalisee,
                 heureFinPersonnalisee: saForEmargement.heure_fin_personnalisee,
               })
@@ -2674,6 +2696,8 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                 const { isTA, isVA, isTaxi, isVTC } = getSessionTrainingFlags(apprenant.type_apprenant);
                                 const isFCVTC = isFormationContinue && isVTC;
                                 const isPratique = session.type_session === 'pratique';
+                                const creneauxText = Array.isArray((session as any).creneaux) ? (session as any).creneaux.join(' ') : String((session as any).creneaux || '');
+                                const isCoursDuSoir = isEveningTrainingValue(session.title, (session as any).nom, creneauxText);
                                 const formationLabel = isFCVTC ? 'Formation Continue VTC' : isPratique ? (isTaxi ? 'Formation pratique TAXI' : 'Formation pratique VTC') : isTaxi ? 'Formation TAXI' : 'Formation VTC';
                                 const formateurNames = isPratique
                                   ? (isTaxi ? ["Rim TOUIL"] : ["Naoufal GUENICHI"])
@@ -2737,13 +2761,12 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                     }
                                     // Pour VTC : forcer les horaires selon le créneau
                                     if (isVTC) {
-                                      const isCoursDuSoir = (session.title || '').toLowerCase().includes('soir');
                                       if (isCoursDuSoir) {
-                                        // Cours du soir : 17:00-21:00 en un seul bloc après-midi
-                                        result.matinDebut = undefined;
-                                        result.matinFin = undefined;
-                                        result.apremDebut = '17:00';
+                                        result.matinDebut = '17:00';
+                                        result.matinFin = '18:30';
+                                        result.apremDebut = '18:30';
                                         result.apremFin = '21:00';
+                                        result.isSoir = true;
                                       } else {
                                         const apremFinHeure = isFCVTC ? '17:00' : '16:00';
                                         if (result.matinDebut) { result.matinDebut = '09:00'; result.matinFin = '12:00'; }
@@ -2763,13 +2786,14 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                       session.dateDebut,
                                       session.dateFin,
                                       sessionApprenant,
+                                      isCoursDuSoir,
                                     )
                                   : agendaDays.length === 0
                                     ? buildFallbackAgendaDays(session.dateDebut, session.dateFin, {
                                         isPratique: isPratiqueIndiv,
                                         isVTC,
                                         isTaxi,
-                                        isCoursDuSoir: (session.title || '').toLowerCase().includes('soir'),
+                                        isCoursDuSoir,
                                         heureDebutPersonnalisee: sessionApprenant.heure_debut_personnalisee,
                                         heureFinPersonnalisee: sessionApprenant.heure_fin_personnalisee,
                                       })
