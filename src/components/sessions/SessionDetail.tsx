@@ -2698,7 +2698,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                 <span className="text-xs">Mail</span>
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="max-h-80 w-72">
+                            <DropdownMenuContent align="end" className="max-h-80 w-72 overflow-y-auto">
                               {emailTemplates.map((t: any) => (
                                 <div key={t.id} className="flex items-center">
                                   <DropdownMenuItem
