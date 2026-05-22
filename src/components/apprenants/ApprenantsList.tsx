@@ -55,7 +55,13 @@ interface Apprenant {
   type_apprenant: string | null;
   organisme_financeur: string | null;
   formation_choisie?: string | null;
+  date_debut_formation?: string | null;
+  date_fin_formation?: string | null;
+  date_debut_cours_en_ligne?: string | null;
+  date_fin_cours_en_ligne?: string | null;
+  date_formation_catalogue?: string | null;
 }
+
 
 interface EmargementStatus {
   needsSignature: boolean;
