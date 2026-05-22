@@ -2299,18 +2299,18 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
             </div>
 
 
-            {showAddApprenant && (
-              <div className="shrink-0 mb-4 p-3 border rounded-lg bg-muted/30">
-                <div className="relative mb-3">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Rechercher un apprenant..."
-                    value={searchApprenant}
-                    onChange={(e) => setSearchApprenant(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-                <ScrollArea className="h-32">
+            <div className="learners-list flex-1 min-h-0 overflow-y-auto px-2 pb-6">
+              {showAddApprenant && (
+                <div className="mb-4 p-3 border rounded-lg bg-muted/30">
+                  <div className="relative mb-3">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Rechercher un apprenant..."
+                      value={searchApprenant}
+                      onChange={(e) => setSearchApprenant(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
                   <div className="space-y-2">
                     {apprenantsNotInSession.slice(0, 10).map((apprenant) => (
                       <div 
@@ -2345,16 +2345,14 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                       </p>
                     )}
                   </div>
-                </ScrollArea>
-              </div>
-            )}
+                </div>
+              )}
 
-            {loadingApprenants ? (
-              <div className="flex items-center justify-center py-8">
+              {loadingApprenants ? (
+                <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-6 w-6 animate-spin text-primary" />
               </div>
             ) : (
-              <div className="learners-list flex-1 min-h-0 overflow-y-auto pr-2 pb-6">
                 <div className="space-y-3 p-1">
                   {apprenantsInSession.map((sessionApprenant: any) => {
                     const apprenant = sessionApprenant.apprenant ?? allApprenants.find((a) => a.id === sessionApprenant.apprenant_id);
