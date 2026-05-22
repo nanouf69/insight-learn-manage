@@ -107,7 +107,13 @@ function App() {
                 <Route path="/devis" element={<ErrorBoundary><DevisPublic /></ErrorBoundary>} />
                 <Route path="/devis-personnel" element={<ErrorBoundary><DevisPersonnel /></ErrorBoundary>} />
                 <Route path="/booking" element={<ErrorBoundary><Booking /></ErrorBoundary>} />
-                
+
+                <Route path="/sessions/:id" element={
+                  <ProtectedRoute>
+                    <ErrorBoundary><SessionDetailPage /></ErrorBoundary>
+                  </ProtectedRoute>
+                } />
+
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
