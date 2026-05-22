@@ -141,8 +141,8 @@ export const EmargementFCModal = ({
 
     setSaving(true);
     try {
-      const docType = `justificatif_absence_${todayISO()}_${demi}`;
-      const titre = `Justificatif d'absence — ${new Date().toLocaleDateString("fr-FR")} (${creneauLabel(demi)})`;
+      const docType = `justificatif_absence_${effectiveDate}_${demi}`;
+      const titre = `Justificatif d'absence — ${dateLabel} (${creneauLabel(demi)})`;
 
       const formData = new FormData();
       formData.append("file", justifFile);
