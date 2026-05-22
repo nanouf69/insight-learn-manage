@@ -56,6 +56,8 @@ const labelDemi = (d: string) => {
   if (k === "matin") return "Matin (09h00 — 12h00)";
   if (k === "apres-midi" || k === "après-midi") return "Après-midi (13h00 — 16h00)";
   if (k === "soir") return "Soir (17h00 — 21h00)";
+  if (k === "soir-1") return "Soir 1 (17h00 — 18h30)";
+  if (k === "soir-2") return "Soir 2 (18h30 — 21h00)";
   return d;
 };
 
@@ -78,8 +80,16 @@ const formatShortDate = (iso?: string | null) => {
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const hasValidSignature = (r?: EmargementRow) => Boolean(r?.signature_data_url?.trim());
 
+type GroupedEmargements = {
+  matin?: EmargementRow;
+  apresMidi?: EmargementRow;
+  soir?: EmargementRow;
+  soir1?: EmargementRow;
+  soir2?: EmargementRow;
+};
+
 const buildEmargementHTML = (
-  groupedByDay: Array<[string, { matin?: EmargementRow; apresMidi?: EmargementRow; soir?: EmargementRow }]>,
+  groupedByDay: Array<[string, GroupedEmargements]>,
   apprenant: ApprenantInfo | null
 ) => {
   const formation = apprenant?.formation_choisie || apprenant?.type_apprenant || "Formation";
@@ -93,11 +103,11 @@ const buildEmargementHTML = (
       ? `du ${formatShortDate(apprenant?.date_debut_formation)} au ${formatShortDate(apprenant?.date_fin_formation)}`
       : "—";
 
-  // Inclure la colonne soir uniquement si au moins une signature soir existe
-  const hasSoir = groupedByDay.some(([, v]) => !!v.soir);
+  const hasSoirSplit = groupedByDay.some(([, v]) => !!v.soir1 || !!v.soir2);
+  const hasSoir = hasSoirSplit || groupedByDay.some(([, v]) => !!v.soir);
 
   const rowsHtml = groupedByDay
-    .map(([date, { matin, apresMidi, soir }]) => {
+    .map(([date, { matin, apresMidi, soir, soir1, soir2 }]) => {
       const jourLabel = capitalize(formatDateFR(date));
       const sigImg = (r?: EmargementRow) =>
         r?.signature_data_url
@@ -110,7 +120,7 @@ const buildEmargementHTML = (
           <td class="sig">${sigImg(matin)}</td>
           <td class="horaire">13:00 - 16:00</td>
           <td class="sig">${sigImg(apresMidi)}</td>
-          ${hasSoir ? `<td class="horaire">17:00 - 21:00</td><td class="sig">${sigImg(soir)}</td>` : ""}
+          ${hasSoirSplit ? `<td class="horaire">17:00 - 18:30</td><td class="sig">${sigImg(soir1)}</td><td class="horaire">18:30 - 21:00</td><td class="sig">${sigImg(soir2)}</td>` : hasSoir ? `<td class="horaire">17:00 - 21:00</td><td class="sig">${sigImg(soir)}</td>` : ""}
         </tr>`;
     })
     .join("");
