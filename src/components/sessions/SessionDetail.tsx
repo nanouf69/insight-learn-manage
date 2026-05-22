@@ -2821,6 +2821,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                       <p className="text-sm">Cliquez sur "Ajouter" pour en ajouter</p>
                     </div>
                   )}
+                </div>
               )}
               {/* Récapitulatif par type de formation */}
               <div className="mt-4 p-3 rounded-lg bg-muted/50 border">
