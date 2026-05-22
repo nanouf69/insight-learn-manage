@@ -160,7 +160,7 @@ Deno.serve(async (req) => {
 
     if (!expected.has(demi)) return json({ error: "Créneau non prévu pour cette formation" }, 403);
 
-    const { error } = await supabase.from("emargements_fc").insert({
+    const row = {
       apprenant_id: apprenantId,
       user_id: user.id,
       date_emargement: dateEmargement,
@@ -170,7 +170,25 @@ Deno.serve(async (req) => {
       justificatif_url: absent ? justificatifUrl : null,
       motif_absence: absent ? (String(body?.motif_absence || "").trim() || null) : null,
       user_agent: String(body?.user_agent || "").slice(0, 500) || null,
-    });
+    };
+
+    const { data: existingRows, error: existingError } = await supabase
+      .from("emargements_fc")
+      .select("id, signature_data_url, absent")
+      .eq("apprenant_id", apprenantId)
+      .eq("date_emargement", dateEmargement)
+      .eq("demi_journee", demi)
+      .limit(1);
+
+    if (existingError) return json({ error: existingError.message, code: existingError.code }, 400);
+
+    const existing = existingRows?.[0];
+    const hasFilledSignature = Boolean(String(existing?.signature_data_url || "").trim()) || existing?.absent === true;
+    if (existing && hasFilledSignature) return json({ success: true, duplicate: true });
+
+    const { error } = existing
+      ? await supabase.from("emargements_fc").update(row).eq("id", existing.id)
+      : await supabase.from("emargements_fc").insert(row);
 
     if (error && error.code === "23505") return json({ success: true, duplicate: true });
     if (error) return json({ error: error.message, code: error.code }, 400);
