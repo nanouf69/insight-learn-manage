@@ -86,6 +86,7 @@ type GroupedEmargements = {
   soir?: EmargementRow;
   soir1?: EmargementRow;
   soir2?: EmargementRow;
+  expectedSet?: Set<CreneauKey>;
 };
 
 const buildEmargementHTML = (
@@ -322,7 +323,7 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
 
   // Group by date — fusionne signatures existantes ET créneaux attendus
   const groupedByDay = useMemo(() => {
-    const map = new Map<string, { matin?: EmargementRow; apresMidi?: EmargementRow; soir?: EmargementRow; expectedSet: Set<CreneauKey> }>();
+    const map = new Map<string, GroupedEmargements>();
     const ensure = (date: string) => {
       let e = map.get(date);
       if (!e) { e = { expectedSet: new Set() }; map.set(date, e); }
@@ -334,10 +335,12 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
       if (k === "matin") entry.matin = r;
       else if (k === "apres-midi" || k === "après-midi") entry.apresMidi = r;
       else if (k === "soir") entry.soir = r;
+      else if (k === "soir-1") entry.soir1 = r;
+      else if (k === "soir-2") entry.soir2 = r;
     }
     for (const e of expected) {
       const entry = ensure(e.date);
-      entry.expectedSet.add(e.creneau);
+      entry.expectedSet?.add(e.creneau);
     }
     return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b));
   }, [rows, expected]);
