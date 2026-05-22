@@ -16,6 +16,7 @@ interface EmargementRow {
 }
 
 interface ApprenantInfo {
+  auth_user_id?: string | null;
   nom?: string | null;
   prenom?: string | null;
   email?: string | null;
@@ -224,7 +225,10 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
     }
     (async () => {
       setLoading(true);
-      const [emRes, apRes, userRes] = await Promise.all([
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const [emRes, apRes] = await Promise.all([
         supabase
           .from("emargements_fc" as any)
           .select("id, date_emargement, demi_journee, signature_data_url, signed_at")
@@ -233,10 +237,9 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
           .order("demi_journee", { ascending: true }),
         supabase
           .from("apprenants")
-          .select("nom, prenom, email, telephone, adresse, code_postal, ville, formation_choisie, type_apprenant, date_debut_formation, date_fin_formation")
+          .select("auth_user_id, nom, prenom, email, telephone, adresse, code_postal, ville, formation_choisie, type_apprenant, date_debut_formation, date_fin_formation")
           .eq("id", apprenantId)
           .maybeSingle(),
-        supabase.auth.getUser(),
       ]);
 
       if (!emRes.error && Array.isArray(emRes.data)) {
@@ -244,7 +247,7 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
       }
       const ap = (!apRes.error && apRes.data) ? (apRes.data as ApprenantInfo) : null;
       if (ap) setApprenant(ap);
-      setUserId(userRes.data.user?.id || null);
+      setUserId(session?.user?.id || ap?.auth_user_id || null);
 
       // Calcul des créneaux attendus (pour proposer la signature des créneaux manquants)
       if (ap) {
