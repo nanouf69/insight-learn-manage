@@ -73,30 +73,49 @@ Deno.serve(async (req) => {
     const organismeFinanceur = cleanText(body.organisme_financeur);
     const inscritFranceTravail = body.inscrit_france_travail === true;
 
-    const { data: apprenant, error: apprenantError } = await supabase
+    const apprenantPayload = {
+      civilite,
+      nom,
+      prenom,
+      email,
+      telephone,
+      adresse,
+      code_postal: codePostal,
+      ville,
+      formation_choisie: formationChoisie,
+      type_apprenant: typeApprenant,
+      montant_ttc: montantTtc,
+      date_debut_formation: dateDebutFormation,
+      date_fin_formation: dateFinFormation,
+      inscrit_france_travail: inscritFranceTravail,
+      mode_financement: modeFinancement,
+      organisme_financeur: organismeFinanceur,
+      statut: "fournisseur",
+      notes: `Via fournisseur: ${fournisseur.nom}`,
+    };
+
+    let createdApprenant = true;
+    let { data: apprenant, error: apprenantError } = await supabase
       .from("apprenants")
-      .insert({
-        civilite,
-        nom,
-        prenom,
-        email,
-        telephone,
-        adresse,
-        code_postal: codePostal,
-        ville,
-        formation_choisie: formationChoisie,
-        type_apprenant: typeApprenant,
-        montant_ttc: montantTtc,
-        date_debut_formation: dateDebutFormation,
-        date_fin_formation: dateFinFormation,
-        inscrit_france_travail: inscritFranceTravail,
-        mode_financement: modeFinancement,
-        organisme_financeur: organismeFinanceur,
-        statut: "fournisseur",
-        notes: `Via fournisseur: ${fournisseur.nom}`,
-      })
+      .insert(apprenantPayload)
       .select("id")
       .single();
+
+    if (apprenantError?.code === "23505" && apprenantError.message?.includes("apprenants_nom_prenom_unique")) {
+      const existing = await supabase
+        .from("apprenants")
+        .select("id")
+        .eq("nom", nom)
+        .eq("prenom", prenom)
+        .is("deleted_at", null)
+        .maybeSingle();
+
+      if (!existing.error && existing.data) {
+        apprenant = existing.data;
+        apprenantError = null;
+        createdApprenant = false;
+      }
+    }
 
     if (apprenantError || !apprenant) {
       console.error("apprenant insert error", apprenantError);
@@ -130,7 +149,7 @@ Deno.serve(async (req) => {
 
     if (linkError || !fournisseurApprenant) {
       console.error("fournisseur_apprenants insert error", linkError);
-      await supabase.from("apprenants").delete().eq("id", apprenant.id);
+      if (createdApprenant) await supabase.from("apprenants").delete().eq("id", apprenant.id);
       return json({ error: "Erreur portail: impossible de lier l'apprenant au fournisseur" }, 500);
     }
 
