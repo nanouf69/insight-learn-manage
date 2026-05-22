@@ -632,16 +632,6 @@ export function DocumentsCompletes({ apprenant }: Props) {
 
   // Calcul des heures de présence basé sur les signatures d'émargement
   // Règle RCM : une journée signée = 6h, déduite des jours ayant au moins un émargement signé
-  const HEURES_PAR_DEMI: Record<string, number> = {
-    "matin": 3,
-    "apres-midi": 3,
-    "apres_midi": 3,
-    "après-midi": 3,
-    "après_midi": 3,
-    "soir_1": 1.5,
-    "soir_2": 1.5,
-    "soir": 3,
-  };
   const emargementsRaw = (documents || []).filter((d: any) => {
     const hasSignature = !!d.donnees?.signature || !!d.donnees?.signed_at || !!d.completed_at;
     return d.type_document === "emargement-fc" && hasSignature && !d.donnees?.absent;
