@@ -204,9 +204,48 @@ export function CRMDashboard({ initialApprenantId, onApprenantClosed }: CRMDashb
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <Button variant="outline" size="icon">
-            <Filter className="w-4 h-4" />
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <Filter className="w-4 h-4" />
+                <span className="hidden sm:inline">Formation</span>
+                {formationFilter.length > 0 && (
+                  <Badge variant="secondary" className="h-5 px-1.5 text-xs">
+                    {formationFilter.length}
+                  </Badge>
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="max-h-80 overflow-y-auto w-64">
+              {formationOptions.length === 0 ? (
+                <div className="px-2 py-3 text-sm text-muted-foreground text-center">
+                  Aucune formation disponible
+                </div>
+              ) : (
+                formationOptions.map((f) => (
+                  <DropdownMenuCheckboxItem
+                    key={f}
+                    checked={formationFilter.includes(f)}
+                    onCheckedChange={(checked) => {
+                      setFormationFilter((prev) =>
+                        checked ? [...prev, f] : prev.filter((x) => x !== f),
+                      );
+                    }}
+                  >
+                    {f}
+                  </DropdownMenuCheckboxItem>
+                ))
+              )}
+              {formationFilter.length > 0 && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => setFormationFilter([])}>
+                    Effacer les filtres
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
         <ApprenantForm />
       </div>
