@@ -59,6 +59,7 @@ import { saveFactureToCRM } from "@/lib/saveFactureToCRM";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { computePresenceHours, formatPresenceHours, isEveningTrainingValue } from "@/lib/emargementHours";
 
 interface Session {
   id: string;
@@ -72,6 +73,7 @@ interface Session {
   maxParticipants: number;
   status: string;
   type_session?: string;
+  creneaux?: string[] | string | null;
 }
 
 interface SessionDetailProps {
@@ -91,6 +93,7 @@ interface ApprenantDB {
   email: string | null;
   telephone: string | null;
   type_apprenant: string | null;
+  formation_choisie?: string | null;
   mode_financement: string | null;
   numero_dossier_cma: string | null;
   date_debut_formation: string | null;
@@ -98,6 +101,7 @@ interface ApprenantDB {
   date_examen_theorique: string | null;
   date_examen_pratique: string | null;
   statut: string | null;
+  creneau_horaire?: string | null;
 }
 
 const modesFinancement = [
@@ -599,6 +603,8 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
             email,
             telephone,
             type_apprenant,
+            formation_choisie,
+            creneau_horaire,
             mode_financement,
             numero_dossier_cma,
             date_debut_formation,
@@ -893,23 +899,12 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
 
   // Détection session du soir (4h/jour, max 40h) vs jour (6h/jour, max 60h)
   const isSessionSoir = (() => {
-    const nom = String((session as any)?.title || (session as any)?.nom || '').toLowerCase();
     const creneaux = Array.isArray((session as any)?.creneaux)
-      ? ((session as any).creneaux as any[]).join(' ').toLowerCase()
-      : String((session as any)?.creneaux || '').toLowerCase();
-    return nom.includes('soir') || creneaux.includes('soir') || /\b(17|18|19|20|21)[h:]/.test(creneaux);
+      ? ((session as any).creneaux as any[]).join(' ')
+      : String((session as any)?.creneaux || '');
+    return isEveningTrainingValue((session as any)?.title, (session as any)?.nom, creneaux, (session as any)?.heure_debut, (session as any)?.heure_fin);
   })();
   const maxHeuresSession = isSessionSoir ? 40 : 60;
-
-  // Poids horaire par demi-journée
-  // Cours du soir : soir_1 = 17h00-18h30 (1.5h), soir_2 = 18h30-21h00 (2.5h)
-  const DEMI_HEURES: Record<string, number> = {
-    matin: 3,
-    apres_midi: 3,
-    soir: 4,
-    soir_1: 1.5,
-    soir_2: 2.5,
-  };
 
   // Charger les émargements pour calculer les heures de présence par apprenant
   // - filtré sur la plage de dates de la session (pas de signature hors formation)
@@ -937,27 +932,19 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       const { data, error } = await q;
       if (error) throw error;
 
-      // Dédup: clé (apprenant, date, demi_journee)
-      const seen: Record<string, Set<string>> = {};
-      (data || []).forEach((row: any) => {
-        const dj = String(row.demi_journee || '').toLowerCase();
-        if (!DEMI_HEURES[dj]) return;
-        // Ignore créneaux soir dans une session jour et inversement
-        const isSoirSlot = dj.startsWith('soir');
-        if (isSessionSoir && !isSoirSlot) return;
-        if (!isSessionSoir && isSoirSlot) return;
-        if (!seen[row.apprenant_id]) seen[row.apprenant_id] = new Set();
-        seen[row.apprenant_id].add(`${row.date_emargement}|${dj}`);
-      });
-
       const result: Record<string, number> = {};
-      Object.entries(seen).forEach(([id, keys]) => {
-        let total = 0;
-        keys.forEach((k) => {
-          const dj = k.split('|')[1];
-          total += DEMI_HEURES[dj] || 0;
-        });
-        result[id] = Math.min(total, maxHeuresSession);
+      apprenantIds.forEach((id: string) => {
+        const sa = apprenantsInSession.find((item: any) => item?.apprenant?.id === id);
+        const apprenant = sa?.apprenant;
+        const learnerIsEvening = isSessionSoir || isEveningTrainingValue(
+          apprenant?.creneau_horaire,
+          apprenant?.formation_choisie,
+          apprenant?.type_apprenant,
+        );
+        result[id] = computePresenceHours(
+          (data || []).filter((row: any) => row.apprenant_id === id),
+          { isEvening: learnerIsEvening, maxHours: learnerIsEvening ? 40 : maxHeuresSession, dateStart: dateDebut, dateEnd: dateFin },
+        );
       });
       return result;
     },
@@ -2595,7 +2582,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                             {getFinancementBadge(sessionApprenant.mode_financement || apprenant.mode_financement).label}
                           </Badge>
                           <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">
-                            ⏱️ {getHeuresPresence(apprenant.id)}h
+                            ⏱️ {formatPresenceHours(getHeuresPresence(apprenant.id))}
                           </span>
                           {sessionApprenant.statut_suivi && (
                             <span className={`inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-full ${
