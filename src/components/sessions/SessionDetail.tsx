@@ -571,7 +571,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
 
   // Charger les apprenants de cette session depuis la base de données
   const { data: apprenantsInSession = [], isLoading: loadingApprenants, refetch: refetchApprenants } = useQuery({
-    queryKey: ['session-apprenants', session?.id],
+    queryKey: ['session-apprenants', session?.id, 'no-elearning-v2'],
     queryFn: async () => {
       if (!session?.id) return [];
       
