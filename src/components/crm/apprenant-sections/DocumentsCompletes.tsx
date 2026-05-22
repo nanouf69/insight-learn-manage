@@ -674,8 +674,48 @@ export function DocumentsCompletes({ apprenant }: Props) {
     );
   }
 
+  // Calcul des heures de présence basé sur les signatures d'émargement
+  const HEURES_PAR_DEMI: Record<string, number> = {
+    "matin": 3,
+    "apres-midi": 3,
+    "après-midi": 3,
+    "soir_1": 1.5,
+    "soir_2": 2.5,
+    "soir": 4,
+  };
+  const emargementsSignes = (documents || []).filter(
+    (d: any) => d.type_document === "emargement-fc" && d.donnees?.signature && !d.donnees?.absent
+  );
+  let totalHeures = 0;
+  const joursPresence = new Set<string>();
+  for (const d of emargementsSignes) {
+    const key = (d.donnees?.demi_journee || "").toString().trim().toLowerCase();
+    totalHeures += HEURES_PAR_DEMI[key] ?? 0;
+    if (d.donnees?.date_emargement) joursPresence.add(d.donnees.date_emargement);
+  }
+  const formatHeures = (h: number) => {
+    const heures = Math.floor(h);
+    const minutes = Math.round((h - heures) * 60);
+    return minutes > 0 ? `${heures}h${String(minutes).padStart(2, "0")}` : `${heures}h00`;
+  };
+
   return (
     <div className="space-y-4">
+      {emargementsSignes.length > 0 && (
+        <Card className="border-primary/30 bg-primary/5">
+          <CardContent className="p-4 flex items-center justify-between flex-wrap gap-3">
+            <div>
+              <p className="text-sm text-muted-foreground">Total heures de présence (basé sur les signatures)</p>
+              <p className="text-2xl font-bold text-primary">{formatHeures(totalHeures)}</p>
+            </div>
+            <div className="text-right text-sm text-muted-foreground">
+              <p><strong className="text-foreground">{emargementsSignes.length}</strong> demi-journée(s) signée(s)</p>
+              <p><strong className="text-foreground">{joursPresence.size}</strong> jour(s) de présence</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -684,6 +724,7 @@ export function DocumentsCompletes({ apprenant }: Props) {
           </CardTitle>
         </CardHeader>
       </Card>
+
 
       {documents.map((doc: any) => (
         <Card key={doc.id} className="overflow-hidden">
