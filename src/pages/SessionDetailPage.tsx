@@ -40,6 +40,8 @@ export default function SessionDetailPage() {
         maxParticipants: data.places_disponibles || 18,
         status: data.statut || "planifiee",
         type_session: data.type_session,
+        creneaux: data.creneaux,
+        nom: data.nom,
       });
       setLoading(false);
     })();
