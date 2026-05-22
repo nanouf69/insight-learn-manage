@@ -5,7 +5,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-type CreneauKey = "matin" | "apres_midi" | "soir";
+type CreneauKey = "matin" | "apres_midi" | "soir" | "soir_1" | "soir_2";
 
 const json = (body: Record<string, unknown>, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -35,6 +35,17 @@ const isPresentielType = (type?: string | null, formation?: string | null) => {
   const value = `${t} ${f}`;
   if (/(^|\s)(vtc|taxi|ta|va)-e(\s|$)/.test(value) && !/-e-pr[eé]sentiel/.test(value)) return false;
   return /pr[eé]sentiel/.test(value) || /\b(vtc|taxi|ta|va)(-exam)?\b/.test(t) || /^(pa|rp|continue)[\s-]/.test(t);
+};
+
+const isEveningText = (value?: string | null): boolean => {
+  const v = (value || "").toLowerCase();
+  if (/soir/.test(v) || /vtc-s|cours-du-soir/.test(v)) return true;
+  const m = v.match(/(\d{1,2})\s*[h:]/);
+  if (m) {
+    const h = parseInt(m[1], 10);
+    if (!isNaN(h) && h >= 17) return true;
+  }
+  return false;
 };
 
 Deno.serve(async (req) => {
