@@ -19,6 +19,8 @@ interface EmargementFCModalProps {
   creneau?: CreneauKey;
   /** Mode: "fc" = formation continue, "presentiel" = cours présentiel classique */
   mode?: "fc" | "presentiel";
+  /** Date de l'émargement à signer (YYYY-MM-DD). Par défaut : aujourd'hui (rattrapage des jours passés). */
+  dateEmargement?: string;
   onSigned?: () => void;
   /** Appelé si l'apprenant ferme/refuse de signer. La signature reste optionnelle. */
   onSkipped?: () => void;
