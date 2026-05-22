@@ -93,7 +93,13 @@ Deno.serve(async (req) => {
       .select("id, auth_user_id, formation_choisie, type_apprenant, date_debut_formation, date_fin_formation")
       .eq("id", apprenantId)
       .maybeSingle();
-    if (apprenantError || !apprenant || apprenant.auth_user_id !== user.id) {
+
+    const { data: isAdmin } = await supabase.rpc("has_role", {
+      _user_id: user.id,
+      _role: "admin",
+    });
+
+    if (apprenantError || !apprenant || (apprenant.auth_user_id !== user.id && isAdmin !== true)) {
       return json({ error: "Accès apprenant refusé" }, 403);
     }
 
@@ -175,7 +181,7 @@ Deno.serve(async (req) => {
 
     const { data: existingRows, error: existingError } = await supabase
       .from("emargements_fc")
-      .select("id, signature_data_url, absent")
+      .select("id, signature_data_url, absent, signed_at")
       .eq("apprenant_id", apprenantId)
       .eq("date_emargement", dateEmargement)
       .eq("demi_journee", demi)
@@ -187,9 +193,13 @@ Deno.serve(async (req) => {
     const hasFilledSignature = Boolean(String(existing?.signature_data_url || "").trim()) || existing?.absent === true;
     if (existing && hasFilledSignature && !replaceExisting) return json({ success: true, duplicate: true });
 
+    const rowToSave = existing && !hasFilledSignature
+      ? { ...row, signed_at: new Date().toISOString() }
+      : row;
+
     const { error } = existing
-      ? await supabase.from("emargements_fc").update(row).eq("id", existing.id)
-      : await supabase.from("emargements_fc").insert(row);
+      ? await supabase.from("emargements_fc").update(rowToSave).eq("id", existing.id)
+      : await supabase.from("emargements_fc").insert(rowToSave);
 
     if (error && error.code === "23505") return json({ success: true, duplicate: true });
     if (error) return json({ error: error.message, code: error.code }, 400);
