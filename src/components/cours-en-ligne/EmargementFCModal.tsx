@@ -42,6 +42,31 @@ const todayISO = () => {
   return `${yyyy}-${mm}-${dd}`;
 };
 
+const saveEmargement = async (payload: Record<string, unknown>) => {
+  const baseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const apikey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+  const { data: { session } } = await supabase.auth.getSession();
+
+  if (!baseUrl || !apikey || !session?.access_token) {
+    throw new Error("Session apprenant expirée. Merci de vous reconnecter.");
+  }
+
+  const response = await fetch(`${baseUrl}/functions/v1/save-emargement-apprenant`, {
+    method: "POST",
+    headers: {
+      apikey,
+      Authorization: `Bearer ${session.access_token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok || result?.error) {
+    throw new Error(result?.error || "Impossible d'enregistrer votre émargement.");
+  }
+  return result;
+};
+
 const creneauIcon = (k: CreneauKey) => {
   if (k === "matin") return <Sun className="w-5 h-5 text-amber-500" />;
   if (k === "apres_midi") return <Moon className="w-5 h-5 text-indigo-500" />;
@@ -90,35 +115,31 @@ export const EmargementFCModal = ({
       return;
     }
     setSaving(true);
-    const { error } = await supabase.from("emargements_fc" as any).insert({
-      apprenant_id: apprenantId,
-      user_id: userId,
-      date_emargement: effectiveDate,
-      demi_journee: demi,
-      signature_data_url: signature,
-      absent: false,
-      user_agent: navigator.userAgent.slice(0, 500),
-    });
-    setSaving(false);
-    if (error) {
-      if (error.code === "23505") {
-        setDone(true);
-        onSigned?.();
-        return;
-      }
+    try {
+      await saveEmargement({
+        apprenant_id: apprenantId,
+        user_id: userId,
+        date_emargement: effectiveDate,
+        demi_journee: demi,
+        signature_data_url: signature,
+        absent: false,
+        user_agent: navigator.userAgent.slice(0, 500),
+      });
+      toast({
+        title: "Émargement validé",
+        description: `Signature ${creneauLabel(demi).toLowerCase()} enregistrée. Bonne formation !`,
+      });
+      setDone(true);
+      onSigned?.();
+    } catch (error: any) {
       toast({
         title: "Erreur",
-        description: "Impossible d'enregistrer votre signature. " + error.message,
+        description: error?.message || "Impossible d'enregistrer votre signature.",
         variant: "destructive",
       });
-      return;
+    } finally {
+      setSaving(false);
     }
-    toast({
-      title: "Émargement validé",
-      description: `Signature ${creneauLabel(demi).toLowerCase()} enregistrée. Bonne formation !`,
-    });
-    setDone(true);
-    onSigned?.();
   };
 
   const handleSubmitAbsent = async () => {
@@ -165,7 +186,7 @@ export const EmargementFCModal = ({
         justUrl = urlData?.publicUrl || "";
       }
 
-      const { error: insErr } = await supabase.from("emargements_fc" as any).insert({
+      await saveEmargement({
         apprenant_id: apprenantId,
         user_id: userId,
         date_emargement: effectiveDate,
@@ -175,11 +196,7 @@ export const EmargementFCModal = ({
         justificatif_url: justUrl,
         motif_absence: motif.trim() || null,
         user_agent: navigator.userAgent.slice(0, 500),
-      } as any);
-
-      if (insErr && insErr.code !== "23505") {
-        throw new Error(insErr.message);
-      }
+      });
 
       toast({
         title: "Absence enregistrée",
