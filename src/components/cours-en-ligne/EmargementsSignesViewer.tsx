@@ -280,6 +280,33 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
     })();
   }, [apprenantId, refreshTick]);
 
+  // Bornes de la formation pour interdire toute signature en dehors de la période
+  const formationBounds = useMemo(() => {
+    const parse = (s?: string | null): Date | null => {
+      if (!s) return null;
+      if (/^\d{4}-\d{2}-\d{2}/.test(s)) return new Date(s.slice(0, 10) + "T00:00:00");
+      if (/^\d{2}\/\d{2}\/\d{4}/.test(s)) {
+        const [d, m, y] = s.slice(0, 10).split("/");
+        return new Date(`${y}-${m}-${d}T00:00:00`);
+      }
+      return null;
+    };
+    return {
+      start: parse(apprenant?.date_debut_formation),
+      end: parse(apprenant?.date_fin_formation),
+    };
+  }, [apprenant?.date_debut_formation, apprenant?.date_fin_formation]);
+
+  const isWithinFormation = (date: string): boolean => {
+    const d = new Date(date + "T00:00:00");
+    if (isNaN(d.getTime())) return false;
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    if (d.getTime() > today.getTime()) return false;
+    if (formationBounds.start && d.getTime() < formationBounds.start.getTime()) return false;
+    if (formationBounds.end && d.getTime() > formationBounds.end.getTime()) return false;
+    return true;
+  };
+
   // Group by date — fusionne signatures existantes ET créneaux attendus
   const groupedByDay = useMemo(() => {
     const map = new Map<string, { matin?: EmargementRow; apresMidi?: EmargementRow; soir?: EmargementRow; expectedSet: Set<CreneauKey> }>();
@@ -422,7 +449,7 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
                           <span className="text-[10px] text-muted-foreground italic">—</span>
                         )}
                       </div>
-                      {!r && userId && apprenantId && (
+                      {!r && userId && apprenantId && isWithinFormation(date) && (
                         <Button
                           size="sm"
                           className="w-full mt-2 h-7 text-xs"
