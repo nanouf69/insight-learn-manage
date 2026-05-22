@@ -2119,18 +2119,10 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   const totalCount = apprenantsInSession.length;
   const formateursCount = formateursInSession.length;
 
-  return (
+  const mainContent = (
     <>
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={cn(
-        "!flex !flex-col !gap-0 overflow-hidden",
-        isFullscreen
-          ? "max-w-none w-screen h-screen sm:max-w-none sm:rounded-none max-h-screen p-6"
-          : "sm:max-w-[800px] h-[90vh] max-h-[90vh]"
-      )}>
+        <DialogHeader className={asPage ? "" : "shrink-0"}>
 
-
-        <DialogHeader className="shrink-0">
           <div className="flex items-center justify-between">
             <DialogTitle className="flex items-center gap-3">
               {session.title}
