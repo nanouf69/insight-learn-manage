@@ -79,6 +79,8 @@ interface SessionDetailProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onNavigateToApprenant?: (apprenantId: string) => void;
+  asPage?: boolean;
+  onBack?: () => void;
 }
 
 // Interface pour l'apprenant depuis la base de données
