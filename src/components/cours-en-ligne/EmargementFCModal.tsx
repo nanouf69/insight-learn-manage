@@ -22,6 +22,7 @@ interface EmargementFCModalProps {
   /** Date de l'émargement à signer (YYYY-MM-DD). Par défaut : aujourd'hui (rattrapage des jours passés). */
   dateEmargement?: string;
   replaceExisting?: boolean;
+  required?: boolean;
   onSigned?: () => void;
   /** Appelé si l'apprenant ferme/refuse de signer. La signature reste optionnelle. */
   onSkipped?: () => void;
@@ -86,6 +87,7 @@ export const EmargementFCModal = ({
   mode = "fc",
   dateEmargement,
   replaceExisting = false,
+  required = false,
   onSigned,
   onSkipped,
 }: EmargementFCModalProps) => {
@@ -224,6 +226,7 @@ export const EmargementFCModal = ({
   const formationLabel = mode === "presentiel" ? "formation en présentiel" : "formation continue";
 
   const handleClose = () => {
+    if (required) return;
     setDone(true);
     onSkipped?.();
   };
@@ -343,14 +346,16 @@ export const EmargementFCModal = ({
         )}
 
         <DialogFooter className="gap-2 sm:gap-2">
-          <Button
-            variant="outline"
-            onClick={handleClose}
-            disabled={saving}
-            size="lg"
-          >
-            <X className="w-4 h-4 mr-2" /> Plus tard
-          </Button>
+          {!required && (
+            <Button
+              variant="outline"
+              onClick={handleClose}
+              disabled={saving}
+              size="lg"
+            >
+              <X className="w-4 h-4 mr-2" /> Plus tard
+            </Button>
+          )}
           {tab === "present" ? (
             <Button
               onClick={handleSubmitPresent}
