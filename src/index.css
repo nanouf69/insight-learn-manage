@@ -206,3 +206,19 @@
     display: none !important;
   }
 }
+
+/* Liste apprenants - scrollbar visible */
+.learners-list::-webkit-scrollbar {
+  width: 12px;
+}
+.learners-list::-webkit-scrollbar-track {
+  background: hsl(var(--muted));
+  border-radius: 8px;
+}
+.learners-list::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.5);
+  border-radius: 8px;
+}
+.learners-list::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.7);
+}
