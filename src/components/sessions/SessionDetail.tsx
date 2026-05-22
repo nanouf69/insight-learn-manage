@@ -626,8 +626,17 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
         console.error('[SessionDetail] Erreur chargement apprenants:', error);
         return [];
       }
-      console.log('[SessionDetail] apprenantsInSession chargés:', data?.length, data);
-      return data || [];
+      // Exclure les apprenants en e-learning (la session présentielle ne les concerne pas)
+      const filtered = (data || []).filter((sa: any) => {
+        const t = (sa?.apprenant?.type_apprenant || "").toLowerCase().trim();
+        if (!t) return true;
+        if (t.includes("elearning")) return false;
+        if (t.endsWith("-e")) return false;
+        return true;
+      });
+      console.log('[SessionDetail] apprenantsInSession chargés:', filtered.length, '(filtrés des e-learning)');
+      return filtered;
+
     },
     enabled: !!session?.id && open,
   });
