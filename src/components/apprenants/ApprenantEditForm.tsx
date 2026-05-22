@@ -21,6 +21,68 @@ import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { parseDateRange } from "@/lib/parseDateRange";
 
+// Bloc "Virements reçus correspondants" réutilisable
+function VirementsMatchBlock({
+  nom,
+  prenom,
+  onApply,
+}: {
+  nom?: string;
+  prenom?: string;
+  onApply: (tx: { montant: number; date: string }) => void;
+}) {
+  const [matches, setMatches] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const n = (nom || "").trim();
+    const p = (prenom || "").trim();
+    if (!n && !p) { setMatches([]); return; }
+    setLoading(true);
+    (async () => {
+      try {
+        const or: string[] = [];
+        if (n) or.push(`libelle.ilike.%${n}%`);
+        if (p) or.push(`libelle.ilike.%${p}%`);
+        const { data } = await supabase
+          .from("transactions_bancaires")
+          .select("id,date_operation,libelle,montant")
+          .gt("montant", 0)
+          .or(or.join(","))
+          .order("date_operation", { ascending: false })
+          .limit(10);
+        setMatches((data as any[]) || []);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [nom, prenom]);
+
+  if (!loading && matches.length === 0) return null;
+
+  return (
+    <div className="space-y-2 rounded-md border bg-muted/30 p-2">
+      <Label className="text-xs">Virements reçus correspondants</Label>
+      {loading && <p className="text-xs text-muted-foreground">Recherche…</p>}
+      {!loading && matches.map((tx) => (
+        <button
+          key={tx.id}
+          type="button"
+          onClick={() => onApply({ montant: Number(tx.montant) || 0, date: tx.date_operation || "" })}
+          className="w-full text-left text-xs px-2 py-1.5 rounded border bg-background hover:bg-accent transition"
+        >
+          <div className="flex justify-between gap-2">
+            <span className="font-medium text-green-700">{Number(tx.montant).toFixed(2)} €</span>
+            <span className="text-muted-foreground">{tx.date_operation}</span>
+          </div>
+          <div className="text-muted-foreground truncate">{tx.libelle}</div>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+
 // Mapping type d'apprenant → modules par défaut
 const DEFAULT_MODULES_BY_TYPE: Record<string, number[]> = {
   // Formation VTC — présentiel inclut module 83 (feuilles d'émargement VTC)
