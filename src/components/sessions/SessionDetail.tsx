@@ -2128,7 +2128,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       )}>
 
 
-        <DialogHeader>
+        <DialogHeader className="shrink-0">
           <div className="flex items-center justify-between">
             <DialogTitle className="flex items-center gap-3">
               {session.title}
@@ -2184,7 +2184,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
         </DialogHeader>
 
         {/* Session Info */}
-        <div className="flex flex-wrap gap-4 p-4 rounded-xl bg-muted/50 text-sm">
+        <div className="shrink-0 flex flex-wrap gap-4 p-4 rounded-xl bg-muted/50 text-sm">
           <div className="flex items-center gap-2">
             <Calendar className="w-4 h-4 text-primary" />
             <span className="font-medium">{format(new Date(session.dateDebut), "dd MMM yyyy", { locale: fr })} au {format(new Date(session.dateFin), "dd MMM yyyy", { locale: fr })}</span>
@@ -2210,8 +2210,8 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
           )}
         </div>
 
-        <Tabs defaultValue="apprenants" className="flex-1 min-h-0 flex flex-col overflow-hidden">
-          <TabsList className={`grid w-full ${isFormationContinue ? 'grid-cols-3' : 'grid-cols-2'}`}>
+        <Tabs defaultValue="apprenants" className="flex-1 min-h-0 flex flex-col">
+          <TabsList className={`shrink-0 grid w-full ${isFormationContinue ? 'grid-cols-3' : 'grid-cols-2'}`}>
             <TabsTrigger value="apprenants" className="gap-2">
               <Users className="w-4 h-4" />
               Apprenants ({totalCount})
@@ -2229,7 +2229,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
           </TabsList>
 
           {/* Apprenants Tab */}
-          <TabsContent value="apprenants" className="flex-1 min-h-0 overflow-y-auto flex flex-col mt-4">
+          <TabsContent value="apprenants" className="flex-1 min-h-0 flex flex-col mt-4">
             {/* Barre d'envoi groupé */}
             <div className="shrink-0 flex items-center gap-3 mb-3 p-3 rounded-lg bg-primary/5 border border-primary/20">
               <Checkbox 
