@@ -2124,10 +2124,17 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
         <DialogHeader className={asPage ? "" : "shrink-0"}>
 
           <div className="flex items-center justify-between">
-            <DialogTitle className="flex items-center gap-3">
-              {session.title}
-              {getStatusBadge(session.status)}
-            </DialogTitle>
+            {asPage ? (
+              <h1 className="flex items-center gap-3 text-lg font-semibold leading-none tracking-tight">
+                {session.title}
+                {getStatusBadge(session.status)}
+              </h1>
+            ) : (
+              <DialogTitle className="flex items-center gap-3">
+                {session.title}
+                {getStatusBadge(session.status)}
+              </DialogTitle>
+            )}
             <div className="flex gap-2 flex-wrap items-center">
               <Button
                 size="sm"
