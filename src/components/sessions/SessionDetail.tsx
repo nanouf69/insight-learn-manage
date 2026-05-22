@@ -93,6 +93,7 @@ interface ApprenantDB {
   email: string | null;
   telephone: string | null;
   type_apprenant: string | null;
+  formation_choisie?: string | null;
   mode_financement: string | null;
   numero_dossier_cma: string | null;
   date_debut_formation: string | null;
@@ -602,6 +603,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
             email,
             telephone,
             type_apprenant,
+            formation_choisie,
             creneau_horaire,
             mode_financement,
             numero_dossier_cma,
