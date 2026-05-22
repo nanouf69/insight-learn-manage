@@ -147,28 +147,6 @@ function getLabel(key: string): string {
 
 const SKIP_KEYS = new Set(['_status', '_signature_image', 'apprenant_nom', 'apprenant_prenom']);
 
-const isEveningSignature = (demiJournee?: string | null) =>
-  (demiJournee || "").toLowerCase().startsWith("soir");
-
-// Une session est considérée comme "soir" si son nom contient "soir"
-// ou si son tableau `creneaux` contient une plage démarrant >= 17h.
-const isEveningSession = (s: any): boolean => {
-  if (!s) return false;
-  const nom = (s.nom || "").toLowerCase();
-  if (/soir/.test(nom)) return true;
-  const cren = Array.isArray(s.creneaux) ? s.creneaux : [];
-  return cren.some((c: string) => {
-    const v = (c || "").toLowerCase();
-    if (/soir/.test(v)) return true;
-    const m = v.match(/(\d{1,2})\s*[h:]/);
-    if (m) {
-      const h = parseInt(m[1], 10);
-      if (!isNaN(h) && h >= 17) return true;
-    }
-    return false;
-  });
-};
-
 export function DocumentsCompletes({ apprenant }: Props) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -195,7 +173,7 @@ export function DocumentsCompletes({ apprenant }: Props) {
             ].filter(Boolean).join(","))
         : Promise.resolve({ data: [], error: null } as any);
 
-      const [docsRes, devisRes, emargRes, fournApprRes, sessRes] = await Promise.all([
+      const [docsRes, devisRes, emargRes, fournApprRes] = await Promise.all([
         supabase
           .from("apprenant_documents_completes" as any)
           .select("*")
@@ -212,10 +190,6 @@ export function DocumentsCompletes({ apprenant }: Props) {
           .eq("apprenant_id", apprenant.id)
           .order("signed_at", { ascending: false }),
         fournApprPromise,
-        supabase
-          .from("session_apprenants" as any)
-          .select("sessions:session_id(nom, creneaux, date_debut, date_fin)")
-          .eq("apprenant_id", apprenant.id),
       ]);
 
       if (docsRes.error) throw docsRes.error;
