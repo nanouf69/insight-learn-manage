@@ -114,14 +114,15 @@ const buildEmargementHTML = (
         r?.signature_data_url
           ? `<img src="${r.signature_data_url}" alt="Signature" style="max-height:55px;max-width:95%;"/>`
           : "";
+      const cells = hasSoirSplit
+        ? `<td class="horaire">17:00 - 18:30</td><td class="sig">${sigImg(soir1)}</td><td class="horaire">18:30 - 21:00</td><td class="sig">${sigImg(soir2)}</td>`
+        : hasSoir
+          ? `<td class="horaire">17:00 - 21:00</td><td class="sig">${sigImg(soir)}</td>`
+          : `<td class="horaire">09:00 - 12:00</td><td class="sig">${sigImg(matin)}</td><td class="horaire">13:00 - 16:00</td><td class="sig">${sigImg(apresMidi)}</td>`;
       return `
         <tr>
           <td class="jour">${jourLabel}</td>
-          <td class="horaire">09:00 - 12:00</td>
-          <td class="sig">${sigImg(matin)}</td>
-          <td class="horaire">13:00 - 16:00</td>
-          <td class="sig">${sigImg(apresMidi)}</td>
-          ${hasSoirSplit ? `<td class="horaire">17:00 - 18:30</td><td class="sig">${sigImg(soir1)}</td><td class="horaire">18:30 - 21:00</td><td class="sig">${sigImg(soir2)}</td>` : hasSoir ? `<td class="horaire">17:00 - 21:00</td><td class="sig">${sigImg(soir)}</td>` : ""}
+          ${cells}
         </tr>`;
     })
     .join("");
@@ -170,9 +171,7 @@ const buildEmargementHTML = (
     <thead>
       <tr class="top">
         <th rowspan="2" style="width:160px;">Jour</th>
-        <th colspan="2">Matin</th>
-        <th colspan="2">Apres-midi</th>
-        ${hasSoirSplit ? `<th colspan="2">Soir 1</th><th colspan="2">Soir 2</th>` : hasSoir ? `<th colspan="2">Soir</th>` : ""}
+        ${hasSoirSplit ? `<th colspan="2">Soir 1</th><th colspan="2">Soir 2</th>` : hasSoir ? `<th colspan="2">Soir</th>` : `<th colspan="2">Matin</th><th colspan="2">Apres-midi</th>`}
       </tr>
       <tr class="sub">
         <th>Horaire</th>
