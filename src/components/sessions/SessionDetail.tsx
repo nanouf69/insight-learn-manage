@@ -602,6 +602,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
             email,
             telephone,
             type_apprenant,
+            creneau_horaire,
             mode_financement,
             numero_dossier_cma,
             date_debut_formation,
@@ -896,23 +897,12 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
 
   // Détection session du soir (4h/jour, max 40h) vs jour (6h/jour, max 60h)
   const isSessionSoir = (() => {
-    const nom = String((session as any)?.title || (session as any)?.nom || '').toLowerCase();
     const creneaux = Array.isArray((session as any)?.creneaux)
-      ? ((session as any).creneaux as any[]).join(' ').toLowerCase()
-      : String((session as any)?.creneaux || '').toLowerCase();
-    return nom.includes('soir') || creneaux.includes('soir') || /\b(17|18|19|20|21)[h:]/.test(creneaux);
+      ? ((session as any).creneaux as any[]).join(' ')
+      : String((session as any)?.creneaux || '');
+    return isEveningTrainingValue((session as any)?.title, (session as any)?.nom, creneaux, (session as any)?.heure_debut, (session as any)?.heure_fin);
   })();
   const maxHeuresSession = isSessionSoir ? 40 : 60;
-
-  // Poids horaire par demi-journée
-  // Cours du soir : soir_1 = 17h00-18h30 (1.5h), soir_2 = 18h30-21h00 (2.5h)
-  const DEMI_HEURES: Record<string, number> = {
-    matin: 3,
-    apres_midi: 3,
-    soir: 4,
-    soir_1: 1.5,
-    soir_2: 2.5,
-  };
 
   // Charger les émargements pour calculer les heures de présence par apprenant
   // - filtré sur la plage de dates de la session (pas de signature hors formation)
