@@ -1046,6 +1046,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
       const expected = await getExpectedEmargements({
         mode,
         formationChoisie: apprenant.formation_choisie,
+        creneauHoraire: apprenant.creneau_horaire,
         apprenantId: apprenant.id!,
         startDate,
         endDate,
