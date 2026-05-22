@@ -176,13 +176,22 @@ type SessionApprenantSchedule = {
   heure_fin_personnalisee?: string | null;
 };
 
-const buildDefaultFCVTCDay = (date: Date): AgendaDaySlot => ({
-  date: new Date(date),
-  matinDebut: '09:00',
-  matinFin: '12:00',
-  apremDebut: '13:00',
-  apremFin: '17:00',
-});
+const buildDefaultFCVTCDay = (date: Date, isCoursDuSoir = false): AgendaDaySlot => isCoursDuSoir
+  ? {
+      date: new Date(date),
+      matinDebut: '17:00',
+      matinFin: '18:30',
+      apremDebut: '18:30',
+      apremFin: '21:00',
+      isSoir: true,
+    }
+  : {
+      date: new Date(date),
+      matinDebut: '09:00',
+      matinFin: '12:00',
+      apremDebut: '13:00',
+      apremFin: '17:00',
+    };
 
 /**
  * Fallback : génère une liste de jours d'émargement basés uniquement sur les
@@ -208,13 +217,22 @@ const buildFallbackAgendaDays = (
   const cur = new Date(start);
   while (cur <= end) {
     const day: AgendaDaySlot = { date: new Date(cur) };
+    const dayOfWeek = cur.getDay();
+    if (dayOfWeek === 0 || dayOfWeek === 6) {
+      cur.setDate(cur.getDate() + 1);
+      continue;
+    }
+
     if (options.heureDebutPersonnalisee && options.heureFinPersonnalisee) {
       // Une seule plage personnalisée : on l'affiche en matin
       day.matinDebut = options.heureDebutPersonnalisee.slice(0, 5);
       day.matinFin = options.heureFinPersonnalisee.slice(0, 5);
     } else if (options.isCoursDuSoir) {
-      day.apremDebut = '17:00';
+      day.matinDebut = '17:00';
+      day.matinFin = '18:30';
+      day.apremDebut = '18:30';
       day.apremFin = '21:00';
+      day.isSoir = true;
     } else if (options.isPratique) {
       day.matinDebut = '09:00';
       day.matinFin = '12:00';
