@@ -1,0 +1,1 @@
+DELETE FROM emargements_fc WHERE apprenant_id = '54199b73-b280-41d9-83b6-47a0d298d5af';
