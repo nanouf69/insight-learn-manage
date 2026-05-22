@@ -660,7 +660,9 @@ export function DocumentsCompletes({ apprenant }: Props) {
   const HEURES_PAR_DEMI: Record<string, number> = {
     "matin": 3,
     "apres-midi": 3,
+    "apres_midi": 3,
     "après-midi": 3,
+    "après_midi": 3,
     "soir_1": 1.5,
     "soir_2": 2.5,
     "soir": 4,
@@ -683,20 +685,18 @@ export function DocumentsCompletes({ apprenant }: Props) {
 
   return (
     <div className="space-y-4">
-      {emargementsSignes.length > 0 && (
-        <Card className="border-primary/30 bg-primary/5">
-          <CardContent className="p-4 flex items-center justify-between flex-wrap gap-3">
-            <div>
-              <p className="text-sm text-muted-foreground">Total heures de présence (basé sur les signatures)</p>
-              <p className="text-2xl font-bold text-primary">{formatHeures(totalHeures)}</p>
-            </div>
-            <div className="text-right text-sm text-muted-foreground">
-              <p><strong className="text-foreground">{emargementsSignes.length}</strong> demi-journée(s) signée(s)</p>
-              <p><strong className="text-foreground">{joursPresence.size}</strong> jour(s) de présence</p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <Card className="border-primary/30 bg-primary/5">
+        <CardContent className="p-4 flex items-center justify-between flex-wrap gap-3">
+          <div>
+            <p className="text-sm text-muted-foreground">Total heures de présence (basé sur les signatures)</p>
+            <p className="text-2xl font-bold text-primary">{formatHeures(totalHeures)}</p>
+          </div>
+          <div className="text-right text-sm text-muted-foreground">
+            <p><strong className="text-foreground">{emargementsSignes.length}</strong> demi-journée(s) signée(s)</p>
+            <p><strong className="text-foreground">{joursPresence.size}</strong> jour(s) de présence</p>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
