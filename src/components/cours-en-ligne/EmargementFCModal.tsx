@@ -26,10 +26,11 @@ interface EmargementFCModalProps {
 
 const getCurrentCreneauFromHour = (): CreneauKey => {
   const h = new Date().getHours();
-  if (h < 13) return "matin";
-  if (h < 18) return "apres_midi";
+  if (h < 12) return "matin";
+  if (h < 17) return "apres_midi";
   return "soir";
 };
+
 
 const todayISO = () => {
   const d = new Date();
