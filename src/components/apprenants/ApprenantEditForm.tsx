@@ -1387,6 +1387,14 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
           {formData.mode_financement === "personnel" && !["repassage-theorique", "repassage-pratique", "passage-pratique"].includes(formData.selected_formation) && !["pa-vtc", "pa-taxi"].includes(formData.type_apprenant) && (
             <div className="space-y-4">
               <h3 className="text-sm font-medium text-muted-foreground border-b pb-2">Informations financières</h3>
+              <VirementsMatchBlock
+                nom={formData.nom}
+                prenom={formData.prenom}
+                onApply={({ montant, date }) => {
+                  setFormData({ ...formData, montant_paye: String(montant), moyen_paiement: "virement" });
+                  if (date) setDatePaiement(new Date(date));
+                }}
+              />
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="prixFormation">Prix de la formation (€)</Label>
