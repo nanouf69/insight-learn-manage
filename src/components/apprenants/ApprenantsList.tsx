@@ -233,9 +233,43 @@ function ApprenantTable({
                         CMA: {apprenant.numero_dossier_cma}
                       </div>
                     )}
+                    {(() => {
+                      const debut = apprenant.date_debut_formation || apprenant.date_debut_cours_en_ligne;
+                      const fin = apprenant.date_fin_formation || apprenant.date_fin_cours_en_ligne;
+                      const catalogue = apprenant.date_formation_catalogue && apprenant.date_formation_catalogue !== "manuel"
+                        ? apprenant.date_formation_catalogue
+                        : null;
+                      const fmt = (d?: string | null) => {
+                        if (!d) return null;
+                        const iso = /^\d{4}-\d{2}-\d{2}/.exec(d);
+                        if (iso) {
+                          const [y, m, day] = d.slice(0, 10).split("-");
+                          return `${day}/${m}/${y}`;
+                        }
+                        return d;
+                      };
+                      if (catalogue) {
+                        return (
+                          <div className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                            <Calendar className="w-3 h-3" />
+                            {catalogue}
+                          </div>
+                        );
+                      }
+                      if (debut || fin) {
+                        return (
+                          <div className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                            <Calendar className="w-3 h-3" />
+                            {fmt(debut) || "?"} → {fmt(fin) || "?"}
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
                   </div>
                 </div>
               </TableCell>
+
               <TableCell>
                 <div className="space-y-1">
                   {apprenant.email && (
