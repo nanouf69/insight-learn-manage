@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, Filter, MoreVertical, Mail, Phone, MapPin, User, UserCheck, Trash2, Pencil, Loader2, ChevronDown, AlertTriangle } from "lucide-react";
+import { Search, Filter, MoreVertical, Mail, Phone, MapPin, User, UserCheck, Trash2, Pencil, Loader2, ChevronDown, AlertTriangle, Calendar } from "lucide-react";
 import { isPresentielType, getCurrentCreneau, type AgendaBloc, type CreneauKey } from "@/lib/agendaSlots";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
