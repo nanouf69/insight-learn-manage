@@ -216,7 +216,7 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
   const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [expected, setExpected] = useState<Array<{ date: string; creneau: CreneauKey }>>([]);
-  const [signTarget, setSignTarget] = useState<{ date: string; creneau: CreneauKey } | null>(null);
+  const [signTarget, setSignTarget] = useState<{ date: string; creneau: CreneauKey; replaceExisting?: boolean } | null>(null);
   const [refreshTick, setRefreshTick] = useState(0);
 
   useEffect(() => {
@@ -450,14 +450,15 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
                           <span className="text-[10px] text-muted-foreground italic">—</span>
                         )}
                       </div>
-                      {!hasValidSignature(r) && userId && apprenantId && isWithinFormation(date) && (
+                      {userId && apprenantId && isWithinFormation(date) && (
                         <Button
                           size="sm"
                           className="w-full mt-2 h-7 text-xs"
-                          onClick={() => setSignTarget({ date, creneau: key })}
+                          variant={hasValidSignature(r) ? "outline" : "default"}
+                          onClick={() => setSignTarget({ date, creneau: key, replaceExisting: Boolean(r) })}
                         >
                           <PenTool className="h-3 w-3 mr-1" />
-                          Signer ce créneau
+                          {hasValidSignature(r) ? "Re-signer ce créneau" : "Signer ce créneau"}
                         </Button>
                       )}
                     </div>
@@ -479,6 +480,7 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
           creneau={signTarget.creneau}
           mode={isFormationContinue(apprenant?.type_apprenant, apprenant?.formation_choisie) ? "fc" : "presentiel"}
           dateEmargement={signTarget.date}
+          replaceExisting={signTarget.replaceExisting}
           onSigned={() => { setSignTarget(null); setRefreshTick((t) => t + 1); }}
           onSkipped={() => setSignTarget(null)}
         />
