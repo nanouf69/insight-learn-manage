@@ -2582,7 +2582,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                             {getFinancementBadge(sessionApprenant.mode_financement || apprenant.mode_financement).label}
                           </Badge>
                           <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">
-                            ⏱️ {getHeuresPresence(apprenant.id)}h
+                            ⏱️ {formatPresenceHours(getHeuresPresence(apprenant.id))}
                           </span>
                           {sessionApprenant.statut_suivi && (
                             <span className={`inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-full ${
