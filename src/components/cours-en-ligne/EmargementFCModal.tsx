@@ -19,6 +19,8 @@ interface EmargementFCModalProps {
   creneau?: CreneauKey;
   /** Mode: "fc" = formation continue, "presentiel" = cours présentiel classique */
   mode?: "fc" | "presentiel";
+  /** Date de l'émargement à signer (YYYY-MM-DD). Par défaut : aujourd'hui (rattrapage des jours passés). */
+  dateEmargement?: string;
   onSigned?: () => void;
   /** Appelé si l'apprenant ferme/refuse de signer. La signature reste optionnelle. */
   onSkipped?: () => void;
@@ -55,6 +57,7 @@ export const EmargementFCModal = ({
   apprenantPrenom,
   creneau,
   mode = "fc",
+  dateEmargement,
   onSigned,
   onSkipped,
 }: EmargementFCModalProps) => {
@@ -64,6 +67,13 @@ export const EmargementFCModal = ({
   const [saving, setSaving] = useState(false);
   const [demi] = useState<CreneauKey>(creneau || getCurrentCreneauFromHour());
   const [done, setDone] = useState(false);
+  const effectiveDate = dateEmargement || todayISO();
+  const isRattrapage = effectiveDate !== todayISO();
+  const dateLabel = (() => {
+    const [y, m, d] = effectiveDate.split("-").map((x) => parseInt(x, 10));
+    const dt = new Date(y, (m || 1) - 1, d || 1);
+    return dt.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  })();
 
   // Absent state
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -83,7 +93,7 @@ export const EmargementFCModal = ({
     const { error } = await supabase.from("emargements_fc" as any).insert({
       apprenant_id: apprenantId,
       user_id: userId,
-      date_emargement: todayISO(),
+      date_emargement: effectiveDate,
       demi_journee: demi,
       signature_data_url: signature,
       absent: false,
@@ -131,8 +141,8 @@ export const EmargementFCModal = ({
 
     setSaving(true);
     try {
-      const docType = `justificatif_absence_${todayISO()}_${demi}`;
-      const titre = `Justificatif d'absence — ${new Date().toLocaleDateString("fr-FR")} (${creneauLabel(demi)})`;
+      const docType = `justificatif_absence_${effectiveDate}_${demi}`;
+      const titre = `Justificatif d'absence — ${dateLabel} (${creneauLabel(demi)})`;
 
       const formData = new FormData();
       formData.append("file", justifFile);
@@ -158,7 +168,7 @@ export const EmargementFCModal = ({
       const { error: insErr } = await supabase.from("emargements_fc" as any).insert({
         apprenant_id: apprenantId,
         user_id: userId,
-        date_emargement: todayISO(),
+        date_emargement: effectiveDate,
         demi_journee: demi,
         signature_data_url: null,
         absent: true,
@@ -203,18 +213,21 @@ export const EmargementFCModal = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {creneauIcon(demi)}
-            Émargement — {creneauLabel(demi)}
+            {isRattrapage ? "Rattrapage d'émargement" : "Émargement"} — {creneauLabel(demi)}
           </DialogTitle>
           <DialogDescription>
             Bonjour <strong>{apprenantPrenom} {apprenantNom}</strong>, vous suivez une <strong>{formationLabel}</strong>.
-            Merci de signer votre présence ou de déclarer une absence avec justificatif.
+            {isRattrapage
+              ? " Un créneau passé n'a pas été émargé. Merci de signer votre présence ou de déclarer une absence avec justificatif."
+              : " Merci de signer votre présence ou de déclarer une absence avec justificatif."}
           </DialogDescription>
         </DialogHeader>
 
-        <Alert className="border-amber-300 bg-amber-50">
-          <AlertTriangle className="h-4 w-4 text-amber-600" />
-          <AlertDescription className="text-sm text-amber-900">
-            Date : <strong>{new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</strong>
+        <Alert className={isRattrapage ? "border-red-300 bg-red-50" : "border-amber-300 bg-amber-50"}>
+          <AlertTriangle className={`h-4 w-4 ${isRattrapage ? "text-red-600" : "text-amber-600"}`} />
+          <AlertDescription className={`text-sm ${isRattrapage ? "text-red-900" : "text-amber-900"}`}>
+            {isRattrapage && <><strong>Créneau passé à régulariser.</strong><br /></>}
+            Date : <strong>{dateLabel}</strong>
             <br />
             Créneau : <strong>{creneauLabel(demi)} ({creneauHoraire(demi)})</strong>
           </AlertDescription>

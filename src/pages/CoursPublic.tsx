@@ -29,7 +29,7 @@ import { useSessionKeepAlive } from "@/hooks/useSessionKeepAlive";
 import { PresenceCheckModal } from "@/components/cours-en-ligne/PresenceCheckModal";
 import { ApprenantChatWidget } from "@/components/chat/ApprenantChatWidget";
 import { EmargementFCModal, isFormationContinue } from "@/components/cours-en-ligne/EmargementFCModal";
-import { isPresentielType, getTodayAgendaBlocs, type CreneauKey } from "@/lib/agendaSlots";
+import { isPresentielType, getExpectedEmargements, type CreneauKey } from "@/lib/agendaSlots";
 import { useAuth } from "@/contexts/AuthContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { computeUnlockState, isModuleLocked as computeIsModuleLocked } from "@/lib/moduleUnlockLogic";
@@ -706,6 +706,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const [isInExam, setIsInExam] = useState(false);
   const [emargementFCStatus, setEmargementFCStatus] = useState<"checking" | "needed" | "signed" | "skipped" | "n/a">("checking");
   const [emargementCreneau, setEmargementCreneau] = useState<CreneauKey | null>(null);
+  const [emargementDate, setEmargementDate] = useState<string | null>(null);
   const [emargementMode, setEmargementMode] = useState<"fc" | "presentiel">("fc");
   const [emargementRefreshTick, setEmargementRefreshTick] = useState(0);
   const [sessionAccessWindow, setSessionAccessWindow] = useState<SessionAccessWindow | null>(null);
@@ -993,6 +994,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     if (embedded || !user || !apprenant?.id) {
       setEmargementFCStatus("n/a");
       setEmargementCreneau(null);
+      setEmargementDate(null);
       return;
     }
 
@@ -1002,69 +1004,86 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     if (!isFC && !isPres) {
       setEmargementFCStatus("n/a");
       setEmargementCreneau(null);
+      setEmargementDate(null);
       return;
     }
 
     let cancelled = false;
     setEmargementFCStatus("checking");
+    const mode: "fc" | "presentiel" = isFC ? "fc" : "presentiel";
+    setEmargementMode(mode);
 
     const check = async () => {
       const now = new Date();
-      const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+      const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 
-      // Liste ordonnée des créneaux attendus aujourd'hui
-      let requiredCreneaux: CreneauKey[] = [];
+      // Détermine la plage : du début de formation jusqu'à aujourd'hui inclus.
+      const startStr =
+        (apprenant.date_debut_formation as string | undefined) ||
+        (apprenant.date_debut_cours_en_ligne as string | undefined) ||
+        todayStr;
+      const endStr =
+        (apprenant.date_fin_formation as string | undefined) ||
+        (apprenant.date_fin_cours_en_ligne as string | undefined) ||
+        todayStr;
 
-      if (isFC) {
-        // FC : matin + après-midi (pas de soir)
-        requiredCreneaux = ["matin", "apres_midi"];
-        setEmargementMode("fc");
-      } else {
-        // Présentiel : on lit l'agenda du jour FILTRÉ par la session de l'apprenant
-        const blocs = await getTodayAgendaBlocs(apprenant.formation_choisie, apprenant.id);
-        if (cancelled) return;
-        if (!blocs || blocs.length === 0) {
-          setEmargementFCStatus("n/a");
-          setEmargementCreneau(null);
-          return;
-        }
-        const set = new Set<CreneauKey>();
-        for (const b of blocs) {
-          const [hStr] = (b.heure_debut || "0:0").split(":");
-          const h = parseInt(hStr, 10) || 0;
-          if (h < 12) set.add("matin");
-          else if (h < 17) set.add("apres_midi");
-          else set.add("soir");
-        }
-        // Ordre logique
-        requiredCreneaux = (["matin", "apres_midi", "soir"] as CreneauKey[]).filter((k) => set.has(k));
-        setEmargementMode("presentiel");
+      const parseISO = (s: string) => {
+        const [y, m, d] = s.split("-").map((x) => parseInt(x, 10));
+        return new Date(y, (m || 1) - 1, d || 1);
+      };
+      const startDate = parseISO(startStr.slice(0, 10));
+      const endDateRaw = parseISO(endStr.slice(0, 10));
+      const today = parseISO(todayStr);
+      const endDate = endDateRaw < today ? endDateRaw : today;
+
+      // Liste de tous les créneaux attendus sur la plage
+      const expected = await getExpectedEmargements({
+        mode,
+        formationChoisie: apprenant.formation_choisie,
+        apprenantId: apprenant.id!,
+        startDate,
+        endDate,
+      });
+      if (cancelled) return;
+
+      if (expected.length === 0) {
+        setEmargementFCStatus("n/a");
+        setEmargementCreneau(null);
+        setEmargementDate(null);
+        return;
       }
 
-      // Récupère les créneaux DÉJÀ signés aujourd'hui
+      // Récupère les créneaux déjà signés (ou déclarés absents) sur la plage
+      const fromISO = expected[0].date;
+      const toISO = expected[expected.length - 1].date;
       const { data: signedData } = await supabase
         .from("emargements_fc" as any)
-        .select("demi_journee")
+        .select("date_emargement, demi_journee")
         .eq("apprenant_id", apprenant.id!)
-        .eq("date_emargement", today);
+        .gte("date_emargement", fromISO)
+        .lte("date_emargement", toISO);
       if (cancelled) return;
-      const signedSet = new Set<string>((signedData || []).map((r: any) => r.demi_journee));
+      const signedSet = new Set<string>(
+        (signedData || []).map((r: any) => `${r.date_emargement}|${r.demi_journee}`),
+      );
 
-      // Premier créneau non signé
-      const next = requiredCreneaux.find((c) => !signedSet.has(c));
+      // Premier créneau non signé (passés d'abord, puis aujourd'hui)
+      const next = expected.find((e) => !signedSet.has(`${e.date}|${e.creneau}`));
       if (!next) {
         setEmargementCreneau(null);
+        setEmargementDate(null);
         setEmargementFCStatus("signed");
         return;
       }
-      setEmargementCreneau(next);
+      setEmargementCreneau(next.creneau);
+      setEmargementDate(next.date);
       setEmargementFCStatus("needed");
     };
     check();
     return () => {
       cancelled = true;
     };
-  }, [embedded, user?.id, apprenant?.id, apprenant?.type_apprenant, apprenant?.formation_choisie, emargementRefreshTick]);
+  }, [embedded, user?.id, apprenant?.id, apprenant?.type_apprenant, apprenant?.formation_choisie, apprenant?.date_debut_formation, apprenant?.date_fin_formation, emargementRefreshTick]);
 
 
   const handleModuleCompleted = useCallback((moduleId: number) => {
@@ -1282,7 +1301,16 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
           <p className="text-sm text-slate-500">
             {emargementFCStatus === "checking"
               ? "Vérification de votre émargement…"
-              : `Avant d'accéder à votre ${formationLabel}, merci de signer la feuille d'émargement de ce créneau.`}
+              : (() => {
+                  const today = (() => {
+                    const d = new Date();
+                    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+                  })();
+                  const isPast = emargementDate && emargementDate !== today;
+                  return isPast
+                    ? `Avant d'accéder à votre ${formationLabel}, merci de régulariser une signature manquante d'un créneau passé.`
+                    : `Avant d'accéder à votre ${formationLabel}, merci de signer la feuille d'émargement de ce créneau.`;
+                })()}
           </p>
         </div>
         <Button variant="outline" size="sm" onClick={handleLogout}>
@@ -1291,13 +1319,14 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         </Button>
         {emargementFCStatus === "needed" && emargementCreneau && (
           <EmargementFCModal
-            key={emargementCreneau}
+            key={`${emargementDate || "today"}|${emargementCreneau}`}
             apprenantId={apprenant!.id!}
             userId={user!.id}
             apprenantNom={apprenant!.nom}
             apprenantPrenom={apprenant!.prenom}
             creneau={emargementCreneau}
             mode={emargementMode}
+            dateEmargement={emargementDate || undefined}
             onSigned={() => setEmargementRefreshTick((t) => t + 1)}
             onSkipped={() => setEmargementFCStatus("skipped")}
           />
