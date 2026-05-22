@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, Filter, MoreVertical, Mail, Phone, MapPin, User, UserCheck, Trash2, Pencil, Loader2, ChevronDown, AlertTriangle } from "lucide-react";
+import { Search, Filter, MoreVertical, Mail, Phone, MapPin, User, UserCheck, Trash2, Pencil, Loader2, ChevronDown, AlertTriangle, Calendar } from "lucide-react";
 import { isPresentielType, getCurrentCreneau, type AgendaBloc, type CreneauKey } from "@/lib/agendaSlots";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -55,7 +55,13 @@ interface Apprenant {
   type_apprenant: string | null;
   organisme_financeur: string | null;
   formation_choisie?: string | null;
+  date_debut_formation?: string | null;
+  date_fin_formation?: string | null;
+  date_debut_cours_en_ligne?: string | null;
+  date_fin_cours_en_ligne?: string | null;
+  date_formation_catalogue?: string | null;
 }
+
 
 interface EmargementStatus {
   needsSignature: boolean;
@@ -227,9 +233,43 @@ function ApprenantTable({
                         CMA: {apprenant.numero_dossier_cma}
                       </div>
                     )}
+                    {(() => {
+                      const debut = apprenant.date_debut_formation || apprenant.date_debut_cours_en_ligne;
+                      const fin = apprenant.date_fin_formation || apprenant.date_fin_cours_en_ligne;
+                      const catalogue = apprenant.date_formation_catalogue && apprenant.date_formation_catalogue !== "manuel"
+                        ? apprenant.date_formation_catalogue
+                        : null;
+                      const fmt = (d?: string | null) => {
+                        if (!d) return null;
+                        const iso = /^\d{4}-\d{2}-\d{2}/.exec(d);
+                        if (iso) {
+                          const [y, m, day] = d.slice(0, 10).split("-");
+                          return `${day}/${m}/${y}`;
+                        }
+                        return d;
+                      };
+                      if (catalogue) {
+                        return (
+                          <div className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                            <Calendar className="w-3 h-3" />
+                            {catalogue}
+                          </div>
+                        );
+                      }
+                      if (debut || fin) {
+                        return (
+                          <div className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                            <Calendar className="w-3 h-3" />
+                            {fmt(debut) || "?"} → {fmt(fin) || "?"}
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
                   </div>
                 </div>
               </TableCell>
+
               <TableCell>
                 <div className="space-y-1">
                   {apprenant.email && (
