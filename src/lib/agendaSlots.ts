@@ -254,8 +254,9 @@ export const creneauHoraire = (k: CreneauKey): string => {
  * triée chronologiquement.
  *
  * - FC : matin + après-midi du lundi au vendredi.
- * - Présentiel : créneaux dérivés des `agenda_blocs` de chaque semaine,
- *   filtrés par formation + jour/soir selon la session de l'apprenant.
+ * - Présentiel : créneaux standards matin + après-midi sur les jours ouvrés
+ *   compris entre les dates de début/fin de formation. L'agenda ne bloque pas
+ *   l'émargement apprenant : la sécurité serveur vérifie seulement la période.
  *
  * Borne max : 90 jours en arrière pour limiter la charge.
  */
@@ -292,110 +293,15 @@ export const getExpectedEmargements = async (params: {
     return out;
   }
 
-  const weekStarts = new Set<string>();
-  const cur = new Date(effectiveStart);
-  while (cur <= end) {
-    weekStarts.add(formatISO(startOfWeek(cur)));
-    cur.setDate(cur.getDate() + 1);
-  }
-  if (weekStarts.size === 0) return [];
-
-  const blocsPromise = supabase
-    .from("agenda_blocs")
-    .select("jour, heure_debut, heure_fin, formation, semaine_debut, publics_cibles" as any)
-    .in("semaine_debut", Array.from(weekStarts));
-
-  const sessionPromise = apprenantId
-    ? supabase
-        .from("session_apprenants")
-        .select("session_id, sessions:session_id(nom, creneaux, date_debut, date_fin)" as any)
-        .eq("apprenant_id", apprenantId)
-    : (Promise.resolve({ data: null, error: null }) as any);
-
-  const [blocsRes, sessionRes] = await Promise.all([blocsPromise, sessionPromise]);
-  if (blocsRes.error || !blocsRes.data) return [];
-  const blocsAll = blocsRes.data as any[];
-
-  const sessRows = (sessionRes as any)?.data as any[] | null;
-  const sessions = Array.isArray(sessRows)
-    ? sessRows.map((r) => r?.sessions).filter(Boolean)
-    : [];
-
-  const fLower = (formationChoisie || "").toLowerCase();
-  const wantTaxi = /taxi/.test(fLower) && !/passerelle/.test(fLower);
-  const wantVtc = /vtc/.test(fLower) && !/passerelle/.test(fLower);
-  const wantTa = /\bta\b|passerelle\s*-?\s*ta(?!xi)|passerelle-taxi/.test(fLower);
-  const wantVa = /\bva\b|passerelle\s*-?\s*va|passerelle-vtc/.test(fLower);
-  const apprenantPublics: string[] = [];
-  if (wantTaxi) apprenantPublics.push("TAXI");
-  if (wantVtc) apprenantPublics.push("VTC");
-  if (wantTa) apprenantPublics.push("TA");
-  if (wantVa) apprenantPublics.push("VA");
-
   const out: Array<{ date: string; creneau: CreneauKey }> = [];
   const cur2 = new Date(effectiveStart);
   while (cur2 <= end) {
     const iso = formatISO(cur2);
-    const weekStart = formatISO(startOfWeek(cur2));
     const dow = todayDow(cur2);
-
-    // Pas de cours le week-end (sauf si la session indique le contraire)
-    if (dow > 4) { cur2.setDate(cur2.getDate() + 1); continue; }
-
-    let activeSession: any = null;
-    for (const s of sessions) {
-      const d = s?.date_debut as string | undefined;
-      const f = s?.date_fin as string | undefined;
-      if (d && f && iso >= d && iso <= f) { activeSession = s; break; }
+    if (dow <= 4) {
+      out.push({ date: iso, creneau: "matin" });
+      out.push({ date: iso, creneau: "apres_midi" });
     }
-    const hasActiveSession = !!activeSession;
-    const wantEvening = isEveningSession(activeSession);
-
-    const dayBlocs = blocsAll.filter((b) => b.semaine_debut === weekStart && b.jour === dow)
-      .filter((bloc) => {
-        if (hasActiveSession) {
-          const startMin = timeToMin(bloc.heure_debut);
-          const isEveningBloc = startMin >= 17 * 60;
-          if (wantEvening && !isEveningBloc) return false;
-          if (!wantEvening && isEveningBloc) return false;
-        }
-        const cibles: string[] = Array.isArray(bloc.publics_cibles) ? bloc.publics_cibles : [];
-        if (cibles.length > 0) {
-          return apprenantPublics.some((p) => cibles.includes(p));
-        }
-        const bf = (bloc.formation || "").toLowerCase();
-        if (wantTaxi && /taxi/.test(bf)) return true;
-        if (wantVtc && /vtc/.test(bf)) return true;
-        if (wantTa && /\bta\b/.test(bf)) return true;
-        if (wantVa && /\bva\b/.test(bf)) return true;
-        if (apprenantPublics.length === 0) return true;
-        return false;
-      });
-
-    const set = new Set<CreneauKey>();
-    for (const b of dayBlocs) {
-      const startMin = timeToMin(b.heure_debut);
-      if (startMin < 12 * 60) set.add("matin");
-      else if (startMin < 17 * 60) set.add("apres_midi");
-      else set.add("soir");
-    }
-
-    // Fallback : si aucune feuille d'agenda n'est planifiée pour ce jour,
-    // on propose quand même les demi-journées standard pour que l'apprenant
-    // puisse régulariser ses signatures manquantes depuis son compte en ligne.
-    if (set.size === 0) {
-      if (wantEvening) {
-        set.add("soir");
-      } else {
-        set.add("matin");
-        set.add("apres_midi");
-      }
-    }
-
-    for (const k of ["matin", "apres_midi", "soir"] as CreneauKey[]) {
-      if (set.has(k)) out.push({ date: iso, creneau: k });
-    }
-
     cur2.setDate(cur2.getDate() + 1);
   }
   return out;
