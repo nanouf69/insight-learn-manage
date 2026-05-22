@@ -1301,7 +1301,16 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
           <p className="text-sm text-slate-500">
             {emargementFCStatus === "checking"
               ? "Vérification de votre émargement…"
-              : `Avant d'accéder à votre ${formationLabel}, merci de signer la feuille d'émargement de ce créneau.`}
+              : (() => {
+                  const today = (() => {
+                    const d = new Date();
+                    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+                  })();
+                  const isPast = emargementDate && emargementDate !== today;
+                  return isPast
+                    ? `Avant d'accéder à votre ${formationLabel}, merci de régulariser une signature manquante d'un créneau passé.`
+                    : `Avant d'accéder à votre ${formationLabel}, merci de signer la feuille d'émargement de ce créneau.`;
+                })()}
           </p>
         </div>
         <Button variant="outline" size="sm" onClick={handleLogout}>
