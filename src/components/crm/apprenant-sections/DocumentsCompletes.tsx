@@ -9,6 +9,7 @@ import { generateEmargementSemainePdf } from "@/lib/pdf/emargement-semaine";
 import { useState } from "react";
 import { format, startOfWeek, endOfWeek, getISOWeek, getYear } from "date-fns";
 import { fr } from "date-fns/locale";
+import { computePresenceHours, formatPresenceHours, isEveningTrainingValue } from "@/lib/emargementHours";
 
 interface Props {
   apprenant: any;
@@ -631,16 +632,24 @@ export function DocumentsCompletes({ apprenant }: Props) {
   }
 
   // Calcul des heures de présence basé sur les signatures d'émargement
-  // Règle RCM : une journée signée = 6h, déduite des jours ayant au moins un émargement signé
   const emargementsRaw = (documents || []).filter((d: any) => {
     const hasSignature = !!d.donnees?.signature || !!d.donnees?.signed_at || !!d.completed_at;
     return d.type_document === "emargement-fc" && hasSignature && !d.donnees?.absent;
   });
-  // Dédoublonnage par (date, demi_journee) pour éviter les doublons
+  const isEvening = isEveningTrainingValue(apprenant?.creneau_horaire, apprenant?.formation_choisie, apprenant?.type_apprenant);
+  const totalHeures = computePresenceHours(
+    emargementsRaw.map((d: any) => ({
+      date_emargement: d.donnees?.date_emargement,
+      demi_journee: d.donnees?.demi_journee,
+      absent: d.donnees?.absent,
+    })),
+    { isEvening, maxHours: isEvening ? 40 : 60, dateStart: apprenant?.date_debut_formation, dateEnd: apprenant?.date_fin_formation },
+  );
   const uniqueMap = new Map<string, any>();
   for (const d of emargementsRaw) {
     const date = d.donnees?.date_emargement || "";
     const demi = (d.donnees?.demi_journee || "").toString().trim().toLowerCase();
+    if (!date || !demi) continue;
     const k = `${date}__${demi}`;
     if (!uniqueMap.has(k)) uniqueMap.set(k, d);
   }
@@ -649,21 +658,13 @@ export function DocumentsCompletes({ apprenant }: Props) {
   for (const d of emargementsSignes) {
     if (d.donnees?.date_emargement) joursPresence.add(d.donnees.date_emargement);
   }
-  const totalHeures = joursPresence.size * 6;
-
-  const formatHeures = (h: number) => {
-    const heures = Math.floor(h);
-    const minutes = Math.round((h - heures) * 60);
-    return minutes > 0 ? `${heures}h${String(minutes).padStart(2, "0")}` : `${heures}h00`;
-  };
-
   return (
     <div className="space-y-4">
       <Card className="border-primary/30 bg-primary/5">
         <CardContent className="p-4 flex items-center justify-between flex-wrap gap-3">
           <div>
             <p className="text-sm text-muted-foreground">Total heures de présence (basé sur les signatures)</p>
-            <p className="text-2xl font-bold text-primary">{formatHeures(totalHeures)}</p>
+            <p className="text-2xl font-bold text-primary">{formatPresenceHours(totalHeures)}</p>
           </div>
           <div className="text-right text-sm text-muted-foreground">
             <p><strong className="text-foreground">{emargementsSignes.length}</strong> demi-journée(s) signée(s)</p>
