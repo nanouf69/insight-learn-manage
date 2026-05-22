@@ -262,6 +262,7 @@ const applyFCVTCPersonalizedSchedule = (
   sessionStart: string,
   sessionEnd: string,
   schedule?: SessionApprenantSchedule,
+  isCoursDuSoir = false,
 ) => {
   const effectiveEnd = schedule?.date_fin_personnalisee || sessionEnd;
   const startDate = new Date(`${sessionStart}T00:00:00`);
@@ -294,7 +295,7 @@ const applyFCVTCPersonalizedSchedule = (
     const isCustomEndDay = key === schedule?.date_fin_personnalisee;
 
     if (!dayMap.has(key) && (shouldBackfillAllDays || isBeyondSessionEnd || isCustomEndDay)) {
-      dayMap.set(key, buildDefaultFCVTCDay(new Date(d)));
+      dayMap.set(key, buildDefaultFCVTCDay(new Date(d), isCoursDuSoir));
     }
   }
 
