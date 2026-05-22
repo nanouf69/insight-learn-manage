@@ -448,7 +448,7 @@ function PaiementPopover({
   );
 }
 
-export function SessionDetail({ session, open, onOpenChange, onNavigateToApprenant }: SessionDetailProps) {
+export function SessionDetail({ session, open, onOpenChange, onNavigateToApprenant, asPage, onBack }: SessionDetailProps) {
   const [searchApprenant, setSearchApprenant] = useState("");
   const [showAddApprenant, setShowAddApprenant] = useState(false);
   const [showAddFormateur, setShowAddFormateur] = useState(false);
