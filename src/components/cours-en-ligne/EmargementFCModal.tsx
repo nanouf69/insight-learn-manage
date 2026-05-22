@@ -213,18 +213,21 @@ export const EmargementFCModal = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {creneauIcon(demi)}
-            Émargement — {creneauLabel(demi)}
+            {isRattrapage ? "Rattrapage d'émargement" : "Émargement"} — {creneauLabel(demi)}
           </DialogTitle>
           <DialogDescription>
             Bonjour <strong>{apprenantPrenom} {apprenantNom}</strong>, vous suivez une <strong>{formationLabel}</strong>.
-            Merci de signer votre présence ou de déclarer une absence avec justificatif.
+            {isRattrapage
+              ? " Un créneau passé n'a pas été émargé. Merci de signer votre présence ou de déclarer une absence avec justificatif."
+              : " Merci de signer votre présence ou de déclarer une absence avec justificatif."}
           </DialogDescription>
         </DialogHeader>
 
-        <Alert className="border-amber-300 bg-amber-50">
-          <AlertTriangle className="h-4 w-4 text-amber-600" />
-          <AlertDescription className="text-sm text-amber-900">
-            Date : <strong>{new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</strong>
+        <Alert className={isRattrapage ? "border-red-300 bg-red-50" : "border-amber-300 bg-amber-50"}>
+          <AlertTriangle className={`h-4 w-4 ${isRattrapage ? "text-red-600" : "text-amber-600"}`} />
+          <AlertDescription className={`text-sm ${isRattrapage ? "text-red-900" : "text-amber-900"}`}>
+            {isRattrapage && <><strong>Créneau passé à régulariser.</strong><br /></>}
+            Date : <strong>{dateLabel}</strong>
             <br />
             Créneau : <strong>{creneauLabel(demi)} ({creneauHoraire(demi)})</strong>
           </AlertDescription>
