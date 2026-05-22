@@ -456,12 +456,29 @@ export function ApprenantsList() {
 
   const stripNonAlpha = (str: string) => str.replace(/[\s\-\.\(\)]/g, "");
 
+  const formationOptions = Array.from(
+    new Set(
+      apprenants
+        .map(a => (a.formation_choisie || "").trim())
+        .filter(f => f.length > 0)
+    )
+  ).sort((a, b) => a.localeCompare(b, "fr", { sensitivity: "base" }));
+
   const filteredApprenants = apprenants.filter(a => {
+    // Filtre par type d'apprenant (multi)
+    if (typeFilter.length > 0) {
+      const t = (a.type_apprenant || "").toLowerCase();
+      if (!typeFilter.some(f => t.includes(f))) return false;
+    }
+    // Filtre par formation (multi)
+    if (formationFilter.length > 0) {
+      const f = (a.formation_choisie || "").trim();
+      if (!formationFilter.includes(f)) return false;
+    }
     if (!searchTerm.trim()) return true;
     const normalizedSearch = normalize(searchTerm);
     const keywords = normalizedSearch.split(" ").filter(Boolean);
-    const haystack = normalize([a.nom, a.prenom, a.email || "", a.telephone || "", a.ville || "", a.adresse || "", a.code_postal || ""].join(" "));
-    // Also build a stripped version for phone/email matching without spaces
+    const haystack = normalize([a.nom, a.prenom, a.email || "", a.telephone || "", a.ville || "", a.adresse || "", a.code_postal || "", a.formation_choisie || ""].join(" "));
     const haystackStripped = stripNonAlpha([a.telephone || "", a.email || ""].join(" "));
     const searchStripped = stripNonAlpha(normalizedSearch);
     return keywords.every(kw => haystack.includes(kw)) || (searchStripped.length >= 3 && haystackStripped.includes(searchStripped));
