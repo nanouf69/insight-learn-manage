@@ -57,6 +57,7 @@ export const EmargementFCModal = ({
   apprenantPrenom,
   creneau,
   mode = "fc",
+  dateEmargement,
   onSigned,
   onSkipped,
 }: EmargementFCModalProps) => {
@@ -66,6 +67,13 @@ export const EmargementFCModal = ({
   const [saving, setSaving] = useState(false);
   const [demi] = useState<CreneauKey>(creneau || getCurrentCreneauFromHour());
   const [done, setDone] = useState(false);
+  const effectiveDate = dateEmargement || todayISO();
+  const isRattrapage = effectiveDate !== todayISO();
+  const dateLabel = (() => {
+    const [y, m, d] = effectiveDate.split("-").map((x) => parseInt(x, 10));
+    const dt = new Date(y, (m || 1) - 1, d || 1);
+    return dt.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  })();
 
   // Absent state
   const fileInputRef = useRef<HTMLInputElement>(null);
