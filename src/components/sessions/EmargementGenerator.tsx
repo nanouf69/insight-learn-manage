@@ -173,6 +173,9 @@ function generatePage(
   ];
 
   const headRow2: any[] = [];
+  const titleLower = (session.title || "").toLowerCase();
+  const formationLower = (session.formation || "").toLowerCase();
+  const isSoir = titleLower.includes("soir") || formationLower.includes("soir");
 
   days.forEach((day) => {
     const dateStr = format(day, "EEE dd/MM", { locale: fr });
@@ -182,8 +185,8 @@ function generatePage(
       colSpan: 2,
       styles: { halign: "center", fontSize: 7 },
     });
-    headRow2.push({ content: "Matin", styles: { halign: "center", fontSize: 6 } });
-    headRow2.push({ content: "Apres-midi", styles: { halign: "center", fontSize: 6 } });
+    headRow2.push({ content: isSoir ? "17h-18h30" : "Matin", styles: { halign: "center", fontSize: 6 } });
+    headRow2.push({ content: isSoir ? "18h30-21h" : "Apres-midi", styles: { halign: "center", fontSize: 6 } });
   });
 
   // Construire les lignes avec tous les apprenants
@@ -257,9 +260,6 @@ function generatePage(
   // ===== HORAIRES =====
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
-  const titleLower = (session.title || "").toLowerCase();
-  const formationLower = (session.formation || "").toLowerCase();
-  const isSoir = titleLower.includes("soir") || formationLower.includes("soir");
   const horairesLine = isSoir
     ? "Horaires : 1ere partie 17h00 - 18h30 / 2eme partie 18h30 - 21h00"
     : "Horaires : Matin 09h00 - 12h00 / Apres-midi 13h00 - 16h00";
