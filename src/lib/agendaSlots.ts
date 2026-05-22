@@ -192,7 +192,8 @@ export const getTodayAgendaBlocs = async (
  * Horaires officiels :
  *  - matin       : 09h00 — 12h00 (bloc qui commence avant 12h)
  *  - apres_midi  : 13h00 — 16h00 (bloc qui commence entre 12h et 17h)
- *  - soir        : 17h00 — 21h00 (bloc qui commence à partir de 17h)
+  *  - soir_1      : 17h00 — 18h30
+  *  - soir_2      : 18h30 — 21h00
  *
  * Renvoie null si aucun cours présentiel n'est prévu aujourd'hui.
  */
@@ -212,7 +213,7 @@ export const getCurrentCreneau = (
   const classify = (startMin: number): CreneauKey => {
     if (startMin < 12 * 60) return "matin";
     if (startMin < 17 * 60) return "apres_midi";
-    return "soir";
+    return splitEveningCreneau(now);
   };
 
   // 1. Bloc actuellement en cours (avec tolérance) → priorité
@@ -233,7 +234,7 @@ export const getCurrentCreneau = (
       return s >= 12 * 60 && s < 17 * 60;
     })) return "apres_midi";
   }
-  if (blocs.some((b) => timeToMin(b.heure_debut) >= 17 * 60)) return "soir";
+  if (blocs.some((b) => timeToMin(b.heure_debut) >= 17 * 60)) return splitEveningCreneau(now);
 
   return null;
 };
@@ -244,6 +245,8 @@ export const creneauLabel = (k: CreneauKey): string => {
     case "matin": return "Matin";
     case "apres_midi": return "Après-midi";
     case "soir": return "Soir";
+    case "soir_1": return "Soir 1";
+    case "soir_2": return "Soir 2";
   }
 };
 
@@ -252,6 +255,8 @@ export const creneauHoraire = (k: CreneauKey): string => {
     case "matin": return "09h00 — 12h00";
     case "apres_midi": return "13h00 — 16h00";
     case "soir": return "17h00 — 21h00";
+    case "soir_1": return "17h00 — 18h30";
+    case "soir_2": return "18h30 — 21h00";
   }
 };
 
