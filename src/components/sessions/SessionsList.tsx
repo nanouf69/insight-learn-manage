@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -72,6 +73,7 @@ const formatDate = (dateString: string) => {
 };
 
 export function SessionsList({ onNavigateToApprenant }: { onNavigateToApprenant?: (apprenantId: string) => void }) {
+  const navigate = useNavigate();
   const [selectedSession, setSelectedSession] = useState<any | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [duplicating, setDuplicating] = useState<string | null>(null);
@@ -207,21 +209,7 @@ export function SessionsList({ onNavigateToApprenant }: { onNavigateToApprenant?
   const hasActiveFilters = search || filterStatut !== "tous" || filterType !== "tous";
 
   const openSessionDetail = (session: Session) => {
-    const detailSession = {
-      id: session.id,
-      title: session.nom || `Session du ${formatDate(session.date_debut)}`,
-      formation: "Formation TAXI VTC",
-      dateDebut: session.date_debut,
-      dateFin: session.date_fin,
-      lieu: session.lieu || "Présentiel",
-      formateur: "",
-      participants: 0,
-      maxParticipants: session.places_disponibles || 18,
-      status: session.statut || "planifiee",
-      type_session: session.type_session,
-    };
-    setSelectedSession(detailSession);
-    setDetailOpen(true);
+    navigate(`/sessions/${session.id}`);
   };
 
   const duplicateSession = async (e: React.MouseEvent, session: Session) => {

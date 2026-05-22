@@ -79,6 +79,8 @@ interface SessionDetailProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onNavigateToApprenant?: (apprenantId: string) => void;
+  asPage?: boolean;
+  onBack?: () => void;
 }
 
 // Interface pour l'apprenant depuis la base de données
@@ -446,7 +448,7 @@ function PaiementPopover({
   );
 }
 
-export function SessionDetail({ session, open, onOpenChange, onNavigateToApprenant }: SessionDetailProps) {
+export function SessionDetail({ session, open, onOpenChange, onNavigateToApprenant, asPage, onBack }: SessionDetailProps) {
   const [searchApprenant, setSearchApprenant] = useState("");
   const [showAddApprenant, setShowAddApprenant] = useState(false);
   const [showAddFormateur, setShowAddFormateur] = useState(false);
@@ -2117,18 +2119,10 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   const totalCount = apprenantsInSession.length;
   const formateursCount = formateursInSession.length;
 
-  return (
+  const mainContent = (
     <>
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={cn(
-        "!flex !flex-col !gap-0 overflow-hidden",
-        isFullscreen
-          ? "max-w-none w-screen h-screen sm:max-w-none sm:rounded-none max-h-screen p-6"
-          : "sm:max-w-[800px] h-[90vh] max-h-[90vh]"
-      )}>
+        <DialogHeader className={asPage ? "" : "shrink-0"}>
 
-
-        <DialogHeader className="shrink-0">
           <div className="flex items-center justify-between">
             <DialogTitle className="flex items-center gap-3">
               {session.title}
@@ -3196,8 +3190,33 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
             </TabsContent>
           )}
         </Tabs>
-      </DialogContent>
-    </Dialog>
+    </>
+  );
+
+  return (
+    <>
+    {asPage ? (
+      <div className="w-full max-w-[1200px] mx-auto p-4 md:p-6 space-y-4">
+        {onBack && (
+          <Button variant="ghost" size="sm" onClick={onBack} className="gap-2 -ml-2">
+            <X className="w-4 h-4" /> Retour
+          </Button>
+        )}
+        {mainContent}
+      </div>
+    ) : (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className={cn(
+          "!flex !flex-col !gap-0 overflow-hidden",
+          isFullscreen
+            ? "max-w-none w-screen h-screen sm:max-w-none sm:rounded-none max-h-screen p-6"
+            : "sm:max-w-[800px] h-[90vh] max-h-[90vh]"
+        )}>
+          {mainContent}
+        </DialogContent>
+      </Dialog>
+    )}
+
 
     {/* Modale d'acquittement */}
     <Dialog open={!!acquittementApprenant} onOpenChange={(open) => !open && setAcquittementApprenant(null)}>
