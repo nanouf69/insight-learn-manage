@@ -1082,8 +1082,12 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
       setEmargementFCStatus("needed");
     };
     check();
+    const interval = window.setInterval(() => {
+      setEmargementRefreshTick((t) => t + 1);
+    }, 60000);
     return () => {
       cancelled = true;
+      window.clearInterval(interval);
     };
   }, [embedded, user?.id, apprenant?.id, apprenant?.type_apprenant, apprenant?.formation_choisie, apprenant?.date_debut_formation, apprenant?.date_fin_formation, emargementRefreshTick]);
 
@@ -1329,6 +1333,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
             creneau={emargementCreneau}
             mode={emargementMode}
             dateEmargement={emargementDate || undefined}
+            required
             onSigned={() => setEmargementRefreshTick((t) => t + 1)}
             onSkipped={() => setEmargementFCStatus("skipped")}
           />
