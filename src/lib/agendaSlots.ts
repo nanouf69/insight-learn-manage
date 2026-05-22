@@ -279,7 +279,7 @@ export const getExpectedEmargements = async (params: {
   startDate: Date;
   endDate: Date;
 }): Promise<Array<{ date: string; creneau: CreneauKey }>> => {
-  const { mode, startDate, endDate } = params;
+  const { mode, startDate, endDate, apprenantId } = params;
 
   const start = new Date(startDate); start.setHours(0, 0, 0, 0);
   const end = new Date(endDate); end.setHours(0, 0, 0, 0);
@@ -305,14 +305,36 @@ export const getExpectedEmargements = async (params: {
     return out;
   }
 
+  let wantEvening = isEveningText(params.formationChoisie);
+  if (apprenantId) {
+    const startISO = formatISO(effectiveStart);
+    const endISO = formatISO(end);
+    const { data: sessionRows } = await supabase
+      .from("session_apprenants")
+      .select("sessions:session_id(nom, creneaux, date_debut, date_fin)")
+      .eq("apprenant_id", apprenantId);
+    const matchingSession = ((sessionRows as any[]) || []).map((row) => row?.sessions).find((s) => {
+      if (!s) return false;
+      const debut = String(s.date_debut || "").slice(0, 10);
+      const fin = String(s.date_fin || debut).slice(0, 10);
+      return debut <= endISO && fin >= startISO;
+    });
+    if (matchingSession) wantEvening = isEveningSession(matchingSession);
+  }
+
   const out: Array<{ date: string; creneau: CreneauKey }> = [];
   const cur2 = new Date(effectiveStart);
   while (cur2 <= end) {
     const iso = formatISO(cur2);
     const dow = todayDow(cur2);
     if (dow <= 4) {
-      out.push({ date: iso, creneau: "matin" });
-      out.push({ date: iso, creneau: "apres_midi" });
+      if (wantEvening) {
+        out.push({ date: iso, creneau: "soir_1" });
+        out.push({ date: iso, creneau: "soir_2" });
+      } else {
+        out.push({ date: iso, creneau: "matin" });
+        out.push({ date: iso, creneau: "apres_midi" });
+      }
     }
     cur2.setDate(cur2.getDate() + 1);
   }
