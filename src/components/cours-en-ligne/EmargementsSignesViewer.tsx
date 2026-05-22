@@ -2,7 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, Download, FileSignature, Loader2, User } from "lucide-react";
+import { CheckCircle2, Download, FileSignature, Loader2, User, PenTool } from "lucide-react";
+import { EmargementFCModal, isFormationContinue } from "./EmargementFCModal";
+import { getExpectedEmargements, isPresentielType, type CreneauKey } from "@/lib/agendaSlots";
+
 
 interface EmargementRow {
   id: string;
