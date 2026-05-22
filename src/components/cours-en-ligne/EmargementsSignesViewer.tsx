@@ -171,18 +171,18 @@ const buildEmargementHTML = (
         <th rowspan="2" style="width:160px;">Jour</th>
         <th colspan="2">Matin</th>
         <th colspan="2">Apres-midi</th>
-        ${hasSoir ? `<th colspan="2">Soir</th>` : ""}
+        ${hasSoirSplit ? `<th colspan="2">Soir 1</th><th colspan="2">Soir 2</th>` : hasSoir ? `<th colspan="2">Soir</th>` : ""}
       </tr>
       <tr class="sub">
         <th>Horaire</th>
         <th>Signature du stagiaire</th>
         <th>Horaire</th>
         <th>Signature du stagiaire</th>
-        ${hasSoir ? `<th>Horaire</th><th>Signature du stagiaire</th>` : ""}
+        ${hasSoirSplit ? `<th>Horaire</th><th>Signature du stagiaire</th><th>Horaire</th><th>Signature du stagiaire</th>` : hasSoir ? `<th>Horaire</th><th>Signature du stagiaire</th>` : ""}
       </tr>
     </thead>
     <tbody>
-      ${rowsHtml || `<tr><td colspan="${hasSoir ? 7 : 5}" style="padding:20px;color:#999;">Aucune signature enregistrée</td></tr>`}
+      ${rowsHtml || `<tr><td colspan="${hasSoirSplit ? 9 : hasSoir ? 7 : 5}" style="padding:20px;color:#999;">Aucune signature enregistrée</td></tr>`}
     </tbody>
   </table>
 
@@ -199,7 +199,7 @@ const buildEmargementHTML = (
 };
 
 const downloadAllJournees = (
-  groupedByDay: Array<[string, { matin?: EmargementRow; apresMidi?: EmargementRow; soir?: EmargementRow }]>,
+  groupedByDay: Array<[string, GroupedEmargements]>,
   apprenant: ApprenantInfo | null
 ) => {
   const html = buildEmargementHTML(groupedByDay, apprenant);
@@ -215,9 +215,11 @@ const downloadJournee = (
   matin: EmargementRow | undefined,
   apresMidi: EmargementRow | undefined,
   soir: EmargementRow | undefined,
+  soir1: EmargementRow | undefined,
+  soir2: EmargementRow | undefined,
   apprenant: ApprenantInfo | null
 ) => {
-  downloadAllJournees([[date, { matin, apresMidi, soir }]], apprenant);
+  downloadAllJournees([[date, { matin, apresMidi, soir, soir1, soir2 }]], apprenant);
 };
 
 export default function EmargementsSignesViewer({ apprenantId, completed, onComplete }: Props) {
