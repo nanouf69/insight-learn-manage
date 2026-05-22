@@ -346,6 +346,8 @@ function PaiementPopover({
   montantPaye, 
   moyenPaiement,
   datePaiement,
+  apprenantNom,
+  apprenantPrenom,
   onSave 
 }: { 
   sessionApprenantId: string; 
@@ -353,14 +355,55 @@ function PaiementPopover({
   montantPaye: number; 
   moyenPaiement: string;
   datePaiement: string;
+  apprenantNom?: string;
+  apprenantPrenom?: string;
   onSave: (data: { montant_paye?: number; moyen_paiement?: string; date_paiement?: string | null }) => void 
 }) {
   const [localMontantPaye, setLocalMontantPaye] = useState(montantPaye);
   const [localMoyenPaiement, setLocalMoyenPaiement] = useState(moyenPaiement);
   const [localDatePaiement, setLocalDatePaiement] = useState(datePaiement);
   const [open, setOpen] = useState(false);
+  const [matches, setMatches] = useState<any[]>([]);
+  const [loadingMatches, setLoadingMatches] = useState(false);
 
   const resteAPayer = montantTotal - localMontantPaye;
+
+  // Recherche de virements reçus correspondant à l'apprenant à l'ouverture
+  useEffect(() => {
+    if (!open) return;
+    const nom = (apprenantNom || "").trim();
+    const prenom = (apprenantPrenom || "").trim();
+    if (!nom && !prenom) {
+      setMatches([]);
+      return;
+    }
+    setLoadingMatches(true);
+    (async () => {
+      try {
+        const orClauses: string[] = [];
+        if (nom) orClauses.push(`libelle.ilike.%${nom}%`);
+        if (prenom) orClauses.push(`libelle.ilike.%${prenom}%`);
+        const { data, error } = await supabase
+          .from("transactions_bancaires")
+          .select("id,date_operation,libelle,montant,banque")
+          .gt("montant", 0)
+          .or(orClauses.join(","))
+          .order("date_operation", { ascending: false })
+          .limit(10);
+        if (!error && data) setMatches(data as any[]);
+      } catch (e) {
+        console.error("[PaiementPopover] match err", e);
+      } finally {
+        setLoadingMatches(false);
+      }
+    })();
+  }, [open, apprenantNom, apprenantPrenom]);
+
+  const applyMatch = (tx: any) => {
+    setLocalMontantPaye(Number(tx.montant) || 0);
+    setLocalMoyenPaiement("virement");
+    setLocalDatePaiement(tx.date_operation || "");
+  };
 
   const handleSave = () => {
     onSave({
@@ -383,9 +426,33 @@ function PaiementPopover({
           {montantPaye > 0 ? `${montantPaye}€ payé` : "Paiement"}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-80">
+      <PopoverContent className="w-80 max-h-[80vh] overflow-y-auto">
         <div className="space-y-4">
           <h4 className="font-medium">Gestion du paiement</h4>
+
+          <div className="space-y-2 rounded-md border bg-muted/30 p-2">
+            <Label className="text-xs">Virements reçus correspondants</Label>
+            {loadingMatches && (
+              <p className="text-xs text-muted-foreground">Recherche…</p>
+            )}
+            {!loadingMatches && matches.map((tx) => (
+              <button
+                key={tx.id}
+                type="button"
+                onClick={() => applyMatch(tx)}
+                className="w-full text-left text-xs px-2 py-1.5 rounded border bg-background hover:bg-accent transition"
+              >
+                <div className="flex justify-between gap-2">
+                  <span className="font-medium text-green-700">{Number(tx.montant).toFixed(2)} €</span>
+                  <span className="text-muted-foreground">{tx.date_operation}</span>
+                </div>
+                <div className="text-muted-foreground truncate">{tx.libelle}</div>
+              </button>
+            ))}
+            {!loadingMatches && matches.length === 0 && (
+              <p className="text-xs text-muted-foreground">Aucun virement correspondant</p>
+            )}
+          </div>
           
           <div className="space-y-2">
             <Label>Montant total (€)</Label>
