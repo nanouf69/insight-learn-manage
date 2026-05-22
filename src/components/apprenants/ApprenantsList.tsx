@@ -344,6 +344,7 @@ function ApprenantTable({
 export function ApprenantsList() {
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState<string[]>([]);
+  const [formationFilter, setFormationFilter] = useState<string[]>([]);
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; id: string | null; name: string }>({
     open: false,
     id: null,
