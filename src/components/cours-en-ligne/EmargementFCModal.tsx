@@ -21,6 +21,7 @@ interface EmargementFCModalProps {
   mode?: "fc" | "presentiel";
   /** Date de l'émargement à signer (YYYY-MM-DD). Par défaut : aujourd'hui (rattrapage des jours passés). */
   dateEmargement?: string;
+  replaceExisting?: boolean;
   onSigned?: () => void;
   /** Appelé si l'apprenant ferme/refuse de signer. La signature reste optionnelle. */
   onSkipped?: () => void;
@@ -83,6 +84,7 @@ export const EmargementFCModal = ({
   creneau,
   mode = "fc",
   dateEmargement,
+  replaceExisting = false,
   onSigned,
   onSkipped,
 }: EmargementFCModalProps) => {
@@ -123,6 +125,7 @@ export const EmargementFCModal = ({
         demi_journee: demi,
         signature_data_url: signature,
         absent: false,
+        replace_existing: replaceExisting,
         user_agent: navigator.userAgent.slice(0, 500),
       });
       toast({
