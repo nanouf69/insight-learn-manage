@@ -412,11 +412,11 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
         </Card>
       ) : (
         <div className="grid gap-3">
-          {groupedByDay.map(([date, { matin, apresMidi, soir, expectedSet }]) => {
-            // Toujours afficher matin + après-midi pour permettre la signature des créneaux manquants.
-            // La colonne soir n'apparaît que si une signature existe ou est attendue.
-            const keys: CreneauKey[] = ["matin", "apres_midi"];
-            if (soir || expectedSet.has("soir")) keys.push("soir");
+          {groupedByDay.map(([date, { matin, apresMidi, soir, soir1, soir2, expectedSet }]) => {
+            const keys: CreneauKey[] = expectedSet?.has("soir_1") || expectedSet?.has("soir_2") || soir1 || soir2
+              ? ["soir_1", "soir_2"]
+              : ["matin", "apres_midi"];
+            if (soir || expectedSet?.has("soir")) keys.push("soir");
             const colsClass = keys.length >= 3 ? "sm:grid-cols-3" : "sm:grid-cols-2";
             return (
             <Card key={date} className="p-3">
@@ -425,7 +425,7 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => downloadJournee(date, matin, apresMidi, soir, apprenant)}
+                  onClick={() => downloadJournee(date, matin, apresMidi, soir, soir1, soir2, apprenant)}
                   className="h-7 text-xs"
                 >
                   <Download className="h-3.5 w-3.5 mr-1" />
@@ -435,7 +435,7 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
 
               <div className={`grid grid-cols-1 ${colsClass} gap-3`}>
                 {keys.map((key) => {
-                  const r = key === "matin" ? matin : key === "apres_midi" ? apresMidi : soir;
+                  const r = key === "matin" ? matin : key === "apres_midi" ? apresMidi : key === "soir_1" ? soir1 : key === "soir_2" ? soir2 : soir;
                   const label = labelDemi(key === "apres_midi" ? "apres-midi" : key);
                   return (
                     <div key={key} className="border rounded-md p-2 bg-slate-50/50">
