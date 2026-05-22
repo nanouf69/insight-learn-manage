@@ -82,7 +82,7 @@ Deno.serve(async (req) => {
 
     const { data: apprenant, error: apprenantError } = await supabase
       .from("apprenants")
-      .select("id, auth_user_id, formation_choisie, type_apprenant, date_debut_formation, date_fin_formation, date_debut_cours_en_ligne, date_fin_cours_en_ligne")
+      .select("id, auth_user_id, formation_choisie, type_apprenant, creneau_horaire, date_debut_formation, date_fin_formation, date_debut_cours_en_ligne, date_fin_cours_en_ligne")
       .eq("id", apprenantId)
       .maybeSingle();
 
@@ -119,12 +119,14 @@ Deno.serve(async (req) => {
     });
     if (isPres && matchingSession) {
       const creneaux = Array.isArray(matchingSession.creneaux) ? matchingSession.creneaux : [];
-      const isEveningSession = isEveningText(matchingSession.nom) || creneaux.some((c: string) => isEveningText(c));
+      const isEveningSession = isEveningText(apprenant.creneau_horaire) || isEveningText(matchingSession.nom) || creneaux.some((c: string) => isEveningText(c));
       const isEveningSignature = ["soir", "soir_1", "soir_2"].includes(demi);
       if (isEveningSession && !isEveningSignature) return json({ error: "Signature de journée non autorisée pour un cours du soir" }, 403);
       if (!isEveningSession && isEveningSignature) return json({ error: "Signature du soir non autorisée pour une session de journée" }, 403);
       // Cours du soir : forcer soir_1 (17h-18h30) ou soir_2 (18h30-21h), refuser le "soir" unique legacy
       if (isEveningSession && demi === "soir") return json({ error: "Émargement du soir : choisir soir_1 (17h-18h30) ou soir_2 (18h30-21h)" }, 403);
+    } else if (isPres && isEveningText(apprenant.creneau_horaire)) {
+      if (!["soir_1", "soir_2"].includes(demi)) return json({ error: "Émargement du soir : choisir soir_1 (17h-18h30) ou soir_2 (18h30-21h)" }, 403);
     }
 
     const row = {
