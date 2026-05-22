@@ -29,9 +29,10 @@ interface EmargementFCModalProps {
 
 const getCurrentCreneauFromHour = (): CreneauKey => {
   const h = new Date().getHours();
+  const m = new Date().getMinutes();
   if (h < 12) return "matin";
   if (h < 17) return "apres_midi";
-  return "soir";
+  return h < 18 || (h === 18 && m < 30) ? "soir_1" : "soir_2";
 };
 
 
