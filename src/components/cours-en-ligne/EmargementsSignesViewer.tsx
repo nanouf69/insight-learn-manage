@@ -2,7 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, Download, FileSignature, Loader2, User } from "lucide-react";
+import { CheckCircle2, Download, FileSignature, Loader2, User, PenTool } from "lucide-react";
+import { EmargementFCModal, isFormationContinue } from "./EmargementFCModal";
+import { getExpectedEmargements, isPresentielType, type CreneauKey } from "@/lib/agendaSlots";
+
 
 interface EmargementRow {
   id: string;
@@ -208,7 +211,11 @@ const downloadJournee = (
 export default function EmargementsSignesViewer({ apprenantId, completed, onComplete }: Props) {
   const [rows, setRows] = useState<EmargementRow[]>([]);
   const [apprenant, setApprenant] = useState<ApprenantInfo | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [expected, setExpected] = useState<Array<{ date: string; creneau: CreneauKey }>>([]);
+  const [signTarget, setSignTarget] = useState<{ date: string; creneau: CreneauKey } | null>(null);
+  const [refreshTick, setRefreshTick] = useState(0);
 
   useEffect(() => {
     if (!apprenantId) {
@@ -217,7 +224,7 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
     }
     (async () => {
       setLoading(true);
-      const [emRes, apRes] = await Promise.all([
+      const [emRes, apRes, userRes] = await Promise.all([
         supabase
           .from("emargements_fc" as any)
           .select("id, date_emargement, demi_journee, signature_data_url, signed_at")
@@ -229,31 +236,69 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
           .select("nom, prenom, email, telephone, adresse, code_postal, ville, formation_choisie, type_apprenant, date_debut_formation, date_fin_formation")
           .eq("id", apprenantId)
           .maybeSingle(),
+        supabase.auth.getUser(),
       ]);
 
       if (!emRes.error && Array.isArray(emRes.data)) {
         setRows(emRes.data as unknown as EmargementRow[]);
       }
-      if (!apRes.error && apRes.data) {
-        setApprenant(apRes.data as ApprenantInfo);
+      const ap = (!apRes.error && apRes.data) ? (apRes.data as ApprenantInfo) : null;
+      if (ap) setApprenant(ap);
+      setUserId(userRes.data.user?.id || null);
+
+      // Calcul des créneaux attendus (pour proposer la signature des créneaux manquants)
+      if (ap) {
+        const isFC = isFormationContinue(ap.type_apprenant, ap.formation_choisie);
+        const isPres = isPresentielType(ap.type_apprenant, ap.formation_choisie);
+        if (isFC || isPres) {
+          const today = new Date(); today.setHours(0, 0, 0, 0);
+          const startStr = ap.date_debut_formation;
+          let start: Date | null = null;
+          if (startStr && /^\d{4}-\d{2}-\d{2}/.test(startStr)) {
+            start = new Date(startStr.slice(0, 10) + "T00:00:00");
+          } else if (startStr && /^\d{2}\/\d{2}\/\d{4}/.test(startStr)) {
+            const [d, m, y] = startStr.slice(0, 10).split("/");
+            start = new Date(`${y}-${m}-${d}T00:00:00`);
+          }
+          if (!start || isNaN(start.getTime())) {
+            start = new Date(today); start.setDate(today.getDate() - 30);
+          }
+          const exp = await getExpectedEmargements({
+            mode: isFC ? "fc" : "presentiel",
+            formationChoisie: ap.formation_choisie,
+            apprenantId,
+            startDate: start,
+            endDate: today,
+          });
+          setExpected(exp);
+        }
       }
       setLoading(false);
     })();
-  }, [apprenantId]);
+  }, [apprenantId, refreshTick]);
 
-  // Group by date
+  // Group by date — fusionne signatures existantes ET créneaux attendus
   const groupedByDay = useMemo(() => {
-    const map = new Map<string, { matin?: EmargementRow; apresMidi?: EmargementRow; soir?: EmargementRow }>();
+    const map = new Map<string, { matin?: EmargementRow; apresMidi?: EmargementRow; soir?: EmargementRow; expectedSet: Set<CreneauKey> }>();
+    const ensure = (date: string) => {
+      let e = map.get(date);
+      if (!e) { e = { expectedSet: new Set() }; map.set(date, e); }
+      return e;
+    };
     for (const r of rows) {
-      const entry = map.get(r.date_emargement) || {};
+      const entry = ensure(r.date_emargement);
       const k = normalizeDemi(r.demi_journee);
       if (k === "matin") entry.matin = r;
       else if (k === "apres-midi" || k === "après-midi") entry.apresMidi = r;
       else if (k === "soir") entry.soir = r;
-      map.set(r.date_emargement, entry);
+    }
+    for (const e of expected) {
+      const entry = ensure(e.date);
+      entry.expectedSet.add(e.creneau);
     }
     return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b));
-  }, [rows]);
+  }, [rows, expected]);
+
 
   if (loading) {
     return (
@@ -321,7 +366,13 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
         </Card>
       ) : (
         <div className="grid gap-3">
-          {groupedByDay.map(([date, { matin, apresMidi, soir }]) => (
+          {groupedByDay.map(([date, { matin, apresMidi, soir, expectedSet }]) => {
+            const keys: CreneauKey[] = [];
+            if (matin || expectedSet.has("matin")) keys.push("matin");
+            if (apresMidi || expectedSet.has("apres_midi")) keys.push("apres_midi");
+            if (soir || expectedSet.has("soir")) keys.push("soir");
+            const colsClass = keys.length >= 3 ? "sm:grid-cols-3" : keys.length === 2 ? "sm:grid-cols-2" : "sm:grid-cols-1";
+            return (
             <Card key={date} className="p-3">
               <div className="flex items-center justify-between flex-wrap gap-2 mb-3 pb-2 border-b">
                 <p className="font-semibold capitalize text-sm">{formatDateFR(date)}</p>
@@ -336,10 +387,10 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
                 </Button>
               </div>
 
-              <div className={`grid grid-cols-1 ${soir ? "sm:grid-cols-3" : "sm:grid-cols-2"} gap-3`}>
-                {(["matin", "apres-midi", ...(soir ? (["soir"] as const) : [])] as const).map((key) => {
-                  const r = key === "matin" ? matin : key === "apres-midi" ? apresMidi : soir;
-                  const label = labelDemi(key);
+              <div className={`grid grid-cols-1 ${colsClass} gap-3`}>
+                {keys.map((key) => {
+                  const r = key === "matin" ? matin : key === "apres_midi" ? apresMidi : soir;
+                  const label = labelDemi(key === "apres_midi" ? "apres-midi" : key);
                   return (
                     <div key={key} className="border rounded-md p-2 bg-slate-50/50">
                       <div className="flex items-center justify-between mb-1.5">
@@ -368,13 +419,38 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
                           <span className="text-[10px] text-muted-foreground italic">—</span>
                         )}
                       </div>
+                      {!r && userId && apprenantId && (
+                        <Button
+                          size="sm"
+                          className="w-full mt-2 h-7 text-xs"
+                          onClick={() => setSignTarget({ date, creneau: key })}
+                        >
+                          <PenTool className="h-3 w-3 mr-1" />
+                          Signer ce créneau
+                        </Button>
+                      )}
                     </div>
                   );
                 })}
               </div>
             </Card>
-          ))}
+            );
+          })}
         </div>
+      )}
+
+      {signTarget && userId && apprenantId && (
+        <EmargementFCModal
+          apprenantId={apprenantId}
+          userId={userId}
+          apprenantNom={apprenant?.nom || ""}
+          apprenantPrenom={apprenant?.prenom || ""}
+          creneau={signTarget.creneau}
+          mode={isFormationContinue(apprenant?.type_apprenant, apprenant?.formation_choisie) ? "fc" : "presentiel"}
+          dateEmargement={signTarget.date}
+          onSigned={() => { setSignTarget(null); setRefreshTick((t) => t + 1); }}
+          onSkipped={() => setSignTarget(null)}
+        />
       )}
 
       {!completed && (
