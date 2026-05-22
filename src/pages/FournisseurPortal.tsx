@@ -785,22 +785,36 @@ export default function FournisseurPortal() {
                   <h2 className="text-xl font-semibold">Mes apprenants ({apprenants.length})</h2>
                   <Button onClick={() => setShowForm(true)} className="gap-2"><Plus className="w-4 h-4" />Ajouter un apprenant</Button>
                 </div>
+                <Input
+                  placeholder="Rechercher par nom ou prénom..."
+                  value={apprenantSearch}
+                  onChange={e => setApprenantSearch(e.target.value)}
+                />
                 {apprenants.length === 0 ? (
                   <Card><CardContent className="pt-6 text-center text-muted-foreground">Aucun apprenant enregistré. Cliquez sur "Ajouter un apprenant" pour commencer.</CardContent></Card>
-                ) : (
-                  <div className="grid gap-3">
-                    {apprenants.map(a => (
-                      <Card key={a.id}>
-                        <CardContent className="pt-4 flex justify-between items-center">
-                          <div>
-                            <p className="font-medium">{a.prenom} {a.nom}</p>
-                            <p className="text-sm text-muted-foreground">{a.formation_choisie || "Pas de formation"} • {new Date(a.created_at).toLocaleDateString('fr-FR')}</p>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                )}
+                ) : (() => {
+                  const q = apprenantSearch.trim().toLowerCase();
+                  const filtered = q
+                    ? apprenants.filter(a => `${a.prenom} ${a.nom}`.toLowerCase().includes(q) || `${a.nom} ${a.prenom}`.toLowerCase().includes(q))
+                    : apprenants;
+                  if (filtered.length === 0) {
+                    return <Card><CardContent className="pt-6 text-center text-muted-foreground">Aucun apprenant trouvé pour « {apprenantSearch} ».</CardContent></Card>;
+                  }
+                  return (
+                    <div className="grid gap-3">
+                      {filtered.map(a => (
+                        <Card key={a.id}>
+                          <CardContent className="pt-4 flex justify-between items-center">
+                            <div>
+                              <p className="font-medium">{a.prenom} {a.nom}</p>
+                              <p className="text-sm text-muted-foreground">{a.formation_choisie || "Pas de formation"} • {new Date(a.created_at).toLocaleDateString('fr-FR')}</p>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  );
+                })()}
               </div>
             ) : (
               <Card>
