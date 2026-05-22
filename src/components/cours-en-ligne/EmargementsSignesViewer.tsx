@@ -28,6 +28,7 @@ interface ApprenantInfo {
   type_apprenant?: string | null;
   date_debut_formation?: string | null;
   date_fin_formation?: string | null;
+  creneau_horaire?: string | null;
 }
 
 interface Props {
@@ -246,7 +247,7 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
           .order("demi_journee", { ascending: true }),
         supabase
           .from("apprenants")
-          .select("auth_user_id, nom, prenom, email, telephone, adresse, code_postal, ville, formation_choisie, type_apprenant, date_debut_formation, date_fin_formation")
+          .select("auth_user_id, nom, prenom, email, telephone, adresse, code_postal, ville, formation_choisie, type_apprenant, date_debut_formation, date_fin_formation, creneau_horaire")
           .eq("id", apprenantId)
           .maybeSingle(),
       ]);
@@ -278,6 +279,7 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
           const exp = await getExpectedEmargements({
             mode: isFC ? "fc" : "presentiel",
             formationChoisie: ap.formation_choisie,
+            creneauHoraire: ap.creneau_horaire,
             apprenantId,
             startDate: start,
             endDate: today,
