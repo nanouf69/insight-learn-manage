@@ -267,7 +267,7 @@ export const getExpectedEmargements = async (params: {
   startDate: Date;
   endDate: Date;
 }): Promise<Array<{ date: string; creneau: CreneauKey }>> => {
-  const { mode, formationChoisie, apprenantId, startDate, endDate } = params;
+  const { mode, startDate, endDate } = params;
 
   const start = new Date(startDate); start.setHours(0, 0, 0, 0);
   const end = new Date(endDate); end.setHours(0, 0, 0, 0);
