@@ -930,27 +930,19 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       const { data, error } = await q;
       if (error) throw error;
 
-      // Dédup: clé (apprenant, date, demi_journee)
-      const seen: Record<string, Set<string>> = {};
-      (data || []).forEach((row: any) => {
-        const dj = String(row.demi_journee || '').toLowerCase();
-        if (!DEMI_HEURES[dj]) return;
-        // Ignore créneaux soir dans une session jour et inversement
-        const isSoirSlot = dj.startsWith('soir');
-        if (isSessionSoir && !isSoirSlot) return;
-        if (!isSessionSoir && isSoirSlot) return;
-        if (!seen[row.apprenant_id]) seen[row.apprenant_id] = new Set();
-        seen[row.apprenant_id].add(`${row.date_emargement}|${dj}`);
-      });
-
       const result: Record<string, number> = {};
-      Object.entries(seen).forEach(([id, keys]) => {
-        let total = 0;
-        keys.forEach((k) => {
-          const dj = k.split('|')[1];
-          total += DEMI_HEURES[dj] || 0;
-        });
-        result[id] = Math.min(total, maxHeuresSession);
+      apprenantIds.forEach((id: string) => {
+        const sa = apprenantsInSession.find((item: any) => item?.apprenant?.id === id);
+        const apprenant = sa?.apprenant;
+        const learnerIsEvening = isSessionSoir || isEveningTrainingValue(
+          apprenant?.creneau_horaire,
+          apprenant?.formation_choisie,
+          apprenant?.type_apprenant,
+        );
+        result[id] = computePresenceHours(
+          (data || []).filter((row: any) => row.apprenant_id === id),
+          { isEvening: learnerIsEvening, maxHours: learnerIsEvening ? 40 : maxHeuresSession, dateStart: dateDebut, dateEnd: dateFin },
+        );
       });
       return result;
     },
