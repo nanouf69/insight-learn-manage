@@ -195,7 +195,7 @@ export function DocumentsCompletes({ apprenant }: Props) {
             ].filter(Boolean).join(","))
         : Promise.resolve({ data: [], error: null } as any);
 
-      const [docsRes, devisRes, emargRes, fournApprRes] = await Promise.all([
+      const [docsRes, devisRes, emargRes, fournApprRes, sessRes] = await Promise.all([
         supabase
           .from("apprenant_documents_completes" as any)
           .select("*")
@@ -212,9 +212,27 @@ export function DocumentsCompletes({ apprenant }: Props) {
           .eq("apprenant_id", apprenant.id)
           .order("signed_at", { ascending: false }),
         fournApprPromise,
+        supabase
+          .from("session_apprenants" as any)
+          .select("sessions:session_id(nom, creneaux, date_debut, date_fin)")
+          .eq("apprenant_id", apprenant.id),
       ]);
 
       if (docsRes.error) throw docsRes.error;
+
+      // Construit la liste des plages de dates où l'apprenant a une session du soir.
+      // Une signature "soir*" n'est conservée que si elle tombe dans une de ces plages.
+      const eveningRanges: { start: string; end: string }[] = [];
+      const sessRows = ((sessRes as any)?.data as any[]) || [];
+      for (const row of sessRows) {
+        const s = row?.sessions;
+        if (!s || !isEveningSession(s)) continue;
+        if (s.date_debut && s.date_fin) {
+          eveningRanges.push({ start: s.date_debut, end: s.date_fin });
+        }
+      }
+      const dateHasEveningSession = (dateStr: string): boolean =>
+        eveningRanges.some((r) => dateStr >= r.start && dateStr <= r.end);
 
       const baseDocs = ((docsRes.data as any[]) || []).map((d) => ({
         id: d.id,
@@ -243,9 +261,14 @@ export function DocumentsCompletes({ apprenant }: Props) {
         };
       });
 
-      const emargements = (((emargRes.data as any[]) || [])).filter(
-        (e) => !(isDayLearner(apprenant) && isEveningSignature(e.demi_journee))
-      );
+      // Filtre : une signature du soir n'est gardée que si l'apprenant a effectivement
+      // une session du soir couvrant cette date. Sinon (apprenant inscrit uniquement
+      // en session de jour), on l'exclut des feuilles d'émargement.
+      const emargements = (((emargRes.data as any[]) || [])).filter((e) => {
+        if (!isEveningSignature(e.demi_journee)) return true;
+        return dateHasEveningSession(e.date_emargement);
+      });
+
 
       const emargDocs = emargements.map((e) => ({
         id: `emarg-${e.id}`,
