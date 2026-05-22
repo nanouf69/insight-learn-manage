@@ -223,16 +223,16 @@ const buildFallbackAgendaDays = (
       continue;
     }
 
-    if (options.heureDebutPersonnalisee && options.heureFinPersonnalisee) {
-      // Une seule plage personnalisée : on l'affiche en matin
-      day.matinDebut = options.heureDebutPersonnalisee.slice(0, 5);
-      day.matinFin = options.heureFinPersonnalisee.slice(0, 5);
-    } else if (options.isCoursDuSoir) {
+    if (options.isCoursDuSoir) {
       day.matinDebut = '17:00';
       day.matinFin = '18:30';
       day.apremDebut = '18:30';
       day.apremFin = '21:00';
       day.isSoir = true;
+    } else if (options.heureDebutPersonnalisee && options.heureFinPersonnalisee) {
+      // Une seule plage personnalisée : on l'affiche en matin
+      day.matinDebut = options.heureDebutPersonnalisee.slice(0, 5);
+      day.matinFin = options.heureFinPersonnalisee.slice(0, 5);
     } else if (options.isPratique) {
       day.matinDebut = '09:00';
       day.matinFin = '12:00';
@@ -302,7 +302,7 @@ const applyFCVTCPersonalizedSchedule = (
   if (schedule?.date_fin_personnalisee && dayMap.has(schedule.date_fin_personnalisee)) {
     const customDay = dayMap.get(schedule.date_fin_personnalisee)!;
 
-    if (schedule.heure_debut_personnalisee && schedule.heure_fin_personnalisee) {
+    if (!isCoursDuSoir && schedule.heure_debut_personnalisee && schedule.heure_fin_personnalisee) {
       customDay.matinDebut = undefined;
       customDay.matinFin = undefined;
       customDay.apremDebut = schedule.heure_debut_personnalisee;
