@@ -2863,6 +2863,8 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                               montantPaye={apprenant.montant_paye || 0}
                               moyenPaiement={apprenant.moyen_paiement || ""}
                               datePaiement={apprenant.date_paiement || ""}
+                              apprenantNom={apprenant.nom}
+                              apprenantPrenom={apprenant.prenom}
                               onSave={(data) => updateApprenantPaiement(apprenant.id, data)}
                             />
                           )}
