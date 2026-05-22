@@ -9,6 +9,8 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuCheckboxItem,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -71,6 +73,7 @@ interface CRMDashboardProps {
 
 export function CRMDashboard({ initialApprenantId, onApprenantClosed }: CRMDashboardProps) {
   const [searchQuery, setSearchQuery] = useState("");
+  const [formationFilter, setFormationFilter] = useState<string[]>([]);
   const [selectedApprenantId, setSelectedApprenantId] = useState<string | null>(initialApprenantId || null);
 
   useEffect(() => {
@@ -108,14 +111,30 @@ export function CRMDashboard({ initialApprenantId, onApprenantClosed }: CRMDashb
   const normalize = (str: string) =>
     str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim();
 
+  const formationOptions = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          apprenants
+            .map((a: any) => (a.formation_choisie || "").trim())
+            .filter((f: string) => f.length > 0),
+        ),
+      ).sort((a, b) => a.localeCompare(b, "fr", { sensitivity: "base" })),
+    [apprenants],
+  );
+
   const filteredApprenants = useMemo(() => {
-    if (!searchQuery.trim()) return apprenants;
+    let list = apprenants as any[];
+    if (formationFilter.length > 0) {
+      list = list.filter((a) => formationFilter.includes((a.formation_choisie || "").trim()));
+    }
+    if (!searchQuery.trim()) return list;
     const words = normalize(searchQuery).split(" ").filter(Boolean);
-    return apprenants.filter(a => {
-      const searchable = normalize(`${a.prenom} ${a.nom} ${a.email} ${a.telephone}`);
+    return list.filter(a => {
+      const searchable = normalize(`${a.prenom} ${a.nom} ${a.email} ${a.telephone} ${a.formation_choisie || ""}`);
       return words.every(word => searchable.includes(word));
     });
-  }, [apprenants, searchQuery]);
+  }, [apprenants, searchQuery, formationFilter]);
 
   const stats = useMemo(() => {
     const byType = apprenants.reduce((acc, a) => {
@@ -185,9 +204,48 @@ export function CRMDashboard({ initialApprenantId, onApprenantClosed }: CRMDashb
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <Button variant="outline" size="icon">
-            <Filter className="w-4 h-4" />
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <Filter className="w-4 h-4" />
+                <span className="hidden sm:inline">Formation</span>
+                {formationFilter.length > 0 && (
+                  <Badge variant="secondary" className="h-5 px-1.5 text-xs">
+                    {formationFilter.length}
+                  </Badge>
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="max-h-80 overflow-y-auto w-64">
+              {formationOptions.length === 0 ? (
+                <div className="px-2 py-3 text-sm text-muted-foreground text-center">
+                  Aucune formation disponible
+                </div>
+              ) : (
+                formationOptions.map((f) => (
+                  <DropdownMenuCheckboxItem
+                    key={f}
+                    checked={formationFilter.includes(f)}
+                    onCheckedChange={(checked) => {
+                      setFormationFilter((prev) =>
+                        checked ? [...prev, f] : prev.filter((x) => x !== f),
+                      );
+                    }}
+                  >
+                    {f}
+                  </DropdownMenuCheckboxItem>
+                ))
+              )}
+              {formationFilter.length > 0 && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => setFormationFilter([])}>
+                    Effacer les filtres
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
         <ApprenantForm />
       </div>
