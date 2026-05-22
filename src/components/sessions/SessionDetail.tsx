@@ -2350,9 +2350,9 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
 
               {loadingApprenants ? (
                 <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-6 w-6 animate-spin text-primary" />
-              </div>
-            ) : (
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                </div>
+              ) : (
                 <div className="space-y-3 p-1">
                   {apprenantsInSession.map((sessionApprenant: any) => {
                     const apprenant = sessionApprenant.apprenant ?? allApprenants.find((a) => a.id === sessionApprenant.apprenant_id);
@@ -2821,38 +2821,37 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                       <p className="text-sm">Cliquez sur "Ajouter" pour en ajouter</p>
                     </div>
                   )}
-                </div>
               )}
-            {/* Récapitulatif par type de formation */}
-            <div className="shrink-0 mt-4 p-3 rounded-lg bg-muted/50 border">
-              <div className="flex flex-wrap items-center justify-center gap-4 text-sm">
-                <div className="flex items-center gap-2">
-                  <Badge className="bg-yellow-100 text-yellow-700 hover:bg-yellow-100">🚕 TAXI</Badge>
-                  <span className="font-medium">{taxiCount}</span>
-                </div>
-                <span className="text-muted-foreground">+</span>
-                <div className="flex items-center gap-2">
-                  <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">🚗 VTC</Badge>
-                  <span className="font-medium">{vtcCount}</span>
-                </div>
-                <span className="text-muted-foreground">=</span>
-                <div className="flex items-center gap-2">
-                  <Badge 
-                    className={`${
-                      totalCount > 18 
-                        ? "bg-red-100 text-red-700 hover:bg-red-100" 
-                        : "bg-primary/10 text-primary hover:bg-primary/10"
-                    }`}
-                  >
-                    📊 TOTAL
-                  </Badge>
-                  <span className={`font-bold ${totalCount > 18 ? "text-red-600" : ""}`}>
-                    {totalCount}
-                  </span>
-                  <span className="text-muted-foreground">/ 18 max</span>
+              {/* Récapitulatif par type de formation */}
+              <div className="mt-4 p-3 rounded-lg bg-muted/50 border">
+                <div className="flex flex-wrap items-center justify-center gap-4 text-sm">
+                  <div className="flex items-center gap-2">
+                    <Badge className="bg-yellow-100 text-yellow-700 hover:bg-yellow-100">🚕 TAXI</Badge>
+                    <span className="font-medium">{taxiCount}</span>
+                  </div>
+                  <span className="text-muted-foreground">+</span>
+                  <div className="flex items-center gap-2">
+                    <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">🚗 VTC</Badge>
+                    <span className="font-medium">{vtcCount}</span>
+                  </div>
+                  <span className="text-muted-foreground">=</span>
+                  <div className="flex items-center gap-2">
+                    <Badge 
+                      className={`${
+                        totalCount > 18 
+                          ? "bg-red-100 text-red-700 hover:bg-red-100" 
+                          : "bg-primary/10 text-primary hover:bg-primary/10"
+                      }`}
+                    >
+                      📊 TOTAL
+                    </Badge>
+                    <span className={`font-bold ${totalCount > 18 ? "text-red-600" : ""}`}>
+                      {totalCount}
+                    </span>
+                    <span className="text-muted-foreground">/ 18 max</span>
+                  </div>
                 </div>
               </div>
-            </div>
             </div>
 
           </TabsContent>
