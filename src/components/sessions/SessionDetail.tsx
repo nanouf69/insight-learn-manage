@@ -2128,7 +2128,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       )}>
 
 
-        <DialogHeader>
+        <DialogHeader className="shrink-0">
           <div className="flex items-center justify-between">
             <DialogTitle className="flex items-center gap-3">
               {session.title}
@@ -2184,7 +2184,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
         </DialogHeader>
 
         {/* Session Info */}
-        <div className="flex flex-wrap gap-4 p-4 rounded-xl bg-muted/50 text-sm">
+        <div className="shrink-0 flex flex-wrap gap-4 p-4 rounded-xl bg-muted/50 text-sm">
           <div className="flex items-center gap-2">
             <Calendar className="w-4 h-4 text-primary" />
             <span className="font-medium">{format(new Date(session.dateDebut), "dd MMM yyyy", { locale: fr })} au {format(new Date(session.dateFin), "dd MMM yyyy", { locale: fr })}</span>
@@ -2210,8 +2210,8 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
           )}
         </div>
 
-        <Tabs defaultValue="apprenants" className="flex-1 min-h-0 flex flex-col overflow-hidden">
-          <TabsList className={`grid w-full ${isFormationContinue ? 'grid-cols-3' : 'grid-cols-2'}`}>
+        <Tabs defaultValue="apprenants" className="flex-1 min-h-0 flex flex-col">
+          <TabsList className={`shrink-0 grid w-full ${isFormationContinue ? 'grid-cols-3' : 'grid-cols-2'}`}>
             <TabsTrigger value="apprenants" className="gap-2">
               <Users className="w-4 h-4" />
               Apprenants ({totalCount})
@@ -2229,7 +2229,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
           </TabsList>
 
           {/* Apprenants Tab */}
-          <TabsContent value="apprenants" className="flex-1 min-h-0 overflow-y-auto flex flex-col mt-4">
+          <TabsContent value="apprenants" className="flex-1 min-h-0 flex flex-col mt-4">
             {/* Barre d'envoi groupé */}
             <div className="shrink-0 flex items-center gap-3 mb-3 p-3 rounded-lg bg-primary/5 border border-primary/20">
               <Checkbox 
@@ -2252,7 +2252,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                     Envoyer un mail type ({selectedApprenants.size})
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="max-h-80 overflow-y-auto w-72">
+                <DropdownMenuContent align="end" className="max-h-80 w-72">
                   {emailTemplates.map((t: any) => (
                     <DropdownMenuItem
                       key={t.id}
@@ -2299,18 +2299,17 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
             </div>
 
 
-            {showAddApprenant && (
-              <div className="shrink-0 mb-4 p-3 border rounded-lg bg-muted/30">
-                <div className="relative mb-3">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Rechercher un apprenant..."
-                    value={searchApprenant}
-                    onChange={(e) => setSearchApprenant(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-                <ScrollArea className="h-32">
+            <div className="learners-list flex-1 min-h-0 overflow-y-auto px-2 pb-6">
+              {showAddApprenant && (
+                <div className="mb-4 p-3 border rounded-lg bg-muted/30">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Search className="w-4 h-4 shrink-0 text-muted-foreground" />
+                    <Input
+                      placeholder="Rechercher un apprenant..."
+                      value={searchApprenant}
+                      onChange={(e) => setSearchApprenant(e.target.value)}
+                    />
+                  </div>
                   <div className="space-y-2">
                     {apprenantsNotInSession.slice(0, 10).map((apprenant) => (
                       <div 
@@ -2345,16 +2344,14 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                       </p>
                     )}
                   </div>
-                </ScrollArea>
-              </div>
-            )}
+                </div>
+              )}
 
-            {loadingApprenants ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-6 w-6 animate-spin text-primary" />
-              </div>
-            ) : (
-              <div className="learners-list flex-1 min-h-0 overflow-y-auto pr-2 pb-6">
+              {loadingApprenants ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                </div>
+              ) : (
                 <div className="space-y-3 p-1">
                   {apprenantsInSession.map((sessionApprenant: any) => {
                     const apprenant = sessionApprenant.apprenant ?? allApprenants.find((a) => a.id === sessionApprenant.apprenant_id);
@@ -2707,7 +2704,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                 <span className="text-xs">Mail</span>
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="max-h-80 overflow-y-auto w-72">
+                            <DropdownMenuContent align="end" className="max-h-80 w-72">
                               {emailTemplates.map((t: any) => (
                                 <div key={t.id} className="flex items-center">
                                   <DropdownMenuItem
@@ -2824,35 +2821,35 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                     </div>
                   )}
                 </div>
-              </div>
-            )}
-            {/* Récapitulatif par type de formation */}
-            <div className="shrink-0 mt-4 p-3 rounded-lg bg-muted/50 border">
-              <div className="flex flex-wrap items-center justify-center gap-4 text-sm">
-                <div className="flex items-center gap-2">
-                  <Badge className="bg-yellow-100 text-yellow-700 hover:bg-yellow-100">🚕 TAXI</Badge>
-                  <span className="font-medium">{taxiCount}</span>
-                </div>
-                <span className="text-muted-foreground">+</span>
-                <div className="flex items-center gap-2">
-                  <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">🚗 VTC</Badge>
-                  <span className="font-medium">{vtcCount}</span>
-                </div>
-                <span className="text-muted-foreground">=</span>
-                <div className="flex items-center gap-2">
-                  <Badge 
-                    className={`${
-                      totalCount > 18 
-                        ? "bg-red-100 text-red-700 hover:bg-red-100" 
-                        : "bg-primary/10 text-primary hover:bg-primary/10"
-                    }`}
-                  >
-                    📊 TOTAL
-                  </Badge>
-                  <span className={`font-bold ${totalCount > 18 ? "text-red-600" : ""}`}>
-                    {totalCount}
-                  </span>
-                  <span className="text-muted-foreground">/ 18 max</span>
+              )}
+              {/* Récapitulatif par type de formation */}
+              <div className="mt-4 p-3 rounded-lg bg-muted/50 border">
+                <div className="flex flex-wrap items-center justify-center gap-4 text-sm">
+                  <div className="flex items-center gap-2">
+                    <Badge className="bg-yellow-100 text-yellow-700 hover:bg-yellow-100">🚕 TAXI</Badge>
+                    <span className="font-medium">{taxiCount}</span>
+                  </div>
+                  <span className="text-muted-foreground">+</span>
+                  <div className="flex items-center gap-2">
+                    <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">🚗 VTC</Badge>
+                    <span className="font-medium">{vtcCount}</span>
+                  </div>
+                  <span className="text-muted-foreground">=</span>
+                  <div className="flex items-center gap-2">
+                    <Badge 
+                      className={`${
+                        totalCount > 18 
+                          ? "bg-red-100 text-red-700 hover:bg-red-100" 
+                          : "bg-primary/10 text-primary hover:bg-primary/10"
+                      }`}
+                    >
+                      📊 TOTAL
+                    </Badge>
+                    <span className={`font-bold ${totalCount > 18 ? "text-red-600" : ""}`}>
+                      {totalCount}
+                    </span>
+                    <span className="text-muted-foreground">/ 18 max</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -2860,7 +2857,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
           </TabsContent>
 
           {/* Formateurs Tab */}
-          <TabsContent value="formateurs" className="flex-1 min-h-0 overflow-hidden flex flex-col mt-4">
+          <TabsContent value="formateurs" className="flex-1 min-h-0 flex flex-col mt-4">
             <div className="flex items-center justify-between mb-3">
               <h4 className="font-medium text-foreground">Formateurs assignés</h4>
               <Button 
