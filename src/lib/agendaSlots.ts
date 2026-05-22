@@ -87,20 +87,9 @@ const isEveningSession = (
   session: { nom?: string | null; creneaux?: string[] | null } | null | undefined,
 ): boolean => {
   if (!session) return false;
-  const nom = (session.nom || "").toLowerCase();
-  if (/soir/.test(nom)) return true;
+  if (isEveningText(session.nom)) return true;
   const cren = Array.isArray(session.creneaux) ? session.creneaux : [];
-  return cren.some((c) => {
-    const v = (c || "").toLowerCase();
-    if (/soir/.test(v)) return true;
-    // Détecte "17h-21h", "17:00-21:00", "18:00-21:00"…
-    const m = v.match(/(\d{1,2})\s*[h:]/);
-    if (m) {
-      const h = parseInt(m[1], 10);
-      if (!isNaN(h) && h >= 17) return true;
-    }
-    return false;
-  });
+  return cren.some((c) => isEveningText(c));
 };
 
 /**
