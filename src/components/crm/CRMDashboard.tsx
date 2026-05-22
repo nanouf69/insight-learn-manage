@@ -73,6 +73,7 @@ interface CRMDashboardProps {
 
 export function CRMDashboard({ initialApprenantId, onApprenantClosed }: CRMDashboardProps) {
   const [searchQuery, setSearchQuery] = useState("");
+  const [formationFilter, setFormationFilter] = useState<string[]>([]);
   const [selectedApprenantId, setSelectedApprenantId] = useState<string | null>(initialApprenantId || null);
 
   useEffect(() => {
