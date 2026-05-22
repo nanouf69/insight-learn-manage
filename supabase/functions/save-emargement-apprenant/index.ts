@@ -5,7 +5,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-type CreneauKey = "matin" | "apres_midi" | "soir";
+type CreneauKey = "matin" | "apres_midi" | "soir" | "soir_1" | "soir_2";
 
 const json = (body: Record<string, unknown>, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -37,6 +37,17 @@ const isPresentielType = (type?: string | null, formation?: string | null) => {
   return /pr[eé]sentiel/.test(value) || /\b(vtc|taxi|ta|va)(-exam)?\b/.test(t) || /^(pa|rp|continue)[\s-]/.test(t);
 };
 
+const isEveningText = (value?: string | null): boolean => {
+  const v = (value || "").toLowerCase();
+  if (/soir/.test(v) || /vtc-s|cours-du-soir/.test(v)) return true;
+  const m = v.match(/(\d{1,2})\s*[h:]/);
+  if (m) {
+    const h = parseInt(m[1], 10);
+    if (!isNaN(h) && h >= 17) return true;
+  }
+  return false;
+};
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
@@ -63,7 +74,7 @@ Deno.serve(async (req) => {
     const signature = typeof body?.signature_data_url === "string" ? body.signature_data_url : null;
     const justificatifUrl = typeof body?.justificatif_url === "string" ? body.justificatif_url : null;
 
-    if (!apprenantId || !["matin", "apres_midi", "soir"].includes(demi) || !/^\d{4}-\d{2}-\d{2}$/.test(dateEmargement)) {
+    if (!apprenantId || !["matin", "apres_midi", "soir", "soir_1", "soir_2"].includes(demi) || !/^\d{4}-\d{2}-\d{2}$/.test(dateEmargement)) {
       return json({ error: "Données d'émargement invalides" }, 400);
     }
     if (!absent && !signature) return json({ error: "Signature requise" }, 400);
@@ -94,6 +105,25 @@ Deno.serve(async (req) => {
     const isFC = isFormationContinue(apprenant.type_apprenant, apprenant.formation_choisie);
     const isPres = isPresentielType(apprenant.type_apprenant, apprenant.formation_choisie);
     if (!isFC && !isPres) return json({ error: "Émargement non prévu pour cette formation" }, 403);
+    if (isFC && ["soir", "soir_1", "soir_2"].includes(demi)) return json({ error: "Créneau du soir non prévu pour cette formation" }, 403);
+
+    const { data: sessionRows } = await supabase
+      .from("session_apprenants")
+      .select("sessions:session_id(nom, creneaux, date_debut, date_fin)")
+      .eq("apprenant_id", apprenantId);
+    const matchingSession = ((sessionRows as any[]) || []).map((row) => row?.sessions).find((s) => {
+      if (!s) return false;
+      const debut = String(s.date_debut || "").slice(0, 10);
+      const fin = String(s.date_fin || debut).slice(0, 10);
+      return debut <= dateEmargement && fin >= dateEmargement;
+    });
+    if (isPres && matchingSession) {
+      const creneaux = Array.isArray(matchingSession.creneaux) ? matchingSession.creneaux : [];
+      const isEveningSession = isEveningText(matchingSession.nom) || creneaux.some((c: string) => isEveningText(c));
+      const isEveningSignature = ["soir", "soir_1", "soir_2"].includes(demi);
+      if (isEveningSession && !isEveningSignature) return json({ error: "Signature de journée non autorisée pour un cours du soir" }, 403);
+      if (!isEveningSession && isEveningSignature) return json({ error: "Signature du soir non autorisée pour une session de journée" }, 403);
+    }
 
     const row = {
       apprenant_id: apprenantId,

@@ -710,6 +710,11 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const [emargementMode, setEmargementMode] = useState<"fc" | "presentiel">("fc");
   const [emargementRefreshTick, setEmargementRefreshTick] = useState(0);
   const [sessionAccessWindow, setSessionAccessWindow] = useState<SessionAccessWindow | null>(null);
+  const emargementStatusRef = useRef(emargementFCStatus);
+
+  useEffect(() => {
+    emargementStatusRef.current = emargementFCStatus;
+  }, [emargementFCStatus]);
 
   const handleExamStateChange = useCallback((inExam: boolean) => {
     setIsInExam(inExam);
@@ -1087,6 +1092,16 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     };
   }, [embedded, user?.id, apprenant?.id, apprenant?.type_apprenant, apprenant?.formation_choisie, apprenant?.date_debut_formation, apprenant?.date_fin_formation, emargementRefreshTick]);
 
+  useEffect(() => {
+    if (embedded || !user || !apprenant?.id) return;
+    const interval = window.setInterval(() => {
+      if (emargementStatusRef.current !== "needed") {
+        setEmargementRefreshTick((t) => t + 1);
+      }
+    }, 60000);
+    return () => window.clearInterval(interval);
+  }, [embedded, user?.id, apprenant?.id]);
+
 
   const handleModuleCompleted = useCallback((moduleId: number) => {
     setCompletedModuleIds(prev => new Set([...prev, moduleId]));
@@ -1329,6 +1344,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
             creneau={emargementCreneau}
             mode={emargementMode}
             dateEmargement={emargementDate || undefined}
+            required
             onSigned={() => setEmargementRefreshTick((t) => t + 1)}
             onSkipped={() => setEmargementFCStatus("skipped")}
           />

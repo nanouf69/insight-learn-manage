@@ -56,6 +56,8 @@ const labelDemi = (d: string) => {
   if (k === "matin") return "Matin (09h00 — 12h00)";
   if (k === "apres-midi" || k === "après-midi") return "Après-midi (13h00 — 16h00)";
   if (k === "soir") return "Soir (17h00 — 21h00)";
+  if (k === "soir-1") return "Soir 1 (17h00 — 18h30)";
+  if (k === "soir-2") return "Soir 2 (18h30 — 21h00)";
   return d;
 };
 
@@ -78,8 +80,17 @@ const formatShortDate = (iso?: string | null) => {
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const hasValidSignature = (r?: EmargementRow) => Boolean(r?.signature_data_url?.trim());
 
+type GroupedEmargements = {
+  matin?: EmargementRow;
+  apresMidi?: EmargementRow;
+  soir?: EmargementRow;
+  soir1?: EmargementRow;
+  soir2?: EmargementRow;
+  expectedSet?: Set<CreneauKey>;
+};
+
 const buildEmargementHTML = (
-  groupedByDay: Array<[string, { matin?: EmargementRow; apresMidi?: EmargementRow; soir?: EmargementRow }]>,
+  groupedByDay: Array<[string, GroupedEmargements]>,
   apprenant: ApprenantInfo | null
 ) => {
   const formation = apprenant?.formation_choisie || apprenant?.type_apprenant || "Formation";
@@ -93,11 +104,11 @@ const buildEmargementHTML = (
       ? `du ${formatShortDate(apprenant?.date_debut_formation)} au ${formatShortDate(apprenant?.date_fin_formation)}`
       : "—";
 
-  // Inclure la colonne soir uniquement si au moins une signature soir existe
-  const hasSoir = groupedByDay.some(([, v]) => !!v.soir);
+  const hasSoirSplit = groupedByDay.some(([, v]) => !!v.soir1 || !!v.soir2);
+  const hasSoir = hasSoirSplit || groupedByDay.some(([, v]) => !!v.soir);
 
   const rowsHtml = groupedByDay
-    .map(([date, { matin, apresMidi, soir }]) => {
+    .map(([date, { matin, apresMidi, soir, soir1, soir2 }]) => {
       const jourLabel = capitalize(formatDateFR(date));
       const sigImg = (r?: EmargementRow) =>
         r?.signature_data_url
@@ -110,7 +121,7 @@ const buildEmargementHTML = (
           <td class="sig">${sigImg(matin)}</td>
           <td class="horaire">13:00 - 16:00</td>
           <td class="sig">${sigImg(apresMidi)}</td>
-          ${hasSoir ? `<td class="horaire">17:00 - 21:00</td><td class="sig">${sigImg(soir)}</td>` : ""}
+          ${hasSoirSplit ? `<td class="horaire">17:00 - 18:30</td><td class="sig">${sigImg(soir1)}</td><td class="horaire">18:30 - 21:00</td><td class="sig">${sigImg(soir2)}</td>` : hasSoir ? `<td class="horaire">17:00 - 21:00</td><td class="sig">${sigImg(soir)}</td>` : ""}
         </tr>`;
     })
     .join("");
@@ -161,18 +172,18 @@ const buildEmargementHTML = (
         <th rowspan="2" style="width:160px;">Jour</th>
         <th colspan="2">Matin</th>
         <th colspan="2">Apres-midi</th>
-        ${hasSoir ? `<th colspan="2">Soir</th>` : ""}
+        ${hasSoirSplit ? `<th colspan="2">Soir 1</th><th colspan="2">Soir 2</th>` : hasSoir ? `<th colspan="2">Soir</th>` : ""}
       </tr>
       <tr class="sub">
         <th>Horaire</th>
         <th>Signature du stagiaire</th>
         <th>Horaire</th>
         <th>Signature du stagiaire</th>
-        ${hasSoir ? `<th>Horaire</th><th>Signature du stagiaire</th>` : ""}
+        ${hasSoirSplit ? `<th>Horaire</th><th>Signature du stagiaire</th><th>Horaire</th><th>Signature du stagiaire</th>` : hasSoir ? `<th>Horaire</th><th>Signature du stagiaire</th>` : ""}
       </tr>
     </thead>
     <tbody>
-      ${rowsHtml || `<tr><td colspan="${hasSoir ? 7 : 5}" style="padding:20px;color:#999;">Aucune signature enregistrée</td></tr>`}
+      ${rowsHtml || `<tr><td colspan="${hasSoirSplit ? 9 : hasSoir ? 7 : 5}" style="padding:20px;color:#999;">Aucune signature enregistrée</td></tr>`}
     </tbody>
   </table>
 
@@ -189,7 +200,7 @@ const buildEmargementHTML = (
 };
 
 const downloadAllJournees = (
-  groupedByDay: Array<[string, { matin?: EmargementRow; apresMidi?: EmargementRow; soir?: EmargementRow }]>,
+  groupedByDay: Array<[string, GroupedEmargements]>,
   apprenant: ApprenantInfo | null
 ) => {
   const html = buildEmargementHTML(groupedByDay, apprenant);
@@ -205,9 +216,11 @@ const downloadJournee = (
   matin: EmargementRow | undefined,
   apresMidi: EmargementRow | undefined,
   soir: EmargementRow | undefined,
+  soir1: EmargementRow | undefined,
+  soir2: EmargementRow | undefined,
   apprenant: ApprenantInfo | null
 ) => {
-  downloadAllJournees([[date, { matin, apresMidi, soir }]], apprenant);
+  downloadAllJournees([[date, { matin, apresMidi, soir, soir1, soir2 }]], apprenant);
 };
 
 export default function EmargementsSignesViewer({ apprenantId, completed, onComplete }: Props) {
@@ -310,7 +323,7 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
 
   // Group by date — fusionne signatures existantes ET créneaux attendus
   const groupedByDay = useMemo(() => {
-    const map = new Map<string, { matin?: EmargementRow; apresMidi?: EmargementRow; soir?: EmargementRow; expectedSet: Set<CreneauKey> }>();
+    const map = new Map<string, GroupedEmargements>();
     const ensure = (date: string) => {
       let e = map.get(date);
       if (!e) { e = { expectedSet: new Set() }; map.set(date, e); }
@@ -322,10 +335,12 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
       if (k === "matin") entry.matin = r;
       else if (k === "apres-midi" || k === "après-midi") entry.apresMidi = r;
       else if (k === "soir") entry.soir = r;
+      else if (k === "soir-1") entry.soir1 = r;
+      else if (k === "soir-2") entry.soir2 = r;
     }
     for (const e of expected) {
       const entry = ensure(e.date);
-      entry.expectedSet.add(e.creneau);
+      entry.expectedSet?.add(e.creneau);
     }
     return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b));
   }, [rows, expected]);
@@ -397,11 +412,11 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
         </Card>
       ) : (
         <div className="grid gap-3">
-          {groupedByDay.map(([date, { matin, apresMidi, soir, expectedSet }]) => {
-            // Toujours afficher matin + après-midi pour permettre la signature des créneaux manquants.
-            // La colonne soir n'apparaît que si une signature existe ou est attendue.
-            const keys: CreneauKey[] = ["matin", "apres_midi"];
-            if (soir || expectedSet.has("soir")) keys.push("soir");
+          {groupedByDay.map(([date, { matin, apresMidi, soir, soir1, soir2, expectedSet }]) => {
+            const keys: CreneauKey[] = expectedSet?.has("soir_1") || expectedSet?.has("soir_2") || soir1 || soir2
+              ? ["soir_1", "soir_2"]
+              : ["matin", "apres_midi"];
+            if (soir || expectedSet?.has("soir")) keys.push("soir");
             const colsClass = keys.length >= 3 ? "sm:grid-cols-3" : "sm:grid-cols-2";
             return (
             <Card key={date} className="p-3">
@@ -410,7 +425,7 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => downloadJournee(date, matin, apresMidi, soir, apprenant)}
+                  onClick={() => downloadJournee(date, matin, apresMidi, soir, soir1, soir2, apprenant)}
                   className="h-7 text-xs"
                 >
                   <Download className="h-3.5 w-3.5 mr-1" />
@@ -420,7 +435,7 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
 
               <div className={`grid grid-cols-1 ${colsClass} gap-3`}>
                 {keys.map((key) => {
-                  const r = key === "matin" ? matin : key === "apres_midi" ? apresMidi : soir;
+                  const r = key === "matin" ? matin : key === "apres_midi" ? apresMidi : key === "soir_1" ? soir1 : key === "soir_2" ? soir2 : soir;
                   const label = labelDemi(key === "apres_midi" ? "apres-midi" : key);
                   return (
                     <div key={key} className="border rounded-md p-2 bg-slate-50/50">

@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 
-export type CreneauKey = "matin" | "apres_midi" | "soir";
+export type CreneauKey = "matin" | "apres_midi" | "soir" | "soir_1" | "soir_2";
 
 export interface AgendaBloc {
   jour: number;          // 0 = lundi
@@ -13,6 +13,36 @@ export interface AgendaBloc {
 const timeToMin = (t: string) => {
   const [h, m] = (t || "0:0").split(":").map((x) => parseInt(x, 10) || 0);
   return h * 60 + m;
+};
+
+const isEveningCreneau = (creneau: CreneauKey) => creneau === "soir" || creneau === "soir_1" || creneau === "soir_2";
+
+const isEveningText = (value?: string | null): boolean => {
+  const v = (value || "").toLowerCase();
+  if (/soir/.test(v) || /vtc-s|cours-du-soir/.test(v)) return true;
+  const m = v.match(/(\d{1,2})\s*[h:]/);
+  if (m) {
+    const h = parseInt(m[1], 10);
+    if (!isNaN(h) && h >= 17) return true;
+  }
+  return false;
+};
+
+const splitEveningCreneau = (now: Date = new Date()): CreneauKey => {
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+  return nowMin < 18 * 60 + 30 ? "soir_1" : "soir_2";
+};
+
+const isCreneauDue = (iso: string, creneau: CreneauKey, todayISO: string, nowMin: number) => {
+  if (iso < todayISO) return true;
+  if (iso > todayISO) return false;
+  switch (creneau) {
+    case "matin": return nowMin >= 8 * 60 + 30;
+    case "apres_midi": return nowMin >= 12 * 60 + 30;
+    case "soir":
+    case "soir_1": return nowMin >= 16 * 60 + 30;
+    case "soir_2": return nowMin >= 18 * 60 + 30;
+  }
 };
 
 // Lundi = 0, Mardi = 1, … Dimanche = 6 (cohérent avec agenda_blocs.jour)
@@ -69,20 +99,9 @@ const isEveningSession = (
   session: { nom?: string | null; creneaux?: string[] | null } | null | undefined,
 ): boolean => {
   if (!session) return false;
-  const nom = (session.nom || "").toLowerCase();
-  if (/soir/.test(nom)) return true;
+  if (isEveningText(session.nom)) return true;
   const cren = Array.isArray(session.creneaux) ? session.creneaux : [];
-  return cren.some((c) => {
-    const v = (c || "").toLowerCase();
-    if (/soir/.test(v)) return true;
-    // Détecte "17h-21h", "17:00-21:00", "18:00-21:00"…
-    const m = v.match(/(\d{1,2})\s*[h:]/);
-    if (m) {
-      const h = parseInt(m[1], 10);
-      if (!isNaN(h) && h >= 17) return true;
-    }
-    return false;
-  });
+  return cren.some((c) => isEveningText(c));
 };
 
 /**
@@ -185,7 +204,8 @@ export const getTodayAgendaBlocs = async (
  * Horaires officiels :
  *  - matin       : 09h00 — 12h00 (bloc qui commence avant 12h)
  *  - apres_midi  : 13h00 — 16h00 (bloc qui commence entre 12h et 17h)
- *  - soir        : 17h00 — 21h00 (bloc qui commence à partir de 17h)
+  *  - soir_1      : 17h00 — 18h30
+  *  - soir_2      : 18h30 — 21h00
  *
  * Renvoie null si aucun cours présentiel n'est prévu aujourd'hui.
  */
@@ -205,7 +225,7 @@ export const getCurrentCreneau = (
   const classify = (startMin: number): CreneauKey => {
     if (startMin < 12 * 60) return "matin";
     if (startMin < 17 * 60) return "apres_midi";
-    return "soir";
+    return splitEveningCreneau(now);
   };
 
   // 1. Bloc actuellement en cours (avec tolérance) → priorité
@@ -226,7 +246,7 @@ export const getCurrentCreneau = (
       return s >= 12 * 60 && s < 17 * 60;
     })) return "apres_midi";
   }
-  if (blocs.some((b) => timeToMin(b.heure_debut) >= 17 * 60)) return "soir";
+  if (blocs.some((b) => timeToMin(b.heure_debut) >= 17 * 60)) return splitEveningCreneau(now);
 
   return null;
 };
@@ -237,6 +257,8 @@ export const creneauLabel = (k: CreneauKey): string => {
     case "matin": return "Matin";
     case "apres_midi": return "Après-midi";
     case "soir": return "Soir";
+    case "soir_1": return "Soir 1";
+    case "soir_2": return "Soir 2";
   }
 };
 
@@ -245,6 +267,8 @@ export const creneauHoraire = (k: CreneauKey): string => {
     case "matin": return "09h00 — 12h00";
     case "apres_midi": return "13h00 — 16h00";
     case "soir": return "17h00 — 21h00";
+    case "soir_1": return "17h00 — 18h30";
+    case "soir_2": return "18h30 — 21h00";
   }
 };
 
@@ -267,7 +291,7 @@ export const getExpectedEmargements = async (params: {
   startDate: Date;
   endDate: Date;
 }): Promise<Array<{ date: string; creneau: CreneauKey }>> => {
-  const { mode, startDate, endDate } = params;
+  const { mode, startDate, endDate, apprenantId } = params;
 
   const start = new Date(startDate); start.setHours(0, 0, 0, 0);
   const end = new Date(endDate); end.setHours(0, 0, 0, 0);
@@ -285,12 +309,31 @@ export const getExpectedEmargements = async (params: {
       const dow = todayDow(cur);
       if (dow <= 4) {
         const iso = formatISO(cur);
-        out.push({ date: iso, creneau: "matin" });
-        out.push({ date: iso, creneau: "apres_midi" });
+        const candidates: CreneauKey[] = ["matin", "apres_midi"];
+        for (const creneau of candidates) {
+          if (isCreneauDue(iso, creneau, formatISO(new Date()), new Date().getHours() * 60 + new Date().getMinutes())) out.push({ date: iso, creneau });
+        }
       }
       cur.setDate(cur.getDate() + 1);
     }
     return out;
+  }
+
+  let wantEvening = isEveningText(params.formationChoisie);
+  if (apprenantId) {
+    const startISO = formatISO(effectiveStart);
+    const endISO = formatISO(end);
+    const { data: sessionRows } = await supabase
+      .from("session_apprenants")
+      .select("sessions:session_id(nom, creneaux, date_debut, date_fin)")
+      .eq("apprenant_id", apprenantId);
+    const matchingSession = ((sessionRows as any[]) || []).map((row) => row?.sessions).find((s) => {
+      if (!s) return false;
+      const debut = String(s.date_debut || "").slice(0, 10);
+      const fin = String(s.date_fin || debut).slice(0, 10);
+      return debut <= endISO && fin >= startISO;
+    });
+    if (matchingSession) wantEvening = isEveningSession(matchingSession);
   }
 
   const out: Array<{ date: string; creneau: CreneauKey }> = [];
@@ -299,8 +342,13 @@ export const getExpectedEmargements = async (params: {
     const iso = formatISO(cur2);
     const dow = todayDow(cur2);
     if (dow <= 4) {
-      out.push({ date: iso, creneau: "matin" });
-      out.push({ date: iso, creneau: "apres_midi" });
+      const candidates: CreneauKey[] = wantEvening ? ["soir_1", "soir_2"] : ["matin", "apres_midi"];
+      const today = formatISO(new Date());
+      const now = new Date();
+      const nowMin = now.getHours() * 60 + now.getMinutes();
+      for (const creneau of candidates) {
+        if (isCreneauDue(iso, creneau, today, nowMin)) out.push({ date: iso, creneau });
+      }
     }
     cur2.setDate(cur2.getDate() + 1);
   }
