@@ -24,19 +24,6 @@ const parseDate = (value?: string | null): Date | null => {
 };
 
 const formatISO = (d: Date) => d.toISOString().slice(0, 10);
-const dowMonday0 = (d: Date) => {
-  const js = d.getUTCDay();
-  return js === 0 ? 6 : js - 1;
-};
-const startOfWeekISO = (d: Date) => {
-  const monday = new Date(d);
-  monday.setUTCDate(d.getUTCDate() - dowMonday0(d));
-  return formatISO(monday);
-};
-const timeToMin = (t: string) => {
-  const [h, m] = (t || "0:0").split(":").map((x) => parseInt(x, 10) || 0);
-  return h * 60 + m;
-};
 const isFormationContinue = (type?: string | null, formation?: string | null) => {
   const t = (type || "").toLowerCase();
   const f = (formation || "").toLowerCase();
@@ -48,12 +35,6 @@ const isPresentielType = (type?: string | null, formation?: string | null) => {
   const value = `${t} ${f}`;
   if (/(^|\s)(vtc|taxi|ta|va)-e(\s|$)/.test(value) && !/-e-pr[eé]sentiel/.test(value)) return false;
   return /pr[eé]sentiel/.test(value) || /\b(vtc|taxi|ta|va)(-exam)?\b/.test(t) || /^(pa|rp|continue)[\s-]/.test(t);
-};
-const isEveningSession = (session: any) => {
-  const nom = String(session?.nom || "").toLowerCase();
-  if (/soir/.test(nom)) return true;
-  const creneaux = Array.isArray(session?.creneaux) ? session.creneaux : [];
-  return creneaux.some((c: string) => /soir/.test(String(c).toLowerCase()) || (parseInt(String(c).match(/(\d{1,2})\s*[h:]/)?.[1] || "0", 10) >= 17));
 };
 
 Deno.serve(async (req) => {
