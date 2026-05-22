@@ -522,21 +522,6 @@ export function ApprenantsList() {
         </div>
       </div>
 
-      {/* Actions Bar */}
-      <div className="flex flex-col sm:flex-row gap-4 justify-between">
-        <div className="flex gap-3 flex-1">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input 
-              placeholder="Rechercher un apprenant..." 
-              className="pl-10"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-        </div>
-        <ApprenantForm />
-      </div>
 
       {/* Actions Bar */}
       <div className="flex flex-col sm:flex-row gap-4 justify-between">
