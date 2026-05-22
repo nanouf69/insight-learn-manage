@@ -891,30 +891,72 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       return identifiantsSent.some((c: any) => c.apprenant_id === apprenantId);
     };
 
+  // Détection session du soir (4h/jour, max 40h) vs jour (6h/jour, max 60h)
+  const isSessionSoir = (() => {
+    const nom = String(session?.title || session?.nom || '').toLowerCase();
+    const creneaux = Array.isArray((session as any)?.creneaux)
+      ? ((session as any).creneaux as any[]).join(' ').toLowerCase()
+      : String((session as any)?.creneaux || '').toLowerCase();
+    return nom.includes('soir') || creneaux.includes('soir') || /\b(17|18|19|20|21)[h:]/.test(creneaux);
+  })();
+  const maxHeuresSession = isSessionSoir ? 40 : 60;
+
+  // Poids horaire par demi-journée
+  const DEMI_HEURES: Record<string, number> = {
+    matin: 3,
+    apres_midi: 3,
+    soir: 4,
+    soir_1: 2,
+    soir_2: 2,
+  };
+
   // Charger les émargements pour calculer les heures de présence par apprenant
+  // - filtré sur la plage de dates de la session (pas de signature hors formation)
+  // - dédupliqué par (date, demi_journee) pour éviter les doublons
+  // - plafonné au max théorique de la session
   const { data: emargementsHoursMap = {} } = useQuery({
-    queryKey: ['emargements-hours', session?.id, apprenantsInSession.map((sa: any) => sa.apprenant?.id).join(',')],
+    queryKey: ['emargements-hours', session?.id, session?.dateDebut, session?.dateFin, isSessionSoir, apprenantsInSession.map((sa: any) => sa.apprenant?.id).join(',')],
     queryFn: async () => {
       const apprenantIds = apprenantsInSession
         .map((sa: any) => sa.apprenant?.id)
         .filter(Boolean);
       if (apprenantIds.length === 0) return {} as Record<string, number>;
 
-      const { data, error } = await supabase
+      const dateDebut = session?.dateDebut ? String(session.dateDebut).slice(0, 10) : null;
+      const dateFin = session?.dateFin ? String(session.dateFin).slice(0, 10) : null;
+
+      let q = supabase
         .from('emargements_fc')
-        .select('apprenant_id, date_emargement')
+        .select('apprenant_id, date_emargement, demi_journee')
         .in('apprenant_id', apprenantIds)
         .eq('absent', false);
+      if (dateDebut) q = q.gte('date_emargement', dateDebut);
+      if (dateFin) q = q.lte('date_emargement', dateFin);
 
+      const { data, error } = await q;
       if (error) throw error;
-      const setMap: Record<string, Set<string>> = {};
+
+      // Dédup: clé (apprenant, date, demi_journee)
+      const seen: Record<string, Set<string>> = {};
       (data || []).forEach((row: any) => {
-        if (!setMap[row.apprenant_id]) setMap[row.apprenant_id] = new Set();
-        setMap[row.apprenant_id].add(row.date_emargement);
+        const dj = String(row.demi_journee || '').toLowerCase();
+        if (!DEMI_HEURES[dj]) return;
+        // Ignore créneaux soir dans une session jour et inversement
+        const isSoirSlot = dj.startsWith('soir');
+        if (isSessionSoir && !isSoirSlot) return;
+        if (!isSessionSoir && isSoirSlot) return;
+        if (!seen[row.apprenant_id]) seen[row.apprenant_id] = new Set();
+        seen[row.apprenant_id].add(`${row.date_emargement}|${dj}`);
       });
+
       const result: Record<string, number> = {};
-      Object.entries(setMap).forEach(([id, dates]) => {
-        result[id] = dates.size * 6;
+      Object.entries(seen).forEach(([id, keys]) => {
+        let total = 0;
+        keys.forEach((k) => {
+          const dj = k.split('|')[1];
+          total += DEMI_HEURES[dj] || 0;
+        });
+        result[id] = Math.min(total, maxHeuresSession);
       });
       return result;
     },
