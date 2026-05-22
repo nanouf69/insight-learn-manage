@@ -891,6 +891,40 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       return identifiantsSent.some((c: any) => c.apprenant_id === apprenantId);
     };
 
+  // Charger les émargements pour calculer les heures de présence par apprenant
+  const { data: emargementsHoursMap = {} } = useQuery({
+    queryKey: ['emargements-hours', session?.id, apprenantsInSession.map((sa: any) => sa.apprenant?.id).join(',')],
+    queryFn: async () => {
+      const apprenantIds = apprenantsInSession
+        .map((sa: any) => sa.apprenant?.id)
+        .filter(Boolean);
+      if (apprenantIds.length === 0) return {} as Record<string, number>;
+
+      const { data, error } = await supabase
+        .from('emargements_fc')
+        .select('apprenant_id, date_emargement')
+        .in('apprenant_id', apprenantIds)
+        .eq('absent', false);
+
+      if (error) throw error;
+      const setMap: Record<string, Set<string>> = {};
+      (data || []).forEach((row: any) => {
+        if (!setMap[row.apprenant_id]) setMap[row.apprenant_id] = new Set();
+        setMap[row.apprenant_id].add(row.date_emargement);
+      });
+      const result: Record<string, number> = {};
+      Object.entries(setMap).forEach(([id, dates]) => {
+        result[id] = dates.size * 6;
+      });
+      return result;
+    },
+    enabled: !!session?.id && open && apprenantsInSession.length > 0,
+  });
+
+  const getHeuresPresence = (apprenantId: string): number => {
+    return (emargementsHoursMap as Record<string, number>)[apprenantId] || 0;
+  };
+
   // --- Account creation helpers ---
   const inferAccountFormationId = (apprenant: any): string => {
     const type = (apprenant?.type_apprenant || "").toLowerCase();
@@ -2517,6 +2551,9 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                           <Badge className={`text-[10px] px-2 py-0 ${getFinancementBadge(sessionApprenant.mode_financement || apprenant.mode_financement).color}`}>
                             {getFinancementBadge(sessionApprenant.mode_financement || apprenant.mode_financement).label}
                           </Badge>
+                          <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">
+                            ⏱️ {getHeuresPresence(apprenant.id)}h
+                          </span>
                           {sessionApprenant.statut_suivi && (
                             <span className={`inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-full ${
                               sessionApprenant.statut_suivi === 'inscription_validee' || sessionApprenant.statut_suivi === 'document_complet'
