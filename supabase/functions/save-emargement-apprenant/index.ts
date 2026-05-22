@@ -78,6 +78,7 @@ Deno.serve(async (req) => {
     const demi = String(body?.demi_journee || "") as CreneauKey;
     const dateEmargement = String(body?.date_emargement || "");
     const absent = Boolean(body?.absent);
+    const replaceExisting = Boolean(body?.replace_existing);
     const signature = typeof body?.signature_data_url === "string" ? body.signature_data_url : null;
     const justificatifUrl = typeof body?.justificatif_url === "string" ? body.justificatif_url : null;
 
@@ -184,7 +185,7 @@ Deno.serve(async (req) => {
 
     const existing = existingRows?.[0];
     const hasFilledSignature = Boolean(String(existing?.signature_data_url || "").trim()) || existing?.absent === true;
-    if (existing && hasFilledSignature) return json({ success: true, duplicate: true });
+    if (existing && hasFilledSignature && !replaceExisting) return json({ success: true, duplicate: true });
 
     const { error } = existing
       ? await supabase.from("emargements_fc").update(row).eq("id", existing.id)
