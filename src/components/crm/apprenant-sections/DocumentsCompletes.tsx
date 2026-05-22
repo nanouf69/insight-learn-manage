@@ -631,20 +631,11 @@ export function DocumentsCompletes({ apprenant }: Props) {
   }
 
   // Calcul des heures de présence basé sur les signatures d'émargement
-  // Règle : une demi-journée = 3h (matin, après-midi, soir)
-  const HEURES_PAR_DEMI: Record<string, number> = {
-    "matin": 3,
-    "apres-midi": 3,
-    "apres_midi": 3,
-    "après-midi": 3,
-    "après_midi": 3,
-    "soir_1": 1.5,
-    "soir_2": 1.5,
-    "soir": 3,
-  };
-  const emargementsRaw = (documents || []).filter(
-    (d: any) => d.type_document === "emargement-fc" && d.donnees?.signature && !d.donnees?.absent
-  );
+  // Règle RCM : une journée signée = 6h, déduite des jours ayant au moins un émargement signé
+  const emargementsRaw = (documents || []).filter((d: any) => {
+    const hasSignature = !!d.donnees?.signature || !!d.donnees?.signed_at || !!d.completed_at;
+    return d.type_document === "emargement-fc" && hasSignature && !d.donnees?.absent;
+  });
   // Dédoublonnage par (date, demi_journee) pour éviter les doublons
   const uniqueMap = new Map<string, any>();
   for (const d of emargementsRaw) {
@@ -654,13 +645,11 @@ export function DocumentsCompletes({ apprenant }: Props) {
     if (!uniqueMap.has(k)) uniqueMap.set(k, d);
   }
   const emargementsSignes = Array.from(uniqueMap.values());
-  let totalHeures = 0;
   const joursPresence = new Set<string>();
   for (const d of emargementsSignes) {
-    const key = (d.donnees?.demi_journee || "").toString().trim().toLowerCase();
-    totalHeures += HEURES_PAR_DEMI[key] ?? 0;
     if (d.donnees?.date_emargement) joursPresence.add(d.donnees.date_emargement);
   }
+  const totalHeures = joursPresence.size * 6;
 
   const formatHeures = (h: number) => {
     const heures = Math.floor(h);
