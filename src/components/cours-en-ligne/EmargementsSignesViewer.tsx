@@ -11,7 +11,7 @@ interface EmargementRow {
   id: string;
   date_emargement: string;
   demi_journee: string;
-  signature_data_url: string;
+  signature_data_url: string | null;
   signed_at: string;
 }
 
@@ -76,6 +76,7 @@ const formatShortDate = (iso?: string | null) => {
 };
 
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+const hasValidSignature = (r?: EmargementRow) => Boolean(r?.signature_data_url?.trim());
 
 const buildEmargementHTML = (
   groupedByDay: Array<[string, { matin?: EmargementRow; apresMidi?: EmargementRow; soir?: EmargementRow }]>,
@@ -425,7 +426,7 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
                     <div key={key} className="border rounded-md p-2 bg-slate-50/50">
                       <div className="flex items-center justify-between mb-1.5">
                         <span className="text-xs font-medium">{label}</span>
-                        {r ? (
+                        {hasValidSignature(r) ? (
                           <span className="inline-flex items-center gap-1 text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded">
                             <CheckCircle2 className="h-2.5 w-2.5" />
                             {new Date(r.signed_at).toLocaleTimeString("fr-FR", {
@@ -449,7 +450,7 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
                           <span className="text-[10px] text-muted-foreground italic">—</span>
                         )}
                       </div>
-                      {!r && userId && apprenantId && isWithinFormation(date) && (
+                      {!hasValidSignature(r) && userId && apprenantId && isWithinFormation(date) && (
                         <Button
                           size="sm"
                           className="w-full mt-2 h-7 text-xs"
