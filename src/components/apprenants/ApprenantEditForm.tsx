@@ -1304,6 +1304,14 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
                   <span className="font-semibold">80,00 €</span>
                 </div>
               </div>
+              <VirementsMatchBlock
+                nom={formData.nom}
+                prenom={formData.prenom}
+                onApply={({ montant, date }) => {
+                  setFormData({ ...formData, montant_paye: String(montant), moyen_paiement: "virement" });
+                  if (date) setDatePaiement(new Date(date));
+                }}
+              />
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="montant_paye">Montant payé (€)</Label>
