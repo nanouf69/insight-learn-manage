@@ -123,6 +123,8 @@ Deno.serve(async (req) => {
       const isEveningSignature = ["soir", "soir_1", "soir_2"].includes(demi);
       if (isEveningSession && !isEveningSignature) return json({ error: "Signature de journée non autorisée pour un cours du soir" }, 403);
       if (!isEveningSession && isEveningSignature) return json({ error: "Signature du soir non autorisée pour une session de journée" }, 403);
+      // Cours du soir : forcer soir_1 (17h-18h30) ou soir_2 (18h30-21h), refuser le "soir" unique legacy
+      if (isEveningSession && demi === "soir") return json({ error: "Émargement du soir : choisir soir_1 (17h-18h30) ou soir_2 (18h30-21h)" }, 403);
     }
 
     const row = {
