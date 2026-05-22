@@ -111,14 +111,30 @@ export function CRMDashboard({ initialApprenantId, onApprenantClosed }: CRMDashb
   const normalize = (str: string) =>
     str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim();
 
+  const formationOptions = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          apprenants
+            .map((a: any) => (a.formation_choisie || "").trim())
+            .filter((f: string) => f.length > 0),
+        ),
+      ).sort((a, b) => a.localeCompare(b, "fr", { sensitivity: "base" })),
+    [apprenants],
+  );
+
   const filteredApprenants = useMemo(() => {
-    if (!searchQuery.trim()) return apprenants;
+    let list = apprenants as any[];
+    if (formationFilter.length > 0) {
+      list = list.filter((a) => formationFilter.includes((a.formation_choisie || "").trim()));
+    }
+    if (!searchQuery.trim()) return list;
     const words = normalize(searchQuery).split(" ").filter(Boolean);
-    return apprenants.filter(a => {
-      const searchable = normalize(`${a.prenom} ${a.nom} ${a.email} ${a.telephone}`);
+    return list.filter(a => {
+      const searchable = normalize(`${a.prenom} ${a.nom} ${a.email} ${a.telephone} ${a.formation_choisie || ""}`);
       return words.every(word => searchable.includes(word));
     });
-  }, [apprenants, searchQuery]);
+  }, [apprenants, searchQuery, formationFilter]);
 
   const stats = useMemo(() => {
     const byType = apprenants.reduce((acc, a) => {
