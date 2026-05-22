@@ -838,6 +838,7 @@ export function ApprenantForm() {
                       <SelectItem value="anglais-28h">Anglais Professionnel 28H - 2 000 €</SelectItem>
                       <SelectItem value="anglais-35h">Anglais Professionnel 35H - 3 000 €</SelectItem>
                       <SelectItem value="anglais-45h">Anglais Professionnel 45H - 4 500 €</SelectItem>
+                      <SelectItem value="anglais-55h">Anglais Professionnel 55H - 4 500 €</SelectItem>
                     </SelectGroup>
                     <SelectGroup>
                       <SelectLabel>Services</SelectLabel>
