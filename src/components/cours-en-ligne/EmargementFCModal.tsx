@@ -168,7 +168,7 @@ export const EmargementFCModal = ({
       const { error: insErr } = await supabase.from("emargements_fc" as any).insert({
         apprenant_id: apprenantId,
         user_id: userId,
-        date_emargement: todayISO(),
+        date_emargement: effectiveDate,
         demi_journee: demi,
         signature_data_url: null,
         absent: true,
