@@ -2121,11 +2121,12 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={cn(
-        "!flex flex-col overflow-hidden !gap-0",
+        "!flex !flex-col !gap-0 overflow-hidden",
         isFullscreen
           ? "max-w-none w-screen h-screen sm:max-w-none sm:rounded-none max-h-screen p-6"
           : "sm:max-w-[800px] h-[90vh] max-h-[90vh]"
       )}>
+
 
         <DialogHeader>
           <div className="flex items-center justify-between">
@@ -2228,7 +2229,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
           </TabsList>
 
           {/* Apprenants Tab */}
-          <TabsContent value="apprenants" className="flex-1 min-h-0 overflow-hidden flex flex-col mt-4">
+          <TabsContent value="apprenants" className="flex-1 min-h-0 overflow-y-auto flex flex-col mt-4">
             {/* Barre d'envoi groupé */}
             <div className="shrink-0 flex items-center gap-3 mb-3 p-3 rounded-lg bg-primary/5 border border-primary/20">
               <Checkbox 
