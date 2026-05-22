@@ -538,6 +538,65 @@ export function ApprenantsList() {
         <ApprenantForm />
       </div>
 
+      {/* Actions Bar */}
+      <div className="flex flex-col sm:flex-row gap-4 justify-between">
+        <div className="flex gap-3 flex-1 flex-wrap">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Rechercher un apprenant..."
+              className="pl-10"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <Filter className="w-4 h-4" />
+                Formation
+                {formationFilter.length > 0 && (
+                  <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
+                    {formationFilter.length}
+                  </Badge>
+                )}
+                <ChevronDown className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="max-h-80 overflow-y-auto w-64">
+              {formationOptions.length === 0 ? (
+                <div className="px-2 py-3 text-sm text-muted-foreground text-center">
+                  Aucune formation disponible
+                </div>
+              ) : (
+                formationOptions.map((f) => (
+                  <DropdownMenuCheckboxItem
+                    key={f}
+                    checked={formationFilter.includes(f)}
+                    onCheckedChange={(checked) => {
+                      setFormationFilter((prev) =>
+                        checked ? [...prev, f] : prev.filter((x) => x !== f)
+                      );
+                    }}
+                  >
+                    {f}
+                  </DropdownMenuCheckboxItem>
+                ))
+              )}
+              {formationFilter.length > 0 && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => setFormationFilter([])}>
+                    Effacer les filtres
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+        <ApprenantForm />
+      </div>
+
       {/* Liste */}
       {filteredApprenants.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground">
@@ -546,8 +605,8 @@ export function ApprenantsList() {
           <p className="text-sm">Ajoutez votre premier apprenant pour commencer</p>
         </div>
       ) : (
-        <ApprenantTable 
-          data={filteredApprenants} 
+        <ApprenantTable
+          data={filteredApprenants}
           onDelete={handleDeleteClick}
           onEdit={setEditApprenant}
           typeFilter={typeFilter}
