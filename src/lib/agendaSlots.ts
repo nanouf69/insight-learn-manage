@@ -182,9 +182,10 @@ export const getTodayAgendaBlocs = async (
  * Détermine le créneau (matin/apres_midi/soir) en cours selon l'heure courante
  * ET les horaires des blocs agenda du jour.
  *
- * - matin : un bloc qui commence avant 12h00
- * - apres_midi : un bloc qui commence entre 12h00 et 17h59
- * - soir : un bloc qui commence à partir de 18h00
+ * Horaires officiels :
+ *  - matin       : 09h00 — 12h00 (bloc qui commence avant 12h)
+ *  - apres_midi  : 13h00 — 16h00 (bloc qui commence entre 12h et 17h)
+ *  - soir        : 17h00 — 21h00 (bloc qui commence à partir de 17h)
  *
  * Renvoie null si aucun cours présentiel n'est prévu aujourd'hui.
  */
@@ -203,7 +204,7 @@ export const getCurrentCreneau = (
 
   const classify = (startMin: number): CreneauKey => {
     if (startMin < 12 * 60) return "matin";
-    if (startMin < 18 * 60) return "apres_midi";
+    if (startMin < 17 * 60) return "apres_midi";
     return "soir";
   };
 
@@ -219,16 +220,17 @@ export const getCurrentCreneau = (
   if (nowMin < 12 * 60) {
     if (blocs.some((b) => timeToMin(b.heure_debut) < 12 * 60)) return "matin";
   }
-  if (nowMin < 18 * 60) {
+  if (nowMin < 17 * 60) {
     if (blocs.some((b) => {
       const s = timeToMin(b.heure_debut);
-      return s >= 12 * 60 && s < 18 * 60;
+      return s >= 12 * 60 && s < 17 * 60;
     })) return "apres_midi";
   }
-  if (blocs.some((b) => timeToMin(b.heure_debut) >= 18 * 60)) return "soir";
+  if (blocs.some((b) => timeToMin(b.heure_debut) >= 17 * 60)) return "soir";
 
   return null;
 };
+
 
 export const creneauLabel = (k: CreneauKey): string => {
   switch (k) {
