@@ -59,6 +59,7 @@ import { saveFactureToCRM } from "@/lib/saveFactureToCRM";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { computePresenceHours, formatPresenceHours, isEveningTrainingValue } from "@/lib/emargementHours";
 
 interface Session {
   id: string;
@@ -72,6 +73,7 @@ interface Session {
   maxParticipants: number;
   status: string;
   type_session?: string;
+  creneaux?: string[] | string | null;
 }
 
 interface SessionDetailProps {
@@ -98,6 +100,7 @@ interface ApprenantDB {
   date_examen_theorique: string | null;
   date_examen_pratique: string | null;
   statut: string | null;
+  creneau_horaire?: string | null;
 }
 
 const modesFinancement = [
