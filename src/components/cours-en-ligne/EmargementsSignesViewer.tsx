@@ -449,7 +449,7 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
                           <span className="text-[10px] text-muted-foreground italic">—</span>
                         )}
                       </div>
-                      {!r && userId && apprenantId && (
+                      {!r && userId && apprenantId && isWithinFormation(date) && (
                         <Button
                           size="sm"
                           className="w-full mt-2 h-7 text-xs"
