@@ -556,6 +556,7 @@ interface ApprenantInfo {
   date_fin_cours_en_ligne: string | null;
   date_debut_formation?: string | null;
   date_fin_formation?: string | null;
+  creneau_horaire?: string | null;
   modules_autorises: number[] | null;
   email?: string | null;
   telephone?: string | null;
@@ -810,7 +811,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         const { data, error: fetchError } = await withTimeout(
           supabase
             .from("apprenants")
-            .select("id, nom, prenom, type_apprenant, formation_choisie, date_debut_cours_en_ligne, date_fin_cours_en_ligne, date_debut_formation, date_fin_formation, modules_autorises, email, telephone, adresse, code_postal, ville, date_naissance")
+            .select("id, nom, prenom, type_apprenant, formation_choisie, date_debut_cours_en_ligne, date_fin_cours_en_ligne, date_debut_formation, date_fin_formation, creneau_horaire, modules_autorises, email, telephone, adresse, code_postal, ville, date_naissance")
             .eq("auth_user_id", user.id)
             .maybeSingle(),
           12000,
@@ -917,7 +918,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     const refreshApprenant = async () => {
       const { data, error } = await supabase
         .from("apprenants")
-        .select("id, nom, prenom, type_apprenant, formation_choisie, date_debut_cours_en_ligne, date_fin_cours_en_ligne, date_debut_formation, date_fin_formation, modules_autorises, email, telephone, adresse, code_postal, ville, date_naissance")
+        .select("id, nom, prenom, type_apprenant, formation_choisie, date_debut_cours_en_ligne, date_fin_cours_en_ligne, date_debut_formation, date_fin_formation, creneau_horaire, modules_autorises, email, telephone, adresse, code_postal, ville, date_naissance")
         .eq("id", apprenantOverride.id)
         .maybeSingle();
 
@@ -1045,6 +1046,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
       const expected = await getExpectedEmargements({
         mode,
         formationChoisie: apprenant.formation_choisie,
+        creneauHoraire: apprenant.creneau_horaire,
         apprenantId: apprenant.id!,
         startDate,
         endDate,

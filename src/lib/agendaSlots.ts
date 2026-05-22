@@ -287,6 +287,7 @@ export const creneauHoraire = (k: CreneauKey): string => {
 export const getExpectedEmargements = async (params: {
   mode: "fc" | "presentiel";
   formationChoisie?: string | null;
+  creneauHoraire?: string | null;
   apprenantId?: string | null;
   startDate: Date;
   endDate: Date;
@@ -319,7 +320,7 @@ export const getExpectedEmargements = async (params: {
     return out;
   }
 
-  let wantEvening = isEveningText(params.formationChoisie);
+  let wantEvening = isEveningText(params.formationChoisie) || isEveningText(params.creneauHoraire);
   if (apprenantId) {
     const startISO = formatISO(effectiveStart);
     const endISO = formatISO(end);
