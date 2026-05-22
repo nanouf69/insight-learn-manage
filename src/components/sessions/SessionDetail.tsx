@@ -893,7 +893,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
 
   // Détection session du soir (4h/jour, max 40h) vs jour (6h/jour, max 60h)
   const isSessionSoir = (() => {
-    const nom = String(session?.title || session?.nom || '').toLowerCase();
+    const nom = String((session as any)?.title || (session as any)?.nom || '').toLowerCase();
     const creneaux = Array.isArray((session as any)?.creneaux)
       ? ((session as any).creneaux as any[]).join(' ').toLowerCase()
       : String((session as any)?.creneaux || '').toLowerCase();
