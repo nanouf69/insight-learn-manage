@@ -31,6 +31,7 @@ import ExamensBlancsResetTab from "./apprenant-sections/ExamensBlancsResetTab";
 import { ResultatsApprenantTab } from "./apprenant-sections/ResultatsApprenantTab";
 import { AccessDiagnosticTab } from "./apprenant-sections/AccessDiagnosticTab";
 import ApprenantActivityReport from "@/components/cours-en-ligne/ApprenantActivityReport";
+import { ReleveHeuresHorsFormationTab } from "./apprenant-sections/ReleveHeuresHorsFormationTab";
 import { ApprenantEditForm } from "@/components/apprenants/ApprenantEditForm";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
