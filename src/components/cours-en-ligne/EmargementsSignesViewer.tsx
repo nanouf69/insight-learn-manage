@@ -259,33 +259,36 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
       if (ap) setApprenant(ap);
       setUserId(session?.user?.id || ap?.auth_user_id || null);
 
-      // Calcul des créneaux attendus (pour proposer la signature des créneaux manquants)
+      // Calcul des créneaux attendus pour TOUS les apprenants ayant des dates de formation
+      // (permet à chaque apprenant de signer/re-signer toute journée passée)
       if (ap) {
         const isFC = isFormationContinue(ap.type_apprenant, ap.formation_choisie);
         const isPres = isPresentielType(ap.type_apprenant, ap.formation_choisie);
-        if (isFC || isPres) {
-          const today = new Date(); today.setHours(0, 0, 0, 0);
-          const startStr = ap.date_debut_formation;
-          let start: Date | null = null;
-          if (startStr && /^\d{4}-\d{2}-\d{2}/.test(startStr)) {
-            start = new Date(startStr.slice(0, 10) + "T00:00:00");
-          } else if (startStr && /^\d{2}\/\d{2}\/\d{4}/.test(startStr)) {
-            const [d, m, y] = startStr.slice(0, 10).split("/");
-            start = new Date(`${y}-${m}-${d}T00:00:00`);
+        const today = new Date(); today.setHours(0, 0, 0, 0);
+        const parseDate = (s?: string | null): Date | null => {
+          if (!s) return null;
+          if (/^\d{4}-\d{2}-\d{2}/.test(s)) return new Date(s.slice(0, 10) + "T00:00:00");
+          if (/^\d{2}\/\d{2}\/\d{4}/.test(s)) {
+            const [d, m, y] = s.slice(0, 10).split("/");
+            return new Date(`${y}-${m}-${d}T00:00:00`);
           }
-          if (!start || isNaN(start.getTime())) {
-            start = new Date(today); start.setDate(today.getDate() - 30);
-          }
-          const exp = await getExpectedEmargements({
-            mode: isFC ? "fc" : "presentiel",
-            formationChoisie: ap.formation_choisie,
-            creneauHoraire: ap.creneau_horaire,
-            apprenantId,
-            startDate: start,
-            endDate: today,
-          });
-          setExpected(exp);
+          return null;
+        };
+        let start = parseDate(ap.date_debut_formation);
+        if (!start || isNaN(start.getTime())) {
+          start = new Date(today); start.setDate(today.getDate() - 30);
         }
+        let end = parseDate(ap.date_fin_formation);
+        if (!end || isNaN(end.getTime()) || end.getTime() > today.getTime()) end = today;
+        const exp = await getExpectedEmargements({
+          mode: isFC ? "fc" : "presentiel",
+          formationChoisie: ap.formation_choisie,
+          creneauHoraire: ap.creneau_horaire,
+          apprenantId,
+          startDate: start,
+          endDate: end,
+        });
+        setExpected(exp);
       }
       setLoading(false);
     })();
