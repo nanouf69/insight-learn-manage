@@ -84,6 +84,8 @@ export function ReleveHeuresHorsFormationTab({ apprenant }: Props) {
     enabled: !!apprenantId,
   });
 
+  const isVTC = String(apprenant?.type_apprenant || "").toLowerCase().startsWith("vtc");
+
   const reports: SessionReport[] = useMemo(() => {
     if (!sessions.length) return [];
     return sessions
@@ -92,12 +94,21 @@ export function ReleveHeuresHorsFormationTab({ apprenant }: Props) {
       .map((session) => {
         const dStart = String(session.date_debut || "").slice(0, 10);
         const dEnd = String(session.date_fin || "").slice(0, 10);
+        // Pour les VTC : on stoppe le décompte 2 jours après la date de fin de formation
+        let dCutoff: string | null = null;
+        if (isVTC && dEnd) {
+          const d = new Date(dEnd);
+          d.setDate(d.getDate() + 2);
+          dCutoff = d.toISOString().slice(0, 10);
+        }
         const details: ConnexionDetail[] = [];
         for (const row of connexions) {
           if (!row.started_at) continue;
           const day = String(row.started_at).slice(0, 10);
           // Hors période de formation
           if (dStart && dEnd && day >= dStart && day <= dEnd) continue;
+          // VTC : ignorer les connexions plus de 2 jours après la fin
+          if (dCutoff && day > dCutoff) continue;
           const start = new Date(row.started_at);
           const rawEnd = new Date(row.ended_at || row.last_seen_at || row.started_at);
           const endMs = Math.min(rawEnd.getTime(), start.getTime() + MAX_SESSION_MS);
@@ -110,7 +121,8 @@ export function ReleveHeuresHorsFormationTab({ apprenant }: Props) {
         const totalHours = details.reduce((s, d) => s + d.durationHours, 0);
         return { session, totalHours, connexions: details };
       });
-  }, [sessions, connexions]);
+  }, [sessions, connexions, isVTC]);
+
 
   const totalGlobal = reports.reduce((s, r) => s + r.totalHours, 0);
 
