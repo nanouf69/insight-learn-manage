@@ -974,6 +974,56 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     return (emargementsHoursMap as Record<string, number>)[apprenantId] || 0;
   };
 
+  // Heures effectuées en ligne EN DEHORS des dates de formation (e-learning à la maison)
+  const { data: onlineHoursMap = {} } = useQuery({
+    queryKey: ['online-hours-out', session?.id, session?.dateDebut, session?.dateFin, apprenantsInSession.map((sa: any) => sa.apprenant?.id).join(',')],
+    queryFn: async () => {
+      const apprenantIds = apprenantsInSession
+        .map((sa: any) => sa.apprenant?.id)
+        .filter(Boolean);
+      if (apprenantIds.length === 0) return {} as Record<string, number>;
+
+      const dateDebut = session?.dateDebut ? String(session.dateDebut).slice(0, 10) : null;
+      const dateFin = session?.dateFin ? String(session.dateFin).slice(0, 10) : null;
+
+      const result: Record<string, number> = {};
+      apprenantIds.forEach((id: string) => { result[id] = 0; });
+
+      const PAGE = 1000;
+      const MAX_SESSION_MS = 12 * 60 * 60 * 1000;
+      let from = 0;
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const { data, error } = await supabase
+          .from('apprenant_connexions')
+          .select('apprenant_id, started_at, ended_at, last_seen_at')
+          .in('apprenant_id', apprenantIds)
+          .range(from, from + PAGE - 1);
+        if (error) throw error;
+        const rows = (data || []) as any[];
+        for (const row of rows) {
+          if (!row.started_at) continue;
+          const day = String(row.started_at).slice(0, 10);
+          // En dehors de la période de formation
+          if (dateDebut && dateFin && day >= dateDebut && day <= dateFin) continue;
+          const start = new Date(row.started_at).getTime();
+          const rawEnd = new Date(row.ended_at || row.last_seen_at || row.started_at).getTime();
+          const end = Math.min(rawEnd, start + MAX_SESSION_MS);
+          const minutes = Math.max(0, (end - start) / 60000);
+          result[row.apprenant_id] = (result[row.apprenant_id] || 0) + minutes / 60;
+        }
+        if (rows.length < PAGE) break;
+        from += PAGE;
+      }
+      return result;
+    },
+    enabled: !!session?.id && open && apprenantsInSession.length > 0,
+  });
+
+  const getHeuresEnLigne = (apprenantId: string): number => {
+    return (onlineHoursMap as Record<string, number>)[apprenantId] || 0;
+  };
+
   // --- Account creation helpers ---
   const inferAccountFormationId = (apprenant: any): string => {
     const type = (apprenant?.type_apprenant || "").toLowerCase();
@@ -2605,6 +2655,12 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                           </Badge>
                           <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">
                             ⏱️ {formatPresenceHours(getHeuresPresence(apprenant.id))}
+                          </span>
+                          <span
+                            className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700"
+                            title="Heures effectuées en ligne en dehors des dates de formation"
+                          >
+                            🌐 {formatPresenceHours(getHeuresEnLigne(apprenant.id))} en ligne
                           </span>
                           {sessionApprenant.statut_suivi && (
                             <span className={`inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-full ${
