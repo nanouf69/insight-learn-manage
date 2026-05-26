@@ -312,9 +312,9 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
     const d = new Date(date + "T00:00:00");
     if (isNaN(d.getTime())) return false;
     const today = new Date(); today.setHours(0, 0, 0, 0);
+    // Autorise la signature pour toute date passée ou aujourd'hui,
+    // sans bloquer sur les dates de formation (rattrapage possible)
     if (d.getTime() > today.getTime()) return false;
-    if (formationBounds.start && d.getTime() < formationBounds.start.getTime()) return false;
-    if (formationBounds.end && d.getTime() > formationBounds.end.getTime()) return false;
     return true;
   };
 
