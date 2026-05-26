@@ -2656,6 +2656,12 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                           <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">
                             ⏱️ {formatPresenceHours(getHeuresPresence(apprenant.id))}
                           </span>
+                          <span
+                            className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700"
+                            title="Heures effectuées en ligne en dehors des dates de formation"
+                          >
+                            🌐 {formatPresenceHours(getHeuresEnLigne(apprenant.id))} en ligne
+                          </span>
                           {sessionApprenant.statut_suivi && (
                             <span className={`inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-full ${
                               sessionApprenant.statut_suivi === 'inscription_validee' || sessionApprenant.statut_suivi === 'document_complet'
