@@ -31,6 +31,7 @@ import ExamensBlancsResetTab from "./apprenant-sections/ExamensBlancsResetTab";
 import { ResultatsApprenantTab } from "./apprenant-sections/ResultatsApprenantTab";
 import { AccessDiagnosticTab } from "./apprenant-sections/AccessDiagnosticTab";
 import ApprenantActivityReport from "@/components/cours-en-ligne/ApprenantActivityReport";
+import { ReleveHeuresHorsFormationTab } from "./apprenant-sections/ReleveHeuresHorsFormationTab";
 import { ApprenantEditForm } from "@/components/apprenants/ApprenantEditForm";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
@@ -768,6 +769,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
           <TabsTrigger value="devis" className="text-sm">Devis</TabsTrigger>
           <TabsTrigger value="examens-blancs-reset" className="text-sm">Examens blancs</TabsTrigger>
           <TabsTrigger value="rapport-activite" className="text-sm">Rapport activité</TabsTrigger>
+          <TabsTrigger value="releve-heures-hors" className="text-sm">Relevé heures hors formation</TabsTrigger>
           <TabsTrigger value="diagnostic-acces" className="text-sm">Diagnostic accès</TabsTrigger>
           <TabsTrigger value="reset-cours" className="text-sm text-destructive">Remise à zéro</TabsTrigger>
           <TabsTrigger value="delete-account" className="text-sm text-destructive">Supprimer compte cours</TabsTrigger>
@@ -864,6 +866,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
           {activeTab === "devis" && <DevisSection apprenant={apprenant} />}
           {activeTab === "examens-blancs-reset" && <ExamensBlancsResetTab apprenant={apprenant} />}
           {activeTab === "rapport-activite" && <ApprenantActivityReport lockedApprenantId={apprenant.id} />}
+          {activeTab === "releve-heures-hors" && <ReleveHeuresHorsFormationTab apprenant={apprenant} />}
           {activeTab === "diagnostic-acces" && <AccessDiagnosticTab apprenant={apprenant} />}
           {activeTab === "reset-cours" && <ResetCoursTab apprenant={apprenant} queryClient={queryClient} />}
           {activeTab === "delete-account" && (
