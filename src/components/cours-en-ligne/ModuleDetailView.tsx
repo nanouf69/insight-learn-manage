@@ -3937,8 +3937,28 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               : Date.now(),
           });
         }
-        if (typeof parsed.currentPage === "number" && totalPages > 0) {
-          const clampedPage = Math.max(0, Math.min(parsed.currentPage, totalPages - 1));
+        // Restore currentPage: prefer sessionStorage, fallback to localStorage
+        // (localStorage survives disconnections so the learner resumes where they left off)
+        let pageToRestore: number | null =
+          typeof parsed.currentPage === "number" ? parsed.currentPage : null;
+        if (pageToRestore === null) {
+          try {
+            const lsPage = window.localStorage.getItem(`${learnerUiStateKey}:page`);
+            if (lsPage !== null) {
+              const n = parseInt(lsPage, 10);
+              if (!Number.isNaN(n)) pageToRestore = n;
+            }
+            if (pageToRestore === null && apprenantId) {
+              const lsPageFb = window.localStorage.getItem(`${learnerUiStateAnonymousFallbackKey}:page`);
+              if (lsPageFb !== null) {
+                const n = parseInt(lsPageFb, 10);
+                if (!Number.isNaN(n)) pageToRestore = n;
+              }
+            }
+          } catch {}
+        }
+        if (pageToRestore !== null && totalPages > 0) {
+          const clampedPage = Math.max(0, Math.min(pageToRestore, totalPages - 1));
           setCurrentPage(clampedPage);
         }
       } catch (error) {
@@ -4020,6 +4040,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             pendingResultRestore,
           })
         );
+        // Persist only the current page index to localStorage so the learner
+        // resumes where they left off even after a disconnect (sessionStorage is cleared).
+        try {
+          window.localStorage.setItem(`${learnerUiStateKey}:page`, String(currentPage));
+        } catch {}
       } catch (error) {
         console.error("Erreur sauvegarde état module:", error);
       }
