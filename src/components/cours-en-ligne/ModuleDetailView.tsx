@@ -344,13 +344,13 @@ const renderExerciseQuestionPrompt = (questionNumber: number, prompt: ExerciseQu
       <span className="inline-flex items-center justify-center bg-primary/10 text-primary text-xs font-bold rounded px-1.5 py-0.5 mr-1.5">
         Q{questionNumber}
       </span>
-      {prompt.question}
+      <RichText value={prompt.question} />
     </p>
 
     {prompt.passageTitle && prompt.passageBody ? (
       <div className="rounded-lg border border-border bg-muted/40 p-4 text-sm leading-relaxed">
-        <p className="mb-2 font-semibold text-foreground">{prompt.passageTitle}</p>
-        <p className="whitespace-pre-line text-foreground">{prompt.passageBody}</p>
+        <p className="mb-2 font-semibold text-foreground"><RichText value={prompt.passageTitle} /></p>
+        <p className="whitespace-pre-line text-foreground"><RichText value={prompt.passageBody} /></p>
       </div>
     ) : null}
   </div>
