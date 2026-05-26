@@ -4040,6 +4040,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             pendingResultRestore,
           })
         );
+        // Persist only the current page index to localStorage so the learner
+        // resumes where they left off even after a disconnect (sessionStorage is cleared).
+        try {
+          window.localStorage.setItem(`${learnerUiStateKey}:page`, String(currentPage));
+        } catch {}
       } catch (error) {
         console.error("Erreur sauvegarde état module:", error);
       }
