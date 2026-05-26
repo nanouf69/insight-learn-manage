@@ -363,6 +363,38 @@ export function CRMDashboard({ initialApprenantId, onApprenantClosed }: CRMDashb
                     <Phone className="w-4 h-4" />
                     {apprenant.telephone || '-'}
                   </div>
+                  {(() => {
+                    const fmt = (d?: string | null) => {
+                      if (!d) return null;
+                      const iso = /^\d{4}-\d{2}-\d{2}/.exec(d);
+                      if (iso) {
+                        const [y, m, day] = d.slice(0, 10).split('-');
+                        return `${day}/${m}/${y}`;
+                      }
+                      return d;
+                    };
+                    const a: any = apprenant;
+                    const catalogue = a.date_formation_catalogue && a.date_formation_catalogue !== 'manuel' ? a.date_formation_catalogue : null;
+                    const debut = a.date_debut_formation || a.date_debut_cours_en_ligne;
+                    const fin = a.date_fin_formation || a.date_fin_cours_en_ligne;
+                    if (catalogue) {
+                      return (
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Calendar className="w-4 h-4" />
+                          {catalogue}
+                        </div>
+                      );
+                    }
+                    if (debut || fin) {
+                      return (
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Calendar className="w-4 h-4" />
+                          {fmt(debut) || '?'} → {fmt(fin) || '?'}
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
                 </div>
 
                 <div className="mt-4 pt-4 border-t border-border flex items-center justify-between">
