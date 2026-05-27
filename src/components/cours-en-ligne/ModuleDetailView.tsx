@@ -5283,7 +5283,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 const selectedArr = Array.isArray(selected) ? selected : selected ? [selected] : [];
 
                 return (
-                  <div key={q.id} id={`exo-q-${exo.id}-${qi}`} className={`space-y-2 p-4 border rounded-lg scroll-mt-20 transition-all ${unansweredKeys.has(key) ? 'border-destructive border-2 bg-destructive/5' : ''}`}>
+                  <div key={q.id} id={`exo-q-${exo.id}-${qi}`} data-answer-scroll-anchor className={`space-y-2 p-4 border rounded-lg scroll-mt-20 transition-all ${unansweredKeys.has(key) ? 'border-destructive border-2 bg-destructive/5' : ''}`}>
                     {renderExerciseQuestionPrompt(qi + 1, questionPrompts[qi] ?? parseExerciseQuestionPrompt(q.enonce))}
                     {q.image && (() => {
                       const sizeMap: Record<string, string> = {
@@ -5312,7 +5312,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                         return (
                           <button
                             key={c.lettre}
-                            onClick={() => handleAnswer(exo.id, q.id, c.lettre, multi)}
+                            onClick={(event) => handleAnswer(exo.id, q.id, c.lettre, multi, event.currentTarget)}
                             className={`w-full text-left p-3 rounded-lg flex items-center gap-3 transition-all ${bg}`}
                           >
                             {multi ? (
