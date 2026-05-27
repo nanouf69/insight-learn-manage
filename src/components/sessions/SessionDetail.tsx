@@ -1944,9 +1944,12 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   const handleBulkAcquitter = async () => {
     setBulkAcquitterSaving(true);
     try {
-      const factures = Object.values(facturesFCMap as Record<string, any>).filter(Boolean) as any[];
+      let factures = Object.values(facturesFCMap as Record<string, any>).filter(Boolean) as any[];
+      if (selectedFactureApprenants.size > 0) {
+        factures = factures.filter((f: any) => f.apprenant_id && selectedFactureApprenants.has(f.apprenant_id));
+      }
       if (factures.length === 0) {
-        toast({ title: "Aucune facture", description: "Générez d'abord les factures.", variant: "destructive" });
+        toast({ title: "Aucune facture", description: selectedFactureApprenants.size > 0 ? "Aucune facture pour la sélection." : "Générez d'abord les factures.", variant: "destructive" });
         return;
       }
       let count = 0;
