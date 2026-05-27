@@ -112,26 +112,36 @@ export default function DemandeCarteVTCViewer({ completed, onComplete }: Props) 
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
             <Stethoscope className="h-5 w-5 text-emerald-700" />
-            Liste des médecins agréés
+            Liste des médecins agréés par département
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <p className="text-sm">
             Le certificat médical doit être délivré par un <strong>médecin agréé par la préfecture</strong>.
-            Consultez la liste officielle ci-dessous pour trouver un médecin près de chez vous :
+            Sélectionnez votre département pour consulter la liste officielle :
           </p>
-          <Button asChild variant="outline" size="lg">
-            <a
-              href="/cours/vtc/Liste_medecins_agrees.pdf"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <FileText className="h-4 w-4 mr-2" />
-              Télécharger la liste des médecins agréés (PDF)
-            </a>
-          </Button>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {[
+              { dept: "01", nom: "Ain", file: "01-AIN.pdf" },
+              { dept: "38", nom: "Isère", file: "38-ISERE.pdf" },
+              { dept: "73", nom: "Savoie", file: "73-SAVOIE.pdf" },
+              { dept: "74", nom: "Haute-Savoie", file: "74-HAUTE-SAVOIE.pdf" },
+            ].map((d) => (
+              <Button key={d.dept} asChild variant="outline" className="justify-start">
+                <a href={`/cours/vtc/medecins/${d.file}`} target="_blank" rel="noopener noreferrer">
+                  <FileText className="h-4 w-4 mr-2" />
+                  {d.dept} — {d.nom}
+                </a>
+              </Button>
+            ))}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Votre département ne figure pas dans la liste ? Contactez la préfecture de votre département
+            pour obtenir la liste des médecins agréés.
+          </p>
         </CardContent>
       </Card>
+
 
       <div className="flex justify-end pt-4">
         <Button onClick={onComplete} size="lg" disabled={completed}>
