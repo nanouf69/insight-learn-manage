@@ -3434,7 +3434,66 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
               </ScrollArea>
             </TabsContent>
           )}
+
+          {/* Absents Tab */}
+          <TabsContent value="absents" className="flex-1 min-h-0 overflow-auto mt-4">
+            {absentApprenants.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <X className="w-10 h-10 mx-auto mb-2 opacity-40" />
+                <p className="text-sm">Aucun apprenant absent</p>
+              </div>
+            ) : (
+              <div className="space-y-2 p-1">
+                {absentApprenants.map((sa: any) => {
+                  const ap = sa.apprenant;
+                  if (!ap) return null;
+                  const reasons: string[] = [];
+                  if (sa.presence_pratique === 'absent') reasons.push('Absent en pratique');
+                  if (ap.resultat_examen === 'absent') reasons.push('Absent à l\'examen');
+                  return (
+                    <div key={sa.id} className="p-3 rounded-xl border bg-card flex items-center gap-3">
+                      <Avatar className="w-8 h-8 shrink-0">
+                        <AvatarFallback className="bg-red-100 text-red-700 font-semibold text-xs">
+                          {ap.prenom?.[0] || ''}{ap.nom?.[0] || ''}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span
+                            className="font-semibold text-sm text-foreground hover:text-primary hover:underline cursor-pointer"
+                            onClick={() => {
+                              if (onNavigateToApprenant) {
+                                onOpenChange(false);
+                                onNavigateToApprenant(ap.id);
+                              }
+                            }}
+                          >
+                            {ap.prenom} {ap.nom}
+                          </span>
+                          <Badge className={`text-[10px] ${getTypeBadgeColor(ap.type_apprenant)}`}>
+                            {ap.type_apprenant?.toUpperCase() || 'N/A'}
+                          </Badge>
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-0.5">
+                          {ap.email || '—'} · {ap.telephone || '—'}
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-1 justify-end">
+                        {reasons.map((r) => (
+                          <span key={r} className="inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-full bg-red-100 text-red-700">
+                            ❌ {r}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </TabsContent>
         </Tabs>
+          );
+        })()}
     </>
   );
 
