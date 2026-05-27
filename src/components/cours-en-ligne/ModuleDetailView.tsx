@@ -5882,7 +5882,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         </div>
       </div>
     );
-  };
+    };
+
+    return LearnerPreviewComponent;
+  }, [apprenantId, apprenantInfo, apprenantType, hideFormulaires, isPresentiel, module.id, moduleData, onBack, onModuleCompleted, onTrackCours, slidesByKey, studentOnly]);
 
   if (studentOnly) {
     return (
