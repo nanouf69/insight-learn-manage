@@ -563,6 +563,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   const [bulkSendingFactures, setBulkSendingFactures] = useState(false);
   const [singleFactureLoading, setSingleFactureLoading] = useState<string | null>(null);
   const [bulkValidatingFactures, setBulkValidatingFactures] = useState(false);
+  const [selectedFactureApprenants, setSelectedFactureApprenants] = useState<Set<string>>(new Set());
   const [acquittementApprenant, setAcquittementApprenant] = useState<any | null>(null);
   const [acquittementDate, setAcquittementDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [acquittementMoyen, setAcquittementMoyen] = useState<string>('virement');
