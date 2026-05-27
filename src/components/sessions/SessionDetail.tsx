@@ -3355,6 +3355,17 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                     return (
                       <div key={a.id} className="flex flex-col gap-2 p-3 rounded-lg border bg-card">
                          <div className="flex items-start gap-3">
+                           <Checkbox
+                             className="mt-1"
+                             checked={selectedFactureApprenants.has(a.id)}
+                             onCheckedChange={(v) => {
+                               setSelectedFactureApprenants(prev => {
+                                 const next = new Set(prev);
+                                 if (v) next.add(a.id); else next.delete(a.id);
+                                 return next;
+                               });
+                             }}
+                           />
                            <div className="flex-1 min-w-0">
                              {/* Ligne 1 : Nom + Prénom + statut */}
                              <div className="flex items-center gap-2 flex-wrap">
