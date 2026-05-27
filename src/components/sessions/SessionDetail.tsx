@@ -3268,10 +3268,22 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                 <div className="text-sm">
                   <div className="font-medium">Factures Formation Continue — 200 € TTC</div>
                   <div className="text-muted-foreground text-xs">
-                    Les factures sont créées en <strong>brouillon</strong>. Validez-les définitivement pour figer le numéro et le statut comptable.
+                    Les factures sont créées en <strong>brouillon</strong>. Cochez les apprenants pour cibler les actions, sinon toutes sont prises.
                   </div>
                 </div>
                 <div className="flex-1" />
+                <div className="flex items-center gap-2 px-2 py-1 rounded-md bg-background border">
+                  <Checkbox
+                    checked={apprenantsInSession.length > 0 && selectedFactureApprenants.size === apprenantsInSession.length}
+                    onCheckedChange={(v) => {
+                      if (v) setSelectedFactureApprenants(new Set(apprenantsInSession.map((sa: any) => sa.apprenant?.id).filter(Boolean)));
+                      else setSelectedFactureApprenants(new Set());
+                    }}
+                  />
+                  <span className="text-xs font-medium">
+                    {selectedFactureApprenants.size > 0 ? `${selectedFactureApprenants.size} sélectionné(s)` : "Tout sélectionner"}
+                  </span>
+                </div>
                 <Button
                   size="sm"
                   variant="outline"
@@ -3280,7 +3292,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                   className="gap-2"
                 >
                   {bulkDownloadingFactures ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                  Toutes les factures (PDF)
+                  Factures PDF{selectedFactureApprenants.size > 0 ? ` (${selectedFactureApprenants.size})` : ''}
                 </Button>
                 <Button
                   size="sm"
@@ -3290,7 +3302,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                   className="gap-2"
                 >
                   {bulkValidatingFactures ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-                  Tout valider définitivement
+                  Valider{selectedFactureApprenants.size > 0 ? ` (${selectedFactureApprenants.size})` : ' tout'}
                 </Button>
                 <Button
                   size="sm"
@@ -3304,7 +3316,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                   className="gap-2 border-emerald-300 text-emerald-700 hover:bg-emerald-50"
                 >
                   <CheckCircle className="w-4 h-4" />
-                  Tout acquitter
+                  Acquitter{selectedFactureApprenants.size > 0 ? ` (${selectedFactureApprenants.size})` : ' tout'}
                 </Button>
                 <Button
                   size="sm"
@@ -3314,7 +3326,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                   className="gap-2"
                 >
                   {bulkSendingFactures ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                  Envoyer aux financeurs
+                  Envoyer{selectedFactureApprenants.size > 0 ? ` (${selectedFactureApprenants.size})` : ''}
                 </Button>
               </div>
 
