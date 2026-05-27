@@ -1824,11 +1824,14 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
 
   // Valider toutes les brouillons en bloc
   const handleBulkValidateFactures = async () => {
-    if (!apprenantsInSession.length) return;
+    const targets = (selectedFactureApprenants.size > 0
+      ? apprenantsInSession.filter((sa: any) => sa.apprenant && selectedFactureApprenants.has(sa.apprenant.id))
+      : apprenantsInSession);
+    if (!targets.length) return;
     setBulkValidatingFactures(true);
     let validated = 0, skipped = 0;
     try {
-      for (const sa of apprenantsInSession) {
+      for (const sa of targets) {
         if (!sa.apprenant) continue;
         const facture = await ensureFactureBrouillon(sa.apprenant, sa);
         if (facture.statut === 'brouillon') {
