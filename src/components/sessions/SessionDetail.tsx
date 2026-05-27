@@ -2698,15 +2698,12 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                           {apprenant.resultat_examen === 'absent' && (
                             <span className="inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-full bg-orange-100 text-orange-700">🔶 Absent examen</span>
                           )}
-                          {session.type_session === 'pratique' && (
+                          {sessionApprenant.presence_pratique && sessionApprenant.presence_pratique !== 'present' && (
                             <span className={`inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-full ${
                               sessionApprenant.presence_pratique === 'absent' ? 'bg-red-100 text-red-700' :
-                              sessionApprenant.presence_pratique === 'deplace' ? 'bg-orange-100 text-orange-700' :
-                              'bg-green-100 text-green-700'
+                              'bg-orange-100 text-orange-700'
                             }`}>
-                              {sessionApprenant.presence_pratique === 'absent' ? '❌ Absent' :
-                               sessionApprenant.presence_pratique === 'deplace' ? '📅 Déplacé' :
-                               '✅ Présent'}
+                              {sessionApprenant.presence_pratique === 'absent' ? '❌ Absent' : '📅 Déplacé'}
                             </span>
                           )}
                         </div>
@@ -3007,23 +3004,25 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                             </SelectContent>
                           </Select>
 
-                          {session.type_session === 'pratique' && (
-                            <Select
-                              value={sessionApprenant.presence_pratique || 'present'}
-                              onValueChange={async (val) => {
-                                await updateSessionApprenant(sessionApprenant.id, { presence_pratique: val });
-                              }}
-                            >
-                              <SelectTrigger className="h-8 w-auto text-xs">
-                                <SelectValue placeholder="Présence" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="present">✅ Présent</SelectItem>
-                                <SelectItem value="absent">❌ Absent</SelectItem>
-                                <SelectItem value="deplace">📅 Déplacé</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          )}
+                          <Select
+                            value={sessionApprenant.presence_pratique || 'present'}
+                            onValueChange={async (val) => {
+                              await updateSessionApprenant(sessionApprenant.id, { presence_pratique: val });
+                            }}
+                          >
+                            <SelectTrigger className={`h-8 w-auto text-xs border ${
+                              sessionApprenant.presence_pratique === 'absent' ? 'border-red-300 text-red-700' :
+                              sessionApprenant.presence_pratique === 'deplace' ? 'border-orange-300 text-orange-700' :
+                              'border-green-300 text-green-700'
+                            }`}>
+                              <SelectValue placeholder="Présence" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="present">✅ Présent</SelectItem>
+                              <SelectItem value="absent">❌ Absent</SelectItem>
+                              <SelectItem value="deplace">📅 Déplacé</SelectItem>
+                            </SelectContent>
+                          </Select>
 
                           {(sessionApprenant.mode_financement === "personnel" || apprenant.mode_financement === "personnel") && (
                             <PaiementPopover 
