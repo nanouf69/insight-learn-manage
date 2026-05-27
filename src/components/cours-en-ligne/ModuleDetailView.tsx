@@ -92,6 +92,7 @@ import { EQUIPEMENTS_TAXI_DATA } from "./equipements-taxi-data";
 import CompetencesChecklist from "./CompetencesChecklist";
 import EmargementsSignesViewer from "./EmargementsSignesViewer";
 import FinanceurFCForm from "./FinanceurFCForm";
+import DemandeCarteVTCViewer from "./DemandeCarteVTCViewer";
 import AnalyseBesoinForm from "./AnalyseBesoinForm";
 import ProjetProfessionnelForm from "./ProjetProfessionnelForm";
 import EvaluationAcquisForm from "./EvaluationAcquisForm";
@@ -132,7 +133,7 @@ interface ContentItem {
   fichiers?: { nom: string; url: string }[];
   slidesKey?: string;
   quiz?: InlineQuizQuestion[];
-  checklistType?: "competences" | "analyse-besoin" | "evaluation-acquis" | "satisfaction" | "projet-professionnel" | "cgv" | "cgv-reglement" | "emargements-fc" | "financeur-fc";
+  checklistType?: "competences" | "analyse-besoin" | "evaluation-acquis" | "satisfaction" | "projet-professionnel" | "cgv" | "cgv-reglement" | "emargements-fc" | "financeur-fc" | "demande-carte-vtc";
   formationType?: string;
 }
 
@@ -1469,6 +1470,25 @@ function getInitialModuleDataRaw(
           description: "Particulier ou professionnel — données pour la facture",
           actif: true,
           checklistType: "financeur-fc" as const,
+        },
+      ],
+      exercices: [],
+    };
+  }
+
+  // Demande de Carte Professionnelle VTC — Formation Continue VTC (88)
+  if (module.id === 88) {
+    return {
+      id: 88,
+      nom: "🪪 DEMANDE DE CARTE PROFESSIONNELLE VTC",
+      description: "Démarche officielle de renouvellement de la carte professionnelle VTC à effectuer en ligne après la formation continue.",
+      cours: [
+        {
+          id: 1,
+          titre: "Renouvellement de la carte professionnelle VTC",
+          description: "Liste des pièces à fournir et accès au portail demarches-simplifiees.fr",
+          actif: true,
+          checklistType: "demande-carte-vtc" as const,
         },
       ],
       exercices: [],
@@ -4566,6 +4586,18 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         return (
           <EmargementsSignesViewer
             apprenantId={apprenantId || undefined}
+            completed={completedPages.has(currentPage)}
+            onComplete={() => {
+              markPageCompleted(currentPage);
+              if (currentPage < totalPages - 1) goToPage(currentPage + 1);
+            }}
+          />
+        );
+      }
+
+      if (cours.checklistType === "demande-carte-vtc") {
+        return (
+          <DemandeCarteVTCViewer
             completed={completedPages.has(currentPage)}
             onComplete={() => {
               markPageCompleted(currentPage);

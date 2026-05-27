@@ -52,6 +52,7 @@ export const ALL_MODULES: ModuleDefinition[] = [
   { id: 84, nom: "2.FEUILLES D'ÉMARGEMENT SIGNÉES TAXI" },
   { id: 85, nom: "3.INFORMATIONS FINANCEUR VTC" },
   { id: 86, nom: "3.INFORMATIONS FINANCEUR TAXI" },
+  { id: 88, nom: "🪪 DEMANDE DE CARTE PROFESSIONNELLE VTC" },
   // 5. EXAMENS BLANCS
   { id: 35, nom: "5.EXAMENS BLANCS VTC" },
   { id: 36, nom: "5.EXAMENS BLANCS TAXI" },
@@ -272,6 +273,7 @@ export const FORMATION_MODULES: Record<string, FormationDefinition> = {
     { id: 87, label: "2.📋 BILAN FIN DE FORMATION CONTINUE VTC" },
     { id: 83, label: "3.FEUILLES D'ÉMARGEMENT SIGNÉES VTC" },
     { id: 85, label: "4.INFORMATIONS FINANCEUR VTC" },
+    { id: 88, label: "5.🪪 DEMANDE DE CARTE PROFESSIONNELLE VTC" },
   ]},
   "continue-taxi": { label: "Formation Continue TAXI", color: "bg-amber-100 text-amber-800 border-amber-300", modules: [
     { id: 82, label: "1.BILAN EXERCICES FORMATION CONTINUE TAXI" },
