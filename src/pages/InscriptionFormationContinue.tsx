@@ -53,15 +53,9 @@ export default function InscriptionFormationContinue() {
   const [telephone, setTelephone] = useState("");
   const [email, setEmail] = useState("");
 
-  // Financeur fields
+  // Financeur fields - stockés dans un objet unique mis à jour par le composant isolé
   const [hasFinanceur, setHasFinanceur] = useState(false);
-  const [financeurSiren, setFinanceurSiren] = useState("");
-  const [financeurNom, setFinanceurNom] = useState("");
-  const [financeurAdresse, setFinanceurAdresse] = useState("");
-  const [financeurCodePostal, setFinanceurCodePostal] = useState("");
-  const [financeurVille, setFinanceurVille] = useState("");
-  const [financeurEmail, setFinanceurEmail] = useState("");
-  const [financeurTelephone, setFinanceurTelephone] = useState("");
+  const [financeur, setFinanceur] = useState<FinanceurValues>(EMPTY_FINANCEUR);
   const [signature, setSignature] = useState("");
   const [cgvAccepted, setCgvAccepted] = useState(false);
 
