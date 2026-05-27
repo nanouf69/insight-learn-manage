@@ -133,7 +133,7 @@ interface ContentItem {
   fichiers?: { nom: string; url: string }[];
   slidesKey?: string;
   quiz?: InlineQuizQuestion[];
-  checklistType?: "competences" | "analyse-besoin" | "evaluation-acquis" | "satisfaction" | "projet-professionnel" | "cgv" | "cgv-reglement" | "emargements-fc" | "financeur-fc";
+  checklistType?: "competences" | "analyse-besoin" | "evaluation-acquis" | "satisfaction" | "projet-professionnel" | "cgv" | "cgv-reglement" | "emargements-fc" | "financeur-fc" | "demande-carte-vtc";
   formationType?: string;
 }
 
@@ -4586,6 +4586,18 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         return (
           <EmargementsSignesViewer
             apprenantId={apprenantId || undefined}
+            completed={completedPages.has(currentPage)}
+            onComplete={() => {
+              markPageCompleted(currentPage);
+              if (currentPage < totalPages - 1) goToPage(currentPage + 1);
+            }}
+          />
+        );
+      }
+
+      if (cours.checklistType === "demande-carte-vtc") {
+        return (
+          <DemandeCarteVTCViewer
             completed={completedPages.has(currentPage)}
             onComplete={() => {
               markPageCompleted(currentPage);
