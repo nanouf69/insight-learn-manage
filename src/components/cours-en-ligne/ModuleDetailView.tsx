@@ -3716,8 +3716,12 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   };
 
   // === Aperçu apprenant ===
-  const LearnerPreview = ({ secureMode = true }: { secureMode?: boolean }) => {
+  // Garder le type de composant stable évite un démontage/remontage complet
+  // lors des heartbeats/autosaves, ce qui faisait repartir le navigateur en haut.
+  const LearnerPreview = useMemo(() => {
+    const LearnerPreviewComponent = ({ secureMode = true }: { secureMode?: boolean }) => {
     const [selectedAnswers, setSelectedAnswers] = useState<Record<string, string | string[]>>({});
+    const preserveScrollYRef = useRef<number | null>(null);
 
     // Always allow multiple answers (checkboxes) for all questions
     const isMultiAnswer = (_q: { choix: { correct?: boolean }[] }) => true;
@@ -4322,8 +4326,20 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       };
     }, [apprenantId, module.id]);
 
+    useEffect(() => {
+      const y = preserveScrollYRef.current;
+      if (y === null) return;
+      preserveScrollYRef.current = null;
+      window.requestAnimationFrame(() => {
+        if (Math.abs(window.scrollY - y) > 4) {
+          window.scrollTo({ top: y, behavior: "auto" });
+        }
+      });
+    }, [selectedAnswers]);
+
     const handleAnswer = (exoId: number, qId: number, lettre: string, multi?: boolean) => {
       if (showResultsFor.has(exoId)) return;
+      preserveScrollYRef.current = window.scrollY;
       const ansKey = `${exoId}-${qId}`;
       setSelectedAnswers(prev => {
         if (multi) {
