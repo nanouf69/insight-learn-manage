@@ -4962,7 +4962,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                   const selected = inlineQuizAnswers[key];
                   const prompt = inlineQuizPrompts[qi] ?? parseExerciseQuestionPrompt(q.enonce);
                   return (
-                    <div key={q.id} id={`inline-q-${cours.id}-${q.id}`} className={`space-y-2 p-4 border rounded-lg scroll-mt-20 transition-all ${unansweredKeys.has(key) ? 'border-destructive border-2 bg-destructive/5' : 'bg-background'}`}>
+                    <div key={q.id} id={`inline-q-${cours.id}-${q.id}`} data-answer-scroll-anchor className={`space-y-2 p-4 border rounded-lg scroll-mt-20 transition-all ${unansweredKeys.has(key) ? 'border-destructive border-2 bg-destructive/5' : 'bg-background'}`}>
                       {renderExerciseQuestionPrompt(qi + 1, prompt)}
                       <div className="space-y-1.5 ml-2">
                         {q.choix.map(c => {
@@ -4973,11 +4973,14 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                           return (
                             <button
                               key={c.lettre}
-                              onClick={() => {
+                              onClick={(event) => {
                                 if (isValidated) return;
-                                preserveScrollYRef.current = window.scrollY;
-                                setInlineQuizAnswers(prev => ({ ...prev, [key]: c.lettre }));
-                                setUnansweredKeys(prev => { if (!prev.has(key)) return prev; const n = new Set(prev); n.delete(key); return n; });
+                                captureAnswerScrollPosition(event.currentTarget);
+                                flushSync(() => {
+                                  setInlineQuizAnswers(prev => prev[key] === c.lettre ? prev : ({ ...prev, [key]: c.lettre }));
+                                  setUnansweredKeys(prev => { if (!prev.has(key)) return prev; const n = new Set(prev); n.delete(key); return n; });
+                                });
+                                scheduleAnswerScrollRestore();
                               }}
                               className={`w-full text-left p-3 rounded-lg flex items-center gap-3 transition-all ${bg}`}
                             >
