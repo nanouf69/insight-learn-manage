@@ -2698,15 +2698,12 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                           {apprenant.resultat_examen === 'absent' && (
                             <span className="inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-full bg-orange-100 text-orange-700">🔶 Absent examen</span>
                           )}
-                          {session.type_session === 'pratique' && (
+                          {sessionApprenant.presence_pratique && sessionApprenant.presence_pratique !== 'present' && (
                             <span className={`inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-full ${
                               sessionApprenant.presence_pratique === 'absent' ? 'bg-red-100 text-red-700' :
-                              sessionApprenant.presence_pratique === 'deplace' ? 'bg-orange-100 text-orange-700' :
-                              'bg-green-100 text-green-700'
+                              'bg-orange-100 text-orange-700'
                             }`}>
-                              {sessionApprenant.presence_pratique === 'absent' ? '❌ Absent' :
-                               sessionApprenant.presence_pratique === 'deplace' ? '📅 Déplacé' :
-                               '✅ Présent'}
+                              {sessionApprenant.presence_pratique === 'absent' ? '❌ Absent' : '📅 Déplacé'}
                             </span>
                           )}
                         </div>
