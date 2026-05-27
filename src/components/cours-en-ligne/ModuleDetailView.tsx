@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, useMemo, useCallback, useLayoutEffect } from "react";
+import { flushSync } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { RealtimeStatusIndicator } from "./RealtimeStatusIndicator";
 import { Card, CardContent } from "@/components/ui/card";
@@ -3741,7 +3742,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   const LearnerPreview = useMemo(() => {
     const LearnerPreviewComponent = ({ secureMode = true }: { secureMode?: boolean }) => {
     const [selectedAnswers, setSelectedAnswers] = useState<Record<string, string | string[]>>({});
-    const preserveScrollYRef = useRef<number | null>(null);
+    const preserveScrollRef = useRef<{ top: number; left: number; anchorId?: string; anchorTop?: number; capturedAt: number } | null>(null);
+    const restoreScrollFrameRef = useRef<number | null>(null);
 
     // Always allow multiple answers (checkboxes) for all questions
     const isMultiAnswer = (_q: { choix: { correct?: boolean }[] }) => true;
@@ -4346,60 +4348,104 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       };
     }, [apprenantId, module.id]);
 
-    useLayoutEffect(() => {
-      const y = preserveScrollYRef.current;
-      if (y === null) return;
-      const restore = () => {
-        if (Math.abs(window.scrollY - y) > 4) {
-          window.scrollTo({ top: y, behavior: "auto" });
-        }
+    const captureAnswerScrollPosition = useCallback((target?: HTMLElement | null) => {
+      const anchor = target?.closest<HTMLElement>("[data-answer-scroll-anchor]");
+      preserveScrollRef.current = {
+        top: window.scrollY,
+        left: window.scrollX,
+        anchorId: anchor?.id,
+        anchorTop: anchor?.getBoundingClientRect().top,
+        capturedAt: performance.now(),
       };
-      restore();
-      window.requestAnimationFrame(restore);
-      window.setTimeout(() => {
-        restore();
-        preserveScrollYRef.current = null;
-      }, 80);
-    }, [selectedAnswers, inlineQuizAnswers, qrcAnswers, unansweredKeys]);
+    }, []);
 
-    const handleAnswer = (exoId: number, qId: number, lettre: string, multi?: boolean) => {
+    const restoreAnswerScrollPosition = useCallback(() => {
+      const snapshot = preserveScrollRef.current;
+      if (!snapshot) return;
+
+      let nextTop = snapshot.top;
+      if (snapshot.anchorId && snapshot.anchorTop !== undefined) {
+        const anchor = document.getElementById(snapshot.anchorId);
+        if (anchor) {
+          nextTop = window.scrollY + anchor.getBoundingClientRect().top - snapshot.anchorTop;
+        }
+      }
+
+      if (Math.abs(window.scrollY - nextTop) > 1 || Math.abs(window.scrollX - snapshot.left) > 1) {
+        window.scrollTo({ top: nextTop, left: snapshot.left, behavior: "auto" });
+      }
+    }, []);
+
+    const scheduleAnswerScrollRestore = useCallback(() => {
+      const capturedAt = preserveScrollRef.current?.capturedAt;
+      restoreAnswerScrollPosition();
+      if (restoreScrollFrameRef.current !== null) {
+        window.cancelAnimationFrame(restoreScrollFrameRef.current);
+      }
+      restoreScrollFrameRef.current = window.requestAnimationFrame(() => {
+        restoreAnswerScrollPosition();
+        restoreScrollFrameRef.current = window.requestAnimationFrame(() => {
+          restoreAnswerScrollPosition();
+          restoreScrollFrameRef.current = null;
+        });
+      });
+      window.setTimeout(() => {
+        restoreAnswerScrollPosition();
+        if (preserveScrollRef.current?.capturedAt === capturedAt) {
+          preserveScrollRef.current = null;
+        }
+      }, 180);
+    }, [restoreAnswerScrollPosition]);
+
+    useLayoutEffect(() => {
+      scheduleAnswerScrollRestore();
+    }, [selectedAnswers, inlineQuizAnswers, qrcAnswers, unansweredKeys, scheduleAnswerScrollRestore]);
+
+    const handleAnswer = (exoId: number, qId: number, lettre: string, multi?: boolean, target?: HTMLElement | null) => {
       if (showResultsFor.has(exoId)) return;
-      preserveScrollYRef.current = window.scrollY;
+      captureAnswerScrollPosition(target);
       const ansKey = `${exoId}-${qId}`;
-      setSelectedAnswers(prev => {
-        if (multi) {
-          const current = Array.isArray(prev[ansKey]) ? (prev[ansKey] as string[]) : prev[ansKey] ? [prev[ansKey] as string] : [];
-          const next = current.includes(lettre) ? current.filter(l => l !== lettre) : [...current, lettre];
-          const updated = { ...prev, [ansKey]: next };
+      flushSync(() => {
+        setSelectedAnswers(prev => {
+          if (multi) {
+            const current = Array.isArray(prev[ansKey]) ? (prev[ansKey] as string[]) : prev[ansKey] ? [prev[ansKey] as string] : [];
+            const next = current.includes(lettre) ? current.filter(l => l !== lettre) : [...current, lettre];
+            const updated = { ...prev, [ansKey]: next };
+            autoSaveAnswers(updated);
+            return updated;
+          }
+          if (prev[ansKey] === lettre) return prev;
+          const updated = { ...prev, [ansKey]: lettre };
           autoSaveAnswers(updated);
           return updated;
-        }
-        const next = { ...prev, [ansKey]: lettre };
-        autoSaveAnswers(next);
-        return next;
+        });
+        setUnansweredKeys(prev => {
+          if (!prev.has(ansKey)) return prev;
+          const next = new Set(prev);
+          next.delete(ansKey);
+          return next;
+        });
       });
-      setUnansweredKeys(prev => {
-        if (!prev.has(ansKey)) return prev;
-        const next = new Set(prev);
-        next.delete(ansKey);
-        return next;
-      });
+      scheduleAnswerScrollRestore();
     };
 
     const handleQrcAnswerChange = (key: string, value: string) => {
-      preserveScrollYRef.current = window.scrollY;
-      setQrcAnswers(prev => ({ ...prev, [key]: value }));
-      setSelectedAnswers(prev => {
-        const next = { ...prev, [key]: value };
-        autoSaveAnswers(next);
-        return next;
+      captureAnswerScrollPosition(document.activeElement instanceof HTMLElement ? document.activeElement : null);
+      flushSync(() => {
+        setQrcAnswers(prev => ({ ...prev, [key]: value }));
+        setSelectedAnswers(prev => {
+          const next = { ...prev, [key]: value };
+          autoSaveAnswers(next);
+          return next;
+        });
+        setUnansweredKeys(prev => {
+          if (!prev.has(key)) return prev;
+          const next = new Set(prev);
+          next.delete(key);
+          return next;
+        });
       });
-      setUnansweredKeys(prev => {
-        if (!prev.has(key)) return prev;
-        const next = new Set(prev);
-        next.delete(key);
-        return next;
-      });
+      scheduleAnswerScrollRestore();
     };
 
     const totalQuestions = activeExercices.reduce((sum, e) => sum + (e.questions?.length || 0), 0);
@@ -4916,7 +4962,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                   const selected = inlineQuizAnswers[key];
                   const prompt = inlineQuizPrompts[qi] ?? parseExerciseQuestionPrompt(q.enonce);
                   return (
-                    <div key={q.id} id={`inline-q-${cours.id}-${q.id}`} className={`space-y-2 p-4 border rounded-lg scroll-mt-20 transition-all ${unansweredKeys.has(key) ? 'border-destructive border-2 bg-destructive/5' : 'bg-background'}`}>
+                    <div key={q.id} id={`inline-q-${cours.id}-${q.id}`} data-answer-scroll-anchor className={`space-y-2 p-4 border rounded-lg scroll-mt-20 transition-all ${unansweredKeys.has(key) ? 'border-destructive border-2 bg-destructive/5' : 'bg-background'}`}>
                       {renderExerciseQuestionPrompt(qi + 1, prompt)}
                       <div className="space-y-1.5 ml-2">
                         {q.choix.map(c => {
@@ -4927,11 +4973,14 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                           return (
                             <button
                               key={c.lettre}
-                              onClick={() => {
+                              onClick={(event) => {
                                 if (isValidated) return;
-                                preserveScrollYRef.current = window.scrollY;
-                                setInlineQuizAnswers(prev => ({ ...prev, [key]: c.lettre }));
-                                setUnansweredKeys(prev => { if (!prev.has(key)) return prev; const n = new Set(prev); n.delete(key); return n; });
+                                captureAnswerScrollPosition(event.currentTarget);
+                                flushSync(() => {
+                                  setInlineQuizAnswers(prev => prev[key] === c.lettre ? prev : ({ ...prev, [key]: c.lettre }));
+                                  setUnansweredKeys(prev => { if (!prev.has(key)) return prev; const n = new Set(prev); n.delete(key); return n; });
+                                });
+                                scheduleAnswerScrollRestore();
                               }}
                               className={`w-full text-left p-3 rounded-lg flex items-center gap-3 transition-all ${bg}`}
                             >
@@ -5234,7 +5283,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 const selectedArr = Array.isArray(selected) ? selected : selected ? [selected] : [];
 
                 return (
-                  <div key={q.id} id={`exo-q-${exo.id}-${qi}`} className={`space-y-2 p-4 border rounded-lg scroll-mt-20 transition-all ${unansweredKeys.has(key) ? 'border-destructive border-2 bg-destructive/5' : ''}`}>
+                  <div key={q.id} id={`exo-q-${exo.id}-${qi}`} data-answer-scroll-anchor className={`space-y-2 p-4 border rounded-lg scroll-mt-20 transition-all ${unansweredKeys.has(key) ? 'border-destructive border-2 bg-destructive/5' : ''}`}>
                     {renderExerciseQuestionPrompt(qi + 1, questionPrompts[qi] ?? parseExerciseQuestionPrompt(q.enonce))}
                     {q.image && (() => {
                       const sizeMap: Record<string, string> = {
@@ -5263,7 +5312,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                         return (
                           <button
                             key={c.lettre}
-                            onClick={() => handleAnswer(exo.id, q.id, c.lettre, multi)}
+                            onClick={(event) => handleAnswer(exo.id, q.id, c.lettre, multi, event.currentTarget)}
                             className={`w-full text-left p-3 rounded-lg flex items-center gap-3 transition-all ${bg}`}
                           >
                             {multi ? (
