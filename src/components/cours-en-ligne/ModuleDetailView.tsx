@@ -4348,60 +4348,104 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       };
     }, [apprenantId, module.id]);
 
-    useLayoutEffect(() => {
-      const y = preserveScrollYRef.current;
-      if (y === null) return;
-      const restore = () => {
-        if (Math.abs(window.scrollY - y) > 4) {
-          window.scrollTo({ top: y, behavior: "auto" });
-        }
+    const captureAnswerScrollPosition = useCallback((target?: HTMLElement | null) => {
+      const anchor = target?.closest<HTMLElement>("[data-answer-scroll-anchor]");
+      preserveScrollRef.current = {
+        top: window.scrollY,
+        left: window.scrollX,
+        anchorId: anchor?.id,
+        anchorTop: anchor?.getBoundingClientRect().top,
+        capturedAt: performance.now(),
       };
-      restore();
-      window.requestAnimationFrame(restore);
-      window.setTimeout(() => {
-        restore();
-        preserveScrollYRef.current = null;
-      }, 80);
-    }, [selectedAnswers, inlineQuizAnswers, qrcAnswers, unansweredKeys]);
+    }, []);
 
-    const handleAnswer = (exoId: number, qId: number, lettre: string, multi?: boolean) => {
+    const restoreAnswerScrollPosition = useCallback(() => {
+      const snapshot = preserveScrollRef.current;
+      if (!snapshot) return;
+
+      let nextTop = snapshot.top;
+      if (snapshot.anchorId && snapshot.anchorTop !== undefined) {
+        const anchor = document.getElementById(snapshot.anchorId);
+        if (anchor) {
+          nextTop = window.scrollY + anchor.getBoundingClientRect().top - snapshot.anchorTop;
+        }
+      }
+
+      if (Math.abs(window.scrollY - nextTop) > 1 || Math.abs(window.scrollX - snapshot.left) > 1) {
+        window.scrollTo({ top: nextTop, left: snapshot.left, behavior: "auto" });
+      }
+    }, []);
+
+    const scheduleAnswerScrollRestore = useCallback(() => {
+      const capturedAt = preserveScrollRef.current?.capturedAt;
+      restoreAnswerScrollPosition();
+      if (restoreScrollFrameRef.current !== null) {
+        window.cancelAnimationFrame(restoreScrollFrameRef.current);
+      }
+      restoreScrollFrameRef.current = window.requestAnimationFrame(() => {
+        restoreAnswerScrollPosition();
+        restoreScrollFrameRef.current = window.requestAnimationFrame(() => {
+          restoreAnswerScrollPosition();
+          restoreScrollFrameRef.current = null;
+        });
+      });
+      window.setTimeout(() => {
+        restoreAnswerScrollPosition();
+        if (preserveScrollRef.current?.capturedAt === capturedAt) {
+          preserveScrollRef.current = null;
+        }
+      }, 180);
+    }, [restoreAnswerScrollPosition]);
+
+    useLayoutEffect(() => {
+      scheduleAnswerScrollRestore();
+    }, [selectedAnswers, inlineQuizAnswers, qrcAnswers, unansweredKeys, scheduleAnswerScrollRestore]);
+
+    const handleAnswer = (exoId: number, qId: number, lettre: string, multi?: boolean, target?: HTMLElement | null) => {
       if (showResultsFor.has(exoId)) return;
-      preserveScrollYRef.current = window.scrollY;
+      captureAnswerScrollPosition(target);
       const ansKey = `${exoId}-${qId}`;
-      setSelectedAnswers(prev => {
-        if (multi) {
-          const current = Array.isArray(prev[ansKey]) ? (prev[ansKey] as string[]) : prev[ansKey] ? [prev[ansKey] as string] : [];
-          const next = current.includes(lettre) ? current.filter(l => l !== lettre) : [...current, lettre];
-          const updated = { ...prev, [ansKey]: next };
+      flushSync(() => {
+        setSelectedAnswers(prev => {
+          if (multi) {
+            const current = Array.isArray(prev[ansKey]) ? (prev[ansKey] as string[]) : prev[ansKey] ? [prev[ansKey] as string] : [];
+            const next = current.includes(lettre) ? current.filter(l => l !== lettre) : [...current, lettre];
+            const updated = { ...prev, [ansKey]: next };
+            autoSaveAnswers(updated);
+            return updated;
+          }
+          if (prev[ansKey] === lettre) return prev;
+          const updated = { ...prev, [ansKey]: lettre };
           autoSaveAnswers(updated);
           return updated;
-        }
-        const next = { ...prev, [ansKey]: lettre };
-        autoSaveAnswers(next);
-        return next;
+        });
+        setUnansweredKeys(prev => {
+          if (!prev.has(ansKey)) return prev;
+          const next = new Set(prev);
+          next.delete(ansKey);
+          return next;
+        });
       });
-      setUnansweredKeys(prev => {
-        if (!prev.has(ansKey)) return prev;
-        const next = new Set(prev);
-        next.delete(ansKey);
-        return next;
-      });
+      scheduleAnswerScrollRestore();
     };
 
     const handleQrcAnswerChange = (key: string, value: string) => {
-      preserveScrollYRef.current = window.scrollY;
-      setQrcAnswers(prev => ({ ...prev, [key]: value }));
-      setSelectedAnswers(prev => {
-        const next = { ...prev, [key]: value };
-        autoSaveAnswers(next);
-        return next;
+      captureAnswerScrollPosition(document.activeElement instanceof HTMLElement ? document.activeElement : null);
+      flushSync(() => {
+        setQrcAnswers(prev => ({ ...prev, [key]: value }));
+        setSelectedAnswers(prev => {
+          const next = { ...prev, [key]: value };
+          autoSaveAnswers(next);
+          return next;
+        });
+        setUnansweredKeys(prev => {
+          if (!prev.has(key)) return prev;
+          const next = new Set(prev);
+          next.delete(key);
+          return next;
+        });
       });
-      setUnansweredKeys(prev => {
-        if (!prev.has(key)) return prev;
-        const next = new Set(prev);
-        next.delete(key);
-        return next;
-      });
+      scheduleAnswerScrollRestore();
     };
 
     const totalQuestions = activeExercices.reduce((sum, e) => sum + (e.questions?.length || 0), 0);
