@@ -1734,15 +1734,18 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   };
 
   const handleBulkSendFactures = async () => {
-    if (!apprenantsInSession.length) {
-      toast({ title: "Aucun apprenant", variant: "destructive" });
+    const targets = (selectedFactureApprenants.size > 0
+      ? apprenantsInSession.filter((sa: any) => sa.apprenant && selectedFactureApprenants.has(sa.apprenant.id))
+      : apprenantsInSession);
+    if (!targets.length) {
+      toast({ title: "Aucun apprenant sélectionné", variant: "destructive" });
       return;
     }
     setBulkSendingFactures(true);
     let sent = 0, skipped = 0, failed = 0;
     try {
-      for (let i = 0; i < apprenantsInSession.length; i++) {
-        const sa = apprenantsInSession[i];
+      for (let i = 0; i < targets.length; i++) {
+        const sa = targets[i];
         const apprenant = sa.apprenant;
         if (!apprenant) continue;
         const recipient = getFactureRecipientEmail(apprenant);
