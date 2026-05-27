@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, memo, useRef } from "react";
+import { useState, useEffect, useCallback, memo, useRef, useMemo } from "react";
 import { useNavigate, Navigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -1108,6 +1108,32 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const handleModuleCompleted = useCallback((moduleId: number) => {
     setCompletedModuleIds(prev => new Set([...prev, moduleId]));
   }, []);
+
+  const handleTrackCours = useCallback((moduleId: number, coursTitle: string) => {
+    trackModuleActivity(moduleId, coursTitle, "open_cours");
+  }, [trackModuleActivity]);
+
+  const apprenantInfoForModule = useMemo(() => apprenant ? {
+    nom: apprenant.nom,
+    prenom: apprenant.prenom,
+    email: apprenant.email || undefined,
+    telephone: apprenant.telephone || undefined,
+    adresse: apprenant.adresse || undefined,
+    code_postal: apprenant.code_postal || undefined,
+    ville: apprenant.ville || undefined,
+    date_naissance: apprenant.date_naissance || undefined,
+    formation_choisie: apprenant.formation_choisie || null,
+  } : null, [
+    apprenant?.nom,
+    apprenant?.prenom,
+    apprenant?.email,
+    apprenant?.telephone,
+    apprenant?.adresse,
+    apprenant?.code_postal,
+    apprenant?.ville,
+    apprenant?.date_naissance,
+    apprenant?.formation_choisie,
+  ]);
 
   const handleBackFromModule = useCallback(async () => {
     setSelectedModule(null);
