@@ -2423,8 +2423,17 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
           )}
         </div>
 
+        {(() => {
+          const absentApprenants = (apprenantsInSession as any[]).filter((sa: any) => {
+            const ap = sa.apprenant;
+            return sa.presence_pratique === 'absent' || ap?.resultat_examen === 'absent';
+          });
+          const absentCount = absentApprenants.length;
+          const tabCount = 2 + (isFormationContinue ? 1 : 0) + 1;
+          const gridColsClass = tabCount === 4 ? 'grid-cols-4' : tabCount === 3 ? 'grid-cols-3' : 'grid-cols-2';
+          return (
         <Tabs defaultValue="apprenants" className="flex-1 min-h-0 flex flex-col">
-          <TabsList className={`shrink-0 grid w-full ${isFormationContinue ? 'grid-cols-3' : 'grid-cols-2'}`}>
+          <TabsList className={`shrink-0 grid w-full ${gridColsClass}`}>
             <TabsTrigger value="apprenants" className="gap-2">
               <Users className="w-4 h-4" />
               Apprenants ({totalCount})
@@ -2439,6 +2448,10 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                 Factures ({totalCount})
               </TabsTrigger>
             )}
+            <TabsTrigger value="absents" className="gap-2">
+              <X className="w-4 h-4" />
+              Absents ({absentCount})
+            </TabsTrigger>
           </TabsList>
 
           {/* Apprenants Tab */}
