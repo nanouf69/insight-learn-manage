@@ -18,6 +18,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import logoFtransport from "@/assets/logo-ftransport.png";
+import { FinanceurFields, type FinanceurValues } from "@/components/inscription/FinanceurFields";
+
+const EMPTY_FINANCEUR: FinanceurValues = {
+  siren: "", nom: "", adresse: "", codePostal: "", ville: "", telephone: "", email: "",
+};
 
 // Dates de formation continue disponibles
 const datesFormationContinue = filterFutureByFin([
