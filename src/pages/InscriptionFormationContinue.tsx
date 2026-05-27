@@ -109,13 +109,13 @@ export default function InscriptionFormationContinue() {
   const financeurValid =
     !hasFinanceur ||
     (
-      financeurSiren.trim() &&
-      financeurNom.trim() &&
-      financeurAdresse.trim() &&
-      financeurCodePostal.trim() &&
-      financeurVille.trim() &&
-      financeurEmail.trim() &&
-      financeurTelephone.trim()
+      financeur.siren.trim() &&
+      financeur.nom.trim() &&
+      financeur.adresse.trim() &&
+      financeur.codePostal.trim() &&
+      financeur.ville.trim() &&
+      financeur.email.trim() &&
+      financeur.telephone.trim()
     );
   const canSubmit = prenom.trim() && nom.trim() && adresse.trim() && telephone.trim() && email.trim() && dateFormation && signature && cgvAccepted && !fullDates[dateFormation] && financeurValid;
 
