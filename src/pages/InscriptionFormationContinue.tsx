@@ -18,6 +18,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import logoFtransport from "@/assets/logo-ftransport.png";
+import { FinanceurFields, type FinanceurValues } from "@/components/inscription/FinanceurFields";
+
+const EMPTY_FINANCEUR: FinanceurValues = {
+  siren: "", nom: "", adresse: "", codePostal: "", ville: "", telephone: "", email: "",
+};
 
 // Dates de formation continue disponibles
 const datesFormationContinue = filterFutureByFin([
@@ -48,15 +53,9 @@ export default function InscriptionFormationContinue() {
   const [telephone, setTelephone] = useState("");
   const [email, setEmail] = useState("");
 
-  // Financeur fields
+  // Financeur fields - stockés dans un objet unique mis à jour par le composant isolé
   const [hasFinanceur, setHasFinanceur] = useState(false);
-  const [financeurSiren, setFinanceurSiren] = useState("");
-  const [financeurNom, setFinanceurNom] = useState("");
-  const [financeurAdresse, setFinanceurAdresse] = useState("");
-  const [financeurCodePostal, setFinanceurCodePostal] = useState("");
-  const [financeurVille, setFinanceurVille] = useState("");
-  const [financeurEmail, setFinanceurEmail] = useState("");
-  const [financeurTelephone, setFinanceurTelephone] = useState("");
+  const [financeur, setFinanceur] = useState<FinanceurValues>(EMPTY_FINANCEUR);
   const [signature, setSignature] = useState("");
   const [cgvAccepted, setCgvAccepted] = useState(false);
 
@@ -110,13 +109,13 @@ export default function InscriptionFormationContinue() {
   const financeurValid =
     !hasFinanceur ||
     (
-      financeurSiren.trim() &&
-      financeurNom.trim() &&
-      financeurAdresse.trim() &&
-      financeurCodePostal.trim() &&
-      financeurVille.trim() &&
-      financeurEmail.trim() &&
-      financeurTelephone.trim()
+      financeur.siren.trim() &&
+      financeur.nom.trim() &&
+      financeur.adresse.trim() &&
+      financeur.codePostal.trim() &&
+      financeur.ville.trim() &&
+      financeur.email.trim() &&
+      financeur.telephone.trim()
     );
   const canSubmit = prenom.trim() && nom.trim() && adresse.trim() && telephone.trim() && email.trim() && dateFormation && signature && cgvAccepted && !fullDates[dateFormation] && financeurValid;
 
@@ -199,7 +198,7 @@ export default function InscriptionFormationContinue() {
           montant_ttc: details.prix,
           montant_paye: 0,
           mode_financement: modeFinancement,
-          organisme_financeur: hasFinanceur ? financeurNom.trim() : null,
+          organisme_financeur: hasFinanceur ? financeur.nom.trim() : null,
           statut: hasFinanceur ? "entreprise" : "particulier",
           date_debut_formation: selectedDate.value,
           date_fin_formation: selectedDate.fin,
@@ -277,22 +276,22 @@ export default function InscriptionFormationContinue() {
           cgv_version: "CGV Ftransport - 2026",
         };
         if (hasFinanceur) {
-          devisDonnees.financeur_siren = financeurSiren.trim();
-          devisDonnees.financeur_nom = financeurNom.trim();
-          devisDonnees.financeur_adresse = financeurAdresse.trim();
-          devisDonnees.financeur_code_postal = financeurCodePostal.trim();
-          devisDonnees.financeur_ville = financeurVille.trim();
-          devisDonnees.financeur_email = financeurEmail.trim();
-          devisDonnees.financeur_telephone = financeurTelephone.trim();
+          devisDonnees.financeur_siren = financeur.siren.trim();
+          devisDonnees.financeur_nom = financeur.nom.trim();
+          devisDonnees.financeur_adresse = financeur.adresse.trim();
+          devisDonnees.financeur_code_postal = financeur.codePostal.trim();
+          devisDonnees.financeur_ville = financeur.ville.trim();
+          devisDonnees.financeur_email = financeur.email.trim();
+          devisDonnees.financeur_telephone = financeur.telephone.trim();
         }
         const financeurPayload = hasFinanceur ? {
-          nom: financeurNom.trim(),
-          siren: financeurSiren.trim(),
-          adresse: financeurAdresse.trim(),
-          code_postal: financeurCodePostal.trim(),
-          ville: financeurVille.trim(),
-          email: financeurEmail.trim(),
-          telephone: financeurTelephone.trim(),
+          nom: financeur.nom.trim(),
+          siren: financeur.siren.trim(),
+          adresse: financeur.adresse.trim(),
+          code_postal: financeur.codePostal.trim(),
+          ville: financeur.ville.trim(),
+          email: financeur.email.trim(),
+          telephone: financeur.telephone.trim(),
         } : undefined;
         const saved = await savePublicFormDocument({
           apprenantId: apprenant.id,
@@ -487,47 +486,7 @@ export default function InscriptionFormationContinue() {
               </div>
 
               {hasFinanceur && (
-                <div className="border rounded-xl p-4 space-y-4 bg-slate-50/50">
-                  <p className="text-xs text-muted-foreground bg-amber-50 border border-amber-200 rounded-md p-2">
-                    ℹ️ Toutes les coordonnées du financeur sont obligatoires pour l'établissement de la facture.
-                  </p>
-                  <div className="space-y-1">
-                    <Label>N° SIREN <span className="text-red-500">*</span></Label>
-                    <Input placeholder="123 456 789" value={financeurSiren} onChange={(e) => setFinanceurSiren(e.target.value)} />
-                  </div>
-
-                  <div className="space-y-1">
-                    <Label>Nom de l'entreprise / organisme <span className="text-red-500">*</span></Label>
-                    <Input placeholder="Nom de l'entreprise ou de l'organisme financeur" value={financeurNom} onChange={(e) => setFinanceurNom(e.target.value)} />
-                  </div>
-
-                  <div className="space-y-1">
-                    <Label>Adresse postale <span className="text-red-500">*</span></Label>
-                    <Input placeholder="Adresse du siège" value={financeurAdresse} onChange={(e) => setFinanceurAdresse(e.target.value)} />
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                      <Label>Code postal <span className="text-red-500">*</span></Label>
-                      <Input placeholder="69000" value={financeurCodePostal} onChange={(e) => setFinanceurCodePostal(e.target.value)} />
-                    </div>
-                    <div className="space-y-1">
-                      <Label>Ville <span className="text-red-500">*</span></Label>
-                      <Input placeholder="Lyon" value={financeurVille} onChange={(e) => setFinanceurVille(e.target.value)} />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                      <Label>Téléphone <span className="text-red-500">*</span></Label>
-                      <Input type="tel" placeholder="01 00 00 00 00" value={financeurTelephone} onChange={(e) => setFinanceurTelephone(e.target.value)} />
-                    </div>
-                    <div className="space-y-1">
-                      <Label>Email <span className="text-red-500">*</span></Label>
-                      <Input type="email" placeholder="contact@entreprise.fr" value={financeurEmail} onChange={(e) => setFinanceurEmail(e.target.value)} />
-                    </div>
-                  </div>
-                </div>
+                <FinanceurFields initial={EMPTY_FINANCEUR} onChange={setFinanceur} />
               )}
             </div>
 
