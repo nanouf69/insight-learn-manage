@@ -32,10 +32,35 @@ interface NoteFrais {
 }
 
 const categories = [
-  "Carburant", "Péage", "Parking", "Transport", "Repas", "Hébergement",
-  "Fournitures bureau", "Matériel pédagogique", "Téléphone / Internet",
-  "Assurance", "Entretien véhicule", "Frais postaux", "Abonnements",
-  "Formation", "Publicité", "Honoraires", "Autre"
+  "📚 Recette formation",
+  "🎓 CPF",
+  "🏛️ Paiement frais examen CMA",
+  "⛽ Carburant",
+  "🍽️ Repas",
+  "🖥️ Matériel",
+  "📎 Fournitures",
+  "📱 Téléphonie & Internet",
+  "💻 Abonnement logiciel / CRM",
+  "🏢 Loyer",
+  "🛡️ Assurance",
+  "👨‍🏫 Formateurs",
+  "💼 Salaire",
+  "🚌 Transport",
+  "⚖️ Honoraires",
+  "📢 Publicité",
+  "🏦 Frais bancaires",
+  "🏛️ Impôts & taxes",
+  "🔄 Virement interne",
+  "💰 Dividendes",
+  "⚡ Électricité",
+  "🧹 Entretien des locaux",
+  "🚗 Entretien véhicule",
+  "🏦 Compte courant associé",
+  "📮 Frais postaux",
+  "🏛️ URSSAF",
+  "👴 Retraite",
+  "❓ Inconnu",
+  "📄 Autre",
 ];
 
 const statutConfig: Record<string, { label: string; color: string }> = {
