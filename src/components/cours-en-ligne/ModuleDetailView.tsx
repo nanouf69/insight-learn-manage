@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, useMemo, useCallback, useLayoutEffect } from "react";
+import { flushSync } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { RealtimeStatusIndicator } from "./RealtimeStatusIndicator";
 import { Card, CardContent } from "@/components/ui/card";
@@ -3741,7 +3742,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   const LearnerPreview = useMemo(() => {
     const LearnerPreviewComponent = ({ secureMode = true }: { secureMode?: boolean }) => {
     const [selectedAnswers, setSelectedAnswers] = useState<Record<string, string | string[]>>({});
-    const preserveScrollYRef = useRef<number | null>(null);
+    const preserveScrollRef = useRef<{ top: number; left: number; anchorId?: string; anchorTop?: number; capturedAt: number } | null>(null);
+    const restoreScrollFrameRef = useRef<number | null>(null);
 
     // Always allow multiple answers (checkboxes) for all questions
     const isMultiAnswer = (_q: { choix: { correct?: boolean }[] }) => true;
