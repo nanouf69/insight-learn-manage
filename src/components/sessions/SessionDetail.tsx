@@ -563,6 +563,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   const [bulkSendingFactures, setBulkSendingFactures] = useState(false);
   const [singleFactureLoading, setSingleFactureLoading] = useState<string | null>(null);
   const [bulkValidatingFactures, setBulkValidatingFactures] = useState(false);
+  const [selectedFactureApprenants, setSelectedFactureApprenants] = useState<Set<string>>(new Set());
   const [acquittementApprenant, setAcquittementApprenant] = useState<any | null>(null);
   const [acquittementDate, setAcquittementDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [acquittementMoyen, setAcquittementMoyen] = useState<string>('virement');
@@ -1674,8 +1675,11 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   };
 
   const handleBulkDownloadFactures = async () => {
-    if (!apprenantsInSession.length) {
-      toast({ title: "Aucun apprenant", variant: "destructive" });
+    const targets = (selectedFactureApprenants.size > 0
+      ? apprenantsInSession.filter((sa: any) => sa.apprenant && selectedFactureApprenants.has(sa.apprenant.id))
+      : apprenantsInSession);
+    if (!targets.length) {
+      toast({ title: "Aucun apprenant sélectionné", variant: "destructive" });
       return;
     }
     setBulkDownloadingFactures(true);
@@ -1683,8 +1687,8 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       let mergedDoc: any = null;
       let count = 0;
       let archived = 0;
-      for (let i = 0; i < apprenantsInSession.length; i++) {
-        const sa = apprenantsInSession[i];
+      for (let i = 0; i < targets.length; i++) {
+        const sa = targets[i];
         if (!sa.apprenant) continue;
         const facture = await ensureFactureBrouillon(sa.apprenant, sa);
         const data = buildFactureDataForApprenant(sa.apprenant, sa, i, {
@@ -1730,15 +1734,18 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   };
 
   const handleBulkSendFactures = async () => {
-    if (!apprenantsInSession.length) {
-      toast({ title: "Aucun apprenant", variant: "destructive" });
+    const targets = (selectedFactureApprenants.size > 0
+      ? apprenantsInSession.filter((sa: any) => sa.apprenant && selectedFactureApprenants.has(sa.apprenant.id))
+      : apprenantsInSession);
+    if (!targets.length) {
+      toast({ title: "Aucun apprenant sélectionné", variant: "destructive" });
       return;
     }
     setBulkSendingFactures(true);
     let sent = 0, skipped = 0, failed = 0;
     try {
-      for (let i = 0; i < apprenantsInSession.length; i++) {
-        const sa = apprenantsInSession[i];
+      for (let i = 0; i < targets.length; i++) {
+        const sa = targets[i];
         const apprenant = sa.apprenant;
         if (!apprenant) continue;
         const recipient = getFactureRecipientEmail(apprenant);
@@ -1817,11 +1824,14 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
 
   // Valider toutes les brouillons en bloc
   const handleBulkValidateFactures = async () => {
-    if (!apprenantsInSession.length) return;
+    const targets = (selectedFactureApprenants.size > 0
+      ? apprenantsInSession.filter((sa: any) => sa.apprenant && selectedFactureApprenants.has(sa.apprenant.id))
+      : apprenantsInSession);
+    if (!targets.length) return;
     setBulkValidatingFactures(true);
     let validated = 0, skipped = 0;
     try {
-      for (const sa of apprenantsInSession) {
+      for (const sa of targets) {
         if (!sa.apprenant) continue;
         const facture = await ensureFactureBrouillon(sa.apprenant, sa);
         if (facture.statut === 'brouillon') {
@@ -1934,9 +1944,12 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   const handleBulkAcquitter = async () => {
     setBulkAcquitterSaving(true);
     try {
-      const factures = Object.values(facturesFCMap as Record<string, any>).filter(Boolean) as any[];
+      let factures = Object.values(facturesFCMap as Record<string, any>).filter(Boolean) as any[];
+      if (selectedFactureApprenants.size > 0) {
+        factures = factures.filter((f: any) => f.apprenant_id && selectedFactureApprenants.has(f.apprenant_id));
+      }
       if (factures.length === 0) {
-        toast({ title: "Aucune facture", description: "Générez d'abord les factures.", variant: "destructive" });
+        toast({ title: "Aucune facture", description: selectedFactureApprenants.size > 0 ? "Aucune facture pour la sélection." : "Générez d'abord les factures.", variant: "destructive" });
         return;
       }
       let count = 0;
@@ -3255,10 +3268,22 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                 <div className="text-sm">
                   <div className="font-medium">Factures Formation Continue — 200 € TTC</div>
                   <div className="text-muted-foreground text-xs">
-                    Les factures sont créées en <strong>brouillon</strong>. Validez-les définitivement pour figer le numéro et le statut comptable.
+                    Les factures sont créées en <strong>brouillon</strong>. Cochez les apprenants pour cibler les actions, sinon toutes sont prises.
                   </div>
                 </div>
                 <div className="flex-1" />
+                <div className="flex items-center gap-2 px-2 py-1 rounded-md bg-background border">
+                  <Checkbox
+                    checked={apprenantsInSession.length > 0 && selectedFactureApprenants.size === apprenantsInSession.length}
+                    onCheckedChange={(v) => {
+                      if (v) setSelectedFactureApprenants(new Set(apprenantsInSession.map((sa: any) => sa.apprenant?.id).filter(Boolean)));
+                      else setSelectedFactureApprenants(new Set());
+                    }}
+                  />
+                  <span className="text-xs font-medium">
+                    {selectedFactureApprenants.size > 0 ? `${selectedFactureApprenants.size} sélectionné(s)` : "Tout sélectionner"}
+                  </span>
+                </div>
                 <Button
                   size="sm"
                   variant="outline"
@@ -3267,7 +3292,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                   className="gap-2"
                 >
                   {bulkDownloadingFactures ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                  Toutes les factures (PDF)
+                  Factures PDF{selectedFactureApprenants.size > 0 ? ` (${selectedFactureApprenants.size})` : ''}
                 </Button>
                 <Button
                   size="sm"
@@ -3277,7 +3302,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                   className="gap-2"
                 >
                   {bulkValidatingFactures ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-                  Tout valider définitivement
+                  Valider{selectedFactureApprenants.size > 0 ? ` (${selectedFactureApprenants.size})` : ' tout'}
                 </Button>
                 <Button
                   size="sm"
@@ -3291,7 +3316,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                   className="gap-2 border-emerald-300 text-emerald-700 hover:bg-emerald-50"
                 >
                   <CheckCircle className="w-4 h-4" />
-                  Tout acquitter
+                  Acquitter{selectedFactureApprenants.size > 0 ? ` (${selectedFactureApprenants.size})` : ' tout'}
                 </Button>
                 <Button
                   size="sm"
@@ -3301,7 +3326,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                   className="gap-2"
                 >
                   {bulkSendingFactures ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                  Envoyer aux financeurs
+                  Envoyer{selectedFactureApprenants.size > 0 ? ` (${selectedFactureApprenants.size})` : ''}
                 </Button>
               </div>
 
@@ -3330,6 +3355,17 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                     return (
                       <div key={a.id} className="flex flex-col gap-2 p-3 rounded-lg border bg-card">
                          <div className="flex items-start gap-3">
+                           <Checkbox
+                             className="mt-1"
+                             checked={selectedFactureApprenants.has(a.id)}
+                             onCheckedChange={(v) => {
+                               setSelectedFactureApprenants(prev => {
+                                 const next = new Set(prev);
+                                 if (v) next.add(a.id); else next.delete(a.id);
+                                 return next;
+                               });
+                             }}
+                           />
                            <div className="flex-1 min-w-0">
                              {/* Ligne 1 : Nom + Prénom + statut */}
                              <div className="flex items-center gap-2 flex-wrap">
