@@ -1680,6 +1680,8 @@ export function ComptabilitePage() {
                       <SelectItem value="Caisse d'Épargne">Caisse d'Épargne</SelectItem>
                       <SelectItem value="Banque Postale">Banque Postale</SelectItem>
                       <SelectItem value="American Express">American Express</SelectItem>
+                      <SelectItem value="Boursorama">Boursorama</SelectItem>
+                      <SelectItem value="BNP Perso">BNP Perso</SelectItem>
                       <SelectItem value="Autre">Autre</SelectItem>
                     </SelectContent>
                   </Select>
@@ -1831,6 +1833,8 @@ export function ComptabilitePage() {
                                 <SelectItem value="Caisse d'Épargne">Caisse d'Épargne</SelectItem>
                                 <SelectItem value="Banque Postale">Banque Postale</SelectItem>
                                 <SelectItem value="American Express">American Express</SelectItem>
+                                <SelectItem value="Boursorama">Boursorama</SelectItem>
+                                <SelectItem value="BNP Perso">BNP Perso</SelectItem>
                                 <SelectItem value="Autre">Autre</SelectItem>
                               </SelectContent>
                             </Select>
