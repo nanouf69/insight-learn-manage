@@ -129,7 +129,7 @@ export function useConnexionTracking({ apprenantId, userId, enabled }: UseConnex
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabled, apprenantId, userId]);
 
-  const trackModuleActivity = async (
+  const trackModuleActivity = useCallback(async (
     moduleId: number,
     moduleNom: string,
     actionType: string = "open_module",
@@ -178,7 +178,7 @@ export function useConnexionTracking({ apprenantId, userId, enabled }: UseConnex
         action_type: actionType,
         metadata,
       });
-  };
+  }, [apprenantId, checkSessionOnServer, endConnexion, userId]);
 
   return {
     trackModuleActivity,
