@@ -198,7 +198,7 @@ export default function InscriptionFormationContinue() {
           montant_ttc: details.prix,
           montant_paye: 0,
           mode_financement: modeFinancement,
-          organisme_financeur: hasFinanceur ? financeurNom.trim() : null,
+          organisme_financeur: hasFinanceur ? financeur.nom.trim() : null,
           statut: hasFinanceur ? "entreprise" : "particulier",
           date_debut_formation: selectedDate.value,
           date_fin_formation: selectedDate.fin,
