@@ -276,22 +276,22 @@ export default function InscriptionFormationContinue() {
           cgv_version: "CGV Ftransport - 2026",
         };
         if (hasFinanceur) {
-          devisDonnees.financeur_siren = financeurSiren.trim();
-          devisDonnees.financeur_nom = financeurNom.trim();
-          devisDonnees.financeur_adresse = financeurAdresse.trim();
-          devisDonnees.financeur_code_postal = financeurCodePostal.trim();
-          devisDonnees.financeur_ville = financeurVille.trim();
-          devisDonnees.financeur_email = financeurEmail.trim();
-          devisDonnees.financeur_telephone = financeurTelephone.trim();
+          devisDonnees.financeur_siren = financeur.siren.trim();
+          devisDonnees.financeur_nom = financeur.nom.trim();
+          devisDonnees.financeur_adresse = financeur.adresse.trim();
+          devisDonnees.financeur_code_postal = financeur.codePostal.trim();
+          devisDonnees.financeur_ville = financeur.ville.trim();
+          devisDonnees.financeur_email = financeur.email.trim();
+          devisDonnees.financeur_telephone = financeur.telephone.trim();
         }
         const financeurPayload = hasFinanceur ? {
-          nom: financeurNom.trim(),
-          siren: financeurSiren.trim(),
-          adresse: financeurAdresse.trim(),
-          code_postal: financeurCodePostal.trim(),
-          ville: financeurVille.trim(),
-          email: financeurEmail.trim(),
-          telephone: financeurTelephone.trim(),
+          nom: financeur.nom.trim(),
+          siren: financeur.siren.trim(),
+          adresse: financeur.adresse.trim(),
+          code_postal: financeur.codePostal.trim(),
+          ville: financeur.ville.trim(),
+          email: financeur.email.trim(),
+          telephone: financeur.telephone.trim(),
         } : undefined;
         const saved = await savePublicFormDocument({
           apprenantId: apprenant.id,
