@@ -1675,8 +1675,11 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   };
 
   const handleBulkDownloadFactures = async () => {
-    if (!apprenantsInSession.length) {
-      toast({ title: "Aucun apprenant", variant: "destructive" });
+    const targets = (selectedFactureApprenants.size > 0
+      ? apprenantsInSession.filter((sa: any) => sa.apprenant && selectedFactureApprenants.has(sa.apprenant.id))
+      : apprenantsInSession);
+    if (!targets.length) {
+      toast({ title: "Aucun apprenant sélectionné", variant: "destructive" });
       return;
     }
     setBulkDownloadingFactures(true);
@@ -1684,8 +1687,8 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       let mergedDoc: any = null;
       let count = 0;
       let archived = 0;
-      for (let i = 0; i < apprenantsInSession.length; i++) {
-        const sa = apprenantsInSession[i];
+      for (let i = 0; i < targets.length; i++) {
+        const sa = targets[i];
         if (!sa.apprenant) continue;
         const facture = await ensureFactureBrouillon(sa.apprenant, sa);
         const data = buildFactureDataForApprenant(sa.apprenant, sa, i, {
