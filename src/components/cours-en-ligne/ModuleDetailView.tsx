@@ -4897,6 +4897,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                               key={c.lettre}
                               onClick={() => {
                                 if (isValidated) return;
+                                preserveScrollYRef.current = window.scrollY;
                                 setInlineQuizAnswers(prev => ({ ...prev, [key]: c.lettre }));
                                 setUnansweredKeys(prev => { if (!prev.has(key)) return prev; const n = new Set(prev); n.delete(key); return n; });
                               }}
