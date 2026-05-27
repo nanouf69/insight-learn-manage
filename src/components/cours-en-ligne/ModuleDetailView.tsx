@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useMemo, useCallback } from "react";
+import { useEffect, useState, useRef, useMemo, useCallback, useLayoutEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { RealtimeStatusIndicator } from "./RealtimeStatusIndicator";
 import { Card, CardContent } from "@/components/ui/card";
@@ -4326,16 +4326,21 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       };
     }, [apprenantId, module.id]);
 
-    useEffect(() => {
+    useLayoutEffect(() => {
       const y = preserveScrollYRef.current;
       if (y === null) return;
-      preserveScrollYRef.current = null;
-      window.requestAnimationFrame(() => {
+      const restore = () => {
         if (Math.abs(window.scrollY - y) > 4) {
           window.scrollTo({ top: y, behavior: "auto" });
         }
-      });
-    }, [selectedAnswers]);
+      };
+      restore();
+      window.requestAnimationFrame(restore);
+      window.setTimeout(() => {
+        restore();
+        preserveScrollYRef.current = null;
+      }, 80);
+    }, [selectedAnswers, inlineQuizAnswers, qrcAnswers, unansweredKeys]);
 
     const handleAnswer = (exoId: number, qId: number, lettre: string, multi?: boolean) => {
       if (showResultsFor.has(exoId)) return;
@@ -4362,6 +4367,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     };
 
     const handleQrcAnswerChange = (key: string, value: string) => {
+      preserveScrollYRef.current = window.scrollY;
       setQrcAnswers(prev => ({ ...prev, [key]: value }));
       setSelectedAnswers(prev => {
         const next = { ...prev, [key]: value };
