@@ -11,7 +11,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Search, Upload, Download, Trash2, Eye, CalendarIcon, Receipt, Euro, Copy } from "lucide-react";
+import { Plus, Search, Upload, Download, Trash2, Eye, CalendarIcon, Receipt, Euro, Copy, Pencil } from "lucide-react";
+
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -79,10 +80,13 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
   const [search, setSearch] = useState("");
   const [filterCategorie, setFilterCategorie] = useState("all");
   const [filterStatut, setFilterStatut] = useState("all");
+  const [filterMois, setFilterMois] = useState("all");
+  const [filterFournisseur, setFilterFournisseur] = useState("all");
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [duplicateSource, setDuplicateSource] = useState<Pick<NoteFrais, "url" | "nom_fichier"> | null>(null);
+  const [editId, setEditId] = useState<string | null>(null);
 
   // Form state
   const [formDate, setFormDate] = useState<Date | undefined>(new Date());
@@ -114,6 +118,7 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
     setFormNotes("");
     setFormFile(null);
     setDuplicateSource(null);
+    setEditId(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -133,7 +138,6 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
     let fileName: string | null = duplicateSource?.nom_fichier || null;
 
     if (formFile) {
-      const ext = formFile.name.split('.').pop();
       const path = `${Date.now()}-${formFile.name}`;
       const { error: uploadError } = await supabase.storage
         .from('notes-frais')
@@ -148,21 +152,34 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
       fileName = formFile.name;
     }
 
-    const { error } = await supabase.from('notes_frais').insert({
+    const payload: any = {
       date_depense: format(formDate, 'yyyy-MM-dd'),
       description: formDescription,
       montant: parseFloat(formMontant),
       categorie: formCategorie || null,
       fournisseur: formFournisseur || null,
-      nom_fichier: fileName,
-      url: fileUrl,
       notes: formNotes || null,
-    });
+    };
+
+    // Only update file fields if a new file is uploaded or duplicating
+    if (editId) {
+      if (formFile) {
+        payload.nom_fichier = fileName;
+        payload.url = fileUrl;
+      }
+    } else {
+      payload.nom_fichier = fileName;
+      payload.url = fileUrl;
+    }
+
+    const { error } = editId
+      ? await supabase.from('notes_frais').update(payload).eq('id', editId)
+      : await supabase.from('notes_frais').insert(payload);
 
     if (error) {
       toast.error("Erreur: " + error.message);
     } else {
-      toast.success(duplicateSource ? "Note de frais dupliquée" : "Note de frais ajoutée");
+      toast.success(editId ? "Note de frais modifiée" : duplicateSource ? "Note de frais dupliquée" : "Note de frais ajoutée");
       resetForm();
       setShowForm(false);
       fetchNotes();
@@ -171,6 +188,7 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
   };
 
   const handleDelete = async (id: string) => {
+    if (!confirm("Supprimer cette note de frais ?")) return;
     const { error } = await supabase.from('notes_frais').delete().eq('id', id);
     if (!error) {
       toast.success("Note de frais supprimée");
@@ -187,9 +205,25 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
     setFormNotes(note.notes || "");
     setFormFile(null);
     setDuplicateSource({ url: note.url, nom_fichier: note.nom_fichier });
+    setEditId(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
     setShowForm(true);
   };
+
+  const handleEdit = (note: NoteFrais) => {
+    setFormDate(new Date(note.date_depense));
+    setFormDescription(note.description);
+    setFormMontant(String(note.montant));
+    setFormCategorie(note.categorie || "");
+    setFormFournisseur(note.fournisseur || "");
+    setFormNotes(note.notes || "");
+    setFormFile(null);
+    setDuplicateSource(note.url ? { url: note.url, nom_fichier: note.nom_fichier } : null);
+    setEditId(note.id);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    setShowForm(true);
+  };
+
 
   const handleStatutChange = async (id: string, newStatut: string) => {
     const { error } = await supabase.from('notes_frais').update({ statut: newStatut }).eq('id', id);
@@ -227,6 +261,11 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
     else toast.error("Impossible de générer le lien");
   };
 
+  const moisOptions = Array.from(new Set(notes.map(n => format(new Date(n.date_depense), 'yyyy-MM'))))
+    .sort()
+    .reverse();
+  const fournisseurOptions = Array.from(new Set(notes.map(n => n.fournisseur).filter(Boolean) as string[])).sort();
+
   const filtered = notes.filter(n => {
     const matchSearch = !search || 
       n.description.toLowerCase().includes(search.toLowerCase()) ||
@@ -234,8 +273,11 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
       (n.categorie || '').toLowerCase().includes(search.toLowerCase());
     const matchCat = filterCategorie === "all" || n.categorie === filterCategorie;
     const matchStatut = filterStatut === "all" || n.statut === filterStatut;
-    return matchSearch && matchCat && matchStatut;
+    const matchMois = filterMois === "all" || format(new Date(n.date_depense), 'yyyy-MM') === filterMois;
+    const matchFournisseur = filterFournisseur === "all" || n.fournisseur === filterFournisseur;
+    return matchSearch && matchCat && matchStatut && matchMois && matchFournisseur;
   });
+
 
   const totalMontant = filtered.reduce((sum, n) => sum + n.montant, 0);
 
@@ -272,7 +314,7 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
 
             <DialogContent className="max-w-lg">
               <DialogHeader>
-                <DialogTitle>{duplicateSource ? "Dupliquer la note de frais" : "Ajouter une note de frais"}</DialogTitle>
+                <DialogTitle>{editId ? "Modifier la note de frais" : duplicateSource ? "Dupliquer la note de frais" : "Ajouter une note de frais"}</DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-3">
@@ -326,8 +368,9 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
                   <Textarea value={formNotes} onChange={e => setFormNotes(e.target.value)} placeholder="Remarques..." rows={2} />
                 </div>
                 <Button onClick={handleSubmit} disabled={saving} className="w-full">
-                  {saving ? "Enregistrement..." : duplicateSource ? "Créer la copie" : "Ajouter"}
+                  {saving ? "Enregistrement..." : editId ? "Enregistrer les modifications" : duplicateSource ? "Créer la copie" : "Ajouter"}
                 </Button>
+
               </div>
             </DialogContent>
           </Dialog>
@@ -358,6 +401,30 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
             <SelectItem value="refuse">Refusé</SelectItem>
           </SelectContent>
         </Select>
+        <Select value={filterMois} onValueChange={setFilterMois}>
+          <SelectTrigger className="w-[160px]"><SelectValue placeholder="Mois" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tous les mois</SelectItem>
+            {moisOptions.map(m => (
+              <SelectItem key={m} value={m} className="capitalize">
+                {format(new Date(m + '-01'), 'MMMM yyyy', { locale: fr })}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={filterFournisseur} onValueChange={setFilterFournisseur}>
+          <SelectTrigger className="w-[180px]"><SelectValue placeholder="Fournisseur" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tous fournisseurs</SelectItem>
+            {fournisseurOptions.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        {(search || filterCategorie !== "all" || filterStatut !== "all" || filterMois !== "all" || filterFournisseur !== "all") && (
+          <Button variant="ghost" size="sm" onClick={() => { setSearch(""); setFilterCategorie("all"); setFilterStatut("all"); setFilterMois("all"); setFilterFournisseur("all"); }}>
+            Réinitialiser
+          </Button>
+        )}
+
       </div>
 
       {/* Table grouped by month */}
@@ -428,8 +495,12 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
                       {!readOnly && (
                         <TableCell>
                           <div className="flex items-center gap-1">
+                            <Button variant="outline" size="sm" className="h-7 gap-1 text-xs" onClick={() => handleEdit(note)} title="Modifier cette note de frais">
+                              <Pencil className="h-3.5 w-3.5" /> Modifier
+                            </Button>
                             <Button variant="outline" size="sm" className="h-7 gap-1 text-xs" onClick={() => handleDuplicate(note)} title="Dupliquer cette note de frais">
                               <Copy className="h-3.5 w-3.5" /> Dupliquer
+
                             </Button>
                             <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDelete(note.id)} title="Supprimer">
                               <Trash2 className="h-3.5 w-3.5" />
