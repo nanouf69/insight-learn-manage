@@ -82,6 +82,7 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [duplicateSource, setDuplicateSource] = useState<Pick<NoteFrais, "url" | "nom_fichier"> | null>(null);
 
   // Form state
   const [formDate, setFormDate] = useState<Date | undefined>(new Date());
@@ -112,7 +113,13 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
     setFormFournisseur("");
     setFormNotes("");
     setFormFile(null);
+    setDuplicateSource(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const openNewNoteForm = () => {
+    resetForm();
+    setShowForm(true);
   };
 
   const handleSubmit = async () => {
@@ -122,8 +129,8 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
     }
     setSaving(true);
 
-    let fileUrl: string | null = null;
-    let fileName: string | null = null;
+    let fileUrl: string | null = duplicateSource?.url || null;
+    let fileName: string | null = duplicateSource?.nom_fichier || null;
 
     if (formFile) {
       const ext = formFile.name.split('.').pop();
@@ -155,7 +162,7 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
     if (error) {
       toast.error("Erreur: " + error.message);
     } else {
-      toast.success("Note de frais ajoutée");
+      toast.success(duplicateSource ? "Note de frais dupliquée" : "Note de frais ajoutée");
       resetForm();
       setShowForm(false);
       fetchNotes();
@@ -179,6 +186,7 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
     setFormFournisseur(note.fournisseur || "");
     setFormNotes(note.notes || "");
     setFormFile(null);
+    setDuplicateSource({ url: note.url, nom_fichier: note.nom_fichier });
     if (fileInputRef.current) fileInputRef.current.value = "";
     setShowForm(true);
   };
@@ -238,11 +246,11 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
         {!readOnly && (
           <Dialog open={showForm} onOpenChange={setShowForm}>
             <DialogTrigger asChild>
-              <Button className="gap-2"><Plus className="h-4 w-4" /> Nouvelle note</Button>
+              <Button className="gap-2" onClick={openNewNoteForm}><Plus className="h-4 w-4" /> Nouvelle note</Button>
             </DialogTrigger>
             <DialogContent className="max-w-lg">
               <DialogHeader>
-                <DialogTitle>Ajouter une note de frais</DialogTitle>
+                <DialogTitle>{duplicateSource ? "Dupliquer la note de frais" : "Ajouter une note de frais"}</DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-3">
@@ -287,13 +295,16 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
                 <div>
                   <Label>Justificatif</Label>
                   <Input ref={fileInputRef} type="file" accept="image/*,.pdf" onChange={e => setFormFile(e.target.files?.[0] || null)} />
+                  {duplicateSource?.nom_fichier && !formFile && (
+                    <p className="mt-1 text-xs text-muted-foreground">Justificatif repris : {duplicateSource.nom_fichier}</p>
+                  )}
                 </div>
                 <div>
                   <Label>Notes</Label>
                   <Textarea value={formNotes} onChange={e => setFormNotes(e.target.value)} placeholder="Remarques..." rows={2} />
                 </div>
                 <Button onClick={handleSubmit} disabled={saving} className="w-full">
-                  {saving ? "Enregistrement..." : "Ajouter"}
+                  {saving ? "Enregistrement..." : duplicateSource ? "Créer la copie" : "Ajouter"}
                 </Button>
               </div>
             </DialogContent>
@@ -393,8 +404,8 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
                       {!readOnly && (
                         <TableCell>
                           <div className="flex items-center gap-1">
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDuplicate(note)} title="Dupliquer">
-                              <Copy className="h-3.5 w-3.5" />
+                            <Button variant="outline" size="sm" className="h-7 gap-1 text-xs" onClick={() => handleDuplicate(note)} title="Dupliquer cette note de frais">
+                              <Copy className="h-3.5 w-3.5" /> Dupliquer
                             </Button>
                             <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDelete(note.id)} title="Supprimer">
                               <Trash2 className="h-3.5 w-3.5" />
