@@ -11,7 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Search, Upload, Download, Trash2, Eye, CalendarIcon, Receipt, Euro } from "lucide-react";
+import { Plus, Search, Upload, Download, Trash2, Eye, CalendarIcon, Receipt, Euro, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -169,6 +169,18 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
       toast.success("Note de frais supprimée");
       fetchNotes();
     }
+  };
+
+  const handleDuplicate = (note: NoteFrais) => {
+    setFormDate(new Date(note.date_depense));
+    setFormDescription(note.description);
+    setFormMontant(String(note.montant));
+    setFormCategorie(note.categorie || "");
+    setFormFournisseur(note.fournisseur || "");
+    setFormNotes(note.notes || "");
+    setFormFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    setShowForm(true);
   };
 
   const handleStatutChange = async (id: string, newStatut: string) => {
@@ -380,9 +392,14 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
                       </TableCell>
                       {!readOnly && (
                         <TableCell>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDelete(note.id)}>
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
+                          <div className="flex items-center gap-1">
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDuplicate(note)} title="Dupliquer">
+                              <Copy className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDelete(note.id)} title="Supprimer">
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
                         </TableCell>
                       )}
                     </TableRow>
