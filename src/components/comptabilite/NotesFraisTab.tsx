@@ -314,7 +314,7 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
 
             <DialogContent className="max-w-lg">
               <DialogHeader>
-                <DialogTitle>{duplicateSource ? "Dupliquer la note de frais" : "Ajouter une note de frais"}</DialogTitle>
+                <DialogTitle>{editId ? "Modifier la note de frais" : duplicateSource ? "Dupliquer la note de frais" : "Ajouter une note de frais"}</DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-3">
