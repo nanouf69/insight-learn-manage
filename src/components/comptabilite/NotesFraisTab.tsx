@@ -77,6 +77,7 @@ interface NotesFraisTabProps {
 export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
   const [notes, setNotes] = useState<NoteFrais[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
   const [filterCategorie, setFilterCategorie] = useState("all");
   const [filterStatut, setFilterStatut] = useState("all");
   const [filterMois, setFilterMois] = useState("all");
@@ -86,8 +87,6 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [duplicateSource, setDuplicateSource] = useState<Pick<NoteFrais, "url" | "nom_fichier"> | null>(null);
   const [editId, setEditId] = useState<string | null>(null);
-
-  const [duplicateSource, setDuplicateSource] = useState<Pick<NoteFrais, "url" | "nom_fichier"> | null>(null);
 
   // Form state
   const [formDate, setFormDate] = useState<Date | undefined>(new Date());
