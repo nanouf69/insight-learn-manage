@@ -278,7 +278,12 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
     const matchStatut = filterStatut === "all" || n.statut === filterStatut;
     const matchMois = filterMois === "all" || format(new Date(n.date_depense), 'yyyy-MM') === filterMois;
     const matchFournisseur = filterFournisseur === "all" || n.fournisseur === filterFournisseur;
-    return matchSearch && matchCat && matchStatut && matchMois && matchFournisseur;
+    const min = parseFloat(filterMontantMin);
+    const max = parseFloat(filterMontantMax);
+    const matchMin = isNaN(min) || n.montant >= min;
+    const matchMax = isNaN(max) || n.montant <= max;
+    return matchSearch && matchCat && matchStatut && matchMois && matchFournisseur && matchMin && matchMax;
+
   });
 
 
