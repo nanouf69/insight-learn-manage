@@ -82,6 +82,9 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
   const [filterStatut, setFilterStatut] = useState("all");
   const [filterMois, setFilterMois] = useState("all");
   const [filterFournisseur, setFilterFournisseur] = useState("all");
+  const [filterMontantMin, setFilterMontantMin] = useState("");
+  const [filterMontantMax, setFilterMontantMax] = useState("");
+
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -275,7 +278,12 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
     const matchStatut = filterStatut === "all" || n.statut === filterStatut;
     const matchMois = filterMois === "all" || format(new Date(n.date_depense), 'yyyy-MM') === filterMois;
     const matchFournisseur = filterFournisseur === "all" || n.fournisseur === filterFournisseur;
-    return matchSearch && matchCat && matchStatut && matchMois && matchFournisseur;
+    const min = parseFloat(filterMontantMin);
+    const max = parseFloat(filterMontantMax);
+    const matchMin = isNaN(min) || n.montant >= min;
+    const matchMax = isNaN(max) || n.montant <= max;
+    return matchSearch && matchCat && matchStatut && matchMois && matchFournisseur && matchMin && matchMax;
+
   });
 
 
@@ -419,9 +427,31 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
             {fournisseurOptions.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
           </SelectContent>
         </Select>
-        {(search || filterCategorie !== "all" || filterStatut !== "all" || filterMois !== "all" || filterFournisseur !== "all") && (
-          <Button variant="ghost" size="sm" onClick={() => { setSearch(""); setFilterCategorie("all"); setFilterStatut("all"); setFilterMois("all"); setFilterFournisseur("all"); }}>
+        <div className="flex items-center gap-1">
+          <Input
+            type="number"
+            inputMode="decimal"
+            step="0.01"
+            placeholder="Min €"
+            className="w-[100px]"
+            value={filterMontantMin}
+            onChange={e => setFilterMontantMin(e.target.value)}
+          />
+          <span className="text-muted-foreground text-sm">–</span>
+          <Input
+            type="number"
+            inputMode="decimal"
+            step="0.01"
+            placeholder="Max €"
+            className="w-[100px]"
+            value={filterMontantMax}
+            onChange={e => setFilterMontantMax(e.target.value)}
+          />
+        </div>
+        {(search || filterCategorie !== "all" || filterStatut !== "all" || filterMois !== "all" || filterFournisseur !== "all" || filterMontantMin || filterMontantMax) && (
+          <Button variant="ghost" size="sm" onClick={() => { setSearch(""); setFilterCategorie("all"); setFilterStatut("all"); setFilterMois("all"); setFilterFournisseur("all"); setFilterMontantMin(""); setFilterMontantMax(""); }}>
             Réinitialiser
+
           </Button>
         )}
 
