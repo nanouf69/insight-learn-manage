@@ -368,8 +368,9 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
                   <Textarea value={formNotes} onChange={e => setFormNotes(e.target.value)} placeholder="Remarques..." rows={2} />
                 </div>
                 <Button onClick={handleSubmit} disabled={saving} className="w-full">
-                  {saving ? "Enregistrement..." : duplicateSource ? "Créer la copie" : "Ajouter"}
+                  {saving ? "Enregistrement..." : editId ? "Enregistrer les modifications" : duplicateSource ? "Créer la copie" : "Ajouter"}
                 </Button>
+
               </div>
             </DialogContent>
           </Dialog>
