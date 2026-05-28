@@ -427,13 +427,14 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
             {fournisseurOptions.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
           </SelectContent>
         </Select>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5 rounded-md border border-input bg-background px-2 h-10">
+          <Euro className="h-4 w-4 text-muted-foreground" />
           <Input
             type="number"
             inputMode="decimal"
             step="0.01"
-            placeholder="Min €"
-            className="w-[100px]"
+            placeholder="Min"
+            className="w-[80px] h-8 border-0 px-1 focus-visible:ring-0"
             value={filterMontantMin}
             onChange={e => setFilterMontantMin(e.target.value)}
           />
@@ -442,12 +443,13 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
             type="number"
             inputMode="decimal"
             step="0.01"
-            placeholder="Max €"
-            className="w-[100px]"
+            placeholder="Max"
+            className="w-[80px] h-8 border-0 px-1 focus-visible:ring-0"
             value={filterMontantMax}
             onChange={e => setFilterMontantMax(e.target.value)}
           />
         </div>
+
         {(search || filterCategorie !== "all" || filterStatut !== "all" || filterMois !== "all" || filterFournisseur !== "all" || filterMontantMin || filterMontantMax) && (
           <Button variant="ghost" size="sm" onClick={() => { setSearch(""); setFilterCategorie("all"); setFilterStatut("all"); setFilterMois("all"); setFilterFournisseur("all"); setFilterMontantMin(""); setFilterMontantMax(""); }}>
             Réinitialiser
