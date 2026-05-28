@@ -404,8 +404,8 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
                       {!readOnly && (
                         <TableCell>
                           <div className="flex items-center gap-1">
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDuplicate(note)} title="Dupliquer">
-                              <Copy className="h-3.5 w-3.5" />
+                            <Button variant="outline" size="sm" className="h-7 gap-1 text-xs" onClick={() => handleDuplicate(note)} title="Dupliquer cette note de frais">
+                              <Copy className="h-3.5 w-3.5" /> Dupliquer
                             </Button>
                             <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDelete(note.id)} title="Supprimer">
                               <Trash2 className="h-3.5 w-3.5" />
