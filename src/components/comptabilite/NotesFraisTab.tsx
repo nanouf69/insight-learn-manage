@@ -261,6 +261,11 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
     else toast.error("Impossible de générer le lien");
   };
 
+  const moisOptions = Array.from(new Set(notes.map(n => format(new Date(n.date_depense), 'yyyy-MM'))))
+    .sort()
+    .reverse();
+  const fournisseurOptions = Array.from(new Set(notes.map(n => n.fournisseur).filter(Boolean) as string[])).sort();
+
   const filtered = notes.filter(n => {
     const matchSearch = !search || 
       n.description.toLowerCase().includes(search.toLowerCase()) ||
@@ -268,8 +273,11 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
       (n.categorie || '').toLowerCase().includes(search.toLowerCase());
     const matchCat = filterCategorie === "all" || n.categorie === filterCategorie;
     const matchStatut = filterStatut === "all" || n.statut === filterStatut;
-    return matchSearch && matchCat && matchStatut;
+    const matchMois = filterMois === "all" || format(new Date(n.date_depense), 'yyyy-MM') === filterMois;
+    const matchFournisseur = filterFournisseur === "all" || n.fournisseur === filterFournisseur;
+    return matchSearch && matchCat && matchStatut && matchMois && matchFournisseur;
   });
+
 
   const totalMontant = filtered.reduce((sum, n) => sum + n.montant, 0);
 
