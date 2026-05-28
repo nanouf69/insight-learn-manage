@@ -171,6 +171,18 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
     }
   };
 
+  const handleDuplicate = (note: NoteFrais) => {
+    setFormDate(new Date(note.date_depense));
+    setFormDescription(note.description);
+    setFormMontant(String(note.montant));
+    setFormCategorie(note.categorie || "");
+    setFormFournisseur(note.fournisseur || "");
+    setFormNotes(note.notes || "");
+    setFormFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    setShowForm(true);
+  };
+
   const handleStatutChange = async (id: string, newStatut: string) => {
     const { error } = await supabase.from('notes_frais').update({ statut: newStatut }).eq('id', id);
     if (!error) {
