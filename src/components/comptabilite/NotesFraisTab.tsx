@@ -199,6 +199,23 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
     }
   };
 
+  const handleValidateAll = async () => {
+    const ids = filtered.filter(n => n.statut !== 'valide').map(n => n.id);
+    if (ids.length === 0) {
+      toast.info("Aucune note à valider");
+      return;
+    }
+    if (!confirm(`Valider ${ids.length} note${ids.length > 1 ? 's' : ''} de frais ?`)) return;
+    const { error } = await supabase.from('notes_frais').update({ statut: 'valide' }).in('id', ids);
+    if (error) {
+      toast.error("Erreur: " + error.message);
+    } else {
+      toast.success(`${ids.length} note${ids.length > 1 ? 's' : ''} validée${ids.length > 1 ? 's' : ''}`);
+      fetchNotes();
+    }
+  };
+
+
   const openFile = async (url: string) => {
     const match = url.match(/\/storage\/v1\/object\/public\/(.+)/);
     if (!match) { window.open(url, '_blank'); return; }
@@ -244,10 +261,15 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
           </p>
         </div>
         {!readOnly && (
-          <Dialog open={showForm} onOpenChange={setShowForm}>
-            <DialogTrigger asChild>
-              <Button className="gap-2" onClick={openNewNoteForm}><Plus className="h-4 w-4" /> Nouvelle note</Button>
-            </DialogTrigger>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" className="gap-2" onClick={handleValidateAll}>
+              ✓ Tout valider
+            </Button>
+            <Dialog open={showForm} onOpenChange={setShowForm}>
+              <DialogTrigger asChild>
+                <Button className="gap-2" onClick={openNewNoteForm}><Plus className="h-4 w-4" /> Nouvelle note</Button>
+              </DialogTrigger>
+
             <DialogContent className="max-w-lg">
               <DialogHeader>
                 <DialogTitle>{duplicateSource ? "Dupliquer la note de frais" : "Ajouter une note de frais"}</DialogTitle>
@@ -309,7 +331,9 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
               </div>
             </DialogContent>
           </Dialog>
+          </div>
         )}
+
       </div>
 
       {/* Filters */}
