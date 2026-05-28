@@ -118,6 +118,7 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
     setFormNotes("");
     setFormFile(null);
     setDuplicateSource(null);
+    setEditId(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -137,7 +138,6 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
     let fileName: string | null = duplicateSource?.nom_fichier || null;
 
     if (formFile) {
-      const ext = formFile.name.split('.').pop();
       const path = `${Date.now()}-${formFile.name}`;
       const { error: uploadError } = await supabase.storage
         .from('notes-frais')
@@ -152,21 +152,34 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
       fileName = formFile.name;
     }
 
-    const { error } = await supabase.from('notes_frais').insert({
+    const payload: any = {
       date_depense: format(formDate, 'yyyy-MM-dd'),
       description: formDescription,
       montant: parseFloat(formMontant),
       categorie: formCategorie || null,
       fournisseur: formFournisseur || null,
-      nom_fichier: fileName,
-      url: fileUrl,
       notes: formNotes || null,
-    });
+    };
+
+    // Only update file fields if a new file is uploaded or duplicating
+    if (editId) {
+      if (formFile) {
+        payload.nom_fichier = fileName;
+        payload.url = fileUrl;
+      }
+    } else {
+      payload.nom_fichier = fileName;
+      payload.url = fileUrl;
+    }
+
+    const { error } = editId
+      ? await supabase.from('notes_frais').update(payload).eq('id', editId)
+      : await supabase.from('notes_frais').insert(payload);
 
     if (error) {
       toast.error("Erreur: " + error.message);
     } else {
-      toast.success(duplicateSource ? "Note de frais dupliquée" : "Note de frais ajoutée");
+      toast.success(editId ? "Note de frais modifiée" : duplicateSource ? "Note de frais dupliquée" : "Note de frais ajoutée");
       resetForm();
       setShowForm(false);
       fetchNotes();
@@ -175,6 +188,7 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
   };
 
   const handleDelete = async (id: string) => {
+    if (!confirm("Supprimer cette note de frais ?")) return;
     const { error } = await supabase.from('notes_frais').delete().eq('id', id);
     if (!error) {
       toast.success("Note de frais supprimée");
@@ -191,9 +205,25 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
     setFormNotes(note.notes || "");
     setFormFile(null);
     setDuplicateSource({ url: note.url, nom_fichier: note.nom_fichier });
+    setEditId(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
     setShowForm(true);
   };
+
+  const handleEdit = (note: NoteFrais) => {
+    setFormDate(new Date(note.date_depense));
+    setFormDescription(note.description);
+    setFormMontant(String(note.montant));
+    setFormCategorie(note.categorie || "");
+    setFormFournisseur(note.fournisseur || "");
+    setFormNotes(note.notes || "");
+    setFormFile(null);
+    setDuplicateSource(note.url ? { url: note.url, nom_fichier: note.nom_fichier } : null);
+    setEditId(note.id);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    setShowForm(true);
+  };
+
 
   const handleStatutChange = async (id: string, newStatut: string) => {
     const { error } = await supabase.from('notes_frais').update({ statut: newStatut }).eq('id', id);
