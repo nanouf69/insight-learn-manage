@@ -82,6 +82,7 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [duplicateSource, setDuplicateSource] = useState<Pick<NoteFrais, "url" | "nom_fichier"> | null>(null);
 
   // Form state
   const [formDate, setFormDate] = useState<Date | undefined>(new Date());
@@ -112,7 +113,13 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
     setFormFournisseur("");
     setFormNotes("");
     setFormFile(null);
+    setDuplicateSource(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const openNewNoteForm = () => {
+    resetForm();
+    setShowForm(true);
   };
 
   const handleSubmit = async () => {
@@ -122,8 +129,8 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
     }
     setSaving(true);
 
-    let fileUrl: string | null = null;
-    let fileName: string | null = null;
+    let fileUrl: string | null = duplicateSource?.url || null;
+    let fileName: string | null = duplicateSource?.nom_fichier || null;
 
     if (formFile) {
       const ext = formFile.name.split('.').pop();
@@ -155,7 +162,7 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
     if (error) {
       toast.error("Erreur: " + error.message);
     } else {
-      toast.success("Note de frais ajoutée");
+      toast.success(duplicateSource ? "Note de frais dupliquée" : "Note de frais ajoutée");
       resetForm();
       setShowForm(false);
       fetchNotes();
@@ -179,6 +186,7 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
     setFormFournisseur(note.fournisseur || "");
     setFormNotes(note.notes || "");
     setFormFile(null);
+    setDuplicateSource({ url: note.url, nom_fichier: note.nom_fichier });
     if (fileInputRef.current) fileInputRef.current.value = "";
     setShowForm(true);
   };
