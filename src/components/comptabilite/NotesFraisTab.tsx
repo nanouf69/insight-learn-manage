@@ -401,6 +401,30 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
             <SelectItem value="refuse">Refusé</SelectItem>
           </SelectContent>
         </Select>
+        <Select value={filterMois} onValueChange={setFilterMois}>
+          <SelectTrigger className="w-[160px]"><SelectValue placeholder="Mois" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tous les mois</SelectItem>
+            {moisOptions.map(m => (
+              <SelectItem key={m} value={m} className="capitalize">
+                {format(new Date(m + '-01'), 'MMMM yyyy', { locale: fr })}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={filterFournisseur} onValueChange={setFilterFournisseur}>
+          <SelectTrigger className="w-[180px]"><SelectValue placeholder="Fournisseur" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tous fournisseurs</SelectItem>
+            {fournisseurOptions.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        {(search || filterCategorie !== "all" || filterStatut !== "all" || filterMois !== "all" || filterFournisseur !== "all") && (
+          <Button variant="ghost" size="sm" onClick={() => { setSearch(""); setFilterCategorie("all"); setFilterStatut("all"); setFilterMois("all"); setFilterFournisseur("all"); }}>
+            Réinitialiser
+          </Button>
+        )}
+
       </div>
 
       {/* Table grouped by month */}
