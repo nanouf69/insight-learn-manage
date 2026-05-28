@@ -82,6 +82,9 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
   const [filterStatut, setFilterStatut] = useState("all");
   const [filterMois, setFilterMois] = useState("all");
   const [filterFournisseur, setFilterFournisseur] = useState("all");
+  const [filterMontantMin, setFilterMontantMin] = useState("");
+  const [filterMontantMax, setFilterMontantMax] = useState("");
+
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
