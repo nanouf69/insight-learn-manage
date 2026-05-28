@@ -331,7 +331,9 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
               </div>
             </DialogContent>
           </Dialog>
+          </div>
         )}
+
       </div>
 
       {/* Filters */}
