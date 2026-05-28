@@ -261,10 +261,15 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
           </p>
         </div>
         {!readOnly && (
-          <Dialog open={showForm} onOpenChange={setShowForm}>
-            <DialogTrigger asChild>
-              <Button className="gap-2" onClick={openNewNoteForm}><Plus className="h-4 w-4" /> Nouvelle note</Button>
-            </DialogTrigger>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" className="gap-2" onClick={handleValidateAll}>
+              ✓ Tout valider
+            </Button>
+            <Dialog open={showForm} onOpenChange={setShowForm}>
+              <DialogTrigger asChild>
+                <Button className="gap-2" onClick={openNewNoteForm}><Plus className="h-4 w-4" /> Nouvelle note</Button>
+              </DialogTrigger>
+
             <DialogContent className="max-w-lg">
               <DialogHeader>
                 <DialogTitle>{duplicateSource ? "Dupliquer la note de frais" : "Ajouter une note de frais"}</DialogTitle>
