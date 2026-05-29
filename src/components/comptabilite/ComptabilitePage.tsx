@@ -196,6 +196,7 @@ export function ComptabilitePage() {
         date_echeance: editFactureForm.date_echeance || null,
         date_paiement: editFactureForm.date_paiement || null,
         numero_engagement: editFactureForm.numero_engagement?.trim() || null,
+        numero_convention: editFactureForm.numero_convention?.trim() || null,
       };
       const { error } = await supabase.from("factures").update(payload).eq("id", editingFacture.id);
       if (error) throw error;
