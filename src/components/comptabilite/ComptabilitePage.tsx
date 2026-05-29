@@ -1306,7 +1306,25 @@ export function ComptabilitePage() {
                         <TableCell>{formatDate(f.date_paiement)}</TableCell>
                         {showActions && (
                           <TableCell onClick={(e) => e.stopPropagation()}>
-                            {!String(f.id).startsWith("draft-") && (
+                            {String(f.id).startsWith("draft-") ? (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-7 px-2 text-primary hover:text-primary hover:bg-primary/10"
+                                onClick={() => {
+                                  if (!f._draftRaw) { toast.error("Brouillon vide"); return; }
+                                  generateDraftPDF(f._draftRaw).then(() => {
+                                    toast.success("PDF téléchargé");
+                                  }).catch((err) => {
+                                    console.error(err);
+                                    toast.error("Erreur lors du téléchargement");
+                                  });
+                                }}
+                                title="Télécharger le brouillon en PDF"
+                              >
+                                <Download className="h-3.5 w-3.5" />
+                              </Button>
+                            ) : (
                               <div className="flex items-center gap-1">
                                 <Button
                                   size="sm"
