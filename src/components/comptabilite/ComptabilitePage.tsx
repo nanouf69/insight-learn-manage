@@ -1339,6 +1339,24 @@ export function ComptabilitePage() {
                                 >
                                   <Pencil className="h-3.5 w-3.5" />
                                 </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-7 px-2 text-primary hover:text-primary hover:bg-primary/10"
+                                  onClick={() => {
+                                    try {
+                                      generateDraftPDF(factureToDraftShape(f), { final: true })
+                                        .then(() => toast.success("PDF téléchargé"))
+                                        .catch((err) => { console.error(err); toast.error("Erreur lors du téléchargement"); });
+                                    } catch (err) {
+                                      console.error(err);
+                                      toast.error("Erreur lors du téléchargement");
+                                    }
+                                  }}
+                                  title="Télécharger la facture en PDF"
+                                >
+                                  <Download className="h-3.5 w-3.5" />
+                                </Button>
                                 {!isAvoir && !isDraft && (
                                   <Button
                                     size="sm"
