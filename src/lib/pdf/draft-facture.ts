@@ -206,6 +206,7 @@ export function factureToDraftShape(f: any) {
   const designationParts: string[] = [];
   if (f?.client_opco) designationParts.push(`OPCO : ${f.client_opco}`);
   if (f?.numero_engagement) designationParts.push(`N° d'engagement : ${f.numero_engagement}`);
+  if (f?.numero_convention) designationParts.push(`N° de convention : ${f.numero_convention}`);
   const designation = ['Prestation de formation', ...designationParts].join(' — ');
   return {
     numero: f?.numero || '',
