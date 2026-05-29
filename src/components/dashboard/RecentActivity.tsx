@@ -254,7 +254,7 @@ export function RecentActivity({ onNavigateToApprenant }: RecentActivityProps) {
         <h3 className="text-lg font-semibold text-foreground mb-4">Activité récente</h3>
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="flex items-start gap-3 animate-pulse">
+            <div key={i} className="flex items-start gap-3 opacity-60">
               <div className="w-8 h-8 rounded-lg bg-muted" />
               <div className="flex-1 space-y-2">
                 <div className="h-4 bg-muted rounded w-3/4" />
