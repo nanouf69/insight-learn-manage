@@ -140,11 +140,13 @@ export function ComptabilitePage() {
     date_echeance: string;
     date_paiement: string;
     numero_engagement: string;
+    numero_convention: string;
   }>({
     numero: "", client_nom: "", type_financement: "particulier",
     montant_ht: "0", tva_taux: "20", statut: "en_attente",
     date_emission: "", date_echeance: "", date_paiement: "",
     numero_engagement: "",
+    numero_convention: "",
   });
   const [savingFactureEdit, setSavingFactureEdit] = useState(false);
   const [creatingAvoir, setCreatingAvoir] = useState<string | null>(null);
