@@ -139,10 +139,12 @@ export function ComptabilitePage() {
     date_emission: string;
     date_echeance: string;
     date_paiement: string;
+    numero_engagement: string;
   }>({
     numero: "", client_nom: "", type_financement: "particulier",
     montant_ht: "0", tva_taux: "20", statut: "en_attente",
     date_emission: "", date_echeance: "", date_paiement: "",
+    numero_engagement: "",
   });
   const [savingFactureEdit, setSavingFactureEdit] = useState(false);
   const [creatingAvoir, setCreatingAvoir] = useState<string | null>(null);
@@ -166,6 +168,7 @@ export function ComptabilitePage() {
       date_emission: f.date_emission || "",
       date_echeance: f.date_echeance || "",
       date_paiement: f.date_paiement || "",
+      numero_engagement: (f as any).numero_engagement || "",
     });
   };
 
@@ -189,6 +192,7 @@ export function ComptabilitePage() {
         date_emission: editFactureForm.date_emission || null,
         date_echeance: editFactureForm.date_echeance || null,
         date_paiement: editFactureForm.date_paiement || null,
+        numero_engagement: editFactureForm.numero_engagement?.trim() || null,
       };
       const { error } = await supabase.from("factures").update(payload).eq("id", editingFacture.id);
       if (error) throw error;
@@ -2072,13 +2076,18 @@ export function ComptabilitePage() {
               />
             </div>
             <div className="space-y-1">
-              <label className="text-xs text-muted-foreground">Taux TVA (%)</label>
-              <Input
-                type="number"
-                step="0.01"
+              <label className="text-xs text-muted-foreground">Taux TVA</label>
+              <Select
                 value={editFactureForm.tva_taux}
-                onChange={(e) => setEditFactureForm(f => ({ ...f, tva_taux: e.target.value }))}
-              />
+                onValueChange={(v) => setEditFactureForm(f => ({ ...f, tva_taux: v }))}
+              >
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="0">Exonération de TVA (0%)</SelectItem>
+                  <SelectItem value="10">10%</SelectItem>
+                  <SelectItem value="20">20%</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-1">
               <label className="text-xs text-muted-foreground">TTC calculé</label>
@@ -2113,6 +2122,16 @@ export function ComptabilitePage() {
                 type="date"
                 value={editFactureForm.date_paiement}
                 onChange={(e) => setEditFactureForm(f => ({ ...f, date_paiement: e.target.value }))}
+              />
+            </div>
+            <div className="col-span-2 space-y-1">
+              <label className="text-xs text-muted-foreground">
+                N° d'engagement {editFactureForm.type_financement === "france_travail" ? "(France Travail)" : "(optionnel)"}
+              </label>
+              <Input
+                placeholder="Ex : 25FT123456"
+                value={editFactureForm.numero_engagement}
+                onChange={(e) => setEditFactureForm(f => ({ ...f, numero_engagement: e.target.value }))}
               />
             </div>
           </div>
