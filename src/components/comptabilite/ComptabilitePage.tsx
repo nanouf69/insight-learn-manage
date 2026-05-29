@@ -1296,8 +1296,37 @@ export function ComptabilitePage() {
                         title={isDraft ? "Cliquer pour prévisualiser et valider la facture" : isDbFacture ? "Cliquer pour modifier la facture" : undefined}
                       >
                         <TableCell className="font-medium">
-                          {f.numero}
-                          {isAvoir && <Badge variant="outline" className="ml-2 border-rose-300 text-rose-700">Avoir</Badge>}
+                          <div className="flex items-center gap-2">
+                            <span>{f.numero}</span>
+                            {isAvoir && <Badge variant="outline" className="border-rose-300 text-rose-700">Avoir</Badge>}
+                            {showActions && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-6 w-6 p-0 text-primary hover:text-primary hover:bg-primary/10 shrink-0"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  try {
+                                    if (String(f.id).startsWith("draft-")) {
+                                      if (!f._draftRaw) { toast.error("Brouillon vide"); return; }
+                                      generateDraftPDF(f._draftRaw).then(() => toast.success("PDF téléchargé"))
+                                        .catch((err) => { console.error(err); toast.error("Erreur lors du téléchargement"); });
+                                    } else {
+                                      generateDraftPDF(factureToDraftShape(f), { final: true })
+                                        .then(() => toast.success("PDF téléchargé"))
+                                        .catch((err) => { console.error(err); toast.error("Erreur lors du téléchargement"); });
+                                    }
+                                  } catch (err) {
+                                    console.error(err);
+                                    toast.error("Erreur lors du téléchargement");
+                                  }
+                                }}
+                                title="Télécharger la facture en PDF"
+                              >
+                                <Download className="h-3.5 w-3.5" />
+                              </Button>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell>{f.client_nom}</TableCell>
                         <TableCell>
