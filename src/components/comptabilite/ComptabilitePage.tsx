@@ -140,11 +140,13 @@ export function ComptabilitePage() {
     date_echeance: string;
     date_paiement: string;
     numero_engagement: string;
+    numero_convention: string;
   }>({
     numero: "", client_nom: "", type_financement: "particulier",
     montant_ht: "0", tva_taux: "20", statut: "en_attente",
     date_emission: "", date_echeance: "", date_paiement: "",
     numero_engagement: "",
+    numero_convention: "",
   });
   const [savingFactureEdit, setSavingFactureEdit] = useState(false);
   const [creatingAvoir, setCreatingAvoir] = useState<string | null>(null);
@@ -169,6 +171,7 @@ export function ComptabilitePage() {
       date_echeance: f.date_echeance || "",
       date_paiement: f.date_paiement || "",
       numero_engagement: (f as any).numero_engagement || "",
+      numero_convention: (f as any).numero_convention || "",
     });
   };
 
@@ -193,6 +196,7 @@ export function ComptabilitePage() {
         date_echeance: editFactureForm.date_echeance || null,
         date_paiement: editFactureForm.date_paiement || null,
         numero_engagement: editFactureForm.numero_engagement?.trim() || null,
+        numero_convention: editFactureForm.numero_convention?.trim() || null,
       };
       const { error } = await supabase.from("factures").update(payload).eq("id", editingFacture.id);
       if (error) throw error;
@@ -2171,7 +2175,7 @@ export function ComptabilitePage() {
                 onChange={(e) => setEditFactureForm(f => ({ ...f, date_paiement: e.target.value }))}
               />
             </div>
-            <div className="col-span-2 space-y-1">
+            <div className="space-y-1">
               <label className="text-xs text-muted-foreground">
                 N° d'engagement {editFactureForm.type_financement === "france_travail" ? "(France Travail)" : "(optionnel)"}
               </label>
@@ -2179,6 +2183,14 @@ export function ComptabilitePage() {
                 placeholder="Ex : 25FT123456"
                 value={editFactureForm.numero_engagement}
                 onChange={(e) => setEditFactureForm(f => ({ ...f, numero_engagement: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">N° de convention (optionnel)</label>
+              <Input
+                placeholder="Ex : CONV-2026-001"
+                value={editFactureForm.numero_convention}
+                onChange={(e) => setEditFactureForm(f => ({ ...f, numero_convention: e.target.value }))}
               />
             </div>
           </div>

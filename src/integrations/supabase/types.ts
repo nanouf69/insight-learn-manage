@@ -1290,6 +1290,7 @@ export type Database = {
           montant_ttc: number
           montant_tva: number
           numero: string
+          numero_convention: string | null
           numero_engagement: string | null
           session_id: string | null
           statut: string | null
@@ -1312,6 +1313,7 @@ export type Database = {
           montant_ttc?: number
           montant_tva?: number
           numero: string
+          numero_convention?: string | null
           numero_engagement?: string | null
           session_id?: string | null
           statut?: string | null
@@ -1334,6 +1336,7 @@ export type Database = {
           montant_ttc?: number
           montant_tva?: number
           numero?: string
+          numero_convention?: string | null
           numero_engagement?: string | null
           session_id?: string | null
           statut?: string | null
