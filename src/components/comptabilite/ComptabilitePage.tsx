@@ -171,6 +171,7 @@ export function ComptabilitePage() {
       date_echeance: f.date_echeance || "",
       date_paiement: f.date_paiement || "",
       numero_engagement: (f as any).numero_engagement || "",
+      numero_convention: (f as any).numero_convention || "",
     });
   };
 
