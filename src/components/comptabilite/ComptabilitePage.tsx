@@ -13,6 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
 import { supabase } from "@/integrations/supabase/client";
+import { generateDraftPDF } from "@/lib/pdf/draft-facture";
 import { 
   Search, Euro, TrendingUp, Clock, CheckCircle, AlertTriangle,
   Download, Filter, Receipt, CreditCard, Banknote, BarChart3,
@@ -1305,7 +1306,25 @@ export function ComptabilitePage() {
                         <TableCell>{formatDate(f.date_paiement)}</TableCell>
                         {showActions && (
                           <TableCell onClick={(e) => e.stopPropagation()}>
-                            {!String(f.id).startsWith("draft-") && (
+                            {String(f.id).startsWith("draft-") ? (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-7 px-2 text-primary hover:text-primary hover:bg-primary/10"
+                                onClick={() => {
+                                  if (!f._draftRaw) { toast.error("Brouillon vide"); return; }
+                                  generateDraftPDF(f._draftRaw).then(() => {
+                                    toast.success("PDF téléchargé");
+                                  }).catch((err) => {
+                                    console.error(err);
+                                    toast.error("Erreur lors du téléchargement");
+                                  });
+                                }}
+                                title="Télécharger le brouillon en PDF"
+                              >
+                                <Download className="h-3.5 w-3.5" />
+                              </Button>
+                            ) : (
                               <div className="flex items-center gap-1">
                                 <Button
                                   size="sm"
@@ -1969,12 +1988,12 @@ export function ComptabilitePage() {
               variant="outline"
               onClick={() => {
                 if (!draftPreview?._draftRaw) return;
-                const html = generateDraftHTML(draftPreview._draftRaw);
-                const w = window.open("", "_blank");
-                if (!w) { toast.error("Popup bloquée"); return; }
-                w.document.write(html);
-                w.document.close();
-                w.onload = () => { setTimeout(() => { w.focus(); w.print(); }, 300); };
+                generateDraftPDF(draftPreview._draftRaw).then(() => {
+                  toast.success("PDF téléchargé");
+                }).catch((err) => {
+                  console.error(err);
+                  toast.error("Erreur lors du téléchargement");
+                });
               }}
               disabled={validatingDraft}
             >
