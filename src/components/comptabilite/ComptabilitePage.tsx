@@ -13,7 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
 import { supabase } from "@/integrations/supabase/client";
-import { generateDraftPDF } from "@/lib/pdf/draft-facture";
+import { generateDraftPDF, factureToDraftShape } from "@/lib/pdf/draft-facture";
 import { 
   Search, Euro, TrendingUp, Clock, CheckCircle, AlertTriangle,
   Download, Filter, Receipt, CreditCard, Banknote, BarChart3,
@@ -1338,6 +1338,24 @@ export function ComptabilitePage() {
                                   title={isDraft ? "Modifier le brouillon" : "Modifier la facture"}
                                 >
                                   <Pencil className="h-3.5 w-3.5" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-7 px-2 text-primary hover:text-primary hover:bg-primary/10"
+                                  onClick={() => {
+                                    try {
+                                      generateDraftPDF(factureToDraftShape(f), { final: true })
+                                        .then(() => toast.success("PDF téléchargé"))
+                                        .catch((err) => { console.error(err); toast.error("Erreur lors du téléchargement"); });
+                                    } catch (err) {
+                                      console.error(err);
+                                      toast.error("Erreur lors du téléchargement");
+                                    }
+                                  }}
+                                  title="Télécharger la facture en PDF"
+                                >
+                                  <Download className="h-3.5 w-3.5" />
                                 </Button>
                                 {!isAvoir && !isDraft && (
                                   <Button

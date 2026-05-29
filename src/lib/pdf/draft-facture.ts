@@ -29,7 +29,8 @@ function eur(n: number): string {
   return `${(n || 0).toFixed(2).replace('.', ',')} €`;
 }
 
-export async function generateDraftPDF(draft: any) {
+export async function generateDraftPDF(draft: any, opts: { final?: boolean } = {}) {
+  const isFinal = !!opts.final;
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const pw = doc.internal.pageSize.getWidth();
   const ph = doc.internal.pageSize.getHeight();
@@ -41,14 +42,17 @@ export async function generateDraftPDF(draft: any) {
     doc.addImage(logoImage, 'PNG', ml, 10, 45, 16);
   } catch {}
 
-  // Banner brouillon
-  doc.setFillColor(253, 230, 138);
-  doc.rect(ml, 28, mr - ml, 8, 'F');
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
-  doc.setTextColor(146, 64, 14);
-  doc.text('⚠ BROUILLON — Facture non validée', pw / 2, 34, { align: 'center' });
-  doc.setTextColor(30, 30, 30);
+  if (!isFinal) {
+    // Banner brouillon
+    doc.setFillColor(253, 230, 138);
+    doc.rect(ml, 28, mr - ml, 8, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(146, 64, 14);
+    doc.text('⚠ BROUILLON — Facture non validée', pw / 2, 34, { align: 'center' });
+    doc.setTextColor(30, 30, 30);
+  }
+
 
   // Titre
   doc.setFont('helvetica', 'bold');
@@ -183,7 +187,42 @@ export async function generateDraftPDF(draft: any) {
     pw / 2, footerY, { align: 'center' }
   );
 
-  const fileName = `Brouillon_Facture_${draft?.numeroInterne || draft?.numero || 'draft'}.pdf`;
+  const fileName = isFinal
+    ? `Facture_${draft?.numero || draft?.numeroInterne || 'facture'}.pdf`
+    : `Brouillon_Facture_${draft?.numeroInterne || draft?.numero || 'draft'}.pdf`;
   doc.save(fileName);
   return { fileName };
 }
+
+// Build draft-shaped object from a DB facture row
+export function factureToDraftShape(f: any) {
+  const ht = Number(f?.montant_ht) || 0;
+  const taux = Number(f?.tva_taux) || 0;
+  const tvaType = taux === 0 ? 'EXO' : 'NORM';
+  const designationParts: string[] = [];
+  if (f?.client_opco) designationParts.push(`OPCO : ${f.client_opco}`);
+  if (f?.numero_engagement) designationParts.push(`N° d'engagement : ${f.numero_engagement}`);
+  const designation = ['Prestation de formation', ...designationParts].join(' — ');
+  return {
+    numero: f?.numero || '',
+    numeroInterne: f?.numero || '',
+    date: f?.date_emission,
+    dateEcheance: f?.date_echeance,
+    refDossier: [f?.client_nom, f?.client_adresse, f?.client_siret ? `SIRET : ${f.client_siret}` : null]
+      .filter(Boolean).join('\n'),
+    refConvention: f?.numero_engagement || '',
+    lignes: [{
+      stagiaire: '',
+      designation,
+      tvaType,
+      tvaTaux: taux,
+      prixUnitaire: ht,
+      quantite: 1,
+      remise: 0,
+      dateDebut: null,
+      dateFin: null,
+      lieu: '',
+    }],
+  };
+}
+
