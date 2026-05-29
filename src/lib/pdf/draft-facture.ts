@@ -214,7 +214,7 @@ export function factureToDraftShape(f: any) {
     dateEcheance: f?.date_echeance,
     refDossier: [f?.client_nom, f?.client_adresse, f?.client_siret ? `SIRET : ${f.client_siret}` : null]
       .filter(Boolean).join('\n'),
-    refConvention: f?.numero_engagement || '',
+    refConvention: '',
     lignes: [{
       stagiaire: '',
       designation,
