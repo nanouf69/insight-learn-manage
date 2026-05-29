@@ -1275,12 +1275,20 @@ export function ComptabilitePage() {
                   const renderRows = (list: Facture[], showActions: boolean) => list.map((f) => {
                     const isDraft = f.statut === "brouillon";
                     const isAvoir = Number(f.montant_ttc) < 0;
+                    const isDbFacture = !String(f.id).startsWith("draft-");
+                    const rowClickable = isDraft || isDbFacture;
                     return (
                       <TableRow
                         key={f.id}
-                        className={isDraft ? "cursor-pointer hover:bg-amber-50" : ""}
-                        onClick={isDraft ? () => setDraftPreview(f) : undefined}
-                        title={isDraft ? "Cliquer pour prévisualiser et valider la facture" : undefined}
+                        className={rowClickable ? (isDraft ? "cursor-pointer hover:bg-amber-50" : "cursor-pointer hover:bg-muted/50") : ""}
+                        onClick={
+                          isDraft
+                            ? () => setDraftPreview(f)
+                            : isDbFacture
+                              ? () => openEditFacture(f)
+                              : undefined
+                        }
+                        title={isDraft ? "Cliquer pour prévisualiser et valider la facture" : isDbFacture ? "Cliquer pour modifier la facture" : undefined}
                       >
                         <TableCell className="font-medium">
                           {f.numero}
