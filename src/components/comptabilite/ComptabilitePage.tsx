@@ -2124,6 +2124,16 @@ export function ComptabilitePage() {
                 onChange={(e) => setEditFactureForm(f => ({ ...f, date_paiement: e.target.value }))}
               />
             </div>
+            <div className="col-span-2 space-y-1">
+              <label className="text-xs text-muted-foreground">
+                N° d'engagement {editFactureForm.type_financement === "france_travail" ? "(France Travail)" : "(optionnel)"}
+              </label>
+              <Input
+                placeholder="Ex : 25FT123456"
+                value={editFactureForm.numero_engagement}
+                onChange={(e) => setEditFactureForm(f => ({ ...f, numero_engagement: e.target.value }))}
+              />
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditingFacture(null)} disabled={savingFactureEdit}>
