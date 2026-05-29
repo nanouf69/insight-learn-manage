@@ -1988,12 +1988,12 @@ export function ComptabilitePage() {
               variant="outline"
               onClick={() => {
                 if (!draftPreview?._draftRaw) return;
-                const html = generateDraftHTML(draftPreview._draftRaw);
-                const w = window.open("", "_blank");
-                if (!w) { toast.error("Popup bloquée"); return; }
-                w.document.write(html);
-                w.document.close();
-                w.onload = () => { setTimeout(() => { w.focus(); w.print(); }, 300); };
+                generateDraftPDF(draftPreview._draftRaw).then(() => {
+                  toast.success("PDF téléchargé");
+                }).catch((err) => {
+                  console.error(err);
+                  toast.error("Erreur lors du téléchargement");
+                });
               }}
               disabled={validatingDraft}
             >
