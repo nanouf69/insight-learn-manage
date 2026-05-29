@@ -2076,13 +2076,18 @@ export function ComptabilitePage() {
               />
             </div>
             <div className="space-y-1">
-              <label className="text-xs text-muted-foreground">Taux TVA (%)</label>
-              <Input
-                type="number"
-                step="0.01"
+              <label className="text-xs text-muted-foreground">Taux TVA</label>
+              <Select
                 value={editFactureForm.tva_taux}
-                onChange={(e) => setEditFactureForm(f => ({ ...f, tva_taux: e.target.value }))}
-              />
+                onValueChange={(v) => setEditFactureForm(f => ({ ...f, tva_taux: v }))}
+              >
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="0">Exonération de TVA (0%)</SelectItem>
+                  <SelectItem value="10">10%</SelectItem>
+                  <SelectItem value="20">20%</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-1">
               <label className="text-xs text-muted-foreground">TTC calculé</label>
