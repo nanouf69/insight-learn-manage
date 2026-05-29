@@ -29,7 +29,8 @@ function eur(n: number): string {
   return `${(n || 0).toFixed(2).replace('.', ',')} €`;
 }
 
-export async function generateDraftPDF(draft: any) {
+export async function generateDraftPDF(draft: any, opts: { final?: boolean } = {}) {
+  const isFinal = !!opts.final;
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const pw = doc.internal.pageSize.getWidth();
   const ph = doc.internal.pageSize.getHeight();
@@ -41,14 +42,17 @@ export async function generateDraftPDF(draft: any) {
     doc.addImage(logoImage, 'PNG', ml, 10, 45, 16);
   } catch {}
 
-  // Banner brouillon
-  doc.setFillColor(253, 230, 138);
-  doc.rect(ml, 28, mr - ml, 8, 'F');
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
-  doc.setTextColor(146, 64, 14);
-  doc.text('⚠ BROUILLON — Facture non validée', pw / 2, 34, { align: 'center' });
-  doc.setTextColor(30, 30, 30);
+  if (!isFinal) {
+    // Banner brouillon
+    doc.setFillColor(253, 230, 138);
+    doc.rect(ml, 28, mr - ml, 8, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(146, 64, 14);
+    doc.text('⚠ BROUILLON — Facture non validée', pw / 2, 34, { align: 'center' });
+    doc.setTextColor(30, 30, 30);
+  }
+
 
   // Titre
   doc.setFont('helvetica', 'bold');
