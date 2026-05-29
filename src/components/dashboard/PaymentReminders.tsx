@@ -73,7 +73,7 @@ export function PaymentReminders() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="animate-pulse space-y-3">
+          <div className="space-y-3 opacity-60">
             {[1, 2].map((i) => (
               <div key={i} className="h-16 bg-muted rounded-lg" />
             ))}
