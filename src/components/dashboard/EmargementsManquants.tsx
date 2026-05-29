@@ -81,7 +81,7 @@ export function EmargementsManquants({ onNavigateToApprenant }: Props) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="animate-pulse space-y-3">
+          <div className="space-y-3 opacity-60">
             {[1, 2].map((i) => (
               <div key={i} className="h-14 bg-muted rounded-lg" />
             ))}
