@@ -85,14 +85,18 @@ export async function generateDraftPDF(draft: any, opts: { final?: boolean } = {
   doc.text('Adressée à :', destX, yd);
   doc.setFont('helvetica', 'normal');
   yd += 5;
-  doc.setFont('helvetica', 'bold');
-  doc.text(draft?.refDossier || '(client non défini)', destX, yd);
+  const destLines = String(draft?.refDossier || '(client non défini)').split('\n').filter(Boolean);
+  destLines.forEach((line, idx) => {
+    if (idx === 0) doc.setFont('helvetica', 'bold'); else doc.setFont('helvetica', 'normal');
+    doc.text(line, destX, yd);
+    yd += 4;
+  });
   doc.setFont('helvetica', 'normal');
-  yd += 4;
   if (draft?.refConvention) {
     doc.text(`Réf à rappeler : ${draft.refConvention}`, destX, yd);
     yd += 4;
   }
+
 
   // Lignes
   const lignes: any[] = Array.isArray(draft?.lignes) ? draft.lignes : [];
