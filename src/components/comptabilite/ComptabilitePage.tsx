@@ -168,6 +168,8 @@ export function ComptabilitePage() {
       date_emission: f.date_emission || "",
       date_echeance: f.date_echeance || "",
       date_paiement: f.date_paiement || "",
+      date_paiement: f.date_paiement || "",
+      numero_engagement: (f as any).numero_engagement || "",
     });
   };
 
