@@ -1297,18 +1297,18 @@ export function ComptabilitePage() {
                         <TableCell>{formatDate(f.date_paiement)}</TableCell>
                         {showActions && (
                           <TableCell onClick={(e) => e.stopPropagation()}>
-                            {!isDraft && (
+                            {!String(f.id).startsWith("draft-") && (
                               <div className="flex items-center gap-1">
                                 <Button
                                   size="sm"
                                   variant="ghost"
                                   className="h-7 px-2"
                                   onClick={() => openEditFacture(f)}
-                                  title="Modifier la facture"
+                                  title={isDraft ? "Modifier le brouillon" : "Modifier la facture"}
                                 >
                                   <Pencil className="h-3.5 w-3.5" />
                                 </Button>
-                                {!isAvoir && (
+                                {!isAvoir && !isDraft && (
                                   <Button
                                     size="sm"
                                     variant="ghost"
