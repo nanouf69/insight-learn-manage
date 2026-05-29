@@ -182,6 +182,18 @@ export async function generateDraftPDF(draft: any, opts: { final?: boolean } = {
   const condLines = doc.splitTextToSize(condText, mr - ml - 6);
   doc.text(condLines, ml + 3, yT + 11);
 
+  // Mention légale
+  let yLegal = yT + 34;
+  const legalText = `Centre de formation agréé par la préfecture n°69-18-001 et 69-16-15 TVA non applicable - article 293 B du CGI « Membre d'un centre de gestion agréé, le règlement par chèque est accepté »`;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(80, 80, 80);
+  const legalLines = doc.splitTextToSize(legalText, mr - ml);
+  legalLines.forEach((line: string) => {
+    doc.text(line, pw / 2, yLegal, { align: 'center' });
+    yLegal += 3.5;
+  });
+
   // Footer
   const footerY = ph - 10;
   doc.setFontSize(7);
