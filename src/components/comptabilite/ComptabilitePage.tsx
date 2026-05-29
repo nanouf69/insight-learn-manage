@@ -2018,14 +2018,14 @@ export function ComptabilitePage() {
 
       {/* Dialog d'édition d'une facture */}
       <Dialog open={!!editingFacture} onOpenChange={(open) => { if (!open) setEditingFacture(null); }}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Pencil className="h-4 w-4" />
               Modifier la facture {editingFacture?.numero}
             </DialogTitle>
           </DialogHeader>
-          <div className="grid grid-cols-2 gap-4 py-2">
+          <div className="grid grid-cols-2 gap-4 py-2 overflow-y-auto flex-1 pr-1">
             <div className="space-y-1">
               <label className="text-xs text-muted-foreground">Numéro</label>
               <Input
