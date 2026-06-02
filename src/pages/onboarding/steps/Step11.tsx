@@ -32,9 +32,11 @@ export default function Step11() {
   const [dateExamen, setDateExamen] = useState('');
   const [typeExamen, setTypeExamen] = useState('');
   const [responsableContact, setResponsableContact] = useState(false);
+  const [mobiliteTaxi, setMobiliteTaxi] = useState(false);
   const [attempted, setAttempted] = useState(false);
 
   const selectedExam = datesExamenTheorique.find(e => e.value === dateExamen);
+  const isTaxi = typeExamen.startsWith('taxi');
 
   // Load saved values on mount
   useEffect(() => {
@@ -42,10 +44,12 @@ export default function Step11() {
     const savedDateExamen = localStorage.getItem('onboarding_date_examen');
     const savedTypeExamen = localStorage.getItem('onboarding_type_examen');
     const savedResponsable = localStorage.getItem('onboarding_responsable_contact_centre');
+    const savedMobilite = localStorage.getItem('onboarding_mobilite_taxi_ack');
     if (savedNumeroDossier) setNumeroDossier(savedNumeroDossier);
     if (savedDateExamen) setDateExamen(savedDateExamen);
     if (savedTypeExamen) setTypeExamen(savedTypeExamen);
     if (savedResponsable === 'true') setResponsableContact(true);
+    if (savedMobilite === 'true') setMobiliteTaxi(true);
   }, []);
 
   const handleNext = async () => {
