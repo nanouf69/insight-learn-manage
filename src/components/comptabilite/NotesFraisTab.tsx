@@ -670,6 +670,7 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
                     <TableHead>Catégorie</TableHead>
                     <TableHead className="text-right">Montant</TableHead>
                     <TableHead>Statut</TableHead>
+                    <TableHead>Note PDF</TableHead>
                     <TableHead>Justificatif</TableHead>
                     {!readOnly && <TableHead>Actions</TableHead>}
                   </TableRow>
@@ -683,7 +684,7 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
                       <TableCell className="font-medium text-sm">{note.description}</TableCell>
                       <TableCell className="text-sm text-muted-foreground">{note.fournisseur || '—'}</TableCell>
                       <TableCell>
-                        {note.categorie ? <Badge variant="outline">{note.categorie}</Badge> : '—'}
+                        {cleanCategorieLabel(note.categorie) ? <Badge variant="outline">{cleanCategorieLabel(note.categorie)}</Badge> : '—'}
                       </TableCell>
                       <TableCell className="text-right font-semibold">{note.montant.toFixed(2)} €</TableCell>
                       <TableCell>
@@ -703,6 +704,11 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
                             </SelectContent>
                           </Select>
                         )}
+                      </TableCell>
+                      <TableCell>
+                        <Button variant="outline" size="sm" className="gap-1 h-7 text-xs" onClick={() => exportSinglePDF(note)}>
+                          <FileDown className="h-3 w-3" /> PDF
+                        </Button>
                       </TableCell>
                       <TableCell>
                         {note.url ? (
