@@ -601,6 +601,32 @@ export default function DevisPersonnel() {
 
       y += totBoxH + 10;
 
+      // Avertissement TAXI uniquement - mobilite departementale
+      if (formation.type === "taxi") {
+        const warnH = 22;
+        doc.setFillColor(254, 226, 226); // rouge tres clair
+        doc.setDrawColor(220, 38, 38); // rouge
+        doc.setLineWidth(0.5);
+        doc.rect(margin, y, contentW, warnH, "FD");
+        doc.setLineWidth(0.2);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(8.5);
+        doc.setTextColor(185, 28, 28);
+        doc.text("ATTENTION - MOBILITE DEPARTEMENTALE TAXI", margin + 3, y + 5);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(7.5);
+        doc.setTextColor(153, 27, 27);
+        const warnText = "Vous pourrez exercer uniquement dans le departement dans lequel vous avez reussi l'examen. Pour exercer dans un autre departement, une formation de mobilite de 14h sera obligatoire dans le departement ou vous souhaitez poursuivre votre activite de taxi.";
+        const warnLines = doc.splitTextToSize(warnText, contentW - 6);
+        warnLines.forEach((l: string, li: number) => {
+          doc.text(l, margin + 3, y + 10 + li * 3.5);
+        });
+        y += warnH + 6;
+        doc.setTextColor(0, 0, 0);
+      }
+
+
+
       // RIB info
       doc.setFont("helvetica", "bold");
       doc.setFontSize(8.5);
