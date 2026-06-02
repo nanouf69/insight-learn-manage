@@ -263,6 +263,28 @@ export default function Step11() {
               )}
             </div>
 
+            {/* Engagement mobilité TAXI - uniquement pour formations taxi */}
+            {isTaxi && (
+              <div className={`rounded-xl p-5 border-2 ${attempted && !mobiliteTaxi ? 'border-red-600 bg-red-50' : 'border-red-400 bg-red-50'}`}>
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={mobiliteTaxi}
+                    onChange={(e) => setMobiliteTaxi(e.target.checked)}
+                    className="mt-1 w-6 h-6 accent-red-600 cursor-pointer flex-shrink-0"
+                  />
+                  <span className="text-red-800 font-bold text-base lg:text-lg leading-snug">
+                    ATTENTION (TAXI) : Je reconnais que je pourrai exercer uniquement dans le département dans lequel j'ai réussi mon examen. Pour exercer dans un autre département, une <span className="underline">formation de mobilité de 14h</span> sera obligatoire dans le département où je souhaite poursuivre mon activité de taxi. <span className="text-red-600">*</span>
+                  </span>
+                </label>
+                {attempted && !mobiliteTaxi && (
+                  <p className="text-red-600 text-sm font-semibold mt-2 ml-9">Vous devez cocher cette case pour continuer.</p>
+                )}
+              </div>
+            )}
+
+
+
             <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
               <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
               <p className="text-red-700 text-sm">
