@@ -427,6 +427,12 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
         </div>
         {!readOnly && (
           <div className="flex items-center gap-2">
+            <Button variant="outline" className="gap-2" onClick={exportPDF}>
+              <FileDown className="h-4 w-4" /> PDF
+            </Button>
+            <Button variant="outline" className="gap-2" onClick={exportCSV}>
+              <Download className="h-4 w-4" /> CSV
+            </Button>
             <Button variant="outline" className="gap-2" onClick={handleValidateAll}>
               ✓ Tout valider
             </Button>
