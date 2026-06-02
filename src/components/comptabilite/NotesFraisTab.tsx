@@ -425,17 +425,21 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
             Total : {totalMontant.toFixed(2)} €
           </p>
         </div>
-        {!readOnly && (
-          <div className="flex items-center gap-2">
-            <Button variant="outline" className="gap-2" onClick={exportPDF}>
-              <FileDown className="h-4 w-4" /> PDF
-            </Button>
-            <Button variant="outline" className="gap-2" onClick={exportCSV}>
-              <Download className="h-4 w-4" /> CSV
-            </Button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button variant="outline" className="gap-2" onClick={exportPDF}>
+            <FileDown className="h-4 w-4" /> PDF
+          </Button>
+          <Button variant="outline" className="gap-2" onClick={exportCSV}>
+            <Download className="h-4 w-4" /> CSV
+          </Button>
+          {!readOnly && (
             <Button variant="outline" className="gap-2" onClick={handleValidateAll}>
               ✓ Tout valider
             </Button>
+          )}
+        </div>
+        {!readOnly && (
+          <div className="flex items-center gap-2">
             <Dialog open={showForm} onOpenChange={setShowForm}>
               <DialogTrigger asChild>
                 <Button className="gap-2" onClick={openNewNoteForm}><Plus className="h-4 w-4" /> Nouvelle note</Button>
