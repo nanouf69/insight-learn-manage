@@ -640,9 +640,14 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
                       </TableCell>
                       <TableCell>
                         {note.url ? (
-                          <Button variant="outline" size="sm" className="gap-1 h-7 text-xs" onClick={() => openFile(note.url!)}>
-                            <Eye className="h-3 w-3" /> Voir
-                          </Button>
+                          <div className="flex items-center gap-1">
+                            <Button variant="outline" size="sm" className="gap-1 h-7 text-xs" onClick={() => openFile(note.url!)}>
+                              <Eye className="h-3 w-3" /> Voir
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => downloadJustificatif(note)} title="Télécharger le justificatif">
+                              <Download className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
                         ) : '—'}
                       </TableCell>
                       {!readOnly && (
