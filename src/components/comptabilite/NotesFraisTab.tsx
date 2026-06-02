@@ -178,7 +178,7 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
       date_depense: format(formDate, 'yyyy-MM-dd'),
       description: formDescription,
       montant: parseFloat(formMontant),
-      categorie: formCategorie || null,
+      categorie: cleanCategorieLabel(formCategorie) || null,
       fournisseur: formFournisseur || null,
       notes: formNotes || null,
     };
@@ -222,7 +222,7 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
     setFormDate(new Date(note.date_depense));
     setFormDescription(note.description);
     setFormMontant(String(note.montant));
-    setFormCategorie(note.categorie || "");
+    setFormCategorie(cleanCategorieLabel(note.categorie));
     setFormFournisseur(note.fournisseur || "");
     setFormNotes(note.notes || "");
     setFormFile(null);
@@ -435,8 +435,8 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
     const matchSearch = !search || 
       n.description.toLowerCase().includes(search.toLowerCase()) ||
       (n.fournisseur || '').toLowerCase().includes(search.toLowerCase()) ||
-      (n.categorie || '').toLowerCase().includes(search.toLowerCase());
-    const matchCat = filterCategorie === "all" || n.categorie === filterCategorie;
+      cleanCategorieLabel(n.categorie).toLowerCase().includes(search.toLowerCase());
+    const matchCat = filterCategorie === "all" || cleanCategorieLabel(n.categorie) === filterCategorie;
     const matchStatut = filterStatut === "all" || n.statut === filterStatut;
     const matchMois = filterMois === "all" || format(new Date(n.date_depense), 'yyyy-MM') === filterMois;
     const matchFournisseur = filterFournisseur === "all" || n.fournisseur === filterFournisseur;
