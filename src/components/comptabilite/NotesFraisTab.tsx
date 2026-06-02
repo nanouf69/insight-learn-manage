@@ -11,12 +11,14 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Search, Upload, Download, Trash2, Eye, CalendarIcon, Receipt, Euro, Copy, Pencil } from "lucide-react";
+import { Plus, Search, Upload, Download, Trash2, Eye, CalendarIcon, Receipt, Euro, Copy, Pencil, FileDown } from "lucide-react";
 
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 interface NoteFrais {
   id: string;
