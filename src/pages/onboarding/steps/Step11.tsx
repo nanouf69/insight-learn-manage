@@ -113,7 +113,7 @@ export default function Step11() {
     navigate('/bienvenue/etape-12');
   };
 
-  const canSubmit = numeroDossier.trim() && dateExamen && typeExamen && responsableContact;
+  const canSubmit = numeroDossier.trim() && dateExamen && typeExamen && responsableContact && (!isTaxi || mobiliteTaxi);
 
   return (
     <OnboardingLayout currentStep={11} totalSteps={12} title="Numéro de dossier et examen">
