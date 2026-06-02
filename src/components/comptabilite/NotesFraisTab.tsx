@@ -35,36 +35,53 @@ interface NoteFrais {
 }
 
 const categories = [
-  "📚 Recette formation",
-  "🎓 CPF",
-  "🏛️ Paiement frais examen CMA",
-  "⛽ Carburant",
-  "🍽️ Repas",
-  "🖥️ Matériel",
-  "📎 Fournitures",
-  "📱 Téléphonie & Internet",
-  "💻 Abonnement logiciel / CRM",
-  "🏢 Loyer",
-  "🛡️ Assurance",
-  "👨‍🏫 Formateurs",
-  "💼 Salaire",
-  "🚌 Transport",
-  "⚖️ Honoraires",
-  "📢 Publicité",
-  "🏦 Frais bancaires",
-  "🏛️ Impôts & taxes",
-  "🔄 Virement interne",
-  "💰 Dividendes",
-  "⚡ Électricité",
-  "🧹 Entretien des locaux",
-  "🚗 Entretien véhicule",
-  "🏦 Compte courant associé",
-  "📮 Frais postaux",
-  "🏛️ URSSAF",
-  "👴 Retraite",
-  "❓ Inconnu",
-  "📄 Autre",
+  "Recette formation",
+  "CPF",
+  "Paiement frais examen CMA",
+  "Carburant",
+  "Repas",
+  "Matériel",
+  "Fournitures",
+  "Téléphonie & Internet",
+  "Abonnement logiciel / CRM",
+  "Loyer",
+  "Assurance",
+  "Formateurs",
+  "Salaire",
+  "Transport",
+  "Honoraires",
+  "Publicité",
+  "Frais bancaires",
+  "Impôts & taxes",
+  "Virement interne",
+  "Dividendes",
+  "Électricité",
+  "Entretien des locaux",
+  "Entretien véhicule",
+  "Compte courant associé",
+  "Frais postaux",
+  "URSSAF",
+  "Retraite",
+  "Inconnu",
+  "Autre",
 ];
+
+const cleanCategorieLabel = (categorie?: string | null) => {
+  if (!categorie) return "";
+  return categorie
+    .replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\uFE0F]/gu, "")
+    .replace(/^[^\p{L}\p{N}]+/u, "")
+    .replace(/\s+/g, " ")
+    .trim();
+};
+
+const safeFilePart = (value: string) =>
+  value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .toLowerCase();
 
 const statutConfig: Record<string, { label: string; color: string }> = {
   a_traiter: { label: "À traiter", color: "bg-amber-100 text-amber-700" },
