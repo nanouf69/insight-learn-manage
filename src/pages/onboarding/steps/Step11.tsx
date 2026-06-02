@@ -75,11 +75,18 @@ export default function Step11() {
       return;
     }
 
+    if (isTaxi && !mobiliteTaxi) {
+      toast.error("Vous devez reconnaître la restriction de mobilité départementale TAXI");
+      return;
+    }
+
     // Store in localStorage
     localStorage.setItem('onboarding_numero_dossier', numeroDossier);
     localStorage.setItem('onboarding_date_examen', dateExamen);
     localStorage.setItem('onboarding_type_examen', typeExamen);
     localStorage.setItem('onboarding_responsable_contact_centre', 'true');
+    localStorage.setItem('onboarding_mobilite_taxi_ack', isTaxi && mobiliteTaxi ? 'true' : 'false');
+
 
     // Also save directly to database
     const apprenantId = localStorage.getItem('onboarding_apprenant_id');
