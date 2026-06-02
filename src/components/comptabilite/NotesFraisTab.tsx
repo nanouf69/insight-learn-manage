@@ -266,6 +266,119 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
     else toast.error("Impossible de générer le lien");
   };
 
+  const downloadJustificatif = async (note: NoteFrais) => {
+    if (!note.url) return;
+    try {
+      const match = note.url.match(/\/storage\/v1\/object\/public\/(.+)/);
+      let downloadUrl = note.url;
+      if (match) {
+        const fullPath = decodeURIComponent(match[1]);
+        const bucketName = fullPath.split('/')[0];
+        const filePath = fullPath.substring(bucketName.length + 1);
+        const { data } = await supabase.storage.from(bucketName).createSignedUrl(filePath, 300, {
+          download: note.nom_fichier || true,
+        });
+        if (data?.signedUrl) downloadUrl = data.signedUrl;
+      }
+      const res = await fetch(downloadUrl);
+      const blob = await res.blob();
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = note.nom_fichier || `justificatif-${note.id}`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(link.href);
+    } catch (e: any) {
+      toast.error("Erreur de téléchargement : " + (e?.message || e));
+    }
+  };
+
+  const exportPDF = () => {
+    if (filtered.length === 0) {
+      toast.info("Aucune note à exporter");
+      return;
+    }
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    const pageWidth = doc.internal.pageSize.getWidth();
+
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Notes de frais', 14, 18);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(100);
+    doc.text(`Édité le ${format(new Date(), 'dd/MM/yyyy')}`, 14, 24);
+    doc.text(
+      `${filtered.length} note${filtered.length > 1 ? 's' : ''} — Total : ${totalMontant.toFixed(2)} €`,
+      14,
+      29
+    );
+    doc.setTextColor(0);
+
+    let cursorY = 36;
+    Object.entries(grouped).forEach(([month, items]) => {
+      const monthTotal = items.reduce((s, i) => s + i.montant, 0);
+      if (cursorY > 260) { doc.addPage(); cursorY = 18; }
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text(month.charAt(0).toUpperCase() + month.slice(1), 14, cursorY);
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(100);
+      doc.text(`${items.length} note${items.length > 1 ? 's' : ''} — ${monthTotal.toFixed(2)} €`, 14, cursorY + 5);
+      doc.setTextColor(0);
+
+      autoTable(doc, {
+        startY: cursorY + 8,
+        head: [['Date', 'Description', 'Fournisseur', 'Catégorie', 'Montant', 'Statut']],
+        body: items.map(n => [
+          format(new Date(n.date_depense), 'dd/MM/yyyy'),
+          n.description,
+          n.fournisseur || '—',
+          n.categorie || '—',
+          `${n.montant.toFixed(2)} €`,
+          statutConfig[n.statut]?.label || n.statut,
+        ]),
+        styles: { fontSize: 8, cellPadding: 2 },
+        headStyles: { fillColor: [243, 244, 246], textColor: 30, fontStyle: 'bold' },
+        columnStyles: { 4: { halign: 'right' } },
+        margin: { left: 14, right: 14 },
+      });
+      cursorY = (doc as any).lastAutoTable.finalY + 8;
+    });
+
+    doc.save(`notes-de-frais-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+  };
+
+  const exportCSV = () => {
+    if (filtered.length === 0) {
+      toast.info("Aucune note à exporter");
+      return;
+    }
+    const rows = [
+      ['Date', 'Description', 'Fournisseur', 'Catégorie', 'Montant', 'Statut', 'Notes'],
+      ...filtered.map(n => [
+        format(new Date(n.date_depense), 'dd/MM/yyyy'),
+        n.description,
+        n.fournisseur || '',
+        n.categorie || '',
+        n.montant.toFixed(2),
+        statutConfig[n.statut]?.label || n.statut,
+        n.notes || '',
+      ]),
+    ];
+    const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(';')).join('\n');
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `notes-de-frais-${format(new Date(), 'yyyy-MM-dd')}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(link.href);
+  };
+
   const moisOptions = Array.from(new Set(notes.map(n => format(new Date(n.date_depense), 'yyyy-MM'))))
     .sort()
     .reverse();
