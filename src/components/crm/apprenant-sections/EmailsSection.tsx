@@ -569,6 +569,85 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
     }
   };
 
+  const buildPdfFromHtml = async (html: string, filename: string): Promise<AttachmentFile | null> => {
+    try {
+      const { default: jsPDF } = await import('jspdf');
+      const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const marginX = 20;
+      const marginY = 20;
+      const maxWidth = pageWidth - marginX * 2;
+      let y = marginY;
+
+      const normalized = html
+        .replace(/<br\s*\/?>(\s*)/gi, '\n')
+        .replace(/<\/p>/gi, '\n\n')
+        .replace(/<p[^>]*>/gi, '');
+
+      const parts: { text: string; bold: boolean }[] = [];
+      const re = /<strong[^>]*>(.*?)<\/strong>/gi;
+      let lastIdx = 0;
+      let m: RegExpExecArray | null;
+      while ((m = re.exec(normalized)) !== null) {
+        if (m.index > lastIdx) parts.push({ text: normalized.slice(lastIdx, m.index), bold: false });
+        parts.push({ text: m[1], bold: true });
+        lastIdx = m.index + m[0].length;
+      }
+      if (lastIdx < normalized.length) parts.push({ text: normalized.slice(lastIdx), bold: false });
+
+      const clean = (s: string) => s
+        .replace(/<[^>]+>/g, '')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&#39;/g, "'")
+        .replace(/&quot;/g, '"');
+
+      const fullText = parts.map(p => clean(p.text)).join('');
+      const boldMap: boolean[] = [];
+      parts.forEach(p => {
+        const t = clean(p.text);
+        for (let i = 0; i < t.length; i++) boldMap.push(p.bold);
+      });
+
+      doc.setFontSize(11);
+      const lines = fullText.split('\n');
+      let charIdx = 0;
+      for (const line of lines) {
+        if (line.trim() === '') {
+          y += 5;
+          charIdx += 1;
+          if (y > pageHeight - marginY) { doc.addPage(); y = marginY; }
+          continue;
+        }
+        let hasBold = false;
+        for (let i = 0; i < line.length; i++) if (boldMap[charIdx + i]) { hasBold = true; break; }
+        doc.setFont('helvetica', hasBold ? 'bold' : 'normal');
+        const wrapped = doc.splitTextToSize(line, maxWidth);
+        for (const w of wrapped) {
+          if (y > pageHeight - marginY) { doc.addPage(); y = marginY; }
+          doc.text(w, marginX, y);
+          y += 6;
+        }
+        charIdx += line.length + 1;
+      }
+
+      const blob = doc.output('blob');
+      const buf = await blob.arrayBuffer();
+      let binary = '';
+      const bytes = new Uint8Array(buf);
+      for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
+      const contentBytes = btoa(binary);
+      const file = new File([blob], filename, { type: 'application/pdf' });
+      return { file, name: filename, contentType: 'application/pdf', contentBytes };
+    } catch (e) {
+      console.error('[buildPdfFromHtml] error:', e);
+      return null;
+    }
+  };
+
   const handleTemplateSelect = async (templateId: string) => {
     setSelectedTemplate(templateId);
     const template = allTemplates.find(t => t.id === templateId);
@@ -590,6 +669,22 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
       });
       if (newOnes.length < 2) {
         toast({ title: 'Pièces jointes', description: 'Certaines pièces jointes n\'ont pas pu être chargées.', variant: 'destructive' });
+      }
+    }
+
+    // Auto-attache la lettre PDF (même contenu) pour la demande de consultation des copies
+    if (templateId === 'consultation-copies' && template) {
+      const body = template.getBody(apprenant);
+      const safeName = `${apprenant.prenom || ''}_${apprenant.nom || ''}`.replace(/[^a-zA-Z0-9_-]/g, '_');
+      const filename = `Demande_consultation_copies_${safeName}.pdf`;
+      const pdf = await buildPdfFromHtml(body, filename);
+      if (pdf) {
+        setAttachments((prev) => {
+          const existingNames = new Set(prev.map((a) => a.name));
+          return existingNames.has(pdf.name) ? prev : [...prev, pdf];
+        });
+      } else {
+        toast({ title: 'Pièce jointe', description: "Impossible de générer le PDF de la demande.", variant: 'destructive' });
       }
     }
   };
