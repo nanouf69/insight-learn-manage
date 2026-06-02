@@ -426,12 +426,16 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <Button variant="outline" className="gap-2" onClick={exportPDF}>
-            <FileDown className="h-4 w-4" /> PDF
-          </Button>
-          <Button variant="outline" className="gap-2" onClick={exportCSV}>
-            <Download className="h-4 w-4" /> CSV
-          </Button>
+          {!readOnly && (
+            <>
+              <Button variant="outline" className="gap-2" onClick={exportPDF}>
+                <FileDown className="h-4 w-4" /> Télécharger PDF
+              </Button>
+              <Button variant="outline" className="gap-2" onClick={exportCSV}>
+                <Download className="h-4 w-4" /> Télécharger CSV
+              </Button>
+            </>
+          )}
           {!readOnly && (
             <Button variant="outline" className="gap-2" onClick={handleValidateAll}>
               ✓ Tout valider
@@ -511,6 +515,17 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
         )}
 
       </div>
+
+      {readOnly && (
+        <div className="flex flex-wrap items-center gap-2 rounded-md border border-border bg-card p-3">
+          <Button variant="outline" className="gap-2" onClick={exportPDF}>
+            <FileDown className="h-4 w-4" /> Télécharger les notes en PDF
+          </Button>
+          <Button variant="outline" className="gap-2" onClick={exportCSV}>
+            <Download className="h-4 w-4" /> Télécharger les notes en CSV
+          </Button>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3">
