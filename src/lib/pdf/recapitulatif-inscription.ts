@@ -12,7 +12,10 @@ interface RecapitulatifData {
   b2Vierge: boolean;
   motDePasseCma?: string;
   responsableContactCentre?: boolean;
+  isTaxi?: boolean;
+  mobiliteTaxiAck?: boolean;
 }
+
 
 export function generateRecapitulatifPDF(data: RecapitulatifData, options?: { returnBlob?: boolean }): Blob | void {
   const doc = new jsPDF();
