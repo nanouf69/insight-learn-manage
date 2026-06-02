@@ -35,36 +35,53 @@ interface NoteFrais {
 }
 
 const categories = [
-  "📚 Recette formation",
-  "🎓 CPF",
-  "🏛️ Paiement frais examen CMA",
-  "⛽ Carburant",
-  "🍽️ Repas",
-  "🖥️ Matériel",
-  "📎 Fournitures",
-  "📱 Téléphonie & Internet",
-  "💻 Abonnement logiciel / CRM",
-  "🏢 Loyer",
-  "🛡️ Assurance",
-  "👨‍🏫 Formateurs",
-  "💼 Salaire",
-  "🚌 Transport",
-  "⚖️ Honoraires",
-  "📢 Publicité",
-  "🏦 Frais bancaires",
-  "🏛️ Impôts & taxes",
-  "🔄 Virement interne",
-  "💰 Dividendes",
-  "⚡ Électricité",
-  "🧹 Entretien des locaux",
-  "🚗 Entretien véhicule",
-  "🏦 Compte courant associé",
-  "📮 Frais postaux",
-  "🏛️ URSSAF",
-  "👴 Retraite",
-  "❓ Inconnu",
-  "📄 Autre",
+  "Recette formation",
+  "CPF",
+  "Paiement frais examen CMA",
+  "Carburant",
+  "Repas",
+  "Matériel",
+  "Fournitures",
+  "Téléphonie & Internet",
+  "Abonnement logiciel / CRM",
+  "Loyer",
+  "Assurance",
+  "Formateurs",
+  "Salaire",
+  "Transport",
+  "Honoraires",
+  "Publicité",
+  "Frais bancaires",
+  "Impôts & taxes",
+  "Virement interne",
+  "Dividendes",
+  "Électricité",
+  "Entretien des locaux",
+  "Entretien véhicule",
+  "Compte courant associé",
+  "Frais postaux",
+  "URSSAF",
+  "Retraite",
+  "Inconnu",
+  "Autre",
 ];
+
+const cleanCategorieLabel = (categorie?: string | null) => {
+  if (!categorie) return "";
+  return categorie
+    .replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\uFE0F]/gu, "")
+    .replace(/^[^\p{L}\p{N}]+/u, "")
+    .replace(/\s+/g, " ")
+    .trim();
+};
+
+const safeFilePart = (value: string) =>
+  value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .toLowerCase();
 
 const statutConfig: Record<string, { label: string; color: string }> = {
   a_traiter: { label: "À traiter", color: "bg-amber-100 text-amber-700" },
@@ -161,7 +178,7 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
       date_depense: format(formDate, 'yyyy-MM-dd'),
       description: formDescription,
       montant: parseFloat(formMontant),
-      categorie: formCategorie || null,
+      categorie: cleanCategorieLabel(formCategorie) || null,
       fournisseur: formFournisseur || null,
       notes: formNotes || null,
     };
@@ -205,7 +222,7 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
     setFormDate(new Date(note.date_depense));
     setFormDescription(note.description);
     setFormMontant(String(note.montant));
-    setFormCategorie(note.categorie || "");
+    setFormCategorie(cleanCategorieLabel(note.categorie));
     setFormFournisseur(note.fournisseur || "");
     setFormNotes(note.notes || "");
     setFormFile(null);
@@ -219,7 +236,7 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
     setFormDate(new Date(note.date_depense));
     setFormDescription(note.description);
     setFormMontant(String(note.montant));
-    setFormCategorie(note.categorie || "");
+    setFormCategorie(cleanCategorieLabel(note.categorie));
     setFormFournisseur(note.fournisseur || "");
     setFormNotes(note.notes || "");
     setFormFile(null);
@@ -294,6 +311,36 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
     }
   };
 
+  const exportSinglePDF = (note: NoteFrais) => {
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Note de frais', 14, 18);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(100);
+    doc.text(`Édité le ${format(new Date(), 'dd/MM/yyyy')}`, 14, 24);
+    doc.setTextColor(0);
+
+    autoTable(doc, {
+      startY: 34,
+      body: [
+        ['Date', format(new Date(note.date_depense), 'dd/MM/yyyy')],
+        ['Description', note.description],
+        ['Fournisseur', note.fournisseur || '—'],
+        ['Catégorie', cleanCategorieLabel(note.categorie) || '—'],
+        ['Montant', `${note.montant.toFixed(2)} €`],
+        ['Statut', statutConfig[note.statut]?.label || note.statut],
+        ['Notes', note.notes || '—'],
+      ],
+      styles: { fontSize: 10, cellPadding: 3 },
+      columnStyles: { 0: { fontStyle: 'bold', cellWidth: 38 }, 1: { cellWidth: 130 } },
+      margin: { left: 14, right: 14 },
+    });
+
+    doc.save(`note-de-frais-${format(new Date(note.date_depense), 'yyyy-MM-dd')}-${safeFilePart(note.description || note.id)}.pdf`);
+  };
+
   const exportPDF = () => {
     if (filtered.length === 0) {
       toast.info("Aucune note à exporter");
@@ -336,7 +383,7 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
           format(new Date(n.date_depense), 'dd/MM/yyyy'),
           n.description,
           n.fournisseur || '—',
-          n.categorie || '—',
+          cleanCategorieLabel(n.categorie) || '—',
           `${n.montant.toFixed(2)} €`,
           statutConfig[n.statut]?.label || n.statut,
         ]),
@@ -362,7 +409,7 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
         format(new Date(n.date_depense), 'dd/MM/yyyy'),
         n.description,
         n.fournisseur || '',
-        n.categorie || '',
+        cleanCategorieLabel(n.categorie),
         n.montant.toFixed(2),
         statutConfig[n.statut]?.label || n.statut,
         n.notes || '',
@@ -388,8 +435,8 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
     const matchSearch = !search || 
       n.description.toLowerCase().includes(search.toLowerCase()) ||
       (n.fournisseur || '').toLowerCase().includes(search.toLowerCase()) ||
-      (n.categorie || '').toLowerCase().includes(search.toLowerCase());
-    const matchCat = filterCategorie === "all" || n.categorie === filterCategorie;
+      cleanCategorieLabel(n.categorie).toLowerCase().includes(search.toLowerCase());
+    const matchCat = filterCategorie === "all" || cleanCategorieLabel(n.categorie) === filterCategorie;
     const matchStatut = filterStatut === "all" || n.statut === filterStatut;
     const matchMois = filterMois === "all" || format(new Date(n.date_depense), 'yyyy-MM') === filterMois;
     const matchFournisseur = filterFournisseur === "all" || n.fournisseur === filterFournisseur;
@@ -623,6 +670,7 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
                     <TableHead>Catégorie</TableHead>
                     <TableHead className="text-right">Montant</TableHead>
                     <TableHead>Statut</TableHead>
+                    <TableHead>Note PDF</TableHead>
                     <TableHead>Justificatif</TableHead>
                     {!readOnly && <TableHead>Actions</TableHead>}
                   </TableRow>
@@ -636,7 +684,7 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
                       <TableCell className="font-medium text-sm">{note.description}</TableCell>
                       <TableCell className="text-sm text-muted-foreground">{note.fournisseur || '—'}</TableCell>
                       <TableCell>
-                        {note.categorie ? <Badge variant="outline">{note.categorie}</Badge> : '—'}
+                        {cleanCategorieLabel(note.categorie) ? <Badge variant="outline">{cleanCategorieLabel(note.categorie)}</Badge> : '—'}
                       </TableCell>
                       <TableCell className="text-right font-semibold">{note.montant.toFixed(2)} €</TableCell>
                       <TableCell>
@@ -656,6 +704,11 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
                             </SelectContent>
                           </Select>
                         )}
+                      </TableCell>
+                      <TableCell>
+                        <Button variant="outline" size="sm" className="gap-1 h-7 text-xs" onClick={() => exportSinglePDF(note)}>
+                          <FileDown className="h-3 w-3" /> PDF
+                        </Button>
                       </TableCell>
                       <TableCell>
                         {note.url ? (
