@@ -12,7 +12,10 @@ interface RecapitulatifData {
   b2Vierge: boolean;
   motDePasseCma?: string;
   responsableContactCentre?: boolean;
+  isTaxi?: boolean;
+  mobiliteTaxiAck?: boolean;
 }
+
 
 export function generateRecapitulatifPDF(data: RecapitulatifData, options?: { returnBlob?: boolean }): Blob | void {
   const doc = new jsPDF();
@@ -175,7 +178,33 @@ export function generateRecapitulatifPDF(data: RecapitulatifData, options?: { re
   doc.text(engageLines, margin + 5, yPos);
   yPos += engageLines.length * 5 + 8;
 
-  // Encadré important
+  // Encadré ENGAGEMENT mobilité TAXI - uniquement formations taxi
+  const isTaxi = data.isTaxi || /taxi/i.test(data.typeExamen || '');
+  if (isTaxi) {
+    doc.setFillColor(254, 226, 226);
+    doc.setDrawColor(220, 38, 38);
+    doc.setLineWidth(0.8);
+    doc.roundedRect(margin, yPos, pageWidth - 2 * margin, 46, 3, 3, 'FD');
+    doc.setLineWidth(0.2);
+
+    yPos += 9;
+    doc.setTextColor(185, 28, 28);
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    const taxiTitle = data.mobiliteTaxiAck
+      ? "[X] ENGAGEMENT MOBILITE TAXI CONFIRME PAR L'APPRENANT"
+      : "[ ] ENGAGEMENT MOBILITE TAXI NON CONFIRME";
+    doc.text(taxiTitle, margin + 5, yPos);
+    yPos += 7;
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    const taxiText = "ATTENTION : Je reconnais que je pourrai exercer uniquement dans le departement dans lequel j'ai reussi mon examen TAXI. Pour exercer dans un autre departement, une formation de mobilite de 14h sera obligatoire dans le departement ou je souhaite poursuivre mon activite de taxi.";
+    const taxiLines = doc.splitTextToSize(taxiText, pageWidth - 2 * margin - 10);
+    doc.text(taxiLines, margin + 5, yPos);
+    yPos += taxiLines.length * 5 + 8;
+  }
+
+
   doc.setFillColor(254, 243, 199); // amber-100
   doc.setDrawColor(251, 191, 36); // amber-400
   doc.roundedRect(margin, yPos, pageWidth - 2 * margin, 35, 3, 3, 'FD');

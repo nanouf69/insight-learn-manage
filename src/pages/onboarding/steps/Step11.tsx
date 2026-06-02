@@ -32,9 +32,11 @@ export default function Step11() {
   const [dateExamen, setDateExamen] = useState('');
   const [typeExamen, setTypeExamen] = useState('');
   const [responsableContact, setResponsableContact] = useState(false);
+  const [mobiliteTaxi, setMobiliteTaxi] = useState(false);
   const [attempted, setAttempted] = useState(false);
 
   const selectedExam = datesExamenTheorique.find(e => e.value === dateExamen);
+  const isTaxi = typeExamen.startsWith('taxi');
 
   // Load saved values on mount
   useEffect(() => {
@@ -42,10 +44,12 @@ export default function Step11() {
     const savedDateExamen = localStorage.getItem('onboarding_date_examen');
     const savedTypeExamen = localStorage.getItem('onboarding_type_examen');
     const savedResponsable = localStorage.getItem('onboarding_responsable_contact_centre');
+    const savedMobilite = localStorage.getItem('onboarding_mobilite_taxi_ack');
     if (savedNumeroDossier) setNumeroDossier(savedNumeroDossier);
     if (savedDateExamen) setDateExamen(savedDateExamen);
     if (savedTypeExamen) setTypeExamen(savedTypeExamen);
     if (savedResponsable === 'true') setResponsableContact(true);
+    if (savedMobilite === 'true') setMobiliteTaxi(true);
   }, []);
 
   const handleNext = async () => {
@@ -71,11 +75,18 @@ export default function Step11() {
       return;
     }
 
+    if (isTaxi && !mobiliteTaxi) {
+      toast.error("Vous devez reconnaître la restriction de mobilité départementale TAXI");
+      return;
+    }
+
     // Store in localStorage
     localStorage.setItem('onboarding_numero_dossier', numeroDossier);
     localStorage.setItem('onboarding_date_examen', dateExamen);
     localStorage.setItem('onboarding_type_examen', typeExamen);
     localStorage.setItem('onboarding_responsable_contact_centre', 'true');
+    localStorage.setItem('onboarding_mobilite_taxi_ack', isTaxi && mobiliteTaxi ? 'true' : 'false');
+
 
     // Also save directly to database
     const apprenantId = localStorage.getItem('onboarding_apprenant_id');
@@ -102,7 +113,7 @@ export default function Step11() {
     navigate('/bienvenue/etape-12');
   };
 
-  const canSubmit = numeroDossier.trim() && dateExamen && typeExamen && responsableContact;
+  const canSubmit = numeroDossier.trim() && dateExamen && typeExamen && responsableContact && (!isTaxi || mobiliteTaxi);
 
   return (
     <OnboardingLayout currentStep={11} totalSteps={12} title="Numéro de dossier et examen">
@@ -251,6 +262,28 @@ export default function Step11() {
                 <p className="text-red-600 text-sm font-semibold mt-2 ml-9">Vous devez cocher cette case pour continuer.</p>
               )}
             </div>
+
+            {/* Engagement mobilité TAXI - uniquement pour formations taxi */}
+            {isTaxi && (
+              <div className={`rounded-xl p-5 border-2 ${attempted && !mobiliteTaxi ? 'border-red-600 bg-red-50' : 'border-red-400 bg-red-50'}`}>
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={mobiliteTaxi}
+                    onChange={(e) => setMobiliteTaxi(e.target.checked)}
+                    className="mt-1 w-6 h-6 accent-red-600 cursor-pointer flex-shrink-0"
+                  />
+                  <span className="text-red-800 font-bold text-base lg:text-lg leading-snug">
+                    ATTENTION (TAXI) : Je reconnais que je pourrai exercer uniquement dans le département dans lequel j'ai réussi mon examen. Pour exercer dans un autre département, une <span className="underline">formation de mobilité de 14h</span> sera obligatoire dans le département où je souhaite poursuivre mon activité de taxi. <span className="text-red-600">*</span>
+                  </span>
+                </label>
+                {attempted && !mobiliteTaxi && (
+                  <p className="text-red-600 text-sm font-semibold mt-2 ml-9">Vous devez cocher cette case pour continuer.</p>
+                )}
+              </div>
+            )}
+
+
 
             <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
               <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />

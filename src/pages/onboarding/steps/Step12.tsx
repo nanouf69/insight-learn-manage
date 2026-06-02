@@ -145,6 +145,7 @@ export default function Step12() {
     const selectedExam = datesExamenTheorique.find(e => e.value === dateExamen);
     const motDePasseCma = localStorage.getItem('onboarding_mot_de_passe_cma') || '';
     const responsableContactCentre = localStorage.getItem('onboarding_responsable_contact_centre') === 'true';
+    const mobiliteTaxiAck = localStorage.getItem('onboarding_mobilite_taxi_ack') === 'true';
 
     return {
       nom,
@@ -158,8 +159,11 @@ export default function Step12() {
       b2Vierge,
       motDePasseCma,
       responsableContactCentre,
+      isTaxi: typeExamen.startsWith('taxi'),
+      mobiliteTaxiAck,
     };
   };
+
 
   const persistRecapDocument = async (
     apprenantId: string,
