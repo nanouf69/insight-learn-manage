@@ -236,7 +236,7 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
     setFormDate(new Date(note.date_depense));
     setFormDescription(note.description);
     setFormMontant(String(note.montant));
-    setFormCategorie(note.categorie || "");
+    setFormCategorie(cleanCategorieLabel(note.categorie));
     setFormFournisseur(note.fournisseur || "");
     setFormNotes(note.notes || "");
     setFormFile(null);
@@ -311,6 +311,36 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
     }
   };
 
+  const exportSinglePDF = (note: NoteFrais) => {
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Note de frais', 14, 18);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(100);
+    doc.text(`Édité le ${format(new Date(), 'dd/MM/yyyy')}`, 14, 24);
+    doc.setTextColor(0);
+
+    autoTable(doc, {
+      startY: 34,
+      body: [
+        ['Date', format(new Date(note.date_depense), 'dd/MM/yyyy')],
+        ['Description', note.description],
+        ['Fournisseur', note.fournisseur || '—'],
+        ['Catégorie', cleanCategorieLabel(note.categorie) || '—'],
+        ['Montant', `${note.montant.toFixed(2)} €`],
+        ['Statut', statutConfig[note.statut]?.label || note.statut],
+        ['Notes', note.notes || '—'],
+      ],
+      styles: { fontSize: 10, cellPadding: 3 },
+      columnStyles: { 0: { fontStyle: 'bold', cellWidth: 38 }, 1: { cellWidth: 130 } },
+      margin: { left: 14, right: 14 },
+    });
+
+    doc.save(`note-de-frais-${format(new Date(note.date_depense), 'yyyy-MM-dd')}-${safeFilePart(note.description || note.id)}.pdf`);
+  };
+
   const exportPDF = () => {
     if (filtered.length === 0) {
       toast.info("Aucune note à exporter");
@@ -353,7 +383,7 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
           format(new Date(n.date_depense), 'dd/MM/yyyy'),
           n.description,
           n.fournisseur || '—',
-          n.categorie || '—',
+          cleanCategorieLabel(n.categorie) || '—',
           `${n.montant.toFixed(2)} €`,
           statutConfig[n.statut]?.label || n.statut,
         ]),
@@ -379,7 +409,7 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
         format(new Date(n.date_depense), 'dd/MM/yyyy'),
         n.description,
         n.fournisseur || '',
-        n.categorie || '',
+        cleanCategorieLabel(n.categorie),
         n.montant.toFixed(2),
         statutConfig[n.statut]?.label || n.statut,
         n.notes || '',
