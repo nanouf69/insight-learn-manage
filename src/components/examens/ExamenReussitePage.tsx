@@ -3773,7 +3773,9 @@ De 9h à 17h sur rendez-vous`;
 
       {/* (Section "Inscrits à l'examen théorique" déplacée en haut de la page) */}
 
+      <div id="anchor-repassage" className="scroll-mt-24" />
       {/* Repassage examen théorique */}
+
       <Card className={fsRepassage.className("border-l-4 border-l-violet-500")}>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
