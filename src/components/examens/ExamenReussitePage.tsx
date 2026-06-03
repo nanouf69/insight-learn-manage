@@ -828,6 +828,7 @@ export function ExamenReussitePage() {
       toast.error("Erreur : " + err.message);
     } finally {
       setAnalyzing(false);
+      setAnalyzingFile(null);
     }
   };
 
