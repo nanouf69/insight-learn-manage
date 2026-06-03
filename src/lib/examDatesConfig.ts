@@ -4,7 +4,10 @@
  */
 
 // ── Dates d'examen théorique 2026 ──
+// Note: la date précédente (26 mai 2026) est conservée pour permettre la sélection
+// d'apprenants inscrits sur cette session même après son passage.
 export const ALL_DATES_EXAMEN_THEORIQUE = [
+  { date: "26 mai 2026", lieu: "Rhône – Double Mixte, 10 Avenue Gaston Berger, 69100 Villeurbanne", horaire: "après-midi" },
   { date: "21 juillet 2026", lieu: "Rhône – Double Mixte, 10 Avenue Gaston Berger, 69100 Villeurbanne", horaire: "après-midi" },
   { date: "29 septembre 2026", lieu: "Rhône – Double Mixte, 10 Avenue Gaston Berger, 69100 Villeurbanne", horaire: "après-midi" },
   { date: "17 novembre 2026", lieu: "Rhône – Double Mixte, 10 Avenue Gaston Berger, 69100 Villeurbanne", horaire: "après-midi" },
