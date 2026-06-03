@@ -60,19 +60,33 @@ function isDateInFuture(d: Date | null): boolean {
 }
 
 /**
- * Filter objects with a `date` field (e.g. "27 janvier 2026").
+ * Garde aussi les dates récemment passées (dans les `graceDays` derniers jours)
+ * pour permettre la sélection d'apprenants inscrits sur une session juste passée.
  */
-export function filterFutureExamDates<T extends { date: string }>(dates: T[]): T[] {
-  return dates.filter(item => isDateInFuture(parseFrenchDate(item.date)));
+function isDateRecentOrFuture(d: Date | null, graceDays = 90): boolean {
+  if (!d) return true;
+  const cutoff = new Date();
+  cutoff.setHours(0, 0, 0, 0);
+  cutoff.setDate(cutoff.getDate() - graceDays);
+  return d >= cutoff;
 }
 
 /**
- * Filter objects with a `value` field containing a French date or ISO date.
+ * Filter objects with a `date` field (e.g. "27 janvier 2026").
+ * Conserve les sessions récemment passées (90 jours) pour rester sélectionnables.
+ */
+export function filterFutureExamDates<T extends { date: string }>(dates: T[]): T[] {
+  return dates.filter(item => isDateRecentOrFuture(parseFrenchDate(item.date)));
+}
+
+/**
+ * Filter objects with a `value` field containing une date FR ou ISO.
+ * Conserve les sessions récemment passées (90 jours) pour rester sélectionnables.
  */
 export function filterFutureExamValues<T extends { value: string }>(dates: T[]): T[] {
   return dates.filter(item => {
     const d = parseFrenchDate(item.value) || parseLastFrenchDate(item.value);
-    return isDateInFuture(d);
+    return isDateRecentOrFuture(d);
   });
 }
 
