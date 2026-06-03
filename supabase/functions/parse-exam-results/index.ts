@@ -127,16 +127,26 @@ Ne mets aucune explication, juste le tableau JSON.`;
       });
     }
 
-    // Fetch ALL apprenants
-    const { data: apprenants, error: fetchErr } = await supabase
-      .from("apprenants")
-      .select("id, nom, prenom, numero_dossier_cma, resultat_examen, resultat_examen_pratique");
+    // Fetch ALL apprenants (paginated to bypass 1000-row Supabase default cap)
+    const apprenants: Array<{ id: string; nom: string; prenom: string; numero_dossier_cma: string | null }> = [];
+    const pageSize = 1000;
+    let from = 0;
+    while (true) {
+      const { data: page, error: fetchErr } = await supabase
+        .from("apprenants")
+        .select("id, nom, prenom, numero_dossier_cma")
+        .range(from, from + pageSize - 1);
 
-    if (fetchErr) {
-      return new Response(JSON.stringify({ error: "Erreur DB: " + fetchErr.message }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      if (fetchErr) {
+        return new Response(JSON.stringify({ error: "Erreur DB: " + fetchErr.message }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      if (!page || page.length === 0) break;
+      apprenants.push(...page);
+      if (page.length < pageSize) break;
+      from += pageSize;
     }
 
     // Build normalized lookup from PDF results
@@ -147,59 +157,47 @@ Ne mets aucune explication, juste le tableau JSON.`;
       mappedResultat: r.resultat.toLowerCase().includes("ajourne") || r.resultat.toLowerCase().includes("non") ? "non" : "oui",
     }));
 
-    // Build apprenant lookup
-    const apprenantList = (apprenants || []).map(a => ({
-      ...a,
-      normNom: normalize(a.nom),
-      normPrenom: normalize(a.prenom),
-    }));
+    // Build apprenant indexes for O(1) lookup
+    const byNamePrenom = new Map<string, typeof apprenants[number]>();
+    const byNameOnly = new Map<string, typeof apprenants[number][]>();
+    const byDossier = new Map<string, typeof apprenants[number]>();
+    for (const a of apprenants) {
+      const nn = normalize(a.nom);
+      const np = normalize(a.prenom);
+      byNamePrenom.set(`${nn}|${np}`, a);
+      const list = byNameOnly.get(nn) || [];
+      list.push(a);
+      byNameOnly.set(nn, list);
+      if (a.numero_dossier_cma) {
+        byDossier.set(a.numero_dossier_cma.replace(/^0+/, ""), a);
+      }
+    }
 
     const matched: Array<{ id: string; nom: string; prenom: string; resultat: string; dossier?: string }> = [];
     const notFound: Array<{ nom: string; prenom: string; resultat: string }> = [];
+    const updates: Array<{ id: string; entry: typeof pdfResults[number]; apprenant: typeof apprenants[number] }> = [];
 
     for (const pdfEntry of pdfResults) {
-      // Try matching by name (accent/case insensitive)
-      let found = apprenantList.find(
-        a => a.normNom === pdfEntry.normNom && a.normPrenom === pdfEntry.normPrenom
-      );
+      let found = byNamePrenom.get(`${pdfEntry.normNom}|${pdfEntry.normPrenom}`);
 
-      // If not found by exact normalized name, try with dossier number
       if (!found && pdfEntry.dossier) {
-        found = apprenantList.find(a => {
-          if (!a.numero_dossier_cma) return false;
-          return a.numero_dossier_cma.replace(/^0+/, "") === pdfEntry.dossier!.replace(/^0+/, "");
-        });
+        found = byDossier.get(pdfEntry.dossier.replace(/^0+/, ""));
       }
 
-      // If still not found, try fuzzy: last name matches exactly, first name starts with
       if (!found) {
-        found = apprenantList.find(
-          a => a.normNom === pdfEntry.normNom && (
-            a.normPrenom.startsWith(pdfEntry.normPrenom) || pdfEntry.normPrenom.startsWith(a.normPrenom)
-          )
-        );
+        const candidates = byNameOnly.get(pdfEntry.normNom);
+        if (candidates) {
+          found = candidates.find(
+            a => {
+              const np = normalize(a.prenom);
+              return np.startsWith(pdfEntry.normPrenom) || pdfEntry.normPrenom.startsWith(np);
+            }
+          );
+        }
       }
 
       if (found) {
-        // Update the correct field based on exam type
-        const updateField = type === "admission"
-          ? { resultat_examen_pratique: pdfEntry.mappedResultat }
-          : { resultat_examen: pdfEntry.mappedResultat };
-
-        const { error: updateErr } = await supabase
-          .from("apprenants")
-          .update(updateField)
-          .eq("id", found.id);
-
-        if (!updateErr) {
-          matched.push({
-            id: found.id,
-            nom: found.nom,
-            prenom: found.prenom,
-            resultat: pdfEntry.mappedResultat,
-            dossier: pdfEntry.dossier,
-          });
-        }
+        updates.push({ id: found.id, entry: pdfEntry, apprenant: found });
       } else {
         notFound.push({
           nom: pdfEntry.nom,
@@ -207,6 +205,30 @@ Ne mets aucune explication, juste le tableau JSON.`;
           resultat: pdfEntry.mappedResultat,
         });
       }
+    }
+
+    // Run updates in parallel batches to avoid the 150s idle timeout
+    const batchSize = 25;
+    for (let i = 0; i < updates.length; i += batchSize) {
+      const batch = updates.slice(i, i + batchSize);
+      const results = await Promise.all(batch.map(u => {
+        const updateField = type === "admission"
+          ? { resultat_examen_pratique: u.entry.mappedResultat }
+          : { resultat_examen: u.entry.mappedResultat };
+        return supabase.from("apprenants").update(updateField).eq("id", u.id);
+      }));
+      results.forEach((res, idx) => {
+        if (!res.error) {
+          const u = batch[idx];
+          matched.push({
+            id: u.id,
+            nom: u.apprenant.nom,
+            prenom: u.apprenant.prenom,
+            resultat: u.entry.mappedResultat,
+            dossier: u.entry.dossier,
+          });
+        }
+      });
     }
 
     return new Response(JSON.stringify({
