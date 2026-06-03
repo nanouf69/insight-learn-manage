@@ -41,23 +41,27 @@ export const ALL_DATES_EXAMEN_REUSSITE = [
 ];
 
 // ── Dates d'examen pratique 2026 ──
-// Note: la session précédente est conservée pour consulter les résultats.
 export const ALL_DATES_EXAMEN_PRATIQUE = [
-  "Du 25 mai au 5 juin 2026",
+  "Du 23 février au 6 mars 2026",
+  "Du 4 au 13 mai 2026",
   "Du 29 juin au 7 juillet 2026",
   "Du 1er au 11 septembre 2026",
   "Du 2 au 13 novembre 2026",
   "Du 16 au 23 décembre 2026",
+  "Début janvier 2027",
 ];
 
 // Version sans accents pour ExamenReussitePage
 export const ALL_DATES_EXAMEN_PRATIQUE_NO_ACCENT = [
-  "Du 25 mai au 5 juin 2026",
+  "Du 23 fevrier au 6 mars 2026",
+  "Du 4 au 13 mai 2026",
   "Du 29 juin au 7 juillet 2026",
   "Du 1er au 11 septembre 2026",
   "Du 2 au 13 novembre 2026",
   "Du 16 au 23 decembre 2026",
+  "Début janvier 2027",
 ];
+
 
 // ── Dates de formation du catalogue ──
 export const ALL_DATES_FORMATION_CATALOGUE = [
