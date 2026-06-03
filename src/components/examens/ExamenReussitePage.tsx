@@ -201,6 +201,7 @@ export function ExamenReussitePage() {
   const [repassageList, setRepassageList] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
+  const [analyzingFile, setAnalyzingFile] = useState<string | null>(null);
   const [selectedExamDate, setSelectedExamDate] = useState(getDefaultExamDate);
   const [selectedDatePratique, setSelectedDatePratique] = useState(
     () => getPratiqueDateForExam(getDefaultExamDate()) || getDefaultPratiqueDate()
@@ -785,6 +786,7 @@ export function ExamenReussitePage() {
 
   const handleAnalyzePdf = async (fileName: string, examType: 'admissibilite' | 'admission') => {
     setAnalyzing(true);
+    setAnalyzingFile(fileName);
     try {
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData?.session?.access_token;
@@ -826,6 +828,7 @@ export function ExamenReussitePage() {
       toast.error("Erreur : " + err.message);
     } finally {
       setAnalyzing(false);
+      setAnalyzingFile(null);
     }
   };
 
@@ -3886,10 +3889,10 @@ De 9h à 17h sur rendez-vous`;
                           variant="default"
                           size="sm"
                           className="gap-1"
-                          disabled={analyzing}
+                          disabled={analyzingFile === file.name}
                         >
                           <CheckCircle2 className="h-4 w-4" />
-                          {analyzing ? "Analyse..." : "Analyser les résultats"}
+                          {analyzingFile === file.name ? "Analyse..." : "Analyser les résultats"}
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-56 p-2 z-[9999]" align="end" sideOffset={5} onOpenAutoFocus={(e) => e.preventDefault()}>
