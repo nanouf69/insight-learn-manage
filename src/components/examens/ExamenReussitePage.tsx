@@ -463,7 +463,13 @@ export function ExamenReussitePage() {
   };
 
   // Dates centralisées — on garde TOUTES les dates (y compris passées) pour consulter les résultats
-  const datesExamenTheorique = ALL_DATES_EXAMEN_REUSSITE;
+  // Dates historiques ajoutées pour permettre de consulter les anciens résultats (3+ mois avant)
+  const HISTORICAL_DATES_THEORIQUE = [
+    { date: "27 janvier 2026", lieu: "Villeurbanne (passé)", pratiqueIndex: 0 },
+    { date: "31 mars 2026", lieu: "Villeurbanne (passé)", pratiqueIndex: 0 },
+    { date: "26 mai 2026", lieu: "Villeurbanne (passé)", pratiqueIndex: 0 },
+  ];
+  const datesExamenTheorique = [...HISTORICAL_DATES_THEORIQUE, ...ALL_DATES_EXAMEN_REUSSITE];
   const datesExamenPratique = ALL_DATES_EXAMEN_PRATIQUE_NO_ACCENT;
 
   const handleExamDateChange = (date: string) => {
