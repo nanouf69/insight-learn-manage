@@ -786,6 +786,7 @@ export function ExamenReussitePage() {
 
   const handleAnalyzePdf = async (fileName: string, examType: 'admissibilite' | 'admission') => {
     setAnalyzing(true);
+    setAnalyzingFile(fileName);
     try {
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData?.session?.access_token;
