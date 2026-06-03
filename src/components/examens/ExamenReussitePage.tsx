@@ -985,7 +985,7 @@ export function ExamenReussitePage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <ClipboardCheck className="h-5 w-5" />
-            Inscrits à l'examen théorique - {selectedExamDate}
+            Résultats et inscriptions examen théorique - {selectedExamDate}
           </CardTitle>
         </CardHeader>
         <CardContent>
