@@ -201,6 +201,7 @@ export function ExamenReussitePage() {
   const [repassageList, setRepassageList] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
+  const [analyzingFile, setAnalyzingFile] = useState<string | null>(null);
   const [selectedExamDate, setSelectedExamDate] = useState(getDefaultExamDate);
   const [selectedDatePratique, setSelectedDatePratique] = useState(
     () => getPratiqueDateForExam(getDefaultExamDate()) || getDefaultPratiqueDate()
