@@ -1109,7 +1109,14 @@ export function FactureForm() {
                           <Label className="md:hidden">Désignation</Label>
                           <div className="flex items-center gap-2">
                             {ligne.type === "session" ? <GraduationCap className="w-4 h-4 text-primary flex-shrink-0" /> : <ShoppingCart className="w-4 h-4 text-primary flex-shrink-0" />}
-                            <Input value={ligne.designation} onChange={(e) => updateLigne(ligne.id, 'designation', e.target.value)} />
+                            <Input list={`designations-${ligne.id}`} value={ligne.designation} onChange={(e) => updateLigne(ligne.id, 'designation', e.target.value)} />
+                            <datalist id={`designations-${ligne.id}`}>
+                              <option value="Frais d'examen CMA" />
+                              <option value="Location de voiture" />
+                              <option value="Formation pratique VTC" />
+                              <option value="Formation pratique TAXI" />
+                            </datalist>
+
                           </div>
                         </div>
                         <div className="md:col-span-2 space-y-1">
