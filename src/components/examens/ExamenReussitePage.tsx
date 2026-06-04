@@ -850,6 +850,8 @@ export function ExamenReussitePage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['apprenants-examen', selectedExamDate] });
+      queryClient.invalidateQueries({ queryKey: ['all-apprenants'] });
+      queryClient.invalidateQueries({ queryKey: ['reservations-pratique-planning'] });
       toast.success("Résultat mis à jour");
     },
     onError: (err: any) => {
