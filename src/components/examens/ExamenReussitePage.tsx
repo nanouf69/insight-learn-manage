@@ -2700,6 +2700,15 @@ export function ExamenReussitePage() {
         const dejaFormesSetP = new Set(dejaFormesPratique || []);
         const paTypesP = ['pa-vtc', 'pa-taxi'];
         const rpTypesP = ['rp-vtc', 'rp-taxi'];
+        const hasEligibleTheoryStatusP = (resultat: string | null | undefined) => {
+          const value = (resultat || '')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase()
+            .trim()
+            .replace(/[^a-z_]/g, '');
+          return !['non', 'absent', 'annule', 'annulee', 'reporte', 'reportee', 'ajourne', 'ajournee'].includes(value);
+        };
         const reussisFormationP = apprenants?.filter(a => 
           (a as any).resultat_examen === 'oui' && 
           !rpTypesP.includes((a.type_apprenant || '').toLowerCase()) &&
@@ -2714,6 +2723,7 @@ export function ExamenReussitePage() {
         );
         const deplacesFormationP = (allApprenants || []).filter(a =>
           (deplacesSessionPratique || []).includes(a.id) &&
+          hasEligibleTheoryStatusP((a as any).resultat_examen) &&
           !reussisFormationP.some(r => r.id === a.id) &&
           !paFormationP.some(r => r.id === a.id) &&
           !dejaFormesSetP.has(a.id)
@@ -2727,6 +2737,7 @@ export function ExamenReussitePage() {
         );
         const extraFormationP = (allApprenants || []).filter(a =>
           extraCandidatsFormation.includes(a.id) &&
+          hasEligibleTheoryStatusP((a as any).resultat_examen) &&
           !reussisFormationP.some(r => r.id === a.id) &&
           !paFormationP.some(r => r.id === a.id) &&
           !deplacesFormationP.some(r => r.id === a.id) &&
