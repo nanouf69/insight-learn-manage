@@ -1970,7 +1970,8 @@ export function ExamenReussitePage() {
                           {formationSearchResults.map(a => {
                             const alreadyListed = tousAFormer.some(r => r.id === a.id);
                             const hasPassedPractice = a.resultat_examen_pratique === 'oui';
-                            const disabled = alreadyListed || hasPassedPractice;
+                            const hasPassedTheory = hasEligibleTheoryStatus(a.resultat_examen);
+                            const disabled = alreadyListed || hasPassedPractice || !hasPassedTheory;
 
                             return (
                               <Button
@@ -1988,7 +1989,7 @@ export function ExamenReussitePage() {
                                 <Plus className="h-3 w-3 mr-1.5 text-green-600" />
                                 {a.nom} {a.prenom}
                                 <Badge className="ml-auto text-[10px] bg-muted text-muted-foreground">
-                                  {alreadyListed ? 'déjà dans la liste' : hasPassedPractice ? 'pratique réussi' : a.type_apprenant || '-'}
+                                  {alreadyListed ? 'déjà dans la liste' : hasPassedPractice ? 'pratique réussi' : !hasPassedTheory ? 'théorie non réussie' : a.type_apprenant || '-'}
                                 </Badge>
                               </Button>
                             );
