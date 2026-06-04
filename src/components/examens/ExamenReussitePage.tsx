@@ -1795,7 +1795,7 @@ export function ExamenReussitePage() {
         const paTypes = ['pa-vtc', 'pa-taxi'];
         const hasEligibleTheoryStatus = (resultat: string | null | undefined) => {
           const value = (resultat || '').toLowerCase();
-          return value !== 'non' && value !== 'absent';
+          return value !== 'non' && value !== 'absent' && value !== 'annule' && value !== 'reporte' && value !== 'ajourne';
         };
 
         const reussisFormation = apprenants?.filter(a =>
