@@ -1399,6 +1399,9 @@ export function ExamenReussitePage() {
         );
         const reussisLettre = [...reussisTheorique, ...paRpApprenants, ...deplacesApprenantsCMA, ...echouesPratiqueCMA, ...extraCMA]
           .filter(a => !removedCandidatsCMA.includes(a.id));
+        const cmaSearchResults = (allApprenants || [])
+          .filter(a => !(a as any).deleted_at && apprenantMatchesSearch(a, searchCMA))
+          .slice(0, 10);
 
 
         const getCategorieCMA = (type: string | null) => {
