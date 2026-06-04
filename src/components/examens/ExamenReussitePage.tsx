@@ -3397,10 +3397,10 @@ export function ExamenReussitePage() {
                           value={resultatP || "non_renseigne"}
                           onValueChange={(val) => updateResultatPratique(a.id, val === "non_renseigne" ? null : val)}
                         >
-                          <SelectTrigger className={`w-36 mx-auto text-xs ${
-                            resultatP === 'oui' ? 'border-emerald-500 text-emerald-700 bg-emerald-50' :
+                          <SelectTrigger className={`w-44 mx-auto text-xs ${
+                            resultatP === 'oui' || resultatP === 'reussite' ? 'border-emerald-500 text-emerald-700 bg-emerald-50' :
                             resultatP === 'non' ? 'border-red-500 text-red-700 bg-red-50' :
-                            resultatP === 'deplace' ? 'border-orange-500 text-orange-700 bg-orange-50' : ''
+                            resultatP === 'deplace' || resultatP === 'reporte_sans_examen' ? 'border-orange-500 text-orange-700 bg-orange-50' : ''
                           }`}>
                             <SelectValue />
                           </SelectTrigger>
@@ -3409,6 +3409,8 @@ export function ExamenReussitePage() {
                             <SelectItem value="oui">✅ Oui</SelectItem>
                             <SelectItem value="non">❌ Non</SelectItem>
                             <SelectItem value="deplace">📅 Déplacé prochaine session</SelectItem>
+                            <SelectItem value="reporte_sans_examen">📋 Reporté sans examen</SelectItem>
+                            <SelectItem value="reussite">🏆 Réussite</SelectItem>
                           </SelectContent>
                         </Select>
                       </TableCell>
