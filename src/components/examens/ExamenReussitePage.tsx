@@ -3406,8 +3406,9 @@ export function ExamenReussitePage() {
                           </SelectTrigger>
                           <SelectContent className="z-[100]">
                             <SelectItem value="non_renseigne">-</SelectItem>
-                            <SelectItem value="oui">✅ Oui</SelectItem>
-                            <SelectItem value="non">❌ Non</SelectItem>
+                            <SelectItem value="oui">✅ Admis</SelectItem>
+                            <SelectItem value="non">❌ Ajourné</SelectItem>
+                            <SelectItem value="reporte">📅 Reporté</SelectItem>
                             <SelectItem value="deplace">📅 Déplacé prochaine session</SelectItem>
                             <SelectItem value="reporte_sans_examen">📋 Reporté sans examen</SelectItem>
                             <SelectItem value="reussite">🏆 Réussite</SelectItem>
