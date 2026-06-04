@@ -592,13 +592,23 @@ export function ExamenReussitePage() {
   const { data: allApprenants } = useQuery({
     queryKey: ['all-apprenants'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('apprenants')
-        .select('id, nom, prenom, type_apprenant, formation_choisie, telephone, email, date_examen_theorique, date_examen_pratique, heure_examen_pratique, resultat_examen, resultat_examen_pratique, numero_dossier_cma')
-        .is('deleted_at', null)
-        .order('nom', { ascending: true });
-      if (error) throw error;
-      return data;
+      const pageSize = 1000;
+      const rows: ExamApprenant[] = [];
+
+      for (let from = 0; ; from += pageSize) {
+        const { data, error } = await supabase
+          .from('apprenants')
+          .select('id, nom, prenom, type_apprenant, formation_choisie, telephone, email, date_examen_theorique, date_examen_pratique, heure_examen_pratique, resultat_examen, resultat_examen_pratique, numero_dossier_cma')
+          .is('deleted_at', null)
+          .order('nom', { ascending: true })
+          .range(from, from + pageSize - 1);
+
+        if (error) throw error;
+        rows.push(...((data || []) as ExamApprenant[]));
+        if (!data || data.length < pageSize) break;
+      }
+
+      return rows;
     },
   });
 
