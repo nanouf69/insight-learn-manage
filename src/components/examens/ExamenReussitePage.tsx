@@ -82,6 +82,57 @@ function toIsoDateKey(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
 
+function normalizeSearchValue(value: string | null | undefined) {
+  return (value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[\s\-.()]+/g, ' ')
+    .trim();
+}
+
+type SearchableApprenant = {
+  nom?: string | null;
+  prenom?: string | null;
+  email?: string | null;
+  telephone?: string | null;
+  type_apprenant?: string | null;
+  formation_choisie?: string | null;
+};
+
+type ExamApprenant = SearchableApprenant & {
+  id: string;
+  nom: string;
+  prenom: string;
+  type_apprenant: string | null;
+  formation_choisie: string | null;
+  telephone: string | null;
+  email: string | null;
+  date_examen_theorique: string | null;
+  date_examen_pratique: string | null;
+  heure_examen_pratique: string | null;
+  resultat_examen: string | null;
+  resultat_examen_pratique: string | null;
+  numero_dossier_cma: string | null;
+  deleted_at?: string | null;
+};
+
+function apprenantMatchesSearch(apprenant: SearchableApprenant, term: string) {
+  const keywords = normalizeSearchValue(term).split(' ').filter(Boolean);
+  if (keywords.length === 0) return true;
+
+  const haystack = normalizeSearchValue([
+    apprenant.nom,
+    apprenant.prenom,
+    apprenant.email,
+    apprenant.telephone,
+    apprenant.type_apprenant,
+    apprenant.formation_choisie,
+  ].filter(Boolean).join(' '));
+
+  return keywords.every((keyword) => haystack.includes(keyword));
+}
+
 function parsePratiquePeriod(period: string | null | undefined): { start: string; end: string } | null {
   if (!period) return null;
 
@@ -541,13 +592,23 @@ export function ExamenReussitePage() {
   const { data: allApprenants } = useQuery({
     queryKey: ['all-apprenants'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('apprenants')
-        .select('id, nom, prenom, type_apprenant, telephone, email, date_examen_theorique, date_examen_pratique, heure_examen_pratique, resultat_examen, resultat_examen_pratique, numero_dossier_cma')
-        .is('deleted_at', null)
-        .order('nom', { ascending: true });
-      if (error) throw error;
-      return data;
+      const pageSize = 1000;
+      const rows: ExamApprenant[] = [];
+
+      for (let from = 0; ; from += pageSize) {
+        const { data, error } = await supabase
+          .from('apprenants')
+          .select('id, nom, prenom, type_apprenant, formation_choisie, telephone, email, date_examen_theorique, date_examen_pratique, heure_examen_pratique, resultat_examen, resultat_examen_pratique, numero_dossier_cma')
+          .is('deleted_at', null)
+          .order('nom', { ascending: true })
+          .range(from, from + pageSize - 1);
+
+        if (error) throw error;
+        rows.push(...((data || []) as ExamApprenant[]));
+        if (!data || data.length < pageSize) break;
+      }
+
+      return rows;
     },
   });
 
@@ -1365,6 +1426,9 @@ export function ExamenReussitePage() {
         );
         const reussisLettre = [...reussisTheorique, ...paRpApprenants, ...deplacesApprenantsCMA, ...echouesPratiqueCMA, ...extraCMA]
           .filter(a => !removedCandidatsCMA.includes(a.id));
+        const cmaSearchResults = (allApprenants || [])
+          .filter(a => apprenantMatchesSearch(a, searchCMA))
+          .slice(0, 10);
 
 
         const getCategorieCMA = (type: string | null) => {
@@ -1644,20 +1708,18 @@ export function ExamenReussitePage() {
                     {searchCMA.trim().length >= 2 && (
                       <ScrollArea className="max-h-48">
                         <div className="space-y-1">
-                          {(allApprenants || [])
-                            .filter(a =>
-                              !reussisLettre.some(r => r.id === a.id) &&
-                              !(a as any).deleted_at &&
-                              (a as any).resultat_examen_pratique !== 'oui' &&
-                              `${a.nom} ${a.prenom}`.toLowerCase().includes(searchCMA.toLowerCase())
-                            )
-                            .slice(0, 10)
-                            .map(a => (
+                          {cmaSearchResults.map(a => {
+                            const alreadyListed = reussisLettre.some(r => r.id === a.id);
+                            const hasPassedPractice = a.resultat_examen_pratique === 'oui';
+                            const disabled = alreadyListed || hasPassedPractice;
+
+                            return (
                               <Button
                                 key={a.id}
                                 variant="ghost"
                                 size="sm"
-                                className="w-full justify-start text-xs h-auto py-1.5"
+                                disabled={disabled}
+                                className="w-full justify-start text-xs h-auto py-1.5 disabled:opacity-60"
                                 onClick={() => {
                                   setExtraCandidatsCMA(prev => [...prev, a.id]);
                                   setSearchCMA("");
@@ -1666,15 +1728,13 @@ export function ExamenReussitePage() {
                               >
                                 <Plus className="h-3 w-3 mr-1.5 text-green-600" />
                                 {a.nom} {a.prenom}
-                                <Badge className="ml-auto text-[10px] bg-muted text-muted-foreground">{a.type_apprenant || '-'}</Badge>
+                                <Badge className="ml-auto text-[10px] bg-muted text-muted-foreground">
+                                  {alreadyListed ? 'déjà dans la liste' : hasPassedPractice ? 'pratique réussi' : a.type_apprenant || '-'}
+                                </Badge>
                               </Button>
-                            ))}
-                          {(allApprenants || []).filter(a =>
-                            !reussisLettre.some(r => r.id === a.id) &&
-                            !(a as any).deleted_at &&
-                            (a as any).resultat_examen_pratique !== 'oui' &&
-                            `${a.nom} ${a.prenom}`.toLowerCase().includes(searchCMA.toLowerCase())
-                          ).length === 0 && (
+                            );
+                          })}
+                          {cmaSearchResults.length === 0 && (
                             <p className="text-xs text-muted-foreground py-2 text-center">Aucun résultat</p>
                           )}
                         </div>
@@ -1847,6 +1907,9 @@ export function ExamenReussitePage() {
         );
         // tousAFormer inclut les déplacés et les échoués pratique
         const tousAFormer = [...reussisFormation, ...paFormation, ...deplacesFormation, ...echouesPratiqueFormation, ...extraFormation];
+        const formationSearchResults = (allApprenants || [])
+          .filter(a => apprenantMatchesSearch(a, searchFormation))
+          .slice(0, 10);
 
         const vtcList = tousAFormer.filter(a => isPracticeVTCType(a.type_apprenant));
         const taxiList = tousAFormer.filter(a => isPracticeTAXIType(a.type_apprenant));
@@ -1931,21 +1994,19 @@ export function ExamenReussitePage() {
                     {searchFormation.trim().length >= 2 && (
                       <ScrollArea className="max-h-48">
                         <div className="space-y-1">
-                          {(allApprenants || [])
-                            .filter(a =>
-                              !tousAFormer.some(r => r.id === a.id) &&
-                              !(a as any).deleted_at &&
-                              hasEligibleTheoryStatus((a as any).resultat_examen) &&
-                              (a as any).resultat_examen_pratique !== 'oui' &&
-                              `${a.nom} ${a.prenom}`.toLowerCase().includes(searchFormation.toLowerCase())
-                            )
-                            .slice(0, 10)
-                            .map(a => (
+                          {formationSearchResults.map(a => {
+                            const alreadyListed = tousAFormer.some(r => r.id === a.id);
+                            const hasPassedPractice = a.resultat_examen_pratique === 'oui';
+                            const hasPassedTheory = hasEligibleTheoryStatus(a.resultat_examen);
+                            const disabled = alreadyListed || hasPassedPractice || !hasPassedTheory;
+
+                            return (
                               <Button
                                 key={a.id}
                                 variant="ghost"
                                 size="sm"
-                                className="w-full justify-start text-xs h-auto py-1.5"
+                                disabled={disabled}
+                                className="w-full justify-start text-xs h-auto py-1.5 disabled:opacity-60"
                                 onClick={() => {
                                   setExtraCandidatsFormation(prev => [...prev, a.id]);
                                   setSearchFormation("");
@@ -1954,16 +2015,13 @@ export function ExamenReussitePage() {
                               >
                                 <Plus className="h-3 w-3 mr-1.5 text-green-600" />
                                 {a.nom} {a.prenom}
-                                <Badge className="ml-auto text-[10px] bg-muted text-muted-foreground">{a.type_apprenant || '-'}</Badge>
+                                <Badge className="ml-auto text-[10px] bg-muted text-muted-foreground">
+                                  {alreadyListed ? 'déjà dans la liste' : hasPassedPractice ? 'pratique réussi' : !hasPassedTheory ? 'théorie non réussie' : a.type_apprenant || '-'}
+                                </Badge>
                               </Button>
-                            ))}
-                          {(allApprenants || []).filter(a =>
-                            !tousAFormer.some(r => r.id === a.id) &&
-                            !(a as any).deleted_at &&
-                            hasEligibleTheoryStatus((a as any).resultat_examen) &&
-                            (a as any).resultat_examen_pratique !== 'oui' &&
-                            `${a.nom} ${a.prenom}`.toLowerCase().includes(searchFormation.toLowerCase())
-                          ).length === 0 && (
+                            );
+                          })}
+                          {formationSearchResults.length === 0 && (
                             <p className="text-xs text-muted-foreground py-2 text-center">Aucun résultat</p>
                           )}
                         </div>
