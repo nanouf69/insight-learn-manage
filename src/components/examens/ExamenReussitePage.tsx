@@ -2733,6 +2733,7 @@ export function ExamenReussitePage() {
         );
         const echouesPratiqueFormationP = (allApprenants || []).filter(a =>
           (a as any).resultat_examen_pratique === 'non' &&
+          hasEligibleTheoryStatusP((a as any).resultat_examen) &&
           !reussisFormationP.some(r => r.id === a.id) &&
           !paFormationP.some(r => r.id === a.id) &&
           !deplacesFormationP.some(r => r.id === a.id) &&
