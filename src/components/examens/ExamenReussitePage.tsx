@@ -245,6 +245,7 @@ export function ExamenReussitePage() {
   const [selectedRecipientIds, setSelectedRecipientIds] = useState<Set<string>>(new Set());
   const [previewTab, setPreviewTab] = useState<string>('preview');
   const [extraCandidatsCMA, setExtraCandidatsCMA] = useState<string[]>([]);
+  const [removedCandidatsCMA, setRemovedCandidatsCMA] = useState<string[]>([]);
   const [searchCMA, setSearchCMA] = useState("");
   const [extraCandidatsFormation, setExtraCandidatsFormation] = useState<string[]>([]);
   const [searchFormation, setSearchFormation] = useState("");
