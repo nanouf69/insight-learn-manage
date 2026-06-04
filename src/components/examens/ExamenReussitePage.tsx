@@ -1789,8 +1789,7 @@ export function ExamenReussitePage() {
           return false;
         };
 
-        // Tous les candidats à former : tous les inscrits de la session sélectionnée
-        // tant qu'ils ne sont pas déjà formés et ne sont pas explicitement en échec/absent.
+        // Tous les candidats à former : uniquement ceux qui ont réussi l'examen théorique.
         const dejaFormesSet = new Set(dejaFormesPratique || []);
         const paTypes = ['pa-vtc', 'pa-taxi'];
         const hasEligibleTheoryStatus = (resultat: string | null | undefined) => {
@@ -1800,7 +1799,7 @@ export function ExamenReussitePage() {
             .toLowerCase()
             .trim()
             .replace(/[^a-z_]/g, '');
-          return !['non', 'absent', 'annule', 'annulee', 'reporte', 'reportee', 'ajourne', 'ajournee'].includes(value);
+          return ['oui', 'admis', 'admise', 'reussi', 'reussie'].includes(value);
         };
 
         const reussisFormation = apprenants?.filter(a =>
