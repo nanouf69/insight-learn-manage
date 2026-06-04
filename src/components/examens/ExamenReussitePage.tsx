@@ -1674,7 +1674,7 @@ export function ExamenReussitePage() {
                               !reussisLettre.some(r => r.id === a.id) &&
                               !(a as any).deleted_at &&
                               (a as any).resultat_examen_pratique !== 'oui' &&
-                              `${a.nom} ${a.prenom}`.toLowerCase().includes(searchCMA.toLowerCase())
+                              apprenantMatchesSearch(a, searchCMA)
                             )
                             .slice(0, 10)
                             .map(a => (
@@ -1698,7 +1698,7 @@ export function ExamenReussitePage() {
                             !reussisLettre.some(r => r.id === a.id) &&
                             !(a as any).deleted_at &&
                             (a as any).resultat_examen_pratique !== 'oui' &&
-                            `${a.nom} ${a.prenom}`.toLowerCase().includes(searchCMA.toLowerCase())
+                            apprenantMatchesSearch(a, searchCMA)
                           ).length === 0 && (
                             <p className="text-xs text-muted-foreground py-2 text-center">Aucun résultat</p>
                           )}
