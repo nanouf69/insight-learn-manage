@@ -1400,7 +1400,7 @@ export function ExamenReussitePage() {
         const reussisLettre = [...reussisTheorique, ...paRpApprenants, ...deplacesApprenantsCMA, ...echouesPratiqueCMA, ...extraCMA]
           .filter(a => !removedCandidatsCMA.includes(a.id));
         const cmaSearchResults = (allApprenants || [])
-          .filter(a => !(a as any).deleted_at && apprenantMatchesSearch(a, searchCMA))
+          .filter(a => apprenantMatchesSearch(a, searchCMA))
           .slice(0, 10);
 
 
@@ -1683,7 +1683,7 @@ export function ExamenReussitePage() {
                         <div className="space-y-1">
                           {cmaSearchResults.map(a => {
                             const alreadyListed = reussisLettre.some(r => r.id === a.id);
-                            const hasPassedPractice = (a as any).resultat_examen_pratique === 'oui';
+                            const hasPassedPractice = a.resultat_examen_pratique === 'oui';
                             const disabled = alreadyListed || hasPassedPractice;
 
                             return (
