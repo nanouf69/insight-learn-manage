@@ -1361,7 +1361,8 @@ export function ExamenReussitePage() {
           !deplacesApprenantsCMA.some(r => r.id === a.id) &&
           !echouesPratiqueCMA.some(r => r.id === a.id)
         );
-        const reussisLettre = [...reussisTheorique, ...paRpApprenants, ...deplacesApprenantsCMA, ...echouesPratiqueCMA, ...extraCMA];
+        const reussisLettre = [...reussisTheorique, ...paRpApprenants, ...deplacesApprenantsCMA, ...echouesPratiqueCMA, ...extraCMA]
+          .filter(a => !removedCandidatsCMA.includes(a.id));
 
 
         const getCategorieCMA = (type: string | null) => {
