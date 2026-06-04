@@ -1029,6 +1029,7 @@ export function ExamenReussitePage() {
                               resultat === 'oui' ? 'border-emerald-500 text-emerald-700 bg-emerald-50' :
                               resultat === 'non' ? 'border-red-500 text-red-700 bg-red-50' :
                               resultat === 'absent' ? 'border-orange-500 text-orange-700 bg-orange-50' :
+                              resultat === 'reporte' ? 'border-orange-500 text-orange-700 bg-orange-50' :
                               resultat === 'deplace' ? 'border-blue-500 text-blue-700 bg-blue-50' : ''
                             }`}>
                               <SelectValue />
@@ -1037,6 +1038,7 @@ export function ExamenReussitePage() {
                               <SelectItem value="non_renseigne">-</SelectItem>
                               <SelectItem value="oui">✅ Admis</SelectItem>
                               <SelectItem value="non">❌ Ajourné</SelectItem>
+                              <SelectItem value="reporte">📅 Reporté</SelectItem>
                               <SelectItem value="absent">🔶 Absent</SelectItem>
                             </SelectContent>
                           </Select>
