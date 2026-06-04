@@ -2698,7 +2698,7 @@ export function ExamenReussitePage() {
         const appMap: Record<string, { id: string; nom: string; prenom: string; type_apprenant: string | null }> = {};
         (allApprenants || []).forEach(a => { appMap[a.id] = a; });
 
-        // Reuse the same candidate list as "Candidats à former" section
+        // Reuse the same candidate list as "Candidats à former" section: only theory successes.
         const dejaFormesSetP = new Set(dejaFormesPratique || []);
         const paTypesP = ['pa-vtc', 'pa-taxi'];
         const rpTypesP = ['rp-vtc', 'rp-taxi'];
@@ -2709,7 +2709,7 @@ export function ExamenReussitePage() {
             .toLowerCase()
             .trim()
             .replace(/[^a-z_]/g, '');
-          return !['non', 'absent', 'annule', 'annulee', 'reporte', 'reportee', 'ajourne', 'ajournee'].includes(value);
+          return ['oui', 'admis', 'admise', 'reussi', 'reussie'].includes(value);
         };
         const reussisFormationP = apprenants?.filter(a => 
           (a as any).resultat_examen === 'oui' && 
