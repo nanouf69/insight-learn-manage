@@ -1828,6 +1828,7 @@ export function ExamenReussitePage() {
         // Mais s'ils ont déjà été présents en session pratique, on ne les remet pas à former
         const echouesPratiqueFormation = (allApprenants || []).filter(a =>
           (a as any).resultat_examen_pratique === 'non' &&
+          hasEligibleTheoryStatus((a as any).resultat_examen) &&
           !reussisFormation.some(r => r.id === a.id) &&
           !paFormation.some(r => r.id === a.id) &&
           !deplacesFormation.some(r => r.id === a.id) &&
@@ -1933,6 +1934,7 @@ export function ExamenReussitePage() {
                             .filter(a =>
                               !tousAFormer.some(r => r.id === a.id) &&
                               !(a as any).deleted_at &&
+                              hasEligibleTheoryStatus((a as any).resultat_examen) &&
                               (a as any).resultat_examen_pratique !== 'oui' &&
                               `${a.nom} ${a.prenom}`.toLowerCase().includes(searchFormation.toLowerCase())
                             )
@@ -1957,6 +1959,7 @@ export function ExamenReussitePage() {
                           {(allApprenants || []).filter(a =>
                             !tousAFormer.some(r => r.id === a.id) &&
                             !(a as any).deleted_at &&
+                            hasEligibleTheoryStatus((a as any).resultat_examen) &&
                             (a as any).resultat_examen_pratique !== 'oui' &&
                             `${a.nom} ${a.prenom}`.toLowerCase().includes(searchFormation.toLowerCase())
                           ).length === 0 && (
