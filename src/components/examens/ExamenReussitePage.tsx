@@ -1880,6 +1880,9 @@ export function ExamenReussitePage() {
         );
         // tousAFormer inclut les déplacés et les échoués pratique
         const tousAFormer = [...reussisFormation, ...paFormation, ...deplacesFormation, ...echouesPratiqueFormation, ...extraFormation];
+        const formationSearchResults = (allApprenants || [])
+          .filter(a => !(a as any).deleted_at && apprenantMatchesSearch(a, searchFormation))
+          .slice(0, 10);
 
         const vtcList = tousAFormer.filter(a => isPracticeVTCType(a.type_apprenant));
         const taxiList = tousAFormer.filter(a => isPracticeTAXIType(a.type_apprenant));
