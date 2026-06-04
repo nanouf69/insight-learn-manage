@@ -1967,20 +1967,18 @@ export function ExamenReussitePage() {
                     {searchFormation.trim().length >= 2 && (
                       <ScrollArea className="max-h-48">
                         <div className="space-y-1">
-                          {(allApprenants || [])
-                            .filter(a =>
-                              !tousAFormer.some(r => r.id === a.id) &&
-                              !(a as any).deleted_at &&
-                              (a as any).resultat_examen_pratique !== 'oui' &&
-                              apprenantMatchesSearch(a, searchFormation)
-                            )
-                            .slice(0, 10)
-                            .map(a => (
+                          {formationSearchResults.map(a => {
+                            const alreadyListed = tousAFormer.some(r => r.id === a.id);
+                            const hasPassedPractice = (a as any).resultat_examen_pratique === 'oui';
+                            const disabled = alreadyListed || hasPassedPractice;
+
+                            return (
                               <Button
                                 key={a.id}
                                 variant="ghost"
                                 size="sm"
-                                className="w-full justify-start text-xs h-auto py-1.5"
+                                disabled={disabled}
+                                className="w-full justify-start text-xs h-auto py-1.5 disabled:opacity-60"
                                 onClick={() => {
                                   setExtraCandidatsFormation(prev => [...prev, a.id]);
                                   setSearchFormation("");
@@ -1989,15 +1987,13 @@ export function ExamenReussitePage() {
                               >
                                 <Plus className="h-3 w-3 mr-1.5 text-green-600" />
                                 {a.nom} {a.prenom}
-                                <Badge className="ml-auto text-[10px] bg-muted text-muted-foreground">{a.type_apprenant || '-'}</Badge>
+                                <Badge className="ml-auto text-[10px] bg-muted text-muted-foreground">
+                                  {alreadyListed ? 'déjà dans la liste' : hasPassedPractice ? 'pratique réussi' : a.type_apprenant || '-'}
+                                </Badge>
                               </Button>
-                            ))}
-                          {(allApprenants || []).filter(a =>
-                            !tousAFormer.some(r => r.id === a.id) &&
-                            !(a as any).deleted_at &&
-                            (a as any).resultat_examen_pratique !== 'oui' &&
-                            apprenantMatchesSearch(a, searchFormation)
-                          ).length === 0 && (
+                            );
+                          })}
+                          {formationSearchResults.length === 0 && (
                             <p className="text-xs text-muted-foreground py-2 text-center">Aucun résultat</p>
                           )}
                         </div>
