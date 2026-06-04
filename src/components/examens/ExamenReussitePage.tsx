@@ -100,6 +100,23 @@ type SearchableApprenant = {
   formation_choisie?: string | null;
 };
 
+type ExamApprenant = SearchableApprenant & {
+  id: string;
+  nom: string;
+  prenom: string;
+  type_apprenant: string | null;
+  formation_choisie: string | null;
+  telephone: string | null;
+  email: string | null;
+  date_examen_theorique: string | null;
+  date_examen_pratique: string | null;
+  heure_examen_pratique: string | null;
+  resultat_examen: string | null;
+  resultat_examen_pratique: string | null;
+  numero_dossier_cma: string | null;
+  deleted_at?: string | null;
+};
+
 function apprenantMatchesSearch(apprenant: SearchableApprenant, term: string) {
   const keywords = normalizeSearchValue(term).split(' ').filter(Boolean);
   if (keywords.length === 0) return true;
