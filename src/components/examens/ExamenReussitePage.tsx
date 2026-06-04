@@ -1033,13 +1033,13 @@ export function ExamenReussitePage() {
                             }`}>
                               <SelectValue />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="z-[9999] max-h-[320px] overflow-y-auto">
                               <SelectItem value="non_renseigne">-</SelectItem>
                               <SelectItem value="oui">✅ Admis</SelectItem>
                               <SelectItem value="non">❌ Ajourné</SelectItem>
                               <SelectItem value="reporte">📅 Reporté</SelectItem>
-                              <SelectItem value="absent">🔶 Absent</SelectItem>
                               <SelectItem value="annule">🚫 Annulé</SelectItem>
+                              <SelectItem value="absent">🔶 Absent</SelectItem>
                             </SelectContent>
                           </Select>
                         </TableCell>
