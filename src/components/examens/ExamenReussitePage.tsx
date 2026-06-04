@@ -82,6 +82,31 @@ function toIsoDateKey(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
 
+function normalizeSearchValue(value: string | null | undefined) {
+  return (value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[\s\-.()]+/g, ' ')
+    .trim();
+}
+
+function apprenantMatchesSearch(apprenant: any, term: string) {
+  const keywords = normalizeSearchValue(term).split(' ').filter(Boolean);
+  if (keywords.length === 0) return true;
+
+  const haystack = normalizeSearchValue([
+    apprenant.nom,
+    apprenant.prenom,
+    apprenant.email,
+    apprenant.telephone,
+    apprenant.type_apprenant,
+    apprenant.formation_choisie,
+  ].filter(Boolean).join(' '));
+
+  return keywords.every((keyword) => haystack.includes(keyword));
+}
+
 function parsePratiquePeriod(period: string | null | undefined): { start: string; end: string } | null {
   if (!period) return null;
 
