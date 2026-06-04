@@ -803,8 +803,14 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     }
 
     let cancelled = false;
-    setApprenantLoading(true);
-    setApprenantFetchError(null);
+    // Anti-flicker: only show the spinner for the *first* attempt or a manual retry.
+    // Subsequent automatic re-runs (caused by profile/session re-resolution while
+    // the network is failing) keep the existing error banner visible instead of
+    // swapping it back to a spinner every few hundred ms.
+    if (currentAttempt === 1) {
+      setApprenantLoading(true);
+      setApprenantFetchError(null);
+    }
 
     const fetchApprenant = async () => {
       try {
