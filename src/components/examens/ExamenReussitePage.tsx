@@ -850,6 +850,8 @@ export function ExamenReussitePage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['apprenants-examen', selectedExamDate] });
+      queryClient.invalidateQueries({ queryKey: ['all-apprenants'] });
+      queryClient.invalidateQueries({ queryKey: ['reservations-pratique-planning'] });
       toast.success("Résultat mis à jour");
     },
     onError: (err: any) => {
@@ -1789,8 +1791,7 @@ export function ExamenReussitePage() {
           return false;
         };
 
-        // Tous les candidats à former : tous les inscrits de la session sélectionnée
-        // tant qu'ils ne sont pas déjà formés et ne sont pas explicitement en échec/absent.
+        // Tous les candidats à former : uniquement ceux qui ont réussi l'examen théorique.
         const dejaFormesSet = new Set(dejaFormesPratique || []);
         const paTypes = ['pa-vtc', 'pa-taxi'];
         const hasEligibleTheoryStatus = (resultat: string | null | undefined) => {
@@ -1800,7 +1801,7 @@ export function ExamenReussitePage() {
             .toLowerCase()
             .trim()
             .replace(/[^a-z_]/g, '');
-          return !['non', 'absent', 'annule', 'annulee', 'reporte', 'reportee', 'ajourne', 'ajournee'].includes(value);
+          return ['oui', 'admis', 'admise', 'reussi', 'reussie'].includes(value);
         };
 
         const reussisFormation = apprenants?.filter(a =>
@@ -2699,7 +2700,7 @@ export function ExamenReussitePage() {
         const appMap: Record<string, { id: string; nom: string; prenom: string; type_apprenant: string | null }> = {};
         (allApprenants || []).forEach(a => { appMap[a.id] = a; });
 
-        // Reuse the same candidate list as "Candidats à former" section
+        // Reuse the same candidate list as "Candidats à former" section: only theory successes.
         const dejaFormesSetP = new Set(dejaFormesPratique || []);
         const paTypesP = ['pa-vtc', 'pa-taxi'];
         const rpTypesP = ['rp-vtc', 'rp-taxi'];
@@ -2710,7 +2711,7 @@ export function ExamenReussitePage() {
             .toLowerCase()
             .trim()
             .replace(/[^a-z_]/g, '');
-          return !['non', 'absent', 'annule', 'annulee', 'reporte', 'reportee', 'ajourne', 'ajournee'].includes(value);
+          return ['oui', 'admis', 'admise', 'reussi', 'reussie'].includes(value);
         };
         const reussisFormationP = apprenants?.filter(a => 
           (a as any).resultat_examen === 'oui' && 
