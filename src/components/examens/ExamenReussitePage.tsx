@@ -1960,9 +1960,8 @@ export function ExamenReussitePage() {
                             .filter(a =>
                               !tousAFormer.some(r => r.id === a.id) &&
                               !(a as any).deleted_at &&
-                              hasEligibleTheoryStatus((a as any).resultat_examen) &&
                               (a as any).resultat_examen_pratique !== 'oui' &&
-                              `${a.nom} ${a.prenom}`.toLowerCase().includes(searchFormation.toLowerCase())
+                              apprenantMatchesSearch(a, searchFormation)
                             )
                             .slice(0, 10)
                             .map(a => (
@@ -1985,9 +1984,8 @@ export function ExamenReussitePage() {
                           {(allApprenants || []).filter(a =>
                             !tousAFormer.some(r => r.id === a.id) &&
                             !(a as any).deleted_at &&
-                            hasEligibleTheoryStatus((a as any).resultat_examen) &&
                             (a as any).resultat_examen_pratique !== 'oui' &&
-                            `${a.nom} ${a.prenom}`.toLowerCase().includes(searchFormation.toLowerCase())
+                            apprenantMatchesSearch(a, searchFormation)
                           ).length === 0 && (
                             <p className="text-xs text-muted-foreground py-2 text-center">Aucun résultat</p>
                           )}
