@@ -3400,14 +3400,15 @@ export function ExamenReussitePage() {
                           <SelectTrigger className={`w-44 mx-auto text-xs ${
                             resultatP === 'oui' || resultatP === 'reussite' ? 'border-emerald-500 text-emerald-700 bg-emerald-50' :
                             resultatP === 'non' || resultatP === 'annule' ? 'border-red-500 text-red-700 bg-red-50' :
-                            resultatP === 'deplace' || resultatP === 'reporte_sans_examen' ? 'border-orange-500 text-orange-700 bg-orange-50' : ''
+                            resultatP === 'deplace' || resultatP === 'reporte' || resultatP === 'reporte_sans_examen' ? 'border-orange-500 text-orange-700 bg-orange-50' : ''
                           }`}>
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent className="z-[100]">
                             <SelectItem value="non_renseigne">-</SelectItem>
-                            <SelectItem value="oui">✅ Oui</SelectItem>
-                            <SelectItem value="non">❌ Non</SelectItem>
+                            <SelectItem value="oui">✅ Admis</SelectItem>
+                            <SelectItem value="non">❌ Ajourné</SelectItem>
+                            <SelectItem value="reporte">📅 Reporté</SelectItem>
                             <SelectItem value="deplace">📅 Déplacé prochaine session</SelectItem>
                             <SelectItem value="reporte_sans_examen">📋 Reporté sans examen</SelectItem>
                             <SelectItem value="reussite">🏆 Réussite</SelectItem>
