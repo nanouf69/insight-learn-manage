@@ -1687,13 +1687,24 @@ export function ExamenReussitePage() {
                     <h4 className="text-sm font-semibold mb-2 text-amber-700">TAXI ({taxiReussis.length})</h4>
                     <div className="space-y-1">
                       {taxiReussis.map(a => (
-                        <div key={a.id} className="text-sm px-2 py-1 bg-amber-50 rounded flex items-center justify-between">
+                        <div key={a.id} className="text-sm px-2 py-1 bg-amber-50 rounded flex items-center justify-between group">
                           <span>{a.nom} {a.prenom}</span>
-                          {extraCandidatsCMA.includes(a.id) && (
-                            <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => setExtraCandidatsCMA(prev => prev.filter(id => id !== a.id))}>
-                              <X className="h-3 w-3 text-red-500" />
-                            </Button>
-                          )}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-5 w-5 opacity-60 hover:opacity-100"
+                            title="Retirer ce candidat de la lettre CMA"
+                            onClick={() => {
+                              if (extraCandidatsCMA.includes(a.id)) {
+                                setExtraCandidatsCMA(prev => prev.filter(id => id !== a.id));
+                              } else {
+                                setRemovedCandidatsCMA(prev => [...prev, a.id]);
+                              }
+                              toast.success(`${a.nom} ${a.prenom} retiré de la lettre CMA`);
+                            }}
+                          >
+                            <X className="h-3 w-3 text-red-500" />
+                          </Button>
                         </div>
                       ))}
                       {taxiReussis.length === 0 && <p className="text-xs text-muted-foreground">Aucun</p>}
@@ -1703,13 +1714,24 @@ export function ExamenReussitePage() {
                     <h4 className="text-sm font-semibold mb-2 text-blue-700">VTC ({vtcReussis.length})</h4>
                     <div className="space-y-1">
                       {vtcReussis.map(a => (
-                        <div key={a.id} className="text-sm px-2 py-1 bg-blue-50 rounded flex items-center justify-between">
+                        <div key={a.id} className="text-sm px-2 py-1 bg-blue-50 rounded flex items-center justify-between group">
                           <span>{a.nom} {a.prenom}</span>
-                          {extraCandidatsCMA.includes(a.id) && (
-                            <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => setExtraCandidatsCMA(prev => prev.filter(id => id !== a.id))}>
-                              <X className="h-3 w-3 text-red-500" />
-                            </Button>
-                          )}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-5 w-5 opacity-60 hover:opacity-100"
+                            title="Retirer ce candidat de la lettre CMA"
+                            onClick={() => {
+                              if (extraCandidatsCMA.includes(a.id)) {
+                                setExtraCandidatsCMA(prev => prev.filter(id => id !== a.id));
+                              } else {
+                                setRemovedCandidatsCMA(prev => [...prev, a.id]);
+                              }
+                              toast.success(`${a.nom} ${a.prenom} retiré de la lettre CMA`);
+                            }}
+                          >
+                            <X className="h-3 w-3 text-red-500" />
+                          </Button>
                         </div>
                       ))}
                       {vtcReussis.length === 0 && <p className="text-xs text-muted-foreground">Aucun</p>}
