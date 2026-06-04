@@ -91,7 +91,16 @@ function normalizeSearchValue(value: string | null | undefined) {
     .trim();
 }
 
-function apprenantMatchesSearch(apprenant: any, term: string) {
+type SearchableApprenant = {
+  nom?: string | null;
+  prenom?: string | null;
+  email?: string | null;
+  telephone?: string | null;
+  type_apprenant?: string | null;
+  formation_choisie?: string | null;
+};
+
+function apprenantMatchesSearch(apprenant: SearchableApprenant, term: string) {
   const keywords = normalizeSearchValue(term).split(' ').filter(Boolean);
   if (keywords.length === 0) return true;
 
