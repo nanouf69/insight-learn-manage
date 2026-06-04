@@ -1881,7 +1881,7 @@ export function ExamenReussitePage() {
         // tousAFormer inclut les déplacés et les échoués pratique
         const tousAFormer = [...reussisFormation, ...paFormation, ...deplacesFormation, ...echouesPratiqueFormation, ...extraFormation];
         const formationSearchResults = (allApprenants || [])
-          .filter(a => !(a as any).deleted_at && apprenantMatchesSearch(a, searchFormation))
+          .filter(a => apprenantMatchesSearch(a, searchFormation))
           .slice(0, 10);
 
         const vtcList = tousAFormer.filter(a => isPracticeVTCType(a.type_apprenant));
@@ -1969,7 +1969,7 @@ export function ExamenReussitePage() {
                         <div className="space-y-1">
                           {formationSearchResults.map(a => {
                             const alreadyListed = tousAFormer.some(r => r.id === a.id);
-                            const hasPassedPractice = (a as any).resultat_examen_pratique === 'oui';
+                            const hasPassedPractice = a.resultat_examen_pratique === 'oui';
                             const disabled = alreadyListed || hasPassedPractice;
 
                             return (
