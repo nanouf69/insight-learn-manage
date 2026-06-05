@@ -2179,12 +2179,7 @@ export function ExamenReussitePage() {
                                 size="sm"
                                 disabled={disabled}
                                 className="w-full justify-start text-xs h-auto py-1.5 disabled:opacity-60"
-                                onClick={() => {
-                                  setRemovedCandidatsFormation(prev => prev.filter(id => id !== a.id));
-                                  setExtraCandidatsFormation(prev => [...prev, a.id]);
-                                  setSearchFormation("");
-                                  toast.success(`${a.nom} ${a.prenom} ajouté aux candidats à former`);
-                                }}
+                                onClick={() => handleAddToFormationList(a)}
                               >
                                 <Plus className="h-3 w-3 mr-1.5 text-green-600" />
                                 {a.nom} {a.prenom}
@@ -2464,7 +2459,7 @@ export function ExamenReussitePage() {
                                   </AlertDialog>
                                 )}
                                 {extraCandidatsFormation.includes(a.id) && (
-                                  <Button variant="ghost" size="icon" className="h-7 w-7" title="Retirer" onClick={() => setExtraCandidatsFormation(prev => prev.filter(id => id !== a.id))}>
+                                  <Button variant="ghost" size="icon" className="h-7 w-7" title="Retirer" onClick={() => handleRemoveExtraFromFormationList(a)}>
                                     <Trash2 className="h-3.5 w-3.5 text-red-500" />
                                   </Button>
                                 )}
@@ -2813,7 +2808,7 @@ export function ExamenReussitePage() {
                                   </AlertDialog>
                                 )}
                                 {extraCandidatsFormation.includes(a.id) && (
-                                  <Button variant="ghost" size="icon" className="h-7 w-7" title="Retirer" onClick={() => setExtraCandidatsFormation(prev => prev.filter(id => id !== a.id))}>
+                                  <Button variant="ghost" size="icon" className="h-7 w-7" title="Retirer" onClick={() => handleRemoveExtraFromFormationList(a)}>
                                     <Trash2 className="h-3.5 w-3.5 text-red-500" />
                                   </Button>
                                 )}
