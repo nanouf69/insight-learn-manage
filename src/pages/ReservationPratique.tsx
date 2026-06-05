@@ -153,7 +153,7 @@ export default function ReservationPratique() {
   const [allApprenants, setAllApprenants] = useState<PlanningApprenant[]>([]);
   const [examApprenants, setExamApprenants] = useState<PlanningApprenant[]>([]);
   const [maxPerDayMap, setMaxPerDayMap] = useState<Record<string, number>>({});
-  const [dayTimeSlots, setDayTimeSlots] = useState<Record<string, { matin?: string; apresmidi?: string }>>({});
+  const [dayTimeSlots, setDayTimeSlots] = useState<Record<string, { matin?: string; apresmidi?: string; type?: 'vtc' | 'taxi' | 'libre' }>>({});
   const [deplacesIds, setDeplacesIds] = useState<string[]>([]);
   const [dejaFormesIds, setDejaFormesIds] = useState<string[]>([]);
 
