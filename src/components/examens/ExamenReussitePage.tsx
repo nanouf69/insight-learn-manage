@@ -3402,6 +3402,27 @@ export function ExamenReussitePage() {
                             </div>
                           </div>
 
+                          {/* Per-day formation type override */}
+                          <div className="flex items-center justify-center gap-1 mb-1">
+                            <span className="text-[8px] text-muted-foreground">Type:</span>
+                            <select
+                              value={(typeof dayTimeSlots[key] === 'object' ? (dayTimeSlots[key] as any)?.type : '') || ''}
+                              onChange={(e) => setDayTimeSlots(prev => {
+                                const current = typeof prev[key] === 'object' ? { ...(prev[key] as any) } : {};
+                                if (e.target.value) current.type = e.target.value;
+                                else delete current.type;
+                                return { ...prev, [key]: current };
+                              })}
+                              className="h-5 text-[9px] border rounded bg-muted/50 focus:outline-none focus:ring-1 focus:ring-primary px-1"
+                              title="Forcer le type de formation pour ce jour"
+                            >
+                              <option value="">Auto ({expectedType || 'libre'})</option>
+                              <option value="vtc">VTC</option>
+                              <option value="taxi">TAXI</option>
+                              <option value="libre">Libre</option>
+                            </select>
+                          </div>
+
                           {/* Show label for expected type */}
                           {expectedType === 'vtc' && (
                             <div className="mb-2">
