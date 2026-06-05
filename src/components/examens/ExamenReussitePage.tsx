@@ -168,18 +168,35 @@ async function searchApprenantsDirectly(term: string) {
 }
 
 const REMOVED_FORMATION_PREFIX = 'removed:';
+const EXTRA_CMA_PREFIX = 'cma-extra:';
+const REMOVED_CMA_PREFIX = 'cma-removed:';
 
 function splitFormationCandidates(values: string[] | null | undefined) {
   return {
-    extra: (values || []).filter((id) => !id.startsWith(REMOVED_FORMATION_PREFIX)),
+    extra: (values || []).filter((id) =>
+      !id.startsWith(REMOVED_FORMATION_PREFIX) &&
+      !id.startsWith(EXTRA_CMA_PREFIX) &&
+      !id.startsWith(REMOVED_CMA_PREFIX)
+    ),
     removed: (values || [])
       .filter((id) => id.startsWith(REMOVED_FORMATION_PREFIX))
       .map((id) => id.replace(REMOVED_FORMATION_PREFIX, '')),
+    extraCMA: (values || [])
+      .filter((id) => id.startsWith(EXTRA_CMA_PREFIX))
+      .map((id) => id.replace(EXTRA_CMA_PREFIX, '')),
+    removedCMA: (values || [])
+      .filter((id) => id.startsWith(REMOVED_CMA_PREFIX))
+      .map((id) => id.replace(REMOVED_CMA_PREFIX, '')),
   };
 }
 
-function joinFormationCandidates(extra: string[], removed: string[]) {
-  return [...extra, ...removed.map((id) => `${REMOVED_FORMATION_PREFIX}${id}`)];
+function joinFormationCandidates(extra: string[], removed: string[], extraCMA: string[], removedCMA: string[]) {
+  return [
+    ...extra,
+    ...removed.map((id) => `${REMOVED_FORMATION_PREFIX}${id}`),
+    ...extraCMA.map((id) => `${EXTRA_CMA_PREFIX}${id}`),
+    ...removedCMA.map((id) => `${REMOVED_CMA_PREFIX}${id}`),
+  ];
 }
 
 function parsePratiquePeriod(period: string | null | undefined): { start: string; end: string } | null {
@@ -765,6 +782,8 @@ export function ExamenReussitePage() {
         const formationCandidates = splitFormationCandidates(data.extra_candidats || []);
         setExtraCandidatsFormation(formationCandidates.extra);
         setRemovedCandidatsFormation(formationCandidates.removed);
+        setExtraCandidatsCMA(formationCandidates.extraCMA);
+        setRemovedCandidatsCMA(formationCandidates.removedCMA);
         if (data.max_per_day) setMaxPerDay(data.max_per_day);
         if (data.max_per_day_map) setMaxPerDayMap(data.max_per_day_map as Record<string, number>);
         if (data.day_time_slots) setDayTimeSlots(data.day_time_slots as Record<string, { matin?: string; apresmidi?: string } | string>);
@@ -795,6 +814,8 @@ export function ExamenReussitePage() {
         const formationCandidates = splitFormationCandidates(data.extra_candidats || []);
         setExtraCandidatsFormation(formationCandidates.extra);
         setRemovedCandidatsFormation(formationCandidates.removed);
+        setExtraCandidatsCMA(formationCandidates.extraCMA);
+        setRemovedCandidatsCMA(formationCandidates.removedCMA);
         if (data.max_per_day) setMaxPerDay(data.max_per_day);
         if (data.max_per_day_map) setMaxPerDayMap(data.max_per_day_map as Record<string, number>);
         if (data.day_time_slots) setDayTimeSlots(data.day_time_slots as Record<string, { matin?: string; apresmidi?: string } | string>);
@@ -806,6 +827,8 @@ export function ExamenReussitePage() {
         setExtraDays([]);
         setExtraCandidatsFormation([]);
         setRemovedCandidatsFormation([]);
+        setExtraCandidatsCMA([]);
+        setRemovedCandidatsCMA([]);
         setMaxPerDayMap({});
         setDayTimeSlots({});
       }
@@ -827,14 +850,14 @@ export function ExamenReussitePage() {
           planning_end_date: planningEndDate,
           excluded_days: excludedDays,
           extra_days: extraDays,
-          extra_candidats: joinFormationCandidates(extraCandidatsFormation, removedCandidatsFormation),
+          extra_candidats: joinFormationCandidates(extraCandidatsFormation, removedCandidatsFormation, extraCandidatsCMA, removedCandidatsCMA),
           max_per_day: maxPerDay,
           max_per_day_map: maxPerDayMap,
           day_time_slots: dayTimeSlots,
         }, { onConflict: 'exam_date,date_pratique' });
     }, 1000);
     return () => clearTimeout(timer);
-  }, [planningConfigLoaded, selectedExamDate, selectedDatePratique, planningStartDate, planningEndDate, excludedDays, extraDays, extraCandidatsFormation, removedCandidatsFormation, maxPerDay, maxPerDayMap, dayTimeSlots]);
+  }, [planningConfigLoaded, selectedExamDate, selectedDatePratique, planningStartDate, planningEndDate, excludedDays, extraDays, extraCandidatsFormation, removedCandidatsFormation, extraCandidatsCMA, removedCandidatsCMA, maxPerDay, maxPerDayMap, dayTimeSlots]);
 
   // Fetch uploaded PDF files
   const { data: examFiles, refetch: refetchFiles } = useQuery({
@@ -1770,7 +1793,8 @@ export function ExamenReussitePage() {
                                 disabled={disabled}
                                 className="w-full justify-start text-xs h-auto py-1.5 disabled:opacity-60"
                                 onClick={() => {
-                                  setExtraCandidatsCMA(prev => [...prev, a.id]);
+                                  setRemovedCandidatsCMA(prev => prev.filter(id => id !== a.id));
+                                  setExtraCandidatsCMA(prev => prev.includes(a.id) ? prev : [...prev, a.id]);
                                   setSearchCMA("");
                                   toast.success(`${a.nom} ${a.prenom} ajouté à la lettre CMA`);
                                 }}
@@ -1810,7 +1834,7 @@ export function ExamenReussitePage() {
                               if (extraCandidatsCMA.includes(a.id)) {
                                 setExtraCandidatsCMA(prev => prev.filter(id => id !== a.id));
                               } else {
-                                setRemovedCandidatsCMA(prev => [...prev, a.id]);
+                                setRemovedCandidatsCMA(prev => prev.includes(a.id) ? prev : [...prev, a.id]);
                               }
                               toast.success(`${a.nom} ${a.prenom} retiré de la lettre CMA`);
                             }}
@@ -1838,7 +1862,7 @@ export function ExamenReussitePage() {
                               if (extraCandidatsCMA.includes(a.id)) {
                                 setExtraCandidatsCMA(prev => prev.filter(id => id !== a.id));
                               } else {
-                                setRemovedCandidatsCMA(prev => [...prev, a.id]);
+                                setRemovedCandidatsCMA(prev => prev.includes(a.id) ? prev : [...prev, a.id]);
                               }
                               toast.success(`${a.nom} ${a.prenom} retiré de la lettre CMA`);
                             }}
