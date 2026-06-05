@@ -3119,18 +3119,39 @@ export function ExamenReussitePage() {
 
         // Auto-assign day types: VTC first, then TAXI based on candidate counts
         // With per-day max, we greedily assign days
+        // Manual overrides (set via per-day type selector) take precedence
+        const getOverride = (key: string): 'vtc' | 'taxi' | 'libre' | undefined => {
+          const v = dayTimeSlots[key];
+          if (v && typeof v === 'object' && (v as any).type) {
+            const t = (v as any).type;
+            if (t === 'vtc' || t === 'taxi' || t === 'libre') return t;
+          }
+          return undefined;
+        };
         let vtcRemaining = totalVTC;
         let taxiRemaining = totalTAXI;
         const dayTypeMap: Record<string, 'vtc' | 'taxi' | 'libre'> = {};
         const dayCapacity: Record<string, number> = {};
         let vtcPlaces = 0;
         let taxiPlaces = 0;
-        
-        // First pass: assign VTC days
+
+        // Pass 0: apply manual overrides and subtract their capacity
         for (const d of weekdays) {
           const key = toKey(d);
           const cap = getMax(key);
           dayCapacity[key] = cap;
+          const ov = getOverride(key);
+          if (ov) {
+            dayTypeMap[key] = ov;
+            if (ov === 'vtc') { vtcPlaces += cap; vtcRemaining -= cap; }
+            else if (ov === 'taxi') { taxiPlaces += cap; taxiRemaining -= cap; }
+          }
+        }
+        // First pass: assign VTC days
+        for (const d of weekdays) {
+          const key = toKey(d);
+          if (dayTypeMap[key]) continue;
+          const cap = dayCapacity[key];
           if (vtcRemaining > 0) {
             dayTypeMap[key] = 'vtc';
             vtcPlaces += cap;
@@ -3141,7 +3162,7 @@ export function ExamenReussitePage() {
         for (const d of weekdays) {
           const key = toKey(d);
           if (dayTypeMap[key]) continue;
-          const cap = getMax(key);
+          const cap = dayCapacity[key];
           if (taxiRemaining > 0) {
             dayTypeMap[key] = 'taxi';
             taxiPlaces += cap;
@@ -3379,6 +3400,27 @@ export function ExamenReussitePage() {
                                 <option value="14h-18h">14h–18h</option>
                               </select>
                             </div>
+                          </div>
+
+                          {/* Per-day formation type override */}
+                          <div className="flex items-center justify-center gap-1 mb-1">
+                            <span className="text-[8px] text-muted-foreground">Type:</span>
+                            <select
+                              value={(typeof dayTimeSlots[key] === 'object' ? (dayTimeSlots[key] as any)?.type : '') || ''}
+                              onChange={(e) => setDayTimeSlots(prev => {
+                                const current = typeof prev[key] === 'object' ? { ...(prev[key] as any) } : {};
+                                if (e.target.value) current.type = e.target.value;
+                                else delete current.type;
+                                return { ...prev, [key]: current };
+                              })}
+                              className="h-5 text-[9px] border rounded bg-muted/50 focus:outline-none focus:ring-1 focus:ring-primary px-1"
+                              title="Forcer le type de formation pour ce jour"
+                            >
+                              <option value="">Auto ({expectedType || 'libre'})</option>
+                              <option value="vtc">VTC</option>
+                              <option value="taxi">TAXI</option>
+                              <option value="libre">Libre</option>
+                            </select>
                           </div>
 
                           {/* Show label for expected type */}
