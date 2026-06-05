@@ -3524,6 +3524,7 @@ export function ExamenReussitePage() {
         // Filter candidates by selected practical exam period
         const selectedPeriodBounds = parsePratiquePeriod(selectedResultsPratiqueDate);
         const candidatsPratique = (allApprenants || []).filter(a => {
+          if ((a as any).resultat_examen_pratique === 'deplace' || (deplacesSessionPratique || []).includes(a.id)) return false;
           if (!a.date_examen_pratique) return false;
           if (!selectedPeriodBounds) return true;
           return a.date_examen_pratique >= selectedPeriodBounds.start && a.date_examen_pratique <= selectedPeriodBounds.end;
