@@ -1249,9 +1249,76 @@ export function ExamenReussitePage() {
       {/* Main table — déplacé en haut de page */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <ClipboardCheck className="h-5 w-5" />
-            Résultats et inscriptions examen théorique - {selectedExamDate}
+          <CardTitle className="flex items-center justify-between gap-2">
+            <span className="flex items-center gap-2">
+              <ClipboardCheck className="h-5 w-5" />
+              Résultats et inscriptions examen théorique - {selectedExamDate}
+            </span>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button size="sm" variant="outline" className="gap-1.5 text-xs">
+                  <Plus className="h-3.5 w-3.5" />
+                  Ajouter un apprenant
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80 p-3" align="end">
+                <p className="text-xs font-medium mb-2">Inscrire un apprenant à l'examen du {selectedExamDate} :</p>
+                <Input
+                  placeholder="Nom ou prénom..."
+                  value={searchInscritTheorique}
+                  onChange={(e) => setSearchInscritTheorique(e.target.value)}
+                  className="h-8 text-sm mb-2"
+                />
+                {searchInscritTheorique.trim().length >= 2 && (
+                  <ScrollArea className="max-h-48">
+                    <div className="space-y-1">
+                      {(allApprenants || [])
+                        .filter(a => `${a.nom} ${a.prenom}`.toLowerCase().includes(searchInscritTheorique.toLowerCase()))
+                        .slice(0, 20)
+                        .map(a => {
+                          const alreadyListed = (filtered || []).some(r => r.id === a.id);
+                          return (
+                            <Button
+                              key={a.id}
+                              variant="ghost"
+                              size="sm"
+                              disabled={alreadyListed || addingInscritTheorique}
+                              className="w-full justify-start text-xs h-auto py-1.5 disabled:opacity-60"
+                              onClick={async () => {
+                                try {
+                                  setAddingInscritTheorique(true);
+                                  const { error } = await supabase
+                                    .from('apprenants')
+                                    .update({ date_examen_theorique: selectedExamDate } as any)
+                                    .eq('id', a.id);
+                                  if (error) throw error;
+                                  toast.success(`${a.nom} ${a.prenom} ajouté à l'examen du ${selectedExamDate}`);
+                                  setSearchInscritTheorique("");
+                                  queryClient.invalidateQueries({ queryKey: ['apprenants-examen', selectedExamDate] });
+                                  queryClient.invalidateQueries({ queryKey: ['all-apprenants'] });
+                                } catch (err: any) {
+                                  toast.error(err.message || "Erreur lors de l'ajout");
+                                } finally {
+                                  setAddingInscritTheorique(false);
+                                }
+                              }}
+                            >
+                              <Plus className="h-3 w-3 mr-1.5 text-green-600" />
+                              {a.nom} {a.prenom}
+                              <Badge className="ml-auto text-[10px] bg-muted text-muted-foreground">
+                                {alreadyListed ? 'déjà inscrit' : (a.type_apprenant || '-')}
+                              </Badge>
+                            </Button>
+                          );
+                        })}
+                      {(allApprenants || []).filter(a => `${a.nom} ${a.prenom}`.toLowerCase().includes(searchInscritTheorique.toLowerCase())).length === 0 && (
+                        <p className="text-xs text-muted-foreground py-2 text-center">Aucun résultat</p>
+                      )}
+                    </div>
+                  </ScrollArea>
+                )}
+              </PopoverContent>
+            </Popover>
           </CardTitle>
         </CardHeader>
         <CardContent>
