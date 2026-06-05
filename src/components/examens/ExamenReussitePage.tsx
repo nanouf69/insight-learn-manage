@@ -1749,14 +1749,15 @@ export function ExamenReussitePage() {
                     <h4 className="text-sm font-semibold mb-2 text-amber-700">TAXI ({taxiReussis.length})</h4>
                     <div className="space-y-1">
                       {taxiReussis.map(a => (
-                        <div key={a.id} className="text-sm px-2 py-1 bg-amber-50 rounded flex items-center justify-between group">
-                          <span>{a.nom} {a.prenom}</span>
+                        <div key={a.id} className="text-sm px-2 py-1 bg-amber-50 rounded flex items-center justify-between gap-2">
+                          <span className="truncate">{a.nom} {a.prenom}</span>
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-5 w-5 opacity-60 hover:opacity-100"
+                            className="h-6 w-6 shrink-0 text-red-600 hover:bg-red-100 hover:text-red-700"
                             title="Retirer ce candidat de la lettre CMA"
                             onClick={() => {
+                              if (!window.confirm(`Retirer ${a.nom} ${a.prenom} de la lettre CMA ?`)) return;
                               if (extraCandidatsCMA.includes(a.id)) {
                                 setExtraCandidatsCMA(prev => prev.filter(id => id !== a.id));
                               } else {
@@ -1765,7 +1766,7 @@ export function ExamenReussitePage() {
                               toast.success(`${a.nom} ${a.prenom} retiré de la lettre CMA`);
                             }}
                           >
-                            <X className="h-3 w-3 text-red-500" />
+                            <X className="h-4 w-4" />
                           </Button>
                         </div>
                       ))}
@@ -1776,14 +1777,15 @@ export function ExamenReussitePage() {
                     <h4 className="text-sm font-semibold mb-2 text-blue-700">VTC ({vtcReussis.length})</h4>
                     <div className="space-y-1">
                       {vtcReussis.map(a => (
-                        <div key={a.id} className="text-sm px-2 py-1 bg-blue-50 rounded flex items-center justify-between group">
-                          <span>{a.nom} {a.prenom}</span>
+                        <div key={a.id} className="text-sm px-2 py-1 bg-blue-50 rounded flex items-center justify-between gap-2">
+                          <span className="truncate">{a.nom} {a.prenom}</span>
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-5 w-5 opacity-60 hover:opacity-100"
+                            className="h-6 w-6 shrink-0 text-red-600 hover:bg-red-100 hover:text-red-700"
                             title="Retirer ce candidat de la lettre CMA"
                             onClick={() => {
+                              if (!window.confirm(`Retirer ${a.nom} ${a.prenom} de la lettre CMA ?`)) return;
                               if (extraCandidatsCMA.includes(a.id)) {
                                 setExtraCandidatsCMA(prev => prev.filter(id => id !== a.id));
                               } else {
@@ -1792,7 +1794,7 @@ export function ExamenReussitePage() {
                               toast.success(`${a.nom} ${a.prenom} retiré de la lettre CMA`);
                             }}
                           >
-                            <X className="h-3 w-3 text-red-500" />
+                            <X className="h-4 w-4" />
                           </Button>
                         </div>
                       ))}
