@@ -358,11 +358,35 @@ export default function ReservationPratique() {
 
     weekdays.sort((a, b) => a.getTime() - b.getTime());
 
-    const vtcDaysNeeded = Math.ceil(totalVTC / 3);
-    const taxiDaysNeeded = Math.ceil(totalTAXI / 3);
+    // Séparer les jours avec override manuel et les jours auto
+    const manualDays: Date[] = [];
+    const autoDays: Date[] = [];
+    weekdays.forEach((date) => {
+      const key = toLocalDateKey(date);
+      const manual = dayTimeSlots[key]?.type;
+      if (manual === 'vtc' || manual === 'taxi' || manual === 'libre') {
+        manualDays.push(date);
+      } else {
+        autoDays.push(date);
+      }
+    });
+
+    // Compter combien sont déjà couverts manuellement
+    const manualVTCCount = manualDays.filter((d) => dayTimeSlots[toLocalDateKey(d)]?.type === 'vtc').length;
+    const manualTAXICount = manualDays.filter((d) => dayTimeSlots[toLocalDateKey(d)]?.type === 'taxi').length;
+
+    const vtcDaysNeeded = Math.max(0, Math.ceil(totalVTC / 3) - manualVTCCount);
+    const taxiDaysNeeded = Math.max(0, Math.ceil(totalTAXI / 3) - manualTAXICount);
     const dayTypeMap: Record<string, "vtc" | "taxi" | "libre"> = {};
 
-    weekdays.forEach((date, index) => {
+    // Appliquer les overrides manuels
+    manualDays.forEach((date) => {
+      const key = toLocalDateKey(date);
+      dayTypeMap[key] = dayTimeSlots[key]!.type as "vtc" | "taxi" | "libre";
+    });
+
+    // Auto-assigner le reste
+    autoDays.forEach((date, index) => {
       const key = toLocalDateKey(date);
       if (index < vtcDaysNeeded) {
         dayTypeMap[key] = "vtc";
@@ -393,6 +417,7 @@ export default function ReservationPratique() {
     excludedDays,
     extraDays,
     occupiedDays,
+    dayTimeSlots,
     maxPerDayMap,
   ]);
 
