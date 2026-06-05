@@ -381,6 +381,51 @@ export function ExamenReussitePage() {
   const planningFileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
+  const saveCandidateListsNow = useCallback(async ({
+    extraFormation = extraCandidatsFormation,
+    removedFormation = removedCandidatsFormation,
+    extraCMA = extraCandidatsCMA,
+    removedCMA = removedCandidatsCMA,
+  }: {
+    extraFormation?: string[];
+    removedFormation?: string[];
+    extraCMA?: string[];
+    removedCMA?: string[];
+  }) => {
+    if (!selectedExamDate || !selectedDatePratique) return;
+
+    const { error } = await supabase
+      .from('planning_pratique_config')
+      .upsert({
+        exam_date: selectedExamDate,
+        date_pratique: selectedDatePratique,
+        planning_start_date: planningStartDate,
+        planning_end_date: planningEndDate,
+        excluded_days: excludedDays,
+        extra_days: extraDays,
+        extra_candidats: joinFormationCandidates(extraFormation, removedFormation, extraCMA, removedCMA),
+        max_per_day: maxPerDay,
+        max_per_day_map: maxPerDayMap,
+        day_time_slots: dayTimeSlots,
+      }, { onConflict: 'exam_date,date_pratique' });
+
+    if (error) throw error;
+  }, [
+    selectedExamDate,
+    selectedDatePratique,
+    planningStartDate,
+    planningEndDate,
+    excludedDays,
+    extraDays,
+    extraCandidatsFormation,
+    removedCandidatsFormation,
+    extraCandidatsCMA,
+    removedCandidatsCMA,
+    maxPerDay,
+    maxPerDayMap,
+    dayTimeSlots,
+  ]);
+
   const handleSendRepassageEmails = async () => {
     const echoues = apprenants?.filter(a => (a as any).resultat_examen === 'non' && a.email) || [];
     if (echoues.length === 0) return;
