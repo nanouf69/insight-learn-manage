@@ -1904,6 +1904,7 @@ export function ExamenReussitePage() {
 
         // Tous les candidats à former : uniquement ceux qui ont réussi l'examen théorique.
         const dejaFormesSet = new Set(dejaFormesPratique || []);
+        const removedFormationSet = new Set(removedCandidatsFormation);
         const paTypes = ['pa-vtc', 'pa-taxi'];
         const hasEligibleTheoryStatus = (resultat: string | null | undefined) => {
           const value = (resultat || '')
@@ -1918,7 +1919,8 @@ export function ExamenReussitePage() {
         const reussisFormation = apprenants?.filter(a =>
           !(a as any).deleted_at &&
           hasEligibleTheoryStatus((a as any).resultat_examen) &&
-          !dejaFormesSet.has(a.id)
+          !dejaFormesSet.has(a.id) &&
+          !removedFormationSet.has(a.id)
         ) || [];
         const paFormation = (allApprenants || []).filter(a => 
           paTypes.includes((a.type_apprenant || '').toLowerCase()) && 
@@ -1926,7 +1928,8 @@ export function ExamenReussitePage() {
           !(a as any).deleted_at &&
           hasEligibleTheoryStatus((a as any).resultat_examen) &&
           !reussisFormation.some(r => r.id === a.id) &&
-          !dejaFormesSet.has(a.id)
+          !dejaFormesSet.has(a.id) &&
+          !removedFormationSet.has(a.id)
         );
         // Candidats déplacés à la prochaine session (sessions pratiques précédentes)
         const deplacesFormation = (allApprenants || []).filter(a =>
@@ -1934,7 +1937,8 @@ export function ExamenReussitePage() {
           hasEligibleTheoryStatus((a as any).resultat_examen) &&
           !reussisFormation.some(r => r.id === a.id) &&
           !paFormation.some(r => r.id === a.id) &&
-          !dejaFormesSet.has(a.id)
+          !dejaFormesSet.has(a.id) &&
+          !removedFormationSet.has(a.id)
         );
         // Candidats ayant échoué l'examen pratique (repassage pratique)
         // Mais s'ils ont déjà été présents en session pratique, on ne les remet pas à former
@@ -1944,7 +1948,8 @@ export function ExamenReussitePage() {
           !reussisFormation.some(r => r.id === a.id) &&
           !paFormation.some(r => r.id === a.id) &&
           !deplacesFormation.some(r => r.id === a.id) &&
-          !dejaFormesSet.has(a.id)
+          !dejaFormesSet.has(a.id) &&
+          !removedFormationSet.has(a.id)
         );
         // Extra candidats ajoutés manuellement
         const extraFormation = (allApprenants || []).filter(a =>
@@ -1954,7 +1959,8 @@ export function ExamenReussitePage() {
           !paFormation.some(r => r.id === a.id) &&
           !deplacesFormation.some(r => r.id === a.id) &&
           !echouesPratiqueFormation.some(r => r.id === a.id) &&
-          !dejaFormesSet.has(a.id)
+          !dejaFormesSet.has(a.id) &&
+          !removedFormationSet.has(a.id)
         );
         // tousAFormer inclut les déplacés et les échoués pratique
         const tousAFormer = [...reussisFormation, ...paFormation, ...deplacesFormation, ...echouesPratiqueFormation, ...extraFormation];
@@ -2057,6 +2063,7 @@ export function ExamenReussitePage() {
                                 disabled={disabled}
                                 className="w-full justify-start text-xs h-auto py-1.5 disabled:opacity-60"
                                 onClick={() => {
+                                  setRemovedCandidatsFormation(prev => prev.filter(id => id !== a.id));
                                   setExtraCandidatsFormation(prev => [...prev, a.id]);
                                   setSearchFormation("");
                                   toast.success(`${a.nom} ${a.prenom} ajouté aux candidats à former`);
