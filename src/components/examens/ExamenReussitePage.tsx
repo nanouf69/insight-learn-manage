@@ -541,8 +541,13 @@ export function ExamenReussitePage() {
 
   const handleRemoveFromFormationList = async (apprenant: { id: string; nom: string; prenom: string }) => {
     try {
-      setExtraCandidatsFormation((prev) => prev.filter((id) => id !== apprenant.id));
-      setRemovedCandidatsFormation((prev) => prev.includes(apprenant.id) ? prev : [...prev, apprenant.id]);
+      const nextExtraFormation = extraCandidatsFormation.filter((id) => id !== apprenant.id);
+      const nextRemovedFormation = removedCandidatsFormation.includes(apprenant.id)
+        ? removedCandidatsFormation
+        : [...removedCandidatsFormation, apprenant.id];
+      setExtraCandidatsFormation(nextExtraFormation);
+      setRemovedCandidatsFormation(nextRemovedFormation);
+      await saveCandidateListsNow({ extraFormation: nextExtraFormation, removedFormation: nextRemovedFormation });
 
       const { error } = await supabase
         .from('reservations_pratique')
@@ -557,6 +562,64 @@ export function ExamenReussitePage() {
       toast.success(`${apprenant.prenom} ${apprenant.nom} retiré(e) de la liste`);
     } catch (err: any) {
       toast.error(`Erreur: ${err.message || 'Échec'}`);
+    }
+  };
+
+  const handleAddToFormationList = async (apprenant: ExamApprenant) => {
+    try {
+      const nextRemovedFormation = removedCandidatsFormation.filter(id => id !== apprenant.id);
+      const nextExtraFormation = extraCandidatsFormation.includes(apprenant.id)
+        ? extraCandidatsFormation
+        : [...extraCandidatsFormation, apprenant.id];
+      setRemovedCandidatsFormation(nextRemovedFormation);
+      setExtraCandidatsFormation(nextExtraFormation);
+      await saveCandidateListsNow({ extraFormation: nextExtraFormation, removedFormation: nextRemovedFormation });
+      setSearchFormation("");
+      toast.success(`${apprenant.nom} ${apprenant.prenom} ajouté aux candidats à former`);
+    } catch (err: any) {
+      toast.error(`Erreur sauvegarde: ${err.message || 'Échec'}`);
+    }
+  };
+
+  const handleRemoveExtraFromFormationList = async (apprenant: ExamApprenant) => {
+    try {
+      const nextExtraFormation = extraCandidatsFormation.filter(id => id !== apprenant.id);
+      setExtraCandidatsFormation(nextExtraFormation);
+      await saveCandidateListsNow({ extraFormation: nextExtraFormation });
+      toast.success(`${apprenant.nom} ${apprenant.prenom} retiré(e) de la liste`);
+    } catch (err: any) {
+      toast.error(`Erreur sauvegarde: ${err.message || 'Échec'}`);
+    }
+  };
+
+  const handleAddToCMAList = async (apprenant: ExamApprenant) => {
+    try {
+      const nextRemovedCMA = removedCandidatsCMA.filter(id => id !== apprenant.id);
+      const nextExtraCMA = extraCandidatsCMA.includes(apprenant.id)
+        ? extraCandidatsCMA
+        : [...extraCandidatsCMA, apprenant.id];
+      setRemovedCandidatsCMA(nextRemovedCMA);
+      setExtraCandidatsCMA(nextExtraCMA);
+      await saveCandidateListsNow({ extraCMA: nextExtraCMA, removedCMA: nextRemovedCMA });
+      setSearchCMA("");
+      toast.success(`${apprenant.nom} ${apprenant.prenom} ajouté à la lettre CMA`);
+    } catch (err: any) {
+      toast.error(`Erreur sauvegarde: ${err.message || 'Échec'}`);
+    }
+  };
+
+  const handleRemoveFromCMAList = async (apprenant: ExamApprenant) => {
+    try {
+      const nextExtraCMA = extraCandidatsCMA.filter(id => id !== apprenant.id);
+      const nextRemovedCMA = extraCandidatsCMA.includes(apprenant.id) || removedCandidatsCMA.includes(apprenant.id)
+        ? removedCandidatsCMA.filter(id => id !== apprenant.id)
+        : [...removedCandidatsCMA, apprenant.id];
+      setExtraCandidatsCMA(nextExtraCMA);
+      setRemovedCandidatsCMA(nextRemovedCMA);
+      await saveCandidateListsNow({ extraCMA: nextExtraCMA, removedCMA: nextRemovedCMA });
+      toast.success(`${apprenant.nom} ${apprenant.prenom} retiré de la lettre CMA`);
+    } catch (err: any) {
+      toast.error(`Erreur sauvegarde: ${err.message || 'Échec'}`);
     }
   };
 
