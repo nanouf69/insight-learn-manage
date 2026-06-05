@@ -381,6 +381,51 @@ export function ExamenReussitePage() {
   const planningFileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
+  const saveCandidateListsNow = useCallback(async ({
+    extraFormation = extraCandidatsFormation,
+    removedFormation = removedCandidatsFormation,
+    extraCMA = extraCandidatsCMA,
+    removedCMA = removedCandidatsCMA,
+  }: {
+    extraFormation?: string[];
+    removedFormation?: string[];
+    extraCMA?: string[];
+    removedCMA?: string[];
+  }) => {
+    if (!selectedExamDate || !selectedDatePratique) return;
+
+    const { error } = await supabase
+      .from('planning_pratique_config')
+      .upsert({
+        exam_date: selectedExamDate,
+        date_pratique: selectedDatePratique,
+        planning_start_date: planningStartDate,
+        planning_end_date: planningEndDate,
+        excluded_days: excludedDays,
+        extra_days: extraDays,
+        extra_candidats: joinFormationCandidates(extraFormation, removedFormation, extraCMA, removedCMA),
+        max_per_day: maxPerDay,
+        max_per_day_map: maxPerDayMap,
+        day_time_slots: dayTimeSlots,
+      }, { onConflict: 'exam_date,date_pratique' });
+
+    if (error) throw error;
+  }, [
+    selectedExamDate,
+    selectedDatePratique,
+    planningStartDate,
+    planningEndDate,
+    excludedDays,
+    extraDays,
+    extraCandidatsFormation,
+    removedCandidatsFormation,
+    extraCandidatsCMA,
+    removedCandidatsCMA,
+    maxPerDay,
+    maxPerDayMap,
+    dayTimeSlots,
+  ]);
+
   const handleSendRepassageEmails = async () => {
     const echoues = apprenants?.filter(a => (a as any).resultat_examen === 'non' && a.email) || [];
     if (echoues.length === 0) return;
@@ -496,8 +541,13 @@ export function ExamenReussitePage() {
 
   const handleRemoveFromFormationList = async (apprenant: { id: string; nom: string; prenom: string }) => {
     try {
-      setExtraCandidatsFormation((prev) => prev.filter((id) => id !== apprenant.id));
-      setRemovedCandidatsFormation((prev) => prev.includes(apprenant.id) ? prev : [...prev, apprenant.id]);
+      const nextExtraFormation = extraCandidatsFormation.filter((id) => id !== apprenant.id);
+      const nextRemovedFormation = removedCandidatsFormation.includes(apprenant.id)
+        ? removedCandidatsFormation
+        : [...removedCandidatsFormation, apprenant.id];
+      setExtraCandidatsFormation(nextExtraFormation);
+      setRemovedCandidatsFormation(nextRemovedFormation);
+      await saveCandidateListsNow({ extraFormation: nextExtraFormation, removedFormation: nextRemovedFormation });
 
       const { error } = await supabase
         .from('reservations_pratique')
@@ -512,6 +562,64 @@ export function ExamenReussitePage() {
       toast.success(`${apprenant.prenom} ${apprenant.nom} retiré(e) de la liste`);
     } catch (err: any) {
       toast.error(`Erreur: ${err.message || 'Échec'}`);
+    }
+  };
+
+  const handleAddToFormationList = async (apprenant: ExamApprenant) => {
+    try {
+      const nextRemovedFormation = removedCandidatsFormation.filter(id => id !== apprenant.id);
+      const nextExtraFormation = extraCandidatsFormation.includes(apprenant.id)
+        ? extraCandidatsFormation
+        : [...extraCandidatsFormation, apprenant.id];
+      setRemovedCandidatsFormation(nextRemovedFormation);
+      setExtraCandidatsFormation(nextExtraFormation);
+      await saveCandidateListsNow({ extraFormation: nextExtraFormation, removedFormation: nextRemovedFormation });
+      setSearchFormation("");
+      toast.success(`${apprenant.nom} ${apprenant.prenom} ajouté aux candidats à former`);
+    } catch (err: any) {
+      toast.error(`Erreur sauvegarde: ${err.message || 'Échec'}`);
+    }
+  };
+
+  const handleRemoveExtraFromFormationList = async (apprenant: ExamApprenant) => {
+    try {
+      const nextExtraFormation = extraCandidatsFormation.filter(id => id !== apprenant.id);
+      setExtraCandidatsFormation(nextExtraFormation);
+      await saveCandidateListsNow({ extraFormation: nextExtraFormation });
+      toast.success(`${apprenant.nom} ${apprenant.prenom} retiré(e) de la liste`);
+    } catch (err: any) {
+      toast.error(`Erreur sauvegarde: ${err.message || 'Échec'}`);
+    }
+  };
+
+  const handleAddToCMAList = async (apprenant: ExamApprenant) => {
+    try {
+      const nextRemovedCMA = removedCandidatsCMA.filter(id => id !== apprenant.id);
+      const nextExtraCMA = extraCandidatsCMA.includes(apprenant.id)
+        ? extraCandidatsCMA
+        : [...extraCandidatsCMA, apprenant.id];
+      setRemovedCandidatsCMA(nextRemovedCMA);
+      setExtraCandidatsCMA(nextExtraCMA);
+      await saveCandidateListsNow({ extraCMA: nextExtraCMA, removedCMA: nextRemovedCMA });
+      setSearchCMA("");
+      toast.success(`${apprenant.nom} ${apprenant.prenom} ajouté à la lettre CMA`);
+    } catch (err: any) {
+      toast.error(`Erreur sauvegarde: ${err.message || 'Échec'}`);
+    }
+  };
+
+  const handleRemoveFromCMAList = async (apprenant: ExamApprenant) => {
+    try {
+      const nextExtraCMA = extraCandidatsCMA.filter(id => id !== apprenant.id);
+      const nextRemovedCMA = extraCandidatsCMA.includes(apprenant.id) || removedCandidatsCMA.includes(apprenant.id)
+        ? removedCandidatsCMA.filter(id => id !== apprenant.id)
+        : [...removedCandidatsCMA, apprenant.id];
+      setExtraCandidatsCMA(nextExtraCMA);
+      setRemovedCandidatsCMA(nextRemovedCMA);
+      await saveCandidateListsNow({ extraCMA: nextExtraCMA, removedCMA: nextRemovedCMA });
+      toast.success(`${apprenant.nom} ${apprenant.prenom} retiré de la lettre CMA`);
+    } catch (err: any) {
+      toast.error(`Erreur sauvegarde: ${err.message || 'Échec'}`);
     }
   };
 
@@ -1792,12 +1900,7 @@ export function ExamenReussitePage() {
                                 size="sm"
                                 disabled={disabled}
                                 className="w-full justify-start text-xs h-auto py-1.5 disabled:opacity-60"
-                                onClick={() => {
-                                  setRemovedCandidatsCMA(prev => prev.filter(id => id !== a.id));
-                                  setExtraCandidatsCMA(prev => prev.includes(a.id) ? prev : [...prev, a.id]);
-                                  setSearchCMA("");
-                                  toast.success(`${a.nom} ${a.prenom} ajouté à la lettre CMA`);
-                                }}
+                                onClick={() => handleAddToCMAList(a)}
                               >
                                 <Plus className="h-3 w-3 mr-1.5 text-green-600" />
                                 {a.nom} {a.prenom}
@@ -1831,12 +1934,7 @@ export function ExamenReussitePage() {
                             title="Retirer ce candidat de la lettre CMA"
                             onClick={() => {
                               if (!window.confirm(`Retirer ${a.nom} ${a.prenom} de la lettre CMA ?`)) return;
-                              if (extraCandidatsCMA.includes(a.id)) {
-                                setExtraCandidatsCMA(prev => prev.filter(id => id !== a.id));
-                              } else {
-                                setRemovedCandidatsCMA(prev => prev.includes(a.id) ? prev : [...prev, a.id]);
-                              }
-                              toast.success(`${a.nom} ${a.prenom} retiré de la lettre CMA`);
+                              handleRemoveFromCMAList(a);
                             }}
                           >
                             <X className="h-4 w-4" />
@@ -1859,12 +1957,7 @@ export function ExamenReussitePage() {
                             title="Retirer ce candidat de la lettre CMA"
                             onClick={() => {
                               if (!window.confirm(`Retirer ${a.nom} ${a.prenom} de la lettre CMA ?`)) return;
-                              if (extraCandidatsCMA.includes(a.id)) {
-                                setExtraCandidatsCMA(prev => prev.filter(id => id !== a.id));
-                              } else {
-                                setRemovedCandidatsCMA(prev => prev.includes(a.id) ? prev : [...prev, a.id]);
-                              }
-                              toast.success(`${a.nom} ${a.prenom} retiré de la lettre CMA`);
+                              handleRemoveFromCMAList(a);
                             }}
                           >
                             <X className="h-4 w-4" />
@@ -2086,12 +2179,7 @@ export function ExamenReussitePage() {
                                 size="sm"
                                 disabled={disabled}
                                 className="w-full justify-start text-xs h-auto py-1.5 disabled:opacity-60"
-                                onClick={() => {
-                                  setRemovedCandidatsFormation(prev => prev.filter(id => id !== a.id));
-                                  setExtraCandidatsFormation(prev => [...prev, a.id]);
-                                  setSearchFormation("");
-                                  toast.success(`${a.nom} ${a.prenom} ajouté aux candidats à former`);
-                                }}
+                                onClick={() => handleAddToFormationList(a)}
                               >
                                 <Plus className="h-3 w-3 mr-1.5 text-green-600" />
                                 {a.nom} {a.prenom}
@@ -2371,7 +2459,7 @@ export function ExamenReussitePage() {
                                   </AlertDialog>
                                 )}
                                 {extraCandidatsFormation.includes(a.id) && (
-                                  <Button variant="ghost" size="icon" className="h-7 w-7" title="Retirer" onClick={() => setExtraCandidatsFormation(prev => prev.filter(id => id !== a.id))}>
+                                  <Button variant="ghost" size="icon" className="h-7 w-7" title="Retirer" onClick={() => handleRemoveExtraFromFormationList(a)}>
                                     <Trash2 className="h-3.5 w-3.5 text-red-500" />
                                   </Button>
                                 )}
@@ -2720,7 +2808,7 @@ export function ExamenReussitePage() {
                                   </AlertDialog>
                                 )}
                                 {extraCandidatsFormation.includes(a.id) && (
-                                  <Button variant="ghost" size="icon" className="h-7 w-7" title="Retirer" onClick={() => setExtraCandidatsFormation(prev => prev.filter(id => id !== a.id))}>
+                                  <Button variant="ghost" size="icon" className="h-7 w-7" title="Retirer" onClick={() => handleRemoveExtraFromFormationList(a)}>
                                     <Trash2 className="h-3.5 w-3.5 text-red-500" />
                                   </Button>
                                 )}
