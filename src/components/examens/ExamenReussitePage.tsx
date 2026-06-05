@@ -479,32 +479,16 @@ export function ExamenReussitePage() {
 
   const handleRemoveFromFormationList = async (apprenant: { id: string; nom: string; prenom: string }) => {
     try {
-      const [apprenantUpdate, reservationDelete, sessionReset] = await Promise.all([
-        supabase
-          .from('apprenants')
-          .update({ resultat_examen: null, resultat_examen_pratique: null } as any)
-          .eq('id', apprenant.id),
-        supabase
-          .from('reservations_pratique')
-          .delete()
-          .eq('apprenant_id', apprenant.id),
-        supabase
-          .from('session_apprenants')
-          .update({ presence_pratique: null } as any)
-          .eq('apprenant_id', apprenant.id)
-          .eq('presence_pratique', 'deplace'),
-      ]);
-
-      if (apprenantUpdate.error) throw apprenantUpdate.error;
-      if (reservationDelete.error) throw reservationDelete.error;
-      if (sessionReset.error) throw sessionReset.error;
-
       setExtraCandidatsFormation((prev) => prev.filter((id) => id !== apprenant.id));
+      setRemovedCandidatsFormation((prev) => prev.includes(apprenant.id) ? prev : [...prev, apprenant.id]);
+
+      const { error } = await supabase
+        .from('reservations_pratique')
+        .delete()
+        .eq('apprenant_id', apprenant.id);
+      if (error) throw error;
 
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['apprenants-examen', selectedExamDate] }),
-        queryClient.invalidateQueries({ queryKey: ['all-apprenants'] }),
-        queryClient.invalidateQueries({ queryKey: ['deplaces-session-pratique'] }),
         queryClient.invalidateQueries({ queryKey: ['reservations-pratique-planning'] }),
       ]);
 
