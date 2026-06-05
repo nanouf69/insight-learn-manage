@@ -428,6 +428,40 @@ export function ExamenReussitePage() {
     dayTimeSlots,
   ]);
 
+  const saveDayTimeSlotsNow = useCallback(async (nextDayTimeSlots: typeof dayTimeSlots) => {
+    if (!selectedExamDate || !selectedDatePratique) return;
+
+    const { error } = await supabase
+      .from('planning_pratique_config')
+      .upsert({
+        exam_date: selectedExamDate,
+        date_pratique: selectedDatePratique,
+        planning_start_date: planningStartDate,
+        planning_end_date: planningEndDate,
+        excluded_days: excludedDays,
+        extra_days: extraDays,
+        extra_candidats: joinFormationCandidates(extraCandidatsFormation, removedCandidatsFormation, extraCandidatsCMA, removedCandidatsCMA),
+        max_per_day: maxPerDay,
+        max_per_day_map: maxPerDayMap,
+        day_time_slots: nextDayTimeSlots,
+      }, { onConflict: 'exam_date,date_pratique' });
+
+    if (error) toast.error("Choix non sauvegardé : " + error.message);
+  }, [
+    selectedExamDate,
+    selectedDatePratique,
+    planningStartDate,
+    planningEndDate,
+    excludedDays,
+    extraDays,
+    extraCandidatsFormation,
+    removedCandidatsFormation,
+    extraCandidatsCMA,
+    removedCandidatsCMA,
+    maxPerDay,
+    maxPerDayMap,
+  ]);
+
   const handleSendRepassageEmails = async () => {
     const echoues = apprenants?.filter(a => (a as any).resultat_examen === 'non' && a.email) || [];
     if (echoues.length === 0) return;
