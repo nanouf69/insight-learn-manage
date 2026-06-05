@@ -1793,7 +1793,8 @@ export function ExamenReussitePage() {
                                 disabled={disabled}
                                 className="w-full justify-start text-xs h-auto py-1.5 disabled:opacity-60"
                                 onClick={() => {
-                                  setExtraCandidatsCMA(prev => [...prev, a.id]);
+                                  setRemovedCandidatsCMA(prev => prev.filter(id => id !== a.id));
+                                  setExtraCandidatsCMA(prev => prev.includes(a.id) ? prev : [...prev, a.id]);
                                   setSearchCMA("");
                                   toast.success(`${a.nom} ${a.prenom} ajouté à la lettre CMA`);
                                 }}
@@ -1833,7 +1834,7 @@ export function ExamenReussitePage() {
                               if (extraCandidatsCMA.includes(a.id)) {
                                 setExtraCandidatsCMA(prev => prev.filter(id => id !== a.id));
                               } else {
-                                setRemovedCandidatsCMA(prev => [...prev, a.id]);
+                                setRemovedCandidatsCMA(prev => prev.includes(a.id) ? prev : [...prev, a.id]);
                               }
                               toast.success(`${a.nom} ${a.prenom} retiré de la lettre CMA`);
                             }}
@@ -1861,7 +1862,7 @@ export function ExamenReussitePage() {
                               if (extraCandidatsCMA.includes(a.id)) {
                                 setExtraCandidatsCMA(prev => prev.filter(id => id !== a.id));
                               } else {
-                                setRemovedCandidatsCMA(prev => [...prev, a.id]);
+                                setRemovedCandidatsCMA(prev => prev.includes(a.id) ? prev : [...prev, a.id]);
                               }
                               toast.success(`${a.nom} ${a.prenom} retiré de la lettre CMA`);
                             }}
