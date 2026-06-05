@@ -2362,7 +2362,7 @@ export function ExamenReussitePage() {
                                       <AlertDialogHeader>
                                         <AlertDialogTitle>Retirer {a.prenom} {a.nom} ?</AlertDialogTitle>
                                         <AlertDialogDescription>
-                                          Cette action va remettre le résultat d'admissibilité à « non renseigné » pour <strong>{a.nom} {a.prenom}</strong>. L'élève disparaîtra de la liste des reçus.
+                                          Cette action retire <strong>{a.nom} {a.prenom}</strong> uniquement de la liste des candidats à former pour cette période. L'apprenant reste dans le CRM et ses résultats ne sont pas modifiés.
                                         </AlertDialogDescription>
                                       </AlertDialogHeader>
                                       <AlertDialogFooter>
@@ -2711,7 +2711,7 @@ export function ExamenReussitePage() {
                                       <AlertDialogHeader>
                                         <AlertDialogTitle>Retirer {a.prenom} {a.nom} ?</AlertDialogTitle>
                                         <AlertDialogDescription>
-                                          Cette action va remettre le résultat d'admissibilité à « non renseigné » pour <strong>{a.nom} {a.prenom}</strong>. L'élève disparaîtra de la liste des reçus.
+                                          Cette action retire <strong>{a.nom} {a.prenom}</strong> uniquement de la liste des candidats à former pour cette période. L'apprenant reste dans le CRM et ses résultats ne sont pas modifiés.
                                         </AlertDialogDescription>
                                       </AlertDialogHeader>
                                       <AlertDialogFooter>
