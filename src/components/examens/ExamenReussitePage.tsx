@@ -1900,12 +1900,7 @@ export function ExamenReussitePage() {
                                 size="sm"
                                 disabled={disabled}
                                 className="w-full justify-start text-xs h-auto py-1.5 disabled:opacity-60"
-                                onClick={() => {
-                                  setRemovedCandidatsCMA(prev => prev.filter(id => id !== a.id));
-                                  setExtraCandidatsCMA(prev => prev.includes(a.id) ? prev : [...prev, a.id]);
-                                  setSearchCMA("");
-                                  toast.success(`${a.nom} ${a.prenom} ajouté à la lettre CMA`);
-                                }}
+                                onClick={() => handleAddToCMAList(a)}
                               >
                                 <Plus className="h-3 w-3 mr-1.5 text-green-600" />
                                 {a.nom} {a.prenom}
@@ -1939,12 +1934,7 @@ export function ExamenReussitePage() {
                             title="Retirer ce candidat de la lettre CMA"
                             onClick={() => {
                               if (!window.confirm(`Retirer ${a.nom} ${a.prenom} de la lettre CMA ?`)) return;
-                              if (extraCandidatsCMA.includes(a.id)) {
-                                setExtraCandidatsCMA(prev => prev.filter(id => id !== a.id));
-                              } else {
-                                setRemovedCandidatsCMA(prev => prev.includes(a.id) ? prev : [...prev, a.id]);
-                              }
-                              toast.success(`${a.nom} ${a.prenom} retiré de la lettre CMA`);
+                              handleRemoveFromCMAList(a);
                             }}
                           >
                             <X className="h-4 w-4" />
@@ -1967,12 +1957,7 @@ export function ExamenReussitePage() {
                             title="Retirer ce candidat de la lettre CMA"
                             onClick={() => {
                               if (!window.confirm(`Retirer ${a.nom} ${a.prenom} de la lettre CMA ?`)) return;
-                              if (extraCandidatsCMA.includes(a.id)) {
-                                setExtraCandidatsCMA(prev => prev.filter(id => id !== a.id));
-                              } else {
-                                setRemovedCandidatsCMA(prev => prev.includes(a.id) ? prev : [...prev, a.id]);
-                              }
-                              toast.success(`${a.nom} ${a.prenom} retiré de la lettre CMA`);
+                              handleRemoveFromCMAList(a);
                             }}
                           >
                             <X className="h-4 w-4" />
