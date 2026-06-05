@@ -782,6 +782,8 @@ export function ExamenReussitePage() {
         const formationCandidates = splitFormationCandidates(data.extra_candidats || []);
         setExtraCandidatsFormation(formationCandidates.extra);
         setRemovedCandidatsFormation(formationCandidates.removed);
+        setExtraCandidatsCMA(formationCandidates.extraCMA);
+        setRemovedCandidatsCMA(formationCandidates.removedCMA);
         if (data.max_per_day) setMaxPerDay(data.max_per_day);
         if (data.max_per_day_map) setMaxPerDayMap(data.max_per_day_map as Record<string, number>);
         if (data.day_time_slots) setDayTimeSlots(data.day_time_slots as Record<string, { matin?: string; apresmidi?: string } | string>);
@@ -812,6 +814,8 @@ export function ExamenReussitePage() {
         const formationCandidates = splitFormationCandidates(data.extra_candidats || []);
         setExtraCandidatsFormation(formationCandidates.extra);
         setRemovedCandidatsFormation(formationCandidates.removed);
+        setExtraCandidatsCMA(formationCandidates.extraCMA);
+        setRemovedCandidatsCMA(formationCandidates.removedCMA);
         if (data.max_per_day) setMaxPerDay(data.max_per_day);
         if (data.max_per_day_map) setMaxPerDayMap(data.max_per_day_map as Record<string, number>);
         if (data.day_time_slots) setDayTimeSlots(data.day_time_slots as Record<string, { matin?: string; apresmidi?: string } | string>);
@@ -823,6 +827,8 @@ export function ExamenReussitePage() {
         setExtraDays([]);
         setExtraCandidatsFormation([]);
         setRemovedCandidatsFormation([]);
+        setExtraCandidatsCMA([]);
+        setRemovedCandidatsCMA([]);
         setMaxPerDayMap({});
         setDayTimeSlots({});
       }
@@ -844,14 +850,14 @@ export function ExamenReussitePage() {
           planning_end_date: planningEndDate,
           excluded_days: excludedDays,
           extra_days: extraDays,
-          extra_candidats: joinFormationCandidates(extraCandidatsFormation, removedCandidatsFormation),
+          extra_candidats: joinFormationCandidates(extraCandidatsFormation, removedCandidatsFormation, extraCandidatsCMA, removedCandidatsCMA),
           max_per_day: maxPerDay,
           max_per_day_map: maxPerDayMap,
           day_time_slots: dayTimeSlots,
         }, { onConflict: 'exam_date,date_pratique' });
     }, 1000);
     return () => clearTimeout(timer);
-  }, [planningConfigLoaded, selectedExamDate, selectedDatePratique, planningStartDate, planningEndDate, excludedDays, extraDays, extraCandidatsFormation, removedCandidatsFormation, maxPerDay, maxPerDayMap, dayTimeSlots]);
+  }, [planningConfigLoaded, selectedExamDate, selectedDatePratique, planningStartDate, planningEndDate, excludedDays, extraDays, extraCandidatsFormation, removedCandidatsFormation, extraCandidatsCMA, removedCandidatsCMA, maxPerDay, maxPerDayMap, dayTimeSlots]);
 
   // Fetch uploaded PDF files
   const { data: examFiles, refetch: refetchFiles } = useQuery({
