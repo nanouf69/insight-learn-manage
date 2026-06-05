@@ -409,6 +409,7 @@ export function ExamenReussitePage() {
         max_per_day: maxPerDay,
         max_per_day_map: maxPerDayMap,
         day_time_slots: dayTimeSlots,
+        updated_at: new Date().toISOString(),
       }, { onConflict: 'exam_date,date_pratique' });
 
     if (error) throw error;
@@ -444,6 +445,7 @@ export function ExamenReussitePage() {
         max_per_day: maxPerDay,
         max_per_day_map: maxPerDayMap,
         day_time_slots: nextDayTimeSlots,
+        updated_at: new Date().toISOString(),
       }, { onConflict: 'exam_date,date_pratique' });
 
     if (error) toast.error("Choix non sauvegardé : " + error.message);
@@ -1016,6 +1018,7 @@ export function ExamenReussitePage() {
           max_per_day: maxPerDay,
           max_per_day_map: maxPerDayMap,
           day_time_slots: dayTimeSlots,
+          updated_at: new Date().toISOString(),
         }, { onConflict: 'exam_date,date_pratique' });
     }, 1000);
     return () => clearTimeout(timer);
