@@ -168,18 +168,35 @@ async function searchApprenantsDirectly(term: string) {
 }
 
 const REMOVED_FORMATION_PREFIX = 'removed:';
+const EXTRA_CMA_PREFIX = 'cma-extra:';
+const REMOVED_CMA_PREFIX = 'cma-removed:';
 
 function splitFormationCandidates(values: string[] | null | undefined) {
   return {
-    extra: (values || []).filter((id) => !id.startsWith(REMOVED_FORMATION_PREFIX)),
+    extra: (values || []).filter((id) =>
+      !id.startsWith(REMOVED_FORMATION_PREFIX) &&
+      !id.startsWith(EXTRA_CMA_PREFIX) &&
+      !id.startsWith(REMOVED_CMA_PREFIX)
+    ),
     removed: (values || [])
       .filter((id) => id.startsWith(REMOVED_FORMATION_PREFIX))
       .map((id) => id.replace(REMOVED_FORMATION_PREFIX, '')),
+    extraCMA: (values || [])
+      .filter((id) => id.startsWith(EXTRA_CMA_PREFIX))
+      .map((id) => id.replace(EXTRA_CMA_PREFIX, '')),
+    removedCMA: (values || [])
+      .filter((id) => id.startsWith(REMOVED_CMA_PREFIX))
+      .map((id) => id.replace(REMOVED_CMA_PREFIX, '')),
   };
 }
 
-function joinFormationCandidates(extra: string[], removed: string[]) {
-  return [...extra, ...removed.map((id) => `${REMOVED_FORMATION_PREFIX}${id}`)];
+function joinFormationCandidates(extra: string[], removed: string[], extraCMA: string[], removedCMA: string[]) {
+  return [
+    ...extra,
+    ...removed.map((id) => `${REMOVED_FORMATION_PREFIX}${id}`),
+    ...extraCMA.map((id) => `${EXTRA_CMA_PREFIX}${id}`),
+    ...removedCMA.map((id) => `${REMOVED_CMA_PREFIX}${id}`),
+  ];
 }
 
 function parsePratiquePeriod(period: string | null | undefined): { start: string; end: string } | null {
