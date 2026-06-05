@@ -501,10 +501,17 @@ export function ExamenReussitePage() {
         .eq('id', apprenantId);
       // Delete existing reservation so they can book a new one next session
       await supabase.from('reservations_pratique').delete().eq('apprenant_id', apprenantId);
+      const nextExtraFormation = extraCandidatsFormation.filter((id) => id !== apprenantId);
+      const nextRemovedFormation = removedCandidatsFormation.includes(apprenantId)
+        ? removedCandidatsFormation
+        : [...removedCandidatsFormation, apprenantId];
+      setExtraCandidatsFormation(nextExtraFormation);
+      setRemovedCandidatsFormation(nextRemovedFormation);
+      await saveCandidateListsNow({ extraFormation: nextExtraFormation, removedFormation: nextRemovedFormation });
       queryClient.invalidateQueries({ queryKey: ['deplaces-session-pratique'] });
       queryClient.invalidateQueries({ queryKey: ['reservations-pratique-planning'] });
       queryClient.invalidateQueries({ queryKey: ['all-apprenants'] });
-      toast.success(`${apprenantNom} déplacé(e) à la prochaine session — inclus dans la lettre CMA et les candidats à former`);
+      toast.success(`${apprenantNom} déplacé(e) à la prochaine session — retiré(e) de la liste actuelle`);
     } catch (err: any) {
       toast.error('Erreur: ' + (err.message || 'Échec'));
     }
@@ -2048,15 +2055,8 @@ export function ExamenReussitePage() {
           !dejaFormesSet.has(a.id) &&
           !removedFormationSet.has(a.id)
         );
-        // Candidats déplacés à la prochaine session (sessions pratiques précédentes)
-        const deplacesFormation = (allApprenants || []).filter(a =>
-          (deplacesSessionPratique || []).includes(a.id) &&
-          hasEligibleTheoryStatus((a as any).resultat_examen) &&
-          !reussisFormation.some(r => r.id === a.id) &&
-          !paFormation.some(r => r.id === a.id) &&
-          !dejaFormesSet.has(a.id) &&
-          !removedFormationSet.has(a.id)
-        );
+        // Les candidats déplacés sont retirés de la session actuelle.
+        const deplacesFormation: ExamApprenant[] = [];
         // Candidats ayant échoué l'examen pratique (repassage pratique)
         // Mais s'ils ont déjà été présents en session pratique, on ne les remet pas à former
         const echouesPratiqueFormation = (allApprenants || []).filter(a =>
@@ -2954,14 +2954,7 @@ export function ExamenReussitePage() {
           !dejaFormesSetP.has(a.id) &&
           !removedFormationSetP.has(a.id)
         );
-        const deplacesFormationP = (allApprenants || []).filter(a =>
-          (deplacesSessionPratique || []).includes(a.id) &&
-          hasEligibleTheoryStatusP((a as any).resultat_examen) &&
-          !reussisFormationP.some(r => r.id === a.id) &&
-          !paFormationP.some(r => r.id === a.id) &&
-          !dejaFormesSetP.has(a.id) &&
-          !removedFormationSetP.has(a.id)
-        );
+        const deplacesFormationP: ExamApprenant[] = [];
         const echouesPratiqueFormationP = (allApprenants || []).filter(a =>
           (a as any).resultat_examen_pratique === 'non' &&
           hasEligibleTheoryStatusP((a as any).resultat_examen) &&
@@ -3614,9 +3607,16 @@ export function ExamenReussitePage() {
               }
               // Also delete existing reservation so they can book a new one
               await supabase.from('reservations_pratique').delete().eq('apprenant_id', id);
+              const nextExtraFormation = extraCandidatsFormation.filter((formationId) => formationId !== id);
+              const nextRemovedFormation = removedCandidatsFormation.includes(id)
+                ? removedCandidatsFormation
+                : [...removedCandidatsFormation, id];
+              setExtraCandidatsFormation(nextExtraFormation);
+              setRemovedCandidatsFormation(nextRemovedFormation);
+              await saveCandidateListsNow({ extraFormation: nextExtraFormation, removedFormation: nextRemovedFormation });
               queryClient.invalidateQueries({ queryKey: ['deplaces-session-pratique'] });
               queryClient.invalidateQueries({ queryKey: ['reservations-pratique-planning'] });
-              toast.success("Candidat déplacé à la prochaine session — il peut réserver un nouveau créneau");
+              toast.success("Candidat déplacé à la prochaine session — retiré de la liste actuelle");
             } else if (resultat !== 'deplace') {
               toast.success("Résultat pratique mis à jour");
             }
