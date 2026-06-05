@@ -409,6 +409,7 @@ export function ExamenReussitePage() {
         max_per_day: maxPerDay,
         max_per_day_map: maxPerDayMap,
         day_time_slots: dayTimeSlots,
+        updated_at: new Date().toISOString(),
       }, { onConflict: 'exam_date,date_pratique' });
 
     if (error) throw error;
@@ -426,6 +427,41 @@ export function ExamenReussitePage() {
     maxPerDay,
     maxPerDayMap,
     dayTimeSlots,
+  ]);
+
+  const saveDayTimeSlotsNow = useCallback(async (nextDayTimeSlots: typeof dayTimeSlots) => {
+    if (!selectedExamDate || !selectedDatePratique) return;
+
+    const { error } = await supabase
+      .from('planning_pratique_config')
+      .upsert({
+        exam_date: selectedExamDate,
+        date_pratique: selectedDatePratique,
+        planning_start_date: planningStartDate,
+        planning_end_date: planningEndDate,
+        excluded_days: excludedDays,
+        extra_days: extraDays,
+        extra_candidats: joinFormationCandidates(extraCandidatsFormation, removedCandidatsFormation, extraCandidatsCMA, removedCandidatsCMA),
+        max_per_day: maxPerDay,
+        max_per_day_map: maxPerDayMap,
+        day_time_slots: nextDayTimeSlots,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'exam_date,date_pratique' });
+
+    if (error) toast.error("Choix non sauvegardé : " + error.message);
+  }, [
+    selectedExamDate,
+    selectedDatePratique,
+    planningStartDate,
+    planningEndDate,
+    excludedDays,
+    extraDays,
+    extraCandidatsFormation,
+    removedCandidatsFormation,
+    extraCandidatsCMA,
+    removedCandidatsCMA,
+    maxPerDay,
+    maxPerDayMap,
   ]);
 
   const handleSendRepassageEmails = async () => {
@@ -982,6 +1018,7 @@ export function ExamenReussitePage() {
           max_per_day: maxPerDay,
           max_per_day_map: maxPerDayMap,
           day_time_slots: dayTimeSlots,
+          updated_at: new Date().toISOString(),
         }, { onConflict: 'exam_date,date_pratique' });
     }, 1000);
     return () => clearTimeout(timer);
@@ -3373,7 +3410,10 @@ export function ExamenReussitePage() {
                                   const current = typeof prev[key] === 'object' ? { ...(prev[key] as any) } : {};
                                   if (e.target.value) current.type = e.target.value;
                                   else delete current.type;
-                                  return { ...prev, [key]: current };
+                                  const next = { ...prev, [key]: current };
+                                  void saveDayTimeSlotsNow(next);
+                                  toast.success("Choix sauvegardé");
+                                  return next;
                                 })}
                                 className="h-5 min-w-[72px] text-[9px] font-semibold border rounded bg-background focus:outline-none focus:ring-1 focus:ring-primary px-1"
                                 title="Choisir la formation de ce jour"
@@ -3390,7 +3430,9 @@ export function ExamenReussitePage() {
                                 value={typeof dayTimeSlots[key] === 'object' ? (dayTimeSlots[key] as any)?.matin || '' : ''}
                                 onChange={(e) => setDayTimeSlots(prev => {
                                   const current = typeof prev[key] === 'object' ? prev[key] as any : {};
-                                  return { ...prev, [key]: { ...current, matin: e.target.value } };
+                                  const next = { ...prev, [key]: { ...current, matin: e.target.value } };
+                                  void saveDayTimeSlotsNow(next);
+                                  return next;
                                 })}
                                 className="h-5 text-[9px] border rounded bg-muted/50 focus:outline-none focus:ring-1 focus:ring-primary px-0.5 flex-1 min-w-0"
                               >
@@ -3407,7 +3449,9 @@ export function ExamenReussitePage() {
                                 value={typeof dayTimeSlots[key] === 'object' ? (dayTimeSlots[key] as any)?.apresmidi || '' : ''}
                                 onChange={(e) => setDayTimeSlots(prev => {
                                   const current = typeof prev[key] === 'object' ? prev[key] as any : {};
-                                  return { ...prev, [key]: { ...current, apresmidi: e.target.value } };
+                                  const next = { ...prev, [key]: { ...current, apresmidi: e.target.value } };
+                                  void saveDayTimeSlotsNow(next);
+                                  return next;
                                 })}
                                 className="h-5 text-[9px] border rounded bg-muted/50 focus:outline-none focus:ring-1 focus:ring-primary px-0.5 flex-1 min-w-0"
                               >
