@@ -133,6 +133,40 @@ function apprenantMatchesSearch(apprenant: SearchableApprenant, term: string) {
   return keywords.every((keyword) => haystack.includes(keyword));
 }
 
+const APPRENANT_SEARCH_SELECT = 'id, nom, prenom, type_apprenant, formation_choisie, telephone, email, date_examen_theorique, date_examen_pratique, heure_examen_pratique, resultat_examen, resultat_examen_pratique, numero_dossier_cma';
+
+function mergeApprenantSearchResults(
+  loadedApprenants: ExamApprenant[] | undefined,
+  directResults: ExamApprenant[] | undefined,
+  term: string
+) {
+  const seen = new Set<string>();
+  return [...(directResults || []), ...(loadedApprenants || [])]
+    .filter((apprenant) => apprenantMatchesSearch(apprenant, term))
+    .filter((apprenant) => {
+      if (seen.has(apprenant.id)) return false;
+      seen.add(apprenant.id);
+      return true;
+    })
+    .slice(0, 10);
+}
+
+async function searchApprenantsDirectly(term: string) {
+  const rawKeyword = term.trim().split(/\s+/)[0]?.replace(/[%,()]/g, '');
+  if (!rawKeyword || rawKeyword.length < 2) return [];
+
+  const { data, error } = await supabase
+    .from('apprenants')
+    .select(APPRENANT_SEARCH_SELECT)
+    .is('deleted_at', null)
+    .or(`nom.ilike.%${rawKeyword}%,prenom.ilike.%${rawKeyword}%,email.ilike.%${rawKeyword}%,telephone.ilike.%${rawKeyword}%`)
+    .order('nom', { ascending: true })
+    .range(0, 24);
+
+  if (error) throw error;
+  return (data || []) as ExamApprenant[];
+}
+
 function parsePratiquePeriod(period: string | null | undefined): { start: string; end: string } | null {
   if (!period) return null;
 
@@ -598,7 +632,7 @@ export function ExamenReussitePage() {
       for (let from = 0; ; from += pageSize) {
         const { data, error } = await supabase
           .from('apprenants')
-          .select('id, nom, prenom, type_apprenant, formation_choisie, telephone, email, date_examen_theorique, date_examen_pratique, heure_examen_pratique, resultat_examen, resultat_examen_pratique, numero_dossier_cma')
+          .select(APPRENANT_SEARCH_SELECT)
           .is('deleted_at', null)
           .order('nom', { ascending: true })
           .range(from, from + pageSize - 1);
@@ -610,6 +644,18 @@ export function ExamenReussitePage() {
 
       return rows;
     },
+  });
+
+  const { data: cmaDirectSearchResults } = useQuery({
+    queryKey: ['apprenants-direct-search', searchCMA],
+    queryFn: () => searchApprenantsDirectly(searchCMA),
+    enabled: searchCMA.trim().length >= 2,
+  });
+
+  const { data: formationDirectSearchResults } = useQuery({
+    queryKey: ['apprenants-direct-search', searchFormation],
+    queryFn: () => searchApprenantsDirectly(searchFormation),
+    enabled: searchFormation.trim().length >= 2,
   });
 
   // Fetch apprenants marqués "Déplacé à la prochaine session"
@@ -1426,9 +1472,7 @@ export function ExamenReussitePage() {
         );
         const reussisLettre = [...reussisTheorique, ...paRpApprenants, ...deplacesApprenantsCMA, ...echouesPratiqueCMA, ...extraCMA]
           .filter(a => !removedCandidatsCMA.includes(a.id));
-        const cmaSearchResults = (allApprenants || [])
-          .filter(a => apprenantMatchesSearch(a, searchCMA))
-          .slice(0, 10);
+        const cmaSearchResults = mergeApprenantSearchResults(allApprenants, cmaDirectSearchResults, searchCMA);
 
 
         const getCategorieCMA = (type: string | null) => {
@@ -1909,9 +1953,7 @@ export function ExamenReussitePage() {
         );
         // tousAFormer inclut les déplacés et les échoués pratique
         const tousAFormer = [...reussisFormation, ...paFormation, ...deplacesFormation, ...echouesPratiqueFormation, ...extraFormation];
-        const formationSearchResults = (allApprenants || [])
-          .filter(a => apprenantMatchesSearch(a, searchFormation))
-          .slice(0, 10);
+        const formationSearchResults = mergeApprenantSearchResults(allApprenants, formationDirectSearchResults, searchFormation);
 
         const vtcList = tousAFormer.filter(a => isPracticeVTCType(a.type_apprenant));
         const taxiList = tousAFormer.filter(a => isPracticeTAXIType(a.type_apprenant));
