@@ -2816,6 +2816,7 @@ export function ExamenReussitePage() {
 
         // Reuse the same candidate list as "Candidats à former" section: only theory successes.
         const dejaFormesSetP = new Set(dejaFormesPratique || []);
+        const removedFormationSetP = new Set(removedCandidatsFormation);
         const paTypesP = ['pa-vtc', 'pa-taxi'];
         const rpTypesP = ['rp-vtc', 'rp-taxi'];
         const hasEligibleTheoryStatusP = (resultat: string | null | undefined) => {
@@ -2830,21 +2831,24 @@ export function ExamenReussitePage() {
         const reussisFormationP = apprenants?.filter(a => 
           (a as any).resultat_examen === 'oui' && 
           !rpTypesP.includes((a.type_apprenant || '').toLowerCase()) &&
-          !dejaFormesSetP.has(a.id)
+          !dejaFormesSetP.has(a.id) &&
+          !removedFormationSetP.has(a.id)
         ) || [];
         const paFormationP = (allApprenants || []).filter(a => 
           paTypesP.includes((a.type_apprenant || '').toLowerCase()) && 
           a.date_examen_theorique?.includes(selectedExamDate) &&
           (a as any).resultat_examen === 'oui' &&
           !reussisFormationP.some(r => r.id === a.id) &&
-          !dejaFormesSetP.has(a.id)
+          !dejaFormesSetP.has(a.id) &&
+          !removedFormationSetP.has(a.id)
         );
         const deplacesFormationP = (allApprenants || []).filter(a =>
           (deplacesSessionPratique || []).includes(a.id) &&
           hasEligibleTheoryStatusP((a as any).resultat_examen) &&
           !reussisFormationP.some(r => r.id === a.id) &&
           !paFormationP.some(r => r.id === a.id) &&
-          !dejaFormesSetP.has(a.id)
+          !dejaFormesSetP.has(a.id) &&
+          !removedFormationSetP.has(a.id)
         );
         const echouesPratiqueFormationP = (allApprenants || []).filter(a =>
           (a as any).resultat_examen_pratique === 'non' &&
@@ -2852,7 +2856,8 @@ export function ExamenReussitePage() {
           !reussisFormationP.some(r => r.id === a.id) &&
           !paFormationP.some(r => r.id === a.id) &&
           !deplacesFormationP.some(r => r.id === a.id) &&
-          !dejaFormesSetP.has(a.id)
+          !dejaFormesSetP.has(a.id) &&
+          !removedFormationSetP.has(a.id)
         );
         const extraFormationP = (allApprenants || []).filter(a =>
           extraCandidatsFormation.includes(a.id) &&
@@ -2861,7 +2866,8 @@ export function ExamenReussitePage() {
           !paFormationP.some(r => r.id === a.id) &&
           !deplacesFormationP.some(r => r.id === a.id) &&
           !echouesPratiqueFormationP.some(r => r.id === a.id) &&
-          !dejaFormesSetP.has(a.id)
+          !dejaFormesSetP.has(a.id) &&
+          !removedFormationSetP.has(a.id)
         );
         const tousPlanning = [...reussisFormationP, ...paFormationP, ...deplacesFormationP, ...echouesPratiqueFormationP, ...extraFormationP];
         const tousPlanningIds = new Set(tousPlanning.map(a => a.id));
