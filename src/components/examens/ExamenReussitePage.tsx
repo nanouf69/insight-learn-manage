@@ -167,6 +167,21 @@ async function searchApprenantsDirectly(term: string) {
   return (data || []) as ExamApprenant[];
 }
 
+const REMOVED_FORMATION_PREFIX = 'removed:';
+
+function splitFormationCandidates(values: string[] | null | undefined) {
+  return {
+    extra: (values || []).filter((id) => !id.startsWith(REMOVED_FORMATION_PREFIX)),
+    removed: (values || [])
+      .filter((id) => id.startsWith(REMOVED_FORMATION_PREFIX))
+      .map((id) => id.replace(REMOVED_FORMATION_PREFIX, '')),
+  };
+}
+
+function joinFormationCandidates(extra: string[], removed: string[]) {
+  return [...extra, ...removed.map((id) => `${REMOVED_FORMATION_PREFIX}${id}`)];
+}
+
 function parsePratiquePeriod(period: string | null | undefined): { start: string; end: string } | null {
   if (!period) return null;
 
