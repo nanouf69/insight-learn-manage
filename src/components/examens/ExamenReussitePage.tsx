@@ -3607,9 +3607,16 @@ export function ExamenReussitePage() {
               }
               // Also delete existing reservation so they can book a new one
               await supabase.from('reservations_pratique').delete().eq('apprenant_id', id);
+              const nextExtraFormation = extraCandidatsFormation.filter((formationId) => formationId !== id);
+              const nextRemovedFormation = removedCandidatsFormation.includes(id)
+                ? removedCandidatsFormation
+                : [...removedCandidatsFormation, id];
+              setExtraCandidatsFormation(nextExtraFormation);
+              setRemovedCandidatsFormation(nextRemovedFormation);
+              await saveCandidateListsNow({ extraFormation: nextExtraFormation, removedFormation: nextRemovedFormation });
               queryClient.invalidateQueries({ queryKey: ['deplaces-session-pratique'] });
               queryClient.invalidateQueries({ queryKey: ['reservations-pratique-planning'] });
-              toast.success("Candidat déplacé à la prochaine session — il peut réserver un nouveau créneau");
+              toast.success("Candidat déplacé à la prochaine session — retiré de la liste actuelle");
             } else if (resultat !== 'deplace') {
               toast.success("Résultat pratique mis à jour");
             }
