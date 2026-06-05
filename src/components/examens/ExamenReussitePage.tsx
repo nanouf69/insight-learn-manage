@@ -377,7 +377,7 @@ export function ExamenReussitePage() {
   const [newExtraDay, setNewExtraDay] = useState("");
   const [maxPerDay, setMaxPerDay] = useState(3);
   const [maxPerDayMap, setMaxPerDayMap] = useState<Record<string, number>>({});
-  const [dayTimeSlots, setDayTimeSlots] = useState<Record<string, { matin?: string; apresmidi?: string } | string>>({});
+  const [dayTimeSlots, setDayTimeSlots] = useState<Record<string, { matin?: string; apresmidi?: string; type?: 'vtc' | 'taxi' | 'libre' } | string>>({});
   const [planningConfigLoaded, setPlanningConfigLoaded] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const planningFileInputRef = useRef<HTMLInputElement>(null);
@@ -3349,7 +3349,7 @@ export function ExamenReussitePage() {
                             </button>
                           </div>
                           
-                          {/* Per-day max + time slot */}
+                          {/* Per-day max + formation type + time slot */}
                           <div className="flex items-center justify-center gap-2 mb-1 flex-wrap">
                             <div className="flex items-center gap-1">
                               <span className="text-[9px] text-muted-foreground">Max:</span>
@@ -3364,6 +3364,25 @@ export function ExamenReussitePage() {
                                 }}
                                 className="w-10 h-5 text-[10px] text-center border rounded bg-muted/50 focus:outline-none focus:ring-1 focus:ring-primary"
                               />
+                            </div>
+                            <div className="flex gap-1 items-center">
+                              <span className="text-[8px] font-semibold text-foreground">Formation:</span>
+                              <select
+                                value={(typeof dayTimeSlots[key] === 'object' ? (dayTimeSlots[key] as any)?.type : '') || ''}
+                                onChange={(e) => setDayTimeSlots(prev => {
+                                  const current = typeof prev[key] === 'object' ? { ...(prev[key] as any) } : {};
+                                  if (e.target.value) current.type = e.target.value;
+                                  else delete current.type;
+                                  return { ...prev, [key]: current };
+                                })}
+                                className="h-5 min-w-[72px] text-[9px] font-semibold border rounded bg-background focus:outline-none focus:ring-1 focus:ring-primary px-1"
+                                title="Choisir la formation de ce jour"
+                              >
+                                <option value="">Auto</option>
+                                <option value="vtc">VTC</option>
+                                <option value="taxi">TAXI</option>
+                                <option value="libre">Libre</option>
+                              </select>
                             </div>
                             <div className="flex gap-1 items-center">
                               <span className="text-[8px] text-muted-foreground">AM:</span>
@@ -3402,26 +3421,11 @@ export function ExamenReussitePage() {
                             </div>
                           </div>
 
-                          {/* Per-day formation type override */}
-                          <div className="flex items-center justify-center gap-1 mb-1">
-                            <span className="text-[8px] text-muted-foreground">Type:</span>
-                            <select
-                              value={(typeof dayTimeSlots[key] === 'object' ? (dayTimeSlots[key] as any)?.type : '') || ''}
-                              onChange={(e) => setDayTimeSlots(prev => {
-                                const current = typeof prev[key] === 'object' ? { ...(prev[key] as any) } : {};
-                                if (e.target.value) current.type = e.target.value;
-                                else delete current.type;
-                                return { ...prev, [key]: current };
-                              })}
-                              className="h-5 text-[9px] border rounded bg-muted/50 focus:outline-none focus:ring-1 focus:ring-primary px-1"
-                              title="Forcer le type de formation pour ce jour"
-                            >
-                              <option value="">Auto ({expectedType || 'libre'})</option>
-                              <option value="vtc">VTC</option>
-                              <option value="taxi">TAXI</option>
-                              <option value="libre">Libre</option>
-                            </select>
-                          </div>
+                          {(typeof dayTimeSlots[key] === 'object' && (dayTimeSlots[key] as any)?.type) && (
+                            <div className="text-[9px] text-center font-semibold text-primary mb-1">
+                              Choix manuel : {String((dayTimeSlots[key] as any).type).toUpperCase()}
+                            </div>
+                          )}
 
                           {/* Show label for expected type */}
                           {expectedType === 'vtc' && (
