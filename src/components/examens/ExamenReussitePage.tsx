@@ -367,6 +367,8 @@ export function ExamenReussitePage() {
   const [extraCandidatsFormation, setExtraCandidatsFormation] = useState<string[]>([]);
   const [removedCandidatsFormation, setRemovedCandidatsFormation] = useState<string[]>([]);
   const [searchFormation, setSearchFormation] = useState("");
+  const [searchInscritTheorique, setSearchInscritTheorique] = useState("");
+  const [addingInscritTheorique, setAddingInscritTheorique] = useState(false);
   // Planning pratique - dates configurables
   const [planningStartDate, setPlanningStartDate] = useState("2026-02-16");
   const [planningEndDate, setPlanningEndDate] = useState("2026-03-06");
