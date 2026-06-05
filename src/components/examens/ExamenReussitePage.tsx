@@ -2055,15 +2055,8 @@ export function ExamenReussitePage() {
           !dejaFormesSet.has(a.id) &&
           !removedFormationSet.has(a.id)
         );
-        // Candidats déplacés à la prochaine session (sessions pratiques précédentes)
-        const deplacesFormation = (allApprenants || []).filter(a =>
-          (deplacesSessionPratique || []).includes(a.id) &&
-          hasEligibleTheoryStatus((a as any).resultat_examen) &&
-          !reussisFormation.some(r => r.id === a.id) &&
-          !paFormation.some(r => r.id === a.id) &&
-          !dejaFormesSet.has(a.id) &&
-          !removedFormationSet.has(a.id)
-        );
+        // Les candidats déplacés sont retirés de la session actuelle.
+        const deplacesFormation: ExamApprenant[] = [];
         // Candidats ayant échoué l'examen pratique (repassage pratique)
         // Mais s'ils ont déjà été présents en session pratique, on ne les remet pas à former
         const echouesPratiqueFormation = (allApprenants || []).filter(a =>
@@ -2961,14 +2954,7 @@ export function ExamenReussitePage() {
           !dejaFormesSetP.has(a.id) &&
           !removedFormationSetP.has(a.id)
         );
-        const deplacesFormationP = (allApprenants || []).filter(a =>
-          (deplacesSessionPratique || []).includes(a.id) &&
-          hasEligibleTheoryStatusP((a as any).resultat_examen) &&
-          !reussisFormationP.some(r => r.id === a.id) &&
-          !paFormationP.some(r => r.id === a.id) &&
-          !dejaFormesSetP.has(a.id) &&
-          !removedFormationSetP.has(a.id)
-        );
+        const deplacesFormationP: ExamApprenant[] = [];
         const echouesPratiqueFormationP = (allApprenants || []).filter(a =>
           (a as any).resultat_examen_pratique === 'non' &&
           hasEligibleTheoryStatusP((a as any).resultat_examen) &&
