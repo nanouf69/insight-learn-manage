@@ -501,10 +501,17 @@ export function ExamenReussitePage() {
         .eq('id', apprenantId);
       // Delete existing reservation so they can book a new one next session
       await supabase.from('reservations_pratique').delete().eq('apprenant_id', apprenantId);
+      const nextExtraFormation = extraCandidatsFormation.filter((id) => id !== apprenantId);
+      const nextRemovedFormation = removedCandidatsFormation.includes(apprenantId)
+        ? removedCandidatsFormation
+        : [...removedCandidatsFormation, apprenantId];
+      setExtraCandidatsFormation(nextExtraFormation);
+      setRemovedCandidatsFormation(nextRemovedFormation);
+      await saveCandidateListsNow({ extraFormation: nextExtraFormation, removedFormation: nextRemovedFormation });
       queryClient.invalidateQueries({ queryKey: ['deplaces-session-pratique'] });
       queryClient.invalidateQueries({ queryKey: ['reservations-pratique-planning'] });
       queryClient.invalidateQueries({ queryKey: ['all-apprenants'] });
-      toast.success(`${apprenantNom} déplacé(e) à la prochaine session — inclus dans la lettre CMA et les candidats à former`);
+      toast.success(`${apprenantNom} déplacé(e) à la prochaine session — retiré(e) de la liste actuelle`);
     } catch (err: any) {
       toast.error('Erreur: ' + (err.message || 'Échec'));
     }
