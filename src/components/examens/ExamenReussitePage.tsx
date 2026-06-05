@@ -3474,7 +3474,6 @@ export function ExamenReussitePage() {
                           {/* Show label for expected type */}
                           {expectedType === 'vtc' && (
                             <div className="mb-2">
-                              <div className="text-[10px] font-semibold text-blue-700 mb-1">Formation pratique VTC</div>
                               {vtcReserved.length > 0 ? vtcReserved.map((a: any) => (
                                 <div key={a.id} className="text-[11px] px-1 py-0.5 bg-blue-100 rounded mb-0.5 truncate font-semibold flex items-center justify-between group" title={`${a.nom} ${a.prenom}`}>
                                   <span>{a.nom} {a.prenom} ✓</span>
@@ -3489,7 +3488,6 @@ export function ExamenReussitePage() {
                           )}
                           {expectedType === 'taxi' && (
                             <div>
-                              <div className="text-[10px] font-semibold text-amber-700 mb-1">Formation pratique TAXI</div>
                               {taxiReserved.length > 0 ? taxiReserved.map((a: any) => (
                                 <div key={a.id} className="text-[11px] px-1 py-0.5 bg-amber-100 rounded mb-0.5 truncate font-semibold flex items-center justify-between group" title={`${a.nom} ${a.prenom}`}>
                                   <span>{a.nom} {a.prenom} ✓</span>
