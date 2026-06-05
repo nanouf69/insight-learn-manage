@@ -505,9 +505,20 @@ export function ExamenReussitePage() {
       const nextRemovedFormation = removedCandidatsFormation.includes(apprenantId)
         ? removedCandidatsFormation
         : [...removedCandidatsFormation, apprenantId];
+      const nextExtraCMA = extraCandidatsCMA.filter((id) => id !== apprenantId);
+      const nextRemovedCMA = removedCandidatsCMA.includes(apprenantId)
+        ? removedCandidatsCMA
+        : [...removedCandidatsCMA, apprenantId];
       setExtraCandidatsFormation(nextExtraFormation);
       setRemovedCandidatsFormation(nextRemovedFormation);
-      await saveCandidateListsNow({ extraFormation: nextExtraFormation, removedFormation: nextRemovedFormation });
+      setExtraCandidatsCMA(nextExtraCMA);
+      setRemovedCandidatsCMA(nextRemovedCMA);
+      await saveCandidateListsNow({
+        extraFormation: nextExtraFormation,
+        removedFormation: nextRemovedFormation,
+        extraCMA: nextExtraCMA,
+        removedCMA: nextRemovedCMA,
+      });
       queryClient.invalidateQueries({ queryKey: ['deplaces-session-pratique'] });
       queryClient.invalidateQueries({ queryKey: ['reservations-pratique-planning'] });
       queryClient.invalidateQueries({ queryKey: ['all-apprenants'] });
@@ -3611,9 +3622,20 @@ export function ExamenReussitePage() {
               const nextRemovedFormation = removedCandidatsFormation.includes(id)
                 ? removedCandidatsFormation
                 : [...removedCandidatsFormation, id];
+              const nextExtraCMA = extraCandidatsCMA.filter((cmaId) => cmaId !== id);
+              const nextRemovedCMA = removedCandidatsCMA.includes(id)
+                ? removedCandidatsCMA
+                : [...removedCandidatsCMA, id];
               setExtraCandidatsFormation(nextExtraFormation);
               setRemovedCandidatsFormation(nextRemovedFormation);
-              await saveCandidateListsNow({ extraFormation: nextExtraFormation, removedFormation: nextRemovedFormation });
+              setExtraCandidatsCMA(nextExtraCMA);
+              setRemovedCandidatsCMA(nextRemovedCMA);
+              await saveCandidateListsNow({
+                extraFormation: nextExtraFormation,
+                removedFormation: nextRemovedFormation,
+                extraCMA: nextExtraCMA,
+                removedCMA: nextRemovedCMA,
+              });
               queryClient.invalidateQueries({ queryKey: ['deplaces-session-pratique'] });
               queryClient.invalidateQueries({ queryKey: ['reservations-pratique-planning'] });
               toast.success("Candidat déplacé à la prochaine session — retiré de la liste actuelle");
