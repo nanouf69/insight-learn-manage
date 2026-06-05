@@ -167,6 +167,21 @@ async function searchApprenantsDirectly(term: string) {
   return (data || []) as ExamApprenant[];
 }
 
+const REMOVED_FORMATION_PREFIX = 'removed:';
+
+function splitFormationCandidates(values: string[] | null | undefined) {
+  return {
+    extra: (values || []).filter((id) => !id.startsWith(REMOVED_FORMATION_PREFIX)),
+    removed: (values || [])
+      .filter((id) => id.startsWith(REMOVED_FORMATION_PREFIX))
+      .map((id) => id.replace(REMOVED_FORMATION_PREFIX, '')),
+  };
+}
+
+function joinFormationCandidates(extra: string[], removed: string[]) {
+  return [...extra, ...removed.map((id) => `${REMOVED_FORMATION_PREFIX}${id}`)];
+}
+
 function parsePratiquePeriod(period: string | null | undefined): { start: string; end: string } | null {
   if (!period) return null;
 
@@ -333,6 +348,7 @@ export function ExamenReussitePage() {
   const [removedCandidatsCMA, setRemovedCandidatsCMA] = useState<string[]>([]);
   const [searchCMA, setSearchCMA] = useState("");
   const [extraCandidatsFormation, setExtraCandidatsFormation] = useState<string[]>([]);
+  const [removedCandidatsFormation, setRemovedCandidatsFormation] = useState<string[]>([]);
   const [searchFormation, setSearchFormation] = useState("");
   // Planning pratique - dates configurables
   const [planningStartDate, setPlanningStartDate] = useState("2026-02-16");
@@ -463,32 +479,16 @@ export function ExamenReussitePage() {
 
   const handleRemoveFromFormationList = async (apprenant: { id: string; nom: string; prenom: string }) => {
     try {
-      const [apprenantUpdate, reservationDelete, sessionReset] = await Promise.all([
-        supabase
-          .from('apprenants')
-          .update({ resultat_examen: null, resultat_examen_pratique: null } as any)
-          .eq('id', apprenant.id),
-        supabase
-          .from('reservations_pratique')
-          .delete()
-          .eq('apprenant_id', apprenant.id),
-        supabase
-          .from('session_apprenants')
-          .update({ presence_pratique: null } as any)
-          .eq('apprenant_id', apprenant.id)
-          .eq('presence_pratique', 'deplace'),
-      ]);
-
-      if (apprenantUpdate.error) throw apprenantUpdate.error;
-      if (reservationDelete.error) throw reservationDelete.error;
-      if (sessionReset.error) throw sessionReset.error;
-
       setExtraCandidatsFormation((prev) => prev.filter((id) => id !== apprenant.id));
+      setRemovedCandidatsFormation((prev) => prev.includes(apprenant.id) ? prev : [...prev, apprenant.id]);
+
+      const { error } = await supabase
+        .from('reservations_pratique')
+        .delete()
+        .eq('apprenant_id', apprenant.id);
+      if (error) throw error;
 
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['apprenants-examen', selectedExamDate] }),
-        queryClient.invalidateQueries({ queryKey: ['all-apprenants'] }),
-        queryClient.invalidateQueries({ queryKey: ['deplaces-session-pratique'] }),
         queryClient.invalidateQueries({ queryKey: ['reservations-pratique-planning'] }),
       ]);
 
@@ -762,7 +762,9 @@ export function ExamenReussitePage() {
         setPlanningEndDate(resolvedBounds?.end || data.planning_end_date);
         setExcludedDays(data.excluded_days || []);
         setExtraDays(data.extra_days || []);
-        setExtraCandidatsFormation(data.extra_candidats || []);
+        const formationCandidates = splitFormationCandidates(data.extra_candidats || []);
+        setExtraCandidatsFormation(formationCandidates.extra);
+        setRemovedCandidatsFormation(formationCandidates.removed);
         if (data.max_per_day) setMaxPerDay(data.max_per_day);
         if (data.max_per_day_map) setMaxPerDayMap(data.max_per_day_map as Record<string, number>);
         if (data.day_time_slots) setDayTimeSlots(data.day_time_slots as Record<string, { matin?: string; apresmidi?: string } | string>);
@@ -790,7 +792,9 @@ export function ExamenReussitePage() {
         setPlanningEndDate(resolvedBounds?.end || data.planning_end_date);
         setExcludedDays(data.excluded_days || []);
         setExtraDays(data.extra_days || []);
-        setExtraCandidatsFormation(data.extra_candidats || []);
+        const formationCandidates = splitFormationCandidates(data.extra_candidats || []);
+        setExtraCandidatsFormation(formationCandidates.extra);
+        setRemovedCandidatsFormation(formationCandidates.removed);
         if (data.max_per_day) setMaxPerDay(data.max_per_day);
         if (data.max_per_day_map) setMaxPerDayMap(data.max_per_day_map as Record<string, number>);
         if (data.day_time_slots) setDayTimeSlots(data.day_time_slots as Record<string, { matin?: string; apresmidi?: string } | string>);
@@ -801,6 +805,7 @@ export function ExamenReussitePage() {
         setExcludedDays([]);
         setExtraDays([]);
         setExtraCandidatsFormation([]);
+        setRemovedCandidatsFormation([]);
         setMaxPerDayMap({});
         setDayTimeSlots({});
       }
@@ -822,14 +827,14 @@ export function ExamenReussitePage() {
           planning_end_date: planningEndDate,
           excluded_days: excludedDays,
           extra_days: extraDays,
-          extra_candidats: extraCandidatsFormation,
+          extra_candidats: joinFormationCandidates(extraCandidatsFormation, removedCandidatsFormation),
           max_per_day: maxPerDay,
           max_per_day_map: maxPerDayMap,
           day_time_slots: dayTimeSlots,
         }, { onConflict: 'exam_date,date_pratique' });
     }, 1000);
     return () => clearTimeout(timer);
-  }, [planningConfigLoaded, selectedExamDate, selectedDatePratique, planningStartDate, planningEndDate, excludedDays, extraDays, extraCandidatsFormation, maxPerDay, maxPerDayMap, dayTimeSlots]);
+  }, [planningConfigLoaded, selectedExamDate, selectedDatePratique, planningStartDate, planningEndDate, excludedDays, extraDays, extraCandidatsFormation, removedCandidatsFormation, maxPerDay, maxPerDayMap, dayTimeSlots]);
 
   // Fetch uploaded PDF files
   const { data: examFiles, refetch: refetchFiles } = useQuery({
@@ -1899,6 +1904,7 @@ export function ExamenReussitePage() {
 
         // Tous les candidats à former : uniquement ceux qui ont réussi l'examen théorique.
         const dejaFormesSet = new Set(dejaFormesPratique || []);
+        const removedFormationSet = new Set(removedCandidatsFormation);
         const paTypes = ['pa-vtc', 'pa-taxi'];
         const hasEligibleTheoryStatus = (resultat: string | null | undefined) => {
           const value = (resultat || '')
@@ -1913,7 +1919,8 @@ export function ExamenReussitePage() {
         const reussisFormation = apprenants?.filter(a =>
           !(a as any).deleted_at &&
           hasEligibleTheoryStatus((a as any).resultat_examen) &&
-          !dejaFormesSet.has(a.id)
+          !dejaFormesSet.has(a.id) &&
+          !removedFormationSet.has(a.id)
         ) || [];
         const paFormation = (allApprenants || []).filter(a => 
           paTypes.includes((a.type_apprenant || '').toLowerCase()) && 
@@ -1921,7 +1928,8 @@ export function ExamenReussitePage() {
           !(a as any).deleted_at &&
           hasEligibleTheoryStatus((a as any).resultat_examen) &&
           !reussisFormation.some(r => r.id === a.id) &&
-          !dejaFormesSet.has(a.id)
+          !dejaFormesSet.has(a.id) &&
+          !removedFormationSet.has(a.id)
         );
         // Candidats déplacés à la prochaine session (sessions pratiques précédentes)
         const deplacesFormation = (allApprenants || []).filter(a =>
@@ -1929,7 +1937,8 @@ export function ExamenReussitePage() {
           hasEligibleTheoryStatus((a as any).resultat_examen) &&
           !reussisFormation.some(r => r.id === a.id) &&
           !paFormation.some(r => r.id === a.id) &&
-          !dejaFormesSet.has(a.id)
+          !dejaFormesSet.has(a.id) &&
+          !removedFormationSet.has(a.id)
         );
         // Candidats ayant échoué l'examen pratique (repassage pratique)
         // Mais s'ils ont déjà été présents en session pratique, on ne les remet pas à former
@@ -1939,7 +1948,8 @@ export function ExamenReussitePage() {
           !reussisFormation.some(r => r.id === a.id) &&
           !paFormation.some(r => r.id === a.id) &&
           !deplacesFormation.some(r => r.id === a.id) &&
-          !dejaFormesSet.has(a.id)
+          !dejaFormesSet.has(a.id) &&
+          !removedFormationSet.has(a.id)
         );
         // Extra candidats ajoutés manuellement
         const extraFormation = (allApprenants || []).filter(a =>
@@ -1949,7 +1959,8 @@ export function ExamenReussitePage() {
           !paFormation.some(r => r.id === a.id) &&
           !deplacesFormation.some(r => r.id === a.id) &&
           !echouesPratiqueFormation.some(r => r.id === a.id) &&
-          !dejaFormesSet.has(a.id)
+          !dejaFormesSet.has(a.id) &&
+          !removedFormationSet.has(a.id)
         );
         // tousAFormer inclut les déplacés et les échoués pratique
         const tousAFormer = [...reussisFormation, ...paFormation, ...deplacesFormation, ...echouesPratiqueFormation, ...extraFormation];
@@ -2052,6 +2063,7 @@ export function ExamenReussitePage() {
                                 disabled={disabled}
                                 className="w-full justify-start text-xs h-auto py-1.5 disabled:opacity-60"
                                 onClick={() => {
+                                  setRemovedCandidatsFormation(prev => prev.filter(id => id !== a.id));
                                   setExtraCandidatsFormation(prev => [...prev, a.id]);
                                   setSearchFormation("");
                                   toast.success(`${a.nom} ${a.prenom} ajouté aux candidats à former`);
@@ -2350,7 +2362,7 @@ export function ExamenReussitePage() {
                                       <AlertDialogHeader>
                                         <AlertDialogTitle>Retirer {a.prenom} {a.nom} ?</AlertDialogTitle>
                                         <AlertDialogDescription>
-                                          Cette action va remettre le résultat d'admissibilité à « non renseigné » pour <strong>{a.nom} {a.prenom}</strong>. L'élève disparaîtra de la liste des reçus.
+                                          Cette action retire <strong>{a.nom} {a.prenom}</strong> uniquement de la liste des candidats à former pour cette période. L'apprenant reste dans le CRM et ses résultats ne sont pas modifiés.
                                         </AlertDialogDescription>
                                       </AlertDialogHeader>
                                       <AlertDialogFooter>
@@ -2699,7 +2711,7 @@ export function ExamenReussitePage() {
                                       <AlertDialogHeader>
                                         <AlertDialogTitle>Retirer {a.prenom} {a.nom} ?</AlertDialogTitle>
                                         <AlertDialogDescription>
-                                          Cette action va remettre le résultat d'admissibilité à « non renseigné » pour <strong>{a.nom} {a.prenom}</strong>. L'élève disparaîtra de la liste des reçus.
+                                          Cette action retire <strong>{a.nom} {a.prenom}</strong> uniquement de la liste des candidats à former pour cette période. L'apprenant reste dans le CRM et ses résultats ne sont pas modifiés.
                                         </AlertDialogDescription>
                                       </AlertDialogHeader>
                                       <AlertDialogFooter>
@@ -2804,6 +2816,7 @@ export function ExamenReussitePage() {
 
         // Reuse the same candidate list as "Candidats à former" section: only theory successes.
         const dejaFormesSetP = new Set(dejaFormesPratique || []);
+        const removedFormationSetP = new Set(removedCandidatsFormation);
         const paTypesP = ['pa-vtc', 'pa-taxi'];
         const rpTypesP = ['rp-vtc', 'rp-taxi'];
         const hasEligibleTheoryStatusP = (resultat: string | null | undefined) => {
@@ -2818,21 +2831,24 @@ export function ExamenReussitePage() {
         const reussisFormationP = apprenants?.filter(a => 
           (a as any).resultat_examen === 'oui' && 
           !rpTypesP.includes((a.type_apprenant || '').toLowerCase()) &&
-          !dejaFormesSetP.has(a.id)
+          !dejaFormesSetP.has(a.id) &&
+          !removedFormationSetP.has(a.id)
         ) || [];
         const paFormationP = (allApprenants || []).filter(a => 
           paTypesP.includes((a.type_apprenant || '').toLowerCase()) && 
           a.date_examen_theorique?.includes(selectedExamDate) &&
           (a as any).resultat_examen === 'oui' &&
           !reussisFormationP.some(r => r.id === a.id) &&
-          !dejaFormesSetP.has(a.id)
+          !dejaFormesSetP.has(a.id) &&
+          !removedFormationSetP.has(a.id)
         );
         const deplacesFormationP = (allApprenants || []).filter(a =>
           (deplacesSessionPratique || []).includes(a.id) &&
           hasEligibleTheoryStatusP((a as any).resultat_examen) &&
           !reussisFormationP.some(r => r.id === a.id) &&
           !paFormationP.some(r => r.id === a.id) &&
-          !dejaFormesSetP.has(a.id)
+          !dejaFormesSetP.has(a.id) &&
+          !removedFormationSetP.has(a.id)
         );
         const echouesPratiqueFormationP = (allApprenants || []).filter(a =>
           (a as any).resultat_examen_pratique === 'non' &&
@@ -2840,7 +2856,8 @@ export function ExamenReussitePage() {
           !reussisFormationP.some(r => r.id === a.id) &&
           !paFormationP.some(r => r.id === a.id) &&
           !deplacesFormationP.some(r => r.id === a.id) &&
-          !dejaFormesSetP.has(a.id)
+          !dejaFormesSetP.has(a.id) &&
+          !removedFormationSetP.has(a.id)
         );
         const extraFormationP = (allApprenants || []).filter(a =>
           extraCandidatsFormation.includes(a.id) &&
@@ -2849,7 +2866,8 @@ export function ExamenReussitePage() {
           !paFormationP.some(r => r.id === a.id) &&
           !deplacesFormationP.some(r => r.id === a.id) &&
           !echouesPratiqueFormationP.some(r => r.id === a.id) &&
-          !dejaFormesSetP.has(a.id)
+          !dejaFormesSetP.has(a.id) &&
+          !removedFormationSetP.has(a.id)
         );
         const tousPlanning = [...reussisFormationP, ...paFormationP, ...deplacesFormationP, ...echouesPratiqueFormationP, ...extraFormationP];
         const tousPlanningIds = new Set(tousPlanning.map(a => a.id));
