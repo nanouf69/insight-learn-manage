@@ -3407,7 +3407,10 @@ export function ExamenReussitePage() {
                                   const current = typeof prev[key] === 'object' ? { ...(prev[key] as any) } : {};
                                   if (e.target.value) current.type = e.target.value;
                                   else delete current.type;
-                                  return { ...prev, [key]: current };
+                                  const next = { ...prev, [key]: current };
+                                  void saveDayTimeSlotsNow(next);
+                                  toast.success("Choix sauvegardé");
+                                  return next;
                                 })}
                                 className="h-5 min-w-[72px] text-[9px] font-semibold border rounded bg-background focus:outline-none focus:ring-1 focus:ring-primary px-1"
                                 title="Choisir la formation de ce jour"
@@ -3424,7 +3427,9 @@ export function ExamenReussitePage() {
                                 value={typeof dayTimeSlots[key] === 'object' ? (dayTimeSlots[key] as any)?.matin || '' : ''}
                                 onChange={(e) => setDayTimeSlots(prev => {
                                   const current = typeof prev[key] === 'object' ? prev[key] as any : {};
-                                  return { ...prev, [key]: { ...current, matin: e.target.value } };
+                                  const next = { ...prev, [key]: { ...current, matin: e.target.value } };
+                                  void saveDayTimeSlotsNow(next);
+                                  return next;
                                 })}
                                 className="h-5 text-[9px] border rounded bg-muted/50 focus:outline-none focus:ring-1 focus:ring-primary px-0.5 flex-1 min-w-0"
                               >
@@ -3441,7 +3446,9 @@ export function ExamenReussitePage() {
                                 value={typeof dayTimeSlots[key] === 'object' ? (dayTimeSlots[key] as any)?.apresmidi || '' : ''}
                                 onChange={(e) => setDayTimeSlots(prev => {
                                   const current = typeof prev[key] === 'object' ? prev[key] as any : {};
-                                  return { ...prev, [key]: { ...current, apresmidi: e.target.value } };
+                                  const next = { ...prev, [key]: { ...current, apresmidi: e.target.value } };
+                                  void saveDayTimeSlotsNow(next);
+                                  return next;
                                 })}
                                 className="h-5 text-[9px] border rounded bg-muted/50 focus:outline-none focus:ring-1 focus:ring-primary px-0.5 flex-1 min-w-0"
                               >
