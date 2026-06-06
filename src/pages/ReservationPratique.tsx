@@ -371,14 +371,12 @@ export default function ReservationPratique() {
       }
     });
 
-    // Compter combien sont déjà couverts manuellement
-    const manualVTCCount = manualDays.filter((d) => dayTimeSlots[toLocalDateKey(d)]?.type === 'vtc').length;
-    const manualTAXICount = manualDays.filter((d) => dayTimeSlots[toLocalDateKey(d)]?.type === 'taxi').length;
-
     // Si admin a fixé manuellement des jours VTC (ou TAXI), on ne complète PAS automatiquement.
     // L'admin a la main : ces jours-là sont la liste définitive pour ce type.
-    const vtcDaysNeeded = manualVTCCount > 0 ? 0 : Math.ceil(totalVTC / 3);
-    const taxiDaysNeeded = manualTAXICount > 0 ? 0 : Math.ceil(totalTAXI / 3);
+    const hasManualVTC = manualDays.some((d) => dayTimeSlots[toLocalDateKey(d)]?.type === 'vtc');
+    const hasManualTAXI = manualDays.some((d) => dayTimeSlots[toLocalDateKey(d)]?.type === 'taxi');
+    const vtcDaysNeeded = hasManualVTC ? 0 : Math.ceil(totalVTC / 3);
+    const taxiDaysNeeded = hasManualTAXI ? 0 : Math.ceil(totalTAXI / 3);
     const dayTypeMap: Record<string, "vtc" | "taxi" | "libre"> = {};
 
     // Appliquer les overrides manuels

@@ -3165,6 +3165,8 @@ export function ExamenReussitePage() {
           }
           return undefined;
         };
+        const hasManualVTC = weekdays.some(d => getOverride(toKey(d)) === 'vtc');
+        const hasManualTAXI = weekdays.some(d => getOverride(toKey(d)) === 'taxi');
         let vtcRemaining = totalVTC;
         let taxiRemaining = totalTAXI;
         const dayTypeMap: Record<string, 'vtc' | 'taxi' | 'libre'> = {};
@@ -3184,23 +3186,25 @@ export function ExamenReussitePage() {
             else if (ov === 'taxi') { taxiPlaces += cap; taxiRemaining -= cap; }
           }
         }
-        // First pass: assign VTC days
+        // First pass: assign VTC days only when no manual VTC day was chosen.
+        // If admin selected VTC days in the "Formation" dropdown, those are definitive.
         for (const d of weekdays) {
           const key = toKey(d);
           if (dayTypeMap[key]) continue;
           const cap = dayCapacity[key];
-          if (vtcRemaining > 0) {
+          if (!hasManualVTC && vtcRemaining > 0) {
             dayTypeMap[key] = 'vtc';
             vtcPlaces += cap;
             vtcRemaining -= cap;
           }
         }
-        // Second pass: assign TAXI days from remaining
+        // Second pass: assign TAXI days only when no manual TAXI day was chosen.
+        // If admin selected TAXI days in the "Formation" dropdown, those are definitive.
         for (const d of weekdays) {
           const key = toKey(d);
           if (dayTypeMap[key]) continue;
           const cap = dayCapacity[key];
-          if (taxiRemaining > 0) {
+          if (!hasManualTAXI && taxiRemaining > 0) {
             dayTypeMap[key] = 'taxi';
             taxiPlaces += cap;
             taxiRemaining -= cap;
