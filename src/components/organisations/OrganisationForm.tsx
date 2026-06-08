@@ -179,7 +179,7 @@ export function OrganisationForm({ organisation, onClose }: OrganisationFormProp
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 pt-4">
+          <div className="sticky bottom-0 -mx-1 flex justify-end gap-3 bg-background px-1 pt-4 pb-1">
             <Button type="button" variant="outline" onClick={handleClose}>Annuler</Button>
             <Button type="submit" disabled={isLoading}>
               {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
