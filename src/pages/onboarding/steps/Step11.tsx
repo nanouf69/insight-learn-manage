@@ -247,9 +247,11 @@ export default function Step11() {
 
           <div className="space-y-4">
             <div className="bg-red-100 border-4 border-red-600 rounded-xl p-6 text-center">
-              <p className="text-red-700 font-extrabold text-2xl lg:text-3xl leading-tight">
+              <p className="text-red-700 font-extrabold text-xl lg:text-2xl leading-tight">
                 ⚠️ MERCI DE NOUS CONTACTER AU<br />
-                <span className="text-3xl lg:text-4xl">04 28 29 60 91</span><br />
+                <span className="text-2xl lg:text-3xl">04 28 29 60 91</span><br />
+                OU PAR EMAIL À<br />
+                <span className="text-xl lg:text-2xl break-all">contact@ftransport.fr</span><br />
                 LE PREMIER JOUR DE LA PUBLICATION DES RÉSULTATS DE VOTRE EXAMEN THÉORIQUE POUR LA SUITE DES DÉMARCHES
               </p>
             </div>
@@ -264,13 +266,32 @@ export default function Step11() {
                   className="mt-1 w-6 h-6 accent-red-600 cursor-pointer flex-shrink-0"
                 />
                 <span className="text-red-800 font-bold text-base lg:text-lg leading-snug">
-                  Je reconnais être responsable de contacter le centre au <span className="underline">04 28 29 60 91</span> le premier jour de la publication des résultats de mon examen théorique pour la suite des démarches. <span className="text-red-600">*</span>
+                  Je reconnais être responsable de contacter le centre par email à <span className="underline">contact@ftransport.fr</span> ou par téléphone au <span className="underline">04 28 29 60 91</span> le premier jour de la publication des résultats de mon examen théorique pour la suite des démarches. <span className="text-red-600">*</span>
                 </span>
               </label>
               {attempted && !responsableContact && (
                 <p className="text-red-600 text-sm font-semibold mt-2 ml-9">Vous devez cocher cette case pour continuer.</p>
               )}
             </div>
+
+            {/* Engagement contact en cas de déplacement / annulation d'examen - OBLIGATOIRE */}
+            <div className={`rounded-xl p-5 border-2 ${attempted && !contactSiDeplace ? 'border-red-600 bg-red-50' : 'border-red-400 bg-red-50'}`}>
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={contactSiDeplace}
+                  onChange={(e) => setContactSiDeplace(e.target.checked)}
+                  className="mt-1 w-6 h-6 accent-red-600 cursor-pointer flex-shrink-0"
+                />
+                <span className="text-red-800 font-bold text-base lg:text-lg leading-snug">
+                  Je m'engage à contacter immédiatement le centre par email à <span className="underline">contact@ftransport.fr</span> ou par téléphone au <span className="underline">04 28 29 60 91</span> si je déplace ou annule mon examen. Sans cette information, le centre ne peut pas garantir une formation de qualité adaptée à ma nouvelle date. <span className="text-red-600">*</span>
+                </span>
+              </label>
+              {attempted && !contactSiDeplace && (
+                <p className="text-red-600 text-sm font-semibold mt-2 ml-9">Vous devez cocher cette case pour continuer.</p>
+              )}
+            </div>
+
 
             {/* Engagement mobilité TAXI - uniquement pour formations taxi */}
             {isTaxi && (
