@@ -14,6 +14,7 @@ interface RecapitulatifData {
   responsableContactCentre?: boolean;
   isTaxi?: boolean;
   mobiliteTaxiAck?: boolean;
+  contactSiDeplaceAck?: boolean;
 }
 
 
