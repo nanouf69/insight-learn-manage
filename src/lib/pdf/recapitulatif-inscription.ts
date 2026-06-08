@@ -14,6 +14,7 @@ interface RecapitulatifData {
   responsableContactCentre?: boolean;
   isTaxi?: boolean;
   mobiliteTaxiAck?: boolean;
+  contactSiDeplaceAck?: boolean;
 }
 
 
@@ -159,7 +160,7 @@ export function generateRecapitulatifPDF(data: RecapitulatifData, options?: { re
   doc.setFillColor(254, 226, 226); // red-100
   doc.setDrawColor(220, 38, 38); // red-600
   doc.setLineWidth(0.8);
-  doc.roundedRect(margin, yPos, pageWidth - 2 * margin, 42, 3, 3, 'FD');
+  doc.roundedRect(margin, yPos, pageWidth - 2 * margin, 48, 3, 3, 'FD');
   doc.setLineWidth(0.2);
 
   yPos += 9;
@@ -173,14 +174,40 @@ export function generateRecapitulatifPDF(data: RecapitulatifData, options?: { re
   yPos += 7;
   doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
-  const engageText = "Je reconnais etre responsable de contacter le centre au 04 28 29 60 91 le premier jour de la publication des resultats de mon examen theorique pour la suite des demarches.";
+  const engageText = "Je reconnais etre responsable de contacter le centre par email a contact@ftransport.fr ou par telephone au 04 28 29 60 91 le premier jour de la publication des resultats de mon examen theorique pour la suite des demarches.";
   const engageLines = doc.splitTextToSize(engageText, pageWidth - 2 * margin - 10);
   doc.text(engageLines, margin + 5, yPos);
-  yPos += engageLines.length * 5 + 8;
+  yPos += engageLines.length * 5 + 10;
+
+  // Encadré ENGAGEMENT - Contact en cas de deplacement / annulation d'examen
+  const pageH = doc.internal.pageSize.getHeight();
+  if (yPos > pageH - 90) { doc.addPage(); yPos = 20; }
+  doc.setFillColor(254, 226, 226);
+  doc.setDrawColor(220, 38, 38);
+  doc.setLineWidth(0.8);
+  doc.roundedRect(margin, yPos, pageWidth - 2 * margin, 52, 3, 3, 'FD');
+  doc.setLineWidth(0.2);
+
+  yPos += 9;
+  doc.setTextColor(185, 28, 28);
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'bold');
+  const deplaceTitle = data.contactSiDeplaceAck
+    ? "[X] ENGAGEMENT DEPLACEMENT/ANNULATION CONFIRME PAR L'APPRENANT"
+    : "[ ] ENGAGEMENT DEPLACEMENT/ANNULATION NON CONFIRME";
+  doc.text(deplaceTitle, margin + 5, yPos);
+  yPos += 7;
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'bold');
+  const deplaceText = "Je m'engage a contacter immediatement le centre par email a contact@ftransport.fr ou par telephone au 04 28 29 60 91 si je deplace ou annule mon examen. Sans cette information, le centre ne peut pas garantir une formation de qualite adaptee a ma nouvelle date.";
+  const deplaceLines = doc.splitTextToSize(deplaceText, pageWidth - 2 * margin - 10);
+  doc.text(deplaceLines, margin + 5, yPos);
+  yPos += deplaceLines.length * 5 + 10;
 
   // Encadré ENGAGEMENT mobilité TAXI - uniquement formations taxi
   const isTaxi = data.isTaxi || /taxi/i.test(data.typeExamen || '');
   if (isTaxi) {
+    if (yPos > pageH - 80) { doc.addPage(); yPos = 20; }
     doc.setFillColor(254, 226, 226);
     doc.setDrawColor(220, 38, 38);
     doc.setLineWidth(0.8);
@@ -205,6 +232,7 @@ export function generateRecapitulatifPDF(data: RecapitulatifData, options?: { re
   }
 
 
+  if (yPos > pageH - 60) { doc.addPage(); yPos = 20; }
   doc.setFillColor(254, 243, 199); // amber-100
   doc.setDrawColor(251, 191, 36); // amber-400
   doc.roundedRect(margin, yPos, pageWidth - 2 * margin, 35, 3, 3, 'FD');
