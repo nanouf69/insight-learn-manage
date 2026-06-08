@@ -126,6 +126,23 @@ const produits = [
   { id: 8, nom: "Frais d'examen de la chambre des métiers TAXI/VTC pratique", prix: 101 },
 ];
 
+// Mapping des clés formation_choisie vers libellés lisibles (synchronisé avec ApprenantDetailPage)
+const FORMATION_LABELS: Record<string, string> = {
+  'vtc': "Formation VTC (sans examen)",
+  'vtc-exam': "Formation VTC avec frais d'examen",
+  'taxi': "Formation TAXI (sans examen)",
+  'taxi-exam': "Formation TAXI avec frais d'examen",
+  'passerelle-taxi': "Formation TAXI pour chauffeur VTC (TA)",
+  'vtc-elearning-1099': "Formation VTC (E-learning)",
+  'vtc-elearning': "Formation VTC avec examen (E-learning)",
+  'taxi-elearning': "Formation TAXI (E-learning)",
+  'passerelle-taxi-elearning': "Formation TA (E-learning)",
+  'passerelle-vtc-elearning': "Formation VA (E-learning)",
+  'vtc-e-presentiel': "Formation VTC E-learning + Présentiel",
+  'taxi-e-presentiel': "Formation TAXI E-learning + Présentiel",
+  'ta-e-presentiel': "Formation TA E-learning + Présentiel",
+};
+
 interface LigneFacture {
   id: string;
   type: "session" | "produit";
@@ -395,7 +412,8 @@ export function FactureForm() {
       const dejaInjecte = prev.lignes.some(
         l => l.type === "session" && l.stagiaire === selectedApprenant.name
       );
-      const designation = selectedApprenant.formationChoisie || selectedApprenant.typeApprenant || "Formation";
+      const fcKey = (selectedApprenant.formationChoisie || '').trim();
+      const designation = FORMATION_LABELS[fcKey] || fcKey || selectedApprenant.typeApprenant || "Formation";
       if (dejaInjecte) {
         return { ...prev, refDossier: prev.refDossier || selectedApprenant.name };
       }
