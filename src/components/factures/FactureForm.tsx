@@ -412,7 +412,8 @@ export function FactureForm() {
       const dejaInjecte = prev.lignes.some(
         l => l.type === "session" && l.stagiaire === selectedApprenant.name
       );
-      const designation = selectedApprenant.formationChoisie || selectedApprenant.typeApprenant || "Formation";
+      const fcKey = (selectedApprenant.formationChoisie || '').trim();
+      const designation = FORMATION_LABELS[fcKey] || fcKey || selectedApprenant.typeApprenant || "Formation";
       if (dejaInjecte) {
         return { ...prev, refDossier: prev.refDossier || selectedApprenant.name };
       }
