@@ -207,6 +207,7 @@ export function generateRecapitulatifPDF(data: RecapitulatifData, options?: { re
   // Encadré ENGAGEMENT mobilité TAXI - uniquement formations taxi
   const isTaxi = data.isTaxi || /taxi/i.test(data.typeExamen || '');
   if (isTaxi) {
+    if (yPos > pageH - 80) { doc.addPage(); yPos = 20; }
     doc.setFillColor(254, 226, 226);
     doc.setDrawColor(220, 38, 38);
     doc.setLineWidth(0.8);
