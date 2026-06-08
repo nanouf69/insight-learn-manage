@@ -33,6 +33,7 @@ export default function Step11() {
   const [typeExamen, setTypeExamen] = useState('');
   const [responsableContact, setResponsableContact] = useState(false);
   const [mobiliteTaxi, setMobiliteTaxi] = useState(false);
+  const [contactSiDeplace, setContactSiDeplace] = useState(false);
   const [attempted, setAttempted] = useState(false);
 
   const selectedExam = datesExamenTheorique.find(e => e.value === dateExamen);
@@ -45,11 +46,13 @@ export default function Step11() {
     const savedTypeExamen = localStorage.getItem('onboarding_type_examen');
     const savedResponsable = localStorage.getItem('onboarding_responsable_contact_centre');
     const savedMobilite = localStorage.getItem('onboarding_mobilite_taxi_ack');
+    const savedContactDeplace = localStorage.getItem('onboarding_contact_si_deplace_ack');
     if (savedNumeroDossier) setNumeroDossier(savedNumeroDossier);
     if (savedDateExamen) setDateExamen(savedDateExamen);
     if (savedTypeExamen) setTypeExamen(savedTypeExamen);
     if (savedResponsable === 'true') setResponsableContact(true);
     if (savedMobilite === 'true') setMobiliteTaxi(true);
+    if (savedContactDeplace === 'true') setContactSiDeplace(true);
   }, []);
 
   const handleNext = async () => {
