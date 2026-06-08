@@ -19,6 +19,7 @@ type Organisation = {
   code_postal: string | null;
   ville: string | null;
   numero_declaration: string | null;
+  numero_tva: string | null;
   code_naf: string | null;
 };
 
@@ -43,6 +44,7 @@ export function OrganisationForm({ organisation, onClose }: OrganisationFormProp
   const [codePostal, setCodePostal] = useState("");
   const [ville, setVille] = useState("");
   const [numeroDeclaration, setNumeroDeclaration] = useState("");
+  const [numeroTva, setNumeroTva] = useState("");
   const [codeNaf, setCodeNaf] = useState("");
 
   useEffect(() => {
@@ -56,6 +58,7 @@ export function OrganisationForm({ organisation, onClose }: OrganisationFormProp
       setCodePostal(organisation.code_postal || "");
       setVille(organisation.ville || "");
       setNumeroDeclaration(organisation.numero_declaration || "");
+      setNumeroTva((organisation as any).numero_tva || "");
       setCodeNaf(organisation.code_naf || "");
     }
   }, [organisation, open]);
@@ -63,7 +66,7 @@ export function OrganisationForm({ organisation, onClose }: OrganisationFormProp
   const resetForm = () => {
     setNom(""); setSiret(""); setSiretComplet(""); setEmail(""); setTelephone("");
     setAdresse(""); setCodePostal(""); setVille("");
-    setNumeroDeclaration(""); setCodeNaf("");
+    setNumeroDeclaration(""); setNumeroTva(""); setCodeNaf("");
   };
 
   const handleClose = () => {
@@ -77,7 +80,7 @@ export function OrganisationForm({ organisation, onClose }: OrganisationFormProp
     setIsLoading(true);
 
     try {
-      const payload = { nom, siret, siret_complet: siretComplet, email, telephone, adresse, code_postal: codePostal, ville, numero_declaration: numeroDeclaration, code_naf: codeNaf };
+      const payload = { nom, siret, siret_complet: siretComplet, email, telephone, adresse, code_postal: codePostal, ville, numero_declaration: numeroDeclaration, numero_tva: numeroTva, code_naf: codeNaf };
 
       if (isEdit && organisation) {
         const { error } = await supabase.from('organismes').update(payload).eq('id', organisation.id);
@@ -113,7 +116,7 @@ export function OrganisationForm({ organisation, onClose }: OrganisationFormProp
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px]" onClick={(e) => e.stopPropagation()}>
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[500px]" onClick={(e) => e.stopPropagation()}>
         <DialogHeader>
           <DialogTitle>{isEdit ? "Modifier l'organisation" : "Nouvelle organisation"}</DialogTitle>
         </DialogHeader>
@@ -144,6 +147,11 @@ export function OrganisationForm({ organisation, onClose }: OrganisationFormProp
             <Input id="numeroDeclaration" placeholder="11 75 12345 75" value={numeroDeclaration} onChange={(e) => setNumeroDeclaration(e.target.value)} />
           </div>
 
+          <div className="space-y-2">
+            <Label htmlFor="numeroTva">N° TVA intracommunautaire</Label>
+            <Input id="numeroTva" placeholder="FR 12 123456789" value={numeroTva} onChange={(e) => setNumeroTva(e.target.value)} />
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
@@ -171,7 +179,7 @@ export function OrganisationForm({ organisation, onClose }: OrganisationFormProp
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 pt-4">
+          <div className="sticky bottom-0 -mx-1 flex justify-end gap-3 bg-background px-1 pt-4 pb-1">
             <Button type="button" variant="outline" onClick={handleClose}>Annuler</Button>
             <Button type="submit" disabled={isLoading}>
               {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}

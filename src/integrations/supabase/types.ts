@@ -2162,6 +2162,7 @@ export type Database = {
           id: string
           nom: string
           numero_declaration: string | null
+          numero_tva: string | null
           siret: string | null
           siret_complet: string | null
           telephone: string | null
@@ -2177,6 +2178,7 @@ export type Database = {
           id?: string
           nom: string
           numero_declaration?: string | null
+          numero_tva?: string | null
           siret?: string | null
           siret_complet?: string | null
           telephone?: string | null
@@ -2192,6 +2194,7 @@ export type Database = {
           id?: string
           nom?: string
           numero_declaration?: string | null
+          numero_tva?: string | null
           siret?: string | null
           siret_complet?: string | null
           telephone?: string | null
