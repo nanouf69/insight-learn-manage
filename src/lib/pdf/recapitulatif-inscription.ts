@@ -180,6 +180,8 @@ export function generateRecapitulatifPDF(data: RecapitulatifData, options?: { re
   yPos += engageLines.length * 5 + 10;
 
   // Encadré ENGAGEMENT - Contact en cas de deplacement / annulation d'examen
+  const pageH = doc.internal.pageSize.getHeight();
+  if (yPos > pageH - 90) { doc.addPage(); yPos = 20; }
   doc.setFillColor(254, 226, 226);
   doc.setDrawColor(220, 38, 38);
   doc.setLineWidth(0.8);
