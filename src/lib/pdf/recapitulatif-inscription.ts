@@ -232,6 +232,7 @@ export function generateRecapitulatifPDF(data: RecapitulatifData, options?: { re
   }
 
 
+  if (yPos > pageH - 60) { doc.addPage(); yPos = 20; }
   doc.setFillColor(254, 243, 199); // amber-100
   doc.setDrawColor(251, 191, 36); // amber-400
   doc.roundedRect(margin, yPos, pageWidth - 2 * margin, 35, 3, 3, 'FD');
