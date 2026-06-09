@@ -78,7 +78,20 @@ export function generateEmargementSemainePdf(
     if (!byDate.has(sig.date)) byDate.set(sig.date, []);
     byDate.get(sig.date)!.push(sig);
   }
-  const sortedDates = Array.from(byDate.keys()).sort();
+
+  // Détecter si formation du soir
+  const isSoir = signatures.some(s => s.demi_journee.startsWith('soir'));
+  const defaultDemis = isSoir ? ['soir_1', 'soir_2'] : ['matin', 'apres_midi'];
+
+  // Construire les 5 jours Lundi-Vendredi de la semaine
+  const weekStartDate = parseISO(weekStart);
+  const allDates: string[] = [];
+  for (let i = 0; i < 5; i++) {
+    const d = new Date(weekStartDate);
+    d.setDate(weekStartDate.getDate() + i);
+    allDates.push(format(d, 'yyyy-MM-dd'));
+  }
+  const sortedDates = allDates;
 
   doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
@@ -106,9 +119,16 @@ export function generateEmargementSemainePdf(
   doc.setTextColor(40, 40, 40);
 
   for (const date of sortedDates) {
-    const sigs = byDate.get(date)!.sort((a, b) => DEMI_ORDER.indexOf(a.demi_journee) - DEMI_ORDER.indexOf(b.demi_journee));
-    for (let i = 0; i < sigs.length; i++) {
-      const sig = sigs[i];
+    const existingSigs = (byDate.get(date) || []).sort((a, b) => DEMI_ORDER.indexOf(a.demi_journee) - DEMI_ORDER.indexOf(b.demi_journee));
+    // Build rows: for each default demi-journée, either the signature or a placeholder
+    const demisForDay = existingSigs.length > 0
+      ? Array.from(new Set([...defaultDemis, ...existingSigs.map(s => s.demi_journee)]))
+          .sort((a, b) => DEMI_ORDER.indexOf(a) - DEMI_ORDER.indexOf(b))
+      : defaultDemis;
+
+    for (let i = 0; i < demisForDay.length; i++) {
+      const demi = demisForDay[i];
+      const sig = existingSigs.find(s => s.demi_journee === demi);
       // Page break
       if (y + rowH > ph - 20) {
         doc.addPage();
@@ -134,15 +154,19 @@ export function generateEmargementSemainePdf(
       }
       // Demi-journée
       doc.setFont('helvetica', 'normal');
-      doc.text(DEMI_LABELS[sig.demi_journee] || sig.demi_journee, margin + dateColW + 2, y + 8);
-      doc.setFontSize(7);
-      doc.setTextColor(120, 120, 120);
-      try {
-        doc.text(`Signé le ${format(new Date(sig.signed_at), 'dd/MM HH:mm', { locale: fr })}`, margin + dateColW + 2, y + 14);
-      } catch {}
+      doc.setFontSize(8);
+      doc.setTextColor(40, 40, 40);
+      doc.text(DEMI_LABELS[demi] || demi, margin + dateColW + 2, y + 8);
+      if (sig) {
+        doc.setFontSize(7);
+        doc.setTextColor(120, 120, 120);
+        try {
+          doc.text(`Signé le ${format(new Date(sig.signed_at), 'dd/MM HH:mm', { locale: fr })}`, margin + dateColW + 2, y + 14);
+        } catch {}
+      }
 
       // Signature image
-      if (sig.signature && sig.signature.startsWith('data:image')) {
+      if (sig && sig.signature && sig.signature.startsWith('data:image')) {
         try {
           const sigH = rowH - 6;
           const sigW = Math.min(sigColW - 6, 60);
