@@ -2932,7 +2932,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
 
                                 const effectiveDateFinEmargement = sessionApprenant.date_fin_personnalisee || session.dateFin;
 
-                                generateEmargementIndividuelPDF(
+                                const resIndiv = generateEmargementIndividuelPDF(
                                   {
                                     formation: formationLabel,
                                     dateDebut: session.dateDebut,
@@ -2944,7 +2944,16 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                   finalAgendaDays,
                                   { print: isPrint }
                                 );
-                                toast({ title: isPrint ? "Impression lancée" : "Emargement individuel genere", description: `Feuille pour ${apprenant.prenom} ${apprenant.nom} ${isPrint ? 'ouverte pour impression.' : 'telechargee.'}` });
+                                if (resIndiv?.blob && apprenant.id) {
+                                  await saveEmargementToCRM({
+                                    apprenantId: apprenant.id,
+                                    fileName: resIndiv.fileName,
+                                    blob: resIndiv.blob,
+                                    titre: `Feuille d'émargement — ${formationLabel}`,
+                                    dateRef: session.dateDebut,
+                                  });
+                                }
+                                toast({ title: isPrint ? "Impression lancée" : "Emargement individuel genere", description: `Feuille pour ${apprenant.prenom} ${apprenant.nom} ${isPrint ? 'ouverte pour impression.' : 'telechargee et enregistree dans son dossier.'}` });
                               }}
                             >
                               <Icon className="w-4 h-4" />
