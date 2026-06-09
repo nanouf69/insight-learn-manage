@@ -27,6 +27,7 @@ function generateWeekdaysForMonth(year: number, month: number): Date[] {
 }
 
 type CandidateInfo = {
+  apprenantId?: string;
   name: string;
   type: string;
   nom: string;
