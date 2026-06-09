@@ -2775,6 +2775,27 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                 const { isTA, isVA, isTaxi, isVTC } = getSessionTrainingFlags(apprenant.type_apprenant);
                                 const isFCVTC = isFormationContinue && isVTC;
                                 const isPratique = session.type_session === 'pratique';
+
+                                // FORMATION PRATIQUE : ne générer l'émargement QUE si l'apprenant
+                                // est inscrit dans le planning pratique (table reservations_pratique).
+                                // Si aucune réservation trouvée → pas de feuille (règle ne s'applique
+                                // PAS aux autres types de formation).
+                                if (isPratique) {
+                                  const { data: resaCheck } = await supabase
+                                    .from('reservations_pratique')
+                                    .select('date_choisie')
+                                    .eq('apprenant_id', apprenant.id)
+                                    .limit(1);
+                                  if (!resaCheck || resaCheck.length === 0) {
+                                    toast({
+                                      title: "Apprenant non inscrit au planning pratique",
+                                      description: `${apprenant.prenom} ${apprenant.nom} n'a aucune date réservée dans le planning de formation pratique. Aucune feuille d'émargement générée.`,
+                                      variant: "destructive",
+                                    });
+                                    return;
+                                  }
+                                }
+
                                 const creneauxText = Array.isArray((session as any).creneaux) ? (session as any).creneaux.join(' ') : String((session as any).creneaux || '');
                                 const isCoursDuSoir = isEveningTrainingValue(session.title, (session as any).nom, creneauxText);
                                 const formationLabel = isFCVTC ? 'Formation Continue VTC' : isPratique ? (isTaxi ? 'Formation pratique TAXI' : 'Formation pratique VTC') : isTaxi ? 'Formation TAXI' : 'Formation VTC';
