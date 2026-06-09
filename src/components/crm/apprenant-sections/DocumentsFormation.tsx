@@ -174,7 +174,7 @@ export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
             const formationLabel = session.nom
               || (isTaxi ? 'Formation TAXI' : isVTC ? 'Formation VTC' : 'Formation');
 
-            generateEmargementIndividuelPDF(
+            const res = generateEmargementIndividuelPDF(
               {
                 formation: formationLabel,
                 dateDebut: session.date_debut,
@@ -190,6 +190,15 @@ export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
               },
               agendaDays,
             );
+            if (res?.blob) {
+              await saveEmargementToCRM({
+                apprenantId: apprenant.id,
+                fileName: res.fileName,
+                blob: res.blob,
+                titre: `Feuille d'émargement — ${formationLabel}`,
+                dateRef: session.date_debut,
+              });
+            }
             generated++;
             // Petit délai entre téléchargements pour éviter blocage navigateur
             if (sessionsToUse.length > 1) await new Promise(r => setTimeout(r, 400));
