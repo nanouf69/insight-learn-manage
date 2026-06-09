@@ -460,8 +460,8 @@ export function PlanningCalendar() {
                       variant="outline"
                       size="sm"
                       className="w-full gap-1 text-xs h-7"
-                      onClick={() => {
-                        generateEmargementPratiquePDF(
+                      onClick={async () => {
+                        const result = generateEmargementPratiquePDF(
                           day.date,
                           day.expectedType as 'vtc' | 'taxi',
                           day.reservedCandidates.map(c => ({
@@ -473,6 +473,24 @@ export function PlanningCalendar() {
                           day.creneaux
                         );
                         toast.success("Feuille d'émargement téléchargée");
+                        try {
+                          const ids = day.reservedCandidates
+                            .map(c => c.apprenantId)
+                            .filter((x): x is string => !!x);
+                          if (result?.blob && ids.length > 0) {
+                            const dateRef = day.dateKey;
+                            const saved = await saveEmargementToCRMForMany(
+                              ids,
+                              result.fileName,
+                              result.blob,
+                              `Feuille d'émargement pratique ${day.expectedType?.toUpperCase()} — ${dateRef}`,
+                              dateRef,
+                            );
+                            if (saved > 0) toast.success(`Enregistrée dans ${saved} dossier(s) apprenant`);
+                          }
+                        } catch (e) {
+                          console.error('[Planning] save emargement error', e);
+                        }
                       }}
                     >
                       <Download className="h-3 w-3" />
