@@ -923,13 +923,17 @@ function EcranResultats({
           if (!matiere) return;
           const qSafe = (matiere.questions || []).filter((q): q is Question => !!q && q?.type !== undefined);
           qSafe.forEach(q => {
-            const rep = r.reponses?.[q.id];
+            // FIX: try both numeric and string keys (JSON round-trip from DB makes keys strings)
+            const rep = r.reponses?.[q.id] ?? r.reponses?.[String(q.id)];
+            // FIX: skip unanswered questions — they shouldn't appear as "wrong to redo"
+            const isUnanswered = rep === undefined || rep === null || (Array.isArray(rep) && rep.length === 0) || (typeof rep === "string" && rep.trim() === "");
+            if (isUnanswered) return;
             if (q?.type === "QCM" && q.choix) {
               const correctes = safeArray<string>(q.choix?.filter(c => c.correct).map(c => c.lettre)).sort();
                const donnees = safeArray<string>(rep).sort();
                if (JSON.stringify(correctes) !== JSON.stringify(donnees)) nbFaussesTop++;
             } else if (q?.type === "QRC") {
-              const corrIA = correctionsIA[mi]?.[q.id];
+              const corrIA = correctionsIA[mi]?.[q.id] ?? correctionsIA[mi]?.[String(q.id)];
               if (corrIA && corrIA !== "loading" && corrIA !== "error") {
                 if (!corrIA.estCorrect) nbFaussesTop++;
               } else {
