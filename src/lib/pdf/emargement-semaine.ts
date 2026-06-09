@@ -78,7 +78,20 @@ export function generateEmargementSemainePdf(
     if (!byDate.has(sig.date)) byDate.set(sig.date, []);
     byDate.get(sig.date)!.push(sig);
   }
-  const sortedDates = Array.from(byDate.keys()).sort();
+
+  // Détecter si formation du soir
+  const isSoir = signatures.some(s => s.demi_journee.startsWith('soir'));
+  const defaultDemis = isSoir ? ['soir_1', 'soir_2'] : ['matin', 'apres_midi'];
+
+  // Construire les 5 jours Lundi-Vendredi de la semaine
+  const weekStartDate = parseISO(weekStart);
+  const allDates: string[] = [];
+  for (let i = 0; i < 5; i++) {
+    const d = new Date(weekStartDate);
+    d.setDate(weekStartDate.getDate() + i);
+    allDates.push(format(d, 'yyyy-MM-dd'));
+  }
+  const sortedDates = allDates;
 
   doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
