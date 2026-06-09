@@ -202,6 +202,7 @@ export function PlanningCalendar() {
         const app = appMap[r.apprenant_id];
         if (app) {
           byDate[r.date_choisie].push({
+            apprenantId: r.apprenant_id,
             name: `${app.nom} ${app.prenom}`,
             type: r.type_formation,
             nom: app.nom,
