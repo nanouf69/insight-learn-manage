@@ -2322,7 +2322,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
 
         const effectiveDateFinEmargement = saForEmargement.date_fin_personnalisee || session.dateFin;
 
-        generateEmargementIndividuelPDF(
+        const resBulk = generateEmargementIndividuelPDF(
           {
             formation: formationLabel,
             dateDebut: session.dateDebut,
@@ -2334,6 +2334,15 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
           finalAgendaDays,
           { print: isPrint }
         );
+        if (resBulk?.blob && apprenant.id) {
+          await saveEmargementToCRM({
+            apprenantId: apprenant.id,
+            fileName: resBulk.fileName,
+            blob: resBulk.blob,
+            titre: `Feuille d'émargement — ${formationLabel}`,
+            dateRef: session.dateDebut,
+          });
+        }
         generated++;
         // Small delay between downloads to avoid browser blocking
         if (!isPrint) await new Promise(r => setTimeout(r, 500));
