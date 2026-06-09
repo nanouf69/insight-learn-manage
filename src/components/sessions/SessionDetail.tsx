@@ -56,6 +56,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { generateAttestationFCVTC } from "@/lib/pdf/attestation-fc-vtc";
 import { generateFactureFC } from "@/lib/pdf/facture-fc";
 import { saveFactureToCRM } from "@/lib/saveFactureToCRM";
+import { saveEmargementToCRM } from "@/lib/saveEmargementToCRM";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
