@@ -4348,58 +4348,15 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       };
     }, [apprenantId, module.id]);
 
-    const captureAnswerScrollPosition = useCallback((target?: HTMLElement | null) => {
-      const anchor = target?.closest<HTMLElement>("[data-answer-scroll-anchor]");
-      preserveScrollRef.current = {
-        top: window.scrollY,
-        left: window.scrollX,
-        anchorId: anchor?.id,
-        anchorTop: anchor?.getBoundingClientRect().top,
-        capturedAt: performance.now(),
-      };
-    }, []);
-
-    const restoreAnswerScrollPosition = useCallback(() => {
-      const snapshot = preserveScrollRef.current;
-      if (!snapshot) return;
-
-      let nextTop = snapshot.top;
-      if (snapshot.anchorId && snapshot.anchorTop !== undefined) {
-        const anchor = document.getElementById(snapshot.anchorId);
-        if (anchor) {
-          nextTop = window.scrollY + anchor.getBoundingClientRect().top - snapshot.anchorTop;
-        }
-      }
-
-      if (Math.abs(window.scrollY - nextTop) > 1 || Math.abs(window.scrollX - snapshot.left) > 1) {
-        window.scrollTo({ top: nextTop, left: snapshot.left, behavior: "auto" });
-      }
+    // Scroll preservation removed: clicking an answer must NEVER move the page.
+    // Any window.scrollTo / scrollIntoView during answer selection is forbidden.
+    const captureAnswerScrollPosition = useCallback((_target?: HTMLElement | null) => {
+      // no-op: keep the user exactly where they are
     }, []);
 
     const scheduleAnswerScrollRestore = useCallback(() => {
-      const capturedAt = preserveScrollRef.current?.capturedAt;
-      restoreAnswerScrollPosition();
-      if (restoreScrollFrameRef.current !== null) {
-        window.cancelAnimationFrame(restoreScrollFrameRef.current);
-      }
-      restoreScrollFrameRef.current = window.requestAnimationFrame(() => {
-        restoreAnswerScrollPosition();
-        restoreScrollFrameRef.current = window.requestAnimationFrame(() => {
-          restoreAnswerScrollPosition();
-          restoreScrollFrameRef.current = null;
-        });
-      });
-      window.setTimeout(() => {
-        restoreAnswerScrollPosition();
-        if (preserveScrollRef.current?.capturedAt === capturedAt) {
-          preserveScrollRef.current = null;
-        }
-      }, 180);
-    }, [restoreAnswerScrollPosition]);
-
-    useLayoutEffect(() => {
-      scheduleAnswerScrollRestore();
-    }, [selectedAnswers, inlineQuizAnswers, qrcAnswers, unansweredKeys, scheduleAnswerScrollRestore]);
+      // no-op
+    }, []);
 
     const handleAnswer = (exoId: number, qId: number, lettre: string, multi?: boolean, target?: HTMLElement | null) => {
       if (showResultsFor.has(exoId)) return;
