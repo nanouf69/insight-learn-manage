@@ -465,7 +465,8 @@ export function PlanningCalendar() {
                             prenom: c.prenom,
                             telephone: c.telephone,
                             email: c.email,
-                          }))
+                          })),
+                          day.creneaux
                         );
                         toast.success("Feuille d'émargement téléchargée");
                       }}
