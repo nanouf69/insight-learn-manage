@@ -23,10 +23,27 @@ const organisme = {
 
 const LIEU_FORMATION = "86 route de genas 69003 Lyon";
 
+function formatCreneau(raw?: string): string {
+  if (!raw) return "";
+  // Accepts "9h-12h", "9h–12h", "13h-17h30", etc. → "09h00 - 12h00"
+  const cleaned = raw.replace(/\s+/g, "").replace(/[–—]/g, "-");
+  const parts = cleaned.split("-");
+  if (parts.length !== 2) return raw;
+  const expand = (p: string) => {
+    const m = p.match(/^(\d{1,2})h(\d{0,2})$/i);
+    if (!m) return p;
+    const hh = m[1].padStart(2, "0");
+    const mm = (m[2] || "").padStart(2, "0");
+    return `${hh}h${mm}`;
+  };
+  return `${expand(parts[0])} - ${expand(parts[1])}`;
+}
+
 export function generateEmargementPratiquePDF(
   date: Date,
   type: "vtc" | "taxi",
-  candidats: CandidatPratique[]
+  candidats: CandidatPratique[],
+  creneaux?: { matin?: string; apresmidi?: string }
 ) {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -144,21 +161,24 @@ export function generateEmargementPratiquePDF(
 
   const afterCandidats = (doc as any).lastAutoTable.finalY + 8;
 
+  const matinLabel = formatCreneau(creneaux?.matin) || "09h00 - 12h00";
+  const apresLabel = formatCreneau(creneaux?.apresmidi) || "13h00 - 16h00";
+
   // ===== TABLEAU D'ÉMARGEMENT =====
   const emargementRows = candidats.map((c) => [
     `${c.nom.toUpperCase()} ${c.prenom}`,
-    "09h00 - 12h00",
+    matinLabel,
     "",
-    "13h00 - 16h00",
+    apresLabel,
     "",
   ]);
 
   // Ligne vide supplémentaire au cas où un élève a été oublié
   emargementRows.push([
     "",
-    "09h00 - 12h00",
+    matinLabel,
     "",
-    "13h00 - 16h00",
+    apresLabel,
     "",
   ]);
 

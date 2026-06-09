@@ -50,6 +50,7 @@ type DayInfo = {
   expectedType: 'vtc' | 'taxi' | 'examen';
   reservedCandidates: CandidateInfo[];
   examCandidates: ExamCandidate[];
+  creneaux?: { matin?: string; apresmidi?: string };
 };
 
 type WeekInfo = {
@@ -260,6 +261,24 @@ export function PlanningCalendar() {
       });
       Object.values(examByDate).forEach(list => list.sort((a, b) => a.heure.localeCompare(b.heure)));
 
+      // Fetch all planning configs and merge their day_time_slots (per-day AM/PM creneaux)
+      const { data: configs } = await supabase
+        .from("planning_pratique_config")
+        .select("day_time_slots");
+      const creneauxByDate: Record<string, { matin?: string; apresmidi?: string }> = {};
+      (configs || []).forEach((c: any) => {
+        const slots = c.day_time_slots || {};
+        Object.entries(slots).forEach(([k, v]: [string, any]) => {
+          if (v && typeof v === "object") {
+            const cur = creneauxByDate[k] || {};
+            creneauxByDate[k] = {
+              matin: v.matin || cur.matin,
+              apresmidi: v.apresmidi || cur.apresmidi,
+            };
+          }
+        });
+      });
+
       // Construire les semaines pour le mois affiché
       const weekdays = generateWeekdaysForMonth(viewYear, viewMonth);
       const builtWeeks: WeekInfo[] = [];
@@ -288,6 +307,7 @@ export function PlanningCalendar() {
           expectedType: inferType(d, key),
           reservedCandidates: byDate[key] || [],
           examCandidates: examByDate[key] || [],
+          creneaux: creneauxByDate[key],
         });
 
         if (d.getDay() === 5 || i === weekdays.length - 1) {
@@ -445,7 +465,8 @@ export function PlanningCalendar() {
                             prenom: c.prenom,
                             telephone: c.telephone,
                             email: c.email,
-                          }))
+                          })),
+                          day.creneaux
                         );
                         toast.success("Feuille d'émargement téléchargée");
                       }}
