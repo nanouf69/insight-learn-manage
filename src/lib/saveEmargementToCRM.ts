@@ -50,8 +50,8 @@ export async function saveEmargementToCRM(params: {
         type_document: "emargement",
         url: publicUrl,
         statut: "valide",
-        donnees: params.dateRef ? { date_emargement: params.dateRef } : null,
-      } as any);
+        description: params.dateRef || null,
+      });
 
     if (insertError) {
       console.error("[saveEmargementToCRM] insert error:", insertError);
