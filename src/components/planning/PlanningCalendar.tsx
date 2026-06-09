@@ -232,6 +232,7 @@ export function PlanningCalendar() {
             const already = byDate[k].some(c => c.nom === app.nom && c.prenom === app.prenom);
             if (!already) {
               byDate[k].push({
+                apprenantId: sa.apprenant_id,
                 name: `${app.nom} ${app.prenom}`,
                 type,
                 nom: app.nom,
