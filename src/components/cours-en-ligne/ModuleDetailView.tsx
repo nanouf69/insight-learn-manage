@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useMemo, useCallback, useLayoutEffect } from "react";
+import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import { flushSync } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { RealtimeStatusIndicator } from "./RealtimeStatusIndicator";
@@ -4349,7 +4349,6 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     }, [apprenantId, module.id]);
 
     // Scroll preservation removed: clicking an answer must NEVER move the page.
-    // Any window.scrollTo / scrollIntoView during answer selection is forbidden.
     const captureAnswerScrollPosition = useCallback((_target?: HTMLElement | null) => {
       // no-op: keep the user exactly where they are
     }, []);
@@ -4989,12 +4988,6 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                           if (!inlineQuizAnswers[k]) missing.add(k);
                         });
                         setUnansweredKeys(missing);
-                        // Scroll to first unanswered
-                        const firstMissing = cours.quiz!.find(qq => !inlineQuizAnswers[`inline-${cours.id}-${qq.id}`]);
-                        if (firstMissing) {
-                          const el = document.getElementById(`inline-q-${cours.id}-${firstMissing.id}`);
-                          el?.scrollIntoView({ behavior: "smooth", block: "center" });
-                        }
                         toast.error("Répondez à toutes les questions avant de valider");
                         return;
                       }
@@ -5310,16 +5303,6 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                         });
                         if (unansweredQcmKeys.length > 0) {
                           setUnansweredKeys(new Set(unansweredQcmKeys));
-                          // Scroll to first unanswered
-                          const firstIdx = questionsSafe.findIndex((q: any) => {
-                            const k = `${exo.id}-${q.id}`;
-                            const isQrc = q?.type === "qrc" || (q.choix?.length === 0 && q.reponsesAttendues);
-                            return !isQrc && !selectedAnswers[k];
-                          });
-                          if (firstIdx >= 0) {
-                            const el = document.getElementById(`exo-q-${exo.id}-${firstIdx}`);
-                            el?.scrollIntoView({ behavior: "smooth", block: "center" });
-                          }
                           toast.error("Répondez à toutes les questions QCM avant de valider");
                           return;
                         }
@@ -5426,10 +5409,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                               <div key={q.id}
                                 className="flex items-center gap-2 rounded-lg border bg-background p-2 cursor-pointer hover:bg-muted/50 transition-colors"
                                 title={`Q${qi + 1}: ${isCorrect ? "Correct" : "Incorrect"} — Cliquer pour voir`}
-                                onClick={() => {
-                                  const el = document.getElementById(`exo-q-${exo.id}-${qi}`);
-                                  if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
-                                }}
+                                onClick={() => undefined}
                               >
                                 <span className="text-sm font-bold min-w-[1.2rem] text-center">{qi + 1}</span>
                                 <span className={`w-3.5 h-3.5 rounded-full shrink-0 ${isCorrect ? "bg-emerald-500" : "bg-destructive"}`} />
