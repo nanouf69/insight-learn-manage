@@ -50,6 +50,7 @@ type DayInfo = {
   expectedType: 'vtc' | 'taxi' | 'examen';
   reservedCandidates: CandidateInfo[];
   examCandidates: ExamCandidate[];
+  creneaux?: { matin?: string; apresmidi?: string };
 };
 
 type WeekInfo = {
