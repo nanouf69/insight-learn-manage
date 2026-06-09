@@ -215,7 +215,7 @@ export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
             ? apprenant.type_apprenant.toUpperCase().includes('TAXI') ? 'FORMATION CONTINUE TAXI' : 'FORMATION CONTINUE VTC'
             : 'FORMATION CONTINUE';
 
-          generateEmargementPDF(
+          const res = generateEmargementPDF(
             {
               title: formation,
               formation,
@@ -226,6 +226,15 @@ export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
             },
             [{ id: 0, nom: apprenant.nom, prenom: apprenant.prenom }]
           );
+          if (res?.blob) {
+            await saveEmargementToCRM({
+              apprenantId: apprenant.id,
+              fileName: res.fileName,
+              blob: res.blob,
+              titre: `Feuille d'émargement — ${formation}`,
+              dateRef: dateDebut,
+            });
+          }
         }
         toast.success("Feuille d'émargement générée");
       }
