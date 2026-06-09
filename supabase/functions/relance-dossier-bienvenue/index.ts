@@ -112,6 +112,21 @@ Deno.serve(async (req) => {
         continue;
       }
 
+      // Limite : ne pas envoyer plus de 10 relances "URGENT - dossier incomplet" par apprenant
+      const { count: relanceCount } = await supabase
+        .from('emails')
+        .select('id', { count: 'exact', head: true })
+        .eq('apprenant_id', apprenant.id)
+        .eq('type', 'sent')
+        .ilike('subject', '%URGENT%dossier%');
+
+      if ((relanceCount || 0) >= 10) {
+        results.push({ name: `${apprenant.prenom} ${apprenant.nom}`, email: apprenant.email, status: `skipped - limite 10 atteinte (${relanceCount})` });
+        continue;
+      }
+
+
+
       // Replace template variables
       const subject = template.subject_template
         .replace(/\{\{prenom\}\}/g, apprenant.prenom || '')
