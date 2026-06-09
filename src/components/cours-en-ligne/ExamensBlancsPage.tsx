@@ -1070,7 +1070,12 @@ export default function ExamensBlancsPage({
       const qSafe = (matiere.questions || []).filter((q): q is Question => !!q && q?.type !== undefined);
       const savedCorrectionsIA = r.correctionsIA || (r as any).details?.correctionsIA || {};
       qSafe.forEach(q => {
-        const rep = r.reponses?.[q.id];
+        // FIX: try both numeric and string keys (JSON round-trip from DB makes keys strings)
+        const rep = r.reponses?.[q.id] ?? r.reponses?.[String(q.id)];
+        // FIX: if no answer was given (question skipped/unanswered), do NOT count as "wrong to revise"
+        if (rep === undefined || rep === null || (Array.isArray(rep) && rep.length === 0) || (typeof rep === "string" && rep.trim() === "")) {
+          return;
+        }
         let isCorrect = false;
         if (q?.type === "QCM" && q.choix) {
           const correctes = safeArray<string>(q.choix?.filter(c => c.correct).map(c => c.lettre)).sort();
