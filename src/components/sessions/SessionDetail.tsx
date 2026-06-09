@@ -56,6 +56,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { generateAttestationFCVTC } from "@/lib/pdf/attestation-fc-vtc";
 import { generateFactureFC } from "@/lib/pdf/facture-fc";
 import { saveFactureToCRM } from "@/lib/saveFactureToCRM";
+import { saveEmargementToCRM } from "@/lib/saveEmargementToCRM";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -2321,7 +2322,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
 
         const effectiveDateFinEmargement = saForEmargement.date_fin_personnalisee || session.dateFin;
 
-        generateEmargementIndividuelPDF(
+        const resBulk = generateEmargementIndividuelPDF(
           {
             formation: formationLabel,
             dateDebut: session.dateDebut,
@@ -2333,6 +2334,15 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
           finalAgendaDays,
           { print: isPrint }
         );
+        if (resBulk?.blob && apprenant.id) {
+          await saveEmargementToCRM({
+            apprenantId: apprenant.id,
+            fileName: resBulk.fileName,
+            blob: resBulk.blob,
+            titre: `Feuille d'émargement — ${formationLabel}`,
+            dateRef: session.dateDebut,
+          });
+        }
         generated++;
         // Small delay between downloads to avoid browser blocking
         if (!isPrint) await new Promise(r => setTimeout(r, 500));
@@ -2922,7 +2932,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
 
                                 const effectiveDateFinEmargement = sessionApprenant.date_fin_personnalisee || session.dateFin;
 
-                                generateEmargementIndividuelPDF(
+                                const resIndiv = generateEmargementIndividuelPDF(
                                   {
                                     formation: formationLabel,
                                     dateDebut: session.dateDebut,
@@ -2934,7 +2944,16 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                   finalAgendaDays,
                                   { print: isPrint }
                                 );
-                                toast({ title: isPrint ? "Impression lancée" : "Emargement individuel genere", description: `Feuille pour ${apprenant.prenom} ${apprenant.nom} ${isPrint ? 'ouverte pour impression.' : 'telechargee.'}` });
+                                if (resIndiv?.blob && apprenant.id) {
+                                  await saveEmargementToCRM({
+                                    apprenantId: apprenant.id,
+                                    fileName: resIndiv.fileName,
+                                    blob: resIndiv.blob,
+                                    titre: `Feuille d'émargement — ${formationLabel}`,
+                                    dateRef: session.dateDebut,
+                                  });
+                                }
+                                toast({ title: isPrint ? "Impression lancée" : "Emargement individuel genere", description: `Feuille pour ${apprenant.prenom} ${apprenant.nom} ${isPrint ? 'ouverte pour impression.' : 'telechargee et enregistree dans son dossier.'}` });
                               }}
                             >
                               <Icon className="w-4 h-4" />

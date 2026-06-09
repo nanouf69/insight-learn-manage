@@ -80,7 +80,9 @@ export function generateEmargementPDF(
     dateDebut,
     "yyyy-MM-dd"
   )}.pdf`;
+  const blob = doc.output("blob") as Blob;
   doc.save(fileName);
+  return { blob, fileName };
 }
 
 function generatePage(

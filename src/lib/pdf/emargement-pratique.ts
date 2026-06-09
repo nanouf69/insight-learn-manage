@@ -257,5 +257,7 @@ export function generateEmargementPratiquePDF(
 
   // Télécharger
   const fileName = `emargement_pratique_${typeLabel}_${format(date, "yyyy-MM-dd")}.pdf`;
+  const blob = doc.output("blob") as Blob;
   doc.save(fileName);
+  return { blob, fileName };
 }
