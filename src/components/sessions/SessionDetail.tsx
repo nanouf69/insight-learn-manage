@@ -2200,6 +2200,22 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
         const { isTA, isVA, isTaxi, isVTC } = getSessionTrainingFlags(apprenant.type_apprenant);
         const isFCVTC = isFormationContinue && isVTC;
         const isPratique = session.type_session === 'pratique';
+
+        // FORMATION PRATIQUE : on suit uniquement le planning pratique. Si l'apprenant
+        // n'est pas inscrit sur une date du planning (reservations_pratique), on saute
+        // sa feuille d'émargement. (Ne s'applique PAS aux autres formations.)
+        if (isPratique) {
+          const { data: resaCheck } = await supabase
+            .from('reservations_pratique')
+            .select('date_choisie')
+            .eq('apprenant_id', apprenant.id)
+            .limit(1);
+          if (!resaCheck || resaCheck.length === 0) {
+            failed++;
+            continue;
+          }
+        }
+
         const creneauxText = Array.isArray((session as any).creneaux) ? (session as any).creneaux.join(' ') : String((session as any).creneaux || '');
         const isCoursDuSoir = isEveningTrainingValue(session.title, (session as any).nom, creneauxText);
         const formationLabel = isFCVTC ? 'Formation Continue VTC' : isPratique ? (isTaxi ? 'Formation pratique TAXI' : 'Formation pratique VTC') : isTaxi ? 'Formation TAXI' : 'Formation VTC';
