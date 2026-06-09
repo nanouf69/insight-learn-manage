@@ -4349,7 +4349,6 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     }, [apprenantId, module.id]);
 
     // Scroll preservation removed: clicking an answer must NEVER move the page.
-    // Any window.scrollTo / scrollIntoView during answer selection is forbidden.
     const captureAnswerScrollPosition = useCallback((_target?: HTMLElement | null) => {
       // no-op: keep the user exactly where they are
     }, []);
