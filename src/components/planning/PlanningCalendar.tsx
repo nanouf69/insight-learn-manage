@@ -5,6 +5,7 @@ import { PlanningForm } from "./PlanningForm";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { generateEmargementPratiquePDF } from "@/lib/pdf/emargement-pratique";
+import { saveEmargementToCRMForMany } from "@/lib/saveEmargementToCRM";
 import PlanningMensuelFormateurs from "@/components/agenda/PlanningMensuelFormateurs";
 import { DayConfigDialog, type DayType } from "./DayConfigDialog";
 
