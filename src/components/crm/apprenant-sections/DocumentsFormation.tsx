@@ -16,6 +16,7 @@ import { generateAttestationFCVTC } from "@/lib/pdf/attestation-fc-vtc";
 import { generateFactureFC } from "@/lib/pdf/facture-fc";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { saveEmargementToCRM } from "@/lib/saveEmargementToCRM";
 import { toast } from "sonner";
 
 
