@@ -71,18 +71,20 @@ export function generateEmargementIndividuelPDF(
   const dateDebut = parseISO(session.dateDebut);
   const fileName = `emargement_${apprenant.nom.toUpperCase()}_${apprenant.prenom}_${format(dateDebut, "yyyy-MM-dd")}.pdf`;
 
+  const pdfBlob = doc.output("blob") as Blob;
+
   if (options?.print) {
-    const pdfBlob = doc.output('blob');
     const url = URL.createObjectURL(pdfBlob);
     const printWindow = window.open(url);
     if (printWindow) {
-      printWindow.addEventListener('load', () => {
+      printWindow.addEventListener("load", () => {
         printWindow.print();
       });
     }
   } else {
     doc.save(fileName);
   }
+  return { blob: pdfBlob, fileName };
 }
 
 function generateIndividualPage(
