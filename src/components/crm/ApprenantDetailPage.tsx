@@ -769,7 +769,13 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
           <TabsTrigger value="devis" className="text-sm">Devis</TabsTrigger>
           <TabsTrigger value="examens-blancs-reset" className="text-sm">Examens blancs</TabsTrigger>
           <TabsTrigger value="rapport-activite" className="text-sm">Rapport activité</TabsTrigger>
-          <TabsTrigger value="releve-heures-hors" className="text-sm">Relevé heures hors formation</TabsTrigger>
+          {(() => {
+            const t = String(apprenant?.type_apprenant || "").toLowerCase();
+            const f = String(apprenant?.formation_choisie || "").toLowerCase();
+            const isElearningOnly = (/-e(\s|$)/.test(t) || /e[-\s]?learning|en[-\s]?ligne/.test(`${t} ${f}`)) && !/pr[eé]sentiel/.test(`${t} ${f}`);
+            if (isElearningOnly) return null;
+            return <TabsTrigger value="releve-heures-hors" className="text-sm">Relevé heures hors formation</TabsTrigger>;
+          })()}
           <TabsTrigger value="diagnostic-acces" className="text-sm">Diagnostic accès</TabsTrigger>
           <TabsTrigger value="reset-cours" className="text-sm text-destructive">Remise à zéro</TabsTrigger>
           <TabsTrigger value="delete-account" className="text-sm text-destructive">Supprimer compte cours</TabsTrigger>
