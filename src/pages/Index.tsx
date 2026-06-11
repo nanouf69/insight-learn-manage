@@ -121,8 +121,11 @@ const Index = () => {
     }
     setSendingRelance(true);
     try {
+      const excludedIds = relanceApprenants
+        .map(a => a.id)
+        .filter(id => !relanceSelected.has(id));
       const { data, error } = await supabase.functions.invoke('relance-dossier-bienvenue', {
-        body: { apprenant_ids: Array.from(relanceSelected) },
+        body: { apprenant_ids: Array.from(relanceSelected), excluded_ids: excludedIds },
       });
       if (error) throw error;
       if (data?.success) {
