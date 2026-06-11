@@ -16,6 +16,16 @@ Deno.serve(async (req) => {
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, serviceKey);
 
+    let body: { preview?: boolean; apprenant_ids?: string[] } = {};
+    try {
+      if (req.headers.get('content-length') && req.headers.get('content-length') !== '0') {
+        body = await req.json();
+      }
+    } catch { /* no body */ }
+    const previewOnly = body.preview === true;
+    const selectedIds = Array.isArray(body.apprenant_ids) ? body.apprenant_ids : null;
+
+
     // 1. Get all apprenants with email
     const { data: apprenants, error: appError } = await supabase
       .from('apprenants')
@@ -86,13 +96,40 @@ Deno.serve(async (req) => {
     const apprenantIdsWithDoc = new Set((docsCompletes || []).map(d => d.apprenant_id));
 
     // 3. Filter apprenants who DON'T have the welcome document
-    const apprenantsSansPdf = elearningApprenants.filter(a => !apprenantIdsWithDoc.has(a.id));
+    let apprenantsSansPdf = elearningApprenants.filter(a => !apprenantIdsWithDoc.has(a.id));
+
+    // Preview mode: return list of eligible apprenants without sending
+    if (previewOnly) {
+      return new Response(JSON.stringify({
+        success: true,
+        preview: true,
+        apprenants: apprenantsSansPdf.map(a => ({
+          id: a.id,
+          nom: a.nom,
+          prenom: a.prenom,
+          email: a.email,
+          formation_choisie: a.formation_choisie,
+          type_apprenant: a.type_apprenant,
+        })),
+      }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // Apply user-selected filtering
+    if (selectedIds && selectedIds.length > 0) {
+      const allowed = new Set(selectedIds);
+      apprenantsSansPdf = apprenantsSansPdf.filter(a => allowed.has(a.id));
+    } else if (selectedIds && selectedIds.length === 0) {
+      return new Response(JSON.stringify({ success: true, message: 'Aucun apprenant sélectionné', sent: 0 }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     if (apprenantsSansPdf.length === 0) {
       return new Response(JSON.stringify({ success: true, message: 'Tous les apprenants ont leur document de bienvenue', sent: 0 }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+
 
     // 4. Get the email template
     const { data: template } = await supabase

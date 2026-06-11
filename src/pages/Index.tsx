@@ -33,6 +33,10 @@ import { EmargementsManquants } from "@/components/dashboard/EmargementsManquant
 import { CreneauxRdvAdmin } from "@/components/dashboard/CreneauxRdvAdmin";
 import { GraduationCap, Users, ArrowDownCircle, ArrowUpCircle, Menu, X, Send, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -77,14 +81,53 @@ const Index = () => {
   const [totalSorties, setTotalSorties] = useState<number>(0);
   const [fluxPeriode, setFluxPeriode] = useState<string>("");
   const [sendingRelance, setSendingRelance] = useState(false);
+  const [relanceDialogOpen, setRelanceDialogOpen] = useState(false);
+  const [relanceApprenants, setRelanceApprenants] = useState<Array<{ id: string; nom: string; prenom: string; email: string; formation_choisie?: string; type_apprenant?: string }>>([]);
+  const [relanceSelected, setRelanceSelected] = useState<Set<string>>(new Set());
+  const [relanceFilter, setRelanceFilter] = useState("");
+  const [loadingPreview, setLoadingPreview] = useState(false);
+
+  const openRelanceDialog = async () => {
+    setRelanceDialogOpen(true);
+    setLoadingPreview(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('relance-dossier-bienvenue', {
+        body: { preview: true },
+      });
+      if (error) throw error;
+      const list = data?.apprenants || [];
+      setRelanceApprenants(list);
+      setRelanceSelected(new Set(list.map((a: any) => a.id)));
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err, "Erreur lors du chargement"));
+      setRelanceDialogOpen(false);
+    } finally {
+      setLoadingPreview(false);
+    }
+  };
+
+  const toggleRelanceOne = (id: string) => {
+    setRelanceSelected(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
 
   const handleRelanceDossierBienvenue = async () => {
+    if (relanceSelected.size === 0) {
+      toast.error("Sélectionnez au moins un apprenant");
+      return;
+    }
     setSendingRelance(true);
     try {
-      const { data, error } = await supabase.functions.invoke('relance-dossier-bienvenue');
+      const { data, error } = await supabase.functions.invoke('relance-dossier-bienvenue', {
+        body: { apprenant_ids: Array.from(relanceSelected) },
+      });
       if (error) throw error;
       if (data?.success) {
-        toast.success(`${data.sent} email(s) envoyé(s) sur ${data.sans_document} apprenant(s) sans document de bienvenue`);
+        toast.success(`${data.sent} email(s) envoyé(s)`);
+        setRelanceDialogOpen(false);
       } else {
         toast.error(data?.error || "Erreur lors de l'envoi");
       }
@@ -94,6 +137,7 @@ const Index = () => {
       setSendingRelance(false);
     }
   };
+
 
   useEffect(() => {
     if (!user) return;
@@ -190,8 +234,9 @@ const Index = () => {
             {/* Actions rapides */}
             <div className="flex flex-wrap gap-3">
               <Button 
-                onClick={handleRelanceDossierBienvenue} 
-                disabled={sendingRelance}
+                onClick={openRelanceDialog} 
+                disabled={sendingRelance || loadingPreview}
+
                 variant="outline"
                 className="gap-2 border-orange-300 text-orange-700 hover:bg-orange-50"
               >
@@ -337,8 +382,98 @@ const Index = () => {
           </ErrorBoundary>
         </main>
       </div>
+
+      <Dialog open={relanceDialogOpen} onOpenChange={setRelanceDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Relancer les dossiers bienvenue incomplets</DialogTitle>
+            <DialogDescription>
+              Cochez les apprenants à qui envoyer la relance. Décochez ceux que vous ne voulez pas relancer.
+            </DialogDescription>
+          </DialogHeader>
+
+          {loadingPreview ? (
+            <div className="flex items-center justify-center py-10 text-muted-foreground">
+              <Loader2 className="h-5 w-5 animate-spin mr-2" /> Chargement…
+            </div>
+          ) : (
+            <>
+              <div className="flex items-center gap-2 py-2">
+                <Input
+                  placeholder="Filtrer par nom, prénom ou email…"
+                  value={relanceFilter}
+                  onChange={(e) => setRelanceFilter(e.target.value)}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setRelanceSelected(new Set(relanceApprenants.map(a => a.id)))}
+                >
+                  Tout cocher
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setRelanceSelected(new Set())}
+                >
+                  Tout décocher
+                </Button>
+              </div>
+              <div className="flex-1 overflow-auto border rounded-md divide-y">
+                {relanceApprenants.length === 0 && (
+                  <div className="p-4 text-sm text-muted-foreground">Aucun apprenant éligible.</div>
+                )}
+                {relanceApprenants
+                  .filter(a => {
+                    const q = relanceFilter.trim().toLowerCase();
+                    if (!q) return true;
+                    return (
+                      a.nom?.toLowerCase().includes(q) ||
+                      a.prenom?.toLowerCase().includes(q) ||
+                      a.email?.toLowerCase().includes(q)
+                    );
+                  })
+                  .map((a) => (
+                    <label key={a.id} className="flex items-center gap-3 px-3 py-2 hover:bg-muted/50 cursor-pointer">
+                      <Checkbox
+                        checked={relanceSelected.has(a.id)}
+                        onCheckedChange={() => toggleRelanceOne(a.id)}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-sm">{a.prenom} {a.nom}</div>
+                        <div className="text-xs text-muted-foreground truncate">
+                          {a.email} {a.formation_choisie ? `• ${a.formation_choisie}` : ''}
+                        </div>
+                      </div>
+                    </label>
+                  ))}
+              </div>
+              <div className="text-sm text-muted-foreground pt-2">
+                {relanceSelected.size} / {relanceApprenants.length} sélectionné(s)
+              </div>
+            </>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRelanceDialogOpen(false)} disabled={sendingRelance}>
+              Annuler
+            </Button>
+            <Button
+              onClick={handleRelanceDossierBienvenue}
+              disabled={sendingRelance || loadingPreview || relanceSelected.size === 0}
+              className="gap-2"
+            >
+              {sendingRelance ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              Envoyer ({relanceSelected.size})
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
+
 
 export default Index;
