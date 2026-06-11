@@ -141,6 +141,30 @@ const Index = () => {
     }
   };
 
+  const handleSaveChoicesOnly = async () => {
+    setSendingRelance(true);
+    try {
+      const excludedIds = relanceApprenants
+        .map(a => a.id)
+        .filter(id => !relanceSelected.has(id));
+      const includedIds = Array.from(relanceSelected);
+      const { data, error } = await supabase.functions.invoke('relance-dossier-bienvenue', {
+        body: { save_only: true, apprenant_ids: includedIds, excluded_ids: excludedIds },
+      });
+      if (error) throw error;
+      if (data?.success) {
+        toast.success(`Choix enregistrés (${excludedIds.length} exclus, aucun email envoyé)`);
+        setRelanceDialogOpen(false);
+      } else {
+        toast.error(data?.error || "Erreur lors de l'enregistrement");
+      }
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err, "Erreur lors de l'enregistrement"));
+    } finally {
+      setSendingRelance(false);
+    }
+  };
+
 
   useEffect(() => {
     if (!user) return;
