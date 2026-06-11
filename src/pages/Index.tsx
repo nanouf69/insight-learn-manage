@@ -382,8 +382,98 @@ const Index = () => {
           </ErrorBoundary>
         </main>
       </div>
+
+      <Dialog open={relanceDialogOpen} onOpenChange={setRelanceDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Relancer les dossiers bienvenue incomplets</DialogTitle>
+            <DialogDescription>
+              Cochez les apprenants à qui envoyer la relance. Décochez ceux que vous ne voulez pas relancer.
+            </DialogDescription>
+          </DialogHeader>
+
+          {loadingPreview ? (
+            <div className="flex items-center justify-center py-10 text-muted-foreground">
+              <Loader2 className="h-5 w-5 animate-spin mr-2" /> Chargement…
+            </div>
+          ) : (
+            <>
+              <div className="flex items-center gap-2 py-2">
+                <Input
+                  placeholder="Filtrer par nom, prénom ou email…"
+                  value={relanceFilter}
+                  onChange={(e) => setRelanceFilter(e.target.value)}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setRelanceSelected(new Set(relanceApprenants.map(a => a.id)))}
+                >
+                  Tout cocher
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setRelanceSelected(new Set())}
+                >
+                  Tout décocher
+                </Button>
+              </div>
+              <div className="flex-1 overflow-auto border rounded-md divide-y">
+                {relanceApprenants.length === 0 && (
+                  <div className="p-4 text-sm text-muted-foreground">Aucun apprenant éligible.</div>
+                )}
+                {relanceApprenants
+                  .filter(a => {
+                    const q = relanceFilter.trim().toLowerCase();
+                    if (!q) return true;
+                    return (
+                      a.nom?.toLowerCase().includes(q) ||
+                      a.prenom?.toLowerCase().includes(q) ||
+                      a.email?.toLowerCase().includes(q)
+                    );
+                  })
+                  .map((a) => (
+                    <label key={a.id} className="flex items-center gap-3 px-3 py-2 hover:bg-muted/50 cursor-pointer">
+                      <Checkbox
+                        checked={relanceSelected.has(a.id)}
+                        onCheckedChange={() => toggleRelanceOne(a.id)}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-sm">{a.prenom} {a.nom}</div>
+                        <div className="text-xs text-muted-foreground truncate">
+                          {a.email} {a.formation_choisie ? `• ${a.formation_choisie}` : ''}
+                        </div>
+                      </div>
+                    </label>
+                  ))}
+              </div>
+              <div className="text-sm text-muted-foreground pt-2">
+                {relanceSelected.size} / {relanceApprenants.length} sélectionné(s)
+              </div>
+            </>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRelanceDialogOpen(false)} disabled={sendingRelance}>
+              Annuler
+            </Button>
+            <Button
+              onClick={handleRelanceDossierBienvenue}
+              disabled={sendingRelance || loadingPreview || relanceSelected.size === 0}
+              className="gap-2"
+            >
+              {sendingRelance ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              Envoyer ({relanceSelected.size})
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
+
 
 export default Index;
