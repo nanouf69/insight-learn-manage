@@ -3939,6 +3939,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           showResultsFor?: number[];
           completedPages?: number[];
           pendingResultRestore?: { exoId?: number; page?: number; validatedAt?: number } | null;
+          revisionQuestionsFor?: Record<string, (number | string)[]>;
         };
 
         if (parsed.selectedAnswers && typeof parsed.selectedAnswers === "object") {
@@ -3962,6 +3963,18 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               ? parsed.pendingResultRestore.validatedAt
               : Date.now(),
           });
+        }
+        if (parsed.revisionQuestionsFor && typeof parsed.revisionQuestionsFor === "object") {
+          const restored: Record<number, Set<number | string>> = {};
+          for (const [k, v] of Object.entries(parsed.revisionQuestionsFor)) {
+            const exoId = Number(k);
+            if (Number.isFinite(exoId) && Array.isArray(v)) {
+              restored[exoId] = new Set(v);
+            }
+          }
+          if (Object.keys(restored).length > 0) {
+            setRevisionQuestionsFor(restored);
+          }
         }
         // Restore currentPage: prefer sessionStorage, fallback to localStorage
         // (localStorage survives disconnections so the learner resumes where they left off)
