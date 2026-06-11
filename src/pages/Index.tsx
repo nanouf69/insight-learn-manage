@@ -488,6 +488,13 @@ const Index = () => {
               Annuler
             </Button>
             <Button
+              variant="secondary"
+              onClick={handleSaveChoicesOnly}
+              disabled={sendingRelance || loadingPreview}
+            >
+              Enregistrer les choix (sans envoyer)
+            </Button>
+            <Button
               onClick={handleRelanceDossierBienvenue}
               disabled={sendingRelance || loadingPreview || relanceSelected.size === 0}
               className="gap-2"
