@@ -3939,6 +3939,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           showResultsFor?: number[];
           completedPages?: number[];
           pendingResultRestore?: { exoId?: number; page?: number; validatedAt?: number } | null;
+          revisionQuestionsFor?: Record<string, (number | string)[]>;
         };
 
         if (parsed.selectedAnswers && typeof parsed.selectedAnswers === "object") {
@@ -3962,6 +3963,18 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               ? parsed.pendingResultRestore.validatedAt
               : Date.now(),
           });
+        }
+        if (parsed.revisionQuestionsFor && typeof parsed.revisionQuestionsFor === "object") {
+          const restored: Record<number, Set<number | string>> = {};
+          for (const [k, v] of Object.entries(parsed.revisionQuestionsFor)) {
+            const exoId = Number(k);
+            if (Number.isFinite(exoId) && Array.isArray(v)) {
+              restored[exoId] = new Set(v);
+            }
+          }
+          if (Object.keys(restored).length > 0) {
+            setRevisionQuestionsFor(restored);
+          }
         }
         // Restore currentPage: prefer sessionStorage, fallback to localStorage
         // (localStorage survives disconnections so the learner resumes where they left off)
@@ -4056,6 +4069,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       if (!uiStateHydrated) return;
 
       try {
+        const revisionSerialized: Record<string, (number | string)[]> = {};
+        for (const [k, v] of Object.entries(revisionQuestionsFor)) {
+          revisionSerialized[k] = Array.from(v as Set<number | string>);
+        }
         window.sessionStorage.setItem(
           learnerUiStateKey,
           JSON.stringify({
@@ -4064,6 +4081,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             showResultsFor: Array.from(showResultsFor),
             completedPages: Array.from(completedPages),
             pendingResultRestore,
+            revisionQuestionsFor: revisionSerialized,
           })
         );
         // Persist only the current page index to localStorage so the learner
@@ -4074,7 +4092,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       } catch (error) {
         console.error("Erreur sauvegarde état module:", error);
       }
-    }, [learnerUiStateKey, uiStateHydrated, currentPage, selectedAnswers, showResultsFor, completedPages, pendingResultRestore]);
+    }, [learnerUiStateKey, uiStateHydrated, currentPage, selectedAnswers, showResultsFor, completedPages, pendingResultRestore, revisionQuestionsFor]);
 
     // --- If a quiz was just validated, force-restore the exact result screen ---
     useEffect(() => {
@@ -5319,6 +5337,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                         setPendingResultRestore(validatedResultState);
 
                         try {
+                          const revisionSerialized: Record<string, (number | string)[]> = {};
+                          for (const [k, v] of Object.entries(revisionQuestionsFor)) {
+                            revisionSerialized[k] = Array.from(v as Set<number | string>);
+                          }
                           window.sessionStorage.setItem(
                             learnerUiStateKey,
                             JSON.stringify({
@@ -5327,6 +5349,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                               showResultsFor: Array.from(nextShowResults),
                               completedPages: Array.from(nextCompletedPages),
                               pendingResultRestore: validatedResultState,
+                              revisionQuestionsFor: revisionSerialized,
                             })
                           );
                         } catch (error) {
