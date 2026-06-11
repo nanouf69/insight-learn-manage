@@ -4069,6 +4069,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       if (!uiStateHydrated) return;
 
       try {
+        const revisionSerialized: Record<string, (number | string)[]> = {};
+        for (const [k, v] of Object.entries(revisionQuestionsFor)) {
+          revisionSerialized[k] = Array.from(v as Set<number | string>);
+        }
         window.sessionStorage.setItem(
           learnerUiStateKey,
           JSON.stringify({
@@ -4077,6 +4081,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             showResultsFor: Array.from(showResultsFor),
             completedPages: Array.from(completedPages),
             pendingResultRestore,
+            revisionQuestionsFor: revisionSerialized,
           })
         );
         // Persist only the current page index to localStorage so the learner
@@ -4087,7 +4092,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       } catch (error) {
         console.error("Erreur sauvegarde état module:", error);
       }
-    }, [learnerUiStateKey, uiStateHydrated, currentPage, selectedAnswers, showResultsFor, completedPages, pendingResultRestore]);
+    }, [learnerUiStateKey, uiStateHydrated, currentPage, selectedAnswers, showResultsFor, completedPages, pendingResultRestore, revisionQuestionsFor]);
 
     // --- If a quiz was just validated, force-restore the exact result screen ---
     useEffect(() => {
