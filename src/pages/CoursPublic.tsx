@@ -1011,7 +1011,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     }
 
     const isFC = isFormationContinue(apprenant.type_apprenant, apprenant.formation_choisie);
-    const isPres = !isFC && isPresentielType(apprenant.type_apprenant, apprenant.formation_choisie);
+    const isPres = !isFC && isPresentielType(apprenant.type_apprenant, apprenant.formation_choisie, apprenant.creneau_horaire);
 
     if (!isFC && !isPres) {
       setEmargementFCStatus("n/a");
@@ -1269,7 +1269,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     // Pour les formations en présentiel (et FC), on garde la fenêtre formation,
     // mais la fenêtre e-learning configurée dans le CRM reste prioritaire si elle est active.
     const isPresentielOrFC =
-      isPresentielType(apprenant?.type_apprenant, apprenant?.formation_choisie) ||
+      isPresentielType(apprenant?.type_apprenant, apprenant?.formation_choisie, apprenant?.creneau_horaire) ||
       isFormationContinue(apprenant?.type_apprenant, apprenant?.formation_choisie) ||
       !!sessionAccessWindow;
     const accessWindows = [
@@ -1340,7 +1340,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     !!user &&
     !!apprenant?.id &&
     !isFC &&
-    isPresentielType(apprenant?.type_apprenant, apprenant?.formation_choisie);
+    isPresentielType(apprenant?.type_apprenant, apprenant?.formation_choisie, apprenant?.creneau_horaire);
 
   const needsEmargement = (isFC || isPres) && emargementFCStatus !== "signed" && emargementFCStatus !== "skipped" && emargementFCStatus !== "n/a";
 
