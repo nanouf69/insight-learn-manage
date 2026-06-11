@@ -16,13 +16,14 @@ Deno.serve(async (req) => {
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, serviceKey);
 
-    let body: { preview?: boolean; apprenant_ids?: string[]; excluded_ids?: string[] } = {};
+    let body: { preview?: boolean; save_only?: boolean; apprenant_ids?: string[]; excluded_ids?: string[] } = {};
     try {
       if (req.headers.get('content-length') && req.headers.get('content-length') !== '0') {
         body = await req.json();
       }
     } catch { /* no body */ }
     const previewOnly = body.preview === true;
+    const saveOnly = body.save_only === true;
     const selectedIds = Array.isArray(body.apprenant_ids) ? body.apprenant_ids : null;
     const excludedIds = Array.isArray(body.excluded_ids) ? body.excluded_ids : [];
 
@@ -32,6 +33,23 @@ Deno.serve(async (req) => {
         .from('apprenants')
         .update({ relance_dossier_bienvenue_exclu: true })
         .in('id', excludedIds);
+    }
+    // Re-include apprenants the user re-checked (in case they were previously excluded)
+    if (!previewOnly && selectedIds && selectedIds.length > 0) {
+      await supabase
+        .from('apprenants')
+        .update({ relance_dossier_bienvenue_exclu: false })
+        .in('id', selectedIds);
+    }
+
+    // Save-only mode: just persist choices, do not send anything
+    if (saveOnly) {
+      return new Response(JSON.stringify({
+        success: true,
+        save_only: true,
+        excluded: excludedIds.length,
+        included: selectedIds?.length || 0,
+      }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
 
