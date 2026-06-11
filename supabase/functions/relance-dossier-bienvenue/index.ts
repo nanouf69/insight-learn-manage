@@ -38,9 +38,10 @@ Deno.serve(async (req) => {
     // 1. Get all apprenants with email
     const { data: apprenants, error: appError } = await supabase
       .from('apprenants')
-      .select('id, nom, prenom, email, formation_choisie, type_apprenant, resultat_examen, resultat_examen_pratique')
+      .select('id, nom, prenom, email, formation_choisie, type_apprenant, resultat_examen, resultat_examen_pratique, relance_dossier_bienvenue_exclu')
       .not('email', 'is', null)
-      .not('email', 'eq', '');
+      .not('email', 'eq', '')
+      .or('relance_dossier_bienvenue_exclu.is.null,relance_dossier_bienvenue_exclu.eq.false');
 
     if (appError) throw appError;
 
