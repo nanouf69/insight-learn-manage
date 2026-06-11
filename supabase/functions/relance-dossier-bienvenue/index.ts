@@ -24,6 +24,15 @@ Deno.serve(async (req) => {
     } catch { /* no body */ }
     const previewOnly = body.preview === true;
     const selectedIds = Array.isArray(body.apprenant_ids) ? body.apprenant_ids : null;
+    const excludedIds = Array.isArray(body.excluded_ids) ? body.excluded_ids : [];
+
+    // Persist exclusion choices (apprenants the user unchecked) so future sends skip them
+    if (!previewOnly && excludedIds.length > 0) {
+      await supabase
+        .from('apprenants')
+        .update({ relance_dossier_bienvenue_exclu: true })
+        .in('id', excludedIds);
+    }
 
 
     // 1. Get all apprenants with email
