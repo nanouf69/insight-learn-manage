@@ -5337,6 +5337,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                         setPendingResultRestore(validatedResultState);
 
                         try {
+                          const revisionSerialized: Record<string, (number | string)[]> = {};
+                          for (const [k, v] of Object.entries(revisionQuestionsFor)) {
+                            revisionSerialized[k] = Array.from(v as Set<number | string>);
+                          }
                           window.sessionStorage.setItem(
                             learnerUiStateKey,
                             JSON.stringify({
@@ -5345,6 +5349,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                               showResultsFor: Array.from(nextShowResults),
                               completedPages: Array.from(nextCompletedPages),
                               pendingResultRestore: validatedResultState,
+                              revisionQuestionsFor: revisionSerialized,
                             })
                           );
                         } catch (error) {
