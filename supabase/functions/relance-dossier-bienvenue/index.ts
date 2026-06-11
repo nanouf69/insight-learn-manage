@@ -96,13 +96,40 @@ Deno.serve(async (req) => {
     const apprenantIdsWithDoc = new Set((docsCompletes || []).map(d => d.apprenant_id));
 
     // 3. Filter apprenants who DON'T have the welcome document
-    const apprenantsSansPdf = elearningApprenants.filter(a => !apprenantIdsWithDoc.has(a.id));
+    let apprenantsSansPdf = elearningApprenants.filter(a => !apprenantIdsWithDoc.has(a.id));
+
+    // Preview mode: return list of eligible apprenants without sending
+    if (previewOnly) {
+      return new Response(JSON.stringify({
+        success: true,
+        preview: true,
+        apprenants: apprenantsSansPdf.map(a => ({
+          id: a.id,
+          nom: a.nom,
+          prenom: a.prenom,
+          email: a.email,
+          formation_choisie: a.formation_choisie,
+          type_apprenant: a.type_apprenant,
+        })),
+      }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // Apply user-selected filtering
+    if (selectedIds && selectedIds.length > 0) {
+      const allowed = new Set(selectedIds);
+      apprenantsSansPdf = apprenantsSansPdf.filter(a => allowed.has(a.id));
+    } else if (selectedIds && selectedIds.length === 0) {
+      return new Response(JSON.stringify({ success: true, message: 'Aucun apprenant sélectionné', sent: 0 }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     if (apprenantsSansPdf.length === 0) {
       return new Response(JSON.stringify({ success: true, message: 'Tous les apprenants ont leur document de bienvenue', sent: 0 }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+
 
     // 4. Get the email template
     const { data: template } = await supabase
