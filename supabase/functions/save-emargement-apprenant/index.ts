@@ -29,10 +29,13 @@ const isFormationContinue = (type?: string | null, formation?: string | null) =>
   const f = (formation || "").toLowerCase();
   return /\bfc\b|fco|formation\s*continue|continue/.test(t) || /continue/.test(f);
 };
-const isPresentielType = (type?: string | null, formation?: string | null) => {
+const isPresentielType = (type?: string | null, formation?: string | null, creneau?: string | null) => {
   const t = (type || "").toLowerCase().trim();
   const f = (formation || "").toLowerCase().trim();
+  const c = (creneau || "").toLowerCase().trim();
   const value = `${t} ${f}`;
+  // Bloc dur : creneau "en-ligne" / "e-learning" => jamais présentiel (sauf si type explicitement -presentiel)
+  if (/(en[-\s]?ligne|e[-\s]?learning|online)/.test(c) && !/pr[eé]sentiel/.test(value)) return false;
   if (/(^|\s)(vtc|taxi|ta|va)-e(\s|$)/.test(value) && !/-e-pr[eé]sentiel/.test(value)) return false;
   return /pr[eé]sentiel/.test(value) || /\b(vtc|taxi|ta|va)(-exam)?\b/.test(t) || /^(pa|rp|continue)[\s-]/.test(t);
 };
