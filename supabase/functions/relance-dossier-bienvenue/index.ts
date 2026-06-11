@@ -16,7 +16,7 @@ Deno.serve(async (req) => {
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, serviceKey);
 
-    let body: { preview?: boolean; apprenant_ids?: string[] } = {};
+    let body: { preview?: boolean; apprenant_ids?: string[]; excluded_ids?: string[] } = {};
     try {
       if (req.headers.get('content-length') && req.headers.get('content-length') !== '0') {
         body = await req.json();
@@ -24,14 +24,24 @@ Deno.serve(async (req) => {
     } catch { /* no body */ }
     const previewOnly = body.preview === true;
     const selectedIds = Array.isArray(body.apprenant_ids) ? body.apprenant_ids : null;
+    const excludedIds = Array.isArray(body.excluded_ids) ? body.excluded_ids : [];
+
+    // Persist exclusion choices (apprenants the user unchecked) so future sends skip them
+    if (!previewOnly && excludedIds.length > 0) {
+      await supabase
+        .from('apprenants')
+        .update({ relance_dossier_bienvenue_exclu: true })
+        .in('id', excludedIds);
+    }
 
 
     // 1. Get all apprenants with email
     const { data: apprenants, error: appError } = await supabase
       .from('apprenants')
-      .select('id, nom, prenom, email, formation_choisie, type_apprenant, resultat_examen, resultat_examen_pratique')
+      .select('id, nom, prenom, email, formation_choisie, type_apprenant, resultat_examen, resultat_examen_pratique, relance_dossier_bienvenue_exclu')
       .not('email', 'is', null)
-      .not('email', 'eq', '');
+      .not('email', 'eq', '')
+      .or('relance_dossier_bienvenue_exclu.is.null,relance_dossier_bienvenue_exclu.eq.false');
 
     if (appError) throw appError;
 

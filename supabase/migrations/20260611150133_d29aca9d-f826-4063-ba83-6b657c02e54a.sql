@@ -1,0 +1,1 @@
+ALTER TABLE public.apprenants ADD COLUMN IF NOT EXISTS relance_dossier_bienvenue_exclu boolean NOT NULL DEFAULT false;
