@@ -73,10 +73,16 @@ const formatISO = (d: Date) => {
 export const isPresentielType = (
   type_apprenant?: string | null,
   formation_choisie?: string | null,
+  creneau_horaire?: string | null,
 ): boolean => {
   const t = (type_apprenant || "").toLowerCase().trim();
   const f = (formation_choisie || "").toLowerCase().trim();
+  const c = (creneau_horaire || "").toLowerCase().trim();
   const value = `${t} ${f}`;
+
+  // Si le créneau CRM indique explicitement une formation en ligne,
+  // l'apprenant ne doit jamais être bloqué par l'émargement présentiel.
+  if (/en[-\s]?ligne|e[-\s]?learning|online|distanciel/.test(c)) return false;
 
   // 1. Les slugs e-learning purs (suffixe "-e" non suivi de "-presentiel") ne sont JAMAIS présentiels.
   //    Ex: "vtc-e", "taxi-e", "ta-e", "va-e" → e-learning pur, pas de signature.
