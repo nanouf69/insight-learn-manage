@@ -230,8 +230,9 @@ const Index = () => {
             {/* Actions rapides */}
             <div className="flex flex-wrap gap-3">
               <Button 
-                onClick={handleRelanceDossierBienvenue} 
-                disabled={sendingRelance}
+                onClick={openRelanceDialog} 
+                disabled={sendingRelance || loadingPreview}
+
                 variant="outline"
                 className="gap-2 border-orange-300 text-orange-700 hover:bg-orange-50"
               >
