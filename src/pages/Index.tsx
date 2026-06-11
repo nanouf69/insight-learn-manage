@@ -77,14 +77,53 @@ const Index = () => {
   const [totalSorties, setTotalSorties] = useState<number>(0);
   const [fluxPeriode, setFluxPeriode] = useState<string>("");
   const [sendingRelance, setSendingRelance] = useState(false);
+  const [relanceDialogOpen, setRelanceDialogOpen] = useState(false);
+  const [relanceApprenants, setRelanceApprenants] = useState<Array<{ id: string; nom: string; prenom: string; email: string; formation_choisie?: string; type_apprenant?: string }>>([]);
+  const [relanceSelected, setRelanceSelected] = useState<Set<string>>(new Set());
+  const [relanceFilter, setRelanceFilter] = useState("");
+  const [loadingPreview, setLoadingPreview] = useState(false);
+
+  const openRelanceDialog = async () => {
+    setRelanceDialogOpen(true);
+    setLoadingPreview(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('relance-dossier-bienvenue', {
+        body: { preview: true },
+      });
+      if (error) throw error;
+      const list = data?.apprenants || [];
+      setRelanceApprenants(list);
+      setRelanceSelected(new Set(list.map((a: any) => a.id)));
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err, "Erreur lors du chargement"));
+      setRelanceDialogOpen(false);
+    } finally {
+      setLoadingPreview(false);
+    }
+  };
+
+  const toggleRelanceOne = (id: string) => {
+    setRelanceSelected(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
 
   const handleRelanceDossierBienvenue = async () => {
+    if (relanceSelected.size === 0) {
+      toast.error("Sélectionnez au moins un apprenant");
+      return;
+    }
     setSendingRelance(true);
     try {
-      const { data, error } = await supabase.functions.invoke('relance-dossier-bienvenue');
+      const { data, error } = await supabase.functions.invoke('relance-dossier-bienvenue', {
+        body: { apprenant_ids: Array.from(relanceSelected) },
+      });
       if (error) throw error;
       if (data?.success) {
-        toast.success(`${data.sent} email(s) envoyé(s) sur ${data.sans_document} apprenant(s) sans document de bienvenue`);
+        toast.success(`${data.sent} email(s) envoyé(s)`);
+        setRelanceDialogOpen(false);
       } else {
         toast.error(data?.error || "Erreur lors de l'envoi");
       }
@@ -94,6 +133,7 @@ const Index = () => {
       setSendingRelance(false);
     }
   };
+
 
   useEffect(() => {
     if (!user) return;
