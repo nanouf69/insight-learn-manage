@@ -468,6 +468,7 @@ export type Database = {
           numero_dossier_cma: string | null
           organisme_financeur: string | null
           prenom: string
+          relance_dossier_bienvenue_exclu: boolean
           responsable_contact_centre: boolean
           resultat_examen: string | null
           resultat_examen_pratique: string | null
@@ -523,6 +524,7 @@ export type Database = {
           numero_dossier_cma?: string | null
           organisme_financeur?: string | null
           prenom: string
+          relance_dossier_bienvenue_exclu?: boolean
           responsable_contact_centre?: boolean
           resultat_examen?: string | null
           resultat_examen_pratique?: string | null
@@ -578,6 +580,7 @@ export type Database = {
           numero_dossier_cma?: string | null
           organisme_financeur?: string | null
           prenom?: string
+          relance_dossier_bienvenue_exclu?: boolean
           responsable_contact_centre?: boolean
           resultat_examen?: string | null
           resultat_examen_pratique?: string | null
