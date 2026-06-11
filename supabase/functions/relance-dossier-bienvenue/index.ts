@@ -16,6 +16,16 @@ Deno.serve(async (req) => {
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, serviceKey);
 
+    let body: { preview?: boolean; apprenant_ids?: string[] } = {};
+    try {
+      if (req.headers.get('content-length') && req.headers.get('content-length') !== '0') {
+        body = await req.json();
+      }
+    } catch { /* no body */ }
+    const previewOnly = body.preview === true;
+    const selectedIds = Array.isArray(body.apprenant_ids) ? body.apprenant_ids : null;
+
+
     // 1. Get all apprenants with email
     const { data: apprenants, error: appError } = await supabase
       .from('apprenants')
