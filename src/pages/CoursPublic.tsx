@@ -1098,7 +1098,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     return () => {
       cancelled = true;
     };
-  }, [embedded, user?.id, apprenant?.id, apprenant?.type_apprenant, apprenant?.formation_choisie, apprenant?.date_debut_formation, apprenant?.date_fin_formation, emargementRefreshTick]);
+  }, [embedded, user?.id, apprenant?.id, apprenant?.type_apprenant, apprenant?.formation_choisie, apprenant?.creneau_horaire, apprenant?.date_debut_formation, apprenant?.date_fin_formation, emargementRefreshTick]);
 
   useEffect(() => {
     if (embedded || !user || !apprenant?.id) return;
