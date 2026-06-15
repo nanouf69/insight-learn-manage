@@ -3094,21 +3094,20 @@ export function ExamenReussitePage() {
         const tousPlanning = [...reussisFormationP, ...paFormationP, ...deplacesFormationP, ...echouesPratiqueFormationP, ...extraFormationP];
         const tousPlanningIds = new Set(tousPlanning.map(a => a.id));
 
-        // IDs who have a reservation — only keep those still in tousPlanning
+        // IDs who have a reservation — only keep those still in tousPlanning (for unreserved count)
         const filteredReservations = (reservationsPratique || []).filter(r => tousPlanningIds.has(r.apprenant_id));
         const reservedIds = new Set(filteredReservations.map(r => r.apprenant_id));
 
-        // Group reservations by date
+        // Group ALL reservations by date (do NOT filter — admin must see every reserved candidate,
+        // even those not currently in tousPlanning, to detect overbookings / forgotten people)
         const byDate: Record<string, { vtc: any[]; taxi: any[] }> = {};
-        filteredReservations.forEach(r => {
+        (reservationsPratique || []).forEach(r => {
           if (!byDate[r.date_choisie]) byDate[r.date_choisie] = { vtc: [], taxi: [] };
-          const app = appMap[r.apprenant_id];
-          if (app) {
-            if (r.type_formation.toLowerCase() === 'vtc') {
-              byDate[r.date_choisie].vtc.push(app);
-            } else {
-              byDate[r.date_choisie].taxi.push(app);
-            }
+          const app = appMap[r.apprenant_id] || { id: r.apprenant_id, nom: '?', prenom: '?', type_apprenant: null };
+          if (String(r.type_formation).toLowerCase() === 'vtc') {
+            byDate[r.date_choisie].vtc.push(app);
+          } else {
+            byDate[r.date_choisie].taxi.push(app);
           }
         });
 
