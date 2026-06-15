@@ -146,13 +146,16 @@ function getShortDayMonth(dateStr: string) {
 function resolveHoraires(
   type: string,
   selectedDate: string,
-  config: { day_time_slots?: Record<string, { am?: string; pm?: string }> } | null,
+  config: { day_time_slots?: Record<string, { matin?: string; apresmidi?: string; am?: string; pm?: string } | string> } | null,
 ): string {
   const slots = config?.day_time_slots?.[selectedDate];
   if (slots) {
     const parts: string[] = [];
-    if (slots.am) parts.push(slots.am);
-    if (slots.pm) parts.push(slots.pm);
+    if (typeof slots === "string") parts.push(slots);
+    else {
+      if (slots.matin || slots.am) parts.push(slots.matin || slots.am || "");
+      if (slots.apresmidi || slots.pm) parts.push(slots.apresmidi || slots.pm || "");
+    }
     if (parts.length > 0) return parts.join(" puis ");
   }
   // Fallback defaults
@@ -350,13 +353,26 @@ Deno.serve(async (req) => {
         .single();
       const resolvedExamForCap = examDate || detectPlanningExamDate(appForCap?.date_examen_theorique);
       if (resolvedExamForCap) {
-        const { data: capCfg } = await supabase
-          .from("planning_pratique_config")
-          .select("max_per_day, max_per_day_map")
-          .eq("exam_date", resolvedExamForCap)
-          .order("updated_at", { ascending: false })
-          .limit(1)
-          .maybeSingle();
+        let capCfg = null;
+        if (pratiqueDate) {
+          const { data: exactCapCfg } = await supabase
+            .from("planning_pratique_config")
+            .select("max_per_day, max_per_day_map")
+            .eq("exam_date", resolvedExamForCap)
+            .eq("date_pratique", pratiqueDate)
+            .maybeSingle();
+          capCfg = exactCapCfg;
+        }
+        if (!capCfg) {
+          const { data: latestCapCfg } = await supabase
+            .from("planning_pratique_config")
+            .select("max_per_day, max_per_day_map")
+            .eq("exam_date", resolvedExamForCap)
+            .order("updated_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          capCfg = latestCapCfg;
+        }
         const defaultMax = (capCfg?.max_per_day as number | null) ?? 3;
         const perDayMap = (capCfg?.max_per_day_map as Record<string, number> | null) || {};
         const dayMax = perDayMap[selectedDate] ?? defaultMax;
@@ -440,17 +456,28 @@ Deno.serve(async (req) => {
       .eq("id", apprenantId)
       .single();
 
-    let planningConfig: { day_time_slots?: Record<string, { am?: string; pm?: string }> } | null = null;
+    let planningConfig: { day_time_slots?: Record<string, { matin?: string; apresmidi?: string; am?: string; pm?: string } | string> } | null = null;
     const resolvedExam = examDate || detectPlanningExamDate(appForExam?.date_examen_theorique);
     if (resolvedExam) {
-      const { data: cfgData } = await supabase
-        .from("planning_pratique_config")
-        .select("day_time_slots")
-        .eq("exam_date", resolvedExam)
-        .order("updated_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      planningConfig = cfgData;
+      if (pratiqueDate) {
+        const { data: exactCfgData } = await supabase
+          .from("planning_pratique_config")
+          .select("day_time_slots")
+          .eq("exam_date", resolvedExam)
+          .eq("date_pratique", pratiqueDate)
+          .maybeSingle();
+        planningConfig = exactCfgData;
+      }
+      if (!planningConfig) {
+        const { data: cfgData } = await supabase
+          .from("planning_pratique_config")
+          .select("day_time_slots")
+          .eq("exam_date", resolvedExam)
+          .order("updated_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        planningConfig = cfgData;
+      }
     }
 
     // 4. Find or create the session for this date
@@ -569,7 +596,14 @@ Deno.serve(async (req) => {
     });
   } catch (err) {
     console.error("confirm-reservation-pratique error:", err);
-    return new Response(JSON.stringify({ error: err.message }), {
+    const message = err instanceof Error ? err.message : String(err);
+    if (message.includes("Journée complète")) {
+      return new Response(JSON.stringify({ error: message, code: "DAY_FULL" }), {
+        status: 409,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    return new Response(JSON.stringify({ error: message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

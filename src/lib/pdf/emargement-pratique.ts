@@ -130,9 +130,6 @@ export function generateEmargementPratiquePDF(
     c.email || "-",
   ]);
 
-  // Ligne vide supplémentaire au cas où un élève a été oublié
-  candidatRows.push(["", "", "", ""]);
-
   autoTable(doc, {
     startY: yPos,
     head: [["N°", "Nom Prénom", "Téléphone", "Email"]],
@@ -167,15 +164,6 @@ export function generateEmargementPratiquePDF(
   // ===== TABLEAU D'ÉMARGEMENT =====
   const emargementRows = candidats.map((c) => [
     `${c.nom.toUpperCase()} ${c.prenom}`,
-    matinLabel,
-    "",
-    apresLabel,
-    "",
-  ]);
-
-  // Ligne vide supplémentaire au cas où un élève a été oublié
-  emargementRows.push([
-    "",
     matinLabel,
     "",
     apresLabel,

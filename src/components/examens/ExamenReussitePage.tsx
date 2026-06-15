@@ -21,6 +21,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Eye, Edit, IdCard, Car } from "lucide-react";
+import { generateEmargementPratiquePDF } from "@/lib/pdf/emargement-pratique";
 
 // Trouve la date d'examen la plus récente passée (ou la première à venir)
 function getDefaultExamDate(): string {
@@ -275,6 +276,30 @@ function buildPratiqueReservationUrl(apprenantId: string, type: 'vtc' | 'taxi', 
   }
 
   return `https://insight-learn-manage.lovable.app/reservation-pratique?${params.toString()}`;
+}
+
+type PratiqueDaySlot = { matin?: string; apresmidi?: string; type?: 'vtc' | 'taxi' | 'libre' } | string | undefined;
+
+function resolvePratiqueDayCreneaux(slot: PratiqueDaySlot, type: 'vtc' | 'taxi') {
+  if (typeof slot === 'string' && slot.trim()) {
+    return { matin: slot };
+  }
+
+  const matin = typeof slot === 'object' ? slot?.matin : undefined;
+  const apresmidi = typeof slot === 'object' ? slot?.apresmidi : undefined;
+
+  return {
+    matin: matin || '9h-12h',
+    apresmidi: apresmidi || (type === 'taxi' ? '13h-17h30' : '13h-16h'),
+  };
+}
+
+function formatPratiqueCreneauxForMessage(slot: PratiqueDaySlot, type: 'vtc' | 'taxi') {
+  const creneaux = resolvePratiqueDayCreneaux(slot, type);
+  return [creneaux.matin, creneaux.apresmidi]
+    .filter(Boolean)
+    .map((value) => String(value).replace(/-/g, ' - '))
+    .join(' puis ');
 }
 
 export function ExamenReussitePage() {
@@ -697,11 +722,27 @@ export function ExamenReussitePage() {
   // Assign a date to a candidate and notify by email
   const handleAssignDate = async (apprenantId: string, apprenantNom: string, date: string, typeFormation: string) => {
     try {
-      // Delete existing reservation first (upsert by apprenant_id which is unique)
-      await supabase.from('reservations_pratique').delete().eq('apprenant_id', apprenantId);
-      const { error } = await supabase
-        .from('reservations_pratique')
-        .insert({ apprenant_id: apprenantId, date_choisie: date, type_formation: typeFormation });
+      const dayMax = maxPerDayMap[date] || maxPerDay;
+      const sameDayCount = (reservationsPratique || []).filter((reservation) =>
+        reservation.date_choisie === date &&
+        String(reservation.type_formation).toLowerCase() === typeFormation.toLowerCase() &&
+        reservation.apprenant_id !== apprenantId
+      ).length;
+
+      if (sameDayCount >= dayMax) {
+        toast.error(`Impossible : ${dayMax} candidat(s) maximum le ${formatDateFR(date)}.`);
+        return;
+      }
+
+      const existingReservation = (reservationsPratique || []).find((reservation) => reservation.apprenant_id === apprenantId);
+      const { error } = existingReservation
+        ? await supabase
+          .from('reservations_pratique')
+          .update({ date_choisie: date, type_formation: typeFormation })
+          .eq('apprenant_id', apprenantId)
+        : await supabase
+          .from('reservations_pratique')
+          .insert({ apprenant_id: apprenantId, date_choisie: date, type_formation: typeFormation });
       if (error) throw error;
       queryClient.invalidateQueries({ queryKey: ['reservations-pratique-planning'] });
       toast.success(`Date ${date} assignée à ${apprenantNom}`);
@@ -711,11 +752,12 @@ export function ExamenReussitePage() {
       if (apprenant?.email) {
         const dateFormatted = formatDateFR(date);
         const typeUpper = typeFormation.toUpperCase();
+        const horaires = formatPratiqueCreneauxForMessage(dayTimeSlots[date], typeFormation as 'vtc' | 'taxi');
         const exerciceLink = typeFormation === 'vtc' 
           ? 'https://app.formative.com/join/DNFDZS' 
           : 'https://app.formative.com/join/ZT924H';
         const subject = `Votre date de formation pratique ${typeUpper} - ${apprenant.prenom} ${apprenant.nom}`;
-        const body = `Bonjour ${apprenant.prenom},<br><br>Votre date de formation pratique ${typeUpper} a été fixée au :<br><br><strong>📅 ${dateFormatted}</strong><br><br>📍 RDV au 86 Route de Genas 69003 Lyon à 9h.<br>🍽️ Pause déjeuner à Confluences de 12h à 13h.<br><br>📚 Merci de bien réviser le cours sur la pratique et d'effectuer les exercices :<br><a href="${exerciceLink}">${exerciceLink}</a><br><br>⚠️ Attention, si vous n'effectuez pas les exercices et que vous n'apprenez pas les éléments de la ville, vous risquez fortement d'échouer votre examen pratique.<br><br>Cordialement,<br><br>FTRANSPORT<br>Centre de formation<br>86 Route de Genas 69003 Lyon<br>📞 04.28.29.60.91<br>De 9h à 17h sur rendez-vous`;
+        const body = `Bonjour ${apprenant.prenom},<br><br>Votre date de formation pratique ${typeUpper} a été fixée au :<br><br><strong>📅 ${dateFormatted}</strong><br><strong>🕐 Horaires : ${horaires}</strong><br><br>📍 RDV au 86 Route de Genas 69003 Lyon.<br>🍽️ Pause déjeuner à Confluences de 12h à 13h.<br><br>📚 Merci de bien réviser le cours sur la pratique et d'effectuer les exercices :<br><a href="${exerciceLink}">${exerciceLink}</a><br><br>⚠️ Attention, si vous n'effectuez pas les exercices et que vous n'apprenez pas les éléments de la ville, vous risquez fortement d'échouer votre examen pratique.<br><br>Cordialement,<br><br>FTRANSPORT<br>Centre de formation<br>86 Route de Genas 69003 Lyon<br>📞 04.28.29.60.91<br>De 9h à 17h sur rendez-vous`;
         try {
           await supabase.functions.invoke('sync-outlook-emails', {
             body: { action: 'send', userEmail: 'contact@ftransport.fr', to: apprenant.email, subject, body, apprenantId }
@@ -3040,7 +3082,7 @@ export function ExamenReussitePage() {
         const monthNames = ['jan', 'fév', 'mar', 'avr', 'mai', 'jun', 'jul', 'aoû', 'sep', 'oct', 'nov', 'déc'];
 
         // Build apprenant map
-        const appMap: Record<string, { id: string; nom: string; prenom: string; type_apprenant: string | null }> = {};
+        const appMap: Record<string, { id: string; nom: string; prenom: string; type_apprenant: string | null; telephone?: string | null; email?: string | null }> = {};
         (allApprenants || []).forEach(a => { appMap[a.id] = a; });
 
         // Reuse the same candidate list as "Candidats à former" section: only theory successes.
@@ -3103,7 +3145,7 @@ export function ExamenReussitePage() {
         const byDate: Record<string, { vtc: any[]; taxi: any[] }> = {};
         (reservationsPratique || []).forEach(r => {
           if (!byDate[r.date_choisie]) byDate[r.date_choisie] = { vtc: [], taxi: [] };
-          const app = appMap[r.apprenant_id] || { id: r.apprenant_id, nom: '?', prenom: '?', type_apprenant: null };
+          const app = appMap[r.apprenant_id] || { id: r.apprenant_id, nom: '?', prenom: '?', type_apprenant: null, telephone: '', email: '' };
           if (String(r.type_formation).toLowerCase() === 'vtc') {
             byDate[r.date_choisie].vtc.push(app);
           } else {
@@ -3372,9 +3414,25 @@ export function ExamenReussitePage() {
                       const taxiReserved = dayData?.taxi || [];
                       const expectedType = dayTypeMap[key];
                       const hasReservations = vtcReserved.length > 0 || taxiReserved.length > 0;
+                      const dayMax = maxPerDayMap[key] || maxPerDay;
+                      const vtcOverbooked = vtcReserved.length > dayMax;
+                      const taxiOverbooked = taxiReserved.length > dayMax;
+                      const downloadEmargement = (formation: 'vtc' | 'taxi', candidats: any[]) => {
+                        generateEmargementPratiquePDF(
+                          new Date(key + 'T00:00:00'),
+                          formation,
+                          candidats.map((c) => ({
+                            nom: c.nom || '',
+                            prenom: c.prenom || '',
+                            telephone: c.telephone || '',
+                            email: c.email || '',
+                          })),
+                          resolvePratiqueDayCreneaux(dayTimeSlots[key], formation)
+                        );
+                      };
 
                       return (
-                        <div key={key} className={`border rounded-lg p-2 min-h-[120px] relative group/day ${(hasReservations || expectedType !== 'libre') ? 'bg-background' : 'bg-muted/30'}`}>
+                        <div key={key} className={`border rounded-lg p-2 min-h-[120px] relative group/day ${(hasReservations || expectedType !== 'libre') ? 'bg-background' : 'bg-muted/30'} ${(vtcOverbooked || taxiOverbooked) ? 'border-destructive bg-destructive/5' : ''}`}>
                           <div className="text-xs font-bold text-center mb-1 pb-1 border-b flex items-center justify-center gap-1">
                             <span>{dayNames[day.getDay()]} {day.getDate()} {monthNames[day.getMonth()]}</span>
                             <button 
@@ -3474,36 +3532,61 @@ export function ExamenReussitePage() {
                             </div>
                           )}
 
-                          {/* Show label for expected type */}
-                          {expectedType === 'vtc' && (
-                            <div className="mb-2">
+                          {(vtcOverbooked || taxiOverbooked) && (
+                            <div className="text-[10px] font-bold text-destructive text-center mb-1">
+                              ⚠️ Max {dayMax} dépassé
+                            </div>
+                          )}
+
+                          {(expectedType === 'vtc' || vtcReserved.length > 0) && (
+                            <div className="mb-2 space-y-1">
+                              {vtcReserved.length > 0 && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-6 w-full text-[10px] gap-1"
+                                  onClick={() => downloadEmargement('vtc', vtcReserved)}
+                                >
+                                  <Download className="h-3 w-3" /> Émargement VTC
+                                </Button>
+                              )}
                               {vtcReserved.length > 0 ? vtcReserved.map((a: any) => (
-                                <div key={a.id} className="text-[11px] px-1 py-0.5 bg-blue-100 rounded mb-0.5 truncate font-semibold flex items-center justify-between group" title={`${a.nom} ${a.prenom}`}>
+                                <div key={a.id} className={`text-[11px] px-1 py-0.5 rounded mb-0.5 truncate font-semibold flex items-center justify-between group ${vtcOverbooked ? 'bg-destructive/10 text-destructive' : 'bg-blue-100'}`} title={`${a.nom} ${a.prenom}`}>
                                   <span>{a.nom} {a.prenom} ✓</span>
                                   <button onClick={() => handleCancelReservation(a.id, `${a.nom} ${a.prenom}`)} className="opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-700 ml-1 shrink-0" title="Annuler">
                                     <X className="h-3 w-3" />
                                   </button>
                                 </div>
                               )) : (
-                                <div className="text-[10px] text-muted-foreground italic">En attente (max {maxPerDayMap[key] || maxPerDay})</div>
+                                <div className="text-[10px] text-muted-foreground italic">En attente (max {dayMax})</div>
                               )}
                             </div>
                           )}
-                          {expectedType === 'taxi' && (
-                            <div>
+                          {(expectedType === 'taxi' || taxiReserved.length > 0) && (
+                            <div className="mb-2 space-y-1">
+                              {taxiReserved.length > 0 && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-6 w-full text-[10px] gap-1"
+                                  onClick={() => downloadEmargement('taxi', taxiReserved)}
+                                >
+                                  <Download className="h-3 w-3" /> Émargement TAXI
+                                </Button>
+                              )}
                               {taxiReserved.length > 0 ? taxiReserved.map((a: any) => (
-                                <div key={a.id} className="text-[11px] px-1 py-0.5 bg-amber-100 rounded mb-0.5 truncate font-semibold flex items-center justify-between group" title={`${a.nom} ${a.prenom}`}>
+                                <div key={a.id} className={`text-[11px] px-1 py-0.5 rounded mb-0.5 truncate font-semibold flex items-center justify-between group ${taxiOverbooked ? 'bg-destructive/10 text-destructive' : 'bg-amber-100'}`} title={`${a.nom} ${a.prenom}`}>
                                   <span>{a.nom} {a.prenom} ✓</span>
                                   <button onClick={() => handleCancelReservation(a.id, `${a.nom} ${a.prenom}`)} className="opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-700 ml-1 shrink-0" title="Annuler">
                                     <X className="h-3 w-3" />
                                   </button>
                                 </div>
                               )) : (
-                                <div className="text-[10px] text-muted-foreground italic">En attente (max {maxPerDayMap[key] || maxPerDay})</div>
+                                <div className="text-[10px] text-muted-foreground italic">En attente (max {dayMax})</div>
                               )}
                             </div>
                           )}
-                          {expectedType === 'libre' && (
+                          {expectedType === 'libre' && !hasReservations && (
                             <div className="text-[10px] text-muted-foreground text-center mt-4">Libre</div>
                           )}
                         </div>
