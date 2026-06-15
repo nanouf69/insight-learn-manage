@@ -3585,6 +3585,29 @@ export function ExamenReussitePage() {
                           {expectedType === 'libre' && !hasReservations && (
                             <div className="text-[10px] text-muted-foreground text-center mt-4">Libre</div>
                           )}
+
+                          {/* Manual add candidate to this day */}
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 w-full text-[10px] gap-1 mt-1 text-primary hover:bg-primary/10"
+                              >
+                                <Plus className="h-3 w-3" /> Ajouter
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-72 p-2" align="start">
+                              <AddCandidateToDayPicker
+                                allApprenants={allApprenants || []}
+                                reservationsPratique={reservationsPratique || []}
+                                defaultType={(expectedType === 'taxi' ? 'taxi' : 'vtc') as 'vtc' | 'taxi'}
+                                onPick={(apprenant, typeFormation) =>
+                                  handleAssignDate(apprenant.id, `${apprenant.nom} ${apprenant.prenom}`, key, typeFormation)
+                                }
+                              />
+                            </PopoverContent>
+                          </Popover>
                         </div>
                       );
                     })}
