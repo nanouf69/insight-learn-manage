@@ -211,7 +211,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
       setLoading(true);
       const since = period === "all" ? "2000-01-01" : format(subDays(new Date(), parseInt(period)), "yyyy-MM-dd");
 
-      const [connRes, actRes, complRes, exRes, qrRes] = await Promise.all([
+      const [connRes, actRes, complRes, exRes, qrRes, emgRes, resPratRes] = await Promise.all([
         supabase
           .from("apprenant_connexions" as any)
           .select("id, started_at, ended_at, last_seen_at, current_module")
@@ -241,6 +241,18 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
           .eq("apprenant_id", selectedId)
           .gte("completed_at", since)
           .order("completed_at", { ascending: false }),
+        supabase
+          .from("emargements_fc")
+          .select("apprenant_id, date_emargement, demi_journee, absent")
+          .eq("apprenant_id", selectedId)
+          .gte("date_emargement", since)
+          .order("date_emargement", { ascending: false }),
+        supabase
+          .from("reservations_pratique")
+          .select("date_choisie")
+          .eq("apprenant_id", selectedId)
+          .gte("date_choisie", since)
+          .order("date_choisie", { ascending: false }),
       ]);
 
       setConnexions(((connRes.data as any[]) || []) as Connexion[]);
@@ -248,6 +260,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
       setCompletedModuleIds(new Set(((complRes.data as any[]) || []).map((r: any) => r.module_id as number)));
       setExercicesCompletes(((exRes.data as any[]) || []) as ExerciceComplete[]);
       setQuizResults(((qrRes.data as any[]) || []) as QuizResult[]);
+      setEmargements(((emgRes.data as any[]) || []) as EmargementRow[]);
       setLoading(false);
     };
     load();
