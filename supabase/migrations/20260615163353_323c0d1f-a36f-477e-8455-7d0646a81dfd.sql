@@ -1,0 +1,2 @@
+ALTER TABLE public.reservations_pratique ADD COLUMN IF NOT EXISTS creneau text NOT NULL DEFAULT 'journee';
+ALTER TABLE public.reservations_pratique ADD CONSTRAINT reservations_pratique_creneau_check CHECK (creneau IN ('matin','apresmidi','journee'));

@@ -311,10 +311,11 @@ function AddCandidateToDayPicker({
   allApprenants: any[];
   reservationsPratique: any[];
   defaultType: 'vtc' | 'taxi';
-  onPick: (apprenant: any, typeFormation: 'vtc' | 'taxi') => void;
+  onPick: (apprenant: any, typeFormation: 'vtc' | 'taxi', creneau: 'matin' | 'apresmidi' | 'journee') => void;
 }) {
   const [q, setQ] = useState('');
   const [type, setType] = useState<'vtc' | 'taxi'>(defaultType);
+  const [creneau, setCreneau] = useState<'matin' | 'apresmidi' | 'journee'>('journee');
   const reservedIds = new Set((reservationsPratique || []).map((r: any) => r.apprenant_id));
   const filtered = (allApprenants || [])
     .filter((a) => {
@@ -341,6 +342,32 @@ function AddCandidateToDayPicker({
           TAXI
         </button>
       </div>
+      <div className="flex gap-1">
+        <button
+          type="button"
+          onClick={() => setCreneau('matin')}
+          className={`flex-1 text-[10px] py-1 rounded border ${creneau === 'matin' ? 'bg-emerald-100 border-emerald-400 text-emerald-800 font-semibold' : 'bg-muted text-muted-foreground'}`}
+          title="Matin"
+        >
+          Matin
+        </button>
+        <button
+          type="button"
+          onClick={() => setCreneau('apresmidi')}
+          className={`flex-1 text-[10px] py-1 rounded border ${creneau === 'apresmidi' ? 'bg-purple-100 border-purple-400 text-purple-800 font-semibold' : 'bg-muted text-muted-foreground'}`}
+          title="Après-midi"
+        >
+          Après-midi
+        </button>
+        <button
+          type="button"
+          onClick={() => setCreneau('journee')}
+          className={`flex-1 text-[10px] py-1 rounded border ${creneau === 'journee' ? 'bg-slate-200 border-slate-400 text-slate-800 font-semibold' : 'bg-muted text-muted-foreground'}`}
+          title="Journée"
+        >
+          Journée
+        </button>
+      </div>
       <input
         autoFocus
         value={q}
@@ -358,7 +385,7 @@ function AddCandidateToDayPicker({
               <button
                 key={a.id}
                 type="button"
-                onClick={() => onPick(a, type)}
+                onClick={() => onPick(a, type, creneau)}
                 className="w-full text-left text-[11px] px-2 py-1 rounded hover:bg-muted flex items-center justify-between gap-2"
                 title={already ? 'Déjà réservé — réassignera à ce jour' : ''}
               >
@@ -791,7 +818,7 @@ export function ExamenReussitePage() {
   };
 
   // Assign a date to a candidate and notify by email
-  const handleAssignDate = async (apprenantId: string, apprenantNom: string, date: string, typeFormation: string) => {
+  const handleAssignDate = async (apprenantId: string, apprenantNom: string, date: string, typeFormation: string, creneau: 'matin' | 'apresmidi' | 'journee' = 'journee') => {
     try {
       const dayMax = maxPerDayMap[date] || maxPerDay;
       const sameDayCount = (reservationsPratique || []).filter((reservation) =>
@@ -809,11 +836,11 @@ export function ExamenReussitePage() {
       const { error } = existingReservation
         ? await supabase
           .from('reservations_pratique')
-          .update({ date_choisie: date, type_formation: typeFormation })
+          .update({ date_choisie: date, type_formation: typeFormation, creneau } as any)
           .eq('apprenant_id', apprenantId)
         : await supabase
           .from('reservations_pratique')
-          .insert({ apprenant_id: apprenantId, date_choisie: date, type_formation: typeFormation });
+          .insert({ apprenant_id: apprenantId, date_choisie: date, type_formation: typeFormation, creneau } as any);
       if (error) throw error;
       queryClient.invalidateQueries({ queryKey: ['reservations-pratique-planning'] });
       toast.success(`Date ${date} assignée à ${apprenantNom}`);
@@ -3212,7 +3239,8 @@ export function ExamenReussitePage() {
         const byDate: Record<string, { vtc: any[]; taxi: any[] }> = {};
         (reservationsPratique || []).forEach(r => {
           if (!byDate[r.date_choisie]) byDate[r.date_choisie] = { vtc: [], taxi: [] };
-          const app = appMap[r.apprenant_id] || { id: r.apprenant_id, nom: '?', prenom: '?', type_apprenant: null, telephone: '', email: '' };
+          const baseApp = appMap[r.apprenant_id] || { id: r.apprenant_id, nom: '?', prenom: '?', type_apprenant: null, telephone: '', email: '' };
+          const app = { ...baseApp, _creneau: (r as any).creneau || 'journee' };
           if (String(r.type_formation).toLowerCase() === 'vtc') {
             byDate[r.date_choisie].vtc.push(app);
           } else {
@@ -3618,9 +3646,19 @@ export function ExamenReussitePage() {
                                 </Button>
                               )}
                               {vtcReserved.length > 0 ? vtcReserved.map((a: any) => (
-                                <div key={a.id} className={`text-[11px] px-1 py-0.5 rounded mb-0.5 truncate font-semibold flex items-center justify-between group ${vtcOverbooked ? 'bg-destructive/10 text-destructive' : 'bg-blue-100'}`} title={`${a.nom} ${a.prenom}`}>
-                                  <span>{a.nom} {a.prenom} ✓</span>
-                                  <button onClick={() => handleCancelReservation(a.id, `${a.nom} ${a.prenom}`)} className="opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-700 ml-1 shrink-0" title="Annuler">
+                                <div key={a.id} className={`text-[11px] px-1 py-0.5 rounded mb-0.5 font-semibold flex items-center justify-between gap-1 group ${vtcOverbooked ? 'bg-destructive/10 text-destructive' : 'bg-blue-100'}`} title={`${a.nom} ${a.prenom}`}>
+                                  <span className="truncate flex-1">{a.nom} {a.prenom} ✓</span>
+                                  <select
+                                    value={a._creneau || 'journee'}
+                                    onChange={(e) => handleAssignDate(a.id, `${a.nom} ${a.prenom}`, key, 'vtc', e.target.value as any)}
+                                    className="text-[9px] px-0.5 py-0 border rounded bg-white/70 shrink-0"
+                                    title="Créneau"
+                                  >
+                                    <option value="journee">Journée</option>
+                                    <option value="matin">Matin</option>
+                                    <option value="apresmidi">Après-midi</option>
+                                  </select>
+                                  <button onClick={() => handleCancelReservation(a.id, `${a.nom} ${a.prenom}`)} className="opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-700 shrink-0" title="Annuler">
                                     <X className="h-3 w-3" />
                                   </button>
                                 </div>
@@ -3642,9 +3680,19 @@ export function ExamenReussitePage() {
                                 </Button>
                               )}
                               {taxiReserved.length > 0 ? taxiReserved.map((a: any) => (
-                                <div key={a.id} className={`text-[11px] px-1 py-0.5 rounded mb-0.5 truncate font-semibold flex items-center justify-between group ${taxiOverbooked ? 'bg-destructive/10 text-destructive' : 'bg-amber-100'}`} title={`${a.nom} ${a.prenom}`}>
-                                  <span>{a.nom} {a.prenom} ✓</span>
-                                  <button onClick={() => handleCancelReservation(a.id, `${a.nom} ${a.prenom}`)} className="opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-700 ml-1 shrink-0" title="Annuler">
+                                <div key={a.id} className={`text-[11px] px-1 py-0.5 rounded mb-0.5 font-semibold flex items-center justify-between gap-1 group ${taxiOverbooked ? 'bg-destructive/10 text-destructive' : 'bg-amber-100'}`} title={`${a.nom} ${a.prenom}`}>
+                                  <span className="truncate flex-1">{a.nom} {a.prenom} ✓</span>
+                                  <select
+                                    value={a._creneau || 'journee'}
+                                    onChange={(e) => handleAssignDate(a.id, `${a.nom} ${a.prenom}`, key, 'taxi', e.target.value as any)}
+                                    className="text-[9px] px-0.5 py-0 border rounded bg-white/70 shrink-0"
+                                    title="Créneau"
+                                  >
+                                    <option value="journee">Journée</option>
+                                    <option value="matin">Matin</option>
+                                    <option value="apresmidi">Après-midi</option>
+                                  </select>
+                                  <button onClick={() => handleCancelReservation(a.id, `${a.nom} ${a.prenom}`)} className="opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-700 shrink-0" title="Annuler">
                                     <X className="h-3 w-3" />
                                   </button>
                                 </div>
@@ -3673,8 +3721,8 @@ export function ExamenReussitePage() {
                                 allApprenants={allApprenants || []}
                                 reservationsPratique={reservationsPratique || []}
                                 defaultType={(expectedType === 'taxi' ? 'taxi' : 'vtc') as 'vtc' | 'taxi'}
-                                onPick={(apprenant, typeFormation) =>
-                                  handleAssignDate(apprenant.id, `${apprenant.nom} ${apprenant.prenom}`, key, typeFormation)
+                                onPick={(apprenant, typeFormation, creneau) =>
+                                  handleAssignDate(apprenant.id, `${apprenant.nom} ${apprenant.prenom}`, key, typeFormation, creneau)
                                 }
                               />
                             </PopoverContent>
