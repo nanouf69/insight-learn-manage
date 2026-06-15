@@ -4,8 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Download, Globe } from "lucide-react";
-import { formatPresenceHours } from "@/lib/emargementHours";
+import { Loader2, Download, Globe, MapPin } from "lucide-react";
+import { computePresenceHours, formatPresenceHours, isEveningTrainingValue } from "@/lib/emargementHours";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
