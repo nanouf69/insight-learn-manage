@@ -38,6 +38,8 @@ type ConnexionDetail = {
 type SessionReport = {
   session: SessionInfo;
   totalHours: number;
+  presentielHours: number;
+  isPratique: boolean;
   connexions: ConnexionDetail[];
 };
 
