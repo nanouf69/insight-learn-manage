@@ -341,6 +341,46 @@ Deno.serve(async (req) => {
       });
     }
 
+    // 1b. Enforce per-day capacity (max_per_day_map / max_per_day from planning config)
+    {
+      const { data: appForCap } = await supabase
+        .from("apprenants")
+        .select("date_examen_theorique")
+        .eq("id", apprenantId)
+        .single();
+      const resolvedExamForCap = examDate || detectPlanningExamDate(appForCap?.date_examen_theorique);
+      if (resolvedExamForCap) {
+        const { data: capCfg } = await supabase
+          .from("planning_pratique_config")
+          .select("max_per_day, max_per_day_map")
+          .eq("exam_date", resolvedExamForCap)
+          .order("updated_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        const defaultMax = (capCfg?.max_per_day as number | null) ?? 3;
+        const perDayMap = (capCfg?.max_per_day_map as Record<string, number> | null) || {};
+        const dayMax = perDayMap[selectedDate] ?? defaultMax;
+
+        const { data: dayResas } = await supabase
+          .from("reservations_pratique")
+          .select("apprenant_id, type_formation")
+          .eq("date_choisie", selectedDate);
+        const sameTypeCount = (dayResas || []).filter(
+          (r: any) => String(r.type_formation).toLowerCase() === String(type).toLowerCase()
+            && r.apprenant_id !== apprenantId,
+        ).length;
+        if (sameTypeCount >= dayMax) {
+          return new Response(JSON.stringify({
+            error: `Cette journée est complète (${dayMax} candidats max pour ${String(type).toUpperCase()}). Merci de choisir une autre date.`,
+            code: "DAY_FULL",
+          }), {
+            status: 409,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+      }
+    }
+
     // 2. Upsert reservation
     if (isModification) {
       // Remove from old session first
