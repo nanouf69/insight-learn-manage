@@ -734,11 +734,15 @@ export function ExamenReussitePage() {
         return;
       }
 
-      // Delete existing reservation first (upsert by apprenant_id which is unique)
-      await supabase.from('reservations_pratique').delete().eq('apprenant_id', apprenantId);
-      const { error } = await supabase
-        .from('reservations_pratique')
-        .insert({ apprenant_id: apprenantId, date_choisie: date, type_formation: typeFormation });
+      const existingReservation = (reservationsPratique || []).find((reservation) => reservation.apprenant_id === apprenantId);
+      const { error } = existingReservation
+        ? await supabase
+          .from('reservations_pratique')
+          .update({ date_choisie: date, type_formation: typeFormation })
+          .eq('apprenant_id', apprenantId)
+        : await supabase
+          .from('reservations_pratique')
+          .insert({ apprenant_id: apprenantId, date_choisie: date, type_formation: typeFormation });
       if (error) throw error;
       queryClient.invalidateQueries({ queryKey: ['reservations-pratique-planning'] });
       toast.success(`Date ${date} assignée à ${apprenantNom}`);
