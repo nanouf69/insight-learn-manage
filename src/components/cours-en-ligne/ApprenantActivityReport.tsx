@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,11 +7,12 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Printer, Clock, BookOpen, Calendar, ArrowLeft, BarChart3, ChevronsUpDown, Check, CheckCircle2, XCircle } from "lucide-react";
+import { Printer, Clock, BookOpen, Calendar, ArrowLeft, BarChart3, ChevronsUpDown, Check, CheckCircle2, XCircle, Car } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { format, subDays, differenceInMinutes, parseISO, startOfDay } from "date-fns";
 import { fr } from "date-fns/locale";
+import { computePresenceHours, formatPresenceHours } from "@/lib/emargementHours";
 import { FORMATION_MODULES, ALL_MODULES } from "./modules-config";
 import { VTC_COURS_DATA } from "./vtc-cours-data";
 import { TAXI_COURS_DATA } from "./taxi-cours-data";
@@ -82,6 +83,13 @@ interface QuizResult {
   quiz_titre: string;
   matiere_nom: string | null;
   completed_at: string;
+}
+
+interface EmargementRow {
+  apprenant_id: string;
+  date_emargement: string;
+  demi_journee: string;
+  absent: boolean | null;
 }
 
 const MAX_SESSION_DURATION_MS = 7 * 60 * 60 * 1000;
@@ -163,6 +171,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
   const [completedModuleIds, setCompletedModuleIds] = useState<Set<number>>(new Set());
   const [exercicesCompletes, setExercicesCompletes] = useState<ExerciceComplete[]>([]);
   const [quizResults, setQuizResults] = useState<QuizResult[]>([]);
+  const [emargements, setEmargements] = useState<EmargementRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [period, setPeriod] = useState<"7" | "30" | "90" | "all">("30");
   const printRef = useRef<HTMLDivElement>(null);
@@ -202,7 +211,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
       setLoading(true);
       const since = period === "all" ? "2000-01-01" : format(subDays(new Date(), parseInt(period)), "yyyy-MM-dd");
 
-      const [connRes, actRes, complRes, exRes, qrRes] = await Promise.all([
+      const [connRes, actRes, complRes, exRes, qrRes, emgRes, resPratRes] = await Promise.all([
         supabase
           .from("apprenant_connexions" as any)
           .select("id, started_at, ended_at, last_seen_at, current_module")
@@ -232,6 +241,18 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
           .eq("apprenant_id", selectedId)
           .gte("completed_at", since)
           .order("completed_at", { ascending: false }),
+        supabase
+          .from("emargements_fc")
+          .select("apprenant_id, date_emargement, demi_journee, absent")
+          .eq("apprenant_id", selectedId)
+          .gte("date_emargement", since)
+          .order("date_emargement", { ascending: false }),
+        supabase
+          .from("reservations_pratique")
+          .select("date_choisie")
+          .eq("apprenant_id", selectedId)
+          .gte("date_choisie", since)
+          .order("date_choisie", { ascending: false }),
       ]);
 
       setConnexions(((connRes.data as any[]) || []) as Connexion[]);
@@ -239,6 +260,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
       setCompletedModuleIds(new Set(((complRes.data as any[]) || []).map((r: any) => r.module_id as number)));
       setExercicesCompletes(((exRes.data as any[]) || []) as ExerciceComplete[]);
       setQuizResults(((qrRes.data as any[]) || []) as QuizResult[]);
+      setEmargements(((emgRes.data as any[]) || []) as EmargementRow[]);
       setLoading(false);
     };
     load();
@@ -258,7 +280,58 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
     return Math.max(0, differenceInMinutes(getCappedSessionEnd(connexion), start));
   };
 
-  // Resolve exercice_id to human-readable title
+  // Build pratique rows from emargements
+  const pratiqueRows = useMemo(() => {
+    const byDate = new Map<string, { date: string; slots: Set<string>; hours: number }>();
+    for (const row of emargements) {
+      if (row.absent) continue;
+      const date = String(row.date_emargement || "").slice(0, 10);
+      const slot = String(row.demi_journee || "").trim().toLowerCase();
+      if (!date || !slot) continue;
+      if (!byDate.has(date)) byDate.set(date, { date, slots: new Set(), hours: 0 });
+      byDate.get(date)!.slots.add(slot);
+    }
+    const rows: { date: string; label: string; hours: number }[] = [];
+    for (const { date, slots } of byDate.values()) {
+      let hours = 0;
+      const hasSoir = slots.has("soir") || slots.has("soir_1") || slots.has("soir_2");
+      if (hasSoir) {
+        hours = Math.min(
+          (slots.has("soir") ? 4 : 0) +
+            (slots.has("soir_1") ? 1.5 : 0) +
+            (slots.has("soir_2") ? 2.5 : 0),
+          4,
+        );
+      } else {
+        hours = Math.min((slots.has("matin") ? 3 : 0) + (slots.has("apres_midi") ? 3 : 0), 6);
+      }
+      const labels: string[] = [];
+      if (slots.has("matin")) labels.push("Matin");
+      if (slots.has("apres_midi")) labels.push("Après-midi");
+      if (slots.has("soir") || slots.has("soir_1") || slots.has("soir_2")) labels.push("Soir");
+      rows.push({ date, label: labels.join(" + ") || "Présentiel", hours });
+    }
+    return rows.sort((a, b) => b.date.localeCompare(a.date));
+  }, [emargements]);
+
+  // Merge connexions + pratique into table rows sorted by date desc
+  const tableRows = useMemo(() => {
+    const connRows = connexions.map((c) => ({
+      type: "connexion" as const,
+      id: c.id,
+      date: c.started_at.slice(0, 10),
+      sortKey: c.started_at,
+      data: c,
+    }));
+    const pratRows = pratiqueRows.map((p, i) => ({
+      type: "pratique" as const,
+      id: `prat_${p.date}_${i}`,
+      date: p.date,
+      sortKey: p.date + "T00:00:00",
+      data: p,
+    }));
+    return [...connRows, ...pratRows].sort((a, b) => b.sortKey.localeCompare(a.sortKey));
+  }, [connexions, pratiqueRows]);
   const resolveExerciceTitle = (exerciceId: string): string => {
     // Check static map first
     const mapped = EXERCICE_TITLE_MAP.get(exerciceId);
@@ -433,7 +506,17 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
             </tr>
           </thead>
           <tbody>
-            ${connexions.map((c) => {
+            ${tableRows.map((row) => {
+              if (row.type === "pratique") {
+                const p = row.data;
+                return `<tr style="background:#fffbeb;">
+                  <td><strong>${format(parseISO(p.date), "dd/MM/yyyy", { locale: fr })}</strong></td>
+                  <td colspan="2"><span class="badge" style="background:#fef3c7;color:#92400e;">🚗 Présentiel — ${p.label}</span></td>
+                  <td><strong>${formatPresenceHours(p.hours)}</strong></td>
+                  <td colspan="3" style="color:#6b7280;font-style:italic;">Journée de pratique</td>
+                </tr>`;
+              }
+              const c = row.data;
               const start = parseISO(c.started_at);
               const end = getCappedSessionEnd(c);
               const mins = getSessionMinutes(c);
@@ -451,8 +534,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
                 <td>${exNames.length > 0 ? exNames.join(", ") : "—"}</td>
               </tr>`;
             }).join("")}
-            ${connexions.length === 0 ? '<tr><td colspan="7" style="text-align:center;color:#9ca3af;">Aucune connexion</td></tr>' : ""}
-          </tbody>
+            ${tableRows.length === 0 ? '<tr><td colspan="7" style="text-align:center;color:#9ca3af;">Aucune connexion</td></tr>' : ""}
           </tbody>
         </table>
 
@@ -656,14 +738,37 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {connexions.length === 0 && (
+                  {tableRows.length === 0 && (
                     <TableRow>
                       <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                         Aucune connexion enregistrée
                       </TableCell>
                     </TableRow>
                   )}
-                  {connexions.map((c) => {
+                  {tableRows.map((row) => {
+                    if (row.type === "pratique") {
+                      const p = row.data as typeof pratiqueRows[0];
+                      return (
+                        <TableRow key={row.id} className="bg-amber-50/60 dark:bg-amber-950/20">
+                          <TableCell className="font-medium text-amber-700 dark:text-amber-400">
+                            {format(parseISO(p.date), "dd/MM/yyyy", { locale: fr })}
+                          </TableCell>
+                          <TableCell colSpan={2}>
+                            <Badge variant="outline" className="gap-1 text-amber-700 border-amber-300 bg-amber-100 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-700">
+                              <Car className="w-3 h-3" />
+                              Présentiel — {p.label}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="font-medium text-amber-700 dark:text-amber-400">
+                            {formatPresenceHours(p.hours)}
+                          </TableCell>
+                          <TableCell colSpan={3} className="text-muted-foreground italic">
+                            Journée de pratique
+                          </TableCell>
+                        </TableRow>
+                      );
+                    }
+                    const c = row.data as Connexion;
                     const start = parseISO(c.started_at);
                     const end = getCappedSessionEnd(c);
                     const mins = getSessionMinutes(c);
