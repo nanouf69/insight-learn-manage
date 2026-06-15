@@ -774,7 +774,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
             const f = String(apprenant?.formation_choisie || "").toLowerCase();
             const isElearningOnly = (/-e(\s|$)/.test(t) || /e[-\s]?learning|en[-\s]?ligne/.test(`${t} ${f}`)) && !/pr[eé]sentiel/.test(`${t} ${f}`);
             if (isElearningOnly) return null;
-            return <TabsTrigger value="releve-heures-hors" className="text-sm">Relevé heures hors formation</TabsTrigger>;
+            return <TabsTrigger value="releve-heures-hors" className="text-sm">Relevé heures e-learning</TabsTrigger>;
           })()}
           <TabsTrigger value="diagnostic-acces" className="text-sm">Diagnostic accès</TabsTrigger>
           <TabsTrigger value="reset-cours" className="text-sm text-destructive">Remise à zéro</TabsTrigger>

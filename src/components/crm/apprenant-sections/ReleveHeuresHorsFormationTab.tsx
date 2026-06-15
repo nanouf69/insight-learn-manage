@@ -181,7 +181,7 @@ export function ReleveHeuresHorsFormationTab({ apprenant }: Props) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `releve-heures-hors-formation-${(apprenant?.nom || "apprenant").toLowerCase()}-${(apprenant?.prenom || "").toLowerCase()}.csv`;
+    a.download = `releve-heures-e-learning-${(apprenant?.nom || "apprenant").toLowerCase()}-${(apprenant?.prenom || "").toLowerCase()}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -193,7 +193,7 @@ export function ReleveHeuresHorsFormationTab({ apprenant }: Props) {
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="flex items-center gap-2">
           <Globe className="w-5 h-5" />
-          Relevé des heures e-learning hors heures de formation
+          Relevé des heures e-learning
         </CardTitle>
         <Button onClick={downloadCSV} disabled={loading || reports.length === 0}>
           <Download className="w-4 h-4 mr-2" />
@@ -210,7 +210,7 @@ export function ReleveHeuresHorsFormationTab({ apprenant }: Props) {
         ) : (
           <div className="space-y-6">
             <div className="flex items-center gap-2 text-sm">
-              <span className="text-muted-foreground">Total global hors formation :</span>
+              <span className="text-muted-foreground">Total global :</span>
               <Badge variant="secondary" className="text-base">
                 {formatPresenceHours(totalGlobal)}
               </Badge>
@@ -229,12 +229,12 @@ export function ReleveHeuresHorsFormationTab({ apprenant }: Props) {
                     </div>
                   </div>
                   <Badge variant="outline">
-                    🌐 {formatPresenceHours(r.totalHours)} hors formation
+                    🌐 {formatPresenceHours(r.totalHours)}
                   </Badge>
                 </div>
                 {r.connexions.length === 0 ? (
                   <div className="px-4 py-3 text-sm text-muted-foreground">
-                    Aucune connexion en dehors de la période de formation.
+                    Aucune connexion enregistrée.
                   </div>
                 ) : (
                   <table className="w-full text-sm">
