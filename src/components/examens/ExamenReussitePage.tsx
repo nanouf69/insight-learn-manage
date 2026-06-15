@@ -21,6 +21,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Eye, Edit, IdCard, Car } from "lucide-react";
+import { generateEmargementPratiquePDF } from "@/lib/pdf/emargement-pratique";
 
 // Trouve la date d'examen la plus récente passée (ou la première à venir)
 function getDefaultExamDate(): string {
@@ -275,6 +276,30 @@ function buildPratiqueReservationUrl(apprenantId: string, type: 'vtc' | 'taxi', 
   }
 
   return `https://insight-learn-manage.lovable.app/reservation-pratique?${params.toString()}`;
+}
+
+type PratiqueDaySlot = { matin?: string; apresmidi?: string; type?: 'vtc' | 'taxi' | 'libre' } | string | undefined;
+
+function resolvePratiqueDayCreneaux(slot: PratiqueDaySlot, type: 'vtc' | 'taxi') {
+  if (typeof slot === 'string' && slot.trim()) {
+    return { matin: slot };
+  }
+
+  const matin = typeof slot === 'object' ? slot?.matin : undefined;
+  const apresmidi = typeof slot === 'object' ? slot?.apresmidi : undefined;
+
+  return {
+    matin: matin || '9h-12h',
+    apresmidi: apresmidi || (type === 'taxi' ? '13h-17h30' : '13h-16h'),
+  };
+}
+
+function formatPratiqueCreneauxForMessage(slot: PratiqueDaySlot, type: 'vtc' | 'taxi') {
+  const creneaux = resolvePratiqueDayCreneaux(slot, type);
+  return [creneaux.matin, creneaux.apresmidi]
+    .filter(Boolean)
+    .map((value) => String(value).replace(/-/g, ' - '))
+    .join(' puis ');
 }
 
 export function ExamenReussitePage() {
