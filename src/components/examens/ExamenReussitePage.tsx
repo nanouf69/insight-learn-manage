@@ -311,10 +311,11 @@ function AddCandidateToDayPicker({
   allApprenants: any[];
   reservationsPratique: any[];
   defaultType: 'vtc' | 'taxi';
-  onPick: (apprenant: any, typeFormation: 'vtc' | 'taxi') => void;
+  onPick: (apprenant: any, typeFormation: 'vtc' | 'taxi', creneau: 'matin' | 'apresmidi' | 'journee') => void;
 }) {
   const [q, setQ] = useState('');
   const [type, setType] = useState<'vtc' | 'taxi'>(defaultType);
+  const [creneau, setCreneau] = useState<'matin' | 'apresmidi' | 'journee'>('journee');
   const reservedIds = new Set((reservationsPratique || []).map((r: any) => r.apprenant_id));
   const filtered = (allApprenants || [])
     .filter((a) => {
@@ -341,6 +342,32 @@ function AddCandidateToDayPicker({
           TAXI
         </button>
       </div>
+      <div className="flex gap-1">
+        <button
+          type="button"
+          onClick={() => setCreneau('matin')}
+          className={`flex-1 text-[10px] py-1 rounded border ${creneau === 'matin' ? 'bg-emerald-100 border-emerald-400 text-emerald-800 font-semibold' : 'bg-muted text-muted-foreground'}`}
+          title="Matin"
+        >
+          Matin
+        </button>
+        <button
+          type="button"
+          onClick={() => setCreneau('apresmidi')}
+          className={`flex-1 text-[10px] py-1 rounded border ${creneau === 'apresmidi' ? 'bg-purple-100 border-purple-400 text-purple-800 font-semibold' : 'bg-muted text-muted-foreground'}`}
+          title="Après-midi"
+        >
+          Après-midi
+        </button>
+        <button
+          type="button"
+          onClick={() => setCreneau('journee')}
+          className={`flex-1 text-[10px] py-1 rounded border ${creneau === 'journee' ? 'bg-slate-200 border-slate-400 text-slate-800 font-semibold' : 'bg-muted text-muted-foreground'}`}
+          title="Journée"
+        >
+          Journée
+        </button>
+      </div>
       <input
         autoFocus
         value={q}
@@ -358,7 +385,7 @@ function AddCandidateToDayPicker({
               <button
                 key={a.id}
                 type="button"
-                onClick={() => onPick(a, type)}
+                onClick={() => onPick(a, type, creneau)}
                 className="w-full text-left text-[11px] px-2 py-1 rounded hover:bg-muted flex items-center justify-between gap-2"
                 title={already ? 'Déjà réservé — réassignera à ce jour' : ''}
               >
