@@ -2329,7 +2329,7 @@ export function ExamenReussitePage() {
                             const alreadyListed = tousAFormer.some(r => r.id === a.id);
                             const hasPassedPractice = a.resultat_examen_pratique === 'oui';
                             const hasPassedTheory = hasEligibleTheoryStatus(a.resultat_examen);
-                            const disabled = alreadyListed || hasPassedPractice || !hasPassedTheory;
+                            const disabled = alreadyListed || hasPassedPractice;
 
                             return (
                               <Button
