@@ -86,6 +86,19 @@ export function ReleveHeuresHorsFormationTab({ apprenant }: Props) {
     enabled: !!apprenantId,
   });
 
+  const { data: emargements = [] } = useQuery({
+    queryKey: ["apprenant-emargements-all", apprenantId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("emargements_fc")
+        .select("apprenant_id, date_emargement, demi_journee, absent")
+        .eq("apprenant_id", apprenantId);
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+    enabled: !!apprenantId,
+  });
+
   const isVTC = String(apprenant?.type_apprenant || "").toLowerCase().startsWith("vtc");
 
   const reports: SessionReport[] = useMemo(() => {
