@@ -171,6 +171,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
   const [completedModuleIds, setCompletedModuleIds] = useState<Set<number>>(new Set());
   const [exercicesCompletes, setExercicesCompletes] = useState<ExerciceComplete[]>([]);
   const [quizResults, setQuizResults] = useState<QuizResult[]>([]);
+  const [emargements, setEmargements] = useState<EmargementRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [period, setPeriod] = useState<"7" | "30" | "90" | "all">("30");
   const printRef = useRef<HTMLDivElement>(null);
