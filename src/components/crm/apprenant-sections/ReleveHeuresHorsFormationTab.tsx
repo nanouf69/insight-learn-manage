@@ -134,9 +134,18 @@ export function ReleveHeuresHorsFormationTab({ apprenant }: Props) {
         }
         details.sort((a, b) => a.start.getTime() - b.start.getTime());
         const totalHours = details.reduce((s, d) => s + d.durationHours, 0);
-        return { session, totalHours, connexions: details };
+        const sessTypeRaw = String(session.type_session || "");
+        const sessNomRaw = String(session.nom || "");
+        const isPratique = /pratique/i.test(sessTypeRaw) || /pratique/i.test(sessNomRaw);
+        const isEvening = isEveningTrainingValue(sessTypeRaw, sessNomRaw);
+        const presentielHours = computePresenceHours(emargements as any, {
+          isEvening,
+          dateStart: dStart || null,
+          dateEnd: dEnd || null,
+        });
+        return { session, totalHours, presentielHours, isPratique, connexions: details };
       });
-  }, [sessions, connexions, isVTC]);
+  }, [sessions, connexions, emargements, isVTC]);
 
 
   const totalGlobal = reports.reduce((s, r) => s + r.totalHours, 0);
