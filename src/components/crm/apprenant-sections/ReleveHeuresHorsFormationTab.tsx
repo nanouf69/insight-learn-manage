@@ -4,8 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Download, Globe } from "lucide-react";
-import { formatPresenceHours } from "@/lib/emargementHours";
+import { Loader2, Download, Globe, MapPin } from "lucide-react";
+import { computePresenceHours, formatPresenceHours, isEveningTrainingValue } from "@/lib/emargementHours";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -38,6 +38,8 @@ type ConnexionDetail = {
 type SessionReport = {
   session: SessionInfo;
   totalHours: number;
+  presentielHours: number;
+  isPratique: boolean;
   connexions: ConnexionDetail[];
 };
 
@@ -84,6 +86,19 @@ export function ReleveHeuresHorsFormationTab({ apprenant }: Props) {
     enabled: !!apprenantId,
   });
 
+  const { data: emargements = [] } = useQuery({
+    queryKey: ["apprenant-emargements-all", apprenantId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("emargements_fc")
+        .select("apprenant_id, date_emargement, demi_journee, absent")
+        .eq("apprenant_id", apprenantId);
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+    enabled: !!apprenantId,
+  });
+
   const isVTC = String(apprenant?.type_apprenant || "").toLowerCase().startsWith("vtc");
 
   const reports: SessionReport[] = useMemo(() => {
@@ -119,9 +134,18 @@ export function ReleveHeuresHorsFormationTab({ apprenant }: Props) {
         }
         details.sort((a, b) => a.start.getTime() - b.start.getTime());
         const totalHours = details.reduce((s, d) => s + d.durationHours, 0);
-        return { session, totalHours, connexions: details };
+        const sessTypeRaw = String(session.type_session || "");
+        const sessNomRaw = String(session.nom || "");
+        const isPratique = /pratique/i.test(sessTypeRaw) || /pratique/i.test(sessNomRaw);
+        const isEvening = isEveningTrainingValue(sessTypeRaw, sessNomRaw);
+        const presentielHours = computePresenceHours(emargements as any, {
+          isEvening,
+          dateStart: dStart || null,
+          dateEnd: dEnd || null,
+        });
+        return { session, totalHours, presentielHours, isPratique, connexions: details };
       });
-  }, [sessions, connexions, isVTC]);
+  }, [sessions, connexions, emargements, isVTC]);
 
 
   const totalGlobal = reports.reduce((s, r) => s + r.totalHours, 0);
@@ -228,9 +252,17 @@ export function ReleveHeuresHorsFormationTab({ apprenant }: Props) {
                       {r.session.lieu ? ` • ${r.session.lieu}` : ""}
                     </div>
                   </div>
-                  <Badge variant="outline">
-                    🌐 {formatPresenceHours(r.totalHours)}
-                  </Badge>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {r.isPratique && (
+                      <Badge variant="outline" className="bg-blue-50">
+                        <MapPin className="w-3 h-3 mr-1" />
+                        {formatPresenceHours(r.presentielHours)} en présentiel
+                      </Badge>
+                    )}
+                    <Badge variant="outline">
+                      🌐 {formatPresenceHours(r.totalHours)}
+                    </Badge>
+                  </div>
                 </div>
                 {r.connexions.length === 0 ? (
                   <div className="px-4 py-3 text-sm text-muted-foreground">
