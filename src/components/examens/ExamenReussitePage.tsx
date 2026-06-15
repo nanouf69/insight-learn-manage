@@ -2230,12 +2230,10 @@ export function ExamenReussitePage() {
         // Extra candidats ajoutés manuellement
         const extraFormation = (allApprenants || []).filter(a =>
           extraCandidatsFormation.includes(a.id) &&
-          hasEligibleTheoryStatus((a as any).resultat_examen) &&
           !reussisFormation.some(r => r.id === a.id) &&
           !paFormation.some(r => r.id === a.id) &&
           !deplacesFormation.some(r => r.id === a.id) &&
           !echouesPratiqueFormation.some(r => r.id === a.id) &&
-          !dejaFormesSet.has(a.id) &&
           !removedFormationSet.has(a.id)
         );
         // tousAFormer inclut les déplacés et les échoués pratique
@@ -3125,12 +3123,10 @@ export function ExamenReussitePage() {
         );
         const extraFormationP = (allApprenants || []).filter(a =>
           extraCandidatsFormation.includes(a.id) &&
-          hasEligibleTheoryStatusP((a as any).resultat_examen) &&
           !reussisFormationP.some(r => r.id === a.id) &&
           !paFormationP.some(r => r.id === a.id) &&
           !deplacesFormationP.some(r => r.id === a.id) &&
           !echouesPratiqueFormationP.some(r => r.id === a.id) &&
-          !dejaFormesSetP.has(a.id) &&
           !removedFormationSetP.has(a.id)
         );
         const tousPlanning = [...reussisFormationP, ...paFormationP, ...deplacesFormationP, ...echouesPratiqueFormationP, ...extraFormationP];
