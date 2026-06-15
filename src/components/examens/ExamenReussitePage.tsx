@@ -3082,7 +3082,7 @@ export function ExamenReussitePage() {
         const monthNames = ['jan', 'fév', 'mar', 'avr', 'mai', 'jun', 'jul', 'aoû', 'sep', 'oct', 'nov', 'déc'];
 
         // Build apprenant map
-        const appMap: Record<string, { id: string; nom: string; prenom: string; type_apprenant: string | null }> = {};
+        const appMap: Record<string, { id: string; nom: string; prenom: string; type_apprenant: string | null; telephone?: string | null; email?: string | null }> = {};
         (allApprenants || []).forEach(a => { appMap[a.id] = a; });
 
         // Reuse the same candidate list as "Candidats à former" section: only theory successes.
@@ -3145,7 +3145,7 @@ export function ExamenReussitePage() {
         const byDate: Record<string, { vtc: any[]; taxi: any[] }> = {};
         (reservationsPratique || []).forEach(r => {
           if (!byDate[r.date_choisie]) byDate[r.date_choisie] = { vtc: [], taxi: [] };
-          const app = appMap[r.apprenant_id] || { id: r.apprenant_id, nom: '?', prenom: '?', type_apprenant: null };
+          const app = appMap[r.apprenant_id] || { id: r.apprenant_id, nom: '?', prenom: '?', type_apprenant: null, telephone: '', email: '' };
           if (String(r.type_formation).toLowerCase() === 'vtc') {
             byDate[r.date_choisie].vtc.push(app);
           } else {
