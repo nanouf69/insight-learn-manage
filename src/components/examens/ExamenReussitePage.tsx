@@ -722,6 +722,18 @@ export function ExamenReussitePage() {
   // Assign a date to a candidate and notify by email
   const handleAssignDate = async (apprenantId: string, apprenantNom: string, date: string, typeFormation: string) => {
     try {
+      const dayMax = maxPerDayMap[date] || maxPerDay;
+      const sameDayCount = (reservationsPratique || []).filter((reservation) =>
+        reservation.date_choisie === date &&
+        String(reservation.type_formation).toLowerCase() === typeFormation.toLowerCase() &&
+        reservation.apprenant_id !== apprenantId
+      ).length;
+
+      if (sameDayCount >= dayMax) {
+        toast.error(`Impossible : ${dayMax} candidat(s) maximum le ${formatDateFR(date)}.`);
+        return;
+      }
+
       // Delete existing reservation first (upsert by apprenant_id which is unique)
       await supabase.from('reservations_pratique').delete().eq('apprenant_id', apprenantId);
       const { error } = await supabase
@@ -736,11 +748,12 @@ export function ExamenReussitePage() {
       if (apprenant?.email) {
         const dateFormatted = formatDateFR(date);
         const typeUpper = typeFormation.toUpperCase();
+        const horaires = formatPratiqueCreneauxForMessage(dayTimeSlots[date], typeFormation as 'vtc' | 'taxi');
         const exerciceLink = typeFormation === 'vtc' 
           ? 'https://app.formative.com/join/DNFDZS' 
           : 'https://app.formative.com/join/ZT924H';
         const subject = `Votre date de formation pratique ${typeUpper} - ${apprenant.prenom} ${apprenant.nom}`;
-        const body = `Bonjour ${apprenant.prenom},<br><br>Votre date de formation pratique ${typeUpper} a été fixée au :<br><br><strong>📅 ${dateFormatted}</strong><br><br>📍 RDV au 86 Route de Genas 69003 Lyon à 9h.<br>🍽️ Pause déjeuner à Confluences de 12h à 13h.<br><br>📚 Merci de bien réviser le cours sur la pratique et d'effectuer les exercices :<br><a href="${exerciceLink}">${exerciceLink}</a><br><br>⚠️ Attention, si vous n'effectuez pas les exercices et que vous n'apprenez pas les éléments de la ville, vous risquez fortement d'échouer votre examen pratique.<br><br>Cordialement,<br><br>FTRANSPORT<br>Centre de formation<br>86 Route de Genas 69003 Lyon<br>📞 04.28.29.60.91<br>De 9h à 17h sur rendez-vous`;
+        const body = `Bonjour ${apprenant.prenom},<br><br>Votre date de formation pratique ${typeUpper} a été fixée au :<br><br><strong>📅 ${dateFormatted}</strong><br><strong>🕐 Horaires : ${horaires}</strong><br><br>📍 RDV au 86 Route de Genas 69003 Lyon.<br>🍽️ Pause déjeuner à Confluences de 12h à 13h.<br><br>📚 Merci de bien réviser le cours sur la pratique et d'effectuer les exercices :<br><a href="${exerciceLink}">${exerciceLink}</a><br><br>⚠️ Attention, si vous n'effectuez pas les exercices et que vous n'apprenez pas les éléments de la ville, vous risquez fortement d'échouer votre examen pratique.<br><br>Cordialement,<br><br>FTRANSPORT<br>Centre de formation<br>86 Route de Genas 69003 Lyon<br>📞 04.28.29.60.91<br>De 9h à 17h sur rendez-vous`;
         try {
           await supabase.functions.invoke('sync-outlook-emails', {
             body: { action: 'send', userEmail: 'contact@ftransport.fr', to: apprenant.email, subject, body, apprenantId }
