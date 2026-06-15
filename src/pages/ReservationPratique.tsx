@@ -446,11 +446,14 @@ export default function ReservationPratique() {
           selectedDate,
           type,
           isModification: !!existingReservation,
+          examDate: resolvedExamDate || examParam,
+          pratiqueDate: resolvedPratiqueDate || pratiqueParam,
         },
       });
 
       if (fnErr) {
-        setError("Erreur lors de la réservation. Veuillez réessayer.");
+        const message = (fnErr as any)?.context?.error || fnErr.message || "Erreur lors de la réservation. Veuillez réessayer.";
+        setError(message);
         setSubmitting(false);
         return;
       }
