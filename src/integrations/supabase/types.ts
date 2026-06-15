@@ -2484,6 +2484,7 @@ export type Database = {
         Row: {
           apprenant_id: string
           created_at: string
+          creneau: string
           date_choisie: string
           id: string
           type_formation: string
@@ -2491,6 +2492,7 @@ export type Database = {
         Insert: {
           apprenant_id: string
           created_at?: string
+          creneau?: string
           date_choisie: string
           id?: string
           type_formation: string
@@ -2498,6 +2500,7 @@ export type Database = {
         Update: {
           apprenant_id?: string
           created_at?: string
+          creneau?: string
           date_choisie?: string
           id?: string
           type_formation?: string
