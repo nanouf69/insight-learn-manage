@@ -146,13 +146,16 @@ function getShortDayMonth(dateStr: string) {
 function resolveHoraires(
   type: string,
   selectedDate: string,
-  config: { day_time_slots?: Record<string, { am?: string; pm?: string }> } | null,
+  config: { day_time_slots?: Record<string, { matin?: string; apresmidi?: string; am?: string; pm?: string } | string> } | null,
 ): string {
   const slots = config?.day_time_slots?.[selectedDate];
   if (slots) {
     const parts: string[] = [];
-    if (slots.am) parts.push(slots.am);
-    if (slots.pm) parts.push(slots.pm);
+    if (typeof slots === "string") parts.push(slots);
+    else {
+      if (slots.matin || slots.am) parts.push(slots.matin || slots.am || "");
+      if (slots.apresmidi || slots.pm) parts.push(slots.apresmidi || slots.pm || "");
+    }
     if (parts.length > 0) return parts.join(" puis ");
   }
   // Fallback defaults
@@ -440,7 +443,7 @@ Deno.serve(async (req) => {
       .eq("id", apprenantId)
       .single();
 
-    let planningConfig: { day_time_slots?: Record<string, { am?: string; pm?: string }> } | null = null;
+    let planningConfig: { day_time_slots?: Record<string, { matin?: string; apresmidi?: string; am?: string; pm?: string } | string> } | null = null;
     const resolvedExam = examDate || detectPlanningExamDate(appForExam?.date_examen_theorique);
     if (resolvedExam) {
       const { data: cfgData } = await supabase
