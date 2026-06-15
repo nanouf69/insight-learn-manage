@@ -3414,9 +3414,25 @@ export function ExamenReussitePage() {
                       const taxiReserved = dayData?.taxi || [];
                       const expectedType = dayTypeMap[key];
                       const hasReservations = vtcReserved.length > 0 || taxiReserved.length > 0;
+                      const dayMax = maxPerDayMap[key] || maxPerDay;
+                      const vtcOverbooked = vtcReserved.length > dayMax;
+                      const taxiOverbooked = taxiReserved.length > dayMax;
+                      const downloadEmargement = (formation: 'vtc' | 'taxi', candidats: any[]) => {
+                        generateEmargementPratiquePDF(
+                          new Date(key + 'T00:00:00'),
+                          formation,
+                          candidats.map((c) => ({
+                            nom: c.nom || '',
+                            prenom: c.prenom || '',
+                            telephone: c.telephone || '',
+                            email: c.email || '',
+                          })),
+                          resolvePratiqueDayCreneaux(dayTimeSlots[key], formation)
+                        );
+                      };
 
                       return (
-                        <div key={key} className={`border rounded-lg p-2 min-h-[120px] relative group/day ${(hasReservations || expectedType !== 'libre') ? 'bg-background' : 'bg-muted/30'}`}>
+                        <div key={key} className={`border rounded-lg p-2 min-h-[120px] relative group/day ${(hasReservations || expectedType !== 'libre') ? 'bg-background' : 'bg-muted/30'} ${(vtcOverbooked || taxiOverbooked) ? 'border-destructive bg-destructive/5' : ''}`}>
                           <div className="text-xs font-bold text-center mb-1 pb-1 border-b flex items-center justify-center gap-1">
                             <span>{dayNames[day.getDay()]} {day.getDate()} {monthNames[day.getMonth()]}</span>
                             <button 
@@ -3516,36 +3532,61 @@ export function ExamenReussitePage() {
                             </div>
                           )}
 
-                          {/* Show label for expected type */}
-                          {expectedType === 'vtc' && (
-                            <div className="mb-2">
+                          {(vtcOverbooked || taxiOverbooked) && (
+                            <div className="text-[10px] font-bold text-destructive text-center mb-1">
+                              ⚠️ Max {dayMax} dépassé
+                            </div>
+                          )}
+
+                          {(expectedType === 'vtc' || vtcReserved.length > 0) && (
+                            <div className="mb-2 space-y-1">
+                              {vtcReserved.length > 0 && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-6 w-full text-[10px] gap-1"
+                                  onClick={() => downloadEmargement('vtc', vtcReserved)}
+                                >
+                                  <Download className="h-3 w-3" /> Émargement VTC
+                                </Button>
+                              )}
                               {vtcReserved.length > 0 ? vtcReserved.map((a: any) => (
-                                <div key={a.id} className="text-[11px] px-1 py-0.5 bg-blue-100 rounded mb-0.5 truncate font-semibold flex items-center justify-between group" title={`${a.nom} ${a.prenom}`}>
+                                <div key={a.id} className={`text-[11px] px-1 py-0.5 rounded mb-0.5 truncate font-semibold flex items-center justify-between group ${vtcOverbooked ? 'bg-destructive/10 text-destructive' : 'bg-blue-100'}`} title={`${a.nom} ${a.prenom}`}>
                                   <span>{a.nom} {a.prenom} ✓</span>
                                   <button onClick={() => handleCancelReservation(a.id, `${a.nom} ${a.prenom}`)} className="opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-700 ml-1 shrink-0" title="Annuler">
                                     <X className="h-3 w-3" />
                                   </button>
                                 </div>
                               )) : (
-                                <div className="text-[10px] text-muted-foreground italic">En attente (max {maxPerDayMap[key] || maxPerDay})</div>
+                                <div className="text-[10px] text-muted-foreground italic">En attente (max {dayMax})</div>
                               )}
                             </div>
                           )}
-                          {expectedType === 'taxi' && (
-                            <div>
+                          {(expectedType === 'taxi' || taxiReserved.length > 0) && (
+                            <div className="mb-2 space-y-1">
+                              {taxiReserved.length > 0 && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-6 w-full text-[10px] gap-1"
+                                  onClick={() => downloadEmargement('taxi', taxiReserved)}
+                                >
+                                  <Download className="h-3 w-3" /> Émargement TAXI
+                                </Button>
+                              )}
                               {taxiReserved.length > 0 ? taxiReserved.map((a: any) => (
-                                <div key={a.id} className="text-[11px] px-1 py-0.5 bg-amber-100 rounded mb-0.5 truncate font-semibold flex items-center justify-between group" title={`${a.nom} ${a.prenom}`}>
+                                <div key={a.id} className={`text-[11px] px-1 py-0.5 rounded mb-0.5 truncate font-semibold flex items-center justify-between group ${taxiOverbooked ? 'bg-destructive/10 text-destructive' : 'bg-amber-100'}`} title={`${a.nom} ${a.prenom}`}>
                                   <span>{a.nom} {a.prenom} ✓</span>
                                   <button onClick={() => handleCancelReservation(a.id, `${a.nom} ${a.prenom}`)} className="opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-700 ml-1 shrink-0" title="Annuler">
                                     <X className="h-3 w-3" />
                                   </button>
                                 </div>
                               )) : (
-                                <div className="text-[10px] text-muted-foreground italic">En attente (max {maxPerDayMap[key] || maxPerDay})</div>
+                                <div className="text-[10px] text-muted-foreground italic">En attente (max {dayMax})</div>
                               )}
                             </div>
                           )}
-                          {expectedType === 'libre' && (
+                          {expectedType === 'libre' && !hasReservations && (
                             <div className="text-[10px] text-muted-foreground text-center mt-4">Libre</div>
                           )}
                         </div>
