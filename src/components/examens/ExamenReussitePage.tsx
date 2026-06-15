@@ -3700,8 +3700,8 @@ export function ExamenReussitePage() {
                                 allApprenants={allApprenants || []}
                                 reservationsPratique={reservationsPratique || []}
                                 defaultType={(expectedType === 'taxi' ? 'taxi' : 'vtc') as 'vtc' | 'taxi'}
-                                onPick={(apprenant, typeFormation) =>
-                                  handleAssignDate(apprenant.id, `${apprenant.nom} ${apprenant.prenom}`, key, typeFormation)
+                                onPick={(apprenant, typeFormation, creneau) =>
+                                  handleAssignDate(apprenant.id, `${apprenant.nom} ${apprenant.prenom}`, key, typeFormation, creneau)
                                 }
                               />
                             </PopoverContent>
