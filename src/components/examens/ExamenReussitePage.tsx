@@ -3646,9 +3646,19 @@ export function ExamenReussitePage() {
                                 </Button>
                               )}
                               {vtcReserved.length > 0 ? vtcReserved.map((a: any) => (
-                                <div key={a.id} className={`text-[11px] px-1 py-0.5 rounded mb-0.5 truncate font-semibold flex items-center justify-between group ${vtcOverbooked ? 'bg-destructive/10 text-destructive' : 'bg-blue-100'}`} title={`${a.nom} ${a.prenom}`}>
-                                  <span>{a.nom} {a.prenom} ✓</span>
-                                  <button onClick={() => handleCancelReservation(a.id, `${a.nom} ${a.prenom}`)} className="opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-700 ml-1 shrink-0" title="Annuler">
+                                <div key={a.id} className={`text-[11px] px-1 py-0.5 rounded mb-0.5 font-semibold flex items-center justify-between gap-1 group ${vtcOverbooked ? 'bg-destructive/10 text-destructive' : 'bg-blue-100'}`} title={`${a.nom} ${a.prenom}`}>
+                                  <span className="truncate flex-1">{a.nom} {a.prenom} ✓</span>
+                                  <select
+                                    value={a._creneau || 'journee'}
+                                    onChange={(e) => handleAssignDate(a.id, `${a.nom} ${a.prenom}`, key, 'vtc', e.target.value as any)}
+                                    className="text-[9px] px-0.5 py-0 border rounded bg-white/70 shrink-0"
+                                    title="Créneau"
+                                  >
+                                    <option value="journee">Journée</option>
+                                    <option value="matin">Matin</option>
+                                    <option value="apresmidi">Après-midi</option>
+                                  </select>
+                                  <button onClick={() => handleCancelReservation(a.id, `${a.nom} ${a.prenom}`)} className="opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-700 shrink-0" title="Annuler">
                                     <X className="h-3 w-3" />
                                   </button>
                                 </div>
