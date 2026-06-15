@@ -252,9 +252,17 @@ export function ReleveHeuresHorsFormationTab({ apprenant }: Props) {
                       {r.session.lieu ? ` • ${r.session.lieu}` : ""}
                     </div>
                   </div>
-                  <Badge variant="outline">
-                    🌐 {formatPresenceHours(r.totalHours)}
-                  </Badge>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {r.isPratique && (
+                      <Badge variant="outline" className="bg-blue-50">
+                        <MapPin className="w-3 h-3 mr-1" />
+                        {formatPresenceHours(r.presentielHours)} en présentiel
+                      </Badge>
+                    )}
+                    <Badge variant="outline">
+                      🌐 {formatPresenceHours(r.totalHours)}
+                    </Badge>
+                  </div>
                 </div>
                 {r.connexions.length === 0 ? (
                   <div className="px-4 py-3 text-sm text-muted-foreground">
