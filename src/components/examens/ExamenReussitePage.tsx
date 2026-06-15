@@ -3239,7 +3239,8 @@ export function ExamenReussitePage() {
         const byDate: Record<string, { vtc: any[]; taxi: any[] }> = {};
         (reservationsPratique || []).forEach(r => {
           if (!byDate[r.date_choisie]) byDate[r.date_choisie] = { vtc: [], taxi: [] };
-          const app = appMap[r.apprenant_id] || { id: r.apprenant_id, nom: '?', prenom: '?', type_apprenant: null, telephone: '', email: '' };
+          const baseApp = appMap[r.apprenant_id] || { id: r.apprenant_id, nom: '?', prenom: '?', type_apprenant: null, telephone: '', email: '' };
+          const app = { ...baseApp, _creneau: (r as any).creneau || 'journee' };
           if (String(r.type_formation).toLowerCase() === 'vtc') {
             byDate[r.date_choisie].vtc.push(app);
           } else {
