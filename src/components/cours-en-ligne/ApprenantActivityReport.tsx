@@ -729,14 +729,37 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {connexions.length === 0 && (
+                  {tableRows.length === 0 && (
                     <TableRow>
                       <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                         Aucune connexion enregistrée
                       </TableCell>
                     </TableRow>
                   )}
-                  {connexions.map((c) => {
+                  {tableRows.map((row) => {
+                    if (row.type === "pratique") {
+                      const p = row.data as typeof pratiqueRows[0];
+                      return (
+                        <TableRow key={row.id} className="bg-amber-50/60 dark:bg-amber-950/20">
+                          <TableCell className="font-medium text-amber-700 dark:text-amber-400">
+                            {format(parseISO(p.date), "dd/MM/yyyy", { locale: fr })}
+                          </TableCell>
+                          <TableCell colSpan={2}>
+                            <Badge variant="outline" className="gap-1 text-amber-700 border-amber-300 bg-amber-100 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-700">
+                              <Car className="w-3 h-3" />
+                              Présentiel — {p.label}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="font-medium text-amber-700 dark:text-amber-400">
+                            {formatPresenceHours(p.hours)}
+                          </TableCell>
+                          <TableCell colSpan={3} className="text-muted-foreground italic">
+                            Journée de pratique
+                          </TableCell>
+                        </TableRow>
+                      );
+                    }
+                    const c = row.data as Connexion;
                     const start = parseISO(c.started_at);
                     const end = getCappedSessionEnd(c);
                     const mins = getSessionMinutes(c);
