@@ -302,6 +302,77 @@ function formatPratiqueCreneauxForMessage(slot: PratiqueDaySlot, type: 'vtc' | '
     .join(' puis ');
 }
 
+function AddCandidateToDayPicker({
+  allApprenants,
+  reservationsPratique,
+  defaultType,
+  onPick,
+}: {
+  allApprenants: any[];
+  reservationsPratique: any[];
+  defaultType: 'vtc' | 'taxi';
+  onPick: (apprenant: any, typeFormation: 'vtc' | 'taxi') => void;
+}) {
+  const [q, setQ] = useState('');
+  const [type, setType] = useState<'vtc' | 'taxi'>(defaultType);
+  const reservedIds = new Set((reservationsPratique || []).map((r: any) => r.apprenant_id));
+  const filtered = (allApprenants || [])
+    .filter((a) => {
+      const s = `${a.nom || ''} ${a.prenom || ''}`.toLowerCase();
+      return !q.trim() || s.includes(q.trim().toLowerCase());
+    })
+    .slice(0, 30);
+
+  return (
+    <div className="space-y-2">
+      <div className="flex gap-1">
+        <button
+          type="button"
+          onClick={() => setType('vtc')}
+          className={`flex-1 text-[11px] py-1 rounded border ${type === 'vtc' ? 'bg-blue-100 border-blue-400 text-blue-800 font-semibold' : 'bg-muted text-muted-foreground'}`}
+        >
+          VTC
+        </button>
+        <button
+          type="button"
+          onClick={() => setType('taxi')}
+          className={`flex-1 text-[11px] py-1 rounded border ${type === 'taxi' ? 'bg-amber-100 border-amber-400 text-amber-800 font-semibold' : 'bg-muted text-muted-foreground'}`}
+        >
+          TAXI
+        </button>
+      </div>
+      <input
+        autoFocus
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        placeholder="Rechercher un candidat…"
+        className="w-full h-7 text-xs px-2 border rounded focus:outline-none focus:ring-1 focus:ring-primary"
+      />
+      <div className="max-h-56 overflow-y-auto space-y-0.5">
+        {filtered.length === 0 ? (
+          <div className="text-[11px] text-muted-foreground italic text-center py-2">Aucun candidat</div>
+        ) : (
+          filtered.map((a) => {
+            const already = reservedIds.has(a.id);
+            return (
+              <button
+                key={a.id}
+                type="button"
+                onClick={() => onPick(a, type)}
+                className="w-full text-left text-[11px] px-2 py-1 rounded hover:bg-muted flex items-center justify-between gap-2"
+                title={already ? 'Déjà réservé — réassignera à ce jour' : ''}
+              >
+                <span className="truncate">{a.nom} {a.prenom}</span>
+                {already && <span className="text-[9px] text-orange-600 shrink-0">déjà placé</span>}
+              </button>
+            );
+          })
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function ExamenReussitePage() {
   const [search, setSearch] = useState("");
   const [fullscreen, setFullscreen] = useState(false);
