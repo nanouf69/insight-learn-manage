@@ -452,7 +452,16 @@ export default function ReservationPratique() {
       });
 
       if (fnErr) {
-        const message = (fnErr as any)?.context?.error || fnErr.message || "Erreur lors de la réservation. Veuillez réessayer.";
+        let message = fnErr.message || "Erreur lors de la réservation. Veuillez réessayer.";
+        try {
+          const context = (fnErr as any)?.context;
+          if (context && typeof context.json === "function") {
+            const errorBody = await context.json();
+            message = errorBody?.error || message;
+          }
+        } catch {
+          // Keep default error message
+        }
         setError(message);
         setSubmitting(false);
         return;
