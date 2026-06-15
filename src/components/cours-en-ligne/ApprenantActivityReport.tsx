@@ -85,6 +85,13 @@ interface QuizResult {
   completed_at: string;
 }
 
+interface EmargementRow {
+  apprenant_id: string;
+  date_emargement: string;
+  demi_journee: string;
+  absent: boolean | null;
+}
+
 const MAX_SESSION_DURATION_MS = 7 * 60 * 60 * 1000;
 
 interface ModuleActivite {
