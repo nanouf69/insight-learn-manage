@@ -596,6 +596,13 @@ Deno.serve(async (req) => {
     });
   } catch (err) {
     console.error("confirm-reservation-pratique error:", err);
+    const message = err instanceof Error ? err.message : String(err);
+    if (message.includes("Journée complète")) {
+      return new Response(JSON.stringify({ error: message, code: "DAY_FULL" }), {
+        status: 409,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
     return new Response(JSON.stringify({ error: err.message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
