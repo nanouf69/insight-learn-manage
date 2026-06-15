@@ -280,7 +280,58 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
     return Math.max(0, differenceInMinutes(getCappedSessionEnd(connexion), start));
   };
 
-  // Resolve exercice_id to human-readable title
+  // Build pratique rows from emargements
+  const pratiqueRows = useMemo(() => {
+    const byDate = new Map<string, { date: string; slots: Set<string>; hours: number }>();
+    for (const row of emargements) {
+      if (row.absent) continue;
+      const date = String(row.date_emargement || "").slice(0, 10);
+      const slot = String(row.demi_journee || "").trim().toLowerCase();
+      if (!date || !slot) continue;
+      if (!byDate.has(date)) byDate.set(date, { date, slots: new Set(), hours: 0 });
+      byDate.get(date)!.slots.add(slot);
+    }
+    const rows: { date: string; label: string; hours: number }[] = [];
+    for (const { date, slots } of byDate.values()) {
+      let hours = 0;
+      const hasSoir = slots.has("soir") || slots.has("soir_1") || slots.has("soir_2");
+      if (hasSoir) {
+        hours = Math.min(
+          (slots.has("soir") ? 4 : 0) +
+            (slots.has("soir_1") ? 1.5 : 0) +
+            (slots.has("soir_2") ? 2.5 : 0),
+          4,
+        );
+      } else {
+        hours = Math.min((slots.has("matin") ? 3 : 0) + (slots.has("apres_midi") ? 3 : 0), 6);
+      }
+      const labels: string[] = [];
+      if (slots.has("matin")) labels.push("Matin");
+      if (slots.has("apres_midi")) labels.push("Après-midi");
+      if (slots.has("soir") || slots.has("soir_1") || slots.has("soir_2")) labels.push("Soir");
+      rows.push({ date, label: labels.join(" + ") || "Présentiel", hours });
+    }
+    return rows.sort((a, b) => b.date.localeCompare(a.date));
+  }, [emargements]);
+
+  // Merge connexions + pratique into table rows sorted by date desc
+  const tableRows = useMemo(() => {
+    const connRows = connexions.map((c) => ({
+      type: "connexion" as const,
+      id: c.id,
+      date: c.started_at.slice(0, 10),
+      sortKey: c.started_at,
+      data: c,
+    }));
+    const pratRows = pratiqueRows.map((p, i) => ({
+      type: "pratique" as const,
+      id: `prat_${p.date}_${i}`,
+      date: p.date,
+      sortKey: p.date + "T00:00:00",
+      data: p,
+    }));
+    return [...connRows, ...pratRows].sort((a, b) => b.sortKey.localeCompare(a.sortKey));
+  }, [connexions, pratiqueRows]);
   const resolveExerciceTitle = (exerciceId: string): string => {
     // Check static map first
     const mapped = EXERCICE_TITLE_MAP.get(exerciceId);
