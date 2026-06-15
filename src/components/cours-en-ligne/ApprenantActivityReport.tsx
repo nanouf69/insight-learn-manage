@@ -506,7 +506,17 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
             </tr>
           </thead>
           <tbody>
-            ${connexions.map((c) => {
+            ${tableRows.map((row) => {
+              if (row.type === "pratique") {
+                const p = row.data;
+                return `<tr style="background:#fffbeb;">
+                  <td><strong>${format(parseISO(p.date), "dd/MM/yyyy", { locale: fr })}</strong></td>
+                  <td colspan="2"><span class="badge" style="background:#fef3c7;color:#92400e;">🚗 Présentiel — ${p.label}</span></td>
+                  <td><strong>${formatPresenceHours(p.hours)}</strong></td>
+                  <td colspan="3" style="color:#6b7280;font-style:italic;">Journée de pratique</td>
+                </tr>`;
+              }
+              const c = row.data;
               const start = parseISO(c.started_at);
               const end = getCappedSessionEnd(c);
               const mins = getSessionMinutes(c);
@@ -524,8 +534,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
                 <td>${exNames.length > 0 ? exNames.join(", ") : "—"}</td>
               </tr>`;
             }).join("")}
-            ${connexions.length === 0 ? '<tr><td colspan="7" style="text-align:center;color:#9ca3af;">Aucune connexion</td></tr>' : ""}
-          </tbody>
+            ${tableRows.length === 0 ? '<tr><td colspan="7" style="text-align:center;color:#9ca3af;">Aucune connexion</td></tr>' : ""}
           </tbody>
         </table>
 
