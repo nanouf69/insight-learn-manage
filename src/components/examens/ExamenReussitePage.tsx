@@ -818,7 +818,7 @@ export function ExamenReussitePage() {
   };
 
   // Assign a date to a candidate and notify by email
-  const handleAssignDate = async (apprenantId: string, apprenantNom: string, date: string, typeFormation: string) => {
+  const handleAssignDate = async (apprenantId: string, apprenantNom: string, date: string, typeFormation: string, creneau: 'matin' | 'apresmidi' | 'journee' = 'journee') => {
     try {
       const dayMax = maxPerDayMap[date] || maxPerDay;
       const sameDayCount = (reservationsPratique || []).filter((reservation) =>
@@ -836,11 +836,11 @@ export function ExamenReussitePage() {
       const { error } = existingReservation
         ? await supabase
           .from('reservations_pratique')
-          .update({ date_choisie: date, type_formation: typeFormation })
+          .update({ date_choisie: date, type_formation: typeFormation, creneau } as any)
           .eq('apprenant_id', apprenantId)
         : await supabase
           .from('reservations_pratique')
-          .insert({ apprenant_id: apprenantId, date_choisie: date, type_formation: typeFormation });
+          .insert({ apprenant_id: apprenantId, date_choisie: date, type_formation: typeFormation, creneau } as any);
       if (error) throw error;
       queryClient.invalidateQueries({ queryKey: ['reservations-pratique-planning'] });
       toast.success(`Date ${date} assignée à ${apprenantNom}`);
