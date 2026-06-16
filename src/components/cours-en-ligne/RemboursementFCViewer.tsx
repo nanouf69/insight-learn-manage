@@ -167,7 +167,7 @@ export default function RemboursementFCViewer({ apprenantId, completed, onComple
     if (!apprenantId) { setLoading(false); return; }
     (async () => {
       setLoading(true);
-      const [apRes, emRes, fRes] = await Promise.all([
+      const [apRes, emRes, fRes, atRes] = await Promise.all([
         supabase
           .from("apprenants")
           .select("nom, prenom, email, telephone, adresse, code_postal, ville, formation_choisie, type_apprenant, date_debut_formation, date_fin_formation, creneau_horaire, date_naissance")
@@ -184,12 +184,19 @@ export default function RemboursementFCViewer({ apprenantId, completed, onComple
           .eq("apprenant_id", apprenantId)
           .eq("type_document", "facture-fc")
           .order("created_at", { ascending: false }),
+        supabase
+          .from("documents_inscription")
+          .select("id, url, nom_fichier, titre, created_at")
+          .eq("apprenant_id", apprenantId)
+          .eq("type_document", "attestation-fc")
+          .order("created_at", { ascending: false }),
       ]);
 
       const ap = (!apRes.error && apRes.data) ? (apRes.data as ApprenantInfo) : null;
       setApprenant(ap);
       if (!emRes.error && Array.isArray(emRes.data)) setEmargements(emRes.data as unknown as EmargementRow[]);
       if (!fRes.error && Array.isArray(fRes.data)) setFactures(fRes.data as FactureDoc[]);
+      if (!atRes.error && Array.isArray(atRes.data)) setAttestations(atRes.data as FactureDoc[]);
 
       if (ap) {
         const today = new Date(); today.setHours(0, 0, 0, 0);
