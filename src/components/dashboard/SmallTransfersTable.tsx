@@ -54,7 +54,7 @@ export function SmallTransfersTable() {
       <CardHeader className="pb-3">
         <CardTitle className="text-base flex items-center gap-2">
           <Banknote className="h-5 w-5 text-primary" />
-          Virements reçus (50 / 150 / 200 €)
+          Virements reçus formation continue (50 / 150 / 200 €)
           <Badge variant="secondary" className="ml-auto">{txns.length} virements · {fmt(grandTotal)}</Badge>
         </CardTitle>
       </CardHeader>
