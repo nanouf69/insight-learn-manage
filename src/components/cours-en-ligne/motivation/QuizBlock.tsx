@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef, useLayoutEffect } from "react";
 
 const VTC_QUESTIONS = [
   {
@@ -92,6 +92,20 @@ export function QuizBlock({ onXPGained, category = "vtc" }: QuizBlockProps) {
 
   const q = questions[qIndex];
 
+  // Préserve la position de scroll lors des re-renders (changement de question / phase)
+  // pour éviter que la page remonte en haut.
+  const containerRef = useRef<HTMLDivElement>(null);
+  const scrollYRef = useRef<number>(0);
+  useLayoutEffect(() => {
+    scrollYRef.current = window.scrollY;
+  });
+  useEffect(() => {
+    const y = scrollYRef.current;
+    if (Math.abs(window.scrollY - y) > 2) {
+      window.scrollTo({ top: y, behavior: "auto" });
+    }
+  }, [qIndex, phase, selected]);
+
   useEffect(() => {
     setQIndex(0);
     setSelected(null);
@@ -155,7 +169,7 @@ export function QuizBlock({ onXPGained, category = "vtc" }: QuizBlockProps) {
   const resultMsg = pct >= 70 ? "Excellent ! Tu maîtrises ce sujet !" : pct >= 40 ? "Bien joué, continue tes révisions !" : "Encore un effort, tu vas y arriver !";
 
   return (
-    <div className="bg-card rounded-2xl p-5 shadow-sm border relative overflow-hidden mb-5">
+    <div ref={containerRef} style={{ scrollBehavior: "auto" }} className="bg-card rounded-2xl p-5 shadow-sm border relative overflow-hidden mb-5">
       <style>{`
         @keyframes fadeSlide { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
         @keyframes fall { 0%{transform:translateY(-20px) rotate(0deg);opacity:1} 100%{transform:translateY(240px) rotate(360deg);opacity:0} }
