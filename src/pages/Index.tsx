@@ -28,6 +28,7 @@ import { ApprenantsCorbeille } from "@/components/apprenants/ApprenantsCorbeille
 import { DiagnosticAccesGlobal } from "@/components/diagnostic/DiagnosticAccesGlobal";
 import { FournisseurInvoiceAlerts } from "@/components/dashboard/FournisseurInvoiceAlerts";
 import { SmallTransfersTable } from "@/components/dashboard/SmallTransfersTable";
+import { PersonalFinancingTransfersTable } from "@/components/dashboard/PersonalFinancingTransfersTable";
 import { ApprenantQuestionsPanel } from "@/components/dashboard/ApprenantQuestionsPanel";
 import { EmargementsManquants } from "@/components/dashboard/EmargementsManquants";
 import { CreneauxRdvAdmin } from "@/components/dashboard/CreneauxRdvAdmin";
@@ -294,6 +295,9 @@ const Index = () => {
 
             {/* Small Transfers */}
             <SmallTransfersTable />
+
+            {/* Personal financing transfers (other formations) */}
+            <PersonalFinancingTransfersTable />
           </div>
         );
       case "agenda":
