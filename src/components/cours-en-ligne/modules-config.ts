@@ -271,7 +271,7 @@ export const FORMATION_MODULES: Record<string, FormationDefinition> = {
   "continue-vtc": { label: "Formation Continue VTC", color: "bg-blue-100 text-blue-800 border-blue-300", modules: [
     { id: 81, label: "1.BILAN EXERCICES FORMATION CONTINUE VTC" },
     { id: 87, label: "2.📋 BILAN FIN DE FORMATION CONTINUE VTC" },
-    { id: 83, label: "3.FEUILLES D'ÉMARGEMENT SIGNÉES VTC" },
+    { id: 83, label: "3.💶 REMBOURSEMENT FORMATION CONTINUE VTC" },
     { id: 85, label: "4.INFORMATIONS FINANCEUR VTC" },
     { id: 88, label: "5.🪪 DEMANDE DE CARTE PROFESSIONNELLE VTC" },
   ]},
