@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { CheckCircle2, Download, FileSignature, Loader2, User, PenTool } from "lucide-react";
 import { EmargementFCModal, isFormationContinue } from "./EmargementFCModal";
 import { getExpectedEmargements, isPresentielType, type CreneauKey } from "@/lib/agendaSlots";
+import { SIGNATURE_NAOUFAL_DATA_URL } from "@/lib/signatureNaoufal";
 
 
 interface EmargementRow {
