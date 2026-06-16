@@ -389,23 +389,42 @@ export default function RemboursementFCViewer({ apprenantId, completed, onComple
         <div className="flex items-start gap-3">
           <Award className="h-6 w-6 text-blue-600 shrink-0 mt-1" />
           <div className="flex-1">
-            <h3 className="font-semibold">3. Attestation de fin de formation continue {formation}</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="font-semibold">3. Attestation de fin de formation continue {formation}</h3>
+              {attestations.length > 0 && (
+                <span className="inline-flex items-center gap-1 text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">
+                  <CheckCircle2 className="h-3 w-3" />
+                  Émise par le centre
+                </span>
+              )}
+            </div>
             <p className="text-xs text-muted-foreground mt-0.5">
               Attestation de présence et de suivi, signée et datée par le représentant légal du centre (article 3 de l'arrêté du 11 août 2017).
             </p>
-            <Button
-              size="sm"
-              className="mt-2"
-              disabled={!apprenant || downloading === "attestation"}
-              onClick={handleDownloadAttestation}
-            >
-              {downloading === "attestation" ? (
-                <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
-              ) : (
-                <Download className="h-4 w-4 mr-1.5" />
-              )}
-              Télécharger l'attestation (PDF)
-            </Button>
+            {attestations.length > 0 ? (
+              <div className="mt-2 space-y-2">
+                {attestations.map((a) => (
+                  <div key={a.id} className="flex items-center justify-between gap-2 border rounded-md p-2 bg-slate-50/50">
+                    <div className="text-xs">
+                      <div className="font-medium">{a.titre}</div>
+                      <div className="text-muted-foreground">{a.nom_fichier}</div>
+                    </div>
+                    <Button size="sm" variant="outline" onClick={() => window.open(a.url, "_blank", "noopener,noreferrer")}>
+                      <Download className="h-3.5 w-3.5 mr-1" />
+                      Télécharger
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="mt-2 flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 p-2 text-xs text-amber-900">
+                <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                <span>
+                  Votre attestation est en cours d'édition par le centre. Elle sera disponible
+                  ici dès qu'elle aura été validée et envoyée par votre formateur.
+                </span>
+              </div>
+            )}
           </div>
         </div>
       </Card>
