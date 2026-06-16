@@ -236,7 +236,7 @@ serve(async (req) => {
             },
             body: JSON.stringify({
               message: {
-                subject: `🔐 Vos nouveaux identifiants de cours en ligne – FTRANSPORT`,
+                subject: `Votre accès à la plateforme FTRANSPORT`,
                 body: { contentType: "HTML", content: emailBody },
                 toRecipients: [{ emailAddress: { address: apprenant.email } }],
               },
