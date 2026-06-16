@@ -242,7 +242,7 @@ export default function RemboursementFCViewer({ apprenantId, completed, onComple
       }
       for (const e of expected) ensure(e.date).expectedSet?.add(e.creneau);
       const grouped = Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b));
-      const html = buildEmargementHTML(grouped, apprenant as any);
+      const html = buildEmargementHTML(grouped, apprenant as any, { isFormationContinue: true });
       openHtmlInNewWindow(html);
     } finally {
       setDownloading(null);
