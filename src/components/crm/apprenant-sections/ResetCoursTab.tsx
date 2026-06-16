@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { RotateCcw, AlertTriangle, Trash2 } from "lucide-react";
+import { RotateCcw, AlertTriangle, Trash2, Unlock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -183,6 +183,7 @@ const FORMATION_LABELS: Record<string, Record<number, string>> = {
 export function ResetCoursTab({ apprenant, queryClient }: ResetCoursTabProps) {
   const [resettingModule, setResettingModule] = useState<number | null>(null);
   const [resettingAll, setResettingAll] = useState(false);
+  const [unlockingModule, setUnlockingModule] = useState<number | null>(null);
 
   const hasAccount = !!apprenant.auth_user_id;
 
@@ -305,6 +306,40 @@ export function ResetCoursTab({ apprenant, queryClient }: ResetCoursTabProps) {
     }
   };
 
+  const unlockModule = async (moduleId: number) => {
+    const mod = MODULES_DATA.find((m) => m.id === moduleId);
+    const moduleLabel = getDisplayLabel(moduleId, mod?.nom || "Module");
+    const confirmed = window.confirm(
+      `Débloquer le module "${moduleLabel}" pour ${apprenant.prenom} ${apprenant.nom} ?\n\nCela marquera le module comme complété (déblocage manuel) afin de permettre l'accès aux modules suivants.`
+    );
+    if (!confirmed) return;
+
+    setUnlockingModule(moduleId);
+    try {
+      const { error } = await supabase
+        .from("apprenant_module_completion")
+        .upsert(
+          {
+            apprenant_id: apprenant.id,
+            module_id: moduleId,
+            score_obtenu: 0,
+            score_max: 0,
+            completed_at: new Date().toISOString(),
+          },
+          { onConflict: "apprenant_id,module_id" }
+        );
+      if (error) throw error;
+
+      queryClient.invalidateQueries({ queryKey: ["reset-completions"] });
+      toast.success(`Module "${moduleLabel}" débloqué`);
+    } catch (error: any) {
+      toast.error("Erreur : " + error.message);
+    } finally {
+      setUnlockingModule(null);
+    }
+  };
+
+
   const resetAll = async () => {
     const confirmed = window.confirm(
       `Êtes-vous sûr de vouloir remettre à zéro TOUS les cours de ${apprenant.prenom} ${apprenant.nom} ? Cette action est irréversible.`
@@ -403,19 +438,37 @@ export function ResetCoursTab({ apprenant, queryClient }: ResetCoursTabProps) {
                         )}
                       </TableCell>
                       <TableCell className="text-center">
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          disabled={!isCompleted || resettingModule === mod.id}
-                          onClick={() => resetModule(mod.id)}
-                        >
-                          {resettingModule === mod.id ? (
-                            <RotateCcw className="w-3 h-3 mr-1 animate-spin" />
-                          ) : (
-                            <Trash2 className="w-3 h-3 mr-1" />
+                        <div className="flex items-center justify-center gap-2">
+                          {!isCompleted && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled={unlockingModule === mod.id}
+                              onClick={() => unlockModule(mod.id)}
+                              title="Débloquer manuellement ce module (marque comme complété)"
+                            >
+                              {unlockingModule === mod.id ? (
+                                <RotateCcw className="w-3 h-3 mr-1 animate-spin" />
+                              ) : (
+                                <Unlock className="w-3 h-3 mr-1" />
+                              )}
+                              Débloquer
+                            </Button>
                           )}
-                          Supprimer
-                        </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            disabled={!isCompleted || resettingModule === mod.id}
+                            onClick={() => resetModule(mod.id)}
+                          >
+                            {resettingModule === mod.id ? (
+                              <RotateCcw className="w-3 h-3 mr-1 animate-spin" />
+                            ) : (
+                              <Trash2 className="w-3 h-3 mr-1" />
+                            )}
+                            Supprimer
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
