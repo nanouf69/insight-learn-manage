@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { CheckCircle2, Download, FileSignature, Loader2, User, PenTool } from "lucide-react";
 import { EmargementFCModal, isFormationContinue } from "./EmargementFCModal";
 import { getExpectedEmargements, isPresentielType, type CreneauKey } from "@/lib/agendaSlots";
+import { SIGNATURE_NAOUFAL_DATA_URL } from "@/lib/signatureNaoufal";
 
 
 interface EmargementRow {
@@ -108,6 +109,22 @@ export const buildEmargementHTML = (
   const hasSoirSplit = groupedByDay.some(([, v]) => !!v.soir1 || !!v.soir2);
   const hasSoir = hasSoirSplit || groupedByDay.some(([, v]) => !!v.soir);
 
+  // Heures par créneau
+  const HRS = {
+    matin: 3,        // 09:00 - 12:00
+    apresMidi: 3,    // 13:00 - 16:00
+    soir: 4,         // 17:00 - 21:00
+    soir1: 1.5,      // 17:00 - 18:30
+    soir2: 2.5,      // 18:30 - 21:00
+  };
+  const fmtH = (h: number) => {
+    const hh = Math.floor(h);
+    const mm = Math.round((h - hh) * 60);
+    return mm === 0 ? `${hh}h` : `${hh}h${String(mm).padStart(2, "0")}`;
+  };
+
+  let totalHeures = 0;
+
   const rowsHtml = groupedByDay
     .map(([date, { matin, apresMidi, soir, soir1, soir2 }]) => {
       const jourLabel = capitalize(formatDateFR(date));
@@ -115,18 +132,33 @@ export const buildEmargementHTML = (
         r?.signature_data_url
           ? `<img src="${r.signature_data_url}" alt="Signature" style="max-height:55px;max-width:95%;"/>`
           : "";
-      const cells = hasSoirSplit
-        ? `<td class="horaire">17:00 - 18:30</td><td class="sig">${sigImg(soir1)}</td><td class="horaire">18:30 - 21:00</td><td class="sig">${sigImg(soir2)}</td>`
-        : hasSoir
-          ? `<td class="horaire">17:00 - 21:00</td><td class="sig">${sigImg(soir)}</td>`
-          : `<td class="horaire">09:00 - 12:00</td><td class="sig">${sigImg(matin)}</td><td class="horaire">13:00 - 16:00</td><td class="sig">${sigImg(apresMidi)}</td>`;
+      let heuresJour = 0;
+      let cells = "";
+      if (hasSoirSplit) {
+        const h1 = soir1 ? HRS.soir1 : 0;
+        const h2 = soir2 ? HRS.soir2 : 0;
+        heuresJour = h1 + h2;
+        cells = `<td class="horaire">17:00 - 18:30<br/><span class="hsmall">${fmtH(HRS.soir1)}</span></td><td class="sig">${sigImg(soir1)}</td><td class="horaire">18:30 - 21:00<br/><span class="hsmall">${fmtH(HRS.soir2)}</span></td><td class="sig">${sigImg(soir2)}</td>`;
+      } else if (hasSoir) {
+        heuresJour = soir ? HRS.soir : 0;
+        cells = `<td class="horaire">17:00 - 21:00<br/><span class="hsmall">${fmtH(HRS.soir)}</span></td><td class="sig">${sigImg(soir)}</td>`;
+      } else {
+        const hm = matin ? HRS.matin : 0;
+        const ha = apresMidi ? HRS.apresMidi : 0;
+        heuresJour = hm + ha;
+        cells = `<td class="horaire">09:00 - 12:00<br/><span class="hsmall">${fmtH(HRS.matin)}</span></td><td class="sig">${sigImg(matin)}</td><td class="horaire">13:00 - 16:00<br/><span class="hsmall">${fmtH(HRS.apresMidi)}</span></td><td class="sig">${sigImg(apresMidi)}</td>`;
+      }
+      totalHeures += heuresJour;
       return `
         <tr>
           <td class="jour">${jourLabel}</td>
           ${cells}
+          <td class="total-day"><strong>${fmtH(heuresJour)}</strong></td>
         </tr>`;
     })
     .join("");
+
+  const totalCols = hasSoirSplit ? 6 : (hasSoir ? 4 : 6); // jour + cells + total
 
   return `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"/>
 <title>Feuille d'émargement individuelle</title>
@@ -148,10 +180,17 @@ export const buildEmargementHTML = (
   tbody td { border: 1px solid #6b7fc7; padding: 10px 8px; text-align: center; height: 70px; vertical-align: middle; }
   tbody td.jour { font-weight: bold; text-align: left; padding-left: 12px; background: #fff; }
   tbody td.horaire { font-size: 10px; color: #444; width: 90px; }
+  tbody td.horaire .hsmall { color: #6b7fc7; font-weight: bold; }
   tbody td.sig { background: #fff; }
-  .cachet { margin-top: 18px; }
-  .cachet .label { font-weight: bold; font-size: 11px; margin-bottom: 4px; }
-  .cachet .box { border: 1px solid #6b7fc7; border-radius: 4px; padding: 14px; min-height: 90px; width: 50%; font-size: 10px; color: #555; }
+  tbody td.total-day { background: #f3f5fb; font-size: 12px; color: #1a1a1a; width: 70px; }
+  tfoot td { border: 1px solid #6b7fc7; padding: 10px 8px; background: #6b7fc7; color: #fff; font-weight: bold; }
+  tfoot td.total-label { text-align: right; font-size: 12px; }
+  tfoot td.total-value { text-align: center; font-size: 14px; }
+  .signatures { margin-top: 16px; display: flex; gap: 14px; }
+  .sigbox { flex: 1; border: 1px solid #6b7fc7; border-radius: 4px; padding: 10px; min-height: 110px; position: relative; }
+  .sigbox .label { font-weight: bold; font-size: 11px; margin-bottom: 4px; color: #6b7fc7; }
+  .sigbox .name { font-size: 11px; color: #333; margin-top: 2px; }
+  .sigbox img.formateur-sig { max-height: 70px; max-width: 90%; display: block; margin: 4px auto; }
   @media print { .noprint { display:none; } }
 </style></head><body>
   <div class="header">
@@ -166,6 +205,7 @@ export const buildEmargementHTML = (
     <div class="item"><span class="label">Lieu :</span><span class="value">${lieu}</span></div>
     <div class="item"><span class="label">Dates :</span><span class="value">${datesFormation}</span></div>
     <div class="item"><span class="label">Formateur(s) :</span><span class="value">${formateur}</span></div>
+    <div class="item"><span class="label">Durée totale :</span><span class="value"><strong>14 heures</strong></span></div>
   </div>
 
   <table>
@@ -173,19 +213,33 @@ export const buildEmargementHTML = (
       <tr class="top">
         <th rowspan="2" style="width:160px;">Jour</th>
         ${hasSoirSplit ? `<th colspan="2">Soir 1</th><th colspan="2">Soir 2</th>` : hasSoir ? `<th colspan="2">Soir</th>` : `<th colspan="2">Matin</th><th colspan="2">Apres-midi</th>`}
+        <th rowspan="2" style="width:70px;">Heures du jour</th>
       </tr>
       <tr class="sub">
         ${hasSoir ? `<th>Horaire</th><th>Signature du stagiaire</th>${hasSoirSplit ? `<th>Horaire</th><th>Signature du stagiaire</th>` : ""}` : `<th>Horaire</th><th>Signature du stagiaire</th><th>Horaire</th><th>Signature du stagiaire</th>`}
       </tr>
     </thead>
     <tbody>
-      ${rowsHtml || `<tr><td colspan="${hasSoir ? (hasSoirSplit ? 5 : 3) : 5}" style="padding:20px;color:#999;">Aucune signature enregistrée</td></tr>`}
+      ${rowsHtml || `<tr><td colspan="${totalCols}" style="padding:20px;color:#999;">Aucune signature enregistrée</td></tr>`}
     </tbody>
+    <tfoot>
+      <tr>
+        <td class="total-label" colspan="${totalCols - 1}">TOTAL HEURES DE FORMATION</td>
+        <td class="total-value">${fmtH(totalHeures)} / 14h</td>
+      </tr>
+    </tfoot>
   </table>
 
-  <div class="cachet">
-    <div class="label">Cachet et signature du centre</div>
-    <div class="box">Fait à Lyon, le ______________</div>
+  <div class="signatures">
+    <div class="sigbox">
+      <div class="label">Formateur</div>
+      <div class="name">${formateur}</div>
+      <img class="formateur-sig" src="${SIGNATURE_NAOUFAL_DATA_URL}" alt="Signature formateur"/>
+    </div>
+    <div class="sigbox">
+      <div class="label">Cachet et signature du centre</div>
+      <div class="name" style="margin-top:8px;color:#666;">Fait à Lyon, le ______________</div>
+    </div>
   </div>
 
   <div class="noprint" style="margin-top:18px;text-align:center;">
