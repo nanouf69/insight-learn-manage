@@ -56,6 +56,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { generateAttestationFCVTC } from "@/lib/pdf/attestation-fc-vtc";
 import { generateFactureFC } from "@/lib/pdf/facture-fc";
 import { saveFactureToCRM } from "@/lib/saveFactureToCRM";
+import { saveAttestationToCRM } from "@/lib/saveAttestationToCRM";
 import { saveEmargementToCRM } from "@/lib/saveEmargementToCRM";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
@@ -1472,6 +1473,16 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       });
       return;
     }
+    // Confirmation avant envoi : une fois envoyée, l'attestation devient
+    // disponible côté apprenant (module Remboursement FC). Permet à l'admin
+    // de revenir en arrière s'il souhaite encore l'éditer.
+    const confirmed = window.confirm(
+      "Envoyer les attestations maintenant ?\n\n" +
+      "Une fois envoyées, elles seront déposées dans l'espace apprenant " +
+      "(module « Remboursement formation continue ») et envoyées par email.\n\n" +
+      "Cliquez sur Annuler si vous souhaitez encore les éditer."
+    );
+    if (!confirmed) return;
     setBulkSendingAttestations(true);
     let sent = 0;
     let skipped = 0;
@@ -1525,6 +1536,18 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
             },
           });
           if (error) { failed++; continue; }
+          // Dépose l'attestation dans le dossier apprenant pour qu'elle
+          // apparaisse dans le module « Remboursement formation continue ».
+          try {
+            await saveAttestationToCRM({
+              apprenantId: apprenant.id,
+              fileName: result.fileName,
+              blob: result.blob,
+              formation,
+            });
+          } catch (e) {
+            console.error('[bulkSendAttestations] saveAttestationToCRM error', e);
+          }
           sent++;
         } catch (e) {
           console.error('Erreur envoi attestation', e);

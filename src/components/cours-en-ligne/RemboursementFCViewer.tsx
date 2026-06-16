@@ -160,13 +160,14 @@ export default function RemboursementFCViewer({ apprenantId, completed, onComple
   const [emargements, setEmargements] = useState<EmargementRow[]>([]);
   const [expected, setExpected] = useState<Array<{ date: string; creneau: CreneauKey }>>([]);
   const [factures, setFactures] = useState<FactureDoc[]>([]);
+  const [attestations, setAttestations] = useState<FactureDoc[]>([]);
   const [downloading, setDownloading] = useState<string | null>(null);
 
   useEffect(() => {
     if (!apprenantId) { setLoading(false); return; }
     (async () => {
       setLoading(true);
-      const [apRes, emRes, fRes] = await Promise.all([
+      const [apRes, emRes, fRes, atRes] = await Promise.all([
         supabase
           .from("apprenants")
           .select("nom, prenom, email, telephone, adresse, code_postal, ville, formation_choisie, type_apprenant, date_debut_formation, date_fin_formation, creneau_horaire, date_naissance")
@@ -183,12 +184,19 @@ export default function RemboursementFCViewer({ apprenantId, completed, onComple
           .eq("apprenant_id", apprenantId)
           .eq("type_document", "facture-fc")
           .order("created_at", { ascending: false }),
+        supabase
+          .from("documents_inscription")
+          .select("id, url, nom_fichier, titre, created_at")
+          .eq("apprenant_id", apprenantId)
+          .eq("type_document", "attestation-fc")
+          .order("created_at", { ascending: false }),
       ]);
 
       const ap = (!apRes.error && apRes.data) ? (apRes.data as ApprenantInfo) : null;
       setApprenant(ap);
       if (!emRes.error && Array.isArray(emRes.data)) setEmargements(emRes.data as unknown as EmargementRow[]);
       if (!fRes.error && Array.isArray(fRes.data)) setFactures(fRes.data as FactureDoc[]);
+      if (!atRes.error && Array.isArray(atRes.data)) setAttestations(atRes.data as FactureDoc[]);
 
       if (ap) {
         const today = new Date(); today.setHours(0, 0, 0, 0);
@@ -381,23 +389,42 @@ export default function RemboursementFCViewer({ apprenantId, completed, onComple
         <div className="flex items-start gap-3">
           <Award className="h-6 w-6 text-blue-600 shrink-0 mt-1" />
           <div className="flex-1">
-            <h3 className="font-semibold">3. Attestation de fin de formation continue {formation}</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="font-semibold">3. Attestation de fin de formation continue {formation}</h3>
+              {attestations.length > 0 && (
+                <span className="inline-flex items-center gap-1 text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">
+                  <CheckCircle2 className="h-3 w-3" />
+                  Émise par le centre
+                </span>
+              )}
+            </div>
             <p className="text-xs text-muted-foreground mt-0.5">
               Attestation de présence et de suivi, signée et datée par le représentant légal du centre (article 3 de l'arrêté du 11 août 2017).
             </p>
-            <Button
-              size="sm"
-              className="mt-2"
-              disabled={!apprenant || downloading === "attestation"}
-              onClick={handleDownloadAttestation}
-            >
-              {downloading === "attestation" ? (
-                <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
-              ) : (
-                <Download className="h-4 w-4 mr-1.5" />
-              )}
-              Télécharger l'attestation (PDF)
-            </Button>
+            {attestations.length > 0 ? (
+              <div className="mt-2 space-y-2">
+                {attestations.map((a) => (
+                  <div key={a.id} className="flex items-center justify-between gap-2 border rounded-md p-2 bg-slate-50/50">
+                    <div className="text-xs">
+                      <div className="font-medium">{a.titre}</div>
+                      <div className="text-muted-foreground">{a.nom_fichier}</div>
+                    </div>
+                    <Button size="sm" variant="outline" onClick={() => window.open(a.url, "_blank", "noopener,noreferrer")}>
+                      <Download className="h-3.5 w-3.5 mr-1" />
+                      Télécharger
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="mt-2 flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 p-2 text-xs text-amber-900">
+                <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                <span>
+                  Votre attestation est en cours d'édition par le centre. Elle sera disponible
+                  ici dès qu'elle aura été validée et envoyée par votre formateur.
+                </span>
+              </div>
+            )}
           </div>
         </div>
       </Card>
