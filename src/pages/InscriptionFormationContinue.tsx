@@ -487,7 +487,16 @@ export default function InscriptionFormationContinue() {
               </div>
 
               {hasFinanceur && (
-                <FinanceurFields initial={EMPTY_FINANCEUR} onChange={setFinanceur} />
+                <FinanceurFields
+                  key={`fin-${adresse}-${codePostal}-${ville}`}
+                  initial={{
+                    ...EMPTY_FINANCEUR,
+                    adresse: adresse.trim(),
+                    codePostal: codePostal.trim(),
+                    ville: ville.trim(),
+                  }}
+                  onChange={setFinanceur}
+                />
               )}
             </div>
 
