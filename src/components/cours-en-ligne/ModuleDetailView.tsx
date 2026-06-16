@@ -5920,10 +5920,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           })() : (
             <Button variant="secondary" className="gap-2" onClick={async () => {
               const ok = await persistModuleCompletion();
-              if (ok) {
-                onBack();
-                toast.success("🎉 Module terminé !");
-              }
+              onBack();
+              if (ok) toast.success("🎉 Module terminé !");
             }}>
               <CheckCircle2 className="w-4 h-4" /> Terminé
             </Button>
