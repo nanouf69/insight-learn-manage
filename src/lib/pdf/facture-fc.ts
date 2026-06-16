@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf';
 import logoImage from '@/assets/logo-ftransport-2.png';
+import { SIGNATURE_NAOUFAL_DATA_URL } from '@/lib/signatureNaoufal';
 
 const COMPANY = {
   name: 'Services pro Ftransport',
