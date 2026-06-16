@@ -281,6 +281,25 @@ export async function generateFactureFC(
     doc.setTextColor(0, 0, 0);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);
+
+    // Signature du gérant (côté droit)
+    try {
+      yT += 6;
+      const sigW = 38;
+      const sigH = 22;
+      const sigX = mr - sigW;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.text('Signature du gérant', mr, yT, { align: 'right' });
+      doc.setFont('helvetica', 'normal');
+      doc.addImage(SIGNATURE_NAOUFAL_DATA_URL, 'PNG', sigX, yT + 2, sigW, sigH);
+      doc.setFontSize(8);
+      doc.setTextColor(80, 80, 80);
+      doc.text('Naoufal GUENICHI', mr, yT + sigH + 6, { align: 'right' });
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(10);
+      yT += sigH + 8;
+    } catch {}
   }
 
   // Mentions légales
