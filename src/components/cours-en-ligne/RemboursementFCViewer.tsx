@@ -87,7 +87,8 @@ ul { padding-left: 18px; } li { margin-bottom: 4px; }
 
 <h2>Durée et organisation</h2>
 <ul>
-  <li>14 heures de formation en présentiel, dans un centre agréé.</li>
+  <li>14 heures de formation en présentiel, dans un centre agréé (2 journées de 7h).</li>
+  <li><strong>Horaires :</strong> 09h00 — 12h00 (matin, 3h) et 13h00 — 17h00 (après-midi, 4h).</li>
   <li>Possibilité de fractionnement en 4 périodes de 3h30 sur 2 mois maximum.</li>
   <li>Session organisée spécifiquement pour la profession (${formation}).</li>
 </ul>
