@@ -93,8 +93,10 @@ type GroupedEmargements = {
 
 export const buildEmargementHTML = (
   groupedByDay: Array<[string, GroupedEmargements]>,
-  apprenant: ApprenantInfo | null
+  apprenant: ApprenantInfo | null,
+  options?: { isFormationContinue?: boolean }
 ) => {
+  const isFC = !!options?.isFormationContinue;
   const formation = apprenant?.formation_choisie || apprenant?.type_apprenant || "Formation";
   const adresse = [apprenant?.adresse, [apprenant?.code_postal, apprenant?.ville].filter(Boolean).join(" ")]
     .filter(Boolean)
@@ -109,13 +111,13 @@ export const buildEmargementHTML = (
   const hasSoirSplit = groupedByDay.some(([, v]) => !!v.soir1 || !!v.soir2);
   const hasSoir = hasSoirSplit || groupedByDay.some(([, v]) => !!v.soir);
 
-  // Heures par créneau
+  // Heures par créneau (FC VTC/TAXI : 9h-12h matin + 13h-17h après-midi = 7h/jour, 14h sur 2 jours)
   const HRS = {
-    matin: 3,        // 09:00 - 12:00
-    apresMidi: 3,    // 13:00 - 16:00
-    soir: 4,         // 17:00 - 21:00
-    soir1: 1.5,      // 17:00 - 18:30
-    soir2: 2.5,      // 18:30 - 21:00
+    matin: 3,                      // 09:00 - 12:00
+    apresMidi: isFC ? 4 : 3,       // FC: 13:00 - 17:00 (4h) | sinon 13:00 - 16:00 (3h)
+    soir: 4,                       // 17:00 - 21:00
+    soir1: 1.5,                    // 17:00 - 18:30
+    soir2: 2.5,                    // 18:30 - 21:00
   };
   const fmtH = (h: number) => {
     const hh = Math.floor(h);
