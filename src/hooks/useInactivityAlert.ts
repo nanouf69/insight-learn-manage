@@ -19,6 +19,13 @@ export function useInactivityAlert({ enabled, onDisconnect, pauseDuringExam = fa
   const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const disconnectedRef = useRef(false);
 
+  // Stabilise onDisconnect : évite que l'effet listeners se reconstruise
+  // (et perde l'état des timers) à chaque render du parent.
+  const onDisconnectRef = useRef(onDisconnect);
+  useEffect(() => {
+    onDisconnectRef.current = onDisconnect;
+  }, [onDisconnect]);
+
   const clearAllTimers = useCallback(() => {
     if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
     if (disconnectTimerRef.current) clearTimeout(disconnectTimerRef.current);
@@ -47,10 +54,10 @@ export function useInactivityAlert({ enabled, onDisconnect, pauseDuringExam = fa
         disconnectedRef.current = true;
         clearAllTimers();
         setShowInactivityModal(false);
-        onDisconnect();
+        onDisconnectRef.current?.();
       }
     }, AUTO_DISCONNECT_TIMEOUT);
-  }, [clearAllTimers, onDisconnect]);
+  }, [clearAllTimers]);
 
   const resetInactivityTimer = useCallback(() => {
     if (!enabled || disconnectedRef.current) return;
