@@ -148,7 +148,7 @@ export const buildEmargementHTML = (
         const hm = matin ? HRS.matin : 0;
         const ha = apresMidi ? HRS.apresMidi : 0;
         heuresJour = hm + ha;
-        cells = `<td class="horaire">09:00 - 12:00<br/><span class="hsmall">${fmtH(HRS.matin)}</span></td><td class="sig">${sigImg(matin)}</td><td class="horaire">13:00 - 16:00<br/><span class="hsmall">${fmtH(HRS.apresMidi)}</span></td><td class="sig">${sigImg(apresMidi)}</td>`;
+        cells = `<td class="horaire">09:00 - 12:00<br/><span class="hsmall">${fmtH(HRS.matin)}</span></td><td class="sig">${sigImg(matin)}</td><td class="horaire">13:00 - ${isFC ? "17:00" : "16:00"}<br/><span class="hsmall">${fmtH(HRS.apresMidi)}</span></td><td class="sig">${sigImg(apresMidi)}</td>`;
       }
       totalHeures += heuresJour;
       return `
