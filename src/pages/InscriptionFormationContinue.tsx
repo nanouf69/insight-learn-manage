@@ -21,7 +21,7 @@ import logoFtransport from "@/assets/logo-ftransport.png";
 import { FinanceurFields, type FinanceurValues } from "@/components/inscription/FinanceurFields";
 
 const EMPTY_FINANCEUR: FinanceurValues = {
-  siren: "", nom: "", adresse: "", codePostal: "", ville: "", telephone: "", email: "",
+  statutJuridique: "", siren: "", nom: "", adresse: "", codePostal: "", ville: "", telephone: "", email: "",
 };
 
 // Dates de formation continue disponibles
@@ -109,6 +109,7 @@ export default function InscriptionFormationContinue() {
   const financeurValid =
     !hasFinanceur ||
     (
+      financeur.statutJuridique &&
       financeur.siren.trim() &&
       financeur.nom.trim() &&
       financeur.adresse.trim() &&
@@ -275,7 +276,13 @@ export default function InscriptionFormationContinue() {
           cgv_accepted_at: new Date().toISOString(),
           cgv_version: "CGV Ftransport - 2026",
         };
+        const statutLabel: Record<string, string> = {
+          micro: "Micro-entreprise",
+          individuelle: "Entreprise individuelle",
+          societe: "Société",
+        };
         if (hasFinanceur) {
+          devisDonnees.financeur_statut_juridique = statutLabel[financeur.statutJuridique] || financeur.statutJuridique;
           devisDonnees.financeur_siren = financeur.siren.trim();
           devisDonnees.financeur_nom = financeur.nom.trim();
           devisDonnees.financeur_adresse = financeur.adresse.trim();
@@ -287,6 +294,7 @@ export default function InscriptionFormationContinue() {
         const financeurPayload = hasFinanceur ? {
           nom: financeur.nom.trim(),
           siren: financeur.siren.trim(),
+          statut_juridique: statutLabel[financeur.statutJuridique] || financeur.statutJuridique,
           adresse: financeur.adresse.trim(),
           code_postal: financeur.codePostal.trim(),
           ville: financeur.ville.trim(),
@@ -486,7 +494,16 @@ export default function InscriptionFormationContinue() {
               </div>
 
               {hasFinanceur && (
-                <FinanceurFields initial={EMPTY_FINANCEUR} onChange={setFinanceur} />
+                <FinanceurFields
+                  key={`fin-${adresse}-${codePostal}-${ville}`}
+                  initial={{
+                    ...EMPTY_FINANCEUR,
+                    adresse: adresse.trim(),
+                    codePostal: codePostal.trim(),
+                    ville: ville.trim(),
+                  }}
+                  onChange={setFinanceur}
+                />
               )}
             </div>
 
