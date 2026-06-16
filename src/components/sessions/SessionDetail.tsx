@@ -1473,6 +1473,16 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       });
       return;
     }
+    // Confirmation avant envoi : une fois envoyée, l'attestation devient
+    // disponible côté apprenant (module Remboursement FC). Permet à l'admin
+    // de revenir en arrière s'il souhaite encore l'éditer.
+    const confirmed = window.confirm(
+      "Envoyer les attestations maintenant ?\n\n" +
+      "Une fois envoyées, elles seront déposées dans l'espace apprenant " +
+      "(module « Remboursement formation continue ») et envoyées par email.\n\n" +
+      "Cliquez sur Annuler si vous souhaitez encore les éditer."
+    );
+    if (!confirmed) return;
     setBulkSendingAttestations(true);
     let sent = 0;
     let skipped = 0;
