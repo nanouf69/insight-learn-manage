@@ -1536,6 +1536,18 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
             },
           });
           if (error) { failed++; continue; }
+          // Dépose l'attestation dans le dossier apprenant pour qu'elle
+          // apparaisse dans le module « Remboursement formation continue ».
+          try {
+            await saveAttestationToCRM({
+              apprenantId: apprenant.id,
+              fileName: result.fileName,
+              blob: result.blob,
+              formation,
+            });
+          } catch (e) {
+            console.error('[bulkSendAttestations] saveAttestationToCRM error', e);
+          }
           sent++;
         } catch (e) {
           console.error('Erreur envoi attestation', e);
