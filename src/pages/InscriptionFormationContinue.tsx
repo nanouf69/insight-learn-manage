@@ -401,6 +401,15 @@ export default function InscriptionFormationContinue() {
               >
                 www.fafcea.com
               </a>
+              {" — "}
+              <a
+                href="https://mon-entreprise.fafcea.com/login/?0"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline font-medium text-emerald-700 hover:text-emerald-900"
+              >
+                portail de remboursement
+              </a>
             </li>
             <li>
               <strong>AGEFICE</strong> — si vous êtes <strong>commerçant</strong> (immatriculé au RCS) :{" "}
