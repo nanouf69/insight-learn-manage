@@ -1437,12 +1437,30 @@ function getInitialModuleDataRaw(
     };
   }
 
-  // Feuilles d'émargement signées — Formation Continue VTC (83) / TAXI (84)
-  if (module.id === 83 || module.id === 84) {
-    const isTaxi = module.id === 84;
+  // Remboursement Formation Continue VTC (83) — documents pour le financeur
+  if (module.id === 83) {
     return {
       id: module.id,
-      nom: `2.FEUILLES D'ÉMARGEMENT SIGNÉES${isTaxi ? " TAXI" : " VTC"}`,
+      nom: "💶 REMBOURSEMENT FORMATION CONTINUE VTC",
+      description: "Téléchargez l'ensemble des documents nécessaires au remboursement par votre financeur.",
+      cours: [
+        {
+          id: 1,
+          titre: "Documents pour le remboursement de la formation",
+          description: "Programme, émargements, attestation et facture acquittée.",
+          actif: true,
+          checklistType: "remboursement-fc-vtc" as const,
+        },
+      ],
+      exercices: [],
+    };
+  }
+
+  // Feuilles d'émargement signées — Formation Continue TAXI (84)
+  if (module.id === 84) {
+    return {
+      id: module.id,
+      nom: "2.FEUILLES D'ÉMARGEMENT SIGNÉES TAXI",
       description: "Consultez l'historique de vos émargements signés durant la formation continue.",
       cours: [
         {
