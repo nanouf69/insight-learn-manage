@@ -4633,6 +4633,20 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         );
       }
 
+      if (cours.checklistType === "remboursement-fc-vtc") {
+        return (
+          <RemboursementFCViewer
+            apprenantId={apprenantId || undefined}
+            formation="VTC"
+            completed={completedPages.has(currentPage)}
+            onComplete={() => {
+              markPageCompleted(currentPage);
+              if (currentPage < totalPages - 1) goToPage(currentPage + 1);
+            }}
+          />
+        );
+      }
+
       if (cours.checklistType === "demande-carte-vtc") {
         return (
           <DemandeCarteVTCViewer
