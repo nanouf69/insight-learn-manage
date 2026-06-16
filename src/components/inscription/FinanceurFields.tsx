@@ -1,8 +1,12 @@
 import { memo, useEffect, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+export type StatutJuridique = "" | "micro" | "individuelle" | "societe";
 
 export interface FinanceurValues {
+  statutJuridique: StatutJuridique;
   siren: string;
   nom: string;
   adresse: string;
@@ -19,18 +23,14 @@ interface FinanceurFieldsProps {
 
 /**
  * Composant ISOLÉ pour les coordonnées du financeur.
- * - État strictement local (les re-renders du parent ne touchent pas ces inputs).
- * - memo() empêche tout re-render inutile du parent.
- * - Sync vers le parent en différé (rAF) pour ne jamais bloquer la saisie.
- * Résout le bug : les champs perdaient le focus pendant la frappe.
+ * État strictement local — `initial` n'est lu qu'au montage. Pour réinitialiser
+ * avec une nouvelle valeur (ex: pré-remplissage adresse), remonter via `key`.
  */
 function FinanceurFieldsInner({ initial, onChange }: FinanceurFieldsProps) {
   const [values, setValues] = useState<FinanceurValues>(initial);
   const onChangeRef = useRef(onChange);
   useEffect(() => { onChangeRef.current = onChange; }, [onChange]);
 
-  // Propage les valeurs au parent sans déclencher de re-render synchrone
-  // qui pourrait faire perdre le focus aux inputs.
   useEffect(() => {
     const id = requestAnimationFrame(() => onChangeRef.current(values));
     return () => cancelAnimationFrame(id);
@@ -47,6 +47,23 @@ function FinanceurFieldsInner({ initial, onChange }: FinanceurFieldsProps) {
       <p className="text-xs text-muted-foreground bg-amber-50 border border-amber-200 rounded-md p-2">
         ℹ️ Toutes les coordonnées du financeur sont obligatoires pour l'établissement de la facture.
       </p>
+
+      <div className="space-y-1">
+        <Label>Type de structure <span className="text-red-500">*</span></Label>
+        <Select
+          value={values.statutJuridique || undefined}
+          onValueChange={(v) => setValues(prev => ({ ...prev, statutJuridique: v as StatutJuridique }))}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Sélectionner…" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="micro">Micro-entreprise</SelectItem>
+            <SelectItem value="individuelle">Entreprise individuelle</SelectItem>
+            <SelectItem value="societe">Société (SARL, SAS, EURL, etc.)</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
       <div className="space-y-1">
         <Label>N° SIREN <span className="text-red-500">*</span></Label>
@@ -77,6 +94,9 @@ function FinanceurFieldsInner({ initial, onChange }: FinanceurFieldsProps) {
           onChange={update("adresse")}
           autoComplete="street-address"
         />
+        <p className="text-[11px] text-muted-foreground">
+          Pré-rempli avec votre adresse personnelle — modifiable si différente.
+        </p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -129,5 +149,5 @@ function FinanceurFieldsInner({ initial, onChange }: FinanceurFieldsProps) {
   );
 }
 
-// memo strict : ne re-render JAMAIS à cause du parent (props stables).
+// memo strict : on ne re-render qu'au remount via `key` (changement d'`initial`).
 export const FinanceurFields = memo(FinanceurFieldsInner, () => true);
