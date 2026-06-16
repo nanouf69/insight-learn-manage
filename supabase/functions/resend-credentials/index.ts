@@ -236,7 +236,7 @@ serve(async (req) => {
             },
             body: JSON.stringify({
               message: {
-                subject: `🔐 Vos nouveaux identifiants de cours en ligne – FTRANSPORT`,
+                subject: `Votre accès à la plateforme FTRANSPORT`,
                 body: { contentType: "HTML", content: emailBody },
                 toRecipients: [{ emailAddress: { address: apprenant.email } }],
               },
@@ -248,7 +248,7 @@ serve(async (req) => {
             emailSent = true;
             await supabaseAdmin.from("emails").insert({
               apprenant_id: apprenant_id,
-              subject: `🔐 Vos nouveaux identifiants de cours en ligne – FTRANSPORT`,
+              subject: `Votre accès à la plateforme FTRANSPORT`,
               body_preview: `Bonjour ${prenom}, voici vos identifiants de connexion mis à jour.`,
               body_html: emailBody,
               sender_email: senderEmail,
