@@ -55,6 +55,13 @@ export function usePresenceCheck({
   const lastActionCheckAtRef = useRef(0);
   const wasInExamRef = useRef(isInExam);
 
+  // Stabilise onForceDisconnect pour éviter que les setInterval/setTimeout
+  // se reconstruisent quand le parent passe une nouvelle référence à chaque render.
+  const onForceDisconnectRef = useRef(onForceDisconnect);
+  useEffect(() => {
+    onForceDisconnectRef.current = onForceDisconnect;
+  }, [onForceDisconnect]);
+
   const clearTimers = useCallback(() => {
     if (pollRef.current) clearInterval(pollRef.current);
     if (countdownRef.current) clearInterval(countdownRef.current);
@@ -98,9 +105,9 @@ export function usePresenceCheck({
         });
       }
 
-      await onForceDisconnect();
+      await onForceDisconnectRef.current?.();
     },
-    [apprenantId, clearTimers, connexionId, onForceDisconnect],
+    [apprenantId, clearTimers, connexionId],
   );
 
   const handleServerValidation = useCallback(
