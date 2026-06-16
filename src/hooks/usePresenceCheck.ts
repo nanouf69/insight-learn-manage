@@ -3,7 +3,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 const COUNTDOWN_TICK_MS = 1000;
-const POLL_INTERVAL_MS = 15_000;
 const ACTION_CHECK_THROTTLE_MS = 20_000;
 
 interface ServerSessionCheck {
@@ -190,8 +189,10 @@ export function usePresenceCheck({
     lastActionCheckAtRef.current = Date.now();
   }, [endSession, runServerCheck]);
 
-  // Main heartbeat polling — PAUSED during exams to avoid any re-render/disruption.
-  // On exam→normal transition, sends confirm_presence to reset rolling window.
+  // Initial check + exam transition handling.
+  // IMPORTANT: aucun setInterval ici — la détection de présence est désormais
+  // 100% event-driven (focus / visibilitychange / clic / clavier) pour éviter
+  // tout re-render global périodique pendant les quiz.
   useEffect(() => {
     if (!enabled || !apprenantId || !userId || !connexionId) {
       clearTimers();
@@ -202,11 +203,9 @@ export function usePresenceCheck({
       return;
     }
 
-    // Detect exam→non-exam transition: send confirm_presence to reset rolling window
     const resumingFromExam = wasInExamRef.current && !isInExam;
     wasInExamRef.current = isInExam;
 
-    // During exam: stop all polling, hide modal, do nothing
     if (isInExam) {
       clearTimers();
       setShowModal(false);
@@ -217,19 +216,13 @@ export function usePresenceCheck({
     endingRef.current = false;
 
     if (resumingFromExam) {
-      // Reset prompt state since we're coming back from exam
       promptLoggedRef.current = false;
       setShowModal(false);
       modalDeadlineRef.current = null;
-      // Send confirm_presence to reset rolling window (prevents immediate disconnect)
       void handleServerValidation("confirm_presence");
     } else {
       void handleServerValidation("heartbeat");
     }
-
-    pollRef.current = setInterval(() => {
-      void handleServerValidation("heartbeat");
-    }, POLL_INTERVAL_MS);
 
     return () => {
       clearTimers();
