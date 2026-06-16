@@ -415,7 +415,7 @@ export default function InscriptionFormationContinue() {
             </li>
           </ul>
           <p className="text-xs text-emerald-700 italic">
-            ℹ️ La demande de prise en charge doit être effectuée auprès de votre fonds <strong>avant le début de la formation</strong>.
+            ℹ️ La demande de prise en charge doit être effectuée auprès de votre fonds <strong>avant le début de la formation</strong>. Merci de bien vouloir contacter ces organismes.
           </p>
         </div>
 
