@@ -90,7 +90,7 @@ type GroupedEmargements = {
   expectedSet?: Set<CreneauKey>;
 };
 
-const buildEmargementHTML = (
+export const buildEmargementHTML = (
   groupedByDay: Array<[string, GroupedEmargements]>,
   apprenant: ApprenantInfo | null
 ) => {
