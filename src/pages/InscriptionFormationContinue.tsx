@@ -109,6 +109,7 @@ export default function InscriptionFormationContinue() {
   const financeurValid =
     !hasFinanceur ||
     (
+      financeur.statutJuridique &&
       financeur.siren.trim() &&
       financeur.nom.trim() &&
       financeur.adresse.trim() &&
