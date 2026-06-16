@@ -382,6 +382,43 @@ export default function InscriptionFormationContinue() {
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-8 space-y-6">
+        {/* Bandeau financement possible FAFCEA / AGEFICE */}
+        <div className="bg-emerald-50 border-l-4 border-emerald-500 rounded-lg p-4 text-sm space-y-2">
+          <p className="font-bold text-emerald-800">
+            💡 Cette formation peut être financée par votre fonds de formation professionnelle
+          </p>
+          <p className="text-emerald-900">
+            Si votre entreprise est toujours <strong>créée et en activité</strong>, vous pouvez bénéficier d'une prise en charge :
+          </p>
+          <ul className="list-disc pl-5 text-emerald-900 space-y-1">
+            <li>
+              <strong>FAFCEA</strong> — si vous êtes <strong>artisan</strong> (immatriculé au Répertoire des Métiers) :{" "}
+              <a
+                href="https://www.fafcea.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline font-medium text-emerald-700 hover:text-emerald-900"
+              >
+                www.fafcea.com
+              </a>
+            </li>
+            <li>
+              <strong>AGEFICE</strong> — si vous êtes <strong>commerçant</strong> (immatriculé au RCS) :{" "}
+              <a
+                href="https://communication-agefice.fr/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline font-medium text-emerald-700 hover:text-emerald-900"
+              >
+                communication-agefice.fr
+              </a>
+            </li>
+          </ul>
+          <p className="text-xs text-emerald-700 italic">
+            ℹ️ La demande de prise en charge doit être effectuée auprès de votre fonds <strong>avant le début de la formation</strong>.
+          </p>
+        </div>
+
         <Card>
           <CardContent className="pt-6 space-y-6">
             <div className="flex items-start gap-3">
