@@ -714,6 +714,10 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const emargementStatusRef = useRef(emargementFCStatus);
   const scrollYRef = useRef(0);
 
+  if (typeof window !== "undefined") {
+    scrollYRef.current = window.scrollY;
+  }
+
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -728,14 +732,6 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
       window.removeEventListener("scroll", handleScroll);
     };
   }, []);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    return () => {
-      scrollYRef.current = window.scrollY;
-    };
-  });
 
   useEffect(() => {
     if (typeof window === "undefined") return;
