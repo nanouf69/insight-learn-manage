@@ -311,3 +311,9 @@ function QuizBlockImpl({ onXPGained, category = "vtc" }: QuizBlockProps) {
     </div>
   );
 }
+
+// Memoised: ne re-render que si onXPGained ou category change.
+// Empêche le quiz de se re-render quand le parent (CoursPublic) re-render
+// pour des raisons sans rapport (countdown de présence, etc).
+export const QuizBlock = memo(QuizBlockImpl);
+
