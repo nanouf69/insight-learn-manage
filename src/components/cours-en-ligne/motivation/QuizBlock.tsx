@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef, useLayoutEffect, memo } from "react";
+import React, { useState, useMemo, useEffect, useRef, useLayoutEffect } from "react";
 
 const VTC_QUESTIONS = [
   {
@@ -315,5 +315,5 @@ function QuizBlockImpl({ onXPGained, category = "vtc" }: QuizBlockProps) {
 // Memoised: ne re-render que si onXPGained ou category change.
 // Empêche le quiz de se re-render quand le parent (CoursPublic) re-render
 // pour des raisons sans rapport (countdown de présence, etc).
-export const QuizBlock = memo(QuizBlockImpl);
+export const QuizBlock = React.memo(QuizBlockImpl);
 
