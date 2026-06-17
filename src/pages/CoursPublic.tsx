@@ -1184,6 +1184,8 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     lastFetchedUserIdRef.current = null;
   };
 
+  const pageContent = useMemo(() => {
+
   // Admin should never see the learner portal — redirect to dashboard
   if (!embedded && user && profile?.role === "admin") {
     return <Navigate to="/" replace />;
@@ -2006,6 +2008,43 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
       )}
     </div>
   );
+  }, [
+    activeTab,
+    apprenant,
+    apprenantFetchError,
+    apprenantInfoForModule,
+    apprenantLoading,
+    authLoading,
+    completedModuleIds,
+    confirmActivity,
+    confirmPresence,
+    disconnectReason,
+    embedded,
+    emargementCreneau,
+    emargementDate,
+    emargementFCStatus,
+    emargementMode,
+    examBlancCompletedIds,
+    handleBackFromModule,
+    handleExamStateChange,
+    handleLogout,
+    handleModuleCompleted,
+    handleTrackCours,
+    inactivityDeadline,
+    lastModuleName,
+    moduleCompletionsForNotes,
+    moduleScores,
+    presenceDeadline,
+    profile?.role,
+    selectedFormation,
+    selectedModule,
+    showInactivityModal,
+    showPresenceModal,
+    trackModuleActivity,
+    user,
+  ]);
+
+  return pageContent;
 };
 
 export default CoursPublic;
