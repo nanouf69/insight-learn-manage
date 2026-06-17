@@ -1175,14 +1175,14 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     }
   }, [apprenant?.id]);
 
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
     await signOut();
     setApprenant(null);
     setSelectedFormation(null);
     setApprenantFetchError(null);
     fetchAttemptRef.current = 0;
     lastFetchedUserIdRef.current = null;
-  };
+  }, [signOut]);
 
   const pageContent = useMemo(() => {
 
@@ -2038,6 +2038,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     profile?.role,
     selectedFormation,
     selectedModule,
+    sessionAccessWindow,
     showInactivityModal,
     showPresenceModal,
     trackModuleActivity,
