@@ -216,6 +216,7 @@ export function usePresenceCheck({
       clearTimers();
       setShowModal(false);
       modalDeadlineRef.current = null;
+      setCountdownDeadline(null);
       return;
     }
 
@@ -225,6 +226,7 @@ export function usePresenceCheck({
       promptLoggedRef.current = false;
       setShowModal(false);
       modalDeadlineRef.current = null;
+      setCountdownDeadline(null);
       void handleServerValidation("confirm_presence");
     } else {
       void handleServerValidation("heartbeat");
@@ -271,34 +273,29 @@ export function usePresenceCheck({
     };
   }, [enabled, apprenantId, userId, connexionId, handleServerValidation, isInExam]);
 
-  // Countdown timer for presence prompt
+  // Expiry timer: déclenche endSession à la deadline — pas de tick state ici.
+  // Le countdown affiché est calculé localement dans le modal isolé (React.memo).
   useEffect(() => {
-    if (!showModal || !modalDeadlineRef.current) {
-      if (countdownRef.current) clearInterval(countdownRef.current);
-      countdownRef.current = null;
-      return;
-    }
+    if (expiryTimerRef.current) clearTimeout(expiryTimerRef.current);
+    expiryTimerRef.current = null;
 
-    countdownRef.current = setInterval(() => {
-      const remaining = Math.max(0, Math.ceil((modalDeadlineRef.current! - Date.now()) / 1000));
-      setCountdownSeconds(remaining);
+    if (!showModal || !modalDeadlineRef.current) return;
 
-      if (remaining <= 0) {
-        if (countdownRef.current) clearInterval(countdownRef.current);
-        countdownRef.current = null;
-        void endSession("no_response");
-      }
-    }, COUNTDOWN_TICK_MS);
+    const delay = Math.max(0, modalDeadlineRef.current - Date.now());
+    expiryTimerRef.current = setTimeout(() => {
+      expiryTimerRef.current = null;
+      void endSession("no_response");
+    }, delay);
 
     return () => {
-      if (countdownRef.current) clearInterval(countdownRef.current);
-      countdownRef.current = null;
+      if (expiryTimerRef.current) clearTimeout(expiryTimerRef.current);
+      expiryTimerRef.current = null;
     };
-  }, [showModal, endSession]);
+  }, [showModal, endSession, countdownDeadline]);
 
   return {
     showModal,
-    countdownSeconds,
+    countdownDeadline,
     disconnectReason,
     confirmPresence,
   };
