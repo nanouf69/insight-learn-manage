@@ -43,11 +43,13 @@ export function usePresenceCheck({
   const isInExam = isInExamProp ?? pauseDuringExam ?? false;
 
   const [showModal, setShowModal] = useState(false);
-  const [countdownSeconds, setCountdownSeconds] = useState(600);
+  // Deadline timestamp (ms). Pas de tick state ici — c'est le modal isolé
+  // qui calcule lui-même la seconde affichée pour ne pas re-render le parent.
+  const [countdownDeadline, setCountdownDeadline] = useState<number | null>(null);
   const [disconnectReason, setDisconnectReason] = useState<string | null>(null);
 
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const expiryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const modalDeadlineRef = useRef<number | null>(null);
   const endingRef = useRef(false);
   const promptLoggedRef = useRef(false);

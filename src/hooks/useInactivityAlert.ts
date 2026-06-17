@@ -12,15 +12,15 @@ interface UseInactivityAlertParams {
 
 export function useInactivityAlert({ enabled, onDisconnect, pauseDuringExam = false }: UseInactivityAlertParams) {
   const [showInactivityModal, setShowInactivityModal] = useState(false);
-  const [inactivityCountdown, setInactivityCountdown] = useState(300); // 5min in seconds
+  // Deadline timestamp (ms). Setting once when modal opens — NO per-second
+  // state updates: le modal isolé calcule lui-même le compte à rebours
+  // localement pour éviter de re-render le parent (et casser le scroll).
+  const [inactivityDeadline, setInactivityDeadline] = useState<number | null>(null);
 
   const inactivityTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const disconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const disconnectedRef = useRef(false);
 
-  // Stabilise onDisconnect : évite que l'effet listeners se reconstruise
-  // (et perde l'état des timers) à chaque render du parent.
   const onDisconnectRef = useRef(onDisconnect);
   useEffect(() => {
     onDisconnectRef.current = onDisconnect;
@@ -29,31 +29,21 @@ export function useInactivityAlert({ enabled, onDisconnect, pauseDuringExam = fa
   const clearAllTimers = useCallback(() => {
     if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
     if (disconnectTimerRef.current) clearTimeout(disconnectTimerRef.current);
-    if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
     inactivityTimerRef.current = null;
     disconnectTimerRef.current = null;
-    countdownIntervalRef.current = null;
   }, []);
 
   const startDisconnectCountdown = useCallback(() => {
-    setShowInactivityModal(true);
-    setInactivityCountdown(300);
     const deadline = Date.now() + AUTO_DISCONNECT_TIMEOUT;
-
-    countdownIntervalRef.current = setInterval(() => {
-      const remaining = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
-      setInactivityCountdown(remaining);
-      if (remaining <= 0) {
-        if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
-        countdownIntervalRef.current = null;
-      }
-    }, 1000);
+    setShowInactivityModal(true);
+    setInactivityDeadline(deadline);
 
     disconnectTimerRef.current = setTimeout(() => {
       if (!disconnectedRef.current) {
         disconnectedRef.current = true;
         clearAllTimers();
         setShowInactivityModal(false);
+        setInactivityDeadline(null);
         onDisconnectRef.current?.();
       }
     }, AUTO_DISCONNECT_TIMEOUT);
@@ -61,8 +51,6 @@ export function useInactivityAlert({ enabled, onDisconnect, pauseDuringExam = fa
 
   const resetInactivityTimer = useCallback(() => {
     if (!enabled || disconnectedRef.current) return;
-
-    // If modal is showing, don't reset — user must click the button
     if (showInactivityModal) return;
 
     if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
@@ -75,8 +63,7 @@ export function useInactivityAlert({ enabled, onDisconnect, pauseDuringExam = fa
   const confirmActivity = useCallback(() => {
     clearAllTimers();
     setShowInactivityModal(false);
-    setInactivityCountdown(300);
-    // Restart the 30min inactivity timer
+    setInactivityDeadline(null);
     if (enabled && !disconnectedRef.current) {
       inactivityTimerRef.current = setTimeout(() => {
         startDisconnectCountdown();
@@ -88,6 +75,7 @@ export function useInactivityAlert({ enabled, onDisconnect, pauseDuringExam = fa
     if (!enabled || pauseDuringExam) {
       clearAllTimers();
       setShowInactivityModal(false);
+      setInactivityDeadline(null);
       disconnectedRef.current = false;
       return;
     }
@@ -101,7 +89,7 @@ export function useInactivityAlert({ enabled, onDisconnect, pauseDuringExam = fa
     const handler = () => resetInactivityTimer();
 
     events.forEach((e) => window.addEventListener(e, handler, { passive: true }));
-    resetInactivityTimer(); // start initial timer
+    resetInactivityTimer();
 
     return () => {
       events.forEach((e) => window.removeEventListener(e, handler));
@@ -111,7 +99,7 @@ export function useInactivityAlert({ enabled, onDisconnect, pauseDuringExam = fa
 
   return {
     showInactivityModal,
-    inactivityCountdown,
+    inactivityDeadline,
     confirmActivity,
   };
 }
