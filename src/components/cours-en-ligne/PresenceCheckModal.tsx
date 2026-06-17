@@ -1,26 +1,75 @@
-import { useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import { AlertTriangle, Clock, UserCheck, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface PresenceCheckModalProps {
   show: boolean;
-  countdownSeconds: number;
+  /** Timestamp (ms) at which the auto-disconnect fires. Null when no countdown active. */
+  countdownDeadline: number | null;
   disconnectReason: string | null;
   onConfirm: () => void;
 }
 
-export function PresenceCheckModal({
+/**
+ * Isolated countdown display — owns its OWN tick state so the 1s update
+ * never re-renders the parent (and never affects the page scroll inside
+ * a quiz). Wrapped with React.memo for the same reason.
+ */
+const CountdownDisplay = memo(function CountdownDisplay({ deadline }: { deadline: number }) {
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    setNow(Date.now());
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [deadline]);
+
+  const remaining = Math.max(0, Math.ceil((deadline - now) / 1000));
+  const minutes = Math.floor(remaining / 60);
+  const seconds = remaining % 60;
+  const maxSeconds = remaining > 300 ? 600 : 300;
+  const progressPercent = (remaining / maxSeconds) * 100;
+  const isUrgent = remaining <= 60;
+
+  return (
+    <div className="space-y-3">
+      <div
+        className={`text-3xl font-mono font-bold tabular-nums ${
+          isUrgent ? "text-destructive" : "text-foreground"
+        }`}
+      >
+        <Clock className="inline-block w-5 h-5 mr-2 -mt-1" />
+        {String(minutes).padStart(2, "0")}:{String(seconds).padStart(2, "0")}
+      </div>
+      <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+        <div
+          className={`h-full rounded-full transition-all duration-1000 ease-linear ${
+            isUrgent ? "bg-destructive" : "bg-primary"
+          }`}
+          style={{ width: `${progressPercent}%` }}
+        />
+      </div>
+      <p className="text-xs text-muted-foreground">
+        {isUrgent
+          ? "⚠️ Temps restant limité — confirmez votre présence maintenant"
+          : "Temps restant pour confirmer votre présence"}
+      </p>
+    </div>
+  );
+});
+
+function PresenceCheckModalImpl({
   show,
-  countdownSeconds,
+  countdownDeadline,
   disconnectReason,
   onConfirm,
 }: PresenceCheckModalProps) {
-  // Show disconnect reason message
+  // Disconnect reason message (full-screen blocking)
   if (disconnectReason) {
     let title = "Session terminée";
     let message = "Votre session a été fermée. Veuillez vous reconnecter pour continuer.";
     let instructions: string[] = [];
-    let icon = <LogOut className="w-8 h-8 text-destructive" />;
+    const icon = <LogOut className="w-8 h-8 text-destructive" />;
     let bgColor = "bg-destructive/10";
 
     if (disconnectReason === "max_duration") {
@@ -100,23 +149,20 @@ export function PresenceCheckModal({
     );
   }
 
+  if (!show || !countdownDeadline) return null;
 
-  if (!show) return null;
-
-  const minutes = Math.floor(countdownSeconds / 60);
-  const seconds = countdownSeconds % 60;
-  const maxSeconds = countdownSeconds > 300 ? 600 : 300;
-  const progressPercent = (countdownSeconds / maxSeconds) * 100;
-  const isUrgent = countdownSeconds <= 60;
+  const isUrgent = countdownDeadline - Date.now() <= 60_000;
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center pointer-events-none">
-      {/* Semi-transparent backdrop - clickable through */}
       <div className="absolute inset-0 bg-black/30" />
 
-      {/* Modal - captures clicks */}
       <div className="relative pointer-events-auto bg-card border border-border rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4 text-center space-y-6 animate-in fade-in zoom-in-95 duration-300">
-        <div className={`mx-auto w-16 h-16 rounded-full flex items-center justify-center ${isUrgent ? "bg-destructive/10" : "bg-primary/10"}`}>
+        <div
+          className={`mx-auto w-16 h-16 rounded-full flex items-center justify-center ${
+            isUrgent ? "bg-destructive/10" : "bg-primary/10"
+          }`}
+        >
           {isUrgent ? (
             <AlertTriangle className="w-8 h-8 text-destructive" />
           ) : (
@@ -133,25 +179,8 @@ export function PresenceCheckModal({
           </p>
         </div>
 
-        {/* Countdown */}
-        <div className="space-y-3">
-          <div className={`text-3xl font-mono font-bold tabular-nums ${isUrgent ? "text-destructive" : "text-foreground"}`}>
-            <Clock className="inline-block w-5 h-5 mr-2 -mt-1" />
-            {String(minutes).padStart(2, "0")}:{String(seconds).padStart(2, "0")}
-          </div>
-          {/* Progress bar */}
-          <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-            <div
-              className={`h-full rounded-full transition-all duration-1000 ease-linear ${isUrgent ? "bg-destructive" : "bg-primary"}`}
-              style={{ width: `${progressPercent}%` }}
-            />
-          </div>
-          <p className="text-xs text-muted-foreground">
-            {isUrgent
-              ? "⚠️ Temps restant limité — confirmez votre présence maintenant"
-              : "Temps restant pour confirmer votre présence"}
-          </p>
-        </div>
+        {/* Local 1s tick lives ONLY inside this child — parent never re-renders. */}
+        <CountdownDisplay deadline={countdownDeadline} />
 
         <Button
           size="lg"
@@ -165,3 +194,7 @@ export function PresenceCheckModal({
     </div>
   );
 }
+
+// Memoised: ne re-render que si une prop change (show / deadline / reason / onConfirm).
+// Le tick 1s vit dans CountdownDisplay et ne remonte jamais au parent.
+export const PresenceCheckModal = memo(PresenceCheckModalImpl);

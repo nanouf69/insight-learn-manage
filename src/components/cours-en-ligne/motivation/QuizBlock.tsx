@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef, useLayoutEffect } from "react";
+import { useState, useMemo, useEffect, useRef, useLayoutEffect, memo } from "react";
 
 const VTC_QUESTIONS = [
   {
@@ -76,7 +76,7 @@ interface QuizBlockProps {
   category?: "vtc" | "taxi";
 }
 
-export function QuizBlock({ onXPGained, category = "vtc" }: QuizBlockProps) {
+function QuizBlockImpl({ onXPGained, category = "vtc" }: QuizBlockProps) {
   const questions = useMemo(
     () => pickRandom(category === "taxi" ? TAXI_QUESTIONS : VTC_QUESTIONS, 3),
     [category]
