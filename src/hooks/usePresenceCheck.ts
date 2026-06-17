@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-const COUNTDOWN_TICK_MS = 1000;
+
 const ACTION_CHECK_THROTTLE_MS = 20_000;
 
 interface ServerSessionCheck {
