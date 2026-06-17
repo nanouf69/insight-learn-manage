@@ -712,6 +712,35 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const [emargementRefreshTick, setEmargementRefreshTick] = useState(0);
   const [sessionAccessWindow, setSessionAccessWindow] = useState<SessionAccessWindow | null>(null);
   const emargementStatusRef = useRef(emargementFCStatus);
+  const scrollYRef = useRef(0);
+
+  if (typeof window !== "undefined") {
+    scrollYRef.current = window.scrollY;
+  }
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handleScroll = () => {
+      scrollYRef.current = window.scrollY;
+    };
+
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const targetY = scrollYRef.current;
+    window.requestAnimationFrame(() => {
+      window.scrollTo(0, targetY);
+    });
+  });
 
   useEffect(() => {
     emargementStatusRef.current = emargementFCStatus;
