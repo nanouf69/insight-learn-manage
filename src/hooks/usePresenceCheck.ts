@@ -128,6 +128,7 @@ export function usePresenceCheck({
           clearTimers();
           setShowModal(false);
           modalDeadlineRef.current = null;
+          setCountdownDeadline(null);
           return;
         }
         console.error(`[PresenceCheck] Déconnexion forcée — raison: ${reason}`);
@@ -147,9 +148,10 @@ export function usePresenceCheck({
 
       if (validation.should_show_presence_prompt) {
         const remaining = Math.max(0, validation.remaining_presence_seconds || 0);
+        const deadline = Date.now() + remaining * 1000;
         setShowModal(true);
-        setCountdownSeconds(remaining);
-        modalDeadlineRef.current = Date.now() + remaining * 1000;
+        modalDeadlineRef.current = deadline;
+        setCountdownDeadline(deadline);
 
         if (!promptLoggedRef.current) {
           promptLoggedRef.current = true;
@@ -171,6 +173,7 @@ export function usePresenceCheck({
       } else {
         setShowModal(false);
         modalDeadlineRef.current = null;
+        setCountdownDeadline(null);
         promptLoggedRef.current = false;
       }
     },
@@ -188,7 +191,7 @@ export function usePresenceCheck({
     promptLoggedRef.current = false;
     setShowModal(false);
     modalDeadlineRef.current = null;
-    setCountdownSeconds(600);
+    setCountdownDeadline(null);
     lastActionCheckAtRef.current = Date.now();
   }, [endSession, runServerCheck]);
 
