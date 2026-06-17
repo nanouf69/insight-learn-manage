@@ -738,7 +738,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
 
   const {
     showModal: showPresenceModal,
-    countdownSeconds: presenceCountdown,
+    countdownDeadline: presenceDeadline,
     disconnectReason,
     confirmPresence,
   } = usePresenceCheck({
@@ -752,7 +752,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
 
   const {
     showInactivityModal,
-    inactivityCountdown,
+    inactivityDeadline,
     confirmActivity,
   } = useInactivityAlert({
     enabled: isStudentSession,
@@ -1995,7 +1995,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
       {/* Presence verification modal (non-blocking overlay) */}
       <PresenceCheckModal
         show={showPresenceModal || showInactivityModal}
-        countdownSeconds={showInactivityModal ? inactivityCountdown : presenceCountdown}
+        countdownDeadline={showInactivityModal ? inactivityDeadline : presenceDeadline}
         disconnectReason={disconnectReason}
         onConfirm={showInactivityModal ? confirmActivity : confirmPresence}
       />
