@@ -65,9 +65,9 @@ export function usePresenceCheck({
 
   const clearTimers = useCallback(() => {
     if (pollRef.current) clearInterval(pollRef.current);
-    if (countdownRef.current) clearInterval(countdownRef.current);
+    if (expiryTimerRef.current) clearTimeout(expiryTimerRef.current);
     pollRef.current = null;
-    countdownRef.current = null;
+    expiryTimerRef.current = null;
   }, []);
 
   const runServerCheck = useCallback(
@@ -97,6 +97,7 @@ export function usePresenceCheck({
       clearTimers();
       setShowModal(false);
       modalDeadlineRef.current = null;
+      setCountdownDeadline(null);
       setDisconnectReason(reason);
 
       if (connexionId) {
