@@ -793,7 +793,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const lastFetchedUserIdRef = useRef<string | null>(null);
   const adminRedirectedRef = useRef(false);
   useEffect(() => {
-    if (!user || !session || embedded) {
+    if (!user || embedded) {
       setApprenantLoading(false);
       return;
     }
@@ -929,7 +929,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     return () => {
       cancelled = true;
     };
-  }, [user?.id, !!session, embedded, navigate, fetchNonce, profile?.role]);
+  }, [user?.id, embedded, navigate, fetchNonce, profile?.role]);
 
   // Use apprenantOverride when provided (admin preview of specific student)
   useEffect(() => {
