@@ -396,6 +396,17 @@ serve(async (req) => {
         message: fullApprenantErr.message,
       });
     } else {
+      const accessUpdates: Record<string, string> = {};
+      if (fullApprenant.date_debut_formation && (!fullApprenant.date_debut_cours_en_ligne || fullApprenant.date_debut_cours_en_ligne < fullApprenant.date_debut_formation)) {
+        accessUpdates.date_debut_cours_en_ligne = fullApprenant.date_debut_formation;
+      }
+      if (!fullApprenant.date_fin_cours_en_ligne && fullApprenant.date_fin_formation) {
+        accessUpdates.date_fin_cours_en_ligne = fullApprenant.date_fin_formation;
+      }
+      if (Object.keys(accessUpdates).length > 0) {
+        await supabaseAdmin.from("apprenants").update(accessUpdates).eq("id", apprenant_id);
+        Object.assign(fullApprenant, accessUpdates);
+      }
       console.log(`${LOG_PREFIX}[${requestId}] Step 13 - Fetch full apprenant for email (done)`);
     }
 
@@ -463,8 +474,8 @@ serve(async (req) => {
             .map((p: string) => formationLabels[p.trim()] || p.trim())
             .filter(Boolean);
           const formation = formationParts.length > 0 ? formationParts.join(" + ") : "Non spécifiée";
-          const dateDebut = fullApprenant.date_debut_cours_en_ligne || "Non définie";
-          const dateFin = fullApprenant.date_fin_cours_en_ligne || "Non définie";
+          const dateDebut = fullApprenant.date_debut_formation || fullApprenant.date_debut_cours_en_ligne || "Non définie";
+          const dateFin = fullApprenant.date_fin_cours_en_ligne || fullApprenant.date_fin_formation || "Non définie";
           const prenom = fullApprenant.prenom || "";
           const nom = fullApprenant.nom || "";
           const coursUrl = "https://insight-learn-manage.lovable.app/cours-public";
