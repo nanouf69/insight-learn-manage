@@ -37,21 +37,14 @@ serve(async (req) => {
       throw fetchErr;
     }
 
-    // Filter: starts today OR tomorrow (J-1 anticipated sending)
-    // EXCEPTION: e-learning formations → send ONLY le jour J (jamais J-1)
+    // Filter: identifiants envoyés uniquement le premier jour réel de formation/access.
+    // Le compteur d'accès ne doit jamais démarrer la veille.
     const eligibleApprenants = (apprenants || []).filter((a: any) => {
-      const coursDate = a.date_debut_cours_en_ligne;
       const formationDate = a.date_debut_formation;
-      const effective = coursDate || formationDate;
+      const coursDate = a.date_debut_cours_en_ligne;
+      const effective = formationDate || coursDate;
       if (!effective) return false;
-      const formation = (a.formation_choisie || "").toLowerCase();
-      const isElearning = formation.includes("elearning") || formation.includes("e-learning");
-      if (isElearning) {
-        // E-learning : strictement le jour J (pas d'envoi anticipé)
-        return effective === today;
-      }
-      // Présentiel : J ou J-1
-      return effective === today || effective === tomorrow;
+      return effective === today;
     });
 
     console.log(`[auto-send-credentials] Found ${eligibleApprenants.length} apprenants starting today or tomorrow`);
