@@ -1140,6 +1140,19 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   }, [embedded, user?.id, apprenant?.id]);
 
 
+  // Track section navigation (Accueil / Examens / Notes) so the activity report
+  // always knows which area of the platform the student was on, even when no
+  // module was opened during the session.
+  useEffect(() => {
+    if (!isStudentSession || !connexionId) return;
+    const sectionLabel =
+      activeTab === "accueil" ? "Accueil — Liste des modules"
+      : activeTab === "examens" ? "Examens blancs"
+      : "Notes & Résultats";
+    trackModuleActivity(0, sectionLabel, "open_section");
+  }, [activeTab, isStudentSession, connexionId, trackModuleActivity]);
+
+
   const handleModuleCompleted = useCallback((moduleId: number) => {
     setCompletedModuleIds(prev => new Set([...prev, moduleId]));
   }, []);
