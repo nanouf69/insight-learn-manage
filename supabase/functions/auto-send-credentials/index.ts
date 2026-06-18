@@ -232,7 +232,7 @@ serve(async (req) => {
         const rawFormation = apprenant.formation_choisie || "";
         const formationParts = rawFormation.split(" + ").map((p: string) => formationLabels[p.trim()] || p.trim()).filter(Boolean);
         const formation = formationParts.length > 0 ? formationParts.join(" + ") : "Non spécifiée";
-        const dateDebut = apprenant.date_debut_cours_en_ligne || apprenant.date_debut_formation || "Non définie";
+        const dateDebut = apprenant.date_debut_formation || apprenant.date_debut_cours_en_ligne || "Non définie";
         const dateFin = apprenant.date_fin_cours_en_ligne || apprenant.date_fin_formation || "Non définie";
         const prenom = apprenant.prenom || "";
         const nom = apprenant.nom || "";
