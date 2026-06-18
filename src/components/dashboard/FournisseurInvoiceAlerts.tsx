@@ -7,19 +7,34 @@ import { Receipt, ExternalLink } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 
+const withTimeout = <T,>(operation: PromiseLike<T>, ms = 10000): Promise<T> =>
+  new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error("Chargement trop long")), ms);
+    Promise.resolve(operation)
+      .then((value) => {
+        clearTimeout(timer);
+        resolve(value);
+      })
+      .catch((error) => {
+        clearTimeout(timer);
+        reject(error);
+      });
+  });
+
 interface FournisseurInvoiceAlertsProps {
   onNavigateToComptabilite?: () => void;
 }
 
 export function FournisseurInvoiceAlerts({ onNavigateToComptabilite }: FournisseurInvoiceAlertsProps) {
-  const { data: facturesEnAttente, isLoading } = useQuery({
+  const { data: facturesEnAttente, isLoading, isError } = useQuery({
     queryKey: ["fournisseur-factures-en-attente"],
+    retry: 1,
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await withTimeout(supabase
         .from("fournisseur_factures")
         .select("*, fournisseurs!inner(nom)")
         .eq("statut", "en_attente")
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false }));
       if (error) throw error;
       return data || [];
     },
@@ -41,6 +56,22 @@ export function FournisseurInvoiceAlerts({ onNavigateToComptabilite }: Fournisse
           <div className="space-y-3 opacity-60">
             {[1, 2].map((i) => <div key={i} className="h-12 bg-muted rounded-lg" />)}
           </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (isError) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-sm">
+            <Receipt className="h-4 w-4 text-muted-foreground" />
+            Factures fournisseurs à payer
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground text-center py-3">Chargement indisponible pour le moment.</p>
         </CardContent>
       </Card>
     );

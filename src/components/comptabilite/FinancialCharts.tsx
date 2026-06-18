@@ -37,6 +37,20 @@ interface MonthData {
 const fmt = (n: number) =>
   new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n);
 
+const withTimeout = <T,>(operation: PromiseLike<T>, ms = 10000): Promise<T> =>
+  new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error("Chargement trop long")), ms);
+    Promise.resolve(operation)
+      .then((value) => {
+        clearTimeout(timer);
+        resolve(value);
+      })
+      .catch((error) => {
+        clearTimeout(timer);
+        reject(error);
+      });
+  });
+
 const CustomTooltip = forwardRef<HTMLDivElement, any>(({ active, payload, label }: any, ref) => {
   if (!active || !payload?.length) return null;
   return (
@@ -66,13 +80,17 @@ export function FinancialCharts({ transactions: externalTx }: Props) {
       setLoading(false);
       return;
     }
-    supabase
-      .from("transactions_bancaires")
-      .select("montant, date_operation")
-      .then(({ data }) => {
-        setTransactions(data || []);
-        setLoading(false);
-      });
+    withTimeout(
+      supabase
+        .from("transactions_bancaires")
+        .select("montant, date_operation"),
+    )
+      .then(({ data }) => setTransactions(data || []))
+      .catch((error) => {
+        console.error("FinancialCharts loading failed:", error);
+        setTransactions([]);
+      })
+      .finally(() => setLoading(false));
   }, [externalTx]);
 
   const monthlyData = useMemo((): MonthData[] => {

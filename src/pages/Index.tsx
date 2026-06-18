@@ -71,6 +71,20 @@ const fmt = (n: number) =>
 
 const getErrorMessage = (err: unknown, fallback: string) => err instanceof Error ? err.message : fallback;
 
+const withTimeout = <T,>(operation: PromiseLike<T>, ms = 10000): Promise<T> =>
+  new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error("Chargement trop long")), ms);
+    Promise.resolve(operation)
+      .then((value) => {
+        clearTimeout(timer);
+        resolve(value);
+      })
+      .catch((error) => {
+        clearTimeout(timer);
+        reject(error);
+      });
+  });
+
 const Index = () => {
   const { profile, user, loading } = useAuth();
   const [currentPage, setCurrentPage] = useState("dashboard");
@@ -171,9 +185,14 @@ const Index = () => {
     if (!user) return;
 
     const fetchFlux = async () => {
-      const { data } = await supabase
-        .from("transactions_bancaires")
-        .select("montant, date_operation");
+      const { data } = await withTimeout(
+        supabase
+          .from("transactions_bancaires")
+          .select("montant, date_operation"),
+      ).catch((error) => {
+        console.error("Dashboard flux loading failed:", error);
+        return { data: null };
+      });
       if (!data) return;
       let entrees = 0;
       let sorties = 0;
