@@ -91,6 +91,18 @@ serve(async (req) => {
       );
     }
 
+    const accessUpdates: Record<string, string> = {};
+    if (apprenant.date_debut_formation && (!apprenant.date_debut_cours_en_ligne || apprenant.date_debut_cours_en_ligne < apprenant.date_debut_formation)) {
+      accessUpdates.date_debut_cours_en_ligne = apprenant.date_debut_formation;
+    }
+    if (!apprenant.date_fin_cours_en_ligne && apprenant.date_fin_formation) {
+      accessUpdates.date_fin_cours_en_ligne = apprenant.date_fin_formation;
+    }
+    if (Object.keys(accessUpdates).length > 0) {
+      await supabaseAdmin.from("apprenants").update(accessUpdates).eq("id", apprenant_id);
+      Object.assign(apprenant, accessUpdates);
+    }
+
     // Generate new password
     const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
     let newPassword = "";
@@ -171,8 +183,8 @@ serve(async (req) => {
           const rawFormation = apprenant.formation_choisie || "";
           const formationParts = rawFormation.split(" + ").map((p: string) => formationLabels[p.trim()] || p.trim()).filter(Boolean);
           const formation = formationParts.length > 0 ? formationParts.join(" + ") : "Non spécifiée";
-          const dateDebut = apprenant.date_debut_cours_en_ligne || "Non définie";
-          const dateFin = apprenant.date_fin_cours_en_ligne || "Non définie";
+          const dateDebut = apprenant.date_debut_formation || apprenant.date_debut_cours_en_ligne || "Non définie";
+          const dateFin = apprenant.date_fin_cours_en_ligne || apprenant.date_fin_formation || "Non définie";
           const prenom = apprenant.prenom || "";
           const nom = apprenant.nom || "";
           const coursUrl = "https://insight-learn-manage.lovable.app/cours-public";
