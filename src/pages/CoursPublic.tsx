@@ -1667,8 +1667,19 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
       (r) => r?.score_max != null && Number(r.score_max) > 0 && r?.score_obtenu != null,
     );
 
-    // If module has quiz stats, require ALL quizzes completed — sauf si l'apprenant a déjà validé un score
     const quizStats = moduleQuizStatsById[module.id];
+    const examStats = examBlancStatsById[module.id];
+
+    // Fallback: if module has quizzes/exams and ALL are completed, consider module done
+    // (covers modules where the explicit "module completion" row is missing)
+    const allQuizzesDone = !quizStats || quizStats.totalQuizzes === 0 || quizStats.completedQuizzes >= quizStats.totalQuizzes;
+    const allExamsDone = !examStats || examStats.total === 0 || examStats.completed >= examStats.total;
+    const hasAnyTracked = (quizStats?.totalQuizzes ?? 0) > 0 || (examStats?.total ?? 0) > 0;
+    if (!isDone && hasAnyTracked && allQuizzesDone && allExamsDone) {
+      isDone = true;
+    }
+
+    // If module has quiz stats, require ALL quizzes completed — sauf si l'apprenant a déjà validé un score
     if (isDone && !hasExplicitScoreRow && quizStats && quizStats.totalQuizzes > 0) {
       if (quizStats.completedQuizzes < quizStats.totalQuizzes) {
         isDone = false;
@@ -1676,7 +1687,6 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     }
 
     // If module has exam blanc stats, require ALL exams completed
-    const examStats = examBlancStatsById[module.id];
     if (isDone && examStats && examStats.total > 0) {
       if (examStats.completed < examStats.total) {
         isDone = false;
