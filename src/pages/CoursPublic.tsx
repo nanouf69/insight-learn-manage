@@ -1297,8 +1297,8 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     const now = new Date();
     now.setHours(12, 0, 0, 0);
 
-    // Pour les formations en présentiel (et FC), on garde la fenêtre formation,
-    // mais la fenêtre e-learning configurée dans le CRM reste prioritaire si elle est active.
+    // Les accès démarrent le premier jour réel de formation : jamais J-1.
+    // La fenêtre e-learning configurée dans le CRM reste prioritaire si elle est active.
     const isPresentielOrFC =
       isPresentielType(apprenant?.type_apprenant, apprenant?.formation_choisie, apprenant?.creneau_horaire) ||
       isFormationContinue(apprenant?.type_apprenant, apprenant?.formation_choisie) ||
@@ -1308,7 +1308,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         ? [{
           start: sessionAccessWindow?.date_debut || apprenant.date_debut_formation || apprenant.date_debut_cours_en_ligne,
           end: sessionAccessWindow?.date_fin || apprenant.date_fin_formation || apprenant.date_debut_formation || apprenant.date_debut_cours_en_ligne,
-          allowDayBefore: true,
+          allowDayBefore: false,
         }]
         : []),
       {

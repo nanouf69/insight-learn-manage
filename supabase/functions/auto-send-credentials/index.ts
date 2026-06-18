@@ -37,21 +37,14 @@ serve(async (req) => {
       throw fetchErr;
     }
 
-    // Filter: starts today OR tomorrow (J-1 anticipated sending)
-    // EXCEPTION: e-learning formations → send ONLY le jour J (jamais J-1)
+    // Filter: identifiants envoyés uniquement le premier jour réel de formation/access.
+    // Le compteur d'accès ne doit jamais démarrer la veille.
     const eligibleApprenants = (apprenants || []).filter((a: any) => {
-      const coursDate = a.date_debut_cours_en_ligne;
       const formationDate = a.date_debut_formation;
-      const effective = coursDate || formationDate;
+      const coursDate = a.date_debut_cours_en_ligne;
+      const effective = formationDate || coursDate;
       if (!effective) return false;
-      const formation = (a.formation_choisie || "").toLowerCase();
-      const isElearning = formation.includes("elearning") || formation.includes("e-learning");
-      if (isElearning) {
-        // E-learning : strictement le jour J (pas d'envoi anticipé)
-        return effective === today;
-      }
-      // Présentiel : J ou J-1
-      return effective === today || effective === tomorrow;
+      return effective === today;
     });
 
     console.log(`[auto-send-credentials] Found ${eligibleApprenants.length} apprenants starting today or tomorrow`);
@@ -208,9 +201,9 @@ serve(async (req) => {
             .update({ auth_user_id: authUserId })
             .eq("id", apprenant.id);
 
-          // Also set cours en ligne dates if missing
+          // Also set cours en ligne dates from the real training window if missing
           const updates: Record<string, string> = {};
-          if (!apprenant.date_debut_cours_en_ligne && apprenant.date_debut_formation) {
+          if (apprenant.date_debut_formation && (!apprenant.date_debut_cours_en_ligne || apprenant.date_debut_cours_en_ligne < apprenant.date_debut_formation)) {
             updates.date_debut_cours_en_ligne = apprenant.date_debut_formation;
           }
           if (!apprenant.date_fin_cours_en_ligne && apprenant.date_fin_formation) {
@@ -239,12 +232,12 @@ serve(async (req) => {
         const rawFormation = apprenant.formation_choisie || "";
         const formationParts = rawFormation.split(" + ").map((p: string) => formationLabels[p.trim()] || p.trim()).filter(Boolean);
         const formation = formationParts.length > 0 ? formationParts.join(" + ") : "Non spécifiée";
-        const dateDebut = apprenant.date_debut_cours_en_ligne || apprenant.date_debut_formation || "Non définie";
+        const dateDebut = apprenant.date_debut_formation || apprenant.date_debut_cours_en_ligne || "Non définie";
         const dateFin = apprenant.date_fin_cours_en_ligne || apprenant.date_fin_formation || "Non définie";
         const prenom = apprenant.prenom || "";
         const nom = apprenant.nom || "";
 
-        const effectiveStart = apprenant.date_debut_cours_en_ligne || apprenant.date_debut_formation;
+        const effectiveStart = apprenant.date_debut_formation || apprenant.date_debut_cours_en_ligne;
         const startsTomorrow = effectiveStart === tomorrow;
         const startPhrase = startsTomorrow ? "Votre formation commence demain" : "Votre formation commence aujourd'hui";
         const subjectLine = `🎓 ${startPhrase} – Vos identifiants de connexion`;
