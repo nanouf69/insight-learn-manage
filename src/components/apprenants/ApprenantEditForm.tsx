@@ -335,6 +335,9 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
         facture_contact_nom: (apprenant as any).facture_contact_nom || "",
         facture_contact_email: (apprenant as any).facture_contact_email || "",
         facture_contact_telephone: (apprenant as any).facture_contact_telephone || "",
+        heures_elearning: (apprenant as any).heures_elearning?.toString() || "",
+        heures_presentiel: (apprenant as any).heures_presentiel?.toString() || "",
+        heures_totales: (apprenant as any).heures_totales?.toString() || "",
       });
       
       // Restaurer la date de formation du catalogue si elle existe
