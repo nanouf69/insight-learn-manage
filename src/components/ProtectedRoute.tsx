@@ -24,10 +24,12 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [checking, setChecking] = useState(true);
+  const [roleError, setRoleError] = useState<string | null>(null);
   const [retryNonce, setRetryNonce] = useState(0);
   const lastKnownAdminRef = useRef<boolean | null>(null);
   const lastKnownUserIdRef = useRef<string | null>(null);
   const consecutiveNegativeChecksRef = useRef(0);
+  const consecutiveRoleErrorsRef = useRef(0);
 
   useEffect(() => {
     let isActive = true;
@@ -38,8 +40,10 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
           lastKnownAdminRef.current = null;
           lastKnownUserIdRef.current = null;
           consecutiveNegativeChecksRef.current = 0;
+          consecutiveRoleErrorsRef.current = 0;
           setIsAdmin(null);
           setChecking(false);
+          setRoleError(null);
         }
         return;
       }
@@ -48,7 +52,9 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
         lastKnownUserIdRef.current = user.id;
         lastKnownAdminRef.current = adminRoleCache.get(user.id) ?? null;
         consecutiveNegativeChecksRef.current = 0;
+        consecutiveRoleErrorsRef.current = 0;
         setIsAdmin(lastKnownAdminRef.current);
+        setRoleError(null);
       }
 
       const cachedAdmin = adminRoleCache.get(user.id);
@@ -78,6 +84,12 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
           setChecking(false);
           return;
         }
+        consecutiveRoleErrorsRef.current += 1;
+        if (consecutiveRoleErrorsRef.current >= 4) {
+          setRoleError("Impossible de vérifier vos droits d'accès. Vérifiez la connexion puis réessayez.");
+          setChecking(false);
+          return;
+        }
         setTimeout(() => {
           if (isActive) setRetryNonce((value) => value + 1);
         }, 1500);
@@ -99,6 +111,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
         }
       } else {
         consecutiveNegativeChecksRef.current = 0;
+        consecutiveRoleErrorsRef.current = 0;
         negativeRoleChecks.delete(user.id);
         adminRoleCache.set(user.id, true);
       }
@@ -120,6 +133,28 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (roleError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-6">
+        <div className="max-w-md rounded-lg border bg-card p-6 text-center shadow-sm">
+          <p className="text-sm text-muted-foreground mb-4">{roleError}</p>
+          <button
+            type="button"
+            className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+            onClick={() => {
+              consecutiveRoleErrorsRef.current = 0;
+              setRoleError(null);
+              setChecking(true);
+              setRetryNonce((value) => value + 1);
+            }}
+          >
+            Réessayer
+          </button>
+        </div>
       </div>
     );
   }

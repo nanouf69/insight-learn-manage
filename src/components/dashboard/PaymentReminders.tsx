@@ -6,6 +6,20 @@ import { AlertCircle, Phone, Mail } from "lucide-react";
 import { format, parseISO, differenceInDays } from "date-fns";
 import { fr } from "date-fns/locale";
 
+const withTimeout = <T,>(operation: PromiseLike<T>, ms = 10000): Promise<T> =>
+  new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error("Chargement trop long")), ms);
+    Promise.resolve(operation)
+      .then((value) => {
+        clearTimeout(timer);
+        resolve(value);
+      })
+      .catch((error) => {
+        clearTimeout(timer);
+        reject(error);
+      });
+  });
+
 interface ApprenantEnRetard {
   id: string;
   nom: string;
@@ -19,20 +33,21 @@ interface ApprenantEnRetard {
 }
 
 export function PaymentReminders() {
-  const { data: apprenantsEnRetard, isLoading } = useQuery({
+  const { data: apprenantsEnRetard, isLoading, isError } = useQuery({
     queryKey: ["apprenants-retard-paiement"],
+    retry: 1,
     queryFn: async () => {
       // Get current date and date 30 days ago
       const today = new Date();
       const oneMonthAgo = new Date(today);
       oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
 
-      const { data, error } = await supabase
+      const { data, error } = await withTimeout(supabase
         .from("apprenants")
         .select("*")
         .eq("mode_financement", "personnel")
         .not("montant_ttc", "is", null)
-        .not("date_debut_formation", "is", null);
+        .not("date_debut_formation", "is", null));
 
       if (error) throw error;
 
@@ -78,6 +93,22 @@ export function PaymentReminders() {
               <div key={i} className="h-16 bg-muted rounded-lg" />
             ))}
           </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (isError) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <AlertCircle className="h-5 w-5 text-muted-foreground" />
+            Rappels de paiement
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground text-center py-4">Chargement indisponible pour le moment.</p>
         </CardContent>
       </Card>
     );
