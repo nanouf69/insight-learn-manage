@@ -79,3 +79,6 @@ verify_jwt = false
 
 [functions.submit-devis-personnel]
 verify_jwt = false
+
+[functions.send-relance-cpf-juillet]
+verify_jwt = false
