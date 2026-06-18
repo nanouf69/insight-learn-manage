@@ -780,10 +780,40 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
                         return t >= start && t <= end && (a.action_type === "open_module" || a.action_type === "open_section");
                       })
                       .sort((a, b) => b.occurred_at.localeCompare(a.occurred_at));
-                    const moduleLabel = c.current_module
+
+                    // Fallback for historical sessions (no activity tracking):
+                    // infer modules from exercices completed and quiz/exams done during the window
+                    const inferredModules = new Set<string>();
+                    exercicesCompletes
+                      .filter(e => {
+                        const t = parseISO(e.updated_at);
+                        return t >= start && t <= end;
+                      })
+                      .forEach(e => {
+                        const match = e.exercice_id.match(/^module_(\d+)_exo_\d+$/);
+                        if (match) {
+                          const name = MODULE_NAME_MAP.get(parseInt(match[1]));
+                          if (name) inferredModules.add(name);
+                        }
+                      });
+                    quizResults
+                      .filter(q => {
+                        const t = parseISO(q.completed_at);
+                        return t >= start && t <= end;
+                      })
+                      .forEach(q => {
+                        if (q.matiere_nom) inferredModules.add(shortenMatiere(q.matiere_nom));
+                        else if (q.quiz_titre) inferredModules.add(q.quiz_titre);
+                      });
+
+                    const trackedLabel = c.current_module
                       || sessionActs.find(a => a.action_type === "open_module")?.module_nom
                       || sessionActs[0]?.module_nom
                       || null;
+                    const inferredLabel = inferredModules.size > 0
+                      ? `${[...inferredModules].join(", ")} (déduit)`
+                      : null;
+                    const moduleLabel = trackedLabel || inferredLabel;
                     return (
                       <TableRow key={c.id}>
                         <TableCell>{format(start, "dd/MM/yyyy", { locale: fr })}</TableCell>
@@ -796,7 +826,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
                         </TableCell>
                         <TableCell className="font-medium">{h}h{m.toString().padStart(2, "0")}</TableCell>
                         <TableCell className="text-muted-foreground">
-                          {moduleLabel || <span className="italic text-xs">Navigation sans ouverture de module</span>}
+                          {moduleLabel || <span className="italic text-xs">Connexion sans activité enregistrée (consultation libre)</span>}
                         </TableCell>
                         <TableCell>
                           {coursNames.length > 0 ? (
