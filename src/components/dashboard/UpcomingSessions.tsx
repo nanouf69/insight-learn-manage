@@ -5,12 +5,27 @@ import { supabase } from "@/integrations/supabase/client";
 import { format, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
 
+const withTimeout = <T,>(operation: PromiseLike<T>, ms = 10000): Promise<T> =>
+  new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error("Chargement trop long")), ms);
+    Promise.resolve(operation)
+      .then((value) => {
+        clearTimeout(timer);
+        resolve(value);
+      })
+      .catch((error) => {
+        clearTimeout(timer);
+        reject(error);
+      });
+  });
+
 export function UpcomingSessions() {
-  const { data: sessions = [], isLoading } = useQuery({
+  const { data: sessions = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["upcoming-sessions"],
+    retry: 1,
     queryFn: async () => {
       const today = new Date().toISOString().split("T")[0];
-      const { data, error } = await supabase
+      const { data, error } = await withTimeout(supabase
         .from("sessions")
         .select(`
           id, nom, date_debut, date_fin, lieu, type_session, heure_debut, heure_fin, places_disponibles,
@@ -18,7 +33,7 @@ export function UpcomingSessions() {
         `)
         .gte("date_debut", today)
         .order("date_debut", { ascending: true })
-        .limit(5);
+        .limit(5));
       if (error) throw error;
       return data || [];
     },
@@ -35,6 +50,11 @@ export function UpcomingSessions() {
       <div className="space-y-3">
         {isLoading ? (
           <p className="text-sm text-muted-foreground">Chargement...</p>
+        ) : isError ? (
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground">Sessions indisponibles pour le moment.</p>
+            <Button variant="outline" size="sm" onClick={() => refetch()}>Réessayer</Button>
+          </div>
         ) : sessions.length === 0 ? (
           <p className="text-sm text-muted-foreground">Aucune session à venir</p>
         ) : (

@@ -37,8 +37,16 @@ const getFormationLabel = (code: string): string => {
 export function RecentActivity({ onNavigateToApprenant }: RecentActivityProps) {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let active = true;
+    const timeoutId = setTimeout(() => {
+      if (!active) return;
+      setError("Activité indisponible pour le moment");
+      setLoading(false);
+    }, 10000);
+
     const fetchActivities = async () => {
       try {
         // Fetch system alerts (email failures, etc.)
@@ -237,15 +245,23 @@ export function RecentActivity({ onNavigateToApprenant }: RecentActivityProps) {
         // Alerts stay on top, sort rest by most recent
         const alerts = activityList.filter(a => a.type === 'alert' || a.type === 'devis_signe');
         const rest = activityList.filter(a => a.type !== 'alert' && a.type !== 'devis_signe');
-        setActivities([...alerts, ...rest].slice(0, 10));
+        if (active) {
+          setActivities([...alerts, ...rest].slice(0, 10));
+          setError(null);
+        }
       } catch (err) {
         console.error('Error fetching activities:', err);
+        if (active) setError("Activité indisponible pour le moment");
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     };
 
     fetchActivities();
+    return () => {
+      active = false;
+      clearTimeout(timeoutId);
+    };
   }, []);
 
   if (loading) {
@@ -271,7 +287,9 @@ export function RecentActivity({ onNavigateToApprenant }: RecentActivityProps) {
     <div className="stat-card">
       <h3 className="text-lg font-semibold text-foreground mb-4">Activité récente</h3>
       <div className="space-y-4">
-        {activities.length === 0 ? (
+        {error ? (
+          <p className="text-sm text-muted-foreground">{error}</p>
+        ) : activities.length === 0 ? (
           <p className="text-sm text-muted-foreground">Aucune activité récente</p>
         ) : (
           activities.map((activity) => (
