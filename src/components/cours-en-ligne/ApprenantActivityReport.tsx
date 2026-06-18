@@ -364,21 +364,18 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
     const end = getCappedSessionEnd(connexion);
     const titles: string[] = [];
 
-    // Cours & parties consultés (module activities)
+    // Cours, parties & sections consultés (module activities)
     const moduleActs = activites.filter(a => {
       const t = parseISO(a.occurred_at);
-      return t >= start && t <= end && (a.action_type === "open_module" || a.action_type === "open_cours");
+      return t >= start && t <= end && (a.action_type === "open_module" || a.action_type === "open_cours" || a.action_type === "open_section");
     });
     const seenModules = new Set<string>();
     moduleActs.forEach(a => {
       const key = `${a.action_type}_${a.module_id}_${a.module_nom}`;
       if (!seenModules.has(key)) {
         seenModules.add(key);
-        if (a.action_type === "open_cours") {
-          titles.push(`📖 ${a.module_nom}`);
-        } else {
-          titles.push(`📖 ${a.module_nom}`);
-        }
+        const icon = a.action_type === "open_section" ? "🧭" : "📖";
+        titles.push(`${icon} ${a.module_nom}`);
       }
     });
 
