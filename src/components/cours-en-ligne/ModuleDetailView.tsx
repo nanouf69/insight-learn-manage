@@ -4596,7 +4596,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         if (pendingResultRestore && page !== pendingResultRestore.page) {
           setPendingResultRestore(null);
         }
-        window.scrollTo({ top: 0, behavior: "smooth" });
+        // Auto scroll-to-top retiré : il remontait la page pendant les quiz lors des re-renders
       }
     };
 
