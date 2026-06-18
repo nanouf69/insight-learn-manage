@@ -201,9 +201,9 @@ serve(async (req) => {
             .update({ auth_user_id: authUserId })
             .eq("id", apprenant.id);
 
-          // Also set cours en ligne dates if missing
+          // Also set cours en ligne dates from the real training window if missing
           const updates: Record<string, string> = {};
-          if (!apprenant.date_debut_cours_en_ligne && apprenant.date_debut_formation) {
+          if (apprenant.date_debut_formation && (!apprenant.date_debut_cours_en_ligne || apprenant.date_debut_cours_en_ligne < apprenant.date_debut_formation)) {
             updates.date_debut_cours_en_ligne = apprenant.date_debut_formation;
           }
           if (!apprenant.date_fin_cours_en_ligne && apprenant.date_fin_formation) {
@@ -237,7 +237,7 @@ serve(async (req) => {
         const prenom = apprenant.prenom || "";
         const nom = apprenant.nom || "";
 
-        const effectiveStart = apprenant.date_debut_cours_en_ligne || apprenant.date_debut_formation;
+        const effectiveStart = apprenant.date_debut_formation || apprenant.date_debut_cours_en_ligne;
         const startsTomorrow = effectiveStart === tomorrow;
         const startPhrase = startsTomorrow ? "Votre formation commence demain" : "Votre formation commence aujourd'hui";
         const subjectLine = `🎓 ${startPhrase} – Vos identifiants de connexion`;
