@@ -50,27 +50,56 @@ export function RecentActivity({ onNavigateToApprenant }: RecentActivityProps) {
     const fetchActivities = async () => {
       try {
         // Fetch system alerts (email failures, etc.)
-        const { data: alertes } = await supabase
-          .from('alertes_systeme')
-          .select('*')
-          .eq('lu', false)
-          .order('created_at', { ascending: false })
-          .limit(5);
+        const [alertesRes, completedRes, reservationsRes, newRes, facturesRes, emailsRes, sentEmailsRes] = await Promise.all([
+          supabase
+            .from('alertes_systeme')
+            .select('*')
+            .eq('lu', false)
+            .order('created_at', { ascending: false })
+            .limit(5),
+          supabase
+            .from('apprenants')
+            .select('id, nom, prenom, updated_at, formation_choisie')
+            .eq('documents_complets', true)
+            .order('updated_at', { ascending: false })
+            .limit(5),
+          supabase
+            .from('reservations_pratique')
+            .select('id, apprenant_id, date_choisie, type_formation, created_at')
+            .order('created_at', { ascending: false })
+            .limit(10),
+          supabase
+            .from('apprenants')
+            .select('id, nom, prenom, created_at, formation_choisie')
+            .order('created_at', { ascending: false })
+            .limit(5),
+          supabase
+            .from('fournisseur_factures')
+            .select('*, fournisseurs!inner(nom)')
+            .order('created_at', { ascending: false })
+            .limit(5),
+          supabase
+            .from('emails')
+            .select('id, subject, sender_name, sender_email, received_at, created_at, type, apprenant_id')
+            .eq('type', 'received')
+            .order('received_at', { ascending: false })
+            .limit(5),
+          supabase
+            .from('emails')
+            .select('id, subject, sent_at, created_at, type, apprenant_id')
+            .eq('type', 'sent')
+            .not('apprenant_id', 'is', null)
+            .order('sent_at', { ascending: false })
+            .limit(10),
+        ]);
 
-        // Fetch apprenants who recently completed onboarding
-        const { data: completedApprenants } = await supabase
-          .from('apprenants')
-          .select('id, nom, prenom, updated_at, formation_choisie')
-          .eq('documents_complets', true)
-          .order('updated_at', { ascending: false })
-          .limit(5);
-
-        // Fetch recent practical training reservations
-        const { data: reservations } = await supabase
-          .from('reservations_pratique')
-          .select('id, apprenant_id, date_choisie, type_formation, created_at')
-          .order('created_at', { ascending: false })
-          .limit(10);
+        const alertes = alertesRes.data || [];
+        const completedApprenants = completedRes.data || [];
+        const reservations = reservationsRes.data || [];
+        const newApprenants = newRes.data || [];
+        const fournisseurFactures = facturesRes.data || [];
+        const recentEmails = emailsRes.data || [];
+        const sentEmails = sentEmailsRes.data || [];
 
         // Fetch apprenant names for reservations
         const resApprenantIds = [...new Set(reservations?.map(r => r.apprenant_id) || [])];
@@ -82,13 +111,6 @@ export function RecentActivity({ onNavigateToApprenant }: RecentActivityProps) {
             .in('id', resApprenantIds);
           resApprenants?.forEach(a => { resApprenantMap[a.id] = a; });
         }
-
-        // Fetch recently created apprenants
-        const { data: newApprenants } = await supabase
-          .from('apprenants')
-          .select('id, nom, prenom, created_at, formation_choisie')
-          .order('created_at', { ascending: false })
-          .limit(5);
 
         const activityList: Activity[] = [];
 
@@ -163,13 +185,6 @@ export function RecentActivity({ onNavigateToApprenant }: RecentActivityProps) {
           }
         });
 
-        // Fetch recent supplier invoices
-        const { data: fournisseurFactures } = await supabase
-          .from('fournisseur_factures')
-          .select('*, fournisseurs!inner(nom)')
-          .order('created_at', { ascending: false })
-          .limit(5);
-
         fournisseurFactures?.forEach((f: any) => {
           activityList.push({
             apprenantId: '',
@@ -183,14 +198,6 @@ export function RecentActivity({ onNavigateToApprenant }: RecentActivityProps) {
             iconColor: "text-orange-600",
           });
         });
-
-        // Fetch recent received emails
-        const { data: recentEmails } = await supabase
-          .from('emails')
-          .select('id, subject, sender_name, sender_email, received_at, created_at, type, apprenant_id')
-          .eq('type', 'received')
-          .order('received_at', { ascending: false })
-          .limit(5);
 
         recentEmails?.forEach((e) => {
           const sender = e.sender_name || e.sender_email || 'Inconnu';
@@ -206,15 +213,6 @@ export function RecentActivity({ onNavigateToApprenant }: RecentActivityProps) {
             iconColor: "text-indigo-600",
           });
         });
-
-        // Fetch recent sent emails to apprenants
-        const { data: sentEmails } = await supabase
-          .from('emails')
-          .select('id, subject, sent_at, created_at, type, apprenant_id')
-          .eq('type', 'sent')
-          .not('apprenant_id', 'is', null)
-          .order('sent_at', { ascending: false })
-          .limit(10);
 
         // Fetch apprenant names for sent emails
         const sentApprenantIds = [...new Set(sentEmails?.map(e => e.apprenant_id).filter(Boolean) || [])];
@@ -253,6 +251,7 @@ export function RecentActivity({ onNavigateToApprenant }: RecentActivityProps) {
         console.error('Error fetching activities:', err);
         if (active) setError("Activité indisponible pour le moment");
       } finally {
+        clearTimeout(timeoutId);
         if (active) setLoading(false);
       }
     };
