@@ -293,6 +293,9 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
     facture_contact_nom: "",
     facture_contact_email: "",
     facture_contact_telephone: "",
+    heures_elearning: "",
+    heures_presentiel: "",
+    heures_totales: "",
   });
   const queryClient = useQueryClient();
 
@@ -332,6 +335,9 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
         facture_contact_nom: (apprenant as any).facture_contact_nom || "",
         facture_contact_email: (apprenant as any).facture_contact_email || "",
         facture_contact_telephone: (apprenant as any).facture_contact_telephone || "",
+        heures_elearning: (apprenant as any).heures_elearning?.toString() || "",
+        heures_presentiel: (apprenant as any).heures_presentiel?.toString() || "",
+        heures_totales: (apprenant as any).heures_totales?.toString() || "",
       });
       
       // Restaurer la date de formation du catalogue si elle existe
@@ -535,6 +541,9 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
       facture_contact_nom: formData.facture_contact_nom?.trim() || null,
       facture_contact_email: formData.facture_contact_email?.trim() || null,
       facture_contact_telephone: formData.facture_contact_telephone?.trim() || null,
+      heures_elearning: formData.heures_elearning ? parseFloat(formData.heures_elearning) : null,
+      heures_presentiel: formData.heures_presentiel ? parseFloat(formData.heures_presentiel) : null,
+      heures_totales: formData.heures_totales ? parseFloat(formData.heures_totales) : null,
     };
 
     try {
@@ -1519,6 +1528,62 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
                     <Calendar mode="single" selected={dateFinCours} onSelect={setDateFinCours} initialFocus locale={fr} className="pointer-events-auto" />
                   </PopoverContent>
                 </Popover>
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="heures_elearning">Heures à réaliser en e-learning</Label>
+                <Input
+                  id="heures_elearning"
+                  type="number"
+                  min="0"
+                  step="0.5"
+                  placeholder="Ex: 35"
+                  value={formData.heures_elearning}
+                  onChange={(e) => {
+                    const el = e.target.value;
+                    const pr = formData.heures_presentiel;
+                    const total = (parseFloat(el) || 0) + (parseFloat(pr) || 0);
+                    setFormData({
+                      ...formData,
+                      heures_elearning: el,
+                      heures_totales: total > 0 ? total.toString() : formData.heures_totales,
+                    });
+                  }}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="heures_presentiel">Heures à réaliser en présentiel</Label>
+                <Input
+                  id="heures_presentiel"
+                  type="number"
+                  min="0"
+                  step="0.5"
+                  placeholder="Ex: 70"
+                  value={formData.heures_presentiel}
+                  onChange={(e) => {
+                    const pr = e.target.value;
+                    const el = formData.heures_elearning;
+                    const total = (parseFloat(el) || 0) + (parseFloat(pr) || 0);
+                    setFormData({
+                      ...formData,
+                      heures_presentiel: pr,
+                      heures_totales: total > 0 ? total.toString() : formData.heures_totales,
+                    });
+                  }}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="heures_totales">Heures totales</Label>
+                <Input
+                  id="heures_totales"
+                  type="number"
+                  min="0"
+                  step="0.5"
+                  placeholder="Ex: 105"
+                  value={formData.heures_totales}
+                  onChange={(e) => setFormData({ ...formData, heures_totales: e.target.value })}
+                />
               </div>
             </div>
             {/* Modules de la formation — ordered like "Configurer l'accès cours" */}
