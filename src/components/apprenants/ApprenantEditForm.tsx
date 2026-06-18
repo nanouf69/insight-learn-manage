@@ -428,6 +428,13 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
   const normalizedFormType = normalizeTypeApprenant(formData.type_apprenant);
   const formationKey = (formData.selected_formation || "").split(" + ")[0];
   const fallbackTypeFromFormation = normalizeTypeApprenant(formationToType[formationKey]);
+  const parsedSelectedDates = selectedDateOption ? parseDateRange(selectedDateOption) : { dateDebut: null, dateFin: null };
+  const effectiveDateDebutFormation = dateDebutFormation
+    ? format(dateDebutFormation, 'yyyy-MM-dd')
+    : parsedSelectedDates.dateDebut;
+  const effectiveDateFinFormation = dateFinFormation
+    ? format(dateFinFormation, 'yyyy-MM-dd')
+    : parsedSelectedDates.dateFin;
   const fallbackDefaultModules = DEFAULT_MODULES_BY_TYPE[normalizedFormType]
     || (fallbackTypeFromFormation ? DEFAULT_MODULES_BY_TYPE[fallbackTypeFromFormation] : undefined)
     || [];
@@ -505,12 +512,8 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
       formation_choisie: secondFormation ? `${formData.selected_formation} + ${secondFormation}` : (formData.selected_formation || null),
       montant_ttc: formData.montant_ttc ? parseFloat(formData.montant_ttc) : null,
       date_formation_catalogue: selectedDateOption || null,
-      date_debut_formation: dateDebutFormation 
-        ? format(dateDebutFormation, 'yyyy-MM-dd') 
-        : (selectedDateOption ? parseDateRange(selectedDateOption).dateDebut : null),
-      date_fin_formation: dateFinFormation 
-        ? format(dateFinFormation, 'yyyy-MM-dd') 
-        : (selectedDateOption ? parseDateRange(selectedDateOption).dateFin : null),
+      date_debut_formation: effectiveDateDebutFormation,
+      date_fin_formation: effectiveDateFinFormation,
       creneau_horaire: formData.creneau_horaire || null,
       date_examen_theorique: formData.date_examen_theorique || null,
       montant_paye: formData.montant_paye ? parseFloat(formData.montant_paye) : 0,
@@ -520,8 +523,8 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
       inscrit_france_travail: inscritFranceTravail,
       date_examen_pratique: dateExamenPratique || null,
       documents_complets: documentsComplets,
-      date_debut_cours_en_ligne: dateDebutCours ? format(dateDebutCours, 'yyyy-MM-dd') : null,
-      date_fin_cours_en_ligne: dateFinCours ? format(dateFinCours, 'yyyy-MM-dd') : null,
+      date_debut_cours_en_ligne: dateDebutCours ? format(dateDebutCours, 'yyyy-MM-dd') : effectiveDateDebutFormation,
+      date_fin_cours_en_ligne: dateFinCours ? format(dateFinCours, 'yyyy-MM-dd') : effectiveDateFinFormation,
       modules_autorises: effectiveModulesAutorises.length > 0 ? effectiveModulesAutorises : null,
       societe_nom: formData.societe_nom?.trim() || null,
       societe_siret: formData.societe_siret?.trim() || null,
