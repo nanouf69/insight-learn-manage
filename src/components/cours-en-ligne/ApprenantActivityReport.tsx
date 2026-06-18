@@ -364,21 +364,18 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
     const end = getCappedSessionEnd(connexion);
     const titles: string[] = [];
 
-    // Cours & parties consultés (module activities)
+    // Cours, parties & sections consultés (module activities)
     const moduleActs = activites.filter(a => {
       const t = parseISO(a.occurred_at);
-      return t >= start && t <= end && (a.action_type === "open_module" || a.action_type === "open_cours");
+      return t >= start && t <= end && (a.action_type === "open_module" || a.action_type === "open_cours" || a.action_type === "open_section");
     });
     const seenModules = new Set<string>();
     moduleActs.forEach(a => {
       const key = `${a.action_type}_${a.module_id}_${a.module_nom}`;
       if (!seenModules.has(key)) {
         seenModules.add(key);
-        if (a.action_type === "open_cours") {
-          titles.push(`📖 ${a.module_nom}`);
-        } else {
-          titles.push(`📖 ${a.module_nom}`);
-        }
+        const icon = a.action_type === "open_section" ? "🧭" : "📖";
+        titles.push(`${icon} ${a.module_nom}`);
       }
     });
 
@@ -776,6 +773,17 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
                     const m = mins % 60;
                     const coursNames = getCoursDuringConnexion(c);
                     const exNames = getExerciceNamesDuringConnexion(c);
+                    // Derive last consulted module/section from activities if current_module is empty
+                    const sessionActs = activites
+                      .filter(a => {
+                        const t = parseISO(a.occurred_at);
+                        return t >= start && t <= end && (a.action_type === "open_module" || a.action_type === "open_section");
+                      })
+                      .sort((a, b) => b.occurred_at.localeCompare(a.occurred_at));
+                    const moduleLabel = c.current_module
+                      || sessionActs.find(a => a.action_type === "open_module")?.module_nom
+                      || sessionActs[0]?.module_nom
+                      || null;
                     return (
                       <TableRow key={c.id}>
                         <TableCell>{format(start, "dd/MM/yyyy", { locale: fr })}</TableCell>
@@ -787,7 +795,9 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
                           }
                         </TableCell>
                         <TableCell className="font-medium">{h}h{m.toString().padStart(2, "0")}</TableCell>
-                        <TableCell className="text-muted-foreground">{c.current_module || "—"}</TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {moduleLabel || <span className="italic text-xs">Navigation sans ouverture de module</span>}
+                        </TableCell>
                         <TableCell>
                           {coursNames.length > 0 ? (
                             <div className="flex flex-wrap gap-1">
