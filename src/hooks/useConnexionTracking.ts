@@ -21,6 +21,7 @@ interface UseConnexionTrackingParams {
 
 export function useConnexionTracking({ apprenantId, userId, enabled }: UseConnexionTrackingParams) {
   const connexionIdRef = useRef<string | null>(null);
+  const startingRef = useRef(false);
   const [connexionId, setConnexionId] = useState<string | null>(null);
 
   const resetLocalSession = useCallback(() => {
@@ -82,10 +83,13 @@ export function useConnexionTracking({ apprenantId, userId, enabled }: UseConnex
     let cancelled = false;
 
     const startConnexion = async () => {
+      if (connexionIdRef.current || startingRef.current) return;
+      startingRef.current = true;
       const { data, error } = await supabase.rpc("start_apprenant_connexion" as any, {
         _apprenant_id: apprenantId,
         _source: "cours",
       });
+      startingRef.current = false;
 
       if (cancelled || error || !data) return;
 
@@ -124,7 +128,7 @@ export function useConnexionTracking({ apprenantId, userId, enabled }: UseConnex
     return () => {
       cancelled = true;
       window.removeEventListener("beforeunload", handleBeforeUnload);
-      void endConnexion();
+      startingRef.current = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabled, apprenantId, userId]);

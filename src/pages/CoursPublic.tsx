@@ -1218,13 +1218,14 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   }, [apprenant?.id]);
 
   const handleLogout = useCallback(async () => {
+    await endConnexion();
     await signOut();
     setApprenant(null);
     setSelectedFormation(null);
     setApprenantFetchError(null);
     fetchAttemptRef.current = 0;
     lastFetchedUserIdRef.current = null;
-  }, [signOut]);
+  }, [endConnexion, signOut]);
 
   const pageContent = useMemo(() => {
 
