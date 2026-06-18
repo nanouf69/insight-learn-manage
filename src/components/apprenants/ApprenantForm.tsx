@@ -379,6 +379,14 @@ export function ApprenantForm() {
       return;
     }
 
+    const parsedSelectedDates = selectedDateOption ? parseDateRange(selectedDateOption) : { dateDebut: null, dateFin: null };
+    const effectiveDateDebutFormation = dateDebutFormation
+      ? format(dateDebutFormation, 'yyyy-MM-dd')
+      : parsedSelectedDates.dateDebut;
+    const effectiveDateFinFormation = dateFinFormation
+      ? format(dateFinFormation, 'yyyy-MM-dd')
+      : parsedSelectedDates.dateFin;
+
     // Capturer les valeurs actuelles pour éviter la perte de données
     const formData = {
       civilite,
@@ -397,12 +405,10 @@ export function ApprenantForm() {
       formation_choisie: secondFormation ? `${selectedFormation} + ${secondFormation}` : (selectedFormation || null),
       montant_ttc: montantTtc ? parseFloat(montantTtc) : null,
       date_formation_catalogue: selectedDateOption || null,
-      date_debut_formation: dateDebutFormation 
-        ? format(dateDebutFormation, 'yyyy-MM-dd') 
-        : (selectedDateOption ? parseDateRange(selectedDateOption).dateDebut : null),
-      date_fin_formation: dateFinFormation 
-        ? format(dateFinFormation, 'yyyy-MM-dd') 
-        : (selectedDateOption ? parseDateRange(selectedDateOption).dateFin : null),
+      date_debut_formation: effectiveDateDebutFormation,
+      date_fin_formation: effectiveDateFinFormation,
+      date_debut_cours_en_ligne: effectiveDateDebutFormation,
+      date_fin_cours_en_ligne: effectiveDateFinFormation,
       creneau_horaire: creneauHoraire || null,
       date_examen_theorique: dateExamenTheorique || null,
       inscrit_france_travail: inscritFranceTravail,
