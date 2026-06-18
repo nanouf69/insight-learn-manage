@@ -1530,6 +1530,62 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
                 </Popover>
               </div>
             </div>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="heures_elearning">Heures à réaliser en e-learning</Label>
+                <Input
+                  id="heures_elearning"
+                  type="number"
+                  min="0"
+                  step="0.5"
+                  placeholder="Ex: 35"
+                  value={formData.heures_elearning}
+                  onChange={(e) => {
+                    const el = e.target.value;
+                    const pr = formData.heures_presentiel;
+                    const total = (parseFloat(el) || 0) + (parseFloat(pr) || 0);
+                    setFormData({
+                      ...formData,
+                      heures_elearning: el,
+                      heures_totales: total > 0 ? total.toString() : formData.heures_totales,
+                    });
+                  }}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="heures_presentiel">Heures à réaliser en présentiel</Label>
+                <Input
+                  id="heures_presentiel"
+                  type="number"
+                  min="0"
+                  step="0.5"
+                  placeholder="Ex: 70"
+                  value={formData.heures_presentiel}
+                  onChange={(e) => {
+                    const pr = e.target.value;
+                    const el = formData.heures_elearning;
+                    const total = (parseFloat(el) || 0) + (parseFloat(pr) || 0);
+                    setFormData({
+                      ...formData,
+                      heures_presentiel: pr,
+                      heures_totales: total > 0 ? total.toString() : formData.heures_totales,
+                    });
+                  }}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="heures_totales">Heures totales</Label>
+                <Input
+                  id="heures_totales"
+                  type="number"
+                  min="0"
+                  step="0.5"
+                  placeholder="Ex: 105"
+                  value={formData.heures_totales}
+                  onChange={(e) => setFormData({ ...formData, heures_totales: e.target.value })}
+                />
+              </div>
+            </div>
             {/* Modules de la formation — ordered like "Configurer l'accès cours" */}
             {(() => {
               // Determine formation type for module display
