@@ -219,6 +219,10 @@ const ApprenantSearchPreview = () => {
             <BarChart3 className="w-4 h-4" />
             Rapport activité
           </TabsTrigger>
+          <TabsTrigger value="suivi-heures" className="flex items-center gap-2">
+            <Clock className="w-4 h-4" />
+            Suivi heures
+          </TabsTrigger>
           <TabsTrigger value="resultats-session" className="flex items-center gap-2">
             <TableProperties className="w-4 h-4" />
             Résultats
