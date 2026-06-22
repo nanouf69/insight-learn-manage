@@ -3,6 +3,29 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import logoImage from '@/assets/logo-ftransport.png';
 import { getCompetencesForFormation } from '@/components/cours-en-ligne/competences-checklist-data';
+import { ALL_DATES_EXAMEN_THEORIQUE } from '@/lib/examDatesConfig';
+import { parseFrenchDate } from '@/lib/filterPastDates';
+
+// Returns the next upcoming theoretical exam session strictly after `today`,
+// or null if all configured dates are past.
+function getNextUpcomingExamTheorique(today: Date = new Date()): { date: string; lieu: string; horaire: string } | null {
+  const t = new Date(today);
+  t.setHours(0, 0, 0, 0);
+  const upcoming = ALL_DATES_EXAMEN_THEORIQUE
+    .map(d => ({ ...d, parsed: parseFrenchDate(d.date) }))
+    .filter(d => d.parsed && d.parsed >= t)
+    .sort((a, b) => (a.parsed!.getTime() - b.parsed!.getTime()));
+  return upcoming.length > 0 ? upcoming[0] : null;
+}
+
+// Detects a question/label referring to the theoretical exam date.
+function isDateExamenTheoriqueLabel(label: string): boolean {
+  const n = label
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+  return n.includes('date') && n.includes('examen') && n.includes('theorique');
+}
 
 const COMPANY_INFO = {
   name: 'Ftransport',
@@ -147,6 +170,28 @@ function renderQA(doc: jsPDF, question: string, answer: string, y: number, margi
   const displayAnswer = answer || '(Non repondu)';
   const aLines = doc.splitTextToSize(`Reponse : ${displayAnswer}`, maxW);
   for (const l of aLines) { y = ensureSpace(doc, y, 5); doc.text(l, margin + 10, y); y += 4.5; }
+
+  // Special case: theoretical exam date in the past → show next upcoming session
+  if (isDateExamenTheoriqueLabel(question) && answer) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const answeredDate = parseFrenchDate(answer);
+    if (answeredDate && answeredDate < today) {
+      const next = getNextUpcomingExamTheorique(today);
+      if (next) {
+        y = ensureSpace(doc, y, 10);
+        doc.setFont('helvetica', 'italic');
+        doc.setTextColor(185, 28, 28); // red-700
+        const noteLines = doc.splitTextToSize(
+          `Cette session est passee. Prochaine session : ${next.date} (${next.horaire}) - ${next.lieu}`,
+          maxW,
+        );
+        for (const l of noteLines) { y = ensureSpace(doc, y, 5); doc.text(l, margin + 10, y); y += 4.5; }
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(30, 30, 30);
+      }
+    }
+  }
 
   y += 3;
   return y;
