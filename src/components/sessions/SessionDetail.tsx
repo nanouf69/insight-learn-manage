@@ -3201,14 +3201,12 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
 
                           {(sessionApprenant.mode_financement === "personnel" || apprenant.mode_financement === "personnel") && (
                             <PaiementPopover 
-                              sessionApprenantId={apprenant.id}
+                              apprenantId={apprenant.id}
                               montantTotal={apprenant.montant_ttc || 0}
                               montantPaye={apprenant.montant_paye || 0}
-                              moyenPaiement={apprenant.moyen_paiement || ""}
-                              datePaiement={apprenant.date_paiement || ""}
                               apprenantNom={apprenant.nom}
                               apprenantPrenom={apprenant.prenom}
-                              onSave={(data) => updateApprenantPaiement(apprenant.id, data)}
+                              onChanged={() => refetchApprenants()}
                             />
                           )}
 
