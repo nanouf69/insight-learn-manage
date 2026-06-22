@@ -33,6 +33,7 @@ export default function StudentHoursTracker({
   dateFinFormation,
   dateDebutCoursEnLigne,
   dateFinCoursEnLigne,
+  dateExamenTheorique,
 }: StudentHoursTrackerProps) {
   const { loading, formattedDone, formattedRemaining, requis, pct } = useStudentEffectiveHours(
     apprenantId,
