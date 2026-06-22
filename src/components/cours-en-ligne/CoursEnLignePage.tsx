@@ -15,6 +15,7 @@ import ExamensBlancsPage from "./ExamensBlancsPage";
 import ExamensBlancsEditor from "./ExamensBlancsEditor";
 import CoursPublic from "@/pages/CoursPublic";
 import ApprenantActivityReport from "./ApprenantActivityReport";
+import SuiviHeuresElearning from "./SuiviHeuresElearning";
 import CorrectionQRCTab from "./CorrectionQRCTab";
 import CorrectionQCMTab from "./CorrectionQCMTab";
 import ResultatsSessionPage from "./ResultatsSessionPage";
