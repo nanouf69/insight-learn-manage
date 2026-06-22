@@ -566,6 +566,7 @@ interface ApprenantInfo {
   ville?: string | null;
   date_naissance?: string | null;
   date_examen_theorique?: string | null;
+  resultat_examen?: string | null;
 }
 
 interface SessionAccessWindow {
