@@ -173,7 +173,23 @@ export default function SuiviHeuresElearning() {
     return m;
   }, [connexions]);
 
-  // Calcul du temps de connexion EFFECTIF (seulement quand un module/exercice/quiz a été ouvert)
+  // Bornes formation par apprenant (priorité dates_formation, fallback cours_en_ligne)
+  const windowByApp = useMemo(() => {
+    const m = new Map<string, { start: number | null; end: number | null }>();
+    for (const a of apprenants) {
+      const start =
+        parseDateBound(a.date_debut_formation, false) ??
+        parseDateBound(a.date_debut_cours_en_ligne, false);
+      const end =
+        parseDateBound(a.date_fin_formation, true) ??
+        parseDateBound(a.date_fin_cours_en_ligne, true);
+      m.set(a.id, { start, end });
+    }
+    return m;
+  }, [apprenants]);
+
+  // Calcul du temps de connexion EFFECTIF (seulement quand un module/exercice/quiz a été ouvert,
+  // et uniquement dans la plage de formation de l'apprenant)
   const heuresByApp = useMemo(() => {
     const result = new Map<string, number>(); // minutes
     for (const [appId, conns] of connByApp.entries()) {
@@ -182,28 +198,35 @@ export default function SuiviHeuresElearning() {
         result.set(appId, 0);
         continue;
       }
+      const win = windowByApp.get(appId) || { start: null, end: null };
       let total = 0;
       for (const c of conns) {
-        const start = Date.parse(c.started_at);
+        const startRaw = Date.parse(c.started_at);
         const rawEnd = c.ended_at ? Date.parse(c.ended_at) : Date.parse(c.last_seen_at);
-        const cappedEnd = Math.min(rawEnd, start + MAX_SESSION_MS);
-        // recherche binaire : existe-t-il une activité dans [start, cappedEnd] ?
+        const cappedEnd = Math.min(rawEnd, startRaw + MAX_SESSION_MS);
+
+        // Clipper à la plage formation
+        const start = win.start != null ? Math.max(startRaw, win.start) : startRaw;
+        const end = win.end != null ? Math.min(cappedEnd, win.end) : cappedEnd;
+        if (end <= start) continue;
+
+        // recherche binaire : existe-t-il une activité dans [start, end] ?
         let lo = 0, hi = acts.length - 1, found = false;
         while (lo <= hi) {
           const mid = (lo + hi) >> 1;
           const v = acts[mid];
           if (v < start) lo = mid + 1;
-          else if (v > cappedEnd) hi = mid - 1;
+          else if (v > end) hi = mid - 1;
           else { found = true; break; }
         }
         if (found) {
-          total += Math.max(0, Math.round((cappedEnd - start) / 60000));
+          total += Math.max(0, Math.round((end - start) / 60000));
         }
       }
       result.set(appId, total);
     }
     return result;
-  }, [connByApp, actByApp]);
+  }, [connByApp, actByApp, windowByApp]);
 
   const rows = useMemo(() => {
     const q = search.trim().toLowerCase();
