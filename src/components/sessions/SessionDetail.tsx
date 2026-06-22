@@ -366,32 +366,54 @@ function NotesPopover({
 }
 
 function PaiementPopover({ 
-  sessionApprenantId, 
+  apprenantId,
   montantTotal, 
   montantPaye, 
-  moyenPaiement,
-  datePaiement,
   apprenantNom,
   apprenantPrenom,
-  onSave 
+  onChanged,
 }: { 
-  sessionApprenantId: string; 
+  apprenantId: string; 
   montantTotal: number; 
   montantPaye: number; 
-  moyenPaiement: string;
-  datePaiement: string;
   apprenantNom?: string;
   apprenantPrenom?: string;
-  onSave: (data: { montant_paye?: number; moyen_paiement?: string; date_paiement?: string | null }) => void 
+  onChanged: () => void;
 }) {
-  const [localMontantPaye, setLocalMontantPaye] = useState(montantPaye);
-  const [localMoyenPaiement, setLocalMoyenPaiement] = useState(moyenPaiement);
-  const [localDatePaiement, setLocalDatePaiement] = useState(datePaiement);
   const [open, setOpen] = useState(false);
   const [matches, setMatches] = useState<any[]>([]);
   const [loadingMatches, setLoadingMatches] = useState(false);
+  const [paiements, setPaiements] = useState<any[]>([]);
+  const [loadingPaiements, setLoadingPaiements] = useState(false);
+  const [newMontant, setNewMontant] = useState<string>("");
+  const [newMoyen, setNewMoyen] = useState<string>("virement");
+  const [newDate, setNewDate] = useState<string>(new Date().toISOString().split("T")[0]);
+  const [saving, setSaving] = useState(false);
+  const { toast } = useToast();
 
-  const resteAPayer = montantTotal - localMontantPaye;
+  const totalPaye = paiements.reduce((s, p) => s + Number(p.montant || 0), 0);
+  const resteAPayer = montantTotal - totalPaye;
+
+  const loadPaiements = async () => {
+    if (!apprenantId) return;
+    setLoadingPaiements(true);
+    try {
+      const { data, error } = await supabase
+        .from("apprenant_paiements")
+        .select("*")
+        .eq("apprenant_id", apprenantId)
+        .order("date_paiement", { ascending: false });
+      if (!error && data) setPaiements(data as any[]);
+    } finally {
+      setLoadingPaiements(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!open) return;
+    loadPaiements();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, apprenantId]);
 
   // Recherche de virements reçus correspondant à l'apprenant à l'ouverture
   useEffect(() => {
@@ -425,18 +447,59 @@ function PaiementPopover({
   }, [open, apprenantNom, apprenantPrenom]);
 
   const applyMatch = (tx: any) => {
-    setLocalMontantPaye(Number(tx.montant) || 0);
-    setLocalMoyenPaiement("virement");
-    setLocalDatePaiement(tx.date_operation || "");
+    setNewMontant(String(Number(tx.montant) || 0));
+    setNewMoyen("virement");
+    setNewDate(tx.date_operation || new Date().toISOString().split("T")[0]);
   };
 
-  const handleSave = () => {
-    onSave({
-      montant_paye: localMontantPaye,
-      moyen_paiement: localMoyenPaiement,
-      date_paiement: localDatePaiement || null
-    });
-    setOpen(false);
+  const handleAddPaiement = async () => {
+    const montant = parseFloat(newMontant);
+    if (!montant || montant <= 0) {
+      toast({ title: "Montant invalide", variant: "destructive" });
+      return;
+    }
+    setSaving(true);
+    try {
+      const { error } = await supabase.from("apprenant_paiements").insert({
+        apprenant_id: apprenantId,
+        montant,
+        moyen_paiement: newMoyen,
+        date_paiement: newDate || null,
+      });
+      if (error) throw error;
+      setNewMontant("");
+      setNewMoyen("virement");
+      setNewDate(new Date().toISOString().split("T")[0]);
+      await loadPaiements();
+      onChanged();
+      toast({ title: "Paiement ajouté" });
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeletePaiement = async (id: string) => {
+    try {
+      const { error } = await supabase.from("apprenant_paiements").delete().eq("id", id);
+      if (error) throw error;
+      await loadPaiements();
+      onChanged();
+      toast({ title: "Paiement supprimé" });
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    }
+  };
+
+  const moyenLabel = (m?: string) => {
+    switch (m) {
+      case "especes": return "Espèces";
+      case "cb": return "CB";
+      case "cheque": return "Chèque";
+      case "virement": return "Virement";
+      default: return m || "—";
+    }
   };
 
   return (
@@ -451,89 +514,105 @@ function PaiementPopover({
           {montantPaye > 0 ? `${montantPaye}€ payé` : "Paiement"}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-80 max-h-[80vh] overflow-y-auto">
+      <PopoverContent className="w-96 max-h-[80vh] overflow-y-auto">
         <div className="space-y-4">
-          <h4 className="font-medium">Gestion du paiement</h4>
+          <h4 className="font-medium">Gestion des paiements</h4>
 
-          <div className="space-y-2 rounded-md border bg-muted/30 p-2">
-            <Label className="text-xs">Virements reçus correspondants</Label>
-            {loadingMatches && (
-              <p className="text-xs text-muted-foreground">Recherche…</p>
-            )}
-            {!loadingMatches && matches.map((tx) => (
-              <button
-                key={tx.id}
-                type="button"
-                onClick={() => applyMatch(tx)}
-                className="w-full text-left text-xs px-2 py-1.5 rounded border bg-background hover:bg-accent transition"
-              >
-                <div className="flex justify-between gap-2">
-                  <span className="font-medium text-green-700">{Number(tx.montant).toFixed(2)} €</span>
-                  <span className="text-muted-foreground">{tx.date_operation}</span>
-                </div>
-                <div className="text-muted-foreground truncate">{tx.libelle}</div>
-              </button>
-            ))}
-            {!loadingMatches && matches.length === 0 && (
-              <p className="text-xs text-muted-foreground">Aucun virement correspondant</p>
-            )}
-          </div>
-          
-          <div className="space-y-2">
-            <Label>Montant total (€)</Label>
-            <div className="h-10 px-3 py-2 rounded-md border bg-muted/50 flex items-center text-muted-foreground">
-              {montantTotal.toFixed(2)} €
-            </div>
-            <p className="text-xs text-muted-foreground">Modifiable dans la fiche apprenant</p>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Montant payé (€)</Label>
-            <Input 
-              type="number"
-              value={localMontantPaye}
-              onChange={(e) => setLocalMontantPaye(parseFloat(e.target.value) || 0)}
-              placeholder="Ex: 500"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label>Moyen de paiement</Label>
-            <Select value={localMoyenPaiement} onValueChange={setLocalMoyenPaiement}>
-              <SelectTrigger>
-                <SelectValue placeholder="Sélectionner..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="especes">Espèces</SelectItem>
-                <SelectItem value="cb">Carte bancaire</SelectItem>
-                <SelectItem value="cheque">Chèque</SelectItem>
-                <SelectItem value="virement">Virement</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Date de paiement</Label>
-            <Input 
-              type="date"
-              value={localDatePaiement}
-              onChange={(e) => setLocalDatePaiement(e.target.value)}
-            />
-          </div>
-
-          <div className="p-3 rounded-lg bg-muted/50">
+          <div className="rounded-md border bg-muted/30 p-2 space-y-1">
             <div className="flex justify-between text-sm">
-              <span>Reste à payer:</span>
+              <span>Total dû:</span>
+              <span className="font-medium">{montantTotal.toFixed(2)} €</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span>Total payé:</span>
+              <span className="font-medium text-green-600">{totalPaye.toFixed(2)} €</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span>Reste:</span>
               <span className={`font-bold ${resteAPayer > 0 ? "text-orange-600" : "text-green-600"}`}>
                 {resteAPayer.toFixed(2)} €
               </span>
             </div>
           </div>
 
-          <Button onClick={handleSave} size="sm" className="w-full gap-2">
-            <Save className="w-4 h-4" />
-            Enregistrer
-          </Button>
+          <div className="space-y-2">
+            <Label className="text-xs">Paiements enregistrés</Label>
+            {loadingPaiements && <p className="text-xs text-muted-foreground">Chargement…</p>}
+            {!loadingPaiements && paiements.length === 0 && (
+              <p className="text-xs text-muted-foreground">Aucun paiement</p>
+            )}
+            {paiements.map((p) => (
+              <div key={p.id} className="flex items-center justify-between gap-2 text-xs px-2 py-1.5 rounded border bg-background">
+                <div className="flex-1">
+                  <div className="font-medium text-green-700">{Number(p.montant).toFixed(2)} €</div>
+                  <div className="text-muted-foreground">
+                    {p.date_paiement || "—"} • {moyenLabel(p.moyen_paiement)}
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 w-7 p-0 text-red-600 hover:text-red-700"
+                  onClick={() => handleDeletePaiement(p.id)}
+                >
+                  <X className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+            ))}
+          </div>
+
+          {matches.length > 0 && (
+            <div className="space-y-1 rounded-md border bg-muted/30 p-2">
+              <Label className="text-xs">Virements reçus correspondants</Label>
+              {matches.map((tx) => (
+                <button
+                  key={tx.id}
+                  type="button"
+                  onClick={() => applyMatch(tx)}
+                  className="w-full text-left text-xs px-2 py-1 rounded border bg-background hover:bg-accent transition"
+                >
+                  <div className="flex justify-between gap-2">
+                    <span className="font-medium text-green-700">{Number(tx.montant).toFixed(2)} €</span>
+                    <span className="text-muted-foreground">{tx.date_operation}</span>
+                  </div>
+                  <div className="text-muted-foreground truncate">{tx.libelle}</div>
+                </button>
+              ))}
+            </div>
+          )}
+
+          <div className="space-y-2 border-t pt-3">
+            <Label className="text-sm font-medium">Ajouter un paiement</Label>
+            <div className="space-y-2">
+              <Input
+                type="number"
+                step="0.01"
+                value={newMontant}
+                onChange={(e) => setNewMontant(e.target.value)}
+                placeholder="Montant (€)"
+              />
+              <Select value={newMoyen} onValueChange={setNewMoyen}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Moyen de paiement" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="especes">Espèces</SelectItem>
+                  <SelectItem value="cb">Carte bancaire</SelectItem>
+                  <SelectItem value="cheque">Chèque</SelectItem>
+                  <SelectItem value="virement">Virement</SelectItem>
+                </SelectContent>
+              </Select>
+              <Input
+                type="date"
+                value={newDate}
+                onChange={(e) => setNewDate(e.target.value)}
+              />
+              <Button onClick={handleAddPaiement} size="sm" className="w-full gap-2" disabled={saving}>
+                <Save className="w-4 h-4" />
+                Ajouter ce paiement
+              </Button>
+            </div>
+          </div>
         </div>
       </PopoverContent>
     </Popover>
@@ -3122,14 +3201,12 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
 
                           {(sessionApprenant.mode_financement === "personnel" || apprenant.mode_financement === "personnel") && (
                             <PaiementPopover 
-                              sessionApprenantId={apprenant.id}
+                              apprenantId={apprenant.id}
                               montantTotal={apprenant.montant_ttc || 0}
                               montantPaye={apprenant.montant_paye || 0}
-                              moyenPaiement={apprenant.moyen_paiement || ""}
-                              datePaiement={apprenant.date_paiement || ""}
                               apprenantNom={apprenant.nom}
                               apprenantPrenom={apprenant.prenom}
-                              onSave={(data) => updateApprenantPaiement(apprenant.id, data)}
+                              onChanged={() => refetchApprenants()}
                             />
                           )}
 
