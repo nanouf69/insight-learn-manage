@@ -82,3 +82,6 @@ verify_jwt = false
 
 [functions.send-relance-cpf-juillet]
 verify_jwt = false
+
+[functions.relance-non-connexion-jour1]
+verify_jwt = false
