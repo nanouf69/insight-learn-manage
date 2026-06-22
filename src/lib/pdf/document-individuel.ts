@@ -171,6 +171,28 @@ function renderQA(doc: jsPDF, question: string, answer: string, y: number, margi
   const aLines = doc.splitTextToSize(`Reponse : ${displayAnswer}`, maxW);
   for (const l of aLines) { y = ensureSpace(doc, y, 5); doc.text(l, margin + 10, y); y += 4.5; }
 
+  // Special case: theoretical exam date in the past → show next upcoming session
+  if (isDateExamenTheoriqueLabel(question) && answer) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const answeredDate = parseFrenchDate(answer);
+    if (answeredDate && answeredDate < today) {
+      const next = getNextUpcomingExamTheorique(today);
+      if (next) {
+        y = ensureSpace(doc, y, 10);
+        doc.setFont('helvetica', 'italic');
+        doc.setTextColor(185, 28, 28); // red-700
+        const noteLines = doc.splitTextToSize(
+          `Cette session est passee. Prochaine session : ${next.date} (${next.horaire}) - ${next.lieu}`,
+          maxW,
+        );
+        for (const l of noteLines) { y = ensureSpace(doc, y, 5); doc.text(l, margin + 10, y); y += 4.5; }
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(30, 30, 30);
+      }
+    }
+  }
+
   y += 3;
   return y;
 }
