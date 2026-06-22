@@ -125,16 +125,42 @@ export function generateRecapitulatifPDF(data: RecapitulatifData, options?: { re
   doc.setFontSize(11);
   addField('Type', data.typeExamen);
   addField('Date', data.dateExamen);
-  
+
   if (data.lieuExamen) {
     doc.setFont('helvetica', 'bold');
     doc.text('Lieu :', margin, yPos);
     doc.setFont('helvetica', 'normal');
-    
-    // Handle long lieu text with wrapping
+
     const lieuLines = doc.splitTextToSize(data.lieuExamen, pageWidth - margin - 55);
     doc.text(lieuLines, margin + 50, yPos);
     yPos += lieuLines.length * 6 + 2;
+  }
+
+  // Si la date d'examen théorique est passée, indiquer la prochaine session
+  const todayExam = new Date(); todayExam.setHours(0, 0, 0, 0);
+  const dateExamenParsed = parseFrenchDate(data.dateExamen || '');
+  if (dateExamenParsed && dateExamenParsed < todayExam) {
+    const next = getNextUpcomingExamTheorique(todayExam);
+    if (next) {
+      yPos += 4;
+      doc.setFillColor(254, 226, 226);
+      doc.setDrawColor(220, 38, 38);
+      doc.setLineWidth(0.5);
+      const boxH = 22;
+      doc.roundedRect(margin, yPos, pageWidth - 2 * margin, boxH, 2, 2, 'FD');
+      doc.setTextColor(185, 28, 28);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.text("Cette date d'examen est passée", margin + 4, yPos + 7);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      const nextText = `Prochaine session : ${next.date} (${next.horaire}) — ${next.lieu}`;
+      const nextLines = doc.splitTextToSize(nextText, pageWidth - 2 * margin - 8);
+      doc.text(nextLines, margin + 4, yPos + 14);
+      yPos += boxH + 4;
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(11);
+    }
   }
 
   yPos += 10;
