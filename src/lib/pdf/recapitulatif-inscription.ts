@@ -1,4 +1,15 @@
 import jsPDF from 'jspdf';
+import { ALL_DATES_EXAMEN_THEORIQUE } from '@/lib/examDatesConfig';
+import { parseFrenchDate } from '@/lib/filterPastDates';
+
+function getNextUpcomingExamTheorique(today: Date = new Date()): { date: string; lieu: string; horaire: string } | null {
+  const t = new Date(today); t.setHours(0, 0, 0, 0);
+  const upcoming = ALL_DATES_EXAMEN_THEORIQUE
+    .map(d => ({ ...d, parsed: parseFrenchDate(d.date) }))
+    .filter(d => d.parsed && d.parsed >= t)
+    .sort((a, b) => a.parsed!.getTime() - b.parsed!.getTime());
+  return upcoming.length > 0 ? upcoming[0] : null;
+}
 
 interface RecapitulatifData {
   nom: string;
