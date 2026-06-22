@@ -145,18 +145,30 @@ export default function StudentHoursTracker({
           const today = new Date();
           today.setHours(0, 0, 0, 0);
           const isPast = savedParsed ? savedParsed < today : false;
-          const displayDate = !saved || isPast ? getNextUpcomingExamTheorique() : saved;
+          // Si l'élève a déjà passé l'examen, on garde sa date d'origine et on n'affiche pas de "prochaine session"
+          const displayDate = examAlreadyTaken
+            ? (saved || null)
+            : (!saved || isPast ? getNextUpcomingExamTheorique() : saved);
           if (!displayDate) return null;
+          const r = (resultatExamen || "").trim().toLowerCase();
+          const isAdmis = r === "oui" || r === "admis";
+          const isAjourne = r === "non" || r === "ajourne" || r === "ajourné";
           return (
             <div className="mt-4 pt-4 border-t flex flex-wrap items-center gap-2 text-sm">
               <CalendarDays className="w-4 h-4 text-primary shrink-0" />
               <span className="text-muted-foreground">Date d'examen théorique :</span>
               <span className="font-semibold">{displayDate}</span>
-              {isPast && saved && (
+              {examAlreadyTaken ? (
+                <Badge variant="outline" className={isAdmis
+                  ? "text-green-700 border-green-200 bg-green-50 dark:bg-green-950/30"
+                  : "text-orange-600 border-orange-200 bg-orange-50 dark:bg-orange-950/30"}>
+                  {isAdmis ? "Examen passé — Admis" : isAjourne ? "Examen passé — Ajourné" : "Examen passé"}
+                </Badge>
+              ) : isPast && saved ? (
                 <Badge variant="outline" className="text-orange-600 border-orange-200 bg-orange-50 dark:bg-orange-950/30">
                   Prochaine session (votre date {saved} est passée)
                 </Badge>
-              )}
+              ) : null}
             </div>
           );
         })()}
