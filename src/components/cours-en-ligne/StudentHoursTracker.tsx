@@ -1,8 +1,10 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { Clock, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Clock, AlertCircle, CheckCircle2, CalendarDays } from "lucide-react";
 import { useStudentEffectiveHours } from "@/hooks/useStudentEffectiveHours";
+import { ALL_DATES_EXAMEN_THEORIQUE } from "@/lib/examDatesConfig";
+import { parseFrenchDate } from "@/lib/filterPastDates";
 
 interface StudentHoursTrackerProps {
   apprenantId: string | null | undefined;
@@ -11,6 +13,17 @@ interface StudentHoursTrackerProps {
   dateFinFormation?: string | null;
   dateDebutCoursEnLigne?: string | null;
   dateFinCoursEnLigne?: string | null;
+  dateExamenTheorique?: string | null;
+}
+
+function getNextUpcomingExamTheorique(): string | null {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const upcoming = ALL_DATES_EXAMEN_THEORIQUE
+    .map(d => ({ ...d, parsed: parseFrenchDate(d.date) }))
+    .filter(d => d.parsed && d.parsed >= today)
+    .sort((a, b) => (a.parsed!.getTime() - b.parsed!.getTime()));
+  return upcoming[0]?.date ?? null;
 }
 
 export default function StudentHoursTracker({
