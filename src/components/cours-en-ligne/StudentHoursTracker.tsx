@@ -43,6 +43,31 @@ export default function StudentHoursTracker({
     { dateDebutFormation, dateFinFormation, dateDebutCoursEnLigne, dateFinCoursEnLigne },
   );
 
+  // Auto-update DB: si la date enregistrée est passée, basculer sur la prochaine session
+  const updatedKeyRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!apprenantId) return;
+    const saved = (dateExamenTheorique || "").trim();
+    if (!saved) return;
+    const savedParsed = parseFrenchDate(saved);
+    if (!savedParsed) return;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (savedParsed >= today) return;
+    const next = getNextUpcomingExamTheorique();
+    if (!next || next === saved) return;
+    const key = `${apprenantId}::${saved}->${next}`;
+    if (updatedKeyRef.current === key) return;
+    updatedKeyRef.current = key;
+    supabase
+      .from("apprenants")
+      .update({ date_examen_theorique: next })
+      .eq("id", apprenantId)
+      .then(({ error }) => {
+        if (error) console.error("[StudentHoursTracker] auto-update date_examen_theorique failed", error);
+      });
+  }, [apprenantId, dateExamenTheorique]);
+
   if (loading || !apprenantId) {
     return null;
   }
