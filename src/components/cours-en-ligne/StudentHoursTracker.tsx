@@ -59,7 +59,7 @@ export default function StudentHoursTracker({
               ) : null}
             </div>
             <p className="text-sm text-muted-foreground">
-              Le temps affiché est compté <strong>uniquement</strong> lorsque vous ouvrez un module, un exercice ou un quiz.
+              Le temps affiché est compté <strong>uniquement</strong> lorsque vous ouvrez un module, un exercice ou un quiz, <strong>et uniquement pendant la période de votre formation</strong>.
             </p>
           </div>
 
