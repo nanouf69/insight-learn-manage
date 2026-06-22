@@ -17,6 +17,7 @@ import ModuleChangeNotificationsBanner from "@/components/cours-en-ligne/ModuleC
 import BilanFinFormationFCVtc from "@/components/cours-en-ligne/BilanFinFormationFCVtc";
 import ExamensBlancsPage from "@/components/cours-en-ligne/ExamensBlancsPage";
 import NotesView from "@/components/cours-en-ligne/NotesView";
+import StudentHoursTracker from "@/components/cours-en-ligne/StudentHoursTracker";
 import StudentLogin from "@/components/cours-en-ligne/StudentLogin";
 import { FORMATIONS, MODULES_DATA, expandModulesAutorises, type FormationId } from "@/components/cours-en-ligne/formations-data";
 import { EXAMENS_BLANCS_VTC, EXAMENS_BLANCS_TAXI, EXAMENS_BLANCS_TA, EXAMENS_BLANCS_VA } from "@/components/cours-en-ligne/examens-blancs-data";
@@ -1837,8 +1838,9 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                    <XPBar xp={xp} moduleScores={moduleScores} />
                    <BadgeGrid badges={badges} />
                    {apprenant?.id && <ModuleChangeNotificationsBanner apprenantId={apprenant.id} />}
-                </>
-              );
+                   <StudentHoursTracker apprenantId={apprenant?.id} typeApprenant={apprenant?.type_apprenant} />
+                 </>
+               );
             })()}
 
             {/* Modules à revoir */}
