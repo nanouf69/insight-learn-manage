@@ -16,6 +16,7 @@ interface StudentHoursTrackerProps {
   dateDebutCoursEnLigne?: string | null;
   dateFinCoursEnLigne?: string | null;
   dateExamenTheorique?: string | null;
+  resultatExamen?: string | null;
 }
 
 function getNextUpcomingExamTheorique(): string | null {
@@ -36,6 +37,7 @@ export default function StudentHoursTracker({
   dateDebutCoursEnLigne,
   dateFinCoursEnLigne,
   dateExamenTheorique,
+  resultatExamen,
 }: StudentHoursTrackerProps) {
   const { loading, formattedDone, formattedRemaining, requis, pct } = useStudentEffectiveHours(
     apprenantId,
@@ -43,10 +45,17 @@ export default function StudentHoursTracker({
     { dateDebutFormation, dateFinFormation, dateDebutCoursEnLigne, dateFinCoursEnLigne },
   );
 
+  // Si l'élève a déjà un résultat à l'examen théorique (admis/ajourné), on ne le réinscrit pas
+  const examAlreadyTaken = (() => {
+    const r = (resultatExamen || "").trim().toLowerCase();
+    return r === "oui" || r === "admis" || r === "non" || r === "ajourne" || r === "ajourné";
+  })();
+
   // Auto-update DB: si la date enregistrée est passée, basculer sur la prochaine session
   const updatedKeyRef = useRef<string | null>(null);
   useEffect(() => {
     if (!apprenantId) return;
+    if (examAlreadyTaken) return;
     const saved = (dateExamenTheorique || "").trim();
     if (!saved) return;
     const savedParsed = parseFrenchDate(saved);
@@ -66,7 +75,7 @@ export default function StudentHoursTracker({
       .then(({ error }) => {
         if (error) console.error("[StudentHoursTracker] auto-update date_examen_theorique failed", error);
       });
-  }, [apprenantId, dateExamenTheorique]);
+  }, [apprenantId, dateExamenTheorique, examAlreadyTaken]);
 
   if (loading || !apprenantId) {
     return null;
@@ -136,18 +145,30 @@ export default function StudentHoursTracker({
           const today = new Date();
           today.setHours(0, 0, 0, 0);
           const isPast = savedParsed ? savedParsed < today : false;
-          const displayDate = !saved || isPast ? getNextUpcomingExamTheorique() : saved;
+          // Si l'élève a déjà passé l'examen, on garde sa date d'origine et on n'affiche pas de "prochaine session"
+          const displayDate = examAlreadyTaken
+            ? (saved || null)
+            : (!saved || isPast ? getNextUpcomingExamTheorique() : saved);
           if (!displayDate) return null;
+          const r = (resultatExamen || "").trim().toLowerCase();
+          const isAdmis = r === "oui" || r === "admis";
+          const isAjourne = r === "non" || r === "ajourne" || r === "ajourné";
           return (
             <div className="mt-4 pt-4 border-t flex flex-wrap items-center gap-2 text-sm">
               <CalendarDays className="w-4 h-4 text-primary shrink-0" />
               <span className="text-muted-foreground">Date d'examen théorique :</span>
               <span className="font-semibold">{displayDate}</span>
-              {isPast && saved && (
+              {examAlreadyTaken ? (
+                <Badge variant="outline" className={isAdmis
+                  ? "text-green-700 border-green-200 bg-green-50 dark:bg-green-950/30"
+                  : "text-orange-600 border-orange-200 bg-orange-50 dark:bg-orange-950/30"}>
+                  {isAdmis ? "Examen passé — Admis" : isAjourne ? "Examen passé — Ajourné" : "Examen passé"}
+                </Badge>
+              ) : isPast && saved ? (
                 <Badge variant="outline" className="text-orange-600 border-orange-200 bg-orange-50 dark:bg-orange-950/30">
                   Prochaine session (votre date {saved} est passée)
                 </Badge>
-              )}
+              ) : null}
             </div>
           );
         })()}
