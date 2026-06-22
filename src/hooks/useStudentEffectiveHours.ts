@@ -44,7 +44,28 @@ function formatHM(minutes: number): string {
   return `${h}h${m.toString().padStart(2, "0")}`;
 }
 
-export function useStudentEffectiveHours(apprenantId: string | null | undefined, typeApprenant: string | null | undefined) {
+// Parse YYYY-MM-DD as local date (no UTC shift) → returns ms
+function parseDateBound(value: string | null | undefined, endOfDay = false): number | null {
+  if (!value) return null;
+  const s = value.slice(0, 10);
+  const [y, m, d] = s.split("-").map(n => parseInt(n, 10));
+  if (!y || !m || !d) return null;
+  const dt = new Date(y, m - 1, d, endOfDay ? 23 : 0, endOfDay ? 59 : 0, endOfDay ? 59 : 0, endOfDay ? 999 : 0);
+  return dt.getTime();
+}
+
+interface UseStudentEffectiveHoursOptions {
+  dateDebutFormation?: string | null;
+  dateFinFormation?: string | null;
+  dateDebutCoursEnLigne?: string | null;
+  dateFinCoursEnLigne?: string | null;
+}
+
+export function useStudentEffectiveHours(
+  apprenantId: string | null | undefined,
+  typeApprenant: string | null | undefined,
+  options: UseStudentEffectiveHoursOptions = {},
+) {
   const [loading, setLoading] = useState(true);
   const [connexions, setConnexions] = useState<ConnexionRow[]>([]);
   const [activites, setActivites] = useState<ActivityTs[]>([]);
@@ -120,17 +141,35 @@ export function useStudentEffectiveHours(apprenantId: string | null | undefined,
     return arr;
   }, [activites]);
 
+  // Bornes de la formation (priorité dates de formation, fallback cours en ligne)
+  const windowStart = useMemo(
+    () =>
+      parseDateBound(options.dateDebutFormation, false) ??
+      parseDateBound(options.dateDebutCoursEnLigne, false),
+    [options.dateDebutFormation, options.dateDebutCoursEnLigne],
+  );
+  const windowEnd = useMemo(
+    () =>
+      parseDateBound(options.dateFinFormation, true) ??
+      parseDateBound(options.dateFinCoursEnLigne, true),
+    [options.dateFinFormation, options.dateFinCoursEnLigne],
+  );
+
   const totalMinutes = useMemo(() => {
     if (actTimestamps.length === 0 || connexions.length === 0) return 0;
     let total = 0;
     for (const c of connexions) {
-      const start = Date.parse(c.started_at);
-      if (Number.isNaN(start)) continue;
+      const startRaw = Date.parse(c.started_at);
+      if (Number.isNaN(startRaw)) continue;
       const rawEnd = c.ended_at ? Date.parse(c.ended_at) : Date.parse(c.last_seen_at);
-      const end = Number.isNaN(rawEnd) ? start : Math.min(rawEnd, start + MAX_SESSION_MS);
+      const endRaw = Number.isNaN(rawEnd) ? startRaw : Math.min(rawEnd, startRaw + MAX_SESSION_MS);
+
+      // Clipper la fenêtre de connexion à la période de formation
+      const start = windowStart != null ? Math.max(startRaw, windowStart) : startRaw;
+      const end = windowEnd != null ? Math.min(endRaw, windowEnd) : endRaw;
       if (end <= start) continue;
 
-      // Binary search: any activity within [start, end]?
+      // Une activité doit exister dans la fenêtre effective
       let lo = 0, hi = actTimestamps.length - 1, found = false;
       while (lo <= hi) {
         const mid = (lo + hi) >> 1;
@@ -144,7 +183,7 @@ export function useStudentEffectiveHours(apprenantId: string | null | undefined,
       }
     }
     return total;
-  }, [connexions, actTimestamps]);
+  }, [connexions, actTimestamps, windowStart, windowEnd]);
 
   const requis = HEURES_REQUISES[(typeApprenant || "").toLowerCase()] ?? 0;
   const faitHeures = totalMinutes / 60;

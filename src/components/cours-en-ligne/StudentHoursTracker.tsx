@@ -7,10 +7,25 @@ import { useStudentEffectiveHours } from "@/hooks/useStudentEffectiveHours";
 interface StudentHoursTrackerProps {
   apprenantId: string | null | undefined;
   typeApprenant: string | null | undefined;
+  dateDebutFormation?: string | null;
+  dateFinFormation?: string | null;
+  dateDebutCoursEnLigne?: string | null;
+  dateFinCoursEnLigne?: string | null;
 }
 
-export default function StudentHoursTracker({ apprenantId, typeApprenant }: StudentHoursTrackerProps) {
-  const { loading, formattedDone, formattedRemaining, requis, pct } = useStudentEffectiveHours(apprenantId, typeApprenant);
+export default function StudentHoursTracker({
+  apprenantId,
+  typeApprenant,
+  dateDebutFormation,
+  dateFinFormation,
+  dateDebutCoursEnLigne,
+  dateFinCoursEnLigne,
+}: StudentHoursTrackerProps) {
+  const { loading, formattedDone, formattedRemaining, requis, pct } = useStudentEffectiveHours(
+    apprenantId,
+    typeApprenant,
+    { dateDebutFormation, dateFinFormation, dateDebutCoursEnLigne, dateFinCoursEnLigne },
+  );
 
   if (loading || !apprenantId) {
     return null;

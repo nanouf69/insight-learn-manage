@@ -1838,7 +1838,14 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                    <XPBar xp={xp} moduleScores={moduleScores} />
                    <BadgeGrid badges={badges} />
                    {apprenant?.id && <ModuleChangeNotificationsBanner apprenantId={apprenant.id} />}
-                   <StudentHoursTracker apprenantId={apprenant?.id} typeApprenant={apprenant?.type_apprenant} />
+                   <StudentHoursTracker
+                     apprenantId={apprenant?.id}
+                     typeApprenant={apprenant?.type_apprenant}
+                     dateDebutFormation={apprenant?.date_debut_formation}
+                     dateFinFormation={apprenant?.date_fin_formation}
+                     dateDebutCoursEnLigne={apprenant?.date_debut_cours_en_ligne}
+                     dateFinCoursEnLigne={apprenant?.date_fin_cours_en_ligne}
+                   />
                  </>
                );
             })()}
