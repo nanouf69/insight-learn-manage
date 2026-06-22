@@ -316,6 +316,44 @@ export type Database = {
           },
         ]
       }
+      apprenant_paiements: {
+        Row: {
+          apprenant_id: string
+          created_at: string
+          date_paiement: string | null
+          id: string
+          montant: number
+          moyen_paiement: string | null
+          notes: string | null
+        }
+        Insert: {
+          apprenant_id: string
+          created_at?: string
+          date_paiement?: string | null
+          id?: string
+          montant?: number
+          moyen_paiement?: string | null
+          notes?: string | null
+        }
+        Update: {
+          apprenant_id?: string
+          created_at?: string
+          date_paiement?: string | null
+          id?: string
+          montant?: number
+          moyen_paiement?: string | null
+          notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "apprenant_paiements_apprenant_id_fkey"
+            columns: ["apprenant_id"]
+            isOneToOne: false
+            referencedRelation: "apprenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       apprenant_questions: {
         Row: {
           answered_at: string | null
