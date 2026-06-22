@@ -16,6 +16,7 @@ interface StudentHoursTrackerProps {
   dateDebutCoursEnLigne?: string | null;
   dateFinCoursEnLigne?: string | null;
   dateExamenTheorique?: string | null;
+  resultatExamen?: string | null;
 }
 
 function getNextUpcomingExamTheorique(): string | null {
