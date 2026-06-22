@@ -222,10 +222,10 @@ export default function SuiviHeuresElearning() {
 
   return (
     <div className="space-y-4">
-      <div>
+      <div className="rounded-lg border bg-amber-50 p-4 dark:bg-amber-950/20">
         <h2 className="text-2xl font-bold">Suivi heures e-learning</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Temps de connexion comptabilisé <strong>uniquement</strong> lorsque l'apprenant consulte un module, un exercice ou un quiz.
+          Les heures affichées correspondent au temps passé sur la plateforme <strong>uniquement</strong> lorsque l'apprenant ouvre un module, un exercice ou un quiz. Les connexions sans activité pédagogique ne sont pas comptabilisées.
         </p>
       </div>
 
