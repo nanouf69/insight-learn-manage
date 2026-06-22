@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
@@ -5,6 +6,7 @@ import { Clock, AlertCircle, CheckCircle2, CalendarDays } from "lucide-react";
 import { useStudentEffectiveHours } from "@/hooks/useStudentEffectiveHours";
 import { ALL_DATES_EXAMEN_THEORIQUE } from "@/lib/examDatesConfig";
 import { parseFrenchDate } from "@/lib/filterPastDates";
+import { supabase } from "@/integrations/supabase/client";
 
 interface StudentHoursTrackerProps {
   apprenantId: string | null | undefined;
