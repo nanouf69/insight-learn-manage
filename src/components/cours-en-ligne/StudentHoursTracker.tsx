@@ -37,6 +37,7 @@ export default function StudentHoursTracker({
   dateDebutCoursEnLigne,
   dateFinCoursEnLigne,
   dateExamenTheorique,
+  resultatExamen,
 }: StudentHoursTrackerProps) {
   const { loading, formattedDone, formattedRemaining, requis, pct } = useStudentEffectiveHours(
     apprenantId,
@@ -44,10 +45,17 @@ export default function StudentHoursTracker({
     { dateDebutFormation, dateFinFormation, dateDebutCoursEnLigne, dateFinCoursEnLigne },
   );
 
+  // Si l'élève a déjà un résultat à l'examen théorique (admis/ajourné), on ne le réinscrit pas
+  const examAlreadyTaken = (() => {
+    const r = (resultatExamen || "").trim().toLowerCase();
+    return r === "oui" || r === "admis" || r === "non" || r === "ajourne" || r === "ajourné";
+  })();
+
   // Auto-update DB: si la date enregistrée est passée, basculer sur la prochaine session
   const updatedKeyRef = useRef<string | null>(null);
   useEffect(() => {
     if (!apprenantId) return;
+    if (examAlreadyTaken) return;
     const saved = (dateExamenTheorique || "").trim();
     if (!saved) return;
     const savedParsed = parseFrenchDate(saved);
@@ -67,7 +75,7 @@ export default function StudentHoursTracker({
       .then(({ error }) => {
         if (error) console.error("[StudentHoursTracker] auto-update date_examen_theorique failed", error);
       });
-  }, [apprenantId, dateExamenTheorique]);
+  }, [apprenantId, dateExamenTheorique, examAlreadyTaken]);
 
   if (loading || !apprenantId) {
     return null;
