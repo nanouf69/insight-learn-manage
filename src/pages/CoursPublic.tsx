@@ -1845,6 +1845,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                      dateFinFormation={apprenant?.date_fin_formation}
                      dateDebutCoursEnLigne={apprenant?.date_debut_cours_en_ligne}
                      dateFinCoursEnLigne={apprenant?.date_fin_cours_en_ligne}
+                     dateExamenTheorique={apprenant?.date_examen_theorique}
                    />
                  </>
                );
