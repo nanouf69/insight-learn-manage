@@ -26,6 +26,10 @@ interface Apprenant {
   prenom: string;
   email: string | null;
   type_apprenant: string;
+  date_debut_formation: string | null;
+  date_fin_formation: string | null;
+  date_debut_cours_en_ligne: string | null;
+  date_fin_cours_en_ligne: string | null;
 }
 interface Connexion {
   apprenant_id: string;
@@ -36,6 +40,16 @@ interface Connexion {
 interface ActivityTs {
   apprenant_id: string;
   ts: string;
+}
+
+// Parse YYYY-MM-DD as local date (no UTC shift)
+function parseDateBound(value: string | null | undefined, endOfDay = false): number | null {
+  if (!value) return null;
+  const s = value.slice(0, 10);
+  const [y, m, d] = s.split("-").map(n => parseInt(n, 10));
+  if (!y || !m || !d) return null;
+  const dt = new Date(y, m - 1, d, endOfDay ? 23 : 0, endOfDay ? 59 : 0, endOfDay ? 59 : 0, endOfDay ? 999 : 0);
+  return dt.getTime();
 }
 
 async function fetchAll<T>(builder: () => any): Promise<T[]> {
@@ -75,7 +89,7 @@ export default function SuiviHeuresElearning() {
         const apps = await fetchAll<Apprenant>(() =>
           supabase
             .from("apprenants")
-            .select("id, nom, prenom, email, type_apprenant")
+            .select("id, nom, prenom, email, type_apprenant, date_debut_formation, date_fin_formation, date_debut_cours_en_ligne, date_fin_cours_en_ligne")
             .in("type_apprenant", ELEARNING_TYPES)
             .not("auth_user_id", "is", null)
             .order("nom"),
