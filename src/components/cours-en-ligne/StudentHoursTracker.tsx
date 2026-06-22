@@ -102,6 +102,28 @@ export default function StudentHoursTracker({
             <span className="text-sm font-semibold w-12 text-right">{Math.round(pct)}%</span>
           </div>
         </div>
+
+        {(() => {
+          const saved = (dateExamenTheorique || "").trim();
+          const savedParsed = saved ? parseFrenchDate(saved) : null;
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const isPast = savedParsed ? savedParsed < today : false;
+          const displayDate = !saved || isPast ? getNextUpcomingExamTheorique() : saved;
+          if (!displayDate) return null;
+          return (
+            <div className="mt-4 pt-4 border-t flex flex-wrap items-center gap-2 text-sm">
+              <CalendarDays className="w-4 h-4 text-primary shrink-0" />
+              <span className="text-muted-foreground">Date d'examen théorique :</span>
+              <span className="font-semibold">{displayDate}</span>
+              {isPast && saved && (
+                <Badge variant="outline" className="text-orange-600 border-orange-200 bg-orange-50 dark:bg-orange-950/30">
+                  Prochaine session (votre date {saved} est passée)
+                </Badge>
+              )}
+            </div>
+          );
+        })()}
       </CardContent>
     </Card>
   );
