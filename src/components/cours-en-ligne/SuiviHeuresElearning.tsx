@@ -262,7 +262,7 @@ export default function SuiviHeuresElearning() {
       <div className="rounded-lg border bg-amber-50 p-4 dark:bg-amber-950/20">
         <h2 className="text-2xl font-bold">Suivi heures e-learning</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Les heures affichées correspondent au temps passé sur la plateforme <strong>uniquement</strong> lorsque l'apprenant ouvre un module, un exercice ou un quiz. Les connexions sans activité pédagogique ne sont pas comptabilisées.
+          Les heures affichées correspondent au temps passé sur la plateforme <strong>uniquement</strong> lorsque l'apprenant ouvre un module, un exercice ou un quiz, <strong>et uniquement à l'intérieur de la plage de dates de sa formation</strong>. Les connexions hors période ou sans activité pédagogique ne sont pas comptabilisées.
         </p>
       </div>
 
