@@ -500,6 +500,10 @@ const ApprenantSearchPreview = () => {
         <TabsContent value="rapport-activite" className="mt-6">
           <ApprenantActivityReport onBack={() => setActiveTab("accueil")} />
         </TabsContent>
+        {/* Suivi heures e-learning */}
+        <TabsContent value="suivi-heures" className="mt-6">
+          <SuiviHeuresElearning />
+        </TabsContent>
         {/* Résultats par session */}
         <TabsContent value="resultats-session" className="mt-6">
           <ResultatsSessionPage />
