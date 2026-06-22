@@ -565,6 +565,7 @@ interface ApprenantInfo {
   code_postal?: string | null;
   ville?: string | null;
   date_naissance?: string | null;
+  date_examen_theorique?: string | null;
 }
 
 interface SessionAccessWindow {
@@ -1845,6 +1846,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                      dateFinFormation={apprenant?.date_fin_formation}
                      dateDebutCoursEnLigne={apprenant?.date_debut_cours_en_ligne}
                      dateFinCoursEnLigne={apprenant?.date_fin_cours_en_ligne}
+                     dateExamenTheorique={apprenant?.date_examen_theorique}
                    />
                  </>
                );

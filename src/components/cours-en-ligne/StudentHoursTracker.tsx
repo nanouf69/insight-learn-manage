@@ -1,8 +1,10 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { Clock, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Clock, AlertCircle, CheckCircle2, CalendarDays } from "lucide-react";
 import { useStudentEffectiveHours } from "@/hooks/useStudentEffectiveHours";
+import { ALL_DATES_EXAMEN_THEORIQUE } from "@/lib/examDatesConfig";
+import { parseFrenchDate } from "@/lib/filterPastDates";
 
 interface StudentHoursTrackerProps {
   apprenantId: string | null | undefined;
@@ -11,6 +13,17 @@ interface StudentHoursTrackerProps {
   dateFinFormation?: string | null;
   dateDebutCoursEnLigne?: string | null;
   dateFinCoursEnLigne?: string | null;
+  dateExamenTheorique?: string | null;
+}
+
+function getNextUpcomingExamTheorique(): string | null {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const upcoming = ALL_DATES_EXAMEN_THEORIQUE
+    .map(d => ({ ...d, parsed: parseFrenchDate(d.date) }))
+    .filter(d => d.parsed && d.parsed >= today)
+    .sort((a, b) => (a.parsed!.getTime() - b.parsed!.getTime()));
+  return upcoming[0]?.date ?? null;
 }
 
 export default function StudentHoursTracker({
@@ -20,6 +33,7 @@ export default function StudentHoursTracker({
   dateFinFormation,
   dateDebutCoursEnLigne,
   dateFinCoursEnLigne,
+  dateExamenTheorique,
 }: StudentHoursTrackerProps) {
   const { loading, formattedDone, formattedRemaining, requis, pct } = useStudentEffectiveHours(
     apprenantId,
@@ -88,6 +102,28 @@ export default function StudentHoursTracker({
             <span className="text-sm font-semibold w-12 text-right">{Math.round(pct)}%</span>
           </div>
         </div>
+
+        {(() => {
+          const saved = (dateExamenTheorique || "").trim();
+          const savedParsed = saved ? parseFrenchDate(saved) : null;
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const isPast = savedParsed ? savedParsed < today : false;
+          const displayDate = !saved || isPast ? getNextUpcomingExamTheorique() : saved;
+          if (!displayDate) return null;
+          return (
+            <div className="mt-4 pt-4 border-t flex flex-wrap items-center gap-2 text-sm">
+              <CalendarDays className="w-4 h-4 text-primary shrink-0" />
+              <span className="text-muted-foreground">Date d'examen théorique :</span>
+              <span className="font-semibold">{displayDate}</span>
+              {isPast && saved && (
+                <Badge variant="outline" className="text-orange-600 border-orange-200 bg-orange-50 dark:bg-orange-950/30">
+                  Prochaine session (votre date {saved} est passée)
+                </Badge>
+              )}
+            </div>
+          );
+        })()}
       </CardContent>
     </Card>
   );
