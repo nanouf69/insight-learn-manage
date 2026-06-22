@@ -7,10 +7,25 @@ import { useStudentEffectiveHours } from "@/hooks/useStudentEffectiveHours";
 interface StudentHoursTrackerProps {
   apprenantId: string | null | undefined;
   typeApprenant: string | null | undefined;
+  dateDebutFormation?: string | null;
+  dateFinFormation?: string | null;
+  dateDebutCoursEnLigne?: string | null;
+  dateFinCoursEnLigne?: string | null;
 }
 
-export default function StudentHoursTracker({ apprenantId, typeApprenant }: StudentHoursTrackerProps) {
-  const { loading, formattedDone, formattedRemaining, requis, pct } = useStudentEffectiveHours(apprenantId, typeApprenant);
+export default function StudentHoursTracker({
+  apprenantId,
+  typeApprenant,
+  dateDebutFormation,
+  dateFinFormation,
+  dateDebutCoursEnLigne,
+  dateFinCoursEnLigne,
+}: StudentHoursTrackerProps) {
+  const { loading, formattedDone, formattedRemaining, requis, pct } = useStudentEffectiveHours(
+    apprenantId,
+    typeApprenant,
+    { dateDebutFormation, dateFinFormation, dateDebutCoursEnLigne, dateFinCoursEnLigne },
+  );
 
   if (loading || !apprenantId) {
     return null;
@@ -44,7 +59,7 @@ export default function StudentHoursTracker({ apprenantId, typeApprenant }: Stud
               ) : null}
             </div>
             <p className="text-sm text-muted-foreground">
-              Le temps affiché est compté <strong>uniquement</strong> lorsque vous ouvrez un module, un exercice ou un quiz.
+              Le temps affiché est compté <strong>uniquement</strong> lorsque vous ouvrez un module, un exercice ou un quiz, <strong>et uniquement pendant la période de votre formation</strong>.
             </p>
           </div>
 

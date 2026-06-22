@@ -26,6 +26,10 @@ interface Apprenant {
   prenom: string;
   email: string | null;
   type_apprenant: string;
+  date_debut_formation: string | null;
+  date_fin_formation: string | null;
+  date_debut_cours_en_ligne: string | null;
+  date_fin_cours_en_ligne: string | null;
 }
 interface Connexion {
   apprenant_id: string;
@@ -36,6 +40,16 @@ interface Connexion {
 interface ActivityTs {
   apprenant_id: string;
   ts: string;
+}
+
+// Parse YYYY-MM-DD as local date (no UTC shift)
+function parseDateBound(value: string | null | undefined, endOfDay = false): number | null {
+  if (!value) return null;
+  const s = value.slice(0, 10);
+  const [y, m, d] = s.split("-").map(n => parseInt(n, 10));
+  if (!y || !m || !d) return null;
+  const dt = new Date(y, m - 1, d, endOfDay ? 23 : 0, endOfDay ? 59 : 0, endOfDay ? 59 : 0, endOfDay ? 999 : 0);
+  return dt.getTime();
 }
 
 async function fetchAll<T>(builder: () => any): Promise<T[]> {
@@ -75,7 +89,7 @@ export default function SuiviHeuresElearning() {
         const apps = await fetchAll<Apprenant>(() =>
           supabase
             .from("apprenants")
-            .select("id, nom, prenom, email, type_apprenant")
+            .select("id, nom, prenom, email, type_apprenant, date_debut_formation, date_fin_formation, date_debut_cours_en_ligne, date_fin_cours_en_ligne")
             .in("type_apprenant", ELEARNING_TYPES)
             .not("auth_user_id", "is", null)
             .order("nom"),
@@ -159,7 +173,23 @@ export default function SuiviHeuresElearning() {
     return m;
   }, [connexions]);
 
-  // Calcul du temps de connexion EFFECTIF (seulement quand un module/exercice/quiz a été ouvert)
+  // Bornes formation par apprenant (priorité dates_formation, fallback cours_en_ligne)
+  const windowByApp = useMemo(() => {
+    const m = new Map<string, { start: number | null; end: number | null }>();
+    for (const a of apprenants) {
+      const start =
+        parseDateBound(a.date_debut_formation, false) ??
+        parseDateBound(a.date_debut_cours_en_ligne, false);
+      const end =
+        parseDateBound(a.date_fin_formation, true) ??
+        parseDateBound(a.date_fin_cours_en_ligne, true);
+      m.set(a.id, { start, end });
+    }
+    return m;
+  }, [apprenants]);
+
+  // Calcul du temps de connexion EFFECTIF (seulement quand un module/exercice/quiz a été ouvert,
+  // et uniquement dans la plage de formation de l'apprenant)
   const heuresByApp = useMemo(() => {
     const result = new Map<string, number>(); // minutes
     for (const [appId, conns] of connByApp.entries()) {
@@ -168,28 +198,35 @@ export default function SuiviHeuresElearning() {
         result.set(appId, 0);
         continue;
       }
+      const win = windowByApp.get(appId) || { start: null, end: null };
       let total = 0;
       for (const c of conns) {
-        const start = Date.parse(c.started_at);
+        const startRaw = Date.parse(c.started_at);
         const rawEnd = c.ended_at ? Date.parse(c.ended_at) : Date.parse(c.last_seen_at);
-        const cappedEnd = Math.min(rawEnd, start + MAX_SESSION_MS);
-        // recherche binaire : existe-t-il une activité dans [start, cappedEnd] ?
+        const cappedEnd = Math.min(rawEnd, startRaw + MAX_SESSION_MS);
+
+        // Clipper à la plage formation
+        const start = win.start != null ? Math.max(startRaw, win.start) : startRaw;
+        const end = win.end != null ? Math.min(cappedEnd, win.end) : cappedEnd;
+        if (end <= start) continue;
+
+        // recherche binaire : existe-t-il une activité dans [start, end] ?
         let lo = 0, hi = acts.length - 1, found = false;
         while (lo <= hi) {
           const mid = (lo + hi) >> 1;
           const v = acts[mid];
           if (v < start) lo = mid + 1;
-          else if (v > cappedEnd) hi = mid - 1;
+          else if (v > end) hi = mid - 1;
           else { found = true; break; }
         }
         if (found) {
-          total += Math.max(0, Math.round((cappedEnd - start) / 60000));
+          total += Math.max(0, Math.round((end - start) / 60000));
         }
       }
       result.set(appId, total);
     }
     return result;
-  }, [connByApp, actByApp]);
+  }, [connByApp, actByApp, windowByApp]);
 
   const rows = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -225,7 +262,7 @@ export default function SuiviHeuresElearning() {
       <div className="rounded-lg border bg-amber-50 p-4 dark:bg-amber-950/20">
         <h2 className="text-2xl font-bold">Suivi heures e-learning</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Les heures affichées correspondent au temps passé sur la plateforme <strong>uniquement</strong> lorsque l'apprenant ouvre un module, un exercice ou un quiz. Les connexions sans activité pédagogique ne sont pas comptabilisées.
+          Les heures affichées correspondent au temps passé sur la plateforme <strong>uniquement</strong> lorsque l'apprenant ouvre un module, un exercice ou un quiz, <strong>et uniquement à l'intérieur de la plage de dates de sa formation</strong>. Les connexions hors période ou sans activité pédagogique ne sont pas comptabilisées.
         </p>
       </div>
 
