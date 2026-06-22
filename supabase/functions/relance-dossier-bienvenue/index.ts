@@ -63,45 +63,39 @@ Deno.serve(async (req) => {
 
     if (appError) throw appError;
 
-    // Exclude présentiel formations and continuing education from onboarding reminders
-    const EXCLUDED_TYPES = new Set([
-      "vtc",
-      "vtc-exam",
-      "taxi",
-      "taxi-exam",
-      "vtc-e-presentiel",
-      "taxi-e-presentiel",
-      "ta-e-presentiel",
-      "pa-vtc",
-      "continue-vtc",
-      "continue-taxi",
-      "formation-continue-vtc",
-      "formation-continue-taxi",
-      "anglais",
-      "anglais-35h",
-      "langues",
-      "fle",
-    ]);
-
+    // UNIQUEMENT formations VTC ou TAXI (présentiel ou e-learning).
+    // Exclure: PA, TA, RP, anglais, marketing, formation continue, etc.
     const normalize = (value: string) =>
       (value || '').toLowerCase().trim().replace(/\s+/g, '-');
 
-    const isExcluded = (rawType: string, rawFormation: string) => {
+    const isVtcOuTaxi = (rawType: string, rawFormation: string) => {
       const candidates = [normalize(rawType), normalize(rawFormation)];
       for (const v of candidates) {
         if (!v) continue;
-        if (EXCLUDED_TYPES.has(v)) return true;
-        if (v.startsWith('continue-')) return true;
-        if (v.includes('formation-continue')) return true;
-        if (v.includes('pa-vtc')) return true;
-        if (v.includes('anglais')) return true;
-        if (v.includes('langue')) return true;
+        // Exclure explicitement les variantes non VTC/TAXI initiales
+        if (v.startsWith('pa-') || v.startsWith('pa ') || v === 'pa') return false;
+        if (v.startsWith('ta-') || v === 'ta') return false;
+        if (v.startsWith('rp-')) return false;
+        if (v.startsWith('va-') || v === 'va') return false;
+        if (v.startsWith('continue-')) return false;
+        if (v.includes('formation-continue')) return false;
+        if (v.includes('anglais')) return false;
+        if (v.includes('langue')) return false;
+        if (v.includes('marketing')) return false;
+        if (v.includes('fle')) return false;
+      }
+      // Doit contenir vtc ou taxi (et pas en tant que sous-type PA/RP)
+      for (const v of candidates) {
+        if (!v) continue;
+        const isVtc = v === 'vtc' || v.startsWith('vtc-') || v.startsWith('vtc ');
+        const isTaxi = v === 'taxi' || v.startsWith('taxi-') || v.startsWith('taxi ');
+        if (isVtc || isTaxi) return true;
       }
       return false;
     };
 
     const elearningApprenants = (apprenants || []).filter((a: any) => {
-      if (isExcluded(a.type_apprenant || '', a.formation_choisie || '')) return false;
+      if (!isVtcOuTaxi(a.type_apprenant || '', a.formation_choisie || '')) return false;
       // Exclure les apprenants ayant déjà réussi la théorie
       if (a.resultat_examen === 'oui') return false;
       // Exclure les apprenants ayant échoué à l'examen pratique
