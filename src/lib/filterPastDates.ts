@@ -8,7 +8,7 @@ const MONTH_MAP: Record<string, number> = {
 /**
  * Parse a French date string like "27 janvier 2026" into a Date object.
  */
-function parseFrenchDate(str: string): Date | null {
+export function parseFrenchDate(str: string): Date | null {
   const match = str.match(/(\d{1,2})\s+(\w+)\s+(\d{4})/);
   if (!match) return null;
   const [, day, monthName, year] = match;
