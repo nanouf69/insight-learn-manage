@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback, useState } from "react";
 
 const INACTIVITY_TIMEOUT = 4 * 60 * 60 * 1000; // 4 hours
-const AUTO_DISCONNECT_TIMEOUT = 30 * 60 * 1000; // 30 minutes
+const PRESENCE_RESPONSE_WINDOW = 30 * 60 * 1000; // 30 minutes
 
 interface UseInactivityAlertParams {
   enabled: boolean;
@@ -34,20 +34,19 @@ export function useInactivityAlert({ enabled, onDisconnect, pauseDuringExam = fa
   }, []);
 
   const startDisconnectCountdown = useCallback(() => {
-    const deadline = Date.now() + AUTO_DISCONNECT_TIMEOUT;
+    const deadline = Date.now() + PRESENCE_RESPONSE_WINDOW;
     setShowInactivityModal(true);
     setInactivityDeadline(deadline);
 
     disconnectTimerRef.current = setTimeout(() => {
       if (!disconnectedRef.current) {
-        disconnectedRef.current = true;
         clearAllTimers();
         setShowInactivityModal(false);
         setInactivityDeadline(null);
-        onDisconnectRef.current?.();
+        resetInactivityTimer();
       }
-    }, AUTO_DISCONNECT_TIMEOUT);
-  }, [clearAllTimers]);
+    }, PRESENCE_RESPONSE_WINDOW);
+  }, [clearAllTimers, resetInactivityTimer]);
 
   const resetInactivityTimer = useCallback(() => {
     if (!enabled || disconnectedRef.current) return;
