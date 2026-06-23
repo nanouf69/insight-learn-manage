@@ -51,7 +51,7 @@ export default function FinanceurFCForm({
   const [contactNom, setContactNom] = useState(`${apprenantPrenom} ${apprenantNom}`.trim());
   const [contactEmail, setContactEmail] = useState(apprenantEmail);
   const [contactTelephone, setContactTelephone] = useState(apprenantTelephone);
-  const [organismeFinanceur, setOrganismeFinanceur] = useState("");
+  
   const [numeroDossier, setNumeroDossier] = useState("");
   const [emailFacturation, setEmailFacturation] = useState(apprenantEmail);
   const [notes, setNotes] = useState("");
@@ -82,7 +82,6 @@ export default function FinanceurFCForm({
         setContactNom(r.contact_nom ?? `${apprenantPrenom} ${apprenantNom}`.trim());
         setContactEmail(r.contact_email ?? apprenantEmail);
         setContactTelephone(r.contact_telephone ?? apprenantTelephone);
-        setOrganismeFinanceur(r.organisme_financeur ?? "");
         setNumeroDossier(r.numero_dossier ?? "");
         setEmailFacturation(r.email_facturation ?? apprenantEmail);
         setNotes(r.notes ?? "");
@@ -134,7 +133,6 @@ export default function FinanceurFCForm({
         contact_nom: contactNom.trim(),
         contact_email: contactEmail.trim(),
         contact_telephone: contactTelephone.trim() || null,
-        organisme_financeur: isPro ? organismeFinanceur.trim() || null : null,
         numero_dossier: numeroDossier.trim() || null,
         email_facturation: emailFacturation.trim() || contactEmail.trim(),
         notes: notes.trim() || null,
@@ -251,14 +249,6 @@ export default function FinanceurFCForm({
             <div className="space-y-2">
               <Label>N° TVA Intracommunautaire</Label>
               <Input value={numeroTva} onChange={(e) => setNumeroTva(e.target.value)} placeholder="FRXX999999999" />
-            </div>
-            <div className="space-y-2">
-              <Label>Organisme financeur (OPCO, etc.)</Label>
-              <Input
-                value={organismeFinanceur}
-                onChange={(e) => setOrganismeFinanceur(e.target.value)}
-                placeholder="Ex : OPCO Mobilités, AKTO, FAFTT…"
-              />
             </div>
           </CardContent>
         </Card>
