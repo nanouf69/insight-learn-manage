@@ -1015,7 +1015,7 @@ export function ApprenantForm() {
             </div>
 
             {/* Date d'examen théorique - masqué pour repassage pratique, passage pratique et formation continue */}
-            {selectedFormation !== "repassage-pratique" && selectedFormation !== "passage-pratique" && selectedFormation !== "continue-vtc" && selectedFormation !== "continue-taxi" && (
+            {selectedFormation !== "repassage-pratique" && selectedFormation !== "passage-pratique" && selectedFormation !== "continue-vtc" && selectedFormation !== "continue-taxi" && selectedFormation !== "demande-carte-vtc-equivalence" && (
             <div className="space-y-2">
               <Label htmlFor="dateExamenTheorique">Date d'examen théorique</Label>
               <Select value={dateExamenTheorique} onValueChange={setDateExamenTheorique}>
