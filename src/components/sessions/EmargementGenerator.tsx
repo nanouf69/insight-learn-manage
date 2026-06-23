@@ -275,9 +275,15 @@ function generatePage(
   doc.setFont("helvetica", "bold");
   doc.setFontSize(8);
   doc.text("Signature du responsable de formation", margin, yPos);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7);
+  doc.text("Naoufal GUENICHI", margin + 2, yPos + 6);
   doc.setDrawColor(180, 180, 180);
   doc.setLineWidth(0.3);
   doc.roundedRect(margin, yPos + 2, colWidth, 20, 2, 2);
+  try {
+    doc.addImage(SIGNATURE_NAOUFAL_DATA_URL, "PNG", margin + colWidth - 38, yPos + 4, 34, 16);
+  } catch (e) { /* ignore */ }
 
   doc.text("Cachet et signature du centre", margin + colWidth + 10, yPos);
   doc.setFont("helvetica", "normal");
