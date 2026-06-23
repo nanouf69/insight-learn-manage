@@ -338,22 +338,32 @@ export default function RemboursementFCViewer({ apprenantId, completed, onComple
               Selon votre organisme financeur, accédez directement au portail pour soumettre votre dossier :
             </p>
             <div className="mt-2 flex flex-wrap gap-2">
-              <a
-                href="https://www.fafcea.com/je-depose-ma-demande/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-xs font-medium text-blue-700 hover:text-blue-900 bg-white border border-blue-200 rounded-md px-3 py-1.5 hover:bg-blue-50 transition-colors"
-              >
-                🏢 FAFCA — Je dépose ma demande
-              </a>
-              <a
-                href="https://communication-agefice.fr/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-xs font-medium text-blue-700 hover:text-blue-900 bg-white border border-blue-200 rounded-md px-3 py-1.5 hover:bg-blue-50 transition-colors"
-              >
-                🏪 AGEFICE — Espace adhérent
-              </a>
+              <div className="flex flex-col gap-1">
+                <a
+                  href="https://www.fafcea.com/je-depose-ma-demande/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-xs font-medium text-blue-700 hover:text-blue-900 bg-white border border-blue-200 rounded-md px-3 py-1.5 hover:bg-blue-50 transition-colors"
+                >
+                  🏢 FAFCA — Je dépose ma demande
+                </a>
+                <p className="text-[11px] text-blueprint_blue-700/70">
+                  Si vous êtes artisan VTC et que votre entreprise est toujours en activité
+                </p>
+              </div>
+              <div className="flex flex-col gap-1">
+                <a
+                  href="https://communication-agefice.fr/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-xs font-medium text-blue-700 hover:text-blue-900 bg-white border border-blue-200 rounded-md px-3 py-1.5 hover:bg-blue-50 transition-colors"
+                >
+                  🏪 AGEFICE — Espace adhérent
+                </a>
+                <p className="text-[11px] text-blue-700/70">
+                  Si vous êtes-ui VTC en plus commerçant, toujours en activité
+                </p>
+              </div>
             </div>
           </div>
         </div>
