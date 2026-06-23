@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 
 const ACTION_CHECK_THROTTLE_MS = 20_000;
-const PRESENCE_PROMPT_SNOOZE_MS = 30 * 60 * 1000;
+const PRESENCE_PROMPT_SNOOZE_MS = 4 * 60 * 60 * 1000;
 
 interface ServerSessionCheck {
   is_valid: boolean;
