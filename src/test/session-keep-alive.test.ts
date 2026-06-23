@@ -35,8 +35,8 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe("BUG #3 — Token refresh pendant les examens (non-regression)", () => {
-  it("devrait refresher toutes les 5 min en mode examen (forceAlways=true)", async () => {
+describe("BUG #3 — Maintien session tablette (non-régression)", () => {
+  it("devrait vérifier la session toutes les 5 min sans forcer refreshSession", async () => {
     const { useSessionKeepAlive } = await import("@/hooks/useSessionKeepAlive");
     renderHook(() => useSessionKeepAlive(true, true));
 
@@ -45,13 +45,15 @@ describe("BUG #3 — Token refresh pendant les examens (non-regression)", () => 
       vi.advanceTimersByTime(5 * 60 * 1000);
       await Promise.resolve();
     });
-    expect(mockRefreshSession).toHaveBeenCalledTimes(2);
+    expect(mockGetSession).toHaveBeenCalledTimes(2);
+    expect(mockRefreshSession).not.toHaveBeenCalled();
 
     await act(async () => {
       vi.advanceTimersByTime(5 * 60 * 1000);
       await Promise.resolve();
     });
-    expect(mockRefreshSession).toHaveBeenCalledTimes(3);
+    expect(mockGetSession).toHaveBeenCalledTimes(3);
+    expect(mockRefreshSession).not.toHaveBeenCalled();
   });
 
   it("devrait refresher MÊME après 20 min sans interaction en mode examen", async () => {
@@ -64,7 +66,8 @@ describe("BUG #3 — Token refresh pendant les examens (non-regression)", () => 
       vi.advanceTimersByTime(20 * 60 * 1000);
       await Promise.resolve();
     });
-    expect(mockRefreshSession).toHaveBeenCalledTimes(5);
+    expect(mockGetSession).toHaveBeenCalledTimes(5);
+    expect(mockRefreshSession).not.toHaveBeenCalled();
   });
 
   it("devrait continuer le refresh même sans interaction en mode NORMAL tablette", async () => {
@@ -76,7 +79,8 @@ describe("BUG #3 — Token refresh pendant les examens (non-regression)", () => 
       vi.advanceTimersByTime(20 * 60 * 1000);
       await Promise.resolve();
     });
-    expect(mockRefreshSession).toHaveBeenCalledTimes(5);
+    expect(mockGetSession).toHaveBeenCalledTimes(5);
+    expect(mockRefreshSession).not.toHaveBeenCalled();
   });
 
   it("ne devrait rien faire quand enabled=false", async () => {
@@ -87,12 +91,13 @@ describe("BUG #3 — Token refresh pendant les examens (non-regression)", () => 
       vi.advanceTimersByTime(30 * 60 * 1000);
       await Promise.resolve();
     });
+    expect(mockGetSession).not.toHaveBeenCalled();
     expect(mockRefreshSession).not.toHaveBeenCalled();
   });
 
-  it("devrait logger un warning en cas d'échec du refresh", async () => {
+  it("devrait logger un warning en cas d'échec de lecture session", async () => {
     const consoleWarn = vi.spyOn(console, "warn").mockImplementation(() => {});
-    mockRefreshSession.mockResolvedValueOnce({ error: { message: "Token expired" } });
+    mockGetSession.mockRejectedValueOnce(new Error("Session unavailable"));
 
     const { useSessionKeepAlive } = await import("@/hooks/useSessionKeepAlive");
     renderHook(() => useSessionKeepAlive(true, true));
@@ -105,7 +110,7 @@ describe("BUG #3 — Token refresh pendant les examens (non-regression)", () => 
 
     expect(consoleWarn).toHaveBeenCalledWith(
       expect.stringContaining("[KeepAlive]"),
-      expect.stringContaining("Token expired")
+      expect.any(Error)
     );
     consoleWarn.mockRestore();
   });
