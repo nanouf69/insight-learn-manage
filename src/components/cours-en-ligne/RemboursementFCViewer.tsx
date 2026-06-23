@@ -323,6 +323,7 @@ export default function RemboursementFCViewer({ apprenantId, completed, onComple
               <li>Les feuilles d'émargement signées</li>
               <li>L'attestation de fin de formation (présence et acquis)</li>
               <li>La facture acquittée délivrée par le centre</li>
+              <li>L'agrément du centre de formation</li>
               <li>Votre RIB (à fournir directement par vos soins)</li>
             </ul>
           </div>
