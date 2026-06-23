@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
 
 
 const ACTION_CHECK_THROTTLE_MS = 20_000;
@@ -58,13 +57,6 @@ export function usePresenceCheck({
   const suppressPromptUntilRef = useRef(0);
   const wasInExamRef = useRef(isInExam);
 
-  // Stabilise onForceDisconnect pour éviter que les setInterval/setTimeout
-  // se reconstruisent quand le parent passe une nouvelle référence à chaque render.
-  const onForceDisconnectRef = useRef(onForceDisconnect);
-  useEffect(() => {
-    onForceDisconnectRef.current = onForceDisconnect;
-  }, [onForceDisconnect]);
-
   const clearTimers = useCallback(() => {
     if (pollRef.current) clearInterval(pollRef.current);
     if (expiryTimerRef.current) clearTimeout(expiryTimerRef.current);
@@ -90,28 +82,6 @@ export function usePresenceCheck({
       return (Array.isArray(data) ? data[0] : null) as ServerSessionCheck | null;
     },
     [enabled, apprenantId, userId, connexionId],
-  );
-
-  const endSession = useCallback(
-    async (reason: string) => {
-      if (endingRef.current) return;
-      endingRef.current = true;
-      clearTimers();
-      setShowModal(false);
-      modalDeadlineRef.current = null;
-      setCountdownDeadline(null);
-      setDisconnectReason(reason);
-
-      if (connexionId) {
-        await supabase.rpc("close_apprenant_connexion" as any, {
-          _connexion_id: connexionId,
-          _apprenant_id: apprenantId,
-        });
-      }
-
-      await onForceDisconnectRef.current?.();
-    },
-    [apprenantId, clearTimers, connexionId],
   );
 
   const pausePresencePrompt = useCallback(() => {
@@ -282,7 +252,7 @@ export function usePresenceCheck({
     };
   }, [enabled, apprenantId, userId, connexionId, handleServerValidation, isInExam]);
 
-  // Expiry timer: déclenche endSession à la deadline — pas de tick state ici.
+  // Expiry timer: masque le contrôle à la deadline — pas de tick state ici.
   // Le countdown affiché est calculé localement dans le modal isolé (React.memo).
   useEffect(() => {
     if (expiryTimerRef.current) clearTimeout(expiryTimerRef.current);
