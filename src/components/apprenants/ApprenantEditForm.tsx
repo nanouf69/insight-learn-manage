@@ -1501,7 +1501,8 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
             </div>
           )}
 
-          {/* Accès cours en ligne */}
+          {/* Accès cours en ligne - masqué pour Demande de carte VTC par équivalence */}
+          {formData.selected_formation !== "demande-carte-vtc-equivalence" && (
           <div className="space-y-4">
             <h3 className="text-sm font-medium text-muted-foreground border-b pb-2 flex items-center gap-2">
               <Monitor className="w-4 h-4" />
