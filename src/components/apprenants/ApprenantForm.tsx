@@ -1191,6 +1191,8 @@ export function ApprenantForm() {
               </Select>
             </div>
 
+            {/* Dates de formation - masqué pour Demande de carte VTC par équivalence */}
+            {selectedFormation !== "demande-carte-vtc-equivalence" && (<>
             {/* Dates de formation */}
             <div className="space-y-4">
               <Label>Dates de formation</Label>
@@ -1319,6 +1321,8 @@ export function ApprenantForm() {
                 onChange={(e) => setNumeroDossierCma(e.target.value)} 
               />
             </div>
+            </>)}
+
           </div>
 
           {/* Prix de la formation - Masqué pour repassage/passage examen */}

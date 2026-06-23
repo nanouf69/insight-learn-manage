@@ -1186,6 +1186,8 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
               </div>
             )}
 
+            {/* Dates de formation - masqué pour Demande de carte VTC par équivalence */}
+            {formData.selected_formation !== "demande-carte-vtc-equivalence" && (<>
             {/* Dates de formation */}
             <div className="space-y-4">
               <Label>Dates de formation</Label>
@@ -1308,7 +1310,9 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
                 onChange={(e) => setFormData({ ...formData, numero_dossier_cma: e.target.value })}
               />
             </div>
+            </>)}
           </div>
+
 
           {/* Section paiement pour RP (repassage) */}
           {formData.selected_formation === "repassage-pratique" && (
@@ -1497,7 +1501,8 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
             </div>
           )}
 
-          {/* Accès cours en ligne */}
+          {/* Accès cours en ligne - masqué pour Demande de carte VTC par équivalence */}
+          {formData.selected_formation !== "demande-carte-vtc-equivalence" && (
           <div className="space-y-4">
             <h3 className="text-sm font-medium text-muted-foreground border-b pb-2 flex items-center gap-2">
               <Monitor className="w-4 h-4" />
@@ -1643,6 +1648,8 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
               );
             })()}
           </div>
+          )}
+
 
           {/* Notes */}
           <div className="space-y-4">
