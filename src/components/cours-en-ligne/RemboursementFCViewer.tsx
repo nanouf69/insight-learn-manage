@@ -347,9 +347,6 @@ export default function RemboursementFCViewer({ apprenantId, completed, onComple
                 🏢 FAFCA — Je dépose ma demande
               </a>
               <a
-                href="https://communication de ma demande
-              </a>
-              <a
                 href="https://communication-agefice.fr/"
                 target="_blank"
                 rel="noopener noreferrer"
