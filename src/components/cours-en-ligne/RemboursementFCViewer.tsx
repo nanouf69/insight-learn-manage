@@ -17,6 +17,7 @@ import { buildEmargementHTML } from "./EmargementsSignesViewer";
 import { getExpectedEmargements, type CreneauKey } from "@/lib/agendaSlots";
 import { generateAttestationFCVTC } from "@/lib/pdf/attestation-fc-vtc";
 import { toast } from "sonner";
+import agrementVtcAsset from "@/assets/agrement-vtc-ftransport.pdf.asset.json";
 
 interface Props {
   apprenantId?: string;
