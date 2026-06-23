@@ -114,6 +114,15 @@ export function usePresenceCheck({
     [apprenantId, clearTimers, connexionId],
   );
 
+  const pausePresencePrompt = useCallback(() => {
+    suppressPromptUntilRef.current = Date.now() + PRESENCE_PROMPT_SNOOZE_MS;
+    clearTimers();
+    setShowModal(false);
+    modalDeadlineRef.current = null;
+    setCountdownDeadline(null);
+    promptLoggedRef.current = false;
+  }, [clearTimers]);
+
   const handleServerValidation = useCallback(
     async (event: "heartbeat" | "heartbeat_exam" | "action" | "confirm_presence" = "heartbeat") => {
       if (endingRef.current) return;
@@ -134,10 +143,7 @@ export function usePresenceCheck({
           return;
         }
         console.warn(`[PresenceCheck] Session serveur expirée sans déconnexion auth — raison: ${reason}`);
-        clearTimers();
-        setShowModal(false);
-        modalDeadlineRef.current = null;
-        setCountdownDeadline(null);
+        pausePresencePrompt();
         return;
       }
 
@@ -179,14 +185,14 @@ export function usePresenceCheck({
         promptLoggedRef.current = false;
       }
     },
-    [apprenantId, connexionId, endSession, runServerCheck, userId],
+    [apprenantId, connexionId, clearTimers, pausePresencePrompt, runServerCheck, userId],
   );
 
   const confirmPresence = useCallback(async () => {
     const validation = await runServerCheck("confirm_presence");
 
     if (!validation || !validation.is_valid) {
-      await endSession(validation?.disconnect_reason || "no_response");
+      pausePresencePrompt();
       return;
     }
 
@@ -196,7 +202,7 @@ export function usePresenceCheck({
     modalDeadlineRef.current = null;
     setCountdownDeadline(null);
     lastActionCheckAtRef.current = Date.now();
-  }, [endSession, runServerCheck]);
+  }, [pausePresencePrompt, runServerCheck]);
 
   // Initial check + exam transition handling.
   // IMPORTANT: aucun setInterval ici — la détection de présence est désormais
@@ -287,14 +293,14 @@ export function usePresenceCheck({
     const delay = Math.max(0, modalDeadlineRef.current - Date.now());
     expiryTimerRef.current = setTimeout(() => {
       expiryTimerRef.current = null;
-      void endSession("no_response");
+      pausePresencePrompt();
     }, delay);
 
     return () => {
       if (expiryTimerRef.current) clearTimeout(expiryTimerRef.current);
       expiryTimerRef.current = null;
     };
-  }, [showModal, endSession, countdownDeadline]);
+  }, [showModal, pausePresencePrompt, countdownDeadline]);
 
   return {
     showModal,
