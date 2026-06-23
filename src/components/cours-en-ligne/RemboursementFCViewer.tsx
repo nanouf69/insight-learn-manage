@@ -347,7 +347,7 @@ export default function RemboursementFCViewer({ apprenantId, completed, onComple
                 >
                   🏢 FAFCA — Je dépose ma demande
                 </a>
-                <p className="text-[11px] text-blueprint_blue-700/70">
+                <p className="text-[11px] text-blue-700/70">
                   Si vous êtes artisan VTC et que votre entreprise est toujours en activité
                 </p>
               </div>
