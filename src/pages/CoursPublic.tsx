@@ -763,10 +763,8 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   useSessionKeepAlive(isStudentSession, isInExam);
 
   const handleForceDisconnect = useCallback(async () => {
-    await supabase.auth.signOut();
-    navigate("/cours");
-    toast.error("Session terminée");
-  }, [navigate]);
+    toast.info("Session maintenue : vous pouvez continuer votre formation.");
+  }, []);
 
   const {
     showModal: showPresenceModal,
