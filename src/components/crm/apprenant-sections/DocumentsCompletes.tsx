@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { FileText, Download, Eye, ChevronDown, ChevronUp, FileDown, ExternalLink } from "lucide-react";
 import { generateDocumentIndividuelPdf } from "@/lib/pdf/document-individuel";
 import { generateEmargementSemainePdf } from "@/lib/pdf/emargement-semaine";
+import { SIGNATURE_NAOUFAL_DATA_URL } from "@/lib/signatureNaoufal";
 import { useState } from "react";
 import { format, startOfWeek, endOfWeek, getISOWeek, getYear } from "date-fns";
 import { fr } from "date-fns/locale";
