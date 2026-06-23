@@ -118,15 +118,8 @@ export function useConnexionTracking({ apprenantId, userId, enabled }: UseConnex
 
     void startConnexion();
 
-    const handleBeforeUnload = () => {
-      void endConnexion();
-    };
-
-    window.addEventListener("beforeunload", handleBeforeUnload);
-
     return () => {
       cancelled = true;
-      window.removeEventListener("beforeunload", handleBeforeUnload);
       startingRef.current = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
