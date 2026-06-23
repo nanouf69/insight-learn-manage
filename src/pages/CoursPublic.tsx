@@ -1430,7 +1430,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
             creneau={emargementCreneau}
             mode={emargementMode}
             dateEmargement={emargementDate || undefined}
-            required
+            required={false}
             onSigned={() => setEmargementRefreshTick((t) => t + 1)}
             onSkipped={() => setEmargementFCStatus("skipped")}
           />
