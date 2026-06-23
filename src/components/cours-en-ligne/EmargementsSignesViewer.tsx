@@ -197,8 +197,9 @@ export const buildEmargementHTML = (
   .sigbox .label { font-weight: bold; font-size: 11px; margin-bottom: 4px; color: #6b7fc7; }
   .sigbox .name { font-size: 11px; color: #333; margin-top: 2px; }
   .signature-center { width: 230px; height: 72px; margin: 0 auto; overflow: hidden; position: relative; }
-  .signature-center img.formateur-sig { position: absolute; width: 425px; height: 600px; max-width: none; max-height: none; left: 50%; top: 50%; transform: translate(-56%, -48%) rotate(-72deg) scale(0.68); transform-origin: center; filter: contrast(4) brightness(0.55) saturate(1.8); }
+  .signature-center img.formateur-sig { position: absolute; width: 425px; height: 600px; max-width: none; max-height: none; left: 50%; top: 50%; transform: translate(-50%, -50%) rotate(18deg) scale(0.68); transform-origin: center; filter: contrast(4) brightness(0.55) saturate(1.8); }
   .signature-text { font-family: "Brush Script MT", "Segoe Script", cursive; font-size: 30px; line-height: 1; color: #101010; transform: rotate(-5deg); text-align: center; margin-top: 2px; }
+  .cachet-img { display: block; margin: 0 auto; max-height: 110px; max-width: 90%; }
   @media print { .noprint { display:none; } }
 </style></head><body>
   <div class="header">
