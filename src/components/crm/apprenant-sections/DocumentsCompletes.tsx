@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { FileText, Download, Eye, ChevronDown, ChevronUp, FileDown, ExternalLink } from "lucide-react";
 import { generateDocumentIndividuelPdf } from "@/lib/pdf/document-individuel";
 import { generateEmargementSemainePdf } from "@/lib/pdf/emargement-semaine";
+import { SIGNATURE_NAOUFAL_DATA_URL } from "@/lib/signatureNaoufal";
 import { useState } from "react";
 import { format, startOfWeek, endOfWeek, getISOWeek, getYear } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -195,13 +196,43 @@ export function DocumentsCompletes({ apprenant }: Props) {
 
       if (docsRes.error) throw docsRes.error;
 
-      const baseDocs = ((docsRes.data as any[]) || []).map((d) => ({
-        id: d.id,
-        type_document: d.type_document,
-        titre: d.titre,
-        donnees: d.donnees,
-        completed_at: d.completed_at,
-      }));
+      const rawDocs = ((docsRes.data as any[]) || []);
+
+      // Récupère la signature de l'apprenant depuis le dossier de bienvenue
+      // (signée à l'étape 12 de l'onboarding) pour l'injecter dans tous les
+      // documents pédagogiques (test compétences, analyse du besoin, etc.).
+      const dossierBienvenue = rawDocs.find((d) => d.type_document === "dossier-bienvenue");
+      const signatureApprenant: string | undefined =
+        dossierBienvenue?.donnees?.signature ||
+        dossierBienvenue?.donnees?.signature_apprenant ||
+        undefined;
+
+      const TYPES_AVEC_SIGNATURE = new Set([
+        "test-competences",
+        "analyse-besoin",
+        "projet-professionnel",
+        "evaluation-acquis",
+        "satisfaction",
+      ]);
+
+      const baseDocs = rawDocs.map((d) => {
+        const donnees = { ...(d.donnees || {}) };
+        if (TYPES_AVEC_SIGNATURE.has(d.type_document)) {
+          if (!donnees.signature && signatureApprenant) {
+            donnees.signature = signatureApprenant;
+          }
+          if (!donnees.signatureResponsable) {
+            donnees.signatureResponsable = SIGNATURE_NAOUFAL_DATA_URL;
+          }
+        }
+        return {
+          id: d.id,
+          type_document: d.type_document,
+          titre: d.titre,
+          donnees,
+          completed_at: d.completed_at,
+        };
+      });
 
       const devisDocs = ((devisRes.data as any[]) || []).map((d) => {
         const isSigned = !!d.devis_signe_url;
