@@ -141,6 +141,7 @@ const FORMATION_LABELS: Record<string, string> = {
   'vtc-e-presentiel': "Formation VTC E-learning + Présentiel",
   'taxi-e-presentiel': "Formation TAXI E-learning + Présentiel",
   'ta-e-presentiel': "Formation TA E-learning + Présentiel",
+  'demande-carte-vtc-equivalence': "Demande de carte VTC par équivalence",
 };
 
 interface LigneFacture {
