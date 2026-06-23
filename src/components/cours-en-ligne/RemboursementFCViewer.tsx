@@ -370,6 +370,32 @@ export default function RemboursementFCViewer({ apprenantId, completed, onComple
         </div>
       </Card>
 
+      {/* Agrément VTC du centre */}
+      <Card className="p-4">
+        <div className="flex items-start gap-3">
+          <Award className="h-6 w-6 text-amber-600 shrink-0 mt-1" />
+          <div className="flex-1">
+            <h3 className="font-semibold">Agrément VTC du centre de formation</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Agrément préfectoral du centre FTRANSPORT (à joindre à votre dossier de remboursement).
+            </p>
+            <div className="mt-2">
+              <a
+                href={agrementVtcAsset.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                download="Agrement-VTC-FTRANSPORT.pdf"
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-white bg-amber-600 hover:bg-amber-700 rounded-md px-3 py-1.5 transition-colors"
+              >
+                <Download className="h-3.5 w-3.5" />
+                Télécharger l'agrément VTC
+              </a>
+            </div>
+          </div>
+        </div>
+      </Card>
+
+
       {/* 1. Programme de formation */}
       <Card className="p-4">
         <div className="flex items-start gap-3">
