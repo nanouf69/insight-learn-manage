@@ -265,7 +265,7 @@ const FORMATION_DISPLAY_LABELS: Partial<Record<FormationId, Record<number, strin
   "continue-vtc": {
     81: "1.BILAN EXERCICES FORMATION CONTINUE VTC",
     87: "2.📋 BILAN FIN DE FORMATION CONTINUE VTC",
-    83: "3.FEUILLES D'ÉMARGEMENT SIGNÉES VTC",
+    83: "3.DOCUMENTS ADMINISTRATIFS VTC",
     85: "4.INFORMATIONS FINANCEUR VTC",
   },
   "continue-taxi": {
