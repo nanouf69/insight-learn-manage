@@ -10,11 +10,14 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 
+const mockSession = { refresh_token: "test-refresh-token" };
+const mockGetSession = vi.fn().mockResolvedValue({ data: { session: mockSession } });
 const mockRefreshSession = vi.fn().mockResolvedValue({ error: null });
 
 vi.mock("@/integrations/supabase/client", () => ({
   supabase: {
     auth: {
+      getSession: mockGetSession,
       refreshSession: mockRefreshSession,
     },
   },
@@ -23,6 +26,8 @@ vi.mock("@/integrations/supabase/client", () => ({
 beforeEach(() => {
   vi.useFakeTimers();
   vi.clearAllMocks();
+  mockGetSession.mockResolvedValue({ data: { session: mockSession } });
+  mockRefreshSession.mockResolvedValue({ error: null });
 });
 
 afterEach(() => {
@@ -31,19 +36,22 @@ afterEach(() => {
 });
 
 describe("BUG #3 — Token refresh pendant les examens (non-regression)", () => {
-  it("devrait refresher toutes les 10 min en mode examen (forceAlways=true)", async () => {
+  it("devrait refresher toutes les 5 min en mode examen (forceAlways=true)", async () => {
     const { useSessionKeepAlive } = await import("@/hooks/useSessionKeepAlive");
     renderHook(() => useSessionKeepAlive(true, true));
 
     await act(async () => {
-      vi.advanceTimersByTime(10 * 60 * 1000);
-    });
-    expect(mockRefreshSession).toHaveBeenCalledTimes(1);
-
-    await act(async () => {
-      vi.advanceTimersByTime(10 * 60 * 1000);
+      await Promise.resolve();
+      vi.advanceTimersByTime(5 * 60 * 1000);
+      await Promise.resolve();
     });
     expect(mockRefreshSession).toHaveBeenCalledTimes(2);
+
+    await act(async () => {
+      vi.advanceTimersByTime(5 * 60 * 1000);
+      await Promise.resolve();
+    });
+    expect(mockRefreshSession).toHaveBeenCalledTimes(3);
   });
 
   it("devrait refresher MÊME après 20 min sans interaction en mode examen", async () => {
@@ -52,21 +60,23 @@ describe("BUG #3 — Token refresh pendant les examens (non-regression)", () => 
 
     // 20 min sans aucun événement user → le hook doit quand même refresher
     await act(async () => {
+      await Promise.resolve();
       vi.advanceTimersByTime(20 * 60 * 1000);
+      await Promise.resolve();
     });
-    expect(mockRefreshSession).toHaveBeenCalledTimes(2);
+    expect(mockRefreshSession).toHaveBeenCalledTimes(5);
   });
 
-  it("devrait skipper le refresh après 15 min d'inactivité en mode NORMAL", async () => {
+  it("devrait continuer le refresh même sans interaction en mode NORMAL tablette", async () => {
     const { useSessionKeepAlive } = await import("@/hooks/useSessionKeepAlive");
     renderHook(() => useSessionKeepAlive(true, false));
 
-    // 10 min: encore actif (< 15 min idle window) → refresh
-    // 20 min: idle depuis 20 min (> 15 min) → skip
     await act(async () => {
+      await Promise.resolve();
       vi.advanceTimersByTime(20 * 60 * 1000);
+      await Promise.resolve();
     });
-    expect(mockRefreshSession).toHaveBeenCalledTimes(1);
+    expect(mockRefreshSession).toHaveBeenCalledTimes(5);
   });
 
   it("ne devrait rien faire quand enabled=false", async () => {
@@ -75,6 +85,7 @@ describe("BUG #3 — Token refresh pendant les examens (non-regression)", () => 
 
     await act(async () => {
       vi.advanceTimersByTime(30 * 60 * 1000);
+      await Promise.resolve();
     });
     expect(mockRefreshSession).not.toHaveBeenCalled();
   });
@@ -87,7 +98,9 @@ describe("BUG #3 — Token refresh pendant les examens (non-regression)", () => 
     renderHook(() => useSessionKeepAlive(true, true));
 
     await act(async () => {
-      vi.advanceTimersByTime(10 * 60 * 1000);
+      await Promise.resolve();
+      vi.advanceTimersByTime(5 * 60 * 1000);
+      await Promise.resolve();
     });
 
     expect(consoleWarn).toHaveBeenCalledWith(
@@ -105,8 +118,8 @@ describe("BUG #3 — Token refresh pendant les examens (non-regression)", () => 
     unmount();
 
     const removedEvents = removeSpy.mock.calls.map((c) => c[0]);
-    expect(removedEvents).toContain("mousemove");
-    expect(removedEvents).toContain("keydown");
+    expect(removedEvents).toContain("focus");
+    expect(removedEvents).toContain("online");
     removeSpy.mockRestore();
   });
 });

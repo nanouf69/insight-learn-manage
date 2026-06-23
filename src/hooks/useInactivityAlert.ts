@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback, useState } from "react";
 
-const INACTIVITY_TIMEOUT = 30 * 60 * 1000; // 30 minutes
-const AUTO_DISCONNECT_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+const INACTIVITY_TIMEOUT = 4 * 60 * 60 * 1000; // 4 hours
+const PRESENCE_RESPONSE_WINDOW = 30 * 60 * 1000; // 30 minutes
 
 interface UseInactivityAlertParams {
   enabled: boolean;
@@ -20,11 +20,7 @@ export function useInactivityAlert({ enabled, onDisconnect, pauseDuringExam = fa
   const inactivityTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const disconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const disconnectedRef = useRef(false);
-
-  const onDisconnectRef = useRef(onDisconnect);
-  useEffect(() => {
-    onDisconnectRef.current = onDisconnect;
-  }, [onDisconnect]);
+  const startDisconnectCountdownRef = useRef<() => void>(() => undefined);
 
   const clearAllTimers = useCallback(() => {
     if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
@@ -33,43 +29,47 @@ export function useInactivityAlert({ enabled, onDisconnect, pauseDuringExam = fa
     disconnectTimerRef.current = null;
   }, []);
 
+  const scheduleInactivityTimer = useCallback(() => {
+    if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
+    inactivityTimerRef.current = setTimeout(() => {
+      startDisconnectCountdownRef.current();
+    }, INACTIVITY_TIMEOUT);
+  }, []);
+
   const startDisconnectCountdown = useCallback(() => {
-    const deadline = Date.now() + AUTO_DISCONNECT_TIMEOUT;
+    const deadline = Date.now() + PRESENCE_RESPONSE_WINDOW;
     setShowInactivityModal(true);
     setInactivityDeadline(deadline);
 
     disconnectTimerRef.current = setTimeout(() => {
       if (!disconnectedRef.current) {
-        disconnectedRef.current = true;
         clearAllTimers();
         setShowInactivityModal(false);
         setInactivityDeadline(null);
-        onDisconnectRef.current?.();
+        scheduleInactivityTimer();
       }
-    }, AUTO_DISCONNECT_TIMEOUT);
-  }, [clearAllTimers]);
+    }, PRESENCE_RESPONSE_WINDOW);
+  }, [clearAllTimers, scheduleInactivityTimer]);
+
+  useEffect(() => {
+    startDisconnectCountdownRef.current = startDisconnectCountdown;
+  }, [startDisconnectCountdown]);
 
   const resetInactivityTimer = useCallback(() => {
     if (!enabled || disconnectedRef.current) return;
     if (showInactivityModal) return;
 
-    if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
-
-    inactivityTimerRef.current = setTimeout(() => {
-      startDisconnectCountdown();
-    }, INACTIVITY_TIMEOUT);
-  }, [enabled, showInactivityModal, startDisconnectCountdown]);
+    scheduleInactivityTimer();
+  }, [enabled, scheduleInactivityTimer, showInactivityModal]);
 
   const confirmActivity = useCallback(() => {
     clearAllTimers();
     setShowInactivityModal(false);
     setInactivityDeadline(null);
     if (enabled && !disconnectedRef.current) {
-      inactivityTimerRef.current = setTimeout(() => {
-        startDisconnectCountdown();
-      }, INACTIVITY_TIMEOUT);
+      scheduleInactivityTimer();
     }
-  }, [clearAllTimers, enabled, startDisconnectCountdown]);
+  }, [clearAllTimers, enabled, scheduleInactivityTimer]);
 
   useEffect(() => {
     if (!enabled || pauseDuringExam) {

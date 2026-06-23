@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
 
 
 const ACTION_CHECK_THROTTLE_MS = 20_000;
+const PRESENCE_PROMPT_SNOOZE_MS = 4 * 60 * 60 * 1000;
 
 interface ServerSessionCheck {
   is_valid: boolean;
@@ -35,7 +35,6 @@ export function usePresenceCheck({
   userId,
   connexionId,
   enabled,
-  onForceDisconnect,
   isInExam: isInExamProp,
   pauseDuringExam,
 }: UsePresenceCheckParams) {
@@ -46,7 +45,6 @@ export function usePresenceCheck({
   // Deadline timestamp (ms). Pas de tick state ici — c'est le modal isolé
   // qui calcule lui-même la seconde affichée pour ne pas re-render le parent.
   const [countdownDeadline, setCountdownDeadline] = useState<number | null>(null);
-  const [disconnectReason, setDisconnectReason] = useState<string | null>(null);
 
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const expiryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -54,14 +52,8 @@ export function usePresenceCheck({
   const endingRef = useRef(false);
   const promptLoggedRef = useRef(false);
   const lastActionCheckAtRef = useRef(0);
+  const suppressPromptUntilRef = useRef(0);
   const wasInExamRef = useRef(isInExam);
-
-  // Stabilise onForceDisconnect pour éviter que les setInterval/setTimeout
-  // se reconstruisent quand le parent passe une nouvelle référence à chaque render.
-  const onForceDisconnectRef = useRef(onForceDisconnect);
-  useEffect(() => {
-    onForceDisconnectRef.current = onForceDisconnect;
-  }, [onForceDisconnect]);
 
   const clearTimers = useCallback(() => {
     if (pollRef.current) clearInterval(pollRef.current);
@@ -90,27 +82,14 @@ export function usePresenceCheck({
     [enabled, apprenantId, userId, connexionId],
   );
 
-  const endSession = useCallback(
-    async (reason: string) => {
-      if (endingRef.current) return;
-      endingRef.current = true;
-      clearTimers();
-      setShowModal(false);
-      modalDeadlineRef.current = null;
-      setCountdownDeadline(null);
-      setDisconnectReason(reason);
-
-      if (connexionId) {
-        await supabase.rpc("close_apprenant_connexion" as any, {
-          _connexion_id: connexionId,
-          _apprenant_id: apprenantId,
-        });
-      }
-
-      await onForceDisconnectRef.current?.();
-    },
-    [apprenantId, clearTimers, connexionId],
-  );
+  const pausePresencePrompt = useCallback(() => {
+    suppressPromptUntilRef.current = Date.now() + PRESENCE_PROMPT_SNOOZE_MS;
+    clearTimers();
+    setShowModal(false);
+    modalDeadlineRef.current = null;
+    setCountdownDeadline(null);
+    promptLoggedRef.current = false;
+  }, [clearTimers]);
 
   const handleServerValidation = useCallback(
     async (event: "heartbeat" | "heartbeat_exam" | "action" | "confirm_presence" = "heartbeat") => {
@@ -131,22 +110,19 @@ export function usePresenceCheck({
           setCountdownDeadline(null);
           return;
         }
-        console.error(`[PresenceCheck] Déconnexion forcée — raison: ${reason}`);
-        const reasonMessages: Record<string, string> = {
-          max_duration: "Durée maximale de session atteinte (7h). Veuillez vous reconnecter.",
-          no_response: "Vous avez été déconnecté pour inactivité (aucune réponse au contrôle de présence).",
-          no_active_session: "Aucune session active détectée.",
-          already_closed: "Votre session a déjà été fermée.",
-        };
-        toast.error(`Déconnexion : ${reasonMessages[reason] || reason}`, {
-          duration: 10000,
-          position: "top-center",
-        });
-        await endSession(reason);
+        console.warn(`[PresenceCheck] Session serveur expirée sans déconnexion auth — raison: ${reason}`);
+        pausePresencePrompt();
         return;
       }
 
       if (validation.should_show_presence_prompt) {
+        if (Date.now() < suppressPromptUntilRef.current) {
+          setShowModal(false);
+          modalDeadlineRef.current = null;
+          setCountdownDeadline(null);
+          return;
+        }
+
         const remaining = Math.max(0, validation.remaining_presence_seconds || 0);
         const deadline = Date.now() + remaining * 1000;
         setShowModal(true);
@@ -155,11 +131,6 @@ export function usePresenceCheck({
 
         if (!promptLoggedRef.current) {
           promptLoggedRef.current = true;
-          toast.info("Êtes-vous là ? Merci de confirmer votre présence.", {
-            duration: 8000,
-            position: "top-center",
-          });
-
           await supabase.from("apprenant_module_activites" as any).insert({
             apprenant_id: apprenantId,
             user_id: userId,
@@ -177,23 +148,24 @@ export function usePresenceCheck({
         promptLoggedRef.current = false;
       }
     },
-    [apprenantId, connexionId, endSession, runServerCheck, userId],
+    [apprenantId, connexionId, clearTimers, pausePresencePrompt, runServerCheck, userId],
   );
 
   const confirmPresence = useCallback(async () => {
     const validation = await runServerCheck("confirm_presence");
 
     if (!validation || !validation.is_valid) {
-      await endSession(validation?.disconnect_reason || "no_response");
+      pausePresencePrompt();
       return;
     }
 
     promptLoggedRef.current = false;
+    suppressPromptUntilRef.current = Date.now() + PRESENCE_PROMPT_SNOOZE_MS;
     setShowModal(false);
     modalDeadlineRef.current = null;
     setCountdownDeadline(null);
     lastActionCheckAtRef.current = Date.now();
-  }, [endSession, runServerCheck]);
+  }, [pausePresencePrompt, runServerCheck]);
 
   // Initial check + exam transition handling.
   // IMPORTANT: aucun setInterval ici — la détection de présence est désormais
@@ -273,7 +245,7 @@ export function usePresenceCheck({
     };
   }, [enabled, apprenantId, userId, connexionId, handleServerValidation, isInExam]);
 
-  // Expiry timer: déclenche endSession à la deadline — pas de tick state ici.
+  // Expiry timer: masque le contrôle à la deadline — pas de tick state ici.
   // Le countdown affiché est calculé localement dans le modal isolé (React.memo).
   useEffect(() => {
     if (expiryTimerRef.current) clearTimeout(expiryTimerRef.current);
@@ -284,19 +256,19 @@ export function usePresenceCheck({
     const delay = Math.max(0, modalDeadlineRef.current - Date.now());
     expiryTimerRef.current = setTimeout(() => {
       expiryTimerRef.current = null;
-      void endSession("no_response");
+      pausePresencePrompt();
     }, delay);
 
     return () => {
       if (expiryTimerRef.current) clearTimeout(expiryTimerRef.current);
       expiryTimerRef.current = null;
     };
-  }, [showModal, endSession, countdownDeadline]);
+  }, [showModal, pausePresencePrompt, countdownDeadline]);
 
   return {
     showModal,
     countdownDeadline,
-    disconnectReason,
+    disconnectReason: null,
     confirmPresence,
   };
 }

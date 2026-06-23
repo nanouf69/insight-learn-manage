@@ -1,37 +1,20 @@
 import { useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-const REFRESH_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes
-const ACTIVITY_WINDOW_MS = 15 * 60 * 1000; // consider active if interaction < 15 min ago
+const REFRESH_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 
 /**
- * Keeps the Supabase auth session alive by refreshing the token every 10 minutes
- * while the user is active (mouse, keyboard, touch, scroll).
- * When forceAlways is true (e.g. during an exam), refreshes unconditionally.
- * Prevents token expiry during long exam/module sessions.
+  * Keeps the auth session alive by refreshing the token every 5 minutes.
+  * Tablets often stay open while learners read/watch without touching the screen,
+  * so refresh must not depend on recent pointer activity.
  */
 export function useSessionKeepAlive(enabled: boolean, forceAlways = false) {
-  const lastActivityRef = useRef(Date.now());
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     if (!enabled) return;
 
-    const markActive = () => {
-      lastActivityRef.current = Date.now();
-    };
-
-    const events = ["mousemove", "keydown", "touchstart", "scroll", "click"];
-    events.forEach(e => window.addEventListener(e, markActive, { passive: true }));
-
-    intervalRef.current = setInterval(async () => {
-      if (!forceAlways) {
-        const idle = Date.now() - lastActivityRef.current;
-        if (idle > ACTIVITY_WINDOW_MS) {
-          console.log("[KeepAlive] User idle, skipping token refresh");
-          return;
-        }
-      }
+    const refreshSession = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session?.refresh_token) return;
@@ -45,10 +28,23 @@ export function useSessionKeepAlive(enabled: boolean, forceAlways = false) {
       } catch (err) {
         console.warn("[KeepAlive] Token refresh error:", err);
       }
-    }, REFRESH_INTERVAL_MS);
+    };
+
+    void refreshSession();
+    intervalRef.current = setInterval(refreshSession, REFRESH_INTERVAL_MS);
+
+    const refreshOnResume = () => {
+      void refreshSession();
+    };
+
+    window.addEventListener("focus", refreshOnResume);
+    window.addEventListener("online", refreshOnResume);
+    document.addEventListener("visibilitychange", refreshOnResume);
 
     return () => {
-      events.forEach(e => window.removeEventListener(e, markActive));
+      window.removeEventListener("focus", refreshOnResume);
+      window.removeEventListener("online", refreshOnResume);
+      document.removeEventListener("visibilitychange", refreshOnResume);
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
   }, [enabled, forceAlways]);
