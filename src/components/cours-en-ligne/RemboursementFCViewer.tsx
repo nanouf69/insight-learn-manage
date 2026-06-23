@@ -328,6 +328,40 @@ export default function RemboursementFCViewer({ apprenantId, completed, onComple
         </div>
       </Card>
 
+      {/* Liens financeurs */}
+      <Card className="p-4 bg-blue-50/60 border-blue-200">
+        <div className="flex items-start gap-3">
+          <ReceiptText className="h-6 w-6 text-blue-600 shrink-0 mt-1" />
+          <div className="flex-1">
+            <h3 className="font-semibold text-blue-900">Déposer votre demande de remboursement en ligne</h3>
+            <p className="text-xs text-blue-800/80 mt-1">
+              Selon votre organisme financeur, accédez directement au portail pour soumettre votre dossier :
+            </p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <a
+                href="https://www.fafcea.com/je-depose-ma-demande/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-blue-700 hover:text-blue-900 bg-white border border-blue-200 rounded-md px-3 py-1.5 hover:bg-blue-50 transition-colors"
+              >
+                🏢 FAFCA — Je dépose ma demande
+              </a>
+              <a
+                href="https://communication de ma demande
+              </a>
+              <a
+                href="https://communication-agefice.fr/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-blue-700 hover:text-blue-900 bg-white border border-blue-200 rounded-md px-3 py-1.5 hover:bg-blue-50 transition-colors"
+              >
+                🏪 AGEFICE — Espace adhérent
+              </a>
+            </div>
+          </div>
+        </div>
+      </Card>
+
       {/* 1. Programme de formation */}
       <Card className="p-4">
         <div className="flex items-start gap-3">
