@@ -1648,6 +1648,8 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
               );
             })()}
           </div>
+          )}
+
 
           {/* Notes */}
           <div className="space-y-4">
