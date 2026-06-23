@@ -51,7 +51,7 @@ export default function FinanceurFCForm({
   const [contactNom, setContactNom] = useState(`${apprenantPrenom} ${apprenantNom}`.trim());
   const [contactEmail, setContactEmail] = useState(apprenantEmail);
   const [contactTelephone, setContactTelephone] = useState(apprenantTelephone);
-  const [organismeFinanceur, setOrganismeFinanceur] = useState("");
+  
   const [numeroDossier, setNumeroDossier] = useState("");
   const [emailFacturation, setEmailFacturation] = useState(apprenantEmail);
   const [notes, setNotes] = useState("");
