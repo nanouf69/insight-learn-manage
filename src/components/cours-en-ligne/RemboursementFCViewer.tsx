@@ -361,7 +361,7 @@ export default function RemboursementFCViewer({ apprenantId, completed, onComple
                   🏪 AGEFICE — Espace adhérent
                 </a>
                 <p className="text-[11px] text-blue-700/70">
-                  Si vous êtes-ui VTC en plus commerçant, toujours en activité
+                  Si vous êtes VTC en plus commerçant, toujours en activité
                 </p>
               </div>
             </div>
