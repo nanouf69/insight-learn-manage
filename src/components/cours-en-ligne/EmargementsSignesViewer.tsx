@@ -107,6 +107,9 @@ export const buildEmargementHTML = (
     apprenant?.date_debut_formation || apprenant?.date_fin_formation
       ? `du ${formatShortDate(apprenant?.date_debut_formation)} au ${formatShortDate(apprenant?.date_fin_formation)}`
       : "—";
+  const dateSignatureCentre = formatShortDate(
+    apprenant?.date_fin_formation || groupedByDay[groupedByDay.length - 1]?.[0] || new Date().toISOString().slice(0, 10)
+  );
 
   const hasSoirSplit = groupedByDay.some(([, v]) => !!v.soir1 || !!v.soir2);
   const hasSoir = hasSoirSplit || groupedByDay.some(([, v]) => !!v.soir);
@@ -192,7 +195,9 @@ export const buildEmargementHTML = (
   .sigbox { flex: 1; border: 1px solid #6b7fc7; border-radius: 4px; padding: 10px; min-height: 110px; position: relative; }
   .sigbox .label { font-weight: bold; font-size: 11px; margin-bottom: 4px; color: #6b7fc7; }
   .sigbox .name { font-size: 11px; color: #333; margin-top: 2px; }
-  .sigbox img.formateur-sig { max-height: 70px; max-width: 90%; display: block; margin: 4px auto; }
+  .signature-center { width: 230px; height: 72px; margin: 0 auto; overflow: hidden; position: relative; }
+  .signature-center img.formateur-sig { position: absolute; width: 425px; height: 600px; max-width: none; max-height: none; left: 50%; top: 50%; transform: translate(-56%, -48%) rotate(-72deg) scale(0.68); transform-origin: center; filter: contrast(4) brightness(0.55) saturate(1.8); }
+  .signature-text { font-family: "Brush Script MT", "Segoe Script", cursive; font-size: 30px; line-height: 1; color: #101010; transform: rotate(-5deg); text-align: center; margin-top: 2px; }
   @media print { .noprint { display:none; } }
 </style></head><body>
   <div class="header">
@@ -236,11 +241,14 @@ export const buildEmargementHTML = (
     <div class="sigbox">
       <div class="label">Formateur</div>
       <div class="name">${formateur}</div>
-      <img class="formateur-sig" src="${SIGNATURE_NAOUFAL_DATA_URL}" alt="Signature formateur"/>
+      <div class="signature-center"><img class="formateur-sig" src="${SIGNATURE_NAOUFAL_DATA_URL}" alt="Signature formateur"/></div>
+      <div class="signature-text">Naoufal Guenichi</div>
     </div>
     <div class="sigbox">
       <div class="label">Cachet et signature du centre</div>
-      <div class="name" style="margin-top:8px;color:#666;">Fait à Lyon, le ______________</div>
+      <div class="name" style="margin-top:8px;color:#666;">Fait à Lyon, le ${dateSignatureCentre}</div>
+      <div class="signature-center"><img class="formateur-sig" src="${SIGNATURE_NAOUFAL_DATA_URL}" alt="Signature du centre"/></div>
+      <div class="signature-text">Naoufal Guenichi</div>
     </div>
   </div>
 
