@@ -138,10 +138,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           .catch(async (error) => {
             if (!isActive) return;
             if (isInvalidRefreshTokenError(error)) {
-              manualSignOutRef.current = true;
-              await supabase.auth.signOut({ scope: 'local' }).catch(() => undefined);
               if (!isActive) return;
-              clearAuthState();
               setLoading(false);
               return;
             }
@@ -200,9 +197,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }).catch(async (error) => {
       if (!isActive) return;
       if (isInvalidRefreshTokenError(error)) {
-        manualSignOutRef.current = true;
-        await supabase.auth.signOut({ scope: 'local' }).catch(() => undefined);
-        if (!isActive) return;
+        authInitializedRef.current = true;
+        pendingSessionRef.current = undefined;
+        setLoading(false);
+        return;
       }
       authInitializedRef.current = true;
       pendingSessionRef.current = undefined;
