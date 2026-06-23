@@ -869,7 +869,7 @@ export function FactureForm() {
               <RadioGroupItem value="professionnel" id="professionnel-top" />
               <Label htmlFor="professionnel-top" className="flex items-center gap-3 cursor-pointer flex-1">
                 <Building2 className="w-5 h-5 text-muted-foreground" />
-                <div><div className="font-medium">Professionnel</div><div className="text-sm text-muted-foreground">Entreprise, OPCO, organisme financeur</div></div>
+                <div><div className="font-medium">Professionnel</div><div className="text-sm text-muted-foreground">Micro entreprise, Société, OPCO, organisme financeur</div></div>
               </Label>
             </div>
           </RadioGroup>
