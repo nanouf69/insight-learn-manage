@@ -22,11 +22,6 @@ export function useInactivityAlert({ enabled, onDisconnect, pauseDuringExam = fa
   const disconnectedRef = useRef(false);
   const startDisconnectCountdownRef = useRef<() => void>(() => undefined);
 
-  const onDisconnectRef = useRef(onDisconnect);
-  useEffect(() => {
-    onDisconnectRef.current = onDisconnect;
-  }, [onDisconnect]);
-
   const clearAllTimers = useCallback(() => {
     if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
     if (disconnectTimerRef.current) clearTimeout(disconnectTimerRef.current);
