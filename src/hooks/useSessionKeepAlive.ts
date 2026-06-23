@@ -4,9 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 const REFRESH_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 
 /**
-  * Keeps the auth session alive by refreshing the token every 5 minutes.
+ * Keeps the auth session warm by reading it every 5 minutes.
   * Tablets often stay open while learners read/watch without touching the screen,
-  * so refresh must not depend on recent pointer activity.
+ * so this must not depend on recent pointer activity. We deliberately avoid
+ * manual refreshSession calls because multiple tablet tabs can race and revoke
+ * each other's refresh token.
  */
 export function useSessionKeepAlive(enabled: boolean, forceAlways = false) {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -14,27 +16,21 @@ export function useSessionKeepAlive(enabled: boolean, forceAlways = false) {
   useEffect(() => {
     if (!enabled) return;
 
-    const refreshSession = async () => {
+    const touchSession = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session?.refresh_token) return;
-
-        const { error } = await supabase.auth.refreshSession(session);
-        if (error) {
-          console.warn("[KeepAlive] Token refresh failed:", error.message);
-        } else {
-          console.log(`[KeepAlive] Token refreshed successfully${forceAlways ? " (exam mode)" : ""}`);
-        }
+        console.log(`[KeepAlive] Session checked${forceAlways ? " (exam mode)" : ""}`);
       } catch (err) {
-        console.warn("[KeepAlive] Token refresh error:", err);
+        console.warn("[KeepAlive] Session check error:", err);
       }
     };
 
-    void refreshSession();
-    intervalRef.current = setInterval(refreshSession, REFRESH_INTERVAL_MS);
+    void touchSession();
+    intervalRef.current = setInterval(touchSession, REFRESH_INTERVAL_MS);
 
     const refreshOnResume = () => {
-      void refreshSession();
+      void touchSession();
     };
 
     window.addEventListener("focus", refreshOnResume);
