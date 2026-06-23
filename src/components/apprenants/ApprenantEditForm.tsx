@@ -1310,8 +1310,9 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
                 onChange={(e) => setFormData({ ...formData, numero_dossier_cma: e.target.value })}
               />
             </div>
+            </>)}
           </div>
-          </>)}
+
 
           {/* Section paiement pour RP (repassage) */}
           {formData.selected_formation === "repassage-pratique" && (
