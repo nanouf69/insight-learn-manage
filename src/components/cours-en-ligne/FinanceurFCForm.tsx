@@ -133,7 +133,6 @@ export default function FinanceurFCForm({
         contact_nom: contactNom.trim(),
         contact_email: contactEmail.trim(),
         contact_telephone: contactTelephone.trim() || null,
-        organisme_financeur: isPro ? organismeFinanceur.trim() || null : null,
         numero_dossier: numeroDossier.trim() || null,
         email_facturation: emailFacturation.trim() || contactEmail.trim(),
         notes: notes.trim() || null,
