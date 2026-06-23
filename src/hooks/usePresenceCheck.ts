@@ -133,11 +133,6 @@ export function usePresenceCheck({
 
         if (!promptLoggedRef.current) {
           promptLoggedRef.current = true;
-          toast.info("Êtes-vous là ? Merci de confirmer votre présence.", {
-            duration: 8000,
-            position: "top-center",
-          });
-
           await supabase.from("apprenant_module_activites" as any).insert({
             apprenant_id: apprenantId,
             user_id: userId,
