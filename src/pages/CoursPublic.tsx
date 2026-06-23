@@ -1678,13 +1678,6 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     const rows = completionsByModuleId[module.id] || [];
     let isDone = completedModuleIds.has(module.id);
 
-    // Si l'apprenant a explicitement validé le module (au moins une ligne avec un score enregistré),
-    // on considère le module comme terminé même si certaines réponses détaillées sont vides.
-    // Sinon, un quiz auto-sauvegardé partiellement laissait l'item dans "à faire" pour toujours.
-    const hasExplicitScoreRow = rows.some(
-      (r) => r?.score_max != null && Number(r.score_max) > 0 && r?.score_obtenu != null,
-    );
-
     const quizStats = moduleQuizStatsById[module.id];
     const examStats = examBlancStatsById[module.id];
 
@@ -1697,8 +1690,8 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
       isDone = true;
     }
 
-    // If module has quiz stats, require ALL quizzes completed — sauf si l'apprenant a déjà validé un score
-    if (isDone && !hasExplicitScoreRow && quizStats && quizStats.totalQuizzes > 0) {
+    // If module has quiz stats, require ALL quizzes completed
+    if (isDone && quizStats && quizStats.totalQuizzes > 0) {
       if (quizStats.completedQuizzes < quizStats.totalQuizzes) {
         isDone = false;
       }
