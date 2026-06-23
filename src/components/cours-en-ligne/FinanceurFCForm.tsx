@@ -220,7 +220,7 @@ export default function FinanceurFCForm({
                   <Building2 className="h-4 w-4" /> Professionnel
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  Entreprise, OPCO, organisme financeur
+                  Micro entreprise, Société, OPCO, organisme financeur
                 </div>
               </div>
             </label>
