@@ -179,7 +179,8 @@ export function ApprenantForm() {
     "marketing-digital-28h": "3300",
     "anglais-20h": "1200",
     "anglais-35h": "2000",
-    "anglais-45h": "3000"
+    "anglais-45h": "3000",
+    "demande-carte-vtc-equivalence": "100"
   };
 
   // Mapping formation → type d'apprenant
