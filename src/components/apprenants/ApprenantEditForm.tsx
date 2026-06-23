@@ -978,7 +978,7 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
             </div>
 
             {/* Date d'examen théorique - masqué pour repassage pratique, passage pratique et formation continue */}
-            {formData.selected_formation !== "repassage-pratique" && formData.selected_formation !== "passage-pratique" && formData.selected_formation !== "continue-vtc" && formData.selected_formation !== "continue-taxi" && (
+            {formData.selected_formation !== "repassage-pratique" && formData.selected_formation !== "passage-pratique" && formData.selected_formation !== "continue-vtc" && formData.selected_formation !== "continue-taxi" && formData.selected_formation !== "demande-carte-vtc-equivalence" && (
             <div className="space-y-2">
               <Label htmlFor="dateExamenTheorique">Date d'examen théorique</Label>
               <Select value={formData.date_examen_theorique} onValueChange={(value) => setFormData({ ...formData, date_examen_theorique: value })}>
