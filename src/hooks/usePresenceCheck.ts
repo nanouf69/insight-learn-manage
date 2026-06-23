@@ -4,6 +4,7 @@ import { toast } from "sonner";
 
 
 const ACTION_CHECK_THROTTLE_MS = 20_000;
+const PRESENCE_PROMPT_SNOOZE_MS = 30 * 60 * 1000;
 
 interface ServerSessionCheck {
   is_valid: boolean;
@@ -54,6 +55,7 @@ export function usePresenceCheck({
   const endingRef = useRef(false);
   const promptLoggedRef = useRef(false);
   const lastActionCheckAtRef = useRef(0);
+  const suppressPromptUntilRef = useRef(0);
   const wasInExamRef = useRef(isInExam);
 
   // Stabilise onForceDisconnect pour éviter que les setInterval/setTimeout
@@ -131,22 +133,22 @@ export function usePresenceCheck({
           setCountdownDeadline(null);
           return;
         }
-        console.error(`[PresenceCheck] Déconnexion forcée — raison: ${reason}`);
-        const reasonMessages: Record<string, string> = {
-          max_duration: "Durée maximale de session atteinte (7h). Veuillez vous reconnecter.",
-          no_response: "Vous avez été déconnecté pour inactivité (aucune réponse au contrôle de présence).",
-          no_active_session: "Aucune session active détectée.",
-          already_closed: "Votre session a déjà été fermée.",
-        };
-        toast.error(`Déconnexion : ${reasonMessages[reason] || reason}`, {
-          duration: 10000,
-          position: "top-center",
-        });
-        await endSession(reason);
+        console.warn(`[PresenceCheck] Session serveur expirée sans déconnexion auth — raison: ${reason}`);
+        clearTimers();
+        setShowModal(false);
+        modalDeadlineRef.current = null;
+        setCountdownDeadline(null);
         return;
       }
 
       if (validation.should_show_presence_prompt) {
+        if (Date.now() < suppressPromptUntilRef.current) {
+          setShowModal(false);
+          modalDeadlineRef.current = null;
+          setCountdownDeadline(null);
+          return;
+        }
+
         const remaining = Math.max(0, validation.remaining_presence_seconds || 0);
         const deadline = Date.now() + remaining * 1000;
         setShowModal(true);
@@ -189,6 +191,7 @@ export function usePresenceCheck({
     }
 
     promptLoggedRef.current = false;
+    suppressPromptUntilRef.current = Date.now() + PRESENCE_PROMPT_SNOOZE_MS;
     setShowModal(false);
     modalDeadlineRef.current = null;
     setCountdownDeadline(null);
