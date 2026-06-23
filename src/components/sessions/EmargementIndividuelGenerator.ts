@@ -269,24 +269,39 @@ function generateIndividualPage(
 
   // ===== ZONE DE SIGNATURE =====
   const pgH = doc.internal.pageSize.getHeight();
-  const sigY = Math.min(yPos, pgH - 42);
+  const sigY = Math.min(yPos, pgH - 50);
   const colWidth = (pageWidth - margin * 2 - 10) / 2;
+  const sigBoxH = 28;
+
+  // Date du dernier jour de formation (2e jour pour FC VTC/TAXI 14h)
+  const lastDay = days[days.length - 1]?.date || parseISO(session.dateFin);
+  const dateSignature = format(lastDay, "dd/MM/yyyy");
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9);
+  doc.setTextColor(0, 0, 0);
   doc.text("Formateur", margin, sigY);
   doc.text("Cachet et signature du centre", margin + colWidth + 10, sigY);
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(7);
+  doc.setFontSize(8);
   doc.text("Naoufal GUENICHI", margin + 2, sigY + 6);
-  doc.text(`Fait a Lyon, le _______________`, margin + colWidth + 12, sigY + 8);
+  doc.text(`Fait a Lyon, le ${dateSignature}`, margin + colWidth + 12, sigY + 6);
+
   doc.setDrawColor(180, 180, 180);
   doc.setLineWidth(0.3);
-  doc.roundedRect(margin, sigY + 2, colWidth, 22, 2, 2);
-  doc.roundedRect(margin + colWidth + 10, sigY + 2, colWidth, 22, 2, 2);
+  doc.roundedRect(margin, sigY + 2, colWidth, sigBoxH, 2, 2);
+  doc.roundedRect(margin + colWidth + 10, sigY + 2, colWidth, sigBoxH, 2, 2);
+
+  // Signature de Naoufal (image large et bien visible, centrée dans le cadre)
   try {
-    doc.addImage(SIGNATURE_NAOUFAL_DATA_URL, "PNG", margin + colWidth - 42, sigY + 4, 38, 18);
-  } catch (e) { /* ignore */ }
+    const sigW = 60;
+    const sigH = 22;
+    const sigX = margin + (colWidth - sigW) / 2;
+    const sigImgY = sigY + 8 + (sigBoxH - 8 - sigH) / 2;
+    doc.addImage(SIGNATURE_NAOUFAL_DATA_URL, "PNG", sigX, sigImgY, sigW, sigH);
+  } catch (e) {
+    console.error("Erreur chargement signature Naoufal:", e);
+  }
 
   // ===== PIED DE PAGE =====
   const footerY = pgH - 8;
