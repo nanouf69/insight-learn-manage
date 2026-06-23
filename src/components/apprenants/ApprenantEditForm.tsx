@@ -1311,6 +1311,7 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
               />
             </div>
           </div>
+          </>)}
 
           {/* Section paiement pour RP (repassage) */}
           {formData.selected_formation === "repassage-pratique" && (
