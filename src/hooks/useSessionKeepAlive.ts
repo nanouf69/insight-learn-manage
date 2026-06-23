@@ -9,7 +9,6 @@ const REFRESH_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
   * so refresh must not depend on recent pointer activity.
  */
 export function useSessionKeepAlive(enabled: boolean, forceAlways = false) {
-  const lastActivityRef = useRef(Date.now());
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
@@ -35,7 +34,6 @@ export function useSessionKeepAlive(enabled: boolean, forceAlways = false) {
     intervalRef.current = setInterval(refreshSession, REFRESH_INTERVAL_MS);
 
     const refreshOnResume = () => {
-      lastActivityRef.current = Date.now();
       void refreshSession();
     };
 
