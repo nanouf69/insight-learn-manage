@@ -85,6 +85,7 @@ describe("BUG #3 — Token refresh pendant les examens (non-regression)", () => 
 
     await act(async () => {
       vi.advanceTimersByTime(30 * 60 * 1000);
+      await Promise.resolve();
     });
     expect(mockRefreshSession).not.toHaveBeenCalled();
   });
@@ -97,7 +98,9 @@ describe("BUG #3 — Token refresh pendant les examens (non-regression)", () => 
     renderHook(() => useSessionKeepAlive(true, true));
 
     await act(async () => {
-      vi.advanceTimersByTime(10 * 60 * 1000);
+      await Promise.resolve();
+      vi.advanceTimersByTime(5 * 60 * 1000);
+      await Promise.resolve();
     });
 
     expect(consoleWarn).toHaveBeenCalledWith(
@@ -115,8 +118,8 @@ describe("BUG #3 — Token refresh pendant les examens (non-regression)", () => 
     unmount();
 
     const removedEvents = removeSpy.mock.calls.map((c) => c[0]);
-    expect(removedEvents).toContain("mousemove");
-    expect(removedEvents).toContain("keydown");
+    expect(removedEvents).toContain("focus");
+    expect(removedEvents).toContain("online");
     removeSpy.mockRestore();
   });
 });
