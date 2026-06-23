@@ -1265,6 +1265,15 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     );
   }
 
+  if (!embedded && !user && !authLoading && apprenant) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-3 p-4 text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+        <p className="text-sm text-muted-foreground">Reconnexion en cours…</p>
+      </div>
+    );
+  }
+
   // Auth required (unless embedded in admin)
   if (!embedded && !user) {
     return <StudentLogin onLogin={() => {}} />;
