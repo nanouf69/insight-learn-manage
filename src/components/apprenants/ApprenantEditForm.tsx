@@ -240,7 +240,8 @@ const prixFormations: Record<string, string> = {
   "taxi-e-presentiel": "1799",
   "ta-e-presentiel": "999",
   "continue-vtc": "200",
-  "continue-taxi": "299"
+  "continue-taxi": "299",
+  "demande-carte-vtc-equivalence": "100"
 };
 
 export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEditFormProps) {
