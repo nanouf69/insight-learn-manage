@@ -6,6 +6,7 @@ import { CheckCircle2, Download, FileSignature, Loader2, User, PenTool } from "l
 import { EmargementFCModal, isFormationContinue } from "./EmargementFCModal";
 import { getExpectedEmargements, isPresentielType, type CreneauKey } from "@/lib/agendaSlots";
 import { SIGNATURE_NAOUFAL_DATA_URL } from "@/lib/signatureNaoufal";
+import cachetAsset from "@/assets/cachet-ftransport.png.asset.json";
 
 
 interface EmargementRow {
@@ -196,8 +197,9 @@ export const buildEmargementHTML = (
   .sigbox .label { font-weight: bold; font-size: 11px; margin-bottom: 4px; color: #6b7fc7; }
   .sigbox .name { font-size: 11px; color: #333; margin-top: 2px; }
   .signature-center { width: 230px; height: 72px; margin: 0 auto; overflow: hidden; position: relative; }
-  .signature-center img.formateur-sig { position: absolute; width: 425px; height: 600px; max-width: none; max-height: none; left: 50%; top: 50%; transform: translate(-56%, -48%) rotate(-72deg) scale(0.68); transform-origin: center; filter: contrast(4) brightness(0.55) saturate(1.8); }
+  .signature-center img.formateur-sig { position: absolute; width: 425px; height: 600px; max-width: none; max-height: none; left: 50%; top: 50%; transform: translate(-50%, -50%) rotate(18deg) scale(0.68); transform-origin: center; filter: contrast(4) brightness(0.55) saturate(1.8); }
   .signature-text { font-family: "Brush Script MT", "Segoe Script", cursive; font-size: 30px; line-height: 1; color: #101010; transform: rotate(-5deg); text-align: center; margin-top: 2px; }
+  .cachet-img { display: block; margin: 0 auto; max-height: 110px; max-width: 90%; }
   @media print { .noprint { display:none; } }
 </style></head><body>
   <div class="header">
@@ -247,8 +249,7 @@ export const buildEmargementHTML = (
     <div class="sigbox">
       <div class="label">Cachet et signature du centre</div>
       <div class="name" style="margin-top:8px;color:#666;">Fait à Lyon, le ${dateSignatureCentre}</div>
-      <div class="signature-center"><img class="formateur-sig" src="${SIGNATURE_NAOUFAL_DATA_URL}" alt="Signature du centre"/></div>
-      <div class="signature-text">Naoufal Guenichi</div>
+      <img class="cachet-img" src="${cachetAsset.url}" alt="Cachet FTRANSPORT"/>
     </div>
   </div>
 
