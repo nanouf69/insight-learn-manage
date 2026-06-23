@@ -179,7 +179,8 @@ export function ApprenantForm() {
     "marketing-digital-28h": "3300",
     "anglais-20h": "1200",
     "anglais-35h": "2000",
-    "anglais-45h": "3000"
+    "anglais-45h": "3000",
+    "demande-carte-vtc-equivalence": "100"
   };
 
   // Mapping formation → type d'apprenant
@@ -786,6 +787,7 @@ export function ApprenantForm() {
                     <SelectItem value="repassage-theorique">Repassage examen théorique</SelectItem>
                     <SelectItem value="repassage-pratique">Repassage examen pratique</SelectItem>
                     <SelectItem value="passage-pratique">Passage examen pratique</SelectItem>
+                    <SelectItem value="demande-carte-vtc-equivalence">Demande de carte VTC par équivalence - 100 €</SelectItem>
                   </SelectGroup>
                 </SelectContent>
               </Select>
@@ -853,6 +855,7 @@ export function ApprenantForm() {
                       <SelectItem value="repassage-theorique">Repassage examen théorique</SelectItem>
                       <SelectItem value="repassage-pratique">Repassage examen pratique</SelectItem>
                       <SelectItem value="passage-pratique">Passage examen pratique</SelectItem>
+                      <SelectItem value="demande-carte-vtc-equivalence">Demande de carte VTC par équivalence - 100 €</SelectItem>
                     </SelectGroup>
                   </SelectContent>
                 </Select>
@@ -1012,7 +1015,7 @@ export function ApprenantForm() {
             </div>
 
             {/* Date d'examen théorique - masqué pour repassage pratique, passage pratique et formation continue */}
-            {selectedFormation !== "repassage-pratique" && selectedFormation !== "passage-pratique" && selectedFormation !== "continue-vtc" && selectedFormation !== "continue-taxi" && (
+            {selectedFormation !== "repassage-pratique" && selectedFormation !== "passage-pratique" && selectedFormation !== "continue-vtc" && selectedFormation !== "continue-taxi" && selectedFormation !== "demande-carte-vtc-equivalence" && (
             <div className="space-y-2">
               <Label htmlFor="dateExamenTheorique">Date d'examen théorique</Label>
               <Select value={dateExamenTheorique} onValueChange={setDateExamenTheorique}>

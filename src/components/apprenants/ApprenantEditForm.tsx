@@ -240,7 +240,8 @@ const prixFormations: Record<string, string> = {
   "taxi-e-presentiel": "1799",
   "ta-e-presentiel": "999",
   "continue-vtc": "200",
-  "continue-taxi": "299"
+  "continue-taxi": "299",
+  "demande-carte-vtc-equivalence": "100"
 };
 
 export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEditFormProps) {
@@ -803,6 +804,7 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
                     <SelectItem value="repassage-theorique">Repassage examen théorique</SelectItem>
                     <SelectItem value="repassage-pratique">Repassage examen pratique</SelectItem>
                     <SelectItem value="passage-pratique">Passage examen pratique</SelectItem>
+                    <SelectItem value="demande-carte-vtc-equivalence">Demande de carte VTC par équivalence - 100 €</SelectItem>
                   </SelectGroup>
                 </SelectContent>
               </Select>
@@ -870,6 +872,7 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
                       <SelectItem value="repassage-theorique">Repassage examen théorique</SelectItem>
                       <SelectItem value="repassage-pratique">Repassage examen pratique</SelectItem>
                       <SelectItem value="passage-pratique">Passage examen pratique</SelectItem>
+                      <SelectItem value="demande-carte-vtc-equivalence">Demande de carte VTC par équivalence - 100 €</SelectItem>
                     </SelectGroup>
                   </SelectContent>
                 </Select>
@@ -975,7 +978,7 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
             </div>
 
             {/* Date d'examen théorique - masqué pour repassage pratique, passage pratique et formation continue */}
-            {formData.selected_formation !== "repassage-pratique" && formData.selected_formation !== "passage-pratique" && formData.selected_formation !== "continue-vtc" && formData.selected_formation !== "continue-taxi" && (
+            {formData.selected_formation !== "repassage-pratique" && formData.selected_formation !== "passage-pratique" && formData.selected_formation !== "continue-vtc" && formData.selected_formation !== "continue-taxi" && formData.selected_formation !== "demande-carte-vtc-equivalence" && (
             <div className="space-y-2">
               <Label htmlFor="dateExamenTheorique">Date d'examen théorique</Label>
               <Select value={formData.date_examen_theorique} onValueChange={(value) => setFormData({ ...formData, date_examen_theorique: value })}>
