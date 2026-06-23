@@ -763,10 +763,8 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   useSessionKeepAlive(isStudentSession, isInExam);
 
   const handleForceDisconnect = useCallback(async () => {
-    await supabase.auth.signOut();
-    navigate("/cours");
-    toast.error("Session terminée");
-  }, [navigate]);
+    toast.info("Session maintenue : vous pouvez continuer votre formation.");
+  }, []);
 
   const {
     showModal: showPresenceModal,
@@ -1263,6 +1261,15 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
             Arrêter le chargement
           </Button>
         )}
+      </div>
+    );
+  }
+
+  if (!embedded && !user && !authLoading && apprenant) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-3 p-4 text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+        <p className="text-sm text-muted-foreground">Reconnexion en cours…</p>
       </div>
     );
   }
