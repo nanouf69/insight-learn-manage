@@ -249,8 +249,7 @@ export const buildEmargementHTML = (
     <div class="sigbox">
       <div class="label">Cachet et signature du centre</div>
       <div class="name" style="margin-top:8px;color:#666;">Fait à Lyon, le ${dateSignatureCentre}</div>
-      <div class="signature-center"><img class="formateur-sig" src="${SIGNATURE_NAOUFAL_DATA_URL}" alt="Signature du centre"/></div>
-      <div class="signature-text">Naoufal Guenichi</div>
+      <img class="cachet-img" src="${cachetAsset.url}" alt="Cachet FTRANSPORT"/>
     </div>
   </div>
 
