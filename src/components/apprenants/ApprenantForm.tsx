@@ -787,6 +787,7 @@ export function ApprenantForm() {
                     <SelectItem value="repassage-theorique">Repassage examen théorique</SelectItem>
                     <SelectItem value="repassage-pratique">Repassage examen pratique</SelectItem>
                     <SelectItem value="passage-pratique">Passage examen pratique</SelectItem>
+                    <SelectItem value="demande-carte-vtc-equivalence">Demande de carte VTC par équivalence - 100 €</SelectItem>
                   </SelectGroup>
                 </SelectContent>
               </Select>
