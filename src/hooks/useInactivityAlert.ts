@@ -20,6 +20,7 @@ export function useInactivityAlert({ enabled, onDisconnect, pauseDuringExam = fa
   const inactivityTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const disconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const disconnectedRef = useRef(false);
+  const startDisconnectCountdownRef = useRef<() => void>(() => undefined);
 
   const onDisconnectRef = useRef(onDisconnect);
   useEffect(() => {
@@ -33,6 +34,13 @@ export function useInactivityAlert({ enabled, onDisconnect, pauseDuringExam = fa
     disconnectTimerRef.current = null;
   }, []);
 
+  const scheduleInactivityTimer = useCallback(() => {
+    if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
+    inactivityTimerRef.current = setTimeout(() => {
+      startDisconnectCountdownRef.current();
+    }, INACTIVITY_TIMEOUT);
+  }, []);
+
   const startDisconnectCountdown = useCallback(() => {
     const deadline = Date.now() + PRESENCE_RESPONSE_WINDOW;
     setShowInactivityModal(true);
@@ -43,32 +51,30 @@ export function useInactivityAlert({ enabled, onDisconnect, pauseDuringExam = fa
         clearAllTimers();
         setShowInactivityModal(false);
         setInactivityDeadline(null);
-        resetInactivityTimer();
+        scheduleInactivityTimer();
       }
     }, PRESENCE_RESPONSE_WINDOW);
-  }, [clearAllTimers, resetInactivityTimer]);
+  }, [clearAllTimers, scheduleInactivityTimer]);
+
+  useEffect(() => {
+    startDisconnectCountdownRef.current = startDisconnectCountdown;
+  }, [startDisconnectCountdown]);
 
   const resetInactivityTimer = useCallback(() => {
     if (!enabled || disconnectedRef.current) return;
     if (showInactivityModal) return;
 
-    if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
-
-    inactivityTimerRef.current = setTimeout(() => {
-      startDisconnectCountdown();
-    }, INACTIVITY_TIMEOUT);
-  }, [enabled, showInactivityModal, startDisconnectCountdown]);
+    scheduleInactivityTimer();
+  }, [enabled, scheduleInactivityTimer, showInactivityModal]);
 
   const confirmActivity = useCallback(() => {
     clearAllTimers();
     setShowInactivityModal(false);
     setInactivityDeadline(null);
     if (enabled && !disconnectedRef.current) {
-      inactivityTimerRef.current = setTimeout(() => {
-        startDisconnectCountdown();
-      }, INACTIVITY_TIMEOUT);
+      scheduleInactivityTimer();
     }
-  }, [clearAllTimers, enabled, startDisconnectCountdown]);
+  }, [clearAllTimers, enabled, scheduleInactivityTimer]);
 
   useEffect(() => {
     if (!enabled || pauseDuringExam) {
