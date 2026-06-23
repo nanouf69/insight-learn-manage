@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback, useState } from "react";
 
-const INACTIVITY_TIMEOUT = 4 * 60 * 60 * 1000; // 4 hours
-const PRESENCE_RESPONSE_WINDOW = 30 * 60 * 1000; // 30 minutes
+const INACTIVITY_TIMEOUT = 30 * 60 * 1000; // 30 minutes
+const PRESENCE_RESPONSE_WINDOW = 5 * 60 * 1000; // 5 minutes
 
 interface UseInactivityAlertParams {
   enabled: boolean;
