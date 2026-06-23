@@ -82,7 +82,6 @@ export default function FinanceurFCForm({
         setContactNom(r.contact_nom ?? `${apprenantPrenom} ${apprenantNom}`.trim());
         setContactEmail(r.contact_email ?? apprenantEmail);
         setContactTelephone(r.contact_telephone ?? apprenantTelephone);
-        setOrganismeFinanceur(r.organisme_financeur ?? "");
         setNumeroDossier(r.numero_dossier ?? "");
         setEmailFacturation(r.email_facturation ?? apprenantEmail);
         setNotes(r.notes ?? "");
