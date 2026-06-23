@@ -250,14 +250,6 @@ export default function FinanceurFCForm({
               <Label>N° TVA Intracommunautaire</Label>
               <Input value={numeroTva} onChange={(e) => setNumeroTva(e.target.value)} placeholder="FRXX999999999" />
             </div>
-            <div className="space-y-2">
-              <Label>Organisme financeur (OPCO, etc.)</Label>
-              <Input
-                value={organismeFinanceur}
-                onChange={(e) => setOrganismeFinanceur(e.target.value)}
-                placeholder="Ex : OPCO Mobilités, AKTO, FAFTT…"
-              />
-            </div>
           </CardContent>
         </Card>
       )}
