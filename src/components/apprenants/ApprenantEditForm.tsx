@@ -1186,6 +1186,8 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
               </div>
             )}
 
+            {/* Dates de formation - masqué pour Demande de carte VTC par équivalence */}
+            {formData.selected_formation !== "demande-carte-vtc-equivalence" && (<>
             {/* Dates de formation */}
             <div className="space-y-4">
               <Label>Dates de formation</Label>
