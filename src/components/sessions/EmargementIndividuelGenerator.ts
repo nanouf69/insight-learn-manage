@@ -3,6 +3,7 @@ import autoTable from "jspdf-autotable";
 import { format, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
 import logoImage from "@/assets/logo-ftransport.png";
+import { SIGNATURE_NAOUFAL_DATA_URL } from "@/lib/signatureNaoufal";
 
 interface Apprenant {
   nom: string;
