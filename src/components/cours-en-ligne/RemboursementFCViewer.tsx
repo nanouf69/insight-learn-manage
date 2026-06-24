@@ -463,7 +463,7 @@ export default function RemboursementFCViewer({ apprenantId, completed, onComple
             <div className="mt-2 flex flex-wrap gap-2">
               <Button
                 size="sm"
-                disabled={!hasEmargements || downloading === "emargements"}
+                disabled={(emargements.length === 0 && expected.length === 0) || downloading === "emargements"}
                 onClick={handleDownloadEmargements}
               >
                 {downloading === "emargements" ? (
@@ -474,9 +474,9 @@ export default function RemboursementFCViewer({ apprenantId, completed, onComple
                 Télécharger les feuilles d'émargement (PDF)
               </Button>
               {firstMissing && userId && (
-                <Button size="sm" variant="outline" onClick={() => openSignatureFor(firstMissing)}>
+                <Button size="sm" onClick={() => openSignatureFor(firstMissing)}>
                   <PenTool className="h-4 w-4 mr-1.5" />
-                  Signer les feuilles manquantes
+                  Signer maintenant
                 </Button>
               )}
             </div>
@@ -487,15 +487,20 @@ export default function RemboursementFCViewer({ apprenantId, completed, onComple
                 </p>
                 <div className="space-y-1.5 max-h-72 overflow-y-auto pr-1">
                   {missingEmargements.map((slot) => (
-                    <div key={emargementSlotKey(slot.date, slot.creneau)} className="flex items-center justify-between gap-2 rounded bg-background/80 px-2 py-1.5 text-xs">
+                    <button
+                      key={emargementSlotKey(slot.date, slot.creneau)}
+                      type="button"
+                      onClick={() => openSignatureFor(slot)}
+                      className="flex w-full items-center justify-between gap-2 rounded bg-background/80 px-2 py-1.5 text-left text-xs hover:bg-amber-100 transition-colors"
+                    >
                       <span className="text-foreground">
                         <span className="capitalize">{formatDateFR(slot.date)}</span> — {creneauLabel(slot.creneau)} ({creneauHoraire(slot.creneau)})
                       </span>
-                      <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => openSignatureFor(slot)}>
+                      <span className="inline-flex h-7 items-center rounded px-2 text-xs font-medium text-primary">
                         <PenTool className="h-3.5 w-3.5 mr-1" />
                         Signer
-                      </Button>
-                    </div>
+                      </span>
+                    </button>
                   ))}
                 </div>
               </div>
