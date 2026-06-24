@@ -22,6 +22,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Eye, Edit, IdCard, Car } from "lucide-react";
 import { generateEmargementPratiquePDF } from "@/lib/pdf/emargement-pratique";
+import listeMedecinsAgrees from "@/assets/medecins/liste-medecins-agrees.pdf.asset.json";
 
 // Trouve la date d'examen la plus récente passée (ou la première à venir)
 function getDefaultExamDate(): string {
@@ -70,6 +71,7 @@ function getPratiqueDateForExam(examDate: string | null | undefined) {
 
 const PRACTICE_VTC_TYPES = new Set(['vtc', 'vtc-e', 'vtc-e-presentiel', 'va', 'va-e', 'va-e-presentiel', 'pa-vtc', 'rp-vtc']);
 const PRACTICE_TAXI_TYPES = new Set(['taxi', 'taxi-e', 'taxi-e-presentiel', 'ta', 'ta-e', 'ta-e-presentiel', 'pa-taxi', 'rp-taxi']);
+const LISTE_MEDECINS_AGREES_URL = `https://gestion.ftransport.fr${listeMedecinsAgrees.url}`;
 
 function isPracticeVTCType(type: string | null) {
   return !!type && PRACTICE_VTC_TYPES.has(type.toLowerCase());
@@ -4324,7 +4326,7 @@ Il faudra maintenant attendre l'attestation de réussite que vous enverra la cha
 ⚠️ Avant d'effectuer votre demande de carte professionnelle, vous devez obtenir un rendez-vous auprès d'un médecin agréé conduite pour l'obtention d'un certificat médical.
 
 📋 Liste officielle des médecins agréés :
-[Cliquez ici](https://gestion.ftransport.fr/documents/Liste_medecins_agrees.pdf)
+[Cliquez ici](${LISTE_MEDECINS_AGREES_URL})
 
 Vous devez également répondre au mail envoyé par l'Imprimerie Nationale en envoyant une photo et une signature depuis votre téléphone portable ou ordinateur.
 
@@ -4370,7 +4372,7 @@ Il faudra maintenant attendre l'attestation de réussite que vous enverra la cha
 [Cliquez ici](https://www.protection-civile.org/formations/grand-public/premiers-secours-psc1/)
 
 📋 Liste officielle des médecins agréés :
-[Cliquez ici](https://gestion.ftransport.fr/documents/Liste_medecins_agrees.pdf)
+[Cliquez ici](${LISTE_MEDECINS_AGREES_URL})
 
 Vous devez également répondre au mail envoyé par l'Imprimerie Nationale en envoyant une photo et une signature depuis votre téléphone portable ou ordinateur.
 
