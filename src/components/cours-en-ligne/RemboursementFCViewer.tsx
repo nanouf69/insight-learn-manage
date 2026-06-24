@@ -12,9 +12,11 @@ import {
   Loader2,
   AlertCircle,
   BookOpen,
+  PenTool,
 } from "lucide-react";
 import { buildEmargementHTML } from "./EmargementsSignesViewer";
-import { getExpectedEmargements, type CreneauKey } from "@/lib/agendaSlots";
+import { EmargementFCModal } from "./EmargementFCModal";
+import { creneauHoraire, creneauLabel, getExpectedEmargements, type CreneauKey } from "@/lib/agendaSlots";
 import { generateAttestationFCVTC } from "@/lib/pdf/attestation-fc-vtc";
 import { toast } from "sonner";
 import agrementVtcAsset from "@/assets/agrement-vtc-ftransport.pdf.asset.json";
@@ -27,6 +29,7 @@ interface Props {
 }
 
 interface ApprenantInfo {
+  auth_user_id?: string | null;
   nom?: string | null;
   prenom?: string | null;
   email?: string | null;
@@ -48,6 +51,7 @@ interface EmargementRow {
   demi_journee: string;
   signature_data_url: string | null;
   signed_at: string;
+  absent?: boolean | null;
 }
 
 interface FactureDoc {
@@ -59,6 +63,23 @@ interface FactureDoc {
 }
 
 const normalizeDemi = (d: string) => (d || "").toLowerCase().replace(/_/g, "-").trim();
+const normalizeCreneauKey = (d: string): CreneauKey | null => {
+  const k = normalizeDemi(d);
+  if (k === "matin") return "matin";
+  if (k === "apres-midi" || k === "après-midi") return "apres_midi";
+  if (k === "soir") return "soir";
+  if (k === "soir-1") return "soir_1";
+  if (k === "soir-2") return "soir_2";
+  return null;
+};
+const emargementSlotKey = (date: string, creneau: CreneauKey) => `${date}|${creneau}`;
+const isEmargementFilled = (row?: EmargementRow | null) => Boolean(row?.signature_data_url?.trim()) || row?.absent === true;
+
+const formatDateFR = (iso: string) => {
+  const d = new Date(iso + "T00:00:00");
+  if (isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString("fr-FR", { weekday: "long", day: "2-digit", month: "long", year: "numeric" });
+};
 
 function buildProgrammeHTML(formation: "VTC" | "TAXI") {
   const titre = `PROGRAMME DE FORMATION CONTINUE ${formation}`;
@@ -163,20 +184,24 @@ export default function RemboursementFCViewer({ apprenantId, completed, onComple
   const [factures, setFactures] = useState<FactureDoc[]>([]);
   const [attestations, setAttestations] = useState<FactureDoc[]>([]);
   const [downloading, setDownloading] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [signTarget, setSignTarget] = useState<{ date: string; creneau: CreneauKey; replaceExisting?: boolean } | null>(null);
+  const [refreshTick, setRefreshTick] = useState(0);
 
   useEffect(() => {
     if (!apprenantId) { setLoading(false); return; }
     (async () => {
       setLoading(true);
+      const { data: { session } } = await supabase.auth.getSession();
       const [apRes, emRes, fRes, atRes] = await Promise.all([
         supabase
           .from("apprenants")
-          .select("nom, prenom, email, telephone, adresse, code_postal, ville, formation_choisie, type_apprenant, date_debut_formation, date_fin_formation, creneau_horaire, date_naissance")
+          .select("auth_user_id, nom, prenom, email, telephone, adresse, code_postal, ville, formation_choisie, type_apprenant, date_debut_formation, date_fin_formation, creneau_horaire, date_naissance")
           .eq("id", apprenantId)
           .maybeSingle(),
         supabase
           .from("emargements_fc" as any)
-          .select("id, date_emargement, demi_journee, signature_data_url, signed_at")
+          .select("id, date_emargement, demi_journee, signature_data_url, signed_at, absent")
           .eq("apprenant_id", apprenantId)
           .order("date_emargement", { ascending: true }),
         supabase
@@ -195,6 +220,7 @@ export default function RemboursementFCViewer({ apprenantId, completed, onComple
 
       const ap = (!apRes.error && apRes.data) ? (apRes.data as ApprenantInfo) : null;
       setApprenant(ap);
+      setUserId(session?.user?.id || ap?.auth_user_id || null);
       if (!emRes.error && Array.isArray(emRes.data)) setEmargements(emRes.data as unknown as EmargementRow[]);
       if (!fRes.error && Array.isArray(fRes.data)) setFactures(fRes.data as FactureDoc[]);
       if (!atRes.error && Array.isArray(atRes.data)) setAttestations(atRes.data as FactureDoc[]);
@@ -226,11 +252,23 @@ export default function RemboursementFCViewer({ apprenantId, completed, onComple
       }
       setLoading(false);
     })();
-  }, [apprenantId]);
+  }, [apprenantId, refreshTick]);
 
   const signedCount = emargements.filter((r) => r.signature_data_url?.trim()).length;
   const hasEmargements = signedCount > 0;
   const hasFacture = factures.length > 0;
+  const emargementBySlot = new Map<string, EmargementRow>();
+  for (const row of emargements) {
+    const key = normalizeCreneauKey(row.demi_journee);
+    if (key) emargementBySlot.set(emargementSlotKey(row.date_emargement, key), row);
+  }
+  const missingEmargements = expected.filter((slot) => !isEmargementFilled(emargementBySlot.get(emargementSlotKey(slot.date, slot.creneau))));
+  const missingCount = missingEmargements.length;
+  const firstMissing = missingEmargements[0];
+  const openSignatureFor = (slot: { date: string; creneau: CreneauKey }) => {
+    const existing = emargementBySlot.get(emargementSlotKey(slot.date, slot.creneau));
+    setSignTarget({ date: slot.date, creneau: slot.creneau, replaceExisting: Boolean(existing) });
+  };
 
   const handleDownloadEmargements = () => {
     setDownloading("emargements");
@@ -403,28 +441,66 @@ export default function RemboursementFCViewer({ apprenantId, completed, onComple
                   {signedCount} signature{signedCount > 1 ? "s" : ""}
                 </span>
               )}
+              {missingCount > 0 && (
+                <span className="inline-flex items-center gap-1 text-[10px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded">
+                  <AlertCircle className="h-3 w-3" />
+                  {missingCount} à signer
+                </span>
+              )}
             </div>
             <p className="text-xs text-muted-foreground mt-0.5">
               Feuille individuelle reprenant toutes vos signatures par demi-journée durant la formation.
             </p>
-            {!hasEmargements && (
+            {missingCount > 0 ? (
+              <p className="text-xs text-amber-700 mt-1">
+                Il reste {missingCount} créneau{missingCount > 1 ? "x" : ""} à signer avant de télécharger une feuille complète.
+              </p>
+            ) : !hasEmargements && (
               <p className="text-xs text-amber-700 mt-1">
                 Aucune signature enregistrée pour le moment. Pensez à signer chaque demi-journée dans le module dédié.
               </p>
             )}
-            <Button
-              size="sm"
-              className="mt-2"
-              disabled={!hasEmargements || downloading === "emargements"}
-              onClick={handleDownloadEmargements}
-            >
-              {downloading === "emargements" ? (
-                <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
-              ) : (
-                <Download className="h-4 w-4 mr-1.5" />
+            <div className="mt-2 flex flex-wrap gap-2">
+              <Button
+                size="sm"
+                disabled={!hasEmargements || downloading === "emargements"}
+                onClick={handleDownloadEmargements}
+              >
+                {downloading === "emargements" ? (
+                  <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+                ) : (
+                  <Download className="h-4 w-4 mr-1.5" />
+                )}
+                Télécharger les feuilles d'émargement (PDF)
+              </Button>
+              {firstMissing && userId && (
+                <Button size="sm" variant="outline" onClick={() => openSignatureFor(firstMissing)}>
+                  <PenTool className="h-4 w-4 mr-1.5" />
+                  Signer les feuilles manquantes
+                </Button>
               )}
-              Télécharger les feuilles d'émargement (PDF)
-            </Button>
+            </div>
+            {missingCount > 0 && userId && (
+              <div className="mt-3 rounded-md border border-amber-200 bg-amber-50/70 p-2">
+                <p className="text-[11px] font-medium text-amber-900 mb-1.5">Créneaux non signés</p>
+                <div className="space-y-1.5">
+                  {missingEmargements.slice(0, 4).map((slot) => (
+                    <div key={emargementSlotKey(slot.date, slot.creneau)} className="flex items-center justify-between gap-2 rounded bg-background/80 px-2 py-1.5 text-xs">
+                      <span className="text-foreground">
+                        <span className="capitalize">{formatDateFR(slot.date)}</span> — {creneauLabel(slot.creneau)} ({creneauHoraire(slot.creneau)})
+                      </span>
+                      <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => openSignatureFor(slot)}>
+                        <PenTool className="h-3.5 w-3.5 mr-1" />
+                        Signer
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+                {missingCount > 4 && (
+                  <p className="text-[11px] text-amber-800 mt-1.5">+ {missingCount - 4} autre{missingCount - 4 > 1 ? "s" : ""} créneau{missingCount - 4 > 1 ? "x" : ""} à signer.</p>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </Card>
@@ -537,6 +613,24 @@ export default function RemboursementFCViewer({ apprenantId, completed, onComple
         <div className="flex justify-end pt-2">
           <Button onClick={onComplete}>J'ai pris connaissance des documents</Button>
         </div>
+      )}
+
+      {signTarget && userId && apprenantId && (
+        <EmargementFCModal
+          apprenantId={apprenantId}
+          userId={userId}
+          apprenantNom={apprenant?.nom || ""}
+          apprenantPrenom={apprenant?.prenom || ""}
+          creneau={signTarget.creneau}
+          mode="fc"
+          dateEmargement={signTarget.date}
+          replaceExisting={signTarget.replaceExisting}
+          onSigned={() => {
+            setSignTarget(null);
+            setRefreshTick((tick) => tick + 1);
+          }}
+          onSkipped={() => setSignTarget(null)}
+        />
       )}
     </div>
   );
