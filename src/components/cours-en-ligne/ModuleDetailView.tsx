@@ -4158,8 +4158,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     const reponsesSaveDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     useEffect(() => {
       const updateRefs = (session: any) => {
-        userIdForSaveRef.current = session?.user?.id ?? null;
-        jwtTokenRef.current = session?.access_token ?? null;
+        if (session?.user?.id) userIdForSaveRef.current = session.user.id;
+        if (session?.access_token) jwtTokenRef.current = session.access_token;
       };
 
       supabase.auth.getSession().then(({ data }) => updateRefs(data.session));
