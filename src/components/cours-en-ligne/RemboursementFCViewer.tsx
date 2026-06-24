@@ -270,6 +270,16 @@ export default function RemboursementFCViewer({ apprenantId, completed, onComple
     setSignTarget({ date: slot.date, creneau: slot.creneau, replaceExisting: Boolean(existing) });
   };
 
+  useEffect(() => {
+    const handler = (event: MessageEvent) => {
+      const data = event.data as { type?: string; date?: string; creneau?: CreneauKey } | null;
+      if (data?.type !== "open-emargement-signature" || !data.date || !data.creneau) return;
+      openSignatureFor({ date: data.date, creneau: data.creneau });
+    };
+    window.addEventListener("message", handler);
+    return () => window.removeEventListener("message", handler);
+  }, [emargements]);
+
   const handleDownloadEmargements = () => {
     setDownloading("emargements");
     try {
