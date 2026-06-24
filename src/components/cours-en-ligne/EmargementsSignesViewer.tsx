@@ -15,6 +15,7 @@ interface EmargementRow {
   demi_journee: string;
   signature_data_url: string | null;
   signed_at: string;
+  absent?: boolean | null;
 }
 
 interface ApprenantInfo {
@@ -54,6 +55,16 @@ const formatDateFR = (iso: string) => {
 };
 
 const normalizeDemi = (d: string) => (d || "").toLowerCase().replace(/_/g, "-").trim();
+const normalizeCreneauKey = (d: string): CreneauKey | null => {
+  const k = normalizeDemi(d);
+  if (k === "matin") return "matin";
+  if (k === "apres-midi" || k === "après-midi") return "apres_midi";
+  if (k === "soir") return "soir";
+  if (k === "soir-1") return "soir_1";
+  if (k === "soir-2") return "soir_2";
+  return null;
+};
+const emargementSlotKey = (date: string, creneau: CreneauKey) => `${date}|${creneau}`;
 const labelDemi = (d: string) => {
   const k = normalizeDemi(d);
   if (k === "matin") return "Matin (09h00 — 12h00)";
@@ -81,7 +92,7 @@ const formatShortDate = (iso?: string | null) => {
 };
 
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
-const hasValidSignature = (r?: EmargementRow) => Boolean(r?.signature_data_url?.trim());
+const hasValidSignature = (r?: EmargementRow) => Boolean(r?.signature_data_url?.trim()) || r?.absent === true;
 
 type GroupedEmargements = {
   matin?: EmargementRow;
@@ -112,8 +123,8 @@ export const buildEmargementHTML = (
     apprenant?.date_fin_formation || groupedByDay[groupedByDay.length - 1]?.[0] || new Date().toISOString().slice(0, 10)
   );
 
-  const hasSoirSplit = groupedByDay.some(([, v]) => !!v.soir1 || !!v.soir2);
-  const hasSoir = hasSoirSplit || groupedByDay.some(([, v]) => !!v.soir);
+  const hasSoirSplit = groupedByDay.some(([, v]) => !!v.soir1 || !!v.soir2 || v.expectedSet?.has("soir_1") || v.expectedSet?.has("soir_2"));
+  const hasSoir = hasSoirSplit || groupedByDay.some(([, v]) => !!v.soir || v.expectedSet?.has("soir"));
 
   // Heures par créneau (FC VTC/TAXI : 9h-12h matin + 13h-17h après-midi = 7h/jour, 14h sur 2 jours)
   const HRS = {
@@ -132,27 +143,32 @@ export const buildEmargementHTML = (
   let totalHeures = 0;
 
   const rowsHtml = groupedByDay
-    .map(([date, { matin, apresMidi, soir, soir1, soir2 }]) => {
+    .map(([date, { matin, apresMidi, soir, soir1, soir2, expectedSet }]) => {
       const jourLabel = capitalize(formatDateFR(date));
-      const sigImg = (r?: EmargementRow) =>
+      const sigImg = (r?: EmargementRow, expectedSlot = false) =>
         r?.signature_data_url
           ? `<img src="${r.signature_data_url}" alt="Signature" style="max-height:55px;max-width:95%;"/>`
-          : "";
+          : expectedSlot ? `<span class="missing-signature">Signature manquante</span>` : "";
       let heuresJour = 0;
       let cells = "";
       if (hasSoirSplit) {
-        const h1 = soir1 ? HRS.soir1 : 0;
-        const h2 = soir2 ? HRS.soir2 : 0;
+        const expectedSoir1 = !!soir1 || expectedSet?.has("soir_1");
+        const expectedSoir2 = !!soir2 || expectedSet?.has("soir_2");
+        const h1 = expectedSoir1 ? HRS.soir1 : 0;
+        const h2 = expectedSoir2 ? HRS.soir2 : 0;
         heuresJour = h1 + h2;
-        cells = `<td class="horaire">17:00 - 18:30<br/><span class="hsmall">${fmtH(HRS.soir1)}</span></td><td class="sig">${sigImg(soir1)}</td><td class="horaire">18:30 - 21:00<br/><span class="hsmall">${fmtH(HRS.soir2)}</span></td><td class="sig">${sigImg(soir2)}</td>`;
+        cells = `<td class="horaire">17:00 - 18:30<br/><span class="hsmall">${fmtH(HRS.soir1)}</span></td><td class="sig">${sigImg(soir1, expectedSoir1)}</td><td class="horaire">18:30 - 21:00<br/><span class="hsmall">${fmtH(HRS.soir2)}</span></td><td class="sig">${sigImg(soir2, expectedSoir2)}</td>`;
       } else if (hasSoir) {
-        heuresJour = soir ? HRS.soir : 0;
-        cells = `<td class="horaire">17:00 - 21:00<br/><span class="hsmall">${fmtH(HRS.soir)}</span></td><td class="sig">${sigImg(soir)}</td>`;
+        const expectedSoir = !!soir || expectedSet?.has("soir");
+        heuresJour = expectedSoir ? HRS.soir : 0;
+        cells = `<td class="horaire">17:00 - 21:00<br/><span class="hsmall">${fmtH(HRS.soir)}</span></td><td class="sig">${sigImg(soir, expectedSoir)}</td>`;
       } else {
-        const hm = matin ? HRS.matin : 0;
-        const ha = apresMidi ? HRS.apresMidi : 0;
+        const expectedMatin = !!matin || expectedSet?.has("matin");
+        const expectedApresMidi = !!apresMidi || expectedSet?.has("apres_midi");
+        const hm = expectedMatin ? HRS.matin : 0;
+        const ha = expectedApresMidi ? HRS.apresMidi : 0;
         heuresJour = hm + ha;
-        cells = `<td class="horaire">09:00 - 12:00<br/><span class="hsmall">${fmtH(HRS.matin)}</span></td><td class="sig">${sigImg(matin)}</td><td class="horaire">13:00 - ${isFC ? "17:00" : "16:00"}<br/><span class="hsmall">${fmtH(HRS.apresMidi)}</span></td><td class="sig">${sigImg(apresMidi)}</td>`;
+        cells = `<td class="horaire">09:00 - 12:00<br/><span class="hsmall">${fmtH(HRS.matin)}</span></td><td class="sig">${sigImg(matin, expectedMatin)}</td><td class="horaire">13:00 - ${isFC ? "17:00" : "16:00"}<br/><span class="hsmall">${fmtH(HRS.apresMidi)}</span></td><td class="sig">${sigImg(apresMidi, expectedApresMidi)}</td>`;
       }
       totalHeures += heuresJour;
       return `
@@ -188,6 +204,7 @@ export const buildEmargementHTML = (
   tbody td.horaire { font-size: 10px; color: #444; width: 90px; }
   tbody td.horaire .hsmall { color: #6b7fc7; font-weight: bold; }
   tbody td.sig { background: #fff; }
+  .missing-signature { display:inline-block; color:#b45309; background:#fff7ed; border:1px dashed #f59e0b; border-radius:4px; padding:6px 10px; font-size:10px; font-weight:bold; }
   tbody td.total-day { background: #f3f5fb; font-size: 12px; color: #1a1a1a; width: 70px; }
   tfoot td { border: 1px solid #6b7fc7; padding: 10px 8px; background: #6b7fc7; color: #fff; font-weight: bold; }
   tfoot td.total-label { text-align: right; font-size: 12px; }
