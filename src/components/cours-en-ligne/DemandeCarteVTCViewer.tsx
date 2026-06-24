@@ -2,11 +2,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, ExternalLink, FileText, Stethoscope, IdCard, AlertCircle, Stamp, Download } from "lucide-react";
 import type { ComponentProps, ReactNode } from "react";
-import medecinsAin from "@/assets/medecins/01-ain.pdf.asset.json";
-import medecinsIsere from "@/assets/medecins/38-isere.pdf.asset.json";
-import medecinsRhone from "@/assets/medecins/69-rhone.pdf.asset.json";
-import medecinsSavoie from "@/assets/medecins/73-savoie.pdf.asset.json";
-import medecinsHauteSavoie from "@/assets/medecins/74-haute-savoie.pdf.asset.json";
 import attestationHebergement from "@/assets/attestation-hebergement.pdf.asset.json";
 
 interface Props {
@@ -264,11 +259,11 @@ export default function DemandeCarteVTCViewer({ completed, onComplete }: Props) 
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {[
-              { dept: "01", nom: "Ain", url: medecinsAin.url },
-              { dept: "38", nom: "Isère", url: medecinsIsere.url },
-              { dept: "69", nom: "Rhône", url: medecinsRhone.url },
-              { dept: "73", nom: "Savoie", url: medecinsSavoie.url },
-              { dept: "74", nom: "Haute-Savoie", url: medecinsHauteSavoie.url },
+              { dept: "01", nom: "Ain", url: "/documents/medecins/medecins-01-ain.pdf" },
+              { dept: "38", nom: "Isère", url: "/documents/medecins/medecins-38-isere.pdf" },
+              { dept: "69", nom: "Rhône", url: "/documents/medecins/medecins-69-rhone.pdf" },
+              { dept: "73", nom: "Savoie", url: "/documents/medecins/medecins-73-savoie.pdf" },
+              { dept: "74", nom: "Haute-Savoie", url: "/documents/medecins/medecins-74-haute-savoie.pdf" },
             ].map((d) => (
               <LinkButton key={d.dept} url={d.url} variant="outline" className="justify-start">
                 <FileText className="h-4 w-4 mr-2" />
