@@ -1570,15 +1570,39 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       });
       return;
     }
-    // Confirmation avant envoi : une fois envoyée, l'attestation devient
-    // disponible côté apprenant (module Remboursement FC). Permet à l'admin
-    // de revenir en arrière s'il souhaite encore l'éditer.
+    // Aperçu avant envoi : on génère le PDF fusionné et on l'ouvre dans un nouvel onglet
+    let previewUrl: string | null = null;
+    try {
+      let mergedDoc: any = null;
+      for (const sa of apprenantsInSession) {
+        const apprenant = sa.apprenant;
+        if (!apprenant?.email) continue;
+        const { data } = buildAttestationDataForApprenant(apprenant, sa);
+        const result: any = await generateAttestationFCVTC(data, {
+          returnDoc: true,
+          existingDoc: mergedDoc ?? undefined,
+          addPage: !!mergedDoc,
+        });
+        if (result?.doc) mergedDoc = result.doc;
+      }
+      if (mergedDoc) {
+        const blob: Blob = mergedDoc.output('blob');
+        previewUrl = URL.createObjectURL(blob);
+        window.open(previewUrl, '_blank');
+      }
+    } catch (e) {
+      console.error('[bulkSendAttestations] preview error', e);
+    }
+
+    // Confirmation après aperçu
     const confirmed = window.confirm(
-      "Envoyer les attestations maintenant ?\n\n" +
+      "Aperçu des attestations ouvert dans un nouvel onglet.\n\n" +
+      "Envoyer maintenant ?\n\n" +
       "Une fois envoyées, elles seront déposées dans l'espace apprenant " +
       "(module « Remboursement formation continue ») et envoyées par email.\n\n" +
       "Cliquez sur Annuler si vous souhaitez encore les éditer."
     );
+    if (previewUrl) setTimeout(() => URL.revokeObjectURL(previewUrl!), 60000);
     if (!confirmed) return;
     setBulkSendingAttestations(true);
     let sent = 0;
