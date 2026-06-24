@@ -2574,6 +2574,9 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
             return sa.presence_pratique === 'absent' || ap?.resultat_examen === 'absent';
           });
           const absentCount = absentApprenants.length;
+          const absentIds = new Set(absentApprenants.map((sa: any) => sa.apprenant?.id).filter(Boolean));
+          const apprenantsForFactures = (apprenantsInSession as any[]).filter((sa: any) => !absentIds.has(sa.apprenant?.id));
+          const facturesCount = apprenantsForFactures.length;
           const tabCount = 2 + (isFormationContinue ? 1 : 0) + 1;
           const gridColsClass = tabCount === 4 ? 'grid-cols-4' : tabCount === 3 ? 'grid-cols-3' : 'grid-cols-2';
           return (
