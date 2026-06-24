@@ -66,17 +66,6 @@ const resolveLinkUrl = (url: string) => {
   return new URL(url, window.location.origin).toString();
 };
 
-const openLink = (url: string) => {
-  const finalUrl = resolveLinkUrl(url);
-  const opened = window.open(finalUrl, "_blank");
-  if (opened) {
-    opened.opener = null;
-  }
-  if (!opened) {
-    window.location.assign(finalUrl);
-  }
-};
-
 const LinkButton = ({
   url,
   children,
