@@ -89,17 +89,17 @@ const LinkButton = ({
   className?: string;
   variant?: ComponentProps<typeof Button>["variant"];
   size?: ComponentProps<typeof Button>["size"];
-}) => (
-  <Button
-    type="button"
-    variant={variant}
-    size={size}
-    className={className}
-    onClick={() => openLink(url)}
-  >
-    {children}
-  </Button>
-);
+}) => {
+  const finalUrl = resolveLinkUrl(url);
+
+  return (
+    <Button asChild variant={variant} size={size} className={className}>
+      <a href={finalUrl} target="_blank" rel="noopener noreferrer">
+        {children}
+      </a>
+    </Button>
+  );
+};
 
 export default function DemandeCarteVTCViewer({ completed, onComplete }: Props) {
   return (
