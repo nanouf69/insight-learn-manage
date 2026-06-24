@@ -4363,7 +4363,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     // beforeunload: flush pending saves immediately
     useEffect(() => {
       const flushSave = () => {
-        if (!apprenantId || !userIdForSaveRef.current || completionPersistedRef.current) return;
+        if (!apprenantId || !userIdForSaveRef.current || completionPersistedRef.current || moduleAlreadyValidatedRef.current) return;
         const answers = latestAnswersRef.current;
         if (Object.keys(answers).length === 0) return;
         // Group answers by exercice
