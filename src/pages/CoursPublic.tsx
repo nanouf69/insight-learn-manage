@@ -1172,9 +1172,10 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
 
   const handleLearnerQuizActivity = useCallback(() => {
     const now = Date.now();
-    if (now - lastQuizActivityAtRef.current < 15_000) return;
-    lastQuizActivityAtRef.current = now;
-    void markActivity();
+    if (now - lastQuizActivityAtRef.current < 5_000) return;
+    void markActivity().then((updated) => {
+      if (updated) lastQuizActivityAtRef.current = Date.now();
+    });
   }, [markActivity]);
 
   const apprenantInfoForModule = useMemo(() => apprenant ? {
@@ -1479,6 +1480,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
             apprenantType={apprenant?.type_apprenant || null}
             isPresentiel={!["vtc-elearning", "taxi-elearning", "taxi-pour-vtc-elearning"].includes(selectedFormation)}
             onExamStateChange={handleExamStateChange}
+            onLearnerActivity={handleLearnerQuizActivity}
           />
         </div>
       );
@@ -1497,6 +1499,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
               apprenantType={examenBlancType}
               isPresentiel={!["vtc-elearning", "taxi-elearning", "taxi-pour-vtc-elearning"].includes(selectedFormation)}
               onExamStateChange={handleExamStateChange}
+              onLearnerActivity={handleLearnerQuizActivity}
             />
           </ErrorBoundary>
         </div>
