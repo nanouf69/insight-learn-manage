@@ -1783,8 +1783,8 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
 
   const handleBulkDownloadFactures = async () => {
     const targets = (selectedFactureApprenants.size > 0
-      ? apprenantsInSession.filter((sa: any) => sa.apprenant && selectedFactureApprenants.has(sa.apprenant.id))
-      : apprenantsInSession);
+      ? nonAbsentApprenants.filter((sa: any) => sa.apprenant && selectedFactureApprenants.has(sa.apprenant.id))
+      : nonAbsentApprenants);
     if (!targets.length) {
       toast({ title: "Aucun apprenant sélectionné", variant: "destructive" });
       return;
@@ -1842,8 +1842,8 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
 
   const handleBulkSendFactures = async () => {
     const targets = (selectedFactureApprenants.size > 0
-      ? apprenantsInSession.filter((sa: any) => sa.apprenant && selectedFactureApprenants.has(sa.apprenant.id))
-      : apprenantsInSession);
+      ? nonAbsentApprenants.filter((sa: any) => sa.apprenant && selectedFactureApprenants.has(sa.apprenant.id))
+      : nonAbsentApprenants);
     if (!targets.length) {
       toast({ title: "Aucun apprenant sélectionné", variant: "destructive" });
       return;
@@ -1932,8 +1932,8 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   // Valider toutes les brouillons en bloc
   const handleBulkValidateFactures = async () => {
     const targets = (selectedFactureApprenants.size > 0
-      ? apprenantsInSession.filter((sa: any) => sa.apprenant && selectedFactureApprenants.has(sa.apprenant.id))
-      : apprenantsInSession);
+      ? nonAbsentApprenants.filter((sa: any) => sa.apprenant && selectedFactureApprenants.has(sa.apprenant.id))
+      : nonAbsentApprenants);
     if (!targets.length) return;
     setBulkValidatingFactures(true);
     let validated = 0, skipped = 0;
@@ -2051,7 +2051,10 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   const handleBulkAcquitter = async () => {
     setBulkAcquitterSaving(true);
     try {
+      const nonAbsentIds = new Set(nonAbsentApprenants.map((sa: any) => sa.apprenant?.id).filter(Boolean));
       let factures = Object.values(facturesFCMap as Record<string, any>).filter(Boolean) as any[];
+      // Exclure les factures des apprenants absents
+      factures = factures.filter((f: any) => f.apprenant_id && nonAbsentIds.has(f.apprenant_id));
       if (selectedFactureApprenants.size > 0) {
         factures = factures.filter((f: any) => f.apprenant_id && selectedFactureApprenants.has(f.apprenant_id));
       }
@@ -2476,6 +2479,12 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   const totalCount = apprenantsInSession.length;
   const formateursCount = formateursInSession.length;
 
+  // Exclure les absents (présence pratique ou résultat examen) pour la facturation FC
+  const nonAbsentApprenants = (apprenantsInSession as any[]).filter((sa: any) => {
+    const ap = sa.apprenant;
+    return sa.presence_pratique !== 'absent' && ap?.resultat_examen !== 'absent';
+  });
+
   const mainContent = (
     <>
         <DialogHeader className={asPage ? "" : "shrink-0"}>
@@ -2574,6 +2583,9 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
             return sa.presence_pratique === 'absent' || ap?.resultat_examen === 'absent';
           });
           const absentCount = absentApprenants.length;
+          const absentIds = new Set(absentApprenants.map((sa: any) => sa.apprenant?.id).filter(Boolean));
+          const apprenantsForFactures = (apprenantsInSession as any[]).filter((sa: any) => !absentIds.has(sa.apprenant?.id));
+          const facturesCount = apprenantsForFactures.length;
           const tabCount = 2 + (isFormationContinue ? 1 : 0) + 1;
           const gridColsClass = tabCount === 4 ? 'grid-cols-4' : tabCount === 3 ? 'grid-cols-3' : 'grid-cols-2';
           return (
@@ -2590,7 +2602,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
             {isFormationContinue && (
               <TabsTrigger value="factures" className="gap-2">
                 <FileText className="w-4 h-4" />
-                Factures ({totalCount})
+                Factures ({facturesCount})
               </TabsTrigger>
             )}
             <TabsTrigger value="absents" className="gap-2">
@@ -3434,9 +3446,9 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                 <div className="flex-1" />
                 <div className="flex items-center gap-2 px-2 py-1 rounded-md bg-background border">
                   <Checkbox
-                    checked={apprenantsInSession.length > 0 && selectedFactureApprenants.size === apprenantsInSession.length}
+                    checked={apprenantsForFactures.length > 0 && selectedFactureApprenants.size === apprenantsForFactures.length}
                     onCheckedChange={(v) => {
-                      if (v) setSelectedFactureApprenants(new Set(apprenantsInSession.map((sa: any) => sa.apprenant?.id).filter(Boolean)));
+                      if (v) setSelectedFactureApprenants(new Set(apprenantsForFactures.map((sa: any) => sa.apprenant?.id).filter(Boolean)));
                       else setSelectedFactureApprenants(new Set());
                     }}
                   />
@@ -3448,7 +3460,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                   size="sm"
                   variant="outline"
                   onClick={handleBulkDownloadFactures}
-                  disabled={bulkDownloadingFactures || apprenantsInSession.length === 0}
+                  disabled={bulkDownloadingFactures || apprenantsForFactures.length === 0}
                   className="gap-2"
                 >
                   {bulkDownloadingFactures ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
@@ -3458,7 +3470,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                   size="sm"
                   variant="secondary"
                   onClick={handleBulkValidateFactures}
-                  disabled={bulkValidatingFactures || apprenantsInSession.length === 0}
+                  disabled={bulkValidatingFactures || apprenantsForFactures.length === 0}
                   className="gap-2"
                 >
                   {bulkValidatingFactures ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
@@ -3472,7 +3484,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                     setBulkAcquitterMoyen('virement');
                     setBulkAcquitterOpen(true);
                   }}
-                  disabled={apprenantsInSession.length === 0}
+                  disabled={apprenantsForFactures.length === 0}
                   className="gap-2 border-emerald-300 text-emerald-700 hover:bg-emerald-50"
                 >
                   <CheckCircle className="w-4 h-4" />
@@ -3482,7 +3494,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                   size="sm"
                   variant="default"
                   onClick={handleBulkSendFactures}
-                  disabled={bulkSendingFactures || apprenantsInSession.length === 0}
+                  disabled={bulkSendingFactures || apprenantsForFactures.length === 0}
                   className="gap-2"
                 >
                   {bulkSendingFactures ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
@@ -3492,13 +3504,13 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
 
               <ScrollArea className="flex-1">
                 <div className="space-y-2 pr-2">
-                  {apprenantsInSession.length === 0 && (
+                  {apprenantsForFactures.length === 0 && (
                     <div className="text-center text-muted-foreground py-12">
                       <FileText className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                      <p>Aucun apprenant dans cette session</p>
+                      <p>Aucun apprenant à facturer</p>
                     </div>
                   )}
-                  {apprenantsInSession.map((sa: any, idx: number) => {
+                  {apprenantsForFactures.map((sa: any, idx: number) => {
                     const a = sa.apprenant;
                     if (!a) return null;
                     const fc: any = (financeursFCMap as any)?.[a.id] || null;
