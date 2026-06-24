@@ -694,7 +694,7 @@ const ChangePasswordDialog = () => {
 
 const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const navigate = useNavigate();
-  const { user, session, loading: authLoading, profile, signOut } = useAuth();
+  const { user, loading: authLoading, profile, signOut } = useAuth();
   const lastKnownUserIdRef = useRef<string | null>(null);
   if (user?.id) lastKnownUserIdRef.current = user.id;
   const effectiveUserId = user?.id || lastKnownUserIdRef.current;
