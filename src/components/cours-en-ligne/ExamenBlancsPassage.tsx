@@ -543,7 +543,7 @@ function PassageMatiere({
   const progress = ((safeQuestionIndex + 1) / safeQuestionsCount) * 100;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[1fr_88px] gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-[1fr_88px] gap-4">
       <div className="space-y-4 min-w-0">
       {/* Bandeau matière FTRANSPORT */}
       <div className="rounded-lg px-4 py-3 flex items-center justify-between flex-wrap gap-2" style={{ backgroundColor: '#0D2540' }}>
@@ -802,7 +802,7 @@ function PassageMatiere({
       </div>
 
       {/* Sidebar verticale des questions */}
-      <aside className="hidden lg:block">
+      <aside className="hidden md:block">
         <div className="sticky top-4 rounded-lg border bg-card p-2 max-h-[calc(100vh-2rem)] overflow-y-auto">
           <div className="text-[10px] font-semibold text-muted-foreground text-center mb-2 uppercase tracking-wide">
             Questions
