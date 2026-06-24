@@ -5110,7 +5110,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                   <div className="text-[10px] font-semibold text-muted-foreground text-center mb-2 uppercase tracking-wide">
                     Questions
                   </div>
-                  <div className="grid grid-cols-2 gap-1 sm:gap-1.5">
+                    <div className="grid grid-cols-2 gap-1.5">
                     {cours.quiz!.map((q, qi) => {
                       const key = `inline-${cours.id}-${q.id}`;
                       const isAnswered = !!inlineQuizAnswers[key];
@@ -5119,12 +5119,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                           key={q.id ?? qi}
                           type="button"
                           onClick={() => document.getElementById(`inline-q-${cours.id}-${q.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" })}
-                          className={`w-7 h-7 sm:w-9 sm:h-9 rounded text-[10px] sm:text-xs font-semibold transition-colors ${
-                            unansweredKeys.has(key)
-                              ? "bg-destructive text-destructive-foreground ring-2 ring-destructive/40"
-                              : isAnswered
-                                ? "bg-emerald-100 text-emerald-700 border border-emerald-300 hover:bg-emerald-200"
-                                : "bg-red-50 text-red-500 border border-red-300 hover:bg-red-100"
+                          className={`w-full aspect-square rounded-md text-xs font-bold transition-colors flex items-center justify-center ${
+                            isAnswered
+                              ? "bg-green-500 text-white border border-green-600 hover:bg-green-600"
+                              : "bg-red-500 text-white border border-red-600 hover:bg-red-600"
                           }`}
                           title={isAnswered ? `Q${qi + 1} — répondue ✓` : `Q${qi + 1} — non répondue ✗`}
                         >
@@ -5133,13 +5131,13 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                       );
                     })}
                   </div>
-                  <div className="mt-3 space-y-1 text-[10px] text-muted-foreground border-t pt-2">
+                  <div className="mt-3 space-y-1.5 text-[10px] text-muted-foreground border-t pt-2">
                     <div className="flex items-center gap-1.5">
-                      <span className="w-3 h-3 rounded bg-emerald-100 border border-emerald-300" />
+                      <span className="w-3 h-3 rounded bg-green-500 border border-green-600" />
                       <span>Répondu</span>
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <span className="w-3 h-3 rounded bg-red-50 border border-red-300" />
+                      <span className="w-3 h-3 rounded bg-red-500 border border-red-600" />
                       <span>À faire</span>
                     </div>
                   </div>
