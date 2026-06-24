@@ -3,6 +3,11 @@ import { Button } from "@/components/ui/button";
 import { CheckCircle2, ExternalLink, FileText, Stethoscope, IdCard, AlertCircle, Stamp, Download } from "lucide-react";
 import type { ComponentProps, ReactNode } from "react";
 import attestationHebergement from "@/assets/attestation-hebergement.pdf.asset.json";
+import medecins01Ain from "@/assets/medecins/01-ain.pdf.asset.json";
+import medecins38Isere from "@/assets/medecins/38-isere.pdf.asset.json";
+import medecins69Rhone from "@/assets/medecins/69-rhone.pdf.asset.json";
+import medecins73Savoie from "@/assets/medecins/73-savoie.pdf.asset.json";
+import medecins74HauteSavoie from "@/assets/medecins/74-haute-savoie.pdf.asset.json";
 
 interface Props {
   completed: boolean;
@@ -53,6 +58,14 @@ const DEMANDES_CARTE_PAR_DEPARTEMENT: { dept: string; nom: string; url: string }
     nom: "Haute-Savoie",
     url: "https://www.demarches-simplifiees.fr/commencer/demande-de-carte-pro-de-vtc-renouvellement",
   },
+];
+
+const MEDECINS_AGREES_PAR_DEPARTEMENT: { dept: string; nom: string; url: string }[] = [
+  { dept: "01", nom: "Ain", url: medecins01Ain.url },
+  { dept: "38", nom: "Isère", url: medecins38Isere.url },
+  { dept: "69", nom: "Rhône", url: medecins69Rhone.url },
+  { dept: "73", nom: "Savoie", url: medecins73Savoie.url },
+  { dept: "74", nom: "Haute-Savoie", url: medecins74HauteSavoie.url },
 ];
 
 const resolveLinkUrl = (url: string) => {
@@ -208,13 +221,7 @@ export default function DemandeCarteVTCViewer({ completed, onComplete }: Props) 
             Sélectionnez votre département pour consulter la liste officielle :
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {[
-              { dept: "01", nom: "Ain", url: "/documents/medecins/medecins-01-ain.pdf" },
-              { dept: "38", nom: "Isère", url: "/documents/medecins/medecins-38-isere.pdf" },
-              { dept: "69", nom: "Rhône", url: "/documents/medecins/medecins-69-rhone.pdf" },
-              { dept: "73", nom: "Savoie", url: "/documents/medecins/medecins-73-savoie.pdf" },
-              { dept: "74", nom: "Haute-Savoie", url: "/documents/medecins/medecins-74-haute-savoie.pdf" },
-            ].map((d) => (
+            {MEDECINS_AGREES_PAR_DEPARTEMENT.map((d) => (
               <LinkButton key={d.dept} url={d.url} variant="outline" className="justify-start">
                 <FileText className="h-4 w-4 mr-2" />
                 {d.dept} — {d.nom}

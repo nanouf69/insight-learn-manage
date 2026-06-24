@@ -22,6 +22,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Eye, Edit, IdCard, Car } from "lucide-react";
 import { generateEmargementPratiquePDF } from "@/lib/pdf/emargement-pratique";
+import listeMedecinsAgrees from "@/assets/medecins/liste-medecins-agrees.pdf.asset.json";
 
 // Trouve la date d'examen la plus récente passée (ou la première à venir)
 function getDefaultExamDate(): string {
@@ -70,6 +71,7 @@ function getPratiqueDateForExam(examDate: string | null | undefined) {
 
 const PRACTICE_VTC_TYPES = new Set(['vtc', 'vtc-e', 'vtc-e-presentiel', 'va', 'va-e', 'va-e-presentiel', 'pa-vtc', 'rp-vtc']);
 const PRACTICE_TAXI_TYPES = new Set(['taxi', 'taxi-e', 'taxi-e-presentiel', 'ta', 'ta-e', 'ta-e-presentiel', 'pa-taxi', 'rp-taxi']);
+const LISTE_MEDECINS_AGREES_URL = `https://gestion.ftransport.fr${listeMedecinsAgrees.url}`;
 
 function isPracticeVTCType(type: string | null) {
   return !!type && PRACTICE_VTC_TYPES.has(type.toLowerCase());
@@ -4211,7 +4213,7 @@ export function ExamenReussitePage() {
                               e.stopPropagation();
                               console.log('[MAIL TYPE] Clic Félicitations', { count: reussisEmail.length });
                               const defaultSubject = `Félicitations - Vous êtes professionnel du transport de personnes`;
-                              const defaultBody = `Bonjour,\n\nFélicitations, vous êtes maintenant professionnel du transport de personnes.\n\nNous vous remercions de votre confiance et nous vous souhaitons une belle aventure dans ce secteur d'activité.\n\nAvant de vous donner la procédure pour effectuer la demande de carte professionnelle, nous vous demanderons de bien vouloir rédiger un avis sur le centre de formation sur google et réaliser une très courte évaluation concernant la formation sur le compte CPF.\n\nVoici le lien pour mettre un avis sur google :\n[Cliquez ici](https://www.google.fr/search?q=ftransport#lrd=0x47f4c1cfb1d26135:0x7b288437c427e7b9,3,,,)\n\nVoici la démarche pour évaluer la formation sur le CPF :\n1. Connectez-vous sur le site www.moncompteformation.gouv.fr\n2. Connectez-vous avec France connect\n3. Cliquez sur dossier\n4. Cliquez sur la formation que vous avez réalisée\n5. Cliquez sur évaluer ma formation\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n🚖 NOUVEAU : Faites établir votre carte professionnelle VTC directement chez nous pour 30 € !\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nNous nous occupons de toute la démarche pour vous. Il vous suffit de nous apporter les 3 documents suivants :\n\n1. Un justificatif de domicile de moins de 3 mois\n2. Votre attestation de réussite de la CMA\n3. Le certificat médical établi par un médecin agréé par la préfecture\n\n📋 Liste officielle des médecins agréés (à jour) :\n[Cliquez ici](https://gestion.ftransport.fr/documents/Liste_medecins_agrees.pdf)\n\n📅 Prendre rendez-vous au centre pour faire établir votre carte VTC :\n[Cliquez ici](https://gestion.ftransport.fr/reservation-carte-vtc)\n\n(ou contactez-nous directement au 04.28.29.60.91)\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nAprès avoir effectué ces deux tâches (avis Google + évaluation CPF), merci de nous contacter pour que l'on puisse vous informer de la démarche à suivre pour la demande de carte professionnelle.\n\nCordialement.\n\nFTRANSPORT\nCentre de formation\n86 Route de genas 69003 Lyon\n04.28.29.60.91\nDe 9h à 17h sur rendez-vous`;
+                              const defaultBody = `Bonjour,\n\nFélicitations, vous êtes maintenant professionnel du transport de personnes.\n\nNous vous remercions de votre confiance et nous vous souhaitons une belle aventure dans ce secteur d'activité.\n\nAvant de vous donner la procédure pour effectuer la demande de carte professionnelle, nous vous demanderons de bien vouloir rédiger un avis sur le centre de formation sur google et réaliser une très courte évaluation concernant la formation sur le compte CPF.\n\nVoici le lien pour mettre un avis sur google :\n[Cliquez ici](https://www.google.fr/search?q=ftransport#lrd=0x47f4c1cfb1d26135:0x7b288437c427e7b9,3,,,)\n\nVoici la démarche pour évaluer la formation sur le CPF :\n1. Connectez-vous sur le site www.moncompteformation.gouv.fr\n2. Connectez-vous avec France connect\n3. Cliquez sur dossier\n4. Cliquez sur la formation que vous avez réalisée\n5. Cliquez sur évaluer ma formation\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n🚖 NOUVEAU : Faites établir votre carte professionnelle VTC directement chez nous pour 30 € !\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nNous nous occupons de toute la démarche pour vous. Il vous suffit de nous apporter les 3 documents suivants :\n\n1. Un justificatif de domicile de moins de 3 mois\n2. Votre attestation de réussite de la CMA\n3. Le certificat médical établi par un médecin agréé par la préfecture\n\n📋 Liste officielle des médecins agréés (à jour) :\n[Cliquez ici](${LISTE_MEDECINS_AGREES_URL})\n\n📅 Prendre rendez-vous au centre pour faire établir votre carte VTC :\n[Cliquez ici](https://gestion.ftransport.fr/reservation-carte-vtc)\n\n(ou contactez-nous directement au 04.28.29.60.91)\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nAprès avoir effectué ces deux tâches (avis Google + évaluation CPF), merci de nous contacter pour que l'on puisse vous informer de la démarche à suivre pour la demande de carte professionnelle.\n\nCordialement.\n\nFTRANSPORT\nCentre de formation\n86 Route de genas 69003 Lyon\n04.28.29.60.91\nDe 9h à 17h sur rendez-vous`;
                               setPreviewMailType('felicitations');
                               setPreviewSubject(defaultSubject);
                               setPreviewBody(defaultBody);
@@ -4324,7 +4326,7 @@ Il faudra maintenant attendre l'attestation de réussite que vous enverra la cha
 ⚠️ Avant d'effectuer votre demande de carte professionnelle, vous devez obtenir un rendez-vous auprès d'un médecin agréé conduite pour l'obtention d'un certificat médical.
 
 📋 Liste officielle des médecins agréés :
-[Cliquez ici](https://gestion.ftransport.fr/documents/Liste_medecins_agrees.pdf)
+[Cliquez ici](${LISTE_MEDECINS_AGREES_URL})
 
 Vous devez également répondre au mail envoyé par l'Imprimerie Nationale en envoyant une photo et une signature depuis votre téléphone portable ou ordinateur.
 
@@ -4370,7 +4372,7 @@ Il faudra maintenant attendre l'attestation de réussite que vous enverra la cha
 [Cliquez ici](https://www.protection-civile.org/formations/grand-public/premiers-secours-psc1/)
 
 📋 Liste officielle des médecins agréés :
-[Cliquez ici](https://gestion.ftransport.fr/documents/Liste_medecins_agrees.pdf)
+[Cliquez ici](${LISTE_MEDECINS_AGREES_URL})
 
 Vous devez également répondre au mail envoyé par l'Imprimerie Nationale en envoyant une photo et une signature depuis votre téléphone portable ou ordinateur.
 
