@@ -2476,6 +2476,12 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   const totalCount = apprenantsInSession.length;
   const formateursCount = formateursInSession.length;
 
+  // Exclure les absents (présence pratique ou résultat examen) pour la facturation FC
+  const nonAbsentApprenants = (apprenantsInSession as any[]).filter((sa: any) => {
+    const ap = sa.apprenant;
+    return sa.presence_pratique !== 'absent' && ap?.resultat_examen !== 'absent';
+  });
+
   const mainContent = (
     <>
         <DialogHeader className={asPage ? "" : "shrink-0"}>
