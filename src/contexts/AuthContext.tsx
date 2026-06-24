@@ -123,50 +123,56 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const recoverSessionBeforeClearing = (delayMs = 1200, attempt = 1) => {
       const hadVisibleSession = !!sessionRef.current?.user;
+      // CRITICAL: never flip loading while a session is visible (quiz in progress).
+      // Flipping loading=true would unmount ModuleDetailView and lose scroll/state.
       if (!hadVisibleSession) setLoading(true);
 
       if (recoveryTimerRef.current) clearTimeout(recoveryTimerRef.current);
       recoveryTimerRef.current = setTimeout(() => {
         if (!isActive) return;
-        void withTimeout(supabase.auth.getSession(), 6000)
+        // Longer timeout (15s) to absorb Android battery-saver / Doze network throttling.
+        void withTimeout(supabase.auth.getSession(), 15000)
           .then(({ data: { session: recoveredSession } }) => {
             if (!isActive) return;
             if (recoveredSession?.user) {
               applySession(recoveredSession);
-              setLoading(false);
+              if (!hadVisibleSession) setLoading(false);
               return;
             }
 
             // Pendant les quiz, une actualisation de token peut émettre SIGNED_OUT
             // brièvement même si la session revient juste après. Ne jamais démonter
             // l'espace apprenant sur ce faux négatif, sinon l'élève perd son quiz.
-            if (hadVisibleSession && attempt < 10) {
-              setLoading(false);
+            if (hadVisibleSession && attempt < 15) {
               recoverSessionBeforeClearing(2000, attempt + 1);
               return;
             }
 
             if (!hadVisibleSession) {
               clearAuthState();
+              setLoading(false);
             }
-            setLoading(false);
           })
           .catch(async (error) => {
             if (!isActive) return;
             if (isInvalidRefreshTokenError(error)) {
-              if (!isActive) return;
-              setLoading(false);
+              if (!hadVisibleSession) setLoading(false);
               return;
             }
-            if (hadVisibleSession) {
-              setLoading(false);
+            // Network error / timeout: keep retrying as long as a session is visible.
+            // Do NOT clear auth state — it would unmount the active quiz.
+            if (hadVisibleSession && attempt < 15) {
+              recoverSessionBeforeClearing(2500, attempt + 1);
               return;
             }
-            clearAuthState();
-            setLoading(false);
+            if (!hadVisibleSession) {
+              clearAuthState();
+              setLoading(false);
+            }
           });
       }, delayMs);
     };
+
 
     const handleResolvedAuthState = (event: string, nextSession: Session | null) => {
       if (nextSession?.user) {

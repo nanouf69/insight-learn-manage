@@ -1,7 +1,9 @@
 import { useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-const REFRESH_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
+const REFRESH_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes (idle)
+const REFRESH_INTERVAL_EXAM_MS = 2 * 60 * 1000; // 2 minutes (quiz/exam mode)
+
 
 /**
  * Keeps the auth session warm by reading it every 5 minutes.
@@ -27,7 +29,7 @@ export function useSessionKeepAlive(enabled: boolean, forceAlways = false) {
     };
 
     void touchSession();
-    intervalRef.current = setInterval(touchSession, REFRESH_INTERVAL_MS);
+    intervalRef.current = setInterval(touchSession, forceAlways ? REFRESH_INTERVAL_EXAM_MS : REFRESH_INTERVAL_MS);
 
     const refreshOnResume = () => {
       void touchSession();
