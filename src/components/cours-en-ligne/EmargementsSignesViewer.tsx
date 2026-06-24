@@ -331,7 +331,7 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
       } = await supabase.auth.getSession();
       const [emRes, apRes] = await Promise.all([
         supabase
-          .from("emargements_fc" as any)
+          .from("emargements_fc")
           .select("id, date_emargement, demi_journee, signature_data_url, signed_at, absent")
           .eq("apprenant_id", apprenantId)
           .order("date_emargement", { ascending: true })
