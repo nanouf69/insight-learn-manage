@@ -412,6 +412,12 @@ export const MODULES_DATA: ModuleInfo[] = [
     description: "Bilan fin de formation — Formation Continue VTC",
     formations: ["continue-vtc"],
   },
+  {
+    id: 88,
+    nom: "5.🪪 DEMANDE DE CARTE PROFESSIONNELLE VTC",
+    description: "Renouvellement de la carte professionnelle VTC — démarche en ligne après formation continue",
+    formations: ["continue-vtc"],
+  },
 ];
 
 // Expansion des modules_autorises :

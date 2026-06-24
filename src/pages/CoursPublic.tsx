@@ -267,6 +267,7 @@ const FORMATION_DISPLAY_LABELS: Partial<Record<FormationId, Record<number, strin
     87: "2.📋 BILAN FIN DE FORMATION CONTINUE VTC",
     83: "3.DOCUMENTS ADMINISTRATIFS VTC",
     85: "4.INFORMATIONS FINANCEUR VTC",
+    88: "5.🪪 DEMANDE DE CARTE PROFESSIONNELLE VTC",
   },
   "continue-taxi": {
     82: "1.BILAN EXERCICES FORMATION CONTINUE TAXI",
@@ -284,11 +285,11 @@ const FORMATION_DEFAULT_MODULES: Record<FormationId, number[]> = {
   "taxi-pour-vtc": [31, 40, 7, 64, 12, 3, 27, 13, 28, 37, 62, 72, 6, 84, 52],
   "taxi-pour-vtc-elearning": [32, 40, 7, 64, 12, 3, 27, 13, 28, 37, 62, 72, 6, 52],
   "vtc-pour-taxi": [33, 41, 3, 29, 30, 38, 63, 73, 8, 83, 53],
-  "continue-vtc": [81, 87, 83, 85],
+  "continue-vtc": [81, 87, 83, 85, 88],
   "continue-taxi": [82, 84, 86],
 };
 
-const MANAGED_MODULE_IDS = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 50, 51, 52, 53, 60, 61, 62, 63, 64, 70, 71, 72, 73, 81, 82, 83, 84, 85, 86, 87]);
+const MANAGED_MODULE_IDS = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 50, 51, 52, 53, 60, 61, 62, 63, 64, 70, 71, 72, 73, 81, 82, 83, 84, 85, 86, 87, 88]);
 const DASHBOARD_PARENT_MODULE_IDS: Partial<Record<number, number>> = {
   25: 2,
   14: 2,

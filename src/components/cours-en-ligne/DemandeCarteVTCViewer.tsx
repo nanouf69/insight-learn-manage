@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, ExternalLink, FileText, Stethoscope, IdCard, AlertCircle } from "lucide-react";
+import { CheckCircle2, ExternalLink, FileText, Stethoscope, IdCard, AlertCircle, Stamp } from "lucide-react";
 
 interface Props {
   completed: boolean;
@@ -15,17 +15,42 @@ const DOCUMENTS_OBLIGATOIRES: string[] = [
   "Copie du justificatif de domicile du conducteur dans le département de moins de 3 mois",
   "Copie de la photo d'identité",
   "Copie de la signature",
-  "Attestation de suivi de la formation continue de conducteur de VTC en cours de validité (délivrée à l'issue de votre formation)",
+  "Si vous êtes entré dans la profession depuis plus de 5 ans : attestation de suivi de la formation continue de conducteur de VTC en cours de validité, dispensée au sein d'un centre de formation agréé",
 ];
 
 const DOCUMENTS_FACULTATIFS: string[] = [
   "Copie du RECTO de la carte professionnelle VTC à renouveler",
   "Copie du VERSO de la carte professionnelle VTC à renouveler",
-  "En cas de VOL : déclaration de vol de la carte professionnelle délivrée par un commissariat",
-  "Si hébergement par tiers : RECTO / VERSO pièce d'identité de l'hébergeant en cours de validité",
-  "Si hébergement par tiers : attestation sur l'honneur de l'hébergeant",
+  "Si VOL : déclaration de vol de la carte professionnelle délivrée par un commissariat",
+  "Si hébergement par tiers : copie du RECTO de la pièce d'identité de l'hébergeant en cours de validité",
+  "Si hébergement par tiers : copie du VERSO de la pièce d'identité de l'hébergeant en cours de validité",
+  "Si hébergement par tiers : copie de l'attestation sur l'honneur de l'hébergeant",
   "Si hébergement par tiers : justificatif de domicile de l'hébergeant de moins de 3 mois",
-  "Copie du certificat médical (CERFA n° 14880*01 ou 14880*02) délivré par un médecin agréé par la préfecture, depuis moins de 2 ans, mention VTC cochée (et aptitude « groupe lourd » pour le CERFA 14880*02)",
+  "Copie du certificat médical (CERFA n° 14880*01 ou 14880*02) établi depuis moins de 2 ans, délivré par un médecin agréé par une préfecture, avec la mention VTC cochée, ainsi que l'aptitude à la conduite de véhicules du « groupe lourd » pour le CERFA n° 14880*02",
+];
+
+// Liens directs vers les démarches de demande de carte VTC par département
+const DEMANDES_CARTE_PAR_DEPARTEMENT: { dept: string; nom: string; url: string }[] = [
+  {
+    dept: "69",
+    nom: "Rhône",
+    url: "https://www.demarches-simplifiees.fr/commencer/demande-de-carte-pro-de-vtc-renouvellement",
+  },
+  {
+    dept: "38",
+    nom: "Isère",
+    url: "https://www.demarches-simplifiees.fr/commencer/demande-de-carte-pro-de-vtc-renouvellement",
+  },
+  {
+    dept: "42",
+    nom: "Loire",
+    url: "https://www.demarches-simplifiees.fr/commencer/demande-de-carte-pro-de-vtc-renouvellement",
+  },
+  {
+    dept: "74",
+    nom: "Haute-Savoie",
+    url: "https://www.demarches-simplifiees.fr/commencer/demande-de-carte-pro-de-vtc-renouvellement",
+  },
 ];
 
 export default function DemandeCarteVTCViewer({ completed, onComplete }: Props) {
@@ -67,6 +92,20 @@ export default function DemandeCarteVTCViewer({ completed, onComplete }: Props) 
               Accéder à la démarche en ligne
             </a>
           </Button>
+
+          <div className="pt-2 space-y-2">
+            <p className="text-sm font-medium">Liens directs par département :</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {DEMANDES_CARTE_PAR_DEPARTEMENT.map((d) => (
+                <Button key={d.dept} asChild variant="outline" className="justify-start">
+                  <a href={d.url} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    Cliquez ICI — {d.dept} {d.nom}
+                  </a>
+                </Button>
+              ))}
+            </div>
+          </div>
         </CardContent>
       </Card>
 
@@ -108,6 +147,32 @@ export default function DemandeCarteVTCViewer({ completed, onComplete }: Props) 
         </CardContent>
       </Card>
 
+      <Card className="border-rose-200 bg-rose-50/40">
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Stamp className="h-5 w-5 text-rose-700" />
+            ⚠️ Spécifique département du Rhône (69)
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-sm">
+            Si vous habitez dans le <strong>Rhône (69)</strong>, une fois votre nouvelle carte professionnelle VTC
+            reçue, vous devez faire <strong>tamponner votre certificat médical</strong> en passant par la démarche
+            officielle dédiée :
+          </p>
+          <Button asChild className="bg-rose-700 hover:bg-rose-800">
+            <a
+              href="https://www.demarches-simplifiees.fr/commencer/obligations-visite-medicale-ou-formation-continue-rhone"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <ExternalLink className="h-4 w-4 mr-2" />
+              Faire tamponner mon certificat médical (Rhône)
+            </a>
+          </Button>
+        </CardContent>
+      </Card>
+
       <Card className="border-emerald-200 bg-emerald-50/40">
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
@@ -124,6 +189,8 @@ export default function DemandeCarteVTCViewer({ completed, onComplete }: Props) 
             {[
               { dept: "01", nom: "Ain", file: "01-AIN.pdf" },
               { dept: "38", nom: "Isère", file: "38-ISERE.pdf" },
+              { dept: "42", nom: "Loire", file: "42-LOIRE.pdf" },
+              { dept: "69", nom: "Rhône", file: "69-RHONE.pdf" },
               { dept: "73", nom: "Savoie", file: "73-SAVOIE.pdf" },
               { dept: "74", nom: "Haute-Savoie", file: "74-HAUTE-SAVOIE.pdf" },
             ].map((d) => (
