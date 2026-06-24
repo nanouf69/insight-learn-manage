@@ -1890,6 +1890,47 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       toast({ title: "Aucun apprenant sélectionné", variant: "destructive" });
       return;
     }
+
+    // Aperçu avant envoi : génère les factures (sans persister de numéro définitif)
+    // en mode brouillon et ouvre le PDF fusionné dans un nouvel onglet.
+    let previewUrl: string | null = null;
+    try {
+      let mergedDoc: any = null;
+      for (let i = 0; i < targets.length; i++) {
+        const sa = targets[i];
+        const apprenant = sa.apprenant;
+        if (!apprenant) continue;
+        const recipient = getFactureRecipientEmail(apprenant);
+        if (!recipient) continue;
+        const facture = await ensureFactureBrouillon(apprenant, sa);
+        const data = buildFactureDataForApprenant(apprenant, sa, i, {
+          numero: facture.numero,
+          dateEmission: facture.date_emission,
+        });
+        const result: any = await generateFactureFC(data, {
+          returnDoc: true,
+          existingDoc: mergedDoc ?? undefined,
+          addPage: !!mergedDoc,
+        });
+        if (result?.doc) mergedDoc = result.doc;
+      }
+      if (mergedDoc) {
+        const blob: Blob = mergedDoc.output('blob');
+        previewUrl = URL.createObjectURL(blob);
+        window.open(previewUrl, '_blank');
+      }
+    } catch (e) {
+      console.error('[bulkSendFactures] preview error', e);
+    }
+
+    const confirmed = window.confirm(
+      "Aperçu des factures ouvert dans un nouvel onglet.\n\n" +
+      "Envoyer maintenant par email aux financeurs ?\n\n" +
+      "Cliquez sur Annuler si vous souhaitez encore les éditer."
+    );
+    if (previewUrl) setTimeout(() => URL.revokeObjectURL(previewUrl!), 60000);
+    if (!confirmed) return;
+
     setBulkSendingFactures(true);
     let sent = 0, skipped = 0, failed = 0;
     try {
