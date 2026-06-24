@@ -193,20 +193,27 @@ export default function DemandeCarteVTCViewer({ completed, onComplete }: Props) 
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {[
-              { dept: "01", nom: "Ain", file: "01-AIN.pdf" },
-              { dept: "38", nom: "Isère", file: "38-ISERE.pdf" },
-              { dept: "42", nom: "Loire", file: "42-LOIRE.pdf" },
-              { dept: "69", nom: "Rhône", file: "69-RHONE.pdf" },
-              { dept: "73", nom: "Savoie", file: "73-SAVOIE.pdf" },
-              { dept: "74", nom: "Haute-Savoie", file: "74-HAUTE-SAVOIE.pdf" },
+              { dept: "01", nom: "Ain", url: medecinsAin.url },
+              { dept: "38", nom: "Isère", url: medecinsIsere.url },
+              { dept: "69", nom: "Rhône", url: medecinsRhone.url },
+              { dept: "73", nom: "Savoie", url: medecinsSavoie.url },
+              { dept: "74", nom: "Haute-Savoie", url: medecinsHauteSavoie.url },
             ].map((d) => (
               <Button key={d.dept} asChild variant="outline" className="justify-start">
-                <a href={`/cours/vtc/medecins/${d.file}`} target="_blank" rel="noopener noreferrer">
+                <a href={d.url} target="_blank" rel="noopener noreferrer">
                   <FileText className="h-4 w-4 mr-2" />
                   {d.dept} — {d.nom}
                 </a>
               </Button>
             ))}
+          </div>
+          <div className="pt-3 border-t border-emerald-200/60">
+            <Button asChild variant="outline" size="sm">
+              <a href={attestationHebergement.url} target="_blank" rel="noopener noreferrer">
+                <Download className="h-4 w-4 mr-2" />
+                Télécharger le modèle d'attestation d'hébergement
+              </a>
+            </Button>
           </div>
           <p className="text-xs text-muted-foreground">
             Votre département ne figure pas dans la liste ? Contactez la préfecture de votre département
