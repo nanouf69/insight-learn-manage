@@ -369,6 +369,7 @@ interface ModuleDetailViewProps {
   isPresentiel?: boolean;
   hideFormulaires?: boolean;
   onTrackCours?: (moduleId: number, coursTitle: string) => void;
+  onLearnerActivity?: () => void;
   apprenantInfo?: {
     nom?: string;
     prenom?: string;
@@ -2414,7 +2415,7 @@ const ContentCard = ({
   );
 };
 
-const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, onModuleCompleted, apprenantType, apprenantInfo, isPresentiel = false, hideFormulaires = false, onTrackCours }: ModuleDetailViewProps) => {
+const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, onModuleCompleted, apprenantType, apprenantInfo, isPresentiel = false, hideFormulaires = false, onTrackCours, onLearnerActivity }: ModuleDetailViewProps) => {
   console.log("[ModuleDetailView] Rendering module:", module.id, module.nom, "studentOnly:", studentOnly, "apprenantType:", apprenantType, "isPresentiel:", isPresentiel);
 
   // Cleanup mode plein écran à la sortie du composant
@@ -4396,6 +4397,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
     const handleAnswer = (exoId: number, qId: number, lettre: string, multi?: boolean, target?: HTMLElement | null) => {
       if (showResultsFor.has(exoId)) return;
+      onLearnerActivity?.();
       captureAnswerScrollPosition(target);
       const ansKey = `${exoId}-${qId}`;
       flushSync(() => {
@@ -4423,6 +4425,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     };
 
     const handleQrcAnswerChange = (key: string, value: string) => {
+      onLearnerActivity?.();
       captureAnswerScrollPosition(document.activeElement instanceof HTMLElement ? document.activeElement : null);
       flushSync(() => {
         setQrcAnswers(prev => ({ ...prev, [key]: value }));
@@ -5966,7 +5969,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     };
 
     return LearnerPreviewComponent;
-  }, [apprenantId, apprenantInfo, apprenantType, hideFormulaires, isPresentiel, module.id, moduleData, onBack, onModuleCompleted, onTrackCours, slidesByKey, studentOnly]);
+  }, [apprenantId, apprenantInfo, apprenantType, hideFormulaires, isPresentiel, module.id, moduleData, onBack, onLearnerActivity, onModuleCompleted, onTrackCours, slidesByKey, studentOnly]);
 
   if (studentOnly) {
     return (
