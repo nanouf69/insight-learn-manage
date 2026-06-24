@@ -482,9 +482,11 @@ export default function RemboursementFCViewer({ apprenantId, completed, onComple
             </div>
             {missingCount > 0 && userId && (
               <div className="mt-3 rounded-md border border-amber-200 bg-amber-50/70 p-2">
-                <p className="text-[11px] font-medium text-amber-900 mb-1.5">Créneaux non signés</p>
-                <div className="space-y-1.5">
-                  {missingEmargements.slice(0, 4).map((slot) => (
+                <p className="text-[11px] font-medium text-amber-900 mb-1.5">
+                  Créneaux non signés ({missingCount})
+                </p>
+                <div className="space-y-1.5 max-h-72 overflow-y-auto pr-1">
+                  {missingEmargements.map((slot) => (
                     <div key={emargementSlotKey(slot.date, slot.creneau)} className="flex items-center justify-between gap-2 rounded bg-background/80 px-2 py-1.5 text-xs">
                       <span className="text-foreground">
                         <span className="capitalize">{formatDateFR(slot.date)}</span> — {creneauLabel(slot.creneau)} ({creneauHoraire(slot.creneau)})
@@ -496,9 +498,6 @@ export default function RemboursementFCViewer({ apprenantId, completed, onComple
                     </div>
                   ))}
                 </div>
-                {missingCount > 4 && (
-                  <p className="text-[11px] text-amber-800 mt-1.5">+ {missingCount - 4} autre{missingCount - 4 > 1 ? "s" : ""} créneau{missingCount - 4 > 1 ? "x" : ""} à signer.</p>
-                )}
               </div>
             )}
           </div>
