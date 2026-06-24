@@ -5417,18 +5417,27 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                       onClick={async () => {
                         // Check all QCM questions are answered (skip QRC)
                         const unansweredQcmKeys: string[] = [];
-                        questionsSafe.forEach((q: any) => {
+                        let firstMissingIndex = -1;
+                        questionsSafe.forEach((q: any, qi: number) => {
                           const k = `${exo.id}-${q.id}`;
                           const isQrc = q?.type === "qrc" || (q.choix?.length === 0 && q.reponsesAttendues);
                           const ans = selectedAnswers[k];
                           const hasAnswer = Array.isArray(ans) ? ans.length > 0 : !!ans;
                           if (!isQrc && !hasAnswer) {
                             unansweredQcmKeys.push(k);
+                            if (firstMissingIndex === -1) firstMissingIndex = qi;
                           }
                         });
                         if (unansweredQcmKeys.length > 0) {
                           setUnansweredKeys(new Set(unansweredQcmKeys));
                           toast.error("Répondez à toutes les questions QCM avant de valider");
+                          if (firstMissingIndex !== -1) {
+                            setTimeout(() => {
+                              document
+                                .getElementById(`exo-q-${exo.id}-${firstMissingIndex}`)
+                                ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                            }, 50);
+                          }
                           return;
                         }
                         setUnansweredKeys(new Set());
