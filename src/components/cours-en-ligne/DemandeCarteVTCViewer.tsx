@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, ExternalLink, FileText, Stethoscope, IdCard, AlertCircle, Stamp, Download } from "lucide-react";
+import type { ComponentProps, ReactNode } from "react";
 import medecinsAin from "@/assets/medecins/01-ain.pdf.asset.json";
 import medecinsIsere from "@/assets/medecins/38-isere.pdf.asset.json";
 import medecinsRhone from "@/assets/medecins/69-rhone.pdf.asset.json";
@@ -81,10 +82,10 @@ const LinkButton = ({
   size,
 }: {
   url: string;
-  children: React.ReactNode;
+  children: ReactNode;
   className?: string;
-  variant?: React.ComponentProps<typeof Button>["variant"];
-  size?: React.ComponentProps<typeof Button>["size"];
+  variant?: ComponentProps<typeof Button>["variant"];
+  size?: ComponentProps<typeof Button>["size"];
 }) => (
   <Button
     type="button"
