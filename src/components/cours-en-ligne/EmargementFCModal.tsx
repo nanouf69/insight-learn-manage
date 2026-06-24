@@ -158,10 +158,11 @@ export const EmargementFCModal = ({
       });
       setDone(true);
       onSigned?.();
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Impossible d'enregistrer votre signature.";
       toast({
         title: "Erreur",
-        description: error?.message || "Impossible d'enregistrer votre signature.",
+        description: message,
         variant: "destructive",
       });
     } finally {
@@ -231,10 +232,11 @@ export const EmargementFCModal = ({
       });
       setDone(true);
       onSigned?.();
-    } catch (e: any) {
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : "Impossible d'enregistrer votre absence.";
       toast({
         title: "Erreur",
-        description: e?.message || "Impossible d'enregistrer votre absence.",
+        description: message,
         variant: "destructive",
       });
     } finally {
