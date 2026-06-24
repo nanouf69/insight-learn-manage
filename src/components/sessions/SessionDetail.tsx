@@ -3495,13 +3495,13 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
 
               <ScrollArea className="flex-1">
                 <div className="space-y-2 pr-2">
-                  {apprenantsInSession.length === 0 && (
+                  {apprenantsForFactures.length === 0 && (
                     <div className="text-center text-muted-foreground py-12">
                       <FileText className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                      <p>Aucun apprenant dans cette session</p>
+                      <p>Aucun apprenant à facturer</p>
                     </div>
                   )}
-                  {apprenantsInSession.map((sa: any, idx: number) => {
+                  {apprenantsForFactures.map((sa: any, idx: number) => {
                     const a = sa.apprenant;
                     if (!a) return null;
                     const fc: any = (financeursFCMap as any)?.[a.id] || null;
