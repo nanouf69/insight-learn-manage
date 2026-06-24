@@ -59,6 +59,44 @@ const DEMANDES_CARTE_PAR_DEPARTEMENT: { dept: string; nom: string; url: string }
   },
 ];
 
+const resolveLinkUrl = (url: string) => {
+  if (url.startsWith("http")) return url;
+  if (typeof window === "undefined") return url;
+  return new URL(url, window.location.origin).toString();
+};
+
+const openLink = (url: string) => {
+  const finalUrl = resolveLinkUrl(url);
+  const opened = window.open(finalUrl, "_blank", "noopener,noreferrer");
+  if (!opened) {
+    window.location.assign(finalUrl);
+  }
+};
+
+const LinkButton = ({
+  url,
+  children,
+  className,
+  variant,
+  size,
+}: {
+  url: string;
+  children: React.ReactNode;
+  className?: string;
+  variant?: React.ComponentProps<typeof Button>["variant"];
+  size?: React.ComponentProps<typeof Button>["size"];
+}) => (
+  <Button
+    type="button"
+    variant={variant}
+    size={size}
+    className={className}
+    onClick={() => openLink(url)}
+  >
+    {children}
+  </Button>
+);
+
 export default function DemandeCarteVTCViewer({ completed, onComplete }: Props) {
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
@@ -88,27 +126,23 @@ export default function DemandeCarteVTCViewer({ completed, onComplete }: Props) 
           <p className="text-sm">
             La demande se fait <strong>uniquement en ligne</strong> via le portail officiel du Ministère :
           </p>
-          <Button asChild size="lg" className="bg-blue-700 hover:bg-blue-800">
-            <a
-              href="https://www.demarches-simplifiees.fr/commencer/demande-de-carte-pro-de-vtc-renouvellement"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <ExternalLink className="h-4 w-4 mr-2" />
-              Accéder à la démarche en ligne
-            </a>
-          </Button>
+          <LinkButton
+            url="https://www.demarches-simplifiees.fr/commencer/demande-de-carte-pro-de-vtc-renouvellement"
+            size="lg"
+            className="bg-blue-700 hover:bg-blue-800"
+          >
+            <ExternalLink className="h-4 w-4 mr-2" />
+            Accéder à la démarche en ligne
+          </LinkButton>
 
           <div className="pt-2 space-y-2">
             <p className="text-sm font-medium">Liens directs par département :</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {DEMANDES_CARTE_PAR_DEPARTEMENT.map((d) => (
-                <Button key={d.dept} asChild variant="outline" className="justify-start">
-                  <a href={d.url} target="_blank" rel="noopener noreferrer">
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    Cliquez ICI — {d.dept} {d.nom}
-                  </a>
-                </Button>
+                <LinkButton key={d.dept} url={d.url} variant="outline" className="justify-start">
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Cliquez ICI — {d.dept} {d.nom}
+                </LinkButton>
               ))}
             </div>
           </div>
@@ -166,16 +200,13 @@ export default function DemandeCarteVTCViewer({ completed, onComplete }: Props) 
             reçue, vous devez faire <strong>tamponner votre certificat médical</strong> en passant par la démarche
             officielle dédiée :
           </p>
-          <Button asChild className="bg-rose-700 hover:bg-rose-800">
-            <a
-              href="https://www.demarches-simplifiees.fr/commencer/obligations-visite-medicale-ou-formation-continue-rhone"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <ExternalLink className="h-4 w-4 mr-2" />
-              Faire tamponner mon certificat médical (Rhône)
-            </a>
-          </Button>
+          <LinkButton
+            url="https://www.demarches-simplifiees.fr/commencer/obligations-visite-medicale-ou-formation-continue-rhone"
+            className="bg-rose-700 hover:bg-rose-800"
+          >
+            <ExternalLink className="h-4 w-4 mr-2" />
+            Faire tamponner mon certificat médical (Rhône)
+          </LinkButton>
         </CardContent>
       </Card>
 
@@ -199,21 +230,17 @@ export default function DemandeCarteVTCViewer({ completed, onComplete }: Props) 
               { dept: "73", nom: "Savoie", url: medecinsSavoie.url },
               { dept: "74", nom: "Haute-Savoie", url: medecinsHauteSavoie.url },
             ].map((d) => (
-              <Button key={d.dept} asChild variant="outline" className="justify-start">
-                <a href={d.url} target="_blank" rel="noopener noreferrer">
-                  <FileText className="h-4 w-4 mr-2" />
-                  {d.dept} — {d.nom}
-                </a>
-              </Button>
+              <LinkButton key={d.dept} url={d.url} variant="outline" className="justify-start">
+                <FileText className="h-4 w-4 mr-2" />
+                {d.dept} — {d.nom}
+              </LinkButton>
             ))}
           </div>
           <div className="pt-3 border-t border-emerald-200/60">
-            <Button asChild variant="outline" size="sm">
-              <a href={attestationHebergement.url} target="_blank" rel="noopener noreferrer">
-                <Download className="h-4 w-4 mr-2" />
-                Télécharger le modèle d'attestation d'hébergement
-              </a>
-            </Button>
+            <LinkButton url={attestationHebergement.url} variant="outline" size="sm">
+              <Download className="h-4 w-4 mr-2" />
+              Télécharger le modèle d'attestation d'hébergement
+            </LinkButton>
           </div>
           <p className="text-xs text-muted-foreground">
             Votre département ne figure pas dans la liste ? Contactez la préfecture de votre département
