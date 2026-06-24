@@ -5901,9 +5901,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     };
 
     return (
-      <div className="flex gap-6 max-w-6xl mx-auto">
+      <div className="flex gap-4 lg:gap-6 max-w-6xl mx-auto">
         {/* Vertical progress sidebar — desktop */}
-        <div className="hidden lg:block shrink-0 w-72 sticky top-4 self-start max-h-[calc(100vh-2rem)] overflow-y-auto">
+        <div className="hidden md:block shrink-0 w-56 lg:w-72 sticky top-4 self-start max-h-[calc(100vh-2rem)] overflow-y-auto">
           <div className="rounded-xl border bg-card shadow-sm p-5 space-y-2">
             <h3 className="text-sm font-bold text-foreground uppercase tracking-wider mb-4">Progression</h3>
             {renderProgressionSteps()}
@@ -5959,7 +5959,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           )}
 
           {/* Mobile/tablet collapsible progression */}
-          <div className="lg:hidden">
+          <div className="md:hidden">
             <button
               onClick={() => setMobileProgressOpen(!mobileProgressOpen)}
               className="w-full flex items-center justify-between rounded-xl border bg-card shadow-sm px-4 py-3"
