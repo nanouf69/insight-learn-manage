@@ -161,14 +161,16 @@ export function useConnexionTracking({ apprenantId, userId, enabled }: UseConnex
       });
   }, [apprenantId, checkSessionOnServer, endConnexion, userId]);
 
-  const markActivity = useCallback(async () => {
-    if (!apprenantId || !userId || !connexionIdRef.current) return;
+  const markActivity = useCallback(async (): Promise<boolean> => {
+    if (!apprenantId || !userId || !connexionIdRef.current) return false;
 
     const validation = await checkSessionOnServer("action");
     if (validation && !validation.is_valid) {
       const reason = validation.disconnect_reason || "";
       console.warn(`[ConnexionTracking] Activité quiz ignorée — session de suivi expirée sans déconnecter l'apprenant — raison: ${reason}`);
+      return false;
     }
+    return true;
   }, [apprenantId, checkSessionOnServer, userId]);
 
   return {

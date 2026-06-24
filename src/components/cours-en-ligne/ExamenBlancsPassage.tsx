@@ -149,6 +149,7 @@ function PassageMatiere({
   apprenantId,
   userId,
   examenId,
+  onLearnerActivity,
 }: {
   matiere: Matiere;
   numero: number;
@@ -158,6 +159,7 @@ function PassageMatiere({
   apprenantId?: string | null;
   userId?: string | null;
   examenId?: string;
+  onLearnerActivity?: () => void;
 }) {
   const [reponses, setReponses] = useState<Reponses>({});
   const [questionIndex, setQuestionIndex] = useState(0);
@@ -411,6 +413,7 @@ function PassageMatiere({
 
   // Core logic extracted to applyQCMChange in examens-blancs-utils.ts (BUG #10 FIX)
   const handleQCMChange = (qId: number, lettre: string, checked: boolean, isMultipleQ: boolean) => {
+    onLearnerActivity?.();
     setReponses(prev => {
       const next = applyQCMChange(prev, qId, lettre, checked, isMultipleQ);
       if (next === prev) return prev; // dedup guard returned same ref
@@ -420,6 +423,7 @@ function PassageMatiere({
   };
 
   const handleQRCChange = (qId: number, val: string) => {
+    onLearnerActivity?.();
     setReponses(prev => {
       const next = { ...prev, [qId]: val };
       persistReponses(next);
