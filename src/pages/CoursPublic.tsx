@@ -738,15 +738,6 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   }, []);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const targetY = scrollYRef.current;
-    window.requestAnimationFrame(() => {
-      window.scrollTo(0, targetY);
-    });
-  });
-
-  useEffect(() => {
     emargementStatusRef.current = emargementFCStatus;
   }, [emargementFCStatus]);
 
