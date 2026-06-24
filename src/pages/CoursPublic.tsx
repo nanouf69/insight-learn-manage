@@ -1563,8 +1563,8 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
 
   // Pour les formations continues, toujours inclure l'ensemble des modules par défaut
   // (évite que d'anciens apprenants n'aient pas accès aux nouveaux modules ajoutés)
-  const isFormationContinue = selectedFormation === "continue-vtc" || selectedFormation === "continue-taxi";
-  const effectiveAuthorizedIds = isFormationContinue
+  const isFCFormation = selectedFormation === "continue-vtc" || selectedFormation === "continue-taxi";
+  const effectiveAuthorizedIds = isFCFormation
     ? Array.from(new Set([...normalizedAuthorizedIds, ...normalizedFormationDefaultIds]))
     : normalizedAuthorizedIds;
 
