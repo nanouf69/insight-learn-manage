@@ -4175,81 +4175,95 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       if (!apprenantId || savedAnswersLoaded) return;
       (async () => {
         try {
-          // Try loading from reponses_apprenants first (per-exercice granularity)
-          const exerciceIds = activeExercices.map(e => `module_${module.id}_exo_${e.id}`);
-          if (exerciceIds.length > 0) {
-            const { data: repData } = await supabase
-              .from("reponses_apprenants" as any)
-              .select("exercice_id, reponses, completed")
-              .eq("apprenant_id", apprenantId)
-              .in("exercice_id", exerciceIds);
-            
-            if (repData && (repData as any[]).length > 0) {
-              const restored: Record<string, string | string[]> = {};
-              (repData as any[]).forEach((row: any) => {
-                if (!row.completed && row.reponses && typeof row.reponses === "object") {
-                  Object.assign(restored, row.reponses);
-                }
-              });
-              if (Object.keys(restored).length > 0) {
-                setSelectedAnswers((prev) => (Object.keys(prev).length > 0 ? prev : restored));
-              }
-            }
-          }
-
-          // Also check apprenant_module_completion for backward compatibility
-          const { data } = await supabase
+          // 1) Check FIRST if the module is already validated
+          //    (apprenant_module_completion exists for this apprenant/module).
+          //    If yes → freeze module: lock writes to reponses_apprenants and
+          //    only restore answers from the immutable snapshot in details.
+          const { data: completionData } = await supabase
             .from("apprenant_module_completion")
             .select("details, score_obtenu")
             .eq("apprenant_id", apprenantId)
             .eq("module_id", module.id)
             .maybeSingle();
 
-          if (data?.details && Array.isArray(data.details)) {
-            const restored: Record<string, string | string[]> = {};
-            const answeredByExercice = new Map<number, number>();
+          const isAlreadyValidated = !!completionData;
 
-            (data.details as any[]).forEach((d: any) => {
-              if (d.reponseEleve) {
-                restored[`${d.exerciceId}-${d.questionId}`] = d.reponseEleve;
-                const exoId = Number(d.exerciceId);
-                if (Number.isFinite(exoId)) {
-                  answeredByExercice.set(exoId, (answeredByExercice.get(exoId) || 0) + 1);
+          if (isAlreadyValidated) {
+            // Lock all future writes to reponses_apprenants for this couple.
+            moduleAlreadyValidatedRef.current = true;
+            completionPersistedRef.current = true;
+
+            if (completionData?.details && Array.isArray(completionData.details)) {
+              const restored: Record<string, string | string[]> = {};
+              const answeredByExercice = new Map<number, number>();
+
+              (completionData.details as any[]).forEach((d: any) => {
+                if (d.reponseEleve) {
+                  restored[`${d.exerciceId}-${d.questionId}`] = d.reponseEleve;
+                  const exoId = Number(d.exerciceId);
+                  if (Number.isFinite(exoId)) {
+                    answeredByExercice.set(exoId, (answeredByExercice.get(exoId) || 0) + 1);
+                  }
+                }
+              });
+
+              if (Object.keys(restored).length > 0) {
+                // Force-overwrite local state with the frozen snapshot.
+                setSelectedAnswers(restored);
+              }
+
+              if (completionData.score_obtenu !== null) {
+                const validatedExoIds = activeExercices
+                  .filter((exo) => {
+                    const totalExoQuestions = exo.questions?.length || 0;
+                    if (totalExoQuestions === 0) return false;
+                    return (answeredByExercice.get(Number(exo.id)) || 0) >= totalExoQuestions;
+                  })
+                  .map((exo) => Number(exo.id));
+
+                if (validatedExoIds.length > 0) {
+                  setShowResultsFor((prev) => {
+                    const next = new Set(prev);
+                    validatedExoIds.forEach((exoId) => next.add(exoId));
+                    return next;
+                  });
+
+                  setCompletedPages((prev) => {
+                    const next = new Set(prev);
+                    validatedExoIds.forEach((exoId) => {
+                      const exoPage = pages.findIndex((p) => p?.type === "exercice-single" && p.exercice.id === exoId);
+                      if (exoPage >= 0) {
+                        next.add(exoPage);
+                        if (exoPage > 0) next.add(exoPage - 1);
+                      }
+                    });
+                    return next;
+                  });
                 }
               }
-            });
-
-            if (Object.keys(restored).length > 0) {
-              setSelectedAnswers((prev) => (Object.keys(prev).length > 0 ? prev : restored));
             }
 
-            if (data.score_obtenu !== null) {
-              const validatedExoIds = activeExercices
-                .filter((exo) => {
-                  const totalExoQuestions = exo.questions?.length || 0;
-                  if (totalExoQuestions === 0) return false;
-                  return (answeredByExercice.get(Number(exo.id)) || 0) >= totalExoQuestions;
-                })
-                .map((exo) => Number(exo.id));
+            console.log(`[ModuleDetailView] Module ${module.id} déjà validé pour apprenant ${apprenantId} — écritures sur reponses_apprenants BLOQUÉES.`);
+          } else {
+            // 2) Module not yet validated → restore from reponses_apprenants (progressive save).
+            const exerciceIds = activeExercices.map(e => `module_${module.id}_exo_${e.id}`);
+            if (exerciceIds.length > 0) {
+              const { data: repData } = await supabase
+                .from("reponses_apprenants" as any)
+                .select("exercice_id, reponses, completed")
+                .eq("apprenant_id", apprenantId)
+                .in("exercice_id", exerciceIds);
 
-              if (validatedExoIds.length > 0) {
-                setShowResultsFor((prev) => {
-                  const next = new Set(prev);
-                  validatedExoIds.forEach((exoId) => next.add(exoId));
-                  return next;
+              if (repData && (repData as any[]).length > 0) {
+                const restored: Record<string, string | string[]> = {};
+                (repData as any[]).forEach((row: any) => {
+                  if (!row.completed && row.reponses && typeof row.reponses === "object") {
+                    Object.assign(restored, row.reponses);
+                  }
                 });
-
-                setCompletedPages((prev) => {
-                  const next = new Set(prev);
-                  validatedExoIds.forEach((exoId) => {
-                    const exoPage = pages.findIndex((p) => p?.type === "exercice-single" && p.exercice.id === exoId);
-                    if (exoPage >= 0) {
-                      next.add(exoPage);
-                      if (exoPage > 0) next.add(exoPage - 1);
-                    }
-                  });
-                  return next;
-                });
+                if (Object.keys(restored).length > 0) {
+                  setSelectedAnswers((prev) => (Object.keys(prev).length > 0 ? prev : restored));
+                }
               }
             }
           }
