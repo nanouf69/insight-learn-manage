@@ -234,6 +234,55 @@ export default function DemandeCarteVTCViewer({ completed, onComplete }: Props) 
         </CardContent>
       </Card>
 
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <FileText className="h-5 w-5 text-slate-700" />
+            Exemple de bon de commande
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="border border-slate-300 rounded-lg p-6 bg-white">
+            <div className="flex gap-1 mb-4">
+              <div className="h-2 flex-1 bg-slate-600" />
+              <div className="h-2 flex-1 bg-emerald-500" />
+              <div className="h-2 flex-1 bg-slate-400" />
+            </div>
+            <h2 className="text-xl font-bold text-slate-800 mb-1 tracking-wide">LE BON DE COMMANDE</h2>
+            <p className="text-center text-slate-600 mb-6 text-sm">Bon de commande</p>
+
+            <div className="text-sm text-slate-700 mb-6 space-y-1">
+              <p className="font-semibold">Ftransport</p>
+              <p>86 route de genas</p>
+              <p>69003 Lyon</p>
+              <p>0428296091</p>
+              <p className="text-rose-600 underline">Contact@ftransport.fr</p>
+            </div>
+
+            <div className="space-y-3 text-sm text-slate-800">
+              {[
+                "Nom",
+                "Tel",
+                "Date de la demande",
+                "Heure de la demande",
+                "Lieu de prise en charge",
+                "Date de prise en charge",
+                "Heure de prise en charge",
+                "N° d'inscription au registre des VTC",
+                "N° Siren",
+              ].map((label) => (
+                <div key={label} className="flex items-baseline gap-2">
+                  <span className="whitespace-nowrap font-medium">{label} :</span>
+                  <span className="flex-1 border-b border-dotted border-slate-400" />
+                </div>
+              ))}
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground mt-3">
+            Voici un exemple de bon de commande type que vous pouvez utiliser pour vos démarches.
+          </p>
+        </CardContent>
+      </Card>
 
       <div className="flex justify-end pt-4">
         <Button onClick={onComplete} size="lg" disabled={completed}>
