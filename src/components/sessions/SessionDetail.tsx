@@ -756,7 +756,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   const apprenantIdsForFinanceur = (apprenantsInSession || [])
     .map((sa: any) => sa.apprenant?.id)
     .filter(Boolean);
-  const { data: financeursFCMap = {} } = useQuery({
+  const { data: financeursFCMap = {}, refetch: refetchFinanceursFC } = useQuery({
     queryKey: ['session-financeurs-fc', session?.id, apprenantIdsForFinanceur.join(',')],
     queryFn: async () => {
       if (!apprenantIdsForFinanceur.length) return {} as Record<string, any>;
@@ -773,7 +773,25 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       return map;
     },
     enabled: !!session?.id && open && apprenantIdsForFinanceur.length > 0,
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
   });
+
+  // Realtime: refetch financeurs_fc when any row changes for the session's apprenants
+  useEffect(() => {
+    if (!open || !session?.id || apprenantIdsForFinanceur.length === 0) return;
+    const channel = supabase
+      .channel(`financeurs-fc-session-${session.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'financeurs_fc' }, (payload: any) => {
+        const aid = (payload?.new?.apprenant_id || payload?.old?.apprenant_id) as string | undefined;
+        if (aid && apprenantIdsForFinanceur.includes(aid)) {
+          refetchFinanceursFC();
+        }
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [open, session?.id, apprenantIdsForFinanceur.join(','), refetchFinanceursFC]);
 
   // Charger les factures FC déjà créées pour cette session (brouillons + validées)
   const { data: facturesFCMap = {}, refetch: refetchFacturesFC } = useQuery({
