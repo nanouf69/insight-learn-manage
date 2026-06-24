@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Loader2, PenTool, ShieldCheck, Sun, Moon, Sunset, AlertTriangle, X, UserCheck, UserX, Upload, FileCheck2 } from "lucide-react";
 import { SignaturePad } from "@/components/onboarding/SignaturePad";
 import { supabase } from "@/integrations/supabase/client";
@@ -78,6 +79,23 @@ const creneauIcon = (k: CreneauKey) => {
 
 const MAX_FILE_SIZE_MB = 10;
 
+const buildTypedSignatureDataUrl = (text: string) => {
+  const value = text.trim();
+  if (!value || typeof document === "undefined") return "";
+  const canvas = document.createElement("canvas");
+  canvas.width = 900;
+  canvas.height = 260;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return "";
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = "#111827";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.font = "76px 'Brush Script MT', 'Segoe Script', cursive";
+  ctx.fillText(value, canvas.width / 2, canvas.height / 2 + 8, canvas.width - 80);
+  return canvas.toDataURL("image/png");
+};
+
 export const EmargementFCModal = ({
   apprenantId,
   userId,
@@ -93,7 +111,9 @@ export const EmargementFCModal = ({
 }: EmargementFCModalProps) => {
   const { toast } = useToast();
   const [tab, setTab] = useState<"present" | "absent">("present");
+  const [signatureMode, setSignatureMode] = useState<"draw" | "typed">("draw");
   const [signature, setSignature] = useState("");
+  const [typedSignature, setTypedSignature] = useState("");
   const [saving, setSaving] = useState(false);
   const [demi] = useState<CreneauKey>(creneau || getCurrentCreneauFromHour());
   const [done, setDone] = useState(false);
@@ -111,10 +131,11 @@ export const EmargementFCModal = ({
   const [motif, setMotif] = useState("");
 
   const handleSubmitPresent = async () => {
-    if (!signature) {
+    const signatureToSave = signatureMode === "typed" ? buildTypedSignatureDataUrl(typedSignature) : signature;
+    if (!signatureToSave) {
       toast({
         title: "Signature requise",
-        description: "Veuillez dessiner votre signature avant de valider.",
+        description: "Veuillez dessiner votre signature ou saisir votre nom avant de valider.",
         variant: "destructive",
       });
       return;
@@ -126,7 +147,7 @@ export const EmargementFCModal = ({
         user_id: userId,
         date_emargement: effectiveDate,
         demi_journee: demi,
-        signature_data_url: signature,
+        signature_data_url: signatureToSave,
         absent: false,
         replace_existing: replaceExisting,
         user_agent: navigator.userAgent.slice(0, 500),
@@ -282,7 +303,42 @@ export const EmargementFCModal = ({
             <p className="text-sm font-medium flex items-center gap-2">
               <PenTool className="w-4 h-4" /> Votre signature
             </p>
-            <SignaturePad value={signature} onChange={setSignature} disabled={saving} />
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                type="button"
+                variant={signatureMode === "draw" ? "secondary" : "outline"}
+                onClick={() => setSignatureMode("draw")}
+                disabled={saving}
+              >
+                Dessiner
+              </Button>
+              <Button
+                type="button"
+                variant={signatureMode === "typed" ? "secondary" : "outline"}
+                onClick={() => setSignatureMode("typed")}
+                disabled={saving}
+              >
+                Écrire
+              </Button>
+            </div>
+            {signatureMode === "draw" ? (
+              <SignaturePad value={signature} onChange={setSignature} disabled={saving} />
+            ) : (
+              <div className="space-y-2">
+                <Input
+                  value={typedSignature}
+                  onChange={(e) => setTypedSignature(e.target.value)}
+                  placeholder={`${apprenantPrenom} ${apprenantNom}`.trim() || "Nom et prénom"}
+                  disabled={saving}
+                  autoComplete="name"
+                />
+                <div className="h-24 rounded-lg border bg-background flex items-center justify-center px-3">
+                  <span className="text-3xl text-foreground" style={{ fontFamily: "Brush Script MT, Segoe Script, cursive" }}>
+                    {typedSignature.trim() || "Votre signature"}
+                  </span>
+                </div>
+              </div>
+            )}
             <p className="text-xs text-muted-foreground flex items-start gap-2">
               <ShieldCheck className="w-4 h-4 mt-0.5 shrink-0" />
               En signant, vous attestez de votre présence effective à ce créneau.
@@ -359,7 +415,7 @@ export const EmargementFCModal = ({
           {tab === "present" ? (
             <Button
               onClick={handleSubmitPresent}
-              disabled={saving || !signature}
+              disabled={saving || (signatureMode === "draw" ? !signature : !typedSignature.trim())}
               size="lg"
               className="flex-1"
             >
