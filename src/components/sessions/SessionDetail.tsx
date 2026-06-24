@@ -2051,7 +2051,10 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   const handleBulkAcquitter = async () => {
     setBulkAcquitterSaving(true);
     try {
+      const nonAbsentIds = new Set(nonAbsentApprenants.map((sa: any) => sa.apprenant?.id).filter(Boolean));
       let factures = Object.values(facturesFCMap as Record<string, any>).filter(Boolean) as any[];
+      // Exclure les factures des apprenants absents
+      factures = factures.filter((f: any) => f.apprenant_id && nonAbsentIds.has(f.apprenant_id));
       if (selectedFactureApprenants.size > 0) {
         factures = factures.filter((f: any) => f.apprenant_id && selectedFactureApprenants.has(f.apprenant_id));
       }
