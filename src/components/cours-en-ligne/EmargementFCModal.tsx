@@ -132,10 +132,8 @@ export const EmargementFCModal = ({
   const [motif, setMotif] = useState("");
 
   useEffect(() => {
-    if (!typedSignature.trim() && defaultTypedSignature) {
-      setTypedSignature(defaultTypedSignature);
-    }
-  }, [defaultTypedSignature, typedSignature]);
+    setTypedSignature((current) => current.trim() ? current : defaultTypedSignature);
+  }, [defaultTypedSignature]);
 
   const handleSubmitPresent = async () => {
     const signatureToSave = signatureMode === "typed" ? buildTypedSignatureDataUrl(typedSignature) : signature;
