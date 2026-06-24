@@ -1,6 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, ExternalLink, FileText, Stethoscope, IdCard, AlertCircle, Stamp } from "lucide-react";
+import { CheckCircle2, ExternalLink, FileText, Stethoscope, IdCard, AlertCircle, Stamp, Download } from "lucide-react";
+import medecinsAin from "@/assets/medecins/01-ain.pdf.asset.json";
+import medecinsIsere from "@/assets/medecins/38-isere.pdf.asset.json";
+import medecinsRhone from "@/assets/medecins/69-rhone.pdf.asset.json";
+import medecinsSavoie from "@/assets/medecins/73-savoie.pdf.asset.json";
+import medecinsHauteSavoie from "@/assets/medecins/74-haute-savoie.pdf.asset.json";
+import attestationHebergement from "@/assets/attestation-hebergement.pdf.asset.json";
 
 interface Props {
   completed: boolean;
