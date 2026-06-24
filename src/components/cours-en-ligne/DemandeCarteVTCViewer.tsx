@@ -23,6 +23,7 @@ const DOCUMENTS_OBLIGATOIRES: string[] = [
   "Copie de la photo d'identité",
   "Copie de la signature",
   "Si vous êtes entré dans la profession depuis plus de 5 ans : attestation de suivi de la formation continue de conducteur de VTC en cours de validité, dispensée au sein d'un centre de formation agréé",
+  "Copie du certificat médical (CERFA n° 14880*01 ou 14880*02) établi depuis moins de 2 ans, délivré par un médecin agréé par une préfecture, avec la mention VTC cochée, ainsi que l'aptitude à la conduite de véhicules du « groupe lourd » pour le CERFA n° 14880*02",
 ];
 
 const DOCUMENTS_FACULTATIFS: string[] = [
@@ -33,7 +34,6 @@ const DOCUMENTS_FACULTATIFS: string[] = [
   "Si hébergement par tiers : copie du VERSO de la pièce d'identité de l'hébergeant en cours de validité",
   "Si hébergement par tiers : copie de l'attestation sur l'honneur de l'hébergeant",
   "Si hébergement par tiers : justificatif de domicile de l'hébergeant de moins de 3 mois",
-  "Copie du certificat médical (CERFA n° 14880*01 ou 14880*02) établi depuis moins de 2 ans, délivré par un médecin agréé par une préfecture, avec la mention VTC cochée, ainsi que l'aptitude à la conduite de véhicules du « groupe lourd » pour le CERFA n° 14880*02",
 ];
 
 // Liens directs vers les démarches de demande de carte VTC par département
