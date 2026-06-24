@@ -802,7 +802,7 @@ function PassageMatiere({
       </div>
 
       {/* Sidebar verticale des questions */}
-      <aside className="hidden lg:block">
+      <aside className="hidden md:block">
         <div className="sticky top-4 rounded-lg border bg-card p-2 max-h-[calc(100vh-2rem)] overflow-y-auto">
           <div className="text-[10px] font-semibold text-muted-foreground text-center mb-2 uppercase tracking-wide">
             Questions
