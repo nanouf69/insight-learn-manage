@@ -3437,9 +3437,9 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                 <div className="flex-1" />
                 <div className="flex items-center gap-2 px-2 py-1 rounded-md bg-background border">
                   <Checkbox
-                    checked={apprenantsInSession.length > 0 && selectedFactureApprenants.size === apprenantsInSession.length}
+                    checked={apprenantsForFactures.length > 0 && selectedFactureApprenants.size === apprenantsForFactures.length}
                     onCheckedChange={(v) => {
-                      if (v) setSelectedFactureApprenants(new Set(apprenantsInSession.map((sa: any) => sa.apprenant?.id).filter(Boolean)));
+                      if (v) setSelectedFactureApprenants(new Set(apprenantsForFactures.map((sa: any) => sa.apprenant?.id).filter(Boolean)));
                       else setSelectedFactureApprenants(new Set());
                     }}
                   />
