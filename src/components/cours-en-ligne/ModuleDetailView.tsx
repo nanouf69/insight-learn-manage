@@ -5143,6 +5143,21 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         const key = `${exo.id}-${q.id}`;
         return isAnswerCorrect(selectedAnswers[key], q as any);
       }).length;
+      const isQuestionAnsweredForSidebar = (q: any) => {
+        const key = `${exo.id}-${q.id}`;
+        const isQrc = q?.type === "qrc" || (q.choix?.length === 0 && q.reponsesAttendues);
+        if (isQrc) {
+          const qrcValue = qrcAnswers[key] ?? selectedAnswers[key];
+          return typeof qrcValue === "string" && qrcValue.trim().length > 0;
+        }
+        const answer = selectedAnswers[key];
+        return Array.isArray(answer) ? answer.length > 0 : !!answer;
+      };
+      const scrollToExerciseQuestion = (questionIndex: number) => {
+        document
+          .getElementById(`exo-q-${exo.id}-${questionIndex}`)
+          ?.scrollIntoView({ behavior: "smooth", block: "start" });
+      };
 
       // File-only exercise (no questions) — show links and auto-complete
       if (exoTotalQ === 0 && exo.fichiers && exo.fichiers.length > 0) {
@@ -5205,7 +5220,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       }
 
       return (
-      <div className="space-y-4">
+      <div className="grid grid-cols-[minmax(0,1fr)_64px] sm:grid-cols-[minmax(0,1fr)_88px] gap-3 sm:gap-4">
+        <div className="space-y-4 min-w-0">
           <Card key={exo.id}>
             <CardContent className="p-6 space-y-4">
               <h3 className="text-lg font-bold">📝 {exo.titre}</h3>
@@ -5631,6 +5647,46 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               )}
             </CardContent>
           </Card>
+        </div>
+        <aside className="block">
+          <div className="sticky top-4 rounded-lg border bg-card p-2 max-h-[calc(100vh-2rem)] overflow-y-auto">
+            <div className="text-[10px] font-semibold text-muted-foreground text-center mb-2 uppercase tracking-wide">
+              Questions
+            </div>
+            <div className="grid grid-cols-2 gap-1 sm:gap-1.5">
+              {questionsSafe.map((q: any, qi: number) => {
+                const isAnswered = isQuestionAnsweredForSidebar(q);
+                return (
+                  <button
+                    key={q.id ?? qi}
+                    type="button"
+                    onClick={() => scrollToExerciseQuestion(qi)}
+                    className={`w-7 h-7 sm:w-9 sm:h-9 rounded text-[10px] sm:text-xs font-semibold transition-colors ${
+                      unansweredKeys.has(`${exo.id}-${q.id}`)
+                        ? "bg-destructive text-destructive-foreground ring-2 ring-destructive/40"
+                        : isAnswered
+                          ? "bg-emerald-100 text-emerald-700 border border-emerald-300 hover:bg-emerald-200"
+                          : "bg-red-50 text-red-500 border border-red-300 hover:bg-red-100"
+                    }`}
+                    title={isAnswered ? `Q${qi + 1} — répondue ✓` : `Q${qi + 1} — non répondue ✗`}
+                  >
+                    {qi + 1}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="mt-3 space-y-1 text-[10px] text-muted-foreground border-t pt-2">
+              <div className="flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded bg-emerald-100 border border-emerald-300" />
+                <span>Répondu</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded bg-red-50 border border-red-300" />
+                <span>À faire</span>
+              </div>
+            </div>
+          </div>
+        </aside>
       </div>
     );
     };
