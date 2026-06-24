@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ interface EmargementRow {
   demi_journee: string;
   signature_data_url: string | null;
   signed_at: string;
+  absent?: boolean | null;
 }
 
 interface ApprenantInfo {
@@ -54,6 +55,16 @@ const formatDateFR = (iso: string) => {
 };
 
 const normalizeDemi = (d: string) => (d || "").toLowerCase().replace(/_/g, "-").trim();
+const normalizeCreneauKey = (d: string): CreneauKey | null => {
+  const k = normalizeDemi(d);
+  if (k === "matin") return "matin";
+  if (k === "apres-midi" || k === "après-midi") return "apres_midi";
+  if (k === "soir") return "soir";
+  if (k === "soir-1") return "soir_1";
+  if (k === "soir-2") return "soir_2";
+  return null;
+};
+const emargementSlotKey = (date: string, creneau: CreneauKey) => `${date}|${creneau}`;
 const labelDemi = (d: string) => {
   const k = normalizeDemi(d);
   if (k === "matin") return "Matin (09h00 — 12h00)";
@@ -81,7 +92,7 @@ const formatShortDate = (iso?: string | null) => {
 };
 
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
-const hasValidSignature = (r?: EmargementRow) => Boolean(r?.signature_data_url?.trim());
+const hasValidSignature = (r?: EmargementRow) => Boolean(r?.signature_data_url?.trim()) || r?.absent === true;
 
 type GroupedEmargements = {
   matin?: EmargementRow;
@@ -112,8 +123,8 @@ export const buildEmargementHTML = (
     apprenant?.date_fin_formation || groupedByDay[groupedByDay.length - 1]?.[0] || new Date().toISOString().slice(0, 10)
   );
 
-  const hasSoirSplit = groupedByDay.some(([, v]) => !!v.soir1 || !!v.soir2);
-  const hasSoir = hasSoirSplit || groupedByDay.some(([, v]) => !!v.soir);
+  const hasSoirSplit = groupedByDay.some(([, v]) => !!v.soir1 || !!v.soir2 || v.expectedSet?.has("soir_1") || v.expectedSet?.has("soir_2"));
+  const hasSoir = hasSoirSplit || groupedByDay.some(([, v]) => !!v.soir || v.expectedSet?.has("soir"));
 
   // Heures par créneau (FC VTC/TAXI : 9h-12h matin + 13h-17h après-midi = 7h/jour, 14h sur 2 jours)
   const HRS = {
@@ -130,29 +141,36 @@ export const buildEmargementHTML = (
   };
 
   let totalHeures = 0;
+  const missingSignatureCell = (date: string, creneau: CreneauKey) =>
+    `<span class="missing-signature">Signature manquante</span><button class="sign-action" data-date="${date}" data-creneau="${creneau}">Signer ici</button>`;
 
   const rowsHtml = groupedByDay
-    .map(([date, { matin, apresMidi, soir, soir1, soir2 }]) => {
+    .map(([date, { matin, apresMidi, soir, soir1, soir2, expectedSet }]) => {
       const jourLabel = capitalize(formatDateFR(date));
-      const sigImg = (r?: EmargementRow) =>
+      const sigImg = (r: EmargementRow | undefined, creneau: CreneauKey, expectedSlot = false) =>
         r?.signature_data_url
           ? `<img src="${r.signature_data_url}" alt="Signature" style="max-height:55px;max-width:95%;"/>`
-          : "";
+          : expectedSlot ? missingSignatureCell(date, creneau) : "";
       let heuresJour = 0;
       let cells = "";
       if (hasSoirSplit) {
-        const h1 = soir1 ? HRS.soir1 : 0;
-        const h2 = soir2 ? HRS.soir2 : 0;
+        const expectedSoir1 = !!soir1 || expectedSet?.has("soir_1");
+        const expectedSoir2 = !!soir2 || expectedSet?.has("soir_2");
+        const h1 = expectedSoir1 ? HRS.soir1 : 0;
+        const h2 = expectedSoir2 ? HRS.soir2 : 0;
         heuresJour = h1 + h2;
-        cells = `<td class="horaire">17:00 - 18:30<br/><span class="hsmall">${fmtH(HRS.soir1)}</span></td><td class="sig">${sigImg(soir1)}</td><td class="horaire">18:30 - 21:00<br/><span class="hsmall">${fmtH(HRS.soir2)}</span></td><td class="sig">${sigImg(soir2)}</td>`;
+        cells = `<td class="horaire">17:00 - 18:30<br/><span class="hsmall">${fmtH(HRS.soir1)}</span></td><td class="sig">${sigImg(soir1, "soir_1", expectedSoir1)}</td><td class="horaire">18:30 - 21:00<br/><span class="hsmall">${fmtH(HRS.soir2)}</span></td><td class="sig">${sigImg(soir2, "soir_2", expectedSoir2)}</td>`;
       } else if (hasSoir) {
-        heuresJour = soir ? HRS.soir : 0;
-        cells = `<td class="horaire">17:00 - 21:00<br/><span class="hsmall">${fmtH(HRS.soir)}</span></td><td class="sig">${sigImg(soir)}</td>`;
+        const expectedSoir = !!soir || expectedSet?.has("soir");
+        heuresJour = expectedSoir ? HRS.soir : 0;
+        cells = `<td class="horaire">17:00 - 21:00<br/><span class="hsmall">${fmtH(HRS.soir)}</span></td><td class="sig">${sigImg(soir, "soir", expectedSoir)}</td>`;
       } else {
-        const hm = matin ? HRS.matin : 0;
-        const ha = apresMidi ? HRS.apresMidi : 0;
+        const expectedMatin = !!matin || expectedSet?.has("matin");
+        const expectedApresMidi = !!apresMidi || expectedSet?.has("apres_midi");
+        const hm = expectedMatin ? HRS.matin : 0;
+        const ha = expectedApresMidi ? HRS.apresMidi : 0;
         heuresJour = hm + ha;
-        cells = `<td class="horaire">09:00 - 12:00<br/><span class="hsmall">${fmtH(HRS.matin)}</span></td><td class="sig">${sigImg(matin)}</td><td class="horaire">13:00 - ${isFC ? "17:00" : "16:00"}<br/><span class="hsmall">${fmtH(HRS.apresMidi)}</span></td><td class="sig">${sigImg(apresMidi)}</td>`;
+        cells = `<td class="horaire">09:00 - 12:00<br/><span class="hsmall">${fmtH(HRS.matin)}</span></td><td class="sig">${sigImg(matin, "matin", expectedMatin)}</td><td class="horaire">13:00 - ${isFC ? "17:00" : "16:00"}<br/><span class="hsmall">${fmtH(HRS.apresMidi)}</span></td><td class="sig">${sigImg(apresMidi, "apres_midi", expectedApresMidi)}</td>`;
       }
       totalHeures += heuresJour;
       return `
@@ -188,6 +206,8 @@ export const buildEmargementHTML = (
   tbody td.horaire { font-size: 10px; color: #444; width: 90px; }
   tbody td.horaire .hsmall { color: #6b7fc7; font-weight: bold; }
   tbody td.sig { background: #fff; }
+  .missing-signature { display:inline-block; color:#b45309; background:#fff7ed; border:1px dashed #f59e0b; border-radius:4px; padding:6px 10px; font-size:10px; font-weight:bold; }
+  .sign-action { display:block; margin:6px auto 0; padding:7px 12px; border:0; border-radius:4px; background:#6b7fc7; color:#fff; font-size:11px; font-weight:bold; cursor:pointer; }
   tbody td.total-day { background: #f3f5fb; font-size: 12px; color: #1a1a1a; width: 70px; }
   tfoot td { border: 1px solid #6b7fc7; padding: 10px 8px; background: #6b7fc7; color: #fff; font-weight: bold; }
   tfoot td.total-label { text-align: right; font-size: 12px; }
@@ -200,7 +220,7 @@ export const buildEmargementHTML = (
   .signature-center img.formateur-sig { position: absolute; width: 425px; height: 600px; max-width: none; max-height: none; left: 50%; top: 50%; transform: translate(-50%, -50%) scale(0.68) rotate(18deg); transform-origin: center; filter: contrast(4) brightness(0.55) saturate(1.8); }
   .signature-text { font-family: "Brush Script MT", "Segoe Script", cursive; font-size: 30px; line-height: 1; color: #101010; transform: rotate(0deg); text-align: center; margin-top: 2px; }
   .cachet-img { display: block; margin: 0 auto; max-height: 110px; max-width: 90%; }
-  @media print { .noprint { display:none; } }
+  @media print { .noprint, .sign-action { display:none; } }
 </style></head><body>
   <div class="header">
     <div class="brand">FTRANSPORT<small>Specialiste Formations Transport</small></div>
@@ -256,7 +276,17 @@ export const buildEmargementHTML = (
   <div class="noprint" style="margin-top:18px;text-align:center;">
     <button onclick="window.print()" style="padding:10px 20px;font-size:13px;cursor:pointer;background:#6b7fc7;color:#fff;border:none;border-radius:4px;">Imprimer / Enregistrer en PDF</button>
   </div>
-  <script>window.onload=()=>setTimeout(()=>window.print(),300);</script>
+  <script>
+    document.addEventListener('click', function(event) {
+      var target = event.target;
+      if (!target || !target.classList || !target.classList.contains('sign-action')) return;
+      if (window.opener) {
+        window.opener.postMessage({ type: 'open-emargement-signature', date: target.dataset.date, creneau: target.dataset.creneau }, '*');
+      }
+      window.close();
+    });
+    window.onload=()=>setTimeout(()=>window.print(),300);
+  </script>
 </body></html>`;
 };
 
@@ -274,14 +304,10 @@ const downloadAllJournees = (
 
 const downloadJournee = (
   date: string,
-  matin: EmargementRow | undefined,
-  apresMidi: EmargementRow | undefined,
-  soir: EmargementRow | undefined,
-  soir1: EmargementRow | undefined,
-  soir2: EmargementRow | undefined,
+  day: GroupedEmargements,
   apprenant: ApprenantInfo | null
 ) => {
-  downloadAllJournees([[date, { matin, apresMidi, soir, soir1, soir2 }]], apprenant);
+  downloadAllJournees([[date, day]], apprenant);
 };
 
 export default function EmargementsSignesViewer({ apprenantId, completed, onComplete }: Props) {
@@ -305,8 +331,8 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
       } = await supabase.auth.getSession();
       const [emRes, apRes] = await Promise.all([
         supabase
-          .from("emargements_fc" as any)
-          .select("id, date_emargement, demi_journee, signature_data_url, signed_at")
+          .from("emargements_fc")
+          .select("id, date_emargement, demi_journee, signature_data_url, signed_at, absent")
           .eq("apprenant_id", apprenantId)
           .order("date_emargement", { ascending: true })
           .order("demi_journee", { ascending: true }),
@@ -359,23 +385,6 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
     })();
   }, [apprenantId, refreshTick]);
 
-  // Bornes de la formation pour interdire toute signature en dehors de la période
-  const formationBounds = useMemo(() => {
-    const parse = (s?: string | null): Date | null => {
-      if (!s) return null;
-      if (/^\d{4}-\d{2}-\d{2}/.test(s)) return new Date(s.slice(0, 10) + "T00:00:00");
-      if (/^\d{2}\/\d{2}\/\d{4}/.test(s)) {
-        const [d, m, y] = s.slice(0, 10).split("/");
-        return new Date(`${y}-${m}-${d}T00:00:00`);
-      }
-      return null;
-    };
-    return {
-      start: parse(apprenant?.date_debut_formation),
-      end: parse(apprenant?.date_fin_formation),
-    };
-  }, [apprenant?.date_debut_formation, apprenant?.date_fin_formation]);
-
   const isWithinFormation = (date: string): boolean => {
     const d = new Date(date + "T00:00:00");
     if (isNaN(d.getTime())) return false;
@@ -409,6 +418,35 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
     }
     return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b));
   }, [rows, expected]);
+
+  const rowBySlot = useMemo(() => {
+    const map = new Map<string, EmargementRow>();
+    for (const row of rows) {
+      const key = normalizeCreneauKey(row.demi_journee);
+      if (key) map.set(emargementSlotKey(row.date_emargement, key), row);
+    }
+    return map;
+  }, [rows]);
+
+  const missingSlots = useMemo(
+    () => expected.filter((slot) => !hasValidSignature(rowBySlot.get(emargementSlotKey(slot.date, slot.creneau)))),
+    [expected, rowBySlot],
+  );
+
+  const openSignatureFor = useCallback((slot: { date: string; creneau: CreneauKey }) => {
+    const existing = rowBySlot.get(emargementSlotKey(slot.date, slot.creneau));
+    setSignTarget({ date: slot.date, creneau: slot.creneau, replaceExisting: Boolean(existing) });
+  }, [rowBySlot]);
+
+  useEffect(() => {
+    const handler = (event: MessageEvent) => {
+      const data = event.data as { type?: string; date?: string; creneau?: CreneauKey } | null;
+      if (data?.type !== "open-emargement-signature" || !data.date || !data.creneau) return;
+      openSignatureFor({ date: data.date, creneau: data.creneau });
+    };
+    window.addEventListener("message", handler);
+    return () => window.removeEventListener("message", handler);
+  }, [openSignatureFor]);
 
 
   if (loading) {
@@ -445,6 +483,21 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
         )}
       </div>
 
+      {missingSlots.length > 0 && userId && apprenantId && (
+        <Card className="p-3 border-amber-300 bg-amber-50/70">
+          <div className="flex items-start justify-between gap-3 flex-wrap">
+            <div>
+              <p className="text-sm font-semibold text-amber-900">{missingSlots.length} signature{missingSlots.length > 1 ? "s" : ""} manquante{missingSlots.length > 1 ? "s" : ""}</p>
+              <p className="text-xs text-amber-800 mt-0.5">Cliquez sur une signature manquante ci-dessous ou signez directement le prochain créneau.</p>
+            </div>
+            <Button size="sm" onClick={() => openSignatureFor(missingSlots[0])}>
+              <PenTool className="h-4 w-4 mr-1" />
+              Signer maintenant
+            </Button>
+          </div>
+        </Card>
+      )}
+
       {/* Carte coordonnées stagiaire */}
       {apprenant && (
         <Card className="p-3 bg-muted/30">
@@ -479,7 +532,8 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
         </Card>
       ) : (
         <div className="grid gap-3">
-          {groupedByDay.map(([date, { matin, apresMidi, soir, soir1, soir2, expectedSet }]) => {
+          {groupedByDay.map(([date, day]) => {
+            const { matin, apresMidi, soir, soir1, soir2, expectedSet } = day;
             const keys: CreneauKey[] = expectedSet?.has("soir_1") || expectedSet?.has("soir_2") || soir1 || soir2
               ? ["soir_1", "soir_2"]
               : ["matin", "apres_midi"];
@@ -492,7 +546,7 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => downloadJournee(date, matin, apresMidi, soir, soir1, soir2, apprenant)}
+                  onClick={() => downloadJournee(date, day, apprenant)}
                   className="h-7 text-xs"
                 >
                   <Download className="h-3.5 w-3.5 mr-1" />
@@ -511,7 +565,7 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
                         {hasValidSignature(r) ? (
                           <span className="inline-flex items-center gap-1 text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded">
                             <CheckCircle2 className="h-2.5 w-2.5" />
-                            {new Date(r.signed_at).toLocaleTimeString("fr-FR", {
+                            {r?.absent === true ? "Absent" : new Date(r.signed_at).toLocaleTimeString("fr-FR", {
                               hour: "2-digit",
                               minute: "2-digit",
                             })}
@@ -528,8 +582,19 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
                             style={{ maxHeight: 80, width: "auto" }}
                             className="object-contain"
                           />
+                        ) : r?.absent === true ? (
+                          <span className="text-[10px] text-amber-700 font-medium">Absence déclarée</span>
+                        ) : userId && apprenantId && isWithinFormation(date) ? (
+                          <button
+                            type="button"
+                            onClick={() => openSignatureFor({ date, creneau: key })}
+                            className="h-full w-full flex flex-col items-center justify-center gap-1 text-amber-700 bg-amber-50 hover:bg-amber-100 transition-colors"
+                          >
+                            <PenTool className="h-4 w-4" />
+                            <span className="text-xs font-medium">Signer ici</span>
+                          </button>
                         ) : (
-                          <span className="text-[10px] text-muted-foreground italic">—</span>
+                          <span className="text-[10px] text-muted-foreground italic">Signature manquante</span>
                         )}
                       </div>
                       {userId && apprenantId && isWithinFormation(date) && (
@@ -537,7 +602,7 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
                           size="sm"
                           className="w-full mt-2 h-7 text-xs"
                           variant={hasValidSignature(r) ? "outline" : "default"}
-                          onClick={() => setSignTarget({ date, creneau: key, replaceExisting: Boolean(r) })}
+                          onClick={() => openSignatureFor({ date, creneau: key })}
                         >
                           <PenTool className="h-3 w-3 mr-1" />
                           {hasValidSignature(r) ? "Re-signer ce créneau" : "Signer ce créneau"}
