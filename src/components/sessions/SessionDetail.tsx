@@ -3475,7 +3475,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                     setBulkAcquitterMoyen('virement');
                     setBulkAcquitterOpen(true);
                   }}
-                  disabled={apprenantsInSession.length === 0}
+                  disabled={apprenantsForFactures.length === 0}
                   className="gap-2 border-emerald-300 text-emerald-700 hover:bg-emerald-50"
                 >
                   <CheckCircle className="w-4 h-4" />
