@@ -141,14 +141,18 @@ export const buildEmargementHTML = (
   };
 
   let totalHeures = 0;
+  const missingSignatureCell = (date: string, creneau: CreneauKey) => {
+    const payload = JSON.stringify({ type: "open-emargement-signature", date, creneau }).replace(/"/g, "&quot;");
+    return `<span class="missing-signature">Signature manquante</span><button class="sign-action" onclick="window.opener && window.opener.postMessage(${payload}, '*'); window.close();">Signer ici</button>`;
+  };
 
   const rowsHtml = groupedByDay
     .map(([date, { matin, apresMidi, soir, soir1, soir2, expectedSet }]) => {
       const jourLabel = capitalize(formatDateFR(date));
-      const sigImg = (r?: EmargementRow, expectedSlot = false) =>
+      const sigImg = (r: EmargementRow | undefined, creneau: CreneauKey, expectedSlot = false) =>
         r?.signature_data_url
           ? `<img src="${r.signature_data_url}" alt="Signature" style="max-height:55px;max-width:95%;"/>`
-          : expectedSlot ? `<span class="missing-signature">Signature manquante</span>` : "";
+          : expectedSlot ? missingSignatureCell(date, creneau) : "";
       let heuresJour = 0;
       let cells = "";
       if (hasSoirSplit) {
@@ -157,18 +161,18 @@ export const buildEmargementHTML = (
         const h1 = expectedSoir1 ? HRS.soir1 : 0;
         const h2 = expectedSoir2 ? HRS.soir2 : 0;
         heuresJour = h1 + h2;
-        cells = `<td class="horaire">17:00 - 18:30<br/><span class="hsmall">${fmtH(HRS.soir1)}</span></td><td class="sig">${sigImg(soir1, expectedSoir1)}</td><td class="horaire">18:30 - 21:00<br/><span class="hsmall">${fmtH(HRS.soir2)}</span></td><td class="sig">${sigImg(soir2, expectedSoir2)}</td>`;
+        cells = `<td class="horaire">17:00 - 18:30<br/><span class="hsmall">${fmtH(HRS.soir1)}</span></td><td class="sig">${sigImg(soir1, "soir_1", expectedSoir1)}</td><td class="horaire">18:30 - 21:00<br/><span class="hsmall">${fmtH(HRS.soir2)}</span></td><td class="sig">${sigImg(soir2, "soir_2", expectedSoir2)}</td>`;
       } else if (hasSoir) {
         const expectedSoir = !!soir || expectedSet?.has("soir");
         heuresJour = expectedSoir ? HRS.soir : 0;
-        cells = `<td class="horaire">17:00 - 21:00<br/><span class="hsmall">${fmtH(HRS.soir)}</span></td><td class="sig">${sigImg(soir, expectedSoir)}</td>`;
+        cells = `<td class="horaire">17:00 - 21:00<br/><span class="hsmall">${fmtH(HRS.soir)}</span></td><td class="sig">${sigImg(soir, "soir", expectedSoir)}</td>`;
       } else {
         const expectedMatin = !!matin || expectedSet?.has("matin");
         const expectedApresMidi = !!apresMidi || expectedSet?.has("apres_midi");
         const hm = expectedMatin ? HRS.matin : 0;
         const ha = expectedApresMidi ? HRS.apresMidi : 0;
         heuresJour = hm + ha;
-        cells = `<td class="horaire">09:00 - 12:00<br/><span class="hsmall">${fmtH(HRS.matin)}</span></td><td class="sig">${sigImg(matin, expectedMatin)}</td><td class="horaire">13:00 - ${isFC ? "17:00" : "16:00"}<br/><span class="hsmall">${fmtH(HRS.apresMidi)}</span></td><td class="sig">${sigImg(apresMidi, expectedApresMidi)}</td>`;
+        cells = `<td class="horaire">09:00 - 12:00<br/><span class="hsmall">${fmtH(HRS.matin)}</span></td><td class="sig">${sigImg(matin, "matin", expectedMatin)}</td><td class="horaire">13:00 - ${isFC ? "17:00" : "16:00"}<br/><span class="hsmall">${fmtH(HRS.apresMidi)}</span></td><td class="sig">${sigImg(apresMidi, "apres_midi", expectedApresMidi)}</td>`;
       }
       totalHeures += heuresJour;
       return `
@@ -205,6 +209,7 @@ export const buildEmargementHTML = (
   tbody td.horaire .hsmall { color: #6b7fc7; font-weight: bold; }
   tbody td.sig { background: #fff; }
   .missing-signature { display:inline-block; color:#b45309; background:#fff7ed; border:1px dashed #f59e0b; border-radius:4px; padding:6px 10px; font-size:10px; font-weight:bold; }
+  .sign-action { display:block; margin:6px auto 0; padding:7px 12px; border:0; border-radius:4px; background:#6b7fc7; color:#fff; font-size:11px; font-weight:bold; cursor:pointer; }
   tbody td.total-day { background: #f3f5fb; font-size: 12px; color: #1a1a1a; width: 70px; }
   tfoot td { border: 1px solid #6b7fc7; padding: 10px 8px; background: #6b7fc7; color: #fff; font-weight: bold; }
   tfoot td.total-label { text-align: right; font-size: 12px; }
@@ -217,7 +222,7 @@ export const buildEmargementHTML = (
   .signature-center img.formateur-sig { position: absolute; width: 425px; height: 600px; max-width: none; max-height: none; left: 50%; top: 50%; transform: translate(-50%, -50%) scale(0.68) rotate(18deg); transform-origin: center; filter: contrast(4) brightness(0.55) saturate(1.8); }
   .signature-text { font-family: "Brush Script MT", "Segoe Script", cursive; font-size: 30px; line-height: 1; color: #101010; transform: rotate(0deg); text-align: center; margin-top: 2px; }
   .cachet-img { display: block; margin: 0 auto; max-height: 110px; max-width: 90%; }
-  @media print { .noprint { display:none; } }
+  @media print { .noprint, .sign-action { display:none; } }
 </style></head><body>
   <div class="header">
     <div class="brand">FTRANSPORT<small>Specialiste Formations Transport</small></div>
