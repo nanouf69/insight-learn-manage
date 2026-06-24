@@ -4276,7 +4276,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
     // --- Auto-save partial answers to DB (debounced) ---
     const autoSaveAnswers = (answers: Record<string, string | string[]>) => {
-      if (!apprenantId || completionPersistedRef.current) return;
+      if (!apprenantId || completionPersistedRef.current || moduleAlreadyValidatedRef.current) return;
 
       // Save to reponses_apprenants per exercice (500ms debounce)
       if (reponsesSaveDebounceRef.current) clearTimeout(reponsesSaveDebounceRef.current);
