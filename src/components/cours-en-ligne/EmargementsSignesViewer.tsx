@@ -323,7 +323,7 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
       const [emRes, apRes] = await Promise.all([
         supabase
           .from("emargements_fc" as any)
-          .select("id, date_emargement, demi_journee, signature_data_url, signed_at")
+          .select("id, date_emargement, demi_journee, signature_data_url, signed_at, absent")
           .eq("apprenant_id", apprenantId)
           .order("date_emargement", { ascending: true })
           .order("demi_journee", { ascending: true }),
@@ -376,23 +376,6 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
     })();
   }, [apprenantId, refreshTick]);
 
-  // Bornes de la formation pour interdire toute signature en dehors de la période
-  const formationBounds = useMemo(() => {
-    const parse = (s?: string | null): Date | null => {
-      if (!s) return null;
-      if (/^\d{4}-\d{2}-\d{2}/.test(s)) return new Date(s.slice(0, 10) + "T00:00:00");
-      if (/^\d{2}\/\d{2}\/\d{4}/.test(s)) {
-        const [d, m, y] = s.slice(0, 10).split("/");
-        return new Date(`${y}-${m}-${d}T00:00:00`);
-      }
-      return null;
-    };
-    return {
-      start: parse(apprenant?.date_debut_formation),
-      end: parse(apprenant?.date_fin_formation),
-    };
-  }, [apprenant?.date_debut_formation, apprenant?.date_fin_formation]);
-
   const isWithinFormation = (date: string): boolean => {
     const d = new Date(date + "T00:00:00");
     if (isNaN(d.getTime())) return false;
@@ -426,6 +409,20 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
     }
     return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b));
   }, [rows, expected]);
+
+  const rowBySlot = useMemo(() => {
+    const map = new Map<string, EmargementRow>();
+    for (const row of rows) {
+      const key = normalizeCreneauKey(row.demi_journee);
+      if (key) map.set(emargementSlotKey(row.date_emargement, key), row);
+    }
+    return map;
+  }, [rows]);
+
+  const missingSlots = useMemo(
+    () => expected.filter((slot) => !hasValidSignature(rowBySlot.get(emargementSlotKey(slot.date, slot.creneau)))),
+    [expected, rowBySlot],
+  );
 
 
   if (loading) {
@@ -461,6 +458,21 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
           </Button>
         )}
       </div>
+
+      {missingSlots.length > 0 && userId && apprenantId && (
+        <Card className="p-3 border-amber-300 bg-amber-50/70">
+          <div className="flex items-start justify-between gap-3 flex-wrap">
+            <div>
+              <p className="text-sm font-semibold text-amber-900">{missingSlots.length} signature{missingSlots.length > 1 ? "s" : ""} manquante{missingSlots.length > 1 ? "s" : ""}</p>
+              <p className="text-xs text-amber-800 mt-0.5">Cliquez sur une signature manquante ci-dessous ou signez directement le prochain créneau.</p>
+            </div>
+            <Button size="sm" onClick={() => setSignTarget({ ...missingSlots[0], replaceExisting: Boolean(rowBySlot.get(emargementSlotKey(missingSlots[0].date, missingSlots[0].creneau))) })}>
+              <PenTool className="h-4 w-4 mr-1" />
+              Signer maintenant
+            </Button>
+          </div>
+        </Card>
+      )}
 
       {/* Carte coordonnées stagiaire */}
       {apprenant && (
@@ -528,7 +540,7 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
                         {hasValidSignature(r) ? (
                           <span className="inline-flex items-center gap-1 text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded">
                             <CheckCircle2 className="h-2.5 w-2.5" />
-                            {new Date(r.signed_at).toLocaleTimeString("fr-FR", {
+                            {r?.absent === true ? "Absent" : new Date(r.signed_at).toLocaleTimeString("fr-FR", {
                               hour: "2-digit",
                               minute: "2-digit",
                             })}
@@ -545,8 +557,19 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
                             style={{ maxHeight: 80, width: "auto" }}
                             className="object-contain"
                           />
+                        ) : r?.absent === true ? (
+                          <span className="text-[10px] text-amber-700 font-medium">Absence déclarée</span>
+                        ) : userId && apprenantId && isWithinFormation(date) ? (
+                          <button
+                            type="button"
+                            onClick={() => setSignTarget({ date, creneau: key, replaceExisting: Boolean(r) })}
+                            className="h-full w-full flex flex-col items-center justify-center gap-1 text-amber-700 bg-amber-50 hover:bg-amber-100 transition-colors"
+                          >
+                            <PenTool className="h-4 w-4" />
+                            <span className="text-xs font-medium">Signer ici</span>
+                          </button>
                         ) : (
-                          <span className="text-[10px] text-muted-foreground italic">—</span>
+                          <span className="text-[10px] text-muted-foreground italic">Signature manquante</span>
                         )}
                       </div>
                       {userId && apprenantId && isWithinFormation(date) && (
