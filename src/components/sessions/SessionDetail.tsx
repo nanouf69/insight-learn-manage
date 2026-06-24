@@ -3451,7 +3451,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                   size="sm"
                   variant="outline"
                   onClick={handleBulkDownloadFactures}
-                  disabled={bulkDownloadingFactures || apprenantsInSession.length === 0}
+                  disabled={bulkDownloadingFactures || apprenantsForFactures.length === 0}
                   className="gap-2"
                 >
                   {bulkDownloadingFactures ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
