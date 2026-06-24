@@ -445,7 +445,22 @@ function PassageMatiere({
 
   const handleTerminer = async () => {
     if (!allAnswered) {
-      toast.error("Veuillez répondre à toutes les questions avant de terminer la matière.");
+      const firstUnansweredIdx = questionsSafe.findIndex(q => !isQuestionAnswered(q));
+      if (firstUnansweredIdx >= 0) {
+        setQuestionIndex(firstUnansweredIdx);
+        const remaining = questionsSafe.filter(q => !isQuestionAnswered(q)).length;
+        toast.error(`Il reste ${remaining} question(s) sans réponse. Vous êtes redirigé vers la première non répondue.`);
+        // Scroll to top of question after state update
+        setTimeout(() => {
+          try {
+            const el = document.getElementById(`exam-question-${firstUnansweredIdx}`);
+            if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+            else window.scrollTo({ top: 0, behavior: "smooth" });
+          } catch {}
+        }, 50);
+      } else {
+        toast.error("Veuillez répondre à toutes les questions avant de terminer la matière.");
+      }
       return;
     }
     if (!apprenantId) {
