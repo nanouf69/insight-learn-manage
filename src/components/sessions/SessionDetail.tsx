@@ -1783,8 +1783,8 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
 
   const handleBulkDownloadFactures = async () => {
     const targets = (selectedFactureApprenants.size > 0
-      ? apprenantsInSession.filter((sa: any) => sa.apprenant && selectedFactureApprenants.has(sa.apprenant.id))
-      : apprenantsInSession);
+      ? nonAbsentApprenants.filter((sa: any) => sa.apprenant && selectedFactureApprenants.has(sa.apprenant.id))
+      : nonAbsentApprenants);
     if (!targets.length) {
       toast({ title: "Aucun apprenant sélectionné", variant: "destructive" });
       return;
@@ -1842,8 +1842,8 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
 
   const handleBulkSendFactures = async () => {
     const targets = (selectedFactureApprenants.size > 0
-      ? apprenantsInSession.filter((sa: any) => sa.apprenant && selectedFactureApprenants.has(sa.apprenant.id))
-      : apprenantsInSession);
+      ? nonAbsentApprenants.filter((sa: any) => sa.apprenant && selectedFactureApprenants.has(sa.apprenant.id))
+      : nonAbsentApprenants);
     if (!targets.length) {
       toast({ title: "Aucun apprenant sélectionné", variant: "destructive" });
       return;
@@ -1932,8 +1932,8 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   // Valider toutes les brouillons en bloc
   const handleBulkValidateFactures = async () => {
     const targets = (selectedFactureApprenants.size > 0
-      ? apprenantsInSession.filter((sa: any) => sa.apprenant && selectedFactureApprenants.has(sa.apprenant.id))
-      : apprenantsInSession);
+      ? nonAbsentApprenants.filter((sa: any) => sa.apprenant && selectedFactureApprenants.has(sa.apprenant.id))
+      : nonAbsentApprenants);
     if (!targets.length) return;
     setBulkValidatingFactures(true);
     let validated = 0, skipped = 0;
