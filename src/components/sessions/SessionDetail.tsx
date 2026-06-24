@@ -3485,7 +3485,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                   size="sm"
                   variant="default"
                   onClick={handleBulkSendFactures}
-                  disabled={bulkSendingFactures || apprenantsInSession.length === 0}
+                  disabled={bulkSendingFactures || apprenantsForFactures.length === 0}
                   className="gap-2"
                 >
                   {bulkSendingFactures ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
