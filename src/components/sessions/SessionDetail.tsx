@@ -3461,7 +3461,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                   size="sm"
                   variant="secondary"
                   onClick={handleBulkValidateFactures}
-                  disabled={bulkValidatingFactures || apprenantsInSession.length === 0}
+                  disabled={bulkValidatingFactures || apprenantsForFactures.length === 0}
                   className="gap-2"
                 >
                   {bulkValidatingFactures ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
