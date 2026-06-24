@@ -4157,10 +4157,17 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     const jwtTokenRef = useRef<string | null>(null);
     const reponsesSaveDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     useEffect(() => {
-      supabase.auth.getSession().then(({ data }) => {
-        userIdForSaveRef.current = data.session?.user?.id ?? null;
-        jwtTokenRef.current = data.session?.access_token ?? null;
+      const updateRefs = (session: any) => {
+        userIdForSaveRef.current = session?.user?.id ?? null;
+        jwtTokenRef.current = session?.access_token ?? null;
+      };
+
+      supabase.auth.getSession().then(({ data }) => updateRefs(data.session));
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        updateRefs(session);
       });
+
+      return () => subscription.unsubscribe();
     }, []);
 
     // --- Load saved partial answers from DB on mount ---
@@ -4282,8 +4289,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           }));
 
           if (rows.length > 0) {
-            const { data: sessData } = await supabase.auth.getSession();
-            console.log("[ModuleDetailView] UPSERT reponses_apprenants — user_id envoyé:", userIdForSaveRef.current, "| auth.uid() actif:", sessData.session?.user?.id ?? "PAS DE SESSION", "| nb rows:", rows.length, "| apprenant_id:", apprenantId);
+            console.log("[ModuleDetailView] UPSERT reponses_apprenants — user_id envoyé:", userIdForSaveRef.current, "| nb rows:", rows.length, "| apprenant_id:", apprenantId);
             await supabase.from("reponses_apprenants" as any)
               .upsert(rows as any, { onConflict: "apprenant_id,exercice_id" });
           }
