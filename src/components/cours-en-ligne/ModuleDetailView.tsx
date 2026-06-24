@@ -4968,6 +4968,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           }).length;
 
           return (
+            <div className="grid grid-cols-[minmax(0,1fr)_64px] sm:grid-cols-[minmax(0,1fr)_88px] gap-3 sm:gap-4">
+              <div className="min-w-0">
             <Card className="border-primary/30 bg-primary/5">
               <CardContent className="p-5 space-y-4">
                 <h4 className="font-bold text-lg flex items-center gap-2">
@@ -5048,6 +5050,12 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                           if (!inlineQuizAnswers[k]) missing.add(k);
                         });
                         setUnansweredKeys(missing);
+                        const firstMissingKey = Array.from(missing)[0];
+                        if (firstMissingKey) {
+                          document
+                            .getElementById(`inline-q-${cours.id}-${firstMissingKey.split("-").pop()}`)
+                            ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                        }
                         toast.error("Répondez à toutes les questions avant de valider");
                         return;
                       }
@@ -5096,6 +5104,48 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 })()}
               </CardContent>
             </Card>
+              </div>
+              <aside className="block">
+                <div className="sticky top-4 rounded-lg border bg-card p-2 max-h-[calc(100vh-2rem)] overflow-y-auto">
+                  <div className="text-[10px] font-semibold text-muted-foreground text-center mb-2 uppercase tracking-wide">
+                    Questions
+                  </div>
+                  <div className="grid grid-cols-2 gap-1 sm:gap-1.5">
+                    {cours.quiz!.map((q, qi) => {
+                      const key = `inline-${cours.id}-${q.id}`;
+                      const isAnswered = !!inlineQuizAnswers[key];
+                      return (
+                        <button
+                          key={q.id ?? qi}
+                          type="button"
+                          onClick={() => document.getElementById(`inline-q-${cours.id}-${q.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                          className={`w-7 h-7 sm:w-9 sm:h-9 rounded text-[10px] sm:text-xs font-semibold transition-colors ${
+                            unansweredKeys.has(key)
+                              ? "bg-destructive text-destructive-foreground ring-2 ring-destructive/40"
+                              : isAnswered
+                                ? "bg-emerald-100 text-emerald-700 border border-emerald-300 hover:bg-emerald-200"
+                                : "bg-red-50 text-red-500 border border-red-300 hover:bg-red-100"
+                          }`}
+                          title={isAnswered ? `Q${qi + 1} — répondue ✓` : `Q${qi + 1} — non répondue ✗`}
+                        >
+                          {qi + 1}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div className="mt-3 space-y-1 text-[10px] text-muted-foreground border-t pt-2">
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-3 h-3 rounded bg-emerald-100 border border-emerald-300" />
+                      <span>Répondu</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-3 h-3 rounded bg-red-50 border border-red-300" />
+                      <span>À faire</span>
+                    </div>
+                  </div>
+                </div>
+              </aside>
+            </div>
           );
         })()}
       </div>
