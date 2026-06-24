@@ -323,6 +323,11 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
   const [signTarget, setSignTarget] = useState<{ date: string; creneau: CreneauKey; replaceExisting?: boolean } | null>(null);
   const [refreshTick, setRefreshTick] = useState(0);
 
+  const openSignatureFor = (slot: { date: string; creneau: CreneauKey }) => {
+    const existing = rowBySlot.get(emargementSlotKey(slot.date, slot.creneau));
+    setSignTarget({ date: slot.date, creneau: slot.creneau, replaceExisting: Boolean(existing) });
+  };
+
   useEffect(() => {
     if (!apprenantId) {
       setLoading(false);
@@ -437,6 +442,16 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
     [expected, rowBySlot],
   );
 
+  useEffect(() => {
+    const handler = (event: MessageEvent) => {
+      const data = event.data as { type?: string; date?: string; creneau?: CreneauKey } | null;
+      if (data?.type !== "open-emargement-signature" || !data.date || !data.creneau) return;
+      openSignatureFor({ date: data.date, creneau: data.creneau });
+    };
+    window.addEventListener("message", handler);
+    return () => window.removeEventListener("message", handler);
+  }, [rowBySlot]);
+
 
   if (loading) {
     return (
@@ -479,7 +494,7 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
               <p className="text-sm font-semibold text-amber-900">{missingSlots.length} signature{missingSlots.length > 1 ? "s" : ""} manquante{missingSlots.length > 1 ? "s" : ""}</p>
               <p className="text-xs text-amber-800 mt-0.5">Cliquez sur une signature manquante ci-dessous ou signez directement le prochain créneau.</p>
             </div>
-            <Button size="sm" onClick={() => setSignTarget({ ...missingSlots[0], replaceExisting: Boolean(rowBySlot.get(emargementSlotKey(missingSlots[0].date, missingSlots[0].creneau))) })}>
+            <Button size="sm" onClick={() => openSignatureFor(missingSlots[0])}>
               <PenTool className="h-4 w-4 mr-1" />
               Signer maintenant
             </Button>
@@ -575,7 +590,7 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
                         ) : userId && apprenantId && isWithinFormation(date) ? (
                           <button
                             type="button"
-                            onClick={() => setSignTarget({ date, creneau: key, replaceExisting: Boolean(r) })}
+                            onClick={() => openSignatureFor({ date, creneau: key })}
                             className="h-full w-full flex flex-col items-center justify-center gap-1 text-amber-700 bg-amber-50 hover:bg-amber-100 transition-colors"
                           >
                             <PenTool className="h-4 w-4" />
@@ -590,7 +605,7 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
                           size="sm"
                           className="w-full mt-2 h-7 text-xs"
                           variant={hasValidSignature(r) ? "outline" : "default"}
-                          onClick={() => setSignTarget({ date, creneau: key, replaceExisting: Boolean(r) })}
+                          onClick={() => openSignatureFor({ date, creneau: key })}
                         >
                           <PenTool className="h-3 w-3 mr-1" />
                           {hasValidSignature(r) ? "Re-signer ce créneau" : "Signer ce créneau"}
