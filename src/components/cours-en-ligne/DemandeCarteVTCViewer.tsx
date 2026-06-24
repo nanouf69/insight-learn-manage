@@ -104,13 +104,10 @@ const LinkButton = ({
 export default function DemandeCarteVTCViewer({ completed, onComplete }: Props) {
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
-      <div>
-        <h2 className="text-2xl font-bold">Demande de renouvellement de la carte professionnelle VTC</h2>
-        <p className="text-sm text-muted-foreground mt-1">
-          Une fois votre formation continue VTC terminée, vous devez transmettre votre demande de renouvellement
-          de carte professionnelle directement sur le portail officiel <strong>demarches-simplifiees.fr</strong>.
-        </p>
-      </div>
+      <p className="text-sm text-muted-foreground">
+        Une fois votre formation continue VTC terminée, vous devez transmettre votre demande de renouvellement
+        de carte professionnelle directement sur le portail officiel <strong>demarches-simplifiees.fr</strong>.
+      </p>
 
       {completed && (
         <div className="flex items-center gap-2 text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded p-3">
