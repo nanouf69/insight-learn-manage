@@ -141,10 +141,8 @@ export const buildEmargementHTML = (
   };
 
   let totalHeures = 0;
-  const missingSignatureCell = (date: string, creneau: CreneauKey) => {
-    const payload = JSON.stringify({ type: "open-emargement-signature", date, creneau }).replace(/"/g, "&quot;");
-    return `<span class="missing-signature">Signature manquante</span><button class="sign-action" onclick="window.opener && window.opener.postMessage(${payload}, '*'); window.close();">Signer ici</button>`;
-  };
+  const missingSignatureCell = (date: string, creneau: CreneauKey) =>
+    `<span class="missing-signature">Signature manquante</span><button class="sign-action" data-date="${date}" data-creneau="${creneau}">Signer ici</button>`;
 
   const rowsHtml = groupedByDay
     .map(([date, { matin, apresMidi, soir, soir1, soir2, expectedSet }]) => {
@@ -278,7 +276,17 @@ export const buildEmargementHTML = (
   <div class="noprint" style="margin-top:18px;text-align:center;">
     <button onclick="window.print()" style="padding:10px 20px;font-size:13px;cursor:pointer;background:#6b7fc7;color:#fff;border:none;border-radius:4px;">Imprimer / Enregistrer en PDF</button>
   </div>
-  <script>window.onload=()=>setTimeout(()=>window.print(),300);</script>
+  <script>
+    document.addEventListener('click', function(event) {
+      var target = event.target;
+      if (!target || !target.classList || !target.classList.contains('sign-action')) return;
+      if (window.opener) {
+        window.opener.postMessage({ type: 'open-emargement-signature', date: target.dataset.date, creneau: target.dataset.creneau }, '*');
+      }
+      window.close();
+    });
+    window.onload=()=>setTimeout(()=>window.print(),300);
+  </script>
 </body></html>`;
 };
 
