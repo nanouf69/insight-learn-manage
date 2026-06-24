@@ -29,7 +29,7 @@ export function useSessionKeepAlive(enabled: boolean, forceAlways = false) {
     };
 
     void touchSession();
-    intervalRef.current = setInterval(touchSession, REFRESH_INTERVAL_MS);
+    intervalRef.current = setInterval(touchSession, forceAlways ? REFRESH_INTERVAL_EXAM_MS : REFRESH_INTERVAL_MS);
 
     const refreshOnResume = () => {
       void touchSession();
