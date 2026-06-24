@@ -195,6 +195,45 @@ export default function DemandeCarteVTCViewer({ completed, onComplete }: Props) 
         </CardContent>
       </Card>
 
+      <Card className="border-emerald-200 bg-emerald-50/40">
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Stethoscope className="h-5 w-5 text-emerald-700" />
+            Liste des médecins agréés par département
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-sm">
+            Le certificat médical doit être délivré par un <strong>médecin agréé par la préfecture</strong>.
+            Sélectionnez votre département pour consulter la liste officielle :
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {[
+              { dept: "01", nom: "Ain", url: "/documents/medecins/medecins-01-ain.pdf" },
+              { dept: "38", nom: "Isère", url: "/documents/medecins/medecins-38-isere.pdf" },
+              { dept: "69", nom: "Rhône", url: "/documents/medecins/medecins-69-rhone.pdf" },
+              { dept: "73", nom: "Savoie", url: "/documents/medecins/medecins-73-savoie.pdf" },
+              { dept: "74", nom: "Haute-Savoie", url: "/documents/medecins/medecins-74-haute-savoie.pdf" },
+            ].map((d) => (
+              <LinkButton key={d.dept} url={d.url} variant="outline" className="justify-start">
+                <FileText className="h-4 w-4 mr-2" />
+                {d.dept} — {d.nom}
+              </LinkButton>
+            ))}
+          </div>
+          <div className="pt-3 border-t border-emerald-200/60">
+            <LinkButton url={attestationHebergement.url} variant="outline" size="sm">
+              <Download className="h-4 w-4 mr-2" />
+              Télécharger le modèle d'attestation d'hébergement
+            </LinkButton>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Votre département ne figure pas dans la liste ? Contactez la préfecture de votre département
+            pour obtenir la liste des médecins agréés.
+          </p>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
@@ -244,46 +283,6 @@ export default function DemandeCarteVTCViewer({ completed, onComplete }: Props) 
           </p>
         </CardContent>
       </Card>
-
-      <Card className="border-emerald-200 bg-emerald-50/40">
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <Stethoscope className="h-5 w-5 text-emerald-700" />
-            Liste des médecins agréés par département
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <p className="text-sm">
-            Le certificat médical doit être délivré par un <strong>médecin agréé par la préfecture</strong>.
-            Sélectionnez votre département pour consulter la liste officielle :
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {[
-              { dept: "01", nom: "Ain", url: "/documents/medecins/medecins-01-ain.pdf" },
-              { dept: "38", nom: "Isère", url: "/documents/medecins/medecins-38-isere.pdf" },
-              { dept: "69", nom: "Rhône", url: "/documents/medecins/medecins-69-rhone.pdf" },
-              { dept: "73", nom: "Savoie", url: "/documents/medecins/medecins-73-savoie.pdf" },
-              { dept: "74", nom: "Haute-Savoie", url: "/documents/medecins/medecins-74-haute-savoie.pdf" },
-            ].map((d) => (
-              <LinkButton key={d.dept} url={d.url} variant="outline" className="justify-start">
-                <FileText className="h-4 w-4 mr-2" />
-                {d.dept} — {d.nom}
-              </LinkButton>
-            ))}
-          </div>
-          <div className="pt-3 border-t border-emerald-200/60">
-            <LinkButton url={attestationHebergement.url} variant="outline" size="sm">
-              <Download className="h-4 w-4 mr-2" />
-              Télécharger le modèle d'attestation d'hébergement
-            </LinkButton>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Votre département ne figure pas dans la liste ? Contactez la préfecture de votre département
-            pour obtenir la liste des médecins agréés.
-          </p>
-        </CardContent>
-      </Card>
-
 
       <div className="flex justify-end pt-4">
         <Button onClick={onComplete} size="lg" disabled={completed}>
