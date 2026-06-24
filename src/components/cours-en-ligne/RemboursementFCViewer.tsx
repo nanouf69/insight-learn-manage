@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -61,6 +61,15 @@ interface FactureDoc {
   titre: string;
   created_at?: string;
 }
+
+type GroupedEmargements = {
+  matin?: EmargementRow;
+  apresMidi?: EmargementRow;
+  soir?: EmargementRow;
+  soir1?: EmargementRow;
+  soir2?: EmargementRow;
+  expectedSet?: Set<CreneauKey>;
+};
 
 const normalizeDemi = (d: string) => (d || "").toLowerCase().replace(/_/g, "-").trim();
 const normalizeCreneauKey = (d: string): CreneauKey | null => {
@@ -257,18 +266,21 @@ export default function RemboursementFCViewer({ apprenantId, completed, onComple
   const signedCount = emargements.filter((r) => r.signature_data_url?.trim()).length;
   const hasEmargements = signedCount > 0;
   const hasFacture = factures.length > 0;
-  const emargementBySlot = new Map<string, EmargementRow>();
-  for (const row of emargements) {
-    const key = normalizeCreneauKey(row.demi_journee);
-    if (key) emargementBySlot.set(emargementSlotKey(row.date_emargement, key), row);
-  }
+  const emargementBySlot = useMemo(() => {
+    const map = new Map<string, EmargementRow>();
+    for (const row of emargements) {
+      const key = normalizeCreneauKey(row.demi_journee);
+      if (key) map.set(emargementSlotKey(row.date_emargement, key), row);
+    }
+    return map;
+  }, [emargements]);
   const missingEmargements = expected.filter((slot) => !isEmargementFilled(emargementBySlot.get(emargementSlotKey(slot.date, slot.creneau))));
   const missingCount = missingEmargements.length;
   const firstMissing = missingEmargements[0];
-  const openSignatureFor = (slot: { date: string; creneau: CreneauKey }) => {
+  const openSignatureFor = useCallback((slot: { date: string; creneau: CreneauKey }) => {
     const existing = emargementBySlot.get(emargementSlotKey(slot.date, slot.creneau));
     setSignTarget({ date: slot.date, creneau: slot.creneau, replaceExisting: Boolean(existing) });
-  };
+  }, [emargementBySlot]);
 
   useEffect(() => {
     const handler = (event: MessageEvent) => {
@@ -278,12 +290,12 @@ export default function RemboursementFCViewer({ apprenantId, completed, onComple
     };
     window.addEventListener("message", handler);
     return () => window.removeEventListener("message", handler);
-  }, [emargements]);
+  }, [openSignatureFor]);
 
   const handleDownloadEmargements = () => {
     setDownloading("emargements");
     try {
-      const map = new Map<string, any>();
+      const map = new Map<string, GroupedEmargements>();
       const ensure = (date: string) => {
         let e = map.get(date);
         if (!e) { e = { expectedSet: new Set() }; map.set(date, e); }
@@ -300,7 +312,7 @@ export default function RemboursementFCViewer({ apprenantId, completed, onComple
       }
       for (const e of expected) ensure(e.date).expectedSet?.add(e.creneau);
       const grouped = Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b));
-      const html = buildEmargementHTML(grouped, apprenant as any, { isFormationContinue: true });
+      const html = buildEmargementHTML(grouped, apprenant, { isFormationContinue: true });
       openHtmlInNewWindow(html);
     } finally {
       setDownloading(null);
