@@ -543,7 +543,7 @@ function PassageMatiere({
   const progress = ((safeQuestionIndex + 1) / safeQuestionsCount) * 100;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-[1fr_88px] gap-4">
+    <div className="grid grid-cols-[minmax(0,1fr)_64px] sm:grid-cols-[minmax(0,1fr)_88px] gap-3 sm:gap-4">
       <div className="space-y-4 min-w-0">
       {/* Bandeau matière FTRANSPORT */}
       <div className="rounded-lg px-4 py-3 flex items-center justify-between flex-wrap gap-2" style={{ backgroundColor: '#0D2540' }}>
@@ -802,12 +802,12 @@ function PassageMatiere({
       </div>
 
       {/* Sidebar verticale des questions */}
-      <aside className="hidden md:block">
+      <aside className="block">
         <div className="sticky top-4 rounded-lg border bg-card p-2 max-h-[calc(100vh-2rem)] overflow-y-auto">
           <div className="text-[10px] font-semibold text-muted-foreground text-center mb-2 uppercase tracking-wide">
             Questions
           </div>
-          <div className="grid grid-cols-2 gap-1.5">
+          <div className="grid grid-cols-2 gap-1 sm:gap-1.5">
             {questionsSafe.map((q, i) => {
               if (!q) return null;
               const isAnswered = isQuestionAnswered(q);
@@ -816,7 +816,7 @@ function PassageMatiere({
                 <button
                   key={q.id ?? i}
                   onClick={() => setQuestionIndex(i)}
-                  className={`w-9 h-9 rounded text-xs font-semibold transition-colors ${
+                  className={`w-7 h-7 sm:w-9 sm:h-9 rounded text-[10px] sm:text-xs font-semibold transition-colors ${
                     isCurrent
                       ? "bg-primary text-primary-foreground ring-2 ring-primary/50"
                       : isAnswered
