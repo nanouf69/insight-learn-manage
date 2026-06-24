@@ -52,6 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const authInitializedRef = useRef(false);
   const pendingSessionRef = useRef<Session | null | undefined>(undefined);
   const sessionRef = useRef<Session | null>(null);
+  const recoveryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fetchProfile = useCallback(async (userId: string, retryCount = 0) => {
     try {
@@ -120,17 +121,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let isActive = true;
 
-    const recoverSessionBeforeClearing = (delayMs = 1200) => {
+    const recoverSessionBeforeClearing = (delayMs = 1200, attempt = 1) => {
       const hadVisibleSession = !!sessionRef.current?.user;
       if (!hadVisibleSession) setLoading(true);
-      setTimeout(() => {
+
+      if (recoveryTimerRef.current) clearTimeout(recoveryTimerRef.current);
+      recoveryTimerRef.current = setTimeout(() => {
         if (!isActive) return;
         void withTimeout(supabase.auth.getSession(), 6000)
           .then(({ data: { session: recoveredSession } }) => {
             if (!isActive) return;
             if (recoveredSession?.user) {
               applySession(recoveredSession);
-            } else {
+              setLoading(false);
+              return;
+            }
+
+            // Pendant les quiz, une actualisation de token peut émettre SIGNED_OUT
+            // brièvement même si la session revient juste après. Ne jamais démonter
+            // l'espace apprenant sur ce faux négatif, sinon l'élève perd son quiz.
+            if (hadVisibleSession && attempt < 10) {
+              setLoading(false);
+              recoverSessionBeforeClearing(2000, attempt + 1);
+              return;
+            }
+
+            if (!hadVisibleSession) {
               clearAuthState();
             }
             setLoading(false);
@@ -212,6 +228,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isActive = false;
       authInitializedRef.current = false;
       pendingSessionRef.current = undefined;
+      if (recoveryTimerRef.current) clearTimeout(recoveryTimerRef.current);
       subscription.unsubscribe();
     };
   }, [applySession, clearAuthState]);
