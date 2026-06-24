@@ -695,6 +695,9 @@ const ChangePasswordDialog = () => {
 const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const navigate = useNavigate();
   const { user, session, loading: authLoading, profile, signOut } = useAuth();
+  const lastKnownUserIdRef = useRef<string | null>(null);
+  if (user?.id) lastKnownUserIdRef.current = user.id;
+  const effectiveUserId = user?.id || lastKnownUserIdRef.current;
   const [apprenantLoading, setApprenantLoading] = useState(false);
   const [apprenant, setApprenant] = useState<ApprenantInfo | null>(null);
   const [apprenantFetchError, setApprenantFetchError] = useState<string | null>(null);
@@ -725,10 +728,10 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     setIsInExam(inExam);
   }, []);
 
-  const isStudentSession = !embedded && !!user && !!apprenant?.id;
+  const isStudentSession = !embedded && !!effectiveUserId && !!apprenant?.id;
   const { trackModuleActivity, markActivity, connexionId, endConnexion } = useConnexionTracking({
     apprenantId: !embedded && apprenant?.id ? apprenant.id : null,
-    userId: user?.id || null,
+    userId: effectiveUserId || null,
     enabled: isStudentSession,
   });
 
@@ -745,7 +748,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     confirmPresence,
   } = usePresenceCheck({
     apprenantId: !embedded && apprenant?.id ? apprenant.id : null,
-    userId: user?.id || null,
+    userId: effectiveUserId || null,
     connexionId,
     enabled: isStudentSession,
     onForceDisconnect: handleForceDisconnect,
@@ -1211,6 +1214,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     setApprenant(null);
     setSelectedFormation(null);
     setApprenantFetchError(null);
+    lastKnownUserIdRef.current = null;
     fetchAttemptRef.current = 0;
     lastFetchedUserIdRef.current = null;
   }, [endConnexion, signOut]);
@@ -1227,7 +1231,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   // `session` est temporairement null (refresh de token Supabase). Sinon l'écran
   // tremble entre le spinner et le bandeau "Chargement du profil…" plusieurs fois
   // par seconde pendant le keep-alive.
-  if ((!embedded && authLoading) || apprenantLoading) {
+  if ((!embedded && authLoading && !(apprenant && selectedModule)) || (apprenantLoading && !selectedModule)) {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-3">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
@@ -1252,7 +1256,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     );
   }
 
-  if (!embedded && !user && !authLoading && apprenant) {
+  if (!embedded && !user && !authLoading && apprenant && !selectedModule) {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-3 p-4 text-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
@@ -1262,7 +1266,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   }
 
   // Auth required (unless embedded in admin)
-  if (!embedded && !user) {
+  if (!embedded && !user && !apprenant) {
     return <StudentLogin onLogin={() => {}} />;
   }
 
@@ -1418,7 +1422,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
           <EmargementFCModal
             key={`${emargementDate || "today"}|${emargementCreneau}`}
             apprenantId={apprenant!.id!}
-            userId={user!.id}
+            userId={effectiveUserId!}
             apprenantNom={apprenant!.nom}
             apprenantPrenom={apprenant!.prenom}
             creneau={emargementCreneau}
@@ -1447,7 +1451,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
           <ExamensBlancsPage
             defaultBilanId={bilanId}
             apprenantId={apprenant?.id || null}
-            userId={user?.id || null}
+            userId={effectiveUserId || null}
             apprenantType={apprenant?.type_apprenant || null}
             isPresentiel={!["vtc-elearning", "taxi-elearning", "taxi-pour-vtc-elearning"].includes(selectedFormation)}
             onExamStateChange={handleExamStateChange}
@@ -1466,7 +1470,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
           <ErrorBoundary>
             <ExamensBlancsPage
               apprenantId={apprenant?.id || null}
-              userId={user?.id || null}
+              userId={effectiveUserId || null}
               apprenantType={examenBlancType}
               isPresentiel={!["vtc-elearning", "taxi-elearning", "taxi-pour-vtc-elearning"].includes(selectedFormation)}
               onExamStateChange={handleExamStateChange}
@@ -1798,7 +1802,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
           >
             <ExamensBlancsPage
               apprenantId={apprenant?.id || null}
-              userId={user?.id || null}
+              userId={effectiveUserId || null}
               apprenantType={apprenant?.type_apprenant || null}
               isPresentiel={!["vtc-elearning", "taxi-elearning", "taxi-pour-vtc-elearning"].includes(selectedFormation)}
               onExamStateChange={handleExamStateChange}
@@ -2076,6 +2080,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     confirmPresence,
     disconnectReason,
     embedded,
+    effectiveUserId,
     emargementCreneau,
     emargementDate,
     emargementFCStatus,
