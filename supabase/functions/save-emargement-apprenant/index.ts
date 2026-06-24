@@ -159,7 +159,7 @@ Deno.serve(async (req) => {
     const hasFilledSignature = Boolean(String(existing?.signature_data_url || "").trim()) || existing?.absent === true;
     if (existing && hasFilledSignature && !replaceExisting) return json({ success: true, duplicate: true });
 
-    const rowToSave = existing && !hasFilledSignature
+    const rowToSave = existing
       ? { ...row, signed_at: new Date().toISOString() }
       : row;
 
