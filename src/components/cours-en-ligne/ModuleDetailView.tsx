@@ -4483,6 +4483,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     };
 
     const completionPersistedRef = useRef(false);
+    // True once we've confirmed a row exists in apprenant_module_completion
+    // for this (apprenant, module). Module becomes frozen: no more writes
+    // to reponses_apprenants allowed, results read from completion.details only.
+    const moduleAlreadyValidatedRef = useRef(false);
 
     const markPageCompleted = (pageIndex: number) => {
       setCompletedPages(prev => {
