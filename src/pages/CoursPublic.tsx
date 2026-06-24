@@ -716,6 +716,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const [sessionAccessWindow, setSessionAccessWindow] = useState<SessionAccessWindow | null>(null);
   const emargementStatusRef = useRef(emargementFCStatus);
   const scrollYRef = useRef(0);
+  const lastQuizActivityAtRef = useRef(0);
 
   if (typeof window !== "undefined") {
     scrollYRef.current = window.scrollY;
@@ -754,7 +755,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   }, []);
 
   const isStudentSession = !embedded && !!user && !!apprenant?.id;
-  const { trackModuleActivity, connexionId, endConnexion } = useConnexionTracking({
+  const { trackModuleActivity, markActivity, connexionId, endConnexion } = useConnexionTracking({
     apprenantId: !embedded && apprenant?.id ? apprenant.id : null,
     userId: user?.id || null,
     enabled: isStudentSession,
@@ -1169,6 +1170,13 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     trackModuleActivity(moduleId, coursTitle, "open_cours");
   }, [trackModuleActivity]);
 
+  const handleLearnerQuizActivity = useCallback(() => {
+    const now = Date.now();
+    if (now - lastQuizActivityAtRef.current < 15_000) return;
+    lastQuizActivityAtRef.current = now;
+    void markActivity();
+  }, [markActivity]);
+
   const apprenantInfoForModule = useMemo(() => apprenant ? {
     nom: apprenant.nom,
     prenom: apprenant.prenom,
@@ -1508,6 +1516,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
             isPresentiel={!["vtc-elearning", "taxi-elearning", "taxi-pour-vtc-elearning"].includes(selectedFormation)}
             hideFormulaires={apprenant?.email === "demo-vtc@ftransport.fr"}
             onTrackCours={handleTrackCours}
+            onLearnerActivity={handleLearnerQuizActivity}
             apprenantInfo={apprenantInfoForModule}
           />
         </ErrorBoundary>
@@ -2103,6 +2112,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     handleLogout,
     handleModuleCompleted,
     handleTrackCours,
+    handleLearnerQuizActivity,
     inactivityDeadline,
     lastModuleName,
     moduleCompletionsForNotes,

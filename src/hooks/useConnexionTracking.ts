@@ -161,8 +161,19 @@ export function useConnexionTracking({ apprenantId, userId, enabled }: UseConnex
       });
   }, [apprenantId, checkSessionOnServer, endConnexion, userId]);
 
+  const markActivity = useCallback(async () => {
+    if (!apprenantId || !userId || !connexionIdRef.current) return;
+
+    const validation = await checkSessionOnServer("action");
+    if (validation && !validation.is_valid) {
+      const reason = validation.disconnect_reason || "";
+      console.warn(`[ConnexionTracking] Activité quiz ignorée — session de suivi expirée sans déconnecter l'apprenant — raison: ${reason}`);
+    }
+  }, [apprenantId, checkSessionOnServer, userId]);
+
   return {
     trackModuleActivity,
+    markActivity,
     connexionId,
     endConnexion,
   };
