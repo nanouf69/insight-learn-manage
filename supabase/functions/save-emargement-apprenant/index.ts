@@ -97,6 +97,7 @@ Deno.serve(async (req) => {
     if (apprenantError || !apprenant || (apprenant.auth_user_id !== user.id && isAdmin !== true)) {
       return json({ error: "Accès apprenant refusé" }, 403);
     }
+    const ownerUserId = String(apprenant.auth_user_id || user.id);
 
     const signedDate = parseDate(dateEmargement);
     const today = parseDate(formatISO(new Date()));
@@ -134,7 +135,7 @@ Deno.serve(async (req) => {
 
     const row = {
       apprenant_id: apprenantId,
-      user_id: user.id,
+      user_id: ownerUserId,
       date_emargement: dateEmargement,
       demi_journee: demi,
       signature_data_url: absent ? null : signature,
