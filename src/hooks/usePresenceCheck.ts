@@ -66,14 +66,28 @@ export function usePresenceCheck({
     async (event: "heartbeat" | "heartbeat_exam" | "action" | "confirm_presence" = "heartbeat"): Promise<ServerSessionCheck | null> => {
       if (!enabled || !apprenantId || !userId || !connexionId) return null;
 
-      const { data, error } = await supabase.rpc("check_apprenant_session" as any, {
-        _apprenant_id: apprenantId,
-        _connexion_id: connexionId,
-        _event: event,
-      });
+      const callRpc = () =>
+        supabase.rpc("check_apprenant_session" as any, {
+          _apprenant_id: apprenantId,
+          _connexion_id: connexionId,
+          _event: event,
+        });
+
+      let { data, error } = await callRpc();
+
+      // Retry once after a short delay on transient network/timeout errors —
+      // Android battery-saver / Doze mode can throttle a single request.
+      // We treat ANY error as potentially transient: the worst case is one extra RPC.
+      if (error) {
+        console.warn("[PresenceCheck] RPC error, retrying once in 2.5s:", error.message || error);
+        await new Promise((r) => setTimeout(r, 2500));
+        const retry = await callRpc();
+        data = retry.data;
+        error = retry.error;
+      }
 
       if (error) {
-        console.error("Presence check RPC error:", error);
+        console.error("Presence check RPC error (after retry):", error);
         return null;
       }
 
@@ -81,6 +95,7 @@ export function usePresenceCheck({
     },
     [enabled, apprenantId, userId, connexionId],
   );
+
 
   const pausePresencePrompt = useCallback(() => {
     suppressPromptUntilRef.current = Date.now() + PRESENCE_PROMPT_SNOOZE_MS;
