@@ -1561,9 +1561,16 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     new Set(formationDefaultIds.map((id) => normalizeModuleIdForDashboard(id))),
   ).filter((id) => MANAGED_MODULE_IDS.has(id));
 
-  const normalizedAuthorizedSet = new Set(normalizedAuthorizedIds);
+  // Pour les formations continues, toujours inclure l'ensemble des modules par défaut
+  // (évite que d'anciens apprenants n'aient pas accès aux nouveaux modules ajoutés)
+  const isFormationContinue = selectedFormation === "continue-vtc" || selectedFormation === "continue-taxi";
+  const effectiveAuthorizedIds = isFormationContinue
+    ? Array.from(new Set([...normalizedAuthorizedIds, ...normalizedFormationDefaultIds]))
+    : normalizedAuthorizedIds;
+
+  const normalizedAuthorizedSet = new Set(effectiveAuthorizedIds);
   const orderedPrimaryIds = normalizedFormationDefaultIds.filter((id) => normalizedAuthorizedSet.has(id));
-  const orderedExtraIds = normalizedAuthorizedIds.filter((id) => !normalizedFormationDefaultIds.includes(id));
+  const orderedExtraIds = effectiveAuthorizedIds.filter((id) => !normalizedFormationDefaultIds.includes(id));
   const orderedAuthorizedIds = [...orderedPrimaryIds, ...orderedExtraIds];
 
   const orderedAuthorizedModules = orderedAuthorizedIds
