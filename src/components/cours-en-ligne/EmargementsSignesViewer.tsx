@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -304,14 +304,10 @@ const downloadAllJournees = (
 
 const downloadJournee = (
   date: string,
-  matin: EmargementRow | undefined,
-  apresMidi: EmargementRow | undefined,
-  soir: EmargementRow | undefined,
-  soir1: EmargementRow | undefined,
-  soir2: EmargementRow | undefined,
+  day: GroupedEmargements,
   apprenant: ApprenantInfo | null
 ) => {
-  downloadAllJournees([[date, { matin, apresMidi, soir, soir1, soir2 }]], apprenant);
+  downloadAllJournees([[date, day]], apprenant);
 };
 
 export default function EmargementsSignesViewer({ apprenantId, completed, onComplete }: Props) {
@@ -322,11 +318,6 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
   const [expected, setExpected] = useState<Array<{ date: string; creneau: CreneauKey }>>([]);
   const [signTarget, setSignTarget] = useState<{ date: string; creneau: CreneauKey; replaceExisting?: boolean } | null>(null);
   const [refreshTick, setRefreshTick] = useState(0);
-
-  const openSignatureFor = (slot: { date: string; creneau: CreneauKey }) => {
-    const existing = rowBySlot.get(emargementSlotKey(slot.date, slot.creneau));
-    setSignTarget({ date: slot.date, creneau: slot.creneau, replaceExisting: Boolean(existing) });
-  };
 
   useEffect(() => {
     if (!apprenantId) {
@@ -442,6 +433,11 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
     [expected, rowBySlot],
   );
 
+  const openSignatureFor = useCallback((slot: { date: string; creneau: CreneauKey }) => {
+    const existing = rowBySlot.get(emargementSlotKey(slot.date, slot.creneau));
+    setSignTarget({ date: slot.date, creneau: slot.creneau, replaceExisting: Boolean(existing) });
+  }, [rowBySlot]);
+
   useEffect(() => {
     const handler = (event: MessageEvent) => {
       const data = event.data as { type?: string; date?: string; creneau?: CreneauKey } | null;
@@ -450,7 +446,7 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
     };
     window.addEventListener("message", handler);
     return () => window.removeEventListener("message", handler);
-  }, [rowBySlot]);
+  }, [openSignatureFor]);
 
 
   if (loading) {
@@ -536,7 +532,8 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
         </Card>
       ) : (
         <div className="grid gap-3">
-          {groupedByDay.map(([date, { matin, apresMidi, soir, soir1, soir2, expectedSet }]) => {
+          {groupedByDay.map(([date, day]) => {
+            const { matin, apresMidi, soir, soir1, soir2, expectedSet } = day;
             const keys: CreneauKey[] = expectedSet?.has("soir_1") || expectedSet?.has("soir_2") || soir1 || soir2
               ? ["soir_1", "soir_2"]
               : ["matin", "apres_midi"];
@@ -549,7 +546,7 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => downloadJournee(date, matin, apresMidi, soir, soir1, soir2, apprenant)}
+                  onClick={() => downloadJournee(date, day, apprenant)}
                   className="h-7 text-xs"
                 >
                   <Download className="h-3.5 w-3.5 mr-1" />
