@@ -2593,7 +2593,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
             {isFormationContinue && (
               <TabsTrigger value="factures" className="gap-2">
                 <FileText className="w-4 h-4" />
-                Factures ({totalCount})
+                Factures ({facturesCount})
               </TabsTrigger>
             )}
             <TabsTrigger value="absents" className="gap-2">
