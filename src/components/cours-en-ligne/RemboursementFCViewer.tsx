@@ -276,7 +276,16 @@ export default function RemboursementFCViewer({ apprenantId, completed, onComple
   }, [emargements]);
   const missingEmargements = expected.filter((slot) => !isEmargementFilled(emargementBySlot.get(emargementSlotKey(slot.date, slot.creneau))));
   const missingCount = missingEmargements.length;
-  const firstMissing = missingEmargements[0];
+  const allSignableSlots = expected.length > 0
+    ? expected
+    : emargements
+        .map((row) => {
+          const creneau = normalizeCreneauKey(row.demi_journee);
+          return creneau ? { date: row.date_emargement, creneau } : null;
+        })
+        .filter((slot): slot is { date: string; creneau: CreneauKey } => Boolean(slot));
+  const signableSlots = missingEmargements.length > 0 ? missingEmargements : allSignableSlots;
+  const firstSignable = signableSlots[0];
   const openSignatureFor = useCallback((slot: { date: string; creneau: CreneauKey }) => {
     const existing = emargementBySlot.get(emargementSlotKey(slot.date, slot.creneau));
     setSignTarget({ date: slot.date, creneau: slot.creneau, replaceExisting: Boolean(existing) });
@@ -495,10 +504,10 @@ export default function RemboursementFCViewer({ apprenantId, completed, onComple
                 )}
                 Télécharger les feuilles d'émargement (PDF)
               </Button>
-              {firstMissing && userId && (
-                <Button size="sm" onClick={() => openSignatureFor(firstMissing)}>
+              {firstSignable && userId && (
+                <Button size="sm" onClick={() => openSignatureFor(firstSignable)}>
                   <PenTool className="h-4 w-4 mr-1.5" />
-                  Signer maintenant
+                  {missingCount > 0 ? "Signer maintenant" : "Re-signer"}
                 </Button>
               )}
             </div>
@@ -521,6 +530,31 @@ export default function RemboursementFCViewer({ apprenantId, completed, onComple
                       <span className="inline-flex h-7 items-center rounded px-2 text-xs font-medium text-primary">
                         <PenTool className="h-3.5 w-3.5 mr-1" />
                         Signer
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            {missingCount === 0 && userId && signableSlots.length > 0 && (
+              <div className="mt-3 rounded-md border border-blue-200 bg-blue-50/70 p-2">
+                <p className="text-[11px] font-medium text-blue-900 mb-1.5">
+                  Besoin de refaire une signature ?
+                </p>
+                <div className="space-y-1.5 max-h-72 overflow-y-auto pr-1">
+                  {signableSlots.map((slot) => (
+                    <button
+                      key={emargementSlotKey(slot.date, slot.creneau)}
+                      type="button"
+                      onClick={() => openSignatureFor(slot)}
+                      className="flex w-full items-center justify-between gap-2 rounded bg-background/80 px-2 py-1.5 text-left text-xs hover:bg-blue-100 transition-colors"
+                    >
+                      <span className="text-foreground">
+                        <span className="capitalize">{formatDateFR(slot.date)}</span> — {creneauLabel(slot.creneau)} ({creneauHoraire(slot.creneau)})
+                      </span>
+                      <span className="inline-flex h-7 items-center rounded px-2 text-xs font-medium text-primary">
+                        <PenTool className="h-3.5 w-3.5 mr-1" />
+                        Re-signer
                       </span>
                     </button>
                   ))}

@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -110,10 +110,11 @@ export const EmargementFCModal = ({
   onSkipped,
 }: EmargementFCModalProps) => {
   const { toast } = useToast();
+  const defaultTypedSignature = `${apprenantPrenom} ${apprenantNom}`.trim();
   const [tab, setTab] = useState<"present" | "absent">("present");
-  const [signatureMode, setSignatureMode] = useState<"draw" | "typed">("draw");
+  const [signatureMode, setSignatureMode] = useState<"draw" | "typed">("typed");
   const [signature, setSignature] = useState("");
-  const [typedSignature, setTypedSignature] = useState("");
+  const [typedSignature, setTypedSignature] = useState(defaultTypedSignature);
   const [saving, setSaving] = useState(false);
   const [demi] = useState<CreneauKey>(creneau || getCurrentCreneauFromHour());
   const [done, setDone] = useState(false);
@@ -129,6 +130,10 @@ export const EmargementFCModal = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [justifFile, setJustifFile] = useState<File | null>(null);
   const [motif, setMotif] = useState("");
+
+  useEffect(() => {
+    setTypedSignature((current) => current.trim() ? current : defaultTypedSignature);
+  }, [defaultTypedSignature]);
 
   const handleSubmitPresent = async () => {
     const signatureToSave = signatureMode === "typed" ? buildTypedSignatureDataUrl(typedSignature) : signature;
@@ -330,7 +335,7 @@ export const EmargementFCModal = ({
                 <Input
                   value={typedSignature}
                   onChange={(e) => setTypedSignature(e.target.value)}
-                  placeholder={`${apprenantPrenom} ${apprenantNom}`.trim() || "Nom et prénom"}
+                  placeholder={defaultTypedSignature || "Nom et prénom"}
                   disabled={saving}
                   autoComplete="name"
                 />

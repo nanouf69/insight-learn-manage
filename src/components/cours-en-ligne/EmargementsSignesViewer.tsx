@@ -433,6 +433,16 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
     [expected, rowBySlot],
   );
 
+  const allSignableSlots = useMemo(() => {
+    if (expected.length > 0) return expected;
+    return rows
+      .map((row) => {
+        const creneau = normalizeCreneauKey(row.demi_journee);
+        return creneau ? { date: row.date_emargement, creneau } : null;
+      })
+      .filter((slot): slot is { date: string; creneau: CreneauKey } => Boolean(slot));
+  }, [expected, rows]);
+
   const openSignatureFor = useCallback((slot: { date: string; creneau: CreneauKey }) => {
     const existing = rowBySlot.get(emargementSlotKey(slot.date, slot.creneau));
     setSignTarget({ date: slot.date, creneau: slot.creneau, replaceExisting: Boolean(existing) });
@@ -494,6 +504,34 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
               <PenTool className="h-4 w-4 mr-1" />
               Signer maintenant
             </Button>
+          </div>
+        </Card>
+      )}
+
+      {missingSlots.length === 0 && allSignableSlots.length > 0 && userId && apprenantId && (
+        <Card className="p-3 border-blue-200 bg-blue-50/70">
+          <div className="flex items-start justify-between gap-3 flex-wrap">
+            <div>
+              <p className="text-sm font-semibold text-blue-900">Refaire une signature</p>
+              <p className="text-xs text-blue-800 mt-0.5">Si une signature n'apparaît pas correctement, choisissez le créneau à re-signer.</p>
+            </div>
+            <Button size="sm" onClick={() => openSignatureFor(allSignableSlots[allSignableSlots.length - 1])}>
+              <PenTool className="h-4 w-4 mr-1" />
+              Re-signer
+            </Button>
+          </div>
+          <div className="mt-2 grid gap-1.5 sm:grid-cols-2 max-h-72 overflow-y-auto pr-1">
+            {allSignableSlots.map((slot) => (
+              <button
+                key={emargementSlotKey(slot.date, slot.creneau)}
+                type="button"
+                onClick={() => openSignatureFor(slot)}
+                className="flex items-center justify-between gap-2 rounded bg-background/80 px-2 py-1.5 text-left text-xs hover:bg-blue-100 transition-colors"
+              >
+                <span><span className="capitalize">{formatDateFR(slot.date)}</span> — {labelDemi(slot.creneau === "apres_midi" ? "apres-midi" : slot.creneau)}</span>
+                <span className="font-medium text-primary">Re-signer</span>
+              </button>
+            ))}
           </div>
         </Card>
       )}

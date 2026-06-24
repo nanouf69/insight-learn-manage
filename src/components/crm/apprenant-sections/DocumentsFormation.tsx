@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { FileText, Download, CheckCircle2, Mail, ClipboardList, Upload, Eye, CalendarDays, BarChart3, Send } from "lucide-react";
+import { FileText, Download, CheckCircle2, Mail, ClipboardList, Upload, Eye, CalendarDays, BarChart3, Send, PenTool } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +18,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { saveEmargementToCRM } from "@/lib/saveEmargementToCRM";
 import { toast } from "sonner";
+import EmargementsSignesViewer from "@/components/cours-en-ligne/EmargementsSignesViewer";
 
 
 interface DocumentsFormationProps {
@@ -31,6 +32,7 @@ export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
   const [uploadingDoc, setUploadingDoc] = useState<string | null>(null);
   const [sendingEmail, setSendingEmail] = useState<string | null>(null);
   const [selectedSessionId, setSelectedSessionId] = useState<string>('__all__');
+  const [showEmargementSigner, setShowEmargementSigner] = useState(false);
   const queryClient = useQueryClient();
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
@@ -562,145 +564,162 @@ export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
             const uploadKey = doc.id === 'fin-formation' ? 'attestation-fin-formation' : doc.id;
 
             return (
-              <div 
+              <div
                 key={doc.id}
-                className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                className="border rounded-lg hover:bg-muted/50 transition-colors"
               >
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <doc.icon className="w-5 h-5 text-primary" />
+                <div className="flex items-center justify-between p-4">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <doc.icon className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                      <h4 className="font-medium">{doc.title}</h4>
+                      <p className="text-sm text-muted-foreground">{doc.description}</p>
+                      {/* Sélecteur de session pour l'émargement */}
+                      {doc.id === 'emargement' && sortedSessions.length > 0 && (
+                        <div className="flex items-center gap-2 mt-2">
+                          <CalendarDays className="w-3.5 h-3.5 text-muted-foreground" />
+                          <Select value={selectedSessionId} onValueChange={setSelectedSessionId}>
+                            <SelectTrigger className="h-7 text-xs w-56">
+                              <SelectValue placeholder="Choisir une session" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="__all__">Toutes les sessions</SelectItem>
+                              {upcomingSessions.length > 0 && (
+                                <SelectGroup>
+                                  <SelectLabel className="text-xs text-primary">📅 À venir</SelectLabel>
+                                  {upcomingSessions.map((sa, i) => {
+                                    const s = sa.sessions as any;
+                                    if (!s) return null;
+                                    const label = s.nom || s.type_session || `Session ${i + 1}`;
+                                    const dateLabel = s.date_debut ? ` · ${s.date_debut}` : '';
+                                    return (
+                                      <SelectItem key={s.id} value={s.id}>
+                                        {i === 0 ? '⭐ ' : ''}{label}{dateLabel}
+                                      </SelectItem>
+                                    );
+                                  })}
+                                </SelectGroup>
+                              )}
+                              {upcomingSessions.length > 0 && pastSessions.length > 0 && (
+                                <SelectSeparator />
+                              )}
+                              {pastSessions.length > 0 && (
+                                <SelectGroup>
+                                  <SelectLabel className="text-xs text-muted-foreground">🕐 Passées</SelectLabel>
+                                  {pastSessions.map((sa, i) => {
+                                    const s = sa.sessions as any;
+                                    if (!s) return null;
+                                    const label = s.nom || s.type_session || `Session ${i + 1}`;
+                                    const dateLabel = s.date_debut ? ` · ${s.date_debut}` : '';
+                                    return (
+                                      <SelectItem key={s.id} value={s.id} className="text-muted-foreground">
+                                        {label}{dateLabel}
+                                      </SelectItem>
+                                    );
+                                  })}
+                                </SelectGroup>
+                              )}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+                      {uploadedDoc && (
+                        <p className="text-xs text-primary mt-0.5">✓ Fichier importé : {uploadedDoc.nom_fichier}</p>
+                      )}
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="font-medium">{doc.title}</h4>
-                    <p className="text-sm text-muted-foreground">{doc.description}</p>
-                    {/* Sélecteur de session pour l'émargement */}
-                    {doc.id === 'emargement' && sortedSessions.length > 0 && (
-                      <div className="flex items-center gap-2 mt-2">
-                        <CalendarDays className="w-3.5 h-3.5 text-muted-foreground" />
-                        <Select value={selectedSessionId} onValueChange={setSelectedSessionId}>
-                          <SelectTrigger className="h-7 text-xs w-56">
-                            <SelectValue placeholder="Choisir une session" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="__all__">Toutes les sessions</SelectItem>
-                            {upcomingSessions.length > 0 && (
-                              <SelectGroup>
-                                <SelectLabel className="text-xs text-primary">📅 À venir</SelectLabel>
-                                {upcomingSessions.map((sa, i) => {
-                                  const s = sa.sessions as any;
-                                  if (!s) return null;
-                                  const label = s.nom || s.type_session || `Session ${i + 1}`;
-                                  const dateLabel = s.date_debut ? ` · ${s.date_debut}` : '';
-                                  return (
-                                    <SelectItem key={s.id} value={s.id}>
-                                      {i === 0 ? '⭐ ' : ''}{label}{dateLabel}
-                                    </SelectItem>
-                                  );
-                                })}
-                              </SelectGroup>
-                            )}
-                            {upcomingSessions.length > 0 && pastSessions.length > 0 && (
-                              <SelectSeparator />
-                            )}
-                            {pastSessions.length > 0 && (
-                              <SelectGroup>
-                                <SelectLabel className="text-xs text-muted-foreground">🕐 Passées</SelectLabel>
-                                {pastSessions.map((sa, i) => {
-                                  const s = sa.sessions as any;
-                                  if (!s) return null;
-                                  const label = s.nom || s.type_session || `Session ${i + 1}`;
-                                  const dateLabel = s.date_debut ? ` · ${s.date_debut}` : '';
-                                  return (
-                                    <SelectItem key={s.id} value={s.id} className="text-muted-foreground">
-                                      {label}{dateLabel}
-                                    </SelectItem>
-                                  );
-                                })}
-                              </SelectGroup>
-                            )}
-                          </SelectContent>
-                        </Select>
-                      </div>
+                  <div className="flex items-center gap-2">
+                    {doc.status === 'disponible' && (
+                      <>
+                        <Badge variant="outline" className="text-primary border-primary">
+                          <CheckCircle2 className="w-3 h-3 mr-1" />
+                          Disponible
+                        </Badge>
+                        {doc.id === 'emargement' && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setShowEmargementSigner((v) => !v)}
+                          >
+                            <PenTool className="w-4 h-4 mr-2" />
+                            {showEmargementSigner ? 'Masquer signatures' : 'Signer / re-signer'}
+                          </Button>
+                        )}
+                        <Button
+                          size="sm"
+                          onClick={() => handleGenerateAttestation(doc.type)}
+                          disabled={generatingDoc === doc.type}
+                        >
+                          <Download className="w-4 h-4 mr-2" />
+                          {generatingDoc === doc.type ? 'Génération...' : 'Générer'}
+                        </Button>
+                        {doc.id === 'attestation-fc' && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={handleSendAttestationFCByEmail}
+                            disabled={sendingEmail === 'attestation-fc' || !apprenant.email}
+                            title={!apprenant.email ? "Aucune adresse email" : `Envoyer à ${apprenant.email}`}
+                          >
+                            <Send className="w-4 h-4 mr-2" />
+                            {sendingEmail === 'attestation-fc' ? 'Envoi...' : 'Envoyer par email'}
+                          </Button>
+                        )}
+                      </>
                     )}
-                    {uploadedDoc && (
-                      <p className="text-xs text-primary mt-0.5">✓ Fichier importé : {uploadedDoc.nom_fichier}</p>
+                    {doc.status === 'en_attente' && (
+                      <Badge variant="secondary">En attente</Badge>
                     )}
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  {doc.status === 'disponible' && (
-                    <>
-                      <Badge variant="outline" className="text-primary border-primary">
-                        <CheckCircle2 className="w-3 h-3 mr-1" />
-                        Disponible
-                      </Badge>
-                      <Button 
-                        size="sm" 
-                        onClick={() => handleGenerateAttestation(doc.type)}
-                        disabled={generatingDoc === doc.type}
-                      >
-                        <Download className="w-4 h-4 mr-2" />
-                        {generatingDoc === doc.type ? 'Génération...' : 'Générer'}
-                      </Button>
-                      {doc.id === 'attestation-fc' && (
+                    {doc.status === 'non_applicable' && (
+                      <Badge variant="outline" className="text-muted-foreground">Non applicable</Badge>
+                    )}
+
+                    {/* Bouton upload pour les docs qu'on peut importer depuis l'ordinateur */}
+                    {canUpload && (
+                      <>
+                        <input
+                          type="file"
+                          accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                          className="hidden"
+                          ref={(el) => { fileInputRefs.current[uploadKey] = el; }}
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleUploadFile(uploadKey, file);
+                            e.target.value = '';
+                          }}
+                        />
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={handleSendAttestationFCByEmail}
-                          disabled={sendingEmail === 'attestation-fc' || !apprenant.email}
-                          title={!apprenant.email ? "Aucune adresse email" : `Envoyer à ${apprenant.email}`}
+                          onClick={() => fileInputRefs.current[uploadKey]?.click()}
+                          disabled={uploadingDoc === uploadKey}
                         >
-                          <Send className="w-4 h-4 mr-2" />
-                          {sendingEmail === 'attestation-fc' ? 'Envoi...' : 'Envoyer par email'}
+                          <Upload className="w-4 h-4 mr-2" />
+                          {uploadingDoc === uploadKey ? 'Import...' : 'Importer'}
                         </Button>
-                      )}
-                    </>
-                  )}
-                  {doc.status === 'en_attente' && (
-                    <Badge variant="secondary">En attente</Badge>
-                  )}
-                  {doc.status === 'non_applicable' && (
-                    <Badge variant="outline" className="text-muted-foreground">Non applicable</Badge>
-                  )}
-
-                  {/* Bouton upload pour les docs qu'on peut importer depuis l'ordinateur */}
-                  {canUpload && (
-                    <>
-                      <input
-                        type="file"
-                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                        className="hidden"
-                        ref={(el) => { fileInputRefs.current[uploadKey] = el; }}
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) handleUploadFile(uploadKey, file);
-                          e.target.value = '';
-                        }}
-                      />
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => fileInputRefs.current[uploadKey]?.click()}
-                        disabled={uploadingDoc === uploadKey}
-                      >
-                        <Upload className="w-4 h-4 mr-2" />
-                        {uploadingDoc === uploadKey ? 'Import...' : 'Importer'}
-                      </Button>
-                      {uploadedDoc && (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          asChild
-                        >
-                          <a href={uploadedDoc.url} target="_blank" rel="noopener noreferrer">
-                            <Eye className="w-4 h-4 mr-1" />
-                            Voir
-                          </a>
-                        </Button>
-                      )}
-                    </>
-                  )}
+                        {uploadedDoc && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            asChild
+                          >
+                            <a href={uploadedDoc.url} target="_blank" rel="noopener noreferrer">
+                              <Eye className="w-4 h-4 mr-1" />
+                              Voir
+                            </a>
+                          </Button>
+                        )}
+                      </>
+                    )}
+                  </div>
                 </div>
+                {doc.id === 'emargement' && showEmargementSigner && (
+                  <div className="border-t bg-background p-4">
+                    <EmargementsSignesViewer apprenantId={apprenant.id} completed={true} onComplete={() => {}} />
+                  </div>
+                )}
               </div>
             );
           })}
