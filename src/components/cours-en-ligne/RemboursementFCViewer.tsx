@@ -733,6 +733,30 @@ export default function RemboursementFCViewer({ apprenantId, completed, onComple
                     </Button>
                   </div>
                 ))}
+                {dbFactures.map((f) => (
+                  <div key={f.id} className="flex items-center justify-between gap-2 border rounded-md p-2 bg-emerald-50/50">
+                    <div className="text-xs">
+                      <div className="font-medium">Facture acquittée n° {f.numero}</div>
+                      <div className="text-muted-foreground">
+                        {Number(f.montant_ttc).toFixed(2).replace(".", ",")} €
+                        {f.date_paiement ? ` — payée le ${f.date_paiement.split("-").reverse().join("/")}` : ""}
+                      </div>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleGenerateDbFacture(f)}
+                      disabled={generatingFactureId === f.id}
+                    >
+                      {generatingFactureId === f.id ? (
+                        <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                      ) : (
+                        <Download className="h-3.5 w-3.5 mr-1" />
+                      )}
+                      Télécharger
+                    </Button>
+                  </div>
+                ))}
               </div>
             ) : (
               <p className="text-xs text-amber-700 mt-2">
