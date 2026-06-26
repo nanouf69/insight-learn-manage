@@ -18,8 +18,20 @@ import { buildEmargementHTML } from "./EmargementsSignesViewer";
 import { EmargementFCModal } from "./EmargementFCModal";
 import { creneauHoraire, creneauLabel, getExpectedEmargements, type CreneauKey } from "@/lib/agendaSlots";
 import { generateAttestationFCVTC } from "@/lib/pdf/attestation-fc-vtc";
+import { generateFactureFC } from "@/lib/pdf/facture-fc";
 import { toast } from "sonner";
 import agrementVtcAsset from "@/assets/agrement-vtc-ftransport.pdf.asset.json";
+
+interface DbFacture {
+  id: string;
+  numero: string;
+  date_emission: string;
+  date_paiement: string | null;
+  statut: string | null;
+  montant_ttc: number;
+  financeur?: any;
+  paiements?: Array<{ montant: number; date_paiement: string; moyen_paiement: string }>;
+}
 
 interface Props {
   apprenantId?: string;
@@ -192,6 +204,8 @@ export default function RemboursementFCViewer({ apprenantId, completed, onComple
   const [expected, setExpected] = useState<Array<{ date: string; creneau: CreneauKey }>>([]);
   const [factures, setFactures] = useState<FactureDoc[]>([]);
   const [attestations, setAttestations] = useState<FactureDoc[]>([]);
+  const [dbFactures, setDbFactures] = useState<DbFacture[]>([]);
+  const [generatingFactureId, setGeneratingFactureId] = useState<string | null>(null);
   const [downloading, setDownloading] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [signTarget, setSignTarget] = useState<{ date: string; creneau: CreneauKey; replaceExisting?: boolean } | null>(null);
@@ -234,6 +248,44 @@ export default function RemboursementFCViewer({ apprenantId, completed, onComple
       if (!fRes.error && Array.isArray(fRes.data)) setFactures(fRes.data as FactureDoc[]);
       if (!atRes.error && Array.isArray(atRes.data)) setAttestations(atRes.data as FactureDoc[]);
 
+      // Charge les factures payées en BDD + financeur + paiements pour génération à la volée
+      try {
+        const { data: facRows } = await supabase
+          .from("factures")
+          .select("id, numero, date_emission, date_paiement, statut, montant_ttc")
+          .eq("apprenant_id", apprenantId)
+          .in("statut", ["payee", "acquittee"])
+          .order("date_emission", { ascending: false });
+        const paidFacs = (facRows || []) as DbFacture[];
+        if (paidFacs.length > 0) {
+          const [{ data: fcRows }, { data: paiRows }] = await Promise.all([
+            supabase
+              .from("financeurs_fc" as any)
+              .select("*")
+              .eq("apprenant_id", apprenantId)
+              .maybeSingle(),
+            supabase
+              .from("facture_paiements" as any)
+              .select("facture_id, montant, date_paiement, moyen_paiement")
+              .in("facture_id", paidFacs.map((f) => f.id)),
+          ]);
+          const payByFac: Record<string, any[]> = {};
+          (paiRows || []).forEach((p: any) => {
+            (payByFac[p.facture_id] = payByFac[p.facture_id] || []).push(p);
+          });
+          setDbFactures(paidFacs.map((f) => ({
+            ...f,
+            financeur: fcRows || null,
+            paiements: payByFac[f.id] || [],
+          })));
+        } else {
+          setDbFactures([]);
+        }
+      } catch (e) {
+        console.warn("[RemboursementFC] load db factures error", e);
+      }
+
+
       if (ap) {
         const today = new Date(); today.setHours(0, 0, 0, 0);
         const parseDate = (s?: string | null): Date | null => {
@@ -265,7 +317,7 @@ export default function RemboursementFCViewer({ apprenantId, completed, onComple
 
   const signedCount = emargements.filter((r) => r.signature_data_url?.trim()).length;
   const hasEmargements = signedCount > 0;
-  const hasFacture = factures.length > 0;
+  const hasFacture = factures.length > 0 || dbFactures.length > 0;
   const emargementBySlot = useMemo(() => {
     const map = new Map<string, EmargementRow>();
     for (const row of emargements) {
@@ -359,6 +411,54 @@ export default function RemboursementFCViewer({ apprenantId, completed, onComple
 
   const handleDownloadFacture = (f: FactureDoc) => {
     window.open(f.url, "_blank", "noopener,noreferrer");
+  };
+
+  const handleGenerateDbFacture = async (f: DbFacture) => {
+    if (!apprenant) return;
+    try {
+      setGeneratingFactureId(f.id);
+      const typeApp = `${apprenant.type_apprenant || ""} ${apprenant.formation_choisie || ""}`.toUpperCase();
+      const formationType: "VTC" | "TAXI" = typeApp.includes("TAXI") ? "TAXI" : "VTC";
+      const lastPay = f.paiements && f.paiements.length ? f.paiements[f.paiements.length - 1] : null;
+      const result: any = await generateFactureFC(
+        {
+          numero: f.numero,
+          dateEmission: f.date_emission,
+          apprenant: {
+            nom: apprenant.nom || "",
+            prenom: apprenant.prenom || "",
+            adresse: apprenant.adresse || undefined,
+            code_postal: apprenant.code_postal || undefined,
+            ville: apprenant.ville || undefined,
+            email: apprenant.email || undefined,
+            telephone: apprenant.telephone || undefined,
+          },
+          financeur: f.financeur || null,
+          formation: formationType,
+          designation: `Formation Continue Obligatoire ${formationType} - 14h`,
+          montantHT: Number(f.montant_ttc) || 200,
+          tvaTaux: 0,
+          duree: "14h",
+          acquittee: true,
+          dateAcquittement: f.date_paiement || lastPay?.date_paiement || undefined,
+          moyenPaiement: lastPay?.moyen_paiement || undefined,
+        },
+        { returnBlob: true }
+      );
+      if (result?.blob && result?.fileName) {
+        const url = URL.createObjectURL(result.blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = result.fileName;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    } catch (e) {
+      console.error("[RemboursementFC] generate facture error", e);
+      toast.error("Erreur lors de la génération de la facture");
+    } finally {
+      setGeneratingFactureId(null);
+    }
   };
 
   if (loading) {
@@ -629,6 +729,30 @@ export default function RemboursementFCViewer({ apprenantId, completed, onComple
                     </div>
                     <Button size="sm" variant="outline" onClick={() => handleDownloadFacture(f)}>
                       <Download className="h-3.5 w-3.5 mr-1" />
+                      Télécharger
+                    </Button>
+                  </div>
+                ))}
+                {dbFactures.map((f) => (
+                  <div key={f.id} className="flex items-center justify-between gap-2 border rounded-md p-2 bg-emerald-50/50">
+                    <div className="text-xs">
+                      <div className="font-medium">Facture acquittée n° {f.numero}</div>
+                      <div className="text-muted-foreground">
+                        {Number(f.montant_ttc).toFixed(2).replace(".", ",")} €
+                        {f.date_paiement ? ` — payée le ${f.date_paiement.split("-").reverse().join("/")}` : ""}
+                      </div>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleGenerateDbFacture(f)}
+                      disabled={generatingFactureId === f.id}
+                    >
+                      {generatingFactureId === f.id ? (
+                        <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                      ) : (
+                        <Download className="h-3.5 w-3.5 mr-1" />
+                      )}
                       Télécharger
                     </Button>
                   </div>
