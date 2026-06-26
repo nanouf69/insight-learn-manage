@@ -317,7 +317,7 @@ export default function RemboursementFCViewer({ apprenantId, completed, onComple
 
   const signedCount = emargements.filter((r) => r.signature_data_url?.trim()).length;
   const hasEmargements = signedCount > 0;
-  const hasFacture = factures.length > 0;
+  const hasFacture = factures.length > 0 || dbFactures.length > 0;
   const emargementBySlot = useMemo(() => {
     const map = new Map<string, EmargementRow>();
     for (const row of emargements) {
