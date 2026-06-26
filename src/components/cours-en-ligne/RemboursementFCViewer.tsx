@@ -202,6 +202,8 @@ export default function RemboursementFCViewer({ apprenantId, completed, onComple
   const [apprenant, setApprenant] = useState<ApprenantInfo | null>(null);
   const [emargements, setEmargements] = useState<EmargementRow[]>([]);
   const [expected, setExpected] = useState<Array<{ date: string; creneau: CreneauKey }>>([]);
+  const [factures, setFactures] = useState<FactureDoc[]>([]);
+  const [attestations, setAttestations] = useState<FactureDoc[]>([]);
   const [dbFactures, setDbFactures] = useState<DbFacture[]>([]);
   const [generatingFactureId, setGeneratingFactureId] = useState<string | null>(null);
   const [downloading, setDownloading] = useState<string | null>(null);
