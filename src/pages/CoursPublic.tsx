@@ -1315,9 +1315,11 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
 
     // Les accès démarrent le premier jour réel de formation : jamais J-1.
     // La fenêtre e-learning configurée dans le CRM reste prioritaire si elle est active.
+    const isFC = isFormationContinue(apprenant?.type_apprenant, apprenant?.formation_choisie);
+    const isFcVtc = isFC && /vtc/i.test(`${apprenant?.formation_choisie || ''} ${apprenant?.type_apprenant || ''}`);
     const isPresentielOrFC =
       isPresentielType(apprenant?.type_apprenant, apprenant?.formation_choisie, apprenant?.creneau_horaire) ||
-      isFormationContinue(apprenant?.type_apprenant, apprenant?.formation_choisie) ||
+      isFC ||
       !!sessionAccessWindow;
     const accessWindows = [
       ...(isPresentielOrFC
@@ -1325,24 +1327,31 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
           start: sessionAccessWindow?.date_debut || apprenant.date_debut_formation || apprenant.date_debut_cours_en_ligne,
           end: sessionAccessWindow?.date_fin || apprenant.date_fin_formation || apprenant.date_debut_formation || apprenant.date_debut_cours_en_ligne,
           allowDayBefore: false,
+          extendMonths: isFcVtc ? 6 : 0,
         }]
         : []),
       {
         start: apprenant.date_debut_cours_en_ligne || apprenant.date_debut_formation,
         end: apprenant.date_fin_cours_en_ligne,
         allowDayBefore: false,
+        extendMonths: isFcVtc ? 6 : 0,
       },
     ]
       .map((window) => {
         const start = parseAccessDate(window.start);
         const end = parseAccessDate(window.end);
         if (!start || !end) return null;
+        const extendedEnd = window.extendMonths
+          ? new Date(new Date(end).setMonth(end.getMonth() + window.extendMonths))
+          : end;
         return {
           start: window.allowDayBefore ? new Date(start.getTime() - 24 * 60 * 60 * 1000) : start,
-          end,
+          end: extendedEnd,
         };
       })
       .filter((window): window is { start: Date; end: Date } => Boolean(window));
+
+
 
     const isAccessAllowed = accessWindows.some((window) => now >= window.start && now <= window.end);
     const debutEffectif = getEarliestDate(accessWindows.map((window) => window.start));
