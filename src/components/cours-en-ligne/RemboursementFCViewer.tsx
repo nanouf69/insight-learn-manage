@@ -413,6 +413,54 @@ export default function RemboursementFCViewer({ apprenantId, completed, onComple
     window.open(f.url, "_blank", "noopener,noreferrer");
   };
 
+  const handleGenerateDbFacture = async (f: DbFacture) => {
+    if (!apprenant) return;
+    try {
+      setGeneratingFactureId(f.id);
+      const typeApp = `${apprenant.type_apprenant || ""} ${apprenant.formation_choisie || ""}`.toUpperCase();
+      const formationType: "VTC" | "TAXI" = typeApp.includes("TAXI") ? "TAXI" : "VTC";
+      const lastPay = f.paiements && f.paiements.length ? f.paiements[f.paiements.length - 1] : null;
+      const result: any = await generateFactureFC(
+        {
+          numero: f.numero,
+          dateEmission: f.date_emission,
+          apprenant: {
+            nom: apprenant.nom || "",
+            prenom: apprenant.prenom || "",
+            adresse: apprenant.adresse || undefined,
+            code_postal: apprenant.code_postal || undefined,
+            ville: apprenant.ville || undefined,
+            email: apprenant.email || undefined,
+            telephone: apprenant.telephone || undefined,
+          },
+          financeur: f.financeur || null,
+          formation: formationType,
+          designation: `Formation Continue Obligatoire ${formationType} - 14h`,
+          montantHT: Number(f.montant_ttc) || 200,
+          tvaTaux: 0,
+          duree: "14h",
+          acquittee: true,
+          dateAcquittement: f.date_paiement || lastPay?.date_paiement || undefined,
+          moyenPaiement: lastPay?.moyen_paiement || undefined,
+        },
+        { returnBlob: true }
+      );
+      if (result?.blob && result?.fileName) {
+        const url = URL.createObjectURL(result.blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = result.fileName;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    } catch (e) {
+      console.error("[RemboursementFC] generate facture error", e);
+      toast.error("Erreur lors de la génération de la facture");
+    } finally {
+      setGeneratingFactureId(null);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
