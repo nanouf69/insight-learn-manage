@@ -18,8 +18,20 @@ import { buildEmargementHTML } from "./EmargementsSignesViewer";
 import { EmargementFCModal } from "./EmargementFCModal";
 import { creneauHoraire, creneauLabel, getExpectedEmargements, type CreneauKey } from "@/lib/agendaSlots";
 import { generateAttestationFCVTC } from "@/lib/pdf/attestation-fc-vtc";
+import { generateFactureFC } from "@/lib/pdf/facture-fc";
 import { toast } from "sonner";
 import agrementVtcAsset from "@/assets/agrement-vtc-ftransport.pdf.asset.json";
+
+interface DbFacture {
+  id: string;
+  numero: string;
+  date_emission: string;
+  date_paiement: string | null;
+  statut: string | null;
+  montant_ttc: number;
+  financeur?: any;
+  paiements?: Array<{ montant: number; date_paiement: string; moyen_paiement: string }>;
+}
 
 interface Props {
   apprenantId?: string;
