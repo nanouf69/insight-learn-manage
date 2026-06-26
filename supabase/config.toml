@@ -85,3 +85,6 @@ verify_jwt = false
 
 [functions.relance-non-connexion-jour1]
 verify_jwt = false
+
+[functions.relance-50pct-1mois-avant-examen]
+verify_jwt = false
