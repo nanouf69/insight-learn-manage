@@ -248,6 +248,44 @@ export default function RemboursementFCViewer({ apprenantId, completed, onComple
       if (!fRes.error && Array.isArray(fRes.data)) setFactures(fRes.data as FactureDoc[]);
       if (!atRes.error && Array.isArray(atRes.data)) setAttestations(atRes.data as FactureDoc[]);
 
+      // Charge les factures payées en BDD + financeur + paiements pour génération à la volée
+      try {
+        const { data: facRows } = await supabase
+          .from("factures")
+          .select("id, numero, date_emission, date_paiement, statut, montant_ttc")
+          .eq("apprenant_id", apprenantId)
+          .in("statut", ["payee", "acquittee"])
+          .order("date_emission", { ascending: false });
+        const paidFacs = (facRows || []) as DbFacture[];
+        if (paidFacs.length > 0) {
+          const [{ data: fcRows }, { data: paiRows }] = await Promise.all([
+            supabase
+              .from("financeurs_fc" as any)
+              .select("*")
+              .eq("apprenant_id", apprenantId)
+              .maybeSingle(),
+            supabase
+              .from("facture_paiements" as any)
+              .select("facture_id, montant, date_paiement, moyen_paiement")
+              .in("facture_id", paidFacs.map((f) => f.id)),
+          ]);
+          const payByFac: Record<string, any[]> = {};
+          (paiRows || []).forEach((p: any) => {
+            (payByFac[p.facture_id] = payByFac[p.facture_id] || []).push(p);
+          });
+          setDbFactures(paidFacs.map((f) => ({
+            ...f,
+            financeur: fcRows || null,
+            paiements: payByFac[f.id] || [],
+          })));
+        } else {
+          setDbFactures([]);
+        }
+      } catch (e) {
+        console.warn("[RemboursementFC] load db factures error", e);
+      }
+
+
       if (ap) {
         const today = new Date(); today.setHours(0, 0, 0, 0);
         const parseDate = (s?: string | null): Date | null => {
