@@ -75,7 +75,10 @@ serve(async (req) => {
       const t = (a.type_apprenant || a.formation_choisie || "").toLowerCase();
       if (!HEURES_REQUISES[t]) return false;
       if (PRESENTIEL_TYPES.includes(t)) return false;
-      if (a.resultat_examen_pratique === "non") return false;
+      // Exclure les formations continues (pas concernées par les 50% avant examen théorique)
+      if (t.includes("continue") || t.startsWith("fc-")) return false;
+      // Exclure ceux qui ont déjà passé l'examen pratique (résultat saisi quel qu'il soit)
+      if (a.resultat_examen_pratique != null && a.resultat_examen_pratique !== "") return false;
       return true;
     });
 
