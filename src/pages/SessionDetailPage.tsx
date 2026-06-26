@@ -64,13 +64,21 @@ export default function SessionDetailPage() {
     );
   }
 
+  const goBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate("/?section=sessions");
+    }
+  };
+
   return (
     <SessionDetail
       session={session}
       open={true}
-      onOpenChange={() => navigate(-1)}
+      onOpenChange={goBack}
       asPage
-      onBack={() => navigate(-1)}
+      onBack={goBack}
       onNavigateToApprenant={(apprenantId) => navigate(`/?section=crm&apprenant=${apprenantId}`)}
     />
   );
