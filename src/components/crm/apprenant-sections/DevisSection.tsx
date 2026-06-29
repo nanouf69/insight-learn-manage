@@ -104,6 +104,7 @@ const DEVIS_TEMPLATES = [
   { id: "ta_elearning", label: "Formation TA (passerelle VTC→TAXI) E-learning", file: "Devis_Ta_elearning.docx", prix: 999, emailId: "devis-ta-elearning" },
   { id: "va_elearning", label: "Formation VA (passerelle TAXI→VTC) E-learning", file: "Devis_VTC_pour_chauffeurs_TAXI.docx", prix: 999, emailId: "devis-va-elearning" },
   { id: "taxi_pratique", label: "Formation pratique TAXI", file: "Devis_TAXI_pratique.docx", prix: 349, emailId: "devis-taxi-pratique" },
+  { id: "taxi_mobilite", label: "Formation à la mobilité TAXI (14h)", file: "Devis_TAXI_mobilite.docx", prix: 349, emailId: "devis-taxi-mobilite" },
   { id: "fc_vtc", label: "Formation continue VTC", file: "Devis_formation_continue_VTC.docx", prix: 200, emailId: "devis-fc-vtc" },
   { id: "fc_taxi", label: "Formation continue TAXI", file: "Devis_formation_continue_TAXI.docx", prix: 200, emailId: "devis-fc-taxi" },
   { id: "vtc_sans_frais_examen", label: "Formation VTC sans frais d'examen", file: "Devis_VTC_sans_frais_examen.docx", prix: 1099, emailId: "devis-vtc-sans-frais-examen" },
@@ -241,6 +242,49 @@ Veuillez trouver en pièce jointe votre devis pour la Formation pratique TAXI.
 Merci de nous renvoyer le devis signé avec vos justificatifs.
 
 📧 contact@ftransport.fr | 📞 04.28.29.60.91
+
+Cordialement,
+L'équipe Ftransport`,
+  },
+  "devis-taxi-mobilite": {
+    subject: "Votre devis Formation à la mobilité TAXI (14h) - {{prenom}} {{nom}}",
+    body: `Bonjour {{prenom}} {{nom}},
+
+Veuillez trouver en pièce jointe votre devis pour la Formation à la mobilité TAXI (14h), obligatoire pour exercer votre activité de conducteur de taxi dans un département différent de celui où vous avez obtenu votre examen (arrêté du 11 août 2017, articles 2 à 4).
+
+📋 Détails de la formation :
+- Intitulé : Formation à la mobilité TAXI
+- Durée : 14 heures en présentiel (2 jours)
+- Lieu : LYON (69) - 86 route de Genas, 69003 Lyon
+- Centre agréé Préfecture n°69-18-001 - Qualiopi
+- Montant : {{montant}} € TTC (non assujetti TVA)
+
+📚 Programme (référentiel annexe I arrêté du 6 avril 2017) :
+• Module A - Connaissance du territoire (7h)
+  Géographie, axes routiers, gares, aéroports, hôpitaux, administrations, lieux d'intérêt du département.
+• Module B - Réglementation locale (7h)
+  Arrêtés préfectoraux et municipaux, zones de prise en charge, stationnement, tarifs, obligations professionnelles.
+
+✅ Prérequis :
+- Être titulaire de la carte professionnelle de conducteur de taxi depuis au moins 2 ans
+- Exercer dans un département différent de celui d'obtention de l'examen
+
+🎓 À l'issue du stage :
+- Remise d'une attestation de suivi de la formation à la mobilité (art. 4)
+- Transmission par le centre au préfet du département d'origine et au préfet du département de destination
+- Délivrance par le préfet de destination d'une autorisation d'exercice
+
+📎 Documents à nous renvoyer avec le devis signé :
+1. Devis signé (mention « Lu et approuvé, bon pour acceptation »)
+2. Fiche d'inscription complétée
+3. Conditions générales de vente signées
+4. Copie pièce d'identité (recto/verso)
+5. Copie carte professionnelle TAXI
+6. Justificatif de domicile de moins de 3 mois
+7. Règlement (virement, chèque ou espèces sur place)
+
+📧 contact@ftransport.fr | 📞 04.28.29.60.91
+📍 86 route de Genas, 69003 Lyon
 
 Cordialement,
 L'équipe Ftransport`,
