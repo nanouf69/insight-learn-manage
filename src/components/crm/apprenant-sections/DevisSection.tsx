@@ -104,6 +104,7 @@ const DEVIS_TEMPLATES = [
   { id: "ta_elearning", label: "Formation TA (passerelle VTC→TAXI) E-learning", file: "Devis_Ta_elearning.docx", prix: 999, emailId: "devis-ta-elearning" },
   { id: "va_elearning", label: "Formation VA (passerelle TAXI→VTC) E-learning", file: "Devis_VTC_pour_chauffeurs_TAXI.docx", prix: 999, emailId: "devis-va-elearning" },
   { id: "taxi_pratique", label: "Formation pratique TAXI", file: "Devis_TAXI_pratique.docx", prix: 349, emailId: "devis-taxi-pratique" },
+  { id: "taxi_mobilite", label: "Formation à la mobilité TAXI (14h)", file: "Devis_TAXI_mobilite.docx", prix: 349, emailId: "devis-taxi-mobilite" },
   { id: "fc_vtc", label: "Formation continue VTC", file: "Devis_formation_continue_VTC.docx", prix: 200, emailId: "devis-fc-vtc" },
   { id: "fc_taxi", label: "Formation continue TAXI", file: "Devis_formation_continue_TAXI.docx", prix: 200, emailId: "devis-fc-taxi" },
   { id: "vtc_sans_frais_examen", label: "Formation VTC sans frais d'examen", file: "Devis_VTC_sans_frais_examen.docx", prix: 1099, emailId: "devis-vtc-sans-frais-examen" },
