@@ -32,7 +32,7 @@ interface PlanningMensuelFormateursProps {
   onClose: () => void;
 }
 
-const JOURS_SEMAINE = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi"];
+const JOURS_SEMAINE = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
 
 const getDateFromBloc = (semaineDebut: string, jour: number): Date => {
   const [year, month, day] = semaineDebut.split("-").map(Number);
