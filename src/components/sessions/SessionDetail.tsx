@@ -3057,18 +3057,12 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                 // est inscrit dans le planning pratique (table reservations_pratique).
                                 // Si aucune réservation trouvée → pas de feuille (règle ne s'applique
                                 // PAS aux autres types de formation).
-                                let practicalReservationDates: string[] = [];
-                                if (isPratique) {
-                                  practicalReservationDates = await getPracticalReservationDates(apprenant.id);
-                                  if (practicalReservationDates.length === 0) {
-                                    toast({
-                                      title: "Apprenant non inscrit au planning pratique",
-                                      description: `${apprenant.prenom} ${apprenant.nom} n'a aucune date réservée dans le planning de formation pratique. Aucune feuille d'émargement générée.`,
-                                      variant: "destructive",
-                                    });
-                                    return;
-                                  }
-                                }
+                                 let practicalReservationDates: string[] = [];
+                                 if (isPratique) {
+                                   practicalReservationDates = await getPracticalReservationDates(apprenant.id);
+                                   // Pas de blocage si aucune réservation : on retombe sur les blocs agenda
+                                   // ou sur les dates de session pour toujours pouvoir sortir la feuille.
+                                 }
 
                                 const creneauxText = Array.isArray((session as any).creneaux) ? (session as any).creneaux.join(' ') : String((session as any).creneaux || '');
                                 const isCoursDuSoir = isEveningTrainingValue(session.title, (session as any).nom, creneauxText);
