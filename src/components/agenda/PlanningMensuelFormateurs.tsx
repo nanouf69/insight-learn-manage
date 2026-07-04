@@ -296,10 +296,16 @@ export default function PlanningMensuelFormateurs({ open, onClose }: PlanningMen
                               </div>
                             );
                           })}
-                          {/* Remplir les jours manquants si semaine incomplète */}
-                          {semaine.length < 5 && Array.from({ length: 5 - semaine.length }).map((_, i) => (
-                            <div key={`empty-${i}`} className="min-h-[120px] p-2 bg-muted/30" />
-                          ))}
+                          {/* Remplir les jours manquants en fin de semaine (7 colonnes) */}
+                          {(() => {
+                            const filled = ((getDay(semaine[0]) + 6) % 7) + semaine.length;
+                            const remaining = 7 - filled;
+                            return remaining > 0
+                              ? Array.from({ length: remaining }).map((_, i) => (
+                                  <div key={`empty-${i}`} className="min-h-[120px] p-2 bg-muted/30" />
+                                ))
+                              : null;
+                          })()}
                         </div>
                       </div>
                     );
