@@ -264,12 +264,17 @@ export default function PlanningMensuelFormateurs({ open, onClose }: PlanningMen
                         <div className="bg-muted px-4 py-2 font-medium text-sm">
                           Semaine du {format(semaine[0], "d")} au {format(semaine[semaine.length - 1], "d MMMM yyyy", { locale: fr })}
                         </div>
-                        <div className="grid grid-cols-5 divide-x">
+                        <div className="grid grid-cols-7 divide-x">
+                          {/* Décalage pour aligner sur lundi si la semaine ne démarre pas un lundi */}
+                          {Array.from({ length: (getDay(semaine[0]) + 6) % 7 }).map((_, i) => (
+                            <div key={`pad-start-${i}`} className="min-h-[120px] p-2 bg-muted/30" />
+                          ))}
                           {semaine.map(jour => {
                             const key = format(jour, "yyyy-MM-dd");
                             const coursJour = blocsParDate.get(key) || [];
+                            const isWE = getDay(jour) === 0 || getDay(jour) === 6;
                             return (
-                              <div key={key} className="min-h-[120px] p-2">
+                              <div key={key} className={`min-h-[120px] p-2 ${isWE ? "bg-muted/20" : ""}`}>
                                 <div className="text-xs font-semibold text-muted-foreground mb-2 capitalize">
                                   {format(jour, "EEE d", { locale: fr })}
                                 </div>
