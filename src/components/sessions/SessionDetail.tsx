@@ -259,6 +259,36 @@ const formatLocalDateKey = (date: Date) => {
   return `${year}-${month}-${day}`;
 };
 
+const normalizeISODate = (value?: string | null) => String(value || '').slice(0, 10);
+
+const addDaysToISO = (isoDate: string, days: number) => {
+  const date = new Date(`${isoDate}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return isoDate;
+  date.setDate(date.getDate() + days);
+  return formatLocalDateKey(date);
+};
+
+const getMinISODate = (dates: string[]) => dates.reduce((min, date) => date < min ? date : min, dates[0]);
+const getMaxISODate = (dates: string[]) => dates.reduce((max, date) => date > max ? date : max, dates[0]);
+
+const getPracticalReservationDates = async (apprenantId?: string | null) => {
+  if (!apprenantId) return [] as string[];
+  const { data, error } = await supabase
+    .from('reservations_pratique')
+    .select('date_choisie')
+    .eq('apprenant_id', apprenantId)
+    .order('date_choisie', { ascending: true });
+
+  if (error) {
+    console.error('[SessionDetail] Erreur chargement réservations pratique:', error);
+    return [] as string[];
+  }
+
+  return Array.from(new Set(((data || []) as any[])
+    .map((r) => normalizeISODate(r.date_choisie))
+    .filter(Boolean)));
+};
+
 const applyFCVTCPersonalizedSchedule = (
   agendaDays: AgendaDaySlot[],
   sessionStart: string,
@@ -2406,13 +2436,10 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
         // FORMATION PRATIQUE : on suit uniquement le planning pratique. Si l'apprenant
         // n'est pas inscrit sur une date du planning (reservations_pratique), on saute
         // sa feuille d'émargement. (Ne s'applique PAS aux autres formations.)
+        let practicalReservationDates: string[] = [];
         if (isPratique) {
-          const { data: resaCheck } = await supabase
-            .from('reservations_pratique')
-            .select('date_choisie')
-            .eq('apprenant_id', apprenant.id)
-            .limit(1);
-          if (!resaCheck || resaCheck.length === 0) {
+          practicalReservationDates = await getPracticalReservationDates(apprenant.id);
+          if (practicalReservationDates.length === 0) {
             failed++;
             continue;
           }
@@ -2431,15 +2458,19 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                 ? ["Naoufal GUENICHI"]
                 : ["Naoufal GUENICHI", "Rim TOUIL"];
 
-        const dateDebut = new Date(session.dateDebut);
-        const semaineDebutMin = new Date(dateDebut);
-        semaineDebutMin.setDate(semaineDebutMin.getDate() - 6);
-        const semaineDebutMinStr = semaineDebutMin.toISOString().slice(0, 10);
+        const effectiveStartISO = isPratique && practicalReservationDates.length > 0
+          ? getMinISODate([session.dateDebut, ...practicalReservationDates])
+          : session.dateDebut;
+        const effectiveEndISO = isPratique && practicalReservationDates.length > 0
+          ? getMaxISODate([session.dateFin, ...practicalReservationDates])
+          : session.dateFin;
+        const practicalDateSet = new Set(practicalReservationDates);
+        const semaineDebutMinStr = addDaysToISO(effectiveStartISO, -6);
         const { data: blocs } = await supabase
           .from('agenda_blocs')
           .select('*')
           .gte('semaine_debut', semaineDebutMinStr)
-          .lte('semaine_debut', session.dateFin);
+          .lte('semaine_debut', effectiveEndISO);
 
         const matchFormation = (f: string) => {
           const fl = f.toLowerCase();
@@ -2456,7 +2487,11 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
           const actualDate = new Date(weekStart);
           actualDate.setDate(actualDate.getDate() + bloc.jour);
           const key = formatLocalDateKey(actualDate);
-          if (key < session.dateDebut || key > session.dateFin) continue;
+          if (isPratique && practicalDateSet.size > 0) {
+            if (!practicalDateSet.has(key)) continue;
+          } else if (key < session.dateDebut || key > session.dateFin) {
+            continue;
+          }
           if (!dayMap.has(key)) {
             dayMap.set(key, { date: actualDate, slots: [] });
           }
@@ -2522,12 +2557,15 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
         }
 
         const effectiveDateFinEmargement = saForEmargement.date_fin_personnalisee || session.dateFin;
+        const practicalPdfEndDate = isPratique && practicalReservationDates.length > 0
+          ? getMaxISODate(practicalReservationDates)
+          : effectiveDateFinEmargement;
 
         const resBulk = generateEmargementIndividuelPDF(
           {
             formation: formationLabel,
             dateDebut: session.dateDebut,
-            dateFin: effectiveDateFinEmargement,
+            dateFin: practicalPdfEndDate,
             lieu: session.lieu,
             formateurs: formateurNames,
           },
@@ -3016,13 +3054,10 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                 // est inscrit dans le planning pratique (table reservations_pratique).
                                 // Si aucune réservation trouvée → pas de feuille (règle ne s'applique
                                 // PAS aux autres types de formation).
+                                let practicalReservationDates: string[] = [];
                                 if (isPratique) {
-                                  const { data: resaCheck } = await supabase
-                                    .from('reservations_pratique')
-                                    .select('date_choisie')
-                                    .eq('apprenant_id', apprenant.id)
-                                    .limit(1);
-                                  if (!resaCheck || resaCheck.length === 0) {
+                                  practicalReservationDates = await getPracticalReservationDates(apprenant.id);
+                                  if (practicalReservationDates.length === 0) {
                                     toast({
                                       title: "Apprenant non inscrit au planning pratique",
                                       description: `${apprenant.prenom} ${apprenant.nom} n'a aucune date réservée dans le planning de formation pratique. Aucune feuille d'émargement générée.`,
@@ -3045,18 +3080,23 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                         ? ["Naoufal GUENICHI"]
                                         : ["Naoufal GUENICHI", "Rim TOUIL"];
 
-                                const dateDebut = new Date(session.dateDebut);
-                                const dateFin = new Date(session.dateFin);
+                                const effectiveStartISO = isPratique && practicalReservationDates.length > 0
+                                  ? getMinISODate([session.dateDebut, ...practicalReservationDates])
+                                  : session.dateDebut;
+                                const effectiveEndISO = isPratique && practicalReservationDates.length > 0
+                                  ? getMaxISODate([session.dateFin, ...practicalReservationDates])
+                                  : session.dateFin;
+                                const practicalDateSet = new Set(practicalReservationDates);
+                                const dateDebut = new Date(`${effectiveStartISO}T00:00:00`);
+                                const dateFin = new Date(`${effectiveEndISO}T00:00:00`);
                                 // semaine_debut is the Monday of the week; a session day (e.g. Tue 31/03)
                                 // belongs to a week starting up to 6 days earlier, so widen the lower bound.
-                                const semaineDebutMin = new Date(dateDebut);
-                                semaineDebutMin.setDate(semaineDebutMin.getDate() - 6);
-                                const semaineDebutMinStr = semaineDebutMin.toISOString().slice(0, 10);
+                                const semaineDebutMinStr = addDaysToISO(effectiveStartISO, -6);
                                 const { data: blocs } = await supabase
                                   .from('agenda_blocs')
                                   .select('*')
                                   .gte('semaine_debut', semaineDebutMinStr)
-                                  .lte('semaine_debut', session.dateFin);
+                                  .lte('semaine_debut', effectiveEndISO);
 
                                 const matchFormation = (f: string) => {
                                   const fl = f.toLowerCase();
@@ -3073,8 +3113,12 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                   const weekStart = new Date(bloc.semaine_debut);
                                   const actualDate = new Date(weekStart);
                                   actualDate.setDate(weekStart.getDate() + bloc.jour);
-                                  if (actualDate < dateDebut || actualDate > dateFin) continue;
                                   const key = formatLocalDateKey(actualDate);
+                                  if (isPratique && practicalDateSet.size > 0) {
+                                    if (!practicalDateSet.has(key)) continue;
+                                  } else if (actualDate < dateDebut || actualDate > dateFin) {
+                                    continue;
+                                  }
                                   if (!dayMap.has(key)) {
                                     dayMap.set(key, { date: actualDate, slots: [] });
                                   }
@@ -3141,12 +3185,15 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                 }
 
                                 const effectiveDateFinEmargement = sessionApprenant.date_fin_personnalisee || session.dateFin;
+                                const practicalPdfEndDate = isPratique && practicalReservationDates.length > 0
+                                  ? getMaxISODate(practicalReservationDates)
+                                  : effectiveDateFinEmargement;
 
                                 const resIndiv = generateEmargementIndividuelPDF(
                                   {
                                     formation: formationLabel,
                                     dateDebut: session.dateDebut,
-                                    dateFin: effectiveDateFinEmargement,
+                                    dateFin: practicalPdfEndDate,
                                     lieu: session.lieu,
                                     formateurs: formateurNames,
                                   },
