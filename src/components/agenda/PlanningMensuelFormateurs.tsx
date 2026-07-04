@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ChevronLeft, ChevronRight, User, Clock, BookOpen, Printer } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isWeekend, getDay } from "date-fns";
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay } from "date-fns";
 import { fr } from "date-fns/locale";
 
 interface Formateur {
@@ -32,7 +32,7 @@ interface PlanningMensuelFormateursProps {
   onClose: () => void;
 }
 
-const JOURS_SEMAINE = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi"];
+const JOURS_SEMAINE = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
 
 const getDateFromBloc = (semaineDebut: string, jour: number): Date => {
   const [year, month, day] = semaineDebut.split("-").map(Number);
@@ -133,11 +133,11 @@ export default function PlanningMensuelFormateurs({ open, onClose }: PlanningMen
     return { formateur: f, heures, jours, disciplines, blocs: blocsF.length };
   }).filter(s => s.blocs > 0);
 
-  // Jours ouvrés du mois
+  // Tous les jours du mois (y compris samedi et dimanche)
   const joursOuvres = eachDayOfInterval({
     start: startOfMonth(moisActuel),
     end: endOfMonth(moisActuel),
-  }).filter(d => !isWeekend(d));
+  });
 
   // Helper : convertit "9:00" ou "13:30" en minutes pour tri numérique
   const heureEnMinutes = (h: string) => {
@@ -247,18 +247,12 @@ export default function PlanningMensuelFormateurs({ open, onClose }: PlanningMen
                   const semaines: Date[][] = [];
                   let semaineCourante: Date[] = [];
                   joursOuvres.forEach((jour, i) => {
-                    if (i === 0) {
-                      semaineCourante.push(jour);
-                    } else {
-                      const prev = joursOuvres[i - 1];
-                      const diff = (jour.getTime() - prev.getTime()) / (1000 * 60 * 60 * 24);
-                      if (diff > 3) {
-                        semaines.push(semaineCourante);
-                        semaineCourante = [jour];
-                      } else {
-                        semaineCourante.push(jour);
-                      }
+                    // Nouvelle semaine à chaque lundi (sauf pour le tout premier jour)
+                    if (i > 0 && getDay(jour) === 1) {
+                      semaines.push(semaineCourante);
+                      semaineCourante = [];
                     }
+                    semaineCourante.push(jour);
                   });
                   if (semaineCourante.length) semaines.push(semaineCourante);
 
@@ -270,12 +264,17 @@ export default function PlanningMensuelFormateurs({ open, onClose }: PlanningMen
                         <div className="bg-muted px-4 py-2 font-medium text-sm">
                           Semaine du {format(semaine[0], "d")} au {format(semaine[semaine.length - 1], "d MMMM yyyy", { locale: fr })}
                         </div>
-                        <div className="grid grid-cols-5 divide-x">
+                        <div className="grid grid-cols-7 divide-x">
+                          {/* Décalage pour aligner sur lundi si la semaine ne démarre pas un lundi */}
+                          {Array.from({ length: (getDay(semaine[0]) + 6) % 7 }).map((_, i) => (
+                            <div key={`pad-start-${i}`} className="min-h-[120px] p-2 bg-muted/30" />
+                          ))}
                           {semaine.map(jour => {
                             const key = format(jour, "yyyy-MM-dd");
                             const coursJour = blocsParDate.get(key) || [];
+                            const isWE = getDay(jour) === 0 || getDay(jour) === 6;
                             return (
-                              <div key={key} className="min-h-[120px] p-2">
+                              <div key={key} className={`min-h-[120px] p-2 ${isWE ? "bg-muted/20" : ""}`}>
                                 <div className="text-xs font-semibold text-muted-foreground mb-2 capitalize">
                                   {format(jour, "EEE d", { locale: fr })}
                                 </div>
@@ -297,10 +296,16 @@ export default function PlanningMensuelFormateurs({ open, onClose }: PlanningMen
                               </div>
                             );
                           })}
-                          {/* Remplir les jours manquants si semaine incomplète */}
-                          {semaine.length < 5 && Array.from({ length: 5 - semaine.length }).map((_, i) => (
-                            <div key={`empty-${i}`} className="min-h-[120px] p-2 bg-muted/30" />
-                          ))}
+                          {/* Remplir les jours manquants en fin de semaine (7 colonnes) */}
+                          {(() => {
+                            const filled = ((getDay(semaine[0]) + 6) % 7) + semaine.length;
+                            const remaining = 7 - filled;
+                            return remaining > 0
+                              ? Array.from({ length: remaining }).map((_, i) => (
+                                  <div key={`empty-${i}`} className="min-h-[120px] p-2 bg-muted/30" />
+                                ))
+                              : null;
+                          })()}
                         </div>
                       </div>
                     );
