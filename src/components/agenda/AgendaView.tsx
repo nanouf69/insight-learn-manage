@@ -318,7 +318,16 @@ export function AgendaView() {
   const handleAddBlock = async () => {
     // Éviter les doubles soumissions
     if (isSaving) return;
-    if (!selectedSlot || !newBlock.formation || !newBlock.formateur || !newBlock.endHour || !newBlock.startHour) return;
+    if (!selectedSlot) return;
+    const missing: string[] = [];
+    if (!newBlock.formation) missing.push("Formation");
+    if (!newBlock.formateur) missing.push("Formateur");
+    if (!newBlock.startHour) missing.push("Heure de début");
+    if (!newBlock.endHour) missing.push("Heure de fin");
+    if (missing.length) {
+      toast.error(`Champs manquants : ${missing.join(", ")}`);
+      return;
+    }
 
     const formateurData = formateursList.find((f) => f.id === newBlock.formateur);
     const disciplineData = disciplines.find((d) => d.id === newBlock.discipline);
@@ -747,15 +756,16 @@ export function AgendaView() {
 
         {/* Dialog pour ajouter un bloc */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
+          <DialogContent className="max-w-md max-h-[calc(100dvh-2rem)] overflow-hidden flex flex-col p-0">
+            <DialogHeader className="px-6 pt-6 pb-3 shrink-0">
               <DialogTitle className="flex items-center gap-2">
                 <BookOpen className="h-5 w-5" />
                 Ajouter un cours
               </DialogTitle>
             </DialogHeader>
             {selectedSlot && (
-              <div className="space-y-4">
+              <div className="flex min-h-0 flex-1 flex-col">
+                <div className="space-y-4 overflow-y-auto px-6 pb-4">
                 <div className="p-3 bg-muted rounded-lg text-sm">
                   <strong>
                     {format(selectedSlot.date, "EEEE d MMMM yyyy", { locale: fr })}
@@ -920,16 +930,22 @@ export function AgendaView() {
                   </div>
                 </div>
 
-                <div className="flex justify-end gap-2 pt-4">
+                </div>
+
+                <div className="flex justify-end gap-2 border-t bg-background px-6 py-4 shrink-0">
                   <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
                     Annuler
                   </Button>
                   <Button
                     onClick={handleAddBlock}
-                    disabled={!newBlock.formation || !newBlock.formateur || !newBlock.endHour}
+                    disabled={isSaving}
                   >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Ajouter
+                    {isSaving ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Plus className="h-4 w-4 mr-2" />
+                    )}
+                    {isSaving ? "Enregistrement..." : "Ajouter"}
                   </Button>
                 </div>
               </div>
@@ -1022,11 +1038,12 @@ export function AgendaView() {
 
         {/* Dialog pour modifier un bloc */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
+          <DialogContent className="max-w-md max-h-[calc(100dvh-2rem)] overflow-hidden flex flex-col p-0">
+            <DialogHeader className="px-6 pt-6 pb-3 shrink-0">
               <DialogTitle>Modifier le cours</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
+            <div className="flex min-h-0 flex-1 flex-col">
+              <div className="space-y-4 overflow-y-auto px-6 pb-4">
               <div className="space-y-2">
                 <Label>Formation *</Label>
                 <Select value={editBlock.formation} onValueChange={(value) => setEditBlock({ ...editBlock, formation: value })}>
@@ -1126,7 +1143,8 @@ export function AgendaView() {
                   </Select>
                 </div>
               </div>
-              <div className="flex justify-end gap-2 pt-4">
+              </div>
+              <div className="flex justify-end gap-2 border-t bg-background px-6 py-4 shrink-0">
                 <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Annuler</Button>
                 <Button onClick={handleUpdateBlock}>
                   Enregistrer
