@@ -1237,15 +1237,33 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
 
   const addApprenant = async (apprenantId: string) => {
     try {
+      // Vérifier si l'apprenant est déjà lié à cette session (peut être masqué par le filtre e-learning)
+      const { data: existing } = await supabase
+        .from('session_apprenants')
+        .select('id')
+        .eq('session_id', session.id)
+        .eq('apprenant_id', apprenantId)
+        .maybeSingle();
+
+      if (existing) {
+        refetchApprenants();
+        setShowAddApprenant(false);
+        toast({
+          title: "Déjà inscrit",
+          description: "Cet apprenant est déjà associé à la session (peut être masqué par un filtre).",
+        });
+        return;
+      }
+
       const { error } = await supabase
         .from('session_apprenants')
         .insert({
           session_id: session.id,
           apprenant_id: apprenantId,
         });
-      
+
       if (error) throw error;
-      
+
       refetchApprenants();
       setShowAddApprenant(false);
       toast({
