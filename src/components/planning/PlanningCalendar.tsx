@@ -14,15 +14,13 @@ const MONTH_NAMES = ['jan', 'fév', 'mar', 'avr', 'mai', 'jun', 'jul', 'aoû', '
 const MONTH_NAMES_FULL = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
 
 /**
- * Génère tous les jours ouvrés (Lun-Ven) du mois donné.
+ * Génère tous les jours du mois donné, week-end inclus.
  */
-function generateWeekdaysForMonth(year: number, month: number): Date[] {
+function generateDaysForMonth(year: number, month: number): Date[] {
   const days: Date[] = [];
   const last = new Date(year, month + 1, 0).getDate();
   for (let d = 1; d <= last; d++) {
-    const date = new Date(year, month, d);
-    const dow = date.getDay();
-    if (dow !== 0 && dow !== 6) days.push(date);
+    days.push(new Date(year, month, d));
   }
   return days;
 }
@@ -284,7 +282,7 @@ export function PlanningCalendar() {
       });
 
       // Construire les semaines pour le mois affiché
-      const weekdays = generateWeekdaysForMonth(viewYear, viewMonth);
+      const days = generateDaysForMonth(viewYear, viewMonth);
       const builtWeeks: WeekInfo[] = [];
       let currentWeek: DayInfo[] = [];
       let weekNum = 1;
@@ -302,7 +300,7 @@ export function PlanningCalendar() {
         return 'vtc';
       };
 
-      weekdays.forEach((d, i) => {
+      days.forEach((d, i) => {
         const key = toLocalDateKey(d);
         currentWeek.push({
           date: d,
@@ -314,7 +312,7 @@ export function PlanningCalendar() {
           creneaux: creneauxByDate[key],
         });
 
-        if (d.getDay() === 5 || i === weekdays.length - 1) {
+        if (d.getDay() === 0 || i === days.length - 1) {
           builtWeeks.push({ label: `Semaine ${weekNum}`, days: currentWeek });
           currentWeek = [];
           weekNum++;
@@ -376,7 +374,7 @@ export function PlanningCalendar() {
       {weeks.map((week) => (
         <div key={week.label} className="space-y-3">
           <h3 className="text-base font-semibold text-foreground italic">{week.label}</h3>
-          <div className="grid grid-cols-5 gap-3">
+          <div className="grid grid-cols-7 gap-3">
             {week.days.map((day) => (
               <div
                 key={day.dateKey}
@@ -509,7 +507,7 @@ export function PlanningCalendar() {
                 </div>
               </div>
             ))}
-            {Array.from({ length: 5 - week.days.length }).map((_, i) => (
+            {Array.from({ length: 7 - week.days.length }).map((_, i) => (
               <div key={`empty-${i}`} className="border rounded-lg p-3 min-h-[180px] bg-muted/10" />
             ))}
           </div>
