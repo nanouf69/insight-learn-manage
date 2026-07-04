@@ -3504,6 +3504,9 @@ export function ExamenReussitePage() {
                 <div key={wi}>
                   <h4 className="text-sm font-semibold mb-2 text-muted-foreground">Semaine {wi + 1}</h4>
                   <div className="grid grid-cols-7 gap-2">
+                    {Array.from({ length: ((week[0].getDay() + 6) % 7) }).map((_, i) => (
+                      <div key={`empty-start-${i}`} className="bg-muted/20 rounded-lg" />
+                    ))}
                     {week.map(day => {
                       const key = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`;
                       const dayData = byDate[key];
