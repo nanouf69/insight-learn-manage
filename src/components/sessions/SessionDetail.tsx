@@ -733,19 +733,10 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
         console.error('[SessionDetail] Erreur chargement apprenants:', error);
         return [];
       }
-      // Exclure les apprenants en e-learning UNIQUEMENT pour les sessions théoriques.
-      // Les sessions pratiques concernent tous les apprenants (y compris e-learning),
-      // car la pratique se déroule toujours en présentiel.
-      const isPratique = (session?.type_session || "").toLowerCase() === "pratique";
-      const filtered = (data || []).filter((sa: any) => {
-        if (isPratique) return true;
-        const t = (sa?.apprenant?.type_apprenant || "").toLowerCase().trim();
-        if (!t) return true;
-        if (t.includes("elearning")) return false;
-        if (t.endsWith("-e")) return false;
-        return true;
-      });
-      console.log('[SessionDetail] apprenantsInSession chargés:', filtered.length, isPratique ? '(pratique: tous inclus)' : '(filtrés des e-learning)');
+      // Ne pas filtrer les e-learning : s'ils ont été explicitement ajoutés à une session
+      // théorique, ils doivent apparaître (sinon impossible de les gérer / retirer).
+      const filtered = data || [];
+      console.log('[SessionDetail] apprenantsInSession chargés:', filtered.length);
       return filtered;
 
     },
