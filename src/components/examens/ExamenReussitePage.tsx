@@ -3361,7 +3361,7 @@ export function ExamenReussitePage() {
         let currentWeek: Date[] = [];
         weekdays.forEach((d, i) => {
           currentWeek.push(d);
-          if (d.getDay() === 5 || i === weekdays.length - 1) {
+          if (d.getDay() === 0 || i === weekdays.length - 1) {
             weeks.push(currentWeek);
             currentWeek = [];
           }
