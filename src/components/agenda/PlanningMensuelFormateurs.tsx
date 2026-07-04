@@ -247,18 +247,12 @@ export default function PlanningMensuelFormateurs({ open, onClose }: PlanningMen
                   const semaines: Date[][] = [];
                   let semaineCourante: Date[] = [];
                   joursOuvres.forEach((jour, i) => {
-                    if (i === 0) {
-                      semaineCourante.push(jour);
-                    } else {
-                      const prev = joursOuvres[i - 1];
-                      const diff = (jour.getTime() - prev.getTime()) / (1000 * 60 * 60 * 24);
-                      if (diff > 3) {
-                        semaines.push(semaineCourante);
-                        semaineCourante = [jour];
-                      } else {
-                        semaineCourante.push(jour);
-                      }
+                    // Nouvelle semaine à chaque lundi (sauf pour le tout premier jour)
+                    if (i > 0 && getDay(jour) === 1) {
+                      semaines.push(semaineCourante);
+                      semaineCourante = [];
                     }
+                    semaineCourante.push(jour);
                   });
                   if (semaineCourante.length) semaines.push(semaineCourante);
 
