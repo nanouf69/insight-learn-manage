@@ -1128,9 +1128,10 @@ export function AgendaView() {
               </div>
               <div className="flex justify-end gap-2 pt-4">
                 <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Annuler</Button>
-                <Button onClick={handleUpdateBlock} disabled={!editBlock.formation || !editBlock.formateur || !editBlock.endHour}>
+                <Button onClick={handleUpdateBlock}>
                   Enregistrer
                 </Button>
+
               </div>
             </div>
           </DialogContent>
