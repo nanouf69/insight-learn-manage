@@ -2228,8 +2228,11 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     const isVA = type === 'va' || type === 'va-e';
     const sessionLooksTaxi = normalizedSessionText.includes('taxi');
     const sessionLooksVTC = normalizedSessionText.includes('vtc');
-    const isTaxi = type.includes('taxi') || isTA || sessionLooksTaxi;
-    const isVTC = type === 'vtc' || type === 'vtc-e' || type === 'pa vtc' || (!isTaxi && (isVA || sessionLooksVTC));
+    const typeLooksTaxi = type.includes('taxi') || isTA;
+    const typeLooksVTC = type === 'vtc' || type === 'vtc-e' || type === 'pa vtc' || isVA;
+    const hasExplicitLearnerType = typeLooksTaxi || typeLooksVTC;
+    const isTaxi = typeLooksTaxi || (!hasExplicitLearnerType && sessionLooksTaxi);
+    const isVTC = typeLooksVTC || (!hasExplicitLearnerType && !isTaxi && sessionLooksVTC);
 
     return { type, isTA, isVA, isTaxi, isVTC };
   };
