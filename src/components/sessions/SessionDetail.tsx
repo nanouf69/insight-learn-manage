@@ -2442,10 +2442,8 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
         let practicalReservationDates: string[] = [];
         if (isPratique) {
           practicalReservationDates = await getPracticalReservationDates(apprenant.id);
-          if (practicalReservationDates.length === 0) {
-            failed++;
-            continue;
-          }
+          // On ne saute plus l'apprenant s'il n'a pas de réservation :
+          // on utilisera les blocs agenda ou le fallback basé sur la session.
         }
 
         const creneauxText = Array.isArray((session as any).creneaux) ? (session as any).creneaux.join(' ') : String((session as any).creneaux || '');
