@@ -133,11 +133,11 @@ export default function PlanningMensuelFormateurs({ open, onClose }: PlanningMen
     return { formateur: f, heures, jours, disciplines, blocs: blocsF.length };
   }).filter(s => s.blocs > 0);
 
-  // Jours ouvrés du mois
+  // Tous les jours du mois (y compris samedi et dimanche)
   const joursOuvres = eachDayOfInterval({
     start: startOfMonth(moisActuel),
     end: endOfMonth(moisActuel),
-  }).filter(d => !isWeekend(d));
+  });
 
   // Helper : convertit "9:00" ou "13:30" en minutes pour tri numérique
   const heureEnMinutes = (h: string) => {
