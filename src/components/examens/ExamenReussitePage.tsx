@@ -3262,7 +3262,7 @@ export function ExamenReussitePage() {
         let cur = new Date(start);
         while (cur <= end) {
           const key = toKey(cur);
-          if (cur.getDay() !== 0 && cur.getDay() !== 6 && !excludedDays.includes(key) && !occupiedDays.has(key)) {
+          if (!excludedDays.includes(key) && !occupiedDays.has(key)) {
             weekdays.push(new Date(cur));
           }
           cur.setDate(cur.getDate() + 1);
@@ -3271,7 +3271,7 @@ export function ExamenReussitePage() {
           cur = new Date(start);
           while (cur <= end) {
             const key = toKey(cur);
-            if (cur.getDay() !== 0 && cur.getDay() !== 6 && !excludedDays.includes(key)) {
+            if (!excludedDays.includes(key)) {
               weekdays.push(new Date(cur));
             }
             cur.setDate(cur.getDate() + 1);
@@ -3361,7 +3361,7 @@ export function ExamenReussitePage() {
         let currentWeek: Date[] = [];
         weekdays.forEach((d, i) => {
           currentWeek.push(d);
-          if (d.getDay() === 5 || i === weekdays.length - 1) {
+          if (d.getDay() === 0 || i === weekdays.length - 1) {
             weeks.push(currentWeek);
             currentWeek = [];
           }
@@ -3503,7 +3503,10 @@ export function ExamenReussitePage() {
               {weeks.map((week, wi) => (
                 <div key={wi}>
                   <h4 className="text-sm font-semibold mb-2 text-muted-foreground">Semaine {wi + 1}</h4>
-                  <div className="grid grid-cols-5 gap-2">
+                  <div className="grid grid-cols-7 gap-2">
+                    {Array.from({ length: ((week[0].getDay() + 6) % 7) }).map((_, i) => (
+                      <div key={`empty-start-${i}`} className="bg-muted/20 rounded-lg" />
+                    ))}
                     {week.map(day => {
                       const key = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`;
                       const dayData = byDate[key];
