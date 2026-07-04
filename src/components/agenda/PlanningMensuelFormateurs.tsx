@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ChevronLeft, ChevronRight, User, Clock, BookOpen, Printer } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isWeekend, getDay } from "date-fns";
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay } from "date-fns";
 import { fr } from "date-fns/locale";
 
 interface Formateur {
