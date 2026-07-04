@@ -442,7 +442,16 @@ export function AgendaView() {
   };
 
   const handleUpdateBlock = async () => {
-    if (!editingBlock || !editBlock.formation || !editBlock.formateur || !editBlock.endHour || !editBlock.startHour) return;
+    if (!editingBlock) return;
+    const missing: string[] = [];
+    if (!editBlock.formation) missing.push("Formation");
+    if (!editBlock.formateur) missing.push("Formateur");
+    if (!editBlock.startHour) missing.push("Heure de début");
+    if (!editBlock.endHour) missing.push("Heure de fin");
+    if (missing.length) {
+      toast.error(`Champs manquants : ${missing.join(", ")}`);
+      return;
+    }
 
     const disciplineData = disciplines.find((d) => d.id === editBlock.discipline);
     const formateurData = formateursList.find((f) => f.id === editBlock.formateur);
