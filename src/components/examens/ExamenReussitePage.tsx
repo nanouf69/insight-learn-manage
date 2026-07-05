@@ -3517,6 +3517,8 @@ export function ExamenReussitePage() {
                       const dayMax = maxPerDayMap[key] || maxPerDay;
                       const vtcOverbooked = vtcReserved.length > dayMax;
                       const taxiOverbooked = taxiReserved.length > dayMax;
+                      const daySlot = typeof dayTimeSlots[key] === 'object' ? (dayTimeSlots[key] as any) : {};
+                      const dayFormateur: string | undefined = daySlot?.formateur;
                       const downloadEmargement = (formation: 'vtc' | 'taxi', candidats: any[]) => {
                         generateEmargementPratiquePDF(
                           new Date(key + 'T00:00:00'),
@@ -3527,7 +3529,8 @@ export function ExamenReussitePage() {
                             telephone: c.telephone || '',
                             email: c.email || '',
                           })),
-                          resolvePratiqueDayCreneaux(dayTimeSlots[key], formation)
+                          resolvePratiqueDayCreneaux(dayTimeSlots[key], formation),
+                          dayFormateur || (formation === 'taxi' ? 'Rim TOUIL' : 'Naoufal GUENICHI')
                         );
                       };
 
