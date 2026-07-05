@@ -43,7 +43,8 @@ export function generateEmargementPratiquePDF(
   date: Date,
   type: "vtc" | "taxi",
   candidats: CandidatPratique[],
-  creneaux?: { matin?: string; apresmidi?: string }
+  creneaux?: { matin?: string; apresmidi?: string },
+  formateur?: string
 ) {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -97,7 +98,7 @@ export function generateEmargementPratiquePDF(
 
   doc.setDrawColor(41, 128, 185);
   doc.setLineWidth(0.5);
-  doc.roundedRect(margin, yPos, pageWidth - margin * 2, 20, 3, 3);
+  doc.roundedRect(margin, yPos, pageWidth - margin * 2, 28, 3, 3);
 
   yPos += 8;
   doc.setFont("helvetica", "bold");
@@ -109,12 +110,23 @@ export function generateEmargementPratiquePDF(
 
   yPos += 8;
   doc.setFont("helvetica", "bold");
+  doc.setTextColor(41, 128, 185);
   doc.text("Lieu :", margin + 5, yPos);
   doc.setFont("helvetica", "normal");
+  doc.setTextColor(0, 0, 0);
   doc.text(LIEU_FORMATION, margin + 18, yPos);
 
+  yPos += 8;
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(41, 128, 185);
+  doc.text("Formateur :", margin + 5, yPos);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(0, 0, 0);
+  const formateurLabel = formateur || (type === "taxi" ? "Rim TOUIL" : "Naoufal GUENICHI");
+  doc.text(formateurLabel, margin + 32, yPos);
+
   // ===== LISTE DES CANDIDATS =====
-  yPos = 86;
+  yPos = 94;
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
   doc.setTextColor(41, 128, 185);
