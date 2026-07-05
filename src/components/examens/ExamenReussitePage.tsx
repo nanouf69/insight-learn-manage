@@ -3590,7 +3590,9 @@ export function ExamenReussitePage() {
                             </div>
                             <div className="flex gap-1 items-center">
                               <span className="text-[8px] text-muted-foreground">AM:</span>
-                              <select
+                              <input
+                                type="text"
+                                placeholder="ex: 9h-12h"
                                 value={typeof dayTimeSlots[key] === 'object' ? (dayTimeSlots[key] as any)?.matin || '' : ''}
                                 onChange={(e) => setDayTimeSlots(prev => {
                                   const current = typeof prev[key] === 'object' ? prev[key] as any : {};
@@ -3598,18 +3600,14 @@ export function ExamenReussitePage() {
                                   void saveDayTimeSlotsNow(next);
                                   return next;
                                 })}
-                                className="h-5 text-[9px] border rounded bg-muted/50 focus:outline-none focus:ring-1 focus:ring-primary px-0.5 flex-1 min-w-0"
-                              >
-                                <option value="">—</option>
-                                <option value="8h-12h">8h–12h</option>
-                                <option value="9h-12h">9h–12h</option>
-                                <option value="9h-13h">9h–13h</option>
-                                <option value="10h-12h">10h–12h</option>
-                              </select>
+                                className="h-5 text-[9px] border rounded bg-muted/50 focus:outline-none focus:ring-1 focus:ring-primary px-1 flex-1 min-w-0"
+                              />
                             </div>
                             <div className="flex gap-1 items-center">
                               <span className="text-[8px] text-muted-foreground">PM:</span>
-                              <select
+                              <input
+                                type="text"
+                                placeholder="ex: 13h-17h"
                                 value={typeof dayTimeSlots[key] === 'object' ? (dayTimeSlots[key] as any)?.apresmidi || '' : ''}
                                 onChange={(e) => setDayTimeSlots(prev => {
                                   const current = typeof prev[key] === 'object' ? prev[key] as any : {};
@@ -3617,15 +3615,8 @@ export function ExamenReussitePage() {
                                   void saveDayTimeSlotsNow(next);
                                   return next;
                                 })}
-                                className="h-5 text-[9px] border rounded bg-muted/50 focus:outline-none focus:ring-1 focus:ring-primary px-0.5 flex-1 min-w-0"
-                              >
-                                <option value="">—</option>
-                                <option value="13h-16h">13h–16h</option>
-                                <option value="13h-17h">13h–17h</option>
-                                <option value="13h-17h30">13h–17h30</option>
-                                <option value="14h-17h">14h–17h</option>
-                                <option value="14h-18h">14h–18h</option>
-                              </select>
+                                className="h-5 text-[9px] border rounded bg-muted/50 focus:outline-none focus:ring-1 focus:ring-primary px-1 flex-1 min-w-0"
+                              />
                             </div>
                           </div>
 
