@@ -3612,9 +3612,9 @@ export function ExamenReussitePage() {
                                 onChange={(e) => setDayTimeSlots(prev => {
                                   const current = typeof prev[key] === 'object' ? prev[key] as any : {};
                                   const next = { ...prev, [key]: { ...current, apresmidi: e.target.value } };
+                                  void saveDayTimeSlotsNow(next);
                                   return next;
                                 })}
-                                onBlur={() => saveDayTimeSlotsNow(dayTimeSlots)}
                                 className="h-5 text-[9px] border rounded bg-muted/50 focus:outline-none focus:ring-1 focus:ring-primary px-1 flex-1 min-w-0"
                               />
                             </div>
