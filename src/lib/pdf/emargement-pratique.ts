@@ -43,7 +43,8 @@ export function generateEmargementPratiquePDF(
   date: Date,
   type: "vtc" | "taxi",
   candidats: CandidatPratique[],
-  creneaux?: { matin?: string; apresmidi?: string }
+  creneaux?: { matin?: string; apresmidi?: string },
+  formateur?: string
 ) {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const pageWidth = doc.internal.pageSize.getWidth();
