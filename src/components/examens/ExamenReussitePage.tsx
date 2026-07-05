@@ -3629,6 +3629,28 @@ export function ExamenReussitePage() {
                             </div>
                           </div>
 
+                            <div className="flex gap-1 items-center w-full">
+                              <span className="text-[8px] text-muted-foreground">Formateur:</span>
+                              <select
+                                value={dayFormateur || ''}
+                                onChange={(e) => setDayTimeSlots(prev => {
+                                  const current = typeof prev[key] === 'object' ? prev[key] as any : {};
+                                  const next = { ...prev, [key]: { ...current, formateur: e.target.value || undefined } };
+                                  void saveDayTimeSlotsNow(next);
+                                  return next;
+                                })}
+                                className="h-5 text-[9px] border rounded bg-muted/50 focus:outline-none focus:ring-1 focus:ring-primary px-0.5 flex-1 min-w-0"
+                                title="Choisir le formateur pour l'émargement"
+                              >
+                                <option value="">Auto</option>
+                                <option value="Naoufal GUENICHI">Naoufal GUENICHI</option>
+                                <option value="Rim TOUIL">Rim TOUIL</option>
+                                <option value="Ismail AMAR">Ismail AMAR</option>
+                                <option value="Mohamed DIALLO">Mohamed DIALLO</option>
+                              </select>
+                            </div>
+                          </div>
+
                           {(typeof dayTimeSlots[key] === 'object' && (dayTimeSlots[key] as any)?.type) && (
                             <div className="text-[9px] text-center font-semibold text-primary mb-1">
                               Choix manuel : {String((dayTimeSlots[key] as any).type).toUpperCase()}
