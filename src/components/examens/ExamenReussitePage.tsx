@@ -3517,6 +3517,8 @@ export function ExamenReussitePage() {
                       const dayMax = maxPerDayMap[key] || maxPerDay;
                       const vtcOverbooked = vtcReserved.length > dayMax;
                       const taxiOverbooked = taxiReserved.length > dayMax;
+                      const daySlot = typeof dayTimeSlots[key] === 'object' ? (dayTimeSlots[key] as any) : {};
+                      const dayFormateur: string | undefined = daySlot?.formateur;
                       const downloadEmargement = (formation: 'vtc' | 'taxi', candidats: any[]) => {
                         generateEmargementPratiquePDF(
                           new Date(key + 'T00:00:00'),
@@ -3527,7 +3529,8 @@ export function ExamenReussitePage() {
                             telephone: c.telephone || '',
                             email: c.email || '',
                           })),
-                          resolvePratiqueDayCreneaux(dayTimeSlots[key], formation)
+                          resolvePratiqueDayCreneaux(dayTimeSlots[key], formation),
+                          dayFormateur || (formation === 'taxi' ? 'Rim TOUIL' : 'Naoufal GUENICHI')
                         );
                       };
 
@@ -3625,6 +3628,27 @@ export function ExamenReussitePage() {
                               </select>
                             </div>
                           </div>
+
+                            <div className="flex gap-1 items-center w-full">
+                              <span className="text-[8px] text-muted-foreground">Formateur:</span>
+                              <select
+                                value={dayFormateur || ''}
+                                onChange={(e) => setDayTimeSlots(prev => {
+                                  const current = typeof prev[key] === 'object' ? prev[key] as any : {};
+                                  const next = { ...prev, [key]: { ...current, formateur: e.target.value || undefined } };
+                                  void saveDayTimeSlotsNow(next);
+                                  return next;
+                                })}
+                                className="h-5 text-[9px] border rounded bg-muted/50 focus:outline-none focus:ring-1 focus:ring-primary px-0.5 flex-1 min-w-0"
+                                title="Choisir le formateur pour l'émargement"
+                              >
+                                <option value="">Auto</option>
+                                <option value="Naoufal GUENICHI">Naoufal GUENICHI</option>
+                                <option value="Rim TOUIL">Rim TOUIL</option>
+                                <option value="Ismail AMAR">Ismail AMAR</option>
+                                <option value="Mohamed DIALLO">Mohamed DIALLO</option>
+                              </select>
+                            </div>
 
                           {(typeof dayTimeSlots[key] === 'object' && (dayTimeSlots[key] as any)?.type) && (
                             <div className="text-[9px] text-center font-semibold text-primary mb-1">
