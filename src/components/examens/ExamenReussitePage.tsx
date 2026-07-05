@@ -3649,7 +3649,6 @@ export function ExamenReussitePage() {
                                 <option value="Mohamed DIALLO">Mohamed DIALLO</option>
                               </select>
                             </div>
-                          </div>
 
                           {(typeof dayTimeSlots[key] === 'object' && (dayTimeSlots[key] as any)?.type) && (
                             <div className="text-[9px] text-center font-semibold text-primary mb-1">
