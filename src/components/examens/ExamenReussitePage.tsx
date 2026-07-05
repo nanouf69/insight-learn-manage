@@ -280,19 +280,19 @@ function buildPratiqueReservationUrl(apprenantId: string, type: 'vtc' | 'taxi', 
   return `https://insight-learn-manage.lovable.app/reservation-pratique?${params.toString()}`;
 }
 
-type PratiqueDaySlot = { matin?: string; apresmidi?: string; type?: 'vtc' | 'taxi' | 'libre' } | string | undefined;
+type PratiqueDaySlot = { matin?: string; apresmidi?: string; type?: 'vtc' | 'taxi' | 'libre'; formateur?: string } | string | undefined;
 
 function resolvePratiqueDayCreneaux(slot: PratiqueDaySlot, type: 'vtc' | 'taxi') {
   if (typeof slot === 'string' && slot.trim()) {
-    return { matin: slot };
+    return { matin: slot.trim() };
   }
 
-  const matin = typeof slot === 'object' ? slot?.matin : undefined;
-  const apresmidi = typeof slot === 'object' ? slot?.apresmidi : undefined;
+  const matin = typeof slot === 'object' ? slot?.matin?.trim() : undefined;
+  const apresmidi = typeof slot === 'object' ? slot?.apresmidi?.trim() : undefined;
 
   return {
-    matin: matin || '9h-12h',
-    apresmidi: apresmidi || (type === 'taxi' ? '13h-17h30' : '13h-16h'),
+    matin: matin || undefined,
+    apresmidi: apresmidi || undefined,
   };
 }
 
@@ -301,7 +301,7 @@ function formatPratiqueCreneauxForMessage(slot: PratiqueDaySlot, type: 'vtc' | '
   return [creneaux.matin, creneaux.apresmidi]
     .filter(Boolean)
     .map((value) => String(value).replace(/-/g, ' - '))
-    .join(' puis ');
+    .join(' puis ') || 'À confirmer';
 }
 
 function AddCandidateToDayPicker({
