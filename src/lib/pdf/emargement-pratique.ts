@@ -170,15 +170,15 @@ export function generateEmargementPratiquePDF(
 
   const afterCandidats = (doc as any).lastAutoTable.finalY + 8;
 
-  const matinLabel = formatCreneau(creneaux?.matin) || "09h00 - 12h00";
-  const apresLabel = formatCreneau(creneaux?.apresmidi) || "13h00 - 16h00";
+  const matinLabel = formatCreneau(creneaux?.matin) || "";
+  const apresLabel = formatCreneau(creneaux?.apresmidi) || "";
 
   // ===== TABLEAU D'ÉMARGEMENT =====
   const emargementRows = candidats.map((c) => [
     `${c.nom.toUpperCase()} ${c.prenom}`,
-    matinLabel,
+    matinLabel || "—",
     "",
-    apresLabel,
+    apresLabel || "—",
     "",
   ]);
 
