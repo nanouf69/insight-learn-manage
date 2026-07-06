@@ -5312,11 +5312,16 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 const isRevisionMode = revisionSet && revisionSet.size > 0;
                 if (isRevisionMode) {
                   return (
-                    <div className="rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/20 p-3 text-sm text-amber-800 dark:text-amber-300 flex items-center justify-between gap-3">
-                      <span>🎯 Mode révision — vous ne voyez que les {revisionSet.size} question{revisionSet.size > 1 ? "s" : ""} fausse{revisionSet.size > 1 ? "s" : ""}.</span>
-                      <Button size="sm" variant="ghost" onClick={() => {
-                        setRevisionQuestionsFor(prev => { const next = { ...prev }; delete next[exo.id]; return next; });
-                      }}>Voir toutes les questions</Button>
+                    <div className="rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/20 p-3 text-sm text-amber-800 dark:text-amber-300 space-y-2">
+                      <div className="flex items-center justify-between gap-3">
+                        <span>🎯 Mode révision — vous ne voyez que les {revisionSet.size} question{revisionSet.size > 1 ? "s" : ""} fausse{revisionSet.size > 1 ? "s" : ""}.</span>
+                        <Button size="sm" variant="ghost" onClick={() => {
+                          setRevisionQuestionsFor(prev => { const next = { ...prev }; delete next[exo.id]; return next; });
+                        }}>Voir toutes les questions</Button>
+                      </div>
+                      <div className="font-semibold text-amber-900 dark:text-amber-200">
+                        📖 Lisez vos erreurs avant de recommencer les questions fausses.
+                      </div>
                     </div>
                   );
                 }
@@ -5661,7 +5666,12 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                               if (nbWrong === 0) {
                                 toast.success("🎉 Aucune question fausse à refaire !");
                               } else {
-                                toast.info(`🎯 ${nbWrong} question${nbWrong > 1 ? "s" : ""} à refaire — seules celles-ci sont affichées`);
+                                toast.info(`🎯 ${nbWrong} question${nbWrong > 1 ? "s" : ""} à refaire — lisez vos erreurs avant de recommencer`);
+                                setTimeout(() => {
+                                  window.scrollTo({ top: 0, behavior: "smooth" });
+                                  document.documentElement.scrollTop = 0;
+                                  document.body.scrollTop = 0;
+                                }, 50);
                               }
                             }}>
                               🎯 Refaire les fausses ({(() => {
