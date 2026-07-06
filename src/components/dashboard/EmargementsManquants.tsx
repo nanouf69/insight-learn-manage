@@ -107,12 +107,14 @@ export function EmargementsManquants({ onNavigateToApprenant }: Props) {
       // Apprenants prévus en formation par jour (via session_apprenants + sessions théoriques)
       const { data: sessionAppr, error: errSA } = await supabase
         .from("session_apprenants")
-        .select("apprenant_id, date_debut, date_fin, date_fin_personnalisee, session:sessions!inner(date_debut, date_fin, type_session)")
+        .select("apprenant_id, date_debut, date_fin, date_fin_personnalisee, session:sessions!inner(date_debut, date_fin, type_session, creneaux, heure_debut, nom)")
         .in("apprenant_id", ids);
 
       if (errSA) throw errSA;
 
-      const scheduledByDay: Record<string, Set<string>> = {};
+      type Slot = "matin" | "apres_midi" | "soir_1" | "soir_2";
+      // scheduledByDay: day -> apprenant_id -> Set of expected slots
+      const scheduledByDay: Record<string, Map<string, Set<Slot>>> = {};
       for (const sa of (sessionAppr || []) as any[]) {
         const sess = sa.session;
         if (!sess) continue;
@@ -121,12 +123,27 @@ export function EmargementsManquants({ onNavigateToApprenant }: Props) {
         const endRaw = sa.date_fin_personnalisee || sa.date_fin || sess.date_fin;
         const end = (endRaw && endRaw < sess.date_fin ? endRaw : sess.date_fin) as string;
         if (!start || !end) continue;
+
+        // Détection soir
+        const creneauxStr = ((sess.creneaux as string[] | null) || []).join(" ").toLowerCase();
+        const nomStr = (sess.nom || "").toLowerCase();
+        const heureDeb = sess.heure_debut || "";
+        const isEvening =
+          creneauxStr.includes("soir") ||
+          nomStr.includes("soir") ||
+          /1[7-9]:|2[0-3]:/.test(creneauxStr) ||
+          (heureDeb && parseInt(heureDeb.split(":")[0], 10) >= 17);
+        const slots: Slot[] = isEvening ? ["soir_1", "soir_2"] : ["matin", "apres_midi"];
+
         const from = start > startDay ? start : startDay;
         const to = end < today ? end : today;
         if (from > to) continue;
         let cursor = from;
         while (cursor <= to) {
-          (scheduledByDay[cursor] ||= new Set()).add(sa.apprenant_id);
+          const map = (scheduledByDay[cursor] ||= new Map());
+          const set = map.get(sa.apprenant_id) || new Set<Slot>();
+          for (const s of slots) set.add(s);
+          map.set(sa.apprenant_id, set);
           cursor = addDays(cursor, 1);
         }
       }
@@ -141,33 +158,47 @@ export function EmargementsManquants({ onNavigateToApprenant }: Props) {
         if (s.demi_journee) signedKeys.add(`${s.date_emargement}|${s.apprenant_id}|${s.demi_journee}`);
       }
 
-      // Manquants historiques par jour (matin + après-midi) — uniquement les prévus
-      const manquantsByDay: Record<string, Array<{ apprenant: ApprenantPresentiel; demi: "matin" | "apres_midi" }>> = {};
-      const nowH = new Date().getHours();
+      // Manquants historiques par jour — uniquement les prévus, selon leurs créneaux
+      const manquantsByDay: Record<string, Array<{ apprenant: ApprenantPresentiel; demi: Slot }>> = {};
+      const now = new Date();
+      const nowH = now.getHours();
+      const nowM = now.getMinutes();
+      const nowMin = nowH * 60 + nowM;
       for (let off = 0; off < HISTORY_DAYS; off++) {
         const day = addDays(today, -off);
         const isToday = off === 0;
-        const demis: Array<"matin" | "apres_midi"> = isToday
-          ? nowH < 13 ? ["matin"] : ["matin", "apres_midi"]
-          : ["matin", "apres_midi"];
         const [yy, mm, dd] = day.split("-").map(Number);
         const dow = new Date(yy, mm - 1, dd).getDay();
         if (dow === 0 || dow === 6) continue;
         const scheduled = scheduledByDay[day];
         if (!scheduled || scheduled.size === 0) continue;
-        for (const a of apprenants) {
-          if (!scheduled.has(a.id)) continue;
-          for (const d of demis) {
-            if (!signedKeys.has(`${day}|${a.id}|${d}`)) {
-              (manquantsByDay[day] ||= []).push({ apprenant: a, demi: d });
+        for (const [aid, slotSet] of scheduled) {
+          const a = apprenantsMap.get(aid);
+          if (!a) continue;
+          for (const slot of slotSet) {
+            // Ne pas afficher un créneau pas encore commencé aujourd'hui
+            if (isToday) {
+              const startMin =
+                slot === "matin" ? 9 * 60
+                : slot === "apres_midi" ? 13 * 60 + 30
+                : slot === "soir_1" ? 17 * 60
+                : 18 * 60 + 30;
+              if (nowMin < startMin) continue;
+            }
+            if (!signedKeys.has(`${day}|${aid}|${slot}`)) {
+              (manquantsByDay[day] ||= []).push({ apprenant: a, demi: slot });
             }
           }
         }
       }
 
-      const scheduledToday = scheduledByDay[today] ?? new Set<string>();
+      const scheduledToday = scheduledByDay[today] ?? new Map<string, Set<Slot>>();
+      const currentSlot: Slot = demi;
       return {
-        manquants: apprenants.filter((a) => scheduledToday.has(a.id) && !signedSet.has(a.id)),
+        manquants: apprenants.filter((a) => {
+          const slots = scheduledToday.get(a.id);
+          return slots && slots.has(currentSlot) && !signedSet.has(a.id);
+        }),
         signesByDay,
         manquantsByDay,
       };
@@ -255,7 +286,7 @@ export function EmargementsManquants({ onNavigateToApprenant }: Props) {
             const heure = s.created_at
               ? new Date(s.created_at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })
               : "";
-            const demiLbl = s.demi_journee === "matin" ? "Matin 09:00-12:30" : s.demi_journee === "apres_midi" ? "A-M 13:30-17:00" : "";
+            const demiLbl = s.demi_journee === "matin" ? "Matin 09:00-12:30" : s.demi_journee === "apres_midi" ? "A-M 13:30-17:00" : s.demi_journee === "soir_1" ? "Soir 17:00-18:30" : s.demi_journee === "soir_2" ? "Soir 18:30-21:00" : "";
             return (
               <div
                 key={`${s.apprenant_id}-${s.demi_journee}-${s.created_at}`}
@@ -291,7 +322,7 @@ export function EmargementsManquants({ onNavigateToApprenant }: Props) {
           <div className="space-y-1.5">
             {manquantsJourSelectionne.map((m, i) => {
               const a = m.apprenant;
-              const demiLbl = m.demi === "matin" ? "Matin 09:00-12:30" : "Après-midi 13:30-17:00";
+              const demiLbl = m.demi === "matin" ? "Matin 09:00-12:30" : m.demi === "apres_midi" ? "Après-midi 13:30-17:00" : m.demi === "soir_1" ? "Soir 17:00-18:30" : "Soir 18:30-21:00";
               return (
                 <div
                   key={`${a.id}-${m.demi}-${i}`}
