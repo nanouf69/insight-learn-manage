@@ -208,7 +208,9 @@ export function EmargementsManquants({ onNavigateToApprenant }: Props) {
   const manquants = (data?.manquants ?? []) as ApprenantPresentiel[];
   const signesByDay = data?.signesByDay ?? {};
   const manquantsByDay = data?.manquantsByDay ?? {};
-  const signesJourSelectionne = signesByDay[selectedDay] ?? [];
+  const signesJourSelectionne = (signesByDay[selectedDay] ?? []).slice().sort(
+    (a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
+  );
   const manquantsJourSelectionne = manquantsByDay[selectedDay] ?? [];
 
 
