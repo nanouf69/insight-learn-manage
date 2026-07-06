@@ -5337,10 +5337,13 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 const isQrc = q?.type === "qrc" || (q.choix?.length === 0 && q.reponsesAttendues);
                 const selected = selectedAnswers[key];
                 const qrcResult = qrcResults[key];
+                const revisionSet = revisionQuestionsFor[exo.id];
+                const isInRevision = revisionSet && revisionSet.size > 0;
 
                 if (isQrc) {
+                  const isQrcWrong = isInRevision || (qrcResult && qrcResult !== "loading" && !qrcResult.estCorrect);
                   return (
-                    <div key={q.id} id={`exo-q-${exo.id}-${qi}`} className="space-y-2 p-4 border rounded-lg scroll-mt-20">
+                    <div key={q.id} id={`exo-q-${exo.id}-${qi}`} className={`space-y-2 p-4 border rounded-lg scroll-mt-20 ${isQrcWrong ? 'border-destructive border-4 bg-destructive/10' : ''}`}>
                       {renderExerciseQuestionPrompt(qi + 1, questionPrompts[qi] ?? parseExerciseQuestionPrompt(q.enonce))}
                       <Badge variant="outline" className="text-xs">QRC — Réponse libre</Badge>
                       <Textarea
@@ -5379,9 +5382,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
                 const multi = isMultiAnswer(q);
                 const selectedArr = Array.isArray(selected) ? selected : selected ? [selected] : [];
+                const exoShowResults = showResultsFor.has(exo.id);
+                const isQcmWrong = isInRevision || (exoShowResults && !isAnswerCorrect(selected, q));
 
                 return (
-                  <div key={q.id} id={`exo-q-${exo.id}-${qi}`} data-answer-scroll-anchor className={`space-y-2 p-4 border rounded-lg scroll-mt-20 transition-all ${unansweredKeys.has(key) ? 'border-destructive border-2 bg-destructive/5' : ''}`}>
+                  <div key={q.id} id={`exo-q-${exo.id}-${qi}`} data-answer-scroll-anchor className={`space-y-2 p-4 border rounded-lg scroll-mt-20 transition-all ${isQcmWrong ? 'border-destructive border-4 bg-destructive/10' : unansweredKeys.has(key) ? 'border-destructive border-2 bg-destructive/5' : ''}`}>
                     {renderExerciseQuestionPrompt(qi + 1, questionPrompts[qi] ?? parseExerciseQuestionPrompt(q.enonce))}
                     {q.image && (() => {
                       const sizeMap: Record<string, string> = {
