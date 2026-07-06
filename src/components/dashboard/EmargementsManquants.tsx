@@ -1,12 +1,27 @@
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { PenLine, Phone, Mail, Sun, Moon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { PenLine, Phone, Mail, Sun, Moon, ChevronLeft, ChevronRight } from "lucide-react";
 
-const todayISO = () => {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+const isoDate = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+const todayISO = () => isoDate(new Date());
+
+const addDays = (iso: string, delta: number) => {
+  const [y, m, d] = iso.split("-").map(Number);
+  const dt = new Date(y, m - 1, d);
+  dt.setDate(dt.getDate() + delta);
+  return isoDate(dt);
+};
+
+const formatDayLabel = (iso: string) => {
+  const [y, m, d] = iso.split("-").map(Number);
+  const dt = new Date(y, m - 1, d);
+  return dt.toLocaleDateString("fr-FR", { weekday: "long", day: "2-digit", month: "long" });
 };
 
 const currentDemi = (): "matin" | "apres_midi" => (new Date().getHours() < 13 ? "matin" : "apres_midi");
@@ -31,14 +46,20 @@ interface EmargementSigne {
   apprenant_id: string;
   demi_journee: string | null;
   created_at: string | null;
+  date_emargement: string | null;
 }
+
+const HISTORY_DAYS = 10;
 
 export function EmargementsManquants({ onNavigateToApprenant }: Props) {
   const demi = currentDemi();
   const today = todayISO();
+  const [dayOffset, setDayOffset] = useState(0); // 0 = aujourd'hui, 1 = hier, ...
+  const selectedDay = useMemo(() => addDays(today, -dayOffset), [today, dayOffset]);
+  const startDay = useMemo(() => addDays(today, -(HISTORY_DAYS - 1)), [today]);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["emargements-manquants", today, demi],
+    queryKey: ["emargements-manquants", today, demi, startDay],
     refetchOnWindowFocus: false,
     queryFn: async () => {
       const { data: allApprenants, error: errA } = await supabase
@@ -46,22 +67,22 @@ export function EmargementsManquants({ onNavigateToApprenant }: Props) {
         .select("id, nom, prenom, email, telephone, type_apprenant, formation_choisie, date_debut_cours_en_ligne, date_fin_cours_en_ligne")
         .is("deleted_at", null)
         .lte("date_debut_cours_en_ligne", today)
-        .gte("date_fin_cours_en_ligne", today);
+        .gte("date_fin_cours_en_ligne", startDay);
 
       // Présentiels = tout sauf pure e-learning (suffixe "-e")
       const apprenants = (allApprenants || []).filter((a) => {
         const t = (a.type_apprenant || "").toLowerCase().trim();
         if (!t) return false;
-        if (/-e$/.test(t)) return false; // exclut vtc-e, taxi-e, ta-e...
+        if (/-e$/.test(t)) return false;
         return true;
       });
 
       if (errA) throw errA;
-      if (!apprenants || apprenants.length === 0) return { manquants: [], signes: [], signesToday: [] };
+      if (!apprenants || apprenants.length === 0) return { manquants: [], signesByDay: {} as Record<string, Array<EmargementSigne & { apprenant: ApprenantPresentiel }>> };
 
       const ids = apprenants.map((a) => a.id);
 
-      // Signatures de la demi-journée en cours (pour "manquants")
+      // Signatures demi-journée en cours (pour "manquants" aujourd'hui)
       const { data: signesDemi, error: errS } = await supabase
         .from("emargements_fc")
         .select("apprenant_id")
@@ -72,31 +93,36 @@ export function EmargementsManquants({ onNavigateToApprenant }: Props) {
       if (errS) throw errS;
       const signedSet = new Set(((signesDemi || []) as { apprenant_id: string }[]).map((s) => s.apprenant_id));
 
-      // Toutes les signatures d'aujourd'hui (matin + après-midi)
-      const { data: signesJour, error: errJ } = await supabase
+      // Signatures des 10 derniers jours
+      const { data: signesHistorique, error: errJ } = await supabase
         .from("emargements_fc")
-        .select("apprenant_id, demi_journee, created_at")
-        .eq("date_emargement", today)
+        .select("apprenant_id, demi_journee, created_at, date_emargement")
+        .gte("date_emargement", startDay)
+        .lte("date_emargement", today)
         .in("apprenant_id", ids)
         .order("created_at", { ascending: true });
 
       if (errJ) throw errJ;
 
       const apprenantsMap = new Map(apprenants.map((a) => [a.id, a]));
-      const signesToday = ((signesJour || []) as EmargementSigne[])
-        .map((s) => ({ ...s, apprenant: apprenantsMap.get(s.apprenant_id) }))
-        .filter((s) => s.apprenant);
+      const signesByDay: Record<string, Array<EmargementSigne & { apprenant: ApprenantPresentiel }>> = {};
+      for (const s of (signesHistorique || []) as EmargementSigne[]) {
+        const a = apprenantsMap.get(s.apprenant_id);
+        if (!a || !s.date_emargement) continue;
+        (signesByDay[s.date_emargement] ||= []).push({ ...s, apprenant: a });
+      }
 
       return {
         manquants: apprenants.filter((a) => !signedSet.has(a.id)),
-        signes: apprenants.filter((a) => signedSet.has(a.id)),
-        signesToday,
+        signesByDay,
       };
     },
   });
 
   const manquants = (data?.manquants ?? []) as ApprenantPresentiel[];
-  const signesToday = (data?.signesToday ?? []) as Array<EmargementSigne & { apprenant: ApprenantPresentiel }>;
+  const signesByDay = data?.signesByDay ?? {};
+  const signesJourSelectionne = signesByDay[selectedDay] ?? [];
+
 
 
   const getTypeLabel = (a: ApprenantPresentiel) => {
