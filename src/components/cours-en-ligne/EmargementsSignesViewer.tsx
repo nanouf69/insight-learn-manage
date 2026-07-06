@@ -123,8 +123,13 @@ export const buildEmargementHTML = (
     apprenant?.date_fin_formation || groupedByDay[groupedByDay.length - 1]?.[0] || new Date().toISOString().slice(0, 10)
   );
 
-  const hasSoirSplit = groupedByDay.some(([, v]) => !!v.soir1 || !!v.soir2 || v.expectedSet?.has("soir_1") || v.expectedSet?.has("soir_2"));
-  const hasSoir = hasSoirSplit || groupedByDay.some(([, v]) => !!v.soir || v.expectedSet?.has("soir"));
+  // On force TOUJOURS le split soir_1 / soir_2 dès qu'un contexte "soir" est présent
+  // (nouveau ou legacy). Les cours du soir n'ont que 2 signatures : 17h-18h30 et 18h30-21h.
+  const hasSoirSplit = groupedByDay.some(([, v]) =>
+    !!v.soir1 || !!v.soir2 || !!v.soir ||
+    v.expectedSet?.has("soir_1") || v.expectedSet?.has("soir_2") || v.expectedSet?.has("soir"),
+  );
+  const hasSoir = hasSoirSplit;
 
   // Heures par créneau (FC VTC/TAXI : 9h-12h matin + 13h-17h après-midi = 7h/jour, 14h sur 2 jours)
   const HRS = {
@@ -154,16 +159,14 @@ export const buildEmargementHTML = (
       let heuresJour = 0;
       let cells = "";
       if (hasSoirSplit) {
-        const expectedSoir1 = !!soir1 || expectedSet?.has("soir_1");
-        const expectedSoir2 = !!soir2 || expectedSet?.has("soir_2");
+        // Legacy : une seule signature "soir" existe → on la place sur soir_1
+        const effSoir1 = soir1 || soir;
+        const expectedSoir1 = !!effSoir1 || expectedSet?.has("soir_1") || expectedSet?.has("soir");
+        const expectedSoir2 = !!soir2 || expectedSet?.has("soir_2") || expectedSet?.has("soir");
         const h1 = expectedSoir1 ? HRS.soir1 : 0;
         const h2 = expectedSoir2 ? HRS.soir2 : 0;
         heuresJour = h1 + h2;
-        cells = `<td class="horaire">17:00 - 18:30<br/><span class="hsmall">${fmtH(HRS.soir1)}</span></td><td class="sig">${sigImg(soir1, "soir_1", expectedSoir1)}</td><td class="horaire">18:30 - 21:00<br/><span class="hsmall">${fmtH(HRS.soir2)}</span></td><td class="sig">${sigImg(soir2, "soir_2", expectedSoir2)}</td>`;
-      } else if (hasSoir) {
-        const expectedSoir = !!soir || expectedSet?.has("soir");
-        heuresJour = expectedSoir ? HRS.soir : 0;
-        cells = `<td class="horaire">17:00 - 21:00<br/><span class="hsmall">${fmtH(HRS.soir)}</span></td><td class="sig">${sigImg(soir, "soir", expectedSoir)}</td>`;
+        cells = `<td class="horaire">17:00 - 18:30<br/><span class="hsmall">${fmtH(HRS.soir1)}</span></td><td class="sig">${sigImg(effSoir1, "soir_1", expectedSoir1)}</td><td class="horaire">18:30 - 21:00<br/><span class="hsmall">${fmtH(HRS.soir2)}</span></td><td class="sig">${sigImg(soir2, "soir_2", expectedSoir2)}</td>`;
       } else {
         const expectedMatin = !!matin || expectedSet?.has("matin");
         const expectedApresMidi = !!apresMidi || expectedSet?.has("apres_midi");
@@ -182,7 +185,7 @@ export const buildEmargementHTML = (
     })
     .join("");
 
-  const totalCols = hasSoirSplit ? 6 : (hasSoir ? 4 : 6); // jour + cells + total
+  const totalCols = 6; // jour + 2×(horaire+sig) + total
 
   return `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"/>
 <title>Feuille d'émargement individuelle</title>
