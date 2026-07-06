@@ -35,11 +35,15 @@ export function usePresenceCheck({
   userId,
   connexionId,
   enabled,
+  onForceDisconnect,
   isInExam: isInExamProp,
   pauseDuringExam,
 }: UsePresenceCheckParams) {
   // Support both isInExam and legacy pauseDuringExam
   const isInExam = isInExamProp ?? pauseDuringExam ?? false;
+  const onForceDisconnectRef = useRef(onForceDisconnect);
+  useEffect(() => { onForceDisconnectRef.current = onForceDisconnect; }, [onForceDisconnect]);
+
 
   const [showModal, setShowModal] = useState(false);
   // Deadline timestamp (ms). Pas de tick state ici — c'est le modal isolé
@@ -125,13 +129,20 @@ export function usePresenceCheck({
           setCountdownDeadline(null);
           return;
         }
-        console.warn(`[PresenceCheck] Session serveur expirée sans déconnexion auth — raison: ${reason}`);
-        pausePresencePrompt();
+        // Real expiry (no_response / max_duration) → force disconnect
+        console.warn(`[PresenceCheck] Session expirée — déconnexion forcée: ${reason}`);
+        endingRef.current = true;
+        clearTimers();
+        setShowModal(false);
+        modalDeadlineRef.current = null;
+        setCountdownDeadline(null);
+        try { onForceDisconnectRef.current?.(); } catch (e) { console.error(e); }
         return;
       }
 
       if (validation.should_show_presence_prompt) {
         if (Date.now() < suppressPromptUntilRef.current) {
+
           setShowModal(false);
           modalDeadlineRef.current = null;
           setCountdownDeadline(null);
@@ -271,14 +282,16 @@ export function usePresenceCheck({
     const delay = Math.max(0, modalDeadlineRef.current - Date.now());
     expiryTimerRef.current = setTimeout(() => {
       expiryTimerRef.current = null;
-      pausePresencePrompt();
+      // Deadline reached without confirmation → ask server, which will report no_response and trigger disconnect
+      void handleServerValidation("heartbeat");
     }, delay);
+
 
     return () => {
       if (expiryTimerRef.current) clearTimeout(expiryTimerRef.current);
       expiryTimerRef.current = null;
     };
-  }, [showModal, pausePresencePrompt, countdownDeadline]);
+  }, [showModal, handleServerValidation, countdownDeadline]);
 
   return {
     showModal,
