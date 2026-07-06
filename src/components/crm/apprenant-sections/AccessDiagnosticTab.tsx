@@ -55,7 +55,7 @@ export function AccessDiagnosticTab({ apprenant }: Props) {
     setLoading(true);
     const { data, error } = await supabase
       .from("apprenant_connexions")
-      .select("id, started_at, ended_at, last_seen_at, last_action_at, end_reason, source, user_id")
+      .select("id, started_at, ended_at, last_seen_at, last_action_at, end_reason, source, user_id, ip_address")
       .eq("apprenant_id", apprenant.id)
       .order("started_at", { ascending: false })
       .limit(20);
