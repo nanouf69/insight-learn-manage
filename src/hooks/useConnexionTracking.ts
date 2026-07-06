@@ -98,6 +98,22 @@ export function useConnexionTracking({ apprenantId, userId, enabled }: UseConnex
       connexionIdRef.current = startedConnexion.id;
       setConnexionId(startedConnexion.id);
 
+      // Capture client IP (best-effort, non-blocking)
+      (async () => {
+        try {
+          const res = await fetch("https://api.ipify.org?format=json");
+          if (!res.ok) return;
+          const { ip } = await res.json();
+          if (!ip || cancelled || !connexionIdRef.current) return;
+          await supabase
+            .from("apprenant_connexions" as any)
+            .update({ ip_address: ip } as any)
+            .eq("id", connexionIdRef.current);
+        } catch (e) {
+          console.warn("[ConnexionTracking] IP capture failed", e);
+        }
+      })();
+
       const { data: apprenantData } = await supabase
         .from("apprenants")
         .select("nom, prenom, formation_choisie, type_apprenant")
