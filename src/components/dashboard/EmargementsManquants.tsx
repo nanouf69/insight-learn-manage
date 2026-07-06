@@ -286,7 +286,7 @@ export function EmargementsManquants({ onNavigateToApprenant }: Props) {
             const heure = s.created_at
               ? new Date(s.created_at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })
               : "";
-            const demiLbl = s.demi_journee === "matin" ? "Matin 09:00-12:30" : s.demi_journee === "apres_midi" ? "A-M 13:30-17:00" : "";
+            const demiLbl = s.demi_journee === "matin" ? "Matin 09:00-12:30" : s.demi_journee === "apres_midi" ? "A-M 13:30-17:00" : s.demi_journee === "soir_1" ? "Soir 17:00-18:30" : s.demi_journee === "soir_2" ? "Soir 18:30-21:00" : "";
             return (
               <div
                 key={`${s.apprenant_id}-${s.demi_journee}-${s.created_at}`}
