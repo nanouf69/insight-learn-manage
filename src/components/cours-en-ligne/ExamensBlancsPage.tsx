@@ -1064,6 +1064,10 @@ export default function ExamensBlancsPage({
   }
 
   if (phase === "revision" && examenChoisi) {
+    // Scroll haut de page à l'entrée en phase révision
+    if (typeof window !== "undefined") {
+      setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 0);
+    }
     const wrongQuestions: { matiere: Matiere; question: Question; matiereNom: string }[] = [];
     examenChoisi.matieres.forEach((matiere, mi) => {
       if (!matiere || matiere.id === "francais" || matiere.id === "bilan_francais") return;
@@ -1107,6 +1111,9 @@ export default function ExamensBlancsPage({
         </div>
         <div className="rounded-lg px-4 py-3" style={{ backgroundColor: '#FFF3E0', border: '2px solid #F4A227' }}>
           <p className="text-sm font-semibold" style={{ color: '#D84315' }}>{wrongQuestions.length} question{wrongQuestions.length > 1 ? "s" : ""} à réviser (hors épreuve de Français)</p>
+        </div>
+        <div className="rounded-lg px-4 py-3 bg-blue-50 border-2 border-blue-300">
+          <p className="text-sm font-semibold text-blue-900">📖 Lisez vos erreurs avant de recommencer les questions fausses.</p>
         </div>
         <RevisionFausses wrongQuestions={wrongQuestions} onTerminer={() => setPhase("resultats")} apprenantId={apprenantId} userId={userId} examenId={examenChoisi.id} />
       </div>
