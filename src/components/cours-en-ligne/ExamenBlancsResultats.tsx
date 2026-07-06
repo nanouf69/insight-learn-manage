@@ -1269,7 +1269,7 @@ function RevisionFausses({
       </div>
       <Progress value={((currentIndex + 1) / wrongQuestions.length) * 100} className="h-2" />
 
-      <Card className="border-2" style={{ borderColor: '#0D2540' }}>
+      <Card className="border-4 border-destructive bg-destructive/5">
         <CardContent className="pt-5 pb-5 space-y-4">
           <div className="flex items-start justify-between gap-3">
             <p className="font-semibold text-base flex-1" style={{ color: '#0D2540' }}>
