@@ -155,7 +155,7 @@ export function EmargementsManquants({ onNavigateToApprenant }: Props) {
     );
   }
 
-  const dayLabel = dayOffset === 0 ? "aujourd'hui" : formatDayLabel(selectedDay);
+  const dayLabel = formatDayLabel(selectedDay);
 
   const SignesList = () => (
     <div className="mt-3 pt-3 border-t space-y-2">
