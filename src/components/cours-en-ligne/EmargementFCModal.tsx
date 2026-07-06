@@ -118,6 +118,7 @@ export const EmargementFCModal = ({
   const [saving, setSaving] = useState(false);
   const [demi] = useState<CreneauKey>(creneau || getCurrentCreneauFromHour());
   const [done, setDone] = useState(false);
+  const [confirmPresenceLieu, setConfirmPresenceLieu] = useState(false);
   const effectiveDate = dateEmargement || todayISO();
   const isRattrapage = effectiveDate !== todayISO();
   const dateLabel = (() => {
