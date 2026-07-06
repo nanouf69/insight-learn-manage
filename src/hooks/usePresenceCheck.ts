@@ -129,13 +129,20 @@ export function usePresenceCheck({
           setCountdownDeadline(null);
           return;
         }
-        console.warn(`[PresenceCheck] Session serveur expirée sans déconnexion auth — raison: ${reason}`);
-        pausePresencePrompt();
+        // Real expiry (no_response / max_duration) → force disconnect
+        console.warn(`[PresenceCheck] Session expirée — déconnexion forcée: ${reason}`);
+        endingRef.current = true;
+        clearTimers();
+        setShowModal(false);
+        modalDeadlineRef.current = null;
+        setCountdownDeadline(null);
+        try { onForceDisconnectRef.current?.(); } catch (e) { console.error(e); }
         return;
       }
 
       if (validation.should_show_presence_prompt) {
         if (Date.now() < suppressPromptUntilRef.current) {
+
           setShowModal(false);
           modalDeadlineRef.current = null;
           setCountdownDeadline(null);
