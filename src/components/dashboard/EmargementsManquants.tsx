@@ -253,6 +253,39 @@ export function EmargementsManquants({ onNavigateToApprenant }: Props) {
           })}
         </div>
       )}
+
+      <div className="pt-2">
+        <p className="text-xs font-medium text-amber-700 mb-1">
+          N'ont pas signé {dayLabel} ({manquantsJourSelectionne.length})
+        </p>
+        {manquantsJourSelectionne.length === 0 ? (
+          <p className="text-xs text-muted-foreground italic px-1">Aucun manquant ce jour-là.</p>
+        ) : (
+          <div className="space-y-1.5">
+            {manquantsJourSelectionne.map((m, i) => {
+              const a = m.apprenant;
+              const demiLbl = m.demi === "matin" ? "Matin" : "Après-midi";
+              return (
+                <div
+                  key={`${a.id}-${m.demi}-${i}`}
+                  className="flex items-center justify-between gap-2 px-2 py-1.5 rounded bg-amber-50 border border-amber-200 cursor-pointer hover:bg-amber-100 transition-colors"
+                  onClick={() => onNavigateToApprenant?.(a.id)}
+                >
+                  <p className="text-xs font-medium truncate">
+                    {a.prenom} {a.nom}
+                  </p>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <span className="text-[10px] text-amber-700">{demiLbl}</span>
+                    <Badge variant="outline" className="text-[10px] border-amber-300 text-amber-700 bg-white">
+                      {getTypeLabel(a)}
+                    </Badge>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 
