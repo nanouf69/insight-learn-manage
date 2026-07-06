@@ -1112,6 +1112,9 @@ export default function ExamensBlancsPage({
         <div className="rounded-lg px-4 py-3" style={{ backgroundColor: '#FFF3E0', border: '2px solid #F4A227' }}>
           <p className="text-sm font-semibold" style={{ color: '#D84315' }}>{wrongQuestions.length} question{wrongQuestions.length > 1 ? "s" : ""} à réviser (hors épreuve de Français)</p>
         </div>
+        <div className="rounded-lg px-4 py-3 bg-blue-50 border-2 border-blue-300">
+          <p className="text-sm font-semibold text-blue-900">📖 Lisez vos erreurs avant de recommencer les questions fausses.</p>
+        </div>
         <RevisionFausses wrongQuestions={wrongQuestions} onTerminer={() => setPhase("resultats")} apprenantId={apprenantId} userId={userId} examenId={examenChoisi.id} />
       </div>
     );
