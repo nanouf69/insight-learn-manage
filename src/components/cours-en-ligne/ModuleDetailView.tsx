@@ -5382,9 +5382,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
                 const multi = isMultiAnswer(q);
                 const selectedArr = Array.isArray(selected) ? selected : selected ? [selected] : [];
+                const exoShowResults = showResultsFor.has(exo.id);
+                const isQcmWrong = isInRevision || (exoShowResults && !isAnswerCorrect(selected, q));
 
                 return (
-                  <div key={q.id} id={`exo-q-${exo.id}-${qi}`} data-answer-scroll-anchor className={`space-y-2 p-4 border rounded-lg scroll-mt-20 transition-all ${isInRevision ? 'border-destructive border-4 bg-destructive/10' : unansweredKeys.has(key) ? 'border-destructive border-2 bg-destructive/5' : ''}`}>
+                  <div key={q.id} id={`exo-q-${exo.id}-${qi}`} data-answer-scroll-anchor className={`space-y-2 p-4 border rounded-lg scroll-mt-20 transition-all ${isQcmWrong ? 'border-destructive border-4 bg-destructive/10' : unansweredKeys.has(key) ? 'border-destructive border-2 bg-destructive/5' : ''}`}>
                     {renderExerciseQuestionPrompt(qi + 1, questionPrompts[qi] ?? parseExerciseQuestionPrompt(q.enonce))}
                     {q.image && (() => {
                       const sizeMap: Record<string, string> = {
