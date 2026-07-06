@@ -1064,6 +1064,10 @@ export default function ExamensBlancsPage({
   }
 
   if (phase === "revision" && examenChoisi) {
+    // Scroll haut de page à l'entrée en phase révision
+    if (typeof window !== "undefined") {
+      setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 0);
+    }
     const wrongQuestions: { matiere: Matiere; question: Question; matiereNom: string }[] = [];
     examenChoisi.matieres.forEach((matiere, mi) => {
       if (!matiere || matiere.id === "francais" || matiere.id === "bilan_francais") return;
