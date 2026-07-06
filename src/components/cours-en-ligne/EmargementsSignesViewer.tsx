@@ -185,7 +185,7 @@ export const buildEmargementHTML = (
     })
     .join("");
 
-  const totalCols = hasSoirSplit ? 6 : (hasSoir ? 4 : 6); // jour + cells + total
+  const totalCols = 6; // jour + 2×(horaire+sig) + total
 
   return `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"/>
 <title>Feuille d'émargement individuelle</title>
