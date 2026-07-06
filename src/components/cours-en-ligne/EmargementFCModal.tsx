@@ -146,6 +146,14 @@ export const EmargementFCModal = ({
       });
       return;
     }
+    if (!confirmPresenceLieu) {
+      toast({
+        title: "Confirmation requise",
+        description: "Vous devez cocher la case attestant votre présence sur le lieu de formation.",
+        variant: "destructive",
+      });
+      return;
+    }
     setSaving(true);
     try {
       await saveEmargement({
