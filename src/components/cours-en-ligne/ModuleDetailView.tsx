@@ -5337,10 +5337,12 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 const isQrc = q?.type === "qrc" || (q.choix?.length === 0 && q.reponsesAttendues);
                 const selected = selectedAnswers[key];
                 const qrcResult = qrcResults[key];
+                const revisionSet = revisionQuestionsFor[exo.id];
+                const isInRevision = revisionSet && revisionSet.size > 0;
 
                 if (isQrc) {
                   return (
-                    <div key={q.id} id={`exo-q-${exo.id}-${qi}`} className="space-y-2 p-4 border rounded-lg scroll-mt-20">
+                    <div key={q.id} id={`exo-q-${exo.id}-${qi}`} className={`space-y-2 p-4 border rounded-lg scroll-mt-20 ${isInRevision ? 'border-destructive border-4 bg-destructive/10' : ''}`}>
                       {renderExerciseQuestionPrompt(qi + 1, questionPrompts[qi] ?? parseExerciseQuestionPrompt(q.enonce))}
                       <Badge variant="outline" className="text-xs">QRC — Réponse libre</Badge>
                       <Textarea
