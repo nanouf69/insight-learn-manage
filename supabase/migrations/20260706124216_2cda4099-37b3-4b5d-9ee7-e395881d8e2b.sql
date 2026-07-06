@@ -1,0 +1,1 @@
+ALTER TABLE public.apprenant_connexions ADD COLUMN IF NOT EXISTS ip_address text;

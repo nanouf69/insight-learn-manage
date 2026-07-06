@@ -33,6 +33,7 @@ interface Connexion {
   end_reason: string | null;
   source: string;
   user_id: string;
+  ip_address: string | null;
 }
 
 const REASON_LABELS: Record<string, string> = {
@@ -54,7 +55,7 @@ export function AccessDiagnosticTab({ apprenant }: Props) {
     setLoading(true);
     const { data, error } = await supabase
       .from("apprenant_connexions")
-      .select("id, started_at, ended_at, last_seen_at, last_action_at, end_reason, source, user_id")
+      .select("id, started_at, ended_at, last_seen_at, last_action_at, end_reason, source, user_id, ip_address")
       .eq("apprenant_id", apprenant.id)
       .order("started_at", { ascending: false })
       .limit(20);
@@ -376,6 +377,11 @@ export function AccessDiagnosticTab({ apprenant }: Props) {
                         {c.ended_at
                           ? REASON_LABELS[c.end_reason || ""] || c.end_reason || "Fermée"
                           : "En cours"}
+                        {c.ip_address && (
+                          <span className="ml-2 font-mono text-[10px] text-foreground/70">
+                            IP&nbsp;: {c.ip_address}
+                          </span>
+                        )}
                       </p>
                     </div>
                     <Badge variant={c.ended_at ? "outline" : "default"} className="shrink-0">
