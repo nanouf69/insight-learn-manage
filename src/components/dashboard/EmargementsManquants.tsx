@@ -106,22 +106,52 @@ export function EmargementsManquants({ onNavigateToApprenant }: Props) {
 
       const apprenantsMap = new Map(apprenants.map((a) => [a.id, a]));
       const signesByDay: Record<string, Array<EmargementSigne & { apprenant: ApprenantPresentiel }>> = {};
+      // signedKeys: `${day}|${apprenant_id}|${demi}` present
+      const signedKeys = new Set<string>();
       for (const s of (signesHistorique || []) as EmargementSigne[]) {
         const a = apprenantsMap.get(s.apprenant_id);
         if (!a || !s.date_emargement) continue;
         (signesByDay[s.date_emargement] ||= []).push({ ...s, apprenant: a });
+        if (s.demi_journee) signedKeys.add(`${s.date_emargement}|${s.apprenant_id}|${s.demi_journee}`);
+      }
+
+      // Manquants historiques par jour (matin + après-midi)
+      const manquantsByDay: Record<string, Array<{ apprenant: ApprenantPresentiel; demi: "matin" | "apres_midi" }>> = {};
+      const nowH = new Date().getHours();
+      for (let off = 0; off < HISTORY_DAYS; off++) {
+        const day = addDays(today, -off);
+        const isToday = off === 0;
+        const demis: Array<"matin" | "apres_midi"> = isToday
+          ? nowH < 13 ? ["matin"] : ["matin", "apres_midi"]
+          : ["matin", "apres_midi"];
+        // Skip weekends (samedi=6, dimanche=0)
+        const [yy, mm, dd] = day.split("-").map(Number);
+        const dow = new Date(yy, mm - 1, dd).getDay();
+        if (dow === 0 || dow === 6) continue;
+        for (const a of apprenants) {
+          if (a.date_debut_cours_en_ligne && a.date_debut_cours_en_ligne > day) continue;
+          if (a.date_fin_cours_en_ligne && a.date_fin_cours_en_ligne < day) continue;
+          for (const d of demis) {
+            if (!signedKeys.has(`${day}|${a.id}|${d}`)) {
+              (manquantsByDay[day] ||= []).push({ apprenant: a, demi: d });
+            }
+          }
+        }
       }
 
       return {
         manquants: apprenants.filter((a) => !signedSet.has(a.id)),
         signesByDay,
+        manquantsByDay,
       };
     },
   });
 
   const manquants = (data?.manquants ?? []) as ApprenantPresentiel[];
   const signesByDay = data?.signesByDay ?? {};
+  const manquantsByDay = data?.manquantsByDay ?? {};
   const signesJourSelectionne = signesByDay[selectedDay] ?? [];
+  const manquantsJourSelectionne = manquantsByDay[selectedDay] ?? [];
 
 
 
@@ -223,6 +253,39 @@ export function EmargementsManquants({ onNavigateToApprenant }: Props) {
           })}
         </div>
       )}
+
+      <div className="pt-2">
+        <p className="text-xs font-medium text-amber-700 mb-1">
+          N'ont pas signé {dayLabel} ({manquantsJourSelectionne.length})
+        </p>
+        {manquantsJourSelectionne.length === 0 ? (
+          <p className="text-xs text-muted-foreground italic px-1">Aucun manquant ce jour-là.</p>
+        ) : (
+          <div className="space-y-1.5">
+            {manquantsJourSelectionne.map((m, i) => {
+              const a = m.apprenant;
+              const demiLbl = m.demi === "matin" ? "Matin" : "Après-midi";
+              return (
+                <div
+                  key={`${a.id}-${m.demi}-${i}`}
+                  className="flex items-center justify-between gap-2 px-2 py-1.5 rounded bg-amber-50 border border-amber-200 cursor-pointer hover:bg-amber-100 transition-colors"
+                  onClick={() => onNavigateToApprenant?.(a.id)}
+                >
+                  <p className="text-xs font-medium truncate">
+                    {a.prenom} {a.nom}
+                  </p>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <span className="text-[10px] text-amber-700">{demiLbl}</span>
+                    <Badge variant="outline" className="text-[10px] border-amber-300 text-amber-700 bg-white">
+                      {getTypeLabel(a)}
+                    </Badge>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 
