@@ -104,9 +104,35 @@ export function EmargementsManquants({ onNavigateToApprenant }: Props) {
 
       if (errJ) throw errJ;
 
+      // Apprenants prévus en formation par jour (via session_apprenants + sessions théoriques)
+      const { data: sessionAppr, error: errSA } = await supabase
+        .from("session_apprenants")
+        .select("apprenant_id, date_debut, date_fin, date_fin_personnalisee, session:sessions!inner(date_debut, date_fin, type_session)")
+        .in("apprenant_id", ids);
+
+      if (errSA) throw errSA;
+
+      const scheduledByDay: Record<string, Set<string>> = {};
+      for (const sa of (sessionAppr || []) as any[]) {
+        const sess = sa.session;
+        if (!sess) continue;
+        if (sess.type_session && sess.type_session !== "theorique") continue;
+        const start = (sa.date_debut && sa.date_debut > sess.date_debut ? sa.date_debut : sess.date_debut) as string;
+        const endRaw = sa.date_fin_personnalisee || sa.date_fin || sess.date_fin;
+        const end = (endRaw && endRaw < sess.date_fin ? endRaw : sess.date_fin) as string;
+        if (!start || !end) continue;
+        const from = start > startDay ? start : startDay;
+        const to = end < today ? end : today;
+        if (from > to) continue;
+        let cursor = from;
+        while (cursor <= to) {
+          (scheduledByDay[cursor] ||= new Set()).add(sa.apprenant_id);
+          cursor = addDays(cursor, 1);
+        }
+      }
+
       const apprenantsMap = new Map(apprenants.map((a) => [a.id, a]));
       const signesByDay: Record<string, Array<EmargementSigne & { apprenant: ApprenantPresentiel }>> = {};
-      // signedKeys: `${day}|${apprenant_id}|${demi}` present
       const signedKeys = new Set<string>();
       for (const s of (signesHistorique || []) as EmargementSigne[]) {
         const a = apprenantsMap.get(s.apprenant_id);
@@ -115,7 +141,7 @@ export function EmargementsManquants({ onNavigateToApprenant }: Props) {
         if (s.demi_journee) signedKeys.add(`${s.date_emargement}|${s.apprenant_id}|${s.demi_journee}`);
       }
 
-      // Manquants historiques par jour (matin + après-midi)
+      // Manquants historiques par jour (matin + après-midi) — uniquement les prévus
       const manquantsByDay: Record<string, Array<{ apprenant: ApprenantPresentiel; demi: "matin" | "apres_midi" }>> = {};
       const nowH = new Date().getHours();
       for (let off = 0; off < HISTORY_DAYS; off++) {
@@ -124,13 +150,13 @@ export function EmargementsManquants({ onNavigateToApprenant }: Props) {
         const demis: Array<"matin" | "apres_midi"> = isToday
           ? nowH < 13 ? ["matin"] : ["matin", "apres_midi"]
           : ["matin", "apres_midi"];
-        // Skip weekends (samedi=6, dimanche=0)
         const [yy, mm, dd] = day.split("-").map(Number);
         const dow = new Date(yy, mm - 1, dd).getDay();
         if (dow === 0 || dow === 6) continue;
+        const scheduled = scheduledByDay[day];
+        if (!scheduled || scheduled.size === 0) continue;
         for (const a of apprenants) {
-          if (a.date_debut_cours_en_ligne && a.date_debut_cours_en_ligne > day) continue;
-          if (a.date_fin_cours_en_ligne && a.date_fin_cours_en_ligne < day) continue;
+          if (!scheduled.has(a.id)) continue;
           for (const d of demis) {
             if (!signedKeys.has(`${day}|${a.id}|${d}`)) {
               (manquantsByDay[day] ||= []).push({ apprenant: a, demi: d });
@@ -139,8 +165,9 @@ export function EmargementsManquants({ onNavigateToApprenant }: Props) {
         }
       }
 
+      const scheduledToday = scheduledByDay[today] ?? new Set<string>();
       return {
-        manquants: apprenants.filter((a) => !signedSet.has(a.id)),
+        manquants: apprenants.filter((a) => scheduledToday.has(a.id) && !signedSet.has(a.id)),
         signesByDay,
         manquantsByDay,
       };
