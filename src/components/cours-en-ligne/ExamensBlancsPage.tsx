@@ -1064,59 +1064,14 @@ export default function ExamensBlancsPage({
   }
 
   if (phase === "revision" && examenChoisi) {
-    // Scroll haut de page à l'entrée en phase révision
-    if (typeof window !== "undefined") {
-      setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 0);
-    }
-    const wrongQuestions: { matiere: Matiere; question: Question; matiereNom: string }[] = [];
-    examenChoisi.matieres.forEach((matiere, mi) => {
-      if (!matiere || matiere.id === "francais" || matiere.id === "bilan_francais") return;
-      const r = tousResultats[mi];
-      if (!r) return;
-      const qSafe = (matiere.questions || []).filter((q): q is Question => !!q && q?.type !== undefined);
-      const savedCorrectionsIA = r.correctionsIA || (r as any).details?.correctionsIA || {};
-      qSafe.forEach(q => {
-        // FIX: try both numeric and string keys (JSON round-trip from DB makes keys strings)
-        const rep = r.reponses?.[q.id] ?? r.reponses?.[String(q.id)];
-        // FIX: if no answer was given (question skipped/unanswered), do NOT count as "wrong to revise"
-        if (rep === undefined || rep === null || (Array.isArray(rep) && rep.length === 0) || (typeof rep === "string" && rep.trim() === "")) {
-          return;
-        }
-        let isCorrect = false;
-        if (q?.type === "QCM" && q.choix) {
-          const correctes = safeArray<string>(q.choix?.filter(c => c.correct).map(c => c.lettre)).sort();
-          const donnees = safeArray<string>(rep).sort();
-          isCorrect = JSON.stringify(correctes) === JSON.stringify(donnees);
-        } else if (q?.type === "QRC") {
-          const corrIA = savedCorrectionsIA[q.id] || savedCorrectionsIA[String(q.id)];
-          if (corrIA && typeof corrIA === "object" && ("estCorrect" in corrIA || "pointsObtenus" in corrIA)) {
-            isCorrect = "estCorrect" in corrIA ? !!(corrIA as any).estCorrect : (corrIA as any).pointsObtenus > 0;
-          } else {
-            const repStr = safeStr(rep).toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
-            const motsCles = q.reponses_possibles || [];
-            let nbTrouvees = 0;
-            motsCles.forEach(mc => { const mcN = mc.toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, ""); if (repStr.includes(mcN)) nbTrouvees++; });
-            isCorrect = nbTrouvees >= motsCles.length;
-          }
-        }
-        if (!isCorrect) wrongQuestions.push({ matiere, question: q, matiereNom: matiere.nom });
-      });
-    });
-
     return (
-      <div className="max-w-3xl mx-auto space-y-6">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => setPhase("resultats")} className="gap-2"><ArrowLeft className="w-4 h-4" /> Retour aux résultats</Button>
-          <h2 className="text-xl font-bold" style={{ color: '#0D2540' }}>🎯 Révision des questions fausses</h2>
-        </div>
-        <div className="rounded-lg px-4 py-3" style={{ backgroundColor: '#FFF3E0', border: '2px solid #F4A227' }}>
-          <p className="text-sm font-semibold" style={{ color: '#D84315' }}>{wrongQuestions.length} question{wrongQuestions.length > 1 ? "s" : ""} à réviser (hors épreuve de Français)</p>
-        </div>
-        <div className="rounded-lg px-4 py-3 bg-blue-50 border-2 border-blue-300">
-          <p className="text-sm font-semibold text-blue-900">📖 Lisez vos erreurs avant de recommencer les questions fausses.</p>
-        </div>
-        <RevisionFausses wrongQuestions={wrongQuestions} onTerminer={() => setPhase("resultats")} apprenantId={apprenantId} userId={userId} examenId={examenChoisi.id} />
-      </div>
+      <RevisionPhaseView
+        examenChoisi={examenChoisi}
+        tousResultats={tousResultats}
+        apprenantId={apprenantId}
+        userId={userId}
+        onRetour={() => setPhase("resultats")}
+      />
     );
   }
 
@@ -1129,4 +1084,92 @@ export default function ExamensBlancsPage({
   }
 
   return null;
+}
+
+function RevisionPhaseView({
+  examenChoisi,
+  tousResultats,
+  apprenantId,
+  userId,
+  onRetour,
+}: {
+  examenChoisi: ExamenBlanc;
+  tousResultats: ResultatMatiere[];
+  apprenantId: string;
+  userId: string;
+  onRetour: () => void;
+}) {
+  // Scroll to top on entry
+  useEffect(() => {
+    try {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    } catch {}
+  }, []);
+
+  const wrongQuestions: { matiere: Matiere; question: Question; matiereNom: string }[] = [];
+  examenChoisi.matieres.forEach((matiere, mi) => {
+    if (!matiere || matiere.id === "francais" || matiere.id === "bilan_francais") return;
+    const r = tousResultats[mi];
+    if (!r) return;
+    const qSafe = (matiere.questions || []).filter((q): q is Question => !!q && q?.type !== undefined);
+    const savedCorrectionsIA = r.correctionsIA || (r as any).details?.correctionsIA || {};
+    qSafe.forEach((q) => {
+      const rep = r.reponses?.[q.id] ?? r.reponses?.[String(q.id)];
+      if (rep === undefined || rep === null || (Array.isArray(rep) && rep.length === 0) || (typeof rep === "string" && rep.trim() === "")) return;
+      let isCorrect = false;
+      if (q?.type === "QCM" && q.choix) {
+        const correctes = safeArray<string>(q.choix?.filter((c) => c.correct).map((c) => c.lettre)).sort();
+        const donnees = safeArray<string>(rep).sort();
+        isCorrect = JSON.stringify(correctes) === JSON.stringify(donnees);
+      } else if (q?.type === "QRC") {
+        const corrIA = savedCorrectionsIA[q.id] || savedCorrectionsIA[String(q.id)];
+        if (corrIA && typeof corrIA === "object" && ("estCorrect" in corrIA || "pointsObtenus" in corrIA)) {
+          isCorrect = "estCorrect" in corrIA ? !!(corrIA as any).estCorrect : (corrIA as any).pointsObtenus > 0;
+        } else {
+          const repStr = safeStr(rep).toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
+          const motsCles = q.reponses_possibles || [];
+          let nbTrouvees = 0;
+          motsCles.forEach((mc) => {
+            const mcN = mc.toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
+            if (repStr.includes(mcN)) nbTrouvees++;
+          });
+          isCorrect = nbTrouvees >= motsCles.length;
+        }
+      }
+      if (!isCorrect) wrongQuestions.push({ matiere, question: q, matiereNom: matiere.nom });
+    });
+  });
+
+  return (
+    <div className="max-w-3xl mx-auto space-y-6">
+      {/* Message d'avertissement — TOUT EN HAUT */}
+      <div className="rounded-lg px-4 py-4 bg-blue-50 border-2 border-blue-400 shadow-md">
+        <p className="text-base font-bold text-blue-900">
+          📖 Lisez vos erreurs avant de recommencer les questions fausses.
+        </p>
+      </div>
+      <div className="flex items-center gap-3">
+        <Button variant="ghost" size="sm" onClick={onRetour} className="gap-2">
+          <ArrowLeft className="w-4 h-4" /> Retour aux résultats
+        </Button>
+        <h2 className="text-xl font-bold" style={{ color: "#0D2540" }}>
+          🎯 Révision des questions fausses
+        </h2>
+      </div>
+      <div className="rounded-lg px-4 py-3" style={{ backgroundColor: "#FFF3E0", border: "2px solid #F4A227" }}>
+        <p className="text-sm font-semibold" style={{ color: "#D84315" }}>
+          {wrongQuestions.length} question{wrongQuestions.length > 1 ? "s" : ""} à réviser (hors épreuve de Français)
+        </p>
+      </div>
+      <RevisionFausses
+        wrongQuestions={wrongQuestions}
+        onTerminer={onRetour}
+        apprenantId={apprenantId}
+        userId={userId}
+        examenId={examenChoisi.id}
+      />
+    </div>
+  );
 }
