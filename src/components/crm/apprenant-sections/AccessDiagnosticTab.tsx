@@ -377,6 +377,11 @@ export function AccessDiagnosticTab({ apprenant }: Props) {
                         {c.ended_at
                           ? REASON_LABELS[c.end_reason || ""] || c.end_reason || "Fermée"
                           : "En cours"}
+                        {c.ip_address && (
+                          <span className="ml-2 font-mono text-[10px] text-foreground/70">
+                            IP&nbsp;: {c.ip_address}
+                          </span>
+                        )}
                       </p>
                     </div>
                     <Badge variant={c.ended_at ? "outline" : "default"} className="shrink-0">
