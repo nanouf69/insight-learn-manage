@@ -33,6 +33,7 @@ interface Connexion {
   end_reason: string | null;
   source: string;
   user_id: string;
+  ip_address: string | null;
 }
 
 const REASON_LABELS: Record<string, string> = {
