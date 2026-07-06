@@ -21,7 +21,7 @@ const addDays = (iso: string, delta: number) => {
 const formatDayLabel = (iso: string) => {
   const [y, m, d] = iso.split("-").map(Number);
   const dt = new Date(y, m - 1, d);
-  return dt.toLocaleDateString("fr-FR", { weekday: "long", day: "2-digit", month: "long" });
+  return dt.toLocaleDateString("fr-FR", { weekday: "long", day: "2-digit", month: "long", year: "numeric" });
 };
 
 const currentDemi = (): "matin" | "apres_midi" => (new Date().getHours() < 13 ? "matin" : "apres_midi");
