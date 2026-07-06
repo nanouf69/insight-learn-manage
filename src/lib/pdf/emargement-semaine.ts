@@ -190,6 +190,17 @@ export function generateEmargementSemainePdf(
     }
   }
 
+  // Mention légale case cochée
+  if (y + 14 > ph - 20) { doc.addPage(); y = 20; }
+  y += 4;
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(8);
+  doc.setTextColor(60, 60, 60);
+  doc.text(
+    `☑ Pour chaque signature, l'apprenant a coché la case : « Je confirme que je suis bien au lieu de formation ».`,
+    margin, y, { maxWidth: pw - margin * 2 }
+  );
+
   // Footer
   const totalPages = doc.getNumberOfPages();
   for (let i = 1; i <= totalPages; i++) {
