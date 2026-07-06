@@ -265,7 +265,17 @@ function generateIndividualPage(
   });
 
   const finalY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY;
-  yPos = finalY + 10;
+  yPos = finalY + 6;
+
+  // Mention légale : case cochée par l'apprenant lors de chaque signature
+  doc.setFont("helvetica", "italic");
+  doc.setFontSize(8);
+  doc.setTextColor(60, 60, 60);
+  doc.text(
+    `☑ Pour chaque signature, l'apprenant a coché la case : « Je confirme que je suis bien au lieu de formation ».`,
+    margin, yPos, { maxWidth: pageWidth - margin * 2 }
+  );
+  yPos += 8;
 
   // ===== ZONE DE SIGNATURE =====
   const pgH = doc.internal.pageSize.getHeight();
