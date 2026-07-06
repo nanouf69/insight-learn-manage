@@ -320,9 +320,22 @@ export const EmargementFCModal = ({
               <PenTool className="w-4 h-4" /> Votre signature
             </p>
             <SignaturePad value={signature} onChange={setSignature} disabled={saving} />
+            <label className="flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 p-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={confirmPresenceLieu}
+                onChange={(e) => setConfirmPresenceLieu(e.target.checked)}
+                disabled={saving}
+                className="mt-0.5 h-4 w-4 shrink-0 accent-amber-600"
+                required
+              />
+              <span className="text-sm text-amber-900">
+                <strong>Je confirme que je suis bien au lieu de formation</strong> pour ce créneau ({creneauLabel(demi)} — {creneauHoraire(demi)}).
+              </span>
+            </label>
             <p className="text-xs text-muted-foreground flex items-start gap-2">
               <ShieldCheck className="w-4 h-4 mt-0.5 shrink-0" />
-              En signant, vous attestez de votre présence effective à ce créneau.
+              En signant et en cochant la case, vous attestez sur l'honneur de votre présence effective sur le lieu de formation.
             </p>
           </div>
         ) : (
