@@ -35,11 +35,15 @@ export function usePresenceCheck({
   userId,
   connexionId,
   enabled,
+  onForceDisconnect,
   isInExam: isInExamProp,
   pauseDuringExam,
 }: UsePresenceCheckParams) {
   // Support both isInExam and legacy pauseDuringExam
   const isInExam = isInExamProp ?? pauseDuringExam ?? false;
+  const onForceDisconnectRef = useRef(onForceDisconnect);
+  useEffect(() => { onForceDisconnectRef.current = onForceDisconnect; }, [onForceDisconnect]);
+
 
   const [showModal, setShowModal] = useState(false);
   // Deadline timestamp (ms). Pas de tick state ici — c'est le modal isolé
