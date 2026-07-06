@@ -35,12 +35,10 @@ export function EmargementsManquants({ onNavigateToApprenant }: Props) {
   const demi = currentDemi();
   const today = todayISO();
 
-  const { data: manquants = [], isLoading } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ["emargements-manquants", today, demi],
     refetchOnWindowFocus: false,
     queryFn: async () => {
-      // 1. Apprenants en présentiel ACTUELLEMENT en formation
-      // (today entre date_debut_cours_en_ligne et date_fin_cours_en_ligne)
       const { data: apprenants, error: errA } = await supabase
         .from("apprenants")
         .select("id, nom, prenom, email, telephone, type_apprenant, formation_choisie, date_debut_cours_en_ligne, date_fin_cours_en_ligne")
@@ -50,9 +48,8 @@ export function EmargementsManquants({ onNavigateToApprenant }: Props) {
         .gte("date_fin_cours_en_ligne", today);
 
       if (errA) throw errA;
-      if (!apprenants || apprenants.length === 0) return [];
+      if (!apprenants || apprenants.length === 0) return { manquants: [], signes: [] };
 
-      // 2. Émargements signés aujourd'hui pour ce créneau
       const ids = apprenants.map((a) => a.id);
       const { data: signes, error: errS } = await supabase
         .from("emargements_fc")
@@ -64,9 +61,22 @@ export function EmargementsManquants({ onNavigateToApprenant }: Props) {
       if (errS) throw errS;
       const signedSet = new Set(((signes || []) as EmargementSigne[]).map((s) => s.apprenant_id));
 
-      return apprenants.filter((a) => !signedSet.has(a.id));
+      return {
+        manquants: apprenants.filter((a) => !signedSet.has(a.id)),
+        signes: apprenants.filter((a) => signedSet.has(a.id)),
+      };
     },
   });
+
+  const manquants = (data?.manquants ?? []) as ApprenantPresentiel[];
+  const signes = (data?.signes ?? []) as ApprenantPresentiel[];
+
+  const getTypeLabel = (a: ApprenantPresentiel) => {
+    const s = `${a.type_apprenant || ""} ${a.formation_choisie || ""}`.toLowerCase();
+    if (s.includes("taxi")) return "TAXI";
+    if (s.includes("vtc")) return "VTC";
+    return (a.type_apprenant || "").toUpperCase();
+  };
 
   const demiLabel = demi === "matin" ? "Matin" : "Après-midi";
   const DemiIcon = demi === "matin" ? Sun : Moon;
@@ -91,6 +101,29 @@ export function EmargementsManquants({ onNavigateToApprenant }: Props) {
     );
   }
 
+  const SignesList = () =>
+    signes.length > 0 ? (
+      <div className="mt-3 pt-3 border-t space-y-1.5">
+        <p className="text-xs font-medium text-muted-foreground mb-1">
+          Ont signé ({signes.length})
+        </p>
+        {signes.map((a) => (
+          <div
+            key={a.id}
+            className="flex items-center justify-between gap-2 px-2 py-1.5 rounded bg-emerald-50 border border-emerald-100 cursor-pointer hover:bg-emerald-100 transition-colors"
+            onClick={() => onNavigateToApprenant?.(a.id)}
+          >
+            <p className="text-xs font-medium truncate">
+              {a.prenom} {a.nom}
+            </p>
+            <Badge variant="outline" className="text-[10px] shrink-0 border-emerald-300 text-emerald-700 bg-white">
+              {getTypeLabel(a)}
+            </Badge>
+          </div>
+        ))}
+      </div>
+    ) : null;
+
   if (manquants.length === 0) {
     return (
       <Card>
@@ -101,9 +134,10 @@ export function EmargementsManquants({ onNavigateToApprenant }: Props) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground text-center py-4">
+          <p className="text-sm text-muted-foreground text-center py-2">
             Tous les apprenants ont signé 🎉
           </p>
+          <SignesList />
         </CardContent>
       </Card>
     );
@@ -121,7 +155,7 @@ export function EmargementsManquants({ onNavigateToApprenant }: Props) {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-2">
-        {(manquants as ApprenantPresentiel[]).slice(0, 8).map((a) => (
+        {manquants.slice(0, 8).map((a) => (
           <div
             key={a.id}
             className="p-3 rounded-lg bg-amber-50 border border-amber-200 space-y-1 cursor-pointer hover:bg-amber-100 transition-colors"
@@ -132,7 +166,7 @@ export function EmargementsManquants({ onNavigateToApprenant }: Props) {
                 {a.prenom} {a.nom}
               </p>
               <Badge variant="outline" className="text-xs shrink-0">
-                {a.type_apprenant}
+                {getTypeLabel(a)}
               </Badge>
             </div>
             <div className="flex items-center gap-3 text-xs text-muted-foreground">
@@ -164,6 +198,7 @@ export function EmargementsManquants({ onNavigateToApprenant }: Props) {
             Et {manquants.length - 8} autre(s)…
           </p>
         )}
+        <SignesList />
       </CardContent>
     </Card>
   );
