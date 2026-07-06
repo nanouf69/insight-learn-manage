@@ -946,7 +946,13 @@ function EcranResultats({
         if (nbFaussesTop === 0) return null;
         return (
           <Button
-            onClick={onRefaireFausses}
+            onClick={() => {
+              toast.warning("📖 Lisez vos erreurs avant de recommencer les questions fausses.", {
+                description: `${nbFaussesTop} question${nbFaussesTop > 1 ? "s" : ""} fausse${nbFaussesTop > 1 ? "s" : ""} à refaire`,
+                duration: 8000,
+              });
+              onRefaireFausses();
+            }}
             className="w-full gap-2 text-lg py-6 font-bold shadow-lg"
             style={{ backgroundColor: '#F4A227', borderColor: '#F4A227', color: 'white', fontSize: '18px' }}
           >
@@ -1027,6 +1033,12 @@ function RevisionFausses({
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const exerciceId = `revision_fausses_${examenId || "unknown"}`;
+
+  useEffect(() => {
+    toast.warning("📖 Lisez vos erreurs avant de recommencer les questions fausses.", {
+      duration: 8000,
+    });
+  }, []);
 
   // ---- Load saved progress on mount ----
   useEffect(() => {

@@ -5671,7 +5671,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                               if (nbWrong === 0) {
                                 toast.success("🎉 Aucune question fausse à refaire !");
                               } else {
-                                toast.info(`🎯 ${nbWrong} question${nbWrong > 1 ? "s" : ""} à refaire — lisez vos erreurs avant de recommencer`);
+                                toast.warning("📖 Lisez vos erreurs avant de recommencer les questions fausses.", {
+                                  description: `${nbWrong} question${nbWrong > 1 ? "s" : ""} fausse${nbWrong > 1 ? "s" : ""} à refaire`,
+                                  duration: 8000,
+                                });
                                 setTimeout(() => {
                                   window.scrollTo({ top: 0, behavior: "smooth" });
                                   document.documentElement.scrollTop = 0;
