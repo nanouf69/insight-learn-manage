@@ -136,11 +136,11 @@ export const EmargementFCModal = ({
   }, [defaultTypedSignature]);
 
   const handleSubmitPresent = async () => {
-    const signatureToSave = signatureMode === "typed" ? buildTypedSignatureDataUrl(typedSignature) : signature;
+    const signatureToSave = signature;
     if (!signatureToSave) {
       toast({
         title: "Signature requise",
-        description: "Veuillez dessiner votre signature ou saisir votre nom avant de valider.",
+        description: "Veuillez dessiner votre signature avant de valider.",
         variant: "destructive",
       });
       return;
