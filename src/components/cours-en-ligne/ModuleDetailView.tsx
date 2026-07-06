@@ -5666,7 +5666,12 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                               if (nbWrong === 0) {
                                 toast.success("🎉 Aucune question fausse à refaire !");
                               } else {
-                                toast.info(`🎯 ${nbWrong} question${nbWrong > 1 ? "s" : ""} à refaire — seules celles-ci sont affichées`);
+                                toast.info(`🎯 ${nbWrong} question${nbWrong > 1 ? "s" : ""} à refaire — lisez vos erreurs avant de recommencer`);
+                                setTimeout(() => {
+                                  window.scrollTo({ top: 0, behavior: "smooth" });
+                                  document.documentElement.scrollTop = 0;
+                                  document.body.scrollTop = 0;
+                                }, 50);
                               }
                             }}>
                               🎯 Refaire les fausses ({(() => {
