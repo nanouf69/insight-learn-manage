@@ -228,7 +228,7 @@ export function EmargementsManquants({ onNavigateToApprenant }: Props) {
             const heure = s.created_at
               ? new Date(s.created_at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })
               : "";
-            const demiLbl = s.demi_journee === "matin" ? "Matin" : s.demi_journee === "apres_midi" ? "A-M" : "";
+            const demiLbl = s.demi_journee === "matin" ? "Matin 09:00-12:30" : s.demi_journee === "apres_midi" ? "A-M 13:30-17:00" : "";
             return (
               <div
                 key={`${s.apprenant_id}-${s.demi_journee}-${s.created_at}`}
@@ -264,7 +264,7 @@ export function EmargementsManquants({ onNavigateToApprenant }: Props) {
           <div className="space-y-1.5">
             {manquantsJourSelectionne.map((m, i) => {
               const a = m.apprenant;
-              const demiLbl = m.demi === "matin" ? "Matin" : "Après-midi";
+              const demiLbl = m.demi === "matin" ? "Matin 09:00-12:30" : "Après-midi 13:30-17:00";
               return (
                 <div
                   key={`${a.id}-${m.demi}-${i}`}
