@@ -159,16 +159,14 @@ export const buildEmargementHTML = (
       let heuresJour = 0;
       let cells = "";
       if (hasSoirSplit) {
-        const expectedSoir1 = !!soir1 || expectedSet?.has("soir_1");
-        const expectedSoir2 = !!soir2 || expectedSet?.has("soir_2");
+        // Legacy : une seule signature "soir" existe → on la place sur soir_1
+        const effSoir1 = soir1 || soir;
+        const expectedSoir1 = !!effSoir1 || expectedSet?.has("soir_1") || expectedSet?.has("soir");
+        const expectedSoir2 = !!soir2 || expectedSet?.has("soir_2") || expectedSet?.has("soir");
         const h1 = expectedSoir1 ? HRS.soir1 : 0;
         const h2 = expectedSoir2 ? HRS.soir2 : 0;
         heuresJour = h1 + h2;
-        cells = `<td class="horaire">17:00 - 18:30<br/><span class="hsmall">${fmtH(HRS.soir1)}</span></td><td class="sig">${sigImg(soir1, "soir_1", expectedSoir1)}</td><td class="horaire">18:30 - 21:00<br/><span class="hsmall">${fmtH(HRS.soir2)}</span></td><td class="sig">${sigImg(soir2, "soir_2", expectedSoir2)}</td>`;
-      } else if (hasSoir) {
-        const expectedSoir = !!soir || expectedSet?.has("soir");
-        heuresJour = expectedSoir ? HRS.soir : 0;
-        cells = `<td class="horaire">17:00 - 21:00<br/><span class="hsmall">${fmtH(HRS.soir)}</span></td><td class="sig">${sigImg(soir, "soir", expectedSoir)}</td>`;
+        cells = `<td class="horaire">17:00 - 18:30<br/><span class="hsmall">${fmtH(HRS.soir1)}</span></td><td class="sig">${sigImg(effSoir1, "soir_1", expectedSoir1)}</td><td class="horaire">18:30 - 21:00<br/><span class="hsmall">${fmtH(HRS.soir2)}</span></td><td class="sig">${sigImg(soir2, "soir_2", expectedSoir2)}</td>`;
       } else {
         const expectedMatin = !!matin || expectedSet?.has("matin");
         const expectedApresMidi = !!apresMidi || expectedSet?.has("apres_midi");
