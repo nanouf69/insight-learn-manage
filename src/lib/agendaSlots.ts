@@ -294,6 +294,7 @@ export const getExpectedEmargements = async (params: {
   mode: "fc" | "presentiel";
   formationChoisie?: string | null;
   creneauHoraire?: string | null;
+  typeApprenant?: string | null;
   apprenantId?: string | null;
   startDate: Date;
   endDate: Date;
@@ -309,24 +310,12 @@ export const getExpectedEmargements = async (params: {
   earliest.setDate(end.getDate() - MAX_LOOKBACK_DAYS);
   const effectiveStart = start < earliest ? earliest : start;
 
-  if (mode === "fc") {
-    const out: Array<{ date: string; creneau: CreneauKey }> = [];
-    const cur = new Date(effectiveStart);
-    while (cur <= end) {
-      const dow = todayDow(cur);
-      if (dow <= 4) {
-        const iso = formatISO(cur);
-        const candidates: CreneauKey[] = ["matin", "apres_midi"];
-        for (const creneau of candidates) {
-          if (isCreneauDue(iso, creneau, formatISO(new Date()), new Date().getHours() * 60 + new Date().getMinutes())) out.push({ date: iso, creneau });
-        }
-      }
-      cur.setDate(cur.getDate() + 1);
-    }
-    return out;
-  }
+  // Détection cours du soir : formation_choisie, creneau_horaire OU type_apprenant
+  let wantEvening =
+    isEveningText(params.formationChoisie) ||
+    isEveningText(params.creneauHoraire) ||
+    isEveningText(params.typeApprenant);
 
-  let wantEvening = isEveningText(params.formationChoisie) || isEveningText(params.creneauHoraire);
   if (apprenantId) {
     const startISO = formatISO(effectiveStart);
     const endISO = formatISO(end);
@@ -340,7 +329,24 @@ export const getExpectedEmargements = async (params: {
       const fin = String(s.date_fin || debut).slice(0, 10);
       return debut <= endISO && fin >= startISO;
     });
-    if (matchingSession) wantEvening = isEveningSession(matchingSession);
+    if (matchingSession && isEveningSession(matchingSession)) wantEvening = true;
+  }
+
+  if (mode === "fc") {
+    const out: Array<{ date: string; creneau: CreneauKey }> = [];
+    const cur = new Date(effectiveStart);
+    while (cur <= end) {
+      const dow = todayDow(cur);
+      if (dow <= 4) {
+        const iso = formatISO(cur);
+        const candidates: CreneauKey[] = wantEvening ? ["soir_1", "soir_2"] : ["matin", "apres_midi"];
+        for (const creneau of candidates) {
+          if (isCreneauDue(iso, creneau, formatISO(new Date()), new Date().getHours() * 60 + new Date().getMinutes())) out.push({ date: iso, creneau });
+        }
+      }
+      cur.setDate(cur.getDate() + 1);
+    }
+    return out;
   }
 
   const out: Array<{ date: string; creneau: CreneauKey }> = [];
