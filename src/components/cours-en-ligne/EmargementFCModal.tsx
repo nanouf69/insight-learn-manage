@@ -409,7 +409,7 @@ export const EmargementFCModal = ({
           {tab === "present" ? (
             <Button
               onClick={handleSubmitPresent}
-              disabled={saving || !signature}
+              disabled={saving || !signature || !confirmPresenceLieu}
               size="lg"
               className="flex-1"
             >
