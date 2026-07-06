@@ -35,12 +35,10 @@ export function EmargementsManquants({ onNavigateToApprenant }: Props) {
   const demi = currentDemi();
   const today = todayISO();
 
-  const { data: manquants = [], isLoading } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ["emargements-manquants", today, demi],
     refetchOnWindowFocus: false,
     queryFn: async () => {
-      // 1. Apprenants en présentiel ACTUELLEMENT en formation
-      // (today entre date_debut_cours_en_ligne et date_fin_cours_en_ligne)
       const { data: apprenants, error: errA } = await supabase
         .from("apprenants")
         .select("id, nom, prenom, email, telephone, type_apprenant, formation_choisie, date_debut_cours_en_ligne, date_fin_cours_en_ligne")
@@ -50,9 +48,8 @@ export function EmargementsManquants({ onNavigateToApprenant }: Props) {
         .gte("date_fin_cours_en_ligne", today);
 
       if (errA) throw errA;
-      if (!apprenants || apprenants.length === 0) return [];
+      if (!apprenants || apprenants.length === 0) return { manquants: [], signes: [] };
 
-      // 2. Émargements signés aujourd'hui pour ce créneau
       const ids = apprenants.map((a) => a.id);
       const { data: signes, error: errS } = await supabase
         .from("emargements_fc")
@@ -64,9 +61,22 @@ export function EmargementsManquants({ onNavigateToApprenant }: Props) {
       if (errS) throw errS;
       const signedSet = new Set(((signes || []) as EmargementSigne[]).map((s) => s.apprenant_id));
 
-      return apprenants.filter((a) => !signedSet.has(a.id));
+      return {
+        manquants: apprenants.filter((a) => !signedSet.has(a.id)),
+        signes: apprenants.filter((a) => signedSet.has(a.id)),
+      };
     },
   });
+
+  const manquants = (data?.manquants ?? []) as ApprenantPresentiel[];
+  const signes = (data?.signes ?? []) as ApprenantPresentiel[];
+
+  const getTypeLabel = (a: ApprenantPresentiel) => {
+    const s = `${a.type_apprenant || ""} ${a.formation_choisie || ""}`.toLowerCase();
+    if (s.includes("taxi")) return "TAXI";
+    if (s.includes("vtc")) return "VTC";
+    return (a.type_apprenant || "").toUpperCase();
+  };
 
   const demiLabel = demi === "matin" ? "Matin" : "Après-midi";
   const DemiIcon = demi === "matin" ? Sun : Moon;
