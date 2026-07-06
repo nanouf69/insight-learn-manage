@@ -291,7 +291,7 @@ export function usePresenceCheck({
       if (expiryTimerRef.current) clearTimeout(expiryTimerRef.current);
       expiryTimerRef.current = null;
     };
-  }, [showModal, pausePresencePrompt, countdownDeadline]);
+  }, [showModal, handleServerValidation, countdownDeadline]);
 
   return {
     showModal,
