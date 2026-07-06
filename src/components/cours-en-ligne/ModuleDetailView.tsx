@@ -5341,8 +5341,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 const isInRevision = revisionSet && revisionSet.size > 0;
 
                 if (isQrc) {
+                  const isQrcWrong = isInRevision || (qrcResult && qrcResult !== "loading" && !qrcResult.estCorrect);
                   return (
-                    <div key={q.id} id={`exo-q-${exo.id}-${qi}`} className={`space-y-2 p-4 border rounded-lg scroll-mt-20 ${isInRevision ? 'border-destructive border-4 bg-destructive/10' : ''}`}>
+                    <div key={q.id} id={`exo-q-${exo.id}-${qi}`} className={`space-y-2 p-4 border rounded-lg scroll-mt-20 ${isQrcWrong ? 'border-destructive border-4 bg-destructive/10' : ''}`}>
                       {renderExerciseQuestionPrompt(qi + 1, questionPrompts[qi] ?? parseExerciseQuestionPrompt(q.enonce))}
                       <Badge variant="outline" className="text-xs">QRC — Réponse libre</Badge>
                       <Textarea
