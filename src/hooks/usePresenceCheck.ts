@@ -282,8 +282,10 @@ export function usePresenceCheck({
     const delay = Math.max(0, modalDeadlineRef.current - Date.now());
     expiryTimerRef.current = setTimeout(() => {
       expiryTimerRef.current = null;
-      pausePresencePrompt();
+      // Deadline reached without confirmation → ask server, which will report no_response and trigger disconnect
+      void handleServerValidation("heartbeat");
     }, delay);
+
 
     return () => {
       if (expiryTimerRef.current) clearTimeout(expiryTimerRef.current);
