@@ -29,6 +29,8 @@ interface ApprenantPresentiel {
 
 interface EmargementSigne {
   apprenant_id: string;
+  demi_journee: string | null;
+  created_at: string | null;
 }
 
 export function EmargementsManquants({ onNavigateToApprenant }: Props) {
@@ -55,10 +57,12 @@ export function EmargementsManquants({ onNavigateToApprenant }: Props) {
       });
 
       if (errA) throw errA;
-      if (!apprenants || apprenants.length === 0) return { manquants: [], signes: [] };
+      if (!apprenants || apprenants.length === 0) return { manquants: [], signes: [], signesToday: [] };
 
       const ids = apprenants.map((a) => a.id);
-      const { data: signes, error: errS } = await supabase
+
+      // Signatures de la demi-journée en cours (pour "manquants")
+      const { data: signesDemi, error: errS } = await supabase
         .from("emargements_fc")
         .select("apprenant_id")
         .eq("date_emargement", today)
@@ -66,17 +70,34 @@ export function EmargementsManquants({ onNavigateToApprenant }: Props) {
         .in("apprenant_id", ids);
 
       if (errS) throw errS;
-      const signedSet = new Set(((signes || []) as EmargementSigne[]).map((s) => s.apprenant_id));
+      const signedSet = new Set(((signesDemi || []) as { apprenant_id: string }[]).map((s) => s.apprenant_id));
+
+      // Toutes les signatures d'aujourd'hui (matin + après-midi)
+      const { data: signesJour, error: errJ } = await supabase
+        .from("emargements_fc")
+        .select("apprenant_id, demi_journee, created_at")
+        .eq("date_emargement", today)
+        .in("apprenant_id", ids)
+        .order("created_at", { ascending: true });
+
+      if (errJ) throw errJ;
+
+      const apprenantsMap = new Map(apprenants.map((a) => [a.id, a]));
+      const signesToday = ((signesJour || []) as EmargementSigne[])
+        .map((s) => ({ ...s, apprenant: apprenantsMap.get(s.apprenant_id) }))
+        .filter((s) => s.apprenant);
 
       return {
         manquants: apprenants.filter((a) => !signedSet.has(a.id)),
         signes: apprenants.filter((a) => signedSet.has(a.id)),
+        signesToday,
       };
     },
   });
 
   const manquants = (data?.manquants ?? []) as ApprenantPresentiel[];
-  const signes = (data?.signes ?? []) as ApprenantPresentiel[];
+  const signesToday = (data?.signesToday ?? []) as Array<EmargementSigne & { apprenant: ApprenantPresentiel }>;
+
 
   const getTypeLabel = (a: ApprenantPresentiel) => {
     const s = `${a.type_apprenant || ""} ${a.formation_choisie || ""}`.toLowerCase();
