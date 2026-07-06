@@ -39,13 +39,20 @@ export function EmargementsManquants({ onNavigateToApprenant }: Props) {
     queryKey: ["emargements-manquants", today, demi],
     refetchOnWindowFocus: false,
     queryFn: async () => {
-      const { data: apprenants, error: errA } = await supabase
+      const { data: allApprenants, error: errA } = await supabase
         .from("apprenants")
         .select("id, nom, prenom, email, telephone, type_apprenant, formation_choisie, date_debut_cours_en_ligne, date_fin_cours_en_ligne")
         .is("deleted_at", null)
-        .ilike("type_apprenant", "%presentiel%")
         .lte("date_debut_cours_en_ligne", today)
         .gte("date_fin_cours_en_ligne", today);
+
+      // Présentiels = tout sauf pure e-learning (suffixe "-e")
+      const apprenants = (allApprenants || []).filter((a) => {
+        const t = (a.type_apprenant || "").toLowerCase().trim();
+        if (!t) return false;
+        if (/-e$/.test(t)) return false; // exclut vtc-e, taxi-e, ta-e...
+        return true;
+      });
 
       if (errA) throw errA;
       if (!apprenants || apprenants.length === 0) return { manquants: [], signes: [] };
