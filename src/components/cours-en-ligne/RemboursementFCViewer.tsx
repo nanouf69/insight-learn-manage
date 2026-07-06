@@ -305,6 +305,7 @@ export default function RemboursementFCViewer({ apprenantId, completed, onComple
           mode: "fc",
           formationChoisie: ap.formation_choisie,
           creneauHoraire: ap.creneau_horaire,
+          typeApprenant: (ap as any).type_apprenant,
           apprenantId,
           startDate: start,
           endDate: end,
