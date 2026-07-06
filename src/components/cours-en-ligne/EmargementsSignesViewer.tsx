@@ -123,8 +123,13 @@ export const buildEmargementHTML = (
     apprenant?.date_fin_formation || groupedByDay[groupedByDay.length - 1]?.[0] || new Date().toISOString().slice(0, 10)
   );
 
-  const hasSoirSplit = groupedByDay.some(([, v]) => !!v.soir1 || !!v.soir2 || v.expectedSet?.has("soir_1") || v.expectedSet?.has("soir_2"));
-  const hasSoir = hasSoirSplit || groupedByDay.some(([, v]) => !!v.soir || v.expectedSet?.has("soir"));
+  // On force TOUJOURS le split soir_1 / soir_2 dès qu'un contexte "soir" est présent
+  // (nouveau ou legacy). Les cours du soir n'ont que 2 signatures : 17h-18h30 et 18h30-21h.
+  const hasSoirSplit = groupedByDay.some(([, v]) =>
+    !!v.soir1 || !!v.soir2 || !!v.soir ||
+    v.expectedSet?.has("soir_1") || v.expectedSet?.has("soir_2") || v.expectedSet?.has("soir"),
+  );
+  const hasSoir = hasSoirSplit;
 
   // Heures par créneau (FC VTC/TAXI : 9h-12h matin + 13h-17h après-midi = 7h/jour, 14h sur 2 jours)
   const HRS = {
