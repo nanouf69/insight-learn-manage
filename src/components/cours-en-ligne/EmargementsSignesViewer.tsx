@@ -375,6 +375,7 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
           mode: isFC ? "fc" : "presentiel",
           formationChoisie: ap.formation_choisie,
           creneauHoraire: ap.creneau_horaire,
+          typeApprenant: ap.type_apprenant,
           apprenantId,
           startDate: start,
           endDate: end,
