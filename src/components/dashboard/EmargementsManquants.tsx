@@ -21,7 +21,7 @@ const addDays = (iso: string, delta: number) => {
 const formatDayLabel = (iso: string) => {
   const [y, m, d] = iso.split("-").map(Number);
   const dt = new Date(y, m - 1, d);
-  return dt.toLocaleDateString("fr-FR", { weekday: "long", day: "2-digit", month: "long" });
+  return dt.toLocaleDateString("fr-FR", { weekday: "long", day: "2-digit", month: "long", year: "numeric" });
 };
 
 const currentDemi = (): "matin" | "apres_midi" => (new Date().getHours() < 13 ? "matin" : "apres_midi");
@@ -155,7 +155,7 @@ export function EmargementsManquants({ onNavigateToApprenant }: Props) {
     );
   }
 
-  const dayLabel = dayOffset === 0 ? "aujourd'hui" : formatDayLabel(selectedDay);
+  const dayLabel = formatDayLabel(selectedDay);
 
   const SignesList = () => (
     <div className="mt-3 pt-3 border-t space-y-2">
