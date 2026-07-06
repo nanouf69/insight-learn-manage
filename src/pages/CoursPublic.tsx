@@ -1066,6 +1066,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         mode,
         formationChoisie: apprenant.formation_choisie,
         creneauHoraire: apprenant.creneau_horaire,
+        typeApprenant: apprenant.type_apprenant,
         apprenantId: apprenant.id!,
         startDate,
         endDate,
