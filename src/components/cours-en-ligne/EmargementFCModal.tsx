@@ -310,42 +310,7 @@ export const EmargementFCModal = ({
             <p className="text-sm font-medium flex items-center gap-2">
               <PenTool className="w-4 h-4" /> Votre signature
             </p>
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                type="button"
-                variant={signatureMode === "draw" ? "secondary" : "outline"}
-                onClick={() => setSignatureMode("draw")}
-                disabled={saving}
-              >
-                Dessiner
-              </Button>
-              <Button
-                type="button"
-                variant={signatureMode === "typed" ? "secondary" : "outline"}
-                onClick={() => setSignatureMode("typed")}
-                disabled={saving}
-              >
-                Écrire
-              </Button>
-            </div>
-            {signatureMode === "draw" ? (
-              <SignaturePad value={signature} onChange={setSignature} disabled={saving} />
-            ) : (
-              <div className="space-y-2">
-                <Input
-                  value={typedSignature}
-                  onChange={(e) => setTypedSignature(e.target.value)}
-                  placeholder={defaultTypedSignature || "Nom et prénom"}
-                  disabled={saving}
-                  autoComplete="name"
-                />
-                <div className="h-24 rounded-lg border bg-background flex items-center justify-center px-3">
-                  <span className="text-3xl text-foreground" style={{ fontFamily: "Brush Script MT, Segoe Script, cursive" }}>
-                    {typedSignature.trim() || "Votre signature"}
-                  </span>
-                </div>
-              </div>
-            )}
+            <SignaturePad value={signature} onChange={setSignature} disabled={saving} />
             <p className="text-xs text-muted-foreground flex items-start gap-2">
               <ShieldCheck className="w-4 h-4 mt-0.5 shrink-0" />
               En signant, vous attestez de votre présence effective à ce créneau.
