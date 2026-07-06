@@ -29,6 +29,8 @@ interface ApprenantPresentiel {
 
 interface EmargementSigne {
   apprenant_id: string;
+  demi_journee: string | null;
+  created_at: string | null;
 }
 
 export function EmargementsManquants({ onNavigateToApprenant }: Props) {
@@ -55,10 +57,12 @@ export function EmargementsManquants({ onNavigateToApprenant }: Props) {
       });
 
       if (errA) throw errA;
-      if (!apprenants || apprenants.length === 0) return { manquants: [], signes: [] };
+      if (!apprenants || apprenants.length === 0) return { manquants: [], signes: [], signesToday: [] };
 
       const ids = apprenants.map((a) => a.id);
-      const { data: signes, error: errS } = await supabase
+
+      // Signatures de la demi-journée en cours (pour "manquants")
+      const { data: signesDemi, error: errS } = await supabase
         .from("emargements_fc")
         .select("apprenant_id")
         .eq("date_emargement", today)
@@ -66,17 +70,34 @@ export function EmargementsManquants({ onNavigateToApprenant }: Props) {
         .in("apprenant_id", ids);
 
       if (errS) throw errS;
-      const signedSet = new Set(((signes || []) as EmargementSigne[]).map((s) => s.apprenant_id));
+      const signedSet = new Set(((signesDemi || []) as { apprenant_id: string }[]).map((s) => s.apprenant_id));
+
+      // Toutes les signatures d'aujourd'hui (matin + après-midi)
+      const { data: signesJour, error: errJ } = await supabase
+        .from("emargements_fc")
+        .select("apprenant_id, demi_journee, created_at")
+        .eq("date_emargement", today)
+        .in("apprenant_id", ids)
+        .order("created_at", { ascending: true });
+
+      if (errJ) throw errJ;
+
+      const apprenantsMap = new Map(apprenants.map((a) => [a.id, a]));
+      const signesToday = ((signesJour || []) as EmargementSigne[])
+        .map((s) => ({ ...s, apprenant: apprenantsMap.get(s.apprenant_id) }))
+        .filter((s) => s.apprenant);
 
       return {
         manquants: apprenants.filter((a) => !signedSet.has(a.id)),
         signes: apprenants.filter((a) => signedSet.has(a.id)),
+        signesToday,
       };
     },
   });
 
   const manquants = (data?.manquants ?? []) as ApprenantPresentiel[];
-  const signes = (data?.signes ?? []) as ApprenantPresentiel[];
+  const signesToday = (data?.signesToday ?? []) as Array<EmargementSigne & { apprenant: ApprenantPresentiel }>;
+
 
   const getTypeLabel = (a: ApprenantPresentiel) => {
     const s = `${a.type_apprenant || ""} ${a.formation_choisie || ""}`.toLowerCase();
@@ -109,27 +130,42 @@ export function EmargementsManquants({ onNavigateToApprenant }: Props) {
   }
 
   const SignesList = () =>
-    signes.length > 0 ? (
+    signesToday.length > 0 ? (
       <div className="mt-3 pt-3 border-t space-y-1.5">
         <p className="text-xs font-medium text-muted-foreground mb-1">
-          Ont signé ({signes.length})
+          Ont signé aujourd'hui ({signesToday.length})
         </p>
-        {signes.map((a) => (
-          <div
-            key={a.id}
-            className="flex items-center justify-between gap-2 px-2 py-1.5 rounded bg-emerald-50 border border-emerald-100 cursor-pointer hover:bg-emerald-100 transition-colors"
-            onClick={() => onNavigateToApprenant?.(a.id)}
-          >
-            <p className="text-xs font-medium truncate">
-              {a.prenom} {a.nom}
-            </p>
-            <Badge variant="outline" className="text-[10px] shrink-0 border-emerald-300 text-emerald-700 bg-white">
-              {getTypeLabel(a)}
-            </Badge>
-          </div>
-        ))}
+        {signesToday.map((s) => {
+          const a = s.apprenant;
+          const heure = s.created_at
+            ? new Date(s.created_at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })
+            : "";
+          const demiLbl = s.demi_journee === "matin" ? "Matin" : s.demi_journee === "apres_midi" ? "A-M" : "";
+          return (
+            <div
+              key={`${s.apprenant_id}-${s.demi_journee}`}
+              className="flex items-center justify-between gap-2 px-2 py-1.5 rounded bg-emerald-50 border border-emerald-100 cursor-pointer hover:bg-emerald-100 transition-colors"
+              onClick={() => onNavigateToApprenant?.(a.id)}
+            >
+              <p className="text-xs font-medium truncate">
+                {a.prenom} {a.nom}
+              </p>
+              <div className="flex items-center gap-1.5 shrink-0">
+                {demiLbl && (
+                  <span className="text-[10px] text-emerald-700">
+                    {demiLbl} {heure}
+                  </span>
+                )}
+                <Badge variant="outline" className="text-[10px] border-emerald-300 text-emerald-700 bg-white">
+                  {getTypeLabel(a)}
+                </Badge>
+              </div>
+            </div>
+          );
+        })}
       </div>
     ) : null;
+
 
   if (manquants.length === 0) {
     return (
