@@ -130,27 +130,42 @@ export function EmargementsManquants({ onNavigateToApprenant }: Props) {
   }
 
   const SignesList = () =>
-    signes.length > 0 ? (
+    signesToday.length > 0 ? (
       <div className="mt-3 pt-3 border-t space-y-1.5">
         <p className="text-xs font-medium text-muted-foreground mb-1">
-          Ont signé ({signes.length})
+          Ont signé aujourd'hui ({signesToday.length})
         </p>
-        {signes.map((a) => (
-          <div
-            key={a.id}
-            className="flex items-center justify-between gap-2 px-2 py-1.5 rounded bg-emerald-50 border border-emerald-100 cursor-pointer hover:bg-emerald-100 transition-colors"
-            onClick={() => onNavigateToApprenant?.(a.id)}
-          >
-            <p className="text-xs font-medium truncate">
-              {a.prenom} {a.nom}
-            </p>
-            <Badge variant="outline" className="text-[10px] shrink-0 border-emerald-300 text-emerald-700 bg-white">
-              {getTypeLabel(a)}
-            </Badge>
-          </div>
-        ))}
+        {signesToday.map((s) => {
+          const a = s.apprenant;
+          const heure = s.created_at
+            ? new Date(s.created_at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })
+            : "";
+          const demiLbl = s.demi_journee === "matin" ? "Matin" : s.demi_journee === "apres_midi" ? "A-M" : "";
+          return (
+            <div
+              key={`${s.apprenant_id}-${s.demi_journee}`}
+              className="flex items-center justify-between gap-2 px-2 py-1.5 rounded bg-emerald-50 border border-emerald-100 cursor-pointer hover:bg-emerald-100 transition-colors"
+              onClick={() => onNavigateToApprenant?.(a.id)}
+            >
+              <p className="text-xs font-medium truncate">
+                {a.prenom} {a.nom}
+              </p>
+              <div className="flex items-center gap-1.5 shrink-0">
+                {demiLbl && (
+                  <span className="text-[10px] text-emerald-700">
+                    {demiLbl} {heure}
+                  </span>
+                )}
+                <Badge variant="outline" className="text-[10px] border-emerald-300 text-emerald-700 bg-white">
+                  {getTypeLabel(a)}
+                </Badge>
+              </div>
+            </div>
+          );
+        })}
       </div>
     ) : null;
+
 
   if (manquants.length === 0) {
     return (
