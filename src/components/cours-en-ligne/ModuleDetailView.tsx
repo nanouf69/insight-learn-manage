@@ -1440,8 +1440,46 @@ function getInitialModuleDataRaw(
     };
   }
 
-  // Remboursement Formation Continue VTC (83) — documents pour le financeur
+  // Feuilles d'émargement signées — VTC / VA présentiel & Formation Continue VTC (83)
   if (module.id === 83) {
+    return {
+      id: module.id,
+      nom: "📝 FEUILLES D'ÉMARGEMENT SIGNÉES VTC",
+      description: "Consultez vos feuilles d'émargement signées (matin 09h-12h / après-midi 13h-16h, ou cours du soir 17h-18h30 / 18h30-21h) et signez les créneaux manquants.",
+      cours: [
+        {
+          id: 1,
+          titre: "Mes feuilles d'émargement signées",
+          description: "Historique des signatures — possibilité de signer les créneaux manquants",
+          actif: true,
+          checklistType: "emargements-fc" as const,
+        },
+      ],
+      exercices: [],
+    };
+  }
+
+  // Feuilles d'émargement signées — TAXI / TA présentiel & Formation Continue TAXI (84)
+  if (module.id === 84) {
+    return {
+      id: module.id,
+      nom: "📝 FEUILLES D'ÉMARGEMENT SIGNÉES TAXI",
+      description: "Consultez vos feuilles d'émargement signées (matin 09h-12h / après-midi 13h-16h) et signez les créneaux manquants.",
+      cours: [
+        {
+          id: 1,
+          titre: "Mes feuilles d'émargement signées",
+          description: "Historique des signatures — possibilité de signer les créneaux manquants",
+          actif: true,
+          checklistType: "emargements-fc" as const,
+        },
+      ],
+      exercices: [],
+    };
+  }
+
+  // Remboursement Formation Continue VTC (89) — documents pour le financeur
+  if (module.id === 89) {
     return {
       id: module.id,
       nom: "💶 REMBOURSEMENT FORMATION CONTINUE VTC",
@@ -1453,25 +1491,6 @@ function getInitialModuleDataRaw(
           description: "Programme, émargements, attestation et facture acquittée.",
           actif: true,
           checklistType: "remboursement-fc-vtc" as const,
-        },
-      ],
-      exercices: [],
-    };
-  }
-
-  // Feuilles d'émargement signées — Formation Continue TAXI (84)
-  if (module.id === 84) {
-    return {
-      id: module.id,
-      nom: "2.FEUILLES D'ÉMARGEMENT SIGNÉES TAXI",
-      description: "Consultez l'historique de vos émargements signés durant la formation continue.",
-      cours: [
-        {
-          id: 1,
-          titre: "Mes feuilles d'émargement signées",
-          description: "Historique des signatures matin / après-midi",
-          actif: true,
-          checklistType: "emargements-fc" as const,
         },
       ],
       exercices: [],
