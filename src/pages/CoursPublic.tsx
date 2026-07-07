@@ -28,6 +28,7 @@ import { usePresenceCheck } from "@/hooks/usePresenceCheck";
 import { useInactivityAlert } from "@/hooks/useInactivityAlert";
 import { useSessionKeepAlive } from "@/hooks/useSessionKeepAlive";
 import { PresenceCheckModal } from "@/components/cours-en-ligne/PresenceCheckModal";
+import { IdentityConfirmModal } from "@/components/cours-en-ligne/IdentityConfirmModal";
 import { ApprenantChatWidget } from "@/components/chat/ApprenantChatWidget";
 import { EmargementFCModal, isFormationContinue } from "@/components/cours-en-ligne/EmargementFCModal";
 import { isPresentielType, getExpectedEmargements, type CreneauKey } from "@/lib/agendaSlots";
@@ -1216,10 +1217,44 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     setApprenant(null);
     setSelectedFormation(null);
     setApprenantFetchError(null);
+    setIdentityConfirmed(false);
     lastKnownUserIdRef.current = null;
     fetchAttemptRef.current = 0;
     lastFetchedUserIdRef.current = null;
   }, [endConnexion, signOut]);
+
+  // Identity confirmation modal (shown once per browser session after login)
+  const [identityConfirmed, setIdentityConfirmed] = useState(false);
+  useEffect(() => {
+    if (embedded || !apprenant?.id) return;
+    try {
+      const flag = sessionStorage.getItem(`identity_confirmed_${apprenant.id}`);
+      setIdentityConfirmed(flag === "1");
+    } catch {
+      setIdentityConfirmed(false);
+    }
+  }, [embedded, apprenant?.id]);
+
+  const handleConfirmIdentity = useCallback(() => {
+    if (!apprenant?.id) return;
+    try {
+      sessionStorage.setItem(`identity_confirmed_${apprenant.id}`, "1");
+    } catch {
+      /* ignore */
+    }
+    setIdentityConfirmed(true);
+  }, [apprenant?.id]);
+
+  const handleDenyIdentity = useCallback(async () => {
+    if (apprenant?.id) {
+      try {
+        sessionStorage.removeItem(`identity_confirmed_${apprenant.id}`);
+      } catch {
+        /* ignore */
+      }
+    }
+    await handleLogout();
+  }, [apprenant?.id, handleLogout]);
 
   const pageContent = useMemo(() => {
 
@@ -2081,6 +2116,17 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         onConfirm={showInactivityModal ? confirmActivity : confirmPresence}
       />
 
+      {/* Identity confirmation modal (post-login) */}
+      {!embedded && apprenant?.id && !identityConfirmed && (
+        <IdentityConfirmModal
+          show
+          prenom={apprenant.prenom || ""}
+          nom={apprenant.nom || ""}
+          onConfirm={handleConfirmIdentity}
+          onDeny={handleDenyIdentity}
+        />
+      )}
+
       {/* Chat: ask a question to the centre */}
       {!embedded && apprenant?.id && (
         <ApprenantChatWidget apprenantId={apprenant.id} apprenantNom={`${apprenant.prenom || ""} ${apprenant.nom || ""}`.trim()} />
@@ -2108,6 +2154,9 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     handleBackFromModule,
     handleExamStateChange,
     handleLogout,
+    handleConfirmIdentity,
+    handleDenyIdentity,
+    identityConfirmed,
     handleModuleCompleted,
     handleTrackCours,
     handleLearnerQuizActivity,
