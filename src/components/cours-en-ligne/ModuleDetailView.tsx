@@ -6108,14 +6108,22 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         <AlertDialog open={pendingWrongQuestionRevision !== null}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>📖 Relisez vos erreurs avant</AlertDialogTitle>
+              <AlertDialogTitle>📖 Que souhaitez-vous faire ?</AlertDialogTitle>
               <AlertDialogDescription className="text-base leading-relaxed">
-                Relisez vos erreurs avant de recommencer les questions fausses. Après validation, seules les questions fausses apparaîtront et la page remontera en haut.
+                Vous pouvez d'abord <strong>relire vos erreurs</strong> tranquillement (vos réponses restent affichées, les questions fausses sont en rouge), puis revenir cliquer sur « Refaire les fausses » quand vous êtes prêt.
+                <br /><br />
+                Ou vous pouvez <strong>refaire directement les questions fausses</strong> maintenant : seules les questions fausses apparaîtront et vos nouvelles réponses seront enregistrées.
               </AlertDialogDescription>
             </AlertDialogHeader>
-            <AlertDialogFooter>
+            <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+              <AlertDialogCancel
+                onClick={() => setPendingWrongQuestionRevision(null)}
+                className="w-full sm:w-auto"
+              >
+                📖 Relire mes erreurs
+              </AlertDialogCancel>
               <AlertDialogAction onClick={confirmWrongQuestionRevision} className="w-full sm:w-auto">
-                J’ai compris, commencer
+                🎯 Refaire les questions fausses
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
