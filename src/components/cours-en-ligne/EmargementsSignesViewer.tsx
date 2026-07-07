@@ -237,7 +237,7 @@ export const buildEmargementHTML = (
     <div class="item"><span class="label">Lieu :</span><span class="value">${lieu}</span></div>
     <div class="item"><span class="label">Dates :</span><span class="value">${datesFormation}</span></div>
     <div class="item"><span class="label">Formateur(s) :</span><span class="value">${formateur}</span></div>
-    <div class="item"><span class="label">Durée totale :</span><span class="value"><strong>14 heures</strong></span></div>
+    ${isFC ? `<div class="item"><span class="label">Durée totale :</span><span class="value"><strong>14 heures</strong></span></div>` : ""}
   </div>
 
   <table>
