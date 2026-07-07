@@ -677,7 +677,7 @@ function PassageMatiere({
 
       {/* Calculatrice flottante */}
       {showCalculator && (
-        <CalculatriceExamen onClose={() => setShowCalculator(false)} />
+        <Calculatrice onClose={() => setShowCalculator(false)} />
       )}
       </div>
 
