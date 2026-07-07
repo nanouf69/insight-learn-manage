@@ -28,6 +28,7 @@ import { usePresenceCheck } from "@/hooks/usePresenceCheck";
 import { useInactivityAlert } from "@/hooks/useInactivityAlert";
 import { useSessionKeepAlive } from "@/hooks/useSessionKeepAlive";
 import { PresenceCheckModal } from "@/components/cours-en-ligne/PresenceCheckModal";
+import { IdentityConfirmModal } from "@/components/cours-en-ligne/IdentityConfirmModal";
 import { ApprenantChatWidget } from "@/components/chat/ApprenantChatWidget";
 import { EmargementFCModal, isFormationContinue } from "@/components/cours-en-ligne/EmargementFCModal";
 import { isPresentielType, getExpectedEmargements, type CreneauKey } from "@/lib/agendaSlots";
