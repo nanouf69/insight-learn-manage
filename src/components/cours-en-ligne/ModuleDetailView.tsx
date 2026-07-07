@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, ArrowUp, ArrowDown, Pencil, Trash2, Plus, ToggleLeft, ToggleRight, Save, X, CheckCircle2, Eye, Settings, Download, FileText, Upload, Loader2, ZoomIn, ZoomOut, RotateCcw, Maximize, Users, ChevronDown, ChevronUp, Lock, Printer, RefreshCw, AlertTriangle } from "lucide-react";
+import { ArrowLeft, ArrowUp, ArrowDown, Pencil, Trash2, Plus, ToggleLeft, ToggleRight, Save, X, CheckCircle2, Eye, Settings, Download, FileText, Upload, Loader2, ZoomIn, ZoomOut, RotateCcw, Maximize, Users, ChevronDown, ChevronUp, Lock, Printer, RefreshCw, AlertTriangle, Calculator } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
@@ -102,6 +102,7 @@ import SatisfactionForm from "./SatisfactionForm";
 import CGVAcceptanceForm from "./CGVAcceptanceForm";
 import CGVReglementForm from "./CGVReglementForm";
 import { getCompetencesForFormation } from "./competences-checklist-data";
+import Calculatrice from "./Calculatrice";
 import {
   applyOverridesToModuleExercices,
   detectAndSaveOverrides,
@@ -3782,6 +3783,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       return JSON.stringify([...selectedLetters].sort()) === JSON.stringify(correctLetters);
     };
     const [showResultsFor, setShowResultsFor] = useState<Set<number>>(new Set());
+    const [showCalculator, setShowCalculator] = useState(false);
     // Revision mode: per exo, set of question IDs to display (only the wrong ones)
     const [revisionQuestionsFor, setRevisionQuestionsFor] = useState<Record<number, Set<number | string>>>({});
     type PendingWrongQuestionRevision = {
@@ -5329,7 +5331,18 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         <div className="space-y-4 min-w-0">
           <Card key={exo.id}>
             <CardContent className="p-6 space-y-4">
-              <h3 className="text-lg font-bold">📝 {exo.titre}</h3>
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <h3 className="text-lg font-bold">📝 {exo.titre}</h3>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setShowCalculator(v => !v)}
+                  className="gap-1"
+                >
+                  <Calculator className="w-4 h-4" />
+                  Calculatrice
+                </Button>
+              </div>
               {exo.sousTitre && <p className="text-sm text-muted-foreground">{exo.sousTitre}</p>}
               {/* Show file links if present alongside questions */}
               {exo.fichiers && exo.fichiers.length > 0 && (
@@ -6153,6 +6166,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         </div>
         </div>
       </div>
+      {showCalculator && <Calculatrice onClose={() => setShowCalculator(false)} />}
     );
     };
 
