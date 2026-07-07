@@ -5463,7 +5463,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 const multi = isMultiAnswer(q);
                 const selectedArr = Array.isArray(selected) ? selected : selected ? [selected] : [];
                 const exoShowResults = showResultsFor.has(exo.id);
-                const isQcmWrong = isInRevision || (exoShowResults && !isAnswerCorrect(selected, q));
+                const answerIsCorrect = isAnswerCorrect(selected, q);
+                const isQcmWrong = (isInRevision && selectedArr.length > 0 && !answerIsCorrect) || (exoShowResults && !answerIsCorrect);
+
 
                 return (
                   <div key={q.id} id={`exo-q-${exo.id}-${qi}`} data-answer-scroll-anchor className={`space-y-2 p-4 border rounded-lg scroll-mt-20 transition-all ${isQcmWrong ? 'border-destructive border-4 bg-destructive/10' : unansweredKeys.has(key) ? 'border-destructive border-2 bg-destructive/5' : ''}`}>
