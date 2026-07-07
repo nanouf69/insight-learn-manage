@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, ArrowUp, ArrowDown, Pencil, Trash2, Plus, ToggleLeft, ToggleRight, Save, X, CheckCircle2, Eye, Settings, Download, FileText, Upload, Loader2, ZoomIn, ZoomOut, RotateCcw, Maximize, Users, ChevronDown, ChevronUp, Lock, Printer, RefreshCw, AlertTriangle } from "lucide-react";
+import { ArrowLeft, ArrowUp, ArrowDown, Pencil, Trash2, Plus, ToggleLeft, ToggleRight, Save, X, CheckCircle2, Eye, Settings, Download, FileText, Upload, Loader2, ZoomIn, ZoomOut, RotateCcw, Maximize, Users, ChevronDown, ChevronUp, Lock, Printer, RefreshCw, AlertTriangle, Calculator } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
@@ -102,6 +102,7 @@ import SatisfactionForm from "./SatisfactionForm";
 import CGVAcceptanceForm from "./CGVAcceptanceForm";
 import CGVReglementForm from "./CGVReglementForm";
 import { getCompetencesForFormation } from "./competences-checklist-data";
+import Calculatrice from "./Calculatrice";
 import {
   applyOverridesToModuleExercices,
   detectAndSaveOverrides,
@@ -3782,6 +3783,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       return JSON.stringify([...selectedLetters].sort()) === JSON.stringify(correctLetters);
     };
     const [showResultsFor, setShowResultsFor] = useState<Set<number>>(new Set());
+    const [showCalculator, setShowCalculator] = useState(false);
     // Revision mode: per exo, set of question IDs to display (only the wrong ones)
     const [revisionQuestionsFor, setRevisionQuestionsFor] = useState<Record<number, Set<number | string>>>({});
     type PendingWrongQuestionRevision = {
