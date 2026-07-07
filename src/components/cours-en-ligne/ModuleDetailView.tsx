@@ -5615,7 +5615,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                               <div key={q.id}
                                 className="flex items-center gap-2 rounded-lg border bg-background p-2 cursor-pointer hover:bg-muted/50 transition-colors"
                                 title={`Q${qi + 1}: ${isCorrect ? "Correct" : "Incorrect"} — Cliquer pour voir`}
-                                onClick={() => undefined}
+                                onClick={() => {
+                                  document
+                                    .getElementById(`exo-q-${exo.id}-${qi}`)
+                                    ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                                }}
                               >
                                 <span className="text-sm font-bold min-w-[1.2rem] text-center">{qi + 1}</span>
                                 <span className={`w-3.5 h-3.5 rounded-full shrink-0 ${isCorrect ? "bg-emerald-500" : "bg-destructive"}`} />
