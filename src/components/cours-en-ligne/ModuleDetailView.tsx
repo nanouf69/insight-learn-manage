@@ -5331,7 +5331,18 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         <div className="space-y-4 min-w-0">
           <Card key={exo.id}>
             <CardContent className="p-6 space-y-4">
-              <h3 className="text-lg font-bold">📝 {exo.titre}</h3>
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <h3 className="text-lg font-bold">📝 {exo.titre}</h3>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setShowCalculator(v => !v)}
+                  className="gap-1"
+                >
+                  <Calculator className="w-4 h-4" />
+                  Calculatrice
+                </Button>
+              </div>
               {exo.sousTitre && <p className="text-sm text-muted-foreground">{exo.sousTitre}</p>}
               {/* Show file links if present alongside questions */}
               {exo.fichiers && exo.fichiers.length > 0 && (
