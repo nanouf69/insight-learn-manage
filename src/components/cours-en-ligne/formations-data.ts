@@ -418,6 +418,12 @@ export const MODULES_DATA: ModuleInfo[] = [
     description: "Renouvellement de la carte professionnelle VTC — démarche en ligne après formation continue",
     formations: ["continue-vtc"],
   },
+  {
+    id: 89,
+    nom: "6.💶 REMBOURSEMENT FORMATION CONTINUE VTC",
+    description: "Documents pour le remboursement par le financeur — Formation Continue VTC",
+    formations: ["continue-vtc"],
+  },
 ];
 
 // Expansion des modules_autorises :
