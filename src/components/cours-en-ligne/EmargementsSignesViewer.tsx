@@ -257,7 +257,7 @@ export const buildEmargementHTML = (
     <tfoot>
       <tr>
         <td class="total-label" colspan="${totalCols - 1}">TOTAL HEURES DE FORMATION</td>
-        <td class="total-value">${fmtH(totalHeures)} / 14h</td>
+        <td class="total-value">${fmtH(totalHeures)}${isFC ? " / 14h" : ""}</td>
       </tr>
     </tfoot>
   </table>
