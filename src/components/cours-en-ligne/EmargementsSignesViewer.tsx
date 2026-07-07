@@ -237,7 +237,7 @@ export const buildEmargementHTML = (
     <div class="item"><span class="label">Lieu :</span><span class="value">${lieu}</span></div>
     <div class="item"><span class="label">Dates :</span><span class="value">${datesFormation}</span></div>
     <div class="item"><span class="label">Formateur(s) :</span><span class="value">${formateur}</span></div>
-    <div class="item"><span class="label">Durée totale :</span><span class="value"><strong>14 heures</strong></span></div>
+    ${isFC ? `<div class="item"><span class="label">Durée totale :</span><span class="value"><strong>14 heures</strong></span></div>` : ""}
   </div>
 
   <table>
@@ -257,7 +257,7 @@ export const buildEmargementHTML = (
     <tfoot>
       <tr>
         <td class="total-label" colspan="${totalCols - 1}">TOTAL HEURES DE FORMATION</td>
-        <td class="total-value">${fmtH(totalHeures)} / 14h</td>
+        <td class="total-value">${fmtH(totalHeures)}${isFC ? " / 14h" : ""}</td>
       </tr>
     </tfoot>
   </table>
