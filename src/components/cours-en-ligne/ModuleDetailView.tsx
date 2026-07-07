@@ -5399,6 +5399,29 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 </Button>
               </div>
               {exo.sousTitre && <p className="text-sm text-muted-foreground">{exo.sousTitre}</p>}
+              {pendingWrongQuestionRevision?.exoId === exo.id && (
+                <div className="rounded-lg border-2 border-amber-300 bg-amber-50 dark:bg-amber-950/20 p-4 space-y-3 text-sm text-amber-900 dark:text-amber-200">
+                  <div className="font-bold text-base">📖 Que souhaitez-vous faire ?</div>
+                  <p>
+                    Vous pouvez relire vos erreurs avec les corrections affichées, ou refaire directement uniquement les questions fausses.
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <Button
+                      variant="outline"
+                      className="border-amber-300 text-amber-800 hover:bg-amber-100"
+                      onClick={() => {
+                        setPendingWrongQuestionRevision(null);
+                        scheduleScrollToRevisionStart(exo.id);
+                      }}
+                    >
+                      📖 Relire mes erreurs
+                    </Button>
+                    <Button onClick={confirmWrongQuestionRevision}>
+                      🎯 Refaire les questions fausses
+                    </Button>
+                  </div>
+                </div>
+              )}
               {/* Show file links if present alongside questions */}
               {exo.fichiers && exo.fichiers.length > 0 && (
                 <div className="flex flex-wrap gap-2">
@@ -5779,6 +5802,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                                 flushSync(() => {
                                   setPendingWrongQuestionRevision({ exoId: exo.id, total: questionsSafe.length, snapCorrect, snapshot, wrongKeys, wrongIds });
                                 });
+                                scheduleScrollToRevisionStart(exo.id);
                               }
                             }}>
                               🎯 Refaire les fausses ({(() => {
@@ -6133,34 +6157,6 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           {currentPageData?.type === "cours" && renderCoursPage(currentPageData.cours)}
           {currentPageData?.type === "exercice-single" && renderSingleExercicePage(currentPageData.exercice)}
         </div>
-
-        <AlertDialog open={pendingWrongQuestionRevision !== null} onOpenChange={(open) => { if (!open) setPendingWrongQuestionRevision(null); }}>
-          <AlertDialogContent className="z-[100] max-w-xl">
-            <AlertDialogHeader>
-              <AlertDialogTitle>📖 Que souhaitez-vous faire ?</AlertDialogTitle>
-              <AlertDialogDescription className="text-base leading-relaxed">
-                Vous pouvez d'abord <strong>relire vos erreurs</strong> tranquillement (vos réponses restent affichées, les questions fausses sont en rouge), puis revenir cliquer sur « Refaire les fausses » quand vous êtes prêt.
-                <br /><br />
-                Ou vous pouvez <strong>refaire directement les questions fausses</strong> maintenant : seules les questions fausses apparaîtront et vos nouvelles réponses seront enregistrées.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter className="flex-col sm:flex-row gap-2">
-              <AlertDialogCancel
-                onClick={() => {
-                  const exoId = pendingWrongQuestionRevision?.exoId;
-                  setPendingWrongQuestionRevision(null);
-                  if (exoId) scheduleScrollToRevisionStart(exoId);
-                }}
-                className="w-full sm:w-auto"
-              >
-                📖 Relire mes erreurs
-              </AlertDialogCancel>
-              <AlertDialogAction onClick={confirmWrongQuestionRevision} className="w-full sm:w-auto">
-                🎯 Refaire les questions fausses
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
 
         {/* Quiz completion rate */}
         {(() => {
