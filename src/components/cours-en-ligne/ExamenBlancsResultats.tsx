@@ -959,7 +959,7 @@ function EcranResultats({
         );
       })()}
 
-      <AlertDialog open={pendingWrongRevisionCount !== null} onOpenChange={(open) => { if (!open) setPendingWrongRevisionCount(null); }}>
+      <AlertDialog open={pendingWrongRevisionCount !== null}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>📖 Relisez vos erreurs avant</AlertDialogTitle>

@@ -6049,7 +6049,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           {currentPageData?.type === "exercice-single" && renderSingleExercicePage(currentPageData.exercice)}
         </div>
 
-        <AlertDialog open={pendingWrongQuestionRevision !== null} onOpenChange={(open) => { if (!open) setPendingWrongQuestionRevision(null); }}>
+        <AlertDialog open={pendingWrongQuestionRevision !== null}>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>📖 Relisez vos erreurs avant</AlertDialogTitle>
