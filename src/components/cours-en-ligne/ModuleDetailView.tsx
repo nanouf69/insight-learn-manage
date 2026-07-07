@@ -4284,7 +4284,29 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               }
             }
 
-            console.log(`[ModuleDetailView] Module ${module.id} déjà validé pour apprenant ${apprenantId} — écritures sur reponses_apprenants BLOQUÉES.`);
+            console.log(`[ModuleDetailView] Module ${module.id} déjà validé pour apprenant ${apprenantId} — apprenant_module_completion figé, reponses_apprenants autorisées pour rejouer les questions fausses.`);
+
+            // Merge any redo answers saved in reponses_apprenants over the frozen snapshot.
+            const exerciceIds = activeExercices.map(e => `module_${module.id}_exo_${e.id}`);
+            if (exerciceIds.length > 0) {
+              const { data: repData } = await supabase
+                .from("reponses_apprenants" as any)
+                .select("exercice_id, reponses, completed")
+                .eq("apprenant_id", apprenantId)
+                .in("exercice_id", exerciceIds);
+              if (repData && (repData as any[]).length > 0) {
+                const redo: Record<string, string | string[]> = {};
+                (repData as any[]).forEach((row: any) => {
+                  if (row.reponses && typeof row.reponses === "object") {
+                    Object.assign(redo, row.reponses);
+                  }
+                });
+                if (Object.keys(redo).length > 0) {
+                  setSelectedAnswers((prev) => ({ ...prev, ...redo }));
+                }
+              }
+            }
+
           } else {
             // 2) Module not yet validated → restore from reponses_apprenants (progressive save).
             const exerciceIds = activeExercices.map(e => `module_${module.id}_exo_${e.id}`);
