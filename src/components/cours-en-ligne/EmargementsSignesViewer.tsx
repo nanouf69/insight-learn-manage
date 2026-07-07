@@ -321,6 +321,8 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
   const [expected, setExpected] = useState<Array<{ date: string; creneau: CreneauKey }>>([]);
   const [signTarget, setSignTarget] = useState<{ date: string; creneau: CreneauKey; replaceExisting?: boolean } | null>(null);
   const [refreshTick, setRefreshTick] = useState(0);
+  const [manualDate, setManualDate] = useState<string>(() => new Date().toISOString().slice(0, 10));
+  const [manualCreneau, setManualCreneau] = useState<CreneauKey>("matin");
 
   useEffect(() => {
     if (!apprenantId) {
@@ -496,6 +498,52 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
           </Button>
         )}
       </div>
+
+      {userId && apprenantId && (
+        <Card className="p-3 border-primary/30 bg-primary/5">
+          <div className="flex flex-col sm:flex-row sm:items-end gap-3">
+            <div className="flex-1">
+              <p className="text-sm font-semibold">Signer un créneau manuellement</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Choisissez la date et le créneau à signer (rattrapage d'un jour passé).
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2 items-end">
+              <div>
+                <label className="text-[10px] text-muted-foreground block mb-0.5">Date</label>
+                <input
+                  type="date"
+                  value={manualDate}
+                  max={new Date().toISOString().slice(0, 10)}
+                  onChange={(e) => setManualDate(e.target.value)}
+                  className="h-8 rounded border px-2 text-xs bg-background"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] text-muted-foreground block mb-0.5">Créneau</label>
+                <select
+                  value={manualCreneau}
+                  onChange={(e) => setManualCreneau(e.target.value as CreneauKey)}
+                  className="h-8 rounded border px-2 text-xs bg-background"
+                >
+                  <option value="matin">Matin (09h-12h)</option>
+                  <option value="apres_midi">Après-midi (13h-16h)</option>
+                  <option value="soir_1">Soir 1 (17h-18h30)</option>
+                  <option value="soir_2">Soir 2 (18h30-21h)</option>
+                </select>
+              </div>
+              <Button
+                size="sm"
+                disabled={!manualDate}
+                onClick={() => openSignatureFor({ date: manualDate, creneau: manualCreneau })}
+              >
+                <PenTool className="h-4 w-4 mr-1" />
+                Signer
+              </Button>
+            </div>
+          </div>
+        </Card>
+      )}
 
       {missingSlots.length > 0 && userId && apprenantId && (
         <Card className="p-3 border-amber-300 bg-amber-50/70">
