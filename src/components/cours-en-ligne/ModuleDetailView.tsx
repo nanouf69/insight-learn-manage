@@ -3784,6 +3784,15 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     const [showResultsFor, setShowResultsFor] = useState<Set<number>>(new Set());
     // Revision mode: per exo, set of question IDs to display (only the wrong ones)
     const [revisionQuestionsFor, setRevisionQuestionsFor] = useState<Record<number, Set<number | string>>>({});
+    type PendingWrongQuestionRevision = {
+      exoId: number;
+      total: number;
+      snapCorrect: number;
+      snapshot: Record<string, string | string[]>;
+      wrongKeys: string[];
+      wrongIds: (number | string)[];
+    };
+    const [pendingWrongQuestionRevision, setPendingWrongQuestionRevision] = useState<PendingWrongQuestionRevision | null>(null);
     // History of past attempts per exo (snapshot of selectedAnswers + score)
     type AttemptRecord = { at: number; total: number; correct: number; mode: "complet" | "revision"; answers: Record<string, string | string[]> };
     const [attemptHistoryFor, setAttemptHistoryFor] = useState<Record<number, AttemptRecord[]>>({});
@@ -3807,6 +3816,36 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     const HIDDEN_CHECKLIST_TYPES = ["analyse-besoin", "projet-professionnel", "competences", "cgv", "cgv-reglement"];
     const activeCours = moduleData.cours.filter(c => c.actif && !(hideFormulaires && c.checklistType && HIDDEN_CHECKLIST_TYPES.includes(c.checklistType)));
     const activeExercices = moduleData.exercices.filter(e => e.actif) as ExerciceItem[];
+    const confirmWrongQuestionRevision = () => {
+      const pending = pendingWrongQuestionRevision;
+      if (!pending) return;
+
+      if (Object.keys(pending.snapshot).length > 0) {
+        setAttemptHistoryFor(prev => ({
+          ...prev,
+          [pending.exoId]: [
+            ...(prev[pending.exoId] ?? []),
+            { at: Date.now(), total: pending.total, correct: pending.snapCorrect, mode: "complet", answers: pending.snapshot },
+          ],
+        }));
+      }
+      setSelectedAnswers(prev => {
+        const next = { ...prev };
+        pending.wrongKeys.forEach(k => delete next[k]);
+        autoSaveAnswers(next);
+        return next;
+      });
+      setShowResultsFor(prev => { const next = new Set(prev); next.delete(pending.exoId); return next; });
+      setPendingResultRestore((prev) => (prev?.exoId === pending.exoId ? null : prev));
+      setRevisionQuestionsFor(prev => ({ ...prev, [pending.exoId]: new Set(pending.wrongIds) }));
+      setPendingWrongQuestionRevision(null);
+
+      setTimeout(() => {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+      }, 50);
+    };
 
     // === Subject number mapping for stepper numbering (e.g. 1.1, 1.2, 2.1…) ===
     const SUBJECT_NUMBER_MAP: Record<number, { parentTitle: string; subjectNum: number }> = {
@@ -5637,7 +5676,6 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                               🔄 Recommencer tout
                             </Button>
                             <Button variant="outline" size="sm" className="gap-2 border-amber-300 text-amber-700 hover:bg-amber-50" onClick={() => {
-                              // Snapshot before revision
                               const snapshot: Record<string, string | string[]> = {};
                               let snapCorrect = 0;
                               const wrongIds: (number | string)[] = [];
@@ -5652,34 +5690,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                                   wrongIds.push(q.id);
                                 }
                               });
-                              if (Object.keys(snapshot).length > 0) {
-                                setAttemptHistoryFor(prev => ({
-                                  ...prev,
-                                  [exo.id]: [...(prev[exo.id] ?? []), { at: Date.now(), total: questionsSafe.length, correct: snapCorrect, mode: "complet", answers: snapshot }],
-                                }));
-                              }
-                              setSelectedAnswers(prev => {
-                                const next = { ...prev };
-                                wrongKeys.forEach(k => delete next[k]);
-                autoSaveAnswers(next);
-                                return next;
-                              });
-                              setShowResultsFor(prev => { const next = new Set(prev); next.delete(exo.id); return next; });
-                              setPendingResultRestore((prev) => (prev?.exoId === exo.id ? null : prev));
-                              setRevisionQuestionsFor(prev => ({ ...prev, [exo.id]: new Set(wrongIds) }));
                               const nbWrong = wrongKeys.length;
                               if (nbWrong === 0) {
                                 toast.success("🎉 Aucune question fausse à refaire !");
                               } else {
-                                toast.warning("📖 Lisez vos erreurs avant de recommencer les questions fausses.", {
-                                  description: `${nbWrong} question${nbWrong > 1 ? "s" : ""} fausse${nbWrong > 1 ? "s" : ""} à refaire`,
-                                  duration: 8000,
-                                });
-                                setTimeout(() => {
-                                  window.scrollTo({ top: 0, behavior: "smooth" });
-                                  document.documentElement.scrollTop = 0;
-                                  document.body.scrollTop = 0;
-                                }, 50);
+                                setPendingWrongQuestionRevision({ exoId: exo.id, total: questionsSafe.length, snapCorrect, snapshot, wrongKeys, wrongIds });
                               }
                             }}>
                               🎯 Refaire les fausses ({(() => {
@@ -6033,6 +6048,22 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           {currentPageData?.type === "cours" && renderCoursPage(currentPageData.cours)}
           {currentPageData?.type === "exercice-single" && renderSingleExercicePage(currentPageData.exercice)}
         </div>
+
+        <AlertDialog open={pendingWrongQuestionRevision !== null} onOpenChange={(open) => { if (!open) setPendingWrongQuestionRevision(null); }}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>📖 Relisez vos erreurs avant</AlertDialogTitle>
+              <AlertDialogDescription className="text-base leading-relaxed">
+                Relisez vos erreurs avant de recommencer les questions fausses. Après validation, seules les questions fausses apparaîtront et la page remontera en haut.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogAction onClick={confirmWrongQuestionRevision} className="w-full sm:w-auto">
+                J’ai compris, commencer
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         {/* Quiz completion rate */}
         {(() => {
