@@ -1147,7 +1147,7 @@ function RevisionPhaseView({
       {/* Message d'avertissement — TOUT EN HAUT */}
       <div className="rounded-lg px-4 py-4 bg-blue-50 border-2 border-blue-400 shadow-md">
         <p className="text-base font-bold text-blue-900">
-          📖 Lisez vos erreurs avant de recommencer les questions fausses.
+          📖 Relisez vos erreurs avant de recommencer les questions fausses.
         </p>
       </div>
       <div className="flex items-center gap-3">
