@@ -5659,10 +5659,18 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                                 className="flex items-center gap-2 rounded-lg border bg-background p-2 cursor-pointer hover:bg-muted/50 transition-colors"
                                 title={`Q${qi + 1}: ${isCorrect ? "Correct" : "Incorrect"} — Cliquer pour voir`}
                                 onClick={() => {
-                                  document
-                                    .getElementById(`exo-q-${exo.id}-${qi}`)
-                                    ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                                  const el = document.getElementById(`exo-q-${exo.id}-${qi}`);
+                                  if (!el) {
+                                    console.warn(`[Réponses] Anchor introuvable: exo-q-${exo.id}-${qi}`);
+                                    return;
+                                  }
+                                  const rect = el.getBoundingClientRect();
+                                  const top = window.scrollY + rect.top - 96; // account for sticky header
+                                  window.scrollTo({ top, behavior: "smooth" });
+                                  el.classList.add("ring-4", "ring-primary");
+                                  setTimeout(() => el.classList.remove("ring-4", "ring-primary"), 1500);
                                 }}
+
                               >
                                 <span className="text-sm font-bold min-w-[1.2rem] text-center">{qi + 1}</span>
                                 <span className={`w-3.5 h-3.5 rounded-full shrink-0 ${isCorrect ? "bg-emerald-500" : "bg-destructive"}`} />
