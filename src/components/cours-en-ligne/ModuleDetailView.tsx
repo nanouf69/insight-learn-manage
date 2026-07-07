@@ -4284,7 +4284,29 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               }
             }
 
-            console.log(`[ModuleDetailView] Module ${module.id} déjà validé pour apprenant ${apprenantId} — écritures sur reponses_apprenants BLOQUÉES.`);
+            console.log(`[ModuleDetailView] Module ${module.id} déjà validé pour apprenant ${apprenantId} — apprenant_module_completion figé, reponses_apprenants autorisées pour rejouer les questions fausses.`);
+
+            // Merge any redo answers saved in reponses_apprenants over the frozen snapshot.
+            const exerciceIds = activeExercices.map(e => `module_${module.id}_exo_${e.id}`);
+            if (exerciceIds.length > 0) {
+              const { data: repData } = await supabase
+                .from("reponses_apprenants" as any)
+                .select("exercice_id, reponses, completed")
+                .eq("apprenant_id", apprenantId)
+                .in("exercice_id", exerciceIds);
+              if (repData && (repData as any[]).length > 0) {
+                const redo: Record<string, string | string[]> = {};
+                (repData as any[]).forEach((row: any) => {
+                  if (row.reponses && typeof row.reponses === "object") {
+                    Object.assign(redo, row.reponses);
+                  }
+                });
+                if (Object.keys(redo).length > 0) {
+                  setSelectedAnswers((prev) => ({ ...prev, ...redo }));
+                }
+              }
+            }
+
           } else {
             // 2) Module not yet validated → restore from reponses_apprenants (progressive save).
             const exerciceIds = activeExercices.map(e => `module_${module.id}_exo_${e.id}`);
@@ -4317,9 +4339,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
     // --- Auto-save partial answers to DB (debounced) ---
     const autoSaveAnswers = (answers: Record<string, string | string[]>) => {
-      if (!apprenantId || completionPersistedRef.current || moduleAlreadyValidatedRef.current) return;
+      if (!apprenantId) return;
 
       // Save to reponses_apprenants per exercice (500ms debounce)
+      // NOTE: we allow this even if the module is already validated so that
+      // "Refaire les fausses" / retry attempts persist the new answers.
       if (reponsesSaveDebounceRef.current) clearTimeout(reponsesSaveDebounceRef.current);
       reponsesSaveDebounceRef.current = setTimeout(async () => {
         if (!userIdForSaveRef.current) return;
@@ -4353,9 +4377,13 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         }
       }, 300);
 
+      // apprenant_module_completion: frozen snapshot — do NOT overwrite once validated.
+      if (completionPersistedRef.current || moduleAlreadyValidatedRef.current) return;
+
       // Also save to apprenant_module_completion (existing behavior, debounced 3s)
       if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
       autoSaveTimerRef.current = setTimeout(async () => {
+
         try {
           const questionDetails = activeExercices.flatMap(e =>
             (e.questions || []).map(q => {
@@ -4404,7 +4432,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     // beforeunload: flush pending saves immediately
     useEffect(() => {
       const flushSave = () => {
-        if (!apprenantId || !userIdForSaveRef.current || completionPersistedRef.current || moduleAlreadyValidatedRef.current) return;
+        if (!apprenantId || !userIdForSaveRef.current) return;
         const answers = latestAnswersRef.current;
         if (Object.keys(answers).length === 0) return;
         // Group answers by exercice
