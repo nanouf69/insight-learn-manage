@@ -3818,35 +3818,62 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     const HIDDEN_CHECKLIST_TYPES = ["analyse-besoin", "projet-professionnel", "competences", "cgv", "cgv-reglement"];
     const activeCours = moduleData.cours.filter(c => c.actif && !(hideFormulaires && c.checklistType && HIDDEN_CHECKLIST_TYPES.includes(c.checklistType)));
     const activeExercices = moduleData.exercices.filter(e => e.actif) as ExerciceItem[];
+
+    const scrollToRevisionStart = useCallback((exoId: number) => {
+      const target =
+        document.getElementById(`exo-revision-top-${exoId}`) ||
+        document.querySelector(`[id^="exo-q-${exoId}-"]`);
+
+      if (target instanceof HTMLElement) {
+        const top = Math.max(0, window.scrollY + target.getBoundingClientRect().top - 16);
+        window.scrollTo({ top, behavior: "smooth" });
+        target.classList.add("ring-4", "ring-primary");
+        window.setTimeout(() => target.classList.remove("ring-4", "ring-primary"), 1400);
+        return;
+      }
+
+      window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+    }, []);
+
+    const scheduleScrollToRevisionStart = useCallback((exoId: number) => {
+      if (document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur();
+      }
+
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => scrollToRevisionStart(exoId));
+      });
+      window.setTimeout(() => scrollToRevisionStart(exoId), 180);
+      window.setTimeout(() => scrollToRevisionStart(exoId), 420);
+    }, [scrollToRevisionStart]);
+
     const confirmWrongQuestionRevision = () => {
       const pending = pendingWrongQuestionRevision;
       if (!pending) return;
 
-      if (Object.keys(pending.snapshot).length > 0) {
-        setAttemptHistoryFor(prev => ({
-          ...prev,
-          [pending.exoId]: [
-            ...(prev[pending.exoId] ?? []),
-            { at: Date.now(), total: pending.total, correct: pending.snapCorrect, mode: "complet", answers: pending.snapshot },
-          ],
-        }));
-      }
-      setSelectedAnswers(prev => {
-        const next = { ...prev };
-        pending.wrongKeys.forEach(k => delete next[k]);
-        autoSaveAnswers(next);
-        return next;
+      flushSync(() => {
+        if (Object.keys(pending.snapshot).length > 0) {
+          setAttemptHistoryFor(prev => ({
+            ...prev,
+            [pending.exoId]: [
+              ...(prev[pending.exoId] ?? []),
+              { at: Date.now(), total: pending.total, correct: pending.snapCorrect, mode: "complet", answers: pending.snapshot },
+            ],
+          }));
+        }
+        setSelectedAnswers(prev => {
+          const next = { ...prev };
+          pending.wrongKeys.forEach(k => delete next[k]);
+          autoSaveAnswers(next);
+          return next;
+        });
+        setShowResultsFor(prev => { const next = new Set(prev); next.delete(pending.exoId); return next; });
+        setPendingResultRestore((prev) => (prev?.exoId === pending.exoId ? null : prev));
+        setRevisionQuestionsFor(prev => ({ ...prev, [pending.exoId]: new Set(pending.wrongIds) }));
+        setPendingWrongQuestionRevision(null);
       });
-      setShowResultsFor(prev => { const next = new Set(prev); next.delete(pending.exoId); return next; });
-      setPendingResultRestore((prev) => (prev?.exoId === pending.exoId ? null : prev));
-      setRevisionQuestionsFor(prev => ({ ...prev, [pending.exoId]: new Set(pending.wrongIds) }));
-      setPendingWrongQuestionRevision(null);
 
-      setTimeout(() => {
-        window.scrollTo({ top: 0, behavior: "smooth" });
-        document.documentElement.scrollTop = 0;
-        document.body.scrollTop = 0;
-      }, 50);
+      scheduleScrollToRevisionStart(pending.exoId);
     };
 
     // === Subject number mapping for stepper numbering (e.g. 1.1, 1.2, 2.1…) ===
