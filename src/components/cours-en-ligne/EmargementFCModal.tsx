@@ -154,6 +154,17 @@ export const EmargementFCModal = ({
       });
       return;
     }
+    const identityOk = window.confirm(
+      `Confirmation d'identité\n\nÊtes-vous bien ${apprenantPrenom} ${apprenantNom} ?\n\nCliquez sur OK pour confirmer et enregistrer votre signature.\nCliquez sur Annuler si ce n'est pas vous.`
+    );
+    if (!identityOk) {
+      toast({
+        title: "Signature annulée",
+        description: "L'identité n'a pas été confirmée. Signature non enregistrée.",
+        variant: "destructive",
+      });
+      return;
+    }
     setSaving(true);
     try {
       await saveEmargement({
@@ -202,6 +213,17 @@ export const EmargementFCModal = ({
       return;
     }
 
+    const identityOk = window.confirm(
+      `Confirmation d'identité\n\nÊtes-vous bien ${apprenantPrenom} ${apprenantNom} ?\n\nCliquez sur OK pour confirmer et déclarer votre absence.\nCliquez sur Annuler si ce n'est pas vous.`
+    );
+    if (!identityOk) {
+      toast({
+        title: "Déclaration annulée",
+        description: "L'identité n'a pas été confirmée.",
+        variant: "destructive",
+      });
+      return;
+    }
     setSaving(true);
     try {
       const docType = `justificatif_absence_${effectiveDate}_${demi}`;
