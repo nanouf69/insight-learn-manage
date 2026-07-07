@@ -4317,9 +4317,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
     // --- Auto-save partial answers to DB (debounced) ---
     const autoSaveAnswers = (answers: Record<string, string | string[]>) => {
-      if (!apprenantId || completionPersistedRef.current || moduleAlreadyValidatedRef.current) return;
+      if (!apprenantId) return;
 
       // Save to reponses_apprenants per exercice (500ms debounce)
+      // NOTE: we allow this even if the module is already validated so that
+      // "Refaire les fausses" / retry attempts persist the new answers.
       if (reponsesSaveDebounceRef.current) clearTimeout(reponsesSaveDebounceRef.current);
       reponsesSaveDebounceRef.current = setTimeout(async () => {
         if (!userIdForSaveRef.current) return;
@@ -4353,9 +4355,13 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         }
       }, 300);
 
+      // apprenant_module_completion: frozen snapshot — do NOT overwrite once validated.
+      if (completionPersistedRef.current || moduleAlreadyValidatedRef.current) return;
+
       // Also save to apprenant_module_completion (existing behavior, debounced 3s)
       if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
       autoSaveTimerRef.current = setTimeout(async () => {
+
         try {
           const questionDetails = activeExercices.flatMap(e =>
             (e.questions || []).map(q => {
