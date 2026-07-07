@@ -5359,7 +5359,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                         }}>Voir toutes les questions</Button>
                       </div>
                       <div className="font-semibold text-amber-900 dark:text-amber-200">
-                        📖 Lisez vos erreurs avant de recommencer les questions fausses.
+                        📖 Relisez vos erreurs avant de recommencer les questions fausses.
                       </div>
                     </div>
                   );
