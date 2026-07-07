@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
+import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import {
   ArrowLeft, ArrowRight, CheckCircle2, XCircle, AlertTriangle,
   Trophy, RotateCcw, ChevronRight, BookOpen, Loader2, Bot, Clock, Pencil
@@ -70,6 +71,7 @@ function EcranResultats({
   const [editingPoints, setEditingPoints] = useState<number>(0);
   const [revisionDejaFaite, setRevisionDejaFaite] = useState(false);
   const [isRetake, setIsRetake] = useState(false);
+  const [pendingWrongRevisionCount, setPendingWrongRevisionCount] = useState<number | null>(null);
 
   // Detect if this is a retake (multiple results exist for same apprenant + quiz)
   useEffect(() => {
@@ -947,11 +949,7 @@ function EcranResultats({
         return (
           <Button
             onClick={() => {
-              toast.warning("📖 Lisez vos erreurs avant de recommencer les questions fausses.", {
-                description: `${nbFaussesTop} question${nbFaussesTop > 1 ? "s" : ""} fausse${nbFaussesTop > 1 ? "s" : ""} à refaire`,
-                duration: 8000,
-              });
-              onRefaireFausses();
+              setPendingWrongRevisionCount(nbFaussesTop);
             }}
             className="w-full gap-2 text-lg py-6 font-bold shadow-lg"
             style={{ backgroundColor: '#F4A227', borderColor: '#F4A227', color: 'white', fontSize: '18px' }}
@@ -960,6 +958,29 @@ function EcranResultats({
           </Button>
         );
       })()}
+
+      <AlertDialog open={pendingWrongRevisionCount !== null} onOpenChange={(open) => { if (!open) setPendingWrongRevisionCount(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>📖 Relisez vos erreurs avant</AlertDialogTitle>
+            <AlertDialogDescription className="text-base leading-relaxed">
+              Relisez vos erreurs avant de recommencer les questions fausses. Après validation, seules les questions fausses apparaîtront et la page remontera en haut.
+              {pendingWrongRevisionCount ? ` ${pendingWrongRevisionCount} question${pendingWrongRevisionCount > 1 ? "s" : ""} fausse${pendingWrongRevisionCount > 1 ? "s" : ""} à refaire.` : ""}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction
+              onClick={() => {
+                setPendingWrongRevisionCount(null);
+                onRefaireFausses();
+              }}
+              className="w-full sm:w-auto"
+            >
+              J’ai compris, commencer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {revisionDejaFaite && (
         <div className="w-full text-center py-3 px-4 rounded-lg bg-green-50 border border-green-200">
@@ -1033,12 +1054,6 @@ function RevisionFausses({
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const exerciceId = `revision_fausses_${examenId || "unknown"}`;
-
-  useEffect(() => {
-    toast.warning("📖 Lisez vos erreurs avant de recommencer les questions fausses.", {
-      duration: 8000,
-    });
-  }, []);
 
   // ---- Load saved progress on mount ----
   useEffect(() => {
