@@ -2116,6 +2116,17 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         onConfirm={showInactivityModal ? confirmActivity : confirmPresence}
       />
 
+      {/* Identity confirmation modal (post-login) */}
+      {!embedded && apprenant?.id && !identityConfirmed && (
+        <IdentityConfirmModal
+          show
+          prenom={apprenant.prenom || ""}
+          nom={apprenant.nom || ""}
+          onConfirm={handleConfirmIdentity}
+          onDeny={handleDenyIdentity}
+        />
+      )}
+
       {/* Chat: ask a question to the centre */}
       {!embedded && apprenant?.id && (
         <ApprenantChatWidget apprenantId={apprenant.id} apprenantNom={`${apprenant.prenom || ""} ${apprenant.nom || ""}`.trim()} />
