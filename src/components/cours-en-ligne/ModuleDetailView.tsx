@@ -5384,7 +5384,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       return (
       <div className="grid grid-cols-[minmax(0,1fr)_64px] sm:grid-cols-[minmax(0,1fr)_88px] gap-3 sm:gap-4">
         <div className="space-y-4 min-w-0">
-          <Card key={exo.id}>
+          <Card key={exo.id} id={`exo-revision-top-${exo.id}`} className="scroll-mt-4 transition-all">
             <CardContent className="p-6 space-y-4">
               <div className="flex items-center justify-between gap-2 flex-wrap">
                 <h3 className="text-lg font-bold">📝 {exo.titre}</h3>
@@ -5776,7 +5776,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                               if (nbWrong === 0) {
                                 toast.success("🎉 Aucune question fausse à refaire !");
                               } else {
-                                setPendingWrongQuestionRevision({ exoId: exo.id, total: questionsSafe.length, snapCorrect, snapshot, wrongKeys, wrongIds });
+                                flushSync(() => {
+                                  setPendingWrongQuestionRevision({ exoId: exo.id, total: questionsSafe.length, snapCorrect, snapshot, wrongKeys, wrongIds });
+                                });
                               }
                             }}>
                               🎯 Refaire les fausses ({(() => {
@@ -6132,8 +6134,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           {currentPageData?.type === "exercice-single" && renderSingleExercicePage(currentPageData.exercice)}
         </div>
 
-        <AlertDialog open={pendingWrongQuestionRevision !== null}>
-          <AlertDialogContent>
+        <AlertDialog open={pendingWrongQuestionRevision !== null} onOpenChange={(open) => { if (!open) setPendingWrongQuestionRevision(null); }}>
+          <AlertDialogContent className="z-[100] max-w-xl">
             <AlertDialogHeader>
               <AlertDialogTitle>📖 Que souhaitez-vous faire ?</AlertDialogTitle>
               <AlertDialogDescription className="text-base leading-relaxed">
@@ -6144,7 +6146,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             </AlertDialogHeader>
             <AlertDialogFooter className="flex-col sm:flex-row gap-2">
               <AlertDialogCancel
-                onClick={() => setPendingWrongQuestionRevision(null)}
+                onClick={() => {
+                  const exoId = pendingWrongQuestionRevision?.exoId;
+                  setPendingWrongQuestionRevision(null);
+                  if (exoId) scheduleScrollToRevisionStart(exoId);
+                }}
                 className="w-full sm:w-auto"
               >
                 📖 Relire mes erreurs
