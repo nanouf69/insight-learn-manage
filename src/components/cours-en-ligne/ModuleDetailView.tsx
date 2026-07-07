@@ -6167,6 +6167,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         </div>
       </div>
       {showCalculator && <Calculatrice onClose={() => setShowCalculator(false)} />}
+    </>
     );
     };
 
