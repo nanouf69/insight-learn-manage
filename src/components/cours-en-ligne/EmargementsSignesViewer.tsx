@@ -321,6 +321,8 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
   const [expected, setExpected] = useState<Array<{ date: string; creneau: CreneauKey }>>([]);
   const [signTarget, setSignTarget] = useState<{ date: string; creneau: CreneauKey; replaceExisting?: boolean } | null>(null);
   const [refreshTick, setRefreshTick] = useState(0);
+  const [manualDate, setManualDate] = useState<string>(() => new Date().toISOString().slice(0, 10));
+  const [manualCreneau, setManualCreneau] = useState<CreneauKey>("matin");
 
   useEffect(() => {
     if (!apprenantId) {
