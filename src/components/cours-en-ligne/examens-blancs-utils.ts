@@ -637,17 +637,15 @@ export function mergeSourceExercices<T extends MergeExerciceBase>(
         };
       });
 
-    // Append genuinely new source questions (not in loaded, not deleted).
-    // This lets new content from source appear without resurrecting admin-deleted questions.
-    const newFromSource = sourceExo.questions.filter(
-      (sq) => !loadedQuestionMap.has(Number(sq.id)) && !deletedIds.has(Number(sq.id))
-    );
+    // Saved question list is authoritative once an exercice has DB state.
+    // New source questions are NOT auto-added to avoid resurrecting admin-deleted ones.
 
     return {
       ...sourceExo,
       ...loadedExo,
-      questions: [...mergedQuestions, ...newFromSource],
+      questions: mergedQuestions,
     } as T;
+
 
   });
 
