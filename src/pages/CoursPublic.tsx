@@ -740,8 +740,21 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   useSessionKeepAlive(isStudentSession, isInExam);
 
   const handleForceDisconnect = useCallback(async () => {
-    toast.info("Session maintenue : vous pouvez continuer votre formation.");
-  }, []);
+    try {
+      toast.warning("Déconnexion automatique pour inactivité prolongée.");
+      await endConnexion();
+      await signOut();
+      setApprenant(null);
+      setSelectedFormation(null);
+      setIdentityConfirmed(false);
+      lastKnownUserIdRef.current = null;
+      fetchAttemptRef.current = 0;
+      lastFetchedUserIdRef.current = null;
+      navigate("/cours-en-ligne", { replace: true });
+    } catch (e) {
+      console.error("[CoursPublic] handleForceDisconnect error", e);
+    }
+  }, [endConnexion, signOut, navigate]);
 
   const {
     showModal: showPresenceModal,
