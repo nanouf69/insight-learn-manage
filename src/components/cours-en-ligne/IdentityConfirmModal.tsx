@@ -14,7 +14,7 @@ interface IdentityConfirmModalProps {
  * Modal de confirmation d'identité affichée à CHAQUE connexion
  * sur la plateforme de cours (présentiel ET e-learning).
  * L'apprenant doit valider qu'il est bien la personne attendue,
- * sinon il est déconnecté. Format visuel volontairement grand.
+ * sinon il est déconnecté. Format compact et lisible.
  */
 export function IdentityConfirmModal({
   show,
