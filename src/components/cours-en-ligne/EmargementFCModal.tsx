@@ -257,6 +257,7 @@ export const EmargementFCModal = ({
         justificatif_url: justUrl,
         motif_absence: motif.trim() || null,
         user_agent: navigator.userAgent.slice(0, 500),
+        confirme_identite: identityConfirmed,
       });
 
       toast({
