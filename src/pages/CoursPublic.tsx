@@ -739,22 +739,14 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
 
   useSessionKeepAlive(isStudentSession, isInExam);
 
+  const forceDisconnectImplRef = useRef<() => Promise<void>>(async () => {});
   const handleForceDisconnect = useCallback(async () => {
     try {
-      toast.warning("Déconnexion automatique pour inactivité prolongée.");
-      await endConnexion();
-      await signOut();
-      setApprenant(null);
-      setSelectedFormation(null);
-      setIdentityConfirmed(false);
-      lastKnownUserIdRef.current = null;
-      fetchAttemptRef.current = 0;
-      lastFetchedUserIdRef.current = null;
-      navigate("/cours-en-ligne", { replace: true });
+      await forceDisconnectImplRef.current();
     } catch (e) {
       console.error("[CoursPublic] handleForceDisconnect error", e);
     }
-  }, [endConnexion, signOut, navigate]);
+  }, []);
 
   const {
     showModal: showPresenceModal,
