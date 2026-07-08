@@ -582,9 +582,9 @@ interface MergeExerciceBase {
 
 /**
  * Merge saved (DB) exercices with source (hardcoded) exercices.
- * Saved data takes priority — admin edits to enonce, choix, correct, image
- * are preserved. Source is used only as a fallback for fields not in saved,
- * and to surface new questions/exercices not yet in saved.
+ * Saved data takes priority — admin edits/deletions to enonce, choix, correct,
+ * image and question order are preserved. Source is used only as a fallback for
+ * fields already present in saved data, not to re-add removed questions.
  */
 export function mergeSourceExercices<T extends MergeExerciceBase>(
   loadedExercices: T[],
@@ -613,39 +613,34 @@ export function mergeSourceExercices<T extends MergeExerciceBase>(
         : []
     );
 
-    const mergedQuestions = sourceExo.questions
-      .filter((sourceQ) => !deletedIds.has(Number(sourceQ.id)))
-      .map((sourceQ) => {
-      const loadedQ = loadedQuestionMap.get(Number(sourceQ.id));
-      if (!loadedQ) return sourceQ;
+    const sourceQuestionMap = new Map(sourceExo.questions.map((q) => [Number(q.id), q]));
+    const mergedQuestions = loadedExo.questions
+      .filter((loadedQ) => !deletedIds.has(Number(loadedQ.id)))
+      .map((loadedQ) => {
+        const sourceQ = sourceQuestionMap.get(Number(loadedQ.id));
+        if (!sourceQ) return loadedQ;
 
-      // Saved (admin edit) takes priority over source.
-      // For image: null means "admin explicitly deleted it" (must stay null).
-      // undefined / key absent means "never set" → fall back to source image.
-      const mergedImage = "image" in loadedQ
-        ? (loadedQ.image === null ? null : (loadedQ.image || sourceQ.image))
-        : sourceQ.image;
+        // Saved (admin edit) takes priority over source.
+        // For image: null means "admin explicitly deleted it" (must stay null).
+        // undefined / key absent means "never set" → fall back to source image.
+        const mergedImage = "image" in loadedQ
+          ? (loadedQ.image === null ? null : (loadedQ.image || sourceQ.image))
+          : sourceQ.image;
 
-      return {
-        ...sourceQ,
-        ...loadedQ,
-        image: mergedImage,
-        choix: Array.isArray(loadedQ.choix) && loadedQ.choix.length > 0
-          ? loadedQ.choix
-          : sourceQ.choix,
-      };
-    });
-
-    // Préserver les questions ajoutées par l'admin (IDs présents dans loaded mais pas dans source)
-    const sourceQuestionIds = new Set(sourceExo.questions.map((q) => Number(q.id)));
-    const adminAddedQuestions = loadedExo.questions.filter(
-      (loadedQ) => !sourceQuestionIds.has(Number(loadedQ.id)) && !deletedIds.has(Number(loadedQ.id)),
-    );
+        return {
+          ...sourceQ,
+          ...loadedQ,
+          image: mergedImage,
+          choix: Array.isArray(loadedQ.choix) && loadedQ.choix.length > 0
+            ? loadedQ.choix
+            : sourceQ.choix,
+        };
+      });
 
     return {
       ...sourceExo,
       ...loadedExo,
-      questions: [...mergedQuestions, ...adminAddedQuestions],
+      questions: mergedQuestions,
     } as T;
   });
 
@@ -729,10 +724,10 @@ export function mergeQuestionsForMatiere(
   savedQuestions: Question[] | null | undefined,
 ): Question[] {
   const safeSrc = Array.isArray(sourceQuestions) ? sourceQuestions : [];
-  const safeSaved = Array.isArray(savedQuestions) ? savedQuestions : [];
-
-  // No saved data → admin hasn't edited this matiere → return source
-  if (safeSaved.length === 0) return safeSrc;
+  // No saved data → admin hasn't edited this matiere → return source.
+  // An explicit empty array means the admin deleted every question.
+  if (!Array.isArray(savedQuestions)) return safeSrc;
+  const safeSaved = savedQuestions;
 
   const normalizeType = (v: unknown) => String(v ?? "").trim().toUpperCase();
   const normalizeText = (v: unknown) => String(v ?? "").trim().replace(/\s+/g, " ").toLowerCase();
