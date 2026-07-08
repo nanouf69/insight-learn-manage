@@ -5346,8 +5346,17 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           <div className="space-y-4">
             <Card>
               <CardContent className="p-6 space-y-4">
-                <h3 className="text-lg font-bold">📝 {exo.titre}</h3>
-                {exo.sousTitre && <p className="text-sm text-muted-foreground">{exo.sousTitre}</p>}
+                <div className="flex items-start justify-between gap-3 flex-wrap">
+                  <div className="min-w-0">
+                    <h3 className="text-lg font-bold">📝 {exo.titre}</h3>
+                    {exo.sousTitre && <p className="text-sm text-muted-foreground mt-1">{exo.sousTitre}</p>}
+                  </div>
+                  {(apprenantInfo?.prenom || apprenantInfo?.nom) && (
+                    <div className="shrink-0 px-3 py-1.5 rounded-lg border-2 border-primary/30 bg-primary/5 text-primary text-sm font-semibold whitespace-nowrap">
+                      👤 {apprenantInfo?.prenom} {apprenantInfo?.nom}
+                    </div>
+                  )}
+                </div>
                 <div className="flex flex-col gap-3 mt-4">
                   {exo.fichiers.map((f, i) => {
                     const isExternal = f.url.startsWith("http");
@@ -5407,15 +5416,22 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             <CardContent className="p-6 space-y-4">
               <div className="flex items-center justify-between gap-2 flex-wrap">
                 <h3 className="text-lg font-bold">📝 {exo.titre}</h3>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setShowCalculator(v => !v)}
-                  className="gap-1"
-                >
-                  <Calculator className="w-4 h-4" />
-                  Calculatrice
-                </Button>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {(apprenantInfo?.prenom || apprenantInfo?.nom) && (
+                    <div className="px-3 py-1.5 rounded-lg border-2 border-primary/30 bg-primary/5 text-primary text-sm font-semibold whitespace-nowrap">
+                      👤 {apprenantInfo?.prenom} {apprenantInfo?.nom}
+                    </div>
+                  )}
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setShowCalculator(v => !v)}
+                    className="gap-1"
+                  >
+                    <Calculator className="w-4 h-4" />
+                    Calculatrice
+                  </Button>
+                </div>
               </div>
               {exo.sousTitre && <p className="text-sm text-muted-foreground">{exo.sousTitre}</p>}
               {pendingWrongQuestionRevision?.exoId === exo.id && (
