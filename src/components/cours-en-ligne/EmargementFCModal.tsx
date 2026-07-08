@@ -306,22 +306,22 @@ export const EmargementFCModal = ({
 
         {!identityConfirmed ? (
           <>
-            <Alert className="border-2 border-blue-400 bg-blue-50 py-4 px-3 sm:py-6 sm:px-5">
-              <ShieldCheck className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600" />
-              <AlertDescription className="text-blue-900 ml-1 sm:ml-2">
-                <div className="text-base sm:text-xl font-semibold mb-2 sm:mb-3">
+            <Alert className="border-4 border-blue-500 bg-blue-50 py-6 px-4 sm:py-8 sm:px-6 shadow-lg rounded-xl">
+              <ShieldCheck className="h-10 w-10 sm:h-14 sm:w-14 text-blue-600 mt-1 sm:mt-2" />
+              <AlertDescription className="text-blue-900 ml-2 sm:ml-3">
+                <div className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4">
                   Avant de signer, merci de confirmer votre identité.
                 </div>
-                <div className="text-lg sm:text-2xl break-words">
+                <div className="text-2xl sm:text-3xl break-words leading-tight">
                   Êtes-vous bien <strong className="text-blue-700">{apprenantPrenom} {apprenantNom}</strong> ?
                 </div>
               </AlertDescription>
             </Alert>
-            <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
+            <DialogFooter className="flex-col-reverse sm:flex-row gap-3">
               <Button
                 variant="outline"
                 size="lg"
-                className="w-full sm:w-auto"
+                className="w-full sm:w-auto text-base sm:text-lg py-5 sm:py-6"
                 onClick={async () => {
                   toast({
                     title: "Identité incorrecte",
@@ -332,14 +332,14 @@ export const EmargementFCModal = ({
                   window.location.href = "/login";
                 }}
               >
-                <UserX className="w-4 h-4 mr-2" /> Non, ce n'est pas moi
+                <UserX className="w-5 h-5 sm:w-6 sm:h-6 mr-2" /> Non, ce n'est pas moi
               </Button>
               <Button
                 size="lg"
-                className="w-full sm:flex-1"
+                className="w-full sm:flex-1 text-base sm:text-lg py-5 sm:py-6"
                 onClick={() => setIdentityConfirmed(true)}
               >
-                <UserCheck className="w-4 h-4 mr-2" /> Oui, c'est bien moi
+                <UserCheck className="w-5 h-5 sm:w-6 sm:h-6 mr-2" /> Oui, c'est bien moi
               </Button>
             </DialogFooter>
           </>
