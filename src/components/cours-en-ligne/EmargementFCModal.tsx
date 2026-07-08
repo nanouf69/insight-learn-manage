@@ -306,12 +306,15 @@ export const EmargementFCModal = ({
 
         {!identityConfirmed ? (
           <>
-            <Alert className="border-blue-300 bg-blue-50">
-              <ShieldCheck className="h-4 w-4 text-blue-600" />
-              <AlertDescription className="text-sm text-blue-900">
-                Avant de signer, merci de confirmer votre identité.
-                <br />
-                Êtes-vous bien <strong>{apprenantPrenom} {apprenantNom}</strong> ?
+            <Alert className="border-2 border-blue-400 bg-blue-50 py-6 px-5">
+              <ShieldCheck className="h-8 w-8 text-blue-600" />
+              <AlertDescription className="text-blue-900 ml-2">
+                <div className="text-lg sm:text-xl font-semibold mb-3">
+                  Avant de signer, merci de confirmer votre identité.
+                </div>
+                <div className="text-xl sm:text-2xl">
+                  Êtes-vous bien <strong className="text-blue-700">{apprenantPrenom} {apprenantNom}</strong> ?
+                </div>
               </AlertDescription>
             </Alert>
             <DialogFooter className="gap-2 sm:gap-2">
