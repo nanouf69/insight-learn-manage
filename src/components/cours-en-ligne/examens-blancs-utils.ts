@@ -637,11 +637,16 @@ export function mergeSourceExercices<T extends MergeExerciceBase>(
         };
       });
 
+    // Saved question list is authoritative once an exercice has DB state.
+    // New source questions are NOT auto-added to avoid resurrecting admin-deleted ones.
+
     return {
       ...sourceExo,
       ...loadedExo,
       questions: mergedQuestions,
     } as T;
+
+
   });
 
   // Préserver les exercices ajoutés par l'admin (IDs présents dans loaded mais pas dans source)
