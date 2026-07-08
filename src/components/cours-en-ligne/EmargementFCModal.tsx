@@ -174,6 +174,8 @@ export const EmargementFCModal = ({
         absent: false,
         replace_existing: replaceExisting,
         user_agent: navigator.userAgent.slice(0, 500),
+        confirme_presence_lieu: confirmPresenceLieu,
+        confirme_identite: identityConfirmed,
       });
       toast({
         title: "Émargement validé",
