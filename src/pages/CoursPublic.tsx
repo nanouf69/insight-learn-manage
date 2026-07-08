@@ -1223,38 +1223,19 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     lastFetchedUserIdRef.current = null;
   }, [endConnexion, signOut]);
 
-  // Identity confirmation modal (shown once per browser session after login)
+  // Identity confirmation modal (shown at EVERY login, for all learners
+  // including e-learning). State only, no persistence: reset on logout,
+  // so the next login always re-prompts.
   const [identityConfirmed, setIdentityConfirmed] = useState(false);
-  useEffect(() => {
-    if (embedded || !apprenant?.id) return;
-    try {
-      const flag = sessionStorage.getItem(`identity_confirmed_${apprenant.id}`);
-      setIdentityConfirmed(flag === "1");
-    } catch {
-      setIdentityConfirmed(false);
-    }
-  }, [embedded, apprenant?.id]);
 
   const handleConfirmIdentity = useCallback(() => {
-    if (!apprenant?.id) return;
-    try {
-      sessionStorage.setItem(`identity_confirmed_${apprenant.id}`, "1");
-    } catch {
-      /* ignore */
-    }
     setIdentityConfirmed(true);
-  }, [apprenant?.id]);
+  }, []);
 
   const handleDenyIdentity = useCallback(async () => {
-    if (apprenant?.id) {
-      try {
-        sessionStorage.removeItem(`identity_confirmed_${apprenant.id}`);
-      } catch {
-        /* ignore */
-      }
-    }
+    setIdentityConfirmed(false);
     await handleLogout();
-  }, [apprenant?.id, handleLogout]);
+  }, [handleLogout]);
 
   const pageContent = useMemo(() => {
 
