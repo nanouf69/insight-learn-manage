@@ -24,6 +24,8 @@ export interface WeekEmargementSignature {
   demi_journee: string;
   signed_at: string;
   signature: string;
+  confirme_presence_lieu?: boolean;
+  confirme_identite?: boolean;
 }
 
 export function generateEmargementSemainePdf(
@@ -163,6 +165,23 @@ export function generateEmargementSemainePdf(
         try {
           doc.text(`Signé le ${format(new Date(sig.signed_at), 'dd/MM HH:mm', { locale: fr })}`, margin + dateColW + 2, y + 14);
         } catch {}
+        // Mention de confirmation (uniquement si le stagiaire a bien coché les cases)
+        if (sig.confirme_presence_lieu && sig.confirme_identite) {
+          doc.setFontSize(6.5);
+          doc.setTextColor(20, 120, 60);
+          doc.text(
+            `\u2611 A confirme sa presence sur place et son identite`,
+            margin + dateColW + 2, y + 20, { maxWidth: demiColW - 4 },
+          );
+        } else if (sig.confirme_presence_lieu) {
+          doc.setFontSize(6.5);
+          doc.setTextColor(20, 120, 60);
+          doc.text(`\u2611 A confirme sa presence sur place`, margin + dateColW + 2, y + 20, { maxWidth: demiColW - 4 });
+        } else if (sig.confirme_identite) {
+          doc.setFontSize(6.5);
+          doc.setTextColor(20, 120, 60);
+          doc.text(`\u2611 A confirme son identite`, margin + dateColW + 2, y + 20, { maxWidth: demiColW - 4 });
+        }
       }
 
       // Signature image
@@ -190,16 +209,6 @@ export function generateEmargementSemainePdf(
     }
   }
 
-  // Mention légale case cochée
-  if (y + 14 > ph - 20) { doc.addPage(); y = 20; }
-  y += 4;
-  doc.setFont('helvetica', 'italic');
-  doc.setFontSize(8);
-  doc.setTextColor(60, 60, 60);
-  doc.text(
-    `☑ Pour chaque signature, l'apprenant a coché la case : « Je confirme que je suis bien au lieu de formation ».`,
-    margin, y, { maxWidth: pw - margin * 2 }
-  );
 
   // Footer
   const totalPages = doc.getNumberOfPages();

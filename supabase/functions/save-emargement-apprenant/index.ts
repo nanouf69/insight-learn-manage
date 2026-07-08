@@ -143,6 +143,8 @@ Deno.serve(async (req) => {
       justificatif_url: absent ? justificatifUrl : null,
       motif_absence: absent ? (String(body?.motif_absence || "").trim() || null) : null,
       user_agent: String(body?.user_agent || "").slice(0, 500) || null,
+      confirme_presence_lieu: !absent && Boolean(body?.confirme_presence_lieu),
+      confirme_identite: Boolean(body?.confirme_identite),
     };
 
     const { data: existingRows, error: existingError } = await supabase

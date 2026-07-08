@@ -1245,6 +1245,8 @@ export type Database = {
         Row: {
           absent: boolean
           apprenant_id: string
+          confirme_identite: boolean
+          confirme_presence_lieu: boolean
           created_at: string
           date_emargement: string
           demi_journee: string
@@ -1259,6 +1261,8 @@ export type Database = {
         Insert: {
           absent?: boolean
           apprenant_id: string
+          confirme_identite?: boolean
+          confirme_presence_lieu?: boolean
           created_at?: string
           date_emargement?: string
           demi_journee: string
@@ -1273,6 +1277,8 @@ export type Database = {
         Update: {
           absent?: boolean
           apprenant_id?: string
+          confirme_identite?: boolean
+          confirme_presence_lieu?: boolean
           created_at?: string
           date_emargement?: string
           demi_journee?: string
