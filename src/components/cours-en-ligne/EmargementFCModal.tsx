@@ -306,21 +306,22 @@ export const EmargementFCModal = ({
 
         {!identityConfirmed ? (
           <>
-            <Alert className="border-2 border-blue-400 bg-blue-50 py-6 px-5">
-              <ShieldCheck className="h-8 w-8 text-blue-600" />
-              <AlertDescription className="text-blue-900 ml-2">
-                <div className="text-lg sm:text-xl font-semibold mb-3">
+            <Alert className="border-2 border-blue-400 bg-blue-50 py-4 px-3 sm:py-6 sm:px-5">
+              <ShieldCheck className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600" />
+              <AlertDescription className="text-blue-900 ml-1 sm:ml-2">
+                <div className="text-base sm:text-xl font-semibold mb-2 sm:mb-3">
                   Avant de signer, merci de confirmer votre identité.
                 </div>
-                <div className="text-xl sm:text-2xl">
+                <div className="text-lg sm:text-2xl break-words">
                   Êtes-vous bien <strong className="text-blue-700">{apprenantPrenom} {apprenantNom}</strong> ?
                 </div>
               </AlertDescription>
             </Alert>
-            <DialogFooter className="gap-2 sm:gap-2">
+            <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
               <Button
                 variant="outline"
                 size="lg"
+                className="w-full sm:w-auto"
                 onClick={async () => {
                   toast({
                     title: "Identité incorrecte",
@@ -335,7 +336,7 @@ export const EmargementFCModal = ({
               </Button>
               <Button
                 size="lg"
-                className="flex-1"
+                className="w-full sm:flex-1"
                 onClick={() => setIdentityConfirmed(true)}
               >
                 <UserCheck className="w-4 h-4 mr-2" /> Oui, c'est bien moi
