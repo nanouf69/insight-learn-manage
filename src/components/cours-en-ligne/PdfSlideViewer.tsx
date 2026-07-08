@@ -417,13 +417,36 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
             onContextMenu={e => e.preventDefault()}
             onScroll={(e) => handleNativeBottomCheck(e.currentTarget)}
           >
+            {/* Barre d'action toujours visible : garantit l'accès au PDF même si l'iframe/object reste blanc */}
+            <div className="flex flex-wrap items-center justify-between gap-2 p-2 bg-amber-50 border-b border-amber-200 text-xs">
+              <span className="text-amber-800">
+                ⚠️ Si l'aperçu reste vide, ouvrez le PDF dans un nouvel onglet.
+              </span>
+              <a
+                href={absoluteUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary text-primary-foreground font-medium hover:opacity-90"
+                onClick={() => onLastPageReached?.()}
+              >
+                📄 Ouvrir le PDF dans un nouvel onglet
+              </a>
+            </div>
             <div style={{ transform: `scale(${zoom})`, transformOrigin: "top left", width: `${100 / zoom}%` }}>
-              <iframe
-                src={`${absoluteUrl}#toolbar=0&navpanes=0&statusbar=0&messages=0&download=0`}
-                className="w-full border-0"
+              {/* <object> + fallback Google Docs viewer : meilleur support cross-browser que <iframe> pour PDF inline */}
+              <object
+                data={`${absoluteUrl}#toolbar=0&navpanes=0&statusbar=0&messages=0&view=FitH`}
+                type="application/pdf"
+                className="w-full border-0 block"
                 style={{ minHeight: isExpanded ? "300%" : "200vh", height: "200vh" }}
-                title={`PDF — ${nom}`}
-              />
+              >
+                <iframe
+                  src={`https://docs.google.com/viewer?url=${encodeURIComponent(absoluteUrl)}&embedded=true`}
+                  className="w-full border-0 block"
+                  style={{ minHeight: isExpanded ? "300%" : "200vh", height: "200vh" }}
+                  title={`PDF — ${nom}`}
+                />
+              </object>
             </div>
           </div>
         ) : (
