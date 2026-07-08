@@ -1,0 +1,1 @@
+ALTER TABLE public.emargements_fc ADD COLUMN IF NOT EXISTS confirme_presence_lieu boolean NOT NULL DEFAULT false; ALTER TABLE public.emargements_fc ADD COLUMN IF NOT EXISTS confirme_identite boolean NOT NULL DEFAULT false;
