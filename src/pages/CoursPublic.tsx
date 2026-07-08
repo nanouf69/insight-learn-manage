@@ -739,8 +739,13 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
 
   useSessionKeepAlive(isStudentSession, isInExam);
 
+  const forceDisconnectImplRef = useRef<() => Promise<void>>(async () => {});
   const handleForceDisconnect = useCallback(async () => {
-    toast.info("Session maintenue : vous pouvez continuer votre formation.");
+    try {
+      await forceDisconnectImplRef.current();
+    } catch (e) {
+      console.error("[CoursPublic] handleForceDisconnect error", e);
+    }
   }, []);
 
   const {
@@ -1222,6 +1227,15 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     fetchAttemptRef.current = 0;
     lastFetchedUserIdRef.current = null;
   }, [endConnexion, signOut]);
+
+  // Bind the force-disconnect implementation used by inactivity/presence hooks
+  useEffect(() => {
+    forceDisconnectImplRef.current = async () => {
+      toast.warning("Déconnexion automatique pour inactivité prolongée (30 min sans activité + 5 min sans réponse).");
+      await handleLogout();
+      navigate("/cours-en-ligne", { replace: true });
+    };
+  }, [handleLogout, navigate]);
 
   // Identity confirmation modal (shown at EVERY login, for all learners
   // including e-learning). State only, no persistence: reset on logout,
