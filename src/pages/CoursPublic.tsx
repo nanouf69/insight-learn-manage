@@ -1228,6 +1228,15 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     lastFetchedUserIdRef.current = null;
   }, [endConnexion, signOut]);
 
+  // Bind the force-disconnect implementation used by inactivity/presence hooks
+  useEffect(() => {
+    forceDisconnectImplRef.current = async () => {
+      toast.warning("Déconnexion automatique pour inactivité prolongée (30 min sans activité + 5 min sans réponse).");
+      await handleLogout();
+      navigate("/cours-en-ligne", { replace: true });
+    };
+  }, [handleLogout, navigate]);
+
   // Identity confirmation modal (shown at EVERY login, for all learners
   // including e-learning). State only, no persistence: reset on logout,
   // so the next login always re-prompts.
