@@ -1,4 +1,4 @@
-import { UserCheck, LogOut } from "lucide-react";
+import { ShieldCheck, LogOut, UserCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface IdentityConfirmModalProps {
@@ -11,9 +11,10 @@ interface IdentityConfirmModalProps {
 }
 
 /**
- * Modal de confirmation d'identité affichée juste après la connexion
- * sur la plateforme de cours. L'apprenant doit valider qu'il est bien
- * la personne attendue ; sinon il est déconnecté.
+ * Modal de confirmation d'identité affichée à CHAQUE connexion
+ * sur la plateforme de cours (présentiel ET e-learning).
+ * L'apprenant doit valider qu'il est bien la personne attendue,
+ * sinon il est déconnecté. Format visuel volontairement grand.
  */
 export function IdentityConfirmModal({
   show,
@@ -25,24 +26,20 @@ export function IdentityConfirmModal({
 }: IdentityConfirmModalProps) {
   if (!show) return null;
 
-  // Fallback civilité : si non renseigné, on affiche "Monsieur / Madame"
-  const salutation = civilite === "M."
-    ? "Monsieur"
-    : civilite === "Mme"
-      ? "Madame"
-      : "Monsieur / Madame";
+  const salutation =
+    civilite === "M."
+      ? "Monsieur"
+      : civilite === "Mme"
+        ? "Madame"
+        : "Monsieur / Madame";
 
   const fullName = `${prenom || ""} ${nom || ""}`.trim();
 
   return (
-    <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="bg-card border border-border rounded-2xl shadow-2xl p-6 sm:p-8 max-w-md w-full text-center space-y-6 animate-in fade-in zoom-in-95 duration-300">
-        <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-          <UserCheck className="w-8 h-8 text-primary" />
-        </div>
-
+    <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+      <div className="bg-card border border-border rounded-2xl shadow-2xl p-6 sm:p-8 max-w-lg w-full text-center space-y-6 animate-in fade-in zoom-in-95 duration-300">
         <div className="space-y-2">
-          <h2 className="text-xl font-bold text-foreground">
+          <h2 className="text-xl sm:text-2xl font-bold text-foreground">
             Confirmation d'identité
           </h2>
           <p className="text-sm text-muted-foreground leading-relaxed">
@@ -50,10 +47,17 @@ export function IdentityConfirmModal({
           </p>
         </div>
 
-        <div className="bg-muted/50 border border-border rounded-lg p-4">
-          <p className="text-base text-foreground">
-            Êtes-vous bien <span className="font-bold">{salutation} {fullName}</span> ?
-          </p>
+        {/* Gros bloc de confirmation identique aux feuilles d'émargement */}
+        <div className="border-4 border-blue-500 bg-blue-50 rounded-xl py-6 px-4 sm:py-8 sm:px-6 shadow-lg">
+          <div className="flex flex-col items-center gap-3">
+            <ShieldCheck className="h-10 w-10 sm:h-14 sm:w-14 text-blue-600" />
+            <p className="text-xl sm:text-2xl font-bold text-blue-900">
+              Êtes-vous bien
+            </p>
+            <p className="text-2xl sm:text-3xl font-extrabold text-blue-950 leading-tight">
+              {salutation} {fullName} ?
+            </p>
+          </div>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3">
@@ -61,17 +65,17 @@ export function IdentityConfirmModal({
             variant="outline"
             size="lg"
             onClick={onDeny}
-            className="flex-1 font-semibold"
+            className="flex-1 font-semibold py-5 sm:py-6"
           >
-            <LogOut className="w-4 h-4 mr-2" />
+            <LogOut className="w-5 h-5 sm:w-6 sm:h-6 mr-2" />
             Non, me déconnecter
           </Button>
           <Button
             size="lg"
             onClick={onConfirm}
-            className="flex-1 font-semibold"
+            className="flex-1 font-semibold py-5 sm:py-6"
           >
-            <UserCheck className="w-4 h-4 mr-2" />
+            <UserCheck className="w-5 h-5 sm:w-6 sm:h-6 mr-2" />
             Oui, c'est bien moi
           </Button>
         </div>
