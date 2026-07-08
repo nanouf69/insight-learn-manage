@@ -37,7 +37,7 @@ function makeQuestion(id: number, enonce: string, correct: string = "A") {
 }
 
 describe("Bug: Deleted questions reappear after merge (modules)", () => {
-  it("deleted question reappears from source when no tracking (demonstrates bug)", () => {
+  it("deleted question stays deleted even without legacy tracking", () => {
     // Admin deleted Q2 from exercice
     const saved = [makeExercice(1, [
       makeQuestion(1, "Q1 modifiée", "B"),
@@ -53,11 +53,8 @@ describe("Bug: Deleted questions reappear after merge (modules)", () => {
 
     const merged = mergeSourceExercices(saved, source);
 
-    // Without fix: Q2 comes back from source (3 questions)
-    // With fix: Q2 stays deleted (2 questions)
-    // For now this demonstrates the current behavior
-    expect(merged[0].questions!.length).toBe(3); // BUG: Q2 came back
-    expect(merged[0].questions![1].enonce).toBe("Q2 originale"); // BUG: source Q2 restored
+    expect(merged[0].questions!.length).toBe(2);
+    expect(merged[0].questions!.map(q => q.id)).toEqual([1, 3]);
   });
 
   it("deletedQuestionIds should prevent deleted questions from reappearing", () => {
@@ -88,7 +85,7 @@ describe("Bug: Deleted questions reappear after merge (modules)", () => {
     expect(roundtripped.deletedQuestionIds).toEqual([2, 5, 8]);
   });
 
-  it("new source questions NOT in deletedQuestionIds should still appear", () => {
+  it("saved question list is authoritative once an exercice has DB state", () => {
     // Admin deleted Q2 but source added Q4 (new)
     const saved = [makeExercice(1, [
       makeQuestion(1, "Q1", "A"),
@@ -104,10 +101,8 @@ describe("Bug: Deleted questions reappear after merge (modules)", () => {
 
     const merged = mergeSourceExercices(saved, source);
 
-    // Q2 deleted, Q4 new → 3 questions
-    expect(merged[0].questions!.length).toBe(3);
-    expect(merged[0].questions!.map(q => q.id)).toEqual([1, 3, 4]);
-    expect(merged[0].questions![2].enonce).toBe("Q4 NEW from source");
+    expect(merged[0].questions!.length).toBe(2);
+    expect(merged[0].questions!.map(q => q.id)).toEqual([1, 3]);
   });
 
   it("deleting multiple questions should all stay deleted", () => {
