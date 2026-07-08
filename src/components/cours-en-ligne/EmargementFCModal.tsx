@@ -301,6 +301,48 @@ export const EmargementFCModal = ({
           </DialogDescription>
         </DialogHeader>
 
+        {!identityConfirmed ? (
+          <>
+            <Alert className="border-blue-300 bg-blue-50">
+              <ShieldCheck className="h-4 w-4 text-blue-600" />
+              <AlertDescription className="text-sm text-blue-900">
+                Avant de signer, merci de confirmer votre identité.
+                <br />
+                Êtes-vous bien <strong>{apprenantPrenom} {apprenantNom}</strong> ?
+              </AlertDescription>
+            </Alert>
+            <DialogFooter className="gap-2 sm:gap-2">
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={async () => {
+                  toast({
+                    title: "Identité incorrecte",
+                    description: "Vous allez être déconnecté pour des raisons de sécurité.",
+                    variant: "destructive",
+                  });
+                  try { await supabase.auth.signOut(); } catch { /* noop */ }
+                  window.location.href = "/login";
+                }}
+              >
+                <UserX className="w-4 h-4 mr-2" /> Non, ce n'est pas moi
+              </Button>
+              <Button
+                size="lg"
+                className="flex-1"
+                onClick={() => setIdentityConfirmed(true)}
+              >
+                <UserCheck className="w-4 h-4 mr-2" /> Oui, c'est bien moi
+              </Button>
+            </DialogFooter>
+          </>
+        ) : (
+        <></>
+        )}
+
+        {identityConfirmed && (<></>)}
+
+
         <Alert className={isRattrapage ? "border-red-300 bg-red-50" : "border-amber-300 bg-amber-50"}>
           <AlertTriangle className={`h-4 w-4 ${isRattrapage ? "text-red-600" : "text-amber-600"}`} />
           <AlertDescription className={`text-sm ${isRattrapage ? "text-red-900" : "text-amber-900"}`}>
