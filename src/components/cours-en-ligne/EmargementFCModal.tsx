@@ -492,8 +492,11 @@ export const EmargementFCModal = ({
             </Button>
           )}
         </DialogFooter>
+          </>
+        )}
       </DialogContent>
     </Dialog>
+
   );
 };
 
