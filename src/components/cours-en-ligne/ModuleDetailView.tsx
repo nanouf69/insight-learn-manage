@@ -5416,15 +5416,22 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             <CardContent className="p-6 space-y-4">
               <div className="flex items-center justify-between gap-2 flex-wrap">
                 <h3 className="text-lg font-bold">📝 {exo.titre}</h3>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setShowCalculator(v => !v)}
-                  className="gap-1"
-                >
-                  <Calculator className="w-4 h-4" />
-                  Calculatrice
-                </Button>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {(apprenantInfo?.prenom || apprenantInfo?.nom) && (
+                    <div className="px-3 py-1.5 rounded-lg border-2 border-primary/30 bg-primary/5 text-primary text-sm font-semibold whitespace-nowrap">
+                      👤 {apprenantInfo?.prenom} {apprenantInfo?.nom}
+                    </div>
+                  )}
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setShowCalculator(v => !v)}
+                    className="gap-1"
+                  >
+                    <Calculator className="w-4 h-4" />
+                    Calculatrice
+                  </Button>
+                </div>
               </div>
               {exo.sousTitre && <p className="text-sm text-muted-foreground">{exo.sousTitre}</p>}
               {pendingWrongQuestionRevision?.exoId === exo.id && (
