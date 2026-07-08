@@ -211,13 +211,10 @@ export const EmargementFCModal = ({
       return;
     }
 
-    const identityOk = window.confirm(
-      `Confirmation d'identité\n\nÊtes-vous bien ${apprenantPrenom} ${apprenantNom} ?\n\nCliquez sur OK pour confirmer et déclarer votre absence.\nCliquez sur Annuler si ce n'est pas vous.`
-    );
-    if (!identityOk) {
+    if (!identityConfirmed) {
       toast({
-        title: "Déclaration annulée",
-        description: "L'identité n'a pas été confirmée.",
+        title: "Identité non confirmée",
+        description: "Merci de confirmer votre identité avant de déclarer une absence.",
         variant: "destructive",
       });
       return;
