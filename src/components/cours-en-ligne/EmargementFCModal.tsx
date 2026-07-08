@@ -337,10 +337,8 @@ export const EmargementFCModal = ({
             </DialogFooter>
           </>
         ) : (
-        <></>
-        )}
+          <>
 
-        {identityConfirmed && (<></>)}
 
 
         <Alert className={isRattrapage ? "border-red-300 bg-red-50" : "border-amber-300 bg-amber-50"}>
