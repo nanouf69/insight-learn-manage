@@ -289,6 +289,8 @@ export function DocumentsCompletes({ apprenant }: Props) {
           demi_journee: e.demi_journee,
           signed_at: e.signed_at,
           signature: e.signature_data_url,
+          confirme_presence_lieu: !!e.confirme_presence_lieu,
+          confirme_identite: !!e.confirme_identite,
         });
       }
       const weekDocs = Array.from(weekMap.entries()).map(([key, w]) => {
