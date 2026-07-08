@@ -24,6 +24,8 @@ export interface WeekEmargementSignature {
   demi_journee: string;
   signed_at: string;
   signature: string;
+  confirme_presence_lieu?: boolean;
+  confirme_identite?: boolean;
 }
 
 export function generateEmargementSemainePdf(
