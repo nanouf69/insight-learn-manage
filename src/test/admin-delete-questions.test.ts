@@ -67,9 +67,7 @@ describe("Admin deletes questions — must not reappear on student side", () => 
 
   it("all questions deleted — result is empty", () => {
     const result = mergeQuestionsForMatiere(sourceQuestions as any, []);
-    // Empty saved = admin never saved → return source (backward compat)
-    // This is intentional: empty saved means "no admin edits yet"
-    expect(result.length).toBe(5);
+    expect(result.length).toBe(0);
   });
 });
 
