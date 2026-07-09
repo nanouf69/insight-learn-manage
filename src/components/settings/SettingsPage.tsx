@@ -211,6 +211,10 @@ export function SettingsPage() {
             </div>
           </div>
         </TabsContent>
+
+        <TabsContent value="backup" className="space-y-6">
+          <BackupTab />
+        </TabsContent>
       </Tabs>
     </div>
   );
