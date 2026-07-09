@@ -411,7 +411,7 @@ export default function FournisseurPortal() {
     if (!fournisseur) return;
     const load = async () => {
       const [appRes, docRes, facRes, sharedRes] = await Promise.all([
-        supabase.from('fournisseur_apprenants').select('id, nom, prenom, formation_choisie, created_at, notes').eq('fournisseur_id', fournisseur.id).order('created_at', { ascending: false }),
+        supabase.from('fournisseur_apprenants').select('id, nom, prenom, formation_choisie, created_at, notes, telephone, email').eq('fournisseur_id', fournisseur.id).order('created_at', { ascending: false }),
         supabase.from('fournisseur_documents').select('*').eq('fournisseur_id', fournisseur.id).order('created_at', { ascending: false }),
         supabase.from('fournisseur_factures').select('*').eq('fournisseur_id', fournisseur.id).order('created_at', { ascending: false }),
         supabase.from('fournisseur_shared_docs').select('*').eq('fournisseur_id', fournisseur.id).order('created_at', { ascending: false }),
