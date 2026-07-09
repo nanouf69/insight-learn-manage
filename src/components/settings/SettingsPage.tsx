@@ -89,6 +89,10 @@ export function SettingsPage() {
             <Bell className="w-4 h-4" />
             Notifications
           </TabsTrigger>
+          <TabsTrigger value="backup" className="gap-2">
+            <Archive className="w-4 h-4" />
+            Sauvegarde
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="profile" className="space-y-6">
