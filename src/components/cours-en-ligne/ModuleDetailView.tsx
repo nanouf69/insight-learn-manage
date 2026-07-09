@@ -6288,24 +6288,31 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   if (studentOnly) {
     return (
       <div className="space-y-6 animate-fade-in">
-        <div className="flex items-center gap-3">
-          <Button variant="outline" size="icon" onClick={onBack}>
-            <ArrowLeft className="w-4 h-4" />
-          </Button>
-          <h2 className="text-2xl font-bold">{(() => {
-            const parentMap: Record<number, string> = {
-              2: "2. COURS ET EXERCICES VTC", 25: "2. COURS ET EXERCICES VTC",
-              14: "2. COURS ET EXERCICES VTC", 15: "2. COURS ET EXERCICES VTC",
-              16: "2. COURS ET EXERCICES VTC", 17: "2. COURS ET EXERCICES VTC",
-              18: "2. COURS ET EXERCICES VTC", 19: "2. COURS ET EXERCICES VTC",
-              10: "2. COURS ET EXERCICES TAXI", 39: "2. COURS ET EXERCICES TAXI",
-              20: "2. COURS ET EXERCICES TAXI", 21: "2. COURS ET EXERCICES TAXI",
-              22: "2. COURS ET EXERCICES TAXI", 23: "2. COURS ET EXERCICES TAXI", 24: "2. COURS ET EXERCICES TAXI",
-              40: "2. COURS ET EXERCICES TA", 42: "2. COURS ET EXERCICES TA",
-              41: "2. COURS ET EXERCICES VA", 43: "2. COURS ET EXERCICES VA",
-            };
-            return parentMap[module.id] || moduleData.nom;
-          })()}</h2>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <Button variant="outline" size="icon" onClick={onBack}>
+              <ArrowLeft className="w-4 h-4" />
+            </Button>
+            <h2 className="text-2xl font-bold">{(() => {
+              const parentMap: Record<number, string> = {
+                2: "2. COURS ET EXERCICES VTC", 25: "2. COURS ET EXERCICES VTC",
+                14: "2. COURS ET EXERCICES VTC", 15: "2. COURS ET EXERCICES VTC",
+                16: "2. COURS ET EXERCICES VTC", 17: "2. COURS ET EXERCICES VTC",
+                18: "2. COURS ET EXERCICES VTC", 19: "2. COURS ET EXERCICES VTC",
+                10: "2. COURS ET EXERCICES TAXI", 39: "2. COURS ET EXERCICES TAXI",
+                20: "2. COURS ET EXERCICES TAXI", 21: "2. COURS ET EXERCICES TAXI",
+                22: "2. COURS ET EXERCICES TAXI", 23: "2. COURS ET EXERCICES TAXI", 24: "2. COURS ET EXERCICES TAXI",
+                40: "2. COURS ET EXERCICES TA", 42: "2. COURS ET EXERCICES TA",
+                41: "2. COURS ET EXERCICES VA", 43: "2. COURS ET EXERCICES VA",
+              };
+              return parentMap[module.id] || moduleData.nom;
+            })()}</h2>
+          </div>
+          {(apprenantInfo?.prenom || apprenantInfo?.nom) && (
+            <div className="shrink-0 px-3 py-1.5 rounded-lg border-2 border-primary/30 bg-primary/5 text-primary text-sm font-semibold whitespace-nowrap">
+              👤 {apprenantInfo?.prenom} {apprenantInfo?.nom}
+            </div>
+          )}
           {/* Sync silencieuse côté apprenant : aucun indicateur ni bouton visible.
               Le realtime + refetch initial assurent l'actualisation automatique. */}
         </div>
