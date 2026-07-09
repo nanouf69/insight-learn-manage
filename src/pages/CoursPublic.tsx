@@ -2115,6 +2115,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
       {!embedded && apprenant?.id && !identityConfirmed && (
         <IdentityConfirmModal
           show
+          apprenantId={apprenant.id}
           prenom={apprenant.prenom || ""}
           nom={apprenant.nom || ""}
           onConfirm={handleConfirmIdentity}
