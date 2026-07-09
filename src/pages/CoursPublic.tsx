@@ -2160,36 +2160,38 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
       {!embedded && alreadyConnected && (
         <div className="fixed inset-0 z-[10001] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
           <div className="bg-card border-2 border-destructive rounded-xl shadow-2xl p-6 max-w-md w-full text-center space-y-4">
-            <h2 className="text-xl font-bold text-destructive">Vous êtes déjà connecté ailleurs</h2>
-            <p className="text-sm text-muted-foreground">
-              Merci de vous déconnecter.
-            </p>
-            {otherSessionInfo && (
-              <div className="text-left text-xs bg-muted rounded-md p-3 space-y-1">
-                <p className="font-semibold text-foreground">Session active détectée :</p>
-                {otherSessionInfo.user_agent && (
-                  <p><span className="text-muted-foreground">Appareil :</span> {(() => {
-                    const ua = otherSessionInfo.user_agent!;
-                    const os = /iPhone|iPad/.test(ua) ? "iPhone/iPad"
-                      : /Android/.test(ua) ? "Android"
-                      : /Mac OS X/.test(ua) ? "Mac"
-                      : /Windows/.test(ua) ? "Windows"
-                      : /Linux/.test(ua) ? "Linux" : "Inconnu";
-                    const br = /Edg\//.test(ua) ? "Edge"
-                      : /Chrome\//.test(ua) ? "Chrome"
-                      : /Firefox\//.test(ua) ? "Firefox"
-                      : /Safari\//.test(ua) ? "Safari" : "Navigateur";
-                    return `${br} sur ${os}`;
-                  })()}</p>
-                )}
-                {otherSessionInfo.ip_address && (
-                  <p><span className="text-muted-foreground">Adresse IP :</span> {otherSessionInfo.ip_address}</p>
-                )}
-                {otherSessionInfo.started_at && (
-                  <p><span className="text-muted-foreground">Connecté depuis :</span> {new Date(otherSessionInfo.started_at).toLocaleString("fr-FR")}</p>
-                )}
-              </div>
-            )}
+            {(() => {
+              const device = getConnectedDeviceDetails(otherSessionInfo?.user_agent);
+              const DeviceIcon = device.Icon;
+              return (
+                <>
+                  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-destructive/10">
+                    <DeviceIcon className="h-7 w-7 text-destructive" />
+                  </div>
+                  <h2 className="text-xl font-bold text-destructive">Vous êtes déjà connecté</h2>
+                  <p className="text-sm font-semibold text-foreground">
+                    Votre compte est déjà ouvert sur un autre appareil : {device.label}.
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Pour continuer ici, fermez ou déconnectez-vous d'abord sur {device.type === "tablette" ? "la tablette" : device.type === "téléphone" ? "le téléphone" : "l'autre appareil"} où votre cours est déjà ouvert.
+                  </p>
+                  <div className="text-left text-xs bg-muted rounded-md p-3 space-y-1">
+                    <p className="font-semibold text-foreground">Appareil déjà connecté :</p>
+                    <p><span className="text-muted-foreground">Type :</span> {device.label}</p>
+                    <p><span className="text-muted-foreground">Navigateur :</span> {device.browser}</p>
+                    {otherSessionInfo?.ip_address && (
+                      <p><span className="text-muted-foreground">Adresse IP :</span> {otherSessionInfo.ip_address}</p>
+                    )}
+                    {otherSessionInfo?.last_seen_at && (
+                      <p><span className="text-muted-foreground">Dernière activité :</span> {new Date(otherSessionInfo.last_seen_at).toLocaleString("fr-FR")}</p>
+                    )}
+                    {otherSessionInfo?.started_at && (
+                      <p><span className="text-muted-foreground">Connecté depuis :</span> {new Date(otherSessionInfo.started_at).toLocaleString("fr-FR")}</p>
+                    )}
+                  </div>
+                </>
+              );
+            })()}
             <button
               type="button"
               className="w-full rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
