@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { User, Building2, CreditCard, Bell } from "lucide-react";
+import { User, Building2, CreditCard, Bell, Archive } from "lucide-react";
+import { BackupTab } from "./BackupTab";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -87,6 +88,10 @@ export function SettingsPage() {
           <TabsTrigger value="notifications" className="gap-2">
             <Bell className="w-4 h-4" />
             Notifications
+          </TabsTrigger>
+          <TabsTrigger value="backup" className="gap-2">
+            <Archive className="w-4 h-4" />
+            Sauvegarde
           </TabsTrigger>
         </TabsList>
 
@@ -205,6 +210,10 @@ export function SettingsPage() {
               ))}
             </div>
           </div>
+        </TabsContent>
+
+        <TabsContent value="backup" className="space-y-6">
+          <BackupTab />
         </TabsContent>
       </Tabs>
     </div>
