@@ -247,5 +247,6 @@ export function useConnexionTracking({ apprenantId, userId, enabled }: UseConnex
     connexionId,
     endConnexion,
     alreadyConnected,
+    otherSessionInfo,
   };
 }
