@@ -1,8 +1,11 @@
-import { ShieldCheck, LogOut, UserCheck } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ShieldCheck, LogOut, UserCheck, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 
 interface IdentityConfirmModalProps {
   show: boolean;
+  apprenantId?: string;
   prenom: string;
   nom: string;
   civilite?: "M." | "Mme" | null;
@@ -18,12 +21,44 @@ interface IdentityConfirmModalProps {
  */
 export function IdentityConfirmModal({
   show,
+  apprenantId,
   prenom,
   nom,
   civilite,
   onConfirm,
   onDeny,
 }: IdentityConfirmModalProps) {
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!show || !apprenantId) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("documents_inscription")
+        .select("url, nom_fichier")
+        .eq("apprenant_id", apprenantId)
+        .eq("type_document", "photo_identite")
+        .in("statut", ["valid", "recu"])
+        .order("created_at", { ascending: false })
+        .maybeSingle();
+      if (cancelled || !data?.url) return;
+      const isPdf =
+        data.nom_fichier?.toLowerCase().endsWith(".pdf") ||
+        data.url.toLowerCase().endsWith(".pdf");
+      if (isPdf) return;
+      let fullUrl = data.url;
+      if (!fullUrl.startsWith("http")) {
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        fullUrl = `${supabaseUrl}/storage/v1/object/public/documents-inscription/${fullUrl}`;
+      }
+      setPhotoUrl(fullUrl);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [show, apprenantId]);
+
   if (!show) return null;
 
   const salutation =
@@ -34,6 +69,7 @@ export function IdentityConfirmModal({
         : "Monsieur / Madame";
 
   const fullName = `${prenom || ""} ${nom || ""}`.trim();
+  const initials = `${(prenom || "").charAt(0)}${(nom || "").charAt(0)}`.toUpperCase();
 
   return (
     <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
@@ -49,8 +85,23 @@ export function IdentityConfirmModal({
 
         {/* Bloc de confirmation identique aux feuilles d'émargement, taille réduite */}
         <div className="border-2 sm:border-4 border-blue-500 bg-blue-50 rounded-lg py-4 px-3 sm:py-5 sm:px-4 shadow-md">
-          <div className="flex flex-col items-center gap-2">
-            <ShieldCheck className="h-8 w-8 sm:h-10 sm:w-10 text-blue-600" />
+          <div className="flex flex-col items-center gap-3">
+            <div className="h-24 w-24 sm:h-28 sm:w-28 rounded-full overflow-hidden border-4 border-blue-500 bg-white flex items-center justify-center shadow-sm">
+              {photoUrl ? (
+                <img
+                  src={photoUrl}
+                  alt={`Photo de ${fullName}`}
+                  className="h-full w-full object-cover"
+                />
+              ) : initials ? (
+                <span className="text-2xl sm:text-3xl font-bold text-blue-700">
+                  {initials}
+                </span>
+              ) : (
+                <User className="h-10 w-10 text-blue-600" />
+              )}
+            </div>
+            <ShieldCheck className="h-6 w-6 sm:h-7 sm:w-7 text-blue-600" />
             <p className="text-base sm:text-lg font-bold text-blue-900">
               Êtes-vous bien
             </p>
