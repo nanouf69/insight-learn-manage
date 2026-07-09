@@ -38,6 +38,13 @@ export function useConnexionTracking({ apprenantId, userId, enabled }: UseConnex
   const startingRef = useRef(false);
   const [connexionId, setConnexionId] = useState<string | null>(null);
   const [alreadyConnected, setAlreadyConnected] = useState(false);
+  const [otherSessionInfo, setOtherSessionInfo] = useState<{
+    ip_address: string | null;
+    user_agent: string | null;
+    started_at: string | null;
+    last_seen_at: string | null;
+    source: string | null;
+  } | null>(null);
 
   const resetLocalSession = useCallback(() => {
     connexionIdRef.current = null;
