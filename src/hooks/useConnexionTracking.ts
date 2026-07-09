@@ -219,5 +219,6 @@ export function useConnexionTracking({ apprenantId, userId, enabled }: UseConnex
     markActivity,
     connexionId,
     endConnexion,
+    alreadyConnected,
   };
 }
