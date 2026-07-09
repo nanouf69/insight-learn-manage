@@ -186,12 +186,64 @@ export function useConnexionTracking({ apprenantId, userId, enabled }: UseConnex
 
     void startConnexion();
 
+    // Close connection when tab/window/PWA is closed (best-effort, uses keepalive)
+    const closeOnUnload = () => {
+      const id = connexionIdRef.current;
+      if (!id) return;
+      try {
+        const url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/rpc/close_apprenant_connexion`;
+        const apikey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
+        const body = JSON.stringify({ _connexion_id: id, _apprenant_id: apprenantId });
+        const token = (supabase as any)?.auth?.session?.()?.access_token;
+        // Try to grab the current access token synchronously from storage
+        let accessToken: string | null = token ?? null;
+        if (!accessToken) {
+          try {
+            const key = Object.keys(localStorage).find((k) => k.startsWith("sb-") && k.endsWith("-auth-token"));
+            if (key) {
+              const raw = localStorage.getItem(key);
+              if (raw) {
+                const parsed = JSON.parse(raw);
+                accessToken = parsed?.access_token ?? parsed?.currentSession?.access_token ?? null;
+              }
+            }
+          } catch { /* ignore */ }
+        }
+        void fetch(url, {
+          method: "POST",
+          keepalive: true,
+          headers: {
+            "Content-Type": "application/json",
+            apikey,
+            Authorization: `Bearer ${accessToken ?? apikey}`,
+          },
+          body,
+        });
+      } catch (e) {
+        console.warn("[ConnexionTracking] closeOnUnload failed", e);
+      }
+    };
+
+    const onPageHide = () => closeOnUnload();
+    const onBeforeUnload = () => closeOnUnload();
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") closeOnUnload();
+    };
+    window.addEventListener("pagehide", onPageHide);
+    window.addEventListener("beforeunload", onBeforeUnload);
+    // pagehide covers mobile Safari; visibilitychange helps on some mobile browsers
+    document.addEventListener("visibilitychange", onVisibility);
+
     return () => {
       cancelled = true;
       startingRef.current = false;
+      window.removeEventListener("pagehide", onPageHide);
+      window.removeEventListener("beforeunload", onBeforeUnload);
+      document.removeEventListener("visibilitychange", onVisibility);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabled, apprenantId, userId]);
+
 
   const trackModuleActivity = useCallback(async (
     moduleId: number,
