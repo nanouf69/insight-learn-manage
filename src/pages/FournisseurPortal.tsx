@@ -331,6 +331,7 @@ export default function FournisseurPortal() {
 
   // Document upload
   const [selectedApprenantForDoc, setSelectedApprenantForDoc] = useState("");
+  const [apprenantDocSearch, setApprenantDocSearch] = useState("");
   const [docTitre, setDocTitre] = useState("");
   const [isUploadingDoc, setIsUploadingDoc] = useState(false);
 
