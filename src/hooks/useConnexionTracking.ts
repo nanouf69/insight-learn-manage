@@ -226,21 +226,16 @@ export function useConnexionTracking({ apprenantId, userId, enabled }: UseConnex
 
     const onPageHide = () => closeOnUnload();
     const onBeforeUnload = () => closeOnUnload();
-    const onVisibility = () => {
-      if (document.visibilityState === "hidden") closeOnUnload();
-    };
     window.addEventListener("pagehide", onPageHide);
     window.addEventListener("beforeunload", onBeforeUnload);
-    // pagehide covers mobile Safari; visibilitychange helps on some mobile browsers
-    document.addEventListener("visibilitychange", onVisibility);
 
     return () => {
       cancelled = true;
       startingRef.current = false;
       window.removeEventListener("pagehide", onPageHide);
       window.removeEventListener("beforeunload", onBeforeUnload);
-      document.removeEventListener("visibilitychange", onVisibility);
     };
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabled, apprenantId, userId]);
 
