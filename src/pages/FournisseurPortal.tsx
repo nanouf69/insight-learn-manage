@@ -271,6 +271,7 @@ export default function FournisseurPortal() {
   const [apprenants, setApprenants] = useState<FournisseurApprenant[]>([]);
   const [documents, setDocuments] = useState<FournisseurDocument[]>([]);
   const [crmDocuments, setCrmDocuments] = useState<any[]>([]);
+  const [crmDocsSearch, setCrmDocsSearch] = useState("");
   const [factures, setFactures] = useState<FournisseurFacture[]>([]);
   const [planning, setPlanning] = useState<any[]>([]);
   const [emargements, setEmargements] = useState<Record<string, { signature_data_url: string; signed_at: string }>>({});
@@ -993,26 +994,46 @@ export default function FournisseurPortal() {
               </Card>
 
               {/* Documents CRM (depuis le dossier apprenant) */}
-              {crmDocuments.length > 0 && (
-                <div>
-                  <h3 className="text-lg font-semibold mb-3">Documents du dossier apprenant ({crmDocuments.length})</h3>
-                  <div className="grid gap-3">
-                    {crmDocuments.map(d => (
-                      <Card key={d.id}>
-                        <CardContent className="pt-4 flex justify-between items-center">
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium truncate">{d.titre}</p>
-                            <p className="text-sm text-muted-foreground">{d.apprenant_nom} • {d.nom_fichier} • {new Date(d.created_at).toLocaleDateString('fr-FR')}</p>
-                          </div>
-                          <a href={d.url.startsWith('http') ? d.url : supabase.storage.from('documents-inscription').getPublicUrl(d.url).data.publicUrl} target="_blank" rel="noopener noreferrer">
-                            <Button variant="ghost" size="sm" className="gap-2 ml-2"><Eye className="w-4 h-4" />Voir</Button>
-                          </a>
-                        </CardContent>
-                      </Card>
-                    ))}
+              {crmDocuments.length > 0 && (() => {
+                const q = crmDocsSearch.trim().toLowerCase();
+                const filtered = q
+                  ? crmDocuments.filter(d =>
+                      (d.apprenant_nom || '').toLowerCase().includes(q) ||
+                      (d.nom_fichier || '').toLowerCase().includes(q) ||
+                      (d.titre || '').toLowerCase().includes(q)
+                    )
+                  : crmDocuments;
+                return (
+                  <div>
+                    <h3 className="text-lg font-semibold mb-3">Documents du dossier apprenant ({filtered.length}{q ? ` / ${crmDocuments.length}` : ''})</h3>
+                    <div className="mb-3">
+                      <Input
+                        placeholder="Rechercher par nom, prénom ou nom de fichier..."
+                        value={crmDocsSearch}
+                        onChange={(e) => setCrmDocsSearch(e.target.value)}
+                      />
+                    </div>
+                    <div className="grid gap-3">
+                      {filtered.map(d => (
+                        <Card key={d.id}>
+                          <CardContent className="pt-4 flex justify-between items-center">
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium truncate">{d.titre}</p>
+                              <p className="text-sm text-muted-foreground">{d.apprenant_nom} • {d.nom_fichier} • {new Date(d.created_at).toLocaleDateString('fr-FR')}</p>
+                            </div>
+                            <a href={d.url.startsWith('http') ? d.url : supabase.storage.from('documents-inscription').getPublicUrl(d.url).data.publicUrl} target="_blank" rel="noopener noreferrer">
+                              <Button variant="ghost" size="sm" className="gap-2 ml-2"><Eye className="w-4 h-4" />Voir</Button>
+                            </a>
+                          </CardContent>
+                        </Card>
+                      ))}
+                      {filtered.length === 0 && (
+                        <Card><CardContent className="pt-6 text-center text-muted-foreground">Aucun document ne correspond à votre recherche.</CardContent></Card>
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               <h3 className="text-lg font-semibold">Documents envoyés via portail ({documents.length})</h3>
               {documents.length === 0 ? (
