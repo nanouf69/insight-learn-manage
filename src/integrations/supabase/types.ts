@@ -136,6 +136,7 @@ export type Database = {
           source: string
           started_at: string
           updated_at: string
+          user_agent: string | null
           user_id: string
         }
         Insert: {
@@ -152,6 +153,7 @@ export type Database = {
           source?: string
           started_at?: string
           updated_at?: string
+          user_agent?: string | null
           user_id: string
         }
         Update: {
@@ -168,6 +170,7 @@ export type Database = {
           source?: string
           started_at?: string
           updated_at?: string
+          user_agent?: string | null
           user_id?: string
         }
         Relationships: [
@@ -2917,6 +2920,16 @@ export type Database = {
         Returns: {
           closed_max_duration: number
           closed_no_response: number
+        }[]
+      }
+      get_active_apprenant_connexion_info: {
+        Args: { _apprenant_id: string; _client_session_id?: string }
+        Returns: {
+          ip_address: string
+          last_seen_at: string
+          source: string
+          started_at: string
+          user_agent: string
         }[]
       }
       has_role: {

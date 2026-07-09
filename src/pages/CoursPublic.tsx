@@ -731,7 +731,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   }, []);
 
   const isStudentSession = !embedded && !!effectiveUserId && !!apprenant?.id;
-  const { trackModuleActivity, markActivity, connexionId, endConnexion, alreadyConnected } = useConnexionTracking({
+  const { trackModuleActivity, markActivity, connexionId, endConnexion, alreadyConnected, otherSessionInfo } = useConnexionTracking({
     apprenantId: !embedded && apprenant?.id ? apprenant.id : null,
     userId: effectiveUserId || null,
     enabled: isStudentSession,
@@ -2130,6 +2130,32 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
             <p className="text-sm text-muted-foreground">
               Merci de vous déconnecter.
             </p>
+            {otherSessionInfo && (
+              <div className="text-left text-xs bg-muted rounded-md p-3 space-y-1">
+                <p className="font-semibold text-foreground">Session active détectée :</p>
+                {otherSessionInfo.user_agent && (
+                  <p><span className="text-muted-foreground">Appareil :</span> {(() => {
+                    const ua = otherSessionInfo.user_agent!;
+                    const os = /iPhone|iPad/.test(ua) ? "iPhone/iPad"
+                      : /Android/.test(ua) ? "Android"
+                      : /Mac OS X/.test(ua) ? "Mac"
+                      : /Windows/.test(ua) ? "Windows"
+                      : /Linux/.test(ua) ? "Linux" : "Inconnu";
+                    const br = /Edg\//.test(ua) ? "Edge"
+                      : /Chrome\//.test(ua) ? "Chrome"
+                      : /Firefox\//.test(ua) ? "Firefox"
+                      : /Safari\//.test(ua) ? "Safari" : "Navigateur";
+                    return `${br} sur ${os}`;
+                  })()}</p>
+                )}
+                {otherSessionInfo.ip_address && (
+                  <p><span className="text-muted-foreground">Adresse IP :</span> {otherSessionInfo.ip_address}</p>
+                )}
+                {otherSessionInfo.started_at && (
+                  <p><span className="text-muted-foreground">Connecté depuis :</span> {new Date(otherSessionInfo.started_at).toLocaleString("fr-FR")}</p>
+                )}
+              </div>
+            )}
             <button
               type="button"
               className="w-full rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
@@ -2190,6 +2216,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     showPresenceModal,
     trackModuleActivity,
     alreadyConnected,
+    otherSessionInfo,
     user,
   ]);
 

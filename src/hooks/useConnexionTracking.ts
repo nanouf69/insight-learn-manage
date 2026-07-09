@@ -38,6 +38,13 @@ export function useConnexionTracking({ apprenantId, userId, enabled }: UseConnex
   const startingRef = useRef(false);
   const [connexionId, setConnexionId] = useState<string | null>(null);
   const [alreadyConnected, setAlreadyConnected] = useState(false);
+  const [otherSessionInfo, setOtherSessionInfo] = useState<{
+    ip_address: string | null;
+    user_agent: string | null;
+    started_at: string | null;
+    last_seen_at: string | null;
+    source: string | null;
+  } | null>(null);
 
   const resetLocalSession = useCallback(() => {
     connexionIdRef.current = null;
@@ -112,6 +119,13 @@ export function useConnexionTracking({ apprenantId, userId, enabled }: UseConnex
         const msg = (error as any)?.message || "";
         if (msg.includes("already_connected")) {
           setAlreadyConnected(true);
+          // Fetch info about the already-active session
+          const { data: infoData } = await supabase.rpc("get_active_apprenant_connexion_info" as any, {
+            _apprenant_id: apprenantId,
+            _client_session_id: getClientSessionId(),
+          });
+          const row = Array.isArray(infoData) ? infoData[0] : infoData;
+          if (row) setOtherSessionInfo(row as any);
         }
         return;
       }
@@ -122,6 +136,19 @@ export function useConnexionTracking({ apprenantId, userId, enabled }: UseConnex
 
       connexionIdRef.current = startedConnexion.id;
       setConnexionId(startedConnexion.id);
+
+      // Persist user agent for the current session
+      try {
+        const ua = typeof navigator !== "undefined" ? navigator.userAgent : null;
+        if (ua) {
+          await supabase
+            .from("apprenant_connexions" as any)
+            .update({ user_agent: ua } as any)
+            .eq("id", startedConnexion.id);
+        }
+      } catch (e) {
+        console.warn("[ConnexionTracking] UA capture failed", e);
+      }
 
       // Capture client IP (best-effort, non-blocking)
       (async () => {
@@ -220,5 +247,6 @@ export function useConnexionTracking({ apprenantId, userId, enabled }: UseConnex
     connexionId,
     endConnexion,
     alreadyConnected,
+    otherSessionInfo,
   };
 }
