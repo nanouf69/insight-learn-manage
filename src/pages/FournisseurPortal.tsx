@@ -271,6 +271,7 @@ export default function FournisseurPortal() {
   const [apprenants, setApprenants] = useState<FournisseurApprenant[]>([]);
   const [documents, setDocuments] = useState<FournisseurDocument[]>([]);
   const [crmDocuments, setCrmDocuments] = useState<any[]>([]);
+  const [crmDocsSearch, setCrmDocsSearch] = useState("");
   const [factures, setFactures] = useState<FournisseurFacture[]>([]);
   const [planning, setPlanning] = useState<any[]>([]);
   const [emargements, setEmargements] = useState<Record<string, { signature_data_url: string; signed_at: string }>>({});
