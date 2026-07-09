@@ -18,10 +18,26 @@ interface UseConnexionTrackingParams {
   enabled: boolean;
 }
 
+const CLIENT_SESSION_STORAGE_KEY = "cours_client_session_id";
+
+function getClientSessionId(): string {
+  try {
+    let id = sessionStorage.getItem(CLIENT_SESSION_STORAGE_KEY);
+    if (!id) {
+      id = (crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`);
+      sessionStorage.setItem(CLIENT_SESSION_STORAGE_KEY, id);
+    }
+    return id;
+  } catch {
+    return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  }
+}
+
 export function useConnexionTracking({ apprenantId, userId, enabled }: UseConnexionTrackingParams) {
   const connexionIdRef = useRef<string | null>(null);
   const startingRef = useRef(false);
   const [connexionId, setConnexionId] = useState<string | null>(null);
+  const [alreadyConnected, setAlreadyConnected] = useState(false);
 
   const resetLocalSession = useCallback(() => {
     connexionIdRef.current = null;
