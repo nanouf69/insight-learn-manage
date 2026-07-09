@@ -3,12 +3,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, CheckSquare, XSquare } from "lucide-react";
+import { AlertTriangle, CheckCircle2, CheckSquare, XSquare } from "lucide-react";
 import { type CompetencesData } from "./competences-checklist-data";
 import { saveFormDocument } from "@/lib/saveFormDocument";
 import { toast } from "sonner";
 import { useAutoSave, useLoadDraft } from "@/hooks/useAutoSave";
 import { sendAdminNotification } from "@/lib/sendAdminNotification";
+
 
 interface Props {
   data: CompetencesData;
