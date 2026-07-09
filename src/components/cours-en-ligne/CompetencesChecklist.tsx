@@ -205,15 +205,22 @@ export default function CompetencesChecklist({ data, apprenantNom, apprenantId, 
       ))}
 
       <Card className="border-primary/30 bg-primary/5">
-        <CardContent className="p-4">
+        <CardContent className="p-4 space-y-3">
+          <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-center">
+            <p className="text-sm font-semibold text-amber-800 flex items-center justify-center gap-2">
+              <AlertTriangle className="w-4 h-4" />
+              Cliquez sur « Valider le test de compétences » ci-dessous pour pouvoir passer à la suite.
+            </p>
+          </div>
           <Button
             className="w-full"
             onClick={handleSubmit}
           >
-            {allAnswered ? "✅ Valider le test de compétences" : `Répondez à toutes les questions (${answeredCount}/${totalItems})`}
+            {allAnswered ? "✅ Valider le test de compétences pour continuer" : `Répondez à toutes les questions (${answeredCount}/${totalItems})`}
           </Button>
         </CardContent>
       </Card>
+
     </div>
   );
 }
