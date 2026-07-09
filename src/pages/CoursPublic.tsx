@@ -6,7 +6,7 @@ import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { LogOut, Target, RotateCcw, ChevronRight, KeyRound, Loader2, AlertTriangle, BookOpen, GraduationCap, TrendingUp, Clock, ArrowRight, Sparkles, CheckCircle2, Lock, Chrome } from "lucide-react";
+import { LogOut, Target, RotateCcw, ChevronRight, KeyRound, Loader2, AlertTriangle, BookOpen, GraduationCap, TrendingUp, Clock, ArrowRight, Sparkles, CheckCircle2, Lock, Chrome, Smartphone, Tablet, Monitor } from "lucide-react";
 import { WelcomeBanner } from "@/components/cours-en-ligne/motivation/WelcomeBanner";
 import { XPBar } from "@/components/cours-en-ligne/motivation/XPBar";
 import { BadgeGrid } from "@/components/cours-en-ligne/motivation/BadgeGrid";
@@ -108,6 +108,39 @@ const resolveFormationId = (
   if (byFormation) return byFormation;
 
   return null;
+};
+
+const getConnectedDeviceDetails = (userAgent: string | null | undefined) => {
+  const ua = userAgent || "";
+  const isIPad = /iPad/.test(ua) || (/Macintosh/.test(ua) && /Mobile\//.test(ua));
+  const isTablet = isIPad || /Tablet|SM-T|Lenovo TB|Nexus 7|Nexus 9|Android(?!.*Mobile)/i.test(ua);
+  const isPhone = !isTablet && /iPhone|Android.*Mobile|Mobile/i.test(ua);
+
+  const os = /iPhone|iPad/.test(ua) || isIPad
+    ? "iOS"
+    : /Android/.test(ua)
+      ? "Android"
+      : /Mac OS X|Macintosh/.test(ua)
+        ? "Mac"
+        : /Windows/.test(ua)
+          ? "Windows"
+          : /Linux/.test(ua)
+            ? "Linux"
+            : "inconnu";
+
+  const browser = /Edg\//.test(ua)
+    ? "Edge"
+    : /Chrome\//.test(ua) && !/Edg\//.test(ua)
+      ? "Chrome"
+      : /Firefox\//.test(ua)
+        ? "Firefox"
+        : /Safari\//.test(ua)
+          ? "Safari"
+          : "navigateur";
+
+  if (isTablet) return { type: "tablette", label: `Tablette ${os}`, browser, Icon: Tablet };
+  if (isPhone) return { type: "téléphone", label: `Téléphone ${os}`, browser, Icon: Smartphone };
+  return { type: "ordinateur", label: `Ordinateur ${os}`, browser, Icon: Monitor };
 };
 
 // ===== LABELS & ORDER synchronized with modules-config.ts =====
