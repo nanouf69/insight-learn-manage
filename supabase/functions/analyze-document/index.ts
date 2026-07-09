@@ -75,13 +75,54 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+
+    // --- AUTHENTICATION: require a valid JWT ---
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(
+        JSON.stringify({ error: 'Non autorisé' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    const userClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: userData, error: userErr } = await userClient.auth.getUser();
+    if (userErr || !userData?.user) {
+      return new Response(
+        JSON.stringify({ error: 'Token invalide' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const supabase = createClient(supabaseUrl, serviceRoleKey);
+
+    // --- AUTHORIZATION: only admins may invoke this AI-heavy endpoint ---
+    const { data: isAdmin } = await supabase.rpc('has_role', {
+      _user_id: userData.user.id,
+      _role: 'admin',
+    });
+    if (!isAdmin) {
+      return new Response(
+        JSON.stringify({ error: 'Réservé aux administrateurs' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     const { documentUrl, documentType, expectedNom, expectedPrenom } = await req.json() as AnalyzeDocumentRequest;
 
     if (!documentUrl || !documentType) {
       return new Response(
         JSON.stringify({ error: 'documentUrl et documentType sont requis' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // SSRF prevention: only accept Supabase storage URLs
+    if (!isValidStorageUrl(documentUrl)) {
+      return new Response(
+        JSON.stringify({ error: 'URL de document invalide' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
