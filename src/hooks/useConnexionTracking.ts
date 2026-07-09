@@ -137,6 +137,19 @@ export function useConnexionTracking({ apprenantId, userId, enabled }: UseConnex
       connexionIdRef.current = startedConnexion.id;
       setConnexionId(startedConnexion.id);
 
+      // Persist user agent for the current session
+      try {
+        const ua = typeof navigator !== "undefined" ? navigator.userAgent : null;
+        if (ua) {
+          await supabase
+            .from("apprenant_connexions" as any)
+            .update({ user_agent: ua } as any)
+            .eq("id", startedConnexion.id);
+        }
+      } catch (e) {
+        console.warn("[ConnexionTracking] UA capture failed", e);
+      }
+
       // Capture client IP (best-effort, non-blocking)
       (async () => {
         try {
