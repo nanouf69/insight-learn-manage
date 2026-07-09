@@ -103,10 +103,19 @@ export function useConnexionTracking({ apprenantId, userId, enabled }: UseConnex
       const { data, error } = await supabase.rpc("start_apprenant_connexion" as any, {
         _apprenant_id: apprenantId,
         _source: "cours",
+        _client_session_id: getClientSessionId(),
       });
       startingRef.current = false;
 
-      if (cancelled || error || !data) return;
+      if (cancelled) return;
+      if (error) {
+        const msg = (error as any)?.message || "";
+        if (msg.includes("already_connected")) {
+          setAlreadyConnected(true);
+        }
+        return;
+      }
+      if (!data) return;
 
       const startedConnexion = Array.isArray(data) ? data[0] : data;
       if (!startedConnexion?.id) return;
