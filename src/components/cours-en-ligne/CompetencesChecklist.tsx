@@ -3,12 +3,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, CheckSquare, XSquare } from "lucide-react";
+import { AlertTriangle, CheckCircle2, CheckSquare, XSquare } from "lucide-react";
 import { type CompetencesData } from "./competences-checklist-data";
 import { saveFormDocument } from "@/lib/saveFormDocument";
 import { toast } from "sonner";
 import { useAutoSave, useLoadDraft } from "@/hooks/useAutoSave";
 import { sendAdminNotification } from "@/lib/sendAdminNotification";
+
 
 interface Props {
   data: CompetencesData;
@@ -139,6 +140,13 @@ export default function CompetencesChecklist({ data, apprenantNom, apprenantId, 
           <p className="text-sm text-muted-foreground text-center">
             Avant le début de la formation, merci de bien vouloir répondre à ces questions en cochant <strong>Oui</strong> ou <strong>Non</strong> pour chaque compétence.
           </p>
+          <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-center">
+            <p className="text-sm font-semibold text-amber-800 flex items-center justify-center gap-2">
+              <AlertTriangle className="w-4 h-4" />
+              Vous devez impérativement valider ce test avant de pouvoir cliquer sur « Suivant ».
+            </p>
+          </div>
+
           <div className="flex items-center justify-center gap-2">
             <Badge variant={allAnswered ? "default" : "secondary"}>{answeredCount}/{totalItems} répondu(s)</Badge>
             <span className="text-xs text-muted-foreground">{progress}%</span>
@@ -197,15 +205,22 @@ export default function CompetencesChecklist({ data, apprenantNom, apprenantId, 
       ))}
 
       <Card className="border-primary/30 bg-primary/5">
-        <CardContent className="p-4">
+        <CardContent className="p-4 space-y-3">
+          <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-center">
+            <p className="text-sm font-semibold text-amber-800 flex items-center justify-center gap-2">
+              <AlertTriangle className="w-4 h-4" />
+              Cliquez sur « Valider le test de compétences » ci-dessous pour pouvoir passer à la suite.
+            </p>
+          </div>
           <Button
             className="w-full"
             onClick={handleSubmit}
           >
-            {allAnswered ? "✅ Valider le test de compétences" : `Répondez à toutes les questions (${answeredCount}/${totalItems})`}
+            {allAnswered ? "✅ Valider le test de compétences pour continuer" : `Répondez à toutes les questions (${answeredCount}/${totalItems})`}
           </Button>
         </CardContent>
       </Card>
+
     </div>
   );
 }
