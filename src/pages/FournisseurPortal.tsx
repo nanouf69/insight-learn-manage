@@ -975,12 +975,56 @@ export default function FournisseurPortal() {
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label>Apprenant *</Label>
-                        <Select value={selectedApprenantForDoc} onValueChange={setSelectedApprenantForDoc}>
-                          <SelectTrigger><SelectValue placeholder="Sélectionner un apprenant" /></SelectTrigger>
-                          <SelectContent>
-                            {apprenants.map(a => <SelectItem key={a.id} value={a.id}>{a.prenom} {a.nom}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
+                        {(() => {
+                          const selected = apprenants.find(a => a.id === selectedApprenantForDoc);
+                          const q = apprenantDocSearch.trim().toLowerCase();
+                          const norm = (s: string | null | undefined) => (s || '').toLowerCase().replace(/\s+/g, '');
+                          const filtered = q
+                            ? apprenants.filter(a =>
+                                `${a.prenom} ${a.nom}`.toLowerCase().includes(q) ||
+                                `${a.nom} ${a.prenom}`.toLowerCase().includes(q) ||
+                                norm(a.telephone).includes(q.replace(/\s+/g, '')) ||
+                                (a.email || '').toLowerCase().includes(q)
+                              ).slice(0, 20)
+                            : [];
+                          return (
+                            <div className="space-y-2">
+                              <Input
+                                placeholder="Rechercher par nom, prénom, téléphone ou email..."
+                                value={apprenantDocSearch}
+                                onChange={(e) => setApprenantDocSearch(e.target.value)}
+                              />
+                              {selected && (
+                                <div className="flex items-center justify-between px-3 py-2 rounded-md border bg-muted/40 text-sm">
+                                  <span className="font-medium">Sélectionné : {selected.prenom} {selected.nom}</span>
+                                  <Button type="button" variant="ghost" size="sm" onClick={() => setSelectedApprenantForDoc("")}>
+                                    <X className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                              )}
+                              {q && filtered.length > 0 && (
+                                <div className="border rounded-md max-h-56 overflow-y-auto divide-y">
+                                  {filtered.map(a => (
+                                    <button
+                                      type="button"
+                                      key={a.id}
+                                      onClick={() => { setSelectedApprenantForDoc(a.id); setApprenantDocSearch(""); }}
+                                      className="w-full text-left px-3 py-2 hover:bg-muted text-sm"
+                                    >
+                                      <div className="font-medium">{a.prenom} {a.nom}</div>
+                                      {(a.telephone || a.email) && (
+                                        <div className="text-xs text-muted-foreground">{a.telephone || ''}{a.telephone && a.email ? ' • ' : ''}{a.email || ''}</div>
+                                      )}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                              {q && filtered.length === 0 && (
+                                <p className="text-sm text-muted-foreground px-1">Aucun apprenant trouvé.</p>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </div>
                     </div>
                     <div className="space-y-2">
