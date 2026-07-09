@@ -140,6 +140,13 @@ export default function CompetencesChecklist({ data, apprenantNom, apprenantId, 
           <p className="text-sm text-muted-foreground text-center">
             Avant le début de la formation, merci de bien vouloir répondre à ces questions en cochant <strong>Oui</strong> ou <strong>Non</strong> pour chaque compétence.
           </p>
+          <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-center">
+            <p className="text-sm font-semibold text-amber-800 flex items-center justify-center gap-2">
+              <AlertTriangle className="w-4 h-4" />
+              Vous devez impérativement valider ce test avant de pouvoir cliquer sur « Suivant ».
+            </p>
+          </div>
+
           <div className="flex items-center justify-center gap-2">
             <Badge variant={allAnswered ? "default" : "secondary"}>{answeredCount}/{totalItems} répondu(s)</Badge>
             <span className="text-xs text-muted-foreground">{progress}%</span>
