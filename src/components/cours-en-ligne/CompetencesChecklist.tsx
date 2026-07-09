@@ -57,6 +57,20 @@ export default function CompetencesChecklist({ data, apprenantNom, apprenantId, 
     }
   }, [answers]);
 
+  // Scroll to the first unanswered question when validation fails
+  useEffect(() => {
+    if (invalidKeys.size > 0) {
+      const firstInvalid = Array.from(invalidKeys)[0];
+      const firstRef = itemRefs.current[firstInvalid];
+      if (firstRef) {
+        setTimeout(() => {
+          firstRef.scrollIntoView({ behavior: "smooth", block: "center" });
+        }, 50);
+      }
+    }
+  }, [invalidKeys]);
+
+
   const toggle = (key: string, value: "oui" | "non") => {
     setAnswers(prev => {
       const next = { ...prev };
@@ -146,6 +160,13 @@ export default function CompetencesChecklist({ data, apprenantNom, apprenantId, 
               Vous devez impérativement valider ce test avant de pouvoir cliquer sur « Suivant ».
             </p>
           </div>
+          <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-center">
+            <p className="text-sm font-semibold text-destructive flex items-center justify-center gap-2">
+              <AlertTriangle className="w-4 h-4" />
+              Toutes les questions sont obligatoires. Les questions non répondues seront indiquées en rouge.
+            </p>
+          </div>
+
 
           <div className="flex items-center justify-center gap-2">
             <Badge variant={allAnswered ? "default" : "secondary"}>{answeredCount}/{totalItems} répondu(s)</Badge>
@@ -164,10 +185,20 @@ export default function CompetencesChecklist({ data, apprenantNom, apprenantId, 
         </CardContent>
       </Card>
 
-      {data.sections.map((section, sIdx) => (
-        <Card key={sIdx}>
+      {data.sections.map((section, sIdx) => {
+        const sectionMissing = section.items.map((_, iIdx) => `${sIdx}-${iIdx}`).filter(k => invalidKeys.has(k));
+        const sectionHasMissing = sectionMissing.length > 0;
+        return (
+        <Card key={sIdx} className={sectionHasMissing ? "border-destructive/60" : ""}>
           <CardContent className="p-4 space-y-3">
-            <h4 className="font-bold text-sm text-primary border-b pb-2">{section.titre}</h4>
+            <div className="flex items-center justify-between border-b pb-2">
+              <h4 className="font-bold text-sm text-primary">{section.titre}</h4>
+              {sectionHasMissing && (
+                <Badge variant="destructive" className="text-xs">
+                  {sectionMissing.length} non répondu{sectionMissing.length > 1 ? "e" : ""}{sectionMissing.length > 1 ? "s" : ""}
+                </Badge>
+              )}
+            </div>
             <div className="space-y-2">
               {section.items.map((item, iIdx) => {
                 const key = `${sIdx}-${iIdx}`;
@@ -177,10 +208,13 @@ export default function CompetencesChecklist({ data, apprenantNom, apprenantId, 
                   <div
                     key={key}
                     ref={el => { itemRefs.current[key] = el; }}
-                    className={`flex items-start gap-3 py-2 border-b border-border/50 last:border-b-0 rounded-lg px-2 ${isInvalid ? "ring-2 ring-destructive/60 bg-destructive/5" : ""}`}
+                    className={`flex items-start gap-3 py-2 border-b border-border/50 last:border-b-0 rounded-lg px-2 ${isInvalid ? "ring-2 ring-destructive border-destructive bg-destructive/10" : ""}`}
                   >
                     <p className={`flex-1 text-sm leading-relaxed ${isInvalid ? "text-destructive font-semibold" : ""}`}>❖ {item}</p>
                     <div className="flex items-center gap-3 shrink-0 pt-0.5">
+                      {isInvalid && (
+                        <span className="text-xs font-semibold text-destructive hidden sm:inline">Obligatoire</span>
+                      )}
                       <label className="flex items-center gap-1.5 cursor-pointer">
                         <Checkbox
                           checked={val === "oui"}
@@ -202,7 +236,9 @@ export default function CompetencesChecklist({ data, apprenantNom, apprenantId, 
             </div>
           </CardContent>
         </Card>
-      ))}
+        );
+      })}
+
 
       <Card className="border-primary/30 bg-primary/5">
         <CardContent className="p-4 space-y-3">
