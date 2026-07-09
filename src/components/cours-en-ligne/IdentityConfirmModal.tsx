@@ -34,20 +34,26 @@ export function IdentityConfirmModal({
     if (!show || !apprenantId) return;
     let cancelled = false;
     (async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("documents_inscription")
-        .select("url, nom_fichier")
+        .select("url, nom_fichier, statut")
         .eq("apprenant_id", apprenantId)
         .eq("type_document", "photo_identite")
-        .in("statut", ["valid", "recu"])
         .order("created_at", { ascending: false })
-        .maybeSingle();
-      if (cancelled || !data?.url) return;
-      const isPdf =
-        data.nom_fichier?.toLowerCase().endsWith(".pdf") ||
-        data.url.toLowerCase().endsWith(".pdf");
-      if (isPdf) return;
-      let fullUrl = data.url;
+        .limit(5);
+      if (cancelled) return;
+      if (error) {
+        console.error("[IdentityConfirmModal] photo fetch error:", error);
+        return;
+      }
+      const row = (data || []).find(
+        (d: any) =>
+          d?.url &&
+          !(d.nom_fichier?.toLowerCase().endsWith(".pdf") ||
+            d.url.toLowerCase().endsWith(".pdf"))
+      );
+      if (!row) return;
+      let fullUrl = row.url as string;
       if (!fullUrl.startsWith("http")) {
         const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
         fullUrl = `${supabaseUrl}/storage/v1/object/public/documents-inscription/${fullUrl}`;
