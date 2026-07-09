@@ -2216,6 +2216,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     showPresenceModal,
     trackModuleActivity,
     alreadyConnected,
+    otherSessionInfo,
     user,
   ]);
 
