@@ -57,6 +57,20 @@ export default function CompetencesChecklist({ data, apprenantNom, apprenantId, 
     }
   }, [answers]);
 
+  // Scroll to the first unanswered question when validation fails
+  useEffect(() => {
+    if (invalidKeys.size > 0) {
+      const firstInvalid = Array.from(invalidKeys)[0];
+      const firstRef = itemRefs.current[firstInvalid];
+      if (firstRef) {
+        setTimeout(() => {
+          firstRef.scrollIntoView({ behavior: "smooth", block: "center" });
+        }, 50);
+      }
+    }
+  }, [invalidKeys]);
+
+
   const toggle = (key: string, value: "oui" | "non") => {
     setAnswers(prev => {
       const next = { ...prev };
