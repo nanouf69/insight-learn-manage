@@ -209,10 +209,16 @@ export function AccessDiagnosticTab({ apprenant }: Props) {
                 <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? "animate-spin" : ""}`} />
                 Rafraîchir
               </Button>
-              {ghostCount > 0 && (
+              {(ghostCount > 0 || activeConn) && (
                 <Button variant="destructive" size="sm" onClick={cleanupSessions} disabled={cleaning}>
                   {cleaning ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-                  Nettoyer les sessions
+                  Forcer la déconnexion
+                </Button>
+              )}
+              {ghostCount === 0 && !activeConn && (
+                <Button variant="outline" size="sm" onClick={cleanupSessions} disabled={cleaning}>
+                  {cleaning ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                  Forcer la déconnexion
                 </Button>
               )}
             </div>
