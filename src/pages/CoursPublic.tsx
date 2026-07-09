@@ -2196,7 +2196,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
               type="button"
               className="w-full rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
               onClick={async () => {
-                try { await supabase.auth.signOut(); } catch {}
+                try { await supabase.auth.signOut(); } catch (error) { console.warn("Déconnexion locale impossible", error); }
                 window.location.href = "/login";
               }}
             >
