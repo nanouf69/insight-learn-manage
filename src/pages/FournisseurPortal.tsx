@@ -125,6 +125,8 @@ interface FournisseurApprenant {
   prenom: string;
   formation_choisie: string | null;
   created_at: string;
+  telephone?: string | null;
+  email?: string | null;
 }
 
 interface FournisseurDocument {
