@@ -731,7 +731,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   }, []);
 
   const isStudentSession = !embedded && !!effectiveUserId && !!apprenant?.id;
-  const { trackModuleActivity, markActivity, connexionId, endConnexion } = useConnexionTracking({
+  const { trackModuleActivity, markActivity, connexionId, endConnexion, alreadyConnected } = useConnexionTracking({
     apprenantId: !embedded && apprenant?.id ? apprenant.id : null,
     userId: effectiveUserId || null,
     enabled: isStudentSession,
@@ -2122,6 +2122,29 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         />
       )}
 
+      {/* Blocked: another active session for this account */}
+      {!embedded && alreadyConnected && (
+        <div className="fixed inset-0 z-[10001] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="bg-card border-2 border-destructive rounded-xl shadow-2xl p-6 max-w-md w-full text-center space-y-4">
+            <h2 className="text-xl font-bold text-destructive">Vous êtes déjà connecté</h2>
+            <p className="text-sm text-muted-foreground">
+              Ce compte est déjà utilisé sur un autre appareil ou navigateur. Un seul accès simultané est autorisé.
+              Merci de vous déconnecter de l'autre appareil avant de réessayer.
+            </p>
+            <button
+              type="button"
+              className="w-full rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+              onClick={async () => {
+                try { await supabase.auth.signOut(); } catch {}
+                window.location.href = "/login";
+              }}
+            >
+              Se déconnecter
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Chat: ask a question to the centre */}
       {!embedded && apprenant?.id && (
         <ApprenantChatWidget apprenantId={apprenant.id} apprenantNom={`${apprenant.prenom || ""} ${apprenant.nom || ""}`.trim()} />
@@ -2167,6 +2190,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     showInactivityModal,
     showPresenceModal,
     trackModuleActivity,
+    alreadyConnected,
     user,
   ]);
 

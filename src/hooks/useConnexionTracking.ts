@@ -18,10 +18,26 @@ interface UseConnexionTrackingParams {
   enabled: boolean;
 }
 
+const CLIENT_SESSION_STORAGE_KEY = "cours_client_session_id";
+
+function getClientSessionId(): string {
+  try {
+    let id = sessionStorage.getItem(CLIENT_SESSION_STORAGE_KEY);
+    if (!id) {
+      id = (crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`);
+      sessionStorage.setItem(CLIENT_SESSION_STORAGE_KEY, id);
+    }
+    return id;
+  } catch {
+    return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  }
+}
+
 export function useConnexionTracking({ apprenantId, userId, enabled }: UseConnexionTrackingParams) {
   const connexionIdRef = useRef<string | null>(null);
   const startingRef = useRef(false);
   const [connexionId, setConnexionId] = useState<string | null>(null);
+  const [alreadyConnected, setAlreadyConnected] = useState(false);
 
   const resetLocalSession = useCallback(() => {
     connexionIdRef.current = null;
@@ -87,10 +103,19 @@ export function useConnexionTracking({ apprenantId, userId, enabled }: UseConnex
       const { data, error } = await supabase.rpc("start_apprenant_connexion" as any, {
         _apprenant_id: apprenantId,
         _source: "cours",
+        _client_session_id: getClientSessionId(),
       });
       startingRef.current = false;
 
-      if (cancelled || error || !data) return;
+      if (cancelled) return;
+      if (error) {
+        const msg = (error as any)?.message || "";
+        if (msg.includes("already_connected")) {
+          setAlreadyConnected(true);
+        }
+        return;
+      }
+      if (!data) return;
 
       const startedConnexion = Array.isArray(data) ? data[0] : data;
       if (!startedConnexion?.id) return;
@@ -194,5 +219,6 @@ export function useConnexionTracking({ apprenantId, userId, enabled }: UseConnex
     markActivity,
     connexionId,
     endConnexion,
+    alreadyConnected,
   };
 }
