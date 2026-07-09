@@ -731,7 +731,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   }, []);
 
   const isStudentSession = !embedded && !!effectiveUserId && !!apprenant?.id;
-  const { trackModuleActivity, markActivity, connexionId, endConnexion, alreadyConnected } = useConnexionTracking({
+  const { trackModuleActivity, markActivity, connexionId, endConnexion, alreadyConnected, otherSessionInfo } = useConnexionTracking({
     apprenantId: !embedded && apprenant?.id ? apprenant.id : null,
     userId: effectiveUserId || null,
     enabled: isStudentSession,
