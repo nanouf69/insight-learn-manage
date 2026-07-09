@@ -119,6 +119,13 @@ export function useConnexionTracking({ apprenantId, userId, enabled }: UseConnex
         const msg = (error as any)?.message || "";
         if (msg.includes("already_connected")) {
           setAlreadyConnected(true);
+          // Fetch info about the already-active session
+          const { data: infoData } = await supabase.rpc("get_active_apprenant_connexion_info" as any, {
+            _apprenant_id: apprenantId,
+            _client_session_id: getClientSessionId(),
+          });
+          const row = Array.isArray(infoData) ? infoData[0] : infoData;
+          if (row) setOtherSessionInfo(row as any);
         }
         return;
       }
