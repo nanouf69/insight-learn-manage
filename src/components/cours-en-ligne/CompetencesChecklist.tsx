@@ -146,6 +146,13 @@ export default function CompetencesChecklist({ data, apprenantNom, apprenantId, 
               Vous devez impérativement valider ce test avant de pouvoir cliquer sur « Suivant ».
             </p>
           </div>
+          <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-center">
+            <p className="text-sm font-semibold text-destructive flex items-center justify-center gap-2">
+              <AlertTriangle className="w-4 h-4" />
+              Toutes les questions sont obligatoires. Les questions non répondues seront indiquées en rouge.
+            </p>
+          </div>
+
 
           <div className="flex items-center justify-center gap-2">
             <Badge variant={allAnswered ? "default" : "secondary"}>{answeredCount}/{totalItems} répondu(s)</Badge>
