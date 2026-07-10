@@ -29,6 +29,7 @@ function PassageMatiere({
   apprenantId,
   userId,
   examenId,
+  tentative = 1,
   onLearnerActivity,
 }: {
   matiere: Matiere;
@@ -39,8 +40,10 @@ function PassageMatiere({
   apprenantId?: string | null;
   userId?: string | null;
   examenId?: string;
+  tentative?: number;
   onLearnerActivity?: () => void;
 }) {
+
   const [reponses, setReponses] = useState<Reponses>({});
   const [questionIndex, setQuestionIndex] = useState(0);
   const [expire, setExpire] = useState(false);
