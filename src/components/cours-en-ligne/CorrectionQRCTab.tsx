@@ -842,17 +842,11 @@ const CorrectionQRCTab = () => {
 
         setTimeout(() => {
           setCurrentIndex(prev => {
-            const newFiltered = updated.filter(i => {
-              if (filter === "pending" && i.corrigeManuel) return false;
-              if (filter === "done" && !i.corrigeManuel) return false;
-              if (filter === "today" && !isToday(i.completedAt)) return false;
-              if (filter === "today-pending" && (!isToday(i.completedAt) || i.corrigeManuel)) return false;
-              return true;
-            });
-            if (newFiltered.length === 0) return 0;
-            const nextPending = newFiltered.findIndex((i, idx) => idx >= prev && !i.corrigeManuel);
+            const newSorted = computeSortedFiltered(updated);
+            if (newSorted.length === 0) return 0;
+            const nextPending = newSorted.findIndex((i, idx) => idx >= prev && !i.corrigeManuel);
             if (nextPending !== -1) return nextPending;
-            return Math.min(prev + 1, newFiltered.length - 1);
+            return Math.min(prev + 1, newSorted.length - 1);
           });
         }, 0);
 
