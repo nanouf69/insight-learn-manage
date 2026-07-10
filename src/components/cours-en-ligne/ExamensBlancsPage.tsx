@@ -832,7 +832,8 @@ export default function ExamensBlancsPage({
 
       // BUG #7 FIX: flush responses to DB BEFORE calculating score
       if (apprenantId && userId) {
-        const exerciceKey = `${examenChoisi.id}__${matiere.id}`;
+        const tSuffix = (currentTentative && currentTentative > 1) ? `__t${currentTentative}` : "";
+        const exerciceKey = `${examenChoisi.id}__${matiere.id}${tSuffix}`;
         const quizType = examenChoisi.id.startsWith("bilan-") ? "bilan" : "examen_blanc";
         try {
           await supabase.from("reponses_apprenants" as any).upsert({
