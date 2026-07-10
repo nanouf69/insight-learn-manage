@@ -103,6 +103,14 @@ export function getPointsParQuestion(matiereId: string, questionType: QuestionTy
   if (matiereId === "reglementation_taxi2" || matiereId === "reglementation_vtc2") {
     return questionType === "QCM" ? 2 : 4;
   }
+  // F(V) / F(T) sur 40 pts (12 QCM à 2pts + 4 QRC à 4pts) — même barème que G(V)/G(T)
+  if (
+    (matiereId === "reglementation_vtc" || matiereId === "reglementation_taxi") &&
+    matiere?.noteSur != null &&
+    matiere.noteSur >= 40
+  ) {
+    return questionType === "QCM" ? 2 : 4;
+  }
   // Défaut (inclut reglementation_taxi, reglementation_vtc, t3p, gestion, securite, anglais) : QCM=1, QRC=2
   return questionType === "QCM" ? 1 : 2;
 }
