@@ -804,7 +804,7 @@ export default function ExamensBlancsPage({
       note_sur_20: noteSur20, reussi: computeAdmisForMatiere(safeScoreObtenu, safeScoreMax, resultat.noteEliminatoire, resultat.noteSur, Boolean(resultat.admis)),
       duree_secondes: Math.max(Math.round(dureeSecondes), 0),
       details: { questions: questionDetails, reponses: resultat.reponses, correctionsIA: Object.keys(frozenCorrections).length > 0 ? frozenCorrections : undefined },
-      tentative: 1,
+      tentative: Math.max(currentTentative || 1, 1),
     };
 
     // Save with retry logic to prevent silent data loss
