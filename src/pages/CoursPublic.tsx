@@ -2169,7 +2169,30 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                   <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-destructive/10">
                     <DeviceIcon className="h-7 w-7 text-destructive" />
                   </div>
-                  <h2 className="text-xl font-bold text-destructive">Vous êtes déjà connecté</h2>
+                  <div className="flex items-center justify-center gap-3 flex-wrap">
+                    <h2 className="text-xl font-bold text-destructive">Vous êtes déjà connecté</h2>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-destructive text-destructive hover:bg-destructive/10"
+                      disabled={forceDisconnecting}
+                      onClick={async () => {
+                        setForceDisconnecting(true);
+                        try {
+                          await forceDisconnectOthers();
+                          toast.success("Autre session fermée. Vous pouvez continuer ici.");
+                        } catch (e) {
+                          console.error("Force disconnect error:", e);
+                          toast.error("Impossible de forcer la déconnexion. Veuillez réessayer.");
+                        } finally {
+                          setForceDisconnecting(false);
+                        }
+                      }}
+                    >
+                      {forceDisconnecting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                      Forcer la déconnexion
+                    </Button>
+                  </div>
                   <p className="text-sm font-semibold text-foreground">
                     Votre compte est déjà ouvert sur un autre appareil : {device.label}.
                   </p>
