@@ -27,6 +27,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { generateRecapitulatifPDF } from "@/lib/pdf/recapitulatif-inscription";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 
 // Dates centralisées
 import { ALL_DATES_EXAMEN_THEORIQUE_VALUES } from '@/lib/examDatesConfig';
