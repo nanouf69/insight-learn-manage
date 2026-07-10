@@ -732,19 +732,11 @@ const CorrectionQRCTab = () => {
 
           setTimeout(() => {
             setCurrentIndex(prevIndex => {
-              const newFiltered = updated.filter(i => {
-                if (filter === "pending" && i.corrigeManuel) return false;
-                if (filter === "done" && !i.corrigeManuel) return false;
-                if (filter === "today" && !isToday(i.completedAt)) return false;
-                if (filter === "today-pending" && (!isToday(i.completedAt) || i.corrigeManuel)) return false;
-                return true;
-              });
-              if (newFiltered.length === 0) return 0;
-              // Try to jump to next pending item after current index
-              const nextPending = newFiltered.findIndex((i, idx) => idx >= prevIndex && !i.corrigeManuel);
+              const newSorted = computeSortedFiltered(updated);
+              if (newSorted.length === 0) return 0;
+              const nextPending = newSorted.findIndex((i, idx) => idx >= prevIndex && !i.corrigeManuel);
               if (nextPending !== -1) return nextPending;
-              // Otherwise advance by one if possible
-              return Math.min(prevIndex + 1, newFiltered.length - 1);
+              return Math.min(prevIndex + 1, newSorted.length - 1);
             });
           }, 0);
 
