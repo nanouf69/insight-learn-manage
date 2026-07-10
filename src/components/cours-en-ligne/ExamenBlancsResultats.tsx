@@ -530,8 +530,9 @@ function EcranResultats({
     .filter(r => !r.admis)
     .map(r => r.nomMatiere.split(" - ")[0]);
 
-  // Detect if QRC corrections are pending (for présentiel: formateur must validate)
-  const hasQrcPendingValidation = isPresentiel && !isAdmin && (() => {
+  // Detect if QRC corrections are pending (for présentiel: formateur must validate).
+  // Retakes are auto-graded by mots-clés and don't require manual validation, so we skip the gate.
+  const hasQrcPendingValidation = isPresentiel && !isAdmin && !isRetake && (() => {
     for (let mi = 0; mi < examen.matieres.length; mi++) {
       const matiere = examen.matieres[mi];
       if (!matiere) continue;
