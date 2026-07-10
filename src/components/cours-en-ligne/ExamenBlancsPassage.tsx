@@ -329,7 +329,9 @@ function PassageMatiere({
       if (firstUnansweredIdx >= 0) {
         setQuestionIndex(firstUnansweredIdx);
         const remaining = questionsSafe.filter(q => !isQuestionAnswered(q)).length;
-        toast.error(`Il reste ${remaining} question(s) sans réponse. Vous êtes redirigé vers la première non répondue.`);
+        toast.error("Merci de répondre à toutes les questions", {
+          description: `Il reste ${remaining} question(s) sans réponse.`,
+        });
         // Scroll to top of question after state update
         setTimeout(() => {
           try {
@@ -339,7 +341,7 @@ function PassageMatiere({
           } catch {}
         }, 50);
       } else {
-        toast.error("Veuillez répondre à toutes les questions avant de terminer la matière.");
+        toast.error("Merci de répondre à toutes les questions");
       }
       return;
     }
@@ -619,7 +621,7 @@ function PassageMatiere({
             <ArrowRight className="w-4 h-4" />
           </Button>
         ) : (
-          <Button onClick={handleTerminer} disabled={!allAnswered} className="gap-2 bg-green-600 hover:bg-green-700 disabled:opacity-50">
+          <Button onClick={handleTerminer} className="gap-2 bg-green-600 hover:bg-green-700">
             <CheckCircle2 className="w-4 h-4" />
             Terminer la matière
             {!allAnswered && <span className="text-xs">({questionsSafe.filter(q => isQuestionAnswered(q)).length}/{questionsSafe.length})</span>}
