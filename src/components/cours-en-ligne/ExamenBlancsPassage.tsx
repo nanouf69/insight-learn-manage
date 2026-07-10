@@ -200,7 +200,8 @@ function PassageMatiere({
     // BUG #7 FIX: increment generation to cancel any in-flight retry loop
     saveGenerationRef.current++;
     const myGeneration = saveGenerationRef.current;
-    const flushImmediately = !hasSavedOnceRef.current;
+    // INSTANT SAVE: no debounce — persist every change immediately so a tablet crash never loses answers
+    const flushImmediately = true;
     debounceRef.current = setTimeout(async () => {
       setSaveStatus("saving");
       const MAX_RETRIES = 3;
