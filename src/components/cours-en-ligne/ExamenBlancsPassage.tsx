@@ -29,6 +29,7 @@ function PassageMatiere({
   apprenantId,
   userId,
   examenId,
+  tentative = 1,
   onLearnerActivity,
 }: {
   matiere: Matiere;
@@ -39,8 +40,10 @@ function PassageMatiere({
   apprenantId?: string | null;
   userId?: string | null;
   examenId?: string;
+  tentative?: number;
   onLearnerActivity?: () => void;
 }) {
+
   const [reponses, setReponses] = useState<Reponses>({});
   const [questionIndex, setQuestionIndex] = useState(0);
   const [expire, setExpire] = useState(false);
@@ -98,7 +101,9 @@ function PassageMatiere({
 
   // Load saved responses on mount
   // FIX: use double underscore `__` to match handleTerminerMatiere in ExamensBlancsPage.tsx
-  const exerciceKey = `${examenId || "exam"}__${matiere.id}`;
+  const tentativeSuffix = (tentative && tentative > 1) ? `__t${tentative}` : "";
+  const exerciceKey = `${examenId || "exam"}__${matiere.id}${tentativeSuffix}`;
+
   useEffect(() => {
     if (!apprenantId || initialLoaded) return;
     (async () => {

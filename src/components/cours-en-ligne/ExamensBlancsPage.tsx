@@ -80,6 +80,7 @@ export default function ExamensBlancsPage({
   const reloadInFlightRef = useRef<Promise<ExamenBlanc[]> | null>(null);
   const [loadTimeout, setLoadTimeout] = useState(false);
   const [pausedExamIds, setPausedExamIds] = useState<Set<string>>(new Set());
+  const [currentTentative, setCurrentTentative] = useState<number>(1);
   const phaseRef = useRef(phase);
   useEffect(() => { phaseRef.current = phase; }, [phase]);
 
@@ -376,6 +377,21 @@ export default function ExamensBlancsPage({
   const handleStart = async (examen: ExamenBlanc, forceRetake = false) => {
     const latestExamen = liveExamens.find((live) => live.id === examen.id) ?? examen;
     const quizType = latestExamen.id.startsWith("bilan-") ? "bilan" : "examen_blanc";
+
+    // Compute current tentative: max existing + 1 on retake, else max existing (or 1)
+    let nextTentative = 1;
+    if (apprenantId) {
+      const { data: tRows } = await supabase
+        .from("apprenant_quiz_results" as any)
+        .select("tentative")
+        .eq("apprenant_id", apprenantId)
+        .eq("quiz_id", latestExamen.id)
+        .eq("quiz_type", quizType);
+      const maxT = ((tRows as any[]) || []).reduce((m, r) => Math.max(m, toFiniteNumber(r?.tentative, 1)), 0);
+      nextTentative = forceRetake ? Math.max(maxT + 1, 2) : Math.max(maxT, 1);
+    }
+    setCurrentTentative(nextTentative);
+
 
     if (!isAdmin && apprenantId && !forceRetake) {
       // Check which matières are already completed
@@ -788,7 +804,7 @@ export default function ExamensBlancsPage({
       note_sur_20: noteSur20, reussi: computeAdmisForMatiere(safeScoreObtenu, safeScoreMax, resultat.noteEliminatoire, resultat.noteSur, Boolean(resultat.admis)),
       duree_secondes: Math.max(Math.round(dureeSecondes), 0),
       details: { questions: questionDetails, reponses: resultat.reponses, correctionsIA: Object.keys(frozenCorrections).length > 0 ? frozenCorrections : undefined },
-      tentative: 1,
+      tentative: Math.max(currentTentative || 1, 1),
     };
 
     // Save with retry logic to prevent silent data loss
@@ -816,7 +832,8 @@ export default function ExamensBlancsPage({
 
       // BUG #7 FIX: flush responses to DB BEFORE calculating score
       if (apprenantId && userId) {
-        const exerciceKey = `${examenChoisi.id}__${matiere.id}`;
+        const tSuffix = (currentTentative && currentTentative > 1) ? `__t${currentTentative}` : "";
+        const exerciceKey = `${examenChoisi.id}__${matiere.id}${tSuffix}`;
         const quizType = examenChoisi.id.startsWith("bilan-") ? "bilan" : "examen_blanc";
         try {
           await supabase.from("reponses_apprenants" as any).upsert({
@@ -1060,7 +1077,7 @@ export default function ExamensBlancsPage({
               <ArrowLeft className="w-4 h-4" /> Retour à la liste
             </Button>
           </div>
-          <PassageMatiere key={`${examenChoisi.id}_${matiere.id}`} matiere={matiere} numero={matiereIndex + 1} total={examenChoisi.matieres.length} onTerminer={handleTerminerMatiere} isBilan={examenChoisi.id.startsWith("bilan-")} apprenantId={apprenantId} userId={userId} examenId={examenChoisi.id} onLearnerActivity={onLearnerActivity} />
+          <PassageMatiere key={`${examenChoisi.id}_${matiere.id}_t${currentTentative}`} matiere={matiere} numero={matiereIndex + 1} total={examenChoisi.matieres.length} onTerminer={handleTerminerMatiere} isBilan={examenChoisi.id.startsWith("bilan-")} apprenantId={apprenantId} userId={userId} examenId={examenChoisi.id} tentative={currentTentative} onLearnerActivity={onLearnerActivity} />
 
         </div>
         <div className="hidden min-[520px]:block w-36 sm:w-40 md:w-48 lg:w-56 shrink-0">
