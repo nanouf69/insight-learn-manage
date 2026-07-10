@@ -3396,8 +3396,22 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     };
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+
+    // Periodic polling fallback (every 45s) — catches missed realtime events
+    // when the tab stays visible for a long time (student watching a course).
+    const pollingInterval = window.setInterval(() => {
+      if (!document.hidden) {
+        lastCheckedAt = 0; // bypass the 10s throttle
+        void handleVisibilityChange();
+      }
+    }, 45_000);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.clearInterval(pollingInterval);
+    };
   }, [module.id, studentOnly, editorStateHydrated, apprenantType]);
+
 
   const performDbSave = async (dataToSave: {
     module_id: number;
