@@ -1209,9 +1209,15 @@ const CorrectionQRCTab = () => {
                           ⏳ En attente (auto: {item.autoScore}/{item.pointsMax})
                         </Badge>
                       )}
-                      <Badge variant="outline" className="font-bold text-sm">
-                        📊 {item.noteSur20 != null ? `${item.noteSur20}/20` : `${item.scoreMatiereObtenu}/${item.scoreMatiereMax}`}
-                      </Badge>
+                      {item.corrigeManuel ? (
+                        <Badge variant="outline" className="font-bold text-sm">
+                          📊 {item.noteSur20 != null ? `${item.noteSur20}/20` : `${item.scoreMatiereObtenu}/${item.scoreMatiereMax}`}
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="font-bold text-sm text-amber-700 border-amber-300" title="Note provisoire : la QRC n'a pas encore été corrigée manuellement">
+                          📊 {item.noteSur20 != null ? `${item.noteSur20}/20` : `${item.scoreMatiereObtenu}/${item.scoreMatiereMax}`} (provisoire)
+                        </Badge>
+                      )}
                     </div>
                   </div>
 
