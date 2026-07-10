@@ -150,6 +150,20 @@ function getQuestionResponse(reponses: Record<string | number, any>, questionId:
   return reponses?.[questionId] ?? reponses?.[String(questionId)] ?? null;
 }
 
+function getQuestionId(question: any): number | null {
+  const rawId = question?.questionId ?? question?.id;
+  const questionId = Number(rawId);
+  return Number.isFinite(questionId) ? questionId : null;
+}
+
+function getCorrectionForQuestion(correctionsIA: Record<string | number, any>, questionId: number): any {
+  return correctionsIA?.[questionId] ?? correctionsIA?.[String(questionId)] ?? correctionsIA?.[`Q${questionId}`] ?? null;
+}
+
+function getCorrectionKey(apprenantId: string, quizId: string, matiereId: string, questionId: number): string {
+  return `${apprenantId}__${quizId}__${matiereId || ""}__${questionId}`;
+}
+
 function isAdminValidatedCorrection(correction: unknown): boolean {
   if (!correction || typeof correction !== "object") return false;
   const correctionRecord = correction as Record<string, unknown>;
@@ -374,6 +388,22 @@ const CorrectionQRCTab = () => {
     const qrcItems: QrcItem[] = [];
     const seenQrcKeys = new Set<string>();
 
+    // Sécurité anti-doublon : dès qu'une QRC a une vraie validation admin en base,
+    // elle ne doit plus revenir dans la file "à corriger", même si une ancienne
+    // autosauvegarde ou un ancien format de question réapparaît.
+    const manualCorrectionKeys = new Set<string>();
+    const manualCorrectionsByKey = new Map<string, any>();
+    for (const r of results as any[]) {
+      const correctionsIA = ((r.details as any)?.correctionsIA || {}) as Record<string | number, any>;
+      Object.entries(correctionsIA).forEach(([rawQuestionId, correction]) => {
+        const questionId = Number(String(rawQuestionId).replace(/^Q/i, ""));
+        if (!Number.isFinite(questionId) || !isAdminValidatedCorrection(correction)) return;
+        const correctionKey = getCorrectionKey(r.apprenant_id, r.quiz_id, r.matiere_id || "", questionId);
+        manualCorrectionKeys.add(correctionKey);
+        manualCorrectionsByKey.set(correctionKey, correction);
+      });
+    }
+
     // Count how many results exist per apprenant + quiz + matiere (to detect retakes)
     // Must include matiere_id because each exam has ~7 matiere rows per attempt
     const attemptCounts: Record<string, number> = {};
@@ -421,6 +451,9 @@ const CorrectionQRCTab = () => {
           : (/\(qrc\)/i.test(enonceStr) ? "QRC" : "QCM");
         if (inferredType !== "QRC") continue;
 
+        const questionId = getQuestionId(q);
+        if (questionId == null) continue;
+
         // Pour les lignes bilan agrégées (matiere_id vide), on résout la matière
         // au niveau de la question (chaque question porte son propre matiereId).
         const effectiveMatiereId = (r.matiere_id || "") || safeStr(q.matiereId);
@@ -428,25 +461,25 @@ const CorrectionQRCTab = () => {
           || findMatiereWithFallback(examenMap, tousLesExamens, r.quiz_id, effectiveMatiereId);
 
         // Deduplicate per apprenant + quiz + matière effective + question
-        const qrcKey = `${r.apprenant_id}__${r.quiz_id}__${effectiveMatiereId}__${q.questionId}`;
+        const qrcKey = getCorrectionKey(r.apprenant_id, r.quiz_id, effectiveMatiereId, questionId);
         if (seenQrcKeys.has(qrcKey)) continue;
         seenQrcKeys.add(qrcKey);
 
         const pts = getPointsParQuestion(effectiveMatiereId, "QRC", perQuestionMatiere || undefined);
 
-        const correction = correctionsIA[q.questionId];
+        const correction = manualCorrectionsByKey.get(qrcKey) ?? getCorrectionForQuestion(correctionsIA, questionId);
         // STRICT : seules les validations admin comptent, y compris l'ancien format
         // écrit avant l'ajout de `validatedByAdmin`.
-        const hasManualCorrection = isAdminValidatedCorrection(correction);
+        const hasManualCorrection = manualCorrectionKeys.has(qrcKey) || isAdminValidatedCorrection(correction);
 
         const app = apprenantMap[r.apprenant_id] || { nom: "Inconnu", prenom: "", mode: "presentiel" as const };
 
-        const questionDef = perQuestionMatiere?.questions?.find((mq: any) => mq && mq.id === q.questionId);
+        const questionDef = perQuestionMatiere?.questions?.find((mq: any) => mq && mq.id === questionId);
         // Compare against the CURRENT canonical matiere (from examenMap) to detect
         // questions removed/replaced in the live exam — not the legacy matched variant.
         const currentExamen = examenMap[r.quiz_id];
         const currentMatiere = currentExamen?.matieres?.find((m: any) => m.id === effectiveMatiereId);
-        const currentQuestionDef = currentMatiere?.questions?.find((mq: any) => mq && mq.id === q.questionId);
+        const currentQuestionDef = currentMatiere?.questions?.find((mq: any) => mq && mq.id === questionId);
         const savedQuestionText = normalizeText(enonceStr);
         const currentQuestionText = normalizeText(safeStr(currentQuestionDef?.enonce));
         const questionSupprimee = !currentQuestionDef || (!!savedQuestionText && !!currentQuestionText && savedQuestionText !== currentQuestionText);
@@ -455,7 +488,7 @@ const CorrectionQRCTab = () => {
         // on la récupère depuis details.reponses[questionId].
         const reponseEleveRaw = q.reponseEleve != null && q.reponseEleve !== ""
           ? q.reponseEleve
-          : (reponses?.[q.questionId] ?? reponses?.[String(q.questionId)] ?? "");
+          : (reponses?.[questionId] ?? reponses?.[String(questionId)] ?? "");
         const reponseEleveStr = safeStr(reponseEleveRaw);
 
         // Réponse correcte : si absente, on la reconstruit depuis la définition.
@@ -492,7 +525,7 @@ const CorrectionQRCTab = () => {
           quizType: r.quiz_type,
           matiereId: effectiveMatiereId,
           matiereNom: r.matiere_nom || safeStr(q.matiereNom) || perQuestionMatiere?.nom || "",
-          questionId: q.questionId,
+          questionId,
           enonce: enonceStr,
           reponseEleve: reponseEleveStr,
           reponseCorrecte: reponseCorrecteStr,
@@ -559,6 +592,7 @@ const CorrectionQRCTab = () => {
         const reponseEleveStr = safeStr(reponses?.[q.id] ?? reponses?.[String(q.id)] ?? "");
         if (!reponseEleveStr.trim()) continue;
         const qrcKey = `${row.apprenant_id}__${quizId}__${matiereId}__${q.id}`;
+        if (manualCorrectionKeys.has(qrcKey)) continue;
         const alreadyHasTodayResult = qrcItems.some(i =>
           i.apprenantId === row.apprenant_id &&
           i.quizId === quizId &&
