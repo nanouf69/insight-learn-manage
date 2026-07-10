@@ -621,7 +621,7 @@ function PassageMatiere({
             <ArrowRight className="w-4 h-4" />
           </Button>
         ) : (
-          <Button onClick={handleTerminer} disabled={!allAnswered} className="gap-2 bg-green-600 hover:bg-green-700 disabled:opacity-50">
+          <Button onClick={handleTerminer} className="gap-2 bg-green-600 hover:bg-green-700">
             <CheckCircle2 className="w-4 h-4" />
             Terminer la matière
             {!allAnswered && <span className="text-xs">({questionsSafe.filter(q => isQuestionAnswered(q)).length}/{questionsSafe.length})</span>}
