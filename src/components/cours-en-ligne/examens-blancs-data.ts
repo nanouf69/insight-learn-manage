@@ -80,40 +80,59 @@ export interface ExamenBlanc {
 }
 
 /**
+ * Points "de base" définis par les règles pédagogiques par matière.
+ * Ces valeurs peuvent être écrasées par un ptsQCM/ptsQRC explicite sur la matière,
+ * ou automatiquement re-mises à l'échelle pour que la somme = matiere.noteSur.
+ */
+function getBasePoints(matiereId: string, questionType: QuestionType): number {
+  if (matiereId.startsWith("bilan_") || matiereId.startsWith("bilan_pratique")) return 1;
+  if (matiereId === "francais") return 2; // QCM=2, QRC=2
+  if (matiereId === "reglementation_taxi2" || matiereId === "reglementation_vtc2") {
+    return questionType === "QCM" ? 2 : 4;
+  }
+  // F(V) / F(T) : QCM=1, QRC=2 par défaut — l'auto-scale ajustera si noteSur > somme
+  return questionType === "QCM" ? 1 : 2;
+}
+
+// Cache du facteur d'échelle par matière (évite recalculs)
+const scaleFactorCache = new WeakMap<Matiere, number>();
+
+function getScaleFactor(matiere: Matiere): number {
+  const cached = scaleFactorCache.get(matiere);
+  if (cached != null) return cached;
+  if (!matiere.noteSur || matiere.noteSur <= 0) {
+    scaleFactorCache.set(matiere, 1);
+    return 1;
+  }
+  // Si l'utilisateur a fixé ptsQCM/ptsQRC explicitement, on ne rescale pas
+  if (matiere.ptsQCM != null || matiere.ptsQRC != null) {
+    scaleFactorCache.set(matiere, 1);
+    return 1;
+  }
+  const questions = (matiere.questions ?? []).filter((q): q is Question => q != null && q?.type != null);
+  const baseSum = questions.reduce((acc, q) => acc + getBasePoints(matiere.id, q?.type || "QCM"), 0);
+  const factor = baseSum > 0 ? matiere.noteSur / baseSum : 1;
+  scaleFactorCache.set(matiere, factor);
+  return factor;
+}
+
+/**
  * Retourne les points attribués pour une question selon la matière et le type de question.
- * - Français (D) : QCM=2pts, QRC=2pts
- * - Réglementation locale TAXI (G(T)) et Réglementation spécifique VTC (G(V)) : QCM=2pts, QRC=4pts
- * - Réglementation nationale TAXI (F(T)) et Développement commercial VTC (F(V)) : QCM=1pt, QRC=2pts
- * - Toutes les autres matières : QCM=1pt, QRC=2pts
+ * Auto-scale : les points sont mis à l'échelle pour que la somme totale des questions
+ * corresponde à matiere.noteSur (barème officiel). Cela corrige les incohérences historiques
+ * (ex: F(V) sur 40, gestion sur 36, français sur 24) où les notes étaient sous-évaluées.
  */
 export function getPointsParQuestion(matiereId: string, questionType: QuestionType, matiere?: Matiere): number {
-  // If matiere has custom points defined, use them
   if (matiere) {
     if (questionType === "QCM" && matiere.ptsQCM != null) return matiere.ptsQCM;
     if (questionType === "QRC" && matiere.ptsQRC != null) return matiere.ptsQRC;
   }
-  // Matières Bilan : tout est à 1 point (QCM uniquement)
-  if (matiereId.startsWith("bilan_") || matiereId.startsWith("bilan_pratique")) {
-    return 1;
-  }
-  if (matiereId === "francais") {
-    return questionType === "QCM" ? 2 : 2;
-  }
-  // Réglementation locale TAXI (G(T)) et Réglementation spécifique VTC (G(V)) : QCM=2, QRC=4
-  if (matiereId === "reglementation_taxi2" || matiereId === "reglementation_vtc2") {
-    return questionType === "QCM" ? 2 : 4;
-  }
-  // F(V) / F(T) sur 40 pts (12 QCM à 2pts + 4 QRC à 4pts) — même barème que G(V)/G(T)
-  if (
-    (matiereId === "reglementation_vtc" || matiereId === "reglementation_taxi") &&
-    matiere?.noteSur != null &&
-    matiere.noteSur >= 40
-  ) {
-    return questionType === "QCM" ? 2 : 4;
-  }
-  // Défaut (inclut reglementation_taxi, reglementation_vtc, t3p, gestion, securite, anglais) : QCM=1, QRC=2
-  return questionType === "QCM" ? 1 : 2;
+  const base = getBasePoints(matiereId, questionType);
+  if (!matiere) return base;
+  const scale = getScaleFactor(matiere);
+  return base * scale;
 }
+
 
 // ===== MATIÈRES COMMUNES (T3P, GESTION, SÉCURITÉ ROUTIÈRE, FRANÇAIS, ANGLAIS) =====
 
