@@ -751,6 +751,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const [emargementDate, setEmargementDate] = useState<string | null>(null);
   const [emargementMode, setEmargementMode] = useState<"fc" | "presentiel">("fc");
   const [emargementRefreshTick, setEmargementRefreshTick] = useState(0);
+  const [forceDisconnecting, setForceDisconnecting] = useState(false);
   const [sessionAccessWindow, setSessionAccessWindow] = useState<SessionAccessWindow | null>(null);
   const emargementStatusRef = useRef(emargementFCStatus);
   const lastQuizActivityAtRef = useRef(0);
