@@ -1031,17 +1031,37 @@ export default function ExamensBlancsPage({
     return (
       <div className="flex gap-6 max-w-[1200px] mx-auto">
         <div className="flex-1 min-w-0 space-y-4">
-          <div className="flex items-center gap-3">
-            <div className="flex gap-1.5">
-              {examenChoisi.matieres.map((_, i) => {
-                const done = tousResultats[i] != null;
-                return <div key={i} className={`h-2 rounded-full transition-all ${done ? "w-8 bg-green-500" : i === matiereIndex ? "w-8 bg-primary" : "w-4 bg-muted"}`} />;
-              })}
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-3">
+              <div className="flex gap-1.5">
+                {examenChoisi.matieres.map((_, i) => {
+                  const done = tousResultats[i] != null;
+                  return <div key={i} className={`h-2 rounded-full transition-all ${done ? "w-8 bg-green-500" : i === matiereIndex ? "w-8 bg-primary" : "w-4 bg-muted"}`} />;
+                })}
+              </div>
+              <span className="text-xs text-muted-foreground">Matière {matiereIndex + 1}/{examenChoisi.matieres.length}</span>
             </div>
-            <span className="text-xs text-muted-foreground">Matière {matiereIndex + 1}/{examenChoisi.matieres.length}</span>
-            {/* Bouton recharger retiré pendant l'examen pour éviter le décalage des questions */}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-2"
+              onClick={() => {
+                const ok = window.confirm("Retour à la liste des examens ? Votre progression sur cet examen sera perdue.");
+                if (!ok) return;
+                try { sessionStorage.removeItem(EXAM_SESSION_KEY); } catch {}
+                setExamenChoisi(null);
+                setTousResultats([]);
+                setMatiereIndex(0);
+                setLastMatiereResult(null);
+                setSelectionRefreshKey(k => k + 1);
+                setPhase("selection");
+              }}
+            >
+              <ArrowLeft className="w-4 h-4" /> Retour à la liste
+            </Button>
           </div>
           <PassageMatiere key={`${examenChoisi.id}_${matiere.id}`} matiere={matiere} numero={matiereIndex + 1} total={examenChoisi.matieres.length} onTerminer={handleTerminerMatiere} isBilan={examenChoisi.id.startsWith("bilan-")} apprenantId={apprenantId} userId={userId} examenId={examenChoisi.id} onLearnerActivity={onLearnerActivity} />
+
         </div>
         <div className="hidden min-[520px]:block w-36 sm:w-40 md:w-48 lg:w-56 shrink-0">
           <div className="sticky top-4 space-y-2">
