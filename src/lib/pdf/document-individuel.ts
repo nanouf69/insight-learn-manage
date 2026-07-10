@@ -579,9 +579,8 @@ export function generateDocumentIndividuelPdf(
 
   // ---- RIB block (devis formation continue only) ----
   if (document.type_document === 'devis-formation-continue') {
-    y = ensureSpace(y, 42) === y ? y : ensureSpace(y, 42);
-    // (ensureSpace already handles page break; keep call simple)
     y = ensureSpace(doc, y, 42);
+
     y += 6;
     y = renderSectionHeader(doc, 'COORDONNEES BANCAIRES POUR REGLEMENT PAR VIREMENT', y, margin, pw);
     const boxY = y - 2;
