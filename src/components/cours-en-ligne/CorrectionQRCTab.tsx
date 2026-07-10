@@ -267,6 +267,46 @@ const CorrectionQRCTab = () => {
   const [examenFilter, setExamenFilter] = useState<string>("all");
   const [isRefreshing, setIsRefreshing] = useState(false);
 
+  // Mirrors the filter + sort applied to `sortedFiltered` in the render, so that
+  // auto-advance after saving picks the correct next item.
+  const computeSortedFiltered = (list: QrcItem[]): QrcItem[] => {
+    const filteredList = list.filter(item => {
+      if (filter === "pending" && item.corrigeManuel) return false;
+      if (filter === "done" && !item.corrigeManuel) return false;
+      if (filter === "today" && !isToday(item.completedAt)) return false;
+      if (filter === "today-pending" && (!isToday(item.completedAt) || item.corrigeManuel)) return false;
+      if (examenFilter !== "all") {
+        const [cat, num] = examenFilter.split(":");
+        if (getExamCategory(item.quizTitre, item.quizId, item.apprenantTypeMode).key !== cat) return false;
+        if (num && getExamNum(item.quizTitre) !== num) return false;
+      }
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        return (
+          item.apprenantNom.toLowerCase().includes(q) ||
+          item.apprenantPrenom.toLowerCase().includes(q) ||
+          item.quizTitre.toLowerCase().includes(q) ||
+          item.matiereNom.toLowerCase().includes(q) ||
+          item.enonce.toLowerCase().includes(q)
+        );
+      }
+      return true;
+    });
+    return [...filteredList].sort((a, b) => {
+      const prioA = a.apprenantTypeMode === "presentiel" ? 0 : 1;
+      const prioB = b.apprenantTypeMode === "presentiel" ? 0 : 1;
+      if (prioA !== prioB) return prioA - prioB;
+      const dateA = new Date(a.completedAt).getTime() || 0;
+      const dateB = new Date(b.completedAt).getTime() || 0;
+      if (dateA !== dateB) return sortOrder === "desc" ? dateB - dateA : dateA - dateB;
+      const numA = parseInt((a.quizTitre.match(/N°(\d+)/)?.[1]) || "0", 10);
+      const numB = parseInt((b.quizTitre.match(/N°(\d+)/)?.[1]) || "0", 10);
+      if (numA !== numB) return numA - numB;
+      if (a.matiereId !== b.matiereId) return a.matiereId.localeCompare(b.matiereId);
+      return a.questionId - b.questionId;
+    });
+  };
+
   const QUICK_COMMENTS = [
     "Précisez !!!",
     "Dire plutôt permis de conduire hors période probatoire",
@@ -732,19 +772,11 @@ const CorrectionQRCTab = () => {
 
           setTimeout(() => {
             setCurrentIndex(prevIndex => {
-              const newFiltered = updated.filter(i => {
-                if (filter === "pending" && i.corrigeManuel) return false;
-                if (filter === "done" && !i.corrigeManuel) return false;
-                if (filter === "today" && !isToday(i.completedAt)) return false;
-                if (filter === "today-pending" && (!isToday(i.completedAt) || i.corrigeManuel)) return false;
-                return true;
-              });
-              if (newFiltered.length === 0) return 0;
-              // Try to jump to next pending item after current index
-              const nextPending = newFiltered.findIndex((i, idx) => idx >= prevIndex && !i.corrigeManuel);
+              const newSorted = computeSortedFiltered(updated);
+              if (newSorted.length === 0) return 0;
+              const nextPending = newSorted.findIndex((i, idx) => idx >= prevIndex && !i.corrigeManuel);
               if (nextPending !== -1) return nextPending;
-              // Otherwise advance by one if possible
-              return Math.min(prevIndex + 1, newFiltered.length - 1);
+              return Math.min(prevIndex + 1, newSorted.length - 1);
             });
           }, 0);
 
@@ -850,17 +882,11 @@ const CorrectionQRCTab = () => {
 
         setTimeout(() => {
           setCurrentIndex(prev => {
-            const newFiltered = updated.filter(i => {
-              if (filter === "pending" && i.corrigeManuel) return false;
-              if (filter === "done" && !i.corrigeManuel) return false;
-              if (filter === "today" && !isToday(i.completedAt)) return false;
-              if (filter === "today-pending" && (!isToday(i.completedAt) || i.corrigeManuel)) return false;
-              return true;
-            });
-            if (newFiltered.length === 0) return 0;
-            const nextPending = newFiltered.findIndex((i, idx) => idx >= prev && !i.corrigeManuel);
+            const newSorted = computeSortedFiltered(updated);
+            if (newSorted.length === 0) return 0;
+            const nextPending = newSorted.findIndex((i, idx) => idx >= prev && !i.corrigeManuel);
             if (nextPending !== -1) return nextPending;
-            return Math.min(prev + 1, newFiltered.length - 1);
+            return Math.min(prev + 1, newSorted.length - 1);
           });
         }, 0);
 
