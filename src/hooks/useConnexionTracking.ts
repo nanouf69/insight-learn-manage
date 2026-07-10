@@ -318,5 +318,6 @@ export function useConnexionTracking({ apprenantId, userId, enabled }: UseConnex
     endConnexion,
     alreadyConnected,
     otherSessionInfo,
+    forceDisconnectOthers,
   };
 }
