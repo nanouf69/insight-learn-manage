@@ -1077,7 +1077,7 @@ export default function ExamensBlancsPage({
               <ArrowLeft className="w-4 h-4" /> Retour à la liste
             </Button>
           </div>
-          <PassageMatiere key={`${examenChoisi.id}_${matiere.id}`} matiere={matiere} numero={matiereIndex + 1} total={examenChoisi.matieres.length} onTerminer={handleTerminerMatiere} isBilan={examenChoisi.id.startsWith("bilan-")} apprenantId={apprenantId} userId={userId} examenId={examenChoisi.id} onLearnerActivity={onLearnerActivity} />
+          <PassageMatiere key={`${examenChoisi.id}_${matiere.id}_t${currentTentative}`} matiere={matiere} numero={matiereIndex + 1} total={examenChoisi.matieres.length} onTerminer={handleTerminerMatiere} isBilan={examenChoisi.id.startsWith("bilan-")} apprenantId={apprenantId} userId={userId} examenId={examenChoisi.id} tentative={currentTentative} onLearnerActivity={onLearnerActivity} />
 
         </div>
         <div className="hidden min-[520px]:block w-36 sm:w-40 md:w-48 lg:w-56 shrink-0">
