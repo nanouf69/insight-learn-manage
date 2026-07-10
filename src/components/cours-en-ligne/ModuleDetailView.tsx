@@ -5039,9 +5039,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             <h4 className="font-bold text-lg">{cours.titre}</h4>
             {cours.sousTitre && <p className="text-sm text-muted-foreground">{cours.sousTitre}</p>}
             {cours.description && (
-              <div className="text-sm whitespace-pre-line leading-relaxed mt-2">
-                {cours.description}
-              </div>
+              <div
+                className="text-sm whitespace-pre-line leading-relaxed mt-2"
+                dangerouslySetInnerHTML={{ __html: cours.description }}
+              />
             )}
             {(() => {
               return (
