@@ -118,7 +118,9 @@ export const EmargementFCModal = ({
   const [saving, setSaving] = useState(false);
   const [demi] = useState<CreneauKey>(creneau || getCurrentCreneauFromHour());
   const [done, setDone] = useState(false);
-  const [identityConfirmed, setIdentityConfirmed] = useState(false);
+  // Identity already confirmed globally via IdentityConfirmModal (with photo) after login.
+  // Skip the redundant in-modal identity gate to avoid a double confirmation.
+  const [identityConfirmed, setIdentityConfirmed] = useState(true);
   const [confirmPresenceLieu, setConfirmPresenceLieu] = useState(false);
   const effectiveDate = dateEmargement || todayISO();
   const isRattrapage = effectiveDate !== todayISO();
