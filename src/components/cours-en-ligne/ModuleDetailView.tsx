@@ -5802,6 +5802,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                           <h4 className="font-semibold text-sm">Actions</h4>
                           <div className="flex flex-col gap-2">
                             <Button variant="outline" size="sm" className="gap-2" onClick={() => {
+              if (!window.confirm("Êtes-vous sûr de vouloir tout recommencer ? Vos réponses actuelles seront effacées.")) return;
               const exoKeys = questionsSafe.map((q: any) => `${exo.id}-${q.id}`);
                               // Save snapshot to history before clearing
                               const snapshot: Record<string, string | string[]> = {};
