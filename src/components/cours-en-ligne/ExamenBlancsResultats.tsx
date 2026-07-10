@@ -1021,7 +1021,7 @@ function EcranResultats({
           Retour aux examens
         </Button>
         {canRetry && (
-          <Button onClick={onRecommencer} className="flex-1 gap-2">
+          <Button onClick={() => { if (window.confirm("Êtes-vous sûr de vouloir tout recommencer ? Votre progression actuelle sera perdue.")) onRecommencer(); }} className="flex-1 gap-2">
             <RotateCcw className="w-4 h-4" />
             Recommencer
           </Button>
@@ -1250,6 +1250,7 @@ function RevisionFausses({
 
   const handleRecommencer = async () => {
     if (!apprenantId || !userId) return;
+    if (!window.confirm("Êtes-vous sûr de vouloir tout recommencer ? Votre progression sur cette révision sera perdue.")) return;
     // Delete saved progress
     try {
       await supabase
