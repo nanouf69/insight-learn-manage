@@ -45,6 +45,28 @@ export function useConnexionTracking({ apprenantId, userId, enabled }: UseConnex
     last_seen_at: string | null;
     source: string | null;
   } | null>(null);
+  const [retry, setRetry] = useState(0);
+  const forceDisconnectOthers = useCallback(async () => {
+    if (!apprenantId) return;
+    const clientSessionId = getClientSessionId();
+    const { error } = await supabase
+      .from("apprenant_connexions" as any)
+      .update({
+        ended_at: new Date().toISOString(),
+        end_reason: "forced_by_other_session",
+      } as any)
+      .eq("apprenant_id", apprenantId)
+      .is("ended_at", null)
+      .neq("client_session_id", clientSessionId);
+    if (error) {
+      console.error("[ConnexionTracking] forceDisconnectOthers error:", error);
+      throw error;
+    }
+    setAlreadyConnected(false);
+    setOtherSessionInfo(null);
+    resetLocalSession();
+    setRetry((r) => r + 1);
+  }, [apprenantId, resetLocalSession]);
 
   const resetLocalSession = useCallback(() => {
     connexionIdRef.current = null;
