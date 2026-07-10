@@ -80,6 +80,7 @@ export default function ExamensBlancsPage({
   const reloadInFlightRef = useRef<Promise<ExamenBlanc[]> | null>(null);
   const [loadTimeout, setLoadTimeout] = useState(false);
   const [pausedExamIds, setPausedExamIds] = useState<Set<string>>(new Set());
+  const [currentTentative, setCurrentTentative] = useState<number>(1);
   const phaseRef = useRef(phase);
   useEffect(() => { phaseRef.current = phase; }, [phase]);
 
