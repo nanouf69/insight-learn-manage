@@ -2252,6 +2252,90 @@ function ExerciceCard({
   );
 }
 
+// ===== Éditeur riche pour la description =====
+function RichDescriptionEditor({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [color, setColor] = useState("#111827");
+  const sizes = [
+    { label: "XS", px: "12px" },
+    { label: "S", px: "14px" },
+    { label: "M", px: "16px" },
+    { label: "L", px: "20px" },
+    { label: "XL", px: "24px" },
+    { label: "XXL", px: "32px" },
+  ];
+  const colorSwatches = ["#111827", "#dc2626", "#ea580c", "#ca8a04", "#16a34a", "#0284c7", "#7c3aed", "#db2777"];
+
+  useEffect(() => {
+    if (ref.current && ref.current.innerHTML !== (value || "")) {
+      ref.current.innerHTML = value || "";
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const emit = () => { if (ref.current) onChange(ref.current.innerHTML); };
+
+  const exec = (cmd: string, val?: string) => {
+    ref.current?.focus();
+    document.execCommand(cmd, false, val);
+    emit();
+  };
+
+  const wrapSelection = (styles: Partial<CSSStyleDeclaration>) => {
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0 || sel.isCollapsed) {
+      toast.info("Sélectionnez d'abord le texte à modifier");
+      return;
+    }
+    const range = sel.getRangeAt(0);
+    const span = document.createElement("span");
+    Object.assign(span.style, styles);
+    try {
+      span.appendChild(range.extractContents());
+      range.insertNode(span);
+      sel.removeAllRanges();
+      emit();
+    } catch { /* noop */ }
+  };
+
+  const applyColor = (c: string) => {
+    setColor(c);
+    wrapSelection({ color: c });
+  };
+
+  return (
+    <div className="border rounded-md">
+      <div className="flex flex-wrap items-center gap-2 p-2 border-b bg-muted/40">
+        <div className="flex items-center gap-1">
+          <span className="text-[10px] font-semibold text-muted-foreground mr-1">Taille</span>
+          {sizes.map(s => (
+            <button key={s.px} type="button" onClick={() => wrapSelection({ fontSize: s.px })}
+              className="px-2 py-1 text-xs rounded border bg-background hover:bg-accent" title={`Taille ${s.px}`}>{s.label}</button>
+          ))}
+        </div>
+        <div className="flex items-center gap-1">
+          <span className="text-[10px] font-semibold text-muted-foreground mr-1">Couleur</span>
+          {colorSwatches.map(c => (
+            <button key={c} type="button" onClick={() => applyColor(c)}
+              className="w-5 h-5 rounded border" style={{ background: c }} title={c} />
+          ))}
+          <input type="color" value={color} onChange={(e) => applyColor(e.target.value)}
+            className="w-6 h-6 p-0 border rounded cursor-pointer" title="Couleur personnalisée" />
+        </div>
+        <div className="flex items-center gap-1">
+          <button type="button" onClick={() => exec("bold")} className="px-2 py-1 text-xs rounded border bg-background hover:bg-accent font-bold">B</button>
+          <button type="button" onClick={() => exec("italic")} className="px-2 py-1 text-xs rounded border bg-background hover:bg-accent italic">I</button>
+          <button type="button" onClick={() => exec("underline")} className="px-2 py-1 text-xs rounded border bg-background hover:bg-accent underline">U</button>
+          <button type="button" onClick={() => exec("removeFormat")} className="px-2 py-1 text-xs rounded border bg-background hover:bg-accent" title="Effacer le formatage">✕</button>
+        </div>
+      </div>
+      <div ref={ref} contentEditable suppressContentEditableWarning
+        onInput={emit}
+        className="min-h-[200px] p-3 text-sm outline-none whitespace-pre-wrap" />
+    </div>
+  );
+}
+
 // ===== Éditeur inline pour un cours =====
 function CoursEditor({ item, onSave, onCancel }: { item: ContentItem; onSave: (updated: ContentItem) => void; onCancel: () => void }) {
   const [titre, setTitre] = useState(item.titre);
@@ -2279,7 +2363,8 @@ function CoursEditor({ item, onSave, onCancel }: { item: ContentItem; onSave: (u
         </div>
         <div className="space-y-1">
           <label className="text-xs font-semibold">Description / Contenu détaillé</label>
-          <Textarea value={description} onChange={e => setDescription(e.target.value)} rows={8} className="text-sm font-mono" />
+          <RichDescriptionEditor value={description} onChange={setDescription} />
+          <p className="text-[10px] text-muted-foreground">Sélectionnez le texte puis choisissez une taille ou une couleur.</p>
         </div>
       </CardContent>
     </Card>
@@ -2361,7 +2446,7 @@ const ContentCard = ({
             <p className="text-sm text-muted-foreground">{item.sousTitre}</p>
           )}
           {item.description && (
-            <pre className="text-xs text-muted-foreground mt-2 whitespace-pre-wrap font-sans max-h-32 overflow-y-auto">{item.description}</pre>
+            <div className="text-xs text-muted-foreground mt-2 whitespace-pre-wrap max-h-32 overflow-y-auto" dangerouslySetInnerHTML={{ __html: item.description }} />
           )}
         </div>
         {/* Fichiers PowerPoint */}
@@ -4954,9 +5039,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             <h4 className="font-bold text-lg">{cours.titre}</h4>
             {cours.sousTitre && <p className="text-sm text-muted-foreground">{cours.sousTitre}</p>}
             {cours.description && (
-              <div className="text-sm whitespace-pre-line leading-relaxed mt-2">
-                {cours.description}
-              </div>
+              <div
+                className="text-sm whitespace-pre-line leading-relaxed mt-2"
+                dangerouslySetInnerHTML={{ __html: cours.description }}
+              />
             )}
             {(() => {
               return (
