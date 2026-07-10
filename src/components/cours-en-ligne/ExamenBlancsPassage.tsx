@@ -287,8 +287,24 @@ function PassageMatiere({
       } catch (_) {}
     };
     window.addEventListener("beforeunload", flushSave);
+    // TABLET FIX: beforeunload is unreliable on iOS/Android — also flush on pagehide & visibility hidden
+    const flushKeepalive = () => {
+      if (!apprenantId) return;
+      const current = latestReponsesRef.current;
+      if (!current || Object.keys(current).length === 0) return;
+      const row = buildAutosavePayload(current, false);
+      if (!row.user_id) return;
+      try {
+        saveViaEdgeFunction(row, true).catch(() => {});
+      } catch (_) {}
+    };
+    const onVisibility = () => { if (document.visibilityState === "hidden") flushKeepalive(); };
+    window.addEventListener("pagehide", flushKeepalive);
+    document.addEventListener("visibilitychange", onVisibility);
     return () => {
       window.removeEventListener("beforeunload", flushSave);
+      window.removeEventListener("pagehide", flushKeepalive);
+      document.removeEventListener("visibilitychange", onVisibility);
       // BUG #8 FIX: flush instead of cancel — don't lose pending saves on unmount
       if (debounceRef.current) {
         clearTimeout(debounceRef.current);
