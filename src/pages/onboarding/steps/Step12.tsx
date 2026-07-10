@@ -244,7 +244,7 @@ export default function Step12() {
 
       // Update the apprenant in the database
       const motDePasseCma = localStorage.getItem('onboarding_mot_de_passe_cma') || '';
-      const updateData: Record<string, unknown> = {
+      const updateData: Database['public']['Tables']['apprenants']['Update'] = {
         numero_dossier_cma: numeroDossier,
         mot_de_passe_cma: motDePasseCma || null,
         date_examen_theorique: dateExamen,
