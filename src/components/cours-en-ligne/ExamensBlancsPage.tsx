@@ -602,7 +602,8 @@ export default function ExamensBlancsPage({
             note_sur_20: noteSur20,
             reussi: admis,
             details: { reponses },
-          }] as any, { onConflict: "apprenant_id,quiz_id,matiere_id" } as any);
+            tentative: 1,
+          }] as any, { onConflict: "apprenant_id,quiz_id,matiere_id,tentative" } as any);
 
         rebuiltResults.push({
           matiereId: matiere.id,
@@ -787,6 +788,7 @@ export default function ExamensBlancsPage({
       note_sur_20: noteSur20, reussi: computeAdmisForMatiere(safeScoreObtenu, safeScoreMax, resultat.noteEliminatoire, resultat.noteSur, Boolean(resultat.admis)),
       duree_secondes: Math.max(Math.round(dureeSecondes), 0),
       details: { questions: questionDetails, reponses: resultat.reponses, correctionsIA: Object.keys(frozenCorrections).length > 0 ? frozenCorrections : undefined },
+      tentative: 1,
     };
 
     // Save with retry logic to prevent silent data loss
@@ -795,7 +797,7 @@ export default function ExamensBlancsPage({
       if (attempt > 0) await new Promise(r => setTimeout(r, 1000 * attempt));
       const { error } = await supabase
         .from("apprenant_quiz_results" as any)
-        .upsert([payload] as any, { onConflict: "apprenant_id,quiz_id,matiere_id" } as any);
+        .upsert([payload] as any, { onConflict: "apprenant_id,quiz_id,matiere_id,tentative" } as any);
       if (!error) {
         saved = true;
         console.log(`[ExamSubmission][EB] Saved ${resultat.matiereId} (attempt ${attempt + 1})`);
