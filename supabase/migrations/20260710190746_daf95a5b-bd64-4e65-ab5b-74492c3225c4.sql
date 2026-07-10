@@ -1,0 +1,2 @@
+DROP POLICY IF EXISTS "Authenticated can read module_editor_state" ON public.module_editor_state;
+CREATE POLICY "Admins can read module_editor_state" ON public.module_editor_state FOR SELECT TO authenticated USING (public.has_role(auth.uid(), 'admin'::public.app_role));
