@@ -374,6 +374,7 @@ function PassageMatiere({
   };
   const handleExpire = async () => {
     setExpire(true);
+    toast.warning("Temps écoulé pour cette matière — passage à la matière suivante.", { duration: 5000 });
     if (!apprenantId) {
       onTerminer(reponses);
       return;
@@ -385,16 +386,25 @@ function PassageMatiere({
         userIdRef.current = sessionRes.data?.session?.user?.id ?? userId ?? null;
         jwtTokenRef.current = sessionRes.data?.session?.access_token ?? jwtTokenRef.current;
       }
-      if (!userIdRef.current && !userId) throw new Error("Session apprenant indisponible");
-      await saveViaEdgeFunction(buildAutosavePayload(reponses, true));
-      setSaveStatus("saved");
-      onTerminer(reponses);
+      if (userIdRef.current || userId) {
+        await saveViaEdgeFunction(buildAutosavePayload(reponses, true));
+        setSaveStatus("saved");
+      }
     } catch (error) {
-      console.error("[AutoSave] Expiration bloquée: réponses non sauvegardées", error);
+      console.error("[AutoSave] Expiration: sauvegarde échouée, backup local + passage forcé", error);
       setSaveStatus("error");
-      toast.error("Temps écoulé mais sauvegarde impossible. Ne quittez pas, réessayez dans quelques secondes.");
-      setExpire(false);
+      // Backup local pour récupération éventuelle
+      try {
+        if (examenId) {
+          localStorage.setItem(
+            `exam_expire_backup_${examenId}_${matiere.id}_${apprenantId}_t${tentative}`,
+            JSON.stringify(reponses)
+          );
+        }
+      } catch (_) {}
     }
+    // TOUJOURS avancer à la matière suivante quand le temps est écoulé
+    onTerminer(reponses);
   };
 
   const handleInterruption = async () => {
