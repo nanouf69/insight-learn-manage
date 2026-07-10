@@ -739,10 +739,15 @@ const CorrectionQRCTab = () => {
                 if (filter === "today-pending" && (!isToday(i.completedAt) || i.corrigeManuel)) return false;
                 return true;
               });
-
-              return Math.min(prevIndex, Math.max(0, newFiltered.length - 1));
+              if (newFiltered.length === 0) return 0;
+              // Try to jump to next pending item after current index
+              const nextPending = newFiltered.findIndex((i, idx) => idx >= prevIndex && !i.corrigeManuel);
+              if (nextPending !== -1) return nextPending;
+              // Otherwise advance by one if possible
+              return Math.min(prevIndex + 1, newFiltered.length - 1);
             });
           }, 0);
+
 
           return updated;
         });
