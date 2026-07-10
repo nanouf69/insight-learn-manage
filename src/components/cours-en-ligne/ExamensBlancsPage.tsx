@@ -863,6 +863,15 @@ export default function ExamensBlancsPage({
               JSON.stringify(resultat)
             );
           } catch (_) {}
+          // BLOCK progression: don't silently push past a matière whose score was NOT persisted.
+          // Otherwise the apprenant may complete F/G while E remains "non terminée" après rechargement.
+          newResultats[matiereIndex] = null as any;
+          setTousResultats(newResultats);
+          toast.error(
+            "Impossible d'enregistrer votre résultat pour cette matière. Vérifiez votre connexion puis cliquez à nouveau sur « Terminer la matière ».",
+            { duration: 8000 }
+          );
+          return;
         }
       }
 
