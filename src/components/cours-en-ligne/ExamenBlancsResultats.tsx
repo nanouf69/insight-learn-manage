@@ -1250,6 +1250,7 @@ function RevisionFausses({
 
   const handleRecommencer = async () => {
     if (!apprenantId || !userId) return;
+    if (!window.confirm("Êtes-vous sûr de vouloir tout recommencer ? Votre progression sur cette révision sera perdue.")) return;
     // Delete saved progress
     try {
       await supabase
