@@ -577,6 +577,40 @@ export function generateDocumentIndividuelPdf(
     y += 10;
   }
 
+  // ---- RIB block (devis formation continue only) ----
+  if (document.type_document === 'devis-formation-continue') {
+    y = ensureSpace(y, 42) === y ? y : ensureSpace(y, 42);
+    // (ensureSpace already handles page break; keep call simple)
+    y = ensureSpace(doc, y, 42);
+    y += 6;
+    y = renderSectionHeader(doc, 'COORDONNEES BANCAIRES POUR REGLEMENT PAR VIREMENT', y, margin, pw);
+    const boxY = y - 2;
+    const boxH = 32;
+    doc.setFillColor(245, 249, 253);
+    doc.setDrawColor(13, 37, 64);
+    doc.setLineWidth(0.3);
+    doc.rect(margin, boxY, pw - margin * 2, boxH, 'FD');
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(30, 30, 30);
+    const ribLines = [
+      'Titulaire : SASU SERVICES PRO FTRANSPORT',
+      'Adresse : 86 Route de Genas, 69003 Lyon 3eme',
+      'Banque : Revolut Bank UAB',
+      'IBAN : FR76 2823 3000 0185 7527 9099 426',
+      'BIC / SWIFT : REVOFRP2',
+      "Merci d'indiquer en reference du virement : NOM Prenom du stagiaire + intitule de la formation.",
+    ];
+    let ly = boxY + 5;
+    for (const line of ribLines) {
+      doc.text(line, margin + 4, ly);
+      ly += 4.5;
+    }
+    y = boxY + boxH + 4;
+  }
+
+
+
   // ---- CGV acceptation block (always shown when accepted) ----
   if (document.donnees && typeof document.donnees === 'object' && document.donnees.cgv_accepted) {
     y = ensureSpace(doc, y, 38);
