@@ -378,6 +378,21 @@ export default function ExamensBlancsPage({
     const latestExamen = liveExamens.find((live) => live.id === examen.id) ?? examen;
     const quizType = latestExamen.id.startsWith("bilan-") ? "bilan" : "examen_blanc";
 
+    // Compute current tentative: max existing + 1 on retake, else max existing (or 1)
+    let nextTentative = 1;
+    if (apprenantId) {
+      const { data: tRows } = await supabase
+        .from("apprenant_quiz_results" as any)
+        .select("tentative")
+        .eq("apprenant_id", apprenantId)
+        .eq("quiz_id", latestExamen.id)
+        .eq("quiz_type", quizType);
+      const maxT = ((tRows as any[]) || []).reduce((m, r) => Math.max(m, toFiniteNumber(r?.tentative, 1)), 0);
+      nextTentative = forceRetake ? Math.max(maxT + 1, 2) : Math.max(maxT, 1);
+    }
+    setCurrentTentative(nextTentative);
+
+
     if (!isAdmin && apprenantId && !forceRetake) {
       // Check which matières are already completed
       const { data: existingResults, error } = await supabase
