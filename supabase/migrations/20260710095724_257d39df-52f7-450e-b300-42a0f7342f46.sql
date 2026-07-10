@@ -1,0 +1,1 @@
+DROP INDEX IF EXISTS public.uq_apprenant_quiz_results_apprenant_quiz_matiere;
