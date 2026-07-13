@@ -202,8 +202,25 @@ export function selectLatestAttemptRows<T extends Record<string, any>>(rows: T[]
     latestByMatiere.set(key, pickBestScoreRow(latestByMatiere.get(key), row) as T);
   });
 
+  // BUG FIX : une nouvelle tentative peut ne cibler qu'un sous-ensemble des matières
+  // (ex : l'apprenant refait seulement 2-3 matières). Sans ce merge, les matières non re-tentées
+  // disparaissent et l'examen bascule à tort en "Non terminé".
+  // On complète donc avec les meilleures lignes des tentatives précédentes pour les matières manquantes.
+  const priorRows = validRows.filter((row) => getAttemptNumber(row) < latestTentative);
+  priorRows.forEach((row, index) => {
+    const key = getMatiereCanonicalKey(row?.matiere_id, row?.matiere_nom) || `prior-${index}`;
+    if (!latestByMatiere.has(key)) {
+      latestByMatiere.set(key, row);
+    } else {
+      // Garde la ligne existante (tentative la plus récente) sauf si elle est corrompue
+      const current = latestByMatiere.get(key);
+      latestByMatiere.set(key, pickBestScoreRow(current, row) as T);
+    }
+  });
+
   return Array.from(latestByMatiere.values());
 }
+
 
 export function isCorruptedZeroRow(row: any): boolean {
   if (!row) return false;
