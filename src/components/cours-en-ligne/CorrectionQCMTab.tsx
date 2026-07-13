@@ -263,7 +263,7 @@ const CorrectionQCMTab = () => {
       if (resultFetchError) throw resultFetchError;
 
       const existingDetails = safeRecord((resultRow as any)?.details);
-      const existingResultReponses = safeRecord(existingDetails.reponses);
+      const existingResultReponses = safeRecord(existingDetails["reponses"]);
       const mergedResultReponses: Record<string, any> = { ...existingResultReponses };
       for (const q of matiere.questions) {
         if (q.type === "QCM") {
@@ -288,7 +288,7 @@ const CorrectionQCMTab = () => {
         } else {
           // QRC: keep existing score from details
           totalMax += pts;
-          const corrections = safeRecord(existingDetails?.correctionsIA);
+          const corrections = safeRecord(existingDetails["correctionsIA"]);
           const corr = corrections[String(q.id)];
           if (corr && typeof corr === "object" && "pointsObtenus" in (corr as any)) {
             totalScore += Number((corr as any).pointsObtenus) || 0;
@@ -301,7 +301,7 @@ const CorrectionQCMTab = () => {
         mergedResultReponses,
         totalScore,
         totalMax,
-        safeRecord(existingDetails?.correctionsIA) as any,
+        safeRecord(existingDetails["correctionsIA"]) as any,
       );
       if (canonicalScore) {
         totalScore = canonicalScore.scoreObtenu;
