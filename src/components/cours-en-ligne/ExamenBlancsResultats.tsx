@@ -296,18 +296,17 @@ function EcranResultats({
 
       const safeMax = Math.max(toFiniteNumber(resultat.maxPoints, 0), 0);
       const noteRecalculeeSecurisee = safeMax > 0 ? clamp(noteRecalculee, 0, safeMax) : Math.max(noteRecalculee, 0);
-      const scoreInitial = Math.max(toFiniteNumber(resultat.noteObtenue, 0), 0);
-      const scoreProtege = noteRecalculeeSecurisee <= 0 && scoreInitial > 0 ? scoreInitial : noteRecalculeeSecurisee;
-      const noteSur20 = normalizeNoteSur20(scoreProtege, safeMax);
+      const scoreRecalcule = Math.max(noteRecalculeeSecurisee, 0);
+      const noteSur20 = normalizeNoteSur20(scoreRecalcule, safeMax);
 
       // Update the existing row with corrections
       let updateQuery = supabase
         .from("apprenant_quiz_results" as any)
         .update({
-          score_obtenu: scoreProtege,
+          score_obtenu: scoreRecalcule,
           note_sur_20: noteSur20,
           reussi: computeAdmisForMatiere(
-            scoreProtege,
+            scoreRecalcule,
             safeMax,
             resultat.noteEliminatoire,
             resultat.noteSur,
@@ -469,11 +468,8 @@ function EcranResultats({
       const matiere = examen.matieres[mi];
       if (!matiere) return;
       const safeMax = Math.max(toFiniteNumber(r.maxPoints, 0), 0);
-      const scoreInitial = Math.max(toFiniteNumber(resultats[mi]?.noteObtenue, 0), 0);
-      const scoreProtege = toFiniteNumber(r.noteObtenue, 0) <= 0 && scoreInitial > 0
-        ? scoreInitial
-        : Math.max(toFiniteNumber(r.noteObtenue, 0), 0);
-      const noteSur20 = normalizeNoteSur20(scoreProtege, safeMax);
+      const scoreRecalcule = Math.max(toFiniteNumber(r.noteObtenue, 0), 0);
+      const noteSur20 = normalizeNoteSur20(scoreRecalcule, safeMax);
       // Also save the correctionsIA in the details column for admin overrides
       const cacheMatiere = correctionsIA[mi] || {};
       const serializedCache: Record<string, CorrectionQRC> = {};
@@ -483,9 +479,9 @@ function EcranResultats({
       let updateQuery = supabase
         .from("apprenant_quiz_results" as any)
         .update({
-          score_obtenu: scoreProtege,
+          score_obtenu: scoreRecalcule,
           note_sur_20: noteSur20,
-          reussi: computeAdmisForMatiere(scoreProtege, safeMax, r.noteEliminatoire, r.noteSur, Boolean(r.admis)),
+          reussi: computeAdmisForMatiere(scoreRecalcule, safeMax, r.noteEliminatoire, r.noteSur, Boolean(r.admis)),
           details: {
             questions: (resultats[mi] as any)?.details?.questions || [],
             reponses: r.reponses,
@@ -733,7 +729,7 @@ function EcranResultats({
                        isCorrect = JSON.stringify(correctes) === JSON.stringify(donnees);
                        pointsObtenus = isCorrect ? pts : 0;
                     } else if (q?.type === "QRC") {
-                      const corrIA = cacheMatiere[q.id];
+                      const corrIA = cacheMatiere[q.id] ?? cacheMatiere[String(q.id)];
                       const fallback = evaluateQrcDeterministic(q, rep, pts);
                       if (corrIA === "loading") {
                         isLoadingIA = true;
