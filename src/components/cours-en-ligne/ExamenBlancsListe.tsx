@@ -14,6 +14,7 @@ import {
   pickBestScoreRow, recoverCorruptedScoreRow, findScoreForMatiere,
   computeAdmisForMatiere,
 } from "./examens-blancs-utils";
+import { computeMoyenneExamen, computeMatiereScore } from "./examens-blancs-scoring";
 
 function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, apprenantType, examensData, apprenantId, isAdmin, refreshKey, pausedExamIds, onPauseToggle }: { onStart: (examen: ExamenBlanc, forceRetake?: boolean) => void; onEdit: () => void; onViewResults: (examen: ExamenBlanc) => void; defaultBilanId?: string | null; apprenantType?: string | null; examensData: ExamenBlanc[]; apprenantId?: string | null; isAdmin?: boolean; refreshKey?: number; pausedExamIds?: Set<string>; onPauseToggle?: (examId: string) => void }) {
   // Determine the forced exam type from the student's formation type
