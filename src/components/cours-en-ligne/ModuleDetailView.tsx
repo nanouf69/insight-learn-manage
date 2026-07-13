@@ -3666,7 +3666,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
       await performDbSave(dataToSave);
       pendingDbSaveDataRef.current = null;
-    }, 1500);
+    }, 300);
 
     return () => {
       if (dbSaveTimerRef.current) clearTimeout(dbSaveTimerRef.current);
