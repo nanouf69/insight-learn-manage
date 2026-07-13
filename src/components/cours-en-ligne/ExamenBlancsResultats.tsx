@@ -35,6 +35,7 @@ function EcranResultats({
   isAdmin,
   canRetry,
   isPresentiel,
+  currentTentative,
 }: {
   examen: ExamenBlanc;
   resultats: ResultatMatiere[];
@@ -47,6 +48,7 @@ function EcranResultats({
   isAdmin?: boolean;
   canRetry?: boolean;
   isPresentiel?: boolean;
+  currentTentative?: number;
 }) {
   // Ensure resultats is always a proper array (DB data can be malformed)
   resultats = safeArray<ResultatMatiere>(resultats);
@@ -299,7 +301,7 @@ function EcranResultats({
       const noteSur20 = normalizeNoteSur20(scoreProtege, safeMax);
 
       // Update the existing row with corrections
-      await supabase
+      let updateQuery = supabase
         .from("apprenant_quiz_results" as any)
         .update({
           score_obtenu: scoreProtege,
@@ -321,6 +323,10 @@ function EcranResultats({
         .eq("quiz_id", examen.id)
         .eq("quiz_type", quizType)
         .eq("matiere_id", matiere.id);
+      updateQuery = (resultat as any).resultId
+        ? updateQuery.eq("id", (resultat as any).resultId)
+        : updateQuery.eq("tentative", toFiniteNumber((resultat as any).tentative, currentTentative || 1));
+      await updateQuery;
     }
   };
 
@@ -474,7 +480,7 @@ function EcranResultats({
       for (const [k, v] of Object.entries(cacheMatiere)) {
         if (v && v !== "loading" && v !== "error") serializedCache[k] = v;
       }
-      await supabase
+      let updateQuery = supabase
         .from("apprenant_quiz_results" as any)
         .update({
           score_obtenu: scoreProtege,
@@ -490,6 +496,10 @@ function EcranResultats({
         .eq("quiz_id", examen.id)
         .eq("quiz_type", quizType)
         .eq("matiere_id", matiere.id);
+      updateQuery = (r as any).resultId
+        ? updateQuery.eq("id", (r as any).resultId)
+        : updateQuery.eq("tentative", toFiniteNumber((r as any).tentative, currentTentative || 1));
+      await updateQuery;
     });
   }, [isViewingSaved, resultatsAvecIA.map(r => r.noteObtenue).join(",")]);
 
