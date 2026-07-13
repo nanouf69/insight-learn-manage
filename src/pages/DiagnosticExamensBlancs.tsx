@@ -10,6 +10,20 @@ import { Loader2, AlertTriangle, CheckCircle2, XCircle, Info, ArrowLeft } from "
 import { useAuth } from "@/contexts/AuthContext";
 import { tousLesExamens, type ExamenBlanc, type Matiere } from "@/components/cours-en-ligne/examens-blancs-data";
 import { buildMatiereLookupKeys, getMatiereCanonicalKey, toFiniteNumber, normalizeNoteSur20 } from "@/components/cours-en-ligne/examens-blancs-utils";
+import { computeMatiereScore, computeMatiereScoreFromReponses } from "@/components/cours-en-ligne/examens-blancs-scoring";
+import { toast } from "sonner";
+
+interface ScanRow {
+  apprenantNom: string;
+  matiereNom: string;
+  matiereId: string;
+  scoreEnBase: number;
+  noteSur20EnBase: number;
+  coverage: number;
+  answeredCount: number;
+  currentQuestionCount: number;
+  affected: boolean;
+}
 
 type Statut =
   | "ok"
@@ -36,6 +50,7 @@ interface Apprenant {
   prenom: string;
   email: string | null;
   type_apprenant: string | null;
+  auth_user_id: string | null;
 }
 
 const STATUT_LABELS: Record<Statut, { label: string; color: string; icon: React.ReactNode }> = {
@@ -92,6 +107,9 @@ export default function DiagnosticExamensBlancs() {
   const [diag, setDiag] = useState<DiagRow[] | null>(null);
   const [rawQuizRows, setRawQuizRows] = useState<any[]>([]);
   const [rawRepRows, setRawRepRows] = useState<any[]>([]);
+  const [repairingId, setRepairingId] = useState<string | null>(null);
+  const [scanRows, setScanRows] = useState<ScanRow[] | null>(null);
+  const [scanning, setScanning] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -117,7 +135,7 @@ export default function DiagnosticExamensBlancs() {
     if (q.length < 2) return;
     const { data } = await supabase
       .from("apprenants")
-      .select("id, nom, prenom, email, type_apprenant")
+      .select("id, nom, prenom, email, type_apprenant, auth_user_id")
       .or(`nom.ilike.%${q}%,prenom.ilike.%${q}%,email.ilike.%${q}%`)
       .order("nom")
       .limit(15);
@@ -222,6 +240,123 @@ export default function DiagnosticExamensBlancs() {
     }
   };
 
+  const runGlobalScan = async () => {
+    if (!exam) return;
+    setScanning(true);
+    setScanRows(null);
+    try {
+      const { data: quizRows } = await supabase
+        .from("apprenant_quiz_results" as any)
+        .select("id, apprenant_id, matiere_id, matiere_nom, score_obtenu, score_max, note_sur_20, tentative, completed_at, created_at, details")
+        .eq("quiz_type", "examen_blanc")
+        .eq("quiz_id", exam.id);
+
+      const rows = (quizRows as any[]) || [];
+      if (rows.length === 0) {
+        setScanRows([]);
+        return;
+      }
+
+      // Latest attempt per (apprenant, matiere)
+      const latestByKey = new Map<string, any>();
+      rows.forEach((r) => {
+        const key = `${r.apprenant_id}__${getMatiereCanonicalKey(r.matiere_id, r.matiere_nom)}`;
+        const prev = latestByKey.get(key);
+        if (!prev || new Date(r.created_at) > new Date(prev.created_at)) latestByKey.set(key, r);
+      });
+
+      const apprenantIds = [...new Set([...latestByKey.values()].map((r) => r.apprenant_id))];
+      const { data: apprenantsData } = await supabase
+        .from("apprenants")
+        .select("id, nom, prenom")
+        .in("id", apprenantIds);
+      const nomById = new Map(((apprenantsData as any[]) || []).map((a) => [a.id, `${a.nom} ${a.prenom}`]));
+
+      const result: ScanRow[] = [];
+      for (const row of latestByKey.values()) {
+        const matiere = exam.matieres.find(
+          (m) => m.id === row.matiere_id || m.nom === row.matiere_nom,
+        );
+        if (!matiere) continue;
+        const reponses = row.details?.reponses;
+        const answeredCount = reponses ? Object.keys(reponses).length : 0;
+        if (answeredCount === 0) continue; // nothing to compare
+
+        const questionsSafe = (matiere.questions ?? []).filter((q) => q != null && q?.type != null);
+        const matchedCount = questionsSafe.filter((q) => {
+          const rep = reponses[q.id] ?? reponses[String(q.id)];
+          if (rep === undefined || rep === null) return false;
+          if (Array.isArray(rep)) return rep.length > 0;
+          if (typeof rep === "string") return rep.trim() !== "";
+          return true;
+        }).length;
+        const coverage = questionsSafe.length > 0 ? matchedCount / questionsSafe.length : 0;
+
+        result.push({
+          apprenantNom: nomById.get(row.apprenant_id) || row.apprenant_id,
+          matiereNom: row.matiere_nom || matiere.nom,
+          matiereId: row.matiere_id,
+          scoreEnBase: toFiniteNumber(row.score_obtenu, 0),
+          noteSur20EnBase: toFiniteNumber(row.note_sur_20, 0),
+          coverage,
+          answeredCount,
+          currentQuestionCount: questionsSafe.length,
+          affected: coverage < 0.5,
+        });
+      }
+
+      result.sort((a, b) => (a.affected === b.affected ? 0 : a.affected ? -1 : 1));
+      setScanRows(result);
+    } finally {
+      setScanning(false);
+    }
+  };
+
+  const handleRepair = async (row: DiagRow) => {
+    if (!selectedApprenant || !exam || !row.responseRow?.reponses) return;
+    const matiere = exam.matieres.find((m) => m.id === row.matiereId);
+    if (!matiere) return;
+    if (!selectedApprenant.auth_user_id) {
+      toast.error("Cet apprenant n'a pas de compte utilisateur lié (auth_user_id manquant) — réparation impossible.");
+      return;
+    }
+
+    setRepairingId(row.matiereId);
+    try {
+      const score = computeMatiereScore(matiere, row.responseRow.reponses);
+      if (!score) {
+        toast.error(`Impossible de recalculer le score pour ${row.matiereNom} (réponses insuffisantes).`);
+        return;
+      }
+      const { error } = await supabase
+        .from("apprenant_quiz_results" as any)
+        .upsert([{
+          apprenant_id: selectedApprenant.id,
+          user_id: selectedApprenant.auth_user_id,
+          quiz_type: "examen_blanc",
+          quiz_id: exam.id,
+          quiz_titre: exam.titre,
+          matiere_id: matiere.id,
+          matiere_nom: matiere.nom,
+          score_obtenu: score.scoreObtenu,
+          score_max: score.scoreMax,
+          note_sur_20: score.noteSur20,
+          reussi: score.admis,
+          details: { reponses: row.responseRow.reponses },
+          tentative: row.quizResult?.tentative || 1,
+        }] as any, { onConflict: "apprenant_id,quiz_id,matiere_id,tentative" } as any);
+
+      if (error) {
+        toast.error(`Échec de la réparation : ${error.message}`);
+        return;
+      }
+      toast.success(`${row.matiereNom} réparée : ${score.scoreObtenu}/${score.scoreMax} (${score.noteSur20.toFixed(1)}/20).`);
+      await runDiagnostic();
+    } finally {
+      setRepairingId(null);
+    }
+  };
+
   const summary = useMemo(() => {
     if (!diag) return null;
     const counts: Record<Statut, number> = {
@@ -256,6 +391,83 @@ export default function DiagnosticExamensBlancs() {
         Explique pourquoi un score n'apparaît pas dans <code>apprenant_quiz_results</code> pour un apprenant donné :
         transaction perdue, réponses manquantes, écriture partielle, etc.
       </p>
+
+      <Card className="border-amber-300">
+        <CardHeader>
+          <CardTitle className="text-base">Scanner tous les élèves d'un examen</CardTitle>
+          <p className="text-xs text-muted-foreground">
+            Détecte, pour TOUS les élèves ayant passé cet examen, les matières où les réponses
+            enregistrées ne correspondent plus aux questions actuelles (question supprimée/modifiée
+            après coup) — sans avoir besoin de chercher élève par élève.
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex flex-wrap gap-2">
+            {tousLesExamens.map((e) => (
+              <Button
+                key={e.id}
+                size="sm"
+                variant={selectedExamId === e.id ? "default" : "outline"}
+                onClick={() => { setSelectedExamId(e.id); setScanRows(null); }}
+              >
+                {e.id} — {e.type}
+              </Button>
+            ))}
+          </div>
+          <Button disabled={!selectedExamId || scanning} onClick={runGlobalScan} className="gap-2">
+            {scanning && <Loader2 className="w-4 h-4 animate-spin" />}
+            Scanner tous les élèves de cet examen
+          </Button>
+
+          {scanRows && (
+            <div className="space-y-2 pt-2">
+              <p className="text-sm">
+                {scanRows.filter((r) => r.affected).length > 0 ? (
+                  <span className="text-red-600 font-semibold">
+                    ⚠ {scanRows.filter((r) => r.affected).length} copie(s) affectée(s) sur {scanRows.length} scannée(s)
+                  </span>
+                ) : (
+                  <span className="text-emerald-600 font-semibold">
+                    ✅ Aucune copie affectée sur {scanRows.length} scannée(s)
+                  </span>
+                )}
+              </p>
+              {scanRows.length > 0 && (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Élève</TableHead>
+                      <TableHead>Matière</TableHead>
+                      <TableHead>Note en base</TableHead>
+                      <TableHead>Correspondance</TableHead>
+                      <TableHead>Statut</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {scanRows.map((r, i) => (
+                      <TableRow key={i} className={r.affected ? "bg-red-50" : undefined}>
+                        <TableCell className="text-xs font-medium">{r.apprenantNom}</TableCell>
+                        <TableCell className="text-xs">{r.matiereNom}</TableCell>
+                        <TableCell className="text-xs">{r.noteSur20EnBase.toFixed(1)}/20</TableCell>
+                        <TableCell className="text-xs">
+                          {Math.round(r.coverage * 100)}% ({r.answeredCount} réponses vs {r.currentQuestionCount} questions actuelles)
+                        </TableCell>
+                        <TableCell className="text-xs">
+                          {r.affected ? (
+                            <Badge className="bg-red-500 text-white">Affectée — questions changées</Badge>
+                          ) : (
+                            <Badge className="bg-emerald-500 text-white">OK</Badge>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader><CardTitle className="text-base">1. Sélectionner l'apprenant</CardTitle></CardHeader>
@@ -340,6 +552,7 @@ export default function DiagnosticExamensBlancs() {
                     <TableHead>quiz_results</TableHead>
                     <TableHead>reponses</TableHead>
                     <TableHead>Explication</TableHead>
+                    <TableHead>Action</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -381,6 +594,20 @@ export default function DiagnosticExamensBlancs() {
                         )}
                       </TableCell>
                       <TableCell className="text-xs max-w-md">{r.explication}</TableCell>
+                      <TableCell>
+                        {(r.statut === "quiz_result_missing_but_response_completed" || r.statut === "zero_score_corrupted") && r.responseRow?.reponses ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={repairingId === r.matiereId}
+                            onClick={() => handleRepair(r)}
+                            className="gap-2"
+                          >
+                            {repairingId === r.matiereId && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                            Réparer
+                          </Button>
+                        ) : null}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

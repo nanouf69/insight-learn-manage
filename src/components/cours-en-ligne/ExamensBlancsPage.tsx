@@ -325,7 +325,7 @@ export default function ExamensBlancsPage({
           lastRealtimeRefreshRef.current = Date.now();
           try { sessionStorage.removeItem(EXAM_SESSION_KEY); } catch {}
           void refreshLiveExamens();
-        }, 500);
+        }, 1000);
       })
       .subscribe();
     return () => {
@@ -336,8 +336,8 @@ export default function ExamensBlancsPage({
 
   // Polling fallback: when Realtime is silent for > 60s, check for admin changes
   // This catches cases where Supabase Realtime silently disconnects
-  const POLLING_FALLBACK_INTERVAL = 30_000; // check every 30s
-  const REALTIME_SILENCE_THRESHOLD = 60_000; // consider Realtime stale after 60s
+  const POLLING_FALLBACK_INTERVAL = 8_000; // check every 8s
+  const REALTIME_SILENCE_THRESHOLD = 15_000; // consider Realtime stale after 15s
   const lastKnownUpdatedAtRef = useRef<string | null>(null);
   useEffect(() => {
     if (isInExam) return;

@@ -47,6 +47,26 @@ export function computeMatiereScoreFromReponses(
     0,
   );
 
+  // SAFETY NET: if a question was deleted/changed after a student answered,
+  // their stored `reponses` may no longer line up with the CURRENT question
+  // set (different ids). Recomputing against a mismatched set can crash a
+  // real, correct grade down to near-zero — worse than just showing the
+  // original stored score. Detect that case and refuse to recompute.
+  const matchedCount = questionsSafe.filter((q) => {
+    const rep = reponses[q.id] ?? reponses[String(q.id)];
+    if (rep === undefined || rep === null) return false;
+    if (Array.isArray(rep)) return rep.length > 0;
+    if (typeof rep === "string") return rep.trim() !== "";
+    return true;
+  }).length;
+  const coverage = questionsSafe.length > 0 ? matchedCount / questionsSafe.length : 0;
+  if (coverage < 0.5) {
+    // Too few of the current questions have a matching stored answer —
+    // the question set has likely changed since this attempt. Bail out
+    // so the caller falls back to the originally stored score/max instead.
+    return null;
+  }
+
   const scoreObtenu = questionsSafe.reduce((total, q) => {
     const rep = reponses[q.id] ?? reponses[String(q.id)];
     const pts = getPointsParQuestion(matiere.id, q.type, matiere);
@@ -86,15 +106,9 @@ export function computeMatiereScoreFromReponses(
 }
 
 /**
- * Calcule le score d'une matière.
- *
- * PRIORITÉ :
- *   1. Recalcul depuis les réponses brutes (`reponses`) avec le barème et les
- *      bonnes réponses ACTUELS. Les corrections admin (changement de bonne
- *      réponse QCM, correction QRC, ajustement du barème…) sont ainsi prises
- *      en compte immédiatement côté apprenant ET côté admin.
- *   2. Sinon, fallback sur le score stocké (`storedScoreObtenu` /
- *      `storedScoreMax`) figé au moment du passage.
+ * Calcule le score d'une matière avec fallback :
+ * 1) réponses brutes (`reponses`) via le barème actuel,
+ * 2) sinon score stocké (`storedScoreObtenu` / `storedScoreMax`).
  */
 export function computeMatiereScore(
   matiere: Matiere,
@@ -103,16 +117,15 @@ export function computeMatiereScore(
   storedScoreMax?: unknown,
   correctionsIA?: CorrectionCache | null,
 ): MatiereScore | null {
-  // 1. Recalcul depuis les réponses brutes (prend en compte les corrections admin)
   const fromReponses = computeMatiereScoreFromReponses(matiere, reponses, correctionsIA);
   if (fromReponses) return fromReponses;
 
-  // 2. Fallback : score stocké figé au moment du passage
   const storedObtenu = toFiniteNumber(storedScoreObtenu, NaN);
   const storedMax = toFiniteNumber(storedScoreMax, NaN);
   if (!Number.isFinite(storedObtenu) || !Number.isFinite(storedMax) || storedMax <= 0) {
     return null;
   }
+
   const safeScore = clamp(storedObtenu, 0, storedMax);
   const noteSur20 = normalizeNoteSur20(safeScore, storedMax);
   const admis = computeAdmisForMatiere(

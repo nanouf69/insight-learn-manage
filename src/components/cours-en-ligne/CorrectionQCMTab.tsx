@@ -8,10 +8,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Search, User, Save, RotateCcw, CheckSquare } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { tousLesExamens, getPointsParQuestion, type ExamenBlanc, type Question } from "./examens-blancs-data";
+import { tousLesExamens, getPointsParQuestion, type ExamenBlanc, type Matiere, type Question } from "./examens-blancs-data";
 import { loadSavedExamens } from "./ExamensBlancsEditor";
-import { computeAdmisForMatiere } from "./examens-blancs-utils";
-import { computeMatiereScore } from "./examens-blancs-scoring";
+import { normalizeNoteSur20, computeAdmisForMatiere } from "./examens-blancs-utils";
 
 // ---------- Types ----------
 
@@ -60,19 +59,6 @@ function parseReponses(raw: unknown): Record<number, string[]> {
   return result;
 }
 
-function getResultReponses(details: unknown): Record<number, string[]> {
-  return parseReponses(safeRecord((details as any)?.reponses));
-}
-
-function isMatchingExerciceId(exerciceId: unknown, quizId: string, matiereId: string): boolean {
-  const raw = String(exerciceId ?? "");
-  if (!raw || !quizId || !matiereId) return false;
-  return raw === `${quizId}__${matiereId}` ||
-    raw.startsWith(`${quizId}__${matiereId}__t`) ||
-    raw === `eb_${quizId}_${matiereId}` ||
-    raw === `${quizId}_${matiereId}`;
-}
-
 // ---------- Component ----------
 
 const CorrectionQCMTab = () => {
@@ -89,7 +75,7 @@ const CorrectionQCMTab = () => {
   // Load examens
   useEffect(() => {
     (async () => {
-      const saved = await loadSavedExamens();
+      const saved = await loadSavedExamens(true);
       setExamens(saved);
     })();
   }, []);
@@ -133,13 +119,23 @@ const CorrectionQCMTab = () => {
       const appMap = new Map<string, ApprenantInfo>();
       (apprenants ?? []).forEach(a => appMap.set(a.id, { id: a.id, nom: a.nom, prenom: a.prenom }));
 
+      // Load reponses_apprenants for these results
+      const exerciceIds = [...new Set(results.map(r => {
+        const mId = r.matiere_id ?? "";
+        return `eb_${r.quiz_id}_${mId}`;
+      }))];
+
       const { data: repData } = await supabase
         .from("reponses_apprenants")
         .select("*")
         .in("apprenant_id", apprenantIds)
         .eq("exercice_type", "examen_blanc");
 
-      const responseRows = (repData ?? []) as any[];
+      // Build lookup: apprenant_id + exercice_id → reponses row
+      const repMap = new Map<string, { id: string; reponses: unknown }>();
+      (repData ?? []).forEach(r => {
+        repMap.set(`${r.apprenant_id}__${r.exercice_id}`, { id: r.id, reponses: r.reponses });
+      });
 
       // Build rows - only QCM questions
       const qcmRows: QcmRow[] = [];
@@ -147,10 +143,8 @@ const CorrectionQCMTab = () => {
       for (const result of results) {
         const app = appMap.get(result.apprenant_id) ?? { id: result.apprenant_id, nom: "Inconnu", prenom: "" };
         const matiereId = result.matiere_id ?? "";
-        const repEntry = responseRows.find((rep) =>
-          rep.apprenant_id === result.apprenant_id &&
-          isMatchingExerciceId(rep.exercice_id, result.quiz_id, matiereId)
-        );
+        const exerciceId = `eb_${result.quiz_id}_${matiereId}`;
+        const repEntry = repMap.get(`${result.apprenant_id}__${exerciceId}`);
 
         // Find exam definition to check if matiere has QCM questions
         const examen = examens.find(e => e.id === result.quiz_id);
@@ -160,9 +154,7 @@ const CorrectionQCMTab = () => {
         const hasQCM = matiere.questions.some(q => q.type === "QCM");
         if (!hasQCM) continue;
 
-        const reponsesFromResult = getResultReponses(result.details);
-        const reponsesFromAutosave = repEntry ? parseReponses(safeRecord(repEntry.reponses)) : {};
-        const reponses = Object.keys(reponsesFromResult).length > 0 ? reponsesFromResult : reponsesFromAutosave;
+        const reponses = repEntry ? parseReponses(safeRecord(repEntry.reponses)) : {};
 
         qcmRows.push({
           resultId: result.id,
@@ -254,24 +246,7 @@ const CorrectionQCMTab = () => {
       const matiere = examen?.matieres.find(m => m.id === editingRow.matiereId);
       if (!matiere) throw new Error("Matière introuvable");
 
-      const { data: resultRow, error: resultFetchError } = await supabase
-        .from("apprenant_quiz_results")
-        .select("details, score_max")
-        .eq("id", editingRow.resultId)
-        .maybeSingle();
-
-      if (resultFetchError) throw resultFetchError;
-
-      const existingDetails = safeRecord((resultRow as any)?.details);
-      const existingResultReponses = safeRecord(existingDetails["reponses"]);
-      const mergedResultReponses: Record<string, any> = { ...existingResultReponses };
-      for (const q of matiere.questions) {
-        if (q.type === "QCM") {
-          mergedResultReponses[String(q.id)] = editedReponses[q.id] ?? [];
-        }
-      }
-
-      // Recalculate score from the same raw responses saved in details.reponses.
+      // Recalculate score for QCM questions
       let totalScore = 0;
       let totalMax = 0;
 
@@ -280,7 +255,7 @@ const CorrectionQCMTab = () => {
 
         if (q.type === "QCM") {
           totalMax += pts;
-          const selected = safeStringArray(mergedResultReponses[String(q.id)] ?? mergedResultReponses[q.id]);
+          const selected = editedReponses[q.id] ?? [];
           const correctLetters = (q.choix ?? []).filter(c => c.correct).map(c => c.lettre);
           const isCorrect = selected.length === correctLetters.length &&
             correctLetters.every(l => selected.includes(l));
@@ -288,7 +263,15 @@ const CorrectionQCMTab = () => {
         } else {
           // QRC: keep existing score from details
           totalMax += pts;
-          const corrections = safeRecord(existingDetails["correctionsIA"]);
+          const details = safeRecord(
+            (await supabase
+              .from("apprenant_quiz_results")
+              .select("details")
+              .eq("id", editingRow.resultId)
+              .maybeSingle()
+            ).data?.details
+          );
+          const corrections = safeRecord(details?.correctionsIA);
           const corr = corrections[String(q.id)];
           if (corr && typeof corr === "object" && "pointsObtenus" in (corr as any)) {
             totalScore += Number((corr as any).pointsObtenus) || 0;
@@ -296,20 +279,8 @@ const CorrectionQCMTab = () => {
         }
       }
 
-      const canonicalScore = computeMatiereScore(
-        matiere,
-        mergedResultReponses,
-        totalScore,
-        totalMax,
-        safeRecord(existingDetails["correctionsIA"]) as any,
-      );
-      if (canonicalScore) {
-        totalScore = canonicalScore.scoreObtenu;
-        totalMax = canonicalScore.scoreMax;
-      }
-
-      const noteSur20 = canonicalScore?.noteSur20 ?? (totalMax > 0 ? Number(((totalScore / totalMax) * 20).toFixed(1)) : 0);
-      const admis = canonicalScore?.admis ?? computeAdmisForMatiere(totalScore, totalMax, matiere.noteEliminatoire, matiere.noteSur);
+      const noteSur20 = totalMax > 0 ? Number(((totalScore / totalMax) * 20).toFixed(1)) : 0;
+      const admis = computeAdmisForMatiere(totalScore, totalMax, matiere.noteEliminatoire, matiere.noteSur);
 
       // Update reponses_apprenants
       if (editingRow.reponseId) {
@@ -335,8 +306,7 @@ const CorrectionQCMTab = () => {
           .eq("id", editingRow.reponseId);
       }
 
-      // Update apprenant_quiz_results AND details.reponses.
-      // Otherwise learner views recalculate from the old raw answers and ignore the admin QCM correction.
+      // Update apprenant_quiz_results
       await supabase
         .from("apprenant_quiz_results")
         .update({
@@ -344,10 +314,6 @@ const CorrectionQCMTab = () => {
           score_max: totalMax,
           note_sur_20: noteSur20,
           reussi: admis,
-          details: {
-            ...existingDetails,
-            reponses: mergedResultReponses,
-          },
         })
         .eq("id", editingRow.resultId);
 
