@@ -518,17 +518,27 @@ function EcranResultats({
     });
   }, [isViewingSaved, resultatsAvecIA.map(r => r.noteObtenue).join(",")]);
 
-  // Moyenne globale : on IGNORE les matières non passées (placeholders) pour ne
-  // pas fausser la moyenne. Elles restent visibles mais ne comptent pas.
-  const resultatsPasses = resultatsAvecIA.filter(r => !r.nonPassee);
-  const totalCoef = resultatsPasses.reduce((acc, r) => acc + (r.coefficient || 1), 0) || 1;
-  const noteGlobaleBrute = resultatsPasses.reduce((acc, r) => {
-    return acc + normalizeNoteSur20(r.noteObtenue, r.maxPoints) * (r.coefficient || 1);
-  }, 0) / totalCoef;
-  const noteGlobale = clamp(toFiniteNumber(noteGlobaleBrute, 0), 0, 20);
-  const hasNoteEliminatoire = resultatsPasses.some(r => !r.admis);
+  // Moyenne globale calculée via le helper PARTAGÉ avec la vue liste et le bilan
+  // texte → les 3 écrans affichent EXACTEMENT la même note.
+  const bilanExamen = computeMoyenneExamen(examen, (m) => {
+    const r = resultatsAvecIA.find(rr => rr.matiereId === m.id);
+    if (!r || r.nonPassee) return null;
+    const scoreMax = Math.max(toFiniteNumber(r.maxPoints, 0), 0);
+    const scoreObtenu = scoreMax > 0
+      ? clamp(toFiniteNumber(r.noteObtenue, 0), 0, scoreMax)
+      : Math.max(toFiniteNumber(r.noteObtenue, 0), 0);
+    return {
+      scoreObtenu,
+      scoreMax,
+      noteSur20: normalizeNoteSur20(scoreObtenu, scoreMax),
+      admis: Boolean(r.admis),
+      passee: true,
+    };
+  });
+  const noteGlobale = bilanExamen.moyenne;
+  const hasNoteEliminatoire = bilanExamen.eliminatoires.length > 0;
   const moyenneSuffisante = noteGlobale >= 10;
-  const admisGlobal = moyenneSuffisante && !hasNoteEliminatoire && resultatsPasses.length === resultatsAvecIA.length;
+  const admisGlobal = bilanExamen.admisGlobal;
 
 
   // Matières avec note éliminatoire
