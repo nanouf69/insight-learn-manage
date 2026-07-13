@@ -325,7 +325,7 @@ export default function ExamensBlancsPage({
           lastRealtimeRefreshRef.current = Date.now();
           try { sessionStorage.removeItem(EXAM_SESSION_KEY); } catch {}
           void refreshLiveExamens();
-        }, 5000);
+        }, 500);
       })
       .subscribe();
     return () => {
