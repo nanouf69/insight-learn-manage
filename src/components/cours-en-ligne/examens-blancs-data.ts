@@ -80,89 +80,53 @@ export interface ExamenBlanc {
 }
 
 /**
- * Matières où les QRC valent OBLIGATOIREMENT 2 points chacun (règle pédagogique fixe).
- * Les QCM se partagent alors le reste du barème (noteSur - QRC×2).
+ * Barème officiel appliqué aux examens blancs (règle pédagogique fixe) :
+ * - QRC = 2 points, systématiquement.
+ * - QCM = 1 point, SAUF pour les matières suivantes où QCM = 2 points :
+ *     • français (D)
+ *     • G(V) — Réglementation nationale spécifique à l'activité de VTC (`reglementation_vtc2`)
+ *     • G(T) — Connaissance du territoire et réglementation locale TAXI (`reglementation_taxi2`)
+ *
+ * Les valeurs explicites `ptsQCM` / `ptsQRC` posées sur une matière restent prioritaires
+ * (utile pour les bilans ou cas particuliers configurés à la main).
  */
-const FIXED_QRC_2PTS_MATIERES = new Set(["t3p", "gestion", "reglementation_vtc2", "reglementation_taxi2"]);
-const FIXED_QRC_POINTS = 2;
+const QCM_2PTS_MATIERES = new Set(["francais", "reglementation_vtc2", "reglementation_taxi2"]);
+const DEFAULT_QRC_POINTS = 2;
+const DEFAULT_QCM_POINTS = 1;
 
-/**
- * Points "de base" définis par les règles pédagogiques par matière.
- * Ces valeurs peuvent être écrasées par un ptsQCM/ptsQRC explicite sur la matière,
- * ou automatiquement re-mises à l'échelle pour que la somme = matiere.noteSur.
- */
-function getBasePoints(matiereId: string, questionType: QuestionType): number {
-  if (matiereId.startsWith("bilan_") || matiereId.startsWith("bilan_pratique")) return 1;
-  if (matiereId === "francais") return 2; // QCM=2, QRC=2
-  // F(V) / F(T) et autres : QCM=1, QRC=2 par défaut — l'auto-scale ajustera
-  return questionType === "QCM" ? 1 : 2;
-}
-
-// Cache par matière (évite recalculs)
-const scaleFactorCache = new WeakMap<Matiere, number>();
-const qcmPointsCache = new WeakMap<Matiere, number>();
-
-function countByType(matiere: Matiere): { qrc: number; qcm: number } {
-  const questions = (matiere.questions ?? []).filter((q): q is Question => q != null && q?.type != null);
-  let qrc = 0, qcm = 0;
-  for (const q of questions) {
-    if (q.type === "QRC") qrc++;
-    else if (q.type === "QCM") qcm++;
-  }
-  return { qrc, qcm };
-}
-
-function getScaleFactor(matiere: Matiere): number {
-  const cached = scaleFactorCache.get(matiere);
-  if (cached != null) return cached;
-  if (!matiere.noteSur || matiere.noteSur <= 0) {
-    scaleFactorCache.set(matiere, 1);
-    return 1;
-  }
-  if (matiere.ptsQCM != null || matiere.ptsQRC != null) {
-    scaleFactorCache.set(matiere, 1);
-    return 1;
-  }
-  const questions = (matiere.questions ?? []).filter((q): q is Question => q != null && q?.type != null);
-  const baseSum = questions.reduce((acc, q) => acc + getBasePoints(matiere.id, q?.type || "QCM"), 0);
-  const factor = baseSum > 0 ? matiere.noteSur / baseSum : 1;
-  scaleFactorCache.set(matiere, factor);
-  return factor;
-}
-
-/**
- * Calcule les points d'un QCM quand les QRC sont fixés à 2 pts :
- * QCM = (noteSur - QRC_count × 2) / QCM_count, arrondi à 2 décimales.
- */
-function getFixedQrcQcmPoints(matiere: Matiere): number {
-  const cached = qcmPointsCache.get(matiere);
-  if (cached != null) return cached;
-  const { qrc, qcm } = countByType(matiere);
-  const remaining = (matiere.noteSur ?? 20) - qrc * FIXED_QRC_POINTS;
-  const pts = qcm > 0 ? remaining / qcm : 0;
-  qcmPointsCache.set(matiere, pts);
-  return pts;
+function getFixedPointsForMatiere(matiereId: string, questionType: QuestionType): number {
+  if (questionType === "QRC") return DEFAULT_QRC_POINTS;
+  if (QCM_2PTS_MATIERES.has(matiereId)) return 2;
+  return DEFAULT_QCM_POINTS;
 }
 
 /**
  * Retourne les points attribués pour une question selon la matière et le type de question.
- * - Pour T3P, Gestion, G(V), G(T) : QRC = 2 pts fixes, QCM = reste réparti.
- * - Sinon : auto-scale pour que la somme = matiere.noteSur.
+ * Applique le barème officiel (QCM=1 sauf exceptions à 2 pts, QRC=2), sauf si la matière
+ * définit explicitement `ptsQCM` / `ptsQRC`.
  */
 export function getPointsParQuestion(matiereId: string, questionType: QuestionType, matiere?: Matiere): number {
   if (matiere) {
     if (questionType === "QCM" && matiere.ptsQCM != null) return matiere.ptsQCM;
     if (questionType === "QRC" && matiere.ptsQRC != null) return matiere.ptsQRC;
-
-    if (FIXED_QRC_2PTS_MATIERES.has(matiereId)) {
-      if (questionType === "QRC") return FIXED_QRC_POINTS;
-      return getFixedQrcQcmPoints(matiere);
-    }
   }
-  const base = getBasePoints(matiereId, questionType);
-  if (!matiere) return base;
-  const scale = getScaleFactor(matiere);
-  return base * scale;
+  return getFixedPointsForMatiere(matiereId, questionType);
+}
+
+/**
+ * Recalcule `noteSur` pour chaque matière à partir du barème fixe :
+ * noteSur = (nb QCM × pts QCM) + (nb QRC × pts QRC).
+ * Ainsi le dénominateur affiché et les seuils éliminatoires restent cohérents
+ * avec la somme réelle des points par question.
+ */
+function normalizeMatiereNoteSur(matiere: Matiere): void {
+  const questions = (matiere.questions ?? []).filter((q): q is Question => q != null && q?.type != null);
+  if (questions.length === 0) return;
+  const total = questions.reduce(
+    (acc, q) => acc + getPointsParQuestion(matiere.id, q.type, matiere),
+    0,
+  );
+  if (total > 0) matiere.noteSur = Math.round(total * 100) / 100;
 }
 
 
