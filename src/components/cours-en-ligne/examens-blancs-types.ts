@@ -14,6 +14,7 @@ export interface CorrectionQRC {
 export type CorrectionCache = { [questionId: number]: CorrectionQRC | "loading" | "error" };
 
 export interface ResultatMatiere {
+  resultId?: string;
   matiereId: string;
   nomMatiere: string;
   noteObtenue: number;
@@ -24,6 +25,7 @@ export interface ResultatMatiere {
   admis: boolean;
   reponses: Reponses;
   correctionsIA?: CorrectionCache;
+  tentative?: number;
   /** true if this matière was NOT attempted by the learner (placeholder row) */
   nonPassee?: boolean;
 }

@@ -21,6 +21,7 @@ import {
   evaluateQrcDeterministic, computeAdmisForMatiere,
   buildMatiereLookupKeys, shareLookupKey, getMatiereCanonicalKey,
   extractMatiereKeyFromExerciceId,
+  selectLatestAttemptRows, getAttemptNumber,
 } from "./examens-blancs-utils";
 import { recoverCorruptedScoreRow, isCorruptedZeroRow, persistExamSession as persistExamSessionUtil, shouldTriggerPollingRefresh } from "./examens-blancs-utils";
 import { EcranSelection } from "./ExamenBlancsListe";
@@ -82,6 +83,7 @@ export default function ExamensBlancsPage({
   const [loadTimeout, setLoadTimeout] = useState(false);
   const [pausedExamIds, setPausedExamIds] = useState<Set<string>>(new Set());
   const [currentTentative, setCurrentTentative] = useState<number>(1);
+  const currentTentativeRef = useRef<number>(1);
   const phaseRef = useRef(phase);
   useEffect(() => { phaseRef.current = phase; }, [phase]);
 
@@ -182,7 +184,7 @@ export default function ExamensBlancsPage({
         const quizType = found.id.startsWith("bilan-") ? "bilan" : "examen_blanc";
         const { data, error } = await supabase
           .from("apprenant_quiz_results" as any)
-          .select("matiere_id, matiere_nom, score_obtenu, score_max, reussi, details, completed_at, created_at")
+            .select("id, matiere_id, matiere_nom, score_obtenu, score_max, reussi, details, tentative, completed_at, created_at")
           .eq("apprenant_id", apprenantId)
           .eq("quiz_id", found.id)
           .eq("quiz_type", quizType);
@@ -193,7 +195,7 @@ export default function ExamensBlancsPage({
           const required = Math.max(validMatieres.length || 1, 1);
 
           const latestByCanonicalKey = new Map<string, any>();
-          rows.forEach((row: any) => {
+          selectLatestAttemptRows(rows).forEach((row: any) => {
             const key = getMatiereCanonicalKey(row?.matiere_id, row?.matiere_nom);
             const prev = latestByCanonicalKey.get(key);
             const prevTs = prev ? Math.max(toTimestamp(prev.completed_at), toTimestamp(prev.created_at)) : 0;
@@ -239,6 +241,7 @@ export default function ExamensBlancsPage({
                 const safeScoreMax = toFiniteNumber(row.score_max, maxPts);
                 const safeScoreObtenu = clamp(toFiniteNumber(row.score_obtenu, 0), 0, safeScoreMax || maxPts);
                 preloadedResults.push({
+                  resultId: row.id,
                   matiereId: m.id,
                   nomMatiere: m.nom,
                   noteObtenue: safeScoreObtenu,
@@ -248,6 +251,8 @@ export default function ExamensBlancsPage({
                   coefficient: m.coefficient || 1,
                   admis: computeAdmisForMatiere(safeScoreObtenu, safeScoreMax || maxPts, m.noteEliminatoire, m.noteSur, Boolean(row.reussi)),
                   reponses: row.details?.reponses || {},
+                  correctionsIA: row.details?.correctionsIA || null,
+                  tentative: getAttemptNumber(row),
                 });
               } else {
                 preloadedResults.push(null as any);
@@ -392,13 +397,14 @@ export default function ExamensBlancsPage({
       nextTentative = forceRetake ? Math.max(maxT + 1, 2) : Math.max(maxT, 1);
     }
     setCurrentTentative(nextTentative);
+    currentTentativeRef.current = nextTentative;
 
 
     if (!isAdmin && apprenantId && !forceRetake) {
       // Check which matières are already completed
       const { data: existingResults, error } = await supabase
         .from("apprenant_quiz_results" as any)
-        .select("matiere_id, matiere_nom, score_obtenu, score_max, reussi, details, completed_at, created_at")
+        .select("id, matiere_id, matiere_nom, score_obtenu, score_max, reussi, details, tentative, completed_at, created_at")
         .eq("apprenant_id", apprenantId)
         .eq("quiz_id", latestExamen.id)
         .eq("quiz_type", quizType);
@@ -447,7 +453,7 @@ export default function ExamensBlancsPage({
 
 
       const latestByCanonicalKey = new Map<string, any>();
-      completedRows.forEach((row: any) => {
+      selectLatestAttemptRows(completedRows).forEach((row: any) => {
         const key = getMatiereCanonicalKey(row?.matiere_id, row?.matiere_nom);
         const prev = latestByCanonicalKey.get(key);
         const prevTs = prev ? Math.max(toTimestamp(prev.completed_at), toTimestamp(prev.created_at)) : 0;
@@ -501,6 +507,7 @@ export default function ExamensBlancsPage({
             const safeScoreMax = toFiniteNumber(row.score_max, maxPts);
             const safeScoreObtenu = clamp(toFiniteNumber(row.score_obtenu, 0), 0, safeScoreMax || maxPts);
             preloadedResults.push({
+              resultId: row.id,
               matiereId: m.id,
               nomMatiere: m.nom,
               noteObtenue: safeScoreObtenu,
@@ -510,6 +517,8 @@ export default function ExamensBlancsPage({
               coefficient: m.coefficient || 1,
               admis: computeAdmisForMatiere(safeScoreObtenu, safeScoreMax || maxPts, m.noteEliminatoire, m.noteSur, Boolean(row.reussi)),
               reponses: row.details?.reponses || {},
+              correctionsIA: row.details?.correctionsIA || null,
+              tentative: getAttemptNumber(row),
             });
           } else {
             // Push null placeholder to keep indices aligned
@@ -649,7 +658,7 @@ export default function ExamensBlancsPage({
       .eq("quiz_id", examReference.id)
       .eq("quiz_type", quizType);
 
-    const rows = (data as any[]) || [];
+    const rows = selectLatestAttemptRows((data as any[]) || []);
     const hasOnlyZeroScores = rows.length > 0 && rows.every((row: any) => toFiniteNumber(row?.score_obtenu, 0) <= 0);
 
     // Rebuild from stored responses if quiz_results is empty or only zero-score rows
@@ -666,17 +675,7 @@ export default function ExamensBlancsPage({
       return;
     }
 
-    const latestByMatiere = new Map<string, any>();
-    (data as any[]).forEach((row: any, idx: number) => {
-      const key = getMatiereCanonicalKey(row?.matiere_id, row?.matiere_nom) || `unknown-${idx}`;
-      const prev = latestByMatiere.get(key);
-      const prevTs = prev ? Math.max(toTimestamp(prev.completed_at), toTimestamp(prev.created_at)) : 0;
-      const currTs = Math.max(toTimestamp(row.completed_at), toTimestamp(row.created_at));
-      if (!prev || currTs >= prevTs) latestByMatiere.set(key, row);
-    });
-
-    const latestRows = Array.from(latestByMatiere.values());
-    const rowsWithLookup = latestRows.map((row: any) => ({
+    const rowsWithLookup = rows.map((row: any) => ({
       row,
       lookupKeys: buildMatiereLookupKeys(row?.matiere_id, row?.matiere_nom),
     }));
@@ -750,6 +749,7 @@ export default function ExamensBlancsPage({
       }
 
       return {
+        resultId: row.id,
         matiereId: row.matiere_id || matiere.id,
         nomMatiere: row.matiere_nom || matiere.nom,
         noteObtenue: safeScoreObtenu,
@@ -760,6 +760,7 @@ export default function ExamensBlancsPage({
         admis: canonicalScore?.admis ?? computeAdmisForMatiere(safeScoreObtenu, normalizedScoreMax, matiere.noteEliminatoire, safeNoteSur, Boolean(row.reussi)),
         reponses: row.details?.reponses || {},
         correctionsIA: savedCorrections,
+        tentative: getAttemptNumber(row),
       };
     });
 
@@ -917,7 +918,7 @@ export default function ExamensBlancsPage({
       note_sur_20: noteSur20, reussi: computeAdmisForMatiere(safeScoreObtenu, safeScoreMax, resultat.noteEliminatoire, resultat.noteSur, Boolean(resultat.admis)),
       duree_secondes: Math.max(Math.round(dureeSecondes), 0),
       details: { questions: questionDetails, reponses: resultat.reponses, correctionsIA: Object.keys(frozenCorrections).length > 0 ? frozenCorrections : undefined },
-      tentative: Math.max(currentTentative || 1, 1),
+      tentative: Math.max(currentTentativeRef.current || currentTentative || 1, 1),
     };
 
     // Save with retry logic to prevent silent data loss
@@ -1239,7 +1240,7 @@ export default function ExamensBlancsPage({
   if (phase === "resultats" && examenChoisi) {
     return (
       <div className="max-w-3xl mx-auto">
-        <EcranResultats examen={examenChoisi} resultats={tousResultats} onRecommencer={() => handleStart(examenChoisi, true)} onRetour={() => { setSelectionRefreshKey(k => k + 1); setPhase("selection"); }} onRefaireFausses={() => setPhase("revision")} apprenantId={apprenantId} userId={userId} isViewingSaved={isViewingSavedResults} isAdmin={isAdmin} canRetry={true} isPresentiel={isPresentiel} />
+        <EcranResultats examen={examenChoisi} resultats={tousResultats} onRecommencer={() => handleStart(examenChoisi, true)} onRetour={() => { setSelectionRefreshKey(k => k + 1); setPhase("selection"); }} onRefaireFausses={() => setPhase("revision")} apprenantId={apprenantId} userId={userId} isViewingSaved={isViewingSavedResults} isAdmin={isAdmin} canRetry={true} isPresentiel={isPresentiel} currentTentative={currentTentative} />
       </div>
     );
   }

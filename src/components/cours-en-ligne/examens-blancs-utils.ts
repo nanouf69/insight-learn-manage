@@ -165,6 +165,46 @@ export function pickBestScoreRow(prev: any, current: any) {
   return prev;
 }
 
+const SAME_ATTEMPT_SESSION_GAP_MS = 8 * 60 * 60 * 1000;
+
+export function getAttemptNumber(row: any): number {
+  const tentative = Math.trunc(toFiniteNumber(row?.tentative, 1));
+  return tentative > 0 ? tentative : 1;
+}
+
+export function getScoreRowTimestamp(row: any): number {
+  return Math.max(
+    toTimestamp(row?.completed_at),
+    toTimestamp(row?.created_at),
+    toTimestamp(row?.updated_at),
+  );
+}
+
+export function selectLatestAttemptRows<T extends Record<string, any>>(rows: T[]): T[] {
+  const validRows = safeArray<T>(rows).filter(Boolean);
+  if (validRows.length === 0) return [];
+
+  const latestTentative = validRows.reduce((max, row) => Math.max(max, getAttemptNumber(row)), 1);
+  const rowsForTentative = validRows.filter((row) => getAttemptNumber(row) === latestTentative);
+  const sorted = [...rowsForTentative].sort((a, b) => getScoreRowTimestamp(b) - getScoreRowTimestamp(a));
+  const latestTimestamp = getScoreRowTimestamp(sorted[0]);
+
+  const sameSessionRows = latestTimestamp > 0
+    ? sorted.filter((row) => {
+        const ts = getScoreRowTimestamp(row);
+        return ts <= 0 || latestTimestamp - ts <= SAME_ATTEMPT_SESSION_GAP_MS;
+      })
+    : sorted;
+
+  const latestByMatiere = new Map<string, T>();
+  sameSessionRows.forEach((row, index) => {
+    const key = getMatiereCanonicalKey(row?.matiere_id, row?.matiere_nom) || `unknown-${index}`;
+    latestByMatiere.set(key, pickBestScoreRow(latestByMatiere.get(key), row) as T);
+  });
+
+  return Array.from(latestByMatiere.values());
+}
+
 export function isCorruptedZeroRow(row: any): boolean {
   if (!row) return false;
   const score = toFiniteNumber(row.score_obtenu, -1);

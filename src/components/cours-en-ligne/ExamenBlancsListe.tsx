@@ -13,6 +13,7 @@ import {
   buildMatiereLookupKeys, getMatiereCanonicalKey, shareLookupKey,
   pickBestScoreRow, recoverCorruptedScoreRow, findScoreForMatiere,
   computeAdmisForMatiere,
+  selectLatestAttemptRows,
 } from "./examens-blancs-utils";
 import { computeMoyenneExamen, computeMatiereScore } from "./examens-blancs-scoring";
 
@@ -38,22 +39,22 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
     // 1) Fetch completed results
     supabase
       .from("apprenant_quiz_results" as any)
-      .select("id, quiz_id, matiere_id, matiere_nom, note_sur_20, score_obtenu, score_max, completed_at, created_at, details")
+      .select("id, quiz_id, matiere_id, matiere_nom, note_sur_20, score_obtenu, score_max, tentative, completed_at, created_at, details")
       .eq("apprenant_id", apprenantId)
       .eq("quiz_type", "examen_blanc")
       .order("completed_at", { ascending: false })
       .order("created_at", { ascending: false })
       .then(({ data }) => {
         if (data) {
-          const latestByQuizMatiere = new Map<string, any>();
-          (data as any[]).forEach((r: any) => {
-            const canonicalMatiereKey = getMatiereCanonicalKey(r.matiere_id, r.matiere_nom);
-            const key = `${r.quiz_id}::${canonicalMatiereKey}`;
-            const prev = latestByQuizMatiere.get(key);
-            latestByQuizMatiere.set(key, pickBestScoreRow(prev, r));
+          const allRows = data as any[];
+          const allRowsByQuiz = new Map<string, any[]>();
+          allRows.forEach((r: any) => {
+            if (!r.quiz_id) return;
+            if (!allRowsByQuiz.has(r.quiz_id)) allRowsByQuiz.set(r.quiz_id, []);
+            allRowsByQuiz.get(r.quiz_id)!.push(r);
           });
 
-          const latestRows = Array.from(latestByQuizMatiere.values());
+          const latestRows = Array.from(allRowsByQuiz.values()).flatMap((rows) => selectLatestAttemptRows(rows));
           const completedIds = new Set<string>();
           const rowsByQuiz = new Map<string, any[]>();
 
@@ -129,7 +130,6 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
             }
           });
 
-          const allRows = data as any[];
           const debugRowsEb1 = allRows.filter((row) => row?.quiz_id === "EB1");
           const debugRowsEb2 = allRows.filter((row) => row?.quiz_id === "EB2");
 
@@ -251,12 +251,6 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
 
           // Compute previous attempt averages per exam
           const prevAvgs: Record<string, number | null> = {};
-          const allRowsByQuiz = new Map<string, any[]>();
-          (data as any[]).forEach((r: any) => {
-            if (!r.quiz_id) return;
-            if (!allRowsByQuiz.has(r.quiz_id)) allRowsByQuiz.set(r.quiz_id, []);
-            allRowsByQuiz.get(r.quiz_id)!.push(r);
-          });
           allRowsByQuiz.forEach((rows, quizId) => {
             const examDef = examensData.find(e => e.id === quizId);
             if (!examDef) return;
