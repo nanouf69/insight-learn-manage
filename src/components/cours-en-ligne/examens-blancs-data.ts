@@ -139,7 +139,7 @@ function getFixedQrcQcmPoints(matiere: Matiere): number {
   if (cached != null) return cached;
   const { qrc, qcm } = countByType(matiere);
   const remaining = (matiere.noteSur ?? 20) - qrc * FIXED_QRC_POINTS;
-  const pts = qcm > 0 ? Math.round((remaining / qcm) * 100) / 100 : 0;
+  const pts = qcm > 0 ? remaining / qcm : 0;
   qcmPointsCache.set(matiere, pts);
   return pts;
 }
