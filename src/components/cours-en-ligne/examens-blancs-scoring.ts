@@ -106,9 +106,16 @@ export function computeMatiereScoreFromReponses(
 }
 
 /**
- * Calcule le score d'une matière avec fallback :
- * 1) réponses brutes (`reponses`) via le barème actuel,
- * 2) sinon score stocké (`storedScoreObtenu` / `storedScoreMax`).
+ * Calcule le score d'une matière avec repli en 3 niveaux :
+ * 1) réponses brutes (`reponses`) via le barème actuel (édité),
+ * 2) sinon réponses brutes via la version ORIGINALE des questions
+ *    (`staticFallbackMatiere`) — utile quand une question a été supprimée/
+ *    modifiée au point que les réponses de l'élève ne correspondent plus à
+ *    rien dans la version actuelle : on revient à la version d'origine,
+ *    toujours intacte, plutôt que de se rabattre sur une note stockée qui
+ *    peut elle-même être déjà corrompue,
+ * 3) sinon score stocké (`storedScoreObtenu` / `storedScoreMax`) en tout
+ *    dernier recours.
  */
 export function computeMatiereScore(
   matiere: Matiere,
@@ -116,9 +123,15 @@ export function computeMatiereScore(
   storedScoreObtenu?: unknown,
   storedScoreMax?: unknown,
   correctionsIA?: CorrectionCache | null,
+  staticFallbackMatiere?: Matiere | null,
 ): MatiereScore | null {
   const fromReponses = computeMatiereScoreFromReponses(matiere, reponses, correctionsIA);
   if (fromReponses) return fromReponses;
+
+  if (staticFallbackMatiere) {
+    const fromOriginal = computeMatiereScoreFromReponses(staticFallbackMatiere, reponses, correctionsIA);
+    if (fromOriginal) return fromOriginal;
+  }
 
   const storedObtenu = toFiniteNumber(storedScoreObtenu, NaN);
   const storedMax = toFiniteNumber(storedScoreMax, NaN);
