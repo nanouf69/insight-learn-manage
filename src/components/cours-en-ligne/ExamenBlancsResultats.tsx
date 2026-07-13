@@ -1341,7 +1341,7 @@ function RevisionFausses({
       {/* Progress */}
       <div className="flex items-center justify-between">
         <Badge style={{ backgroundColor: '#0D2540', color: '#00B4D8' }}>
-          Question Q{q?.id ?? "?"} ({currentIndex + 1} / {wrongQuestions.length})
+          Question Q{qNumero > 0 ? qNumero : (q?.id ?? "?")} ({currentIndex + 1} / {wrongQuestions.length})
         </Badge>
         <div className="flex items-center gap-2">
           <span className="text-xs text-muted-foreground">{matiereNom}</span>
