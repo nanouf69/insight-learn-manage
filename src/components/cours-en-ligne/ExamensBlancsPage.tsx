@@ -739,7 +739,6 @@ export default function ExamensBlancsPage({
         row.score_obtenu,
         safeScoreMax,
         savedCorrections,
-        findStaticFallbackMatiere(examReference.id, matiere.id, matiere.nom),
       );
       if (canonicalScore) {
         safeScoreObtenu = canonicalScore.scoreObtenu;
