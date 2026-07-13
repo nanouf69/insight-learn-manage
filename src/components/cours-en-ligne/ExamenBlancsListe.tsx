@@ -288,7 +288,9 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
           });
           setPreviousExamAverages(prevAvgs);
 
-          // 2) Fetch started-but-not-finished exams from reponses_apprenants
+          // 2) Fetch started-but-not-finished + fallback completion detection from reponses_apprenants.
+          //    Certains scores peuvent ne pas s'être enregistrés dans apprenant_quiz_results (bug historique) :
+          //    on considère l'examen comme terminé si toutes ses matières ont completed=true dans reponses_apprenants.
           supabase
             .from("reponses_apprenants" as any)
             .select("exercice_id, completed")
@@ -296,11 +298,37 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
             .eq("exercice_type", "examen_blanc")
             .then(({ data: repData }) => {
               const started = new Set<string>();
+              const completedMatieresByQuiz = new Map<string, Set<string>>();
               if (repData) {
                 (repData as any[]).forEach((r: any) => {
-                  // Started but not finished = has a reponse row but not in completedExamIds
-                  if (!completedIds.has(r.exercice_id)) {
-                    started.add(r.exercice_id);
+                  const id: string = r?.exercice_id || "";
+                  const [quizId, matiereKey] = id.includes("__") ? id.split("__") : [id, ""];
+                  if (r?.completed && quizId && matiereKey) {
+                    if (!completedMatieresByQuiz.has(quizId)) completedMatieresByQuiz.set(quizId, new Set());
+                    completedMatieresByQuiz.get(quizId)!.add(matiereKey.toLowerCase());
+                  }
+                });
+              }
+
+              // Merge fallback completion into completedIds
+              const mergedCompleted = new Set(completedIds);
+              completedMatieresByQuiz.forEach((doneKeys, quizId) => {
+                const examDef = examensData.find((e) => e.id === quizId);
+                const validMatieres = (examDef?.matieres || []).filter((m): m is Matiere => Boolean(m));
+                if (validMatieres.length === 0) return;
+                const allDone = validMatieres.every((m) => doneKeys.has(String(m.id).toLowerCase()));
+                if (allDone) mergedCompleted.add(quizId);
+              });
+              if (mergedCompleted.size !== completedIds.size) {
+                setCompletedExamIds(mergedCompleted);
+              }
+
+              if (repData) {
+                (repData as any[]).forEach((r: any) => {
+                  const id: string = r?.exercice_id || "";
+                  const quizId = id.includes("__") ? id.split("__")[0] : id;
+                  if (!mergedCompleted.has(quizId)) {
+                    started.add(quizId);
                   }
                 });
               }
