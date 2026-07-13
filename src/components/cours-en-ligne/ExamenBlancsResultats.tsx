@@ -279,12 +279,12 @@ function EcranResultats({
         if (!q) return;
         if (q?.type === "QCM" && q.choix) {
           const correctes = safeArray<string>(q.choix?.filter(c => c.correct).map(c => c.lettre)).sort();
-          const donnees = safeArray<string>(resultat.reponses?.[q.id]).sort();
+          const donnees = safeArray<string>(resultat.reponses?.[q.id] ?? resultat.reponses?.[String(q.id)]).sort();
           if (JSON.stringify(correctes) === JSON.stringify(donnees)) {
             noteRecalculee += getPointsParQuestion(matiere.id, q?.type || "QCM", matiere);
           }
         } else if (q?.type === "QRC") {
-          const correction = cache[q.id];
+          const correction = cache[q.id] ?? cache[String(q.id)];
           if (correction && correction !== "loading" && correction !== "error") {
             noteRecalculee += clampToQuestionMax(
               correction.pointsObtenus,
