@@ -102,6 +102,7 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
               completed_at: scoreSource.completed_at,
               created_at: scoreSource.created_at,
               lookupKeys: buildMatiereLookupKeys(scoreSource.matiere_id, scoreSource.matiere_nom),
+              reponses: r?.details?.reponses ?? null,
             });
 
             if (recovered && recovered.score_obtenu > toFiniteNumber(r.score_obtenu, 0)) {
