@@ -222,6 +222,16 @@ export default function DiagnosticExamensBlancs() {
     }
   };
 
+  const summary = useMemo(() => {
+    if (!diag) return null;
+    const counts: Record<Statut, number> = {
+      ok: 0, quiz_result_missing_but_response_completed: 0, response_incomplete: 0,
+      response_missing: 0, zero_score_corrupted: 0, score_mismatch: 0,
+    };
+    diag.forEach((r) => counts[r.statut]++);
+    return counts;
+  }, [diag]);
+
   if (isAdmin === null) {
     return <div className="p-8 text-center"><Loader2 className="w-6 h-6 animate-spin mx-auto" /></div>;
   }
@@ -235,16 +245,6 @@ export default function DiagnosticExamensBlancs() {
       </div>
     );
   }
-
-  const summary = useMemo(() => {
-    if (!diag) return null;
-    const counts: Record<Statut, number> = {
-      ok: 0, quiz_result_missing_but_response_completed: 0, response_incomplete: 0,
-      response_missing: 0, zero_score_corrupted: 0, score_mismatch: 0,
-    };
-    diag.forEach((r) => counts[r.statut]++);
-    return counts;
-  }, [diag]);
 
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-6">
