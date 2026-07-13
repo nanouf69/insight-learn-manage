@@ -21,7 +21,7 @@ import {
   evaluateQrcDeterministic, ENABLE_AI_QRC_CORRECTION, AI_ONLY_UPGRADES,
   getQuestionImageValue,
 } from "./examens-blancs-utils";
-import { computeMoyenneExamen, computeMatiereScoreFromReponses, computeResultatMatiereScore } from "./examens-blancs-scoring";
+import { computeMoyenneExamen, computeResultatMatiereScore } from "./examens-blancs-scoring";
 
 function EcranResultats({
   examen,
@@ -498,17 +498,8 @@ function EcranResultats({
   const bilanExamen = computeMoyenneExamen(examen, (m) => {
     const r = resultatsAvecIA.find(rr => rr.matiereId === m.id);
     if (!r || r.nonPassee) return null;
-    const scoreMax = Math.max(toFiniteNumber(r.maxPoints, 0), 0);
-    const scoreObtenu = scoreMax > 0
-      ? clamp(toFiniteNumber(r.noteObtenue, 0), 0, scoreMax)
-      : Math.max(toFiniteNumber(r.noteObtenue, 0), 0);
-    return {
-      scoreObtenu,
-      scoreMax,
-      noteSur20: normalizeNoteSur20(scoreObtenu, scoreMax),
-      admis: Boolean(r.admis),
-      passee: true,
-    };
+    const mi = examen.matieres.findIndex(mm => mm?.id === m.id);
+    return computeResultatMatiereScore(m, r, correctionsIA[mi] ?? r.correctionsIA ?? null);
   });
   const noteGlobale = bilanExamen.moyenne;
   const hasNoteEliminatoire = bilanExamen.eliminatoires.length > 0;
