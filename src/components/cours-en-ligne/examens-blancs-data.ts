@@ -10441,3 +10441,13 @@ export const tousLesExamens: ExamenBlanc[] = [
   bilanExamenTA,
   bilanExamenVA,
 ];
+
+// Normalisation finale : aligne `noteSur` de chaque matière sur la somme réelle
+// des points obtenus par le barème fixe (QCM=1 sauf exceptions à 2 pts, QRC=2).
+// Cela garantit que le dénominateur affiché correspond exactement au total possible.
+for (const examen of tousLesExamens) {
+  for (const matiere of examen.matieres ?? []) {
+    normalizeMatiereNoteSur(matiere);
+  }
+}
+
