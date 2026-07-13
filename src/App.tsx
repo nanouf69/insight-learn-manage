@@ -25,6 +25,7 @@ import DevisPersonnel from "./pages/DevisPersonnel";
 import ReservationCarteVtc from "./pages/ReservationCarteVtc";
 import Booking from "./pages/Booking";
 import SessionDetailPage from "./pages/SessionDetailPage";
+import DiagnosticExamensBlancs from "./pages/DiagnosticExamensBlancs";
 
 // Onboarding pages
 import OnboardingWelcome from "./pages/onboarding/OnboardingWelcome";
