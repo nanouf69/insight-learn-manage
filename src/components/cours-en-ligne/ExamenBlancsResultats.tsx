@@ -655,6 +655,29 @@ function EcranResultats({
           const cacheMatiere = correctionsIA[mi] || {};
           const questionsSafe = matiere ? (matiere.questions || []).filter(q => q && q?.type !== undefined) : [];
           const isExpanded = !!expandedMatieres[mi];
+          if (r.nonPassee) {
+            return (
+              <Card key={r.matiereId} className="border-l-4 overflow-hidden opacity-70" style={{ borderLeftColor: '#94a3b8' }}>
+                <div className="px-4 py-2 flex items-center gap-2" style={{ backgroundColor: '#0D2540' }}>
+                  <span className="text-xs font-semibold text-white">Matière {mi + 1}/{resultatsAvecIA.length}</span>
+                  <span className="text-xs font-medium" style={{ color: '#00B4D8' }}>— Coeff. {r.coefficient || 1}</span>
+                  <span className="text-xs font-semibold text-slate-300 ml-auto">Non passée</span>
+                </div>
+                <CardContent className="py-3 px-4">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm" style={{ color: '#0D2540' }}>{r.nomMatiere}</p>
+                      <p className="text-xs text-muted-foreground mt-1">Barème : {r.maxPoints} pts — matière non encore commencée par l'apprenant</p>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-lg font-bold text-slate-500">— / {r.maxPoints} pts</span>
+                      <p className="text-xs text-muted-foreground">Non évaluée</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          }
           return (
             <Card key={r.matiereId} className="border-l-4 overflow-hidden" style={{ borderLeftColor: r.admis ? '#00B4D8' : '#ef4444' }}>
               <div className="px-4 py-2 flex items-center gap-2" style={{ backgroundColor: '#0D2540' }}>
@@ -697,6 +720,7 @@ function EcranResultats({
                   </p>
                 </CardContent>
               </div>
+
 
               {/* Correction détaillée inline */}
               {isExpanded && (
