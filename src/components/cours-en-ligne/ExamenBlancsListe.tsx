@@ -417,31 +417,21 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
                     </div>
                     <CardTitle className="text-base mt-2">{examen.titre}</CardTitle>
                     {isCompleted && (() => {
-                      // Compute weighted average from DB scores — uses same logic as EcranResultats
-                      let totalCoef = 0;
-                      let weightedSum = 0;
-                      let hasScores = false;
-                      const eliminatoiresMatieres: string[] = [];
-                      examen.matieres.forEach(m => {
+                      // Utilise le helper partagé pour être ALIGNÉ avec l'écran de résultats détaillés.
+                      const bilan = computeMoyenneExamen(examen, (m) => {
                         const scoreData = findScoreForMatiere(scores, m);
-                        const coef = m.coefficient || 1;
-                        if (scoreData) {
-                          const noteSur20 = normalizeNoteSur20(scoreData.score_obtenu, scoreData.score_max, scoreData.note_sur_20);
-                          weightedSum += noteSur20 * coef;
-                          totalCoef += coef;
-                          hasScores = true;
-                          // Use computeAdmisForMatiere (same as detail view) to check éliminatoire
-                          const admisMatiere = computeAdmisForMatiere(
-                            scoreData.score_obtenu, scoreData.score_max,
-                            m.noteEliminatoire, m.noteSur || 20, true
-                          );
-                          if (!admisMatiere) {
-                            eliminatoiresMatieres.push(m.nom.split(" - ")[0]);
-                          }
-                        }
+                        if (!scoreData) return null;
+                        return computeMatiereScore(
+                          m,
+                          (scoreData as any).reponses,
+                          scoreData.score_obtenu,
+                          scoreData.score_max,
+                        );
                       });
-                      const moyenne = totalCoef > 0 ? Math.round((weightedSum / totalCoef) * 10) / 10 : 0;
-                      const isReussi = hasScores && moyenne >= 10 && eliminatoiresMatieres.length === 0;
+                      const moyenne = bilan.moyenne;
+                      const hasScores = bilan.hasScores;
+                      const eliminatoiresMatieres = bilan.eliminatoires;
+                      const isReussi = bilan.admisGlobal;
                       return (
                         <div className={`flex flex-col items-center gap-1 mt-2 rounded-lg px-3 py-2 border ${
                           isReussi
