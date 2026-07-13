@@ -80,6 +80,13 @@ export interface ExamenBlanc {
 }
 
 /**
+ * Matières où les QRC valent OBLIGATOIREMENT 2 points chacun (règle pédagogique fixe).
+ * Les QCM se partagent alors le reste du barème (noteSur - QRC×2).
+ */
+const FIXED_QRC_2PTS_MATIERES = new Set(["t3p", "gestion", "reglementation_vtc2", "reglementation_taxi2"]);
+const FIXED_QRC_POINTS = 2;
+
+/**
  * Points "de base" définis par les règles pédagogiques par matière.
  * Ces valeurs peuvent être écrasées par un ptsQCM/ptsQRC explicite sur la matière,
  * ou automatiquement re-mises à l'échelle pour que la somme = matiere.noteSur.
@@ -87,15 +94,23 @@ export interface ExamenBlanc {
 function getBasePoints(matiereId: string, questionType: QuestionType): number {
   if (matiereId.startsWith("bilan_") || matiereId.startsWith("bilan_pratique")) return 1;
   if (matiereId === "francais") return 2; // QCM=2, QRC=2
-  if (matiereId === "reglementation_taxi2" || matiereId === "reglementation_vtc2") {
-    return questionType === "QCM" ? 2 : 4;
-  }
-  // F(V) / F(T) : QCM=1, QRC=2 par défaut — l'auto-scale ajustera si noteSur > somme
+  // F(V) / F(T) et autres : QCM=1, QRC=2 par défaut — l'auto-scale ajustera
   return questionType === "QCM" ? 1 : 2;
 }
 
-// Cache du facteur d'échelle par matière (évite recalculs)
+// Cache par matière (évite recalculs)
 const scaleFactorCache = new WeakMap<Matiere, number>();
+const qcmPointsCache = new WeakMap<Matiere, number>();
+
+function countByType(matiere: Matiere): { qrc: number; qcm: number } {
+  const questions = (matiere.questions ?? []).filter((q): q is Question => q != null && q?.type != null);
+  let qrc = 0, qcm = 0;
+  for (const q of questions) {
+    if (q.type === "QRC") qrc++;
+    else if (q.type === "QCM") qcm++;
+  }
+  return { qrc, qcm };
+}
 
 function getScaleFactor(matiere: Matiere): number {
   const cached = scaleFactorCache.get(matiere);
@@ -104,7 +119,6 @@ function getScaleFactor(matiere: Matiere): number {
     scaleFactorCache.set(matiere, 1);
     return 1;
   }
-  // Si l'utilisateur a fixé ptsQCM/ptsQRC explicitement, on ne rescale pas
   if (matiere.ptsQCM != null || matiere.ptsQRC != null) {
     scaleFactorCache.set(matiere, 1);
     return 1;
@@ -117,15 +131,33 @@ function getScaleFactor(matiere: Matiere): number {
 }
 
 /**
+ * Calcule les points d'un QCM quand les QRC sont fixés à 2 pts :
+ * QCM = (noteSur - QRC_count × 2) / QCM_count, arrondi à 2 décimales.
+ */
+function getFixedQrcQcmPoints(matiere: Matiere): number {
+  const cached = qcmPointsCache.get(matiere);
+  if (cached != null) return cached;
+  const { qrc, qcm } = countByType(matiere);
+  const remaining = (matiere.noteSur ?? 20) - qrc * FIXED_QRC_POINTS;
+  const pts = qcm > 0 ? remaining / qcm : 0;
+  qcmPointsCache.set(matiere, pts);
+  return pts;
+}
+
+/**
  * Retourne les points attribués pour une question selon la matière et le type de question.
- * Auto-scale : les points sont mis à l'échelle pour que la somme totale des questions
- * corresponde à matiere.noteSur (barème officiel). Cela corrige les incohérences historiques
- * (ex: F(V) sur 40, gestion sur 36, français sur 24) où les notes étaient sous-évaluées.
+ * - Pour T3P, Gestion, G(V), G(T) : QRC = 2 pts fixes, QCM = reste réparti.
+ * - Sinon : auto-scale pour que la somme = matiere.noteSur.
  */
 export function getPointsParQuestion(matiereId: string, questionType: QuestionType, matiere?: Matiere): number {
   if (matiere) {
     if (questionType === "QCM" && matiere.ptsQCM != null) return matiere.ptsQCM;
     if (questionType === "QRC" && matiere.ptsQRC != null) return matiere.ptsQRC;
+
+    if (FIXED_QRC_2PTS_MATIERES.has(matiereId)) {
+      if (questionType === "QRC") return FIXED_QRC_POINTS;
+      return getFixedQrcQcmPoints(matiere);
+    }
   }
   const base = getBasePoints(matiereId, questionType);
   if (!matiere) return base;
