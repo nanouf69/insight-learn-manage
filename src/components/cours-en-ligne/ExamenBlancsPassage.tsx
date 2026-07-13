@@ -91,7 +91,6 @@ function PassageMatiere({
   const userIdRef = useRef<string | null>(null);
   const jwtTokenRef = useRef<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const hasCompletedRef = useRef(false);
   useEffect(() => {
     userIdRef.current = userId ?? userIdRef.current;
     supabase.auth.getSession().then(({ data }) => {
@@ -173,7 +172,7 @@ function PassageMatiere({
     exercice_id: exerciceKey,
     exercice_type: isBilan ? "bilan" : "examen_blanc",
     reponses: updated,
-    completed: completed || hasCompletedRef.current,
+    completed,
     updated_at: new Date().toISOString(),
   });
 
@@ -228,7 +227,13 @@ function PassageMatiere({
         if (saveGenerationRef.current !== myGeneration) return;
 
         try {
-          // Refresh token ref in case it was renewed by keep-alive
+          // Refresh token ref in case it was renewed by keep-alive.
+          // Force an actual refresh (not just re-reading the cached session) so a
+          // genuinely expired token (tablet idle) gets renewed before retrying —
+          // this is the same tablet/JWT-expiry class of bug as "C and E don't save".
+          if (attempt > 1) {
+            try { await supabase.auth.refreshSession(); } catch { /* best effort */ }
+          }
           const sessionRes = await supabase.auth.getSession();
           if (sessionRes.data?.session?.access_token) {
             jwtTokenRef.current = sessionRes.data.session.access_token;
@@ -374,9 +379,6 @@ function PassageMatiere({
     }
     try {
       setSaveStatus("saving");
-      // Cancel any stale autosave retry loop that could otherwise write `completed=false`
-      // after the final validation save.
-      saveGenerationRef.current++;
       if (!userIdRef.current) {
         const sessionRes = await supabase.auth.getSession();
         userIdRef.current = sessionRes.data?.session?.user?.id ?? userId ?? null;
@@ -384,7 +386,6 @@ function PassageMatiere({
       }
       if (!userIdRef.current && !userId) throw new Error("Session apprenant indisponible");
       await saveViaEdgeFunction(buildAutosavePayload(reponses, true));
-      hasCompletedRef.current = true;
       setSaveStatus("saved");
     } catch (error) {
       console.error("[AutoSave] Validation bloquée: réponses non sauvegardées", error);
