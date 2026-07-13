@@ -1216,7 +1216,8 @@ function RevisionFausses({
 
   const current = wrongQuestions[currentIndex];
   if (!current) return null;
-  const { question: q, matiereNom } = current;
+  const { question: q, matiereNom, matiere: currentMatiere } = current;
+  const qNumero = (currentMatiere?.questions || []).indexOf(q) + 1;
   const rep = reponses[q.id];
 
   const checkAnswer = () => {
