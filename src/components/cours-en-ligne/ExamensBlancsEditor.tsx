@@ -85,7 +85,7 @@ const TAXI_OFFSET = 6;
  * Repair missing `correct` flags on QCM choices by falling back to the
  * original source data when the saved data has lost them.
  */
-function repairCorrectFlags(examens: ExamenBlanc[]): void {
+function repairCorrectFlags(examens: ExamenBlanc[], notify: boolean = false): void {
   const source = tousLesExamens;
   for (let i = 0; i < examens.length && i < source.length; i++) {
     const ex = examens[i];
@@ -103,6 +103,19 @@ function repairCorrectFlags(examens: ExamenBlanc[]): void {
       // Only repair when ALL correct flags are lost (serialization bug), not admin edits
       if (srcCorrectCount > 0 && savedCorrectCount === 0) {
         console.log(`[ExamRepair] Restoring correct flags for exam ${ex.id}, matière ${mat.id}: ${savedCorrectCount} → ${srcCorrectCount}`);
+        // VISIBLE trace: this auto-repair silently rewrote correct-answer flags.
+        // Surface it in the UI (admin editor only — never to a student) so it's
+        // never a mystery "the answer changed itself".
+        if (notify) {
+          try {
+            toast.warning(
+              `⚠️ Réparation automatique déclenchée sur "${ex.titre || ex.id}" / ${mat.nom} : ` +
+              `les bonnes réponses avaient toutes disparu, elles ont été restaurées depuis l'original. ` +
+              `Si vous aviez fait une modification récente sur cette matière, vérifiez-la.`,
+              { duration: 15000 },
+            );
+          } catch {}
+        }
         for (const q of mat.questions) {
           if (q?.type !== "QCM" || !Array.isArray(q.choix)) continue;
           const srcQ = srcMat.questions.find(sq => sq.id === q.id);
@@ -180,7 +193,7 @@ function syncTaxiTaMatieres(examens: ExamenBlanc[]): void {
 }
 
 // Load saved exam overrides from DB — NO CACHE, always fresh from DB
-export async function loadSavedExamens(): Promise<ExamenBlanc[]> {
+export async function loadSavedExamens(notifyRepairs: boolean = false): Promise<ExamenBlanc[]> {
   const examens = cloneExamens(tousLesExamens);
   
   try {
@@ -194,7 +207,7 @@ export async function loadSavedExamens(): Promise<ExamenBlanc[]> {
     if (error) {
       console.error("[ExamensEditor] Error loading saved exams:", error);
       // On error, return source data (no stale cache)
-      repairCorrectFlags(examens);
+      repairCorrectFlags(examens, notifyRepairs);
       syncVtcTaxiMatieres(examens);
       syncVtcVaMatieres(examens);
       syncTaxiTaMatieres(examens);
@@ -339,7 +352,7 @@ export async function loadSavedExamens(): Promise<ExamenBlanc[]> {
   // NOTE: sync functions are NOT run here after merge — the saved data in DB
   // was already synced during persistExamens. Running sync again would overwrite
   // correctly merged admin edits with stale source data.
-  repairCorrectFlags(examens);
+  repairCorrectFlags(examens, notifyRepairs);
 
   // Apply fournisseur (formateur) overrides on top of admin's saved data.
   // The fournisseur portal saves modifications in `quiz_questions_overrides`
@@ -629,8 +642,47 @@ function MatiereEditor({
     setConfirmDeleteQId(qId);
   };
 
-  const confirmDelete = () => {
+  const [checkingBeforeDelete, setCheckingBeforeDelete] = useState(false);
+
+  const confirmDelete = async () => {
     if (confirmDeleteQId === null) return;
+    setCheckingBeforeDelete(true);
+    try {
+      // LIVE re-check: don't trust the `locked` prop alone — it was computed once
+      // when the editor loaded this exam, and a student may have submitted an
+      // answer since then. Deleting a question after a student has already
+      // answered it retroactively breaks their score (their answer no longer
+      // matches any current question). Always verify right before deleting.
+      const prefix = `${examId}_`;
+      const [{ count: repCount }, { count: resCount }] = await Promise.all([
+        supabase
+          .from("reponses_apprenants")
+          .select("*", { count: "exact", head: true })
+          .like("exercice_id", `${prefix}%`),
+        supabase
+          .from("apprenant_quiz_results")
+          .select("*", { count: "exact", head: true })
+          .like("quiz_id", `${prefix}%`),
+      ]);
+      const totalResponses = (repCount ?? 0) + (resCount ?? 0);
+      if (totalResponses > 0) {
+        toast.error(
+          `❌ Suppression annulée : ${totalResponses} réponse(s) d'apprenant(s) existent déjà pour cet examen. ` +
+          `Supprimer cette question fausserait rétroactivement leur note. ` +
+          `Si la question est incorrecte, corrigez plutôt son énoncé ou sa bonne réponse au lieu de la supprimer.`,
+          { duration: 12000 },
+        );
+        setConfirmDeleteQId(null);
+        return;
+      }
+    } catch (err) {
+      console.error("[ExamensEditor] Error checking responses before delete:", err);
+      toast.error("Impossible de vérifier s'il existe des réponses d'apprenants — suppression annulée par précaution.");
+      setConfirmDeleteQId(null);
+      return;
+    } finally {
+      setCheckingBeforeDelete(false);
+    }
     const newQuestions = questionsSafe.filter(q => q.id !== confirmDeleteQId);
     onChange({ ...matiere, questions: newQuestions });
     setEditingQId(null);
@@ -872,12 +924,13 @@ function MatiereEditor({
           <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
           <AlertDialogDescription>
             Êtes-vous sûr de vouloir supprimer cette question ? Cette action est irréversible.
+            Une vérification sera faite pour s'assurer qu'aucun apprenant n'y a déjà répondu.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Annuler</AlertDialogCancel>
-          <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-            Supprimer
+          <AlertDialogCancel disabled={checkingBeforeDelete}>Annuler</AlertDialogCancel>
+          <AlertDialogAction onClick={confirmDelete} disabled={checkingBeforeDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            {checkingBeforeDelete ? "Vérification..." : "Supprimer"}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
@@ -1064,7 +1117,7 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
 
 
   useEffect(() => {
-    loadSavedExamens().then(async (loadedExamens) => {
+    loadSavedExamens(true).then(async (loadedExamens) => {
       setExamens(loadedExamens);
       lastSavedFingerprintRef.current = JSON.stringify(loadedExamens);
       lastSavedModuleFingerprintsRef.current = loadedExamens.reduce<Record<number, string>>((acc, ex) => {

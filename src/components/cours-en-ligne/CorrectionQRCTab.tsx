@@ -11,7 +11,6 @@ import { toast } from "sonner";
 import { tousLesExamens, getPointsParQuestion, type ExamenBlanc, type Matiere } from "./examens-blancs-data";
 import { loadSavedExamens } from "./ExamensBlancsEditor";
 import { buildExamenMap, findMatiereWithFallback, getSourceQuestions } from "./exam-helpers";
-import { computeMatiereScore } from "./examens-blancs-scoring";
 
 interface QrcItem {
   resultId: string;
@@ -335,7 +334,7 @@ const CorrectionQRCTab = () => {
   // Load examens (source + saved)
   useEffect(() => {
     const load = async () => {
-      const saved = await loadSavedExamens();
+      const saved = await loadSavedExamens(true);
       setExamenMap(buildExamenMap(tousLesExamens, saved));
     };
     load();
@@ -730,10 +729,8 @@ const CorrectionQRCTab = () => {
         }
       }
 
-      const canonicalScore = computeMatiereScore(matiere, mergedReponses, newScore, newScore, correctionsIA as any);
-      const scoreObtenu = canonicalScore?.scoreObtenu ?? Math.max(newScore, 0);
-      const scoreMax = canonicalScore?.scoreMax ?? questions.reduce((sum, q) => sum + getPointsParQuestion(item.matiereId, q.type || "QCM", matiere), 0);
-      const noteSur20 = canonicalScore?.noteSur20 ?? (scoreMax > 0 ? Number(((Math.min(Math.max(scoreObtenu, 0), scoreMax) / scoreMax) * 20).toFixed(1)) : 0);
+      const scoreMax = matiere.noteSur || 20;
+      const noteSur20 = scoreMax > 0 ? Number(((Math.min(Math.max(newScore, 0), scoreMax) / scoreMax) * 20).toFixed(1)) : 0;
       const payload = {
         apprenant_id: item.apprenantId,
         user_id: item.userId || (autosaveRow as any).user_id,
@@ -743,10 +740,10 @@ const CorrectionQRCTab = () => {
         matiere_id: item.matiereId,
         matiere_nom: item.matiereNom,
         tentative: 1,
-        score_obtenu: Math.min(Math.max(scoreObtenu, 0), scoreMax),
+        score_obtenu: Math.min(Math.max(newScore, 0), scoreMax),
         score_max: scoreMax,
         note_sur_20: noteSur20,
-        reussi: canonicalScore?.admis ?? noteSur20 >= 10,
+        reussi: noteSur20 >= 10,
         completed_at: (existing as any)?.details
           ? ((existing as any).completed_at || (autosaveRow as any).updated_at || new Date().toISOString())
           : ((autosaveRow as any).updated_at || new Date().toISOString()),
@@ -860,9 +857,7 @@ const CorrectionQRCTab = () => {
     // Recalculate total score for this matiere
     const examen = examenMap[item.quizId];
     const matiere = examen?.matieres?.find((m: Matiere) => m.id === item.matiereId);
-    const questions = Array.isArray(details.questions) && details.questions.length > 0
-      ? details.questions
-      : (matiere ? buildQuestionListFromMatiere(matiere, details.reponses || {}) : []);
+    const questions = details.questions || [];
     const reponses = details.reponses || {};
 
     let newScore = 0;
@@ -884,17 +879,16 @@ const CorrectionQRCTab = () => {
       }
     }
 
-    const canonicalScore = matiere ? computeMatiereScore(matiere, reponses, newScore, (row as any).score_max, correctionsIA as any) : null;
-    const scoreMax = canonicalScore?.scoreMax ?? ((row as any).score_max || 20);
-    const safeClamped = Math.min(Math.max(canonicalScore?.scoreObtenu ?? newScore, 0), scoreMax);
-    const scoreRecalcule = Math.max(safeClamped, 0);
-    const noteSur20 = canonicalScore?.noteSur20 ?? (scoreMax > 0 ? Number(((scoreRecalcule / scoreMax) * 20).toFixed(1)) : 0);
+    const scoreMax = (row as any).score_max || 20;
+    const safeClamped = Math.min(Math.max(newScore, 0), scoreMax);
+    const existingScore = Math.max(Number((row as any).score_obtenu) || 0, 0);
+    const protectedScore = safeClamped <= 0 && existingScore > 0 ? existingScore : safeClamped;
+    const noteSur20 = scoreMax > 0 ? Number(((protectedScore / scoreMax) * 20).toFixed(1)) : 0;
 
     const { error: updateErr } = await supabase
       .from("apprenant_quiz_results")
       .update({
-        score_obtenu: scoreRecalcule,
-        score_max: scoreMax,
+        score_obtenu: protectedScore,
         note_sur_20: noteSur20,
         details: {
           ...details,
@@ -911,7 +905,7 @@ const CorrectionQRCTab = () => {
       setItems(prev => {
         const updated = prev.map(i => {
           if (i.resultId === item.resultId) {
-            const upd: Partial<QrcItem> = { noteSur20, scoreMatiereObtenu: scoreRecalcule };
+            const upd: Partial<QrcItem> = { noteSur20, scoreMatiereObtenu: protectedScore };
             if (i.questionId === item.questionId) {
               return { ...i, ...upd, pointsObtenus: clamped, corrigeManuel: true, commentaire: commentaire || "", correctedAt: new Date().toISOString() };
             }
