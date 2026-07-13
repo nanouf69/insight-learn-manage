@@ -9,7 +9,7 @@
 // Cela évite toute divergence entre les 3 écrans quand le barème change.
 
 import { getPointsParQuestion, type Matiere, type Question } from "./examens-blancs-data";
-import type { ExamenBlanc } from "./examens-blancs-types";
+import type { CorrectionCache, ExamenBlanc, ResultatMatiere } from "./examens-blancs-types";
 import {
   safeArray,
   toFiniteNumber,
@@ -33,6 +33,7 @@ export interface MatiereScore {
 export function computeMatiereScoreFromReponses(
   matiere: Matiere,
   reponses: Record<string, any> | null | undefined,
+  correctionsIA?: CorrectionCache | null,
 ): MatiereScore | null {
   if (!reponses || Object.keys(reponses).length === 0) return null;
 
@@ -61,8 +62,12 @@ export function computeMatiereScoreFromReponses(
       return total;
     }
     if (q.type === "QRC") {
-      const correction = evaluateQrcDeterministic(q, rep, pts);
-      return total + correction.pointsObtenus;
+      const storedCorrection = correctionsIA?.[q.id] ?? correctionsIA?.[String(q.id) as any];
+      if (storedCorrection && storedCorrection !== "loading" && storedCorrection !== "error") {
+        return total + clamp(storedCorrection.pointsObtenus, 0, pts);
+      }
+      const deterministicCorrection = evaluateQrcDeterministic(q, rep, pts);
+      return total + deterministicCorrection.pointsObtenus;
     }
     return total;
   }, 0);
@@ -90,8 +95,9 @@ export function computeMatiereScore(
   reponses: Record<string, any> | null | undefined,
   storedScoreObtenu?: unknown,
   storedScoreMax?: unknown,
+  correctionsIA?: CorrectionCache | null,
 ): MatiereScore | null {
-  const fromReponses = computeMatiereScoreFromReponses(matiere, reponses);
+  const fromReponses = computeMatiereScoreFromReponses(matiere, reponses, correctionsIA);
   if (fromReponses) return fromReponses;
 
   const storedObtenu = toFiniteNumber(storedScoreObtenu, NaN);
@@ -110,6 +116,21 @@ export function computeMatiereScore(
     false,
   );
   return { scoreObtenu: safeScore, scoreMax: storedMax, noteSur20, admis, passee: true };
+}
+
+export function computeResultatMatiereScore(
+  matiere: Matiere,
+  resultat: Pick<ResultatMatiere, "reponses" | "noteObtenue" | "maxPoints" | "correctionsIA"> | null | undefined,
+  correctionsIA?: CorrectionCache | null,
+): MatiereScore | null {
+  if (!resultat) return null;
+  return computeMatiereScore(
+    matiere,
+    resultat.reponses as Record<string, any> | null | undefined,
+    resultat.noteObtenue,
+    resultat.maxPoints,
+    correctionsIA ?? resultat.correctionsIA ?? null,
+  );
 }
 
 export interface MoyenneExamen {

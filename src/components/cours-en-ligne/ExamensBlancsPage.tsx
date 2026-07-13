@@ -26,6 +26,7 @@ import { recoverCorruptedScoreRow, isCorruptedZeroRow, persistExamSession as per
 import { EcranSelection } from "./ExamenBlancsListe";
 import { PassageMatiere, TransitionMatiere } from "./ExamenBlancsPassage";
 import { EcranResultats, RevisionFausses } from "./ExamenBlancsResultats";
+import { computeMatiereScore } from "./examens-blancs-scoring";
 
 export default function ExamensBlancsPage({
   defaultBilanId,
@@ -601,24 +602,11 @@ export default function ExamensBlancsPage({
         }
 
         const reponses = resp.reponses || {};
-        const note = questionsSafe.reduce((total, q) => {
-          if (!q || !q?.type) return total;
-          const rep = reponses?.[q.id] ?? reponses?.[String(q.id)];
-          const pts = getPointsParQuestion(matiere.id, q?.type, matiere);
-          if (q?.type === "QCM" && q.choix) {
-            const correctes = safeArray<string>(q.choix?.filter(c => c.correct).map(c => c.lettre)).sort();
-            const donnees = safeArray<string>(rep).sort();
-            if (JSON.stringify(correctes) === JSON.stringify(donnees)) return total + pts;
-          } else if (q?.type === "QRC") {
-            const correction = evaluateQrcDeterministic(q, rep, pts);
-            return total + correction.pointsObtenus;
-          }
-          return total;
-        }, 0);
-
-        const safeNote = maxPoints > 0 ? clamp(note, 0, maxPoints) : Math.max(note, 0);
-        const noteSur20 = normalizeNoteSur20(safeNote, maxPoints);
-        const admis = computeAdmisForMatiere(safeNote, maxPoints, matiere.noteEliminatoire, matiere.noteSur || 20, false);
+        const score = computeMatiereScore(matiere, reponses, 0, maxPoints);
+        const safeNote = score?.scoreObtenu ?? 0;
+        const safeMaxPoints = score?.scoreMax ?? maxPoints;
+        const noteSur20 = score?.noteSur20 ?? normalizeNoteSur20(safeNote, safeMaxPoints);
+        const admis = score?.admis ?? computeAdmisForMatiere(safeNote, safeMaxPoints, matiere.noteEliminatoire, matiere.noteSur || 20, false);
 
         await supabase
           .from("apprenant_quiz_results" as any)
@@ -631,7 +619,7 @@ export default function ExamensBlancsPage({
             matiere_id: matiere.id,
             matiere_nom: matiere.nom,
             score_obtenu: safeNote,
-            score_max: maxPoints,
+            score_max: safeMaxPoints,
             note_sur_20: noteSur20,
             reussi: admis,
             details: { reponses },
@@ -642,7 +630,7 @@ export default function ExamensBlancsPage({
           matiereId: matiere.id,
           nomMatiere: matiere.nom,
           noteObtenue: safeNote,
-          maxPoints,
+          maxPoints: safeMaxPoints,
           noteSur: matiere.noteSur || 20,
           noteEliminatoire: matiere.noteEliminatoire || 0,
           coefficient: matiere.coefficient || 1,
@@ -727,10 +715,23 @@ export default function ExamensBlancsPage({
 
       // Auto-heal corrupted zero-score rows
       let safeScoreObtenu = safeScoreMax > 0 ? clamp(toFiniteNumber(row.score_obtenu, 0), 0, safeScoreMax) : Math.max(toFiniteNumber(row.score_obtenu, 0), 0);
+      let normalizedScoreMax = safeScoreMax;
+      const canonicalScore = computeMatiereScore(
+        matiere,
+        row.details?.reponses || null,
+        row.score_obtenu,
+        safeScoreMax,
+        savedCorrections,
+      );
+      if (canonicalScore) {
+        safeScoreObtenu = canonicalScore.scoreObtenu;
+        normalizedScoreMax = canonicalScore.scoreMax;
+      }
       if (safeScoreObtenu <= 0 && isCorruptedZeroRow(row)) {
         const recovered = recoverCorruptedScoreRow(row, liveExamens);
         if (recovered && recovered.score_obtenu > 0) {
           safeScoreObtenu = recovered.score_obtenu;
+          normalizedScoreMax = recovered.score_max;
           console.warn(`[handleViewResults][AutoHeal] ${row.quiz_id}/${row.matiere_id}: 0 -> ${recovered.score_obtenu}/${recovered.score_max}`);
           // Persist healed score back to DB (fire-and-forget)
           void supabase
@@ -752,11 +753,11 @@ export default function ExamensBlancsPage({
         matiereId: row.matiere_id || matiere.id,
         nomMatiere: row.matiere_nom || matiere.nom,
         noteObtenue: safeScoreObtenu,
-        maxPoints: safeScoreMax,
+        maxPoints: normalizedScoreMax,
         noteSur: safeNoteSur,
         noteEliminatoire: matiere.noteEliminatoire || 0,
         coefficient: matiere.coefficient || 1,
-        admis: computeAdmisForMatiere(safeScoreObtenu, safeScoreMax, matiere.noteEliminatoire, safeNoteSur, Boolean(row.reussi)),
+        admis: canonicalScore?.admis ?? computeAdmisForMatiere(safeScoreObtenu, normalizedScoreMax, matiere.noteEliminatoire, safeNoteSur, Boolean(row.reussi)),
         reponses: row.details?.reponses || {},
         correctionsIA: savedCorrections,
       };
@@ -800,23 +801,11 @@ export default function ExamensBlancsPage({
 
         const questionsSafe = (matiere.questions ?? []).filter((q): q is Question => q != null && q?.type != null);
         const maxPoints = questionsSafe.reduce((acc, q) => acc + getPointsParQuestion(matiere.id, q?.type || "QCM", matiere), 0);
-        const note = questionsSafe.reduce((total, q) => {
-          const rep = reponses?.[q.id] ?? reponses?.[String(q.id)];
-          const pts = getPointsParQuestion(matiere.id, q?.type, matiere);
-          if (q?.type === "QCM" && q.choix) {
-            const correctes = safeArray<string>(q.choix.filter(c => c.correct).map(c => c.lettre)).sort();
-            const donnees = safeArray<string>(rep).sort();
-            if (JSON.stringify(correctes) === JSON.stringify(donnees)) return total + pts;
-          } else if (q?.type === "QRC") {
-            const correction = evaluateQrcDeterministic(q, rep, pts);
-            return total + correction.pointsObtenus;
-          }
-          return total;
-        }, 0);
-
-        const safeNote = maxPoints > 0 ? clamp(note, 0, maxPoints) : Math.max(note, 0);
-        const noteSur20 = normalizeNoteSur20(safeNote, maxPoints);
-        const admis = computeAdmisForMatiere(safeNote, maxPoints, matiere.noteEliminatoire, matiere.noteSur || 20, false);
+        const score = computeMatiereScore(matiere, reponses, 0, maxPoints);
+        const safeNote = score?.scoreObtenu ?? 0;
+        const safeMaxPoints = score?.scoreMax ?? maxPoints;
+        const noteSur20 = score?.noteSur20 ?? normalizeNoteSur20(safeNote, safeMaxPoints);
+        const admis = score?.admis ?? computeAdmisForMatiere(safeNote, safeMaxPoints, matiere.noteEliminatoire, matiere.noteSur || 20, false);
 
         // Upsert into apprenant_quiz_results so future loads see it
         await supabase
@@ -830,7 +819,7 @@ export default function ExamensBlancsPage({
             matiere_id: matiere.id,
             matiere_nom: matiere.nom,
             score_obtenu: safeNote,
-            score_max: maxPoints,
+            score_max: safeMaxPoints,
             note_sur_20: noteSur20,
             reussi: admis,
             details: { reponses },
@@ -839,7 +828,7 @@ export default function ExamensBlancsPage({
 
         // Replace the placeholder in results in-place
         placeholder.noteObtenue = safeNote;
-        placeholder.maxPoints = maxPoints;
+        placeholder.maxPoints = safeMaxPoints;
         placeholder.admis = admis;
         placeholder.reponses = reponses;
         placeholder.nonPassee = false;
