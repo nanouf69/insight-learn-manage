@@ -86,9 +86,18 @@ export function computeMatiereScoreFromReponses(
 }
 
 /**
- * Calcule le score d'une matière avec fallback :
- * 1) réponses brutes (`reponses`) via le barème actuel,
- * 2) sinon score stocké (`storedScoreObtenu` / `storedScoreMax`).
+ * Calcule le score d'une matière.
+ *
+ * PRIORITÉ (fix divergence admin vs apprenant) :
+ *   1. Score stocké (`storedScoreObtenu` / `storedScoreMax`) s'il est valide.
+ *      Ce score a été calculé au moment de l'examen avec le set de questions
+ *      d'alors et fait autorité. Le recalcul à la volée casse tout dès qu'une
+ *      question est éditée / supprimée / renumérotée après coup (chaque
+ *      appareil peut avoir une version différente des questions et sortir
+ *      un score différent → divergence entre l'écran admin et l'écran
+ *      apprenant).
+ *   2. Sinon on retombe sur `computeMatiereScoreFromReponses` (raw reponses)
+ *      pour auto-heal les lignes corrompues sans score.
  */
 export function computeMatiereScore(
   matiere: Matiere,
@@ -97,15 +106,34 @@ export function computeMatiereScore(
   storedScoreMax?: unknown,
   correctionsIA?: CorrectionCache | null,
 ): MatiereScore | null {
+  const storedObtenu = toFiniteNumber(storedScoreObtenu, NaN);
+  const storedMax = toFiniteNumber(storedScoreMax, NaN);
+  const hasValidStored =
+    Number.isFinite(storedObtenu) &&
+    Number.isFinite(storedMax) &&
+    storedMax > 0 &&
+    storedObtenu > 0;
+
+  if (hasValidStored) {
+    const safeScore = clamp(storedObtenu, 0, storedMax);
+    const noteSur20 = normalizeNoteSur20(safeScore, storedMax);
+    const admis = computeAdmisForMatiere(
+      safeScore,
+      storedMax,
+      matiere.noteEliminatoire,
+      matiere.noteSur || 20,
+      false,
+    );
+    return { scoreObtenu: safeScore, scoreMax: storedMax, noteSur20, admis, passee: true };
+  }
+
+  // Fallback : pas de score stocké valide → recalcule depuis les réponses brutes.
   const fromReponses = computeMatiereScoreFromReponses(matiere, reponses, correctionsIA);
   if (fromReponses) return fromReponses;
 
-  const storedObtenu = toFiniteNumber(storedScoreObtenu, NaN);
-  const storedMax = toFiniteNumber(storedScoreMax, NaN);
   if (!Number.isFinite(storedObtenu) || !Number.isFinite(storedMax) || storedMax <= 0) {
     return null;
   }
-
   const safeScore = clamp(storedObtenu, 0, storedMax);
   const noteSur20 = normalizeNoteSur20(safeScore, storedMax);
   const admis = computeAdmisForMatiere(
