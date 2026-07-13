@@ -764,10 +764,99 @@ export default function ExamensBlancsPage({
 
     if (results.length === 0) { toast.error("Résultats introuvables pour les matières de cet examen."); return; }
 
+    // BACKFILL : pour les matières marquées "non passée" mais qui ont en réalité
+    // une réponse complète dans reponses_apprenants (bug historique de sauvegarde),
+    // on recalcule le score depuis les réponses brutes et on l'upsert dans
+    // apprenant_quiz_results afin qu'elles apparaissent avec leur vraie note.
+    const missingMatieres = results
+      .map((r, i) => ({ r, matiere: examReference.matieres[i] }))
+      .filter(({ r, matiere }) => r?.nonPassee && matiere);
+
+    if (missingMatieres.length > 0 && userId) {
+      const { data: savedResponses } = await supabase
+        .from("reponses_apprenants" as any)
+        .select("exercice_id, reponses, completed")
+        .eq("apprenant_id", apprenantId)
+        .eq("exercice_type", "examen_blanc")
+        .like("exercice_id", `${examReference.id}_%`);
+
+      const responseRows = (savedResponses as any[]) || [];
+      let healedCount = 0;
+
+      for (const { r: placeholder, matiere } of missingMatieres) {
+        if (!matiere) continue;
+        const expectedKeys = buildMatiereLookupKeys(matiere.id, matiere.nom);
+        const resp = responseRows.find((row: any) => {
+          const exerciceId = safeStr(row?.exercice_id);
+          const matiereKey = extractMatiereKeyFromExerciceId(exerciceId, examReference.id);
+          if (!matiereKey) return false;
+          return shareLookupKey(buildMatiereLookupKeys(matiereKey, matiereKey), expectedKeys);
+        });
+        if (!resp) continue;
+
+        const reponses = resp.reponses || {};
+        // Skip if no responses at all
+        if (Object.keys(reponses).length === 0) continue;
+
+        const questionsSafe = (matiere.questions ?? []).filter((q): q is Question => q != null && q?.type != null);
+        const maxPoints = questionsSafe.reduce((acc, q) => acc + getPointsParQuestion(matiere.id, q?.type || "QCM", matiere), 0);
+        const note = questionsSafe.reduce((total, q) => {
+          const rep = reponses?.[q.id] ?? reponses?.[String(q.id)];
+          const pts = getPointsParQuestion(matiere.id, q?.type, matiere);
+          if (q?.type === "QCM" && q.choix) {
+            const correctes = safeArray<string>(q.choix.filter(c => c.correct).map(c => c.lettre)).sort();
+            const donnees = safeArray<string>(rep).sort();
+            if (JSON.stringify(correctes) === JSON.stringify(donnees)) return total + pts;
+          } else if (q?.type === "QRC") {
+            const correction = evaluateQrcDeterministic(q, rep, pts);
+            return total + correction.pointsObtenus;
+          }
+          return total;
+        }, 0);
+
+        const safeNote = maxPoints > 0 ? clamp(note, 0, maxPoints) : Math.max(note, 0);
+        const noteSur20 = normalizeNoteSur20(safeNote, maxPoints);
+        const admis = computeAdmisForMatiere(safeNote, maxPoints, matiere.noteEliminatoire, matiere.noteSur || 20, false);
+
+        // Upsert into apprenant_quiz_results so future loads see it
+        await supabase
+          .from("apprenant_quiz_results" as any)
+          .upsert([{
+            apprenant_id: apprenantId,
+            user_id: userId,
+            quiz_type: quizType,
+            quiz_id: examReference.id,
+            quiz_titre: examReference.titre,
+            matiere_id: matiere.id,
+            matiere_nom: matiere.nom,
+            score_obtenu: safeNote,
+            score_max: maxPoints,
+            note_sur_20: noteSur20,
+            reussi: admis,
+            details: { reponses },
+            tentative: 1,
+          }] as any, { onConflict: "apprenant_id,quiz_id,matiere_id,tentative" } as any);
+
+        // Replace the placeholder in results in-place
+        placeholder.noteObtenue = safeNote;
+        placeholder.maxPoints = maxPoints;
+        placeholder.admis = admis;
+        placeholder.reponses = reponses;
+        placeholder.nonPassee = false;
+        healedCount++;
+        console.warn(`[handleViewResults][Backfill] Healed missing score for ${examReference.id}/${matiere.id}: ${safeNote}/${maxPoints}`);
+      }
+
+      if (healedCount > 0) {
+        toast.success(`${healedCount} matière(s) récupérée(s) depuis vos réponses.`);
+      }
+    }
+
     setExamenChoisi(examReference);
     setTousResultats(results);
     setIsViewingSavedResults(true);
     setPhase("resultats");
+
     // BUG #2 FIX: purge any stale exam sessionStorage immediately on entering results phase
     try { sessionStorage.removeItem(EXAM_SESSION_KEY); } catch {}
   };
