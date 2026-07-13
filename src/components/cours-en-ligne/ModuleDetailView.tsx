@@ -3411,9 +3411,20 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       .subscribe((status) => {
         console.log(`[Realtime] Channel module-editor-live-${module.id} status:`, status);
         setRealtimeStatus(status);
+        // Auto-reconnect on failure so students never miss admin corrections
+        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+          setTimeout(() => setRealtimeReconnectKey((k) => k + 1), 3000);
+        }
       });
 
+    // Continuous polling fallback (every 15s) → catches any missed realtime event
+    // so admin corrections ALWAYS reach the learner within 15s max.
+    const pollTimer = setInterval(() => {
+      void refetchModuleFromDb();
+    }, 15_000);
+
     return () => {
+      clearInterval(pollTimer);
       supabase.removeChannel(channel);
     };
   }, [module.id, studentOnly, realtimeReconnectKey]);
