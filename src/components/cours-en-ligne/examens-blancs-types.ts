@@ -37,6 +37,8 @@ export interface ExamScoreItem {
   created_at?: string;
   completed_at?: string;
   lookupKeys: string[];
+  /** Réponses brutes stockées (pour recalcul au barème actuel dans les vues) */
+  reponses?: Record<string, any> | null;
 }
 
 export type { ExamenBlanc, Matiere, Question };
