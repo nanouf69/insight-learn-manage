@@ -629,7 +629,7 @@ export default function ExamensBlancsPage({
         }
 
         const reponses = resp.reponses || {};
-        const score = computeMatiereScore(matiere, reponses, 0, maxPoints, null, findStaticFallbackMatiere(examReference.id, matiere.id, matiere.nom));
+        const score = computeMatiereScore(matiere, reponses, 0, maxPoints, null);
         const safeNote = score?.scoreObtenu ?? 0;
         const safeMaxPoints = score?.scoreMax ?? maxPoints;
         const noteSur20 = score?.noteSur20 ?? normalizeNoteSur20(safeNote, safeMaxPoints);
@@ -739,7 +739,6 @@ export default function ExamensBlancsPage({
         row.score_obtenu,
         safeScoreMax,
         savedCorrections,
-        findStaticFallbackMatiere(examReference.id, matiere.id, matiere.nom),
       );
       if (canonicalScore) {
         safeScoreObtenu = canonicalScore.scoreObtenu;
@@ -821,7 +820,7 @@ export default function ExamensBlancsPage({
 
         const questionsSafe = (matiere.questions ?? []).filter((q): q is Question => q != null && q?.type != null);
         const maxPoints = questionsSafe.reduce((acc, q) => acc + getPointsParQuestion(matiere.id, q?.type || "QCM", matiere), 0);
-        const score = computeMatiereScore(matiere, reponses, 0, maxPoints, null, findStaticFallbackMatiere(examReference.id, matiere.id, matiere.nom));
+        const score = computeMatiereScore(matiere, reponses, 0, maxPoints, null);
         const safeNote = score?.scoreObtenu ?? 0;
         const safeMaxPoints = score?.scoreMax ?? maxPoints;
         const noteSur20 = score?.noteSur20 ?? normalizeNoteSur20(safeNote, safeMaxPoints);
