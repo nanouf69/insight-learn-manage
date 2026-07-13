@@ -308,17 +308,22 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
               }
 
               // Merge fallback completion into completedIds
+              // On considère l'examen comme terminé si TOUTES les matières OU au moins N-1
+              // ont completed=true dans reponses_apprenants (aligné sur la tolérance appliquée
+              // à apprenant_quiz_results, pour éviter qu'un seul upsert perdu affiche "Non terminé").
               const mergedCompleted = new Set(completedIds);
               completedMatieresByQuiz.forEach((doneKeys, quizId) => {
                 const examDef = examensData.find((e) => e.id === quizId);
                 const validMatieres = (examDef?.matieres || []).filter((m): m is Matiere => Boolean(m));
                 if (validMatieres.length === 0) return;
-                const allDone = validMatieres.every((m) => doneKeys.has(String(m.id).toLowerCase()));
-                if (allDone) mergedCompleted.add(quizId);
+                const doneCount = validMatieres.filter((m) => doneKeys.has(String(m.id).toLowerCase())).length;
+                const threshold = Math.max(validMatieres.length - 1, 1);
+                if (doneCount >= threshold) mergedCompleted.add(quizId);
               });
               if (mergedCompleted.size !== completedIds.size) {
                 setCompletedExamIds(mergedCompleted);
               }
+
 
               if (repData) {
                 (repData as any[]).forEach((r: any) => {
