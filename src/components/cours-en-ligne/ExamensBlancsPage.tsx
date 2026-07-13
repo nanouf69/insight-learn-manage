@@ -629,7 +629,7 @@ export default function ExamensBlancsPage({
         }
 
         const reponses = resp.reponses || {};
-        const score = computeMatiereScore(matiere, reponses, 0, maxPoints, null, findStaticFallbackMatiere(examReference.id, matiere.id, matiere.nom));
+        const score = computeMatiereScore(matiere, reponses, 0, maxPoints, null);
         const safeNote = score?.scoreObtenu ?? 0;
         const safeMaxPoints = score?.scoreMax ?? maxPoints;
         const noteSur20 = score?.noteSur20 ?? normalizeNoteSur20(safeNote, safeMaxPoints);
