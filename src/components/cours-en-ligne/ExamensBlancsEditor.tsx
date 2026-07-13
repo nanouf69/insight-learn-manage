@@ -1009,32 +1009,35 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
         return true;
       }
 
-      // ANTI-CONFLICT CHECK: before overwriting, verify no other tab/session has
-      // saved these same modules more recently than what this tab last loaded/saved.
-      // Prevents a stale tab (e.g. left open from earlier) from silently reverting
-      // a more recent edit made elsewhere — the exact symptom of "my edit disappears
-      // later, on reload or another day".
+      // ANTI-CONFLICT CHECK: warn (don't block) if another tab/session appears to
+      // have saved these same modules more recently than what this tab last knew
+      // about. A 3s tolerance absorbs clock differences between client and server
+      // so this never produces a false positive that silently prevents saving —
+      // a rare missed warning is far better than blocking legitimate edits.
       const moduleIdsToCheck = rows.map((r) => r.module_id);
       const { data: currentServerRows } = await supabase
         .from("module_editor_state")
         .select("module_id, updated_at")
         .in("module_id", moduleIdsToCheck);
 
+      const CONFLICT_TOLERANCE_MS = 3000;
       const conflictingModuleIds = new Set<number>();
       for (const serverRow of (currentServerRows as any[]) || []) {
         const known = lastKnownServerUpdatedAtRef.current[serverRow.module_id];
-        if (known && new Date(serverRow.updated_at).getTime() > new Date(known).getTime()) {
+        if (known && new Date(serverRow.updated_at).getTime() > new Date(known).getTime() + CONFLICT_TOLERANCE_MS) {
           conflictingModuleIds.add(serverRow.module_id);
         }
       }
 
       if (conflictingModuleIds.size > 0) {
-        console.warn("[ExamensEditor] Conflit détecté, sauvegarde bloquée pour les modules :", [...conflictingModuleIds]);
-        toast.error(
-          "⚠️ Un autre onglet ou une autre session a modifié cet examen entre-temps. " +
-          "Votre sauvegarde a été bloquée pour ne rien écraser — rechargez la page pour repartir des dernières données.",
+        console.warn("[ExamensEditor] Conflit potentiel détecté (sauvegarde non bloquée) pour les modules :", [...conflictingModuleIds]);
+        toast.warning(
+          "⚠️ Un autre onglet ou une autre session semble avoir modifié cet examen entre-temps. " +
+          "Votre modification a quand même été enregistrée. Si quelque chose semble incohérent, rechargez la page.",
+          { duration: 10000 },
         );
-        return false;
+        // Do NOT return false here — a false positive (clock skew, etc.) must never
+        // silently prevent a real, legitimate save. Warn and proceed.
       }
 
       // Save only changed exams in one batch request
