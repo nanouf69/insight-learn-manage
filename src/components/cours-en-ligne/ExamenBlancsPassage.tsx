@@ -91,6 +91,7 @@ function PassageMatiere({
   const userIdRef = useRef<string | null>(null);
   const jwtTokenRef = useRef<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hasCompletedRef = useRef(false);
   useEffect(() => {
     userIdRef.current = userId ?? userIdRef.current;
     supabase.auth.getSession().then(({ data }) => {
@@ -172,7 +173,7 @@ function PassageMatiere({
     exercice_id: exerciceKey,
     exercice_type: isBilan ? "bilan" : "examen_blanc",
     reponses: updated,
-    completed,
+    completed: completed || hasCompletedRef.current,
     updated_at: new Date().toISOString(),
   });
 
@@ -373,6 +374,9 @@ function PassageMatiere({
     }
     try {
       setSaveStatus("saving");
+      // Cancel any stale autosave retry loop that could otherwise write `completed=false`
+      // after the final validation save.
+      saveGenerationRef.current++;
       if (!userIdRef.current) {
         const sessionRes = await supabase.auth.getSession();
         userIdRef.current = sessionRes.data?.session?.user?.id ?? userId ?? null;
@@ -380,6 +384,7 @@ function PassageMatiere({
       }
       if (!userIdRef.current && !userId) throw new Error("Session apprenant indisponible");
       await saveViaEdgeFunction(buildAutosavePayload(reponses, true));
+      hasCompletedRef.current = true;
       setSaveStatus("saved");
     } catch (error) {
       console.error("[AutoSave] Validation bloquée: réponses non sauvegardées", error);
