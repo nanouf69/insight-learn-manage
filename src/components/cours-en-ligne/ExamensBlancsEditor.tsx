@@ -1157,9 +1157,14 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
     autoSaveTimerRef.current = setTimeout(async () => {
       setAutoSaving(true);
-      await persistExamens(examens, false);
+      const ok = await persistExamens(examens, true);
       pendingExamSaveRef.current = null;
       setAutoSaving(false);
+      if (!ok) {
+        // persistExamens already shows a toast.error on failure, but make it
+        // impossible to miss: the admin must always know if a save failed.
+        console.error("[ExamensEditor] Auto-save FAILED — the edit was NOT persisted to the database.");
+      }
     }, 800);
 
     return () => {
