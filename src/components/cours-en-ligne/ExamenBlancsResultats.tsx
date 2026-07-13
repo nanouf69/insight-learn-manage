@@ -21,6 +21,7 @@ import {
   evaluateQrcDeterministic, ENABLE_AI_QRC_CORRECTION, AI_ONLY_UPGRADES,
   getQuestionImageValue,
 } from "./examens-blancs-utils";
+import { computeMoyenneExamen } from "./examens-blancs-scoring";
 
 function EcranResultats({
   examen,
