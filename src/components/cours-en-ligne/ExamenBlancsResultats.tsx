@@ -1070,8 +1070,13 @@ function RevisionFausses({
   const [correctedCount, setCorrectedCount] = useState(0);
   const [loaded, setLoaded] = useState(false);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Refs pour flush "keepalive" en cas de déconnexion / fermeture d'onglet
+  const latestPayloadRef = useRef<any>(null);
+  const pendingSaveRef = useRef(false);
+  const accessTokenRef = useRef<string | null>(null);
 
   const exerciceId = `revision_fausses_${examenId || "unknown"}`;
+
 
   // ---- Load saved progress on mount ----
   useEffect(() => {
@@ -1122,33 +1127,86 @@ function RevisionFausses({
     correctedQuestions: string[],
   ) => {
     if (!apprenantId || !userId) return;
+    const payload = {
+      apprenant_id: apprenantId,
+      user_id: userId,
+      exercice_id: exerciceId,
+      exercice_type: "revision_fausses",
+      reponses: {
+        answers: newReponses,
+        currentIndex: newIndex,
+        correctedCount: newCorrectedCount,
+        correctedQuestions,
+      },
+      score: newCorrectedCount,
+      completed: false,
+    };
+    // Toujours mémoriser le dernier état — sert au flush en cas de déconnexion.
+    latestPayloadRef.current = payload;
+    pendingSaveRef.current = true;
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     saveTimeoutRef.current = setTimeout(async () => {
       try {
-        const payload = {
-          apprenant_id: apprenantId,
-          user_id: userId,
-          exercice_id: exerciceId,
-          exercice_type: "revision_fausses",
-          reponses: {
-            answers: newReponses,
-            currentIndex: newIndex,
-            correctedCount: newCorrectedCount,
-            correctedQuestions,
-          },
-          score: newCorrectedCount,
-          completed: false,
-        };
-        // Try upsert
         const { error } = await supabase
           .from("reponses_apprenants")
           .upsert(payload as any, { onConflict: "apprenant_id,exercice_id" });
         if (error) console.error("Erreur sauvegarde révision progress:", error.message);
+        else pendingSaveRef.current = false;
       } catch (err) {
         console.error("Erreur sauvegarde révision progress:", err);
       }
     }, 800);
   }, [apprenantId, userId, exerciceId]);
+
+  // Récupère l'access token pour le flush "keepalive" (fetch synchronisable sur pagehide).
+  useEffect(() => {
+    let mounted = true;
+    supabase.auth.getSession().then(({ data }) => {
+      if (mounted) accessTokenRef.current = data.session?.access_token || null;
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+      accessTokenRef.current = session?.access_token || null;
+    });
+    return () => { mounted = false; sub.subscription.unsubscribe(); };
+  }, []);
+
+  // Flush "keepalive" en cas de fermeture d'onglet / déconnexion / mise en veille.
+  useEffect(() => {
+    const flush = () => {
+      if (!pendingSaveRef.current || !latestPayloadRef.current) return;
+      try {
+        const baseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+        const apikey = (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
+          || import.meta.env.VITE_SUPABASE_ANON_KEY) as string | undefined;
+        if (!baseUrl || !apikey) return;
+        const token = accessTokenRef.current || apikey;
+        fetch(`${baseUrl}/rest/v1/reponses_apprenants?on_conflict=apprenant_id,exercice_id`, {
+          method: "POST",
+          keepalive: true,
+          headers: {
+            apikey,
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+            Prefer: "resolution=merge-duplicates,return=minimal",
+          },
+          body: JSON.stringify(latestPayloadRef.current),
+        }).catch(() => {});
+        pendingSaveRef.current = false;
+      } catch {}
+    };
+    const onVis = () => { if (document.visibilityState === "hidden") flush(); };
+    window.addEventListener("beforeunload", flush);
+    window.addEventListener("pagehide", flush);
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      window.removeEventListener("beforeunload", flush);
+      window.removeEventListener("pagehide", flush);
+      document.removeEventListener("visibilitychange", onVis);
+      // Dernier essai (best-effort) à la destruction du composant
+      flush();
+    };
+  }, []);
+
 
   if (!loaded) {
     return (
