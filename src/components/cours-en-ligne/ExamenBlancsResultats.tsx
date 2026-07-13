@@ -21,7 +21,7 @@ import {
   evaluateQrcDeterministic, ENABLE_AI_QRC_CORRECTION, AI_ONLY_UPGRADES,
   getQuestionImageValue,
 } from "./examens-blancs-utils";
-import { computeMoyenneExamen, computeMatiereScoreFromReponses } from "./examens-blancs-scoring";
+import { computeMoyenneExamen, computeMatiereScoreFromReponses, computeResultatMatiereScore } from "./examens-blancs-scoring";
 
 function EcranResultats({
   examen,
@@ -96,33 +96,17 @@ function EcranResultats({
     const bilan = computeMoyenneExamen(examen, (m) => {
       const r = resultats.find(rr => rr.matiereId === m.id);
       if (!r || (r as any).nonPassee) return null;
-      // Priorité au recalcul depuis les réponses brutes (nouveau barème)
-      const fromReponses = computeMatiereScoreFromReponses(m, r.reponses as any);
-      if (fromReponses) return fromReponses;
-      // Fallback : score stocké dans la prop
-      const scoreMax = Math.max(toFiniteNumber(r.maxPoints, 0), 0);
-      const scoreObtenu = scoreMax > 0
-        ? clamp(toFiniteNumber(r.noteObtenue, 0), 0, scoreMax)
-        : Math.max(toFiniteNumber(r.noteObtenue, 0), 0);
-      if (scoreMax <= 0) return null;
-      return {
-        scoreObtenu,
-        scoreMax,
-        noteSur20: normalizeNoteSur20(scoreObtenu, scoreMax),
-        admis: computeAdmisForMatiere(scoreObtenu, scoreMax, m.noteEliminatoire, m.noteSur || 20, Boolean(r.admis)),
-        passee: true,
-      };
+      const mi = examen.matieres.findIndex(mm => mm?.id === m.id);
+      return computeResultatMatiereScore(m, r, correctionsIA[mi] ?? r.correctionsIA ?? null);
     });
 
     const matieresDetails = examen.matieres
       .map((m) => {
         const r = resultats.find(rr => rr.matiereId === m.id);
         if (!r || (r as any).nonPassee) return null;
-        const fromReponses = computeMatiereScoreFromReponses(m, r.reponses as any);
-        const score = fromReponses ?? {
-          noteSur20: r.maxPoints > 0 ? Math.round(((r.noteObtenue / r.maxPoints) * 20) * 10) / 10 : 0,
-          admis: Boolean(r.admis),
-        };
+        const mi = examen.matieres.findIndex(mm => mm?.id === m.id);
+        const score = computeResultatMatiereScore(m, r, correctionsIA[mi] ?? r.correctionsIA ?? null);
+        if (!score) return null;
         return {
           nom: (r.nomMatiere || m.nom).split(" - ")[0],
           note: score.noteSur20,
@@ -456,42 +440,16 @@ function EcranResultats({
     const safeMaxPoints = Math.max(toFiniteNumber(r.maxPoints, 0), 0);
     // Find matière by ID instead of relying on index alignment (resultats may have been filtered)
     const matiere = examen.matieres.find(m => m?.id === r.matiereId) ?? examen.matieres[mi];
-    const questionsSafe = matiere ? (matiere.questions || []).filter((q): q is Question => q != null && q?.type !== undefined) : [];
     const cacheMatiere = correctionsIA[mi] || {};
-
-    const recalculatedFromDetails = questionsSafe.reduce((acc, q) => {
-      const pts = getPointsParQuestion(matiere?.id ?? "", q?.type || "QRC", matiere);
-      const rep = r.reponses?.[q.id];
-
-      if (q?.type === "QCM" && q.choix) {
-        const correctes = safeArray<string>(q.choix.filter(c => c.correct).map(c => c.lettre)).sort();
-        const donnees = safeArray<string>(rep).sort();
-        return acc + (JSON.stringify(correctes) === JSON.stringify(donnees) ? pts : 0);
-      }
-
-      if (q?.type === "QRC") {
-        const corrIA = cacheMatiere[q.id];
-        const fallback = evaluateQrcDeterministic(q, rep, pts);
-        if (corrIA && corrIA !== "loading" && corrIA !== "error") {
-          return acc + clampToQuestionMax(corrIA.pointsObtenus, pts);
-        }
-        return acc + clampToQuestionMax(fallback.pointsObtenus, pts);
-      }
-
-      return acc;
-    }, 0);
-
-    const scoreInitial = Math.max(toFiniteNumber(r.noteObtenue, 0), 0);
-    const baseNote = questionsSafe.length > 0 ? recalculatedFromDetails : scoreInitial;
-    const safeNoteCandidate = safeMaxPoints > 0
-      ? clamp(baseNote, 0, safeMaxPoints)
-      : Math.max(baseNote, 0);
-    const safeNote = safeNoteCandidate <= 0 && scoreInitial > 0 ? scoreInitial : safeNoteCandidate;
+    const score = matiere ? computeResultatMatiereScore(matiere, r, cacheMatiere) : null;
+    const safeNote = score?.scoreObtenu ?? (safeMaxPoints > 0 ? clamp(toFiniteNumber(r.noteObtenue, 0), 0, safeMaxPoints) : Math.max(toFiniteNumber(r.noteObtenue, 0), 0));
+    const safeMax = score?.scoreMax ?? safeMaxPoints;
 
     return {
       ...r,
       noteObtenue: Number(safeNote.toFixed(1)),
-      admis: computeAdmisForMatiere(safeNote, safeMaxPoints, r.noteEliminatoire, r.noteSur, Boolean(r.admis)),
+      maxPoints: safeMax,
+      admis: score?.admis ?? computeAdmisForMatiere(safeNote, safeMax, r.noteEliminatoire, r.noteSur, Boolean(r.admis)),
     };
   });
 

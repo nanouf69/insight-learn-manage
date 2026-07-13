@@ -104,6 +104,7 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
               created_at: scoreSource.created_at,
               lookupKeys: buildMatiereLookupKeys(scoreSource.matiere_id, scoreSource.matiere_nom),
               reponses: r?.details?.reponses ?? null,
+              correctionsIA: r?.details?.correctionsIA ?? null,
             });
 
             if (recovered && recovered.score_obtenu > toFiniteNumber(r.score_obtenu, 0)) {
@@ -427,6 +428,7 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
                           (scoreData as any).reponses,
                           scoreData.score_obtenu,
                           scoreData.score_max,
+                          scoreData.correctionsIA,
                         );
                       });
                       const moyenne = bilan.moyenne;
@@ -499,9 +501,10 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
                           <div key={m.id} className="flex justify-between text-xs text-muted-foreground">
                             <span className="truncate pr-2">{m.nom.split(" - ")[0]}</span>
                             {isCompleted && scoreData ? (() => {
-                              const noteSur20 = normalizeNoteSur20(scoreData.score_obtenu, scoreData.score_max, scoreData.note_sur_20);
+                              const score = computeMatiereScore(m, scoreData.reponses, scoreData.score_obtenu, scoreData.score_max, scoreData.correctionsIA);
+                              const noteSur20 = score?.noteSur20 ?? normalizeNoteSur20(scoreData.score_obtenu, scoreData.score_max, scoreData.note_sur_20);
                               return (
-                                <span className={`shrink-0 font-bold ${computeAdmisForMatiere(scoreData.score_obtenu, scoreData.score_max, m.noteEliminatoire, m.noteSur || 20, true) ? "text-green-600" : "text-red-500"}`}>
+                                <span className={`shrink-0 font-bold ${(score?.admis ?? computeAdmisForMatiere(scoreData.score_obtenu, scoreData.score_max, m.noteEliminatoire, m.noteSur || 20, true)) ? "text-green-600" : "text-red-500"}`}>
                                   {noteSur20.toFixed(1)}/20
                                 </span>
                               );

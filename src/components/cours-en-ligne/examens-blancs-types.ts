@@ -39,6 +39,8 @@ export interface ExamScoreItem {
   lookupKeys: string[];
   /** Réponses brutes stockées (pour recalcul au barème actuel dans les vues) */
   reponses?: Record<string, any> | null;
+  /** Corrections QRC stockées, utilisées dans le même calcul que l'écran résultats */
+  correctionsIA?: CorrectionCache | null;
 }
 
 export type { ExamenBlanc, Matiere, Question };
