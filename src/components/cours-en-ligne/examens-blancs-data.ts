@@ -2620,26 +2620,21 @@ Ainsi tout « écart » intempestif est considéré comme une agression à la pr
       {
         id: 1,
         type: "QRC",
-        enonce: "réglementation spécifique VTC",
-      },
-      {
-        id: 2,
-        type: "QRC",
         enonce: "Donnez la définition de l'activité de VTC. (QRC)",
         reponseQRC:
           "Les activités de VTC sont « des exploitants qui mettent à la disposition de leur clientèle une ou plusieurs voitures de transport avec chauffeur dans des conditions fixées à l'avance entre les parties ».",
       },
       {
-        id: 3,
+        id: 2,
         type: "QRC",
         enonce:
-          "Un conducteur de VTC doit-il obligatoirement être propriétaire de son véhicule ? (QRC)Développez votre réponse.",
+          "Un conducteur de VTC doit-il obligatoirement être propriétaire de son véhicule ? (QRC) Développez votre réponse.",
         reponseQRC:
           "Non, il peut aussi louer le véhicule sous réserve de justifier au moins de l'inscription au registre des exploitants de VTC",
         reponses_possibles: ["non", "louer|location", "registre|exploitants", "vtc|societe"],
       },
       {
-        id: 4,
+        id: 3,
         type: "QCM",
         enonce:
           "La durée maximale de stationnement précédant l’horaire de prise en charge mentionné par le client lors de sa réservation à un aéroport ou une gare pour un VTC est de :",
@@ -2651,7 +2646,7 @@ Ainsi tout « écart » intempestif est considéré comme une agression à la pr
         ],
       },
       {
-        id: 5,
+        id: 4,
         type: "QCM",
         enonce: "Qui délivre la carte professionnelle des conducteurs de VTC ?",
         choix: [
@@ -2662,7 +2657,7 @@ Ainsi tout « écart » intempestif est considéré comme une agression à la pr
         ],
       },
       {
-        id: 6,
+        id: 5,
         type: "QCM",
         enonce: "La justification d’une réservation préalable :",
         choix: [
@@ -2672,7 +2667,7 @@ Ainsi tout « écart » intempestif est considéré comme une agression à la pr
         ],
       },
       {
-        id: 7,
+        id: 6,
         type: "QCM",
         enonce:
           "Parmi les puissances de moteur suivantes, quelles sont celles permettant à une voiture d’être exploitée en VTC ?",
@@ -2684,7 +2679,7 @@ Ainsi tout « écart » intempestif est considéré comme une agression à la pr
         ],
       },
       {
-        id: 8,
+        id: 7,
         type: "QCM",
         enonce: "Quelle(s) entreprise(s) doit (doivent) être inscrite(s) au registre des exploitants de VTC ?",
         choix: [
