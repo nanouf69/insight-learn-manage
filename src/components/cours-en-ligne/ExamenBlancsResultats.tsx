@@ -483,6 +483,7 @@ function EcranResultats({
     if (!apprenantId || !examen) return;
     const quizType = examen.id?.startsWith("taxi") ? "examen_blanc_taxi" : "examen_blanc";
     resultatsAvecIA.forEach(async (r, mi) => {
+      if (r.nonPassee) return; // Skip placeholder rows (matière not attempted)
       const matiere = examen.matieres[mi];
       if (!matiere) return;
       const safeMax = Math.max(toFiniteNumber(r.maxPoints, 0), 0);
@@ -516,14 +517,18 @@ function EcranResultats({
     });
   }, [isViewingSaved, resultatsAvecIA.map(r => r.noteObtenue).join(",")]);
 
-  const totalCoef = resultatsAvecIA.reduce((acc, r) => acc + (r.coefficient || 1), 0) || 1;
-  const noteGlobaleBrute = resultatsAvecIA.reduce((acc, r) => {
+  // Moyenne globale : on IGNORE les matières non passées (placeholders) pour ne
+  // pas fausser la moyenne. Elles restent visibles mais ne comptent pas.
+  const resultatsPasses = resultatsAvecIA.filter(r => !r.nonPassee);
+  const totalCoef = resultatsPasses.reduce((acc, r) => acc + (r.coefficient || 1), 0) || 1;
+  const noteGlobaleBrute = resultatsPasses.reduce((acc, r) => {
     return acc + normalizeNoteSur20(r.noteObtenue, r.maxPoints) * (r.coefficient || 1);
   }, 0) / totalCoef;
   const noteGlobale = clamp(toFiniteNumber(noteGlobaleBrute, 0), 0, 20);
-  const hasNoteEliminatoire = resultatsAvecIA.some(r => !r.admis);
+  const hasNoteEliminatoire = resultatsPasses.some(r => !r.admis);
   const moyenneSuffisante = noteGlobale >= 10;
-  const admisGlobal = moyenneSuffisante && !hasNoteEliminatoire;
+  const admisGlobal = moyenneSuffisante && !hasNoteEliminatoire && resultatsPasses.length === resultatsAvecIA.length;
+
 
   // Matières avec note éliminatoire
   const matieresEliminatoires = resultatsAvecIA
@@ -655,6 +660,29 @@ function EcranResultats({
           const cacheMatiere = correctionsIA[mi] || {};
           const questionsSafe = matiere ? (matiere.questions || []).filter(q => q && q?.type !== undefined) : [];
           const isExpanded = !!expandedMatieres[mi];
+          if (r.nonPassee) {
+            return (
+              <Card key={r.matiereId} className="border-l-4 overflow-hidden opacity-70" style={{ borderLeftColor: '#94a3b8' }}>
+                <div className="px-4 py-2 flex items-center gap-2" style={{ backgroundColor: '#0D2540' }}>
+                  <span className="text-xs font-semibold text-white">Matière {mi + 1}/{resultatsAvecIA.length}</span>
+                  <span className="text-xs font-medium" style={{ color: '#00B4D8' }}>— Coeff. {r.coefficient || 1}</span>
+                  <span className="text-xs font-semibold text-slate-300 ml-auto">Non passée</span>
+                </div>
+                <CardContent className="py-3 px-4">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm" style={{ color: '#0D2540' }}>{r.nomMatiere}</p>
+                      <p className="text-xs text-muted-foreground mt-1">Barème : {r.maxPoints} pts — matière non encore commencée par l'apprenant</p>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-lg font-bold text-slate-500">— / {r.maxPoints} pts</span>
+                      <p className="text-xs text-muted-foreground">Non évaluée</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          }
           return (
             <Card key={r.matiereId} className="border-l-4 overflow-hidden" style={{ borderLeftColor: r.admis ? '#00B4D8' : '#ef4444' }}>
               <div className="px-4 py-2 flex items-center gap-2" style={{ backgroundColor: '#0D2540' }}>
@@ -697,6 +725,7 @@ function EcranResultats({
                   </p>
                 </CardContent>
               </div>
+
 
               {/* Correction détaillée inline */}
               {isExpanded && (

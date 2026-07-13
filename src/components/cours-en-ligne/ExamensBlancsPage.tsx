@@ -579,11 +579,28 @@ export default function ExamensBlancsPage({
           const responseKeys = buildMatiereLookupKeys(matiereKey, matiereKey);
           return shareLookupKey(responseKeys, expectedKeys);
         });
-        if (!resp) continue;
 
-        const reponses = resp.reponses || {};
         const questionsSafe = (matiere.questions ?? []).filter((q): q is Question => q != null && q?.type != null);
         const maxPoints = questionsSafe.reduce((acc, q) => acc + getPointsParQuestion(matiere.id, q?.type || "QCM", matiere), 0);
+
+        // Placeholder for non-attempted matières so ALL 7 matières always display.
+        if (!resp) {
+          rebuiltResults.push({
+            matiereId: matiere.id,
+            nomMatiere: matiere.nom,
+            noteObtenue: 0,
+            maxPoints,
+            noteSur: matiere.noteSur || 20,
+            noteEliminatoire: matiere.noteEliminatoire || 0,
+            coefficient: matiere.coefficient || 1,
+            admis: false,
+            reponses: {},
+            nonPassee: true,
+          } as ResultatMatiere);
+          continue;
+        }
+
+        const reponses = resp.reponses || {};
         const note = questionsSafe.reduce((total, q) => {
           if (!q || !q?.type) return total;
           const rep = reponses?.[q.id] ?? reponses?.[String(q.id)];
@@ -681,13 +698,31 @@ export default function ExamensBlancsPage({
       return questionsSafe.reduce((acc, q) => acc + getPointsParQuestion(matiere.id, q?.type || "QCM", matiere), 0);
     };
 
-    const results = examReference.matieres.map((matiere): ResultatMatiere | null => {
+    const results = examReference.matieres.map((matiere): ResultatMatiere => {
       const expectedKeys = buildMatiereLookupKeys(matiere.id, matiere.nom);
       const row = rowsWithLookup.find((entry) => shareLookupKey(entry.lookupKeys, expectedKeys))?.row;
-      if (!row) return null;
+      const safeNoteSur = matiere.noteSur || 20;
+      const computedMax = calculerMaxPoints(matiere);
+
+      // Placeholder for matières that were not attempted so ALL matières of the exam
+      // stay visible (7 for VTC) and keep their canonical order from the data file.
+      if (!row) {
+        return {
+          matiereId: matiere.id,
+          nomMatiere: matiere.nom,
+          noteObtenue: 0,
+          maxPoints: computedMax,
+          noteSur: safeNoteSur,
+          noteEliminatoire: matiere.noteEliminatoire || 0,
+          coefficient: matiere.coefficient || 1,
+          admis: false,
+          reponses: {},
+          nonPassee: true,
+        } as ResultatMatiere;
+      }
+
       const savedCorrections = row.details?.correctionsIA || null;
       const rawScoreMax = toFiniteNumber(row.score_max, 0);
-      const computedMax = calculerMaxPoints(matiere);
       const safeScoreMax = rawScoreMax > 0 ? rawScoreMax : computedMax;
 
       // Auto-heal corrupted zero-score rows
@@ -713,7 +748,6 @@ export default function ExamensBlancsPage({
         }
       }
 
-      const safeNoteSur = matiere.noteSur || 20;
       return {
         matiereId: row.matiere_id || matiere.id,
         nomMatiere: row.matiere_nom || matiere.nom,
@@ -726,9 +760,10 @@ export default function ExamensBlancsPage({
         reponses: row.details?.reponses || {},
         correctionsIA: savedCorrections,
       };
-    }).filter((r): r is ResultatMatiere => r !== null);
+    });
 
     if (results.length === 0) { toast.error("Résultats introuvables pour les matières de cet examen."); return; }
+
     setExamenChoisi(examReference);
     setTousResultats(results);
     setIsViewingSavedResults(true);

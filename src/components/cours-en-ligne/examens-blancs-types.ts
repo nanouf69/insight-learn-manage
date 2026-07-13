@@ -24,6 +24,8 @@ export interface ResultatMatiere {
   admis: boolean;
   reponses: Reponses;
   correctionsIA?: CorrectionCache;
+  /** true if this matière was NOT attempted by the learner (placeholder row) */
+  nonPassee?: boolean;
 }
 
 export interface ExamScoreItem {
