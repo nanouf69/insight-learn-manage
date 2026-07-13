@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { tousLesExamens, getPointsParQuestion, type ExamenBlanc, type Matiere, type Question } from "./examens-blancs-data";
 import { loadSavedExamens } from "./ExamensBlancsEditor";
 import { normalizeNoteSur20, computeAdmisForMatiere } from "./examens-blancs-utils";
+import { computeMatiereScore } from "./examens-blancs-scoring";
 
 // ---------- Types ----------
 
@@ -295,8 +296,20 @@ const CorrectionQCMTab = () => {
         }
       }
 
-      const noteSur20 = totalMax > 0 ? Number(((totalScore / totalMax) * 20).toFixed(1)) : 0;
-      const admis = computeAdmisForMatiere(totalScore, totalMax, matiere.noteEliminatoire, matiere.noteSur);
+      const canonicalScore = computeMatiereScore(
+        matiere,
+        mergedResultReponses,
+        totalScore,
+        totalMax,
+        safeRecord(existingDetails?.correctionsIA) as any,
+      );
+      if (canonicalScore) {
+        totalScore = canonicalScore.scoreObtenu;
+        totalMax = canonicalScore.scoreMax;
+      }
+
+      const noteSur20 = canonicalScore?.noteSur20 ?? (totalMax > 0 ? Number(((totalScore / totalMax) * 20).toFixed(1)) : 0);
+      const admis = canonicalScore?.admis ?? computeAdmisForMatiere(totalScore, totalMax, matiere.noteEliminatoire, matiere.noteSur);
 
       // Update reponses_apprenants
       if (editingRow.reponseId) {
