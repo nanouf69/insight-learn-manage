@@ -25,6 +25,7 @@ import DevisPersonnel from "./pages/DevisPersonnel";
 import ReservationCarteVtc from "./pages/ReservationCarteVtc";
 import Booking from "./pages/Booking";
 import SessionDetailPage from "./pages/SessionDetailPage";
+import DiagnosticExamensBlancs from "./pages/DiagnosticExamensBlancs";
 
 // Onboarding pages
 import OnboardingWelcome from "./pages/onboarding/OnboardingWelcome";
@@ -113,6 +114,12 @@ function App() {
                 <Route path="/sessions/:id" element={
                   <ProtectedRoute>
                     <ErrorBoundary><SessionDetailPage /></ErrorBoundary>
+                  </ProtectedRoute>
+                } />
+
+                <Route path="/diagnostic-examens-blancs" element={
+                  <ProtectedRoute>
+                    <ErrorBoundary><DiagnosticExamensBlancs /></ErrorBoundary>
                   </ProtectedRoute>
                 } />
 
