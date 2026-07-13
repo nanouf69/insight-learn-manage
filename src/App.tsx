@@ -118,9 +118,7 @@ function App() {
                 } />
 
                 <Route path="/diagnostic-examens-blancs" element={
-                  <ProtectedRoute>
-                    <ErrorBoundary><DiagnosticExamensBlancs /></ErrorBoundary>
-                  </ProtectedRoute>
+                  <ErrorBoundary><DiagnosticExamensBlancs /></ErrorBoundary>
                 } />
 
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
