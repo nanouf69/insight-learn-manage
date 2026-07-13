@@ -579,11 +579,28 @@ export default function ExamensBlancsPage({
           const responseKeys = buildMatiereLookupKeys(matiereKey, matiereKey);
           return shareLookupKey(responseKeys, expectedKeys);
         });
-        if (!resp) continue;
 
-        const reponses = resp.reponses || {};
         const questionsSafe = (matiere.questions ?? []).filter((q): q is Question => q != null && q?.type != null);
         const maxPoints = questionsSafe.reduce((acc, q) => acc + getPointsParQuestion(matiere.id, q?.type || "QCM", matiere), 0);
+
+        // Placeholder for non-attempted matières so ALL 7 matières always display.
+        if (!resp) {
+          rebuiltResults.push({
+            matiereId: matiere.id,
+            nomMatiere: matiere.nom,
+            noteObtenue: 0,
+            maxPoints,
+            noteSur: matiere.noteSur || 20,
+            noteEliminatoire: matiere.noteEliminatoire || 0,
+            coefficient: matiere.coefficient || 1,
+            admis: false,
+            reponses: {},
+            nonPassee: true,
+          } as ResultatMatiere);
+          continue;
+        }
+
+        const reponses = resp.reponses || {};
         const note = questionsSafe.reduce((total, q) => {
           if (!q || !q?.type) return total;
           const rep = reponses?.[q.id] ?? reponses?.[String(q.id)];
