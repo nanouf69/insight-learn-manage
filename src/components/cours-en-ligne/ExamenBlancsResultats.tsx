@@ -92,32 +92,49 @@ function EcranResultats({
   const generateBilanAuto = useCallback(() => {
     if (!resultats || resultats.length === 0) return null;
 
-    // Compute weighted average
-    let totalCoef = 0;
-    let weightedSum = 0;
-    const matieresDetails: { nom: string; note: number; coef: number; noteElim: number; isElim: boolean }[] = [];
-
-    resultats.forEach((r) => {
-      const m = examen.matieres.find(mm => mm.id === r.matiereId);
-      const coef = m?.coefficient || 1;
-      const noteElim = m?.noteEliminatoire || 6;
-      const noteSur = m?.noteSur || r.noteSur || 20;
-      const note = r.maxPoints > 0 ? Math.round(((r.noteObtenue / r.maxPoints) * 20) * 10) / 10 : 0;
-      // BUG 4 fix: use the shared computeAdmisForMatiere helper (same as list view)
-      const isElim = !computeAdmisForMatiere(r.noteObtenue, r.maxPoints, noteElim, noteSur, true);
-      weightedSum += note * coef;
-      totalCoef += coef;
-      matieresDetails.push({
-        nom: r.nomMatiere.split(" - ")[0],
-        note,
-        coef,
-        noteElim,
-        isElim,
-      });
+    // Utilise le helper PARTAGÉ pour aligner la moyenne du bilan sur les autres écrans.
+    const bilan = computeMoyenneExamen(examen, (m) => {
+      const r = resultats.find(rr => rr.matiereId === m.id);
+      if (!r || (r as any).nonPassee) return null;
+      // Priorité au recalcul depuis les réponses brutes (nouveau barème)
+      const fromReponses = computeMatiereScoreFromReponses(m, r.reponses as any);
+      if (fromReponses) return fromReponses;
+      // Fallback : score stocké dans la prop
+      const scoreMax = Math.max(toFiniteNumber(r.maxPoints, 0), 0);
+      const scoreObtenu = scoreMax > 0
+        ? clamp(toFiniteNumber(r.noteObtenue, 0), 0, scoreMax)
+        : Math.max(toFiniteNumber(r.noteObtenue, 0), 0);
+      if (scoreMax <= 0) return null;
+      return {
+        scoreObtenu,
+        scoreMax,
+        noteSur20: normalizeNoteSur20(scoreObtenu, scoreMax),
+        admis: computeAdmisForMatiere(scoreObtenu, scoreMax, m.noteEliminatoire, m.noteSur || 20, Boolean(r.admis)),
+        passee: true,
+      };
     });
 
-    const moyenne = totalCoef > 0 ? Math.round((weightedSum / totalCoef) * 10) / 10 : 0;
-    const isReussi = moyenne >= 10 && !matieresDetails.some(m => m.isElim);
+    const matieresDetails = examen.matieres
+      .map((m) => {
+        const r = resultats.find(rr => rr.matiereId === m.id);
+        if (!r || (r as any).nonPassee) return null;
+        const fromReponses = computeMatiereScoreFromReponses(m, r.reponses as any);
+        const score = fromReponses ?? {
+          noteSur20: r.maxPoints > 0 ? Math.round(((r.noteObtenue / r.maxPoints) * 20) * 10) / 10 : 0,
+          admis: Boolean(r.admis),
+        };
+        return {
+          nom: (r.nomMatiere || m.nom).split(" - ")[0],
+          note: score.noteSur20,
+          coef: m.coefficient || 1,
+          noteElim: m.noteEliminatoire || 6,
+          isElim: !score.admis,
+        };
+      })
+      .filter((v): v is { nom: string; note: number; coef: number; noteElim: number; isElim: boolean } => v !== null);
+
+    const moyenne = bilan.moyenne;
+    const isReussi = bilan.admisGlobal;
 
     // Sort by note ascending for weakest first
     const sorted = [...matieresDetails].sort((a, b) => a.note - b.note);
