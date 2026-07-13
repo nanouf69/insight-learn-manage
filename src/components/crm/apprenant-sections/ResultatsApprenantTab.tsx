@@ -154,7 +154,7 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
                       const recomputed = matiereDef
                         ? computeMatiereScore(matiereDef, m.details?.reponses || null, m.score_obtenu, m.score_max, m.details?.correctionsIA || null)
                         : null;
-                      const note = recomputed?.noteSur20 ?? Number(m.note_sur_20) || 0;
+                      const note = recomputed?.noteSur20 ?? (Number(m.note_sur_20) || 0);
                       return (
                         <div key={i} className="flex justify-between text-xs border rounded px-2 py-1">
                           <span className="truncate pr-1">{(m.matiere_nom || m.matiere_id || "?").split(" - ")[0]}</span>
