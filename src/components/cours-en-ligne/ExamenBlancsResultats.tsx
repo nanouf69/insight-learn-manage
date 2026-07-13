@@ -483,6 +483,7 @@ function EcranResultats({
     if (!apprenantId || !examen) return;
     const quizType = examen.id?.startsWith("taxi") ? "examen_blanc_taxi" : "examen_blanc";
     resultatsAvecIA.forEach(async (r, mi) => {
+      if (r.nonPassee) return; // Skip placeholder rows (matière not attempted)
       const matiere = examen.matieres[mi];
       if (!matiere) return;
       const safeMax = Math.max(toFiniteNumber(r.maxPoints, 0), 0);
@@ -516,14 +517,18 @@ function EcranResultats({
     });
   }, [isViewingSaved, resultatsAvecIA.map(r => r.noteObtenue).join(",")]);
 
-  const totalCoef = resultatsAvecIA.reduce((acc, r) => acc + (r.coefficient || 1), 0) || 1;
-  const noteGlobaleBrute = resultatsAvecIA.reduce((acc, r) => {
+  // Moyenne globale : on IGNORE les matières non passées (placeholders) pour ne
+  // pas fausser la moyenne. Elles restent visibles mais ne comptent pas.
+  const resultatsPasses = resultatsAvecIA.filter(r => !r.nonPassee);
+  const totalCoef = resultatsPasses.reduce((acc, r) => acc + (r.coefficient || 1), 0) || 1;
+  const noteGlobaleBrute = resultatsPasses.reduce((acc, r) => {
     return acc + normalizeNoteSur20(r.noteObtenue, r.maxPoints) * (r.coefficient || 1);
   }, 0) / totalCoef;
   const noteGlobale = clamp(toFiniteNumber(noteGlobaleBrute, 0), 0, 20);
-  const hasNoteEliminatoire = resultatsAvecIA.some(r => !r.admis);
+  const hasNoteEliminatoire = resultatsPasses.some(r => !r.admis);
   const moyenneSuffisante = noteGlobale >= 10;
-  const admisGlobal = moyenneSuffisante && !hasNoteEliminatoire;
+  const admisGlobal = moyenneSuffisante && !hasNoteEliminatoire && resultatsPasses.length === resultatsAvecIA.length;
+
 
   // Matières avec note éliminatoire
   const matieresEliminatoires = resultatsAvecIA
