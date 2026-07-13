@@ -8,9 +8,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Search, User, Save, RotateCcw, CheckSquare } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { tousLesExamens, getPointsParQuestion, type ExamenBlanc, type Matiere, type Question } from "./examens-blancs-data";
+import { tousLesExamens, getPointsParQuestion, type ExamenBlanc, type Question } from "./examens-blancs-data";
 import { loadSavedExamens } from "./ExamensBlancsEditor";
-import { normalizeNoteSur20, computeAdmisForMatiere } from "./examens-blancs-utils";
+import { computeAdmisForMatiere } from "./examens-blancs-utils";
 import { computeMatiereScore } from "./examens-blancs-scoring";
 
 // ---------- Types ----------
