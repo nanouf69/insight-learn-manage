@@ -43,19 +43,34 @@ Deno.serve(async (req) => {
     }
 
     // Build the row — only include score if explicitly provided
-    // to avoid overwriting an existing score with null
+    // to avoid overwriting an existing score with null.
+    // IMPORTANT: once an exercise is completed, stale autosave requests from the
+    // browser must never downgrade it back to completed=false.
     const row: Record<string, any> = {
       apprenant_id,
       user_id,
       exercice_id,
       exercice_type,
       reponses: reponses ?? {},
-      completed: completed ?? false,
+      completed: Boolean(completed),
       updated_at: updated_at ?? new Date().toISOString(),
     };
 
     if (score !== undefined && score !== null) {
       row.score = score;
+    }
+
+    if (!row.completed) {
+      const { data: existing } = await supabase
+        .from("reponses_apprenants")
+        .select("completed")
+        .eq("apprenant_id", apprenant_id)
+        .eq("exercice_id", exercice_id)
+        .maybeSingle();
+
+      if (existing?.completed === true) {
+        row.completed = true;
+      }
     }
 
     const { error } = await supabase
