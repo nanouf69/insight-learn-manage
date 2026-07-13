@@ -746,7 +746,7 @@ function MatiereEditor({
               )}
             </div>
           )}
-          {questionsSafe.map(q => (
+          {questionsSafe.map((q, qIndex) => (
             <div key={q.id}>
               {editingQId === q.id ? (
                 <QuestionEditor
@@ -767,7 +767,7 @@ function MatiereEditor({
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-start gap-3 flex-1 min-w-0">
                       <Badge variant={q?.type === "QCM" ? "default" : "secondary"} className="text-sm shrink-0 mt-0.5 px-2 py-0.5">
-                        {q?.type} — Q{q.id}
+                        {q?.type} — Q{qIndex + 1}
                       </Badge>
                       <div className="flex-1 min-w-0">
                         <p className="text-base font-medium text-foreground leading-relaxed"><RichText value={q.enonce} /></p>
@@ -903,6 +903,10 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingExamSaveRef = useRef<ExamenBlanc[] | null>(null);
   const persistChainRef = useRef<Promise<boolean>>(Promise.resolve(true));
+  // Tracks the DB `updated_at` this tab last saw for each module_id (from load or from
+  // its own last successful save). Used to detect "another tab/session saved more
+  // recently than what this tab knows about" before blindly overwriting it.
+  const lastKnownServerUpdatedAtRef = useRef<Record<number, string>>({});
 
   const examensFiltres = examens.filter(e => typeFiltre === "tous" || e?.type === typeFiltre);
   const examenSel = examens.find(e => e.id === examenSelId) || null;
@@ -952,6 +956,34 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
         return true;
       }
 
+      // ANTI-CONFLICT CHECK: before overwriting, verify no other tab/session has
+      // saved these same modules more recently than what this tab last loaded/saved.
+      // Prevents a stale tab (e.g. left open from earlier) from silently reverting
+      // a more recent edit made elsewhere — the exact symptom of "my edit disappears
+      // later, on reload or another day".
+      const moduleIdsToCheck = rows.map((r) => r.module_id);
+      const { data: currentServerRows } = await supabase
+        .from("module_editor_state")
+        .select("module_id, updated_at")
+        .in("module_id", moduleIdsToCheck);
+
+      const conflictingModuleIds = new Set<number>();
+      for (const serverRow of (currentServerRows as any[]) || []) {
+        const known = lastKnownServerUpdatedAtRef.current[serverRow.module_id];
+        if (known && new Date(serverRow.updated_at).getTime() > new Date(known).getTime()) {
+          conflictingModuleIds.add(serverRow.module_id);
+        }
+      }
+
+      if (conflictingModuleIds.size > 0) {
+        console.warn("[ExamensEditor] Conflit détecté, sauvegarde bloquée pour les modules :", [...conflictingModuleIds]);
+        toast.error(
+          "⚠️ Un autre onglet ou une autre session a modifié cet examen entre-temps. " +
+          "Votre sauvegarde a été bloquée pour ne rien écraser — rechargez la page pour repartir des dernières données.",
+        );
+        return false;
+      }
+
       // Save only changed exams in one batch request
       const { error } = await supabase
         .from("module_editor_state")
@@ -968,6 +1000,9 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
         ...lastSavedModuleFingerprintsRef.current,
         ...changedModuleFingerprints,
       };
+      for (const moduleId of moduleIdsToCheck) {
+        lastKnownServerUpdatedAtRef.current[moduleId] = now;
+      }
 
       if (showSuccessToast) {
         setSaved(true);
@@ -1029,13 +1064,27 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
 
 
   useEffect(() => {
-    loadSavedExamens().then(loadedExamens => {
+    loadSavedExamens().then(async (loadedExamens) => {
       setExamens(loadedExamens);
       lastSavedFingerprintRef.current = JSON.stringify(loadedExamens);
       lastSavedModuleFingerprintsRef.current = loadedExamens.reduce<Record<number, string>>((acc, ex) => {
         acc[getModuleIdForExamId(ex.id)] = JSON.stringify(ex.matieres ?? []);
         return acc;
       }, {});
+      // Record the server's current updated_at per module so persistExamens can
+      // detect if another tab/session saves in between.
+      try {
+        const moduleIds = loadedExamens.map((ex) => getModuleIdForExamId(ex.id));
+        const { data } = await supabase
+          .from("module_editor_state")
+          .select("module_id, updated_at")
+          .in("module_id", moduleIds);
+        for (const row of (data as any[]) || []) {
+          lastKnownServerUpdatedAtRef.current[row.module_id] = row.updated_at;
+        }
+      } catch (err) {
+        console.error("[ExamensEditor] Error loading server updated_at map:", err);
+      }
       initialLoadDoneRef.current = true;
     });
   }, []);
@@ -1055,7 +1104,7 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
       await persistExamens(examens, false);
       pendingExamSaveRef.current = null;
       setAutoSaving(false);
-    }, 2000);
+    }, 800);
 
     return () => {
       if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
