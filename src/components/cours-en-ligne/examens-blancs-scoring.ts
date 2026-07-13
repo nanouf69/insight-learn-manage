@@ -62,12 +62,12 @@ export function computeMatiereScoreFromReponses(
       return total;
     }
     if (q.type === "QRC") {
-      const correction = correctionsIA?.[q.id] ?? correctionsIA?.[String(q.id) as any];
-      if (correction && correction !== "loading" && correction !== "error") {
-        return total + clamp(correction.pointsObtenus, 0, pts);
+      const storedCorrection = correctionsIA?.[q.id] ?? correctionsIA?.[String(q.id) as any];
+      if (storedCorrection && storedCorrection !== "loading" && storedCorrection !== "error") {
+        return total + clamp(storedCorrection.pointsObtenus, 0, pts);
       }
-      const correction = evaluateQrcDeterministic(q, rep, pts);
-      return total + correction.pointsObtenus;
+      const deterministicCorrection = evaluateQrcDeterministic(q, rep, pts);
+      return total + deterministicCorrection.pointsObtenus;
     }
     return total;
   }, 0);
