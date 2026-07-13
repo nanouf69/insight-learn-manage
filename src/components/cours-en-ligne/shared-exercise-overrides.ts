@@ -92,10 +92,115 @@ export function applyCrossModuleOverrides<T extends { questions?: { enonce: stri
   return exercices;
 }
 
+// ---------------------------------------------------------------------------
+// Propagation « safe » réactivée (2026-07) : on propage UNIQUEMENT les
+// modifications identifiées par _editedAt sur la question. On ne remplace
+// jamais une question cible qui a été éditée plus récemment côté admin
+// (comparaison stricte des _editedAt). Le match se fait par énoncé normalisé
+// pour couvrir le cas où la même question a un id différent d'un module à
+// l'autre (root cause du bug historique).
+// ---------------------------------------------------------------------------
+
+const normalizeEnonce = (s: string): string =>
+  String(s ?? "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ")
+    .replace(/[^\p{L}\p{N} ]+/gu, "")
+    .trim();
+
+const tsOf = (v: unknown): number => {
+  if (!v) return 0;
+  const n = new Date(String(v)).getTime();
+  return Number.isFinite(n) ? n : 0;
+};
+
 export async function syncSharedExercisesToSiblingModules(
-  _savedModuleId: number,
-  _savedExercices: { id: number; titre?: string; sousTitre?: string; actif?: boolean; questions?: any[] }[],
+  savedModuleId: number,
+  savedExercices: { id: number; titre?: string; sousTitre?: string; actif?: boolean; questions?: any[] }[],
   _deletedExerciceIds: number[],
 ): Promise<void> {
-  // no-op: la sauvegarde admin n'écrase plus les modules voisins.
+  try {
+    const { supabase } = await import("@/integrations/supabase/client");
+
+    // Index des questions éditées dans le module sauvegardé (par énoncé normalisé)
+    const editedByEnonce = new Map<string, { enonce: string; choix: any[]; editedAt: number; image?: string }>();
+    for (const exo of savedExercices ?? []) {
+      for (const q of (exo?.questions ?? []) as any[]) {
+        const editedAt = tsOf(q?._editedAt);
+        if (!editedAt) continue;
+        const key = normalizeEnonce(q?.enonce ?? "");
+        if (!key) continue;
+        const prev = editedByEnonce.get(key);
+        if (!prev || editedAt > prev.editedAt) {
+          editedByEnonce.set(key, {
+            enonce: q.enonce,
+            choix: Array.isArray(q.choix) ? q.choix : [],
+            editedAt,
+            image: q.image,
+          });
+        }
+      }
+    }
+    if (editedByEnonce.size === 0) return;
+
+    const { data: rows, error } = await supabase
+      .from("module_editor_state")
+      .select("module_id, module_data, deleted_cours, deleted_exercices, source_fingerprint, updated_at")
+      .neq("module_id", savedModuleId);
+    if (error || !rows) return;
+
+    for (const row of rows as any[]) {
+      const md = row.module_data;
+      if (!md || !Array.isArray(md.exercices)) continue;
+
+      let touched = false;
+      const newExercices = md.exercices.map((exo: any) => {
+        if (!Array.isArray(exo?.questions)) return exo;
+        let exoTouched = false;
+        const newQuestions = exo.questions.map((q: any) => {
+          const key = normalizeEnonce(q?.enonce ?? "");
+          const edit = editedByEnonce.get(key);
+          if (!edit) return q;
+          const qEditedAt = tsOf(q?._editedAt);
+          // Ne jamais écraser une édition plus récente
+          if (qEditedAt >= edit.editedAt) return q;
+          exoTouched = true;
+          touched = true;
+          return {
+            ...q,
+            enonce: edit.enonce,
+            choix: edit.choix,
+            _editedAt: new Date(edit.editedAt).toISOString(),
+          };
+        });
+        return exoTouched ? { ...exo, questions: newQuestions } : exo;
+      });
+
+      if (!touched) continue;
+
+      const savedAt = new Date().toISOString();
+      const { error: upErr } = await supabase
+        .from("module_editor_state")
+        .upsert(
+          [{
+            module_id: row.module_id,
+            module_data: { ...md, exercices: newExercices },
+            deleted_cours: row.deleted_cours,
+            deleted_exercices: row.deleted_exercices,
+            source_fingerprint: row.source_fingerprint,
+            updated_at: savedAt,
+          }],
+          { onConflict: "module_id" },
+        );
+      if (upErr) {
+        console.error("[SharedSync] Upsert failed for module", row.module_id, upErr);
+      } else {
+        console.log("[SharedSync] Propagated edits to module", row.module_id);
+      }
+    }
+  } catch (err) {
+    console.error("[SharedSync] unexpected error:", err);
+  }
 }
