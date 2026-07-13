@@ -1070,8 +1070,13 @@ function RevisionFausses({
   const [correctedCount, setCorrectedCount] = useState(0);
   const [loaded, setLoaded] = useState(false);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Refs pour flush "keepalive" en cas de déconnexion / fermeture d'onglet
+  const latestPayloadRef = useRef<any>(null);
+  const pendingSaveRef = useRef(false);
+  const accessTokenRef = useRef<string | null>(null);
 
   const exerciceId = `revision_fausses_${examenId || "unknown"}`;
+
 
   // ---- Load saved progress on mount ----
   useEffect(() => {
