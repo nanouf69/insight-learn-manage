@@ -5849,9 +5849,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                                     console.warn(`[Réponses] Anchor introuvable: exo-q-${exo.id}-${qi}`);
                                     return;
                                   }
-                                  const rect = el.getBoundingClientRect();
-                                  const top = window.scrollY + rect.top - 96; // account for sticky header
-                                  window.scrollTo({ top, behavior: "smooth" });
+                                  el.scrollIntoView({ behavior: "smooth", block: "start" });
                                   el.classList.add("ring-4", "ring-primary");
                                   setTimeout(() => el.classList.remove("ring-4", "ring-primary"), 1500);
                                 }}
