@@ -79,44 +79,136 @@ function getProgramme(typeApprenant?: string | null): ProgrammeDef {
 
   if (t === "vtc") {
     return {
-      titre: "PROGRAMME DE FORMATION INITIALE VTC",
+      titre: "PROGRAMME DE FORMATION VTC",
       reference:
         "Arrete du 6 avril 2017 relatif a la formation et a l'examen des conducteurs de VTC (modifie).",
-      duree: "250 heures (dont e-learning et presentiel obligatoire).",
+      duree: "250 heures (e-learning et presentiel).",
       objectif:
         "Preparer le candidat a l'examen d'acces a la profession de conducteur VTC et lui permettre d'exercer en respectant la reglementation en vigueur.",
       sections: [
         {
-          title: "Public et prerequis",
+          title: "Reglementation du transport public particulier de personnes et prevention des discriminations et des violences sexuelles et sexistes - Competences communes",
           bullets: [
-            "Toute personne souhaitant exercer la profession de conducteur VTC.",
-            "Permis B en cours de validite depuis plus de 3 ans (2 ans si conduite accompagnee).",
-            "Aptitude medicale (visite chez medecin agree) et casier judiciaire (B2) compatible.",
-            "Maitrise du francais (comprehension ecrite et orale).",
+            "Connaitre la reglementation s'appliquant aux differents modes de transport publics particuliers : taxis, VTC, vehicules motorises a deux roues.",
+            "Connaitre la reglementation relative a l'utilisation de la voie publique pour la prise en charge de la clientele pour les differents modes de transport publics particuliers.",
+            "Connaitre les obligations generales relatives aux vehicules.",
+            "Connaitre les obligations relatives au conducteur : acces et exercice de la profession, obligations de formation continue.",
+            "Connaitre la composition et le role des divers organismes administratifs, consultatifs et professionnels.",
+            "Connaitre les autorites administratives et juridictions competentes dans le cadre de l'activite du transport public particulier de personnes.",
+            "Connaitre les obligations du conducteur en matiere d'assurance, l'identification des assurances obligatoires et les consequences de ne pas etre assure.",
+            "Connaitre les agents susceptibles de proceder a des controles en entreprise ou sur route et leurs prerogatives respectives ; savoir presenter les documents relatifs au conducteur et au vehicule.",
+            "Connaitre les sanctions administratives et/ou penales encourues en cas d'infraction a la reglementation ainsi que les voies et delais de recours.",
+            "Connaitre les regles relatives a la prise en charge des personnes a mobilite reduite.",
+            "Avoir des notions de reglementation s'appliquant aux transports collectifs assures sous la forme de services occasionnels ainsi que sur le transport a la demande.",
+            "Avoir des notions sur les regles s'appliquant aux pratiques de covoiturage entre particuliers et aux offres de transport prive.",
+            "Connaitre les dispositions relatives aux intermediaires, en ce qui concerne la relation avec le conducteur.",
+            "Connaitre les comportements constituant des infractions a caractere sexuel et/ou sexiste (outrage sexiste, agression sexuelle, harcelement sexuel, viol).",
+            "Connaitre les discriminations listees a l'article 225-1 du code penal ainsi que les peines encourues.",
+            "Connaitre les acteurs au service de la prevention en matiere de violences sexuelles et sexistes et les acteurs au service de la prevention et de la lutte contre les discriminations : identification des acteurs mobilisables et bons reflexes a mobiliser.",
           ],
         },
         {
-          title: "Contenu pedagogique - Epreuves theoriques (tronc commun T3P)",
+          title: "Competences specifiques VTC",
           bullets: [
-            "A - Reglementation du Transport Public Particulier de Personnes (T3P).",
-            "B - Gestion : notions de gestion, comptabilite, fiscalite.",
-            "C - Securite routiere : reglementation, comportements, ecoconduite.",
-            "D - Capacite d'expression et de comprehension en francais.",
-            "E - Capacite d'expression et de comprehension en anglais.",
+            "Connaitre les dispositions relatives aux exploitants : modalites d'inscription au registre des VTC, regles relatives a la capacite financiere...",
+            "Connaitre les obligations specifiques relatives aux vehicules d'exploitation (dimensions, puissance, age...) et connaitre leur signalisation.",
+            "Savoir etablir les documents relatifs a l'execution de la prestation de transport qui doivent etre presentes en cas de controle.",
           ],
         },
         {
-          title: "Contenu pedagogique - Epreuves specifiques VTC",
+          title: "Securite routiere",
           bullets: [
-            "F - Developpement commercial et gestion propre a l'activite VTC.",
-            "G - Reglementation nationale specifique de l'activite VTC.",
+            "Savoir appliquer les regles du code de la route (signalisation, regles de circulation, comportement du conducteur, usage de securite, utilisation des voies dediees...).",
+            "Connaitre et eviter les risques lies a l'alcoolemie, l'usage de stupefiants, la prise de medicaments, le stress, la fatigue.",
+            "Connaitre les principes de conduite rationnelle pour economiser le carburant, reduire le bruit et preserver le materiel et l'environnement.",
+            "Savoir appliquer les regles de securite concernant l'utilisation des telephones et ordiphones dans les vehicules.",
+            "Savoir respecter les obligations en matiere d'entretien et de visite technique des vehicules.",
+            "Savoir appliquer les regles de conduite a tenir en cas d'accident (protection des victimes, alerte des secours, premiers secours a porter...).",
+            "Savoir rediger un constat amiable d'accident materiel.",
+            "Connaitre la reglementation du permis de conduire (permis a points, permis probatoire, annulation, invalidation et suspension de permis).",
+            "Savoir prendre en charge des passagers et leurs bagages en assurant la securite des personnes et des biens.",
           ],
         },
         {
-          title: "Epreuve pratique",
+          title: "Gestion - Competences communes",
           bullets: [
-            "Conduite en circulation reelle (1 heure).",
-            "Evaluation de la maitrise du vehicule, de la securite, du confort du passager et de la relation client.",
+            "Connaitre et savoir appliquer les principes de base de gestion et de comptabilite.",
+            "Connaitre les obligations et documents comptables.",
+            "Connaitre les charges entrant dans le calcul du cout de revient et les classer en charges fixes et charges variables.",
+            "Connaitre les principes de base pour determiner le produit d'exploitation, le benefice, le resultat, les charges, le seuil de rentabilite.",
+            "Connaitre les principes de l'amortissement.",
+            "Connaitre les differentes formes juridiques d'exploitation (EI, EIRL, EURL, SARL, SASU, SCOP...) et les modes d'exploitation (exploitation directe, location-gerance).",
+            "Connaitre les differents regimes d'imposition et declarations fiscales.",
+            "Connaitre les differentes formalites declaratives.",
+            "Connaitre la composition et le role des chambres des metiers et de l'artisanat.",
+            "Savoir definir les differents regimes sociaux (regime general, regime social des independants) ; comprendre les principes de cotisations et prestations par branche (maladie, vieillesse, chomage...).",
+          ],
+        },
+        {
+          title: "Gestion - Competences specifiques VTC",
+          bullets: [
+            "Savoir etablir un devis pour la realisation d'une prestation et etablir la facturation.",
+            "Savoir calculer le cout de revient en formule simple (formule monome et binome).",
+            "Savoir definir la notion de marge et l'utiliser pour calculer un prix de vente.",
+          ],
+        },
+        {
+          title: "Francais",
+          bullets: [
+            "Comprendre un texte simple ou des documents en lien, notamment, avec l'activite des transports.",
+            "Comprendre et s'exprimer en francais pour : accueillir la clientele ; comprendre les demandes des clients ; interroger les clients sur leur confort ; tenir une conversation neutre et courtoise avec les clients durant le transport ; prendre conge des clients.",
+          ],
+        },
+        {
+          title: "Anglais",
+          paragraph:
+            "Comprendre et s'exprimer en anglais, au niveau A2 du Cadre Europeen Commun de Reference pour les Langues, pour : accueillir la clientele ; comprendre les demandes simples des clients ; demander des renseignements simples concernant le confort de la clientele ; tenir une conversation tres simple durant le transport ; prendre conge des clients.",
+        },
+        {
+          title: "Developpement commercial (specifique aux conducteurs de VTC)",
+          bullets: [
+            "Connaitre et comprendre les principes generaux du marketing (analyse de marche, ciblage de l'offre, competitivite, determination du prix...).",
+            "Savoir valoriser les qualites de la prestation commerciale VTC.",
+            "Savoir fideliser ses clients et prospecter pour en obtenir d'autres.",
+            "Savoir mener des actions de communication pour faire connaitre son entreprise, notamment par internet et les moyens numeriques.",
+            "Savoir developper un reseau de partenaires favorisant l'acces a la clientele (hotels, entreprise...).",
+          ],
+        },
+        {
+          title: "Epreuve pratique - A. Conduite et securite",
+          bullets: [
+            "A-1 Conduite en securite et respect du code de la route : integrer son vehicule dans la circulation sur les differents types de reseaux, respecter l'ensemble des regles du code de la route, rechercher visuellement les informations, analyser les situations de conduite, adapter l'allure aux circonstances, respecter les distances et marges de securite, respecter les autres usagers (piétons, deux-roues), appliquer les principes d'eco-conduite.",
+            "A-2 Souplesse de la conduite assurant le confort des passagers : utiliser de maniere souple et rationnelle les commandes du vehicule (allure, direction, vitesse) ; anticiper les situations de conduite pour eviter les decelerations ou changements de direction brutaux.",
+            "A-3 Prise en charge et depose des clients et leurs bagages : respecter la reglementation de l'arret et du stationnement ; assurer la securite de l'arret ; manier correctement et precautionneusement les bagages.",
+          ],
+        },
+        {
+          title: "Epreuve pratique - B. Relation client",
+          bullets: [
+            "B-1 Presentation generale et attitudes : tenue vestimentaire correcte, attitudes et comportements adaptes, discretion et courtoisie.",
+            "B-2 Accueil, comportement durant le parcours et prise de conge : accueillir le client, converser de facon neutre et discrete, veiller au confort (temperature, radio), prendre conge.",
+            "B-3 Verification de l'etat du vehicule avant et apres la prestation : veiller au bon etat et a la proprete du vehicule.",
+          ],
+        },
+        {
+          title: "Epreuve pratique - C. Construction du parcours et competences specifiques VTC",
+          bullets: [
+            "C-1 Elaborer un parcours d'un lieu de prise en charge a un lieu de depose ; utiliser un GPS et une carte routiere ; adapter le parcours a d'eventuelles difficultes (embouteillages, travaux...).",
+            "Competences specifiques VTC : preparer un parcours en fonction de la commande des clients.",
+          ],
+        },
+        {
+          title: "Epreuve pratique - D. Facturation et paiement",
+          bullets: [
+            "D-1 Etablir le prix de la prestation, facturer et proceder a l'encaissement : calculer le prix d'une course, etablir la facture, encaisser le paiement notamment avec un terminal de paiement electronique.",
+          ],
+        },
+        {
+          title: "Moyens pedagogiques",
+          bullets: [
+            "Tablettes et plateforme numerique.",
+            "Cours magistraux.",
+            "Evaluations : controles continus et examens blancs.",
           ],
         },
         commonModalites,
@@ -128,44 +220,137 @@ function getProgramme(typeApprenant?: string | null): ProgrammeDef {
 
   if (t === "taxi") {
     return {
-      titre: "PROGRAMME DE FORMATION INITIALE TAXI",
+      titre: "PROGRAMME DE FORMATION TAXI",
       reference:
         "Arrete du 6 avril 2017 relatif a la formation et a l'examen des conducteurs de taxi (modifie).",
-      duree: "250 heures (e-learning + presentiel).",
+      duree: "250 heures (e-learning et presentiel).",
       objectif:
         "Preparer le candidat au Certificat de Capacite Professionnelle (CCPCT) et a l'exercice de la profession de conducteur de taxi.",
       sections: [
         {
-          title: "Public et prerequis",
+          title: "Reglementation du transport public particulier de personnes et prevention des discriminations et des violences sexuelles et sexistes - Competences communes",
           bullets: [
-            "Toute personne souhaitant devenir chauffeur de taxi.",
-            "Permis B en cours de validite depuis plus de 3 ans (2 ans si conduite accompagnee).",
-            "Certificat medical d'aptitude delivre par un medecin agree.",
-            "Casier judiciaire (B2) compatible.",
+            "Connaitre la reglementation s'appliquant aux differents modes de transport publics particuliers : taxis, VTC, vehicules motorises a deux roues.",
+            "Connaitre la reglementation relative a l'utilisation de la voie publique pour la prise en charge de la clientele pour les differents modes de transport publics particuliers.",
+            "Connaitre les obligations generales relatives aux vehicules.",
+            "Connaitre les obligations relatives au conducteur : acces et exercice de la profession, obligations de formation continue.",
+            "Connaitre la composition et le role des divers organismes administratifs, consultatifs et professionnels.",
+            "Connaitre les autorites administratives et juridictions competentes dans le cadre de l'activite du transport public particulier de personnes.",
+            "Connaitre les obligations du conducteur en matiere d'assurance, l'identification des assurances obligatoires et les consequences de ne pas etre assure.",
+            "Connaitre les agents susceptibles de proceder a des controles en entreprise ou sur route et leurs prerogatives respectives ; savoir presenter les documents relatifs au conducteur et au vehicule.",
+            "Connaitre les sanctions administratives et/ou penales encourues en cas d'infraction a la reglementation ainsi que les voies et delais de recours.",
+            "Connaitre les regles relatives a la prise en charge des personnes a mobilite reduite.",
+            "Avoir des notions de reglementation s'appliquant aux transports collectifs assures sous la forme de services occasionnels ainsi que sur le transport a la demande.",
+            "Avoir des notions sur les regles s'appliquant aux pratiques de covoiturage entre particuliers et aux offres de transport prive.",
+            "Connaitre les dispositions relatives aux intermediaires, en ce qui concerne la relation avec le conducteur.",
+            "Connaitre les comportements constituant des infractions a caractere sexuel et/ou sexiste (outrage sexiste, agression sexuelle, harcelement sexuel, viol).",
+            "Connaitre les discriminations listees a l'article 225-1 du code penal ainsi que les peines encourues.",
+            "Connaitre les acteurs au service de la prevention en matiere de violences sexuelles et sexistes et les acteurs au service de la prevention et de la lutte contre les discriminations.",
           ],
         },
         {
-          title: "Contenu pedagogique - Epreuves theoriques (tronc commun T3P)",
+          title: "Competences specifiques TAXIS",
           bullets: [
-            "A - Reglementation du Transport Public Particulier de Personnes (T3P).",
-            "B - Gestion : notions de gestion et de comptabilite.",
-            "C - Securite routiere.",
-            "D - Capacite d'expression et de comprehension en francais.",
-            "E - Capacite d'expression et de comprehension en anglais.",
+            "Connaitre le fonctionnement des equipements speciaux obligatoires et du terminal de paiement electronique.",
+            "Connaitre l'articulation entre les reglementations nationales et locales.",
+            "Connaitre les regimes d'autorisation de stationnement.",
+            "Connaitre les regles de tarification d'une course de Taxi.",
+            "Connaitre les activites complementaires ouvertes aux taxis : services reguliers de transport, transport assis professionnalise.",
+            "Savoir etablir les documents relatifs a l'execution.",
           ],
         },
         {
-          title: "Contenu pedagogique - Epreuves specifiques TAXI",
+          title: "Securite routiere",
           bullets: [
-            "F - Reglementation nationale et locale specifique a l'activite de taxi.",
-            "G - Connaissance du territoire et de la reglementation locale du departement d'exercice.",
+            "Savoir appliquer les regles du code de la route (signalisation, regles de circulation, comportement du conducteur, usage de securite, utilisation des voies dediees...).",
+            "Connaitre et eviter les risques lies a l'alcoolemie, l'usage de stupefiants, la prise de medicaments, le stress, la fatigue.",
+            "Connaitre les principes de conduite rationnelle pour economiser le carburant, reduire le bruit et preserver le materiel et l'environnement.",
+            "Savoir appliquer les regles de securite concernant l'utilisation des telephones et ordiphones dans les vehicules.",
+            "Savoir respecter les obligations en matiere d'entretien et de visite technique des vehicules.",
+            "Savoir appliquer les regles de conduite a tenir en cas d'accident.",
+            "Savoir rediger un constat amiable d'accident materiel.",
+            "Connaitre la reglementation du permis de conduire.",
+            "Savoir prendre en charge des passagers et leurs bagages en assurant la securite des personnes et des biens.",
           ],
         },
         {
-          title: "Epreuve pratique",
+          title: "Gestion - Competences communes",
           bullets: [
-            "Conduite en circulation reelle (1 heure).",
-            "Evaluation de la conduite, du taximetre, de la relation client et du respect de la reglementation.",
+            "Connaitre et savoir appliquer les principes de base de gestion et de comptabilite.",
+            "Connaitre les obligations et documents comptables.",
+            "Connaitre les charges entrant dans le calcul du cout de revient et les classer en charges fixes et variables.",
+            "Connaitre les principes de base pour determiner le produit d'exploitation, le benefice, le resultat, les charges, le seuil de rentabilite.",
+            "Connaitre les principes de l'amortissement.",
+            "Connaitre les differentes formes juridiques d'exploitation (EI, EIRL, EURL, SARL, SASU, SCOP...) et les modes d'exploitation (directe, location-gerance).",
+            "Connaitre les differents regimes d'imposition et declarations fiscales.",
+            "Connaitre les differentes formalites declaratives.",
+            "Connaitre la composition et le role des chambres des metiers et de l'artisanat.",
+            "Savoir definir les differents regimes sociaux ; comprendre les principes de cotisations et prestations par branche.",
+          ],
+        },
+        {
+          title: "Gestion - Competences specifiques Taxi",
+          bullets: [
+            "Connaitre les regles de detaxation partielle de la taxe interieure sur la consommation des produits energetiques (TICPE).",
+            "Connaitre la reglementation relative a la taxe de stationnement.",
+          ],
+        },
+        {
+          title: "Francais",
+          bullets: [
+            "Comprendre un texte simple ou des documents en lien, notamment, avec l'activite des transports.",
+            "Comprendre et s'exprimer en francais pour : accueillir la clientele ; comprendre les demandes ; interroger les clients sur leur confort ; tenir une conversation neutre et courtoise ; prendre conge des clients.",
+          ],
+        },
+        {
+          title: "Anglais",
+          paragraph:
+            "Comprendre et s'exprimer en anglais, au niveau A2 du Cadre Europeen Commun de Reference pour les Langues, pour : accueillir la clientele ; comprendre les demandes simples ; demander des renseignements simples concernant le confort ; tenir une conversation tres simple durant le transport ; prendre conge des clients.",
+        },
+        {
+          title: "Connaissance du territoire et de la reglementation locale (specifique aux conducteurs de Taxi)",
+          bullets: [
+            "Connaitre le territoire d'exercice de l'activite : les principaux lieux, sites, batiments publics et les principaux axes routiers.",
+            "Connaitre le reglement local en vigueur.",
+          ],
+        },
+        {
+          title: "Epreuve pratique - A. Conduite et securite",
+          bullets: [
+            "A-1 Conduite en securite et respect du code de la route : integration dans la circulation, respect des regles du code, recherche visuelle des informations, analyse des situations, adaptation de l'allure, distances de securite, respect des usagers vulnerables, eco-conduite.",
+            "A-2 Souplesse de la conduite assurant le confort des passagers : usage souple des commandes ; anticipation des situations pour eviter les manoeuvres brutales.",
+            "A-3 Prise en charge et depose des clients et leurs bagages : respect de l'arret et du stationnement, securite de l'arret, maniement precautionneux des bagages.",
+          ],
+        },
+        {
+          title: "Epreuve pratique - B. Relation client",
+          bullets: [
+            "B-1 Presentation generale et attitudes : tenue correcte, attitudes adaptees, discretion et courtoisie.",
+            "B-2 Accueil, comportement durant le parcours et prise de conge.",
+            "B-3 Verification de l'etat du vehicule avant et apres la prestation.",
+          ],
+        },
+        {
+          title: "Epreuve pratique - C. Construction du parcours",
+          bullets: [
+            "C-1 Elaborer un parcours ; utiliser un GPS et une carte routiere ; adapter le parcours a d'eventuelles difficultes (embouteillages, travaux...).",
+          ],
+        },
+        {
+          title: "Epreuve pratique - D. Facturation et paiement (competences specifiques Taxis)",
+          bullets: [
+            "Utiliser les equipements speciaux (compteur horokilometrique, dispositif lumineux, plaque horodateur, imprimante) et le terminal de paiement electronique (TPE) et controler leur bon fonctionnement.",
+            "Connaitre la tarification locale applicable.",
+            "Calculer le cout estimatif d'une course en fonction de la duree, de la distance et des aleas de la circulation.",
+            "Etablir une facturation.",
+          ],
+        },
+        {
+          title: "Moyens pedagogiques",
+          bullets: [
+            "Tablettes et plateforme numerique.",
+            "Cours magistraux.",
+            "Evaluations : controles continus et examens blancs.",
           ],
         },
         commonModalites,
@@ -177,7 +362,7 @@ function getProgramme(typeApprenant?: string | null): ProgrammeDef {
 
   if (t === "ta") {
     return {
-      titre: "PROGRAMME DE FORMATION PASSERELLE TAXI POUR TITULAIRE VTC (TA)",
+      titre: "PROGRAMME FORMATION CHAUFFEUR TAXI POUR CHAUFFEURS VTC (Passerelle TA)",
       reference:
         "Arrete du 11 aout 2017 modifie relatif a la formation d'equivalence entre les activites VTC et taxi.",
       duree: "35 heures.",
@@ -185,26 +370,24 @@ function getProgramme(typeApprenant?: string | null): ProgrammeDef {
         "Permettre a un conducteur VTC titulaire de la carte professionnelle depuis plus d'un an d'obtenir la carte de conducteur de taxi via la formation passerelle.",
       sections: [
         {
-          title: "Public et prerequis",
+          title: "Reglementation nationale",
           bullets: [
-            "Titulaire de la carte professionnelle VTC en cours de validite depuis au moins un an.",
-            "Casier judiciaire (B2) compatible et aptitude medicale.",
+            "Connaitre le fonctionnement des equipements speciaux obligatoires et du terminal de paiement electronique.",
+            "Connaitre l'articulation entre les reglementations nationales et locales.",
+            "Connaitre les regimes d'autorisation de stationnement.",
+            "Connaitre les regles de tarification d'une course de Taxi.",
+            "Connaitre les activites complementaires ouvertes aux taxis : services reguliers de transport, transport assis professionnalise.",
+            "Connaitre les regles de detaxation partielle de la taxe interieure sur la consommation des produits energetiques (TICPE).",
+            "Connaitre la reglementation relative a la taxe de stationnement.",
+            "Connaitre le territoire d'exercice de l'activite : les principaux lieux, sites, batiments publics et les principaux axes routiers.",
+            "Connaitre le reglement local en vigueur.",
           ],
         },
         {
-          title: "Contenu pedagogique",
+          title: "Reglementation locale (specifique aux conducteurs de Taxi)",
           bullets: [
-            "Reglementation specifique a l'activite de taxi (national et local).",
-            "Utilisation du taximetre, de l'imprimante, du lumineux et du terminal de paiement.",
-            "Connaissance du territoire d'exercice (topographie, points d'interet).",
-            "Securite routiere adaptee au transport de personnes.",
-            "Relation client, deontologie et gestion des incidents.",
-          ],
-        },
-        {
-          title: "Epreuve pratique",
-          bullets: [
-            "Mise en situation reelle de course taxi (prise en charge, itineraire, encaissement).",
+            "Connaitre le territoire d'exercice de l'activite : les principaux lieux, sites, batiments publics et les principaux axes routiers.",
+            "Connaitre le reglement local en vigueur.",
           ],
         },
         commonModalites,
@@ -216,7 +399,7 @@ function getProgramme(typeApprenant?: string | null): ProgrammeDef {
 
   if (t === "va") {
     return {
-      titre: "PROGRAMME DE FORMATION PASSERELLE VTC POUR TITULAIRE TAXI (VA)",
+      titre: "PROGRAMME FORMATION CHAUFFEUR VTC POUR CHAUFFEURS TAXI (Passerelle VA)",
       reference:
         "Arrete du 11 aout 2017 modifie relatif a la formation d'equivalence entre les activites taxi et VTC.",
       duree: "7 heures.",
@@ -224,19 +407,21 @@ function getProgramme(typeApprenant?: string | null): ProgrammeDef {
         "Permettre a un conducteur de taxi titulaire de la carte professionnelle depuis plus d'un an d'exercer l'activite de VTC.",
       sections: [
         {
-          title: "Public et prerequis",
+          title: "Developpement commercial",
           bullets: [
-            "Titulaire de la carte professionnelle taxi en cours de validite depuis au moins un an.",
-            "Casier judiciaire (B2) compatible et aptitude medicale.",
+            "Connaitre et comprendre les principes generaux du marketing (analyse de marche, ciblage de l'offre, competitivite, determination du prix...).",
+            "Savoir valoriser les qualites de la prestation commerciale VTC.",
+            "Savoir fideliser ses clients et prospecter pour en obtenir d'autres.",
+            "Savoir mener des actions de communication pour faire connaitre son entreprise, notamment par internet et les moyens numeriques.",
+            "Savoir developper un reseau de partenaires favorisant l'acces a la clientele (hotels, entreprise...).",
           ],
         },
         {
-          title: "Contenu pedagogique",
+          title: "Reglementation specifique VTC",
           bullets: [
-            "Reglementation specifique de l'activite VTC (differences avec l'activite taxi).",
-            "Regime de la reservation prealable et interdictions specifiques.",
-            "Developpement commercial et positionnement sur les plateformes.",
-            "Relation client haut de gamme et deontologie.",
+            "Connaitre les dispositions relatives aux exploitants : les modalites d'inscription au registre des VTC, les regles relatives a la capacite financiere...",
+            "Connaitre les obligations specifiques relatives aux vehicules d'exploitation (dimensions, puissance, age...) et connaitre leur signalisation.",
+            "Savoir etablir les documents relatifs a l'execution de la prestation de transport qui doivent etre presentes en cas de controle.",
           ],
         },
         commonModalites,
