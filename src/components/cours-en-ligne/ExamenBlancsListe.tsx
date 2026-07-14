@@ -582,6 +582,13 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
                             {isCompleted && scoreData ? (() => {
                               const score = computeMatiereScore(m, scoreData.reponses, scoreData.score_obtenu, scoreData.score_max, scoreData.correctionsIA, findStaticFallbackMatiere(examen.id, m.id, m.nom));
                               const noteSur20 = score?.noteSur20 ?? normalizeNoteSur20(scoreData.score_obtenu, scoreData.score_max, scoreData.note_sur_20);
+                              if (m.id === "reglementation_vtc2") {
+                                const ts = new Date().toISOString();
+                                const source = score?.noteSur20 != null ? "RECALCUL(computeMatiereScore)" : "REPLI(score_obtenu/score_max stockés)";
+                                // eslint-disable-next-line no-console
+                                console.log(`[TRACE ${ts}] examen=${examen.id} matiere=reglementation_vtc2 apprenant=${apprenantId} source=${source} score.noteSur20=${score?.noteSur20} score.pointsObtenus=${score?.pointsObtenus} score.pointsMax=${score?.pointsMax} stored.score_obtenu=${scoreData.score_obtenu} stored.score_max=${scoreData.score_max} stored.note_sur_20=${scoreData.note_sur_20} reponsesKeys=${scoreData.reponses ? Object.keys(scoreData.reponses).length : 0} => noteAffichée=${noteSur20.toFixed(1)}/20`);
+                              }
+
                               return (
                                 <span className="flex items-center gap-1 shrink-0">
                                   {isAdmin && (
