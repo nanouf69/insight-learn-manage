@@ -275,7 +275,30 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
     return rawEnd > cappedEnd ? cappedEnd : rawEnd;
   };
 
+  // Une connexion n'est comptabilisée que si l'apprenant a réellement ouvert
+  // un module/section pédagogique OU complété un exercice/quiz pendant la fenêtre.
+  // Rester sur "Accueil — Liste des modules" ne compte pas.
+  const hasPedagogicalActivity = (connexion: Connexion) => {
+    const start = parseISO(connexion.started_at);
+    const end = getCappedSessionEnd(connexion);
+    const isAccueil = (nom?: string | null) =>
+      !!nom && /accueil|liste\s+des\s+modules/i.test(nom);
+    const inWindow = (iso: string) => {
+      const t = parseISO(iso);
+      return t >= start && t <= end;
+    };
+    if (activites.some(a =>
+      inWindow(a.occurred_at)
+      && (a.action_type === "open_module" || a.action_type === "open_section" || a.action_type === "open_cours")
+      && !isAccueil(a.module_nom)
+    )) return true;
+    if (exercicesCompletes.some(e => inWindow(e.updated_at))) return true;
+    if (quizResults.some(q => inWindow(q.completed_at))) return true;
+    return false;
+  };
+
   const getSessionMinutes = (connexion: Connexion) => {
+    if (!hasPedagogicalActivity(connexion)) return 0;
     const start = parseISO(connexion.started_at);
     return Math.max(0, differenceInMinutes(getCappedSessionEnd(connexion), start));
   };
