@@ -182,13 +182,13 @@ export function generateRecapitulatifPDF(data: RecapitulatifData, options?: { re
     doc.circle(margin + 3, yPos - 2, 3, 'F');
     doc.setTextColor(34, 197, 94);
     doc.setFont('helvetica', 'bold');
-    doc.text('✓ B2 vierge confirmé', margin + 10, yPos);
+    doc.text('[OK] B2 vierge confirme', margin + 10, yPos);
   } else {
     doc.setFillColor(239, 68, 68); // red-500
     doc.circle(margin + 3, yPos - 2, 3, 'F');
     doc.setTextColor(239, 68, 68);
     doc.setFont('helvetica', 'bold');
-    doc.text('✗ B2 non confirmé', margin + 10, yPos);
+    doc.text('[X] B2 non confirme', margin + 10, yPos);
   }
 
   yPos += 20;

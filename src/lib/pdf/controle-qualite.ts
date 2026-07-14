@@ -343,7 +343,7 @@ function renderTestCompetences(doc: jsPDF, donnees: any, y: number, margin: numb
           doc.setFont('helvetica', 'bold');
           const answerColor = String(value).toLowerCase() === 'oui' ? [34, 139, 34] : [200, 50, 50];
           doc.setTextColor(answerColor[0], answerColor[1], answerColor[2]);
-          doc.text(`→ ${String(value)}`, margin + 18, y);
+          doc.text(`Reponse : ${String(value)}`, margin + 18, y);
           doc.setTextColor(50, 50, 50);
           y += 6;
         } else {
