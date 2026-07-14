@@ -42,9 +42,10 @@ export function getStagiaireSignatureImage(donnees: any): string | undefined {
 export function getStagiaireSignatureName(donnees: any): string | undefined {
   if (!donnees || typeof donnees !== "object") return undefined;
   for (const key of SIGNATURE_NAME_KEYS) {
-    const value = donnees[key];
-    if (typeof value === "string" && value.trim() && !isImageSignature(value)) {
-      return value.trim();
+    const value = donnees[key] as unknown;
+    if (typeof value === "string") {
+      const trimmed = value.trim();
+      if (trimmed && !trimmed.startsWith("data:image/")) return trimmed;
     }
   }
   return undefined;
