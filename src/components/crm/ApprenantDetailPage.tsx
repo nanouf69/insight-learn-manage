@@ -340,6 +340,23 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
     staleTime: 0,
   });
 
+  const { data: apprenantSessions } = useQuery({
+    queryKey: ["apprenant-sessions", apprenantId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("session_apprenants")
+        .select("session_id, sessions:session_id (id, nom, date_debut, date_fin, type_session, lieu, statut)")
+        .eq("apprenant_id", apprenantId);
+      if (error) return [];
+      return (data ?? [])
+        .map((r: any) => r.sessions)
+        .filter(Boolean)
+        .sort((a: any, b: any) => (b.date_debut || "").localeCompare(a.date_debut || ""));
+    },
+    enabled: !!apprenantId,
+  });
+
+
   const rawModules = (apprenant as any)?.modules_autorises;
   const hasStoredModulesArray = Array.isArray(rawModules);
   const currentModules: number[] = hasStoredModulesArray
@@ -838,8 +855,30 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
                       <p className="text-sm text-muted-foreground">Date de fin</p>
                       <p className="font-medium">{apprenant.date_fin_formation || '-'}</p>
                     </div>
+                    {apprenantSessions && apprenantSessions.length > 0 && (
+                      <div className="pt-2 border-t">
+                        <p className="text-sm text-muted-foreground mb-2">Session(s) rattachée(s)</p>
+                        <div className="space-y-2">
+                          {apprenantSessions.map((s: any) => (
+                            <Button
+                              key={s.id}
+                              variant="outline"
+                              size="sm"
+                              className="w-full justify-start gap-2"
+                              onClick={() => navigate(`/sessions/${s.id}`)}
+                            >
+                              <Calendar className="w-4 h-4" />
+                              <span className="truncate">
+                                {s.nom || `Session ${s.type_session}`} — {s.date_debut}{s.date_fin && s.date_fin !== s.date_debut ? ` → ${s.date_fin}` : ''}
+                              </span>
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
+
               </div>
             </div>
           )}
