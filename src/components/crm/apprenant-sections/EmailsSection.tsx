@@ -753,6 +753,57 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
     return dateStr ? new Date(dateStr) : new Date(email.created_at);
   };
 
+  const handleExportPdf = () => {
+    const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    const pw = doc.internal.pageSize.getWidth();
+    const today = format(new Date(), "dd/MM/yyyy", { locale: fr });
+    const tabLabel = activeTab === "sent" ? "Envoyés" : activeTab === "received" ? "Reçus" : "Tous";
+
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text("Relevé des emails", pw / 2, 15, { align: "center" });
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text(`${apprenant.prenom || ""} ${apprenant.nom || ""}${apprenant.email ? " — " + apprenant.email : ""}`, pw / 2, 22, { align: "center" });
+    doc.setFontSize(9);
+    doc.setTextColor(100);
+    doc.text(`Filtre : ${tabLabel} • ${filteredEmails.length} email(s) • Généré le ${today}`, pw / 2, 28, { align: "center" });
+    doc.setTextColor(0);
+
+    const body = filteredEmails.map((e) => {
+      const d = e.type === "sent" ? e.sent_at : e.received_at;
+      const dateStr = d ? format(new Date(d), "dd/MM/yyyy HH:mm", { locale: fr }) : "";
+      const from = e.sender_name || e.sender_email || "";
+      const to = (e.recipients || []).join(", ");
+      const preview = (e.body_preview || "").replace(/\s+/g, " ").slice(0, 220);
+      return [
+        dateStr,
+        e.type === "sent" ? "Envoyé" : "Reçu",
+        e.subject || "(sans objet)",
+        e.type === "sent" ? to : from,
+        preview,
+      ];
+    });
+
+    autoTable(doc, {
+      startY: 34,
+      head: [["Date", "Type", "Objet", "De / À", "Aperçu"]],
+      body,
+      styles: { fontSize: 7.5, cellPadding: 1.5, overflow: "linebreak", valign: "top" },
+      headStyles: { fillColor: [0, 102, 51], textColor: 255, fontStyle: "bold" },
+      columnStyles: {
+        0: { cellWidth: 24 },
+        1: { cellWidth: 15 },
+        2: { cellWidth: 45 },
+        3: { cellWidth: 40 },
+        4: { cellWidth: "auto" },
+      },
+      margin: { left: 10, right: 10 },
+    });
+
+    doc.save(`emails_${apprenant.nom || "apprenant"}_${apprenant.prenom || ""}.pdf`);
+  };
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
@@ -761,6 +812,15 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
           Historique des Emails
         </CardTitle>
         <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportPdf}
+            disabled={filteredEmails.length === 0}
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Exporter PDF
+          </Button>
           <Button 
             variant="outline" 
             size="sm" 
