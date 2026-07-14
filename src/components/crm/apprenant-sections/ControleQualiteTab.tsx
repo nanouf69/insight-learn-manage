@@ -683,8 +683,28 @@ export function ControleQualiteTab({ apprenant }: Props) {
           if (prog?.blob) {
             zip.folder("suivi-progression")!.file(prog.fileName, prog.blob);
           }
+
+          // Relevé de connexions (avec synthèse des durées : e-learning, théorie, pratique, total)
+          try {
+            const relevePdf = generateReleveConnexionsPdf(apprenant, cnxRawRows, {
+              returnBlob: true,
+              tempsPresentielTheorie: fmtDur(theorieSec),
+              tempsPratique: fmtDur(pratiqueSec),
+              tempsTotal: fmtDur(grandTotalSec),
+            }) as { blob: Blob; fileName: string } | undefined;
+            if (relevePdf?.blob) {
+              releveFolder.file(relevePdf.fileName, relevePdf.blob);
+            }
+          } catch (pdfErr) {
+            console.error("[bulk-download] releve PDF generation failed:", pdfErr);
+          }
         } catch (progErr) {
           console.error("[bulk-download] suivi progression failed:", progErr);
+          // Fallback: relevé simple sans synthèse
+          try {
+            const relevePdf = generateReleveConnexionsPdf(apprenant, cnxRawRows, { returnBlob: true }) as { blob: Blob; fileName: string } | undefined;
+            if (relevePdf?.blob) releveFolder.file(relevePdf.fileName, relevePdf.blob);
+          } catch {}
         }
 
 
