@@ -156,7 +156,7 @@ export function useStudentEffectiveHours(
   );
 
   const totalMinutes = useMemo(() => {
-    if (actTimestamps.length === 0 || connexions.length === 0) return 0;
+    if (connexions.length === 0) return 0;
     let total = 0;
     for (const c of connexions) {
       const startRaw = Date.parse(c.started_at);
@@ -164,26 +164,15 @@ export function useStudentEffectiveHours(
       const rawEnd = c.ended_at ? Date.parse(c.ended_at) : Date.parse(c.last_seen_at);
       const endRaw = Number.isNaN(rawEnd) ? startRaw : Math.min(rawEnd, startRaw + MAX_SESSION_MS);
 
-      // Clipper la fenêtre de connexion à la période de formation
+      // Clipper la fenêtre à la période de formation si définie
       const start = windowStart != null ? Math.max(startRaw, windowStart) : startRaw;
       const end = windowEnd != null ? Math.min(endRaw, windowEnd) : endRaw;
       if (end <= start) continue;
 
-      // Une activité doit exister dans la fenêtre effective
-      let lo = 0, hi = actTimestamps.length - 1, found = false;
-      while (lo <= hi) {
-        const mid = (lo + hi) >> 1;
-        const v = actTimestamps[mid];
-        if (v < start) lo = mid + 1;
-        else if (v > end) hi = mid - 1;
-        else { found = true; break; }
-      }
-      if (found) {
-        total += Math.max(0, Math.round((end - start) / 60000));
-      }
+      total += Math.max(0, Math.round((end - start) / 60000));
     }
     return total;
-  }, [connexions, actTimestamps, windowStart, windowEnd]);
+  }, [connexions, windowStart, windowEnd]);
 
   const requis = HEURES_REQUISES[(typeApprenant || "").toLowerCase()] ?? 0;
   const faitHeures = totalMinutes / 60;
