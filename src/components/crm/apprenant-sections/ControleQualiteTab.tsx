@@ -349,7 +349,8 @@ export function ControleQualiteTab({ apprenant }: Props) {
               completedAt: status.details?.completed_at,
               donnees: status.details?.donnees || null,
             };
-          });
+          })
+          .filter(i => i.found); // Ne pas afficher les documents manquants dans le PDF
         const cq = generateControleQualitePdf(apprenant, pdfItems, { returnBlob: true });
         if (cq) zip.folder("controle-qualite")!.file(cq.fileName, cq.blob);
 
