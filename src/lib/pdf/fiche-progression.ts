@@ -121,24 +121,29 @@ export function generateFicheProgression(data: FicheProgressionData, options?: {
     doc.setTextColor(0);
 
     doc.setFont('helvetica', 'bold');
-    doc.text('E-learning :', col1, y + 40);
+    doc.text('E-learning (temps actif) :', col1, y + 40);
     doc.setFont('helvetica', 'normal');
-    doc.text(data.tempsEnLigne || '-', col1 + 30, y + 40);
+    doc.text(data.tempsEnLigne || '-', col1 + 55, y + 40);
 
     doc.setFont('helvetica', 'bold');
-    doc.text('Presentiel theorie :', col2, y + 40);
+    doc.text('Presentiel theorie :', col1, y + 46);
     doc.setFont('helvetica', 'normal');
-    doc.text(data.tempsPresentielTheorie || '-', col2 + 45, y + 40);
+    doc.text(data.tempsPresentielTheorie || '-', col1 + 55, y + 46);
 
     doc.setFont('helvetica', 'bold');
-    doc.text('Pratique (presentiel) :', col1, y + 48);
+    doc.text('Pratique (presentiel) :', col1, y + 52);
     doc.setFont('helvetica', 'normal');
-    doc.text(data.tempsPresentielPratique || '-', col1 + 45, y + 48);
+    doc.text(data.tempsPresentielPratique || '-', col1 + 55, y + 52);
+
+    doc.setDrawColor(0, 102, 51);
+    doc.line(col1, y + 54.5, col1 + 90, y + 54.5);
 
     doc.setFont('helvetica', 'bold');
-    doc.text('Presentiel total :', col2, y + 48);
-    doc.setFont('helvetica', 'normal');
-    doc.text(data.tempsPresentielTotal || '-', col2 + 40, y + 48);
+    doc.setTextColor(0, 102, 51);
+    doc.text('TOTAL (e-learning + theorie + pratique) :', col1, y + 60);
+    doc.setFont('helvetica', 'bold');
+    doc.text(data.tempsTotal, col1 + 95, y + 60);
+    doc.setTextColor(0);
   }
 
   y += infoBoxH + 8;
