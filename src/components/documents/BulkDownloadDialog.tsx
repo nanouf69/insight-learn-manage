@@ -31,6 +31,11 @@ import {
 import { generateEmargementSemainePdf } from "@/lib/pdf/emargement-semaine";
 import { generateDocumentIndividuelPdf } from "@/lib/pdf/document-individuel";
 import { buildDossierApprenantIntoZip } from "@/lib/pdf/build-dossier-apprenant";
+import {
+  ensureDocumentSignatures,
+  findSharedStagiaireSignature,
+  findSharedStagiaireSignatureName,
+} from "@/lib/pdf/document-signatures";
 
 type DocKey =
   | "dossier-complet"
@@ -149,6 +154,8 @@ export function BulkDownloadDialog() {
 
     const getDoc = (typeDocument: string) =>
       documentsCompletes.find((d) => d.type_document === typeDocument);
+    const sharedSignature = findSharedStagiaireSignature(documentsCompletes);
+    const sharedSignatureName = findSharedStagiaireSignatureName(documentsCompletes);
 
     // --- Dossier apprenant complet (contrôle qualité + programme + émargements + relevé + progression + emails) ---
     if (selectedDocs.has("dossier-complet")) {
@@ -169,7 +176,7 @@ export function BulkDownloadDialog() {
             {
               type_document: "test-competences",
               titre: "Fiche de positionnement stagiaire",
-              donnees: d.donnees,
+              donnees: ensureDocumentSignatures(d.donnees, sharedSignature, sharedSignatureName),
               completed_at: d.completed_at,
             },
             { returnBlob: true },
@@ -192,7 +199,7 @@ export function BulkDownloadDialog() {
             {
               type_document: "projet-professionnel",
               titre: "Questionnaire projet professionnel",
-              donnees: d.donnees,
+              donnees: ensureDocumentSignatures(d.donnees, sharedSignature, sharedSignatureName),
               completed_at: d.completed_at,
             },
             { returnBlob: true },

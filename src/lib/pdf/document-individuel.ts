@@ -5,7 +5,12 @@ import logoImage from '@/assets/logo-ftransport.png';
 import { getCompetencesForFormation } from '@/components/cours-en-ligne/competences-checklist-data';
 import { ALL_DATES_EXAMEN_THEORIQUE } from '@/lib/examDatesConfig';
 import { parseFrenchDate } from '@/lib/filterPastDates';
-import { SIGNATURE_NAOUFAL_DATA_URL } from '@/lib/signatureNaoufal';
+import {
+  ensureDocumentSignatures,
+  getStagiaireSignatureImage,
+  getStagiaireSignatureName,
+  isImageSignature,
+} from '@/lib/pdf/document-signatures';
 
 // Returns the next upcoming theoretical exam session strictly after `today`,
 // or null if all configured dates are past.
@@ -523,6 +528,7 @@ export function generateDocumentIndividuelPdf(
   const doc = new jsPDF();
   const pw = doc.internal.pageSize.getWidth();
   const margin = 15;
+  const donneesWithSignatures = ensureDocumentSignatures(document.donnees);
 
   // ---- Header with logo ----
   try { doc.addImage(logoImage, 'PNG', margin, 8, 45, 16); } catch (_) {}
@@ -569,7 +575,7 @@ export function generateDocumentIndividuelPdf(
 
   // ---- Document content ----
   if (document.donnees && typeof document.donnees === 'object') {
-    y = renderDocContent(doc, document.type_document, document.donnees, y, margin, pw);
+    y = renderDocContent(doc, document.type_document, donneesWithSignatures, y, margin, pw);
   } else {
     y = ensureSpace(doc, y, 10);
     doc.setFontSize(10);
@@ -613,7 +619,7 @@ export function generateDocumentIndividuelPdf(
 
 
   // ---- CGV acceptation block (always shown when accepted) ----
-  if (document.donnees && typeof document.donnees === 'object' && document.donnees.cgv_accepted) {
+  if (document.donnees && typeof document.donnees === 'object' && donneesWithSignatures.cgv_accepted) {
     y = ensureSpace(doc, y, 38);
     y += 6;
     y = renderSectionHeader(doc, 'ACCEPTATION DES CONDITIONS GENERALES DE VENTE', y, margin, pw);
@@ -625,10 +631,10 @@ export function generateDocumentIndividuelPdf(
     doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(30, 60, 30);
-    const acceptedAt = document.donnees.cgv_accepted_at
-      ? (() => { try { return format(new Date(document.donnees.cgv_accepted_at), "dd/MM/yyyy a HH:mm", { locale: fr }); } catch { return String(document.donnees.cgv_accepted_at); } })()
+    const acceptedAt = donneesWithSignatures.cgv_accepted_at
+      ? (() => { try { return format(new Date(donneesWithSignatures.cgv_accepted_at), "dd/MM/yyyy a HH:mm", { locale: fr }); } catch { return String(donneesWithSignatures.cgv_accepted_at); } })()
       : '-';
-    const version = document.donnees.cgv_version || 'CGV Ftransport';
+    const version = donneesWithSignatures.cgv_version || 'CGV Ftransport';
     const lines = [
       `Le stagiaire reconnait avoir pris connaissance et accepte sans reserve les Conditions Generales`,
       `de Vente de Ftransport (${version}).`,
@@ -688,6 +694,7 @@ export function generateDocumentIndividuelPdf(
   const drawSignatureBlock = (
     label: string,
     sigData: string | undefined,
+    signedName: string | undefined,
     x: number,
     yTop: number,
   ) => {
@@ -698,20 +705,21 @@ export function generateDocumentIndividuelPdf(
     doc.text(label, x, yTop);
 
     // Box
+    doc.setFillColor(255, 255, 255);
     doc.setDrawColor(180, 180, 180);
     doc.setLineWidth(0.3);
-    doc.roundedRect(x, yTop + 2, colW, boxH, 2, 2);
+    doc.roundedRect(x, yTop + 2, colW, boxH, 2, 2, 'FD');
 
-    const present = sigData && isBase64(sigData);
+    const present = sigData && (isImageSignature(sigData) || isBase64(sigData));
     if (present) {
       try {
         doc.addImage(
           sigData!,
           'PNG',
-          x + (colW - sigImgW) / 2,
-          yTop + 2 + (boxH - sigImgH) / 2,
-          sigImgW,
-          sigImgH,
+          x + 4,
+          yTop + 5,
+          colW - 8,
+          boxH - 7,
         );
         return;
       } catch (e) {
@@ -721,6 +729,12 @@ export function generateDocumentIndividuelPdf(
       doc.setFont('helvetica', 'italic');
       doc.setFontSize(8);
       doc.text('[Signature numerique enregistree]', x + 4, yTop + 2 + boxH / 2);
+    } else if (signedName) {
+      doc.setTextColor(30, 30, 30);
+      doc.setFont('helvetica', 'italic');
+      doc.setFontSize(7.5);
+      const lines = doc.splitTextToSize(`Signe electroniquement : ${signedName}`, colW - 8);
+      doc.text(lines, x + 4, yTop + 2 + boxH / 2);
     } else {
       doc.setTextColor(170, 170, 170);
       doc.setFont('helvetica', 'italic');
@@ -731,13 +745,15 @@ export function generateDocumentIndividuelPdf(
 
   drawSignatureBlock(
     'Signature du stagiaire :',
-    document.donnees?.signature,
+    getStagiaireSignatureImage(donneesWithSignatures),
+    getStagiaireSignatureName(donneesWithSignatures),
     margin,
     y,
   );
   drawSignatureBlock(
     'Signature du responsable pedagogique :',
-    document.donnees?.signatureResponsable || SIGNATURE_NAOUFAL_DATA_URL,
+    donneesWithSignatures.signatureResponsable,
+    'Naoufal GUENICHI',
     margin + colW + colGap,
     y,
   );
