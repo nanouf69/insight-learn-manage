@@ -516,8 +516,9 @@ function renderGenericContent(doc: jsPDF, donnees: any, y: number, margin: numbe
 // ===== Main export =====
 export function generateDocumentIndividuelPdf(
   apprenant: { nom: string; prenom: string; civilite?: string; type_apprenant?: string; formation_choisie?: string },
-  document: { type_document: string; titre: string; donnees: any; completed_at: string }
-) {
+  document: { type_document: string; titre: string; donnees: any; completed_at: string },
+  opts?: { returnBlob?: boolean }
+): { blob: Blob; fileName: string } | void {
   const doc = new jsPDF();
   const pw = doc.internal.pageSize.getWidth();
   const margin = 15;
@@ -736,5 +737,8 @@ export function generateDocumentIndividuelPdf(
 
   const fileName = `${document.type_document}_${apprenant.nom}_${apprenant.prenom}_${format(new Date(), 'yyyy-MM-dd')}.pdf`
     .replace(/\s+/g, '-').toLowerCase();
+  if (opts?.returnBlob) {
+    return { blob: doc.output('blob'), fileName };
+  }
   doc.save(fileName);
 }
