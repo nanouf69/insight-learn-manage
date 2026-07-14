@@ -151,6 +151,27 @@ const CONTROLE_DOCUMENTS: ControleDocument[] = [
     docType: "cgv-acceptation",
   },
   {
+    id: "cgv-ri-acceptation",
+    label: "CGV et Reglement Interieur",
+    description: "CGV et reglement interieur signes (presentiel)",
+    category: "formulaire",
+    docType: "cgv-ri-acceptation",
+  },
+  {
+    id: "evaluation-pedagogique",
+    label: "Évaluation pédagogique",
+    description: "Évaluation des acquis de l'apprenant",
+    category: "formulaire",
+    docType: "evaluation-acquis",
+  },
+  {
+    id: "enquete-satisfaction",
+    label: "Enquête de satisfaction",
+    description: "Questionnaire de satisfaction TAXI, TA, VTC ou VA",
+    category: "formulaire",
+    docType: "satisfaction",
+  },
+  {
     id: "suivi-progression",
     label: "Suivi de progression e-learning",
     description: "Progression des modules et scores obtenus",
