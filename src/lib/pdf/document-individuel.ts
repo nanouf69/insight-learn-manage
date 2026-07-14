@@ -737,7 +737,7 @@ export function generateDocumentIndividuelPdf(
   );
   drawSignatureBlock(
     'Signature du responsable pedagogique :',
-    document.donnees?.signatureResponsable,
+    document.donnees?.signatureResponsable || SIGNATURE_NAOUFAL_DATA_URL,
     margin + colW + colGap,
     y,
   );
