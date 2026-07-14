@@ -704,5 +704,8 @@ export function generateControleQualitePdf(apprenant: any, items: ControleItem[]
   doc.text(`${COMPANY_INFO.name} - ${COMPANY_INFO.address}`, pw / 2, y, { align: 'center' });
 
   const fileName = `controle-qualite-${apprenant.prenom}-${apprenant.nom}.pdf`.replace(/\s+/g, '-').toLowerCase();
+  if (opts?.returnBlob) {
+    return { blob: doc.output('blob'), fileName };
+  }
   doc.save(fileName);
 }
