@@ -44,7 +44,7 @@ const TYPE_COLORS: Record<string, string> = {
   "devis-formation-continue": "bg-indigo-100 text-indigo-800",
   "devis-envoi": "bg-cyan-100 text-cyan-800",
   "emargement-fc": "bg-rose-100 text-rose-800",
-  "emargement-fc-semaine": "bg-rose-200 text-rose-900",
+  "emargement-fc-semaine": "bg-green-500 text-white",
   "doc-fournisseur": "bg-violet-100 text-violet-800",
 };
 
