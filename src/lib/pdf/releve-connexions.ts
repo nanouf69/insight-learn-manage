@@ -94,12 +94,17 @@ export function generateReleveConnexionsPdf(
   doc.text(`Genere le ${format(new Date(), "dd/MM/yyyy HH:mm", { locale: fr })}`, pw - margin, 56, { align: "right" });
 
   // Total duration
+  // Total duration (plafonné à 7h par session pour rester cohérent avec le rapport d'activité)
+  const MAX_SESSION_MS = 7 * 60 * 60 * 1000;
   let totalMin = 0;
   for (const r of rows) {
     const s = r.started_at;
     const e = r.ended_at || r.last_seen_at;
     if (s && e) {
-      const ms = new Date(e).getTime() - new Date(s).getTime();
+      const startMs = new Date(s).getTime();
+      const rawEndMs = new Date(e).getTime();
+      const endMs = Math.min(rawEndMs, startMs + MAX_SESSION_MS);
+      const ms = endMs - startMs;
       if (isFinite(ms) && ms > 0) totalMin += Math.round(ms / 60000);
     }
   }
