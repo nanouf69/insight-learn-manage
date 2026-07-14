@@ -17,6 +17,27 @@ import {
 import { RotateCcw, Trophy, Calendar, Hash, Loader2, ChevronDown, ChevronRight, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import {
+  EXAMENS_BLANCS_VTC,
+  EXAMENS_BLANCS_TAXI,
+  EXAMENS_BLANCS_TA,
+  EXAMENS_BLANCS_VA,
+} from "@/components/cours-en-ligne/examens-blancs-data";
+import {
+  computeMoyenneExamen,
+  computeMatiereScore,
+} from "@/components/cours-en-ligne/examens-blancs-scoring";
+import {
+  buildMatiereLookupKeys,
+  findScoreForMatiere,
+} from "@/components/cours-en-ligne/examens-blancs-utils";
+
+const ALL_EXAMENS_BLANCS = [
+  ...EXAMENS_BLANCS_VTC,
+  ...EXAMENS_BLANCS_TAXI,
+  ...EXAMENS_BLANCS_TA,
+  ...EXAMENS_BLANCS_VA,
+];
 
 interface ExamensBlancsResetTabProps {
   apprenant: {
