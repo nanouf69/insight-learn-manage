@@ -354,16 +354,21 @@ export function ControleQualiteTab({ apprenant }: Props) {
           .order("date_emargement", { ascending: true });
         const emargements = (emargData as any[]) || [];
         const weekMap = new Map<string, { weekStart: Date; weekEnd: Date; year: number; week: number; sigs: any[] }>();
-        for (const e of emargements) {
-          if (!e.date_emargement) continue;
-          const d = new Date(e.date_emargement + "T00:00:00");
+
+        const addWeek = (d: Date, sig?: any) => {
           const ws = startOfWeek(d, { weekStartsOn: 1 });
           const we = endOfWeek(d, { weekStartsOn: 1 });
           const year = getYear(ws);
-          const week = getISOWeek(d);
+          const week = getISOWeek(ws);
           const key = `${year}-W${String(week).padStart(2, "0")}`;
           if (!weekMap.has(key)) weekMap.set(key, { weekStart: ws, weekEnd: we, year, week, sigs: [] });
-          weekMap.get(key)!.sigs.push({
+          if (sig) weekMap.get(key)!.sigs.push(sig);
+        };
+
+        for (const e of emargements) {
+          if (!e.date_emargement) continue;
+          const d = new Date(e.date_emargement + "T00:00:00");
+          addWeek(d, {
             date: e.date_emargement,
             demi_journee: e.demi_journee,
             signed_at: e.signed_at,
@@ -372,8 +377,28 @@ export function ControleQualiteTab({ apprenant }: Props) {
             confirme_identite: !!e.confirme_identite,
           });
         }
+
+        // Toujours iterer toutes les semaines de la periode de formation, meme sans signature
+        const startStr = apprenant.date_debut_formation || apprenant.date_debut_cours_en_ligne;
+        const endStr = apprenant.date_fin_formation || apprenant.date_fin_cours_en_ligne;
+        if (startStr && endStr) {
+          try {
+            let cursor = startOfWeek(parseISO(startStr), { weekStartsOn: 1 });
+            const stop = endOfWeek(parseISO(endStr), { weekStartsOn: 1 });
+            let safety = 0;
+            while ((isBefore(cursor, stop) || +cursor === +stop) && safety < 260) {
+              addWeek(cursor);
+              cursor = addWeeks(cursor, 1);
+              safety++;
+            }
+          } catch {}
+        }
+
         const emargFolder = zip.folder("feuilles-emargement-hebdomadaires")!;
-        for (const [key, w] of weekMap.entries()) {
+        const sortedWeeks = Array.from(weekMap.values()).sort(
+          (a, b) => a.weekStart.getTime() - b.weekStart.getTime(),
+        );
+        for (const w of sortedWeeks) {
           const wsStr = format(w.weekStart, "yyyy-MM-dd");
           const weStr = format(w.weekEnd, "yyyy-MM-dd");
           const label = `Semaine ${w.week} - ${w.year}`;
@@ -382,13 +407,18 @@ export function ControleQualiteTab({ apprenant }: Props) {
           if (res) emargFolder.file(res.fileName, res.blob);
         }
 
-        // 3) Relevé de connexion (CSV)
+        // 3) Relevé de connexion (PDF + CSV)
         const { data: cnxData } = await supabase
           .from("apprenant_connexions")
           .select("started_at, ended_at, last_seen_at, last_action_at, end_reason, source, current_module, ip_address, user_agent")
           .eq("apprenant_id", apprenant.id)
           .order("started_at", { ascending: false });
-        const cnxRows = ((cnxData as any[]) || []).map(r => ({
+        const cnxRawRows = (cnxData as any[]) || [];
+        const relevePdf = generateReleveConnexionsPdf(apprenant, cnxRawRows, { returnBlob: true });
+        const releveFolder = zip.folder("releve-connexions")!;
+        if (relevePdf) releveFolder.file(relevePdf.fileName, relevePdf.blob);
+
+        const cnxRows = cnxRawRows.map(r => ({
           date_debut: r.started_at ? format(new Date(r.started_at), "yyyy-MM-dd HH:mm:ss") : "",
           date_fin: r.ended_at ? format(new Date(r.ended_at), "yyyy-MM-dd HH:mm:ss") : "",
           derniere_activite: r.last_action_at ? format(new Date(r.last_action_at), "yyyy-MM-dd HH:mm:ss") : "",
@@ -402,7 +432,7 @@ export function ControleQualiteTab({ apprenant }: Props) {
           navigateur: r.user_agent || "",
         }));
         const cnxCsv = toCsv(cnxRows, ["date_debut","date_fin","derniere_activite","duree_min","module","source","fin","ip","navigateur"]);
-        zip.folder("releve-connexions")!.file(`releve-connexions_${slug}.csv`, cnxCsv);
+        releveFolder.file(`releve-connexions_${slug}.csv`, cnxCsv);
 
         // 4) Trace des emails envoyés / reçus (CSV)
         const { data: emailsData } = await supabase
