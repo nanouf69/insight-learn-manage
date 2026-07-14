@@ -463,7 +463,7 @@ export function ControleQualiteTab({ apprenant }: Props) {
 
         // 3c) Suivi de progression e-learning (PDF Qualiopi)
         try {
-          const [actAllRes, complAllRes, qrAllRes, cnxAllRes, emargAllRes, sessInscritsRes] = await Promise.all([
+          const [actAllRes, complAllRes, qrAllRes, cnxAllRes, emargAllRes, sessInscritsRes, exosRes] = await Promise.all([
             supabase
               .from("apprenant_module_activites")
               .select("module_id, module_nom, action_type, occurred_at")
@@ -490,6 +490,11 @@ export function ControleQualiteTab({ apprenant }: Props) {
               .from("session_apprenants")
               .select("session_id, heure_debut_personnalisee, heure_fin_personnalisee, sessions:session_id(type_session, heure_debut, heure_fin, date_debut, date_fin)")
               .eq("apprenant_id", apprenant.id),
+            supabase
+              .from("reponses_apprenants")
+              .select("updated_at")
+              .eq("apprenant_id", apprenant.id)
+              .eq("completed", true),
           ]);
           if (actAllRes.error) console.error("[bulk-download] activites error:", actAllRes.error);
           if (complAllRes.error) console.error("[bulk-download] completion error:", complAllRes.error);
