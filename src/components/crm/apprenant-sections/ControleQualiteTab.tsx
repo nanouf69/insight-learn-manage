@@ -396,26 +396,35 @@ export function ControleQualiteTab({ apprenant }: Props) {
           });
         }
 
-        // Toujours iterer toutes les semaines de la periode de formation, meme sans signature
-        const startStr = apprenant.date_debut_formation || apprenant.date_debut_cours_en_ligne;
-        const endStr = apprenant.date_fin_formation || apprenant.date_fin_cours_en_ligne;
-        if (startStr && endStr) {
-          try {
-            let cursor = startOfWeek(parseISO(startStr), { weekStartsOn: 1 });
-            const stop = endOfWeek(parseISO(endStr), { weekStartsOn: 1 });
-            let safety = 0;
-            while ((isBefore(cursor, stop) || +cursor === +stop) && safety < 260) {
-              addWeek(cursor);
-              cursor = addWeeks(cursor, 1);
-              safety++;
-            }
-          } catch {}
+        // Détection e-learning : type_apprenant suffixé "-e" (vtc-e, taxi-e, ta-e, va-e)
+        // Pour les apprenants en pur e-learning, on n'itère PAS toutes les semaines
+        // de la période de formation : on garde uniquement les feuilles pratiques
+        // (semaines pour lesquelles une signature d'émargement existe réellement).
+        const isElearningOnly = /(^|-)e($|-)/i.test(String(apprenant.type_apprenant || ""));
+
+        if (!isElearningOnly) {
+          // Toujours iterer toutes les semaines de la periode de formation, meme sans signature
+          const startStr = apprenant.date_debut_formation || apprenant.date_debut_cours_en_ligne;
+          const endStr = apprenant.date_fin_formation || apprenant.date_fin_cours_en_ligne;
+          if (startStr && endStr) {
+            try {
+              let cursor = startOfWeek(parseISO(startStr), { weekStartsOn: 1 });
+              const stop = endOfWeek(parseISO(endStr), { weekStartsOn: 1 });
+              let safety = 0;
+              while ((isBefore(cursor, stop) || +cursor === +stop) && safety < 260) {
+                addWeek(cursor);
+                cursor = addWeeks(cursor, 1);
+                safety++;
+              }
+            } catch {}
+          }
         }
 
         const emargFolder = zip.folder("feuilles-emargement-hebdomadaires")!;
-        const sortedWeeks = Array.from(weekMap.values()).sort(
-          (a, b) => a.weekStart.getTime() - b.weekStart.getTime(),
-        );
+        const sortedWeeks = Array.from(weekMap.values())
+          // e-learning : ne conserver que les semaines avec une signature réelle (pratique)
+          .filter(w => !isElearningOnly || w.sigs.length > 0)
+          .sort((a, b) => a.weekStart.getTime() - b.weekStart.getTime());
         for (const w of sortedWeeks) {
           const wsStr = format(w.weekStart, "yyyy-MM-dd");
           const weStr = format(w.weekEnd, "yyyy-MM-dd");
