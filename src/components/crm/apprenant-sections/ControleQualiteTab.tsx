@@ -151,13 +151,6 @@ const CONTROLE_DOCUMENTS: ControleDocument[] = [
     docType: "cgv-acceptation",
   },
   {
-    id: "cgv-ri-acceptation",
-    label: "CGV et Reglement Interieur",
-    description: "CGV et reglement interieur signes (presentiel)",
-    category: "formulaire",
-    docType: "cgv-ri-acceptation",
-  },
-  {
     id: "suivi-progression",
     label: "Suivi de progression e-learning",
     description: "Progression des modules et scores obtenus",
@@ -172,13 +165,6 @@ const CONTROLE_DOCUMENTS: ControleDocument[] = [
     isActivity: true,
   },
   {
-    id: "evaluation-pedagogique",
-    label: "Évaluation pédagogique",
-    description: "Évaluation des acquis de l'apprenant",
-    category: "formulaire",
-    docType: "evaluation-acquis",
-  },
-  {
     id: "attestation-fin",
     label: "Attestation de fin de formation",
     description: "Document attestant la fin de la formation",
@@ -191,13 +177,6 @@ const CONTROLE_DOCUMENTS: ControleDocument[] = [
     description: "Synthèse globale du parcours de l'apprenant",
     category: "suivi",
     isProgress: true,
-  },
-  {
-    id: "enquete-satisfaction",
-    label: "Enquête de satisfaction",
-    description: "Questionnaire de satisfaction TAXI, TA, VTC ou VA",
-    category: "formulaire",
-    docType: "satisfaction",
   },
   {
     id: "programme-formation",
