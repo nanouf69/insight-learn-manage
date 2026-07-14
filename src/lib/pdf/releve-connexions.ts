@@ -109,45 +109,67 @@ export function generateReleveConnexionsPdf(
   doc.text(`Duree cumulee : ${h}h${String(m).padStart(2, "0")}`, margin, 62);
   doc.setFont("helvetica", "normal");
 
-  const body = rows.map((r) => [
-    fmt(r.started_at),
-    fmt(r.ended_at || r.last_seen_at),
-    duree(r.started_at, r.ended_at || r.last_seen_at),
-    r.current_module || "-",
-    r.source || "-",
-    r.end_reason || "-",
-    r.ip_address || "-",
-    shortUA(r.user_agent),
-  ]);
+  if (!rows || rows.length === 0) {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.setTextColor(200, 50, 50);
+    doc.text(
+      "Aucune connexion e-learning enregistree pour cet apprenant.",
+      pw / 2, 90, { align: "center" },
+    );
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(80, 80, 80);
+    doc.text(
+      "Cet apprenant n'a pas encore initialise de session sur la plateforme e-learning,",
+      pw / 2, 100, { align: "center" },
+    );
+    doc.text(
+      "ou suit une formation exclusivement en presentiel.",
+      pw / 2, 106, { align: "center" },
+    );
+  } else {
+    const body = rows.map((r) => [
+      fmt(r.started_at),
+      fmt(r.ended_at || r.last_seen_at),
+      duree(r.started_at, r.ended_at || r.last_seen_at),
+      r.current_module || "-",
+      r.source || "-",
+      r.end_reason || "-",
+      r.ip_address || "-",
+      shortUA(r.user_agent),
+    ]);
 
-  autoTable(doc, {
-    startY: 68,
-    head: [["Debut", "Fin", "Duree", "Module", "Source", "Fin de session", "IP", "Navigateur"]],
-    body,
-    theme: "grid",
-    styles: { fontSize: 8, cellPadding: 2, valign: "middle", overflow: "linebreak" },
-    headStyles: { fillColor: [13, 37, 64], textColor: 255, fontStyle: "bold", fontSize: 8 },
-    alternateRowStyles: { fillColor: [245, 248, 252] },
-    columnStyles: {
-      0: { cellWidth: 32 },
-      1: { cellWidth: 32 },
-      2: { cellWidth: 18, halign: "center" },
-      3: { cellWidth: 45 },
-      4: { cellWidth: 22 },
-      5: { cellWidth: 30 },
-      6: { cellWidth: 28 },
-      7: { cellWidth: "auto" },
-    },
-    margin: { left: margin, right: margin },
-    didDrawPage: () => {
-      doc.setFontSize(7);
-      doc.setTextColor(150, 150, 150);
-      doc.text(
-        `${COMPANY.name} - ${COMPANY.address}`,
-        pw / 2, ph - 6, { align: "center" },
-      );
-    },
-  });
+    autoTable(doc, {
+      startY: 68,
+      head: [["Debut", "Fin", "Duree", "Module", "Source", "Fin de session", "IP", "Navigateur"]],
+      body,
+      theme: "grid",
+      styles: { fontSize: 8, cellPadding: 2, valign: "middle", overflow: "linebreak" },
+      headStyles: { fillColor: [13, 37, 64], textColor: 255, fontStyle: "bold", fontSize: 8 },
+      alternateRowStyles: { fillColor: [245, 248, 252] },
+      columnStyles: {
+        0: { cellWidth: 32 },
+        1: { cellWidth: 32 },
+        2: { cellWidth: 18, halign: "center" },
+        3: { cellWidth: 45 },
+        4: { cellWidth: 22 },
+        5: { cellWidth: 30 },
+        6: { cellWidth: 28 },
+        7: { cellWidth: "auto" },
+      },
+      margin: { left: margin, right: margin },
+      didDrawPage: () => {
+        doc.setFontSize(7);
+        doc.setTextColor(150, 150, 150);
+        doc.text(
+          `${COMPANY.name} - ${COMPANY.address}`,
+          pw / 2, ph - 6, { align: "center" },
+        );
+      },
+    });
+  }
+
 
   const totalPages = doc.getNumberOfPages();
   for (let i = 1; i <= totalPages; i++) {

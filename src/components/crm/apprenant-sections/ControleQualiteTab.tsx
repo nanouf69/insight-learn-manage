@@ -414,9 +414,18 @@ export function ControleQualiteTab({ apprenant }: Props) {
           .eq("apprenant_id", apprenant.id)
           .order("started_at", { ascending: false });
         const cnxRawRows = (cnxData as any[]) || [];
-        const relevePdf = generateReleveConnexionsPdf(apprenant, cnxRawRows, { returnBlob: true });
         const releveFolder = zip.folder("releve-connexions")!;
-        if (relevePdf) releveFolder.file(relevePdf.fileName, relevePdf.blob);
+        try {
+          const relevePdf = generateReleveConnexionsPdf(apprenant, cnxRawRows, { returnBlob: true }) as { blob: Blob; fileName: string } | undefined;
+          if (relevePdf?.blob) {
+            releveFolder.file(relevePdf.fileName, relevePdf.blob);
+          } else {
+            console.warn("[bulk-download] releve PDF: no blob returned");
+          }
+        } catch (pdfErr) {
+          console.error("[bulk-download] releve PDF generation failed:", pdfErr);
+        }
+
 
         const cnxRows = cnxRawRows.map(r => ({
           date_debut: r.started_at ? format(new Date(r.started_at), "yyyy-MM-dd HH:mm:ss") : "",
