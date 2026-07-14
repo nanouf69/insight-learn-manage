@@ -151,6 +151,27 @@ const CONTROLE_DOCUMENTS: ControleDocument[] = [
     docType: "cgv-acceptation",
   },
   {
+    id: "cgv-ri-acceptation",
+    label: "CGV et Reglement Interieur",
+    description: "CGV et reglement interieur signes (presentiel)",
+    category: "formulaire",
+    docType: "cgv-ri-acceptation",
+  },
+  {
+    id: "evaluation-pedagogique",
+    label: "Évaluation pédagogique",
+    description: "Évaluation des acquis de l'apprenant",
+    category: "formulaire",
+    docType: "evaluation-acquis",
+  },
+  {
+    id: "enquete-satisfaction",
+    label: "Enquête de satisfaction",
+    description: "Questionnaire de satisfaction TAXI, TA, VTC ou VA",
+    category: "formulaire",
+    docType: "satisfaction",
+  },
+  {
     id: "suivi-progression",
     label: "Suivi de progression e-learning",
     description: "Progression des modules et scores obtenus",
@@ -315,17 +336,20 @@ export function ControleQualiteTab({ apprenant }: Props) {
         const slug = `${apprenant.prenom || ""}-${apprenant.nom || ""}`
           .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "apprenant";
 
-        // 1) Contrôle qualité PDF
-        const pdfItems = CONTROLE_DOCUMENTS.map(doc => {
-          const status = getDocStatus(doc);
-          return {
-            label: doc.label,
-            category: doc.category,
-            found: status.found,
-            completedAt: status.details?.completed_at,
-            donnees: status.details?.donnees || null,
-          };
-        });
+        // 1) Contrôle qualité PDF — n'inclut que les formulaires stagiaire
+        // (Suivi pédagogique et Documents administratifs restent affichés sur la plateforme mais pas dans le PDF)
+        const pdfItems = CONTROLE_DOCUMENTS
+          .filter(doc => doc.category === "formulaire")
+          .map(doc => {
+            const status = getDocStatus(doc);
+            return {
+              label: doc.label,
+              category: doc.category,
+              found: status.found,
+              completedAt: status.details?.completed_at,
+              donnees: status.details?.donnees || null,
+            };
+          });
         const cq = generateControleQualitePdf(apprenant, pdfItems, { returnBlob: true });
         if (cq) zip.folder("controle-qualite")!.file(cq.fileName, cq.blob);
 
