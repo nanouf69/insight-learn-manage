@@ -642,6 +642,24 @@ export function generateDocumentIndividuelPdf(
     y = boxY + boxH + 4;
   }
 
+  // ---- Décision organisme de formation (pour les docs pédagogiques) ----
+  const DECISION_TYPES = new Set(['projet-professionnel', 'analyse-besoin', 'test-competences']);
+  if (DECISION_TYPES.has(document.type_document)) {
+    const typeApp = String(apprenant.type_apprenant || '').toLowerCase();
+    const isPresentiel = !/(^|-)e($|-)/.test(typeApp);
+    y = ensureSpace(doc, y, 14);
+    y += 6;
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(13, 37, 64);
+    let decisionText = "Décision de l'organisme de formation : admis";
+    if (!isPresentiel) {
+      decisionText += `   —   Date : ${format(new Date(), 'dd/MM/yyyy', { locale: fr })}`;
+    }
+    doc.text(decisionText, margin, y);
+    y += 4;
+  }
+
   // ---- Signatures section ----
   const SIG_BLOCK_HEIGHT = 50; // header + box
   y = ensureSpace(doc, y, SIG_BLOCK_HEIGHT + 6);
@@ -649,6 +667,7 @@ export function generateDocumentIndividuelPdf(
   doc.setDrawColor(200, 200, 200);
   doc.line(margin, y, pw - margin, y);
   y += 8;
+
 
   doc.setFontSize(9);
   doc.setFont('helvetica', 'bold');
