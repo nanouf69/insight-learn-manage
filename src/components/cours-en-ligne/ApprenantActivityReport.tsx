@@ -365,9 +365,14 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
     const titles: string[] = [];
 
     // Cours, parties & sections consultés (module activities)
+    // On ignore la page d'accueil qui n'est pas un vrai module pédagogique.
+    const isAccueil = (nom?: string | null) =>
+      !!nom && /accueil|liste\s+des\s+modules/i.test(nom);
     const moduleActs = activites.filter(a => {
       const t = parseISO(a.occurred_at);
-      return t >= start && t <= end && (a.action_type === "open_module" || a.action_type === "open_cours" || a.action_type === "open_section");
+      return t >= start && t <= end
+        && (a.action_type === "open_module" || a.action_type === "open_cours" || a.action_type === "open_section")
+        && !isAccueil(a.module_nom);
     });
     const seenModules = new Set<string>();
     moduleActs.forEach(a => {
