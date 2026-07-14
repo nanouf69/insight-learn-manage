@@ -68,7 +68,7 @@ export async function buildDossierApprenantIntoZip(
       completedAt: d?.completed_at,
       donnees: d?.donnees || null,
     };
-  });
+  }).filter(i => i.found); // Ne pas afficher les documents manquants dans le PDF
   try {
     const cq = generateControleQualitePdf(apprenant, formulaires, { returnBlob: true });
     if (cq) root.folder("controle-qualite")!.file(cq.fileName, cq.blob);
