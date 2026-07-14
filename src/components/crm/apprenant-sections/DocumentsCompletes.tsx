@@ -44,7 +44,7 @@ const TYPE_COLORS: Record<string, string> = {
   "devis-formation-continue": "bg-indigo-100 text-indigo-800",
   "devis-envoi": "bg-cyan-100 text-cyan-800",
   "emargement-fc": "bg-rose-100 text-rose-800",
-  "emargement-fc-semaine": "bg-rose-200 text-rose-900",
+  "emargement-fc-semaine": "bg-green-500 text-white",
   "doc-fournisseur": "bg-violet-100 text-violet-800",
 };
 
@@ -365,12 +365,17 @@ export function DocumentsCompletes({ apprenant }: Props) {
 
   const downloadPDF = (doc: any) => {
     if (doc.type_document === "emargement-fc-semaine") {
+      const formateur = (window.prompt(
+        "Nom du formateur à indiquer sur la feuille d'émargement :",
+        "GUENICHI Naoufal",
+      ) || "GUENICHI Naoufal").trim();
       generateEmargementSemainePdf(
         apprenant,
         doc.donnees?.week_label || doc.titre,
         doc.donnees?.week_start,
         doc.donnees?.week_end,
         doc.donnees?.signatures || [],
+        formateur,
       );
       return;
     }
