@@ -578,7 +578,7 @@ export function ControleQualiteTab({ apprenant }: Props) {
           // ---- E-learning : temps TOTAL de connexion (identique au relevé de connexions + rapport d'activité)
           // Somme des sessions (ended_at || last_seen_at) - started_at, plafonnée à 7h par session.
           const MAX_SESSION_MS = 7 * 60 * 60 * 1000;
-          let onlineMs = 0;
+          let onlineMin = 0;
           for (const c of cnxRawRows) {
             const s = c.started_at;
             const e = c.ended_at || c.last_seen_at;
@@ -588,9 +588,9 @@ export function ControleQualiteTab({ apprenant }: Props) {
             if (!isFinite(startMs) || !isFinite(rawEndMs)) continue;
             const endMs = Math.min(rawEndMs, startMs + MAX_SESSION_MS);
             const ms = endMs - startMs;
-            if (ms > 0) onlineMs += ms;
+            if (ms > 0) onlineMin += Math.floor(ms / 60000);
           }
-          const onlineSec = Math.round(onlineMs / 1000);
+          const onlineSec = onlineMin * 60;
 
           // ---- Présentiel théorie : émargements FC
           const byDate = new Map<string, Set<string>>();
