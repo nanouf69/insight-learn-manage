@@ -365,9 +365,14 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
     const titles: string[] = [];
 
     // Cours, parties & sections consultés (module activities)
+    // On ignore la page d'accueil qui n'est pas un vrai module pédagogique.
+    const isAccueil = (nom?: string | null) =>
+      !!nom && /accueil|liste\s+des\s+modules/i.test(nom);
     const moduleActs = activites.filter(a => {
       const t = parseISO(a.occurred_at);
-      return t >= start && t <= end && (a.action_type === "open_module" || a.action_type === "open_cours" || a.action_type === "open_section");
+      return t >= start && t <= end
+        && (a.action_type === "open_module" || a.action_type === "open_cours" || a.action_type === "open_section")
+        && !isAccueil(a.module_nom);
     });
     const seenModules = new Set<string>();
     moduleActs.forEach(a => {
@@ -774,10 +779,14 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
                     const coursNames = getCoursDuringConnexion(c);
                     const exNames = getExerciceNamesDuringConnexion(c);
                     // Derive last consulted module/section from activities if current_module is empty
+                    const isAccueilLabel = (s?: string | null) =>
+                      !!s && /accueil|liste\s+des\s+modules/i.test(s);
                     const sessionActs = activites
                       .filter(a => {
                         const t = parseISO(a.occurred_at);
-                        return t >= start && t <= end && (a.action_type === "open_module" || a.action_type === "open_section");
+                        return t >= start && t <= end
+                          && (a.action_type === "open_module" || a.action_type === "open_section")
+                          && !isAccueilLabel(a.module_nom);
                       })
                       .sort((a, b) => b.occurred_at.localeCompare(a.occurred_at));
 
@@ -806,7 +815,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
                         else if (q.quiz_titre) inferredModules.add(q.quiz_titre);
                       });
 
-                    const trackedLabel = c.current_module
+                    const trackedLabel = (!isAccueilLabel(c.current_module) ? c.current_module : null)
                       || sessionActs.find(a => a.action_type === "open_module")?.module_nom
                       || sessionActs[0]?.module_nom
                       || null;
@@ -814,6 +823,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
                       ? `${[...inferredModules].join(", ")} (déduit)`
                       : null;
                     const moduleLabel = trackedLabel || inferredLabel;
+                    const hasRealActivity = !!moduleLabel;
                     return (
                       <TableRow key={c.id}>
                         <TableCell>{format(start, "dd/MM/yyyy", { locale: fr })}</TableCell>
@@ -826,7 +836,9 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
                         </TableCell>
                         <TableCell className="font-medium">{h}h{m.toString().padStart(2, "0")}</TableCell>
                         <TableCell className="text-muted-foreground">
-                          {moduleLabel || <span className="italic text-xs">Connexion sans activité enregistrée (consultation libre)</span>}
+                          {hasRealActivity
+                            ? moduleLabel
+                            : <span className="italic text-xs text-orange-600">Aucun module / quiz ouvert (page d'accueil uniquement)</span>}
                         </TableCell>
                         <TableCell>
                           {coursNames.length > 0 ? (
