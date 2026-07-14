@@ -376,9 +376,40 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
             {examGroups.map((group) => {
               const key = `${group.examenNum}-${group.type}`;
               const expanded = expandedExams.has(key);
-              const noteGlobale = group.totalMax > 0
-                ? ((group.totalScore / group.totalMax) * 20).toFixed(1)
-                : "0";
+
+              // Recalcul EN DIRECT à partir de details.reponses + définition actuelle
+              // des questions — même mécanisme que ExamenBlancsListe.tsx. Ne jamais
+              // se fier à note_sur_20 / (score_obtenu / score_max) figés en base.
+              const examenDef = ALL_EXAMENS_BLANCS.find((e) => e.id === group.quizId);
+              const scoresWithLookup = group.results.map((r) => ({
+                matiere_id: r.matiere_id,
+                matiere_nom: r.matiere_nom,
+                note_sur_20: r.score_max > 0 ? (r.score_obtenu / r.score_max) * 20 : 0,
+                score_obtenu: r.score_obtenu,
+                score_max: r.score_max,
+                completed_at: r.completed_at,
+                lookupKeys: buildMatiereLookupKeys(r.matiere_id, r.matiere_nom),
+                reponses: r.reponses ?? null,
+                correctionsIA: r.correctionsIA ?? null,
+              }));
+              const bilanExamen = examenDef
+                ? computeMoyenneExamen(examenDef, (m) => {
+                    const row = findScoreForMatiere(scoresWithLookup as any, m);
+                    if (!row) return null;
+                    return computeMatiereScore(
+                      m,
+                      (row as any).reponses,
+                      row.score_obtenu,
+                      row.score_max,
+                      (row as any).correctionsIA,
+                    );
+                  })
+                : null;
+              const noteGlobale = bilanExamen?.hasScores
+                ? bilanExamen.moyenne.toFixed(1)
+                : group.totalMax > 0
+                  ? ((group.totalScore / group.totalMax) * 20).toFixed(1)
+                  : "0";
 
               return (
                 <div key={key} className="border rounded-lg overflow-hidden">
