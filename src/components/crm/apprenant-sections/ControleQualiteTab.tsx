@@ -474,7 +474,7 @@ export function ControleQualiteTab({ apprenant }: Props) {
           const [actAllRes, complAllRes, qrAllRes] = await Promise.all([
             supabase
               .from("apprenant_module_activites")
-              .select("module_id, module_nom, action_type, occurred_at, duration_seconds")
+              .select("module_id, module_nom, action_type, occurred_at")
               .eq("apprenant_id", apprenant.id)
               .order("occurred_at", { ascending: true }),
             supabase
@@ -483,25 +483,46 @@ export function ControleQualiteTab({ apprenant }: Props) {
               .eq("apprenant_id", apprenant.id),
             supabase
               .from("apprenant_quiz_results")
-              .select("quiz_titre, matiere_nom, score, total_questions, completed_at")
+              .select("quiz_titre, matiere_nom, score_obtenu, score_max, note_sur_20, reussi, duree_secondes, completed_at")
               .eq("apprenant_id", apprenant.id)
               .order("completed_at", { ascending: true }),
           ]);
+          if (actAllRes.error) console.error("[bulk-download] activites error:", actAllRes.error);
+          if (complAllRes.error) console.error("[bulk-download] completion error:", complAllRes.error);
+          if (qrAllRes.error) console.error("[bulk-download] quiz error:", qrAllRes.error);
           const acts = (actAllRes.data as any[]) || [];
           const compls = (complAllRes.data as any[]) || [];
           const quizzes = (qrAllRes.data as any[]) || [];
           const completedIds = new Set(compls.map((c: any) => c.module_id));
 
-          // Group activités by module
+          // Group activités by module — derive duration from consecutive occurred_at within same module (cap 15min)
           const modulesMap = new Map<string, { firstDate?: string; lastDate?: string; totalSec: number; moduleId?: number }>();
-          for (const a of acts) {
+          const sortedActs = [...acts].sort((a, b) => (a.occurred_at || "").localeCompare(b.occurred_at || ""));
+          for (let i = 0; i < sortedActs.length; i++) {
+            const a = sortedActs[i];
             const key = a.module_nom || `Module ${a.module_id ?? "?"}`;
             const cur: { firstDate?: string; lastDate?: string; totalSec: number; moduleId?: number } =
               modulesMap.get(key) || { totalSec: 0, moduleId: a.module_id };
             if (!cur.firstDate || (a.occurred_at && a.occurred_at < cur.firstDate)) cur.firstDate = a.occurred_at;
             if (!cur.lastDate || (a.occurred_at && a.occurred_at > cur.lastDate)) cur.lastDate = a.occurred_at;
-            cur.totalSec += Number(a.duration_seconds) || 0;
+            const next = sortedActs[i + 1];
+            if (next && next.module_id === a.module_id && a.occurred_at && next.occurred_at) {
+              const diff = (new Date(next.occurred_at).getTime() - new Date(a.occurred_at).getTime()) / 1000;
+              if (diff > 0 && diff < 900) cur.totalSec += diff;
+            }
             modulesMap.set(key, cur);
+          }
+          // Ensure completed modules appear even without activités
+          for (const c of compls) {
+            const alreadyIn = Array.from(modulesMap.values()).some(v => v.moduleId === c.module_id);
+            if (!alreadyIn) {
+              modulesMap.set(`Module ${c.module_id}`, {
+                totalSec: 0,
+                moduleId: c.module_id,
+                firstDate: c.completed_at,
+                lastDate: c.completed_at,
+              });
+            }
           }
 
           // Quiz per matière/module
@@ -526,19 +547,22 @@ export function ControleQualiteTab({ apprenant }: Props) {
               type: "cours",
               label: nom,
               date: fmtDate(info.firstDate),
-              duree: fmtDur(info.totalSec),
+              duree: fmtDur(Math.round(info.totalSec)),
               statut: info.moduleId && completedIds.has(info.moduleId) ? "Termine" : "En cours",
             }];
             const modQuizzes = quizByMod.get(nom) || [];
             for (const q of modQuizzes) {
-              const pct = q.total_questions ? Math.round((Number(q.score) / Number(q.total_questions)) * 100) : null;
+              const pct = q.score_max ? Math.round((Number(q.score_obtenu) / Number(q.score_max)) * 100) : null;
+              const scoreLabel = q.note_sur_20 != null
+                ? `${Number(q.note_sur_20).toFixed(1)}/20`
+                : pct !== null ? `${pct}%` : "-";
               lignes.push({
                 type: "quiz",
                 label: q.quiz_titre || "Quiz",
                 date: fmtDate(q.completed_at),
-                duree: "-",
-                score: pct !== null ? `${pct}%` : (q.score != null ? String(q.score) : "-"),
-                statut: pct !== null && pct >= 50 ? "Reussi" : "Realise",
+                duree: q.duree_secondes ? fmtDur(Number(q.duree_secondes)) : "-",
+                score: scoreLabel,
+                statut: q.reussi ? "Reussi" : "Realise",
               });
             }
             return { nom, lignes };
@@ -546,10 +570,12 @@ export function ControleQualiteTab({ apprenant }: Props) {
 
           // Totals
           const totalSec = Array.from(modulesMap.values()).reduce((s, m) => s + m.totalSec, 0);
-          const scoresPct = quizzes
-            .filter((q: any) => q.total_questions)
-            .map((q: any) => (Number(q.score) / Number(q.total_questions)) * 100);
-          const avg = scoresPct.length ? Math.round(scoresPct.reduce((s, v) => s + v, 0) / scoresPct.length) : 0;
+          const notes = quizzes
+            .filter((q: any) => q.note_sur_20 != null)
+            .map((q: any) => Number(q.note_sur_20));
+          const avgLabel = notes.length
+            ? `${(notes.reduce((s, v) => s + v, 0) / notes.length).toFixed(1)}/20`
+            : "-";
 
           const data: FicheProgressionData = {
             nom: apprenant.nom || "",
@@ -562,14 +588,14 @@ export function ControleQualiteTab({ apprenant }: Props) {
             periodeFin: apprenant.date_fin_cours_en_ligne
               ? format(new Date(apprenant.date_fin_cours_en_ligne), "dd/MM/yyyy")
               : (apprenant.date_fin_formation ? format(new Date(apprenant.date_fin_formation), "dd/MM/yyyy") : "-"),
-            tempsTotal: fmtDur(totalSec),
+            tempsTotal: fmtDur(Math.round(totalSec)),
             modules: progModules,
             recap: {
               modulesCompletes: progModules.filter(m => m.lignes[0]?.statut === "Termine").length,
               modulesTotal: progModules.length,
               quizCompletes: quizzes.length,
               quizTotal: quizzes.length,
-              scoreMoyen: `${avg}%`,
+              scoreMoyen: avgLabel,
               statut: progModules.length > 0 && progModules.every(m => m.lignes[0]?.statut === "Termine")
                 ? "FORMATION ENTIEREMENT COMPLETEE"
                 : "FORMATION EN COURS",
