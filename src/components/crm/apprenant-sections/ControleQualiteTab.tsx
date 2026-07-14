@@ -10,6 +10,7 @@ import { fr } from "date-fns/locale";
 import { generateControleQualitePdf } from "@/lib/pdf/controle-qualite";
 import { generateEmargementSemainePdf } from "@/lib/pdf/emargement-semaine";
 import { generateReleveConnexionsPdf } from "@/lib/pdf/releve-connexions";
+import { generateEmailsApprenantPdf } from "@/lib/pdf/emails-apprenant";
 import { buildRapportActiviteHtml } from "@/lib/reports/rapport-activite-html";
 import { generateFicheProgression, type FicheProgressionData, type ProgressionModule } from "@/lib/pdf/fiche-progression";
 import { getCompetencesForFormation } from "@/components/cours-en-ligne/competences-checklist-data";
@@ -834,13 +835,14 @@ export function ControleQualiteTab({ apprenant }: Props) {
         const cnxCsv = toCsv(cnxRows, ["date_debut","date_fin","derniere_activite","duree_min","module","source","fin","ip","navigateur"]);
         releveFolder.file(`releve-connexions_${slug}.csv`, cnxCsv);
 
-        // 4) Trace des emails envoyés / reçus (CSV)
+        // 4) Trace des emails envoyés / reçus (PDF avec contenu complet + CSV)
         const { data: emailsData } = await supabase
           .from("emails")
-          .select("type, subject, sender_email, sender_name, recipients, sent_at, received_at, created_at, is_read, has_attachments, body_preview")
+          .select("type, subject, sender_email, sender_name, recipients, sent_at, received_at, created_at, is_read, has_attachments, body_preview, body_html")
           .eq("apprenant_id", apprenant.id)
           .order("created_at", { ascending: false });
-        const emailRows = ((emailsData as any[]) || []).map(e => ({
+        const emailsRaw = (emailsData as any[]) || [];
+        const emailRows = emailsRaw.map(e => ({
           type: e.type === "sent" ? "Envoyé" : "Reçu",
           date: (e.sent_at || e.received_at || e.created_at)
             ? format(new Date(e.sent_at || e.received_at || e.created_at), "yyyy-MM-dd HH:mm:ss") : "",
@@ -852,7 +854,18 @@ export function ControleQualiteTab({ apprenant }: Props) {
           apercu: (e.body_preview || "").replace(/\s+/g, " ").slice(0, 500),
         }));
         const emailCsv = toCsv(emailRows, ["type","date","sujet","expediteur","destinataires","lu","pieces_jointes","apercu"]);
-        zip.folder("emails")!.file(`emails_${slug}.csv`, emailCsv);
+        const emailsFolder = zip.folder("emails")!;
+        emailsFolder.file(`emails_${slug}.csv`, emailCsv);
+        try {
+          const emailsPdf = generateEmailsApprenantPdf(
+            { ...apprenant, email: apprenant.email },
+            emailsRaw,
+            { returnBlob: true },
+          ) as { blob: Blob; fileName: string } | undefined;
+          if (emailsPdf?.blob) emailsFolder.file(emailsPdf.fileName, emailsPdf.blob);
+        } catch (mailErr) {
+          console.error("[bulk-download] emails PDF failed:", mailErr);
+        }
 
         const blob = await zip.generateAsync({ type: "blob" });
         const today = format(new Date(), "yyyy-MM-dd");
