@@ -73,19 +73,33 @@ function shortUA(ua?: string | null) {
   return os ? `${browser} (${os})` : browser;
 }
 
+function sanitize(s?: string | null): string {
+  if (!s) return "";
+  let out = String(s).normalize("NFKC");
+  out = out
+    .replace(/[•·▪◦●○]/g, "-")
+    .replace(/[""«»]/g, '"')
+    .replace(/['']/g, "'")
+    .replace(/[–—]/g, "-")
+    .replace(/…/g, "...");
+  // Remove emojis / non-Latin symbols not supported by Helvetica (WinAnsi)
+  out = out.replace(/[^\x20-\x7E\u00A0-\u00FF]/g, "");
+  out = out.replace(/\s+/g, " ").trim();
+  return out;
+}
+
 function joinList(items?: string[] | null): string {
   if (!items || items.length === 0) return "—";
-  // Dedupe & trim
   const seen = new Set<string>();
   const out: string[] = [];
   for (const it of items) {
-    const t = (it || "").trim();
+    const t = sanitize(it);
     if (!t) continue;
     if (seen.has(t)) continue;
     seen.add(t);
     out.push(t);
   }
-  return out.length > 0 ? out.join("\n• ").replace(/^/, "• ") : "—";
+  return out.length > 0 ? "- " + out.join("\n- ") : "—";
 }
 
 export function generateReleveConnexionsPdf(
