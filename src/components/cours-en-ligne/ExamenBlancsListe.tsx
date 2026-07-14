@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -47,8 +47,19 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
   const [startedNotFinishedIds, setStartedNotFinishedIds] = useState<Set<string>>(new Set());
   const [examScores, setExamScores] = useState<Record<string, ExamScoreItem[]>>({});
   const [previousExamAverages, setPreviousExamAverages] = useState<Record<string, number | null>>({});
+  // Ref so the score-fetch effect below can read the LATEST exam definitions
+  // without needing `examensData` as a dependency (its identity changes on
+  // every fast question-definition refresh, which was causing this effect to
+  // re-run every few seconds and produce a visible flicker in scores).
+  const examensDataRef = useRef(examensData);
+  examensDataRef.current = examensData;
 
-  // Fetch completed exams with scores from DB + started-but-not-finished
+  // Fetch completed exams with scores from DB + started-but-not-finished.
+  // IMPORTANT: only re-run when the STUDENT changes, not on every question-
+  // definition refresh (which now happens every few seconds so admin edits
+  // propagate fast). Results don't need to be re-fetched that often, and
+  // doing so repeatedly caused a visible flicker between correct and stale
+  // reads a few seconds apart.
   useEffect(() => {
     if (!apprenantId) return;
 
@@ -134,7 +145,7 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
           });
 
           rowsByQuiz.forEach((rows, quizId) => {
-            const examDef = examensData.find((e) => e.id === quizId);
+            const examDef = examensDataRef.current.find((e) => e.id === quizId);
             const validMatieres = (examDef?.matieres || []).filter((m): m is Matiere => Boolean(m));
             const requiredMatieres = Math.max(validMatieres.length || 1, 1);
 
@@ -157,7 +168,7 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
 
           const scores: Record<string, ExamScoreItem[]> = {};
           latestRows.forEach((r: any) => {
-            const recovered = recoverCorruptedScoreRow(r, examensData);
+            const recovered = recoverCorruptedScoreRow(r, examensDataRef.current);
             const scoreSource = recovered && recovered.score_obtenu > toFiniteNumber(r.score_obtenu, 0)
               ? { ...r, ...recovered }
               : r;
@@ -295,7 +306,7 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
           console.groupEnd();
 
           Object.entries(scores).forEach(([quizId, quizScores]) => {
-            const examDef = examensData.find((exam) => exam.id === quizId);
+            const examDef = examensDataRef.current.find((exam) => exam.id === quizId);
             if (!examDef) return;
             console.groupCollapsed(`[ExamensBlancs][${quizId}] mapping par matière`);
             console.table(
@@ -320,7 +331,7 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
           // Compute previous attempt averages per exam
           const prevAvgs: Record<string, number | null> = {};
           allRowsByQuiz.forEach((rows, quizId) => {
-            const examDef = examensData.find(e => e.id === quizId);
+            const examDef = examensDataRef.current.find(e => e.id === quizId);
             if (!examDef) return;
             // Group rows by matiere canonical key, sorted by created_at desc
             const byMatiere = new Map<string, any[]>();
@@ -381,7 +392,7 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
               // à apprenant_quiz_results, pour éviter qu'un seul upsert perdu affiche "Non terminé").
               const mergedCompleted = new Set(completedIds);
               completedMatieresByQuiz.forEach((doneKeys, quizId) => {
-                const examDef = examensData.find((e) => e.id === quizId);
+                const examDef = examensDataRef.current.find((e) => e.id === quizId);
                 const validMatieres = (examDef?.matieres || []).filter((m): m is Matiere => Boolean(m));
                 if (validMatieres.length === 0) return;
                 const doneCount = validMatieres.filter((m) => doneKeys.has(String(m.id).toLowerCase())).length;
@@ -406,7 +417,7 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
             });
         }
       });
-  }, [apprenantId, examensData, refreshKey]);
+  }, [apprenantId]);
 
   const examens = examensData.filter(e => {
     const typeOk = typeFiltre === "tous" || e?.type === typeFiltre;
