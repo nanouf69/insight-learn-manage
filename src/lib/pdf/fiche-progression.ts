@@ -44,7 +44,7 @@ export interface FicheProgressionData {
   };
 }
 
-export function generateFicheProgression(data: FicheProgressionData) {
+export function generateFicheProgression(data: FicheProgressionData, options?: { returnBlob?: boolean }) {
   const doc = new jsPDF();
   const pw = doc.internal.pageSize.getWidth();
   const ph = doc.internal.pageSize.getHeight();
@@ -245,7 +245,11 @@ export function generateFicheProgression(data: FicheProgressionData) {
     doc.text(`Document genere le ${today} - Page ${i}/${totalPages}`, pw / 2, ph - 6, { align: 'center' });
   }
 
-  doc.save(`fiche_progression_${data.nom}_${data.prenom}.pdf`);
+  const fileName = `fiche_progression_${data.nom}_${data.prenom}.pdf`;
+  if (options?.returnBlob) {
+    return { blob: doc.output('blob') as Blob, fileName };
+  }
+  doc.save(fileName);
 }
 
 // ---------- Données pré-remplies GUENICHI Naoufal ----------
