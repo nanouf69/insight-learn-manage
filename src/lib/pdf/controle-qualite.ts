@@ -574,7 +574,7 @@ function renderDocContent(doc: jsPDF, docLabel: string, donnees: any, y: number,
 }
 
 // ===== Main export =====
-export function generateControleQualitePdf(apprenant: any, items: ControleItem[]) {
+export function generateControleQualitePdf(apprenant: any, items: ControleItem[], opts?: { returnBlob?: boolean }): { blob: Blob; fileName: string } | void {
   const doc = new jsPDF();
   const pw = doc.internal.pageSize.getWidth();
   const margin = 15;
