@@ -85,12 +85,11 @@ export default function SuiviHeuresElearning() {
     (async () => {
       setLoading(true);
       try {
-        // 1) Apprenants e-learning
+        // 1) Tous les apprenants (tous types) ayant un compte
         const apps = await fetchAll<Apprenant>(() =>
           supabase
             .from("apprenants")
             .select("id, nom, prenom, email, type_apprenant, date_debut_formation, date_fin_formation, date_debut_cours_en_ligne, date_fin_cours_en_ligne")
-            .in("type_apprenant", ELEARNING_TYPES)
             .not("auth_user_id", "is", null)
             .order("nom"),
         );
