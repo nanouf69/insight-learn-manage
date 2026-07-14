@@ -616,6 +616,7 @@ export default function PreInformationPublic() {
       apprenant_nom: apprenant?.nom,
       apprenant_prenom: apprenant?.prenom,
       formation: formationLabel,
+      signature: analyseSignatureData,
       _signature_image: analyseSignatureData,
     });
     if (saved) {
@@ -644,6 +645,7 @@ export default function PreInformationPublic() {
       apprenant_nom: apprenant?.nom,
       apprenant_prenom: apprenant?.prenom,
       formation: formationLabel,
+      signature: projetSignatureData,
       _signature_image: projetSignatureData,
     });
     if (saved) {
@@ -675,6 +677,9 @@ export default function PreInformationPublic() {
       sections: competencesData.sections.map((s) => s.titre),
       sectionItems: competencesData.sections.map((s) => s.items),
       formationLabel: competencesData.formationLabel,
+      signature: projetSignatureData || analyseSignatureData,
+      _signature_image: projetSignatureData || analyseSignatureData,
+      signatureNom: signature,
     });
     if (saved) {
       toast.success("Test de compétences enregistré !");

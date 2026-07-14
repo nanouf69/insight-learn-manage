@@ -2,6 +2,11 @@ import { supabase } from "@/integrations/supabase/client";
 import JSZip from "jszip";
 import { format, startOfWeek, endOfWeek, getISOWeek, getYear, addWeeks, isBefore, parseISO } from "date-fns";
 import { generateDocumentIndividuelPdf } from "@/lib/pdf/document-individuel";
+import {
+  ensureDocumentSignatures,
+  findSharedStagiaireSignature,
+  findSharedStagiaireSignatureName,
+} from "@/lib/pdf/document-signatures";
 import { generateProgrammeFormationPdf } from "@/lib/pdf/programme-formation";
 import { generateEmargementSemainePdf } from "@/lib/pdf/emargement-semaine";
 import { generateReleveConnexionsPdf } from "@/lib/pdf/releve-connexions";
@@ -50,6 +55,8 @@ export async function buildDossierApprenantIntoZip(
     .eq("apprenant_id", apprenant.id);
   const documentsCompletes = (docsData as any[]) || [];
   const getDoc = (t: string) => documentsCompletes.find(d => d.type_document === t);
+  const sharedSignature = findSharedStagiaireSignature(documentsCompletes);
+  const sharedSignatureName = findSharedStagiaireSignatureName(documentsCompletes);
 
   const docsIndividuels: { docType: string; titre: string; folder: string }[] = [
     { docType: "test-competences", titre: "Fiche de positionnement stagiaire", folder: "test-competences" },
@@ -62,7 +69,12 @@ export async function buildDossierApprenantIntoZip(
     try {
       const res = generateDocumentIndividuelPdf(
         apprenant,
-        { type_document: it.docType, titre: it.titre, donnees: d.donnees, completed_at: d.completed_at },
+        {
+          type_document: it.docType,
+          titre: it.titre,
+          donnees: ensureDocumentSignatures(d.donnees, sharedSignature, sharedSignatureName),
+          completed_at: d.completed_at,
+        },
         { returnBlob: true },
       );
       if (res) root.folder(it.folder)!.file(res.fileName, res.blob);

@@ -6,7 +6,12 @@ import { Button } from "@/components/ui/button";
 import { FileText, Download, Eye, ChevronDown, ChevronUp, FileDown, ExternalLink } from "lucide-react";
 import { generateDocumentIndividuelPdf } from "@/lib/pdf/document-individuel";
 import { generateEmargementSemainePdf } from "@/lib/pdf/emargement-semaine";
-import { SIGNATURE_NAOUFAL_DATA_URL } from "@/lib/signatureNaoufal";
+import {
+  DOCUMENT_SIGNATURE_TYPES,
+  ensureDocumentSignatures,
+  findSharedStagiaireSignature,
+  findSharedStagiaireSignatureName,
+} from "@/lib/pdf/document-signatures";
 import { useState } from "react";
 import { format, startOfWeek, endOfWeek, getISOWeek, getYear } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -198,33 +203,13 @@ export function DocumentsCompletes({ apprenant }: Props) {
 
       const rawDocs = ((docsRes.data as any[]) || []);
 
-      // Récupère la signature de l'apprenant depuis le dossier de bienvenue
-      // (signée à l'étape 12 de l'onboarding) pour l'injecter dans tous les
-      // documents pédagogiques (test compétences, analyse du besoin, etc.).
-      const dossierBienvenue = rawDocs.find((d) => d.type_document === "dossier-bienvenue");
-      const signatureApprenant: string | undefined =
-        dossierBienvenue?.donnees?.signature ||
-        dossierBienvenue?.donnees?.signature_apprenant ||
-        undefined;
-
-      const TYPES_AVEC_SIGNATURE = new Set([
-        "test-competences",
-        "analyse-besoin",
-        "projet-professionnel",
-        "evaluation-acquis",
-        "satisfaction",
-      ]);
+      const signatureApprenant = findSharedStagiaireSignature(rawDocs);
+      const signatureApprenantNom = findSharedStagiaireSignatureName(rawDocs);
 
       const baseDocs = rawDocs.map((d) => {
-        const donnees = { ...(d.donnees || {}) };
-        if (TYPES_AVEC_SIGNATURE.has(d.type_document)) {
-          if (!donnees.signature && signatureApprenant) {
-            donnees.signature = signatureApprenant;
-          }
-          if (!donnees.signatureResponsable) {
-            donnees.signatureResponsable = SIGNATURE_NAOUFAL_DATA_URL;
-          }
-        }
+        const donnees = DOCUMENT_SIGNATURE_TYPES.has(d.type_document)
+          ? ensureDocumentSignatures(d.donnees, signatureApprenant, signatureApprenantNom)
+          : { ...(d.donnees || {}) };
         return {
           id: d.id,
           type_document: d.type_document,
