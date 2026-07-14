@@ -80,7 +80,7 @@ export function generateFicheProgression(data: FicheProgressionData, options?: {
   doc.setFontSize(10);
 
   const hasBreakdown = !!(data.tempsEnLigne || data.tempsPresentielTheorie || data.tempsPresentielPratique || data.tempsPresentielTotal);
-  const infoBoxH = hasBreakdown ? 56 : 32;
+  const infoBoxH = hasBreakdown ? 68 : 32;
 
   doc.setFillColor(240, 248, 240);
   doc.roundedRect(margin, y - 4, pw - margin * 2, infoBoxH, 2, 2, 'F');
