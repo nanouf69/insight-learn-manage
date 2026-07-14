@@ -495,16 +495,34 @@ export function ControleQualiteTab({ apprenant }: Props) {
           const quizzes = (qrAllRes.data as any[]) || [];
           const completedIds = new Set(compls.map((c: any) => c.module_id));
 
-          // Group activités by module
+          // Group activités by module — derive duration from consecutive occurred_at within same module (cap 15min)
           const modulesMap = new Map<string, { firstDate?: string; lastDate?: string; totalSec: number; moduleId?: number }>();
-          for (const a of acts) {
+          const sortedActs = [...acts].sort((a, b) => (a.occurred_at || "").localeCompare(b.occurred_at || ""));
+          for (let i = 0; i < sortedActs.length; i++) {
+            const a = sortedActs[i];
             const key = a.module_nom || `Module ${a.module_id ?? "?"}`;
             const cur: { firstDate?: string; lastDate?: string; totalSec: number; moduleId?: number } =
               modulesMap.get(key) || { totalSec: 0, moduleId: a.module_id };
             if (!cur.firstDate || (a.occurred_at && a.occurred_at < cur.firstDate)) cur.firstDate = a.occurred_at;
             if (!cur.lastDate || (a.occurred_at && a.occurred_at > cur.lastDate)) cur.lastDate = a.occurred_at;
-            cur.totalSec += Number(a.duration_seconds) || 0;
+            const next = sortedActs[i + 1];
+            if (next && next.module_id === a.module_id && a.occurred_at && next.occurred_at) {
+              const diff = (new Date(next.occurred_at).getTime() - new Date(a.occurred_at).getTime()) / 1000;
+              if (diff > 0 && diff < 900) cur.totalSec += diff;
+            }
             modulesMap.set(key, cur);
+          }
+          // Ensure completed modules appear even without activités
+          for (const c of compls) {
+            const alreadyIn = Array.from(modulesMap.values()).some(v => v.moduleId === c.module_id);
+            if (!alreadyIn) {
+              modulesMap.set(`Module ${c.module_id}`, {
+                totalSec: 0,
+                moduleId: c.module_id,
+                firstDate: c.completed_at,
+                lastDate: c.completed_at,
+              });
+            }
           }
 
           // Quiz per matière/module
