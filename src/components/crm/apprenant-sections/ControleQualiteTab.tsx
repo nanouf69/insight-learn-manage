@@ -10,6 +10,7 @@ import { fr } from "date-fns/locale";
 import { generateControleQualitePdf } from "@/lib/pdf/controle-qualite";
 import { generateEmargementSemainePdf } from "@/lib/pdf/emargement-semaine";
 import { generateReleveConnexionsPdf } from "@/lib/pdf/releve-connexions";
+import { buildRapportActiviteHtml } from "@/lib/reports/rapport-activite-html";
 import { getCompetencesForFormation } from "@/components/cours-en-ligne/competences-checklist-data";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
