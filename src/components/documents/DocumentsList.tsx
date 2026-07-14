@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { DocumentForm } from "./DocumentForm";
 import { EmailTemplatesEditor } from "./EmailTemplatesEditor";
+import { BulkDownloadDialog } from "./BulkDownloadDialog";
 
 const documents = [
   {
@@ -150,7 +151,10 @@ export function DocumentsList() {
                 )}
               </Button>
             </div>
-            <DocumentForm />
+            <div className="flex gap-2">
+              <BulkDownloadDialog />
+              <DocumentForm />
+            </div>
           </div>
 
           {/* Filters */}
