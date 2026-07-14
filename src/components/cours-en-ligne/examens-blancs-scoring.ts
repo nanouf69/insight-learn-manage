@@ -106,16 +106,20 @@ export function computeMatiereScoreFromReponses(
 }
 
 /**
- * Calcule le score d'une matière avec repli en 3 niveaux :
- * 1) réponses brutes (`reponses`) via le barème actuel (édité),
- * 2) sinon réponses brutes via la version ORIGINALE des questions
- *    (`staticFallbackMatiere`) — utile quand une question a été supprimée/
- *    modifiée au point que les réponses de l'élève ne correspondent plus à
- *    rien dans la version actuelle : on revient à la version d'origine,
- *    toujours intacte, plutôt que de se rabattre sur une note stockée qui
- *    peut elle-même être déjà corrompue,
- * 3) sinon score stocké (`storedScoreObtenu` / `storedScoreMax`) en tout
- *    dernier recours.
+ * Calcule le score d'une matière en FUSIONNANT intelligemment deux sources :
+ * - les questions ACTUELLES (`matiere`), qui reflètent vos corrections/éditions —
+ *   toujours prioritaires quand une question y est présente,
+ * - complétées par les questions de la version D'ORIGINE (`staticFallbackMatiere`)
+ *   UNIQUEMENT pour les questions auxquelles l'élève a répondu mais qui ont
+ *   depuis disparu de la version actuelle (ex : question supprimée après coup).
+ *
+ * Ça évite le piège d'un repli "tout ou rien" : une correction que vous avez
+ * faite sur une question qui existe encore ne doit JAMAIS être perdue au
+ * profit de l'ancienne version, même si une AUTRE question de la même
+ * matière a été supprimée entre-temps.
+ *
+ * En dernier recours seulement (aucune réponse brute exploitable), on
+ * retombe sur le score stocké (`storedScoreObtenu` / `storedScoreMax`).
  */
 export function computeMatiereScore(
   matiere: Matiere,
@@ -125,10 +129,34 @@ export function computeMatiereScore(
   correctionsIA?: CorrectionCache | null,
   staticFallbackMatiere?: Matiere | null,
 ): MatiereScore | null {
+  // 1) Try the current (live-edited) question set first, as-is.
   const fromReponses = computeMatiereScoreFromReponses(matiere, reponses, correctionsIA);
   if (fromReponses) return fromReponses;
 
-  if (staticFallbackMatiere) {
+  // 2) If that failed (low coverage — some answered questions are missing
+  // from the current set), build a MERGED question set: current questions
+  // win by id (preserving your edits), plus any original questions the
+  // student answered that are no longer present currently.
+  if (staticFallbackMatiere && reponses) {
+    const currentIds = new Set((matiere.questions ?? []).map((q) => q?.id));
+    const missingAnsweredStaticQuestions = (staticFallbackMatiere.questions ?? []).filter((q) => {
+      if (q == null || currentIds.has(q.id)) return false;
+      const rep = reponses[q.id] ?? reponses[String(q.id)];
+      if (rep === undefined || rep === null) return false;
+      if (Array.isArray(rep)) return rep.length > 0;
+      if (typeof rep === "string") return rep.trim() !== "";
+      return true;
+    });
+    if (missingAnsweredStaticQuestions.length > 0) {
+      const mergedMatiere: Matiere = {
+        ...matiere,
+        questions: [...(matiere.questions ?? []), ...missingAnsweredStaticQuestions],
+      };
+      const fromMerged = computeMatiereScoreFromReponses(mergedMatiere, reponses, correctionsIA);
+      if (fromMerged) return fromMerged;
+    }
+    // Last-resort whole-fallback (e.g. current set is entirely mismatched —
+    // question ids were fully reshuffled, not just one deletion).
     const fromOriginal = computeMatiereScoreFromReponses(staticFallbackMatiere, reponses, correctionsIA);
     if (fromOriginal) return fromOriginal;
   }
