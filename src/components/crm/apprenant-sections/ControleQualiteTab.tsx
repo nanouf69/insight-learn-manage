@@ -643,6 +643,7 @@ export function ControleQualiteTab({ apprenant }: Props) {
             if (!m) return null;
             return parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
           };
+          const MAX_PRATIQUE_MIN_PER_SESSION = 6 * 60; // la pratique dépasse rarement 6h par session
           let pratiqueMinutes = 0;
           for (const si of sessInscrits) {
             const sess = si.sessions;
@@ -650,11 +651,13 @@ export function ControleQualiteTab({ apprenant }: Props) {
             if (!type.includes("pratique")) continue;
             const hd = parseHM(si.heure_debut_personnalisee) ?? parseHM(sess?.heure_debut);
             const hf = parseHM(si.heure_fin_personnalisee) ?? parseHM(sess?.heure_fin);
+            let dur: number;
             if (hd != null && hf != null && hf > hd) {
-              pratiqueMinutes += (hf - hd);
+              dur = hf - hd;
             } else {
-              pratiqueMinutes += 7 * 60; // valeur par défaut d'une journée pratique
+              dur = 3 * 60; // valeur par défaut d'une session pratique
             }
+            pratiqueMinutes += Math.min(dur, MAX_PRATIQUE_MIN_PER_SESSION);
           }
           const pratiqueSec = pratiqueMinutes * 60;
 
