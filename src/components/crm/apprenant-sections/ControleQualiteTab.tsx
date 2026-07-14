@@ -575,17 +575,20 @@ export function ControleQualiteTab({ apprenant }: Props) {
             return { nom, lignes };
           });
 
-          // ---- E-learning : temps TOTAL de connexion (somme des sessions de connexion, plafonné à 7h/session)
+          // ---- E-learning : temps TOTAL de connexion (identique au relevé de connexions + rapport d'activité)
+          // Somme des sessions (ended_at || last_seen_at) - started_at, plafonnée à 7h par session.
           const MAX_SESSION_MS = 7 * 60 * 60 * 1000;
           let onlineMs = 0;
           for (const c of cnxRawRows) {
-            const startRaw = c.started_at ? Date.parse(c.started_at) : NaN;
-            if (Number.isNaN(startRaw)) continue;
-            const endSrc = c.ended_at || c.last_action_at || c.last_seen_at;
-            const endRaw = endSrc ? Date.parse(endSrc) : startRaw;
-            if (Number.isNaN(endRaw) || endRaw <= startRaw) continue;
-            const dur = Math.min(endRaw - startRaw, MAX_SESSION_MS);
-            onlineMs += dur;
+            const s = c.started_at;
+            const e = c.ended_at || c.last_seen_at;
+            if (!s || !e) continue;
+            const startMs = new Date(s).getTime();
+            const rawEndMs = new Date(e).getTime();
+            if (!isFinite(startMs) || !isFinite(rawEndMs)) continue;
+            const endMs = Math.min(rawEndMs, startMs + MAX_SESSION_MS);
+            const ms = endMs - startMs;
+            if (ms > 0) onlineMs += ms;
           }
           const onlineSec = Math.round(onlineMs / 1000);
 
