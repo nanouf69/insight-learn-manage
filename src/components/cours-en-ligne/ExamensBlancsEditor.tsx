@@ -383,6 +383,7 @@ function QuestionEditor({
   onDelete,
   onCancel,
   examId,
+  hasExistingResponses,
 }: {
   question: Question;
   onSave: (q: Question) => void;
@@ -390,6 +391,7 @@ function QuestionEditor({
   onDelete: () => void;
   onCancel: () => void;
   examId: string;
+  hasExistingResponses?: boolean;
 }) {
   const [enonce, setEnonce] = useState(question.enonce);
   const [qType, setQType] = useState<"QCM" | "QRC">(question?.type as "QCM" | "QRC" || "QCM");
@@ -463,7 +465,25 @@ function QuestionEditor({
   };
 
   const handleSave = () => {
-    onSave(buildUpdatedQuestion());
+    const updated = buildUpdatedQuestion();
+    if (hasExistingResponses && qType === "QCM") {
+      const originalCorrect = (question.choix ?? [])
+        .filter((c) => c?.correct)
+        .map((c) => c?.lettre)
+        .sort()
+        .join(",");
+      const newCorrect = choix.filter((c) => c.correct).map((c) => c.lettre).sort().join(",");
+      if (originalCorrect !== newCorrect) {
+        const confirmed = window.confirm(
+          "⚠️ Vous changez la bonne réponse d'une question à laquelle des élèves ont déjà répondu.\n\n" +
+          "Leur note sera automatiquement recalculée avec cette nouvelle bonne réponse dès leur prochaine consultation " +
+          "(y compris pour des examens déjà passés).\n\n" +
+          "Continuer ?",
+        );
+        if (!confirmed) return;
+      }
+    }
+    onSave(updated);
   };
 
   return (
@@ -808,6 +828,7 @@ function MatiereEditor({
                     onDelete={() => { if (!locked) deleteQuestion(q.id); }}
                     onCancel={() => setEditingQId(null)}
                     examId={examId}
+                    hasExistingResponses={locked}
                   />
               ) : (
                 <div className="border border-border/40 rounded-xl bg-background hover:bg-muted/10 hover:shadow-md group transition-all duration-200 p-5 space-y-3">
@@ -1364,7 +1385,10 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
                       {activeResponsesCount} réponse(s) élève(s) détectée(s) sur cet examen
                     </p>
                     <p className="text-xs text-destructive/80 mt-1">
-                      La suppression et le déplacement de questions sont bloqués pour éviter de corrompre les données des élèves. Vous pouvez uniquement modifier le texte des questions et des choix.
+                      La suppression et le déplacement de questions sont bloqués pour éviter de corrompre les données des élèves.
+                      Vous pouvez toujours corriger le texte, les choix et la bonne réponse d'une question — c'est la bonne pratique
+                      quand une question contient une erreur. Sachez simplement que cette correction s'appliquera automatiquement
+                      dès le prochain affichage aux élèves qui ont déjà répondu, y compris rétroactivement sur leur note.
                     </p>
                   </div>
                 </div>
