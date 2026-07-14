@@ -365,12 +365,17 @@ export function DocumentsCompletes({ apprenant }: Props) {
 
   const downloadPDF = (doc: any) => {
     if (doc.type_document === "emargement-fc-semaine") {
+      const formateur = (window.prompt(
+        "Nom du formateur à indiquer sur la feuille d'émargement :",
+        "GUENICHI Naoufal",
+      ) || "GUENICHI Naoufal").trim();
       generateEmargementSemainePdf(
         apprenant,
         doc.donnees?.week_label || doc.titre,
         doc.donnees?.week_start,
         doc.donnees?.week_end,
         doc.donnees?.signatures || [],
+        formateur,
       );
       return;
     }
