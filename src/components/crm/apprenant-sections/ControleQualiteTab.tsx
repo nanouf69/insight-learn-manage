@@ -496,7 +496,8 @@ export function ControleQualiteTab({ apprenant }: Props) {
           const modulesMap = new Map<string, { firstDate?: string; lastDate?: string; totalSec: number; moduleId?: number }>();
           for (const a of acts) {
             const key = a.module_nom || `Module ${a.module_id ?? "?"}`;
-            const cur = modulesMap.get(key) || { totalSec: 0, moduleId: a.module_id };
+            const cur: { firstDate?: string; lastDate?: string; totalSec: number; moduleId?: number } =
+              modulesMap.get(key) || { totalSec: 0, moduleId: a.module_id };
             if (!cur.firstDate || (a.occurred_at && a.occurred_at < cur.firstDate)) cur.firstDate = a.occurred_at;
             if (!cur.lastDate || (a.occurred_at && a.occurred_at > cur.lastDate)) cur.lastDate = a.occurred_at;
             cur.totalSec += Number(a.duration_seconds) || 0;
