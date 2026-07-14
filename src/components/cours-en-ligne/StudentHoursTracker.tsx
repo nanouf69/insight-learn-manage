@@ -109,7 +109,7 @@ export default function StudentHoursTracker({
               ) : null}
             </div>
             <p className="text-sm text-muted-foreground">
-              Le temps affiché correspond à la <strong>durée totale de vos connexions</strong> à la plateforme (plafonnée à 7h par session), <strong>pendant la période de votre formation</strong>.
+              Le temps affiché correspond à vos <strong>sessions de connexion pendant lesquelles vous avez consulté un module, un exercice ou un quiz</strong> (plafonné à 7h par session), <strong>uniquement sur la période de votre formation</strong>.
             </p>
             <p className="text-sm text-red-600 font-semibold mt-1">
               Vous devez terminer tous les modules pour valider votre formation.
