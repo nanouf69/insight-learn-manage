@@ -41,6 +41,12 @@ interface ActivityTs {
   apprenant_id: string;
   ts: string;
 }
+interface ModuleActivityRow {
+  apprenant_id: string;
+  occurred_at: string;
+  action_type: string | null;
+  module_nom: string | null;
+}
 
 // Parse YYYY-MM-DD as local date (no UTC shift)
 function parseDateBound(value: string | null | undefined, endOfDay = false): number | null {
@@ -71,6 +77,17 @@ function formatHM(minutes: number): string {
   const h = Math.floor(minutes / 60);
   const m = Math.round(minutes % 60);
   return `${h}h${m.toString().padStart(2, "0")}`;
+}
+
+function isAccueilModule(nom?: string | null): boolean {
+  return !!nom && /accueil|liste\s+des\s+modules/i.test(nom);
+}
+
+function isPedagogicalModuleActivity(activity: ModuleActivityRow): boolean {
+  return (
+    (activity.action_type === "open_module" || activity.action_type === "open_section" || activity.action_type === "open_cours") &&
+    !isAccueilModule(activity.module_nom)
+  );
 }
 
 export default function SuiviHeuresElearning() {
@@ -109,10 +126,10 @@ export default function SuiviHeuresElearning() {
 
         // 3) Activités module + exercices complétés + quiz (timestamps uniquement)
         const [mods, exos, quizz] = await Promise.all([
-          fetchAll<{ apprenant_id: string; occurred_at: string }>(() =>
+          fetchAll<ModuleActivityRow>(() =>
             supabase
               .from("apprenant_module_activites" as any)
-              .select("apprenant_id, occurred_at")
+              .select("apprenant_id, occurred_at, action_type, module_nom")
               .in("apprenant_id", Array.from(ids))
               .order("occurred_at", { ascending: false }),
           ),
@@ -134,7 +151,9 @@ export default function SuiviHeuresElearning() {
         ]);
 
         const merged: ActivityTs[] = [
-          ...mods.map(m => ({ apprenant_id: m.apprenant_id, ts: m.occurred_at })),
+          ...mods
+            .filter(isPedagogicalModuleActivity)
+            .map(m => ({ apprenant_id: m.apprenant_id, ts: m.occurred_at })),
           ...exos.map(e => ({ apprenant_id: e.apprenant_id, ts: e.updated_at })),
           ...quizz.map(q => ({ apprenant_id: q.apprenant_id, ts: q.completed_at })),
         ].filter(a => a.ts);
@@ -219,7 +238,7 @@ export default function SuiviHeuresElearning() {
           else { found = true; break; }
         }
         if (found) {
-          total += Math.max(0, Math.round((end - start) / 60000));
+          total += Math.max(0, Math.floor((end - start) / 60000));
         }
       }
       result.set(appId, total);
