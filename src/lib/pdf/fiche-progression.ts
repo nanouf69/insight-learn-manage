@@ -13,6 +13,29 @@ const COMPANY = {
   declaration: '84 69 15114 69',
 };
 
+// Nettoyage des chaînes pour jsPDF (police helvetica = WinAnsi, ne supporte pas les emojis
+// ni les caractères hors Latin-1 → ils s'affichent comme "Ø=Ü¶ &F&o&r...")
+function sanitize(input: unknown): string {
+  if (input == null) return '';
+  const s = String(input);
+  return s
+    // Supprime les emojis et symboles pictographiques
+    .replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{2300}-\u{23FF}\u{2B00}-\u{2BFF}\u{FE0F}\u{200D}]/gu, '')
+    // Normalise et retire les caractères non imprimables
+    .normalize('NFKC')
+    .replace(/[\u0000-\u001F\u007F]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function fmtDuree(d?: string): string {
+  if (!d) return '-';
+  const t = d.trim();
+  if (!t || t === '0h00' || t === '0h' || t === '0h0') return '-';
+  return t;
+}
+
+
 export interface ProgressionModule {
   nom: string;
   lignes: {
@@ -162,7 +185,7 @@ export function generateFicheProgression(data: FicheProgressionData, options?: {
     doc.setTextColor(255);
     doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
-    doc.text(`MODULE ${idx + 1} - ${mod.nom}`, margin + 4, y + 5.5);
+    doc.text(sanitize(`MODULE ${idx + 1} - ${mod.nom}`), margin + 4, y + 5.5);
     doc.setTextColor(0);
     y += 12;
 
@@ -170,11 +193,11 @@ export function generateFicheProgression(data: FicheProgressionData, options?: {
       const typeIcon = l.type === 'cours' ? 'Cours' : l.type === 'examen' ? 'Examen' : 'Quiz';
       return [
         typeIcon,
-        l.label,
+        sanitize(l.label),
         l.date,
-        l.duree,
-        l.score || '-',
-        l.statut,
+        fmtDuree(l.duree),
+        sanitize(l.score) || '-',
+        sanitize(l.statut),
       ];
     });
 
