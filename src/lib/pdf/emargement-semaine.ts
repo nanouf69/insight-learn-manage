@@ -35,7 +35,8 @@ export function generateEmargementSemainePdf(
   weekEnd: string,
   signatures: WeekEmargementSignature[],
   formateurNom: string = 'GUENICHI Naoufal',
-) {
+  opts?: { returnBlob?: boolean },
+): { blob: Blob; fileName: string } | void {
   const doc = new jsPDF();
   const pw = doc.internal.pageSize.getWidth();
   const ph = doc.internal.pageSize.getHeight();
