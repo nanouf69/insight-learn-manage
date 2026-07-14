@@ -17,6 +17,21 @@ import {
 } from "./examens-blancs-utils";
 import { computeMoyenneExamen, computeMatiereScore } from "./examens-blancs-scoring";
 
+/**
+ * Retrouve la version ORIGINALE (source statique) d'une matière pour un examen
+ * donné — repli sûr quand les réponses d'un élève ne correspondent plus à la
+ * version actuelle (question supprimée/modifiée après coup).
+ */
+function findStaticFallbackMatiere(examId: string, matiereId: string, matiereNom?: string): Matiere | null {
+  const staticExam = tousLesExamens.find((e) => e.id === examId);
+  if (!staticExam) return null;
+  return (
+    staticExam.matieres.find((m) => m.id === matiereId) ||
+    (matiereNom ? staticExam.matieres.find((m) => m.nom === matiereNom) : undefined) ||
+    null
+  );
+}
+
 function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, apprenantType, examensData, apprenantId, isAdmin, refreshKey, pausedExamIds, onPauseToggle }: { onStart: (examen: ExamenBlanc, forceRetake?: boolean) => void; onEdit: () => void; onViewResults: (examen: ExamenBlanc) => void; defaultBilanId?: string | null; apprenantType?: string | null; examensData: ExamenBlanc[]; apprenantId?: string | null; isAdmin?: boolean; refreshKey?: number; pausedExamIds?: Set<string>; onPauseToggle?: (examId: string) => void }) {
   // Determine the forced exam type from the student's formation type
   const forcedType = (() => {
@@ -36,14 +51,32 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
   useEffect(() => {
     if (!apprenantId) return;
 
-    // 1) Fetch completed results
-    supabase
-      .from("apprenant_quiz_results" as any)
-      .select("id, quiz_id, matiere_id, matiere_nom, note_sur_20, score_obtenu, score_max, tentative, completed_at, created_at, details")
-      .eq("apprenant_id", apprenantId)
-      .eq("quiz_type", "examen_blanc")
-      .order("completed_at", { ascending: false })
-      .order("created_at", { ascending: false })
+    // 1) Fetch completed results — with retry + session refresh in case the
+    // auth token expired in the background (same class of issue as the
+    // tablet/session bugs fixed previously: a stale token can make this
+    // read return incomplete/wrong data without any visible error).
+    const fetchQuizResultsWithRetry = async () => {
+      let lastResult: { data: any } = { data: null };
+      for (let attempt = 0; attempt < 3; attempt++) {
+        if (attempt > 0) {
+          await new Promise((r) => setTimeout(r, 600 * attempt));
+          try { await supabase.auth.refreshSession(); } catch { /* best effort */ }
+        }
+        const result = await supabase
+          .from("apprenant_quiz_results" as any)
+          .select("id, quiz_id, matiere_id, matiere_nom, note_sur_20, score_obtenu, score_max, tentative, completed_at, created_at, details")
+          .eq("apprenant_id", apprenantId)
+          .eq("quiz_type", "examen_blanc")
+          .order("completed_at", { ascending: false })
+          .order("created_at", { ascending: false });
+        lastResult = result;
+        if (!result.error && result.data) return result;
+        console.warn(`[ExamensBlancs] Fetch attempt ${attempt + 1} failed:`, result.error);
+      }
+      return lastResult;
+    };
+
+    fetchQuizResultsWithRetry()
       .then(({ data }) => {
         if (data) {
           const allRows = data as any[];
@@ -428,6 +461,7 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
                           scoreData.score_obtenu,
                           scoreData.score_max,
                           scoreData.correctionsIA,
+                          findStaticFallbackMatiere(examen.id, m.id, m.nom),
                         );
                       });
                       const moyenne = bilan.moyenne;
@@ -500,7 +534,7 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
                           <div key={m.id} className="flex justify-between text-xs text-muted-foreground">
                             <span className="truncate pr-2">{m.nom.split(" - ")[0]}</span>
                             {isCompleted && scoreData ? (() => {
-                              const score = computeMatiereScore(m, scoreData.reponses, scoreData.score_obtenu, scoreData.score_max, scoreData.correctionsIA);
+                              const score = computeMatiereScore(m, scoreData.reponses, scoreData.score_obtenu, scoreData.score_max, scoreData.correctionsIA, findStaticFallbackMatiere(examen.id, m.id, m.nom));
                               const noteSur20 = score?.noteSur20 ?? normalizeNoteSur20(scoreData.score_obtenu, scoreData.score_max, scoreData.note_sur_20);
                               return (
                                 <span className={`shrink-0 font-bold ${(score?.admis ?? computeAdmisForMatiere(scoreData.score_obtenu, scoreData.score_max, m.noteEliminatoire, m.noteSur || 20, true)) ? "text-green-600" : "text-red-500"}`}>
