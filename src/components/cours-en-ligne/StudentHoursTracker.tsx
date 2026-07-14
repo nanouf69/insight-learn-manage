@@ -111,6 +111,9 @@ export default function StudentHoursTracker({
             <p className="text-sm text-muted-foreground">
               Le temps affiché correspond à vos <strong>sessions de connexion pendant lesquelles vous avez consulté un module, un exercice ou un quiz</strong> (plafonné à 7h par session), <strong>uniquement sur la période de votre formation</strong>.
             </p>
+            <p className="text-sm text-orange-600 font-semibold mt-1">
+              ⚠️ Attention : le compteur ne se déclenche pas tant que vous n'avez pas ouvert un module. Rester sur la page d'accueil ne compte pas.
+            </p>
             <p className="text-sm text-red-600 font-semibold mt-1">
               Vous devez terminer tous les modules pour valider votre formation.
             </p>
