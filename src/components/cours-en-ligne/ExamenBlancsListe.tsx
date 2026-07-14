@@ -78,7 +78,7 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
     };
 
     fetchQuizResultsWithRetry()
-      .then(({ data }) => {
+      .then(async ({ data }) => {
         if (data) {
           const allRows = data as any[];
           const allRowsByQuiz = new Map<string, any[]>();
@@ -89,6 +89,40 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
           });
 
           const latestRows = Array.from(allRowsByQuiz.values()).flatMap((rows) => selectLatestAttemptRows(rows));
+
+          // FALLBACK: some rows have an empty details.reponses (the grading
+          // snapshot never captured the answers, e.g. a save that failed
+          // mid-way), even though the raw answers were actually saved to
+          // reponses_apprenants during the exam. Without this, those rows
+          // can never be rescored and stay wrongly stuck at 0.
+          const rowsNeedingRawFallback = latestRows.filter(
+            (r: any) => !r?.details?.reponses || Object.keys(r.details.reponses).length === 0,
+          );
+          if (rowsNeedingRawFallback.length > 0 && apprenantId) {
+            try {
+              const { data: rawRows } = await supabase
+                .from("reponses_apprenants" as any)
+                .select("exercice_id, reponses")
+                .eq("apprenant_id", apprenantId)
+                .in(
+                  "exercice_id",
+                  rowsNeedingRawFallback.map((r: any) => `${r.quiz_id}__${r.matiere_id}`),
+                );
+              const rawByExercice = new Map<string, any>();
+              ((rawRows as any[]) || []).forEach((rr) => {
+                if (rr.reponses && Object.keys(rr.reponses).length > 0) rawByExercice.set(rr.exercice_id, rr.reponses);
+              });
+              rowsNeedingRawFallback.forEach((r: any) => {
+                const raw = rawByExercice.get(`${r.quiz_id}__${r.matiere_id}`);
+                if (raw) {
+                  r.details = { ...(r.details || {}), reponses: raw };
+                }
+              });
+            } catch (err) {
+              console.warn("[ExamensBlancs] reponses_apprenants fallback fetch failed:", err);
+            }
+          }
+
           const completedIds = new Set<string>();
           const rowsByQuiz = new Map<string, any[]>();
 
