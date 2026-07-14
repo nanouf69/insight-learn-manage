@@ -547,19 +547,22 @@ export function ControleQualiteTab({ apprenant }: Props) {
               type: "cours",
               label: nom,
               date: fmtDate(info.firstDate),
-              duree: fmtDur(info.totalSec),
+              duree: fmtDur(Math.round(info.totalSec)),
               statut: info.moduleId && completedIds.has(info.moduleId) ? "Termine" : "En cours",
             }];
             const modQuizzes = quizByMod.get(nom) || [];
             for (const q of modQuizzes) {
-              const pct = q.total_questions ? Math.round((Number(q.score) / Number(q.total_questions)) * 100) : null;
+              const pct = q.score_max ? Math.round((Number(q.score_obtenu) / Number(q.score_max)) * 100) : null;
+              const scoreLabel = q.note_sur_20 != null
+                ? `${Number(q.note_sur_20).toFixed(1)}/20`
+                : pct !== null ? `${pct}%` : "-";
               lignes.push({
                 type: "quiz",
                 label: q.quiz_titre || "Quiz",
                 date: fmtDate(q.completed_at),
-                duree: "-",
-                score: pct !== null ? `${pct}%` : (q.score != null ? String(q.score) : "-"),
-                statut: pct !== null && pct >= 50 ? "Reussi" : "Realise",
+                duree: q.duree_secondes ? fmtDur(Number(q.duree_secondes)) : "-",
+                score: scoreLabel,
+                statut: q.reussi ? "Reussi" : "Realise",
               });
             }
             return { nom, lignes };
@@ -567,10 +570,12 @@ export function ControleQualiteTab({ apprenant }: Props) {
 
           // Totals
           const totalSec = Array.from(modulesMap.values()).reduce((s, m) => s + m.totalSec, 0);
-          const scoresPct = quizzes
-            .filter((q: any) => q.total_questions)
-            .map((q: any) => (Number(q.score) / Number(q.total_questions)) * 100);
-          const avg = scoresPct.length ? Math.round(scoresPct.reduce((s, v) => s + v, 0) / scoresPct.length) : 0;
+          const notes = quizzes
+            .filter((q: any) => q.note_sur_20 != null)
+            .map((q: any) => Number(q.note_sur_20));
+          const avgLabel = notes.length
+            ? `${(notes.reduce((s, v) => s + v, 0) / notes.length).toFixed(1)}/20`
+            : "-";
 
           const data: FicheProgressionData = {
             nom: apprenant.nom || "",
@@ -583,14 +588,14 @@ export function ControleQualiteTab({ apprenant }: Props) {
             periodeFin: apprenant.date_fin_cours_en_ligne
               ? format(new Date(apprenant.date_fin_cours_en_ligne), "dd/MM/yyyy")
               : (apprenant.date_fin_formation ? format(new Date(apprenant.date_fin_formation), "dd/MM/yyyy") : "-"),
-            tempsTotal: fmtDur(totalSec),
+            tempsTotal: fmtDur(Math.round(totalSec)),
             modules: progModules,
             recap: {
               modulesCompletes: progModules.filter(m => m.lignes[0]?.statut === "Termine").length,
               modulesTotal: progModules.length,
               quizCompletes: quizzes.length,
               quizTotal: quizzes.length,
-              scoreMoyen: `${avg}%`,
+              scoreMoyen: avgLabel,
               statut: progModules.length > 0 && progModules.every(m => m.lignes[0]?.statut === "Termine")
                 ? "FORMATION ENTIEREMENT COMPLETEE"
                 : "FORMATION EN COURS",
