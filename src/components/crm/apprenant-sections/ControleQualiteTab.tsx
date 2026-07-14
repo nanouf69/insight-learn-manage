@@ -10,6 +10,7 @@ import { fr } from "date-fns/locale";
 import { generateControleQualitePdf } from "@/lib/pdf/controle-qualite";
 import { generateEmargementSemainePdf } from "@/lib/pdf/emargement-semaine";
 import { generateReleveConnexionsPdf } from "@/lib/pdf/releve-connexions";
+import { buildRapportActiviteHtml } from "@/lib/reports/rapport-activite-html";
 import { getCompetencesForFormation } from "@/components/cours-en-ligne/competences-checklist-data";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
@@ -424,6 +425,47 @@ export function ControleQualiteTab({ apprenant }: Props) {
           }
         } catch (pdfErr) {
           console.error("[bulk-download] releve PDF generation failed:", pdfErr);
+        }
+
+        // 3b) Rapport d'activité élève (HTML — même vue que "Imprimer le rapport")
+        try {
+          const [actRes, complRes, qrRes] = await Promise.all([
+            supabase
+              .from("apprenant_module_activites")
+              .select("id, module_id, module_nom, action_type, occurred_at")
+              .eq("apprenant_id", apprenant.id)
+              .order("occurred_at", { ascending: false }),
+            supabase
+              .from("apprenant_module_completion")
+              .select("module_id")
+              .eq("apprenant_id", apprenant.id),
+            supabase
+              .from("apprenant_quiz_results")
+              .select("id, quiz_titre, matiere_nom, completed_at")
+              .eq("apprenant_id", apprenant.id)
+              .order("completed_at", { ascending: false }),
+          ]);
+          const html = buildRapportActiviteHtml({
+            apprenant: {
+              nom: apprenant.nom,
+              prenom: apprenant.prenom,
+              email: apprenant.email,
+              type_apprenant: apprenant.type_apprenant,
+            },
+            connexions: cnxRawRows.map((r: any) => ({
+              id: r.id || "",
+              started_at: r.started_at,
+              ended_at: r.ended_at,
+              last_seen_at: r.last_seen_at,
+              current_module: r.current_module,
+            })),
+            activites: ((actRes.data as any[]) || []) as any,
+            quizResults: ((qrRes.data as any[]) || []) as any,
+            completedModuleIds: new Set(((complRes.data as any[]) || []).map((r: any) => r.module_id as number)),
+          });
+          releveFolder.file(`rapport-activite_${slug}.html`, html);
+        } catch (rapErr) {
+          console.error("[bulk-download] rapport activite failed:", rapErr);
         }
 
 
