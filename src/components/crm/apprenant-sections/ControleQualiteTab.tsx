@@ -469,6 +469,120 @@ export function ControleQualiteTab({ apprenant }: Props) {
           console.error("[bulk-download] rapport activite failed:", rapErr);
         }
 
+        // 3c) Suivi de progression e-learning (PDF Qualiopi)
+        try {
+          const [actAllRes, complAllRes, qrAllRes] = await Promise.all([
+            supabase
+              .from("apprenant_module_activites")
+              .select("module_id, module_nom, action_type, occurred_at, duration_seconds")
+              .eq("apprenant_id", apprenant.id)
+              .order("occurred_at", { ascending: true }),
+            supabase
+              .from("apprenant_module_completion")
+              .select("module_id, completed_at")
+              .eq("apprenant_id", apprenant.id),
+            supabase
+              .from("apprenant_quiz_results")
+              .select("quiz_titre, matiere_nom, score, total_questions, completed_at")
+              .eq("apprenant_id", apprenant.id)
+              .order("completed_at", { ascending: true }),
+          ]);
+          const acts = (actAllRes.data as any[]) || [];
+          const compls = (complAllRes.data as any[]) || [];
+          const quizzes = (qrAllRes.data as any[]) || [];
+          const completedIds = new Set(compls.map((c: any) => c.module_id));
+
+          // Group activités by module
+          const modulesMap = new Map<string, { firstDate?: string; lastDate?: string; totalSec: number; moduleId?: number }>();
+          for (const a of acts) {
+            const key = a.module_nom || `Module ${a.module_id ?? "?"}`;
+            const cur = modulesMap.get(key) || { totalSec: 0, moduleId: a.module_id };
+            if (!cur.firstDate || (a.occurred_at && a.occurred_at < cur.firstDate)) cur.firstDate = a.occurred_at;
+            if (!cur.lastDate || (a.occurred_at && a.occurred_at > cur.lastDate)) cur.lastDate = a.occurred_at;
+            cur.totalSec += Number(a.duration_seconds) || 0;
+            modulesMap.set(key, cur);
+          }
+
+          // Quiz per matière/module
+          const quizByMod = new Map<string, any[]>();
+          for (const q of quizzes) {
+            const key = q.matiere_nom || "Quiz";
+            const arr = quizByMod.get(key) || [];
+            arr.push(q);
+            quizByMod.set(key, arr);
+          }
+
+          const fmtDate = (s?: string) => s ? format(new Date(s), "dd/MM/yyyy") : "-";
+          const fmtDur = (sec: number) => {
+            if (!sec) return "-";
+            const h = Math.floor(sec / 3600);
+            const m = Math.floor((sec % 3600) / 60);
+            return h > 0 ? `${h}h${String(m).padStart(2, "0")}` : `${m}min`;
+          };
+
+          const progModules: ProgressionModule[] = Array.from(modulesMap.entries()).map(([nom, info]) => {
+            const lignes: ProgressionModule["lignes"] = [{
+              type: "cours",
+              label: nom,
+              date: fmtDate(info.firstDate),
+              duree: fmtDur(info.totalSec),
+              statut: info.moduleId && completedIds.has(info.moduleId) ? "Termine" : "En cours",
+            }];
+            const modQuizzes = quizByMod.get(nom) || [];
+            for (const q of modQuizzes) {
+              const pct = q.total_questions ? Math.round((Number(q.score) / Number(q.total_questions)) * 100) : null;
+              lignes.push({
+                type: "quiz",
+                label: q.quiz_titre || "Quiz",
+                date: fmtDate(q.completed_at),
+                duree: "-",
+                score: pct !== null ? `${pct}%` : (q.score != null ? String(q.score) : "-"),
+                statut: pct !== null && pct >= 50 ? "Reussi" : "Realise",
+              });
+            }
+            return { nom, lignes };
+          });
+
+          // Totals
+          const totalSec = Array.from(modulesMap.values()).reduce((s, m) => s + m.totalSec, 0);
+          const scoresPct = quizzes
+            .filter((q: any) => q.total_questions)
+            .map((q: any) => (Number(q.score) / Number(q.total_questions)) * 100);
+          const avg = scoresPct.length ? Math.round(scoresPct.reduce((s, v) => s + v, 0) / scoresPct.length) : 0;
+
+          const data: FicheProgressionData = {
+            nom: apprenant.nom || "",
+            prenom: apprenant.prenom || "",
+            formation: apprenant.type_apprenant || apprenant.formation || "-",
+            codeFormation: apprenant.code_formation || "-",
+            periodeDebut: apprenant.date_debut_cours_en_ligne
+              ? format(new Date(apprenant.date_debut_cours_en_ligne), "dd/MM/yyyy")
+              : (apprenant.date_debut_formation ? format(new Date(apprenant.date_debut_formation), "dd/MM/yyyy") : "-"),
+            periodeFin: apprenant.date_fin_cours_en_ligne
+              ? format(new Date(apprenant.date_fin_cours_en_ligne), "dd/MM/yyyy")
+              : (apprenant.date_fin_formation ? format(new Date(apprenant.date_fin_formation), "dd/MM/yyyy") : "-"),
+            tempsTotal: fmtDur(totalSec),
+            modules: progModules,
+            recap: {
+              modulesCompletes: progModules.filter(m => m.lignes[0]?.statut === "Termine").length,
+              modulesTotal: progModules.length,
+              quizCompletes: quizzes.length,
+              quizTotal: quizzes.length,
+              scoreMoyen: `${avg}%`,
+              statut: progModules.length > 0 && progModules.every(m => m.lignes[0]?.statut === "Termine")
+                ? "FORMATION ENTIEREMENT COMPLETEE"
+                : "FORMATION EN COURS",
+            },
+          };
+
+          const prog = generateFicheProgression(data, { returnBlob: true }) as { blob: Blob; fileName: string } | undefined;
+          if (prog?.blob) {
+            zip.folder("suivi-progression")!.file(prog.fileName, prog.blob);
+          }
+        } catch (progErr) {
+          console.error("[bulk-download] suivi progression failed:", progErr);
+        }
+
 
         const cnxRows = cnxRawRows.map(r => ({
           date_debut: r.started_at ? format(new Date(r.started_at), "yyyy-MM-dd HH:mm:ss") : "",
