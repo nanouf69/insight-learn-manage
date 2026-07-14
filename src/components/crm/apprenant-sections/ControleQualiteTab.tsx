@@ -349,6 +349,17 @@ export function ControleQualiteTab({ apprenant }: Props) {
         const cq = generateControleQualitePdf(apprenant, pdfItems, { returnBlob: true });
         if (cq) zip.folder("controle-qualite")!.file(cq.fileName, cq.blob);
 
+        // 1b) Programme officiel de la formation (adapte au type d'apprenant)
+        try {
+          const progForm = generateProgrammeFormationPdf(apprenant, { returnBlob: true }) as { blob: Blob; fileName: string } | undefined;
+          if (progForm?.blob) {
+            zip.folder("programme-formation")!.file(progForm.fileName, progForm.blob);
+          }
+        } catch (progFormErr) {
+          console.error("[bulk-download] programme formation PDF failed:", progFormErr);
+        }
+
+
         // 2) Feuilles d'émargement hebdomadaires
         const { data: emargData } = await supabase
           .from("emargements_fc" as any)
