@@ -416,7 +416,7 @@ export function ControleQualiteTab({ apprenant }: Props) {
         const cnxRawRows = (cnxData as any[]) || [];
         const releveFolder = zip.folder("releve-connexions")!;
         try {
-          const relevePdf = generateReleveConnexionsPdf(apprenant, cnxRawRows, { returnBlob: true });
+          const relevePdf = generateReleveConnexionsPdf(apprenant, cnxRawRows, { returnBlob: true }) as { blob: Blob; fileName: string } | undefined;
           if (relevePdf?.blob) {
             releveFolder.file(relevePdf.fileName, relevePdf.blob);
           } else {
