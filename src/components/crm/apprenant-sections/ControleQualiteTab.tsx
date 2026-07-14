@@ -11,6 +11,7 @@ import { generateControleQualitePdf } from "@/lib/pdf/controle-qualite";
 import { generateEmargementSemainePdf } from "@/lib/pdf/emargement-semaine";
 import { generateReleveConnexionsPdf } from "@/lib/pdf/releve-connexions";
 import { generateEmailsApprenantPdf } from "@/lib/pdf/emails-apprenant";
+import { generateProgrammeFormationPdf } from "@/lib/pdf/programme-formation";
 import { buildRapportActiviteHtml } from "@/lib/reports/rapport-activite-html";
 import { generateFicheProgression, type FicheProgressionData, type ProgressionModule } from "@/lib/pdf/fiche-progression";
 import { getCompetencesForFormation } from "@/components/cours-en-ligne/competences-checklist-data";
