@@ -724,6 +724,7 @@ export function ControleQualiteTab({ apprenant }: Props) {
           try {
             const relevePdf = generateReleveConnexionsPdf(apprenant, cnxRawRows, {
               returnBlob: true,
+              tempsEnLearning: fmtDur(onlineSec),
               tempsPresentielTheorie: fmtDur(theorieSec),
               tempsPratique: fmtDur(pratiqueSec),
               tempsTotal: fmtDur(grandTotalSec),
