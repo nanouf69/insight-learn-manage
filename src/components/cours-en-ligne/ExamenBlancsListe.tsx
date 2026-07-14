@@ -16,6 +16,7 @@ import {
   selectLatestAttemptRows,
 } from "./examens-blancs-utils";
 import { computeMoyenneExamen, computeMatiereScore } from "./examens-blancs-scoring";
+import { toast } from "sonner";
 
 /**
  * Retrouve la version ORIGINALE (source statique) d'une matière pour un examen
@@ -537,8 +538,38 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
                               const score = computeMatiereScore(m, scoreData.reponses, scoreData.score_obtenu, scoreData.score_max, scoreData.correctionsIA, findStaticFallbackMatiere(examen.id, m.id, m.nom));
                               const noteSur20 = score?.noteSur20 ?? normalizeNoteSur20(scoreData.score_obtenu, scoreData.score_max, scoreData.note_sur_20);
                               return (
-                                <span className={`shrink-0 font-bold ${(score?.admis ?? computeAdmisForMatiere(scoreData.score_obtenu, scoreData.score_max, m.noteEliminatoire, m.noteSur || 20, true)) ? "text-green-600" : "text-red-500"}`}>
-                                  {noteSur20.toFixed(1)}/20
+                                <span className="flex items-center gap-1 shrink-0">
+                                  {isAdmin && (
+                                    <button
+                                      type="button"
+                                      title="Diagnostiquer cette matière (admin)"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        const reponsesCount = scoreData.reponses ? Object.keys(scoreData.reponses).length : 0;
+                                        const staticFallback = findStaticFallbackMatiere(examen.id, m.id, m.nom);
+                                        const questionCount = m.questions?.length ?? 0;
+                                        const staticQuestionCount = staticFallback?.questions?.length ?? 0;
+                                        toast.info(
+                                          `🔍 Matière "${m.nom}" — apprenant=${apprenantId}\n` +
+                                          `• Réponses stockées (details.reponses) : ${reponsesCount} clé(s)\n` +
+                                          `• Questions version actuelle : ${questionCount}\n` +
+                                          `• Questions version d'origine : ${staticQuestionCount}\n` +
+                                          `• score_obtenu / score_max stockés : ${scoreData.score_obtenu} / ${scoreData.score_max}\n` +
+                                          `• note_sur_20 stockée : ${scoreData.note_sur_20}\n` +
+                                          (reponsesCount === 0
+                                            ? "→ Aucune réponse brute enregistrée : la donnée d'origine est manquante, note irrécupérable automatiquement."
+                                            : "→ Des réponses existent : le score devrait pouvoir être recalculé."),
+                                          { duration: 30000 },
+                                        );
+                                      }}
+                                      className="text-muted-foreground hover:text-foreground"
+                                    >
+                                      🔍
+                                    </button>
+                                  )}
+                                  <span className={`font-bold ${(score?.admis ?? computeAdmisForMatiere(scoreData.score_obtenu, scoreData.score_max, m.noteEliminatoire, m.noteSur || 20, true)) ? "text-green-600" : "text-red-500"}`}>
+                                    {noteSur20.toFixed(1)}/20
+                                  </span>
                                 </span>
                               );
                             })() : (
