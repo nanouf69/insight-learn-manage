@@ -454,10 +454,21 @@ export function ControleQualiteTab({ apprenant }: Props) {
               <ClipboardCheck className="w-5 h-5" />
               Contrôle qualité — Dossier apprenant
             </CardTitle>
-            <Button variant="outline" size="sm" className="gap-2" onClick={handleDownloadPdf}>
-              <Download className="w-4 h-4" />
-              Télécharger PDF
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" className="gap-2" onClick={handleDownloadPdf}>
+                <Download className="w-4 h-4" />
+                Télécharger PDF
+              </Button>
+              <Button
+                size="sm"
+                className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
+                onClick={handleDownloadAll}
+                disabled={bulkLoading}
+              >
+                {bulkLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Package className="w-4 h-4" />}
+                Tout télécharger (ZIP)
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
