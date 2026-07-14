@@ -2,13 +2,17 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, XCircle, FileText, Eye, ChevronDown, ChevronUp, ClipboardCheck, Download } from "lucide-react";
+import { CheckCircle2, XCircle, FileText, Eye, ChevronDown, ChevronUp, ClipboardCheck, Download, Package, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
-import { format } from "date-fns";
+import { format, startOfWeek, endOfWeek, getISOWeek, getYear } from "date-fns";
 import { fr } from "date-fns/locale";
 import { generateControleQualitePdf } from "@/lib/pdf/controle-qualite";
+import { generateEmargementSemainePdf } from "@/lib/pdf/emargement-semaine";
 import { getCompetencesForFormation } from "@/components/cours-en-ligne/competences-checklist-data";
+import JSZip from "jszip";
+import { saveAs } from "file-saver";
+import { useToast } from "@/hooks/use-toast";
 
 /** Renders donnees content with real question texts instead of raw JSON */
 function DonneesRenderer({ donnees }: { donnees: any }) {
@@ -228,8 +232,8 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 export function ControleQualiteTab({ apprenant }: Props) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
-
-  // Fetch completed documents from DB
+  const [bulkLoading, setBulkLoading] = useState(false);
+  const { toast } = useToast();
   const { data: completedDocs = [] } = useQuery({
     queryKey: ["apprenant-documents-completes", apprenant.id],
     queryFn: async () => {
@@ -304,6 +308,142 @@ export function ControleQualiteTab({ apprenant }: Props) {
       generateControleQualitePdf(apprenant, pdfItems);
     };
 
+    const escapeCsv = (v: any) => {
+      if (v === null || v === undefined) return "";
+      const s = String(v).replace(/"/g, '""');
+      return /[",;\n\r]/.test(s) ? `"${s}"` : s;
+    };
+    const toCsv = (rows: any[], columns: string[]) => {
+      const header = columns.join(";");
+      const lines = rows.map(r => columns.map(c => escapeCsv(r[c])).join(";"));
+      return "\uFEFF" + [header, ...lines].join("\r\n");
+    };
+
+    const handleDownloadAll = async () => {
+      setBulkLoading(true);
+      try {
+        const formateur = (window.prompt(
+          "Nom du formateur à indiquer sur les feuilles d'émargement :",
+          "GUENICHI Naoufal",
+        ) || "GUENICHI Naoufal").trim();
+
+        const zip = new JSZip();
+        const slug = `${apprenant.prenom || ""}-${apprenant.nom || ""}`
+          .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "apprenant";
+
+        // 1) Contrôle qualité PDF
+        const pdfItems = CONTROLE_DOCUMENTS.map(doc => {
+          const status = getDocStatus(doc);
+          return {
+            label: doc.label,
+            category: doc.category,
+            found: status.found,
+            completedAt: status.details?.completed_at,
+            donnees: status.details?.donnees || null,
+          };
+        });
+        const cq = generateControleQualitePdf(apprenant, pdfItems, { returnBlob: true });
+        if (cq) zip.folder("controle-qualite")!.file(cq.fileName, cq.blob);
+
+        // 2) Feuilles d'émargement hebdomadaires
+        const { data: emargData } = await supabase
+          .from("emargements_fc" as any)
+          .select("*")
+          .eq("apprenant_id", apprenant.id)
+          .order("date_emargement", { ascending: true });
+        const emargements = (emargData as any[]) || [];
+        const weekMap = new Map<string, { weekStart: Date; weekEnd: Date; year: number; week: number; sigs: any[] }>();
+        for (const e of emargements) {
+          if (!e.date_emargement) continue;
+          const d = new Date(e.date_emargement + "T00:00:00");
+          const ws = startOfWeek(d, { weekStartsOn: 1 });
+          const we = endOfWeek(d, { weekStartsOn: 1 });
+          const year = getYear(ws);
+          const week = getISOWeek(d);
+          const key = `${year}-W${String(week).padStart(2, "0")}`;
+          if (!weekMap.has(key)) weekMap.set(key, { weekStart: ws, weekEnd: we, year, week, sigs: [] });
+          weekMap.get(key)!.sigs.push({
+            date: e.date_emargement,
+            demi_journee: e.demi_journee,
+            signed_at: e.signed_at,
+            signature: e.signature_data_url,
+            confirme_presence_lieu: !!e.confirme_presence_lieu,
+            confirme_identite: !!e.confirme_identite,
+          });
+        }
+        const emargFolder = zip.folder("feuilles-emargement-hebdomadaires")!;
+        for (const [key, w] of weekMap.entries()) {
+          const wsStr = format(w.weekStart, "yyyy-MM-dd");
+          const weStr = format(w.weekEnd, "yyyy-MM-dd");
+          const label = `Semaine ${w.week} - ${w.year}`;
+          const sigs = w.sigs.sort((a, b) => a.date.localeCompare(b.date));
+          const res = generateEmargementSemainePdf(apprenant, label, wsStr, weStr, sigs, formateur, { returnBlob: true });
+          if (res) emargFolder.file(res.fileName, res.blob);
+        }
+
+        // 3) Relevé de connexion (CSV)
+        const { data: cnxData } = await supabase
+          .from("apprenant_connexions")
+          .select("started_at, ended_at, last_seen_at, last_action_at, end_reason, source, current_module, ip_address, user_agent")
+          .eq("apprenant_id", apprenant.id)
+          .order("started_at", { ascending: false });
+        const cnxRows = ((cnxData as any[]) || []).map(r => ({
+          date_debut: r.started_at ? format(new Date(r.started_at), "yyyy-MM-dd HH:mm:ss") : "",
+          date_fin: r.ended_at ? format(new Date(r.ended_at), "yyyy-MM-dd HH:mm:ss") : "",
+          derniere_activite: r.last_action_at ? format(new Date(r.last_action_at), "yyyy-MM-dd HH:mm:ss") : "",
+          duree_min: r.started_at && (r.ended_at || r.last_seen_at)
+            ? Math.round((new Date(r.ended_at || r.last_seen_at).getTime() - new Date(r.started_at).getTime()) / 60000)
+            : "",
+          module: r.current_module || "",
+          source: r.source || "",
+          fin: r.end_reason || "",
+          ip: r.ip_address || "",
+          navigateur: r.user_agent || "",
+        }));
+        const cnxCsv = toCsv(cnxRows, ["date_debut","date_fin","derniere_activite","duree_min","module","source","fin","ip","navigateur"]);
+        zip.folder("releve-connexions")!.file(`releve-connexions_${slug}.csv`, cnxCsv);
+
+        // 4) Trace des emails envoyés / reçus (CSV)
+        const { data: emailsData } = await supabase
+          .from("emails")
+          .select("type, subject, sender_email, sender_name, recipients, sent_at, received_at, created_at, is_read, has_attachments, body_preview")
+          .eq("apprenant_id", apprenant.id)
+          .order("created_at", { ascending: false });
+        const emailRows = ((emailsData as any[]) || []).map(e => ({
+          type: e.type === "sent" ? "Envoyé" : "Reçu",
+          date: (e.sent_at || e.received_at || e.created_at)
+            ? format(new Date(e.sent_at || e.received_at || e.created_at), "yyyy-MM-dd HH:mm:ss") : "",
+          sujet: e.subject || "",
+          expediteur: e.sender_name ? `${e.sender_name} <${e.sender_email || ""}>` : (e.sender_email || ""),
+          destinataires: Array.isArray(e.recipients) ? e.recipients.join(", ") : (e.recipients || ""),
+          lu: e.is_read ? "Oui" : "Non",
+          pieces_jointes: e.has_attachments ? "Oui" : "Non",
+          apercu: (e.body_preview || "").replace(/\s+/g, " ").slice(0, 500),
+        }));
+        const emailCsv = toCsv(emailRows, ["type","date","sujet","expediteur","destinataires","lu","pieces_jointes","apercu"]);
+        zip.folder("emails")!.file(`emails_${slug}.csv`, emailCsv);
+
+        const blob = await zip.generateAsync({ type: "blob" });
+        const today = format(new Date(), "yyyy-MM-dd");
+        saveAs(blob, `dossier-complet_${slug}_${today}.zip`);
+
+        toast({
+          title: "Téléchargement prêt",
+          description: `Contrôle qualité, ${weekMap.size} feuille(s) d'émargement, ${cnxRows.length} connexion(s), ${emailRows.length} email(s).`,
+        });
+      } catch (err: any) {
+        console.error("[bulk-download]", err);
+        toast({
+          title: "Erreur",
+          description: err?.message || "Impossible de générer l'archive.",
+          variant: "destructive",
+        });
+      } finally {
+        setBulkLoading(false);
+      }
+    };
+
+
     return (
     <div className="space-y-6">
       {/* Summary header */}
@@ -314,10 +454,21 @@ export function ControleQualiteTab({ apprenant }: Props) {
               <ClipboardCheck className="w-5 h-5" />
               Contrôle qualité — Dossier apprenant
             </CardTitle>
-            <Button variant="outline" size="sm" className="gap-2" onClick={handleDownloadPdf}>
-              <Download className="w-4 h-4" />
-              Télécharger PDF
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" className="gap-2" onClick={handleDownloadPdf}>
+                <Download className="w-4 h-4" />
+                Télécharger PDF
+              </Button>
+              <Button
+                size="sm"
+                className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
+                onClick={handleDownloadAll}
+                disabled={bulkLoading}
+              >
+                {bulkLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Package className="w-4 h-4" />}
+                Tout télécharger (ZIP)
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
