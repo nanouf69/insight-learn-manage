@@ -473,9 +473,23 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
                       {group.results
                         .sort((a, b) => a.matiere_nom.localeCompare(b.matiere_nom))
                         .map((r, i) => {
-                          const note = r.score_max > 0
-                            ? ((r.score_obtenu / r.score_max) * 20).toFixed(1)
-                            : "0";
+                          const matiereDef = examenDef?.matieres.find(
+                            (md) => md.id === r.matiere_id || md.nom === r.matiere_nom,
+                          );
+                          const recomputed = matiereDef
+                            ? computeMatiereScore(
+                                matiereDef,
+                                r.reponses ?? null,
+                                r.score_obtenu,
+                                r.score_max,
+                                r.correctionsIA ?? null,
+                              )
+                            : null;
+                          const note = recomputed
+                            ? recomputed.noteSur20.toFixed(1)
+                            : r.score_max > 0
+                              ? ((r.score_obtenu / r.score_max) * 20).toFixed(1)
+                              : "0";
                           return (
                             <div key={i} className="px-4 py-2 flex items-center justify-between text-sm">
                               <span className="text-muted-foreground">{r.matiere_nom}</span>
