@@ -463,7 +463,7 @@ export function ControleQualiteTab({ apprenant }: Props) {
 
         // 3c) Suivi de progression e-learning (PDF Qualiopi)
         try {
-          const [actAllRes, complAllRes, qrAllRes, cnxAllRes, emargAllRes, sessInscritsRes] = await Promise.all([
+          const [actAllRes, complAllRes, qrAllRes, cnxAllRes, emargAllRes, sessInscritsRes, exosRes] = await Promise.all([
             supabase
               .from("apprenant_module_activites")
               .select("module_id, module_nom, action_type, occurred_at")
@@ -490,6 +490,11 @@ export function ControleQualiteTab({ apprenant }: Props) {
               .from("session_apprenants")
               .select("session_id, heure_debut_personnalisee, heure_fin_personnalisee, sessions:session_id(type_session, heure_debut, heure_fin, date_debut, date_fin)")
               .eq("apprenant_id", apprenant.id),
+            supabase
+              .from("reponses_apprenants")
+              .select("updated_at")
+              .eq("apprenant_id", apprenant.id)
+              .eq("completed", true),
           ]);
           if (actAllRes.error) console.error("[bulk-download] activites error:", actAllRes.error);
           if (complAllRes.error) console.error("[bulk-download] completion error:", complAllRes.error);
@@ -500,6 +505,7 @@ export function ControleQualiteTab({ apprenant }: Props) {
           const cnxAll = (cnxAllRes.data as any[]) || [];
           const emargAll = (emargAllRes.data as any[]) || [];
           const sessInscrits = (sessInscritsRes.data as any[]) || [];
+          const exos = (exosRes.data as any[]) || [];
           const completedIds = new Set(compls.map((c: any) => c.module_id));
 
           // Group activités by module — derive duration from consecutive occurred_at within same module (cap 15min)
@@ -575,9 +581,34 @@ export function ControleQualiteTab({ apprenant }: Props) {
             return { nom, lignes };
           });
 
-          // ---- E-learning : temps TOTAL de connexion (identique au relevé de connexions + rapport d'activité)
-          // Somme des sessions (ended_at || last_seen_at) - started_at, plafonnée à 7h par session.
+          // ---- E-learning : temps de connexion (identique au Rapport d'activité).
+          // Une connexion n'est comptée QUE si l'apprenant a réellement ouvert un module/section
+          // pédagogique (hors "Accueil / Liste des modules") ou complété un exercice/quiz pendant la session.
+          // Chaque session est plafonnée à 7h.
           const MAX_SESSION_MS = 7 * 60 * 60 * 1000;
+          const isAccueil = (nom?: string | null) => !!nom && /accueil|liste\s+des\s+modules/i.test(nom);
+          const pedagogicalActTs = [
+            ...acts
+              .filter((a: any) =>
+                (a.action_type === "open_module" || a.action_type === "open_section" || a.action_type === "open_cours") &&
+                !isAccueil(a.module_nom))
+              .map((a: any) => Date.parse(a.occurred_at)),
+            ...exos.map((e: any) => Date.parse(e.updated_at)),
+            ...quizzes.map((q: any) => Date.parse(q.completed_at)),
+          ].filter((t: number) => !Number.isNaN(t)).sort((a: number, b: number) => a - b);
+
+          const hasActivityInWindow = (start: number, end: number): boolean => {
+            let lo = 0, hi = pedagogicalActTs.length - 1;
+            while (lo <= hi) {
+              const mid = (lo + hi) >> 1;
+              const v = pedagogicalActTs[mid];
+              if (v < start) lo = mid + 1;
+              else if (v > end) hi = mid - 1;
+              else return true;
+            }
+            return false;
+          };
+
           let onlineMin = 0;
           for (const c of cnxRawRows) {
             const s = c.started_at;
@@ -588,7 +619,9 @@ export function ControleQualiteTab({ apprenant }: Props) {
             if (!isFinite(startMs) || !isFinite(rawEndMs)) continue;
             const endMs = Math.min(rawEndMs, startMs + MAX_SESSION_MS);
             const ms = endMs - startMs;
-            if (ms > 0) onlineMin += Math.floor(ms / 60000);
+            if (ms <= 0) continue;
+            if (!hasActivityInWindow(startMs, endMs)) continue;
+            onlineMin += Math.floor(ms / 60000);
           }
           const onlineSec = onlineMin * 60;
 
@@ -691,6 +724,7 @@ export function ControleQualiteTab({ apprenant }: Props) {
           try {
             const relevePdf = generateReleveConnexionsPdf(apprenant, cnxRawRows, {
               returnBlob: true,
+              tempsEnLearning: fmtDur(onlineSec),
               tempsPresentielTheorie: fmtDur(theorieSec),
               tempsPratique: fmtDur(pratiqueSec),
               tempsTotal: fmtDur(grandTotalSec),

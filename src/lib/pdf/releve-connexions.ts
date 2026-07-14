@@ -57,7 +57,7 @@ function shortUA(ua?: string | null) {
 export function generateReleveConnexionsPdf(
   apprenant: { nom: string; prenom: string; civilite?: string; type_apprenant?: string },
   rows: ConnexionRow[],
-  opts?: { returnBlob?: boolean; tempsPratique?: string; tempsPresentielTheorie?: string; tempsTotal?: string },
+  opts?: { returnBlob?: boolean; tempsEnLearning?: string; tempsPratique?: string; tempsPresentielTheorie?: string; tempsTotal?: string },
 ): { blob: Blob; fileName: string } | void {
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
   const pw = doc.internal.pageSize.getWidth();
@@ -111,8 +111,9 @@ export function generateReleveConnexionsPdf(
   }
   const h = Math.floor(totalMin / 60);
   const m = totalMin % 60;
+  const eLearningLabel = opts?.tempsEnLearning || `${h}h${String(m).padStart(2, "0")}`;
   doc.setFont("helvetica", "bold");
-  doc.text(`Duree cumulee e-learning : ${h}h${String(m).padStart(2, "0")}`, margin, 62);
+  doc.text(`Duree cumulee e-learning : ${eLearningLabel}`, margin, 62);
   if (opts?.tempsPresentielTheorie) {
     doc.text(`Presentiel theorie : ${opts.tempsPresentielTheorie}`, margin + 90, 62);
   }
