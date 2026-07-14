@@ -417,16 +417,8 @@ export function ControleQualiteTab({ apprenant }: Props) {
           .order("started_at", { ascending: false });
         const cnxRawRows = (cnxData as any[]) || [];
         const releveFolder = zip.folder("releve-connexions")!;
-        try {
-          const relevePdf = generateReleveConnexionsPdf(apprenant, cnxRawRows, { returnBlob: true }) as { blob: Blob; fileName: string } | undefined;
-          if (relevePdf?.blob) {
-            releveFolder.file(relevePdf.fileName, relevePdf.blob);
-          } else {
-            console.warn("[bulk-download] releve PDF: no blob returned");
-          }
-        } catch (pdfErr) {
-          console.error("[bulk-download] releve PDF generation failed:", pdfErr);
-        }
+        // Le PDF du relevé est généré plus bas (après le calcul des temps présentiel/pratique)
+        // pour inclure la synthèse complète des durées.
 
         // 3b) Rapport d'activité élève (HTML — même vue que "Imprimer le rapport")
         try {
