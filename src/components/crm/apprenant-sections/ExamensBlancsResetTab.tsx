@@ -30,6 +30,10 @@ import {
 import {
   buildMatiereLookupKeys,
   findScoreForMatiere,
+  selectLatestAttemptRows,
+  recoverCorruptedScoreRow,
+  normalizeNoteSur20,
+  toFiniteNumber,
 } from "@/components/cours-en-ligne/examens-blancs-utils";
 
 const ALL_EXAMENS_BLANCS = [
@@ -108,40 +112,58 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
 
       if (error) throw error;
 
-      const grouped = new Map<string, ExamenGroup>();
+      // Group rows by quiz_id, then dedupe per matière via selectLatestAttemptRows
+      // (same logic as ExamenBlancsListe.tsx côté élève) so admin & student agree.
+      const rowsByQuiz = new Map<string, any[]>();
       for (const row of (data || [])) {
-        const { num, type } = parseExamenInfo(row.quiz_id);
-        const key = `${num}-${type}`;
-        const existing = grouped.get(key);
-        const result: ExamenResult = {
-          quiz_id: row.quiz_id,
-          matiere_id: row.matiere_id ?? "unknown",
-          matiere_nom: row.matiere_nom ?? "Matière inconnue",
-          score_obtenu: row.score_obtenu ?? 0,
-          score_max: row.score_max ?? 20,
-          completed_at: row.completed_at,
-          reponses: (row as any).details?.reponses ?? null,
-          correctionsIA: (row as any).details?.correctionsIA ?? null,
-        };
+        if (!row?.quiz_id) continue;
+        if (!rowsByQuiz.has(row.quiz_id)) rowsByQuiz.set(row.quiz_id, []);
+        rowsByQuiz.get(row.quiz_id)!.push(row);
+      }
 
-        if (existing) {
-          existing.results.push(result);
-          existing.totalScore += result.score_obtenu;
-          existing.totalMax += result.score_max;
-          if (result.completed_at > existing.lastDate) {
-            existing.lastDate = result.completed_at;
+      const grouped = new Map<string, ExamenGroup>();
+      for (const [quizId, quizRows] of rowsByQuiz) {
+        const latestRows = selectLatestAttemptRows(quizRows);
+        const { num, type } = parseExamenInfo(quizId);
+        const key = `${num}-${type}`;
+        for (const row of latestRows) {
+          // Auto-recover corrupted score rows using details.reponses (same as student side)
+          const recovered = recoverCorruptedScoreRow(row, ALL_EXAMENS_BLANCS);
+          const scoreSource = recovered && recovered.score_obtenu > toFiniteNumber(row.score_obtenu, 0)
+            ? { ...row, ...recovered }
+            : row;
+
+          const result: ExamenResult = {
+            quiz_id: row.quiz_id,
+            matiere_id: scoreSource.matiere_id ?? "unknown",
+            matiere_nom: scoreSource.matiere_nom ?? "Matière inconnue",
+            score_obtenu: toFiniteNumber(scoreSource.score_obtenu, 0),
+            score_max: toFiniteNumber(scoreSource.score_max, 0),
+            completed_at: scoreSource.completed_at,
+            reponses: (row as any).details?.reponses ?? null,
+            correctionsIA: (row as any).details?.correctionsIA ?? null,
+          };
+
+          const existing = grouped.get(key);
+          if (existing) {
+            existing.results.push(result);
+            existing.totalScore += result.score_obtenu;
+            existing.totalMax += result.score_max;
+            if (result.completed_at && result.completed_at > existing.lastDate) {
+              existing.lastDate = result.completed_at;
+            }
+          } else {
+            grouped.set(key, {
+              examenNum: num,
+              examenLabel: `Examen Blanc ${num} — ${typeLabel(type)}`,
+              type,
+              quizId: row.quiz_id,
+              results: [result],
+              totalScore: result.score_obtenu,
+              totalMax: result.score_max,
+              lastDate: result.completed_at ?? "",
+            });
           }
-        } else {
-          grouped.set(key, {
-            examenNum: num,
-            examenLabel: `Examen Blanc ${num} — ${typeLabel(type)}`,
-            type,
-            quizId: row.quiz_id,
-            results: [result],
-            totalScore: result.score_obtenu,
-            totalMax: result.score_max,
-            lastDate: result.completed_at,
-          });
         }
       }
 
