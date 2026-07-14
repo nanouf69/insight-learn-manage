@@ -30,6 +30,10 @@ import {
 import {
   buildMatiereLookupKeys,
   findScoreForMatiere,
+  selectLatestAttemptRows,
+  recoverCorruptedScoreRow,
+  normalizeNoteSur20,
+  toFiniteNumber,
 } from "@/components/cours-en-ligne/examens-blancs-utils";
 
 const ALL_EXAMENS_BLANCS = [
