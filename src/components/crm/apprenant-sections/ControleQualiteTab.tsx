@@ -232,8 +232,8 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 export function ControleQualiteTab({ apprenant }: Props) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
-
-  // Fetch completed documents from DB
+  const [bulkLoading, setBulkLoading] = useState(false);
+  const { toast } = useToast();
   const { data: completedDocs = [] } = useQuery({
     queryKey: ["apprenant-documents-completes", apprenant.id],
     queryFn: async () => {
