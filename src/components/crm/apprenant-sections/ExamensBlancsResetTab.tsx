@@ -54,12 +54,15 @@ interface ExamenResult {
   score_obtenu: number;
   score_max: number;
   completed_at: string;
+  reponses?: Record<string, any> | null;
+  correctionsIA?: any;
 }
 
 interface ExamenGroup {
   examenNum: number;
   examenLabel: string;
   type: string;
+  quizId: string;
   results: ExamenResult[];
   totalScore: number;
   totalMax: number;
