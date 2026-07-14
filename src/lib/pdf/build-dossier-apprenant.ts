@@ -191,7 +191,8 @@ export async function buildDossierApprenantIntoZip(
     for (let i = 0; i < sortedActs.length; i++) {
       const a = sortedActs[i];
       const key = a.module_nom || `Module ${a.module_id ?? "?"}`;
-      const cur = modulesMap.get(key) || { totalSec: 0, moduleId: a.module_id };
+      const cur: { firstDate?: string; lastDate?: string; totalSec: number; moduleId?: number } =
+        modulesMap.get(key) || { totalSec: 0, moduleId: a.module_id };
       if (!cur.firstDate || (a.occurred_at && a.occurred_at < cur.firstDate)) cur.firstDate = a.occurred_at;
       if (!cur.lastDate || (a.occurred_at && a.occurred_at > cur.lastDate)) cur.lastDate = a.occurred_at;
       const next = sortedActs[i + 1];
