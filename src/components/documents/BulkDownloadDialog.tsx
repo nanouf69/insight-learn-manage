@@ -28,35 +28,35 @@ import {
   isBefore,
   parseISO,
 } from "date-fns";
-import { generateControleQualitePdf } from "@/lib/pdf/controle-qualite";
 import { generateEmargementSemainePdf } from "@/lib/pdf/emargement-semaine";
 import { generateDocumentIndividuelPdf } from "@/lib/pdf/document-individuel";
+import { buildDossierApprenantIntoZip } from "@/lib/pdf/build-dossier-apprenant";
 
 type DocKey =
-  | "controle-qualite"
+  | "dossier-complet"
   | "emargements-hebdo"
   | "fiche-positionnement"
   | "projet-professionnel";
 
 const DOC_OPTIONS: { key: DocKey; label: string; description: string }[] = [
   {
-    key: "controle-qualite",
-    label: "Dossier de contrôle qualité",
-    description: "PDF récapitulatif Qualiopi du dossier de l'apprenant",
+    key: "dossier-complet",
+    label: "Dossier apprenant complet",
+    description: "Contrôle qualité, programme, émargements, relevé de connexions, suivi de progression et emails",
   },
   {
     key: "emargements-hebdo",
-    label: "Feuilles d'émargement hebdomadaires",
+    label: "Feuilles d'émargement hebdomadaires (seules)",
     description: "Un PDF par semaine de la période de formation",
   },
   {
     key: "fiche-positionnement",
-    label: "Fiche de positionnement stagiaire",
+    label: "Fiche de positionnement stagiaire (seule)",
     description: "Test de compétences rempli à l'entrée en formation",
   },
   {
     key: "projet-professionnel",
-    label: "Questionnaire projet professionnel",
+    label: "Questionnaire projet professionnel (seul)",
     description: "Projet professionnel TAXI / VTC",
   },
 ];
@@ -133,9 +133,8 @@ export function BulkDownloadDialog() {
       apprenant.id;
     const root = zip.folder(slug)!;
 
-    // --- Fetch documents completes if needed for CQ / positionnement / projet ---
+    // --- Fetch documents completes if needed for fiche positionnement / projet ---
     const needDocs =
-      selectedDocs.has("controle-qualite") ||
       selectedDocs.has("fiche-positionnement") ||
       selectedDocs.has("projet-professionnel");
 
@@ -151,46 +150,12 @@ export function BulkDownloadDialog() {
     const getDoc = (typeDocument: string) =>
       documentsCompletes.find((d) => d.type_document === typeDocument);
 
-    // --- Contrôle qualité PDF (récapitulatif complet) ---
-    if (selectedDocs.has("controle-qualite")) {
+    // --- Dossier apprenant complet (contrôle qualité + programme + émargements + relevé + progression + emails) ---
+    if (selectedDocs.has("dossier-complet")) {
       try {
-        const items = [
-          {
-            id: "fiche-positionnement",
-            label: "Fiche de positionnement stagiaire",
-            docType: "test-competences",
-          },
-          {
-            id: "projet-professionnel",
-            label: "Questionnaire projet professionnel",
-            docType: "projet-professionnel",
-          },
-          {
-            id: "verification-prerequis",
-            label: "Vérification des prérequis",
-            docType: "analyse-besoin",
-          },
-          {
-            id: "cgv-acceptation",
-            label: "Conditions Générales de Vente",
-            docType: "cgv-acceptation",
-          },
-        ].map((it) => {
-          const d = getDoc(it.docType);
-          return {
-            label: it.label,
-            category: "formulaire" as const,
-            found: !!d,
-            completedAt: d?.completed_at,
-            donnees: d?.donnees || null,
-          };
-        });
-        const res = generateControleQualitePdf(apprenant, items, {
-          returnBlob: true,
-        });
-        if (res) root.folder("controle-qualite")!.file(res.fileName, res.blob);
+        await buildDossierApprenantIntoZip(apprenant, root, formateur);
       } catch (e) {
-        console.error("[bulk] CQ failed", slug, e);
+        console.error("[bulk] dossier complet failed", slug, e);
       }
     }
 
