@@ -340,6 +340,23 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
     staleTime: 0,
   });
 
+  const { data: apprenantSessions } = useQuery({
+    queryKey: ["apprenant-sessions", apprenantId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("session_apprenants")
+        .select("session_id, sessions:session_id (id, nom, date_debut, date_fin, type_session, lieu, statut)")
+        .eq("apprenant_id", apprenantId);
+      if (error) return [];
+      return (data ?? [])
+        .map((r: any) => r.sessions)
+        .filter(Boolean)
+        .sort((a: any, b: any) => (b.date_debut || "").localeCompare(a.date_debut || ""));
+    },
+    enabled: !!apprenantId,
+  });
+
+
   const rawModules = (apprenant as any)?.modules_autorises;
   const hasStoredModulesArray = Array.isArray(rawModules);
   const currentModules: number[] = hasStoredModulesArray
