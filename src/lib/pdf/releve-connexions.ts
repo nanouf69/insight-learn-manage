@@ -73,19 +73,33 @@ function shortUA(ua?: string | null) {
   return os ? `${browser} (${os})` : browser;
 }
 
+function sanitize(s?: string | null): string {
+  if (!s) return "";
+  let out = String(s).normalize("NFKC");
+  out = out
+    .replace(/[•·▪◦●○]/g, "-")
+    .replace(/[""«»]/g, '"')
+    .replace(/['']/g, "'")
+    .replace(/[–—]/g, "-")
+    .replace(/…/g, "...");
+  // Remove emojis / non-Latin symbols not supported by Helvetica (WinAnsi)
+  out = out.replace(/[^\x20-\x7E\u00A0-\u00FF]/g, "");
+  out = out.replace(/\s+/g, " ").trim();
+  return out;
+}
+
 function joinList(items?: string[] | null): string {
   if (!items || items.length === 0) return "—";
-  // Dedupe & trim
   const seen = new Set<string>();
   const out: string[] = [];
   for (const it of items) {
-    const t = (it || "").trim();
+    const t = sanitize(it);
     if (!t) continue;
     if (seen.has(t)) continue;
     seen.add(t);
     out.push(t);
   }
-  return out.length > 0 ? out.join("\n• ").replace(/^/, "• ") : "—";
+  return out.length > 0 ? "- " + out.join("\n- ") : "—";
 }
 
 export function generateReleveConnexionsPdf(
@@ -199,7 +213,7 @@ export function generateReleveConnexionsPdf(
       const moduleFallback =
         (r.modules_consultes && r.modules_consultes.length > 0)
           ? modulesTxt
-          : (r.current_module ? `• ${r.current_module}` : "—");
+          : (r.current_module ? `- ${sanitize(r.current_module)}` : "—");
       return [
         fmtDate(startedAt),
         fmtTime(startedAt),
@@ -209,8 +223,6 @@ export function generateReleveConnexionsPdf(
         quizTxt,
         exosTxt,
         r.ip_address || "-",
-        shortUA(r.user_agent),
-        r.end_reason || "-",
       ];
     });
 
@@ -225,8 +237,6 @@ export function generateReleveConnexionsPdf(
         "Quiz / Examens realises",
         "Cours & Exercices effectues",
         "IP",
-        "Navigateur",
-        "Fin session",
       ]],
       body,
       theme: "grid",
@@ -234,16 +244,14 @@ export function generateReleveConnexionsPdf(
       headStyles: { fillColor: [13, 37, 64], textColor: 255, fontStyle: "bold", fontSize: 7.5, halign: "center" },
       alternateRowStyles: { fillColor: [245, 248, 252] },
       columnStyles: {
-        0: { cellWidth: 20, halign: "center" },
-        1: { cellWidth: 13, halign: "center" },
-        2: { cellWidth: 13, halign: "center" },
-        3: { cellWidth: 14, halign: "center", fontStyle: "bold" },
-        4: { cellWidth: 50 },
-        5: { cellWidth: 50 },
-        6: { cellWidth: 55 },
-        7: { cellWidth: 26 },
-        8: { cellWidth: 26 },
-        9: { cellWidth: "auto", halign: "center" },
+        0: { cellWidth: 22, halign: "center" },
+        1: { cellWidth: 15, halign: "center" },
+        2: { cellWidth: 15, halign: "center" },
+        3: { cellWidth: 16, halign: "center", fontStyle: "bold" },
+        4: { cellWidth: 62 },
+        5: { cellWidth: 60 },
+        6: { cellWidth: 65 },
+        7: { cellWidth: "auto", halign: "center" },
       },
       margin: { left: margin, right: margin },
       didDrawPage: () => {
