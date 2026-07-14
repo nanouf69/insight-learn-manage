@@ -133,9 +133,8 @@ export function BulkDownloadDialog() {
       apprenant.id;
     const root = zip.folder(slug)!;
 
-    // --- Fetch documents completes if needed for CQ / positionnement / projet ---
+    // --- Fetch documents completes if needed for fiche positionnement / projet ---
     const needDocs =
-      selectedDocs.has("controle-qualite") ||
       selectedDocs.has("fiche-positionnement") ||
       selectedDocs.has("projet-professionnel");
 
@@ -151,46 +150,12 @@ export function BulkDownloadDialog() {
     const getDoc = (typeDocument: string) =>
       documentsCompletes.find((d) => d.type_document === typeDocument);
 
-    // --- Contrôle qualité PDF (récapitulatif complet) ---
-    if (selectedDocs.has("controle-qualite")) {
+    // --- Dossier apprenant complet (contrôle qualité + programme + émargements + relevé + progression + emails) ---
+    if (selectedDocs.has("dossier-complet")) {
       try {
-        const items = [
-          {
-            id: "fiche-positionnement",
-            label: "Fiche de positionnement stagiaire",
-            docType: "test-competences",
-          },
-          {
-            id: "projet-professionnel",
-            label: "Questionnaire projet professionnel",
-            docType: "projet-professionnel",
-          },
-          {
-            id: "verification-prerequis",
-            label: "Vérification des prérequis",
-            docType: "analyse-besoin",
-          },
-          {
-            id: "cgv-acceptation",
-            label: "Conditions Générales de Vente",
-            docType: "cgv-acceptation",
-          },
-        ].map((it) => {
-          const d = getDoc(it.docType);
-          return {
-            label: it.label,
-            category: "formulaire" as const,
-            found: !!d,
-            completedAt: d?.completed_at,
-            donnees: d?.donnees || null,
-          };
-        });
-        const res = generateControleQualitePdf(apprenant, items, {
-          returnBlob: true,
-        });
-        if (res) root.folder("controle-qualite")!.file(res.fileName, res.blob);
+        await buildDossierApprenantIntoZip(apprenant, root, formateur);
       } catch (e) {
-        console.error("[bulk] CQ failed", slug, e);
+        console.error("[bulk] dossier complet failed", slug, e);
       }
     }
 
