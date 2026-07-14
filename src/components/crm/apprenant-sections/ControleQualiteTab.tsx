@@ -474,7 +474,7 @@ export function ControleQualiteTab({ apprenant }: Props) {
           const [actAllRes, complAllRes, qrAllRes] = await Promise.all([
             supabase
               .from("apprenant_module_activites")
-              .select("module_id, module_nom, action_type, occurred_at, duration_seconds")
+              .select("module_id, module_nom, action_type, occurred_at")
               .eq("apprenant_id", apprenant.id)
               .order("occurred_at", { ascending: true }),
             supabase
@@ -483,10 +483,13 @@ export function ControleQualiteTab({ apprenant }: Props) {
               .eq("apprenant_id", apprenant.id),
             supabase
               .from("apprenant_quiz_results")
-              .select("quiz_titre, matiere_nom, score, total_questions, completed_at")
+              .select("quiz_titre, matiere_nom, score_obtenu, score_max, note_sur_20, reussi, duree_secondes, completed_at")
               .eq("apprenant_id", apprenant.id)
               .order("completed_at", { ascending: true }),
           ]);
+          if (actAllRes.error) console.error("[bulk-download] activites error:", actAllRes.error);
+          if (complAllRes.error) console.error("[bulk-download] completion error:", complAllRes.error);
+          if (qrAllRes.error) console.error("[bulk-download] quiz error:", qrAllRes.error);
           const acts = (actAllRes.data as any[]) || [];
           const compls = (complAllRes.data as any[]) || [];
           const quizzes = (qrAllRes.data as any[]) || [];
