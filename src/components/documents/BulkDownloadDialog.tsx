@@ -28,35 +28,35 @@ import {
   isBefore,
   parseISO,
 } from "date-fns";
-import { generateControleQualitePdf } from "@/lib/pdf/controle-qualite";
 import { generateEmargementSemainePdf } from "@/lib/pdf/emargement-semaine";
 import { generateDocumentIndividuelPdf } from "@/lib/pdf/document-individuel";
+import { buildDossierApprenantIntoZip } from "@/lib/pdf/build-dossier-apprenant";
 
 type DocKey =
-  | "controle-qualite"
+  | "dossier-complet"
   | "emargements-hebdo"
   | "fiche-positionnement"
   | "projet-professionnel";
 
 const DOC_OPTIONS: { key: DocKey; label: string; description: string }[] = [
   {
-    key: "controle-qualite",
-    label: "Dossier de contrôle qualité",
-    description: "PDF récapitulatif Qualiopi du dossier de l'apprenant",
+    key: "dossier-complet",
+    label: "Dossier apprenant complet",
+    description: "Contrôle qualité, programme, émargements, relevé de connexions, suivi de progression et emails",
   },
   {
     key: "emargements-hebdo",
-    label: "Feuilles d'émargement hebdomadaires",
+    label: "Feuilles d'émargement hebdomadaires (seules)",
     description: "Un PDF par semaine de la période de formation",
   },
   {
     key: "fiche-positionnement",
-    label: "Fiche de positionnement stagiaire",
+    label: "Fiche de positionnement stagiaire (seule)",
     description: "Test de compétences rempli à l'entrée en formation",
   },
   {
     key: "projet-professionnel",
-    label: "Questionnaire projet professionnel",
+    label: "Questionnaire projet professionnel (seul)",
     description: "Projet professionnel TAXI / VTC",
   },
 ];
