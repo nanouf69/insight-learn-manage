@@ -1,7 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import JSZip from "jszip";
 import { format, startOfWeek, endOfWeek, getISOWeek, getYear, addWeeks, isBefore, parseISO } from "date-fns";
-import { generateControleQualitePdf } from "@/lib/pdf/controle-qualite";
+import { generateDocumentIndividuelPdf } from "@/lib/pdf/document-individuel";
 import { generateProgrammeFormationPdf } from "@/lib/pdf/programme-formation";
 import { generateEmargementSemainePdf } from "@/lib/pdf/emargement-semaine";
 import { generateReleveConnexionsPdf } from "@/lib/pdf/releve-connexions";
@@ -43,7 +43,7 @@ export async function buildDossierApprenantIntoZip(
   const slug = `${apprenant.prenom || ""}-${apprenant.nom || ""}`
     .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "apprenant";
 
-  // ---------- 1) Contrôle qualité (formulaires uniquement) ----------
+  // ---------- 1) Documents apprenant (test compétences, projet pro, analyse du besoin) ----------
   const { data: docsData } = await supabase
     .from("apprenant_documents_completes" as any)
     .select("type_document, donnees, completed_at, titre")
@@ -51,28 +51,23 @@ export async function buildDossierApprenantIntoZip(
   const documentsCompletes = (docsData as any[]) || [];
   const getDoc = (t: string) => documentsCompletes.find(d => d.type_document === t);
 
-  const formulaires = [
-    { label: "Fiche de positionnement stagiaire", docType: "test-competences" },
-    { label: "Questionnaire projet professionnel", docType: "projet-professionnel" },
-    { label: "Vérification des prérequis", docType: "analyse-besoin" },
-    { label: "Conditions Générales de Vente", docType: "cgv-acceptation" },
-    { label: "CGV et Règlement Intérieur", docType: "cgv-ri-acceptation" },
-    { label: "Évaluation pédagogique", docType: "evaluation-acquis" },
-    { label: "Enquête de satisfaction", docType: "satisfaction" },
-  ].map(it => {
+  const docsIndividuels: { docType: string; titre: string; folder: string }[] = [
+    { docType: "test-competences", titre: "Fiche de positionnement stagiaire", folder: "test-competences" },
+    { docType: "projet-professionnel", titre: "Questionnaire projet professionnel", folder: "projet-professionnel" },
+    { docType: "analyse-besoin", titre: "Analyse du besoin", folder: "analyse-besoin" },
+  ];
+  for (const it of docsIndividuels) {
     const d = getDoc(it.docType);
-    return {
-      label: it.label,
-      category: "formulaire" as const,
-      found: !!d,
-      completedAt: d?.completed_at,
-      donnees: d?.donnees || null,
-    };
-  }).filter(i => i.found); // Ne pas afficher les documents manquants dans le PDF
-  try {
-    const cq = generateControleQualitePdf(apprenant, formulaires, { returnBlob: true });
-    if (cq) root.folder("controle-qualite")!.file(cq.fileName, cq.blob);
-  } catch (e) { console.error("[dossier] CQ failed", e); }
+    if (!d) continue;
+    try {
+      const res = generateDocumentIndividuelPdf(
+        apprenant,
+        { type_document: it.docType, titre: it.titre, donnees: d.donnees, completed_at: d.completed_at },
+        { returnBlob: true },
+      );
+      if (res) root.folder(it.folder)!.file(res.fileName, res.blob);
+    } catch (e) { console.error("[dossier] doc individuel failed", it.docType, e); }
+  }
 
   // ---------- 1b) Programme officiel ----------
   try {
