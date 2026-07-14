@@ -284,32 +284,37 @@ export function BulkDownloadDialog() {
           });
         }
 
-        const startStr =
-          apprenant.date_debut_formation || apprenant.date_debut_cours_en_ligne;
-        const endStr =
-          apprenant.date_fin_formation || apprenant.date_fin_cours_en_ligne;
-        if (startStr && endStr) {
-          try {
-            let cursor = startOfWeek(parseISO(startStr), { weekStartsOn: 1 });
-            const stop = endOfWeek(parseISO(endStr), { weekStartsOn: 1 });
-            let safety = 0;
-            while (
-              (isBefore(cursor, stop) || +cursor === +stop) &&
-              safety < 260
-            ) {
-              addWeek(cursor);
-              cursor = addWeeks(cursor, 1);
-              safety++;
-            }
-          } catch {}
+        // e-learning : pas d'itération des semaines vides — uniquement les feuilles pratiques
+        const isElearningOnly = /(^|-)e($|-)/i.test(String(apprenant.type_apprenant || ""));
+
+        if (!isElearningOnly) {
+          const startStr =
+            apprenant.date_debut_formation || apprenant.date_debut_cours_en_ligne;
+          const endStr =
+            apprenant.date_fin_formation || apprenant.date_fin_cours_en_ligne;
+          if (startStr && endStr) {
+            try {
+              let cursor = startOfWeek(parseISO(startStr), { weekStartsOn: 1 });
+              const stop = endOfWeek(parseISO(endStr), { weekStartsOn: 1 });
+              let safety = 0;
+              while (
+                (isBefore(cursor, stop) || +cursor === +stop) &&
+                safety < 260
+              ) {
+                addWeek(cursor);
+                cursor = addWeeks(cursor, 1);
+                safety++;
+              }
+            } catch {}
+          }
         }
 
         const emargFolder = root.folder(
           "feuilles-emargement-hebdomadaires",
         )!;
-        const sortedWeeks = Array.from(weekMap.values()).sort(
-          (a, b) => a.weekStart.getTime() - b.weekStart.getTime(),
-        );
+        const sortedWeeks = Array.from(weekMap.values())
+          .filter(w => !isElearningOnly || w.sigs.length > 0)
+          .sort((a, b) => a.weekStart.getTime() - b.weekStart.getTime());
         for (const w of sortedWeeks) {
           const wsStr = format(w.weekStart, "yyyy-MM-dd");
           const weStr = format(w.weekEnd, "yyyy-MM-dd");
