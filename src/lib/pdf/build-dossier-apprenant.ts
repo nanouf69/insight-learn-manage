@@ -1,7 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import JSZip from "jszip";
 import { format, startOfWeek, endOfWeek, getISOWeek, getYear, addWeeks, isBefore, parseISO } from "date-fns";
-import { generateControleQualitePdf } from "@/lib/pdf/controle-qualite";
+import { generateDocumentIndividuelPdf } from "@/lib/pdf/document-individuel";
 import { generateProgrammeFormationPdf } from "@/lib/pdf/programme-formation";
 import { generateEmargementSemainePdf } from "@/lib/pdf/emargement-semaine";
 import { generateReleveConnexionsPdf } from "@/lib/pdf/releve-connexions";
