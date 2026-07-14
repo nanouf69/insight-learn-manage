@@ -106,7 +106,18 @@ export function generateReleveConnexionsPdf(
   const h = Math.floor(totalMin / 60);
   const m = totalMin % 60;
   doc.setFont("helvetica", "bold");
-  doc.text(`Duree cumulee : ${h}h${String(m).padStart(2, "0")}`, margin, 62);
+  doc.text(`Duree cumulee e-learning : ${h}h${String(m).padStart(2, "0")}`, margin, 62);
+  if (opts?.tempsPresentielTheorie) {
+    doc.text(`Presentiel theorie : ${opts.tempsPresentielTheorie}`, margin + 90, 62);
+  }
+  if (opts?.tempsPratique) {
+    doc.text(`Pratique (presentiel) : ${opts.tempsPratique}`, margin + 165, 62);
+  }
+  if (opts?.tempsTotal) {
+    doc.setTextColor(13, 37, 64);
+    doc.text(`TOTAL formation : ${opts.tempsTotal}`, margin, 68);
+    doc.setTextColor(40, 40, 40);
+  }
   doc.setFont("helvetica", "normal");
 
   if (!rows || rows.length === 0) {
