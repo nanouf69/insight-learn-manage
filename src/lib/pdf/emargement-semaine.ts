@@ -61,7 +61,7 @@ export function generateEmargementSemainePdf(
   let y = 56;
   const fullName = `${apprenant.civilite || ''} ${apprenant.prenom} ${apprenant.nom}`.trim();
   doc.setFillColor(240, 245, 250);
-  doc.rect(margin, y - 4, pw - margin * 2, 24, 'F');
+  doc.rect(margin, y - 4, pw - margin * 2, 30, 'F');
   doc.setFontSize(9);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(13, 37, 64);
@@ -72,8 +72,11 @@ export function generateEmargementSemainePdf(
   doc.text(`Période : du ${format(parseISO(weekStart), 'dd/MM/yyyy')} au ${format(parseISO(weekEnd), 'dd/MM/yyyy')}`, margin + 4, y + 16);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(13, 37, 64);
+  doc.text(`Formateur : ${formateurNom}`, margin + 4, y + 23);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(13, 37, 64);
   doc.text(weekLabel, pw - margin - 4, y + 2, { align: 'right' });
-  y += 28;
+  y += 34;
 
   // Group signatures by date
   const byDate = new Map<string, WeekEmargementSignature[]>();
