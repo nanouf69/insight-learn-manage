@@ -185,7 +185,7 @@ export function generateFicheProgression(data: FicheProgressionData, options?: {
     doc.setTextColor(255);
     doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
-    doc.text(`MODULE ${idx + 1} - ${mod.nom}`, margin + 4, y + 5.5);
+    doc.text(sanitize(`MODULE ${idx + 1} - ${mod.nom}`), margin + 4, y + 5.5);
     doc.setTextColor(0);
     y += 12;
 
@@ -193,11 +193,11 @@ export function generateFicheProgression(data: FicheProgressionData, options?: {
       const typeIcon = l.type === 'cours' ? 'Cours' : l.type === 'examen' ? 'Examen' : 'Quiz';
       return [
         typeIcon,
-        l.label,
+        sanitize(l.label),
         l.date,
-        l.duree,
-        l.score || '-',
-        l.statut,
+        fmtDuree(l.duree),
+        sanitize(l.score) || '-',
+        sanitize(l.statut),
       ];
     });
 
