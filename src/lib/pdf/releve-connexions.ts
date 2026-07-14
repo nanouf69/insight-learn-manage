@@ -111,8 +111,9 @@ export function generateReleveConnexionsPdf(
   }
   const h = Math.floor(totalMin / 60);
   const m = totalMin % 60;
+  const eLearningLabel = opts?.tempsEnLearning || `${h}h${String(m).padStart(2, "0")}`;
   doc.setFont("helvetica", "bold");
-  doc.text(`Duree cumulee e-learning : ${h}h${String(m).padStart(2, "0")}`, margin, 62);
+  doc.text(`Duree cumulee e-learning : ${eLearningLabel}`, margin, 62);
   if (opts?.tempsPresentielTheorie) {
     doc.text(`Presentiel theorie : ${opts.tempsPresentielTheorie}`, margin + 90, 62);
   }
