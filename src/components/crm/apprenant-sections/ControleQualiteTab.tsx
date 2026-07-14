@@ -2,13 +2,17 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, XCircle, FileText, Eye, ChevronDown, ChevronUp, ClipboardCheck, Download } from "lucide-react";
+import { CheckCircle2, XCircle, FileText, Eye, ChevronDown, ChevronUp, ClipboardCheck, Download, Package, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
-import { format } from "date-fns";
+import { format, startOfWeek, endOfWeek, getISOWeek, getYear } from "date-fns";
 import { fr } from "date-fns/locale";
 import { generateControleQualitePdf } from "@/lib/pdf/controle-qualite";
+import { generateEmargementSemainePdf } from "@/lib/pdf/emargement-semaine";
 import { getCompetencesForFormation } from "@/components/cours-en-ligne/competences-checklist-data";
+import JSZip from "jszip";
+import { saveAs } from "file-saver";
+import { useToast } from "@/hooks/use-toast";
 
 /** Renders donnees content with real question texts instead of raw JSON */
 function DonneesRenderer({ donnees }: { donnees: any }) {
