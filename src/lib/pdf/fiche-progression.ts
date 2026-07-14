@@ -121,7 +121,7 @@ export function generateFicheProgression(data: FicheProgressionData, options?: {
     doc.setTextColor(0);
 
     doc.setFont('helvetica', 'bold');
-    doc.text('E-learning (temps actif) :', col1, y + 40);
+    doc.text('E-learning (temps total) :', col1, y + 40);
     doc.setFont('helvetica', 'normal');
     doc.text(data.tempsEnLigne || '-', col1 + 55, y + 40);
 
