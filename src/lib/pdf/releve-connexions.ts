@@ -20,6 +20,10 @@ export interface ConnexionRow {
   current_module?: string | null;
   ip_address?: string | null;
   user_agent?: string | null;
+  // Enriched (optional) — computed by caller
+  modules_consultes?: string[];
+  quiz_realises?: string[];
+  cours_exercices?: string[];
 }
 
 function fmt(d?: string | null) {
@@ -27,14 +31,29 @@ function fmt(d?: string | null) {
   try { return format(new Date(d), "dd/MM/yyyy HH:mm", { locale: fr }); } catch { return ""; }
 }
 
+function fmtDate(d?: string | null) {
+  if (!d) return "";
+  try { return format(new Date(d), "dd/MM/yyyy", { locale: fr }); } catch { return ""; }
+}
+
+function fmtTime(d?: string | null) {
+  if (!d) return "";
+  try { return format(new Date(d), "HH:mm", { locale: fr }); } catch { return ""; }
+}
+
 function duree(start?: string | null, end?: string | null) {
   if (!start || !end) return "";
-  const ms = new Date(end).getTime() - new Date(start).getTime();
-  if (!isFinite(ms) || ms <= 0) return "";
-  const min = Math.round(ms / 60000);
+  const startMs = new Date(start).getTime();
+  const rawEndMs = new Date(end).getTime();
+  if (!isFinite(startMs) || !isFinite(rawEndMs)) return "";
+  const MAX = 7 * 60 * 60 * 1000;
+  const endMs = Math.min(rawEndMs, startMs + MAX);
+  const ms = endMs - startMs;
+  if (ms <= 0) return "";
+  const min = Math.floor(ms / 60000);
   const h = Math.floor(min / 60);
   const m = min % 60;
-  return h > 0 ? `${h}h${String(m).padStart(2, "0")}` : `${m} min`;
+  return `${h}h${String(m).padStart(2, "0")}`;
 }
 
 function shortUA(ua?: string | null) {
@@ -54,6 +73,21 @@ function shortUA(ua?: string | null) {
   return os ? `${browser} (${os})` : browser;
 }
 
+function joinList(items?: string[] | null): string {
+  if (!items || items.length === 0) return "—";
+  // Dedupe & trim
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const it of items) {
+    const t = (it || "").trim();
+    if (!t) continue;
+    if (seen.has(t)) continue;
+    seen.add(t);
+    out.push(t);
+  }
+  return out.length > 0 ? out.join("\n• ").replace(/^/, "• ") : "—";
+}
+
 export function generateReleveConnexionsPdf(
   apprenant: { nom: string; prenom: string; civilite?: string; type_apprenant?: string },
   rows: ConnexionRow[],
@@ -62,7 +96,7 @@ export function generateReleveConnexionsPdf(
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
   const pw = doc.internal.pageSize.getWidth();
   const ph = doc.internal.pageSize.getHeight();
-  const margin = 12;
+  const margin = 8;
 
   // Header
   try { doc.addImage(logoImage, "PNG", margin, 8, 40, 14); } catch {}
@@ -93,8 +127,7 @@ export function generateReleveConnexionsPdf(
   doc.text(`Nombre de connexions : ${rows.length}`, pw - margin, 50, { align: "right" });
   doc.text(`Genere le ${format(new Date(), "dd/MM/yyyy HH:mm", { locale: fr })}`, pw - margin, 56, { align: "right" });
 
-  // Total duration
-  // Total duration (plafonné à 7h par session — identique au rapport d'activité et à la fiche de progression)
+  // Synthèse durées (plafonné à 7h par session — identique au rapport d'activité)
   const MAX_SESSION_MS = 7 * 60 * 60 * 1000;
   let totalMin = 0;
   for (const r of rows) {
@@ -127,54 +160,90 @@ export function generateReleveConnexionsPdf(
   }
   doc.setFont("helvetica", "normal");
 
+  // Rappel méthodologique
+  doc.setFontSize(7);
+  doc.setTextColor(110, 110, 110);
+  doc.text(
+    "Note : chaque session est plafonnee a 7h. Une session n'est comptabilisee que si l'apprenant a consulte un module, un exercice ou un quiz.",
+    margin, 73,
+  );
+  doc.setTextColor(40, 40, 40);
+
   if (!rows || rows.length === 0) {
     doc.setFont("helvetica", "bold");
     doc.setFontSize(11);
     doc.setTextColor(200, 50, 50);
     doc.text(
       "Aucune connexion e-learning enregistree pour cet apprenant.",
-      pw / 2, 90, { align: "center" },
+      pw / 2, 95, { align: "center" },
     );
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
     doc.setTextColor(80, 80, 80);
     doc.text(
       "Cet apprenant n'a pas encore initialise de session sur la plateforme e-learning,",
-      pw / 2, 100, { align: "center" },
+      pw / 2, 105, { align: "center" },
     );
     doc.text(
       "ou suit une formation exclusivement en presentiel.",
-      pw / 2, 106, { align: "center" },
+      pw / 2, 111, { align: "center" },
     );
   } else {
-    const body = rows.map((r) => [
-      fmt(r.started_at),
-      fmt(r.ended_at || r.last_seen_at),
-      duree(r.started_at, r.ended_at || r.last_seen_at),
-      r.current_module || "-",
-      r.source || "-",
-      r.end_reason || "-",
-      r.ip_address || "-",
-      shortUA(r.user_agent),
-    ]);
+    const body = rows.map((r) => {
+      const startedAt = r.started_at || null;
+      const endedAt = r.ended_at || r.last_seen_at || null;
+      const modulesTxt = joinList(r.modules_consultes);
+      const quizTxt = joinList(r.quiz_realises);
+      const exosTxt = joinList(r.cours_exercices);
+      // Fallback module label if no enriched data provided
+      const moduleFallback =
+        (r.modules_consultes && r.modules_consultes.length > 0)
+          ? modulesTxt
+          : (r.current_module ? `• ${r.current_module}` : "—");
+      return [
+        fmtDate(startedAt),
+        fmtTime(startedAt),
+        fmtTime(endedAt),
+        duree(startedAt, endedAt),
+        moduleFallback,
+        quizTxt,
+        exosTxt,
+        r.ip_address || "-",
+        shortUA(r.user_agent),
+        r.end_reason || "-",
+      ];
+    });
 
     autoTable(doc, {
-      startY: 68,
-      head: [["Debut", "Fin", "Duree", "Module", "Source", "Fin de session", "IP", "Navigateur"]],
+      startY: 78,
+      head: [[
+        "Date",
+        "Debut",
+        "Fin",
+        "Duree",
+        "Module consulte",
+        "Quiz / Examens realises",
+        "Cours & Exercices effectues",
+        "IP",
+        "Navigateur",
+        "Fin session",
+      ]],
       body,
       theme: "grid",
-      styles: { fontSize: 8, cellPadding: 2, valign: "middle", overflow: "linebreak" },
-      headStyles: { fillColor: [13, 37, 64], textColor: 255, fontStyle: "bold", fontSize: 8 },
+      styles: { fontSize: 7, cellPadding: 1.6, valign: "top", overflow: "linebreak" },
+      headStyles: { fillColor: [13, 37, 64], textColor: 255, fontStyle: "bold", fontSize: 7.5, halign: "center" },
       alternateRowStyles: { fillColor: [245, 248, 252] },
       columnStyles: {
-        0: { cellWidth: 32 },
-        1: { cellWidth: 32 },
-        2: { cellWidth: 18, halign: "center" },
-        3: { cellWidth: 45 },
-        4: { cellWidth: 22 },
-        5: { cellWidth: 30 },
-        6: { cellWidth: 28 },
-        7: { cellWidth: "auto" },
+        0: { cellWidth: 20, halign: "center" },
+        1: { cellWidth: 13, halign: "center" },
+        2: { cellWidth: 13, halign: "center" },
+        3: { cellWidth: 14, halign: "center", fontStyle: "bold" },
+        4: { cellWidth: 50 },
+        5: { cellWidth: 50 },
+        6: { cellWidth: 55 },
+        7: { cellWidth: 26 },
+        8: { cellWidth: 26 },
+        9: { cellWidth: "auto", halign: "center" },
       },
       margin: { left: margin, right: margin },
       didDrawPage: () => {
