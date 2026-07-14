@@ -5,6 +5,7 @@ import logoImage from '@/assets/logo-ftransport.png';
 import { getCompetencesForFormation } from '@/components/cours-en-ligne/competences-checklist-data';
 import { ALL_DATES_EXAMEN_THEORIQUE } from '@/lib/examDatesConfig';
 import { parseFrenchDate } from '@/lib/filterPastDates';
+import { SIGNATURE_NAOUFAL_DATA_URL } from '@/lib/signatureNaoufal';
 
 // Returns the next upcoming theoretical exam session strictly after `today`,
 // or null if all configured dates are past.
