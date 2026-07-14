@@ -57,7 +57,7 @@ function shortUA(ua?: string | null) {
 export function generateReleveConnexionsPdf(
   apprenant: { nom: string; prenom: string; civilite?: string; type_apprenant?: string },
   rows: ConnexionRow[],
-  opts?: { returnBlob?: boolean; tempsPratique?: string; tempsPresentielTheorie?: string; tempsTotal?: string },
+  opts?: { returnBlob?: boolean; tempsEnLearning?: string; tempsPratique?: string; tempsPresentielTheorie?: string; tempsTotal?: string },
 ): { blob: Blob; fileName: string } | void {
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
   const pw = doc.internal.pageSize.getWidth();
