@@ -583,32 +583,33 @@ export function ControleQualiteTab({ apprenant }: Props) {
             return { nom, lignes };
           });
 
-          // ---- E-learning : connexions clippées par activité (mêmes règles que useStudentEffectiveHours)
-          const MAX_SESSION_MS = 7 * 60 * 60 * 1000;
+          // ---- E-learning : temps ACTIF uniquement (cours/quiz/exercice)
+          // On somme les intervalles entre événements d'activité tant que le gap est court (<= 5 min),
+          // et on ajoute une "queue" fixe (2 min) au dernier événement de chaque rafale.
+          const GAP_MS = 5 * 60 * 1000;
+          const TAIL_MS = 2 * 60 * 1000;
           const actTs = acts
             .map((a: any) => Date.parse(a.occurred_at))
             .concat(quizzes.map((q: any) => Date.parse(q.completed_at)))
             .filter((t: number) => !Number.isNaN(t))
             .sort((a: number, b: number) => a - b);
-          let onlineMinutes = 0;
-          for (const c of cnxAll) {
-            const start = Date.parse(c.started_at);
-            if (Number.isNaN(start)) continue;
-            const rawEnd = c.ended_at ? Date.parse(c.ended_at) : Date.parse(c.last_seen_at);
-            const end = Number.isNaN(rawEnd) ? start : Math.min(rawEnd, start + MAX_SESSION_MS);
-            if (end <= start) continue;
-            // Une activité doit exister dans la fenêtre
-            let lo = 0, hi = actTs.length - 1, found = false;
-            while (lo <= hi) {
-              const mid = (lo + hi) >> 1;
-              const v = actTs[mid];
-              if (v < start) lo = mid + 1;
-              else if (v > end) hi = mid - 1;
-              else { found = true; break; }
+          let onlineMs = 0;
+          if (actTs.length > 0) {
+            let burstStart = actTs[0];
+            let prev = actTs[0];
+            for (let i = 1; i < actTs.length; i++) {
+              const t = actTs[i];
+              if (t - prev <= GAP_MS) {
+                prev = t;
+              } else {
+                onlineMs += (prev - burstStart) + TAIL_MS;
+                burstStart = t;
+                prev = t;
+              }
             }
-            if (found) onlineMinutes += Math.max(0, Math.round((end - start) / 60000));
+            onlineMs += (prev - burstStart) + TAIL_MS;
           }
-          const onlineSec = onlineMinutes * 60;
+          const onlineSec = Math.round(onlineMs / 1000);
 
           // ---- Présentiel théorie : émargements FC
           const byDate = new Map<string, Set<string>>();
