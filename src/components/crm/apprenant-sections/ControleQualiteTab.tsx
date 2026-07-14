@@ -583,31 +583,17 @@ export function ControleQualiteTab({ apprenant }: Props) {
             return { nom, lignes };
           });
 
-          // ---- E-learning : temps ACTIF uniquement (cours/quiz/exercice)
-          // On somme les intervalles entre événements d'activité tant que le gap est court (<= 5 min),
-          // et on ajoute une "queue" fixe (2 min) au dernier événement de chaque rafale.
-          const GAP_MS = 5 * 60 * 1000;
-          const TAIL_MS = 2 * 60 * 1000;
-          const actTs = acts
-            .map((a: any) => Date.parse(a.occurred_at))
-            .concat(quizzes.map((q: any) => Date.parse(q.completed_at)))
-            .filter((t: number) => !Number.isNaN(t))
-            .sort((a: number, b: number) => a - b);
+          // ---- E-learning : temps TOTAL de connexion (somme des sessions de connexion, plafonné à 7h/session)
+          const MAX_SESSION_MS = 7 * 60 * 60 * 1000;
           let onlineMs = 0;
-          if (actTs.length > 0) {
-            let burstStart = actTs[0];
-            let prev = actTs[0];
-            for (let i = 1; i < actTs.length; i++) {
-              const t = actTs[i];
-              if (t - prev <= GAP_MS) {
-                prev = t;
-              } else {
-                onlineMs += (prev - burstStart) + TAIL_MS;
-                burstStart = t;
-                prev = t;
-              }
-            }
-            onlineMs += (prev - burstStart) + TAIL_MS;
+          for (const c of cnxRawRows) {
+            const startRaw = c.started_at ? Date.parse(c.started_at) : NaN;
+            if (Number.isNaN(startRaw)) continue;
+            const endSrc = c.ended_at || c.last_action_at || c.last_seen_at;
+            const endRaw = endSrc ? Date.parse(endSrc) : startRaw;
+            if (Number.isNaN(endRaw) || endRaw <= startRaw) continue;
+            const dur = Math.min(endRaw - startRaw, MAX_SESSION_MS);
+            onlineMs += dur;
           }
           const onlineSec = Math.round(onlineMs / 1000);
 
