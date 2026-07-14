@@ -181,6 +181,7 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
               examenNum: num,
               examenLabel: `Examen Blanc ${num} — ${typeLabel(type)}`,
               type,
+              quizId: examPart,
               results: [],
               totalScore: 0,
               totalMax: 0,
