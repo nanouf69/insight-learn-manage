@@ -33,6 +33,11 @@ export interface FicheProgressionData {
   periodeDebut: string;
   periodeFin: string;
   tempsTotal: string;
+  /** Détail optionnel du temps par modalité */
+  tempsEnLigne?: string;
+  tempsPresentielTheorie?: string;
+  tempsPresentielPratique?: string;
+  tempsPresentielTotal?: string;
   modules: ProgressionModule[];
   recap: {
     modulesCompletes: number;
