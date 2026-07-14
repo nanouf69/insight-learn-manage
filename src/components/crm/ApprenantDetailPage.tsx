@@ -855,8 +855,30 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
                       <p className="text-sm text-muted-foreground">Date de fin</p>
                       <p className="font-medium">{apprenant.date_fin_formation || '-'}</p>
                     </div>
+                    {apprenantSessions && apprenantSessions.length > 0 && (
+                      <div className="pt-2 border-t">
+                        <p className="text-sm text-muted-foreground mb-2">Session(s) rattachée(s)</p>
+                        <div className="space-y-2">
+                          {apprenantSessions.map((s: any) => (
+                            <Button
+                              key={s.id}
+                              variant="outline"
+                              size="sm"
+                              className="w-full justify-start gap-2"
+                              onClick={() => navigate(`/sessions/${s.id}`)}
+                            >
+                              <Calendar className="w-4 h-4" />
+                              <span className="truncate">
+                                {s.nom || `Session ${s.type_session}`} — {s.date_debut}{s.date_fin && s.date_fin !== s.date_debut ? ` → ${s.date_fin}` : ''}
+                              </span>
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
+
               </div>
             </div>
           )}
