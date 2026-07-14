@@ -120,6 +120,8 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
           score_obtenu: row.score_obtenu ?? 0,
           score_max: row.score_max ?? 20,
           completed_at: row.completed_at,
+          reponses: (row as any).details?.reponses ?? null,
+          correctionsIA: (row as any).details?.correctionsIA ?? null,
         };
 
         if (existing) {
@@ -134,6 +136,7 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
             examenNum: num,
             examenLabel: `Examen Blanc ${num} — ${typeLabel(type)}`,
             type,
+            quizId: row.quiz_id,
             results: [result],
             totalScore: result.score_obtenu,
             totalMax: result.score_max,
