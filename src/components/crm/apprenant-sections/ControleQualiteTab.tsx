@@ -417,16 +417,8 @@ export function ControleQualiteTab({ apprenant }: Props) {
           .order("started_at", { ascending: false });
         const cnxRawRows = (cnxData as any[]) || [];
         const releveFolder = zip.folder("releve-connexions")!;
-        try {
-          const relevePdf = generateReleveConnexionsPdf(apprenant, cnxRawRows, { returnBlob: true }) as { blob: Blob; fileName: string } | undefined;
-          if (relevePdf?.blob) {
-            releveFolder.file(relevePdf.fileName, relevePdf.blob);
-          } else {
-            console.warn("[bulk-download] releve PDF: no blob returned");
-          }
-        } catch (pdfErr) {
-          console.error("[bulk-download] releve PDF generation failed:", pdfErr);
-        }
+        // Le PDF du relevé est généré plus bas (après le calcul des temps présentiel/pratique)
+        // pour inclure la synthèse complète des durées.
 
         // 3b) Rapport d'activité élève (HTML — même vue que "Imprimer le rapport")
         try {
@@ -691,8 +683,28 @@ export function ControleQualiteTab({ apprenant }: Props) {
           if (prog?.blob) {
             zip.folder("suivi-progression")!.file(prog.fileName, prog.blob);
           }
+
+          // Relevé de connexions (avec synthèse des durées : e-learning, théorie, pratique, total)
+          try {
+            const relevePdf = generateReleveConnexionsPdf(apprenant, cnxRawRows, {
+              returnBlob: true,
+              tempsPresentielTheorie: fmtDur(theorieSec),
+              tempsPratique: fmtDur(pratiqueSec),
+              tempsTotal: fmtDur(grandTotalSec),
+            }) as { blob: Blob; fileName: string } | undefined;
+            if (relevePdf?.blob) {
+              releveFolder.file(relevePdf.fileName, relevePdf.blob);
+            }
+          } catch (pdfErr) {
+            console.error("[bulk-download] releve PDF generation failed:", pdfErr);
+          }
         } catch (progErr) {
           console.error("[bulk-download] suivi progression failed:", progErr);
+          // Fallback: relevé simple sans synthèse
+          try {
+            const relevePdf = generateReleveConnexionsPdf(apprenant, cnxRawRows, { returnBlob: true }) as { blob: Blob; fileName: string } | undefined;
+            if (relevePdf?.blob) releveFolder.file(relevePdf.fileName, relevePdf.blob);
+          } catch {}
         }
 
 
