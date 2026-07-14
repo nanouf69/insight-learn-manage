@@ -653,8 +653,10 @@ export function generateDocumentIndividuelPdf(
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(13, 37, 64);
     let decisionText = "Décision de l'organisme de formation : admis";
-    if (!isPresentiel) {
-      decisionText += `   —   Date : ${format(new Date(), 'dd/MM/yyyy', { locale: fr })}`;
+    if (!isPresentiel && document.completed_at) {
+      try {
+        decisionText += `   —   Date : ${format(new Date(document.completed_at), 'dd/MM/yyyy', { locale: fr })}`;
+      } catch {}
     }
     doc.text(decisionText, margin, y);
     y += 4;
