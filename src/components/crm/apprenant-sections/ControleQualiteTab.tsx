@@ -505,6 +505,7 @@ export function ControleQualiteTab({ apprenant }: Props) {
           const cnxAll = (cnxAllRes.data as any[]) || [];
           const emargAll = (emargAllRes.data as any[]) || [];
           const sessInscrits = (sessInscritsRes.data as any[]) || [];
+          const exos = (exosRes.data as any[]) || [];
           const completedIds = new Set(compls.map((c: any) => c.module_id));
 
           // Group activités by module — derive duration from consecutive occurred_at within same module (cap 15min)
