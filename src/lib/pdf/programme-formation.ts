@@ -598,12 +598,11 @@ export function generateProgrammeFormationPdf(
         for (let i = 0; i < lines.length; i++) {
           ensureSpace(lineH);
           if (i === 0) {
-            doc.setTextColor(212, 175, 55);
-            doc.setFont("helvetica", "bold");
-            doc.text("\u2022", margin + 2, y);
+            doc.setFillColor(212, 175, 55);
+            doc.circle(margin + 2.8, y - 1.4, 0.9, "F");
             doc.setTextColor(40, 40, 40);
-            doc.setFont("helvetica", "normal");
           }
+
           doc.text(lines[i], margin + bulletIndent + 2, y);
           y += lineH;
         }
