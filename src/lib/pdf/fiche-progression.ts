@@ -44,7 +44,7 @@ export interface FicheProgressionData {
   };
 }
 
-export function generateFicheProgression(data: FicheProgressionData) {
+export function generateFicheProgression(data: FicheProgressionData, options?: { returnBlob?: boolean }) {
   const doc = new jsPDF();
   const pw = doc.internal.pageSize.getWidth();
   const ph = doc.internal.pageSize.getHeight();
