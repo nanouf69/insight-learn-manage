@@ -471,7 +471,7 @@ export function ControleQualiteTab({ apprenant }: Props) {
 
         // 3c) Suivi de progression e-learning (PDF Qualiopi)
         try {
-          const [actAllRes, complAllRes, qrAllRes] = await Promise.all([
+          const [actAllRes, complAllRes, qrAllRes, cnxAllRes, emargAllRes, sessInscritsRes] = await Promise.all([
             supabase
               .from("apprenant_module_activites")
               .select("module_id, module_nom, action_type, occurred_at")
@@ -486,6 +486,18 @@ export function ControleQualiteTab({ apprenant }: Props) {
               .select("quiz_titre, matiere_nom, score_obtenu, score_max, note_sur_20, reussi, duree_secondes, completed_at")
               .eq("apprenant_id", apprenant.id)
               .order("completed_at", { ascending: true }),
+            supabase
+              .from("apprenant_connexions")
+              .select("started_at, ended_at, last_seen_at")
+              .eq("apprenant_id", apprenant.id),
+            supabase
+              .from("emargements_fc" as any)
+              .select("date_emargement, demi_journee, absent")
+              .eq("apprenant_id", apprenant.id),
+            supabase
+              .from("session_apprenants")
+              .select("session_id, heure_debut_personnalisee, heure_fin_personnalisee, sessions:session_id(type_session, heure_debut, heure_fin, date_debut, date_fin)")
+              .eq("apprenant_id", apprenant.id),
           ]);
           if (actAllRes.error) console.error("[bulk-download] activites error:", actAllRes.error);
           if (complAllRes.error) console.error("[bulk-download] completion error:", complAllRes.error);
@@ -493,6 +505,9 @@ export function ControleQualiteTab({ apprenant }: Props) {
           const acts = (actAllRes.data as any[]) || [];
           const compls = (complAllRes.data as any[]) || [];
           const quizzes = (qrAllRes.data as any[]) || [];
+          const cnxAll = (cnxAllRes.data as any[]) || [];
+          const emargAll = (emargAllRes.data as any[]) || [];
+          const sessInscrits = (sessInscritsRes.data as any[]) || [];
           const completedIds = new Set(compls.map((c: any) => c.module_id));
 
           // Group activités by module — derive duration from consecutive occurred_at within same module (cap 15min)
@@ -536,10 +551,10 @@ export function ControleQualiteTab({ apprenant }: Props) {
 
           const fmtDate = (s?: string) => s ? format(new Date(s), "dd/MM/yyyy") : "-";
           const fmtDur = (sec: number) => {
-            if (!sec) return "-";
+            if (!sec) return "0h00";
             const h = Math.floor(sec / 3600);
             const m = Math.floor((sec % 3600) / 60);
-            return h > 0 ? `${h}h${String(m).padStart(2, "0")}` : `${m}min`;
+            return `${h}h${String(m).padStart(2, "0")}`;
           };
 
           const progModules: ProgressionModule[] = Array.from(modulesMap.entries()).map(([nom, info]) => {
@@ -568,8 +583,84 @@ export function ControleQualiteTab({ apprenant }: Props) {
             return { nom, lignes };
           });
 
-          // Totals
-          const totalSec = Array.from(modulesMap.values()).reduce((s, m) => s + m.totalSec, 0);
+          // ---- E-learning : connexions clippées par activité (mêmes règles que useStudentEffectiveHours)
+          const MAX_SESSION_MS = 7 * 60 * 60 * 1000;
+          const actTs = acts
+            .map((a: any) => Date.parse(a.occurred_at))
+            .concat(quizzes.map((q: any) => Date.parse(q.completed_at)))
+            .filter((t: number) => !Number.isNaN(t))
+            .sort((a: number, b: number) => a - b);
+          let onlineMinutes = 0;
+          for (const c of cnxAll) {
+            const start = Date.parse(c.started_at);
+            if (Number.isNaN(start)) continue;
+            const rawEnd = c.ended_at ? Date.parse(c.ended_at) : Date.parse(c.last_seen_at);
+            const end = Number.isNaN(rawEnd) ? start : Math.min(rawEnd, start + MAX_SESSION_MS);
+            if (end <= start) continue;
+            // Une activité doit exister dans la fenêtre
+            let lo = 0, hi = actTs.length - 1, found = false;
+            while (lo <= hi) {
+              const mid = (lo + hi) >> 1;
+              const v = actTs[mid];
+              if (v < start) lo = mid + 1;
+              else if (v > end) hi = mid - 1;
+              else { found = true; break; }
+            }
+            if (found) onlineMinutes += Math.max(0, Math.round((end - start) / 60000));
+          }
+          const onlineSec = onlineMinutes * 60;
+
+          // ---- Présentiel théorie : émargements FC
+          const byDate = new Map<string, Set<string>>();
+          for (const r of emargAll) {
+            if (r.absent) continue;
+            const date = String(r.date_emargement || "").slice(0, 10);
+            const slot = String(r.demi_journee || "").trim().toLowerCase();
+            if (!date || !slot) continue;
+            if (!byDate.has(date)) byDate.set(date, new Set());
+            byDate.get(date)!.add(slot);
+          }
+          let theorieHours = 0;
+          for (const slots of byDate.values()) {
+            const eveningSlot = slots.has("soir") || slots.has("soir_1") || slots.has("soir_2");
+            if (eveningSlot) {
+              theorieHours += Math.min(
+                (slots.has("soir") ? 4 : 0) +
+                  (slots.has("soir_1") ? 1.5 : 0) +
+                  (slots.has("soir_2") ? 2.5 : 0),
+                4,
+              );
+            } else {
+              theorieHours += Math.min((slots.has("matin") ? 3 : 0) + (slots.has("apres_midi") ? 3 : 0), 6);
+            }
+          }
+          const theorieSec = Math.round(theorieHours * 3600);
+
+          // ---- Pratique (présentiel) : sessions de type "pratique" auxquelles l'apprenant est inscrit
+          const parseHM = (s?: string | null) => {
+            if (!s) return null;
+            const m = String(s).match(/^(\d{1,2}):(\d{2})/);
+            if (!m) return null;
+            return parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
+          };
+          let pratiqueMinutes = 0;
+          for (const si of sessInscrits) {
+            const sess = si.sessions;
+            const type = String(sess?.type_session || "").toLowerCase();
+            if (!type.includes("pratique")) continue;
+            const hd = parseHM(si.heure_debut_personnalisee) ?? parseHM(sess?.heure_debut);
+            const hf = parseHM(si.heure_fin_personnalisee) ?? parseHM(sess?.heure_fin);
+            if (hd != null && hf != null && hf > hd) {
+              pratiqueMinutes += (hf - hd);
+            } else {
+              pratiqueMinutes += 7 * 60; // valeur par défaut d'une journée pratique
+            }
+          }
+          const pratiqueSec = pratiqueMinutes * 60;
+
+          const presentielTotalSec = theorieSec + pratiqueSec;
+          const grandTotalSec = onlineSec + presentielTotalSec;
+
           const notes = quizzes
             .filter((q: any) => q.note_sur_20 != null)
             .map((q: any) => Number(q.note_sur_20));
@@ -588,7 +679,11 @@ export function ControleQualiteTab({ apprenant }: Props) {
             periodeFin: apprenant.date_fin_cours_en_ligne
               ? format(new Date(apprenant.date_fin_cours_en_ligne), "dd/MM/yyyy")
               : (apprenant.date_fin_formation ? format(new Date(apprenant.date_fin_formation), "dd/MM/yyyy") : "-"),
-            tempsTotal: fmtDur(Math.round(totalSec)),
+            tempsTotal: fmtDur(grandTotalSec),
+            tempsEnLigne: fmtDur(onlineSec),
+            tempsPresentielTheorie: fmtDur(theorieSec),
+            tempsPresentielPratique: fmtDur(pratiqueSec),
+            tempsPresentielTotal: fmtDur(presentielTotalSec),
             modules: progModules,
             recap: {
               modulesCompletes: progModules.filter(m => m.lignes[0]?.statut === "Termine").length,

@@ -33,6 +33,11 @@ export interface FicheProgressionData {
   periodeDebut: string;
   periodeFin: string;
   tempsTotal: string;
+  /** Détail optionnel du temps par modalité */
+  tempsEnLigne?: string;
+  tempsPresentielTheorie?: string;
+  tempsPresentielPratique?: string;
+  tempsPresentielTotal?: string;
   modules: ProgressionModule[];
   recap: {
     modulesCompletes: number;
@@ -74,8 +79,11 @@ export function generateFicheProgression(data: FicheProgressionData, options?: {
   doc.setTextColor(0);
   doc.setFontSize(10);
 
+  const hasBreakdown = !!(data.tempsEnLigne || data.tempsPresentielTheorie || data.tempsPresentielPratique || data.tempsPresentielTotal);
+  const infoBoxH = hasBreakdown ? 56 : 32;
+
   doc.setFillColor(240, 248, 240);
-  doc.roundedRect(margin, y - 4, pw - margin * 2, 32, 2, 2, 'F');
+  doc.roundedRect(margin, y - 4, pw - margin * 2, infoBoxH, 2, 2, 'F');
 
   const col1 = margin + 4;
   const col2 = pw / 2 + 4;
@@ -105,7 +113,35 @@ export function generateFicheProgression(data: FicheProgressionData, options?: {
   doc.setFont('helvetica', 'normal');
   doc.text(COMPANY.declaration, col1 + 38, y + 22);
 
-  y += 40;
+  if (hasBreakdown) {
+    // Titre bloc
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(0, 102, 51);
+    doc.text('Detail du temps de formation :', col1, y + 32);
+    doc.setTextColor(0);
+
+    doc.setFont('helvetica', 'bold');
+    doc.text('E-learning :', col1, y + 40);
+    doc.setFont('helvetica', 'normal');
+    doc.text(data.tempsEnLigne || '-', col1 + 30, y + 40);
+
+    doc.setFont('helvetica', 'bold');
+    doc.text('Presentiel theorie :', col2, y + 40);
+    doc.setFont('helvetica', 'normal');
+    doc.text(data.tempsPresentielTheorie || '-', col2 + 45, y + 40);
+
+    doc.setFont('helvetica', 'bold');
+    doc.text('Pratique (presentiel) :', col1, y + 48);
+    doc.setFont('helvetica', 'normal');
+    doc.text(data.tempsPresentielPratique || '-', col1 + 45, y + 48);
+
+    doc.setFont('helvetica', 'bold');
+    doc.text('Presentiel total :', col2, y + 48);
+    doc.setFont('helvetica', 'normal');
+    doc.text(data.tempsPresentielTotal || '-', col2 + 40, y + 48);
+  }
+
+  y += infoBoxH + 8;
 
   // --- MODULE TABLES ---
   data.modules.forEach((mod, idx) => {
