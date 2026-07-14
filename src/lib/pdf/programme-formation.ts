@@ -495,46 +495,59 @@ export function generateProgrammeFormationPdf(
 
   // Title band
   doc.setFillColor(13, 37, 64);
-  doc.rect(0, 26, pw, 16, "F");
+  doc.rect(0, 26, pw, 18, "F");
+  doc.setFillColor(212, 175, 55);
+  doc.rect(0, 44, pw, 1.2, "F");
   doc.setTextColor(255, 255, 255);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(13);
-  doc.text(sanitize(prog.titre), pw / 2, 36, { align: "center" });
+  doc.setFontSize(14);
+  doc.text(sanitize(prog.titre), pw / 2, 37, { align: "center" });
 
   doc.setTextColor(40, 40, 40);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
 
-  let y = 50;
+  let y = 54;
 
   // Stagiaire
   const full = sanitize(
     `${apprenant.civilite || ""} ${apprenant.prenom || ""} ${apprenant.nom || ""}`.trim(),
   );
-  doc.text(`Stagiaire : ${full}`, margin, y);
+  doc.setFont("helvetica", "bold");
+  doc.text("Stagiaire :", margin, y);
+  doc.setFont("helvetica", "normal");
+  doc.text(full, margin + doc.getTextWidth("Stagiaire :  "), y);
+  doc.setTextColor(120, 120, 120);
   doc.text(
-    `Genere le ${format(new Date(), "dd/MM/yyyy HH:mm", { locale: fr })}`,
+    `Genere le ${format(new Date(), "dd/MM/yyyy", { locale: fr })}`,
     pw - margin, y, { align: "right" },
   );
+  doc.setTextColor(40, 40, 40);
   y += 8;
 
-  // Meta info block
+  // Meta info block (framed)
+  const metaStartY = y;
   const meta: Array<[string, string]> = [
     ["Reference reglementaire", prog.reference],
-    ["Duree totale", prog.duree],
     ["Objectif general", prog.objectif],
   ];
+  y += 2;
   for (const [k, v] of meta) {
     doc.setFont("helvetica", "bold");
-    doc.text(`${k} :`, margin, y);
-    const labelW = doc.getTextWidth(`${k} : `);
+    doc.setTextColor(13, 37, 64);
+    doc.text(`${k}`, margin + 3, y);
+    y += 4.4;
     doc.setFont("helvetica", "normal");
-    const lines = doc.splitTextToSize(sanitize(v), pw - margin * 2 - labelW) as string[];
-    doc.text(lines, margin + labelW, y);
-    y += Math.max(6, lines.length * 4.6);
+    doc.setTextColor(50, 50, 50);
+    const lines = doc.splitTextToSize(sanitize(v), pw - margin * 2 - 6) as string[];
+    doc.text(lines, margin + 3, y);
+    y += lines.length * 4.4 + 2;
   }
-
-  y += 3;
+  // Frame around meta
+  doc.setDrawColor(212, 175, 55);
+  doc.setLineWidth(0.3);
+  doc.roundedRect(margin, metaStartY, pw - margin * 2, y - metaStartY, 1.5, 1.5);
+  y += 4;
 
   const lineH = 4.6;
   const bulletIndent = 5;
@@ -546,45 +559,58 @@ export function generateProgrammeFormationPdf(
     }
   };
 
-  for (const s of prog.sections) {
-    ensureSpace(14);
-    // Section title
-    doc.setDrawColor(13, 37, 64);
-    doc.setLineWidth(0.4);
-    doc.setFillColor(232, 238, 248);
-    doc.rect(margin, y - 4, pw - margin * 2, 6, "F");
+  prog.sections.forEach((s, idx) => {
+    const titleLines = doc.splitTextToSize(sanitize(s.title), pw - margin * 2 - 10) as string[];
+    const titleH = titleLines.length * 5 + 3;
+    ensureSpace(titleH + 8);
+
+    // Section title band
+    doc.setFillColor(13, 37, 64);
+    doc.rect(margin, y - 4, 3, titleH, "F");
+    doc.setFillColor(238, 243, 250);
+    doc.rect(margin + 3, y - 4, pw - margin * 2 - 3, titleH, "F");
     doc.setTextColor(13, 37, 64);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(10);
-    doc.text(sanitize(s.title), margin + 2, y);
-    y += 6;
+    let ty = y;
+    titleLines.forEach((tl, i) => {
+      doc.text(`${i === 0 ? String(idx + 1).padStart(2, "0") + ".  " : "     "}${tl}`, margin + 5, ty);
+      ty += 5;
+    });
+    y += titleH + 2;
 
     doc.setTextColor(40, 40, 40);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
 
     if (s.paragraph) {
-      const lines = doc.splitTextToSize(sanitize(s.paragraph), pw - margin * 2) as string[];
+      const lines = doc.splitTextToSize(sanitize(s.paragraph), pw - margin * 2 - 4) as string[];
       for (const line of lines) {
         ensureSpace(lineH);
-        doc.text(line, margin, y);
+        doc.text(line, margin + 2, y);
         y += lineH;
       }
     }
 
     if (s.bullets) {
       for (const b of s.bullets) {
-        const lines = doc.splitTextToSize(sanitize(b), pw - margin * 2 - bulletIndent) as string[];
+        const lines = doc.splitTextToSize(sanitize(b), pw - margin * 2 - bulletIndent - 2) as string[];
         for (let i = 0; i < lines.length; i++) {
           ensureSpace(lineH);
-          if (i === 0) doc.text("-", margin, y);
-          doc.text(lines[i], margin + bulletIndent, y);
+          if (i === 0) {
+            doc.setFillColor(212, 175, 55);
+            doc.circle(margin + 2.8, y - 1.4, 0.9, "F");
+            doc.setTextColor(40, 40, 40);
+          }
+
+          doc.text(lines[i], margin + bulletIndent + 2, y);
           y += lineH;
         }
       }
     }
-    y += 2;
-  }
+    y += 4;
+  });
+
 
   // Footer legal
   const totalPages = doc.getNumberOfPages();
