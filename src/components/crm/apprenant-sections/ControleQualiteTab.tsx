@@ -492,7 +492,7 @@ export function ControleQualiteTab({ apprenant }: Props) {
               .eq("apprenant_id", apprenant.id),
             supabase
               .from("reponses_apprenants")
-              .select("updated_at")
+              .select("exercice_id, updated_at")
               .eq("apprenant_id", apprenant.id)
               .eq("completed", true),
           ]);
