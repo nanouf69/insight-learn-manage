@@ -230,5 +230,8 @@ export function generateEmargementSemainePdf(
 
   const fileName = `emargement-semaine_${apprenant.nom}_${apprenant.prenom}_${weekStart}.pdf`
     .replace(/\s+/g, '-').toLowerCase();
+  if (opts?.returnBlob) {
+    return { blob: doc.output('blob'), fileName };
+  }
   doc.save(fileName);
 }
