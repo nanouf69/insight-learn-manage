@@ -89,6 +89,39 @@ Deno.serve(async (req) => {
         .order("date_signature", { ascending: false });
       return json({ data: data || [] });
     }
+    if (action === "delete_facture") {
+      const factureId = typeof body?.facture_id === "string" ? body.facture_id : "";
+      if (!factureId) return json({ error: "facture_id requis" }, 400);
+      const { data: fac } = await supabase
+        .from("fournisseur_factures")
+        .select("id, url, fournisseur_id")
+        .eq("id", factureId)
+        .maybeSingle();
+      if (!fac || fac.fournisseur_id !== fid) return json({ error: "Facture introuvable" }, 404);
+      const url = fac.url || "";
+      const marker = "/fournisseur-documents/";
+      const idx = url.indexOf(marker);
+      if (idx !== -1) {
+        try {
+          const path = decodeURIComponent(url.slice(idx + marker.length));
+          await supabase.storage.from("fournisseur-documents").remove([path]);
+        } catch (_) { /* ignore storage errors */ }
+      }
+      const { error: delErr } = await supabase.from("fournisseur_factures").delete().eq("id", factureId);
+      if (delErr) return json({ error: delErr.message }, 500);
+      return json({ success: true });
+    }
+    if (action === "apprenant_notes") {
+      const apprenantId = typeof body?.fournisseur_apprenant_id === "string" ? body.fournisseur_apprenant_id : "";
+      if (!apprenantId) return json({ error: "fournisseur_apprenant_id requis" }, 400);
+      const { data } = await supabase
+        .from("fournisseur_apprenants")
+        .select("id, notes, fournisseur_id")
+        .eq("id", apprenantId)
+        .maybeSingle();
+      if (!data || data.fournisseur_id !== fid) return json({ error: "Apprenant introuvable" }, 404);
+      return json({ notes: data.notes || null });
+    }
 
     // init: return fournisseur + all base collections
     const [appRes, docRes, facRes, sharedRes] = await Promise.all([
