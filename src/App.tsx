@@ -26,6 +26,7 @@ import ReservationCarteVtc from "./pages/ReservationCarteVtc";
 import Booking from "./pages/Booking";
 import SessionDetailPage from "./pages/SessionDetailPage";
 import DiagnosticExamensBlancs from "./pages/DiagnosticExamensBlancs";
+import AdminErrorLogs from "./pages/AdminErrorLogs";
 
 // Onboarding pages
 import OnboardingWelcome from "./pages/onboarding/OnboardingWelcome";
@@ -119,6 +120,12 @@ function App() {
 
                 <Route path="/diagnostic-examens-blancs" element={
                   <ErrorBoundary><DiagnosticExamensBlancs /></ErrorBoundary>
+                } />
+
+                <Route path="/admin/erreurs" element={
+                  <ProtectedRoute>
+                    <ErrorBoundary><AdminErrorLogs /></ErrorBoundary>
+                  </ProtectedRoute>
                 } />
 
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
