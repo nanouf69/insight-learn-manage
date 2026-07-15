@@ -381,46 +381,54 @@ export default function FournisseurPortal() {
     });
   }, [releves, releveFilterSearch, releveFilterBanque, releveFilterAnnee, releveFilterMois]);
 
-  // Load fournisseur by token
+  // Load fournisseur + initial data via edge function (bypasses RLS with validated token)
   useEffect(() => {
     const loadFournisseur = async () => {
       if (!token) { setError("Lien invalide"); setLoading(false); return; }
-      const { data, error: err } = await supabase
-        .from('fournisseurs')
-        .select('id, nom, actif, factures_only, formateur_id, comptable_only')
-        .eq('token', token)
-        .maybeSingle();
-      if (err || !data) { setError("Lien invalide ou expiré"); setLoading(false); return; }
-      if (!data.actif) { setError("Ce compte fournisseur est désactivé"); setLoading(false); return; }
-      const facOnly = (data as any).factures_only === true;
-      const formateurId = (data as any).formateur_id || null;
-      const comptableOnly = (data as any).comptable_only === true;
-      setFournisseur({ id: data.id, nom: data.nom, factures_only: facOnly, formateur_id: formateurId, comptable_only: comptableOnly });
-      // Pré-remplir le destinataire avec le nom du fournisseur lui-même
-      setFactureDestinataire(data.nom);
-      if (comptableOnly) setActiveTab("rapprochement");
-      else if (formateurId) setActiveTab("planning");
-      else if (facOnly) setActiveTab("factures");
-      else setActiveTab("apprenants");
-      setLoading(false);
+      try {
+        const baseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const apikey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+        const res = await fetch(`${baseUrl}/functions/v1/fournisseur-portal-data`, {
+          method: "POST",
+          headers: { apikey, "Content-Type": "application/json" },
+          body: JSON.stringify({ token, action: "init" }),
+        });
+        const payload = await res.json();
+        if (!res.ok || !payload?.fournisseur) {
+          setError(payload?.error || "Lien invalide ou expiré");
+          setLoading(false);
+          return;
+        }
+        const data = payload.fournisseur;
+        const facOnly = data.factures_only === true;
+        const formateurId = data.formateur_id || null;
+        const comptableOnly = data.comptable_only === true;
+        setFournisseur({ id: data.id, nom: data.nom, factures_only: facOnly, formateur_id: formateurId, comptable_only: comptableOnly });
+        setFactureDestinataire(data.nom);
+        if (comptableOnly) setActiveTab("rapprochement");
+        else if (formateurId) setActiveTab("planning");
+        else if (facOnly) setActiveTab("factures");
+        else setActiveTab("apprenants");
+
+        // Seed initial collections from init payload
+        if (Array.isArray(payload.apprenants)) setApprenants(payload.apprenants);
+        if (Array.isArray(payload.documents)) setDocuments(payload.documents as FournisseurDocument[]);
+        if (Array.isArray(payload.factures)) setFactures(payload.factures as FournisseurFacture[]);
+        if (Array.isArray(payload.shared_docs)) setSharedDocs(payload.shared_docs);
+      } catch (e) {
+        setError("Erreur de chargement");
+      } finally {
+        setLoading(false);
+      }
     };
     loadFournisseur();
   }, [token]);
 
-  // Load data
+  // Load data (secondary loader — data already seeded via init, kept for downstream logic)
   useEffect(() => {
     if (!fournisseur) return;
     const load = async () => {
-      const [appRes, docRes, facRes, sharedRes] = await Promise.all([
-        supabase.from('fournisseur_apprenants').select('id, nom, prenom, formation_choisie, created_at, notes, telephone, email').eq('fournisseur_id', fournisseur.id).order('created_at', { ascending: false }),
-        supabase.from('fournisseur_documents').select('*').eq('fournisseur_id', fournisseur.id).order('created_at', { ascending: false }),
-        supabase.from('fournisseur_factures').select('*').eq('fournisseur_id', fournisseur.id).order('created_at', { ascending: false }),
-        supabase.from('fournisseur_shared_docs').select('*').eq('fournisseur_id', fournisseur.id).order('created_at', { ascending: false }),
-      ]);
-      if (appRes.data) setApprenants(appRes.data);
-      if (docRes.data) setDocuments(docRes.data as FournisseurDocument[]);
-      if (facRes.data) setFactures(facRes.data as FournisseurFacture[]);
-      if (sharedRes.data) setSharedDocs(sharedRes.data);
+      const appRes = { data: apprenants } as { data: any[] };
 
       // Récupérer les documents CRM (documents_inscription) pour tous les apprenants liés
       if (appRes.data && appRes.data.length > 0) {
