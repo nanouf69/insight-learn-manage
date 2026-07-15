@@ -630,17 +630,16 @@ export default function FournisseurPortal() {
     }
     setIsUploadingDoc(true);
     try {
-      // Find the linked apprenant_id from fournisseur_apprenant notes
+      // Find the linked apprenant_id from fournisseur_apprenant notes (via edge fn)
       let mainApprenantId: string | null = null;
-      const { data: faData } = await supabase
-        .from('fournisseur_apprenants')
-        .select('notes')
-        .eq('id', selectedApprenantForDoc)
-        .single();
-      if (faData?.notes) {
-        const match = faData.notes.match(/apprenant_id:(.+)/);
-        if (match) mainApprenantId = match[1];
-      }
+      try {
+        const notesResp = await callPortal("apprenant_notes", { fournisseur_apprenant_id: selectedApprenantForDoc });
+        const notes: string | null = notesResp?.notes ?? null;
+        if (notes) {
+          const match = notes.match(/apprenant_id:(.+)/);
+          if (match) mainApprenantId = match[1];
+        }
+      } catch (_) { /* ignore */ }
 
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
