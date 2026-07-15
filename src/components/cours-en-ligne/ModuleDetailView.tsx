@@ -85,6 +85,7 @@ import { BILAN_EXERCICES_VA } from "./bilan-exercices-va-data";
 import { BILAN_EXERCICES_FC_VTC } from "./bilan-exercices-fc-vtc-data";
 import { BILAN_FIN_FORMATION_FC_VTC_EXERCICE } from "./bilan-fin-formation-fc-vtc-exercice";
 import { BILAN_EXERCICES_FC_TAXI } from "./bilan-exercices-fc-taxi-data";
+import { COURS_FC_TAXI, QCM_FINAL_FC_TAXI } from "./cours-fc-taxi-data";
 import { BILAN_EXAMEN_VTC } from "./bilan-examen-vtc-data";
 import { BILAN_EXAMEN_TAXI } from "./bilan-examen-taxi-data";
 import { BILAN_EXAMEN_VA } from "./bilan-examen-va-data";
@@ -1418,16 +1419,17 @@ function getInitialModuleDataRaw(
     };
   }
 
-  // Bilan Exercices Formation Continue TAXI (module 82) — sans Gestion
+  // Cours Formation Continue TAXI (module 82) — 4 modules PDF + QCM Final
   if (module.id === 82) {
     return {
       id: 82,
-      nom: "1.BILAN EXERCICES FORMATION CONTINUE TAXI",
-      description: "Tous les exercices regroupés par matière (sans Gestion). Refaites-les autant de fois que nécessaire.",
-      cours: [],
-      exercices: JSON.parse(JSON.stringify(BILAN_EXERCICES_FC_TAXI)),
+      nom: "1.COURS FC TAXI",
+      description: "Formation continue TAXI — 4 modules pédagogiques téléchargeables (Droit du T3P, Réglementation, Sécurité Routière, Gestion & Développement Commercial) + QCM Final de validation.",
+      cours: JSON.parse(JSON.stringify(COURS_FC_TAXI)),
+      exercices: JSON.parse(JSON.stringify(QCM_FINAL_FC_TAXI)),
     };
   }
+
 
   // Bilan fin de formation — Formation Continue VTC (module 87) — quiz interactif
   if (module.id === 87) {
