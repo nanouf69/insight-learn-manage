@@ -336,17 +336,6 @@ function getProgramme(typeApprenant?: string | null): ProgrammeDef {
             "Etablir une facturation.",
           ],
         },
-        {
-          title: "Moyens pedagogiques",
-          bullets: [
-            "Tablettes et plateforme numerique.",
-            "Cours magistraux.",
-            "Evaluations : controles continus et examens blancs.",
-          ],
-        },
-        commonModalites,
-        commonMoyens,
-        commonEval,
       ],
     };
   }
