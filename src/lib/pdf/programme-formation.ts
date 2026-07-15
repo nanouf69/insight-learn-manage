@@ -48,34 +48,6 @@ function normalizeType(t?: string | null): string {
 function getProgramme(typeApprenant?: string | null): ProgrammeDef {
   const t = normalizeType(typeApprenant);
 
-  const commonEval: ProgrammeSection = {
-    title: "Evaluation et sanction",
-    bullets: [
-      "Emargements signes par le stagiaire et le formateur pour chaque demi-journee.",
-      "Evaluations formatives tout au long de la formation (quiz, mises en situation).",
-      "Evaluation finale des acquis (examen blanc ou controle continu).",
-      "Remise d'une attestation de fin de formation (art. L.6353-1 du code du travail).",
-    ],
-  };
-
-  const commonMoyens: ProgrammeSection = {
-    title: "Moyens pedagogiques et techniques",
-    bullets: [
-      "Salle equipee (video-projecteur, wifi) au 86 Route de Genas, 69003 Lyon.",
-      "Plateforme e-learning avec suivi individualise (heures de connexion, quiz, examens blancs).",
-      "Supports pedagogiques remis au stagiaire (papier et numerique).",
-      "Formateurs habilites justifiant d'une experience professionnelle du secteur.",
-    ],
-  };
-
-  const commonModalites: ProgrammeSection = {
-    title: "Modalites d'acces et delais",
-    bullets: [
-      "Entretien prealable et verification des prerequis (permis B > 3 ans, casier judiciaire compatible, aptitude medicale).",
-      "Delai d'acces : 15 jours ouvres apres validation du dossier.",
-      "Accessibilite handicap : contact du referent handicap avant inscription pour amenagements.",
-    ],
-  };
 
   if (t === "vtc") {
     return {
