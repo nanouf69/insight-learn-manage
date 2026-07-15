@@ -223,6 +223,14 @@ export function DiagnosticAccesGlobal({ onOpenApprenant }: Props) {
 
   return (
     <div className="space-y-4">
+      <div className="flex justify-end">
+        <a href="/diagnostic-examens-blancs">
+          <Button variant="outline" size="sm" className="gap-2">
+            <ShieldCheck className="w-4 h-4" />
+            Diagnostic Examens Blancs
+          </Button>
+        </a>
+      </div>
       {/* Compteurs */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2">
         {(Object.keys(STATUT_INFO) as Statut[])
