@@ -11,6 +11,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { tousLesExamens, type ExamenBlanc, type Matiere } from "@/components/cours-en-ligne/examens-blancs-data";
 import { buildMatiereLookupKeys, getMatiereCanonicalKey, toFiniteNumber, normalizeNoteSur20 } from "@/components/cours-en-ligne/examens-blancs-utils";
 import { computeMatiereScore, computeMatiereScoreFromReponses } from "@/components/cours-en-ligne/examens-blancs-scoring";
+import { runExamensBlancsConsistencyCheck, type ExamConsistencyReport, type ConsistencyIssue } from "@/components/cours-en-ligne/examens-blancs-consistency";
 import { toast } from "sonner";
 
 interface ScanRow {
