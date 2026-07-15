@@ -500,6 +500,38 @@ export function computeIsMultiple(question: Question): boolean {
   return question?.type === "QCM" && (question.choix?.filter(c => c.correct).length || 0) > 1;
 }
 
+/**
+ * Detects when a question is declared as "QRC" but actually behaves like a QCM
+ * (has a `choix` array with at least one `correct: true`).
+ * Used to auto-fix mistyped questions and to block the QRC free-text UI before
+ * students submit an answer that could never be scored correctly.
+ */
+export function hasQCMShape(q: Question | null | undefined): boolean {
+  if (!q) return false;
+  const choix = Array.isArray((q as any).choix) ? (q as any).choix : [];
+  if (choix.length < 2) return false;
+  return choix.some((c: any) => c && c.correct === true);
+}
+
+export function isMistypedAsQRC(q: Question | null | undefined): boolean {
+  if (!q) return false;
+  const declared = String((q as any).type ?? "").trim().toUpperCase();
+  return declared === "QRC" && hasQCMShape(q);
+}
+
+/**
+ * Returns the "effective" type of a question, auto-correcting a QCM that was
+ * mistakenly declared as QRC in the source data. Downstream rendering and
+ * scoring should use this instead of `q.type` directly.
+ */
+export function resolveEffectiveQuestionType(q: Question | null | undefined): "QCM" | "QRC" {
+  if (!q) return "QCM";
+  if (isMistypedAsQRC(q)) return "QCM";
+  const declared = String((q as any).type ?? "").trim().toUpperCase();
+  return declared === "QRC" ? "QRC" : "QCM";
+}
+
+
 /** Apply a QCM answer change to a reponses object */
 export function applyQCMChange(
   reponses: Reponses,
