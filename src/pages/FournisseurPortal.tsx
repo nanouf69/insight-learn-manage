@@ -381,6 +381,20 @@ export default function FournisseurPortal() {
     });
   }, [releves, releveFilterSearch, releveFilterBanque, releveFilterAnnee, releveFilterMois]);
 
+  // Helper: call fournisseur-portal-data edge function with the validated token
+  const callPortal = async (action: string, extras: Record<string, unknown> = {}) => {
+    const baseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const apikey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+    const res = await fetch(`${baseUrl}/functions/v1/fournisseur-portal-data`, {
+      method: "POST",
+      headers: { apikey, "Content-Type": "application/json" },
+      body: JSON.stringify({ token, action, ...extras }),
+    });
+    const payload = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(payload?.error || `Erreur ${res.status}`);
+    return payload;
+  };
+
   // Load fournisseur + initial data via edge function (bypasses RLS with validated token)
   useEffect(() => {
     const loadFournisseur = async () => {
@@ -594,8 +608,10 @@ export default function FournisseurPortal() {
       resetForm();
       setShowForm(false);
       // Refresh apprenants list
-      const { data: refreshed } = await supabase.from('fournisseur_apprenants').select('*').eq('fournisseur_id', fournisseur.id).order('created_at', { ascending: false });
-      if (refreshed) setApprenants(refreshed as FournisseurApprenant[]);
+      try {
+        const refreshed = await callPortal("apprenants");
+        if (Array.isArray(refreshed?.data)) setApprenants(refreshed.data as FournisseurApprenant[]);
+      } catch (_) { /* ignore refresh error */ }
     } catch (err: any) {
       toast({ title: "Erreur", description: err.message, variant: "destructive" });
     } finally {
@@ -614,17 +630,16 @@ export default function FournisseurPortal() {
     }
     setIsUploadingDoc(true);
     try {
-      // Find the linked apprenant_id from fournisseur_apprenant notes
+      // Find the linked apprenant_id from fournisseur_apprenant notes (via edge fn)
       let mainApprenantId: string | null = null;
-      const { data: faData } = await supabase
-        .from('fournisseur_apprenants')
-        .select('notes')
-        .eq('id', selectedApprenantForDoc)
-        .single();
-      if (faData?.notes) {
-        const match = faData.notes.match(/apprenant_id:(.+)/);
-        if (match) mainApprenantId = match[1];
-      }
+      try {
+        const notesResp = await callPortal("apprenant_notes", { fournisseur_apprenant_id: selectedApprenantForDoc });
+        const notes: string | null = notesResp?.notes ?? null;
+        if (notes) {
+          const match = notes.match(/apprenant_id:(.+)/);
+          if (match) mainApprenantId = match[1];
+        }
+      } catch (_) { /* ignore */ }
 
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -653,8 +668,10 @@ export default function FournisseurPortal() {
       }
       toast({ title: "Documents envoyés", description: `${successCount} document(s) uploadé(s) avec succès.` });
       setSelectedApprenantForDoc(""); fileInput.value = "";
-      const { data } = await supabase.from('fournisseur_documents').select('*').eq('fournisseur_id', fournisseur.id).order('created_at', { ascending: false });
-      if (data) setDocuments(data as FournisseurDocument[]);
+      try {
+        const refreshed = await callPortal("documents");
+        if (Array.isArray(refreshed?.data)) setDocuments(refreshed.data as FournisseurDocument[]);
+      } catch (_) { /* ignore refresh error */ }
     } catch (err: any) {
       toast({ title: "Erreur", description: err.message, variant: "destructive" });
     } finally {
@@ -710,8 +727,10 @@ export default function FournisseurPortal() {
 
       toast({ title: "Facture envoyée", description: `Facture envoyée avec succès.` });
       setFactureMontant(""); setFactureDescription("Prestation de services"); setFactureMoisAnnee(""); setFactureMoisMultiples([]); setSelectedFactureFileName(""); if (fileInput) fileInput.value = "";
-      const { data: refreshed } = await supabase.from('fournisseur_factures').select('*').eq('fournisseur_id', fournisseur.id).order('created_at', { ascending: false });
-      if (refreshed) setFactures(refreshed as FournisseurFacture[]);
+      try {
+        const refreshed = await callPortal("factures");
+        if (Array.isArray(refreshed?.data)) setFactures(refreshed.data as FournisseurFacture[]);
+      } catch (_) { /* ignore refresh error */ }
     } catch (err: any) {
       toast({ title: "Erreur", description: err.message, variant: "destructive" });
     } finally {
@@ -1227,19 +1246,7 @@ export default function FournisseurPortal() {
                           onClick={async () => {
                             if (!confirm(`Supprimer définitivement la facture "${f.nom_fichier}" ?`)) return;
                             try {
-                              // Tenter de supprimer le fichier du storage (extraire le path depuis l'URL publique)
-                              const url = f.url || "";
-                              const marker = "/fournisseur-documents/";
-                              const idx = url.indexOf(marker);
-                              if (idx !== -1) {
-                                const path = decodeURIComponent(url.slice(idx + marker.length));
-                                await supabase.storage.from("fournisseur-documents").remove([path]);
-                              }
-                              const { error } = await supabase
-                                .from("fournisseur_factures")
-                                .delete()
-                                .eq("id", f.id);
-                              if (error) throw error;
+                              await callPortal("delete_facture", { facture_id: f.id });
                               setFactures(prev => prev.filter(x => x.id !== f.id));
                               toast({ title: "Facture supprimée" });
                             } catch (err: any) {
@@ -1278,29 +1285,30 @@ export default function FournisseurPortal() {
                     }
                     setIsUploadingSharedDoc(true);
                     try {
+                      if (!token) throw new Error("Session invalide");
+                      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+                      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
                       for (let i = 0; i < files.length; i++) {
-                         const file = files[i];
-                         const safeName = file.name
-                           .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // supprimer accents
-                           .replace(/[^a-zA-Z0-9._-]/g, '_'); // remplacer caractères spéciaux
-                         const filePath = `${fournisseur.id}/${Date.now()}_${safeName}`;
-                        const { error: uploadErr } = await supabase.storage.from('fournisseur-shared-docs').upload(filePath, file);
-                        if (uploadErr) throw uploadErr;
-                        const { data: { publicUrl } } = supabase.storage.from('fournisseur-shared-docs').getPublicUrl(filePath);
-                        const { error: insertErr } = await supabase.from('fournisseur_shared_docs').insert({
-                          fournisseur_id: fournisseur.id,
-                          titre: sharedDocTitre || file.name,
-                          nom_fichier: file.name,
-                          url: publicUrl,
-                          uploaded_by: 'fournisseur',
+                        const file = files[i];
+                        const fd = new FormData();
+                        fd.append('file', file);
+                        fd.append('token', token);
+                        fd.append('fournisseur_id', fournisseur.id);
+                        fd.append('type', 'shared');
+                        fd.append('titre', sharedDocTitre || file.name);
+                        const resp = await fetch(`${supabaseUrl}/functions/v1/upload-fournisseur-document`, {
+                          method: 'POST',
+                          headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` },
+                          body: fd,
                         });
-                        if (insertErr) throw insertErr;
+                        const out = await resp.json().catch(() => ({}));
+                        if (!resp.ok || out?.error) throw new Error(out?.error || `Erreur ${resp.status} sur "${file.name}"`);
                       }
                       toast({ title: "Document envoyé", description: "Le document a été transmis avec succès." });
                       setSharedDocTitre("");
                       fileInput.value = "";
-                      const { data } = await supabase.from('fournisseur_shared_docs').select('*').eq('fournisseur_id', fournisseur.id).order('created_at', { ascending: false });
-                      if (data) setSharedDocs(data);
+                      const refreshed = await callPortal("shared_docs");
+                      if (Array.isArray(refreshed?.data)) setSharedDocs(refreshed.data);
                     } catch (err: any) {
                       toast({ title: "Erreur", description: err.message, variant: "destructive" });
                     } finally {
@@ -2063,26 +2071,30 @@ export default function FournisseurPortal() {
                       }
                       setIsUploadingSharedDoc(true);
                       try {
+                        if (!token) throw new Error("Session invalide");
+                        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+                        const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
                         for (let i = 0; i < files.length; i++) {
                           const file = files[i];
-                          const safeName = file.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9._-]/g, '_');
-                          const filePath = `${fournisseur.id}/${Date.now()}_${safeName}`;
-                          const { error: uploadErr } = await supabase.storage.from('fournisseur-shared-docs').upload(filePath, file);
-                          if (uploadErr) throw uploadErr;
-                          const { data: { publicUrl } } = supabase.storage.from('fournisseur-shared-docs').getPublicUrl(filePath);
-                          await supabase.from('fournisseur_shared_docs').insert({
-                            fournisseur_id: fournisseur.id,
-                            titre: sharedDocTitre || file.name,
-                            nom_fichier: file.name,
-                            url: publicUrl,
-                            uploaded_by: 'fournisseur',
+                          const fd = new FormData();
+                          fd.append('file', file);
+                          fd.append('token', token);
+                          fd.append('fournisseur_id', fournisseur.id);
+                          fd.append('type', 'shared');
+                          fd.append('titre', sharedDocTitre || file.name);
+                          const resp = await fetch(`${supabaseUrl}/functions/v1/upload-fournisseur-document`, {
+                            method: 'POST',
+                            headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` },
+                            body: fd,
                           });
+                          const out = await resp.json().catch(() => ({}));
+                          if (!resp.ok || out?.error) throw new Error(out?.error || `Erreur ${resp.status} sur "${file.name}"`);
                         }
                         toast({ title: "Document envoyé", description: "Le document a été transmis avec succès." });
                         setSharedDocTitre("");
                         fileInput.value = "";
-                        const { data } = await supabase.from('fournisseur_shared_docs').select('*').eq('fournisseur_id', fournisseur.id).order('created_at', { ascending: false });
-                        if (data) setSharedDocs(data);
+                        const refreshed = await callPortal("shared_docs");
+                        if (Array.isArray(refreshed?.data)) setSharedDocs(refreshed.data);
                       } catch (err: any) {
                         toast({ title: "Erreur", description: err.message, variant: "destructive" });
                       } finally {
