@@ -887,8 +887,21 @@ export function mergeQuestionsForMatiere(
       }
     }
 
+
+    // Safety: if a question is declared QRC but has a proper QCM shape
+    // (choices with a correct flag), auto-correct the type so it's rendered
+    // and scored as a QCM. Prevents students from typing a free-text answer
+    // to what is really a multiple-choice question.
+    if (isMistypedAsQRC(merged)) {
+      console.warn(
+        `[examens-blancs] Question mistyped as QRC (id=${merged.id}) — auto-corrected to QCM.`,
+      );
+      return { ...merged, type: "QCM" } as Question;
+    }
+
     return merged;
   });
+
   // NOTE: source questions NOT in saved are intentionally NOT appended.
   // If saved data exists, admin chose which questions to keep.
 }
