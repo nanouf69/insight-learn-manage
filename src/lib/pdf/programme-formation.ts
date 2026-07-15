@@ -48,34 +48,6 @@ function normalizeType(t?: string | null): string {
 function getProgramme(typeApprenant?: string | null): ProgrammeDef {
   const t = normalizeType(typeApprenant);
 
-  const commonEval: ProgrammeSection = {
-    title: "Evaluation et sanction",
-    bullets: [
-      "Emargements signes par le stagiaire et le formateur pour chaque demi-journee.",
-      "Evaluations formatives tout au long de la formation (quiz, mises en situation).",
-      "Evaluation finale des acquis (examen blanc ou controle continu).",
-      "Remise d'une attestation de fin de formation (art. L.6353-1 du code du travail).",
-    ],
-  };
-
-  const commonMoyens: ProgrammeSection = {
-    title: "Moyens pedagogiques et techniques",
-    bullets: [
-      "Salle equipee (video-projecteur, wifi) au 86 Route de Genas, 69003 Lyon.",
-      "Plateforme e-learning avec suivi individualise (heures de connexion, quiz, examens blancs).",
-      "Supports pedagogiques remis au stagiaire (papier et numerique).",
-      "Formateurs habilites justifiant d'une experience professionnelle du secteur.",
-    ],
-  };
-
-  const commonModalites: ProgrammeSection = {
-    title: "Modalites d'acces et delais",
-    bullets: [
-      "Entretien prealable et verification des prerequis (permis B > 3 ans, casier judiciaire compatible, aptitude medicale).",
-      "Delai d'acces : 15 jours ouvres apres validation du dossier.",
-      "Accessibilite handicap : contact du referent handicap avant inscription pour amenagements.",
-    ],
-  };
 
   if (t === "vtc") {
     return {
@@ -203,20 +175,11 @@ function getProgramme(typeApprenant?: string | null): ProgrammeDef {
             "D-1 Etablir le prix de la prestation, facturer et proceder a l'encaissement : calculer le prix d'une course, etablir la facture, encaisser le paiement notamment avec un terminal de paiement electronique.",
           ],
         },
-        {
-          title: "Moyens pedagogiques",
-          bullets: [
-            "Tablettes et plateforme numerique.",
-            "Cours magistraux.",
-            "Evaluations : controles continus et examens blancs.",
-          ],
-        },
-        commonModalites,
-        commonMoyens,
-        commonEval,
       ],
     };
   }
+
+
 
   if (t === "taxi") {
     return {
@@ -345,17 +308,6 @@ function getProgramme(typeApprenant?: string | null): ProgrammeDef {
             "Etablir une facturation.",
           ],
         },
-        {
-          title: "Moyens pedagogiques",
-          bullets: [
-            "Tablettes et plateforme numerique.",
-            "Cours magistraux.",
-            "Evaluations : controles continus et examens blancs.",
-          ],
-        },
-        commonModalites,
-        commonMoyens,
-        commonEval,
       ],
     };
   }
@@ -390,9 +342,6 @@ function getProgramme(typeApprenant?: string | null): ProgrammeDef {
             "Connaitre le reglement local en vigueur.",
           ],
         },
-        commonModalites,
-        commonMoyens,
-        commonEval,
       ],
     };
   }
@@ -424,9 +373,6 @@ function getProgramme(typeApprenant?: string | null): ProgrammeDef {
             "Savoir etablir les documents relatifs a l'execution de la prestation de transport qui doivent etre presentes en cas de controle.",
           ],
         },
-        commonModalites,
-        commonMoyens,
-        commonEval,
       ],
     };
   }
@@ -468,9 +414,6 @@ function getProgramme(typeApprenant?: string | null): ProgrammeDef {
         paragraph:
           "Annexe I de l'arrete du 6 avril 2017 pour les modules A, B, C, D, E. Annexes 1, 2 et 3 de l'arrete du 24 juillet 2007 pour le module F (PSC).",
       },
-      commonModalites,
-      commonMoyens,
-      commonEval,
     ],
   };
 }
