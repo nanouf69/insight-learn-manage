@@ -4085,10 +4085,10 @@ const eb3Matieres: Matiere[] = [
         id: 1,
         type: "QRC",
         enonce:
-          "M. PAUL achète un véhicule le 1er mars 2018 pour une valeur de 24 000 € HT, amortissable de façon linéaire sur 5 ans. Ses comptes sont clôturés traditionnellement le 31 décembre de chaque année. (QRC)",
-        reponseQRC: "Quelle est la valeur comptable du véhicule au 31 décembre 2021 ? (Détaillez les calculs)",
+          "M. PAUL achète un véhicule le 1er mars 2018 pour une valeur de 24 000 € HT, amortissable de façon linéaire sur 5 ans. Ses comptes sont clôturés traditionnellement le 31 décembre de chaque année. Quelle est la valeur comptable du véhicule au 31 décembre 2021 ? (Détaillez les calculs) (QRC)",
+        reponseQRC:
+          "La valeur du véhicule est de 5 600 €. Calcul : 24 000 € / 5 = 4 800 € (amortissement annuel) ; 4 800 € / 12 = 400 € (amortissement mensuel) ; 46 mois × 400 € = 18 400 € (amortissement cumulé de mars 2018 à décembre 2021) ; 24 000 € − 18 400 € = 5 600 € (valeur nette comptable).",
         reponses_possibles: [
-          "Quelle est la valeur comptable du véhicule au 31 décembre 2021 ? (Détaillez les calculs)",
           "La valeur du véhicule est de 5 600 €.",
           "24000€/5 =4800€ ;4800€/12=400€ ;46*400€=18400€ ;24000€-18400€=5600€. (5600€)",
         ],
