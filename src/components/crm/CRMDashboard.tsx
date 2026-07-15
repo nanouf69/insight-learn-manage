@@ -85,8 +85,8 @@ export function CRMDashboard({ initialApprenantId, onApprenantClosed }: CRMDashb
   const { data: apprenants = [], isLoading } = useQuery({
     queryKey: ['apprenants-crm'],
     queryFn: async () => {
-      // Fetch ALL apprenants (paginated to bypass 1000-row limit)
-      const pageSize = 10000;
+      // Fetch ALL apprenants (backend caps each page at 1000 rows)
+      const pageSize = 1000;
       let from = 0;
       const regularData: any[] = [];
       // eslint-disable-next-line no-constant-condition
