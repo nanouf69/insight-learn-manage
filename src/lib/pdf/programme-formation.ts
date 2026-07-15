@@ -203,20 +203,14 @@ function getProgramme(typeApprenant?: string | null): ProgrammeDef {
             "D-1 Etablir le prix de la prestation, facturer et proceder a l'encaissement : calculer le prix d'une course, etablir la facture, encaisser le paiement notamment avec un terminal de paiement electronique.",
           ],
         },
-        {
-          title: "Moyens pedagogiques",
-          bullets: [
-            "Tablettes et plateforme numerique.",
-            "Cours magistraux.",
-            "Evaluations : controles continus et examens blancs.",
-          ],
-        },
-        commonModalites,
-        commonMoyens,
-        commonEval,
       ],
     };
   }
+
+  if (t === "taxi_placeholder_never_matches") {
+    return { titre: "", reference: "", duree: "", objectif: "", sections: [] };
+  }
+
 
   if (t === "taxi") {
     return {
