@@ -103,7 +103,9 @@ export function GlobalSearch({ onSelectApprenant, onNavigate }: GlobalSearchProp
         })),
       ];
 
-      setResults(mapped);
+      setResults(
+        Array.from(new Map(mapped.map((item) => [`${item.type}-${item.id}`, item])).values()),
+      );
     } catch (err) {
       console.error("Search error:", err);
     } finally {
@@ -183,7 +185,7 @@ export function GlobalSearch({ onSelectApprenant, onNavigate }: GlobalSearchProp
                 <CommandGroup key={type} heading={groupLabels[type as keyof typeof groupLabels]}>
                   {items.map((item) => (
                     <CommandItem
-                      key={item.id}
+                      key={`${item.type}-${item.id}`}
                       value={`${item.label} ${item.sublabel || ""}`}
                       onSelect={() => handleSelect(item)}
                     >

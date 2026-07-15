@@ -66,6 +66,9 @@ const financementColors: Record<string, string> = {
   'entreprise': 'bg-accent text-accent-foreground',
 };
 
+const dedupeByStableId = <T extends { id?: string | null }>(rows: T[]) =>
+  Array.from(new Map(rows.map((row, index) => [row.id || `missing-id-${index}`, row])).values());
+
 interface CRMDashboardProps {
   initialApprenantId?: string | null;
   onApprenantClosed?: () => void;
@@ -105,9 +108,7 @@ export function CRMDashboard({ initialApprenantId, onApprenantClosed }: CRMDashb
         from += pageSize;
       }
 
-      const uniqueData = Array.from(
-        new Map((regularData || []).map((a: any) => [a.id, a])).values(),
-      );
+      const uniqueData = dedupeByStableId(regularData || []);
 
       // Mark fournisseur apprenants with source info
       const result = uniqueData.map((a: any) => {
@@ -288,7 +289,7 @@ export function CRMDashboard({ initialApprenantId, onApprenantClosed }: CRMDashb
         <div className="text-center py-12 text-muted-foreground">Aucun apprenant trouvé</div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {filteredApprenants.map((apprenant) => {
+          {dedupeByStableId(filteredApprenants).map((apprenant, index) => {
             const typeLabel = typeLabels[apprenant.type_apprenant || ''] || apprenant.type_apprenant || '-';
             const typeColor = typeColors[apprenant.type_apprenant || ''] || 'bg-muted text-muted-foreground';
             const financementLabel = financementLabels[apprenant.mode_financement || ''] || apprenant.mode_financement || '-';
@@ -326,7 +327,7 @@ export function CRMDashboard({ initialApprenantId, onApprenantClosed }: CRMDashb
 
             return (
               <div 
-                key={apprenant.id} 
+                key={apprenant.id || `apprenant-${index}`} 
                 className={`bg-card rounded-xl border p-5 hover:shadow-lg transition-all duration-200 cursor-pointer ${
                   hasAnomalies ? 'border-red-500 border-2' : 'border-border'
                 }`}
