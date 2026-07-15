@@ -1285,29 +1285,30 @@ export default function FournisseurPortal() {
                     }
                     setIsUploadingSharedDoc(true);
                     try {
+                      if (!token) throw new Error("Session invalide");
+                      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+                      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
                       for (let i = 0; i < files.length; i++) {
-                         const file = files[i];
-                         const safeName = file.name
-                           .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // supprimer accents
-                           .replace(/[^a-zA-Z0-9._-]/g, '_'); // remplacer caractères spéciaux
-                         const filePath = `${fournisseur.id}/${Date.now()}_${safeName}`;
-                        const { error: uploadErr } = await supabase.storage.from('fournisseur-shared-docs').upload(filePath, file);
-                        if (uploadErr) throw uploadErr;
-                        const { data: { publicUrl } } = supabase.storage.from('fournisseur-shared-docs').getPublicUrl(filePath);
-                        const { error: insertErr } = await supabase.from('fournisseur_shared_docs').insert({
-                          fournisseur_id: fournisseur.id,
-                          titre: sharedDocTitre || file.name,
-                          nom_fichier: file.name,
-                          url: publicUrl,
-                          uploaded_by: 'fournisseur',
+                        const file = files[i];
+                        const fd = new FormData();
+                        fd.append('file', file);
+                        fd.append('token', token);
+                        fd.append('fournisseur_id', fournisseur.id);
+                        fd.append('type', 'shared');
+                        fd.append('titre', sharedDocTitre || file.name);
+                        const resp = await fetch(`${supabaseUrl}/functions/v1/upload-fournisseur-document`, {
+                          method: 'POST',
+                          headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` },
+                          body: fd,
                         });
-                        if (insertErr) throw insertErr;
+                        const out = await resp.json().catch(() => ({}));
+                        if (!resp.ok || out?.error) throw new Error(out?.error || `Erreur ${resp.status} sur "${file.name}"`);
                       }
                       toast({ title: "Document envoyé", description: "Le document a été transmis avec succès." });
                       setSharedDocTitre("");
                       fileInput.value = "";
-                      const { data } = await supabase.from('fournisseur_shared_docs').select('*').eq('fournisseur_id', fournisseur.id).order('created_at', { ascending: false });
-                      if (data) setSharedDocs(data);
+                      const refreshed = await callPortal("shared_docs");
+                      if (Array.isArray(refreshed?.data)) setSharedDocs(refreshed.data);
                     } catch (err: any) {
                       toast({ title: "Erreur", description: err.message, variant: "destructive" });
                     } finally {
