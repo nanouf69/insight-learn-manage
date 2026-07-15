@@ -2881,7 +2881,13 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                     return (
                       <div 
                         key={sessionApprenant.id}
-                        className="block static p-3 rounded-xl border bg-card hover:shadow-md transition-shadow"
+                        className="block static p-3 rounded-xl border bg-card hover:shadow-md transition-shadow cursor-pointer"
+                        onClick={() => {
+                          if (onNavigateToApprenant) {
+                            onOpenChange(false);
+                            onNavigateToApprenant(apprenant.id);
+                          }
+                        }}
                       >
                         {/* Ligne 1: Checkbox + Avatar + Nom + Badge */}
                         <div className="flex items-center gap-2 mb-1.5 flex-wrap">
