@@ -207,9 +207,6 @@ function getProgramme(typeApprenant?: string | null): ProgrammeDef {
     };
   }
 
-  if (t === "taxi_placeholder_never_matches") {
-    return { titre: "", reference: "", duree: "", objectif: "", sections: [] };
-  }
 
 
   if (t === "taxi") {
