@@ -60,6 +60,7 @@ interface Apprenant {
   date_debut_cours_en_ligne?: string | null;
   date_fin_cours_en_ligne?: string | null;
   date_formation_catalogue?: string | null;
+  created_at?: string | null;
 }
 
 
