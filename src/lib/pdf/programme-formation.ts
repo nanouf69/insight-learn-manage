@@ -442,9 +442,6 @@ function getProgramme(typeApprenant?: string | null): ProgrammeDef {
         paragraph:
           "Annexe I de l'arrete du 6 avril 2017 pour les modules A, B, C, D, E. Annexes 1, 2 et 3 de l'arrete du 24 juillet 2007 pour le module F (PSC).",
       },
-      commonModalites,
-      commonMoyens,
-      commonEval,
     ],
   };
 }
