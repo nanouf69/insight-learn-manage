@@ -370,9 +370,6 @@ function getProgramme(typeApprenant?: string | null): ProgrammeDef {
             "Connaitre le reglement local en vigueur.",
           ],
         },
-        commonModalites,
-        commonMoyens,
-        commonEval,
       ],
     };
   }
