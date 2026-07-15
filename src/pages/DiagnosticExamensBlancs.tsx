@@ -393,6 +393,8 @@ export default function DiagnosticExamensBlancs() {
         transaction perdue, réponses manquantes, écriture partielle, etc.
       </p>
 
+      <ConsistencyCheckCard />
+
       <Card className="border-amber-300">
         <CardHeader>
           <CardTitle className="text-base">Scanner tous les élèves d'un examen</CardTitle>
