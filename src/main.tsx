@@ -2,6 +2,9 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
+import { installErrorMonitoring } from "@/lib/monitoring/errorLogger";
+
+installErrorMonitoring();
 
 // Patch for React/Radix removeChild DOM error (known issue with Select/Dialog portals)
 const origRemoveChild = Node.prototype.removeChild;
