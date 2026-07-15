@@ -2896,7 +2896,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                             onClick={(e) => {
                               e.stopPropagation();
                               if (onNavigateToApprenant) {
-                                onOpenChange(false);
+                                if (!asPage) onOpenChange(false);
                                 onNavigateToApprenant(apprenant.id);
                               }
                             }}
@@ -3809,7 +3809,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                             className="font-semibold text-sm text-foreground hover:text-primary hover:underline cursor-pointer"
                             onClick={() => {
                               if (onNavigateToApprenant) {
-                                onOpenChange(false);
+                                if (!asPage) onOpenChange(false);
                                 onNavigateToApprenant(ap.id);
                               }
                             }}
