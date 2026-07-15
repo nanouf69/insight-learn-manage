@@ -81,7 +81,7 @@ export interface ExamenBlanc {
 
 /**
  * Barème officiel appliqué aux examens blancs (règle pédagogique fixe) :
- * - QRC = 2 points, systématiquement.
+ * - QRC = 2 points, SAUF pour les matières G(V) et G(T) où QRC = 4 points.
  * - QCM = 1 point, SAUF pour les matières suivantes où QCM = 2 points :
  *     • français (D)
  *     • G(V) — Réglementation nationale spécifique à l'activité de VTC (`reglementation_vtc2`)
@@ -91,14 +91,19 @@ export interface ExamenBlanc {
  * (utile pour les bilans ou cas particuliers configurés à la main).
  */
 const QCM_2PTS_MATIERES = new Set(["francais", "reglementation_vtc2", "reglementation_taxi2"]);
+const QRC_4PTS_MATIERES = new Set(["reglementation_vtc2", "reglementation_taxi2"]);
 const DEFAULT_QRC_POINTS = 2;
 const DEFAULT_QCM_POINTS = 1;
 
 function getFixedPointsForMatiere(matiereId: string, questionType: QuestionType): number {
-  if (questionType === "QRC") return DEFAULT_QRC_POINTS;
+  if (questionType === "QRC") {
+    if (QRC_4PTS_MATIERES.has(matiereId)) return 4;
+    return DEFAULT_QRC_POINTS;
+  }
   if (QCM_2PTS_MATIERES.has(matiereId)) return 2;
   return DEFAULT_QCM_POINTS;
 }
+
 
 /**
  * Retourne les points attribués pour une question selon la matière et le type de question.
