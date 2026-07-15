@@ -1,4 +1,5 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
+import { captureError } from '@/lib/monitoring/errorLogger';
 
 interface Props {
   children: ReactNode;
@@ -23,6 +24,12 @@ export class ErrorBoundary extends Component<Props, State> {
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('[ErrorBoundary] Erreur capturée:', error);
     console.error('[ErrorBoundary] Stack composant:', errorInfo.componentStack);
+    captureError({
+      message: `[ErrorBoundary] ${error.message}`,
+      stack: error.stack,
+      component_stack: errorInfo.componentStack ?? undefined,
+      source: 'react-error-boundary',
+    });
   }
 
   handleReload = () => {
