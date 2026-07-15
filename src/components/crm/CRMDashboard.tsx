@@ -96,6 +96,7 @@ export function CRMDashboard({ initialApprenantId, onApprenantClosed }: CRMDashb
           .select('*')
           .is('deleted_at' as any, null)
           .order('created_at', { ascending: false })
+          .order('id', { ascending: false })
           .range(from, from + pageSize - 1);
         if (error) throw error;
         if (!data || data.length === 0) break;
@@ -104,8 +105,12 @@ export function CRMDashboard({ initialApprenantId, onApprenantClosed }: CRMDashb
         from += pageSize;
       }
 
+      const uniqueData = Array.from(
+        new Map((regularData || []).map((a: any) => [a.id, a])).values(),
+      );
+
       // Mark fournisseur apprenants with source info
-      const result = (regularData || []).map((a: any) => {
+      const result = uniqueData.map((a: any) => {
         if (a.statut === 'fournisseur') {
           return { ...a, _source: 'fournisseur', _fournisseurNom: a.notes?.replace('Via fournisseur: ', '') || 'Fournisseur' };
         }
@@ -113,7 +118,9 @@ export function CRMDashboard({ initialApprenantId, onApprenantClosed }: CRMDashb
       });
 
       return result.sort(
-        (a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        (a: any, b: any) =>
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          || String(b.id).localeCompare(String(a.id))
       );
     },
   });

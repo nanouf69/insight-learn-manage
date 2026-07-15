@@ -357,14 +357,33 @@ export function ApprenantsList() {
   const { data: apprenants = [], isLoading } = useQuery({
     queryKey: ['apprenants'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('apprenants')
-        .select('*')
-        .is('deleted_at' as any, null)
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data as Apprenant[];
+      const pageSize = 1000;
+      let from = 0;
+      const rows: Apprenant[] = [];
+
+      // Fetch ALL apprenants with a stable order to avoid duplicates/missing rows across pages
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const { data, error } = await supabase
+          .from('apprenants')
+          .select('*')
+          .is('deleted_at' as any, null)
+          .order('created_at', { ascending: false })
+          .order('id', { ascending: false })
+          .range(from, from + pageSize - 1);
+
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        rows.push(...(data as Apprenant[]));
+        if (data.length < pageSize) break;
+        from += pageSize;
+      }
+
+      return Array.from(new Map(rows.map((a) => [a.id, a])).values()).sort(
+        (a, b) =>
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          || String(b.id).localeCompare(String(a.id))
+      );
     }
   });
 
