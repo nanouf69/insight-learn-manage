@@ -398,7 +398,7 @@ function renderProjetProfessionnel(doc: jsPDF, donnees: any, y: number, margin: 
 }
 
 function renderAnalyseBesoin(doc: jsPDF, donnees: any, y: number, margin: number, pw: number): number {
-  // Public pre-information format: donnees.reponses contains QCM answers
+  // Public pre-information format (portal QCM answers)
   if (donnees.reponses && typeof donnees.reponses === 'object') {
     if (donnees.formation) {
       y = renderField(doc, 'formationLabel', donnees.formation, y, margin, pw);
@@ -412,24 +412,76 @@ function renderAnalyseBesoin(doc: jsPDF, donnees: any, y: number, margin: number
     return y;
   }
 
-  const SECTIONS = [
-    { title: 'IDENTITE', keys: ['nom', 'prenom', 'email', 'telephone', 'adresse', 'codePostal', 'ville'] },
-    { title: 'FORMATION SOUHAITEE', keys: ['formationVTC', 'formationTAXI', 'centreFormation'] },
-    { title: 'ELIGIBILITE & ACCESSIBILITE', keys: ['eligibility', 'complementary', 'typeHandicap'] },
-    { title: 'ENGAGEMENT', keys: ['engagementAccepted', 'dateDocument'] },
-  ];
+  // Standard "Fiche client" format
+  const yesNo = (v: any) => (v === true ? 'Oui' : v === false ? 'Non' : '(Non repondu)');
 
-  for (const section of SECTIONS) {
-    const filled = section.keys.filter(k => donnees[k] !== undefined && donnees[k] !== null && donnees[k] !== '');
-    if (filled.length === 0) continue;
-    y = renderSectionHeader(doc, section.title, y, margin, pw);
-    for (const key of filled) {
-      const val = typeof donnees[key] === 'boolean' ? (donnees[key] ? 'Oui' : 'Non') : String(donnees[key]);
-      y = renderQA(doc, getLabel(key), val, y, margin, pw);
+  // 1. Coordonnees du stagiaire
+  const identityKeys: Array<[string, string]> = [
+    ['Nom', donnees.nom], ['Prenom', donnees.prenom],
+    ['Adresse', donnees.adresse], ['Code postal', donnees.codePostal], ['Ville', donnees.ville],
+    ['Telephone', donnees.telephone], ['E-mail', donnees.email],
+  ];
+  if (identityKeys.some(([, v]) => v)) {
+    y = renderSectionHeader(doc, '1. COORDONNEES DU STAGIAIRE', y, margin, pw);
+    for (const [label, val] of identityKeys) {
+      if (val) y = renderQA(doc, label, String(val), y, margin, pw);
     }
+  }
+
+  // 2. Informations formation
+  y = renderSectionHeader(doc, '2. INFORMATIONS FORMATION', y, margin, pw);
+  const formations: string[] = [];
+  if (donnees.formationVTC) formations.push('Habilitation VTC (RS5637)');
+  if (donnees.formationTAXI) formations.push('Habilitation TAXI (RS5635)');
+  y = renderQA(doc, 'Formation souhaitee', formations.length ? formations.join(' + ') : '(Aucune)', y, margin, pw);
+
+  // 3. Criteres d'eligibilite et de moralite
+  const eligibilityQuestions = [
+    "Avez-vous deja perdu 6 points d'un coup sur votre permis de conduire ?",
+    "Avez-vous deja ete condamne pour conduite d'un vehicule sans permis ?",
+    "Avez-vous ete condamne pour refus de restitution du permis malgre son annulation, invalidation ou interdiction de l'obtenir ?",
+    "Avez-vous deja ete condamne a au moins 6 mois d'emprisonnement pour vol, escroquerie, abus de confiance, atteinte volontaire a l'integrite de la personne, agression sexuelle ou infraction a la legislation sur les stupefiants (en France ou a l'etranger) ?",
+    "Avez-vous le casier judiciaire B3 vierge ?",
+  ];
+  const elig = donnees.eligibility || {};
+  if (Object.keys(elig).length > 0 || eligibilityQuestions.length) {
+    y = renderSectionHeader(doc, "3. CRITERES D'ELIGIBILITE ET DE MORALITE", y, margin, pw);
+    eligibilityQuestions.forEach((q, i) => {
+      y = renderQA(doc, q, yesNo(elig[`e${i}`]), y, margin, pw);
+    });
+  }
+
+  // 4. Informations complementaires
+  const complementaryQuestions = [
+    "Avez-vous deja realise une formation TAXI (en initiale ou en continue) ?",
+    "Etes-vous en situation de handicap ?",
+  ];
+  const comp = donnees.complementary || {};
+  y = renderSectionHeader(doc, '4. INFORMATIONS COMPLEMENTAIRES', y, margin, pw);
+  complementaryQuestions.forEach((q, i) => {
+    y = renderQA(doc, q, yesNo(comp[`c${i}`]), y, margin, pw);
+    if (i === 0 && comp[`c${i}`] === true && donnees.centreFormation) {
+      y = renderQA(doc, 'Centre de formation', String(donnees.centreFormation), y, margin, pw);
+    }
+    if (i === 1 && comp[`c${i}`] === true && donnees.typeHandicap) {
+      y = renderQA(doc, 'Type de handicap', String(donnees.typeHandicap), y, margin, pw);
+    }
+  });
+
+  // 5. Engagement
+  y = renderSectionHeader(doc, '5. ENGAGEMENT', y, margin, pw);
+  y = renderQA(
+    doc,
+    "Le stagiaire s'engage sur l'exactitude des reponses fournies",
+    yesNo(donnees.engagementAccepted),
+    y, margin, pw,
+  );
+  if (donnees.dateDocument) {
+    y = renderQA(doc, 'Date du document', String(donnees.dateDocument), y, margin, pw);
   }
   return y;
 }
+
 
 function renderCGV(doc: jsPDF, donnees: any, y: number, margin: number, pw: number): number {
   const infoKeys = ['formationLabel', 'accepted', 'accepted_at', 'cgv_accepted', 'ri_accepted', 'signed_at'];
