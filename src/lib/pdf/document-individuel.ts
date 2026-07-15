@@ -414,92 +414,89 @@ const PORTAL_ANALYSE_QUESTIONS: Array<{ key: string; question: string }> = [
 ];
 
 function renderAnalyseBesoin(doc: jsPDF, donnees: any, y: number, margin: number, pw: number): number {
-  const reponses = (donnees.reponses && typeof donnees.reponses === 'object') ? donnees.reponses : {};
+  const yesNo = (v: any) => (v === true ? 'Oui' : v === false ? 'Non' : '(Non repondu)');
+  const hasPortalReponses = donnees.reponses && typeof donnees.reponses === 'object'
+    && Object.keys(donnees.reponses).length > 0;
 
-  // Formation (si fournie)
-  if (donnees.formation) {
-    y = renderField(doc, 'formationLabel', donnees.formation, y, margin, pw);
-  } else if (donnees.formationVTC || donnees.formationTAXI) {
-    const parts: string[] = [];
-    if (donnees.formationVTC) parts.push('Habilitation VTC (RS5637)');
-    if (donnees.formationTAXI) parts.push('Habilitation TAXI (RS5635)');
-    y = renderField(doc, 'formationLabel', parts.join(' + '), y, margin, pw);
-  }
-
-  // Toujours afficher les 12 questions du portail QCM
-  y = renderSectionHeader(doc, 'ANALYSE DU BESOIN', y, margin, pw);
-  for (const { key, question } of PORTAL_ANALYSE_QUESTIONS) {
-    const value = reponses[key];
-    const answer = Array.isArray(value)
-      ? (value.length ? value.join(', ') : '(Non repondu)')
-      : (value !== undefined && value !== null && value !== '' ? String(value) : '(Non repondu)');
-    y = renderQA(doc, question, answer, y, margin, pw);
-  }
-
-  // Champ "Autre" éventuel (portail)
-  if (donnees.autres && typeof donnees.autres === 'object') {
-    for (const [k, v] of Object.entries(donnees.autres)) {
-      if (v) y = renderQA(doc, `Precision (${getLabel(k)})`, String(v), y, margin, pw);
+  // === Cas 1 : apprenant e-learning (rempli via le portail /pre-information) ===
+  if (hasPortalReponses) {
+    if (donnees.formation) {
+      y = renderField(doc, 'formationLabel', donnees.formation, y, margin, pw);
     }
+    y = renderSectionHeader(doc, 'ANALYSE DU BESOIN', y, margin, pw);
+    for (const { key, question } of PORTAL_ANALYSE_QUESTIONS) {
+      const value = donnees.reponses[key];
+      const answer = Array.isArray(value)
+        ? (value.length ? value.join(', ') : '(Non repondu)')
+        : (value !== undefined && value !== null && value !== '' ? String(value) : '(Non repondu)');
+      y = renderQA(doc, question, answer, y, margin, pw);
+    }
+    if (donnees.autres && typeof donnees.autres === 'object') {
+      for (const [k, v] of Object.entries(donnees.autres)) {
+        if (v) y = renderQA(doc, `Precision (${getLabel(k)})`, String(v), y, margin, pw);
+      }
+    }
+    return y;
   }
 
-  // Annexe : données de l'ancien formulaire "Fiche client" si présentes
-  const hasLegacy = donnees.nom || donnees.prenom || donnees.eligibility || donnees.complementary
-    || donnees.engagementAccepted !== undefined || donnees.centreFormation || donnees.typeHandicap;
-  if (hasLegacy) {
-    const yesNo = (v: any) => (v === true ? 'Oui' : v === false ? 'Non' : '(Non repondu)');
-    y = renderSectionHeader(doc, 'INFORMATIONS COMPLEMENTAIRES (ancien formulaire)', y, margin, pw);
-
-    const identity: Array<[string, any]> = [
-      ['Nom', donnees.nom], ['Prenom', donnees.prenom],
-      ['Adresse', donnees.adresse], ['Code postal', donnees.codePostal], ['Ville', donnees.ville],
-      ['Telephone', donnees.telephone], ['E-mail', donnees.email],
-    ];
-    for (const [label, val] of identity) {
+  // === Cas 2 : apprenant présentiel — fiche client classique ===
+  // (Pour le présentiel, l'analyse du besoin détaillée est dans le module Introduction.)
+  const identityKeys: Array<[string, any]> = [
+    ['Nom', donnees.nom], ['Prenom', donnees.prenom],
+    ['Adresse', donnees.adresse], ['Code postal', donnees.codePostal], ['Ville', donnees.ville],
+    ['Telephone', donnees.telephone], ['E-mail', donnees.email],
+  ];
+  if (identityKeys.some(([, v]) => v)) {
+    y = renderSectionHeader(doc, '1. COORDONNEES DU STAGIAIRE', y, margin, pw);
+    for (const [label, val] of identityKeys) {
       if (val) y = renderQA(doc, label, String(val), y, margin, pw);
     }
-
-    const eligibilityQuestions = [
-      "Avez-vous deja perdu 6 points d'un coup sur votre permis de conduire ?",
-      "Avez-vous deja ete condamne pour conduite d'un vehicule sans permis ?",
-      "Avez-vous ete condamne pour refus de restitution du permis malgre son annulation, invalidation ou interdiction de l'obtenir ?",
-      "Avez-vous deja ete condamne a au moins 6 mois d'emprisonnement pour vol, escroquerie, abus de confiance, atteinte volontaire a l'integrite de la personne, agression sexuelle ou infraction a la legislation sur les stupefiants (en France ou a l'etranger) ?",
-      "Avez-vous le casier judiciaire B3 vierge ?",
-    ];
-    const elig = donnees.eligibility || {};
-    if (Object.keys(elig).length > 0) {
-      eligibilityQuestions.forEach((q, i) => {
-        if (elig[`e${i}`] !== undefined) y = renderQA(doc, q, yesNo(elig[`e${i}`]), y, margin, pw);
-      });
-    }
-
-    const complementaryQuestions = [
-      "Avez-vous deja realise une formation TAXI (en initiale ou en continue) ?",
-      "Etes-vous en situation de handicap ?",
-    ];
-    const comp = donnees.complementary || {};
-    complementaryQuestions.forEach((q, i) => {
-      if (comp[`c${i}`] !== undefined) {
-        y = renderQA(doc, q, yesNo(comp[`c${i}`]), y, margin, pw);
-        if (i === 0 && comp[`c${i}`] === true && donnees.centreFormation) {
-          y = renderQA(doc, 'Centre de formation', String(donnees.centreFormation), y, margin, pw);
-        }
-        if (i === 1 && comp[`c${i}`] === true && donnees.typeHandicap) {
-          y = renderQA(doc, 'Type de handicap', String(donnees.typeHandicap), y, margin, pw);
-        }
-      }
-    });
-
-    if (donnees.engagementAccepted !== undefined) {
-      y = renderQA(doc, "Engagement sur l'exactitude des reponses", yesNo(donnees.engagementAccepted), y, margin, pw);
-    }
-    if (donnees.dateDocument) {
-      y = renderQA(doc, 'Date du document', String(donnees.dateDocument), y, margin, pw);
-    }
   }
 
+  y = renderSectionHeader(doc, '2. INFORMATIONS FORMATION', y, margin, pw);
+  const formations: string[] = [];
+  if (donnees.formationVTC) formations.push('Habilitation VTC (RS5637)');
+  if (donnees.formationTAXI) formations.push('Habilitation TAXI (RS5635)');
+  y = renderQA(doc, 'Formation souhaitee', formations.length ? formations.join(' + ') : '(Aucune)', y, margin, pw);
+
+  const eligibilityQuestions = [
+    "Avez-vous deja perdu 6 points d'un coup sur votre permis de conduire ?",
+    "Avez-vous deja ete condamne pour conduite d'un vehicule sans permis ?",
+    "Avez-vous ete condamne pour refus de restitution du permis malgre son annulation, invalidation ou interdiction de l'obtenir ?",
+    "Avez-vous deja ete condamne a au moins 6 mois d'emprisonnement pour vol, escroquerie, abus de confiance, atteinte volontaire a l'integrite de la personne, agression sexuelle ou infraction a la legislation sur les stupefiants (en France ou a l'etranger) ?",
+    "Avez-vous le casier judiciaire B3 vierge ?",
+  ];
+  const elig = donnees.eligibility || {};
+  y = renderSectionHeader(doc, "3. CRITERES D'ELIGIBILITE ET DE MORALITE", y, margin, pw);
+  eligibilityQuestions.forEach((q, i) => {
+    y = renderQA(doc, q, yesNo(elig[`e${i}`]), y, margin, pw);
+  });
+
+  const complementaryQuestions = [
+    "Avez-vous deja realise une formation TAXI (en initiale ou en continue) ?",
+    "Etes-vous en situation de handicap ?",
+  ];
+  const comp = donnees.complementary || {};
+  y = renderSectionHeader(doc, '4. INFORMATIONS COMPLEMENTAIRES', y, margin, pw);
+  complementaryQuestions.forEach((q, i) => {
+    y = renderQA(doc, q, yesNo(comp[`c${i}`]), y, margin, pw);
+    if (i === 0 && comp[`c${i}`] === true && donnees.centreFormation) {
+      y = renderQA(doc, 'Centre de formation', String(donnees.centreFormation), y, margin, pw);
+    }
+    if (i === 1 && comp[`c${i}`] === true && donnees.typeHandicap) {
+      y = renderQA(doc, 'Type de handicap', String(donnees.typeHandicap), y, margin, pw);
+    }
+  });
+
+  y = renderSectionHeader(doc, '5. ENGAGEMENT', y, margin, pw);
+  y = renderQA(doc, "Le stagiaire s'engage sur l'exactitude des reponses fournies",
+    yesNo(donnees.engagementAccepted), y, margin, pw);
+  if (donnees.dateDocument) {
+    y = renderQA(doc, 'Date du document', String(donnees.dateDocument), y, margin, pw);
+  }
   return y;
 }
+
 
 
 
