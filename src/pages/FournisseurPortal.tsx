@@ -381,6 +381,20 @@ export default function FournisseurPortal() {
     });
   }, [releves, releveFilterSearch, releveFilterBanque, releveFilterAnnee, releveFilterMois]);
 
+  // Helper: call fournisseur-portal-data edge function with the validated token
+  const callPortal = async (action: string, extras: Record<string, unknown> = {}) => {
+    const baseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const apikey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+    const res = await fetch(`${baseUrl}/functions/v1/fournisseur-portal-data`, {
+      method: "POST",
+      headers: { apikey, "Content-Type": "application/json" },
+      body: JSON.stringify({ token, action, ...extras }),
+    });
+    const payload = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(payload?.error || `Erreur ${res.status}`);
+    return payload;
+  };
+
   // Load fournisseur + initial data via edge function (bypasses RLS with validated token)
   useEffect(() => {
     const loadFournisseur = async () => {
