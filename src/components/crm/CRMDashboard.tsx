@@ -85,14 +85,24 @@ export function CRMDashboard({ initialApprenantId, onApprenantClosed }: CRMDashb
   const { data: apprenants = [], isLoading } = useQuery({
     queryKey: ['apprenants-crm'],
     queryFn: async () => {
-      // Fetch regular apprenants
-      const { data: regularData, error: regularError } = await supabase
-        .from('apprenants')
-        .select('*')
-        .is('deleted_at' as any, null)
-        .order('created_at', { ascending: false });
-      
-      if (regularError) throw regularError;
+      // Fetch ALL apprenants (paginated to bypass 1000-row limit)
+      const pageSize = 1000;
+      let from = 0;
+      const regularData: any[] = [];
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const { data, error } = await supabase
+          .from('apprenants')
+          .select('*')
+          .is('deleted_at' as any, null)
+          .order('created_at', { ascending: false })
+          .range(from, from + pageSize - 1);
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        regularData.push(...data);
+        if (data.length < pageSize) break;
+        from += pageSize;
+      }
 
       // Mark fournisseur apprenants with source info
       const result = (regularData || []).map((a: any) => {
