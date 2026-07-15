@@ -41,29 +41,44 @@ export function GlobalSearch({ onSelectApprenant, onNavigate }: GlobalSearchProp
   }, []);
 
   const search = useCallback(async (term: string) => {
-    if (term.length < 2) {
+    const cleaned = term.trim().replace(/\s+/g, " ");
+    if (cleaned.length < 2) {
       setResults([]);
       return;
     }
     setLoading(true);
     try {
-      const searchTerm = `%${term}%`;
+      // Split multi-word queries (e.g. "ismail amar") so each word can
+      // match a different column (prénom vs nom). Each word must match
+      // somewhere → AND across words, OR across columns.
+      const words = cleaned.split(" ").filter((w) => w.length > 0);
+      const applyApprenantWords = <T extends { or: Function }>(q: T): T => {
+        for (const w of words) {
+          const p = `%${w}%`;
+          (q as any).or(
+            `nom.ilike.${p},prenom.ilike.${p},email.ilike.${p},telephone.ilike.${p}`
+          );
+        }
+        return q;
+      };
+      const fullPattern = `%${cleaned}%`;
+
+      let apprenantsQuery = supabase
+        .from("apprenants")
+        .select("id, nom, prenom, email, telephone");
+      apprenantsQuery = applyApprenantWords(apprenantsQuery);
 
       const [apprenants, formations, sessions] = await Promise.all([
-        supabase
-          .from("apprenants")
-          .select("id, nom, prenom, email, telephone")
-          .or(`nom.ilike.${searchTerm},prenom.ilike.${searchTerm},email.ilike.${searchTerm},telephone.ilike.${searchTerm}`)
-          .limit(5),
+        apprenantsQuery.limit(10),
         supabase
           .from("formations")
           .select("id, nom, description")
-          .or(`nom.ilike.${searchTerm},description.ilike.${searchTerm}`)
+          .or(`nom.ilike.${fullPattern},description.ilike.${fullPattern}`)
           .limit(5),
         supabase
           .from("sessions")
           .select("id, nom, lieu, date_debut, date_fin")
-          .or(`nom.ilike.${searchTerm},lieu.ilike.${searchTerm}`)
+          .or(`nom.ilike.${fullPattern},lieu.ilike.${fullPattern}`)
           .limit(5),
       ]);
 
