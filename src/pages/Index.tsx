@@ -118,16 +118,20 @@ const Index = () => {
     const params = new URLSearchParams(location.search);
     const section = params.get("section");
     const apprenantId = params.get("apprenant");
+    const state = location.state as { section?: string; apprenantId?: string } | null;
 
-    if (section && section in pageConfig) {
+    if (state?.section && state.section in pageConfig) {
+      setCurrentPage(state.section);
+    } else if (section && section in pageConfig) {
       setCurrentPage(section);
     }
 
-    if (apprenantId) {
-      setInitialApprenantId(apprenantId);
+    const targetApprenantId = state?.apprenantId || apprenantId;
+    if (targetApprenantId) {
+      setInitialApprenantId(targetApprenantId);
       setCurrentPage("crm");
     }
-  }, [location.search]);
+  }, [location.search, location.state]);
 
   const openRelanceDialog = async () => {
     setRelanceDialogOpen(true);
