@@ -2890,13 +2890,9 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                             onCheckedChange={() => toggleSelectApprenant(apprenant.id)}
                             onClick={(e) => e.stopPropagation()}
                           />
-                          <Avatar className="w-7 h-7 shrink-0">
-                            <AvatarFallback className="bg-primary/10 text-primary font-semibold text-xs">
-                              {apprenant.prenom?.[0] || ""}{apprenant.nom?.[0] || ""}
-                            </AvatarFallback>
-                          </Avatar>
-                          <span 
-                            className="font-semibold text-sm text-foreground hover:text-primary hover:underline cursor-pointer transition-colors"
+                          <button
+                            type="button"
+                            className="flex items-center gap-2 group cursor-pointer"
                             onClick={(e) => {
                               e.stopPropagation();
                               if (onNavigateToApprenant) {
@@ -2904,7 +2900,16 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                 onNavigateToApprenant(apprenant.id);
                               }
                             }}
-                          >{apprenant.prenom} {apprenant.nom}</span>
+                          >
+                            <Avatar className="w-7 h-7 shrink-0">
+                              <AvatarFallback className="bg-primary/10 text-primary font-semibold text-xs">
+                                {apprenant.prenom?.[0] || ""}{apprenant.nom?.[0] || ""}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span className="font-semibold text-sm text-foreground group-hover:text-primary group-hover:underline transition-colors">
+                              {apprenant.prenom} {apprenant.nom}
+                            </span>
+                          </button>
                           <Badge className={`text-[10px] shrink-0 ${getTypeBadgeColor(apprenant.type_apprenant)}`}>
                             {apprenant.type_apprenant?.toUpperCase() || "N/A"}
                           </Badge>
