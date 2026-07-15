@@ -378,8 +378,8 @@ export const MODULES_DATA: ModuleInfo[] = [
   },
   {
     id: 82,
-    nom: "1.BILAN EXERCICES FORMATION CONTINUE TAXI",
-    description: "Bilan exercices TAXI sans Gestion — Formation continue",
+    nom: "1.COURS FC TAXI",
+    description: "Formation continue TAXI — 4 modules pédagogiques téléchargeables + QCM Final",
     formations: ["continue-taxi"],
   },
   {
