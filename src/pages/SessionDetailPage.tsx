@@ -79,7 +79,10 @@ export default function SessionDetailPage() {
       onOpenChange={goBack}
       asPage
       onBack={goBack}
-      onNavigateToApprenant={(apprenantId) => navigate(`/?section=crm&apprenant=${apprenantId}`)}
+      onNavigateToApprenant={(apprenantId) => navigate(`/?section=crm&apprenant=${apprenantId}`, {
+        replace: true,
+        state: { section: "crm", apprenantId },
+      })}
     />
   );
 }

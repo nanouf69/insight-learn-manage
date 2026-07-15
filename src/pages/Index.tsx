@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -66,6 +67,15 @@ const pageConfig = {
   "creneaux-25-mai": { title: "Créneaux lundi 25 mai", subtitle: "Q/R avant l'examen du 26 mai — temps réel" },
 };
 
+const getInitialNavigationFromUrl = () => {
+  const params = new URLSearchParams(window.location.search);
+  const section = params.get("section");
+  return {
+    page: section && section in pageConfig ? section : "dashboard",
+    apprenantId: params.get("apprenant"),
+  };
+};
+
 const fmt = (n: number) =>
   new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n);
 
@@ -86,12 +96,14 @@ const withTimeout = <T,>(operation: PromiseLike<T>, ms = 10000): Promise<T> =>
   });
 
 const Index = () => {
+  const location = useLocation();
   const { profile, user, loading } = useAuth();
-  const [currentPage, setCurrentPage] = useState("dashboard");
+  const initialNavigation = getInitialNavigationFromUrl();
+  const [currentPage, setCurrentPage] = useState(initialNavigation.page);
   const [pageHistory, setPageHistory] = useState<string[]>([]);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [initialApprenantId, setInitialApprenantId] = useState<string | null>(null);
+  const [initialApprenantId, setInitialApprenantId] = useState<string | null>(initialNavigation.apprenantId);
   const [totalEntrees, setTotalEntrees] = useState<number>(0);
   const [totalSorties, setTotalSorties] = useState<number>(0);
   const [fluxPeriode, setFluxPeriode] = useState<string>("");
@@ -101,6 +113,25 @@ const Index = () => {
   const [relanceSelected, setRelanceSelected] = useState<Set<string>>(new Set());
   const [relanceFilter, setRelanceFilter] = useState("");
   const [loadingPreview, setLoadingPreview] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const section = params.get("section");
+    const apprenantId = params.get("apprenant");
+    const state = location.state as { section?: string; apprenantId?: string } | null;
+
+    if (state?.section && state.section in pageConfig) {
+      setCurrentPage(state.section);
+    } else if (section && section in pageConfig) {
+      setCurrentPage(section);
+    }
+
+    const targetApprenantId = state?.apprenantId || apprenantId;
+    if (targetApprenantId) {
+      setInitialApprenantId(targetApprenantId);
+      setCurrentPage("crm");
+    }
+  }, [location.search, location.state]);
 
   const openRelanceDialog = async () => {
     setRelanceDialogOpen(true);
