@@ -668,8 +668,10 @@ export default function FournisseurPortal() {
       }
       toast({ title: "Documents envoyés", description: `${successCount} document(s) uploadé(s) avec succès.` });
       setSelectedApprenantForDoc(""); fileInput.value = "";
-      const { data } = await supabase.from('fournisseur_documents').select('*').eq('fournisseur_id', fournisseur.id).order('created_at', { ascending: false });
-      if (data) setDocuments(data as FournisseurDocument[]);
+      try {
+        const refreshed = await callPortal("documents");
+        if (Array.isArray(refreshed?.data)) setDocuments(refreshed.data as FournisseurDocument[]);
+      } catch (_) { /* ignore refresh error */ }
     } catch (err: any) {
       toast({ title: "Erreur", description: err.message, variant: "destructive" });
     } finally {
