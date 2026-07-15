@@ -11,6 +11,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { tousLesExamens, type ExamenBlanc, type Matiere } from "@/components/cours-en-ligne/examens-blancs-data";
 import { buildMatiereLookupKeys, getMatiereCanonicalKey, toFiniteNumber, normalizeNoteSur20 } from "@/components/cours-en-ligne/examens-blancs-utils";
 import { computeMatiereScore, computeMatiereScoreFromReponses } from "@/components/cours-en-ligne/examens-blancs-scoring";
+import { runExamensBlancsConsistencyCheck, type ExamConsistencyReport, type ConsistencyIssue } from "@/components/cours-en-ligne/examens-blancs-consistency";
 import { toast } from "sonner";
 
 interface ScanRow {
@@ -392,6 +393,8 @@ export default function DiagnosticExamensBlancs() {
         transaction perdue, réponses manquantes, écriture partielle, etc.
       </p>
 
+      <ConsistencyCheckCard />
+
       <Card className="border-amber-300">
         <CardHeader>
           <CardTitle className="text-base">Scanner tous les élèves d'un examen</CardTitle>
@@ -627,5 +630,101 @@ export default function DiagnosticExamensBlancs() {
         </>
       )}
     </div>
+  );
+}
+
+function ConsistencyCheckCard() {
+  const [report, setReport] = useState<ReturnType<typeof runExamensBlancsConsistencyCheck> | null>(null);
+  const [running, setRunning] = useState(false);
+  const [openExam, setOpenExam] = useState<string | null>(null);
+
+  const run = () => {
+    setRunning(true);
+    // laisse le spinner s'afficher
+    setTimeout(() => {
+      try {
+        setReport(runExamensBlancsConsistencyCheck());
+      } finally {
+        setRunning(false);
+      }
+    }, 30);
+  };
+
+  return (
+    <Card className="border-blue-300">
+      <CardHeader>
+        <CardTitle className="text-base">Vérification apprenant ↔ admin (tous les examens blancs)</CardTitle>
+        <p className="text-xs text-muted-foreground">
+          Analyse statique des données de questions et détecte tout ce qui provoque un décalage
+          entre le score calculé côté apprenant et l'affichage côté correction admin :
+          QCM sans bonne réponse, QRC dont la « réponse attendue » est en fait la question,
+          doublons contradictoires entre examens, etc.
+        </p>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <Button onClick={run} disabled={running} className="gap-2">
+          {running && <Loader2 className="w-4 h-4 animate-spin" />}
+          Lancer la vérification
+        </Button>
+
+        {report && (
+          <div className="space-y-2">
+            {report.totalErrors === 0 && report.totalWarnings === 0 ? (
+              <div className="flex items-center gap-2 text-emerald-600 font-medium text-sm">
+                <CheckCircle2 className="w-4 h-4" />
+                Aucun décalage détecté sur {report.reports.length} examens.
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 text-sm">
+                <Badge className="bg-red-500 text-white">{report.totalErrors} erreurs</Badge>
+                <Badge className="bg-amber-500 text-white">{report.totalWarnings} avertissements</Badge>
+              </div>
+            )}
+
+            <div className="border rounded divide-y">
+              {report.reports
+                .filter((r) => r.errors + r.warnings > 0)
+                .map((r) => (
+                  <div key={r.examId}>
+                    <button
+                      type="button"
+                      onClick={() => setOpenExam(openExam === r.examId ? null : r.examId)}
+                      className="w-full flex items-center justify-between px-3 py-2 text-left hover:bg-muted/40"
+                    >
+                      <div className="text-sm">
+                        <span className="font-medium">{r.examId}</span>
+                        <span className="text-muted-foreground"> — {r.examTitre}</span>
+                      </div>
+                      <div className="flex gap-1">
+                        {r.errors > 0 && <Badge className="bg-red-500 text-white">{r.errors}</Badge>}
+                        {r.warnings > 0 && <Badge className="bg-amber-500 text-white">{r.warnings}</Badge>}
+                      </div>
+                    </button>
+                    {openExam === r.examId && (
+                      <div className="px-3 py-2 bg-muted/20 space-y-2">
+                        {r.issues.map((i: ConsistencyIssue, idx: number) => (
+                          <div key={idx} className="text-xs border-l-2 pl-2" style={{ borderColor: i.severity === "error" ? "#ef4444" : "#f59e0b" }}>
+                            <div className="font-medium">
+                              [{i.severity.toUpperCase()}] {i.matiereNom} · Q{i.questionId}
+                            </div>
+                            <div className="text-muted-foreground italic">« {i.enonce.slice(0, 140)}{i.enonce.length > 140 ? "…" : ""} »</div>
+                            <div>{i.message}</div>
+                            {i.detail && <div className="text-muted-foreground mt-0.5">→ {i.detail}</div>}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              {report.reports.every((r) => r.errors + r.warnings === 0) && (
+                <div className="px-3 py-4 text-sm text-muted-foreground text-center">
+                  Tous les examens sont cohérents.
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
