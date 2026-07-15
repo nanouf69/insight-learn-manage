@@ -92,6 +92,9 @@ const modesFinancementLabels: Record<string, { label: string; class: string }> =
   autre: { label: "Autre", class: "bg-slate-100 text-slate-700" },
 };
 
+const dedupeByStableId = <T extends { id?: string | null }>(rows: T[]) =>
+  Array.from(new Map(rows.map((row, index) => [row.id || `missing-id-${index}`, row])).values());
+
 function ApprenantTable({ 
   data, 
   onDelete,
@@ -201,12 +204,12 @@ function ApprenantTable({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {data.map((apprenant) => {
+          {dedupeByStableId(data).map((apprenant, index) => {
             const status = emargementStatus[apprenant.id];
             const missing = status?.needsSignature;
             return (
             <TableRow
-              key={apprenant.id}
+              key={apprenant.id || `apprenant-${index}`}
               className={missing ? "bg-destructive/5 hover:bg-destructive/10 border-l-4 border-l-destructive" : "hover:bg-muted/50"}
             >
               <TableCell>
@@ -380,7 +383,7 @@ export function ApprenantsList() {
         from += pageSize;
       }
 
-      return Array.from(new Map(rows.map((a) => [a.id, a])).values()).sort(
+      return dedupeByStableId(rows).sort(
         (a, b) =>
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
           || String(b.id).localeCompare(String(a.id))
