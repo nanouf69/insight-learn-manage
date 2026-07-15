@@ -1298,6 +1298,69 @@ export type Database = {
         }
         Relationships: []
       }
+      error_logs: {
+        Row: {
+          component_stack: string | null
+          context: Json | null
+          count: number
+          created_at: string
+          fingerprint: string | null
+          id: string
+          last_seen_at: string
+          level: string
+          message: string
+          resolved: boolean
+          resolved_at: string | null
+          route: string | null
+          source: string
+          stack: string | null
+          url: string | null
+          user_agent: string | null
+          user_email: string | null
+          user_id: string | null
+        }
+        Insert: {
+          component_stack?: string | null
+          context?: Json | null
+          count?: number
+          created_at?: string
+          fingerprint?: string | null
+          id?: string
+          last_seen_at?: string
+          level?: string
+          message: string
+          resolved?: boolean
+          resolved_at?: string | null
+          route?: string | null
+          source?: string
+          stack?: string | null
+          url?: string | null
+          user_agent?: string | null
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          component_stack?: string | null
+          context?: Json | null
+          count?: number
+          created_at?: string
+          fingerprint?: string | null
+          id?: string
+          last_seen_at?: string
+          level?: string
+          message?: string
+          resolved?: boolean
+          resolved_at?: string | null
+          route?: string | null
+          source?: string
+          stack?: string | null
+          url?: string | null
+          user_agent?: string | null
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       facture_paiements: {
         Row: {
           created_at: string
@@ -2942,6 +3005,23 @@ export type Database = {
       is_current_user_apprenant: {
         Args: { _apprenant_id: string }
         Returns: boolean
+      }
+      log_error: {
+        Args: {
+          _component_stack?: string
+          _context?: Json
+          _fingerprint?: string
+          _level?: string
+          _message: string
+          _route?: string
+          _source?: string
+          _stack?: string
+          _url?: string
+          _user_agent?: string
+          _user_email?: string
+          _user_id?: string
+        }
+        Returns: string
       }
       search_apprenant_onboarding: {
         Args: { p_nom: string; p_prenom: string }
