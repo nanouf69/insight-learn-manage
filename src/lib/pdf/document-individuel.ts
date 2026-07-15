@@ -123,7 +123,7 @@ const FIELD_LABELS: Record<string, string> = {
 const TYPE_TITLES: Record<string, string> = {
   'test-competences': 'FICHE DE POSITIONNEMENT STAGIAIRE',
   'projet-professionnel': 'QUESTIONNAIRE PROJET PROFESSIONNEL',
-  'analyse-besoin': 'VERIFICATION DES PREREQUIS',
+  'analyse-besoin': 'ANALYSE DU BESOIN',
   'evaluation-acquis': 'EVALUATION PEDAGOGIQUE',
   'satisfaction': 'ENQUETE DE SATISFACTION',
   'cgv-acceptation': 'CONDITIONS GENERALES DE VENTE',
