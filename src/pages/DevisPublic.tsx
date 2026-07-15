@@ -272,22 +272,29 @@ export default function DevisPublic() {
   }, [loading]);
 
   const loadDevis = async () => {
-    const { data, error: err } = await supabase
-      .from("devis_envois")
-      .select("*, apprenants(nom, prenom, email, formation_choisie, adresse, code_postal, ville, telephone, date_naissance, civilite)")
-      .eq("token", token!)
-      .single();
-
-    if (err || !data) {
+    const baseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const apikey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+    try {
+      const res = await fetch(`${baseUrl}/functions/v1/get-devis-public`, {
+        method: "POST",
+        headers: { apikey, "Content-Type": "application/json" },
+        body: JSON.stringify({ token }),
+      });
+      const payload = await res.json();
+      if (!res.ok || !payload?.devis) {
+        setError("Ce lien de devis est invalide ou a expiré.");
+        setLoading(false);
+        return;
+      }
+      const data = payload.devis;
+      setDevis(data);
+      setApprenant((data as any).apprenants);
+      if (data.devis_signe_url) setUploaded(true);
+    } catch {
       setError("Ce lien de devis est invalide ou a expiré.");
+    } finally {
       setLoading(false);
-      return;
     }
-
-    setDevis(data);
-    setApprenant((data as any).apprenants);
-    if (data.devis_signe_url) setUploaded(true);
-    setLoading(false);
   };
 
   // Canvas drawing handlers
