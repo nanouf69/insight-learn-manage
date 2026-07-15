@@ -88,3 +88,9 @@ verify_jwt = false
 
 [functions.relance-50pct-1mois-avant-examen]
 verify_jwt = false
+
+[functions.get-devis-public]
+verify_jwt = false
+
+[functions.fournisseur-portal-data]
+verify_jwt = false
