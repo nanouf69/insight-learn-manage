@@ -16,7 +16,7 @@ import { toast } from "sonner";
 import { TimerBadge } from "./ExamenBlancsTimer";
 import { ExamQuestionImage } from "./ExamQuestionImage";
 import type { Reponses, ReponseQCM, ReponseQRC } from "./examens-blancs-types";
-import { safeStr, safeArray, getQuestionImageValue, normalizeReponses as normalizeReponsesUtil, computeIsMultiple, applyQCMChange } from "./examens-blancs-utils";
+import { safeStr, safeArray, getQuestionImageValue, normalizeReponses as normalizeReponsesUtil, computeIsMultiple, applyQCMChange, isMistypedAsQRC } from "./examens-blancs-utils";
 import Calculatrice from "./Calculatrice";
 
 // ===== PASSAGE D'UNE MATIÈRE =====
@@ -588,52 +588,71 @@ function PassageMatiere({
             </Badge>
           </div>
 
-          {question?.type === "QCM" && question.choix && (
-            <div className="space-y-2 ml-2">
-              <p className="text-xs text-muted-foreground italic">Vous pouvez sélectionner une ou plusieurs réponses</p>
-              {question.choix.map((choix) => {
-                if (!choix || choix === undefined) return null;
-                const rawRep = reponses[question.id] ?? reponses[String(question.id)];
-                const checked = (Array.isArray(rawRep) ? rawRep : []).includes(choix.lettre);
-                return (
-                  <div
-                    key={choix.lettre}
-                    className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${checked ? "border-primary bg-primary/5" : "border-muted hover:border-primary/40"}`}
-                    onClick={(e) => { e.preventDefault(); handleQCMChange(question.id, choix.lettre, !checked, isMultiple(question)); }}
-                  >
-                    <Checkbox
-                      checked={checked}
-                      onCheckedChange={(value) => handleQCMChange(question.id, choix.lettre, Boolean(value), isMultiple(question))}
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                    <span className="font-mono text-sm font-bold w-6 shrink-0">{choix.lettre})</span>
-                    <span className="text-sm"><RichText value={choix.texte} /></span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {question?.type === "QRC" && (
-            <div className="space-y-2">
-              <p className="text-xs text-muted-foreground">Rédigez votre réponse ci-dessous :</p>
-              {isCalculQuestion(question) && (
-                <div className="flex items-start gap-2 p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-800">
-                  <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-                  <p className="text-xs">
-                    ⚠️ Pour obtenir tous les points, détaillez votre calcul et précisez l'unité dans votre réponse (ex: 21 000 / 3 = 7 000 € HT)
+          {isMistypedAsQRC(question) ? (
+            <div className="rounded-lg border-2 border-destructive/40 bg-destructive/5 p-4 space-y-2">
+              <div className="flex items-start gap-2 text-destructive">
+                <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-semibold text-sm">Question indisponible : incohérence de type détectée</p>
+                  <p className="text-xs text-destructive/80 mt-1">
+                    Cette question est marquée comme « QRC » (réponse libre) mais possède des choix de réponse (QCM).
+                    L'affichage est bloqué pour éviter une correction erronée. Merci de contacter votre formateur —
+                    la question sera exclue du barème le temps de la correction.
                   </p>
                 </div>
-              )}
-              <Textarea
-                placeholder={isCalculQuestion(question) ? "Détaillez votre calcul et indiquez le résultat avec l'unité..." : "Votre réponse..."}
-                rows={4}
-                value={String((reponses[question.id] ?? reponses[String(question.id)]) || "")}
-                onChange={e => handleQRCChange(question.id, e.target.value)}
-                className="resize-none"
-              />
+              </div>
             </div>
+          ) : (
+            <>
+              {question?.type === "QCM" && question.choix && (
+                <div className="space-y-2 ml-2">
+                  <p className="text-xs text-muted-foreground italic">Vous pouvez sélectionner une ou plusieurs réponses</p>
+                  {question.choix.map((choix) => {
+                    if (!choix || choix === undefined) return null;
+                    const rawRep = reponses[question.id] ?? reponses[String(question.id)];
+                    const checked = (Array.isArray(rawRep) ? rawRep : []).includes(choix.lettre);
+                    return (
+                      <div
+                        key={choix.lettre}
+                        className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${checked ? "border-primary bg-primary/5" : "border-muted hover:border-primary/40"}`}
+                        onClick={(e) => { e.preventDefault(); handleQCMChange(question.id, choix.lettre, !checked, isMultiple(question)); }}
+                      >
+                        <Checkbox
+                          checked={checked}
+                          onCheckedChange={(value) => handleQCMChange(question.id, choix.lettre, Boolean(value), isMultiple(question))}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                        <span className="font-mono text-sm font-bold w-6 shrink-0">{choix.lettre})</span>
+                        <span className="text-sm"><RichText value={choix.texte} /></span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {question?.type === "QRC" && (
+                <div className="space-y-2">
+                  <p className="text-xs text-muted-foreground">Rédigez votre réponse ci-dessous :</p>
+                  {isCalculQuestion(question) && (
+                    <div className="flex items-start gap-2 p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-800">
+                      <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                      <p className="text-xs">
+                        ⚠️ Pour obtenir tous les points, détaillez votre calcul et précisez l'unité dans votre réponse (ex: 21 000 / 3 = 7 000 € HT)
+                      </p>
+                    </div>
+                  )}
+                  <Textarea
+                    placeholder={isCalculQuestion(question) ? "Détaillez votre calcul et indiquez le résultat avec l'unité..." : "Votre réponse..."}
+                    rows={4}
+                    value={String((reponses[question.id] ?? reponses[String(question.id)]) || "")}
+                    onChange={e => handleQRCChange(question.id, e.target.value)}
+                    className="resize-none"
+                  />
+                </div>
+              )}
+            </>
           )}
+
         </CardContent>
       </Card>
 
