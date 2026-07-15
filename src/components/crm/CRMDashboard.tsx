@@ -139,11 +139,25 @@ export function CRMDashboard({ initialApprenantId, onApprenantClosed }: CRMDashb
       list = list.filter((a) => formationFilter.includes((a.formation_choisie || "").trim()));
     }
     if (!searchQuery.trim()) return list;
-    const words = normalize(searchQuery).split(" ").filter(Boolean);
-    return list.filter(a => {
-      const searchable = normalize(`${a.prenom} ${a.nom} ${a.email} ${a.telephone} ${a.formation_choisie || ""}`);
-      return words.every(word => searchable.includes(word));
-    });
+    const query = normalize(searchQuery);
+    const words = query.split(" ").filter(Boolean);
+
+    return list
+      .map((a) => {
+        const fullName = normalize(`${a.prenom || ""} ${a.nom || ""}`);
+        const reverseName = normalize(`${a.nom || ""} ${a.prenom || ""}`);
+        const searchable = normalize(`${a.prenom || ""} ${a.nom || ""} ${a.email || ""} ${a.telephone || ""} ${a.formation_choisie || ""}`);
+        const matches = words.every((word) => searchable.includes(word));
+        const score =
+          fullName === query || reverseName === query ? 0 :
+          fullName.startsWith(query) || reverseName.startsWith(query) ? 1 :
+          words.every((word) => fullName.includes(word) || reverseName.includes(word)) ? 2 :
+          3;
+        return { apprenant: a, matches, score };
+      })
+      .filter((item) => item.matches)
+      .sort((a, b) => a.score - b.score)
+      .map((item) => item.apprenant);
   }, [apprenants, searchQuery, formationFilter]);
 
   const stats = useMemo(() => {
