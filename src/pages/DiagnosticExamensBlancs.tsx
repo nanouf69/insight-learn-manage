@@ -655,10 +655,9 @@ function ConsistencyCheckCard() {
       <CardHeader>
         <CardTitle className="text-base">Vérification apprenant ↔ admin (tous les examens blancs)</CardTitle>
         <p className="text-xs text-muted-foreground">
-          Analyse statique des données de questions et détecte tout ce qui provoque un décalage
-          entre le score calculé côté apprenant et l'affichage côté correction admin :
-          QCM sans bonne réponse, QRC dont la « réponse attendue » est en fait la question,
-          doublons contradictoires entre examens, etc.
+          Pour chaque question, recalcule en temps réel la « bonne réponse » telle que l'apprenant est noté
+          et telle que l'admin la voit dans la correction, puis compare les deux. Toute divergence
+          (même d'une lettre ou d'un caractère) est signalée comme erreur bloquante.
         </p>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -669,15 +668,21 @@ function ConsistencyCheckCard() {
 
         {report && (
           <div className="space-y-2">
-            {report.totalErrors === 0 && report.totalWarnings === 0 ? (
+            {report.totalErrors === 0 && report.totalWarnings === 0 && report.totalParityMismatches === 0 ? (
               <div className="flex items-center gap-2 text-emerald-600 font-medium text-sm">
                 <CheckCircle2 className="w-4 h-4" />
-                Aucun décalage détecté sur {report.reports.length} examens.
+                Parité stricte OK sur {report.reports.reduce((s, r) => s + r.parityChecked, 0)} questions
+                — l'apprenant et l'admin sont notés/corrigés sur exactement la même base.
               </div>
             ) : (
-              <div className="flex items-center gap-2 text-sm">
+              <div className="flex items-center gap-2 text-sm flex-wrap">
                 <Badge className="bg-red-500 text-white">{report.totalErrors} erreurs</Badge>
                 <Badge className="bg-amber-500 text-white">{report.totalWarnings} avertissements</Badge>
+                {report.totalParityMismatches > 0 && (
+                  <Badge className="bg-red-700 text-white">
+                    {report.totalParityMismatches} divergence(s) apprenant↔admin
+                  </Badge>
+                )}
               </div>
             )}
 
@@ -694,8 +699,12 @@ function ConsistencyCheckCard() {
                       <div className="text-sm">
                         <span className="font-medium">{r.examId}</span>
                         <span className="text-muted-foreground"> — {r.examTitre}</span>
+                        <span className="text-muted-foreground text-xs ml-2">
+                          ({r.parityChecked - r.parityMismatches}/{r.parityChecked} questions en parité stricte)
+                        </span>
                       </div>
                       <div className="flex gap-1">
+                        {r.parityMismatches > 0 && <Badge className="bg-red-700 text-white">≠ {r.parityMismatches}</Badge>}
                         {r.errors > 0 && <Badge className="bg-red-500 text-white">{r.errors}</Badge>}
                         {r.warnings > 0 && <Badge className="bg-amber-500 text-white">{r.warnings}</Badge>}
                       </div>
@@ -705,7 +714,7 @@ function ConsistencyCheckCard() {
                         {r.issues.map((i: ConsistencyIssue, idx: number) => (
                           <div key={idx} className="text-xs border-l-2 pl-2" style={{ borderColor: i.severity === "error" ? "#ef4444" : "#f59e0b" }}>
                             <div className="font-medium">
-                              [{i.severity.toUpperCase()}] {i.matiereNom} · Q{i.questionId}
+                              [{i.severity.toUpperCase()}] {i.matiereNom} · Q{i.questionId} · {i.kind}
                             </div>
                             <div className="text-muted-foreground italic">« {i.enonce.slice(0, 140)}{i.enonce.length > 140 ? "…" : ""} »</div>
                             <div>{i.message}</div>
