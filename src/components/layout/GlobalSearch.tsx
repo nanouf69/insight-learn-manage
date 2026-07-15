@@ -161,7 +161,7 @@ export function GlobalSearch({ onSelectApprenant, onNavigate }: GlobalSearchProp
         </kbd>
       </button>
 
-      <CommandDialog open={open} onOpenChange={setOpen}>
+      <CommandDialog open={open} onOpenChange={setOpen} shouldFilter={false}>
         <CommandInput
           placeholder="Rechercher un apprenant, formation, session..."
           value={query}
