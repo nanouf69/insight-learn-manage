@@ -608,8 +608,10 @@ export default function FournisseurPortal() {
       resetForm();
       setShowForm(false);
       // Refresh apprenants list
-      const { data: refreshed } = await supabase.from('fournisseur_apprenants').select('*').eq('fournisseur_id', fournisseur.id).order('created_at', { ascending: false });
-      if (refreshed) setApprenants(refreshed as FournisseurApprenant[]);
+      try {
+        const refreshed = await callPortal("apprenants");
+        if (Array.isArray(refreshed?.data)) setApprenants(refreshed.data as FournisseurApprenant[]);
+      } catch (_) { /* ignore refresh error */ }
     } catch (err: any) {
       toast({ title: "Erreur", description: err.message, variant: "destructive" });
     } finally {
