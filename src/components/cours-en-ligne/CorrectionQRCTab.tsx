@@ -1256,26 +1256,30 @@ const CorrectionQRCTab = () => {
                   </div>
 
                   {/* Question */}
-                  <div>
-                    {item.questionSupprimee ? (
+                  <div className="space-y-2">
+                    {item.questionSupprimee && !item.corrigeManuel && !item.enonce && (
                       <div className="flex items-center gap-2 p-2 rounded-md bg-red-50 border border-red-200 flex-wrap">
                         <span className="text-sm font-bold text-red-700">⚠️ Q{item.questionId} — QUESTION SUPPRIMÉE</span>
-                        {!item.corrigeManuel && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-7 text-xs border-red-300 text-red-700 hover:bg-red-100"
-                            disabled={savingId === `${item.resultId}-${item.questionId}`}
-                            onClick={() => handleSaveCorrection(item, item.pointsMax)}
-                          >
-                            Ne pas comptabiliser
-                          </Button>
-                        )}
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-xs border-red-300 text-red-700 hover:bg-red-100"
+                          disabled={savingId === `${item.resultId}-${item.questionId}`}
+                          onClick={() => handleSaveCorrection(item, item.pointsMax)}
+                        >
+                          Ne pas comptabiliser
+                        </Button>
                       </div>
-                    ) : (
+                    )}
+                    {item.enonce && (
                       <p className="text-sm font-bold text-foreground">
                         <span className="text-primary mr-1">Q{item.questionId} —</span>
                         {item.enonce}
+                        {item.questionSupprimee && (
+                          <span className="ml-2 text-xs font-normal text-amber-700" title="Cette question a été modifiée ou supprimée dans l'examen après la passation de l'élève. La correction reste valide.">
+                            (modifiée depuis)
+                          </span>
+                        )}
                       </p>
                     )}
                   </div>
