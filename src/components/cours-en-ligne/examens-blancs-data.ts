@@ -5033,15 +5033,12 @@ Il y a quelque chose de mystique dans la voiture autonome. Des dizaines de milli
       },
       {
         id: 16,
-        type: "QRC",
+        type: "QCM",
         enonce: "Que signifie les 4P :",
-        reponseQRC: "produits/prix/communication ou promotion/distribution ou place",
-        reponses_possibles: [
-          "produits/prix/communication ou promotion/distribution ou place",
-          "projet/prix/communication ou promotion/distribution ou place",
-          "produit/présence/communication ou promotion/distribution ou place",
-          "produits/prix/commercialisation ou promotion/distribution ou place",
-          "6 Règlementation nationale Taxi",
+        choix: [
+          { lettre: "A", texte: "produits/prix/concurrent ou promotion/distribution ou place" },
+          { lettre: "B", texte: "produits/prix/communication ou promotion/distribution ou place", correct: true },
+          { lettre: "C", texte: "produits/prix/communication ou promotion/distribution ou plane" },
         ],
       },
     ],
