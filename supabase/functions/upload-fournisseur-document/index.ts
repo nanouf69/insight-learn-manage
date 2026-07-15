@@ -113,6 +113,52 @@ Deno.serve(async (req) => {
         JSON.stringify({ success: true, url: urlData.publicUrl }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
+    } else if (type === "shared") {
+      const sharedBucket = "fournisseur-shared-docs";
+      const { data: sBuckets } = await supabase.storage.listBuckets();
+      const sExisting = sBuckets?.find((b: any) => b.name === sharedBucket);
+      if (!sExisting) {
+        await supabase.storage.createBucket(sharedBucket, { public: true });
+      } else if (!sExisting.public) {
+        await supabase.storage.updateBucket(sharedBucket, { public: true });
+      }
+      const safeName = file.name
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-zA-Z0-9._-]/g, "_");
+      const filePath = `${fournisseurId}/${timestamp}_${safeName}`;
+      const arrayBuffer = await file.arrayBuffer();
+      const { error: uploadErr } = await supabase.storage
+        .from(sharedBucket)
+        .upload(filePath, arrayBuffer, {
+          contentType: file.type || "application/octet-stream",
+          upsert: false,
+        });
+      if (uploadErr) {
+        return new Response(
+          JSON.stringify({ error: "Erreur upload: " + uploadErr.message }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      const { data: urlData } = supabase.storage.from(sharedBucket).getPublicUrl(filePath);
+      const titre = (formData.get("titre") as string | null) || file.name;
+      const { error: dbErr } = await supabase.from("fournisseur_shared_docs").insert({
+        fournisseur_id: fournisseurId,
+        titre,
+        nom_fichier: file.name,
+        url: urlData.publicUrl,
+        uploaded_by: "fournisseur",
+      });
+      if (dbErr) {
+        return new Response(
+          JSON.stringify({ error: "Erreur DB: " + dbErr.message }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      return new Response(
+        JSON.stringify({ success: true, url: urlData.publicUrl }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     } else {
       // Document upload
       if (!fournisseurApprenantId) {
