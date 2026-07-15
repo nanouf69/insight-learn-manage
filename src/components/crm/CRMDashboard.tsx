@@ -86,7 +86,7 @@ export function CRMDashboard({ initialApprenantId, onApprenantClosed }: CRMDashb
     queryKey: ['apprenants-crm'],
     queryFn: async () => {
       // Fetch ALL apprenants (paginated to bypass 1000-row limit)
-      const pageSize = 1000;
+      const pageSize = 10000;
       let from = 0;
       const regularData: any[] = [];
       // eslint-disable-next-line no-constant-condition
