@@ -401,9 +401,6 @@ function getProgramme(typeApprenant?: string | null): ProgrammeDef {
             "Savoir etablir les documents relatifs a l'execution de la prestation de transport qui doivent etre presentes en cas de controle.",
           ],
         },
-        commonModalites,
-        commonMoyens,
-        commonEval,
       ],
     };
   }
