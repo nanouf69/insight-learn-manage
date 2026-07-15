@@ -727,8 +727,10 @@ export default function FournisseurPortal() {
 
       toast({ title: "Facture envoyée", description: `Facture envoyée avec succès.` });
       setFactureMontant(""); setFactureDescription("Prestation de services"); setFactureMoisAnnee(""); setFactureMoisMultiples([]); setSelectedFactureFileName(""); if (fileInput) fileInput.value = "";
-      const { data: refreshed } = await supabase.from('fournisseur_factures').select('*').eq('fournisseur_id', fournisseur.id).order('created_at', { ascending: false });
-      if (refreshed) setFactures(refreshed as FournisseurFacture[]);
+      try {
+        const refreshed = await callPortal("factures");
+        if (Array.isArray(refreshed?.data)) setFactures(refreshed.data as FournisseurFacture[]);
+      } catch (_) { /* ignore refresh error */ }
     } catch (err: any) {
       toast({ title: "Erreur", description: err.message, variant: "destructive" });
     } finally {
