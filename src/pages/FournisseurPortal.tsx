@@ -1246,19 +1246,7 @@ export default function FournisseurPortal() {
                           onClick={async () => {
                             if (!confirm(`Supprimer définitivement la facture "${f.nom_fichier}" ?`)) return;
                             try {
-                              // Tenter de supprimer le fichier du storage (extraire le path depuis l'URL publique)
-                              const url = f.url || "";
-                              const marker = "/fournisseur-documents/";
-                              const idx = url.indexOf(marker);
-                              if (idx !== -1) {
-                                const path = decodeURIComponent(url.slice(idx + marker.length));
-                                await supabase.storage.from("fournisseur-documents").remove([path]);
-                              }
-                              const { error } = await supabase
-                                .from("fournisseur_factures")
-                                .delete()
-                                .eq("id", f.id);
-                              if (error) throw error;
+                              await callPortal("delete_facture", { facture_id: f.id });
                               setFactures(prev => prev.filter(x => x.id !== f.id));
                               toast({ title: "Facture supprimée" });
                             } catch (err: any) {
