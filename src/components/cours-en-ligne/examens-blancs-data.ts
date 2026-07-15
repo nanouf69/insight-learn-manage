@@ -5082,9 +5082,9 @@ Il y a quelque chose de mystique dans la voiture autonome. Des dizaines de milli
         type: "QCM",
         enonce: "Quel est le périmètre d'exercice de l'activité de conducteur de VTC ?",
         choix: [
-          { lettre: "A", texte: "son département de résidence", correct: true },
+          { lettre: "A", texte: "son département de résidence" },
           { lettre: "B", texte: "sa commune de résidence" },
-          { lettre: "C", texte: "Le territoire national" },
+          { lettre: "C", texte: "Le territoire national", correct: true },
         ],
       },
       {
