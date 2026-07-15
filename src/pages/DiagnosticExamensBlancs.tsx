@@ -710,17 +710,56 @@ function ConsistencyCheckCard() {
                       </div>
                     </button>
                     {openExam === r.examId && (
-                      <div className="px-3 py-2 bg-muted/20 space-y-2">
-                        {r.issues.map((i: ConsistencyIssue, idx: number) => (
-                          <div key={idx} className="text-xs border-l-2 pl-2" style={{ borderColor: i.severity === "error" ? "#ef4444" : "#f59e0b" }}>
-                            <div className="font-medium">
-                              [{i.severity.toUpperCase()}] {i.matiereNom} · Q{i.questionId} · {i.kind}
+                      <div className="px-3 py-2 bg-muted/20 space-y-3">
+                        {r.parities.filter((p) => !p.match).length > 0 && (
+                          <div className="space-y-2">
+                            <div className="text-xs font-semibold text-red-700">
+                              Divergences apprenant ↔ admin ({r.parities.filter((p) => !p.match).length})
                             </div>
-                            <div className="text-muted-foreground italic">« {i.enonce.slice(0, 140)}{i.enonce.length > 140 ? "…" : ""} »</div>
-                            <div>{i.message}</div>
-                            {i.detail && <div className="text-muted-foreground mt-0.5">→ {i.detail}</div>}
+                            {r.parities.filter((p) => !p.match).map((p) => (
+                              <div key={`par-${p.questionId}`} className="text-xs border border-red-300 rounded p-2 bg-red-50 space-y-1">
+                                <div className="font-medium">
+                                  {p.matiereNom} · Q{p.questionId} · {p.type}
+                                </div>
+                                <div className="text-muted-foreground italic">
+                                  « {p.enonce.slice(0, 160)}{p.enonce.length > 160 ? "…" : ""} »
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pt-1">
+                                  <div className="border rounded p-2 bg-white">
+                                    <div className="text-[10px] uppercase tracking-wide text-blue-700 font-semibold mb-1">Côté apprenant (X)</div>
+                                    <div className="font-mono break-words whitespace-pre-wrap">
+                                      {p.learnerExpected || <span className="text-muted-foreground italic">(vide)</span>}
+                                    </div>
+                                  </div>
+                                  <div className="border rounded p-2 bg-white">
+                                    <div className="text-[10px] uppercase tracking-wide text-purple-700 font-semibold mb-1">Côté admin (Y)</div>
+                                    <div className="font-mono break-words whitespace-pre-wrap">
+                                      {p.adminExpected || <span className="text-muted-foreground italic">(vide)</span>}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
                           </div>
-                        ))}
+                        )}
+
+                        {r.issues.filter((i) => i.kind !== "answer_parity_mismatch").length > 0 && (
+                          <div className="space-y-2">
+                            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                              Autres anomalies
+                            </div>
+                            {r.issues.filter((i) => i.kind !== "answer_parity_mismatch").map((i: ConsistencyIssue, idx: number) => (
+                              <div key={idx} className="text-xs border-l-2 pl-2" style={{ borderColor: i.severity === "error" ? "#ef4444" : "#f59e0b" }}>
+                                <div className="font-medium">
+                                  [{i.severity.toUpperCase()}] {i.matiereNom} · Q{i.questionId} · {i.kind}
+                                </div>
+                                <div className="text-muted-foreground italic">« {i.enonce.slice(0, 140)}{i.enonce.length > 140 ? "…" : ""} »</div>
+                                <div>{i.message}</div>
+                                {i.detail && <div className="text-muted-foreground mt-0.5">→ {i.detail}</div>}
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
