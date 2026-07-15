@@ -97,9 +97,26 @@ function checkQuestion(
   }
 }
 
-/** Vérifie qu'une même question (même énoncé) n'a pas des corrigés différents d'un examen à l'autre. */
+/** Jaccard sur mots ≥ 3 lettres. */
+function textSimilarity(a: string, b: string): number {
+  const tok = (s: string) =>
+    new Set(
+      norm(s)
+        .split(/[^a-z0-9]+/)
+        .filter((w) => w.length >= 3),
+    );
+  const A = tok(a);
+  const B = tok(b);
+  if (A.size === 0 && B.size === 0) return 1;
+  let inter = 0;
+  for (const w of A) if (B.has(w)) inter++;
+  const union = A.size + B.size - inter;
+  return union === 0 ? 1 : inter / union;
+}
+
+/** Vérifie qu'une même question (même énoncé) n'a pas des corrigés VRAIMENT différents. */
 function checkCrossExam(examens: ExamenBlanc[], out: ConsistencyIssue[]) {
-  const byEnonce = new Map<string, { exam: ExamenBlanc; matiere: Matiere; q: Question; signature: string }[]>();
+  const byEnonce = new Map<string, { exam: ExamenBlanc; matiere: Matiere; q: Question; signature: string; raw: string }[]>();
 
   for (const exam of examens) {
     for (const matiere of exam.matieres || []) {
@@ -108,30 +125,72 @@ function checkCrossExam(examens: ExamenBlanc[], out: ConsistencyIssue[]) {
         const key = norm(q.enonce);
         if (!key || key.length < 15) continue;
         let signature = "";
+        let raw = "";
         if (q.type === "QCM") {
           signature = "QCM|" + (q.choix || [])
             .filter((c) => c.correct)
             .map((c) => norm(c.texte))
             .sort()
             .join("§");
+          raw = signature;
         } else {
-          signature = "QRC|" + norm(q.reponseQRC || "");
+          raw = (q.reponseQRC || "").trim();
+          if (!raw) continue; // QRC vide déjà signalé ailleurs
+          signature = "QRC|" + norm(raw);
         }
         const arr = byEnonce.get(key) || [];
-        arr.push({ exam, matiere, q, signature });
+        arr.push({ exam, matiere, q, signature, raw });
         byEnonce.set(key, arr);
       }
     }
   }
 
+  const SIMILARITY_THRESHOLD = 0.75; // ≥ 75% de mots en commun ⇒ on considère identique
+
   for (const [_, items] of byEnonce) {
     if (items.length < 2) continue;
-    const distinctSigs = new Set(items.map((i) => i.signature).filter((s) => !s.endsWith("|")));
-    if (distinctSigs.size <= 1) continue;
-    // Conflict — signaler chaque occurrence
+    const isQCM = items[0].q.type === "QCM";
+
+    if (isQCM) {
+      const distinct = new Set(items.map((i) => i.signature));
+      if (distinct.size <= 1) continue;
+      const detail = [...distinct].map((s) => s.replace(/^QCM\|/, "")).join("  ≠  ");
+      for (const it of items) {
+        out.push({
+          severity: "error",
+          kind: "cross_exam_conflict",
+          examId: it.exam.id,
+          examTitre: it.exam.titre,
+          matiereId: it.matiere.id,
+          matiereNom: it.matiere.nom,
+          questionId: it.q.id,
+          enonce: it.q.enonce,
+          message: `QCM : même énoncé, bonnes réponses différentes dans ${items.length} examens.`,
+          detail,
+        });
+      }
+      continue;
+    }
+
+    // QRC : regrouper par similarité (Jaccard). Ne flagger que si ≥ 2 clusters distincts.
+    const clusters: string[][] = [];
+    for (const it of items) {
+      let placed = false;
+      for (const c of clusters) {
+        if (textSimilarity(it.raw, c[0]) >= SIMILARITY_THRESHOLD) {
+          c.push(it.raw);
+          placed = true;
+          break;
+        }
+      }
+      if (!placed) clusters.push([it.raw]);
+    }
+    if (clusters.length <= 1) continue; // reformulations mineures : on ignore
+
+    const detail = clusters.map((c) => c[0].slice(0, 180)).join("  ≠  ");
     for (const it of items) {
       out.push({
-        severity: "error",
+        severity: "warning",
         kind: "cross_exam_conflict",
         examId: it.exam.id,
         examTitre: it.exam.titre,
@@ -139,8 +198,8 @@ function checkCrossExam(examens: ExamenBlanc[], out: ConsistencyIssue[]) {
         matiereNom: it.matiere.nom,
         questionId: it.q.id,
         enonce: it.q.enonce,
-        message: `Même énoncé, corrigé différent dans ${items.length} examens — l'apprenant et l'admin verront des bonnes réponses différentes selon l'examen.`,
-        detail: [...distinctSigs].map((s) => s.replace(/^Q[CR]C\|/, "")).join("  ≠  "),
+        message: `QRC : même énoncé, réponses attendues significativement différentes (${clusters.length} versions).`,
+        detail,
       });
     }
   }
