@@ -96,6 +96,7 @@ export function CRMDashboard({ initialApprenantId, onApprenantClosed }: CRMDashb
           .select('*')
           .is('deleted_at' as any, null)
           .order('created_at', { ascending: false })
+          .order('id', { ascending: false })
           .range(from, from + pageSize - 1);
         if (error) throw error;
         if (!data || data.length === 0) break;
@@ -104,8 +105,12 @@ export function CRMDashboard({ initialApprenantId, onApprenantClosed }: CRMDashb
         from += pageSize;
       }
 
+      const uniqueData = Array.from(
+        new Map((regularData || []).map((a: any) => [a.id, a])).values(),
+      );
+
       // Mark fournisseur apprenants with source info
-      const result = (regularData || []).map((a: any) => {
+      const result = uniqueData.map((a: any) => {
         if (a.statut === 'fournisseur') {
           return { ...a, _source: 'fournisseur', _fournisseurNom: a.notes?.replace('Via fournisseur: ', '') || 'Fournisseur' };
         }
@@ -113,7 +118,9 @@ export function CRMDashboard({ initialApprenantId, onApprenantClosed }: CRMDashb
       });
 
       return result.sort(
-        (a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        (a: any, b: any) =>
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          || String(b.id).localeCompare(String(a.id))
       );
     },
   });
@@ -139,11 +146,25 @@ export function CRMDashboard({ initialApprenantId, onApprenantClosed }: CRMDashb
       list = list.filter((a) => formationFilter.includes((a.formation_choisie || "").trim()));
     }
     if (!searchQuery.trim()) return list;
-    const words = normalize(searchQuery).split(" ").filter(Boolean);
-    return list.filter(a => {
-      const searchable = normalize(`${a.prenom} ${a.nom} ${a.email} ${a.telephone} ${a.formation_choisie || ""}`);
-      return words.every(word => searchable.includes(word));
-    });
+    const query = normalize(searchQuery);
+    const words = query.split(" ").filter(Boolean);
+
+    return list
+      .map((a) => {
+        const fullName = normalize(`${a.prenom || ""} ${a.nom || ""}`);
+        const reverseName = normalize(`${a.nom || ""} ${a.prenom || ""}`);
+        const searchable = normalize(`${a.prenom || ""} ${a.nom || ""} ${a.email || ""} ${a.telephone || ""} ${a.formation_choisie || ""}`);
+        const matches = words.every((word) => searchable.includes(word));
+        const score =
+          fullName === query || reverseName === query ? 0 :
+          fullName.startsWith(query) || reverseName.startsWith(query) ? 1 :
+          words.every((word) => fullName.includes(word) || reverseName.includes(word)) ? 2 :
+          3;
+        return { apprenant: a, matches, score };
+      })
+      .filter((item) => item.matches)
+      .sort((a, b) => a.score - b.score)
+      .map((item) => item.apprenant);
   }, [apprenants, searchQuery, formationFilter]);
 
   const stats = useMemo(() => {

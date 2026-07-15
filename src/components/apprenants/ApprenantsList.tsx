@@ -60,6 +60,7 @@ interface Apprenant {
   date_debut_cours_en_ligne?: string | null;
   date_fin_cours_en_ligne?: string | null;
   date_formation_catalogue?: string | null;
+  created_at?: string | null;
 }
 
 
@@ -357,14 +358,33 @@ export function ApprenantsList() {
   const { data: apprenants = [], isLoading } = useQuery({
     queryKey: ['apprenants'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('apprenants')
-        .select('*')
-        .is('deleted_at' as any, null)
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data as Apprenant[];
+      const pageSize = 1000;
+      let from = 0;
+      const rows: Apprenant[] = [];
+
+      // Fetch ALL apprenants with a stable order to avoid duplicates/missing rows across pages
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const { data, error } = await supabase
+          .from('apprenants')
+          .select('*')
+          .is('deleted_at' as any, null)
+          .order('created_at', { ascending: false })
+          .order('id', { ascending: false })
+          .range(from, from + pageSize - 1);
+
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        rows.push(...(data as Apprenant[]));
+        if (data.length < pageSize) break;
+        from += pageSize;
+      }
+
+      return Array.from(new Map(rows.map((a) => [a.id, a])).values()).sort(
+        (a, b) =>
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          || String(b.id).localeCompare(String(a.id))
+      );
     }
   });
 
@@ -464,25 +484,39 @@ export function ApprenantsList() {
     )
   ).sort((a, b) => a.localeCompare(b, "fr", { sensitivity: "base" }));
 
-  const filteredApprenants = apprenants.filter(a => {
-    // Filtre par type d'apprenant (multi)
-    if (typeFilter.length > 0) {
-      const t = (a.type_apprenant || "").toLowerCase();
-      if (!typeFilter.some(f => t.includes(f))) return false;
-    }
-    // Filtre par formation (multi)
-    if (formationFilter.length > 0) {
-      const f = (a.formation_choisie || "").trim();
-      if (!formationFilter.includes(f)) return false;
-    }
-    if (!searchTerm.trim()) return true;
-    const normalizedSearch = normalize(searchTerm);
-    const keywords = normalizedSearch.split(" ").filter(Boolean);
-    const haystack = normalize([a.nom, a.prenom, a.email || "", a.telephone || "", a.ville || "", a.adresse || "", a.code_postal || "", a.formation_choisie || ""].join(" "));
-    const haystackStripped = stripNonAlpha([a.telephone || "", a.email || ""].join(" "));
-    const searchStripped = stripNonAlpha(normalizedSearch);
-    return keywords.every(kw => haystack.includes(kw)) || (searchStripped.length >= 3 && haystackStripped.includes(searchStripped));
-  });
+  const filteredApprenants = apprenants
+    .map(a => {
+      // Filtre par type d'apprenant (multi)
+      if (typeFilter.length > 0) {
+        const t = (a.type_apprenant || "").toLowerCase();
+        if (!typeFilter.some(f => t.includes(f))) return { apprenant: a, matches: false, score: 99 };
+      }
+      // Filtre par formation (multi)
+      if (formationFilter.length > 0) {
+        const f = (a.formation_choisie || "").trim();
+        if (!formationFilter.includes(f)) return { apprenant: a, matches: false, score: 99 };
+      }
+      if (!searchTerm.trim()) return { apprenant: a, matches: true, score: 0 };
+
+      const normalizedSearch = normalize(searchTerm);
+      const keywords = normalizedSearch.split(" ").filter(Boolean);
+      const fullName = normalize(`${a.prenom || ""} ${a.nom || ""}`);
+      const reverseName = normalize(`${a.nom || ""} ${a.prenom || ""}`);
+      const haystack = normalize([a.nom, a.prenom, a.email || "", a.telephone || "", a.ville || "", a.adresse || "", a.code_postal || "", a.formation_choisie || ""].join(" "));
+      const haystackStripped = stripNonAlpha([a.telephone || "", a.email || ""].join(" "));
+      const searchStripped = stripNonAlpha(normalizedSearch);
+      const matches = keywords.every(kw => haystack.includes(kw)) || (searchStripped.length >= 3 && haystackStripped.includes(searchStripped));
+      const score =
+        fullName === normalizedSearch || reverseName === normalizedSearch ? 0 :
+        fullName.startsWith(normalizedSearch) || reverseName.startsWith(normalizedSearch) ? 1 :
+        keywords.every(kw => fullName.includes(kw) || reverseName.includes(kw)) ? 2 :
+        3;
+
+      return { apprenant: a, matches, score };
+    })
+    .filter(item => item.matches)
+    .sort((a, b) => a.score - b.score)
+    .map(item => item.apprenant);
 
   if (isLoading) {
     return (
