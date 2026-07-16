@@ -339,6 +339,7 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
         facture_contact_telephone: (apprenant as any).facture_contact_telephone || "",
         heures_elearning: (apprenant as any).heures_elearning?.toString() || "",
         heures_presentiel: (apprenant as any).heures_presentiel?.toString() || "",
+        heures_pratique: (apprenant as any).heures_pratique?.toString() || "",
         heures_totales: (apprenant as any).heures_totales?.toString() || "",
       });
       
