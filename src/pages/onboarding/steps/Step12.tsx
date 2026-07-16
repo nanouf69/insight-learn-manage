@@ -90,6 +90,7 @@ export default function Step12() {
   const [editDossierOpen, setEditDossierOpen] = useState(false);
   const [editExamenOpen, setEditExamenOpen] = useState(false);
   const [editDateOpen, setEditDateOpen] = useState(false);
+  const [editMotDePasseCmaOpen, setEditMotDePasseCmaOpen] = useState(false);
   
   // Temp edit values
   const [tempNom, setTempNom] = useState('');
