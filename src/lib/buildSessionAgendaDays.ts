@@ -14,7 +14,17 @@ export interface SessionAgendaContext {
   title?: string | null;   // ex: "Session du soir"
   type_session?: string | null;
   typeApprenant?: string | null;
+  /**
+   * Nombre d'heures de présentiel à réaliser par l'apprenant (hors pratique).
+   * Si fourni et > total des heures des jours de la session, on ajoute des
+   * feuilles d'émargement supplémentaires les samedis (priorité), puis les
+   * lundis suivants la fin de session pour atteindre l'objectif.
+   */
+  heuresPresentielRequis?: number | null;
 }
+
+const hoursPerDay = (d: { isSoir?: boolean }) => (d.isSoir ? 4 : 6);
+
 
 const getFlags = (typeApprenant: string | null | undefined, title: string) => {
   const t = (typeApprenant || "").toLowerCase();
@@ -121,7 +131,7 @@ export async function buildSessionAgendaDays(
       return result;
     });
 
-  if (days.length > 0) return days;
+  if (days.length > 0) return padExtraDays(days, ctx);
 
   // ---- Fallback : aucun bloc agenda trouvé ----
   const isCoursDuSoir = titleLower.includes("soir");
@@ -149,5 +159,66 @@ export async function buildSessionAgendaDays(
     fallback.push(day);
     cur.setDate(cur.getDate() + 1);
   }
-  return fallback;
+  return padExtraDays(fallback, ctx);
 }
+
+/**
+ * Ajoute des jours d'émargement supplémentaires (samedi en priorité, sinon
+ * lundi) après la date de fin de session pour atteindre le nombre d'heures
+ * de présentiel requis (hors heures de pratique).
+ */
+function padExtraDays(days: AgendaDaySlot[], ctx: SessionAgendaContext): AgendaDaySlot[] {
+  const target = Number(ctx.heuresPresentielRequis || 0);
+  if (!target || days.length === 0) return days;
+
+  const currentTotal = days.reduce((sum, d) => sum + hoursPerDay(d), 0);
+  if (currentTotal >= target) return days;
+
+  const lastDay = days[days.length - 1].date;
+  const isSoir = days.every((d) => d.isSoir);
+  const perDay = isSoir ? 4 : 6;
+
+  const makeDay = (date: Date): AgendaDaySlot => (isSoir
+    ? { date, matinDebut: "17:00", matinFin: "18:30", apremDebut: "18:30", apremFin: "21:00", isSoir: true }
+    : { date, matinDebut: "09:00", matinFin: "12:00", apremDebut: "13:00", apremFin: "16:00" });
+
+  const MAX_WEEKS = 16;
+  const extras: AgendaDaySlot[] = [];
+  let remaining = target - currentTotal;
+
+  // 1) Priorité : samedis suivant la fin de session
+  const cursor = new Date(lastDay);
+  cursor.setDate(cursor.getDate() + 1);
+  let weeksScanned = 0;
+  while (remaining > 0 && weeksScanned < MAX_WEEKS) {
+    if (cursor.getDay() === 6) { // samedi
+      extras.push(makeDay(new Date(cursor)));
+      remaining -= perDay;
+      weeksScanned++;
+    }
+    cursor.setDate(cursor.getDate() + 1);
+    // sécurité : borne dure
+    if (extras.length > 32) break;
+  }
+
+  // 2) Fallback : lundis suivants si samedis insuffisants
+  if (remaining > 0) {
+    const cursor2 = new Date(lastDay);
+    cursor2.setDate(cursor2.getDate() + 1);
+    let mondaysScanned = 0;
+    while (remaining > 0 && mondaysScanned < MAX_WEEKS) {
+      if (cursor2.getDay() === 1) { // lundi
+        // éviter doublon si un samedi précédent est déjà à cette date (impossible ici)
+        extras.push(makeDay(new Date(cursor2)));
+        remaining -= perDay;
+        mondaysScanned++;
+      }
+      cursor2.setDate(cursor2.getDate() + 1);
+      if (extras.length > 64) break;
+    }
+  }
+
+  // Trier chronologiquement pour un rendu propre dans le PDF
+  return [...days, ...extras].sort((a, b) => a.date.getTime() - b.date.getTime());
+}
+
