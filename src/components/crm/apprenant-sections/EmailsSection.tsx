@@ -1123,9 +1123,66 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
               <Inbox className="w-3 h-3" />
               Reçus
             </TabsTrigger>
+            <TabsTrigger value="calls" className="gap-2">
+              <Phone className="w-3 h-3" />
+              Appels {appels.length > 0 && <span className="text-xs opacity-70">({appels.length})</span>}
+            </TabsTrigger>
           </TabsList>
 
+          {activeTab === 'calls' ? (
+            <div>
+              {isLoadingAppels ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : appels.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Phone className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                  <p>Aucun appel enregistré</p>
+                  <Button variant="link" className="mt-2" onClick={() => setIsCallOpen(true)}>
+                    Enregistrer un premier appel
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {appels.map((a) => (
+                    <div key={a.id} className="flex items-start gap-4 p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${a.direction === 'entrant' ? 'bg-purple-100' : 'bg-orange-100'}`}>
+                        <Phone className={`w-4 h-4 ${a.direction === 'entrant' ? 'text-purple-600' : 'text-orange-600'}`} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                          <h4 className="font-medium truncate">{a.sujet}</h4>
+                          <Badge variant="outline" className="text-xs shrink-0">
+                            {a.direction === 'entrant' ? 'Entrant' : 'Sortant'}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {format(new Date(a.date_appel), "dd MMM yyyy 'à' HH'h'mm", { locale: fr })}
+                          </span>
+                        </div>
+                        {a.notes && (
+                          <p className="text-sm text-muted-foreground whitespace-pre-wrap">{a.notes}</p>
+                        )}
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          if (confirm("Supprimer cette trace d'appel ?")) deleteAppelMutation.mutate(a.id);
+                        }}
+                        title="Supprimer"
+                      >
+                        <Trash2 className="w-4 h-4 text-destructive" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
           <TabsContent value={activeTab}>
+
             {isLoading ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
