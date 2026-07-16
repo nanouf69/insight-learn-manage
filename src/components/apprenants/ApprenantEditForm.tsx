@@ -1541,7 +1541,7 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
                 </Popover>
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-4 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="heures_elearning">Heures à réaliser en e-learning</Label>
                 <Input
@@ -1554,7 +1554,8 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
                   onChange={(e) => {
                     const el = e.target.value;
                     const pr = formData.heures_presentiel;
-                    const total = (parseFloat(el) || 0) + (parseFloat(pr) || 0);
+                    const pra = formData.heures_pratique;
+                    const total = (parseFloat(el) || 0) + (parseFloat(pr) || 0) + (parseFloat(pra) || 0);
                     setFormData({
                       ...formData,
                       heures_elearning: el,
@@ -1575,10 +1576,33 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
                   onChange={(e) => {
                     const pr = e.target.value;
                     const el = formData.heures_elearning;
-                    const total = (parseFloat(el) || 0) + (parseFloat(pr) || 0);
+                    const pra = formData.heures_pratique;
+                    const total = (parseFloat(el) || 0) + (parseFloat(pr) || 0) + (parseFloat(pra) || 0);
                     setFormData({
                       ...formData,
                       heures_presentiel: pr,
+                      heures_totales: total > 0 ? total.toString() : formData.heures_totales,
+                    });
+                  }}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="heures_pratique">Heures à réaliser en pratique</Label>
+                <Input
+                  id="heures_pratique"
+                  type="number"
+                  min="0"
+                  step="0.5"
+                  placeholder="Ex: 20"
+                  value={formData.heures_pratique}
+                  onChange={(e) => {
+                    const pra = e.target.value;
+                    const el = formData.heures_elearning;
+                    const pr = formData.heures_presentiel;
+                    const total = (parseFloat(el) || 0) + (parseFloat(pr) || 0) + (parseFloat(pra) || 0);
+                    setFormData({
+                      ...formData,
+                      heures_pratique: pra,
                       heures_totales: total > 0 ? total.toString() : formData.heures_totales,
                     });
                   }}
@@ -1591,12 +1615,13 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
                   type="number"
                   min="0"
                   step="0.5"
-                  placeholder="Ex: 105"
+                  placeholder="Ex: 125"
                   value={formData.heures_totales}
                   onChange={(e) => setFormData({ ...formData, heures_totales: e.target.value })}
                 />
               </div>
             </div>
+
             {/* Modules de la formation — ordered like "Configurer l'accès cours" */}
             {(() => {
               // Determine formation type for module display
