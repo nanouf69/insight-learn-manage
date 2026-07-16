@@ -815,6 +815,28 @@ export default function Step12() {
           </Select>
         </div>
       </EditDialog>
+
+      <EditDialog
+        title="Renseigner votre mot de passe CMA"
+        open={editMotDePasseCmaOpen}
+        onOpenChange={setEditMotDePasseCmaOpen}
+        onSave={saveMotDePasseCma}
+      >
+        <div>
+          <Label htmlFor="edit-mdp-cma">Mot de passe CMA <span className="text-red-500">*</span></Label>
+          <Input
+            id="edit-mdp-cma"
+            value={tempMotDePasseCma}
+            onChange={(e) => setTempMotDePasseCma(e.target.value)}
+            placeholder="Le mot de passe que vous avez créé lors de votre inscription CMA"
+            className="font-mono mt-2"
+          />
+          <p className="text-xs text-gray-500 mt-2">
+            Ce mot de passe est indispensable pour finaliser votre dossier de bienvenue.
+          </p>
+        </div>
+      </EditDialog>
     </OnboardingLayout>
+
   );
 }
