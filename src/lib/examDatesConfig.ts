@@ -66,6 +66,7 @@ export const ALL_DATES_EXAMEN_PRATIQUE_NO_ACCENT = [
 // ── Dates de formation du catalogue ──
 export const ALL_DATES_FORMATION_CATALOGUE = [
   "Du 21 au 24 juillet 2026",
+  "Du 25 au 28 août 2026",
   "Du 29 septembre au 2 octobre 2026",
   "Du 17 au 20 novembre 2026",
 ];
