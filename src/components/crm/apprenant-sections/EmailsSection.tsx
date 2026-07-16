@@ -266,7 +266,7 @@ L'équipe Ftransport
 
 export function EmailsSection({ apprenant }: EmailsSectionProps) {
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState<'all' | 'sent' | 'received'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'sent' | 'received' | 'calls'>('all');
   const [isComposeOpen, setIsComposeOpen] = useState(false);
   const [selectedEmail, setSelectedEmail] = useState<EmailRecord | null>(null);
   const [newEmailSubject, setNewEmailSubject] = useState("");
@@ -275,6 +275,15 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
   const [forwardTo, setForwardTo] = useState("");
   const [isForwarding, setIsForwarding] = useState(false);
   const [attachments, setAttachments] = useState<AttachmentFile[]>([]);
+  const [isCallOpen, setIsCallOpen] = useState(false);
+  const [callDate, setCallDate] = useState<string>(() => {
+    const d = new Date();
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    return d.toISOString().slice(0, 16);
+  });
+  const [callSujet, setCallSujet] = useState("");
+  const [callNotes, setCallNotes] = useState("");
+  const [callDirection, setCallDirection] = useState<'sortant' | 'entrant'>('sortant');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
