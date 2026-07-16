@@ -121,9 +121,6 @@ serve(async (req) => {
     for (const session of sessions) {
       const soir = estCoursDuSoir(session.heure_debut);
       const demiJourneesParJour = soir ? 1 : 2;
-      const jours = joursEcoules(session.date_debut, session.date_fin, today);
-      const expected = jours * demiJourneesParJour;
-      if (expected < 1) continue;
 
       const { data: liens } = await supabase
         .from("session_apprenants")
@@ -134,13 +131,22 @@ serve(async (req) => {
         const a: any = (lien as any).apprenants;
         if (!a?.email || !isPresentiel(a)) continue;
 
-        // Toutes les entrées d'émargement (signées OU absence justifiée) comptent
+        // Jours de cours RÉELS déjà passés (agenda_blocs, exclut weekends/futur)
+        const joursPasses = await joursDeCoursPasses(
+          supabase,
+          { date_debut: session.date_debut, date_fin: session.date_fin },
+          a.type_apprenant || a.formation_choisie || "",
+          today,
+        );
+        const expected = joursPasses.length * demiJourneesParJour;
+        if (expected < 1) continue;
+
+        // Compter les émargements uniquement sur ces jours de cours passés
         const { count } = await supabase
           .from("emargements_fc")
           .select("id", { count: "exact", head: true })
           .eq("apprenant_id", a.id)
-          .gte("date_emargement", session.date_debut)
-          .lte("date_emargement", todayStr);
+          .in("date_emargement", joursPasses);
 
         const signed = count || 0;
         const gap = expected - signed;
