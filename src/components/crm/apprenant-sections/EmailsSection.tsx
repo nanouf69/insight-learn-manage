@@ -880,7 +880,7 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="flex items-center gap-2">
           <Mail className="w-5 h-5" />
-          Historique des Emails
+          Emails &amp; contacts
         </CardTitle>
         <div className="flex gap-2">
           <Button
