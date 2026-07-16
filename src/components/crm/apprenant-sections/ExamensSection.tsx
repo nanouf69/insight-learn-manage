@@ -31,7 +31,33 @@ export function ExamensSection({ apprenant }: ExamensSectionProps) {
   const [resultatPratique, setResultatPratique] = useState<string | null>(null);
   const [datePratique, setDatePratique] = useState<string>('');
   const [dateEntrainement, setDateEntrainement] = useState<string | null>(null);
+  const [editingMdpCma, setEditingMdpCma] = useState(false);
+  const [mdpCma, setMdpCma] = useState<string>(apprenant.mot_de_passe_cma || '');
+  const [savingMdpCma, setSavingMdpCma] = useState(false);
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    setMdpCma(apprenant.mot_de_passe_cma || '');
+  }, [apprenant.mot_de_passe_cma]);
+
+  const handleSaveMdpCma = async () => {
+    setSavingMdpCma(true);
+    try {
+      const { error } = await supabase
+        .from('apprenants')
+        .update({ mot_de_passe_cma: mdpCma.trim() || null })
+        .eq('id', apprenant.id);
+      if (error) throw error;
+      toast.success('Mot de passe CMA enregistré');
+      setEditingMdpCma(false);
+      queryClient.invalidateQueries({ queryKey: ['apprenant-detail', apprenant.id] });
+    } catch (e) {
+      console.error(e);
+      toast.error("Erreur lors de la sauvegarde du mot de passe CMA");
+    } finally {
+      setSavingMdpCma(false);
+    }
+  };
 
   // Fetch reservation pratique (date d'entraînement)
   useEffect(() => {
