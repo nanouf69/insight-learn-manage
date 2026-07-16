@@ -253,10 +253,9 @@ export default function Step12() {
       const lieuExamen = selectedExam?.lieu || '';
 
       // Update the apprenant in the database
-      const motDePasseCma = localStorage.getItem('onboarding_mot_de_passe_cma') || '';
       const updateData: Database['public']['Tables']['apprenants']['Update'] = {
         numero_dossier_cma: numeroDossier,
-        mot_de_passe_cma: motDePasseCma || null,
+        mot_de_passe_cma: motDePasseCma.trim(),
         date_examen_theorique: dateExamen,
         type_examen: typeExamen || null,
         lieu_examen: lieuExamen || null,
