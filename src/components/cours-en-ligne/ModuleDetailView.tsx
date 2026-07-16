@@ -1431,6 +1431,17 @@ function getInitialModuleDataRaw(
     };
   }
 
+  // Cours Formation Mobilité TAXI (module 90) — 2 modules PDF + QCM Final
+  if (module.id === 90) {
+    return {
+      id: 90,
+      nom: "1.COURS MOBILITÉ TAXI",
+      description: "Formation Mobilité TAXI — 2 modules pédagogiques téléchargeables (Connaissance du territoire, Réglementation locale) + QCM Final de validation.",
+      cours: JSON.parse(JSON.stringify(COURS_MOBILITE_TAXI)),
+      exercices: JSON.parse(JSON.stringify(QCM_FINAL_MOBILITE_TAXI)),
+    };
+  }
+
 
   // Bilan fin de formation — Formation Continue VTC (module 87) — quiz interactif
   if (module.id === 87) {
