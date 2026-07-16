@@ -562,6 +562,35 @@ export default function Step12() {
             <p className="text-lg font-semibold text-gray-900">{dateExamen || '-'}</p>
           </div>
 
+          {/* Mot de passe CMA */}
+          <div className={`border rounded-xl p-5 mb-4 ${motDePasseCma.trim() ? 'border-gray-200' : 'border-red-300 bg-red-50'}`}>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <KeyRound className="w-5 h-5 text-gray-500" />
+                <h3 className="font-semibold text-gray-900">
+                  Mot de passe CMA <span className="text-red-500">*</span>
+                </h3>
+              </div>
+              <button
+                onClick={openEditMotDePasseCma}
+                disabled={isSubmitted}
+                className="flex items-center gap-1 text-blue-600 hover:text-blue-700 text-sm font-medium disabled:opacity-50"
+              >
+                <Edit2 className="w-4 h-4" />
+                Modifier
+              </button>
+            </div>
+            {motDePasseCma.trim() ? (
+              <p className="text-lg font-mono font-semibold text-gray-900">{motDePasseCma}</p>
+            ) : (
+              <p className="text-sm text-red-700 flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4" />
+                Obligatoire pour finaliser et télécharger votre dossier de bienvenue.
+              </p>
+            )}
+          </div>
+
+
           {/* Signature du stagiaire */}
           <div className={`border rounded-xl p-5 mb-6 ${signature ? 'border-green-200 bg-green-50' : 'border-blue-200 bg-blue-50'}`}>
             <div className="flex items-center gap-3 mb-4">
