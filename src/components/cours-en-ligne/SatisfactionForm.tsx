@@ -1,12 +1,10 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { CheckCircle2, Star } from "lucide-react";
 import { toast } from "sonner";
-import { saveFormDocument } from "@/lib/saveFormDocument";
 import { sendAdminNotification } from "@/lib/sendAdminNotification";
 import { useAutoSave, useLoadDraft } from "@/hooks/useAutoSave";
 
@@ -86,9 +84,6 @@ const SatisfactionForm = ({ formationType, apprenantId, onComplete }: Satisfacti
   const label = getFormationLabel(formationType);
   const [parties, setParties] = useState<PartieData[]>(buildSatisfactionData(label));
   const [noteGlobale, setNoteGlobale] = useState<number | null>(null);
-  const [pointsForts, setPointsForts] = useState("");
-  const [pointsAmeliorer, setPointsAmeliorer] = useState("");
-  const [suggestions, setSuggestions] = useState("");
   const [submitted, setSubmitted] = useState(false);
 
   const { queueSave, triggerSave: autoTrigger, StatusIndicator } = useAutoSave({
@@ -102,20 +97,17 @@ const SatisfactionForm = ({ formationType, apprenantId, onComplete }: Satisfacti
   useLoadDraft(apprenantId || "", "satisfaction", (draft) => {
     if (draft.parties && Array.isArray(draft.parties)) setParties(draft.parties);
     if (draft.noteGlobale !== undefined) setNoteGlobale(draft.noteGlobale);
-    if (draft.pointsForts) setPointsForts(draft.pointsForts);
-    if (draft.pointsAmeliorer) setPointsAmeliorer(draft.pointsAmeliorer);
-    if (draft.suggestions) setSuggestions(draft.suggestions);
   }, !!apprenantId && !submitted);
 
   const collectData = () => ({
     formationType,
     parties: parties.map(p => ({ titre: p.titre, criteres: p.criteres })),
-    noteGlobale, pointsForts, pointsAmeliorer, suggestions,
+    noteGlobale,
   });
 
   useEffect(() => {
     queueSave(collectData());
-  }, [parties, noteGlobale, pointsForts, pointsAmeliorer, suggestions]);
+  }, [parties, noteGlobale]);
 
   const updateCritere = (partieIdx: number, critereIdx: number, value: number) => {
     setParties(prev => prev.map((p, pi) => pi === partieIdx ? {
@@ -223,24 +215,6 @@ const SatisfactionForm = ({ formationType, apprenantId, onComplete }: Satisfacti
             )}
           </div>
 
-          {/* Commentaires libres */}
-          <div className="space-y-4">
-            <h3 className="font-bold text-foreground border-b pb-2">COMMENTAIRES LIBRES</h3>
-            <div className="space-y-3">
-              <div>
-                <Label className="text-sm font-medium">Points forts de la formation</Label>
-                <Textarea placeholder="Ce que vous avez particulièrement apprécié..." value={pointsForts} onChange={(e) => setPointsForts(e.target.value)} rows={2} className="mt-1" />
-              </div>
-              <div>
-                <Label className="text-sm font-medium">Points à améliorer</Label>
-                <Textarea placeholder="Ce qui pourrait être amélioré..." value={pointsAmeliorer} onChange={(e) => setPointsAmeliorer(e.target.value)} rows={2} className="mt-1" />
-              </div>
-              <div>
-                <Label className="text-sm font-medium">Suggestions</Label>
-                <Textarea placeholder="Vos suggestions pour les prochaines sessions..." value={suggestions} onChange={(e) => setSuggestions(e.target.value)} rows={2} className="mt-1" />
-              </div>
-            </div>
-          </div>
 
           <Button size="lg" className="w-full gap-2" onClick={handleSubmit} disabled={!allFilled}>
             <CheckCircle2 className="w-5 h-5" />
