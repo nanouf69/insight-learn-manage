@@ -81,6 +81,7 @@ export default function Step12() {
   const [numeroDossier, setNumeroDossier] = useState('');
   const [dateExamen, setDateExamen] = useState('');
   const [typeExamen, setTypeExamen] = useState('');
+  const [motDePasseCma, setMotDePasseCma] = useState('');
   const [b2Vierge, setB2Vierge] = useState(false);
   const [signature, setSignature] = useState('');
   
