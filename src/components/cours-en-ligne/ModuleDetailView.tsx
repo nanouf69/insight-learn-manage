@@ -2707,7 +2707,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     return preserved ? { ...incoming, exercices: incomingExercices } : incoming;
   };
 
-  const GENERATED_BILAN_MODULE_IDS = new Set([4, 9, 27, 29, 81, 82]);
+  const GENERATED_BILAN_MODULE_IDS = new Set([4, 9, 27, 29, 81, 82, 90]);
 
   const hasDuplicateGeneratedBilanQuestions = (data: ModuleData | null | undefined) => {
     if (!data || !GENERATED_BILAN_MODULE_IDS.has(Number(data.id))) return false;
