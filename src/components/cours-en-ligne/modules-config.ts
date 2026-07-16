@@ -281,6 +281,11 @@ export const FORMATION_MODULES: Record<string, FormationDefinition> = {
     { id: 84, label: "2.FEUILLES D'ÉMARGEMENT SIGNÉES TAXI" },
     { id: 86, label: "3.INFORMATIONS FINANCEUR TAXI" },
   ]},
+  "mobilite-taxi": { label: "Formation Mobilité TAXI", color: "bg-teal-100 text-teal-800 border-teal-300", modules: [
+    { id: 90, label: "1.COURS MOBILITÉ TAXI" },
+    { id: 84, label: "2.FEUILLES D'ÉMARGEMENT SIGNÉES TAXI" },
+    { id: 86, label: "3.INFORMATIONS FINANCEUR TAXI" },
+  ]},
 };
 
 // ======================================================================
