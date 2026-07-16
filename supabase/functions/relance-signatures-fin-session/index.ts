@@ -21,17 +21,69 @@ const isPresentiel = (a: any) => {
   return PRESENTIEL_TYPES.includes(t);
 };
 
-function joursEcoules(debut: string, fin: string, today: Date): number {
-  const start = new Date(debut + "T00:00:00Z");
-  const end = new Date(fin + "T00:00:00Z");
-  const cap = end < today ? end : today;
-  if (cap < start) return 0;
-  const ms = cap.getTime() - start.getTime();
-  return Math.floor(ms / 86400000) + 1;
+function fmtDate(d: Date): string { return d.toISOString().slice(0, 10); }
+const estCoursDuSoir = (h: string | null) =>
+  !!h && parseInt((h || "").split(":")[0] || "0", 10) >= 17;
+
+function apprenantPublics(typeApprenant: string): string[] {
+  const t = (typeApprenant || "").toLowerCase();
+  const out: string[] = [];
+  if (t === "taxi" || t === "taxi-e") out.push("TAXI");
+  if (t === "ta" || t === "ta-e" || t.includes("passerelle-ta") || t.includes("passerelle-taxi")) out.push("TA");
+  if (t === "vtc" || t === "vtc-e") out.push("VTC");
+  if (t === "va" || t === "va-e" || t === "pa vtc" || t.includes("passerelle-va") || t.includes("passerelle-vtc")) out.push("VA");
+  return out;
 }
 
-const estCoursDuSoir = (h: string | null) =>
-  !!h && parseInt(h.split(":")[0] || "0", 10) >= 17;
+// Jours de cours réels déjà passés (basé sur agenda_blocs)
+async function joursDeCoursPasses(
+  supabase: any,
+  session: { date_debut: string; date_fin: string },
+  typeApprenant: string,
+  today: Date,
+): Promise<string[]> {
+  const todayStr = fmtDate(today);
+  const capStr = session.date_fin < todayStr ? session.date_fin : todayStr;
+  if (capStr < session.date_debut) return [];
+
+  const start = new Date(session.date_debut + "T00:00:00Z");
+  const semaineMin = new Date(start);
+  semaineMin.setUTCDate(semaineMin.getUTCDate() - 6);
+
+  const { data: blocs } = await supabase
+    .from("agenda_blocs")
+    .select("semaine_debut, jour, formation, publics_cibles")
+    .gte("semaine_debut", fmtDate(semaineMin))
+    .lte("semaine_debut", session.date_fin);
+
+  const publics = apprenantPublics(typeApprenant);
+  const t = (typeApprenant || "").toLowerCase();
+  const isTaxi = t.includes("taxi") || t === "ta" || t === "ta-e";
+  const isVTC = !isTaxi && (t === "vtc" || t === "vtc-e" || t === "pa vtc" || t === "va" || t === "va-e");
+  const matchFormation = (f: string) => {
+    const fl = (f || "").toLowerCase();
+    if (fl.includes("taxi et vtc") || fl.includes("taxi & vtc")) return true;
+    if (isTaxi && fl.includes("taxi")) return true;
+    if (isVTC && fl.includes("vtc")) return true;
+    if (!isTaxi && !isVTC) return true;
+    return false;
+  };
+
+  const dates = new Set<string>();
+  for (const b of blocs || []) {
+    const cibles: string[] = Array.isArray(b.publics_cibles) ? b.publics_cibles : [];
+    let match = false;
+    if (cibles.length > 0) match = publics.length === 0 || publics.some((p) => cibles.includes(p));
+    else match = matchFormation(b.formation);
+    if (!match) continue;
+    const ws = new Date(b.semaine_debut + "T00:00:00Z");
+    ws.setUTCDate(ws.getUTCDate() + Number(b.jour || 0));
+    const key = fmtDate(ws);
+    if (key < session.date_debut || key > capStr) continue;
+    dates.add(key);
+  }
+  return Array.from(dates).sort();
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -71,9 +123,6 @@ serve(async (req) => {
     for (const session of sessions) {
       const soir = estCoursDuSoir(session.heure_debut);
       const demiJourneesParJour = soir ? 1 : 2;
-      const jours = joursEcoules(session.date_debut, session.date_fin, today);
-      const expected = jours * demiJourneesParJour;
-      if (expected < 1) continue;
 
       const { data: liens } = await supabase
         .from("session_apprenants")
@@ -84,13 +133,22 @@ serve(async (req) => {
         const a: any = (lien as any).apprenants;
         if (!a?.email || !isPresentiel(a)) continue;
 
-        // Toutes les entrées d'émargement (signées OU absence justifiée) comptent
+        // Jours de cours RÉELS déjà passés (agenda_blocs, exclut weekends/futur)
+        const joursPasses = await joursDeCoursPasses(
+          supabase,
+          { date_debut: session.date_debut, date_fin: session.date_fin },
+          a.type_apprenant || a.formation_choisie || "",
+          today,
+        );
+        const expected = joursPasses.length * demiJourneesParJour;
+        if (expected < 1) continue;
+
+        // Compter les émargements uniquement sur ces jours de cours passés
         const { count } = await supabase
           .from("emargements_fc")
           .select("id", { count: "exact", head: true })
           .eq("apprenant_id", a.id)
-          .gte("date_emargement", session.date_debut)
-          .lte("date_emargement", todayStr);
+          .in("date_emargement", joursPasses);
 
         const signed = count || 0;
         const gap = expected - signed;
