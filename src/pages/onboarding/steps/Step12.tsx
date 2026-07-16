@@ -334,7 +334,7 @@ export default function Step12() {
         email,
         telephone,
         numero_dossier_cma: numeroDossier,
-        mot_de_passe_cma: localStorage.getItem('onboarding_mot_de_passe_cma') || '',
+        mot_de_passe_cma: motDePasseCma.trim(),
         type_examen: getTypeExamenLabel(typeExamen),
         date_examen: dateExamen,
         lieu_examen: selectedExamNotif?.lieu || '',
