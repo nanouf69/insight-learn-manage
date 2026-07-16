@@ -340,6 +340,68 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
     enabled: !!apprenant.id,
   });
 
+  interface AppelRecord {
+    id: string;
+    apprenant_id: string;
+    date_appel: string;
+    sujet: string;
+    notes: string | null;
+    direction: string;
+    created_at: string;
+  }
+
+  const { data: appels = [], isLoading: isLoadingAppels } = useQuery({
+    queryKey: ['apprenant_appels', apprenant.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('apprenant_appels' as any)
+        .select('*')
+        .eq('apprenant_id', apprenant.id)
+        .order('date_appel', { ascending: false });
+      if (error) throw error;
+      return (data || []) as unknown as AppelRecord[];
+    },
+    enabled: !!apprenant.id,
+  });
+
+  const addAppelMutation = useMutation({
+    mutationFn: async () => {
+      if (!callSujet.trim()) throw new Error("Sujet de l'appel obligatoire");
+      const { data: { user } } = await supabase.auth.getUser();
+      const { error } = await supabase.from('apprenant_appels' as any).insert({
+        apprenant_id: apprenant.id,
+        date_appel: new Date(callDate).toISOString(),
+        sujet: callSujet.trim(),
+        notes: callNotes.trim() || null,
+        direction: callDirection,
+        created_by: user?.id ?? null,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['apprenant_appels', apprenant.id] });
+      setIsCallOpen(false);
+      setCallSujet("");
+      setCallNotes("");
+      setCallDirection('sortant');
+      toast({ title: "Appel enregistré", description: "La trace de l'appel a été ajoutée." });
+    },
+    onError: (e: any) => toast({ title: "Erreur", description: e.message, variant: "destructive" }),
+  });
+
+  const deleteAppelMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('apprenant_appels' as any).delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['apprenant_appels', apprenant.id] });
+      toast({ title: "Appel supprimé" });
+    },
+    onError: (e: any) => toast({ title: "Erreur", description: e.message, variant: "destructive" }),
+  });
+
+
   // Sync emails mutation
   const syncMutation = useMutation({
     mutationFn: async () => {
