@@ -14,7 +14,17 @@ export interface SessionAgendaContext {
   title?: string | null;   // ex: "Session du soir"
   type_session?: string | null;
   typeApprenant?: string | null;
+  /**
+   * Nombre d'heures de présentiel à réaliser par l'apprenant (hors pratique).
+   * Si fourni et > total des heures des jours de la session, on ajoute des
+   * feuilles d'émargement supplémentaires les samedis (priorité), puis les
+   * lundis suivants la fin de session pour atteindre l'objectif.
+   */
+  heuresPresentielRequis?: number | null;
 }
+
+const hoursPerDay = (d: { isSoir?: boolean }) => (d.isSoir ? 4 : 6);
+
 
 const getFlags = (typeApprenant: string | null | undefined, title: string) => {
   const t = (typeApprenant || "").toLowerCase();
