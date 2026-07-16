@@ -131,7 +131,7 @@ export async function buildSessionAgendaDays(
       return result;
     });
 
-  if (days.length > 0) return days;
+  if (days.length > 0) return padExtraDays(days, ctx);
 
   // ---- Fallback : aucun bloc agenda trouvé ----
   const isCoursDuSoir = titleLower.includes("soir");
