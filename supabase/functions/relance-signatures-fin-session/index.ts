@@ -22,6 +22,8 @@ const isPresentiel = (a: any) => {
 };
 
 function fmtDate(d: Date): string { return d.toISOString().slice(0, 10); }
+const estCoursDuSoir = (h: string | null) =>
+  !!h && parseInt((h || "").split(":")[0] || "0", 10) >= 17;
 
 function apprenantPublics(typeApprenant: string): string[] {
   const t = (typeApprenant || "").toLowerCase();
