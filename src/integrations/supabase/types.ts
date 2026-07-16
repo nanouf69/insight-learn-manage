@@ -546,6 +546,7 @@ export type Database = {
           formation_choisie: string | null
           heure_examen_pratique: string | null
           heures_elearning: number | null
+          heures_pratique: number | null
           heures_presentiel: number | null
           heures_totales: number | null
           id: string
@@ -605,6 +606,7 @@ export type Database = {
           formation_choisie?: string | null
           heure_examen_pratique?: string | null
           heures_elearning?: number | null
+          heures_pratique?: number | null
           heures_presentiel?: number | null
           heures_totales?: number | null
           id?: string
@@ -664,6 +666,7 @@ export type Database = {
           formation_choisie?: string | null
           heure_examen_pratique?: string | null
           heures_elearning?: number | null
+          heures_pratique?: number | null
           heures_presentiel?: number | null
           heures_totales?: number | null
           id?: string
