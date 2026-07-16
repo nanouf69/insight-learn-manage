@@ -226,6 +226,11 @@ export default function Step12() {
       return;
     }
 
+    if (!motDePasseCma.trim()) {
+      toast.error("Le mot de passe CMA est obligatoire pour finaliser votre dossier");
+      return;
+    }
+
     if (!signature) {
       toast.error("Veuillez dessiner votre signature avant d'envoyer le dossier");
       return;
