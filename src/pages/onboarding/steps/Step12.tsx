@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { filterFutureExamValues } from "@/lib/filterPastDates";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Phone, CheckCircle, Clock, AlertTriangle, User, FileText, Calendar, GraduationCap, Shield, Edit2, Send, Download, PenTool } from "lucide-react";
+import { ArrowLeft, Phone, CheckCircle, Clock, AlertTriangle, User, FileText, Calendar, GraduationCap, Shield, Edit2, Send, Download, PenTool, KeyRound } from "lucide-react";
 import { SignaturePad } from "@/components/onboarding/SignaturePad";
 import { OnboardingLayout } from "../OnboardingLayout";
 import { toast } from "sonner";
@@ -81,6 +81,7 @@ export default function Step12() {
   const [numeroDossier, setNumeroDossier] = useState('');
   const [dateExamen, setDateExamen] = useState('');
   const [typeExamen, setTypeExamen] = useState('');
+  const [motDePasseCma, setMotDePasseCma] = useState('');
   const [b2Vierge, setB2Vierge] = useState(false);
   const [signature, setSignature] = useState('');
   
@@ -89,6 +90,7 @@ export default function Step12() {
   const [editDossierOpen, setEditDossierOpen] = useState(false);
   const [editExamenOpen, setEditExamenOpen] = useState(false);
   const [editDateOpen, setEditDateOpen] = useState(false);
+  const [editMotDePasseCmaOpen, setEditMotDePasseCmaOpen] = useState(false);
   
   // Temp edit values
   const [tempNom, setTempNom] = useState('');
@@ -98,6 +100,7 @@ export default function Step12() {
   const [tempNumeroDossier, setTempNumeroDossier] = useState('');
   const [tempTypeExamen, setTempTypeExamen] = useState('');
   const [tempDateExamen, setTempDateExamen] = useState('');
+  const [tempMotDePasseCma, setTempMotDePasseCma] = useState('');
 
   // Load saved values on mount
   useEffect(() => {
@@ -135,6 +138,9 @@ export default function Step12() {
     if (savedNumeroDossier) setNumeroDossier(savedNumeroDossier);
     if (savedDateExamen) setDateExamen(savedDateExamen);
     if (savedTypeExamen) setTypeExamen(savedTypeExamen);
+
+    const savedMdpCma = localStorage.getItem('onboarding_mot_de_passe_cma');
+    if (savedMdpCma) setMotDePasseCma(savedMdpCma);
   }, []);
 
   const getTypeExamenLabel = (value: string) => {
@@ -144,7 +150,6 @@ export default function Step12() {
 
   const buildRecapData = () => {
     const selectedExam = datesExamenTheorique.find(e => e.value === dateExamen);
-    const motDePasseCma = localStorage.getItem('onboarding_mot_de_passe_cma') || '';
     const responsableContactCentre = localStorage.getItem('onboarding_responsable_contact_centre') === 'true';
     const mobiliteTaxiAck = localStorage.getItem('onboarding_mobilite_taxi_ack') === 'true';
     const contactSiDeplaceAck = localStorage.getItem('onboarding_contact_si_deplace_ack') === 'true';
@@ -221,6 +226,11 @@ export default function Step12() {
       return;
     }
 
+    if (!motDePasseCma.trim()) {
+      toast.error("Le mot de passe CMA est obligatoire pour finaliser votre dossier");
+      return;
+    }
+
     if (!signature) {
       toast.error("Veuillez dessiner votre signature avant d'envoyer le dossier");
       return;
@@ -243,10 +253,9 @@ export default function Step12() {
       const lieuExamen = selectedExam?.lieu || '';
 
       // Update the apprenant in the database
-      const motDePasseCma = localStorage.getItem('onboarding_mot_de_passe_cma') || '';
       const updateData: Database['public']['Tables']['apprenants']['Update'] = {
         numero_dossier_cma: numeroDossier,
-        mot_de_passe_cma: motDePasseCma || null,
+        mot_de_passe_cma: motDePasseCma.trim(),
         date_examen_theorique: dateExamen,
         type_examen: typeExamen || null,
         lieu_examen: lieuExamen || null,
@@ -278,7 +287,7 @@ export default function Step12() {
 
       // Force save all onboarding data as a document in apprenant_documents_completes
       // so it appears in the CRM "Formulaires" tab
-      const motDePasseCmaFinal = localStorage.getItem('onboarding_mot_de_passe_cma') || '';
+      const motDePasseCmaFinal = motDePasseCma.trim();
       const selectedExamFinal = datesExamenTheorique.find(e => e.value === dateExamen);
       
       try {
@@ -325,7 +334,7 @@ export default function Step12() {
         email,
         telephone,
         numero_dossier_cma: numeroDossier,
-        mot_de_passe_cma: localStorage.getItem('onboarding_mot_de_passe_cma') || '',
+        mot_de_passe_cma: motDePasseCma.trim(),
         type_examen: getTypeExamenLabel(typeExamen),
         date_examen: dateExamen,
         lieu_examen: selectedExamNotif?.lieu || '',
@@ -405,7 +414,36 @@ export default function Step12() {
     toast.success("Date d'examen mise à jour");
   };
 
+  const openEditMotDePasseCma = () => {
+    setTempMotDePasseCma(motDePasseCma);
+    setEditMotDePasseCmaOpen(true);
+  };
+
+  const saveMotDePasseCma = async () => {
+    const value = tempMotDePasseCma.trim();
+    if (!value) {
+      toast.error("Le mot de passe CMA est obligatoire");
+      return;
+    }
+    setMotDePasseCma(value);
+    localStorage.setItem('onboarding_mot_de_passe_cma', value);
+    const apprenantId = localStorage.getItem('onboarding_apprenant_id');
+    if (apprenantId) {
+      const { error } = await supabase
+        .from('apprenants')
+        .update({ mot_de_passe_cma: value })
+        .eq('id', apprenantId);
+      if (error) console.error("Erreur MAJ mot_de_passe_cma:", error);
+    }
+    toast.success("Mot de passe CMA mis à jour");
+  };
+
+
   const handleDownloadRecap = async () => {
+    if (!motDePasseCma.trim()) {
+      toast.error("Impossible de télécharger le dossier : le mot de passe CMA est obligatoire.");
+      return;
+    }
     const pdfData = buildRecapData();
     generateRecapitulatifPDF(pdfData);
 
@@ -528,6 +566,35 @@ export default function Step12() {
             <p className="text-lg font-semibold text-gray-900">{dateExamen || '-'}</p>
           </div>
 
+          {/* Mot de passe CMA */}
+          <div className={`border rounded-xl p-5 mb-4 ${motDePasseCma.trim() ? 'border-gray-200' : 'border-red-300 bg-red-50'}`}>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <KeyRound className="w-5 h-5 text-gray-500" />
+                <h3 className="font-semibold text-gray-900">
+                  Mot de passe CMA <span className="text-red-500">*</span>
+                </h3>
+              </div>
+              <button
+                onClick={openEditMotDePasseCma}
+                disabled={isSubmitted}
+                className="flex items-center gap-1 text-blue-600 hover:text-blue-700 text-sm font-medium disabled:opacity-50"
+              >
+                <Edit2 className="w-4 h-4" />
+                Modifier
+              </button>
+            </div>
+            {motDePasseCma.trim() ? (
+              <p className="text-lg font-mono font-semibold text-gray-900">{motDePasseCma}</p>
+            ) : (
+              <p className="text-sm text-red-700 flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4" />
+                Obligatoire pour finaliser et télécharger votre dossier de bienvenue.
+              </p>
+            )}
+          </div>
+
+
           {/* Signature du stagiaire */}
           <div className={`border rounded-xl p-5 mb-6 ${signature ? 'border-green-200 bg-green-50' : 'border-blue-200 bg-blue-50'}`}>
             <div className="flex items-center gap-3 mb-4">
@@ -567,11 +634,11 @@ export default function Step12() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
             <button
               onClick={handleSubmit}
-              disabled={isSubmitting || isSubmitted || !b2Vierge || !signature}
+              disabled={isSubmitting || isSubmitted || !b2Vierge || !signature || !motDePasseCma.trim()}
               className={`inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-medium text-lg transition-colors ${
                 isSubmitted 
                   ? "bg-green-500 text-white cursor-default" 
-                  : (b2Vierge && signature)
+                  : (b2Vierge && signature && motDePasseCma.trim())
                     ? "bg-blue-600 hover:bg-blue-700 text-white"
                     : "bg-gray-300 text-gray-500 cursor-not-allowed"
               }`}
@@ -748,6 +815,28 @@ export default function Step12() {
           </Select>
         </div>
       </EditDialog>
+
+      <EditDialog
+        title="Renseigner votre mot de passe CMA"
+        open={editMotDePasseCmaOpen}
+        onOpenChange={setEditMotDePasseCmaOpen}
+        onSave={saveMotDePasseCma}
+      >
+        <div>
+          <Label htmlFor="edit-mdp-cma">Mot de passe CMA <span className="text-red-500">*</span></Label>
+          <Input
+            id="edit-mdp-cma"
+            value={tempMotDePasseCma}
+            onChange={(e) => setTempMotDePasseCma(e.target.value)}
+            placeholder="Le mot de passe que vous avez créé lors de votre inscription CMA"
+            className="font-mono mt-2"
+          />
+          <p className="text-xs text-gray-500 mt-2">
+            Ce mot de passe est indispensable pour finaliser votre dossier de bienvenue.
+          </p>
+        </div>
+      </EditDialog>
     </OnboardingLayout>
+
   );
 }
