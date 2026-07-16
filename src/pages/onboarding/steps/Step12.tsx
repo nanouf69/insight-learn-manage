@@ -100,6 +100,7 @@ export default function Step12() {
   const [tempNumeroDossier, setTempNumeroDossier] = useState('');
   const [tempTypeExamen, setTempTypeExamen] = useState('');
   const [tempDateExamen, setTempDateExamen] = useState('');
+  const [tempMotDePasseCma, setTempMotDePasseCma] = useState('');
 
   // Load saved values on mount
   useEffect(() => {
