@@ -414,6 +414,31 @@ export default function Step12() {
     toast.success("Date d'examen mise à jour");
   };
 
+  const openEditMotDePasseCma = () => {
+    setTempMotDePasseCma(motDePasseCma);
+    setEditMotDePasseCmaOpen(true);
+  };
+
+  const saveMotDePasseCma = async () => {
+    const value = tempMotDePasseCma.trim();
+    if (!value) {
+      toast.error("Le mot de passe CMA est obligatoire");
+      return;
+    }
+    setMotDePasseCma(value);
+    localStorage.setItem('onboarding_mot_de_passe_cma', value);
+    const apprenantId = localStorage.getItem('onboarding_apprenant_id');
+    if (apprenantId) {
+      const { error } = await supabase
+        .from('apprenants')
+        .update({ mot_de_passe_cma: value })
+        .eq('id', apprenantId);
+      if (error) console.error("Erreur MAJ mot_de_passe_cma:", error);
+    }
+    toast.success("Mot de passe CMA mis à jour");
+  };
+
+
   const handleDownloadRecap = async () => {
     const pdfData = buildRecapData();
     generateRecapitulatifPDF(pdfData);
