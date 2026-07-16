@@ -905,6 +905,52 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
             )}
             Synchroniser
           </Button>
+          <Dialog open={isCallOpen} onOpenChange={setIsCallOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm" variant="secondary">
+                <Phone className="w-4 h-4 mr-2" />
+                Nouvel appel
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[520px]">
+              <DialogHeader>
+                <DialogTitle>Enregistrer un appel avec {apprenant.prenom} {apprenant.nom}</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-2">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Date &amp; heure</Label>
+                    <Input type="datetime-local" value={callDate} onChange={(e) => setCallDate(e.target.value)} />
+                  </div>
+                  <div>
+                    <Label>Direction</Label>
+                    <Select value={callDirection} onValueChange={(v) => setCallDirection(v as 'sortant' | 'entrant')}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="sortant">📞 Appel sortant</SelectItem>
+                        <SelectItem value="entrant">📲 Appel entrant</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div>
+                  <Label>Sujet *</Label>
+                  <Input value={callSujet} onChange={(e) => setCallSujet(e.target.value)} placeholder="Objet de l'appel (ex : relance dossier, confirmation examen...)" />
+                </div>
+                <div>
+                  <Label>Notes / compte-rendu</Label>
+                  <Textarea value={callNotes} onChange={(e) => setCallNotes(e.target.value)} rows={5} placeholder="Détails de l'échange, prochaines étapes..." />
+                </div>
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setIsCallOpen(false)}>Annuler</Button>
+                <Button onClick={() => addAppelMutation.mutate()} disabled={!callSujet.trim() || addAppelMutation.isPending}>
+                  {addAppelMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Phone className="w-4 h-4 mr-2" />}
+                  Enregistrer l'appel
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
           <Dialog open={isComposeOpen} onOpenChange={(open) => {
             setIsComposeOpen(open);
             if (!open) {
