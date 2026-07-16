@@ -47,6 +47,7 @@ export const ALL_MODULES: ModuleDefinition[] = [
   { id: 29, nom: "4.BILAN EXERCICES VA" },
   { id: 81, nom: "1.BILAN EXERCICES FORMATION CONTINUE VTC" },
   { id: 82, nom: "1.COURS FC TAXI" },
+  { id: 90, nom: "1.COURS MOBILITÉ TAXI" },
   { id: 87, nom: "📋 BILAN FIN DE FORMATION CONTINUE VTC" },
   { id: 83, nom: "💶 REMBOURSEMENT FORMATION CONTINUE VTC" },
   { id: 84, nom: "2.FEUILLES D'ÉMARGEMENT SIGNÉES TAXI" },
