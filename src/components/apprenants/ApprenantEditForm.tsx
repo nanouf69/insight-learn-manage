@@ -546,6 +546,7 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
       facture_contact_telephone: formData.facture_contact_telephone?.trim() || null,
       heures_elearning: formData.heures_elearning ? parseFloat(formData.heures_elearning) : null,
       heures_presentiel: formData.heures_presentiel ? parseFloat(formData.heures_presentiel) : null,
+      heures_pratique: formData.heures_pratique ? parseFloat(formData.heures_pratique) : null,
       heures_totales: formData.heures_totales ? parseFloat(formData.heures_totales) : null,
     };
 
