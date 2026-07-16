@@ -11,6 +11,7 @@ export const FORMATIONS = [
   { id: "vtc-cours-du-soir", label: "Formation VTC cours du soir" },
   { id: "continue-vtc", label: "Formation continue VTC" },
   { id: "continue-taxi", label: "Formation continue TAXI" },
+  { id: "mobilite-taxi", label: "Formation Mobilité TAXI" },
 ] as const;
 
 export type FormationId = (typeof FORMATIONS)[number]["id"];
@@ -391,8 +392,8 @@ export const MODULES_DATA: ModuleInfo[] = [
   {
     id: 84,
     nom: "2.FEUILLES D'ÉMARGEMENT SIGNÉES TAXI",
-    description: "Historique des feuilles d'émargement signées — TAXI / TA présentiel et formation continue TAXI",
-    formations: ["taxi", "taxi-pour-vtc", "continue-taxi"],
+    description: "Historique des feuilles d'émargement signées — TAXI / TA présentiel, formation continue TAXI et formation Mobilité TAXI",
+    formations: ["taxi", "taxi-pour-vtc", "continue-taxi", "mobilite-taxi"],
   },
   {
     id: 85,
@@ -403,8 +404,8 @@ export const MODULES_DATA: ModuleInfo[] = [
   {
     id: 86,
     nom: "3.INFORMATIONS FINANCEUR TAXI",
-    description: "Saisie des informations de facturation — Formation continue TAXI",
-    formations: ["continue-taxi"],
+    description: "Saisie des informations de facturation — Formation continue TAXI et Mobilité TAXI",
+    formations: ["continue-taxi", "mobilite-taxi"],
   },
   {
     id: 87,
@@ -423,6 +424,12 @@ export const MODULES_DATA: ModuleInfo[] = [
     nom: "6.💶 REMBOURSEMENT FORMATION CONTINUE VTC",
     description: "Documents pour le remboursement par le financeur — Formation Continue VTC",
     formations: ["continue-vtc"],
+  },
+  {
+    id: 90,
+    nom: "1.COURS MOBILITÉ TAXI",
+    description: "Formation Mobilité TAXI — 2 modules pédagogiques téléchargeables (Connaissance du territoire, Réglementation locale) + QCM Final de validation.",
+    formations: ["mobilite-taxi"],
   },
 ];
 

@@ -86,6 +86,7 @@ import { BILAN_EXERCICES_FC_VTC } from "./bilan-exercices-fc-vtc-data";
 import { BILAN_FIN_FORMATION_FC_VTC_EXERCICE } from "./bilan-fin-formation-fc-vtc-exercice";
 import { BILAN_EXERCICES_FC_TAXI } from "./bilan-exercices-fc-taxi-data";
 import { COURS_FC_TAXI, QCM_FINAL_FC_TAXI } from "./cours-fc-taxi-data";
+import { COURS_MOBILITE_TAXI, QCM_FINAL_MOBILITE_TAXI } from "./cours-mobilite-taxi-data";
 import { BILAN_EXAMEN_VTC } from "./bilan-examen-vtc-data";
 import { BILAN_EXAMEN_TAXI } from "./bilan-examen-taxi-data";
 import { BILAN_EXAMEN_VA } from "./bilan-examen-va-data";
@@ -1430,6 +1431,17 @@ function getInitialModuleDataRaw(
     };
   }
 
+  // Cours Formation Mobilité TAXI (module 90) — 2 modules PDF + QCM Final
+  if (module.id === 90) {
+    return {
+      id: 90,
+      nom: "1.COURS MOBILITÉ TAXI",
+      description: "Formation Mobilité TAXI — 2 modules pédagogiques téléchargeables (Connaissance du territoire, Réglementation locale) + QCM Final de validation.",
+      cours: JSON.parse(JSON.stringify(COURS_MOBILITE_TAXI)),
+      exercices: JSON.parse(JSON.stringify(QCM_FINAL_MOBILITE_TAXI)),
+    };
+  }
+
 
   // Bilan fin de formation — Formation Continue VTC (module 87) — quiz interactif
   if (module.id === 87) {
@@ -2695,7 +2707,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     return preserved ? { ...incoming, exercices: incomingExercices } : incoming;
   };
 
-  const GENERATED_BILAN_MODULE_IDS = new Set([4, 9, 27, 29, 81, 82]);
+  const GENERATED_BILAN_MODULE_IDS = new Set([4, 9, 27, 29, 81, 82, 90]);
 
   const hasDuplicateGeneratedBilanQuestions = (data: ModuleData | null | undefined) => {
     if (!data || !GENERATED_BILAN_MODULE_IDS.has(Number(data.id))) return false;
