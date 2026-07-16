@@ -215,24 +215,6 @@ const SatisfactionForm = ({ formationType, apprenantId, onComplete }: Satisfacti
             )}
           </div>
 
-          {/* Commentaires libres */}
-          <div className="space-y-4">
-            <h3 className="font-bold text-foreground border-b pb-2">COMMENTAIRES LIBRES</h3>
-            <div className="space-y-3">
-              <div>
-                <Label className="text-sm font-medium">Points forts de la formation</Label>
-                <Textarea placeholder="Ce que vous avez particulièrement apprécié..." value={pointsForts} onChange={(e) => setPointsForts(e.target.value)} rows={2} className="mt-1" />
-              </div>
-              <div>
-                <Label className="text-sm font-medium">Points à améliorer</Label>
-                <Textarea placeholder="Ce qui pourrait être amélioré..." value={pointsAmeliorer} onChange={(e) => setPointsAmeliorer(e.target.value)} rows={2} className="mt-1" />
-              </div>
-              <div>
-                <Label className="text-sm font-medium">Suggestions</Label>
-                <Textarea placeholder="Vos suggestions pour les prochaines sessions..." value={suggestions} onChange={(e) => setSuggestions(e.target.value)} rows={2} className="mt-1" />
-              </div>
-            </div>
-          </div>
 
           <Button size="lg" className="w-full gap-2" onClick={handleSubmit} disabled={!allFilled}>
             <CheckCircle2 className="w-5 h-5" />
