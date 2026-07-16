@@ -138,6 +138,9 @@ export default function Step12() {
     if (savedNumeroDossier) setNumeroDossier(savedNumeroDossier);
     if (savedDateExamen) setDateExamen(savedDateExamen);
     if (savedTypeExamen) setTypeExamen(savedTypeExamen);
+
+    const savedMdpCma = localStorage.getItem('onboarding_mot_de_passe_cma');
+    if (savedMdpCma) setMotDePasseCma(savedMdpCma);
   }, []);
 
   const getTypeExamenLabel = (value: string) => {
