@@ -523,13 +523,18 @@ function QuestionEditor({
         />
       </div>
 
-      {/* Image (optionnel) */}
+      {/* Image (optionnel) — enregistrement immédiat */}
       <QuestionImageUpload
         image={image}
         context="exam"
         contextId={examId}
         questionId={question.id}
-        onImageChange={setImage}
+        onImageChange={(newImage) => {
+          setImage(newImage);
+          // Persistance immédiate en DB sans attendre le bouton Enregistrer
+          const updated: Question = { ...buildUpdatedQuestion(), image: newImage };
+          onSave(updated);
+        }}
       />
 
       {/* QRC */}
