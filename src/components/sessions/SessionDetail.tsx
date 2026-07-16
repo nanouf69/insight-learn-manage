@@ -1384,11 +1384,82 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   };
 
 
+  const sendSatisfactionEmailPratique = async (sessionApprenantId: string) => {
+    try {
+      const sa = apprenantsInSession.find((x: any) => x.id === sessionApprenantId) as any;
+      const apprenant = sa?.apprenant;
+      if (!apprenant?.email || !apprenant?.id) return;
+
+      // Anti-doublon : ne pas renvoyer si un questionnaire de satisfaction a déjà été envoyé
+      const { data: existing } = await supabase
+        .from('emails')
+        .select('id')
+        .eq('apprenant_id', apprenant.id)
+        .eq('type', 'sent')
+        .ilike('subject', '%satisfaction%')
+        .limit(1);
+      if (existing && existing.length > 0) return;
+
+      const { data: tpl } = await supabase
+        .from('email_templates')
+        .select('subject_template, body_template')
+        .eq('id', 'questionnaire-satisfaction-pratique')
+        .single();
+      if (!tpl) return;
+
+      const formation = apprenant.type_apprenant || 'VTC';
+      const subject = tpl.subject_template
+        .replace(/\{\{formation\}\}/g, formation)
+        .replace(/\{\{prenom\}\}/g, apprenant.prenom || '')
+        .replace(/\{\{nom\}\}/g, apprenant.nom || '');
+      const body = tpl.body_template
+        .replace(/\{\{formation\}\}/g, formation)
+        .replace(/\{\{prenom\}\}/g, apprenant.prenom || '')
+        .replace(/\{\{nom\}\}/g, apprenant.nom || '');
+      const htmlBody = body.replace(/\n/g, '<br>');
+
+      const { data, error } = await supabase.functions.invoke('sync-outlook-emails', {
+        body: {
+          action: 'send',
+          userEmail: 'contact@ftransport.fr',
+          to: apprenant.email,
+          subject,
+          body: htmlBody,
+        },
+      });
+      if (!error && data?.success) {
+        await supabase.from('emails').insert({
+          subject,
+          body_html: htmlBody,
+          body_preview: body.slice(0, 200),
+          sender_email: 'contact@ftransport.fr',
+          recipients: [apprenant.email],
+          type: 'sent',
+          is_read: true,
+          sent_at: new Date().toISOString(),
+          apprenant_id: apprenant.id,
+        });
+        toast({
+          title: "📋 Questionnaire de satisfaction envoyé",
+          description: `À ${apprenant.prenom} ${apprenant.nom}`,
+        });
+      }
+    } catch (e) {
+      console.error('Erreur envoi satisfaction (pratique):', e);
+    }
+  };
+
   const updateSessionApprenant = async (
     sessionApprenantId: string, 
     updates: { notes?: string; presence_pratique?: string | null; statut_suivi?: string | null; date_fin_personnalisee?: string | null; heure_debut_personnalisee?: string | null; heure_fin_personnalisee?: string | null }
   ) => {
     try {
+      // Détection transition présence pratique -> present (pour envoi satisfaction)
+      const previous = apprenantsInSession.find((x: any) => x.id === sessionApprenantId) as any;
+      const wasPresent = (previous?.presence_pratique || 'present') === 'present';
+      const willBePresent = updates.presence_pratique === 'present';
+      const isPratiqueSession = session?.type_session === 'pratique';
+
       const { error } = await supabase
         .from('session_apprenants')
         .update(updates)
@@ -1401,6 +1472,11 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
         title: "Notes mises à jour",
         description: "Les notes ont été enregistrées.",
       });
+
+      // Envoi automatique du questionnaire de satisfaction après entraînement pratique
+      if (isPratiqueSession && willBePresent && !wasPresent) {
+        sendSatisfactionEmailPratique(sessionApprenantId);
+      }
     } catch (error: any) {
       toast({
         title: "Erreur",
