@@ -287,7 +287,7 @@ export default function Step12() {
 
       // Force save all onboarding data as a document in apprenant_documents_completes
       // so it appears in the CRM "Formulaires" tab
-      const motDePasseCmaFinal = localStorage.getItem('onboarding_mot_de_passe_cma') || '';
+      const motDePasseCmaFinal = motDePasseCma.trim();
       const selectedExamFinal = datesExamenTheorique.find(e => e.value === dateExamen);
       
       try {
