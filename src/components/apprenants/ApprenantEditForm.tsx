@@ -296,6 +296,7 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
     facture_contact_telephone: "",
     heures_elearning: "",
     heures_presentiel: "",
+    heures_pratique: "",
     heures_totales: "",
   });
   const queryClient = useQueryClient();
