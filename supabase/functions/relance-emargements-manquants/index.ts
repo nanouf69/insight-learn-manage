@@ -22,23 +22,82 @@ const isPresentiel = (a: any) => {
   return PRESENTIEL_TYPES.includes(t);
 };
 
-// Compte les jours écoulés (inclus) entre debut et min(today-1, fin). On ne compte pas aujourd'hui.
-function joursEcoules(debut: string, fin: string, today: Date): number {
-  const start = new Date(debut + "T00:00:00Z");
-  const end = new Date(fin + "T00:00:00Z");
-  const yesterday = new Date(today);
-  yesterday.setUTCDate(yesterday.getUTCDate() - 1);
-  const cap = end < yesterday ? end : yesterday;
-  if (cap < start) return 0;
-  const ms = cap.getTime() - start.getTime();
-  return Math.floor(ms / 86400000) + 1;
-}
-
 // Détecte cours du soir si heure_debut >= 17:00
 function estCoursDuSoir(heure_debut: string | null): boolean {
   if (!heure_debut) return false;
   const h = parseInt(heure_debut.split(":")[0] || "0", 10);
   return h >= 17;
+}
+
+function fmtDate(d: Date): string {
+  return d.toISOString().slice(0, 10);
+}
+
+function apprenantPublics(typeApprenant: string): string[] {
+  const t = (typeApprenant || "").toLowerCase();
+  const out: string[] = [];
+  if (t === "taxi" || t === "taxi-e") out.push("TAXI");
+  if (t === "ta" || t === "ta-e" || t.includes("passerelle-ta") || t.includes("passerelle-taxi")) out.push("TA");
+  if (t === "vtc" || t === "vtc-e") out.push("VTC");
+  if (t === "va" || t === "va-e" || t === "pa vtc" || t.includes("passerelle-va") || t.includes("passerelle-vtc")) out.push("VA");
+  return out;
+}
+
+// Retourne les dates réelles de cours (à partir d'agenda_blocs) entre debut et min(today-1, fin)
+// pour un apprenant donné. Ne compte QUE les jours passés (pas aujourd'hui, pas le futur).
+async function joursDeCoursPasses(
+  supabase: any,
+  session: { date_debut: string; date_fin: string },
+  typeApprenant: string,
+  today: Date,
+): Promise<string[]> {
+  const yesterday = new Date(today);
+  yesterday.setUTCDate(yesterday.getUTCDate() - 1);
+  const yesterdayStr = fmtDate(yesterday);
+  const capStr = session.date_fin < yesterdayStr ? session.date_fin : yesterdayStr;
+  if (capStr < session.date_debut) return [];
+
+  const start = new Date(session.date_debut + "T00:00:00Z");
+  const semaineMin = new Date(start);
+  semaineMin.setUTCDate(semaineMin.getUTCDate() - 6);
+
+  const { data: blocs } = await supabase
+    .from("agenda_blocs")
+    .select("semaine_debut, jour, formation, publics_cibles, heure_debut")
+    .gte("semaine_debut", fmtDate(semaineMin))
+    .lte("semaine_debut", session.date_fin);
+
+  const publics = apprenantPublics(typeApprenant);
+  const t = (typeApprenant || "").toLowerCase();
+  const isTaxi = t.includes("taxi") || t === "ta" || t === "ta-e";
+  const isVTC = !isTaxi && (t === "vtc" || t === "vtc-e" || t === "pa vtc" || t === "va" || t === "va-e");
+
+  const matchFormation = (f: string) => {
+    const fl = (f || "").toLowerCase();
+    if (fl.includes("taxi et vtc") || fl.includes("taxi & vtc")) return true;
+    if (isTaxi && fl.includes("taxi")) return true;
+    if (isVTC && fl.includes("vtc")) return true;
+    if (!isTaxi && !isVTC) return true;
+    return false;
+  };
+
+  const dates = new Set<string>();
+  for (const b of blocs || []) {
+    const cibles: string[] = Array.isArray(b.publics_cibles) ? b.publics_cibles : [];
+    let match = false;
+    if (cibles.length > 0) {
+      match = publics.length === 0 || publics.some((p) => cibles.includes(p));
+    } else {
+      match = matchFormation(b.formation);
+    }
+    if (!match) continue;
+    const ws = new Date(b.semaine_debut + "T00:00:00Z");
+    ws.setUTCDate(ws.getUTCDate() + Number(b.jour || 0));
+    const key = fmtDate(ws);
+    if (key < session.date_debut || key > capStr) continue;
+    dates.add(key);
+  }
+  return Array.from(dates).sort();
 }
 
 serve(async (req) => {
