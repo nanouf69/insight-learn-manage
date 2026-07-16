@@ -1248,7 +1248,9 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
               </div>
             )}
           </TabsContent>
+          )}
         </Tabs>
+
 
         {/* Info */}
         {!apprenant.email && (
