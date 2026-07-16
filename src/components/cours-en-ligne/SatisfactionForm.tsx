@@ -84,9 +84,6 @@ const SatisfactionForm = ({ formationType, apprenantId, onComplete }: Satisfacti
   const label = getFormationLabel(formationType);
   const [parties, setParties] = useState<PartieData[]>(buildSatisfactionData(label));
   const [noteGlobale, setNoteGlobale] = useState<number | null>(null);
-  const [pointsForts, setPointsForts] = useState("");
-  const [pointsAmeliorer, setPointsAmeliorer] = useState("");
-  const [suggestions, setSuggestions] = useState("");
   const [submitted, setSubmitted] = useState(false);
 
   const { queueSave, triggerSave: autoTrigger, StatusIndicator } = useAutoSave({
