@@ -97,20 +97,17 @@ const SatisfactionForm = ({ formationType, apprenantId, onComplete }: Satisfacti
   useLoadDraft(apprenantId || "", "satisfaction", (draft) => {
     if (draft.parties && Array.isArray(draft.parties)) setParties(draft.parties);
     if (draft.noteGlobale !== undefined) setNoteGlobale(draft.noteGlobale);
-    if (draft.pointsForts) setPointsForts(draft.pointsForts);
-    if (draft.pointsAmeliorer) setPointsAmeliorer(draft.pointsAmeliorer);
-    if (draft.suggestions) setSuggestions(draft.suggestions);
   }, !!apprenantId && !submitted);
 
   const collectData = () => ({
     formationType,
     parties: parties.map(p => ({ titre: p.titre, criteres: p.criteres })),
-    noteGlobale, pointsForts, pointsAmeliorer, suggestions,
+    noteGlobale,
   });
 
   useEffect(() => {
     queueSave(collectData());
-  }, [parties, noteGlobale, pointsForts, pointsAmeliorer, suggestions]);
+  }, [parties, noteGlobale]);
 
   const updateCritere = (partieIdx: number, critereIdx: number, value: number) => {
     setParties(prev => prev.map((p, pi) => pi === partieIdx ? {
