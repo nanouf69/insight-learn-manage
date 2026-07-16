@@ -1,5 +1,5 @@
 import { useState, useRef, type ChangeEvent } from "react";
-import { Mail, Send, Inbox, Clock, Plus, Search, RefreshCw, Loader2, FileText, Forward, Paperclip, X, RotateCcw, Download } from "lucide-react";
+import { Mail, Send, Inbox, Clock, Plus, Search, RefreshCw, Loader2, FileText, Forward, Paperclip, X, RotateCcw, Download, Phone, Trash2 } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { Button } from "@/components/ui/button";
@@ -266,7 +266,7 @@ L'équipe Ftransport
 
 export function EmailsSection({ apprenant }: EmailsSectionProps) {
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState<'all' | 'sent' | 'received'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'sent' | 'received' | 'calls'>('all');
   const [isComposeOpen, setIsComposeOpen] = useState(false);
   const [selectedEmail, setSelectedEmail] = useState<EmailRecord | null>(null);
   const [newEmailSubject, setNewEmailSubject] = useState("");
@@ -275,6 +275,15 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
   const [forwardTo, setForwardTo] = useState("");
   const [isForwarding, setIsForwarding] = useState(false);
   const [attachments, setAttachments] = useState<AttachmentFile[]>([]);
+  const [isCallOpen, setIsCallOpen] = useState(false);
+  const [callDate, setCallDate] = useState<string>(() => {
+    const d = new Date();
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    return d.toISOString().slice(0, 16);
+  });
+  const [callSujet, setCallSujet] = useState("");
+  const [callNotes, setCallNotes] = useState("");
+  const [callDirection, setCallDirection] = useState<'sortant' | 'entrant'>('sortant');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -330,6 +339,68 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
     },
     enabled: !!apprenant.id,
   });
+
+  interface AppelRecord {
+    id: string;
+    apprenant_id: string;
+    date_appel: string;
+    sujet: string;
+    notes: string | null;
+    direction: string;
+    created_at: string;
+  }
+
+  const { data: appels = [], isLoading: isLoadingAppels } = useQuery({
+    queryKey: ['apprenant_appels', apprenant.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('apprenant_appels' as any)
+        .select('*')
+        .eq('apprenant_id', apprenant.id)
+        .order('date_appel', { ascending: false });
+      if (error) throw error;
+      return (data || []) as unknown as AppelRecord[];
+    },
+    enabled: !!apprenant.id,
+  });
+
+  const addAppelMutation = useMutation({
+    mutationFn: async () => {
+      if (!callSujet.trim()) throw new Error("Sujet de l'appel obligatoire");
+      const { data: { user } } = await supabase.auth.getUser();
+      const { error } = await supabase.from('apprenant_appels' as any).insert({
+        apprenant_id: apprenant.id,
+        date_appel: new Date(callDate).toISOString(),
+        sujet: callSujet.trim(),
+        notes: callNotes.trim() || null,
+        direction: callDirection,
+        created_by: user?.id ?? null,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['apprenant_appels', apprenant.id] });
+      setIsCallOpen(false);
+      setCallSujet("");
+      setCallNotes("");
+      setCallDirection('sortant');
+      toast({ title: "Appel enregistré", description: "La trace de l'appel a été ajoutée." });
+    },
+    onError: (e: any) => toast({ title: "Erreur", description: e.message, variant: "destructive" }),
+  });
+
+  const deleteAppelMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('apprenant_appels' as any).delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['apprenant_appels', apprenant.id] });
+      toast({ title: "Appel supprimé" });
+    },
+    onError: (e: any) => toast({ title: "Erreur", description: e.message, variant: "destructive" }),
+  });
+
 
   // Sync emails mutation
   const syncMutation = useMutation({
@@ -809,7 +880,7 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="flex items-center gap-2">
           <Mail className="w-5 h-5" />
-          Historique des Emails
+          Emails &amp; contacts
         </CardTitle>
         <div className="flex gap-2">
           <Button
@@ -834,6 +905,52 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
             )}
             Synchroniser
           </Button>
+          <Dialog open={isCallOpen} onOpenChange={setIsCallOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm" variant="secondary">
+                <Phone className="w-4 h-4 mr-2" />
+                Nouvel appel
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[520px]">
+              <DialogHeader>
+                <DialogTitle>Enregistrer un appel avec {apprenant.prenom} {apprenant.nom}</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-2">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Date &amp; heure</Label>
+                    <Input type="datetime-local" value={callDate} onChange={(e) => setCallDate(e.target.value)} />
+                  </div>
+                  <div>
+                    <Label>Direction</Label>
+                    <Select value={callDirection} onValueChange={(v) => setCallDirection(v as 'sortant' | 'entrant')}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="sortant">📞 Appel sortant</SelectItem>
+                        <SelectItem value="entrant">📲 Appel entrant</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div>
+                  <Label>Sujet *</Label>
+                  <Input value={callSujet} onChange={(e) => setCallSujet(e.target.value)} placeholder="Objet de l'appel (ex : relance dossier, confirmation examen...)" />
+                </div>
+                <div>
+                  <Label>Notes / compte-rendu</Label>
+                  <Textarea value={callNotes} onChange={(e) => setCallNotes(e.target.value)} rows={5} placeholder="Détails de l'échange, prochaines étapes..." />
+                </div>
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setIsCallOpen(false)}>Annuler</Button>
+                <Button onClick={() => addAppelMutation.mutate()} disabled={!callSujet.trim() || addAppelMutation.isPending}>
+                  {addAppelMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Phone className="w-4 h-4 mr-2" />}
+                  Enregistrer l'appel
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
           <Dialog open={isComposeOpen} onOpenChange={(open) => {
             setIsComposeOpen(open);
             if (!open) {
@@ -1006,9 +1123,66 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
               <Inbox className="w-3 h-3" />
               Reçus
             </TabsTrigger>
+            <TabsTrigger value="calls" className="gap-2">
+              <Phone className="w-3 h-3" />
+              Appels {appels.length > 0 && <span className="text-xs opacity-70">({appels.length})</span>}
+            </TabsTrigger>
           </TabsList>
 
+          {activeTab === 'calls' ? (
+            <div>
+              {isLoadingAppels ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : appels.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Phone className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                  <p>Aucun appel enregistré</p>
+                  <Button variant="link" className="mt-2" onClick={() => setIsCallOpen(true)}>
+                    Enregistrer un premier appel
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {appels.map((a) => (
+                    <div key={a.id} className="flex items-start gap-4 p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${a.direction === 'entrant' ? 'bg-purple-100' : 'bg-orange-100'}`}>
+                        <Phone className={`w-4 h-4 ${a.direction === 'entrant' ? 'text-purple-600' : 'text-orange-600'}`} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                          <h4 className="font-medium truncate">{a.sujet}</h4>
+                          <Badge variant="outline" className="text-xs shrink-0">
+                            {a.direction === 'entrant' ? 'Entrant' : 'Sortant'}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {format(new Date(a.date_appel), "dd MMM yyyy 'à' HH'h'mm", { locale: fr })}
+                          </span>
+                        </div>
+                        {a.notes && (
+                          <p className="text-sm text-muted-foreground whitespace-pre-wrap">{a.notes}</p>
+                        )}
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          if (confirm("Supprimer cette trace d'appel ?")) deleteAppelMutation.mutate(a.id);
+                        }}
+                        title="Supprimer"
+                      >
+                        <Trash2 className="w-4 h-4 text-destructive" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
           <TabsContent value={activeTab}>
+
             {isLoading ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
@@ -1074,7 +1248,9 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
               </div>
             )}
           </TabsContent>
+          )}
         </Tabs>
+
 
         {/* Info */}
         {!apprenant.email && (

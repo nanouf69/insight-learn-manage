@@ -121,6 +121,50 @@ export type Database = {
         }
         Relationships: []
       }
+      apprenant_appels: {
+        Row: {
+          apprenant_id: string
+          created_at: string
+          created_by: string | null
+          date_appel: string
+          direction: string
+          id: string
+          notes: string | null
+          sujet: string
+          updated_at: string
+        }
+        Insert: {
+          apprenant_id: string
+          created_at?: string
+          created_by?: string | null
+          date_appel?: string
+          direction?: string
+          id?: string
+          notes?: string | null
+          sujet: string
+          updated_at?: string
+        }
+        Update: {
+          apprenant_id?: string
+          created_at?: string
+          created_by?: string | null
+          date_appel?: string
+          direction?: string
+          id?: string
+          notes?: string | null
+          sujet?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "apprenant_appels_apprenant_id_fkey"
+            columns: ["apprenant_id"]
+            isOneToOne: false
+            referencedRelation: "apprenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       apprenant_connexions: {
         Row: {
           apprenant_id: string
