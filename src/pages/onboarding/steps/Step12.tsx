@@ -440,6 +440,10 @@ export default function Step12() {
 
 
   const handleDownloadRecap = async () => {
+    if (!motDePasseCma.trim()) {
+      toast.error("Impossible de télécharger le dossier : le mot de passe CMA est obligatoire.");
+      return;
+    }
     const pdfData = buildRecapData();
     generateRecapitulatifPDF(pdfData);
 
