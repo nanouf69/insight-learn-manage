@@ -209,6 +209,9 @@ export function SessionForm() {
   const [typeSession, setTypeSession] = useState("theorique");
   const [dateDebut, setDateDebut] = useState("");
   const [dateFin, setDateFin] = useState("");
+  const [hasSecondPeriod, setHasSecondPeriod] = useState(false);
+  const [dateDebut2, setDateDebut2] = useState("");
+  const [dateFin2, setDateFin2] = useState("");
   const [lieu, setLieu] = useState("");
   const [places, setPlaces] = useState("18");
   const [heureDebut, setHeureDebut] = useState("08:00");
@@ -219,11 +222,15 @@ export function SessionForm() {
     setTypeSession("theorique");
     setDateDebut("");
     setDateFin("");
+    setHasSecondPeriod(false);
+    setDateDebut2("");
+    setDateFin2("");
     setLieu("");
     setPlaces("18");
     setHeureDebut("08:00");
     setHeureFin("17:00");
   };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
