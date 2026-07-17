@@ -1954,6 +1954,30 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                     totalModules={modules.length}
                     globalProgress={globalProgress}
                   />
+                  {showLastFridayIntroReminder && (
+                    <div className="mt-4 rounded-xl border-4 border-red-500 bg-red-50 p-5 shadow-lg animate-pulse">
+                      <div className="flex items-start gap-3">
+                        <span className="text-3xl">⚠️</span>
+                        <div className="flex-1">
+                          <div className="text-lg font-bold text-red-800 mb-1">
+                            Dernier jour de formation — Module Introduction obligatoire
+                          </div>
+                          <div className="text-sm text-red-900 mb-3">
+                            C'est le <strong>dernier vendredi</strong> de votre formation présentielle et
+                            vous n'avez pas encore terminé le module <strong>« {modules[0]?.nom || "Introduction"} »</strong>.
+                            Merci de le compléter aujourd'hui avant la fin de la formation.
+                          </div>
+                          <Button
+                            className="bg-red-600 hover:bg-red-700 text-white"
+                            onClick={() => setSelectedModule(modules[0])}
+                          >
+                            👉 Ouvrir le module Introduction maintenant
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                    <XPBar xp={xp} moduleScores={moduleScores} />
                    <BadgeGrid badges={badges} />
                    {apprenant?.id && <ModuleChangeNotificationsBanner apprenantId={apprenant.id} />}
