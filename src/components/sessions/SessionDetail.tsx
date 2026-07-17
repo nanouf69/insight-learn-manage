@@ -897,13 +897,26 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   const { data: allApprenants = [] } = useQuery({
     queryKey: ['all-apprenants'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('apprenants')
-        .select('id, nom, prenom, email, telephone, type_apprenant, mode_financement, numero_dossier_cma, date_debut_formation, date_fin_formation, date_examen_theorique, date_examen_pratique, statut')
-        .order('nom', { ascending: true });
-      
-      if (error) throw error;
-      return data as ApprenantDB[];
+      const columns = 'id, nom, prenom, email, telephone, type_apprenant, mode_financement, numero_dossier_cma, date_debut_formation, date_fin_formation, date_examen_theorique, date_examen_pratique, statut';
+      const pageSize = 1000;
+      let from = 0;
+      const rows: any[] = [];
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const { data, error } = await supabase
+          .from('apprenants')
+          .select(columns)
+          .is('deleted_at' as any, null)
+          .order('nom', { ascending: true })
+          .order('id', { ascending: true })
+          .range(from, from + pageSize - 1);
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        rows.push(...data);
+        if (data.length < pageSize) break;
+        from += pageSize;
+      }
+      return rows as ApprenantDB[];
     },
     enabled: open,
   });
