@@ -1835,10 +1835,34 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   // Check if the Introduction (first module) is completed
   const introCompleted = modules.length > 0 && effectivelyCompletedIds.has(modules[0].id);
 
+  // Rappel automatique : pour les formations en présentiel, si aujourd'hui = dernier vendredi
+  // de la période de formation, on affiche un rappel bloquant si l'Introduction n'est pas faite.
+  const isPresLearner = !isFormationContinue(apprenant?.type_apprenant, apprenant?.formation_choisie)
+    && isPresentielType(apprenant?.type_apprenant, apprenant?.formation_choisie, apprenant?.creneau_horaire);
+  const showLastFridayIntroReminder = (() => {
+    if (!isPresLearner || introCompleted || modules.length === 0) return false;
+    const startStr = apprenant?.date_debut_formation;
+    const endStr = apprenant?.date_fin_formation;
+    if (!startStr || !endStr) return false;
+    const start = new Date(startStr + "T00:00:00");
+    const end = new Date(endStr + "T00:00:00");
+    if (isNaN(start.getTime()) || isNaN(end.getTime()) || end < start) return false;
+    // Trouver le dernier vendredi (jour 5) dans [start, end]
+    const lastFriday = new Date(end);
+    while (lastFriday >= start && lastFriday.getDay() !== 5) {
+      lastFriday.setDate(lastFriday.getDate() - 1);
+    }
+    if (lastFriday < start) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return today.getTime() === lastFriday.getTime();
+  })();
+
   const isModuleLocked = (modId: number) => computeIsModuleLocked(modId, unlockState);
 
   // Introduction modules: once completed, they cannot be re-opened (E-LEARNING ONLY)
   const isIntroLocked = (modId: number) => isElearning && INTRO_MODULE_IDS.has(modId) && effectivelyCompletedIds.has(modId);
+
 
   return (
     <div className={embedded ? "" : "min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50"}>
@@ -1930,6 +1954,30 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                     totalModules={modules.length}
                     globalProgress={globalProgress}
                   />
+                  {showLastFridayIntroReminder && (
+                    <div className="mt-4 rounded-xl border-4 border-red-500 bg-red-50 p-5 shadow-lg animate-pulse">
+                      <div className="flex items-start gap-3">
+                        <span className="text-3xl">⚠️</span>
+                        <div className="flex-1">
+                          <div className="text-lg font-bold text-red-800 mb-1">
+                            Dernier jour de formation — Module Introduction obligatoire
+                          </div>
+                          <div className="text-sm text-red-900 mb-3">
+                            C'est le <strong>dernier vendredi</strong> de votre formation présentielle et
+                            vous n'avez pas encore terminé le module <strong>« {modules[0]?.nom || "Introduction"} »</strong>.
+                            Merci de le compléter aujourd'hui avant la fin de la formation.
+                          </div>
+                          <Button
+                            className="bg-red-600 hover:bg-red-700 text-white"
+                            onClick={() => setSelectedModule(modules[0])}
+                          >
+                            👉 Ouvrir le module Introduction maintenant
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                    <XPBar xp={xp} moduleScores={moduleScores} />
                    <BadgeGrid badges={badges} />
                    {apprenant?.id && <ModuleChangeNotificationsBanner apprenantId={apprenant.id} />}
