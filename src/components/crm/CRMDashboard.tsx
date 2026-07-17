@@ -89,6 +89,15 @@ export function CRMDashboard({ initialApprenantId, onApprenantClosed }: CRMDashb
     queryKey: ['apprenants-crm'],
     queryFn: async () => {
       // Fetch ALL apprenants (backend caps each page at 1000 rows)
+      // On limite aux colonnes affichées dans la liste pour accélérer le chargement.
+      const columns = [
+        'id', 'nom', 'prenom', 'email', 'telephone',
+        'statut', 'created_at', 'type_apprenant', 'formation_choisie',
+        'mode_financement', 'organisme_financeur',
+        'montant_ttc', 'montant_paye',
+        'date_formation_catalogue', 'date_examen_theorique',
+        'type_examen', 'b2_vierge', 'notes', 'auth_user_id',
+      ].join(', ');
       const pageSize = 1000;
       let from = 0;
       const regularData: any[] = [];
@@ -96,7 +105,7 @@ export function CRMDashboard({ initialApprenantId, onApprenantClosed }: CRMDashb
       while (true) {
         const { data, error } = await supabase
           .from('apprenants')
-          .select('*')
+          .select(columns as any)
           .is('deleted_at' as any, null)
           .order('created_at', { ascending: false })
           .order('id', { ascending: false })
@@ -124,7 +133,9 @@ export function CRMDashboard({ initialApprenantId, onApprenantClosed }: CRMDashb
           || String(b.id).localeCompare(String(a.id))
       );
     },
+    staleTime: 60_000,
   });
+
 
   const normalize = (str: string) =>
     str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim();
