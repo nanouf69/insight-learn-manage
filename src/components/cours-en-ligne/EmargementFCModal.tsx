@@ -185,8 +185,8 @@ export const EmargementFCModal = ({
           const check = await checkSignatureAgainstReferences(signatureToSave, refs);
           if (!check.ok) {
             toast({
-              title: "Signature à refaire",
-              description: check.reason || "Merci de re-signer.",
+              title: "Signature mal faite",
+              description: check.reason || "La signature a été mal faite. Merci de re-signer.",
               variant: "destructive",
             });
             setSignature("");
