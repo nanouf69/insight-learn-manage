@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { CreneauKey } from "@/lib/agendaSlots";
 import { creneauLabel, creneauHoraire } from "@/lib/agendaSlots";
+import { checkSignatureAgainstReferences } from "@/lib/signatureSimilarity";
 
 interface EmargementFCModalProps {
   apprenantId: string;
