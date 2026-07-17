@@ -362,24 +362,17 @@ for (const [child, parent] of Object.entries(DASHBOARD_PARENT_MODULE_IDS)) {
  * For intro modules (1, 26, 31, 32, 33, 34): require explicit score OR fully completed details.
  */
 const computeFullyCompletedModuleIds = (completionRows: any[]): Set<number> => {
-  const INTRO_MODULE_IDS_FOR_FULLY_DONE = new Set([1, 26, 31, 32, 33, 34]);
+  // NOTE: on ne re-vérifie plus la présence d'un score/détails pour les modules
+  // Introduction : toute ligne `apprenant_module_completion` existante = module terminé.
+  // (Éviter de "perdre" une complétion historique qui redemanderait à l'apprenant de refaire le module.)
 
   // Group done rows by their RAW module_id
   const doneRawIds = new Set(
     completionRows
-      .filter((row) => {
-        if (!isModuleCompletionFullyDone(row)) return false;
-        const moduleId = Number(row.module_id);
-        if (INTRO_MODULE_IDS_FOR_FULLY_DONE.has(moduleId)) {
-          const hasScore = row.score_max != null && row.score_max > 0 && row.score_obtenu != null;
-          const details = Array.isArray(row?.details) ? row.details : null;
-          const detailsFullyDone = details && details.length > 0 && getCompletionAnsweredCount(row) === details.length;
-          return hasScore || detailsFullyDone;
-        }
-        return true;
-      })
+      .filter(isModuleCompletionFullyDone)
       .map((d) => Number(d.module_id)),
   );
+
 
   // All normalized IDs that have at least one done row
   const candidateIds = new Set(
