@@ -197,7 +197,7 @@ export const EmargementFCModal = ({
           // En cas d'échec de vérification (offline, RLS), on n'empêche pas la signature
         }
       }
-    try {
+
       await saveEmargement({
         apprenant_id: apprenantId,
         user_id: userId,
