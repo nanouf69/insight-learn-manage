@@ -765,6 +765,7 @@ export function ApprenantForm() {
                     <SelectLabel>Formations Continues</SelectLabel>
                     <SelectItem value="continue-vtc">Formation continue VTC - 200 €</SelectItem>
                     <SelectItem value="continue-taxi">Formation continue TAXI - 299 €</SelectItem>
+                    <SelectItem value="mobilite-taxi">Formation Mobilité TAXI</SelectItem>
                   </SelectGroup>
                   <SelectGroup>
                     <SelectLabel>Marketing Digital</SelectLabel>
