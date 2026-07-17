@@ -122,7 +122,7 @@ export async function checkSignatureAgainstReferences(
   if (current.inkPixels < 120) {
     return {
       ok: false,
-      reason: "Votre signature semble très légère ou incomplète. Merci de re-signer plus clairement.",
+      reason: "La signature a été mal faite. Merci de re-signer.",
     };
   }
 
