@@ -206,8 +206,8 @@ export default function SuiviHeuresElearning() {
     return m;
   }, [apprenants]);
 
-  // Calcul du temps de connexion EFFECTIF (seulement quand un module/exercice/quiz a été ouvert,
-  // et uniquement dans la plage de formation de l'apprenant)
+  // Calcul du temps de connexion EFFECTIF (seulement quand un module/exercice/quiz a été ouvert)
+  // Aligné sur le Rapport d'activité : plafond 7h/session, pas de clip par période de formation.
   const heuresByApp = useMemo(() => {
     const result = new Map<string, number>(); // minutes
     for (const [appId, conns] of connByApp.entries()) {
@@ -216,16 +216,12 @@ export default function SuiviHeuresElearning() {
         result.set(appId, 0);
         continue;
       }
-      const win = windowByApp.get(appId) || { start: null, end: null };
       let total = 0;
       for (const c of conns) {
-        const startRaw = Date.parse(c.started_at);
+        const start = Date.parse(c.started_at);
+        if (Number.isNaN(start)) continue;
         const rawEnd = c.ended_at ? Date.parse(c.ended_at) : Date.parse(c.last_seen_at);
-        const cappedEnd = Math.min(rawEnd, startRaw + MAX_SESSION_MS);
-
-        // Clipper à la plage formation
-        const start = win.start != null ? Math.max(startRaw, win.start) : startRaw;
-        const end = win.end != null ? Math.min(cappedEnd, win.end) : cappedEnd;
+        const end = Number.isNaN(rawEnd) ? start : Math.min(rawEnd, start + MAX_SESSION_MS);
         if (end <= start) continue;
 
         // recherche binaire : existe-t-il une activité dans [start, end] ?
@@ -244,7 +240,8 @@ export default function SuiviHeuresElearning() {
       result.set(appId, total);
     }
     return result;
-  }, [connByApp, actByApp, windowByApp]);
+  }, [connByApp, actByApp]);
+
 
   const rows = useMemo(() => {
     const q = search.trim().toLowerCase();

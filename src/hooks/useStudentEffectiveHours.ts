@@ -179,17 +179,13 @@ export function useStudentEffectiveHours(
     if (actTimestamps.length === 0 || connexions.length === 0) return 0;
     let total = 0;
     for (const c of connexions) {
-      const startRaw = Date.parse(c.started_at);
-      if (Number.isNaN(startRaw)) continue;
+      const start = Date.parse(c.started_at);
+      if (Number.isNaN(start)) continue;
       const rawEnd = c.ended_at ? Date.parse(c.ended_at) : Date.parse(c.last_seen_at);
-      const endRaw = Number.isNaN(rawEnd) ? startRaw : Math.min(rawEnd, startRaw + MAX_SESSION_MS);
-
-      // Clipper la fenêtre de connexion à la période de formation
-      const start = windowStart != null ? Math.max(startRaw, windowStart) : startRaw;
-      const end = windowEnd != null ? Math.min(endRaw, windowEnd) : endRaw;
+      const end = Number.isNaN(rawEnd) ? start : Math.min(rawEnd, start + MAX_SESSION_MS);
       if (end <= start) continue;
 
-      // Une activité pédagogique doit exister dans la fenêtre effective (même règle que le Rapport d'activité)
+      // Une activité pédagogique doit exister dans la session (même règle que le Rapport d'activité)
       let lo = 0, hi = actTimestamps.length - 1, found = false;
       while (lo <= hi) {
         const mid = (lo + hi) >> 1;
@@ -203,7 +199,8 @@ export function useStudentEffectiveHours(
       }
     }
     return total;
-  }, [connexions, actTimestamps, windowStart, windowEnd]);
+  }, [connexions, actTimestamps]);
+
 
   const requis = HEURES_REQUISES[(typeApprenant || "").toLowerCase()] ?? 0;
   const faitHeures = totalMinutes / 60;
