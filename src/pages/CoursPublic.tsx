@@ -1835,10 +1835,34 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   // Check if the Introduction (first module) is completed
   const introCompleted = modules.length > 0 && effectivelyCompletedIds.has(modules[0].id);
 
+  // Rappel automatique : pour les formations en présentiel, si aujourd'hui = dernier vendredi
+  // de la période de formation, on affiche un rappel bloquant si l'Introduction n'est pas faite.
+  const isPresLearner = !isFormationContinue(apprenant?.type_apprenant, apprenant?.formation_choisie)
+    && isPresentielType(apprenant?.type_apprenant, apprenant?.formation_choisie, apprenant?.creneau_horaire);
+  const showLastFridayIntroReminder = (() => {
+    if (!isPresLearner || introCompleted || modules.length === 0) return false;
+    const startStr = apprenant?.date_debut_formation;
+    const endStr = apprenant?.date_fin_formation;
+    if (!startStr || !endStr) return false;
+    const start = new Date(startStr + "T00:00:00");
+    const end = new Date(endStr + "T00:00:00");
+    if (isNaN(start.getTime()) || isNaN(end.getTime()) || end < start) return false;
+    // Trouver le dernier vendredi (jour 5) dans [start, end]
+    const lastFriday = new Date(end);
+    while (lastFriday >= start && lastFriday.getDay() !== 5) {
+      lastFriday.setDate(lastFriday.getDate() - 1);
+    }
+    if (lastFriday < start) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return today.getTime() === lastFriday.getTime();
+  })();
+
   const isModuleLocked = (modId: number) => computeIsModuleLocked(modId, unlockState);
 
   // Introduction modules: once completed, they cannot be re-opened (E-LEARNING ONLY)
   const isIntroLocked = (modId: number) => isElearning && INTRO_MODULE_IDS.has(modId) && effectivelyCompletedIds.has(modId);
+
 
   return (
     <div className={embedded ? "" : "min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50"}>
