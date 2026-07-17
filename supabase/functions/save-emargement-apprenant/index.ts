@@ -105,7 +105,6 @@ Deno.serve(async (req) => {
     const end = parseDate(apprenant.date_fin_formation || apprenant.date_fin_cours_en_ligne);
     if (!signedDate || !today || signedDate.getTime() > today.getTime()) return json({ error: "Date d'émargement non autorisée" }, 403);
     if (start && signedDate.getTime() < start.getTime()) return json({ error: "Signature avant le début de formation interdite" }, 403);
-    if (end && signedDate.getTime() > end.getTime()) return json({ error: "Signature après la fin de formation interdite" }, 403);
     const isFC = isFormationContinue(apprenant.type_apprenant, apprenant.formation_choisie);
     const isPres = isPresentielType(apprenant.type_apprenant, apprenant.formation_choisie, apprenant.creneau_horaire);
     if (!isFC && !isPres) return json({ error: "Émargement non prévu pour cette formation" }, 403);
