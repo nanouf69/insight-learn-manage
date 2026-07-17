@@ -209,6 +209,9 @@ export function SessionForm() {
   const [typeSession, setTypeSession] = useState("theorique");
   const [dateDebut, setDateDebut] = useState("");
   const [dateFin, setDateFin] = useState("");
+  const [hasSecondPeriod, setHasSecondPeriod] = useState(false);
+  const [dateDebut2, setDateDebut2] = useState("");
+  const [dateFin2, setDateFin2] = useState("");
   const [lieu, setLieu] = useState("");
   const [places, setPlaces] = useState("18");
   const [heureDebut, setHeureDebut] = useState("08:00");
@@ -219,24 +222,32 @@ export function SessionForm() {
     setTypeSession("theorique");
     setDateDebut("");
     setDateFin("");
+    setHasSecondPeriod(false);
+    setDateDebut2("");
+    setDateFin2("");
     setLieu("");
     setPlaces("18");
     setHeureDebut("08:00");
     setHeureFin("17:00");
   };
 
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
+      const hasP2 = hasSecondPeriod && dateDebut2 && dateFin2;
+      const globalStart = hasP2 ? (dateDebut2 < dateDebut ? dateDebut2 : dateDebut) : dateDebut;
+      const globalEnd = hasP2 ? (dateFin2 > dateFin ? dateFin2 : dateFin) : dateFin;
+
       const { error } = await supabase
         .from('sessions')
         .insert({
           nom: nom || null,
           type_session: typeSession,
-          date_debut: dateDebut,
-          date_fin: dateFin,
+          date_debut: globalStart,
+          date_fin: globalEnd,
           heure_debut: heureDebut || null,
           heure_fin: heureFin || null,
           lieu,
@@ -246,7 +257,7 @@ export function SessionForm() {
 
       if (error) throw error;
 
-      // Créer les blocs agenda automatiquement (copie depuis session précédente similaire si possible)
+      // Créer les blocs agenda automatiquement pour chaque période
       const result = await createAgendaBlocs({
         date_debut: dateDebut,
         date_fin: dateFin,
@@ -256,12 +267,25 @@ export function SessionForm() {
         heure_fin: heureFin,
       });
 
+      let extra = { copied: 0 };
+      if (hasP2) {
+        extra = await createAgendaBlocs({
+          date_debut: dateDebut2,
+          date_fin: dateFin2,
+          nom: nom || null,
+          type_session: typeSession,
+          heure_debut: heureDebut,
+          heure_fin: heureFin,
+        });
+      }
+
       toast({
         title: "Session créée",
         description: result.source
-          ? `Agenda rempli avec ${result.copied} blocs copiés depuis « ${result.source} ».`
-          : `Agenda rempli avec ${result.copied} blocs génériques.`,
+          ? `Agenda rempli avec ${result.copied + extra.copied} blocs copiés depuis « ${result.source} ».`
+          : `Agenda rempli avec ${result.copied + extra.copied} blocs génériques.`,
       });
+
       resetForm();
       setOpen(false);
     } catch (error: any) {
@@ -320,6 +344,32 @@ export function SessionForm() {
               <Input id="dateFin" type="date" required value={dateFin} onChange={(e) => setDateFin(e.target.value)} />
             </div>
           </div>
+
+          {!hasSecondPeriod ? (
+            <Button type="button" variant="outline" size="sm" onClick={() => setHasSecondPeriod(true)}>
+              + Ajouter une seconde période
+            </Button>
+          ) : (
+            <div className="space-y-2 border-l-2 border-primary/30 pl-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium">Seconde période</Label>
+                <Button type="button" variant="ghost" size="sm" onClick={() => { setHasSecondPeriod(false); setDateDebut2(""); setDateFin2(""); }}>
+                  Retirer
+                </Button>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="dateDebut2">Date de début (2)</Label>
+                  <Input id="dateDebut2" type="date" value={dateDebut2} onChange={(e) => setDateDebut2(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="dateFin2">Date de fin (2)</Label>
+                  <Input id="dateFin2" type="date" value={dateFin2} onChange={(e) => setDateFin2(e.target.value)} />
+                </div>
+              </div>
+            </div>
+          )}
+
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
