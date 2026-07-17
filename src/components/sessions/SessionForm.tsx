@@ -237,13 +237,17 @@ export function SessionForm() {
     setIsLoading(true);
 
     try {
+      const hasP2 = hasSecondPeriod && dateDebut2 && dateFin2;
+      const globalStart = hasP2 ? (dateDebut2 < dateDebut ? dateDebut2 : dateDebut) : dateDebut;
+      const globalEnd = hasP2 ? (dateFin2 > dateFin ? dateFin2 : dateFin) : dateFin;
+
       const { error } = await supabase
         .from('sessions')
         .insert({
           nom: nom || null,
           type_session: typeSession,
-          date_debut: dateDebut,
-          date_fin: dateFin,
+          date_debut: globalStart,
+          date_fin: globalEnd,
           heure_debut: heureDebut || null,
           heure_fin: heureFin || null,
           lieu,
@@ -253,7 +257,7 @@ export function SessionForm() {
 
       if (error) throw error;
 
-      // Créer les blocs agenda automatiquement (copie depuis session précédente similaire si possible)
+      // Créer les blocs agenda automatiquement pour chaque période
       const result = await createAgendaBlocs({
         date_debut: dateDebut,
         date_fin: dateFin,
@@ -263,12 +267,25 @@ export function SessionForm() {
         heure_fin: heureFin,
       });
 
+      let extra = { copied: 0 };
+      if (hasP2) {
+        extra = await createAgendaBlocs({
+          date_debut: dateDebut2,
+          date_fin: dateFin2,
+          nom: nom || null,
+          type_session: typeSession,
+          heure_debut: heureDebut,
+          heure_fin: heureFin,
+        });
+      }
+
       toast({
         title: "Session créée",
         description: result.source
-          ? `Agenda rempli avec ${result.copied} blocs copiés depuis « ${result.source} ».`
-          : `Agenda rempli avec ${result.copied} blocs génériques.`,
+          ? `Agenda rempli avec ${result.copied + extra.copied} blocs copiés depuis « ${result.source} ».`
+          : `Agenda rempli avec ${result.copied + extra.copied} blocs génériques.`,
       });
+
       resetForm();
       setOpen(false);
     } catch (error: any) {
