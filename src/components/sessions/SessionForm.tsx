@@ -345,6 +345,32 @@ export function SessionForm() {
             </div>
           </div>
 
+          {!hasSecondPeriod ? (
+            <Button type="button" variant="outline" size="sm" onClick={() => setHasSecondPeriod(true)}>
+              + Ajouter une seconde période
+            </Button>
+          ) : (
+            <div className="space-y-2 border-l-2 border-primary/30 pl-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium">Seconde période</Label>
+                <Button type="button" variant="ghost" size="sm" onClick={() => { setHasSecondPeriod(false); setDateDebut2(""); setDateFin2(""); }}>
+                  Retirer
+                </Button>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="dateDebut2">Date de début (2)</Label>
+                  <Input id="dateDebut2" type="date" value={dateDebut2} onChange={(e) => setDateDebut2(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="dateFin2">Date de fin (2)</Label>
+                  <Input id="dateFin2" type="date" value={dateFin2} onChange={(e) => setDateFin2(e.target.value)} />
+                </div>
+              </div>
+            </div>
+          )}
+
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="heureDebut">Heure de début</Label>
