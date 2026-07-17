@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { CreneauKey } from "@/lib/agendaSlots";
 import { creneauLabel, creneauHoraire } from "@/lib/agendaSlots";
+import { checkSignatureAgainstReferences } from "@/lib/signatureSimilarity";
 
 interface EmargementFCModalProps {
   apprenantId: string;
@@ -167,6 +168,36 @@ export const EmargementFCModal = ({
     }
     setSaving(true);
     try {
+      // Vérification anti-gribouillage : comparer avec les précédentes signatures dessinées
+      if (signatureMode === "draw") {
+        try {
+          const { data: prev } = await supabase
+            .from("emargements_fc")
+            .select("signature_data_url")
+            .eq("apprenant_id", apprenantId)
+            .eq("absent", false)
+            .not("signature_data_url", "is", null)
+            .order("date_emargement", { ascending: false })
+            .limit(8);
+          const refs = (prev || [])
+            .map((r: { signature_data_url: string | null }) => r.signature_data_url || "")
+            .filter((u: string) => u && u.startsWith("data:image"));
+          const check = await checkSignatureAgainstReferences(signatureToSave, refs);
+          if (!check.ok) {
+            toast({
+              title: "Signature à refaire",
+              description: check.reason || "Merci de re-signer.",
+              variant: "destructive",
+            });
+            setSignature("");
+            setSaving(false);
+            return;
+          }
+        } catch {
+          // En cas d'échec de vérification (offline, RLS), on n'empêche pas la signature
+        }
+      }
+
       await saveEmargement({
         apprenant_id: apprenantId,
         user_id: userId,
