@@ -1825,8 +1825,22 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   });
   const { effectivelyCompletedIds, unlockedModuleIds } = unlockState;
 
-  // Check if the Introduction (first module) is completed
-  const introCompleted = modules.length > 0 && effectivelyCompletedIds.has(modules[0].id);
+  // Check if the Introduction (first module) is completed.
+  // Fallback : toute ligne `apprenant_module_completion` avec un `completed_at`
+  // pour le module d'intro (ou son ID brut) suffit — évite d'afficher à tort
+  // le rappel "à refaire" aux apprenants qui l'ont déjà validé.
+  const firstModuleId = modules[0]?.id;
+  const hasAnyIntroCompletionRow = moduleCompletionsForNotes.some((row) => {
+    const mid = Number(row?.module_id);
+    return (
+      row?.completed_at &&
+      (mid === firstModuleId || INTRO_MODULE_IDS.has(mid))
+    );
+  });
+  const introCompleted =
+    modules.length > 0 &&
+    (effectivelyCompletedIds.has(firstModuleId) || hasAnyIntroCompletionRow);
+
 
   // Rappel automatique : pour les formations en présentiel, si aujourd'hui = dernier vendredi
   // de la période de formation, on affiche un rappel bloquant si l'Introduction n'est pas faite.
