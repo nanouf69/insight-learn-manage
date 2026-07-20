@@ -70,6 +70,9 @@ const financementColors: Record<string, string> = {
 const dedupeByStableId = <T extends { id?: string | null }>(rows: T[]) =>
   Array.from(new Map(rows.map((row, index) => [row.id || `missing-id-${index}`, row])).values());
 
+const INITIAL_VISIBLE_APPRENANTS = 80;
+const SEARCH_VISIBLE_APPRENANTS = 160;
+
 interface CRMDashboardProps {
   initialApprenantId?: string | null;
   onApprenantClosed?: () => void;
@@ -156,6 +159,12 @@ export function CRMDashboard({ initialApprenantId, onApprenantClosed }: CRMDashb
     }
     return filterAndSortApprenants(list, searchQuery);
   }, [apprenants, searchQuery, formationFilter]);
+
+  const displayedApprenants = useMemo(() => {
+    const unique = dedupeByStableId(filteredApprenants);
+    const limit = searchQuery.trim() ? SEARCH_VISIBLE_APPRENANTS : INITIAL_VISIBLE_APPRENANTS;
+    return unique.slice(0, limit);
+  }, [filteredApprenants, searchQuery]);
 
   const stats = useMemo(() => {
     const byType = apprenants.reduce((acc, a) => {
@@ -277,8 +286,14 @@ export function CRMDashboard({ initialApprenantId, onApprenantClosed }: CRMDashb
       ) : filteredApprenants.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground">Aucun apprenant trouvé</div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {dedupeByStableId(filteredApprenants).map((apprenant, index) => {
+        <>
+          {filteredApprenants.length > displayedApprenants.length && (
+            <div className="text-sm text-muted-foreground">
+              {displayedApprenants.length} résultats affichés sur {filteredApprenants.length}. Affinez la recherche pour ouvrir la fiche plus vite.
+            </div>
+          )}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {displayedApprenants.map((apprenant, index) => {
             const typeLabel = typeLabels[apprenant.type_apprenant || ''] || apprenant.type_apprenant || '-';
             const typeColor = typeColors[apprenant.type_apprenant || ''] || 'bg-muted text-muted-foreground';
             const financementLabel = financementLabels[apprenant.mode_financement || ''] || apprenant.mode_financement || '-';
@@ -435,7 +450,8 @@ export function CRMDashboard({ initialApprenantId, onApprenantClosed }: CRMDashb
               </div>
             );
           })}
-        </div>
+          </div>
+        </>
       )}
     </div>
   );

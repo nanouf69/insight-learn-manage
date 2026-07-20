@@ -415,25 +415,6 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
     setGeneratedPassword("");
   }, [apprenant, inferredAccountFormationId, showCreateDialog]);
 
-  useEffect(() => {
-    if (!apprenant?.id) return;
-    if (hasStoredModulesArray) return;
-    if (fallbackDefaultModules.length === 0) return;
-
-    const autoFillModules = async () => {
-      const { error } = await supabase
-        .from("apprenants")
-        .update({ modules_autorises: fallbackDefaultModules } as any)
-        .eq("id", apprenantId);
-
-      if (!error) {
-        queryClient.invalidateQueries({ queryKey: ["apprenant-detail", apprenantId] });
-      }
-    };
-
-    void autoFillModules();
-  }, [apprenant?.id, apprenantId, hasStoredModulesArray, fallbackSignature, queryClient]);
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
