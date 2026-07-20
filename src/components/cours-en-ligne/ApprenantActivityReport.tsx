@@ -287,6 +287,9 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
       const t = parseISO(iso);
       return t >= start && t <= end;
     };
+    // Fallback pour anciennes sessions sans logs d'activité :
+    // si current_module est un vrai module (pas l'accueil), compter la session.
+    if (connexion.current_module && !isAccueil(connexion.current_module)) return true;
     if (activites.some(a =>
       inWindow(a.occurred_at)
       && (a.action_type === "open_module" || a.action_type === "open_section" || a.action_type === "open_cours")
