@@ -62,6 +62,7 @@ import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { computePresenceHours, formatPresenceHours, isEveningTrainingValue } from "@/lib/emargementHours";
+import { filterAndSortApprenants } from "@/lib/apprenantSearch";
 
 interface Session {
   id: string;
@@ -94,6 +95,10 @@ interface ApprenantDB {
   prenom: string;
   email: string | null;
   telephone: string | null;
+  adresse?: string | null;
+  code_postal?: string | null;
+  ville?: string | null;
+  civilite?: string | null;
   type_apprenant: string | null;
   formation_choisie?: string | null;
   mode_financement: string | null;
@@ -897,7 +902,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   const { data: allApprenants = [] } = useQuery({
     queryKey: ['all-apprenants'],
     queryFn: async () => {
-      const columns = 'id, nom, prenom, email, telephone, type_apprenant, mode_financement, numero_dossier_cma, date_debut_formation, date_fin_formation, date_examen_theorique, date_examen_pratique, statut';
+      const columns = 'id, nom, prenom, email, telephone, adresse, code_postal, ville, civilite, type_apprenant, formation_choisie, mode_financement, numero_dossier_cma, date_debut_formation, date_fin_formation, date_examen_theorique, date_examen_pratique, statut';
       const pageSize = 1000;
       let from = 0;
       const rows: any[] = [];
@@ -1254,11 +1259,9 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   if (!session) return null;
 
   const sessionApprenantIds = apprenantsInSession.map((sa: any) => sa.apprenant?.id);
-  const apprenantsNotInSession = allApprenants.filter(a => 
-    !sessionApprenantIds.includes(a.id) &&
-    (a.nom.toLowerCase().includes(searchApprenant.toLowerCase()) ||
-     a.prenom.toLowerCase().includes(searchApprenant.toLowerCase()) ||
-     (a.email?.toLowerCase() || "").includes(searchApprenant.toLowerCase()))
+  const apprenantsNotInSession = filterAndSortApprenants(
+    allApprenants.filter(a => !sessionApprenantIds.includes(a.id)),
+    searchApprenant,
   );
 
   const sessionFormateurIds = formateursInSession.map((sf: any) => sf.formateur?.id);

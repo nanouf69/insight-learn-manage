@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Search, User, GraduationCap, Calendar, Loader2 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import {
   CommandDialog,
   CommandEmpty,
@@ -9,6 +10,7 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { supabase } from "@/integrations/supabase/client";
+import { filterAndSortApprenants } from "@/lib/apprenantSearch";
 
 interface SearchResult {
   id: string;
@@ -27,6 +29,37 @@ export function GlobalSearch({ onSelectApprenant, onNavigate }: GlobalSearchProp
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
+
+  const { data: allApprenants = [], isFetching: loadingApprenants } = useQuery({
+    queryKey: ["global-search-apprenants"],
+    enabled: open,
+    staleTime: 60_000,
+    queryFn: async () => {
+      const columns = "id, nom, prenom, email, telephone, numero_dossier_cma, type_apprenant, formation_choisie";
+      const pageSize = 1000;
+      let from = 0;
+      const rows: any[] = [];
+
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const { data, error } = await supabase
+          .from("apprenants")
+          .select(columns as any)
+          .is("deleted_at" as any, null)
+          .order("created_at", { ascending: false })
+          .order("id", { ascending: false })
+          .range(from, from + pageSize - 1);
+
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        rows.push(...data);
+        if (data.length < pageSize) break;
+        from += pageSize;
+      }
+
+      return rows;
+    },
+  });
 
   // Keyboard shortcut
   useEffect(() => {
@@ -48,28 +81,10 @@ export function GlobalSearch({ onSelectApprenant, onNavigate }: GlobalSearchProp
     }
     setLoading(true);
     try {
-      // Split multi-word queries (e.g. "ismail amar") so each word can
-      // match a different column (prénom vs nom). Each word must match
-      // somewhere → AND across words, OR across columns.
-      const words = cleaned.split(" ").filter((w) => w.length > 0);
-      const applyApprenantWords = <T extends { or: Function }>(q: T): T => {
-        for (const w of words) {
-          const p = `%${w}%`;
-          (q as any).or(
-            `nom.ilike.${p},prenom.ilike.${p},email.ilike.${p},telephone.ilike.${p}`
-          );
-        }
-        return q;
-      };
       const fullPattern = `%${cleaned}%`;
+      const apprenantResults = filterAndSortApprenants(allApprenants, cleaned).slice(0, 20);
 
-      let apprenantsQuery = supabase
-        .from("apprenants")
-        .select("id, nom, prenom, email, telephone");
-      apprenantsQuery = applyApprenantWords(apprenantsQuery);
-
-      const [apprenants, formations, sessions] = await Promise.all([
-        apprenantsQuery.limit(10),
+      const [formations, sessions] = await Promise.all([
         supabase
           .from("formations")
           .select("id, nom, description")
@@ -83,10 +98,10 @@ export function GlobalSearch({ onSelectApprenant, onNavigate }: GlobalSearchProp
       ]);
 
       const mapped: SearchResult[] = [
-        ...(apprenants.data || []).map((a) => ({
+        ...apprenantResults.map((a) => ({
           id: a.id,
           label: `${a.prenom} ${a.nom}`,
-          sublabel: a.email || a.telephone || undefined,
+          sublabel: a.email || a.telephone || a.numero_dossier_cma || undefined,
           type: "apprenant" as const,
         })),
         ...(formations.data || []).map((f) => ({
@@ -111,7 +126,7 @@ export function GlobalSearch({ onSelectApprenant, onNavigate }: GlobalSearchProp
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [allApprenants]);
 
   useEffect(() => {
     const timeout = setTimeout(() => search(query), 300);
@@ -170,15 +185,15 @@ export function GlobalSearch({ onSelectApprenant, onNavigate }: GlobalSearchProp
           onValueChange={setQuery}
         />
         <CommandList>
-          {loading && (
+          {(loading || loadingApprenants) && (
             <div className="flex items-center justify-center py-6">
               <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
             </div>
           )}
-          {!loading && query.length >= 2 && results.length === 0 && (
+          {!loading && !loadingApprenants && query.length >= 2 && results.length === 0 && (
             <CommandEmpty>Aucun résultat trouvé.</CommandEmpty>
           )}
-          {!loading &&
+          {!loading && !loadingApprenants &&
             Object.entries(grouped).map(([type, items]) => {
               const Icon = iconMap[type as keyof typeof iconMap];
               return (

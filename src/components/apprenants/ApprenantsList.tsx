@@ -37,6 +37,7 @@ import { ApprenantEditForm } from "./ApprenantEditForm";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { filterAndSortApprenants } from "@/lib/apprenantSearch";
 
 interface Apprenant {
   id: string;
@@ -474,11 +475,6 @@ export function ApprenantsList() {
     }
   };
 
-  const normalize = (str: string) =>
-    str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim();
-
-  const stripNonAlpha = (str: string) => str.replace(/[\s\-\.\(\)]/g, "");
-
   const formationOptions = Array.from(
     new Set(
       apprenants
@@ -487,39 +483,21 @@ export function ApprenantsList() {
     )
   ).sort((a, b) => a.localeCompare(b, "fr", { sensitivity: "base" }));
 
-  const filteredApprenants = apprenants
-    .map(a => {
-      // Filtre par type d'apprenant (multi)
-      if (typeFilter.length > 0) {
-        const t = (a.type_apprenant || "").toLowerCase();
-        if (!typeFilter.some(f => t.includes(f))) return { apprenant: a, matches: false, score: 99 };
-      }
-      // Filtre par formation (multi)
-      if (formationFilter.length > 0) {
-        const f = (a.formation_choisie || "").trim();
-        if (!formationFilter.includes(f)) return { apprenant: a, matches: false, score: 99 };
-      }
-      if (!searchTerm.trim()) return { apprenant: a, matches: true, score: 0 };
+  const filteredByFilters = apprenants.filter(a => {
+    if (typeFilter.length > 0) {
+      const t = (a.type_apprenant || "").toLowerCase();
+      if (!typeFilter.some(f => t.includes(f))) return false;
+    }
 
-      const normalizedSearch = normalize(searchTerm);
-      const keywords = normalizedSearch.split(" ").filter(Boolean);
-      const fullName = normalize(`${a.prenom || ""} ${a.nom || ""}`);
-      const reverseName = normalize(`${a.nom || ""} ${a.prenom || ""}`);
-      const haystack = normalize([a.nom, a.prenom, a.email || "", a.telephone || "", a.ville || "", a.adresse || "", a.code_postal || "", a.formation_choisie || ""].join(" "));
-      const haystackStripped = stripNonAlpha([a.telephone || "", a.email || ""].join(" "));
-      const searchStripped = stripNonAlpha(normalizedSearch);
-      const matches = keywords.every(kw => haystack.includes(kw)) || (searchStripped.length >= 3 && haystackStripped.includes(searchStripped));
-      const score =
-        fullName === normalizedSearch || reverseName === normalizedSearch ? 0 :
-        fullName.startsWith(normalizedSearch) || reverseName.startsWith(normalizedSearch) ? 1 :
-        keywords.every(kw => fullName.includes(kw) || reverseName.includes(kw)) ? 2 :
-        3;
+    if (formationFilter.length > 0) {
+      const f = (a.formation_choisie || "").trim();
+      if (!formationFilter.includes(f)) return false;
+    }
 
-      return { apprenant: a, matches, score };
-    })
-    .filter(item => item.matches)
-    .sort((a, b) => a.score - b.score)
-    .map(item => item.apprenant);
+    return true;
+  });
+
+  const filteredApprenants = filterAndSortApprenants(filteredByFilters, searchTerm);
 
   if (isLoading) {
     return (
