@@ -226,6 +226,27 @@ export default function OnboardingWelcome() {
                   </>
                 )}
               </Button>
+
+              {candidates.length > 1 && (
+                <div className="mt-4 space-y-2">
+                  <p className="text-sm text-white/70">
+                    Plusieurs dossiers correspondent, sélectionnez le vôtre :
+                  </p>
+                  {candidates.map((c) => (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => selectCandidate(c)}
+                      className="w-full text-left bg-white/5 hover:bg-white/10 border border-white/20 rounded-xl p-3 transition-colors"
+                    >
+                      <div className="font-semibold">{c.prenom} {c.nom}</div>
+                      <div className="text-xs text-white/60">
+                        {[c.email, c.telephone, c.ville].filter(Boolean).join(' • ')}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
