@@ -20,6 +20,7 @@ import ApprenantDetailPage from "./ApprenantDetailPage";
 import { ApprenantForm } from "@/components/apprenants/ApprenantForm";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { getAvatarUrl } from "@/lib/avatarUrl";
+import { filterAndSortApprenants } from "@/lib/apprenantSearch";
 const typeLabels: Record<string, string> = {
   'vtc': 'VTC',
   'vtc-e': 'VTC E',
@@ -96,7 +97,7 @@ export function CRMDashboard({ initialApprenantId, onApprenantClosed }: CRMDashb
         'mode_financement', 'organisme_financeur',
         'montant_ttc', 'montant_paye',
         'date_formation_catalogue', 'date_examen_theorique',
-        'type_examen', 'b2_vierge', 'notes', 'auth_user_id',
+        'type_examen', 'b2_vierge', 'numero_dossier_cma', 'notes', 'auth_user_id',
       ].join(', ');
       const pageSize = 1000;
       let from = 0;
@@ -136,10 +137,6 @@ export function CRMDashboard({ initialApprenantId, onApprenantClosed }: CRMDashb
     staleTime: 60_000,
   });
 
-
-  const normalize = (str: string) =>
-    str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim();
-
   const formationOptions = useMemo(
     () =>
       Array.from(
@@ -157,26 +154,7 @@ export function CRMDashboard({ initialApprenantId, onApprenantClosed }: CRMDashb
     if (formationFilter.length > 0) {
       list = list.filter((a) => formationFilter.includes((a.formation_choisie || "").trim()));
     }
-    if (!searchQuery.trim()) return list;
-    const query = normalize(searchQuery);
-    const words = query.split(" ").filter(Boolean);
-
-    return list
-      .map((a) => {
-        const fullName = normalize(`${a.prenom || ""} ${a.nom || ""}`);
-        const reverseName = normalize(`${a.nom || ""} ${a.prenom || ""}`);
-        const searchable = normalize(`${a.prenom || ""} ${a.nom || ""} ${a.email || ""} ${a.telephone || ""} ${a.formation_choisie || ""}`);
-        const matches = words.every((word) => searchable.includes(word));
-        const score =
-          fullName === query || reverseName === query ? 0 :
-          fullName.startsWith(query) || reverseName.startsWith(query) ? 1 :
-          words.every((word) => fullName.includes(word) || reverseName.includes(word)) ? 2 :
-          3;
-        return { apprenant: a, matches, score };
-      })
-      .filter((item) => item.matches)
-      .sort((a, b) => a.score - b.score)
-      .map((item) => item.apprenant);
+    return filterAndSortApprenants(list, searchQuery);
   }, [apprenants, searchQuery, formationFilter]);
 
   const stats = useMemo(() => {
