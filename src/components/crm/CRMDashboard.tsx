@@ -82,12 +82,17 @@ export function CRMDashboard({ initialApprenantId, onApprenantClosed }: CRMDashb
   const [searchQuery, setSearchQuery] = useState("");
   const [formationFilter, setFormationFilter] = useState<string[]>([]);
   const [selectedApprenantId, setSelectedApprenantId] = useState<string | null>(initialApprenantId || null);
+  const [visibleLimit, setVisibleLimit] = useState(INITIAL_VISIBLE_APPRENANTS);
 
   useEffect(() => {
     if (initialApprenantId) {
       setSelectedApprenantId(initialApprenantId);
     }
   }, [initialApprenantId]);
+
+  useEffect(() => {
+    setVisibleLimit(searchQuery.trim() ? SEARCH_VISIBLE_APPRENANTS : INITIAL_VISIBLE_APPRENANTS);
+  }, [searchQuery, formationFilter.join("|")]);
 
   const { data: apprenants = [], isLoading } = useQuery({
     queryKey: ['apprenants-crm'],
@@ -162,9 +167,8 @@ export function CRMDashboard({ initialApprenantId, onApprenantClosed }: CRMDashb
 
   const displayedApprenants = useMemo(() => {
     const unique = dedupeByStableId(filteredApprenants);
-    const limit = searchQuery.trim() ? SEARCH_VISIBLE_APPRENANTS : INITIAL_VISIBLE_APPRENANTS;
-    return unique.slice(0, limit);
-  }, [filteredApprenants, searchQuery]);
+    return unique.slice(0, visibleLimit);
+  }, [filteredApprenants, visibleLimit]);
 
   const stats = useMemo(() => {
     const byType = apprenants.reduce((acc, a) => {
@@ -451,6 +455,13 @@ export function CRMDashboard({ initialApprenantId, onApprenantClosed }: CRMDashb
             );
           })}
           </div>
+          {filteredApprenants.length > displayedApprenants.length && (
+            <div className="flex justify-center">
+              <Button variant="outline" onClick={() => setVisibleLimit((limit) => limit + 80)}>
+                Afficher plus
+              </Button>
+            </div>
+          )}
         </>
       )}
     </div>
