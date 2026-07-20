@@ -44,16 +44,43 @@ const isSimilar = (input: string, target: string, maxDistance = 2): boolean => {
   return levenshtein(a, b) <= Math.max(1, tolerance);
 };
 
+type Candidate = {
+  id: string;
+  nom: string;
+  prenom: string;
+  email: string | null;
+  telephone: string | null;
+  adresse: string | null;
+  code_postal: string | null;
+  ville: string | null;
+};
+
 export default function OnboardingWelcome() {
   const navigate = useNavigate();
   const [nom, setNom] = useState('');
   const [prenom, setPrenom] = useState('');
   const [isSearching, setIsSearching] = useState(false);
-  const [attempted, setAttempted] = useState(false); // Pour afficher les erreurs
+  const [attempted, setAttempted] = useState(false);
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
+
+  const selectCandidate = (found: Candidate) => {
+    localStorage.setItem('onboarding_apprenant_id', found.id);
+    localStorage.setItem('onboarding_email', found.email || '');
+    localStorage.setItem('onboarding_telephone', found.telephone || '');
+    localStorage.setItem('onboarding_adresse', found.adresse || '');
+    localStorage.setItem('onboarding_code_postal', found.code_postal || '');
+    localStorage.setItem('onboarding_ville', found.ville || '');
+    localStorage.setItem('onboarding_found', 'true');
+    localStorage.setItem('onboarding_nom', found.nom);
+    localStorage.setItem('onboarding_prenom', found.prenom);
+    toast.success(`Bienvenue ${found.prenom} !`);
+    navigate('/bienvenue/etape-1');
+  };
 
   const handleSearch = async () => {
     setAttempted(true);
-    
+    setCandidates([]);
+
     if (!nom.trim() || !prenom.trim()) {
       toast.error("Veuillez saisir votre nom et prénom");
       return;
@@ -62,7 +89,6 @@ export default function OnboardingWelcome() {
     setIsSearching(true);
 
     try {
-      // Utiliser la fonction sécurisée côté serveur (ignore accents et casse)
       const { data: results, error } = await supabase
         .rpc('search_apprenant_onboarding', {
           p_nom: nom.trim(),
@@ -71,39 +97,29 @@ export default function OnboardingWelcome() {
 
       if (error) throw error;
 
-      const found = results && results.length > 0 ? results[0] : null;
-
-      // La recherche fuzzy est faite côté serveur (Levenshtein)
-
-      // Sauvegarder les infos dans localStorage
       localStorage.setItem('onboarding_nom', nom.trim());
       localStorage.setItem('onboarding_prenom', prenom.trim());
 
-      if (found) {
-        // Apprenant trouvé - sauvegarder toutes ses infos
-        localStorage.setItem('onboarding_apprenant_id', found.id);
-        localStorage.setItem('onboarding_email', found.email || '');
-        localStorage.setItem('onboarding_telephone', found.telephone || '');
-        localStorage.setItem('onboarding_adresse', found.adresse || '');
-        localStorage.setItem('onboarding_code_postal', found.code_postal || '');
-        localStorage.setItem('onboarding_ville', found.ville || '');
-        localStorage.setItem('onboarding_found', 'true');
-        // Utiliser le nom/prénom exact de la BDD
-        localStorage.setItem('onboarding_nom', found.nom);
-        localStorage.setItem('onboarding_prenom', found.prenom);
-        toast.success(`Bienvenue ${found.prenom} ! Nous avons trouvé votre dossier.`);
-      } else {
-        // Apprenant non trouvé - afficher message d'erreur
+      const list = (results || []) as Candidate[];
+
+      if (list.length === 0) {
         toast.error(
-          "Dossier non trouvé. Veuillez écrire votre nom et prénom exactement comme sur votre compte CPF, ou contactez le centre au 04 28 29 60 91",
+          "Dossier non trouvé. Vérifiez l'orthographe de votre nom et prénom, ou contactez le centre au 04 28 29 60 91",
           { duration: 10000 }
         );
         setIsSearching(false);
-        return; // Ne pas continuer
+        return;
       }
 
-      // Rediriger vers l'étape 1 seulement si trouvé
-      navigate('/bienvenue/etape-1');
+      // Un seul candidat clair → on continue directement
+      if (list.length === 1) {
+        selectCandidate(list[0]);
+        return;
+      }
+
+      // Plusieurs candidats → demander à l'utilisateur de choisir
+      setCandidates(list);
+      toast.info("Plusieurs dossiers correspondent. Sélectionnez le vôtre ci-dessous.");
     } catch (error) {
       console.error('Erreur lors de la recherche:', error);
       toast.error("Une erreur est survenue. Veuillez réessayer.");
@@ -210,6 +226,27 @@ export default function OnboardingWelcome() {
                   </>
                 )}
               </Button>
+
+              {candidates.length > 1 && (
+                <div className="mt-4 space-y-2">
+                  <p className="text-sm text-white/70">
+                    Plusieurs dossiers correspondent, sélectionnez le vôtre :
+                  </p>
+                  {candidates.map((c) => (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => selectCandidate(c)}
+                      className="w-full text-left bg-white/5 hover:bg-white/10 border border-white/20 rounded-xl p-3 transition-colors"
+                    >
+                      <div className="font-semibold">{c.prenom} {c.nom}</div>
+                      <div className="text-xs text-white/60">
+                        {[c.email, c.telephone, c.ville].filter(Boolean).join(' • ')}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
