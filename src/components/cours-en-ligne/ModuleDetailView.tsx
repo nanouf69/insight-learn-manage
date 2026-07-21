@@ -2051,6 +2051,16 @@ function ExerciceCard({
     toast.success("Question supprimée avec succès");
   };
 
+  const moveQuestion = (qId: number, direction: "up" | "down") => {
+    if (!item.questions) return;
+    const idx = item.questions.findIndex(q => q.id === qId);
+    if (idx < 0) return;
+    const target = direction === "up" ? idx - 1 : idx + 1;
+    if (target < 0 || target >= item.questions.length) return;
+    const reordered = moveQuestionToPosition(item.questions, qId, target);
+    onUpdateQuestions(item.id, reordered);
+  };
+
   const addQuestion = () => {
     const existing = item.questions || [];
     const newId = Math.max(0, ...existing.map(q => q.id)) + 1;
