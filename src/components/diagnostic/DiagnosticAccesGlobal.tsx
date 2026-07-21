@@ -224,24 +224,33 @@ export function DiagnosticAccesGlobal({ onOpenApprenant }: Props) {
   return (
     <div className="space-y-4">
       <div className="flex justify-end gap-2">
-        <a href="/admin/audit-modules">
-          <Button variant="outline" size="sm" className="gap-2">
-            <ShieldCheck className="w-4 h-4" />
-            Audit parité (tous modules)
-          </Button>
-        </a>
-        <a href="/admin/audit-t3p">
-          <Button variant="outline" size="sm" className="gap-2">
-            <ShieldCheck className="w-4 h-4" />
-            Audit parité T3P
-          </Button>
-        </a>
-        <a href="/diagnostic-examens-blancs">
-          <Button variant="outline" size="sm" className="gap-2">
-            <ShieldCheck className="w-4 h-4" />
-            Diagnostic Examens Blancs
-          </Button>
-        </a>
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-2"
+          onClick={() => window.open("/admin/audit-modules", "_blank", "noopener")}
+        >
+          <ShieldCheck className="w-4 h-4" />
+          Audit parité (tous modules)
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-2"
+          onClick={() => window.open("/admin/audit-t3p", "_blank", "noopener")}
+        >
+          <ShieldCheck className="w-4 h-4" />
+          Audit parité T3P
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-2"
+          onClick={() => window.open("/diagnostic-examens-blancs", "_blank", "noopener")}
+        >
+          <ShieldCheck className="w-4 h-4" />
+          Diagnostic Examens Blancs
+        </Button>
       </div>
       {/* Compteurs */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2">
