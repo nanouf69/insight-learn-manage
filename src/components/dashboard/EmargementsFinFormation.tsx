@@ -125,7 +125,7 @@ export function EmargementsFinFormation({ onNavigateToApprenant }: Props) {
         })
         .filter((r): r is NonNullable<typeof r> => r !== null && r.missing > 0)
 
-        .sort((a, b) => b.missing - a.missing);
+        .sort((a, b) => a.missing - b.missing);
 
       return results;
     },
