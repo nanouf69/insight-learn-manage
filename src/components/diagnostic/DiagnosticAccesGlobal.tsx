@@ -223,7 +223,13 @@ export function DiagnosticAccesGlobal({ onOpenApprenant }: Props) {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-2">
+        <a href="/admin/audit-t3p">
+          <Button variant="outline" size="sm" className="gap-2">
+            <ShieldCheck className="w-4 h-4" />
+            Audit parité T3P
+          </Button>
+        </a>
         <a href="/diagnostic-examens-blancs">
           <Button variant="outline" size="sm" className="gap-2">
             <ShieldCheck className="w-4 h-4" />
