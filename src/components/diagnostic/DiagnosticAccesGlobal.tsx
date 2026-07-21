@@ -223,34 +223,25 @@ export function DiagnosticAccesGlobal({ onOpenApprenant }: Props) {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          className="gap-2"
-          onClick={() => window.open("/admin/audit-modules", "_blank", "noopener")}
-        >
-          <ShieldCheck className="w-4 h-4" />
-          Audit parité (tous modules)
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          className="gap-2"
-          onClick={() => window.open("/admin/audit-t3p", "_blank", "noopener")}
-        >
-          <ShieldCheck className="w-4 h-4" />
-          Audit parité T3P
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          className="gap-2"
-          onClick={() => window.open("/diagnostic-examens-blancs", "_blank", "noopener")}
-        >
-          <ShieldCheck className="w-4 h-4" />
-          Diagnostic Examens Blancs
-        </Button>
+      <div className="flex flex-wrap justify-end gap-2">
+        {[
+          { href: "/admin/audit-modules", label: "Audit parité (tous modules)" },
+          { href: "/admin/audit-t3p", label: "Audit parité T3P" },
+          { href: "/diagnostic-examens-blancs", label: "Diagnostic Examens Blancs" },
+        ].map((b) => (
+          <Button
+            key={b.href}
+            asChild
+            variant="outline"
+            size="sm"
+            className="gap-2"
+          >
+            <a href={b.href} target="_blank" rel="noopener noreferrer">
+              <ShieldCheck className="w-4 h-4" />
+              {b.label}
+            </a>
+          </Button>
+        ))}
       </div>
       {/* Compteurs */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2">
