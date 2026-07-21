@@ -70,6 +70,7 @@ export function EmargementsFinFormation({ onNavigateToApprenant }: Props) {
 
       // 4. Calcul créneaux attendus par apprenant (jours passés seulement)
       const expectedByAppr = new Map<string, Array<{ date: string; slot: Slot }>>();
+      const sessionsByAppr = new Map<string, Array<{ start: string; end: string; nom: string; isEvening: boolean }>>();
       for (const sa of (sessionAppr || []) as any[]) {
         const sess = sa.session;
         if (!sess) continue;
@@ -88,6 +89,10 @@ export function EmargementsFinFormation({ onNavigateToApprenant }: Props) {
           /1[7-9]:|2[0-3]:/.test(creneauxStr) ||
           (heureDeb && parseInt(heureDeb.split(":")[0], 10) >= 17);
         const slots: Slot[] = isEvening ? ["soir_1", "soir_2"] : ["matin", "apres_midi"];
+
+        const sList = sessionsByAppr.get(sa.apprenant_id) || [];
+        sList.push({ start, end, nom: sess.nom || "", isEvening });
+        sessionsByAppr.set(sa.apprenant_id, sList);
 
         const to = end < today ? end : addDays(today, -1);
         if (start > to) continue;
@@ -115,9 +120,11 @@ export function EmargementsFinFormation({ onNavigateToApprenant }: Props) {
             expected: expected.length,
             signed: expected.length - missing.length,
             missing: missing.length,
+            sessions: sessionsByAppr.get(a.id) || [],
           };
         })
         .filter((r): r is NonNullable<typeof r> => r !== null && r.missing > 0)
+
         .sort((a, b) => b.missing - a.missing);
 
       return results;
@@ -173,7 +180,12 @@ export function EmargementsFinFormation({ onNavigateToApprenant }: Props) {
             Aucun émargement manquant en fin de formation 🎉
           </p>
         ) : (
-          results.map(({ apprenant: a, expected, signed, missing }) => (
+          results.map(({ apprenant: a, expected, signed, missing, sessions }) => {
+            const fmt = (iso: string) => {
+              const [y, m, d] = iso.split("-").map(Number);
+              return new Date(y, m - 1, d).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "2-digit" });
+            };
+            return (
             <div
               key={a.id}
               className="p-3 rounded-lg bg-rose-50 border border-rose-200 space-y-1 cursor-pointer hover:bg-rose-100 transition-colors"
@@ -192,6 +204,15 @@ export function EmargementsFinFormation({ onNavigateToApprenant }: Props) {
                   </Badge>
                 </div>
               </div>
+              {sessions.length > 0 && (
+                <div className="text-xs text-rose-700 space-y-0.5">
+                  {sessions.map((s, i) => (
+                    <div key={i} className="truncate">
+                      📅 {fmt(s.start)} → {fmt(s.end)} {s.isEvening ? "(soir)" : "(journée)"}
+                    </div>
+                  ))}
+                </div>
+              )}
               <div className="flex items-center gap-3 text-xs text-muted-foreground">
                 <span>{signed}/{expected} signées</span>
                 {a.telephone && (
@@ -216,7 +237,9 @@ export function EmargementsFinFormation({ onNavigateToApprenant }: Props) {
                 )}
               </div>
             </div>
-          ))
+            );
+          })
+
         )}
       </CardContent>
     </Card>
