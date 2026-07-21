@@ -2272,6 +2272,14 @@ function ExerciceCard({
                             ))}
                           </div>
                         </div>
+                        <div className="flex flex-col gap-1">
+                          <Button size="sm" variant="outline" className="h-7 w-7 p-0" onClick={() => moveQuestion(q.id, "up")} disabled={qi === 0} title="Monter">
+                            <ArrowUp className="w-3 h-3" />
+                          </Button>
+                          <Button size="sm" variant="outline" className="h-7 w-7 p-0" onClick={() => moveQuestion(q.id, "down")} disabled={qi === item.questions!.length - 1} title="Descendre">
+                            <ArrowDown className="w-3 h-3" />
+                          </Button>
+                        </div>
                         <Button size="sm" variant="outline" className="gap-1" onClick={() => setEditingQId(q.id)}>
                           <Pencil className="w-3 h-3" /> Modifier
                         </Button>
