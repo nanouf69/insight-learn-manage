@@ -125,7 +125,12 @@ export function EmargementsFinFormation({ onNavigateToApprenant }: Props) {
         })
         .filter((r): r is NonNullable<typeof r> => r !== null && r.missing > 0)
 
-        .sort((a, b) => a.missing - b.missing);
+        .sort((a, b) => {
+          const aEnd = a.apprenant.date_fin_cours_en_ligne || "";
+          const bEnd = b.apprenant.date_fin_cours_en_ligne || "";
+          if (aEnd !== bEnd) return bEnd.localeCompare(aEnd);
+          return a.missing - b.missing;
+        });
 
       return results;
     },
