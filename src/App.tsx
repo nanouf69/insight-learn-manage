@@ -129,6 +129,12 @@ function App() {
                   </ProtectedRoute>
                 } />
 
+                <Route path="/admin/audit-t3p" element={
+                  <ProtectedRoute>
+                    <ErrorBoundary><AdminAuditT3P /></ErrorBoundary>
+                  </ProtectedRoute>
+                } />
+
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
