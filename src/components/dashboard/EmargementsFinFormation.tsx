@@ -180,7 +180,12 @@ export function EmargementsFinFormation({ onNavigateToApprenant }: Props) {
             Aucun émargement manquant en fin de formation 🎉
           </p>
         ) : (
-          results.map(({ apprenant: a, expected, signed, missing }) => (
+          results.map(({ apprenant: a, expected, signed, missing, sessions }) => {
+            const fmt = (iso: string) => {
+              const [y, m, d] = iso.split("-").map(Number);
+              return new Date(y, m - 1, d).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "2-digit" });
+            };
+            return (
             <div
               key={a.id}
               className="p-3 rounded-lg bg-rose-50 border border-rose-200 space-y-1 cursor-pointer hover:bg-rose-100 transition-colors"
@@ -199,6 +204,15 @@ export function EmargementsFinFormation({ onNavigateToApprenant }: Props) {
                   </Badge>
                 </div>
               </div>
+              {sessions.length > 0 && (
+                <div className="text-xs text-rose-700 space-y-0.5">
+                  {sessions.map((s, i) => (
+                    <div key={i} className="truncate">
+                      📅 {fmt(s.start)} → {fmt(s.end)} {s.isEvening ? "(soir)" : "(journée)"}
+                    </div>
+                  ))}
+                </div>
+              )}
               <div className="flex items-center gap-3 text-xs text-muted-foreground">
                 <span>{signed}/{expected} signées</span>
                 {a.telephone && (
@@ -223,7 +237,9 @@ export function EmargementsFinFormation({ onNavigateToApprenant }: Props) {
                 )}
               </div>
             </div>
-          ))
+            );
+          })
+
         )}
       </CardContent>
     </Card>
