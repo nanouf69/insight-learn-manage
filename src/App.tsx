@@ -136,6 +136,13 @@ function App() {
                   </ProtectedRoute>
                 } />
 
+                <Route path="/admin/audit-modules" element={
+                  <ProtectedRoute>
+                    <ErrorBoundary><AdminAuditModules /></ErrorBoundary>
+                  </ProtectedRoute>
+                } />
+
+
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
