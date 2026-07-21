@@ -27,6 +27,7 @@ import Booking from "./pages/Booking";
 import SessionDetailPage from "./pages/SessionDetailPage";
 import DiagnosticExamensBlancs from "./pages/DiagnosticExamensBlancs";
 import AdminErrorLogs from "./pages/AdminErrorLogs";
+import AdminAuditT3P from "./pages/AdminAuditT3P";
 
 // Onboarding pages
 import OnboardingWelcome from "./pages/onboarding/OnboardingWelcome";
@@ -125,6 +126,12 @@ function App() {
                 <Route path="/admin/erreurs" element={
                   <ProtectedRoute>
                     <ErrorBoundary><AdminErrorLogs /></ErrorBoundary>
+                  </ProtectedRoute>
+                } />
+
+                <Route path="/admin/audit-t3p" element={
+                  <ProtectedRoute>
+                    <ErrorBoundary><AdminAuditT3P /></ErrorBoundary>
                   </ProtectedRoute>
                 } />
 
