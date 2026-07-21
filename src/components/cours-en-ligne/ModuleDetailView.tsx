@@ -48,7 +48,7 @@ import { VILLE_ARRONDISSEMENTS_SLIDES } from "./slides/ville-arrondissements-dat
 import { VILLE_STATIONS_TAXI_SLIDES } from "./slides/ville-stations-taxi-data";
 import { QuestionImageUpload } from "./QuestionImageUpload";
 import { ImageLightbox } from "./ImageLightbox";
-import { mergeSourceExercices } from "./examens-blancs-utils";
+import { mergeSourceExercices, moveQuestionToPosition } from "./examens-blancs-utils";
 
 // Images des monuments et lieux de Lyon
 import imgCathedraleStJean from "@/assets/pratique/cathedrale-st-jean.jpg";
@@ -2051,6 +2051,16 @@ function ExerciceCard({
     toast.success("Question supprimée avec succès");
   };
 
+  const moveQuestion = (qId: number, direction: "up" | "down") => {
+    if (!item.questions) return;
+    const idx = item.questions.findIndex(q => q.id === qId);
+    if (idx < 0) return;
+    const target = direction === "up" ? idx - 1 : idx + 1;
+    if (target < 0 || target >= item.questions.length) return;
+    const reordered = moveQuestionToPosition(item.questions, qId, target);
+    onUpdateQuestions(item.id, reordered);
+  };
+
   const addQuestion = () => {
     const existing = item.questions || [];
     const newId = Math.max(0, ...existing.map(q => q.id)) + 1;
@@ -2168,6 +2178,14 @@ function ExerciceCard({
                         ))}
                       </div>
                     </div>
+                    <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100">
+                      <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => moveQuestion(q.id, "up")} disabled={qi === 0} title="Monter">
+                        <ArrowUp className="w-3 h-3" />
+                      </Button>
+                      <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => moveQuestion(q.id, "down")} disabled={qi === item.questions!.length - 1} title="Descendre">
+                        <ArrowDown className="w-3 h-3" />
+                      </Button>
+                    </div>
                     <Button size="sm" variant="ghost" className="opacity-0 group-hover:opacity-100 h-7 px-2" onClick={() => setEditingQId(q.id)}>
                       <Pencil className="w-3 h-3" />
                     </Button>
@@ -2253,6 +2271,14 @@ function ExerciceCard({
                               </span>
                             ))}
                           </div>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <Button size="sm" variant="outline" className="h-7 w-7 p-0" onClick={() => moveQuestion(q.id, "up")} disabled={qi === 0} title="Monter">
+                            <ArrowUp className="w-3 h-3" />
+                          </Button>
+                          <Button size="sm" variant="outline" className="h-7 w-7 p-0" onClick={() => moveQuestion(q.id, "down")} disabled={qi === item.questions!.length - 1} title="Descendre">
+                            <ArrowDown className="w-3 h-3" />
+                          </Button>
                         </div>
                         <Button size="sm" variant="outline" className="gap-1" onClick={() => setEditingQId(q.id)}>
                           <Pencil className="w-3 h-3" /> Modifier
