@@ -48,7 +48,7 @@ import { VILLE_ARRONDISSEMENTS_SLIDES } from "./slides/ville-arrondissements-dat
 import { VILLE_STATIONS_TAXI_SLIDES } from "./slides/ville-stations-taxi-data";
 import { QuestionImageUpload } from "./QuestionImageUpload";
 import { ImageLightbox } from "./ImageLightbox";
-import { mergeSourceExercices } from "./examens-blancs-utils";
+import { mergeSourceExercices, moveQuestionToPosition } from "./examens-blancs-utils";
 
 // Images des monuments et lieux de Lyon
 import imgCathedraleStJean from "@/assets/pratique/cathedrale-st-jean.jpg";
