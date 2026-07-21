@@ -32,6 +32,7 @@ import { SmallTransfersTable } from "@/components/dashboard/SmallTransfersTable"
 import { PersonalFinancingTransfersTable } from "@/components/dashboard/PersonalFinancingTransfersTable";
 import { ApprenantQuestionsPanel } from "@/components/dashboard/ApprenantQuestionsPanel";
 import { EmargementsManquants } from "@/components/dashboard/EmargementsManquants";
+import { EmargementsFinFormation } from "@/components/dashboard/EmargementsFinFormation";
 import { CreneauxRdvAdmin } from "@/components/dashboard/CreneauxRdvAdmin";
 import { GraduationCap, Users, ArrowDownCircle, ArrowUpCircle, Menu, X, Send, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -329,6 +330,7 @@ const Index = () => {
               <RecentActivity onNavigateToApprenant={handleNavigateToApprenant} />
               <div className="space-y-4">
                 <EmargementsManquants onNavigateToApprenant={handleNavigateToApprenant} />
+                <EmargementsFinFormation onNavigateToApprenant={handleNavigateToApprenant} />
                 <PaymentReminders />
                 <FournisseurInvoiceAlerts onNavigateToComptabilite={() => handleNavigate("comptabilite")} />
               </div>
