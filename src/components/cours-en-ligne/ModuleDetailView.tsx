@@ -2066,6 +2066,13 @@ function ExerciceCard({
     setEditingQId(null);
   };
 
+  const saveQuestionDraft = (updated: ExerciceQuestion) => {
+    if (!item.questions) return;
+    const newQ = item.questions.map(q => q.id === updated.id ? updated : q);
+    onUpdateQuestions(item.id, newQ);
+  };
+
+
   const [confirmDeleteQId, setConfirmDeleteQId] = useState<number | null>(null);
 
   const deleteQuestion = (qId: number) => {
