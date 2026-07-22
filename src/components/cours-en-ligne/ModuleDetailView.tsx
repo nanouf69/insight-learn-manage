@@ -16,6 +16,7 @@ import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { diffModuleData, publishModuleChangeNotification } from "@/lib/moduleChangeNotifications";
+import { logModuleAudit, logAdminEditsDiff } from "@/lib/moduleAuditLog";
 import { RichText } from "@/lib/richText";
 import { ColoredTextField } from "./ColoredTextField";
 
