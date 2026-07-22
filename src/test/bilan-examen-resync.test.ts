@@ -74,56 +74,77 @@ describe("Bilan Examen — resynchronisation matières (questions & images)", ()
     const sourceVtc = { exercices: BILAN_EXAMEN_VTC } as any;
     const sourceTaxi = { exercices: BILAN_EXAMEN_TAXI } as any;
 
-    it("écrase les énoncés du snapshot par ceux de la source (VTC)", () => {
-      const corrupted = {
+    it("préserve les énoncés modifiés par l'admin (VTC)", () => {
+      const edited = {
         exercices: BILAN_EXAMEN_VTC.map((ex) => ({
           ...cloneExercise(ex),
           questions: ex.questions.map((q: any) => ({
             ...q,
-            enonce: "SNAPSHOT CORROMPU",
+            enonce: "EDITE PAR ADMIN",
           })),
         })),
       } as any;
 
       const resolved = forceBilanExamGestionFromSource(
         BILAN_EXAMEN_VTC_MODULE_ID,
-        corrupted,
+        edited,
         sourceVtc,
       );
 
       for (const ex of resolved.exercices) {
         for (const q of ex.questions as any[]) {
-          expect(q.enonce).not.toBe("SNAPSHOT CORROMPU");
+          expect(q.enonce).toBe("EDITE PAR ADMIN");
         }
       }
     });
 
-    it("restaure la bonne image pour chaque question (VTC)", () => {
-      const sourceImages = collectImageMap(BILAN_EXAMEN_VTC as any[]);
-
-      // Snapshot mélangé : décale les images d'une question sur l'autre.
-      const shuffled = {
+    it("respecte les suppressions d'image faites par l'admin (image=null)", () => {
+      const withDeletedImages = {
         exercices: BILAN_EXAMEN_VTC.map((ex) => {
           const cloned = cloneExercise(ex);
-          cloned.questions = cloned.questions.map((q: any, i: number, arr: any[]) => ({
-            ...q,
-            image: arr[(i + 1) % arr.length]?.image ?? q.image,
-          }));
+          cloned.questions = cloned.questions.map((q: any) => ({ ...q, image: null }));
           return cloned;
         }),
       } as any;
 
       const resolved = forceBilanExamGestionFromSource(
         BILAN_EXAMEN_VTC_MODULE_ID,
-        shuffled,
+        withDeletedImages,
         sourceVtc,
       );
 
-      const resolvedImages = collectImageMap(resolved.exercices);
-      for (const [key, image] of sourceImages.entries()) {
-        expect(resolvedImages.get(key)).toBe(image);
+      for (const ex of resolved.exercices) {
+        for (const q of ex.questions as any[]) {
+          expect(q.image).toBeNull();
+        }
       }
     });
+
+    it("backfill l'image quand elle est absente (undefined) depuis la source", () => {
+      const withoutImages = {
+        exercices: BILAN_EXAMEN_VTC.map((ex) => {
+          const cloned = cloneExercise(ex);
+          cloned.questions = cloned.questions.map((q: any) => {
+            const { image, ...rest } = q;
+            return rest;
+          });
+          return cloned;
+        }),
+      } as any;
+
+      const resolved = forceBilanExamGestionFromSource(
+        BILAN_EXAMEN_VTC_MODULE_ID,
+        withoutImages,
+        sourceVtc,
+      );
+
+      const sourceImages = collectImageMap(BILAN_EXAMEN_VTC as any[]);
+      const resolvedImages = collectImageMap(resolved.exercices);
+      for (const [key, image] of sourceImages.entries()) {
+        if (image) expect(resolvedImages.get(key)).toBe(image);
+      }
+    });
+
 
     it("réinjecte une matière supprimée du snapshot (TAXI)", () => {
       const missing = {
