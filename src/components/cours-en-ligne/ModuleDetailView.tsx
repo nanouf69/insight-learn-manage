@@ -197,6 +197,13 @@ const BILAN_EXAMEN_GESTION_EXERCISE_IDS: Record<number, number> = {
   [BILAN_EXAMEN_VTC_MODULE_ID]: 501,
   [BILAN_EXAMEN_TAXI_MODULE_ID]: 601,
 };
+// Exercices Bilan Examen à toujours re-synchroniser depuis la source (questions
+// + images) — évite les dérives des snapshots DB (ex. images de panneaux non
+// alignées avec les énoncés côté apprenant).
+const BILAN_EXAMEN_FORCE_FROM_SOURCE_IDS: Record<number, number[]> = {
+  [BILAN_EXAMEN_VTC_MODULE_ID]: [500, 501, 502, 503, 504, 505, 506],
+  [BILAN_EXAMEN_TAXI_MODULE_ID]: [600, 601, 602, 603, 604, 605, 606],
+};
 
 const TRAINER_QUIZ_IDS_BY_MODULE_ID: Record<number, string[]> = {
   7: ["connaissance-ville"],
