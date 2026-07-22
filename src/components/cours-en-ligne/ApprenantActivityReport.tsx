@@ -7,11 +7,15 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Printer, Clock, BookOpen, Calendar, ArrowLeft, BarChart3, ChevronsUpDown, Check, CheckCircle2, XCircle, Car } from "lucide-react";
+import { Printer, Clock, BookOpen, Calendar, ArrowLeft, BarChart3, ChevronsUpDown, Check, CheckCircle2, XCircle, Car, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { format, subDays, differenceInMinutes, parseISO, startOfDay } from "date-fns";
 import { fr } from "date-fns/locale";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { toast } from "@/hooks/use-toast";
 import { computePresenceHours, formatPresenceHours } from "@/lib/emargementHours";
 import { FORMATION_MODULES, ALL_MODULES } from "./modules-config";
 import { VTC_COURS_DATA } from "./vtc-cours-data";
@@ -175,6 +179,60 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
   const [loading, setLoading] = useState(false);
   const [period, setPeriod] = useState<"7" | "30" | "90" | "all">("30");
   const printRef = useRef<HTMLDivElement>(null);
+  const [editingConn, setEditingConn] = useState<{ id: string; started_at: string; ended_at: string } | null>(null);
+  const [savingConn, setSavingConn] = useState(false);
+
+  // Convert an ISO/datetime string to the `YYYY-MM-DDTHH:mm` format
+  // required by <input type="datetime-local"> (local timezone).
+  const toLocalInput = (iso: string | null | undefined): string => {
+    if (!iso) return "";
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return "";
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  };
+
+  const openEditConn = (c: Connexion) => {
+    setEditingConn({
+      id: c.id,
+      started_at: toLocalInput(c.started_at),
+      ended_at: toLocalInput(c.ended_at || c.last_seen_at),
+    });
+  };
+
+  const saveEditConn = async () => {
+    if (!editingConn) return;
+    if (!editingConn.started_at) {
+      toast({ title: "Date de début requise", variant: "destructive" });
+      return;
+    }
+    const startedISO = new Date(editingConn.started_at).toISOString();
+    const endedISO = editingConn.ended_at ? new Date(editingConn.ended_at).toISOString() : null;
+    if (endedISO && new Date(endedISO) <= new Date(startedISO)) {
+      toast({ title: "La fin doit être après le début", variant: "destructive" });
+      return;
+    }
+    setSavingConn(true);
+    const patch: any = { started_at: startedISO, ended_at: endedISO };
+    if (endedISO) patch.last_seen_at = endedISO;
+    const { error } = await supabase
+      .from("apprenant_connexions" as any)
+      .update(patch)
+      .eq("id", editingConn.id);
+    setSavingConn(false);
+    if (error) {
+      toast({ title: "Erreur", description: error.message, variant: "destructive" });
+      return;
+    }
+    setConnexions((prev) => prev.map((c) =>
+      c.id === editingConn.id
+        ? { ...c, started_at: startedISO, ended_at: endedISO, last_seen_at: endedISO || c.last_seen_at }
+        : c,
+    ));
+    setEditingConn(null);
+    toast({ title: "Connexion mise à jour" });
+  };
+
 
   // Load apprenants list
   useEffect(() => {
@@ -763,12 +821,13 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
                     <TableHead>Module consulté</TableHead>
                     <TableHead>Quiz / Examens réalisés</TableHead>
                     <TableHead>Cours & Exercices effectués</TableHead>
+                    <TableHead className="w-[70px] text-center print:hidden">Éditer</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {tableRows.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                      <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                         Aucune connexion enregistrée
                       </TableCell>
                     </TableRow>
@@ -793,6 +852,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
                           <TableCell colSpan={3} className="text-muted-foreground italic">
                             Journée de pratique
                           </TableCell>
+                          <TableCell className="print:hidden" />
                         </TableRow>
                       );
                     }
@@ -888,6 +948,17 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
                             <span className="text-muted-foreground">—</span>
                           )}
                         </TableCell>
+                        <TableCell className="text-center print:hidden">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7"
+                            title="Modifier date/heure"
+                            onClick={() => openEditConn(c)}
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                        </TableCell>
                       </TableRow>
                     );
                   })}
@@ -974,6 +1045,47 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
           <p className="text-sm">pour voir son rapport d'activité détaillé</p>
         </div>
       )}
+
+      <Dialog open={!!editingConn} onOpenChange={(o) => { if (!o) setEditingConn(null); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Modifier la connexion</DialogTitle>
+            <DialogDescription>
+              Ajustez la date et les heures de début/fin. Les durées et le rapport sont recalculés automatiquement.
+            </DialogDescription>
+          </DialogHeader>
+          {editingConn && (
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <Label htmlFor="edit-conn-start">Début</Label>
+                <Input
+                  id="edit-conn-start"
+                  type="datetime-local"
+                  value={editingConn.started_at}
+                  onChange={(e) => setEditingConn({ ...editingConn, started_at: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="edit-conn-end">Fin</Label>
+                <Input
+                  id="edit-conn-end"
+                  type="datetime-local"
+                  value={editingConn.ended_at}
+                  onChange={(e) => setEditingConn({ ...editingConn, ended_at: e.target.value })}
+                />
+                <p className="text-xs text-muted-foreground">Laisser vide pour une session « en cours ».</p>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingConn(null)} disabled={savingConn}>Annuler</Button>
+            <Button onClick={saveEditConn} disabled={savingConn}>
+              {savingConn ? "Enregistrement..." : "Enregistrer"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
+
