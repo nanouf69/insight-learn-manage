@@ -33,6 +33,7 @@ import { AccessDiagnosticTab } from "./apprenant-sections/AccessDiagnosticTab";
 import ApprenantActivityReport from "@/components/cours-en-ligne/ApprenantActivityReport";
 import CoursPublic from "@/pages/CoursPublic";
 import { ReleveHeuresHorsFormationTab } from "./apprenant-sections/ReleveHeuresHorsFormationTab";
+import { SessionsTab } from "./apprenant-sections/SessionsTab";
 import { ApprenantEditForm } from "@/components/apprenants/ApprenantEditForm";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
@@ -778,6 +779,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
           })()}
           <TabsTrigger value="diagnostic-acces" className="text-sm">Diagnostic accès</TabsTrigger>
           <TabsTrigger value="vue-apprenant" className="text-sm">Vue apprenant</TabsTrigger>
+          <TabsTrigger value="sessions" className="text-sm">Session</TabsTrigger>
           <TabsTrigger value="reset-cours" className="text-sm text-destructive">Remise à zéro</TabsTrigger>
           <TabsTrigger value="delete-account" className="text-sm text-destructive">Supprimer compte cours</TabsTrigger>
         </TabsList>
@@ -897,6 +899,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
           {activeTab === "rapport-activite" && <ApprenantActivityReport lockedApprenantId={apprenant.id} />}
           {activeTab === "releve-heures-hors" && <ReleveHeuresHorsFormationTab apprenant={apprenant} />}
           {activeTab === "diagnostic-acces" && <AccessDiagnosticTab apprenant={apprenant} />}
+          {activeTab === "sessions" && <SessionsTab apprenant={apprenant} />}
           {activeTab === "vue-apprenant" && (
             <div className="border rounded-xl overflow-hidden bg-background">
               <div className="p-3 bg-muted/50 border-b flex items-center gap-2">
