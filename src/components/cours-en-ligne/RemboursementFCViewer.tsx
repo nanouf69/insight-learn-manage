@@ -410,6 +410,27 @@ export default function RemboursementFCViewer({ apprenantId, completed, onComple
     }
   };
 
+  const handleOpenAttestation = async (url: string) => {
+    try {
+      // Extraire le chemin après /documents-inscription/
+      const match = url.match(/\/documents-inscription\/(.+?)(\?|$)/);
+      const path = match?.[1] ? decodeURIComponent(match[1]) : null;
+      if (path) {
+        const { data, error } = await supabase.storage
+          .from("documents-inscription")
+          .createSignedUrl(path, 300);
+        if (!error && data?.signedUrl) {
+          window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+          return;
+        }
+      }
+      window.open(url, "_blank", "noopener,noreferrer");
+    } catch (e) {
+      console.error("[RemboursementFC] open attestation error", e);
+      window.open(url, "_blank", "noopener,noreferrer");
+    }
+  };
+
   const handleDownloadFacture = (f: FactureDoc) => {
     window.open(f.url, "_blank", "noopener,noreferrer");
   };
@@ -691,7 +712,7 @@ export default function RemboursementFCViewer({ apprenantId, completed, onComple
                       <div className="font-medium">{a.titre}</div>
                       <div className="text-muted-foreground">{a.nom_fichier}</div>
                     </div>
-                    <Button size="sm" variant="outline" onClick={() => window.open(a.url, "_blank", "noopener,noreferrer")}>
+                    <Button size="sm" variant="outline" onClick={() => handleOpenAttestation(a.url)}>
                       <Download className="h-3.5 w-3.5 mr-1" />
                       Télécharger
                     </Button>
