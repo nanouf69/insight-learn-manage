@@ -9,12 +9,18 @@ const COMPANY = {
   siret: '53516371400044',
 };
 
-const DEMI_LABELS: Record<string, string> = {
+const buildDemiLabels = (isFCVtc: boolean): Record<string, string> => ({
   matin: 'Matin (09h-12h)',
-  apres_midi: 'Après-midi (13h-16h)',
+  apres_midi: isFCVtc ? 'Après-midi (13h-17h)' : 'Après-midi (13h-16h)',
   soir: 'Soir (17h-21h)',
   soir_1: 'Soir 1 (17h-18h30)',
   soir_2: 'Soir 2 (18h30-21h)',
+});
+
+const isFormationContinueVTC = (type?: string): boolean => {
+  if (!type) return false;
+  const t = type.toLowerCase();
+  return t.includes('continue') && t.includes('vtc');
 };
 
 const DEMI_ORDER = ['matin', 'apres_midi', 'soir', 'soir_1', 'soir_2'];
@@ -37,6 +43,8 @@ export function generateEmargementSemainePdf(
   formateurNom: string = 'GUENICHI Naoufal',
   opts?: { returnBlob?: boolean },
 ): { blob: Blob; fileName: string } | void {
+  const isFCVtc = isFormationContinueVTC(apprenant.type_apprenant);
+  const DEMI_LABELS = buildDemiLabels(isFCVtc);
   const doc = new jsPDF();
   const pw = doc.internal.pageSize.getWidth();
   const ph = doc.internal.pageSize.getHeight();
