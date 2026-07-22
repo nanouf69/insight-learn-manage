@@ -34,9 +34,9 @@ export const SECURITE_ROUTIERE_EXERCICES: {
         { lettre: "C", texte: "Virage à gauche" },
       ]},
       { id: 4, enonce: "Ce panneau m'annonce :", image: "/cours/exercices/securite/image4.png", choix: [
-        { lettre: "A", texte: "Cédez le passage" },
+        { lettre: "A", texte: "Cédez le passage", correct: true },
         { lettre: "B", texte: "Priorité ponctuelle à la prochaine intersection" },
-        { lettre: "C", texte: "Succession de virages dont le 1er est à droite", correct: true },
+        { lettre: "C", texte: "Succession de virages dont le 1er est à droite" },
       ]},
       { id: 5, enonce: "Ce panneau m'annonce :", image: "/cours/exercices/securite/image5.png", choix: [
         { lettre: "A", texte: "Sortie de zone à stationnement interdit" },
