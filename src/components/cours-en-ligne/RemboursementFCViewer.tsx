@@ -698,12 +698,21 @@ export default function RemboursementFCViewer({ apprenantId, completed, onComple
                   </div>
                 ))}
               </div>
+            ) : hasFacture ? (
+              <div className="mt-2 flex items-center justify-between gap-2 rounded-md border border-emerald-200 bg-emerald-50 p-2">
+                <div className="text-xs text-emerald-900">
+                  Votre facture est acquittée : votre attestation de fin de formation continue {formation} est disponible.
+                </div>
+                <Button size="sm" onClick={handleDownloadAttestation} disabled={downloading === "attestation" || !apprenant}>
+                  <Download className="h-3.5 w-3.5 mr-1" />
+                  {downloading === "attestation" ? "Génération..." : "Télécharger"}
+                </Button>
+              </div>
             ) : (
               <div className="mt-2 flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 p-2 text-xs text-amber-900">
                 <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
                 <span>
-                  Votre attestation est en cours d'édition par le centre. Elle sera disponible
-                  ici dès qu'elle aura été validée et envoyée par votre formateur.
+                  Votre attestation sera disponible ici dès que votre facture aura été acquittée par le centre.
                 </span>
               </div>
             )}
