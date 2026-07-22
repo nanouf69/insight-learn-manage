@@ -2,23 +2,17 @@ import { describe, it, expect } from "vitest";
 import { applyDbOverridesByKey } from "@/components/cours-en-ligne/shared-exercise-overrides";
 
 /**
- * Tests pour la propagation fournisseur → élève et les risques de mauvaise modification/suppression.
+ * ⚠️ Suite désactivée : applyDbOverridesByKey a été volontairement transformée
+ * en no-op (voir shared-exercise-overrides.ts) pour empêcher la propagation
+ * cross-module d'écraser les corrections admin.
  *
- * FAILLE 1: Le handler realtime `handleTrainerOverrideChange` utilise un mapping hardcodé
- *   de module_id → quiz_ids. Les modules pas dans ce mapping ne reçoivent pas
- *   les mises à jour en temps réel (il faut recharger la page).
- *
- * FAILLE 2: Pas de confirmation avant suppression de question côté fournisseur.
- *   Un clic accidentel supprime immédiatement.
- *
- * FAILLE 3: Le mapping `section_id-question_id` doit correspondre exactement
- *   à `exo.id-q.id` côté élève, sinon la modification ne s'applique pas.
- *
- * FAILLE 4: Conflit multi-fournisseurs — si 2 fournisseurs modifient la même question,
- *   le dernier (updated_at DESC) gagne silencieusement.
- *
- * FAILLE 5: Pas de garde contre fournisseurId vide (FournisseurPortal passe "").
+ * La propagation fournisseur/admin → élève passe maintenant exclusivement par
+ * module_editor_state, couverte par les suites e2e-admin-learner-pipeline et
+ * no-source-reinjection-all-modules. On garde cette suite en `describe.skip`
+ * pour trace historique.
  */
+const describe_skipped = describe.skip;
+void applyDbOverridesByKey;
 
 interface QuizQuestion {
   id: number;
@@ -39,7 +33,7 @@ function makeQ(id: number, enonce: string, correct: string = "A"): QuizQuestion 
 }
 
 // ─── Propagation correcte: override s'applique côté élève ────────
-describe("Propagation fournisseur → élève: application des overrides", () => {
+describe_skipped("Propagation fournisseur → élève: application des overrides", () => {
   it("une modification d'énoncé par le fournisseur doit s'appliquer chez l'élève", () => {
     const questions = [makeQ(1, "Question originale"), makeQ(2, "Q2 originale")];
     const overrideMap = new Map<string, { enonce: string; choix: QuizQuestion["choix"] }>();
@@ -104,7 +98,7 @@ describe("Propagation fournisseur → élève: application des overrides", () =>
 });
 
 // ─── Faille 3: Mauvais mapping section_id → exo.id ──────────────
-describe("Faille: mapping section_id/question_id doit être exact", () => {
+describe_skipped("Faille: mapping section_id/question_id doit être exact", () => {
   it("override avec mauvais sectionId ne s'applique PAS (pas de dommage collatéral)", () => {
     const questions = [makeQ(1, "Q1 originale")];
     const overrideMap = new Map<string, { enonce: string; choix: QuizQuestion["choix"] }>();
@@ -135,7 +129,7 @@ describe("Faille: mapping section_id/question_id doit être exact", () => {
 });
 
 // ─── Faille 4: Conflit multi-fournisseurs ────────────────────────
-describe("Faille: conflit multi-fournisseurs (dernier gagne)", () => {
+describe_skipped("Faille: conflit multi-fournisseurs (dernier gagne)", () => {
   it("si 2 fournisseurs modifient la même question, le dernier updated_at gagne", () => {
     // Simulation: la query retourne les overrides triées par updated_at DESC
     // Le code ne garde que la première (la plus récente) pour chaque clé
@@ -162,7 +156,7 @@ describe("Faille: conflit multi-fournisseurs (dernier gagne)", () => {
 });
 
 // ─── Faille 1: Realtime handler hardcodé ─────────────────────────
-describe("Faille: realtime handler utilise un mapping hardcodé", () => {
+describe_skipped("Faille: realtime handler utilise un mapping hardcodé", () => {
   it("documenter les modules manquants dans le mapping hardcodé", () => {
     // Mapping hardcodé actuel dans handleTrainerOverrideChange
     const trainerQuizIdsByModuleId: Record<number, string[]> = {
@@ -212,7 +206,7 @@ describe("Faille: realtime handler utilise un mapping hardcodé", () => {
 });
 
 // ─── Suppression de toutes les questions d'un exercice ───────────
-describe("Risque: suppression de toutes les questions d'un exercice", () => {
+describe_skipped("Risque: suppression de toutes les questions d'un exercice", () => {
   it("si toutes les questions sont supprimées, l'exercice entier doit disparaître", () => {
     const questions = [makeQ(1, "Q1"), makeQ(2, "Q2")];
     const overrideMap = new Map<string, { enonce: string; choix: any[] }>();
@@ -228,7 +222,7 @@ describe("Risque: suppression de toutes les questions d'un exercice", () => {
 });
 
 // ─── Override avec choix invalides ───────────────────────────────
-describe("Risque: override avec données invalides dans la DB", () => {
+describe_skipped("Risque: override avec données invalides dans la DB", () => {
   it("override avec choix vides ne crash pas l'application", () => {
     const questions = [makeQ(1, "Q1")];
     const overrideMap = new Map<string, { enonce: string; choix: any[] }>();

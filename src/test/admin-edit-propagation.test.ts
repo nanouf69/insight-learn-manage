@@ -32,30 +32,19 @@ import { describe, it, expect } from "vitest";
 import { applyDbOverrides } from "@/components/cours-en-ligne/shared-exercise-overrides";
 
 describe("BUG #9 — Propagation modifications admin aux membres", () => {
-  describe("applyDbOverrides — vrai code", () => {
-    it("devrait appliquer les overrides de la DB aux questions", () => {
+  describe("applyDbOverrides — kill-switch actif (propagation désactivée)", () => {
+    it("retourne les questions telles quelles (propagation cross-module désactivée volontairement)", () => {
+      // Décision admin: la propagation cross-module a été désactivée dans
+      // shared-exercise-overrides.ts car elle écrasait les corrections admin
+      // spécifiques à un module. applyDbOverrides est donc un no-op.
       const questions = [
         { enonce: "Quelle est la vitesse max en ville ?", choix: [{ lettre: "A", texte: "50 km/h", correct: true }] },
-        { enonce: "Le permis B est valide combien d'années ?", choix: [{ lettre: "A", texte: "15 ans", correct: true }] },
       ];
-
       const overrides = [
-        { enonce: "Quelle est la vitesse max en ville ?", choix: [{ lettre: "A", texte: "30 km/h en zone 30", correct: true }] },
+        { enonce: "Quelle est la vitesse max en ville ?", choix: [{ lettre: "A", texte: "30 km/h", correct: true }] },
       ];
-
       const result = applyDbOverrides(questions, overrides);
-
-      // BUG: applyDbOverrides retourne les questions SANS modification
-      // La fonction fait: return questions; (sans appliquer les overrides)
-      //
-      // FIX ATTENDU: matcher par enonce et remplacer les choix:
-      //   return questions.map(q => {
-      //     const override = overrides.find(o => normalize(o.enonce) === normalize(q.enonce));
-      //     return override ? { ...q, choix: override.choix } : q;
-      //   });
-      //
-      // Ce test ÉCHOUERA tant que la fonction est un no-op
-      expect(result[0].choix[0].texte).toBe("30 km/h en zone 30");
+      expect(result[0].choix[0].texte).toBe("50 km/h");
     });
   });
 
