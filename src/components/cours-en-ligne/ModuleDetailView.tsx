@@ -293,6 +293,15 @@ const forceBilanExamGestionFromSource = (moduleId: number | string, loadedData: 
   const forcedIds = BILAN_EXAMEN_FORCE_FROM_SOURCE_IDS[Number(moduleId)];
   if (!forcedIds || forcedIds.length === 0) return loadedData;
 
+  const overwrites: Array<{
+    exerciceId: any;
+    questionId?: any;
+    field: string;
+    summary: string;
+    before?: unknown;
+    after?: unknown;
+  }> = [];
+
   const nextExercices = [...loadedData.exercices];
   for (const forcedId of forcedIds) {
     const sourceIndex = sourceData.exercices.findIndex((exercise) => Number(exercise.id) === forcedId);
@@ -303,6 +312,12 @@ const forceBilanExamGestionFromSource = (moduleId: number | string, loadedData: 
     if (loadedIndex === -1) {
       const insertAt = Math.max(0, Math.min(sourceIndex, nextExercices.length));
       nextExercices.splice(insertAt, 0, JSON.parse(JSON.stringify(sourceExercise)));
+      overwrites.push({
+        exerciceId: forcedId,
+        field: "exercice_inserted_from_source",
+        summary: `Exercice ${forcedId} réinjecté depuis la source (absent en base)`,
+        after: sourceExercise,
+      });
       continue;
     }
 
@@ -319,7 +334,17 @@ const forceBilanExamGestionFromSource = (moduleId: number | string, loadedData: 
       // On complète seulement les anciennes lignes qui n'ont jamais eu d'image.
       // image:null = suppression volontaire admin, à ne jamais restaurer.
       if (!("image" in question) || (question as any).image === undefined) {
-        if ((sourceQuestion as any).image) patched.image = (sourceQuestion as any).image;
+        if ((sourceQuestion as any).image) {
+          patched.image = (sourceQuestion as any).image;
+          overwrites.push({
+            exerciceId: forcedId,
+            questionId: (question as any).id,
+            field: "image",
+            summary: `Image restaurée depuis la source (aucune valeur admin en base)`,
+            before: undefined,
+            after: (sourceQuestion as any).image,
+          });
+        }
       }
       if (!("imageSize" in question) || (question as any).imageSize === undefined) {
         if ((sourceQuestion as any).imageSize) patched.imageSize = (sourceQuestion as any).imageSize;
@@ -328,6 +353,25 @@ const forceBilanExamGestionFromSource = (moduleId: number | string, loadedData: 
     });
 
     nextExercices[loadedIndex] = { ...loadedExercise, questions: mergedQuestions };
+  }
+
+  if (overwrites.length > 0) {
+    // Fire-and-forget : audit log de la resynchronisation
+    void Promise.all(
+      overwrites.slice(0, 20).map((o) =>
+        logModuleAudit({
+          moduleId: Number(moduleId),
+          action: "resync_overwrite",
+          origin: "forceBilanExamGestionFromSource",
+          exerciceId: o.exerciceId,
+          questionId: o.questionId,
+          field: o.field,
+          summary: o.summary,
+          before: o.before,
+          after: o.after,
+        }),
+      ),
+    );
   }
 
   return { ...loadedData, exercices: nextExercices };
