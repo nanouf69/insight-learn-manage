@@ -271,7 +271,10 @@ describe("Persistance des modifs admin sur module bilan via mergeSourceExercices
     expect(ids).toContain(3);
   });
 
-  it("nouvelles questions ajoutées en source apparaissent dans le merge", () => {
+  it("nouvelles questions source NE sont PAS ré-injectées dans un exercice déjà édité (protection anti-réapparition)", () => {
+    // Politique anti-réinjection: si l'admin a déjà sauvegardé un exercice,
+    // les questions source additionnelles ne doivent pas être ajoutées,
+    // sinon toute question supprimée par l'admin réapparaîtrait.
     const adminSaved = [
       {
         id: 100,
@@ -289,14 +292,15 @@ describe("Persistance des modifs admin sur module bilan via mergeSourceExercices
           makeQuestion(1),
           makeQuestion(2),
           makeQuestion(3),
-          makeQuestion(4), // nouvelle question source
+          makeQuestion(4),
         ],
       },
     ];
 
     const merged = mergeSourceExercices(adminSaved as any, sourceWithNew as any);
     const ids = merged[0].questions?.map(q => q.id) || [];
-    expect(ids).toContain(4);
+    expect(ids).not.toContain(4);
+    expect(ids).toEqual([1, 2, 3]);
   });
 
   it("question AJOUTÉE par admin (ID hors source) doit être préservée au merge", () => {
