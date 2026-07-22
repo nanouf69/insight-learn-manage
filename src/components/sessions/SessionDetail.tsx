@@ -3103,6 +3103,10 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                           {apprenant.resultat_examen === 'absent' && (
                             <span className="inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-full bg-orange-100 text-orange-700">🔶 Absent examen</span>
                           )}
+                          {hasNoSignature(apprenant.id) && sessionApprenant.presence_pratique !== 'absent' && (
+                            <span className="inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-full bg-red-100 text-red-700" title="Aucune feuille d'émargement signée">❌ Absent (aucune signature)</span>
+                          )}
+
                           {sessionApprenant.presence_pratique && sessionApprenant.presence_pratique !== 'present' && (
                             <span className={`inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-full ${
                               sessionApprenant.presence_pratique === 'absent' ? 'bg-red-100 text-red-700' :
