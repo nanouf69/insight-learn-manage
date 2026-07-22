@@ -779,6 +779,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
           })()}
           <TabsTrigger value="diagnostic-acces" className="text-sm">Diagnostic accès</TabsTrigger>
           <TabsTrigger value="vue-apprenant" className="text-sm">Vue apprenant</TabsTrigger>
+          <TabsTrigger value="sessions" className="text-sm">Session</TabsTrigger>
           <TabsTrigger value="reset-cours" className="text-sm text-destructive">Remise à zéro</TabsTrigger>
           <TabsTrigger value="delete-account" className="text-sm text-destructive">Supprimer compte cours</TabsTrigger>
         </TabsList>
