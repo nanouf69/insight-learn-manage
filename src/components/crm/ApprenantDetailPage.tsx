@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, User, FileText, BookOpen, Calendar, Mail, Phone, MapPin, CreditCard, Edit2, Download, CheckCircle2, XCircle, Plus, CalendarIcon, Pencil, KeyRound, Loader2, Copy, Monitor, Send, BarChart3, Trash2, AlertTriangle } from "lucide-react";
+import { ArrowLeft, User, FileText, BookOpen, Calendar, Mail, Phone, MapPin, CreditCard, Edit2, Download, CheckCircle2, XCircle, Plus, CalendarIcon, Pencil, KeyRound, Loader2, Copy, Monitor, Send, BarChart3, Trash2, AlertTriangle, Eye } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { MODULES_DATA, FORMATIONS, type FormationId } from "@/components/cours-en-ligne/formations-data";
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,7 @@ import ExamensBlancsResetTab from "./apprenant-sections/ExamensBlancsResetTab";
 import { ResultatsApprenantTab } from "./apprenant-sections/ResultatsApprenantTab";
 import { AccessDiagnosticTab } from "./apprenant-sections/AccessDiagnosticTab";
 import ApprenantActivityReport from "@/components/cours-en-ligne/ApprenantActivityReport";
+import CoursPublic from "@/pages/CoursPublic";
 import { ReleveHeuresHorsFormationTab } from "./apprenant-sections/ReleveHeuresHorsFormationTab";
 import { ApprenantEditForm } from "@/components/apprenants/ApprenantEditForm";
 import { cn } from "@/lib/utils";
@@ -776,6 +777,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
             return <TabsTrigger value="releve-heures-hors" className="text-sm">Relevé heures e-learning</TabsTrigger>;
           })()}
           <TabsTrigger value="diagnostic-acces" className="text-sm">Diagnostic accès</TabsTrigger>
+          <TabsTrigger value="vue-apprenant" className="text-sm">Vue apprenant</TabsTrigger>
           <TabsTrigger value="reset-cours" className="text-sm text-destructive">Remise à zéro</TabsTrigger>
           <TabsTrigger value="delete-account" className="text-sm text-destructive">Supprimer compte cours</TabsTrigger>
         </TabsList>
@@ -895,6 +897,29 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
           {activeTab === "rapport-activite" && <ApprenantActivityReport lockedApprenantId={apprenant.id} />}
           {activeTab === "releve-heures-hors" && <ReleveHeuresHorsFormationTab apprenant={apprenant} />}
           {activeTab === "diagnostic-acces" && <AccessDiagnosticTab apprenant={apprenant} />}
+          {activeTab === "vue-apprenant" && (
+            <div className="border rounded-xl overflow-hidden bg-background">
+              <div className="p-3 bg-muted/50 border-b flex items-center gap-2">
+                <Eye className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm font-medium text-muted-foreground">
+                  Aperçu de la plateforme e-learning tel que la voit {apprenant.prenom} {apprenant.nom}
+                </span>
+              </div>
+              <CoursPublic
+                embedded
+                apprenantOverride={{
+                  id: apprenant.id,
+                  nom: apprenant.nom,
+                  prenom: apprenant.prenom,
+                  type_apprenant: apprenant.type_apprenant,
+                  formation_choisie: apprenant.formation_choisie,
+                  date_debut_cours_en_ligne: (apprenant as any).date_debut_cours_en_ligne,
+                  date_fin_cours_en_ligne: (apprenant as any).date_fin_cours_en_ligne,
+                  modules_autorises: (apprenant as any).modules_autorises,
+                } as any}
+              />
+            </div>
+          )}
           {activeTab === "reset-cours" && <ResetCoursTab apprenant={apprenant} queryClient={queryClient} />}
           {activeTab === "delete-account" && (
             <Card className="border-destructive">
