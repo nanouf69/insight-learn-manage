@@ -2,23 +2,17 @@ import { describe, it, expect } from "vitest";
 import { applyDbOverridesByKey } from "@/components/cours-en-ligne/shared-exercise-overrides";
 
 /**
- * Tests pour la propagation fournisseur → élève et les risques de mauvaise modification/suppression.
+ * ⚠️ Suite désactivée : applyDbOverridesByKey a été volontairement transformée
+ * en no-op (voir shared-exercise-overrides.ts) pour empêcher la propagation
+ * cross-module d'écraser les corrections admin.
  *
- * FAILLE 1: Le handler realtime `handleTrainerOverrideChange` utilise un mapping hardcodé
- *   de module_id → quiz_ids. Les modules pas dans ce mapping ne reçoivent pas
- *   les mises à jour en temps réel (il faut recharger la page).
- *
- * FAILLE 2: Pas de confirmation avant suppression de question côté fournisseur.
- *   Un clic accidentel supprime immédiatement.
- *
- * FAILLE 3: Le mapping `section_id-question_id` doit correspondre exactement
- *   à `exo.id-q.id` côté élève, sinon la modification ne s'applique pas.
- *
- * FAILLE 4: Conflit multi-fournisseurs — si 2 fournisseurs modifient la même question,
- *   le dernier (updated_at DESC) gagne silencieusement.
- *
- * FAILLE 5: Pas de garde contre fournisseurId vide (FournisseurPortal passe "").
+ * La propagation fournisseur/admin → élève passe maintenant exclusivement par
+ * module_editor_state, couverte par les suites e2e-admin-learner-pipeline et
+ * no-source-reinjection-all-modules. On garde cette suite en `describe.skip`
+ * pour trace historique.
  */
+const describe_skipped = describe.skip;
+void applyDbOverridesByKey;
 
 interface QuizQuestion {
   id: number;
