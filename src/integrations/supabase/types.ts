@@ -2186,6 +2186,57 @@ export type Database = {
           },
         ]
       }
+      module_admin_audit_log: {
+        Row: {
+          action: string
+          after_value: Json | null
+          author_email: string | null
+          author_user_id: string | null
+          before_value: Json | null
+          created_at: string
+          exercice_id: string | null
+          field: string | null
+          id: string
+          module_id: number
+          module_nom: string | null
+          origin: string | null
+          question_id: string | null
+          summary: string | null
+        }
+        Insert: {
+          action: string
+          after_value?: Json | null
+          author_email?: string | null
+          author_user_id?: string | null
+          before_value?: Json | null
+          created_at?: string
+          exercice_id?: string | null
+          field?: string | null
+          id?: string
+          module_id: number
+          module_nom?: string | null
+          origin?: string | null
+          question_id?: string | null
+          summary?: string | null
+        }
+        Update: {
+          action?: string
+          after_value?: Json | null
+          author_email?: string | null
+          author_user_id?: string | null
+          before_value?: Json | null
+          created_at?: string
+          exercice_id?: string | null
+          field?: string | null
+          id?: string
+          module_id?: number
+          module_nom?: string | null
+          origin?: string | null
+          question_id?: string | null
+          summary?: string | null
+        }
+        Relationships: []
+      }
       module_change_notifications: {
         Row: {
           change_summary: string
