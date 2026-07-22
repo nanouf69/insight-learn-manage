@@ -4021,6 +4021,9 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                   })}
                 </div>
               </ScrollArea>
+              <div className="mt-4">
+                <SmallTransfersTable />
+              </div>
             </TabsContent>
           )}
 
