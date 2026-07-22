@@ -276,6 +276,7 @@ export const FORMATION_MODULES: Record<string, FormationDefinition> = {
     { id: 83, label: "4.DOCUMENTS ADMINISTRATIFS VTC" },
     { id: 85, label: "5.INFORMATIONS FINANCEUR VTC" },
     { id: 88, label: "6.🪪 DEMANDE DE CARTE PROFESSIONNELLE VTC" },
+    { id: 89, label: "7.💶 REMBOURSEMENT FORMATION CONTINUE VTC" },
   ]},
   "continue-taxi": { label: "Formation Continue TAXI", color: "bg-amber-100 text-amber-800 border-amber-300", modules: [
     { id: 82, label: "1.COURS FC TAXI" },
