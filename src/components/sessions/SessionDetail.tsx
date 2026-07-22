@@ -3958,6 +3958,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                              </div>
                              <div className="text-xs text-muted-foreground truncate">
                                Email facturation : {recipient || <span className="text-destructive">manquant</span>}
+                               {' • '}Tél : {a.telephone ? <a href={`tel:${a.telephone}`} className="text-foreground font-medium hover:underline">{a.telephone}</a> : <span className="text-destructive">manquant</span>}
                                {' • '}Montant TTC : <span className="font-medium text-foreground">{montantTtc.toFixed(2)} €</span>
                              </div>
                            </div>
