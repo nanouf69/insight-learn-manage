@@ -53,6 +53,35 @@ export async function buildSessionAgendaDays(
   const titleLower = (ctx.title || "").toLowerCase();
   const { isTaxi, isVTC } = getFlags(ctx.typeApprenant, ctx.title || "");
 
+  // ---- Formation Continue : STRICTEMENT limité aux dates de session ----
+  // FC VTC / FC TAXI / Mobilité TAXI = 14h sur 2 jours (7h/jour : 09-12 + 13-17).
+  // On n'utilise NI les blocs agenda ni de padding samedi/lundi.
+  const tLower = (ctx.typeApprenant || "").toLowerCase();
+  const isFCStrict =
+    tLower.startsWith("continue-") ||
+    tLower.includes("mobilite") ||
+    titleLower.includes("formation continue") ||
+    titleLower.includes("mobilité") ||
+    titleLower.includes("mobilite");
+  if (isFCStrict) {
+    const startD = new Date(dateDebut + "T00:00:00");
+    const endD = new Date(dateFin + "T00:00:00");
+    if (isNaN(startD.getTime()) || isNaN(endD.getTime()) || endD < startD) return [];
+    const fc: AgendaDaySlot[] = [];
+    const cur = new Date(startD);
+    while (cur <= endD) {
+      fc.push({
+        date: new Date(cur),
+        matinDebut: "09:00",
+        matinFin: "12:00",
+        apremDebut: "13:00",
+        apremFin: "17:00",
+      });
+      cur.setDate(cur.getDate() + 1);
+    }
+    return fc;
+  }
+
   // Charger les blocs agenda potentiels (semaines couvrant la session)
   const start = new Date(dateDebut + "T00:00:00");
   const semaineMin = new Date(start);
