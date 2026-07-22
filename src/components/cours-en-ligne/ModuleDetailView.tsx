@@ -1903,16 +1903,19 @@ function createSectionModuleData(id: number, nom: string, description: string, s
 function QuestionEditor({
   question,
   onSave,
+  onDraftSave,
   onDelete,
   onCancel,
   moduleId,
 }: {
   question: ExerciceQuestion;
   onSave: (q: ExerciceQuestion) => void;
+  onDraftSave: (q: ExerciceQuestion) => void;
   onDelete: () => void;
   onCancel: () => void;
   moduleId: number;
 }) {
+
   const [enonce, setEnonce] = useState(question.enonce);
   const [choix, setChoix] = useState<ExerciceChoix[]>([...question.choix]);
   const [image, setImage] = useState<string | null>(question.image ?? null);
@@ -1920,6 +1923,7 @@ function QuestionEditor({
 
   // Auto-save live: propage chaque modification (énoncé, choix, bonne réponse)
   // vers le parent qui déclenche la persistance DB debouncée.
+  // ⚠️ On utilise onDraftSave (ne ferme PAS l'éditeur) et non onSave.
   const isFirstAutoSaveRef = useRef(true);
   useEffect(() => {
     if (isFirstAutoSaveRef.current) {
@@ -1927,7 +1931,7 @@ function QuestionEditor({
       return;
     }
     const t = setTimeout(() => {
-      onSave({
+      onDraftSave({
         ...question,
         enonce,
         choix,
@@ -1939,6 +1943,7 @@ function QuestionEditor({
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enonce, choix, imageSize]);
+
 
   const handleChoixTexte = (i: number, val: string) => {
     setChoix(prev => prev.map((c, idx) => idx === i ? { ...c, texte: val } : c));
@@ -1980,15 +1985,16 @@ function QuestionEditor({
         imageSize={imageSize}
         onImageSizeChange={(sz) => {
           setImageSize(sz);
-          onSave({ ...question, enonce, choix, image: image ?? undefined, imageSize: sz, _editedAt: new Date().toISOString() } as ExerciceQuestion);
+          onDraftSave({ ...question, enonce, choix, image: image ?? undefined, imageSize: sz, _editedAt: new Date().toISOString() } as ExerciceQuestion);
         }}
         context="module"
         contextId={moduleId}
         questionId={question.id}
         onImageChange={(newImage) => {
           setImage(newImage);
-          onSave({ ...question, enonce, choix, image: newImage ?? undefined, imageSize, _editedAt: new Date().toISOString() } as ExerciceQuestion);
+          onDraftSave({ ...question, enonce, choix, image: newImage ?? undefined, imageSize, _editedAt: new Date().toISOString() } as ExerciceQuestion);
         }}
+
       />
       <div className="space-y-3">
         <label className="text-xs font-semibold">Réponses (cochez les bonnes réponses — plusieurs possibles)</label>
@@ -2059,6 +2065,13 @@ function ExerciceCard({
     onUpdateQuestions(item.id, newQ);
     setEditingQId(null);
   };
+
+  const saveQuestionDraft = (updated: ExerciceQuestion) => {
+    if (!item.questions) return;
+    const newQ = item.questions.map(q => q.id === updated.id ? updated : q);
+    onUpdateQuestions(item.id, newQ);
+  };
+
 
   const [confirmDeleteQId, setConfirmDeleteQId] = useState<number | null>(null);
 
@@ -2167,10 +2180,12 @@ function ExerciceCard({
                   <QuestionEditor
                     question={q}
                     onSave={saveQuestion}
+                    onDraftSave={saveQuestionDraft}
                     onDelete={() => deleteQuestion(q.id)}
                     onCancel={() => setEditingQId(null)}
                     moduleId={moduleId}
                   />
+
                 ) : (
                   <div className="flex items-start gap-3 p-3 border rounded-lg hover:bg-muted/20 group transition-colors">
                     <Badge className="text-xs shrink-0 mt-0.5">Q{qi + 1}</Badge>
@@ -2261,10 +2276,12 @@ function ExerciceCard({
                       <QuestionEditor
                         question={q}
                         onSave={saveQuestion}
+                        onDraftSave={saveQuestionDraft}
                         onDelete={() => deleteQuestion(q.id)}
                         onCancel={() => setEditingQId(null)}
                         moduleId={moduleId}
                       />
+
                     ) : (
                       <div className="flex items-start gap-3 p-4 border rounded-lg hover:bg-muted/20 group transition-colors">
                         <Badge className="text-base shrink-0 mt-0.5 px-3 py-1">Q{qi + 1}</Badge>
