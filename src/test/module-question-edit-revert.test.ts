@@ -98,7 +98,10 @@ describe("BUG — Module mergeSourceExercices: saved data must take priority ove
 // ────────────────────────────────────────────────────────────
 
 describe("mergeSourceExercices — new source questions appear alongside saved ones", () => {
-  it("source has a question not in saved: it appears in merged", () => {
+  it("source has a question not in saved: saved is source of truth (deletion protection)", () => {
+    // Politique anti-réinjection : si un exercice existe déjà en base, on n'y
+    // ré-injecte JAMAIS les questions supplémentaires du code source, sinon
+    // les questions supprimées par l'admin réapparaîtraient.
     const source = [makeExercice(1, [
       { id: 1, enonce: "Q1", choix: [makeChoix("A", "A", true)] },
       { id: 2, enonce: "Q2 new from source", choix: [makeChoix("A", "X", true)] },
@@ -109,11 +112,9 @@ describe("mergeSourceExercices — new source questions appear alongside saved o
     ])];
 
     const merged = mergeSourceExercices(saved, source);
-    // Q1 should have saved version
     expect(merged[0].questions![0].enonce).toBe("Q1 edited");
-    // Q2 should come from source
-    expect(merged[0].questions!).toHaveLength(2);
-    expect(merged[0].questions![1].enonce).toBe("Q2 new from source");
+    expect(merged[0].questions!).toHaveLength(1);
+    expect(merged[0].questions!.find((q) => q.id === 2)).toBeUndefined();
   });
 
   it("source has new exercice not in saved: it appears in merged", () => {
