@@ -33,6 +33,7 @@ import { AccessDiagnosticTab } from "./apprenant-sections/AccessDiagnosticTab";
 import ApprenantActivityReport from "@/components/cours-en-ligne/ApprenantActivityReport";
 import CoursPublic from "@/pages/CoursPublic";
 import { ReleveHeuresHorsFormationTab } from "./apprenant-sections/ReleveHeuresHorsFormationTab";
+import { SessionsTab } from "./apprenant-sections/SessionsTab";
 import { ApprenantEditForm } from "@/components/apprenants/ApprenantEditForm";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
