@@ -9,11 +9,11 @@ function matiereToExercice(matiere: typeof bilanExamenVTC.matieres[0], baseId: n
     titre: `📝 ${matiere.nom}`,
     sousTitre: `${matiere.questions.length} questions — Bilan Examen`,
     actif: true,
-    questions: matiere.questions.map((q, i) => ({
+    questions: matiere.questions.map((q: any, i) => ({
+      ...q,
       id: i + 1,
       enonce: q.enonce,
       choix: q.choix || [],
-      ...(q.image ? { image: q.image } : {}),
     })),
   };
 }
