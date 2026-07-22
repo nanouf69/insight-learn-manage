@@ -1923,6 +1923,7 @@ function QuestionEditor({
 
   // Auto-save live: propage chaque modification (énoncé, choix, bonne réponse)
   // vers le parent qui déclenche la persistance DB debouncée.
+  // ⚠️ On utilise onDraftSave (ne ferme PAS l'éditeur) et non onSave.
   const isFirstAutoSaveRef = useRef(true);
   useEffect(() => {
     if (isFirstAutoSaveRef.current) {
@@ -1930,7 +1931,7 @@ function QuestionEditor({
       return;
     }
     const t = setTimeout(() => {
-      onSave({
+      onDraftSave({
         ...question,
         enonce,
         choix,
@@ -1942,6 +1943,7 @@ function QuestionEditor({
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enonce, choix, imageSize]);
+
 
   const handleChoixTexte = (i: number, val: string) => {
     setChoix(prev => prev.map((c, idx) => idx === i ? { ...c, texte: val } : c));
