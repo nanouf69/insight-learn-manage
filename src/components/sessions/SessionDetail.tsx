@@ -126,8 +126,11 @@ const ORDERED_FORMATION_MODULES = Object.fromEntries(
 const COMPTE_FORMATIONS = [
   { id: "vtc", label: "VTC (Présentiel)" },
   { id: "vtc-e", label: "VTC E-learning" },
+  { id: "continue-vtc", label: "Formation continue VTC" },
   { id: "taxi", label: "TAXI (Présentiel)" },
   { id: "taxi-e", label: "TAXI E-learning" },
+  { id: "continue-taxi", label: "Formation continue TAXI" },
+  { id: "mobilite-taxi", label: "Formation Mobilité TAXI" },
   { id: "ta", label: "TA (Présentiel)" },
   { id: "ta-e", label: "TA E-learning" },
   { id: "va", label: "VA (Présentiel)" },
@@ -136,11 +139,13 @@ const COMPTE_FORMATIONS = [
 
 const ACCOUNT_FORMATION_TO_TYPE: Record<string, string> = {
   vtc: "vtc", "vtc-e": "vtc-e", taxi: "taxi", "taxi-e": "taxi-e",
+  "continue-vtc": "pa vtc", "continue-taxi": "pa taxi", "mobilite-taxi": "taxi",
   ta: "ta", "ta-e": "ta-e", va: "va", "va-e": "va-e",
 };
 
 const ACCOUNT_FORMATION_TO_DB_FORMATION: Record<string, string> = {
   vtc: "vtc", "vtc-e": "vtc-elearning", taxi: "taxi", "taxi-e": "taxi-elearning",
+  "continue-vtc": "continue-vtc", "continue-taxi": "continue-taxi", "mobilite-taxi": "mobilite-taxi",
   ta: "passerelle-taxi", "ta-e": "passerelle-taxi-elearning",
   va: "passerelle-vtc-elearning", "va-e": "passerelle-vtc-elearning",
 };

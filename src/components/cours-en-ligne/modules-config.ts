@@ -271,10 +271,11 @@ export const FORMATION_MODULES: Record<string, FormationDefinition> = {
   ]},
   "continue-vtc": { label: "Formation Continue VTC", color: "bg-blue-100 text-blue-800 border-blue-300", modules: [
     { id: 81, label: "1.BILAN EXERCICES FORMATION CONTINUE VTC" },
-    { id: 87, label: "2.📋 BILAN FIN DE FORMATION CONTINUE VTC" },
-    { id: 83, label: "3.💶 REMBOURSEMENT FORMATION CONTINUE VTC" },
-    { id: 85, label: "4.INFORMATIONS FINANCEUR VTC" },
-    { id: 88, label: "5.🪪 DEMANDE DE CARTE PROFESSIONNELLE VTC" },
+    { id: 5, label: "2.BILAN EXAMEN VTC" },
+    { id: 87, label: "3.📋 BILAN FIN DE FORMATION CONTINUE VTC" },
+    { id: 83, label: "4.DOCUMENTS ADMINISTRATIFS VTC" },
+    { id: 85, label: "5.INFORMATIONS FINANCEUR VTC" },
+    { id: 88, label: "6.🪪 DEMANDE DE CARTE PROFESSIONNELLE VTC" },
   ]},
   "continue-taxi": { label: "Formation Continue TAXI", color: "bg-amber-100 text-amber-800 border-amber-300", modules: [
     { id: 82, label: "1.COURS FC TAXI" },
