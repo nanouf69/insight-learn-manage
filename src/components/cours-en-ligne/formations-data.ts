@@ -111,7 +111,7 @@ export const MODULES_DATA: ModuleInfo[] = [
     id: 5,
     nom: "6.BILAN EXAMEN VTC",
     description: "Très important, il s'agit de questions que vous pouvez retrouver en examen",
-    formations: VTC_FORMATIONS,
+    formations: [...VTC_FORMATIONS, "continue-vtc"],
   },
   {
     id: 6,
