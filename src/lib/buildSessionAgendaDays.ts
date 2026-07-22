@@ -168,11 +168,26 @@ export async function buildSessionAgendaDays(
  * de présentiel requis (hors heures de pratique).
  */
 function padExtraDays(days: AgendaDaySlot[], ctx: SessionAgendaContext): AgendaDaySlot[] {
+  // Formation Continue = 14h maxi (2 jours). On NE complète JAMAIS avec des
+  // samedis/lundis supplémentaires pour les FC VTC / FC TAXI / Mobilité TAXI.
+  const t = (ctx.typeApprenant || "").toLowerCase();
+  const titleLower = (ctx.title || "").toLowerCase();
+  const isFC =
+    t.startsWith("continue-") ||
+    t === "pa vtc" ||
+    t === "pa" ||
+    t.includes("mobilite") ||
+    titleLower.includes("formation continue") ||
+    titleLower.includes("mobilité") ||
+    titleLower.includes("mobilite");
+  if (isFC) return days;
+
   const target = Number(ctx.heuresPresentielRequis || 0);
   if (!target || days.length === 0) return days;
 
   const currentTotal = days.reduce((sum, d) => sum + hoursPerDay(d), 0);
   if (currentTotal >= target) return days;
+
 
   const lastDay = days[days.length - 1].date;
   const isSoir = days.every((d) => d.isSoir);
