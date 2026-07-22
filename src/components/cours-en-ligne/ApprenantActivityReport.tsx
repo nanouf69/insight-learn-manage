@@ -821,6 +821,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
                     <TableHead>Module consulté</TableHead>
                     <TableHead>Quiz / Examens réalisés</TableHead>
                     <TableHead>Cours & Exercices effectués</TableHead>
+                    <TableHead className="w-[70px] text-center print:hidden">Éditer</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
