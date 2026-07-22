@@ -2374,7 +2374,7 @@ function ExerciceCard({
                           <Button size="sm" variant="outline" className="h-7 w-7 p-0" onClick={() => moveQuestion(q.id, "up")} disabled={qi === 0} title="Monter">
                             <ArrowUp className="w-3 h-3" />
                           </Button>
-                          <Button size="sm" variant="outline" className="h-7 w-7 p-0" onClick={() => moveQuestion(q.id, "down")} disabled={qi === item.questions!.length - 1} title="Descendre">
+                          <Button size="sm" variant="outline" className="h-7 w-7 p-0" onClick={() => moveQuestion(q.id, "down")} disabled={qi === safeQuestions.length - 1} title="Descendre">
                             <ArrowDown className="w-3 h-3" />
                           </Button>
                         </div>
