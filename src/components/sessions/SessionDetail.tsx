@@ -2707,11 +2707,25 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   const totalCount = apprenantsInSession.length;
   const formateursCount = formateursInSession.length;
 
-  // Exclure les absents (présence pratique ou résultat examen) pour la facturation FC
+  // Marquer automatiquement "absent" les apprenants sans AUCUNE feuille d'émargement signée
+  // dès lors que la session est terminée (date_fin passée).
+  const sessionFinIso = session?.dateFin ? String(session.dateFin).slice(0, 10) : null;
+  const todayIso = new Date().toISOString().slice(0, 10);
+  const sessionIsOver = !!sessionFinIso && todayIso > sessionFinIso;
+  const hasNoSignature = (apprenantId?: string | null): boolean => {
+    if (!apprenantId) return false;
+    const h = (emargementsHoursMap as Record<string, number>)[apprenantId];
+    return sessionIsOver && (!h || h <= 0);
+  };
+
+  // Exclure les absents (présence pratique, résultat examen, ou aucune signature) pour la facturation FC
   const nonAbsentApprenants = (apprenantsInSession as any[]).filter((sa: any) => {
     const ap = sa.apprenant;
-    return sa.presence_pratique !== 'absent' && ap?.resultat_examen !== 'absent';
+    if (sa.presence_pratique === 'absent' || ap?.resultat_examen === 'absent') return false;
+    if (hasNoSignature(ap?.id)) return false;
+    return true;
   });
+
 
   const mainContent = (
     <>
@@ -2808,8 +2822,9 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
         {(() => {
           const absentApprenants = (apprenantsInSession as any[]).filter((sa: any) => {
             const ap = sa.apprenant;
-            return sa.presence_pratique === 'absent' || ap?.resultat_examen === 'absent';
+            return sa.presence_pratique === 'absent' || ap?.resultat_examen === 'absent' || hasNoSignature(ap?.id);
           });
+
           const absentCount = absentApprenants.length;
           const absentIds = new Set(absentApprenants.map((sa: any) => sa.apprenant?.id).filter(Boolean));
           const apprenantsForFactures = (apprenantsInSession as any[]).filter((sa: any) => !absentIds.has(sa.apprenant?.id));
@@ -3088,6 +3103,10 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                           {apprenant.resultat_examen === 'absent' && (
                             <span className="inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-full bg-orange-100 text-orange-700">🔶 Absent examen</span>
                           )}
+                          {hasNoSignature(apprenant.id) && sessionApprenant.presence_pratique !== 'absent' && (
+                            <span className="inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-full bg-red-100 text-red-700" title="Aucune feuille d'émargement signée">❌ Absent (aucune signature)</span>
+                          )}
+
                           {sessionApprenant.presence_pratique && sessionApprenant.presence_pratique !== 'present' && (
                             <span className={`inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-full ${
                               sessionApprenant.presence_pratique === 'absent' ? 'bg-red-100 text-red-700' :
