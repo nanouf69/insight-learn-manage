@@ -2094,9 +2094,26 @@ function ExerciceCard({
   const [fullscreenOpen, setFullscreenOpen] = useState(false);
   const [editingQId, setEditingQId] = useState<number | null>(null);
 
-  const hasQuestions = item.questions && item.questions.length > 0;
+  // Dé-doublonnage défensif par id (évite tout mélange d'affichage entre questions
+  // partageant accidentellement le même id — la 1re occurrence gagne).
+  const safeQuestions = React.useMemo(() => {
+    if (!item.questions) return [] as ExerciceQuestion[];
+    const seen = new Set<number>();
+    const out: ExerciceQuestion[] = [];
+    for (const q of item.questions) {
+      const key = Number(q.id);
+      if (seen.has(key)) {
+        console.warn(`[ModuleDetailView] Doublon d'id question détecté (${key}) dans exo ${item.id} — ignoré`);
+        continue;
+      }
+      seen.add(key);
+      out.push(q);
+    }
+    return out;
+  }, [item.questions, item.id]);
+  const hasQuestions = safeQuestions.length > 0;
   const getOverrideWarning = (questionId: number) => overrideWarnings?.get(`${item.id}-${questionId}`);
-  const overrideWarningCount = (item.questions ?? []).filter(q => getOverrideWarning(q.id)).length;
+  const overrideWarningCount = safeQuestions.filter(q => getOverrideWarning(q.id)).length;
 
   const saveQuestion = (updated: ExerciceQuestion) => {
     if (!item.questions) return;
