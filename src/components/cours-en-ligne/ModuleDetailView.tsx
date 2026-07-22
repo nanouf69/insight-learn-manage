@@ -2230,8 +2230,9 @@ function ExerciceCard({
         {/* Questions list */}
         {expanded && hasQuestions && (
           <div className="space-y-2 pt-2 border-t">
-            {item.questions!.map((q, qi) => (
-              <div key={q.id}>
+            {safeQuestions.map((q, qi) => (
+              <div key={`${q.id}-${qi}`}>
+
                 {editingQId === q.id ? (
                   <QuestionEditor
                     question={q}
