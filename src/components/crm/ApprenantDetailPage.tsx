@@ -897,6 +897,29 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
           {activeTab === "rapport-activite" && <ApprenantActivityReport lockedApprenantId={apprenant.id} />}
           {activeTab === "releve-heures-hors" && <ReleveHeuresHorsFormationTab apprenant={apprenant} />}
           {activeTab === "diagnostic-acces" && <AccessDiagnosticTab apprenant={apprenant} />}
+          {activeTab === "vue-apprenant" && (
+            <div className="border rounded-xl overflow-hidden bg-background">
+              <div className="p-3 bg-muted/50 border-b flex items-center gap-2">
+                <Eye className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm font-medium text-muted-foreground">
+                  Aperçu de la plateforme e-learning tel que la voit {apprenant.prenom} {apprenant.nom}
+                </span>
+              </div>
+              <CoursPublic
+                embedded
+                apprenantOverride={{
+                  id: apprenant.id,
+                  nom: apprenant.nom,
+                  prenom: apprenant.prenom,
+                  type_apprenant: apprenant.type_apprenant,
+                  formation_choisie: apprenant.formation_choisie,
+                  date_debut_cours_en_ligne: (apprenant as any).date_debut_cours_en_ligne,
+                  date_fin_cours_en_ligne: (apprenant as any).date_fin_cours_en_ligne,
+                  modules_autorises: (apprenant as any).modules_autorises,
+                } as any}
+              />
+            </div>
+          )}
           {activeTab === "reset-cours" && <ResetCoursTab apprenant={apprenant} queryClient={queryClient} />}
           {activeTab === "delete-account" && (
             <Card className="border-destructive">
