@@ -852,6 +852,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
                           <TableCell colSpan={3} className="text-muted-foreground italic">
                             Journée de pratique
                           </TableCell>
+                          <TableCell className="print:hidden" />
                         </TableRow>
                       );
                     }
