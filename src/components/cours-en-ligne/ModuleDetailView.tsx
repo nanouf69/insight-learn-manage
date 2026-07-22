@@ -1944,14 +1944,17 @@ function QuestionEditor({
         ...question,
         enonce,
         choix,
-        image: image ?? undefined,
+        // ⚠️ image: null = suppression explicite par l'admin (le merge côté apprenant
+        // doit conserver null et NE PAS re-hydrater l'image source). undefined serait
+        // supprimé par JSON.stringify → le merge retomberait sur l'image source.
+        image: image as any,
         imageSize,
         _editedAt: new Date().toISOString(),
       } as ExerciceQuestion);
     }, 400);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enonce, choix, imageSize]);
+  }, [enonce, choix, image, imageSize]);
 
 
   const handleChoixTexte = (i: number, val: string) => {
