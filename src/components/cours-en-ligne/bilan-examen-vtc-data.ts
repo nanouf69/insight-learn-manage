@@ -13,6 +13,7 @@ function matiereToExercice(matiere: typeof bilanExamenVTC.matieres[0], baseId: n
       id: i + 1,
       enonce: q.enonce,
       choix: q.choix || [],
+      ...(q.image ? { image: q.image } : {}),
     })),
   };
 }
