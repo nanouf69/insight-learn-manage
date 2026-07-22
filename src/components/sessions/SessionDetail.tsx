@@ -903,19 +903,23 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
           .split(/[^a-z0-9]+/)
           .filter((t) => t.length >= 4 && !STOP.has(t));
 
-      const tokensByApp: Record<string, string[]> = {};
+      // Tokens "forts" par apprenant : nom de famille + tokens du financeur pro
+      // (raison sociale, siret). Le prénom et le local-part email sont trop
+      // ambigus (ex: "mohammed" matcherait n'importe quel virement d'un homonyme)
+      // → on les IGNORE pour éviter les faux positifs.
+      const strongTokensByApp: Record<string, string[]> = {};
       const allTokens = new Set<string>();
       for (const a of apps) {
         const fin = (financeursFCMap as Record<string, any>)[a.id] || {};
-        const emailLocal = String(fin.email_facturation || a.email || '').split('@')[0] || '';
+        const isPro = fin.type === 'pro' || fin.raison_sociale;
         const raw = [
-          a.nom, a.prenom,
-          a.societe_nom, a.organisme_financeur,
-          fin.raison_sociale, fin.organisme_financeur, fin.contact_nom,
-          emailLocal,
+          a.nom,
+          isPro ? fin.raison_sociale : null,
+          isPro ? fin.siret : null,
+          isPro ? fin.siren : null,
         ].filter(Boolean).join(' ');
         const toks = Array.from(new Set(tokenize(raw)));
-        tokensByApp[a.id] = toks;
+        strongTokensByApp[a.id] = toks;
         toks.forEach((t) => allTokens.add(t));
       }
 
@@ -931,7 +935,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       if (error || !data) return result;
 
       for (const a of apps) {
-        const toks = tokensByApp[a.id] || [];
+        const toks = strongTokensByApp[a.id] || [];
         if (!toks.length) continue;
         const matches = (data as any[]).filter((tx) => {
           const lib = String(tx.libelle || '')
