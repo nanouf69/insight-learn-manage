@@ -1903,16 +1903,19 @@ function createSectionModuleData(id: number, nom: string, description: string, s
 function QuestionEditor({
   question,
   onSave,
+  onDraftSave,
   onDelete,
   onCancel,
   moduleId,
 }: {
   question: ExerciceQuestion;
   onSave: (q: ExerciceQuestion) => void;
+  onDraftSave: (q: ExerciceQuestion) => void;
   onDelete: () => void;
   onCancel: () => void;
   moduleId: number;
 }) {
+
   const [enonce, setEnonce] = useState(question.enonce);
   const [choix, setChoix] = useState<ExerciceChoix[]>([...question.choix]);
   const [image, setImage] = useState<string | null>(question.image ?? null);
