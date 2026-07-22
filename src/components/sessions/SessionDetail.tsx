@@ -3890,14 +3890,14 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                              <Button
                                size="sm"
                                variant="outline"
-                               className="gap-1 border-red-300 text-red-700 hover:bg-red-50"
-                               title="Marquer absent et retirer de la facturation"
+                               className="border-red-300 text-red-700 hover:bg-red-50"
+                               title="Marquer absent et déplacer dans l'onglet Absents"
                                onClick={async () => {
-                                 if (!confirm(`Marquer ${a.prenom} ${a.nom} comme absent et le retirer de la facturation FC ?`)) return;
+                                 if (!confirm(`Marquer ${a.prenom} ${a.nom} comme absent et le déplacer dans l'onglet Absents ?`)) return;
                                  await updateSessionApprenant(sa.id, { presence_pratique: 'absent' });
                                }}
                              >
-                               <X className="w-4 h-4" />
+                               Absent
                              </Button>
                            </div>
                          </div>
