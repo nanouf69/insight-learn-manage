@@ -2822,8 +2822,9 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
         {(() => {
           const absentApprenants = (apprenantsInSession as any[]).filter((sa: any) => {
             const ap = sa.apprenant;
-            return sa.presence_pratique === 'absent' || ap?.resultat_examen === 'absent';
+            return sa.presence_pratique === 'absent' || ap?.resultat_examen === 'absent' || hasNoSignature(ap?.id);
           });
+
           const absentCount = absentApprenants.length;
           const absentIds = new Set(absentApprenants.map((sa: any) => sa.apprenant?.id).filter(Boolean));
           const apprenantsForFactures = (apprenantsInSession as any[]).filter((sa: any) => !absentIds.has(sa.apprenant?.id));
