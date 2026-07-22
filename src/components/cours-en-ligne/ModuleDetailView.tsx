@@ -3655,6 +3655,30 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       saveErrorShownRef.current = false;
       markDbSnapshotApplied(savedAt);
 
+      // 📣 Broadcast complémentaire : force un refresh instantané côté apprenant
+      // (backup de postgres_changes ; utile quand l'image d'une question est supprimée
+      // et que l'apprenant doit voir la mise à jour sans attendre le polling).
+      try {
+        const broadcastChan = supabase.channel(`module-editor-live-${dataToSave.module_id}`);
+        await new Promise<void>((resolve) => {
+          const timeout = setTimeout(resolve, 600);
+          broadcastChan.subscribe((status) => {
+            if (status === 'SUBSCRIBED') {
+              clearTimeout(timeout);
+              resolve();
+            }
+          });
+        });
+        await broadcastChan.send({
+          type: 'broadcast',
+          event: 'module-updated',
+          payload: { moduleId: dataToSave.module_id, at: savedAt },
+        });
+        await supabase.removeChannel(broadcastChan);
+      } catch (broadcastErr) {
+        console.warn('[Realtime] Broadcast module-updated failed (non-bloquant):', broadcastErr);
+      }
+
       // 🔎 DEBUG carte grise : log the exact choix array we just wrote to DB
       try {
         const exos = (dataToSave.module_data?.exercices ?? []) as any[];
