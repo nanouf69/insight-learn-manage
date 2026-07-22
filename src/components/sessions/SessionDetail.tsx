@@ -872,6 +872,50 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     enabled: !!session?.id && open && factureIdsForPaiements.length > 0,
   });
 
+  // Charger les virements reçus (transactions_bancaires) correspondant aux apprenants de la session
+  // pour afficher automatiquement date + montant à côté de chaque ligne facture.
+  const { data: virementsByApprenantId = {} } = useQuery({
+    queryKey: [
+      'session-virements-matches',
+      session?.id,
+      apprenantsInSession.map((sa: any) => sa.apprenant?.id).join(','),
+    ],
+    queryFn: async () => {
+      const result: Record<string, any[]> = {};
+      const apps = (apprenantsInSession || [])
+        .map((sa: any) => sa.apprenant)
+        .filter((a: any) => a && (a.nom || a.prenom));
+      if (apps.length === 0) return result;
+      const orClauses: string[] = [];
+      for (const a of apps) {
+        const nom = String(a.nom || '').trim();
+        const prenom = String(a.prenom || '').trim();
+        if (nom) orClauses.push(`libelle.ilike.%${nom}%`);
+        if (prenom) orClauses.push(`libelle.ilike.%${prenom}%`);
+      }
+      if (!orClauses.length) return result;
+      const { data, error } = await supabase
+        .from('transactions_bancaires')
+        .select('id,date_operation,libelle,montant,banque')
+        .gt('montant', 0)
+        .or(orClauses.join(','))
+        .order('date_operation', { ascending: false })
+        .limit(2000);
+      if (error || !data) return result;
+      for (const a of apps) {
+        const nom = String(a.nom || '').toLowerCase();
+        const prenom = String(a.prenom || '').toLowerCase();
+        const matches = (data as any[]).filter((tx) => {
+          const lib = String(tx.libelle || '').toLowerCase();
+          return (nom && lib.includes(nom)) || (prenom && lib.includes(prenom));
+        });
+        if (matches.length > 0) result[a.id] = matches.slice(0, 5);
+      }
+      return result;
+    },
+    enabled: !!session?.id && open && apprenantsInSession.length > 0,
+  });
+
   // Charger les formateurs de cette session
   const { data: formateursInSession = [], isLoading: loadingFormateurs, refetch: refetchFormateurs } = useQuery({
     queryKey: ['session-formateurs', session?.id],
@@ -3827,9 +3871,30 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                    {restantDu > 0 && <span className="text-orange-600"> (reste {restantDu.toFixed(2)} €)</span>}
                                  </span>
                                </div>
-                             ) : facture ? (
-                               <div className="mt-1.5 text-sm text-muted-foreground italic">Aucun paiement enregistré</div>
-                             ) : null}
+                              ) : facture ? (
+                                (() => {
+                                  const vmatches: any[] = (virementsByApprenantId as any)?.[a.id] || [];
+                                  if (vmatches.length === 0) {
+                                    return <div className="mt-1.5 text-sm text-muted-foreground italic">Aucun paiement enregistré</div>;
+                                  }
+                                  return (
+                                    <div className="mt-1.5 flex flex-wrap gap-1.5 items-center">
+                                      <span className="text-xs font-medium text-blue-700">Virements reçus correspondants :</span>
+                                      {vmatches.map((tx) => (
+                                        <span
+                                          key={tx.id}
+                                          className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-blue-50 border border-blue-200 text-blue-900 text-xs"
+                                          title={tx.libelle}
+                                        >
+                                          <span className="font-semibold">{Number(tx.montant).toFixed(2)} €</span>
+                                          <span>•</span>
+                                          <span>{formatDateShortFR(tx.date_operation)}</span>
+                                        </span>
+                                      ))}
+                                    </div>
+                                  );
+                                })()
+                              ) : null}
 
                              {/* Ligne 3 : financeur */}
                              <div className="text-xs text-muted-foreground truncate mt-1">
