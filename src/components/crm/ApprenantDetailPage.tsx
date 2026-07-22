@@ -899,6 +899,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
           {activeTab === "rapport-activite" && <ApprenantActivityReport lockedApprenantId={apprenant.id} />}
           {activeTab === "releve-heures-hors" && <ReleveHeuresHorsFormationTab apprenant={apprenant} />}
           {activeTab === "diagnostic-acces" && <AccessDiagnosticTab apprenant={apprenant} />}
+          {activeTab === "sessions" && <SessionsTab apprenant={apprenant} />}
           {activeTab === "vue-apprenant" && (
             <div className="border rounded-xl overflow-hidden bg-background">
               <div className="p-3 bg-muted/50 border-b flex items-center gap-2">
