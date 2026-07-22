@@ -1504,18 +1504,21 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
           <p className="text-sm text-slate-500">
             {emargementFCStatus === "checking"
               ? "Vérification de votre émargement…"
-              : (() => {
-                  const today = (() => {
-                    const d = new Date();
-                    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-                  })();
-                  const isPast = emargementDate && emargementDate !== today;
-                  return isPast
-                    ? `Avant d'accéder à votre ${formationLabel}, merci de régulariser une signature manquante d'un créneau passé.`
-                    : `Avant d'accéder à votre ${formationLabel}, merci de signer la feuille d'émargement de ce créneau.`;
-                })()}
+              : isFCLastDay
+                ? `⚠️ Dernier jour de votre ${formationLabel}. Il vous reste une ou plusieurs signatures manquantes : vous devez toutes les régulariser avant d'accéder à la plateforme.`
+                : (() => {
+                    const today = (() => {
+                      const d = new Date();
+                      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+                    })();
+                    const isPast = emargementDate && emargementDate !== today;
+                    return isPast
+                      ? `Avant d'accéder à votre ${formationLabel}, merci de régulariser une signature manquante d'un créneau passé.`
+                      : `Avant d'accéder à votre ${formationLabel}, merci de signer la feuille d'émargement de ce créneau.`;
+                  })()}
           </p>
         </div>
+
         <Button variant="outline" size="sm" onClick={handleLogout}>
           <LogOut className="w-3.5 h-3.5 mr-1" />
           Se déconnecter
