@@ -249,13 +249,22 @@ const getExerciseById = (data: ModuleData | null | undefined, exerciseId: number
 const forceTaxiSecurityFromVtc = (taxiData: ModuleData, vtcSecurityExercise: ExerciceItem | null): ModuleData => {
   if (Number(taxiData.id) !== BILAN_TAXI_MODULE_ID || !vtcSecurityExercise) return taxiData;
 
+  // Ne jamais écraser une matière TAXI déjà enregistrée en base : si l'admin a
+  // modifié/supprimé des réponses directement dans TAXI, ces données gagnent.
+  const existingSecurity = taxiData.exercices.find(
+    (exercise) => Number(exercise.id) === SECURITE_ROUTIERE_BILAN_ID,
+  );
+  if (existingSecurity?.questions && existingSecurity.questions.length > 0) return taxiData;
+
   return {
     ...taxiData,
-    exercices: taxiData.exercices.map((exercise) =>
-      Number(exercise.id) === SECURITE_ROUTIERE_BILAN_ID
-        ? JSON.parse(JSON.stringify(vtcSecurityExercise))
-        : exercise,
-    ),
+    exercices: existingSecurity
+      ? taxiData.exercices.map((exercise) =>
+          Number(exercise.id) === SECURITE_ROUTIERE_BILAN_ID
+            ? JSON.parse(JSON.stringify(vtcSecurityExercise))
+            : exercise,
+        )
+      : [...taxiData.exercices, JSON.parse(JSON.stringify(vtcSecurityExercise))],
   };
 };
 
@@ -3107,7 +3116,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           }
         }
 
-        if (shouldSyncVtcBilanFromCours(module.id) && initialData.exercices.length > 0) {
+        // Ancien comportement dangereux : si le module source était plus récent,
+        // il remplaçait le Bilan déjà modifié par l'admin quelques minutes après.
+        // Désormais, le module courant en base est toujours prioritaire ; la
+        // source ne sert qu'au tout premier backfill quand aucun état n'existe.
+        if (!latestState?.module_data && shouldSyncVtcBilanFromCours(module.id) && initialData.exercices.length > 0) {
           try {
             const { data: sourceState } = await supabase
               .from("module_editor_state")
@@ -3118,8 +3131,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               .maybeSingle();
 
             const sourceMd = sourceState?.module_data as unknown as ModuleData | undefined;
-            const sourceIsNewerThanCurrent = toSafeTimestamp(sourceState?.updated_at) > toSafeTimestamp(latestState?.updated_at);
-            if (sourceMd?.exercices && Array.isArray(sourceMd.exercices) && (!latestState?.module_data || sourceIsNewerThanCurrent)) {
+            if (sourceMd?.exercices && Array.isArray(sourceMd.exercices)) {
               if (shouldSkipFetchedQuestionState(sourceState.updated_at, fetchStartedAt, "initial generated bilan source sync")) {
                 setEditorStateHydrated(true);
                 return;
@@ -3381,30 +3393,6 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     const refetchModuleFromDb = async () => {
       try {
         const fetchStartedAt = Date.now();
-        if (shouldSyncVtcBilanFromCours(module.id)) {
-          const { data: sourceState } = await supabase
-            .from("module_editor_state")
-            .select("module_data, deleted_exercices")
-            .eq("module_id", BILAN_VTC_SOURCE_MODULE_ID)
-            .order("updated_at", { ascending: false })
-            .limit(1)
-            .maybeSingle();
-          const sourceMd = sourceState?.module_data as unknown as ModuleData | undefined;
-          if (sourceMd?.exercices && Array.isArray(sourceMd.exercices)) {
-            const sourceInitial = JSON.parse(JSON.stringify(VTC_COURS_DATA)) as ModuleData;
-            const deletedSourceIds = Array.isArray(sourceState?.deleted_exercices)
-              ? (sourceState.deleted_exercices as any[]).map((e: any) => Number(e?.id)).filter((n) => !Number.isNaN(n))
-              : [];
-            const sourceExercices = mergeSourceExercices(sourceMd.exercices, sourceInitial.exercices, deletedSourceIds);
-            setModuleData((prev) => getSyncedBilanVtcModuleData(prev, sourceExercices, Number(module.id) === 4));
-            setDeletedCours([]);
-            setDeletedExercices([]);
-            setLoadedModuleEditorState(true);
-            setTrainerOverridesReapplyKey((k) => k + 1);
-            return;
-          }
-        }
-
         const { data, error } = await supabase
           .from("module_editor_state")
           .select("module_data, deleted_cours, deleted_exercices, updated_at")
@@ -3449,6 +3437,32 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           setLastSyncAt(new Date());
           // Re-apply fournisseur overrides après reload DB (sinon perdu par le merge admin)
           setTrainerOverridesReapplyKey((k) => k + 1);
+          return;
+        }
+
+        // Fallback seulement s'il n'existe PAS encore d'état propre au module.
+        // Ne jamais l'utiliser pour écraser des corrections admin existantes.
+        if (shouldSyncVtcBilanFromCours(module.id)) {
+          const { data: sourceState } = await supabase
+            .from("module_editor_state")
+            .select("module_data, deleted_exercices")
+            .eq("module_id", BILAN_VTC_SOURCE_MODULE_ID)
+            .order("updated_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          const sourceMd = sourceState?.module_data as unknown as ModuleData | undefined;
+          if (sourceMd?.exercices && Array.isArray(sourceMd.exercices)) {
+            const sourceInitial = JSON.parse(JSON.stringify(VTC_COURS_DATA)) as ModuleData;
+            const deletedSourceIds = Array.isArray(sourceState?.deleted_exercices)
+              ? (sourceState.deleted_exercices as any[]).map((e: any) => Number(e?.id)).filter((n) => !Number.isNaN(n))
+              : [];
+            const sourceExercices = mergeSourceExercices(sourceMd.exercices, sourceInitial.exercices, deletedSourceIds);
+            setModuleData((prev) => getSyncedBilanVtcModuleData(prev, sourceExercices, Number(module.id) === 4));
+            setDeletedCours([]);
+            setDeletedExercices([]);
+            setLoadedModuleEditorState(true);
+            setTrainerOverridesReapplyKey((k) => k + 1);
+          }
         }
       } catch (err) {
         console.error("[Realtime] Error refetching module data:", err);
