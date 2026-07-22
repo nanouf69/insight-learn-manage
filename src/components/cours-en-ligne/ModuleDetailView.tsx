@@ -3848,6 +3848,15 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         console.error("[ModuleNotif] diff/publish error:", e);
       }
 
+      // 📝 Journal d'audit : trace question par question chaque changement admin
+      void logAdminEditsDiff(
+        dataToSave.module_id,
+        module.nom,
+        previousModuleData,
+        dataToSave.module_data,
+        "ModuleDetailView.performDbSave",
+      );
+
       // Sync shared exercises to ALL sibling modules (handles edits, adds, deletes)
       await syncSharedExercisesToSiblingModules(
         dataToSave.module_id,
