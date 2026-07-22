@@ -179,6 +179,60 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
   const [loading, setLoading] = useState(false);
   const [period, setPeriod] = useState<"7" | "30" | "90" | "all">("30");
   const printRef = useRef<HTMLDivElement>(null);
+  const [editingConn, setEditingConn] = useState<{ id: string; started_at: string; ended_at: string } | null>(null);
+  const [savingConn, setSavingConn] = useState(false);
+
+  // Convert an ISO/datetime string to the `YYYY-MM-DDTHH:mm` format
+  // required by <input type="datetime-local"> (local timezone).
+  const toLocalInput = (iso: string | null | undefined): string => {
+    if (!iso) return "";
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return "";
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  };
+
+  const openEditConn = (c: Connexion) => {
+    setEditingConn({
+      id: c.id,
+      started_at: toLocalInput(c.started_at),
+      ended_at: toLocalInput(c.ended_at || c.last_seen_at),
+    });
+  };
+
+  const saveEditConn = async () => {
+    if (!editingConn) return;
+    if (!editingConn.started_at) {
+      toast({ title: "Date de début requise", variant: "destructive" });
+      return;
+    }
+    const startedISO = new Date(editingConn.started_at).toISOString();
+    const endedISO = editingConn.ended_at ? new Date(editingConn.ended_at).toISOString() : null;
+    if (endedISO && new Date(endedISO) <= new Date(startedISO)) {
+      toast({ title: "La fin doit être après le début", variant: "destructive" });
+      return;
+    }
+    setSavingConn(true);
+    const patch: any = { started_at: startedISO, ended_at: endedISO };
+    if (endedISO) patch.last_seen_at = endedISO;
+    const { error } = await supabase
+      .from("apprenant_connexions" as any)
+      .update(patch)
+      .eq("id", editingConn.id);
+    setSavingConn(false);
+    if (error) {
+      toast({ title: "Erreur", description: error.message, variant: "destructive" });
+      return;
+    }
+    setConnexions((prev) => prev.map((c) =>
+      c.id === editingConn.id
+        ? { ...c, started_at: startedISO, ended_at: endedISO, last_seen_at: endedISO || c.last_seen_at }
+        : c,
+    ));
+    setEditingConn(null);
+    toast({ title: "Connexion mise à jour" });
+  };
+
 
   // Load apprenants list
   useEffect(() => {
