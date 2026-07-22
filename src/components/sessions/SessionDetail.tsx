@@ -1730,7 +1730,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       if (!adresse?.trim()) fields.push('adresse');
       if (!cp?.trim()) fields.push('code postal');
       if (!ville?.trim()) fields.push('ville');
-      if (!tel?.trim()) fields.push('téléphone');
+      // Téléphone non bloquant pour la génération d'attestation
       if (!email?.trim()) fields.push('email');
       if (fields.length) {
         missing.push(`${a.prenom || ''} ${a.nom || ''} → ${fields.join(', ')}`);
