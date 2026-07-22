@@ -1473,7 +1473,24 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     !isFC &&
     isPresentielType(apprenant?.type_apprenant, apprenant?.formation_choisie, apprenant?.creneau_horaire);
 
-  const needsEmargement = (isFC || isPres) && emargementFCStatus !== "signed" && emargementFCStatus !== "skipped" && emargementFCStatus !== "n/a";
+  // Dernier jour de FC : on n'autorise PAS le bypass "skipped" — toutes les
+  // signatures doivent être régularisées avant d'accéder aux cours.
+  const isFCLastDay = (() => {
+    if (!isFC) return false;
+    const endStr = apprenant?.date_fin_formation;
+    if (!endStr) return false;
+    const end = new Date(endStr.slice(0, 10) + "T00:00:00");
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return today.getTime() >= end.getTime();
+  })();
+
+  const needsEmargement =
+    (isFC || isPres) &&
+    emargementFCStatus !== "signed" &&
+    emargementFCStatus !== "n/a" &&
+    (isFCLastDay ? emargementFCStatus !== "checking" : emargementFCStatus !== "skipped");
+
 
   if (needsEmargement) {
     const formationLabel = isPres ? "formation en présentiel" : "formation continue";
