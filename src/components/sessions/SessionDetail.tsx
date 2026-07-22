@@ -764,7 +764,10 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
             ville,
             auth_user_id,
             date_debut_cours_en_ligne,
-            date_fin_cours_en_ligne
+            date_fin_cours_en_ligne,
+            societe_nom,
+            societe_siret,
+            organisme_financeur
           )
         `)
         .eq('session_id', session.id);
