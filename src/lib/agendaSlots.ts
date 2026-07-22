@@ -316,6 +316,9 @@ export const getExpectedEmargements = async (params: {
     isEveningText(params.creneauHoraire) ||
     isEveningText(params.typeApprenant);
 
+  let fcStart: Date | null = null;
+  let fcEnd: Date | null = null;
+
   if (apprenantId) {
     const startISO = formatISO(effectiveStart);
     const endISO = formatISO(end);
@@ -323,19 +326,29 @@ export const getExpectedEmargements = async (params: {
       .from("session_apprenants")
       .select("sessions:session_id(nom, creneaux, date_debut, date_fin)")
       .eq("apprenant_id", apprenantId);
-    const matchingSession = ((sessionRows as any[]) || []).map((row) => row?.sessions).find((s) => {
-      if (!s) return false;
+    const sessions = ((sessionRows as any[]) || []).map((row) => row?.sessions).filter(Boolean);
+    const matchingSession = sessions.find((s) => {
       const debut = String(s.date_debut || "").slice(0, 10);
       const fin = String(s.date_fin || debut).slice(0, 10);
       return debut <= endISO && fin >= startISO;
-    });
+    }) || sessions[sessions.length - 1];
     if (matchingSession && isEveningSession(matchingSession)) wantEvening = true;
+    // Pour la Formation Continue : borner strictement aux dates de la session
+    // (2 jours = 4 signatures). Ne pas déborder sur d'autres jours.
+    if (mode === "fc" && matchingSession?.date_debut) {
+      const sd = new Date(String(matchingSession.date_debut).slice(0, 10) + "T00:00:00");
+      const sf = new Date(String(matchingSession.date_fin || matchingSession.date_debut).slice(0, 10) + "T00:00:00");
+      if (!isNaN(sd.getTime())) fcStart = sd;
+      if (!isNaN(sf.getTime())) fcEnd = sf;
+    }
   }
 
   if (mode === "fc") {
+    const rangeStart = fcStart ?? effectiveStart;
+    const rangeEnd = fcEnd ?? end;
     const out: Array<{ date: string; creneau: CreneauKey }> = [];
-    const cur = new Date(effectiveStart);
-    while (cur <= end) {
+    const cur = new Date(rangeStart);
+    while (cur <= rangeEnd) {
       const dow = todayDow(cur);
       if (dow <= 4) {
         const iso = formatISO(cur);
@@ -348,6 +361,7 @@ export const getExpectedEmargements = async (params: {
     }
     return out;
   }
+
 
   const out: Array<{ date: string; creneau: CreneauKey }> = [];
   const cur2 = new Date(effectiveStart);
