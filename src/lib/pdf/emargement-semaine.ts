@@ -19,9 +19,13 @@ const buildDemiLabels = (isFCVtc: boolean): Record<string, string> => ({
 
 const isFormationContinueVTC = (type?: string): boolean => {
   if (!type) return false;
-  const t = type.toLowerCase();
-  return t.includes('continue') && t.includes('vtc');
+  const t = type.toLowerCase().replace(/[_\s]+/g, '-');
+  // Match: continue-vtc, fc-vtc, formation-continue-vtc, vtc-continue, vtc-fc…
+  const hasVtc = /(^|[-])vtc([-]|$)/.test(t);
+  const hasFC = t.includes('continue') || /(^|[-])fc([-]|$)/.test(t);
+  return hasVtc && hasFC;
 };
+
 
 const DEMI_ORDER = ['matin', 'apres_midi', 'soir', 'soir_1', 'soir_2'];
 
