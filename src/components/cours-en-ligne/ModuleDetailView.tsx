@@ -2094,9 +2094,26 @@ function ExerciceCard({
   const [fullscreenOpen, setFullscreenOpen] = useState(false);
   const [editingQId, setEditingQId] = useState<number | null>(null);
 
-  const hasQuestions = item.questions && item.questions.length > 0;
+  // Dé-doublonnage défensif par id (évite tout mélange d'affichage entre questions
+  // partageant accidentellement le même id — la 1re occurrence gagne).
+  const safeQuestions = useMemo(() => {
+    if (!item.questions) return [] as ExerciceQuestion[];
+    const seen = new Set<number>();
+    const out: ExerciceQuestion[] = [];
+    for (const q of item.questions) {
+      const key = Number(q.id);
+      if (seen.has(key)) {
+        console.warn(`[ModuleDetailView] Doublon d'id question détecté (${key}) dans exo ${item.id} — ignoré`);
+        continue;
+      }
+      seen.add(key);
+      out.push(q);
+    }
+    return out;
+  }, [item.questions, item.id]);
+  const hasQuestions = safeQuestions.length > 0;
   const getOverrideWarning = (questionId: number) => overrideWarnings?.get(`${item.id}-${questionId}`);
-  const overrideWarningCount = (item.questions ?? []).filter(q => getOverrideWarning(q.id)).length;
+  const overrideWarningCount = safeQuestions.filter(q => getOverrideWarning(q.id)).length;
 
   const saveQuestion = (updated: ExerciceQuestion) => {
     if (!item.questions) return;
@@ -2213,8 +2230,9 @@ function ExerciceCard({
         {/* Questions list */}
         {expanded && hasQuestions && (
           <div className="space-y-2 pt-2 border-t">
-            {item.questions!.map((q, qi) => (
-              <div key={q.id}>
+            {safeQuestions.map((q, qi) => (
+              <div key={`${q.id}-${qi}`}>
+
                 {editingQId === q.id ? (
                   <QuestionEditor
                     question={q}
@@ -2259,7 +2277,7 @@ function ExerciceCard({
                       <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => moveQuestion(q.id, "up")} disabled={qi === 0} title="Monter">
                         <ArrowUp className="w-3 h-3" />
                       </Button>
-                      <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => moveQuestion(q.id, "down")} disabled={qi === item.questions!.length - 1} title="Descendre">
+                      <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => moveQuestion(q.id, "down")} disabled={qi === safeQuestions.length - 1} title="Descendre">
                         <ArrowDown className="w-3 h-3" />
                       </Button>
                     </div>
@@ -2309,8 +2327,9 @@ function ExerciceCard({
             </div>
             {hasQuestions ? (
               <div className="space-y-3">
-                {item.questions!.map((q, qi) => (
-                  <div key={q.id}>
+                {safeQuestions.map((q, qi) => (
+                  <div key={`${q.id}-${qi}`}>
+
                     {editingQId === q.id ? (
                       <QuestionEditor
                         question={q}
@@ -2355,7 +2374,7 @@ function ExerciceCard({
                           <Button size="sm" variant="outline" className="h-7 w-7 p-0" onClick={() => moveQuestion(q.id, "up")} disabled={qi === 0} title="Monter">
                             <ArrowUp className="w-3 h-3" />
                           </Button>
-                          <Button size="sm" variant="outline" className="h-7 w-7 p-0" onClick={() => moveQuestion(q.id, "down")} disabled={qi === item.questions!.length - 1} title="Descendre">
+                          <Button size="sm" variant="outline" className="h-7 w-7 p-0" onClick={() => moveQuestion(q.id, "down")} disabled={qi === safeQuestions.length - 1} title="Descendre">
                             <ArrowDown className="w-3 h-3" />
                           </Button>
                         </div>
