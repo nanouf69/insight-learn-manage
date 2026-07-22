@@ -197,9 +197,8 @@ const BILAN_EXAMEN_GESTION_EXERCISE_IDS: Record<number, number> = {
   [BILAN_EXAMEN_VTC_MODULE_ID]: 501,
   [BILAN_EXAMEN_TAXI_MODULE_ID]: 601,
 };
-// Exercices Bilan Examen à toujours re-synchroniser depuis la source (questions
-// + images) — évite les dérives des snapshots DB (ex. images de panneaux non
-// alignées avec les énoncés côté apprenant).
+// Anciens IDs concernés par la correction d'images Bilan Examen.
+// Important : la base reste la source prioritaire des corrections admin.
 const BILAN_EXAMEN_FORCE_FROM_SOURCE_IDS: Record<number, number[]> = {
   [BILAN_EXAMEN_VTC_MODULE_ID]: [500, 501, 502, 503, 504, 505, 506],
   [BILAN_EXAMEN_TAXI_MODULE_ID]: [600, 601, 602, 603, 604, 605, 606],
@@ -285,14 +284,41 @@ const forceBilanExamGestionFromSource = (moduleId: number | string, loadedData: 
   const forcedIds = BILAN_EXAMEN_FORCE_FROM_SOURCE_IDS[Number(moduleId)];
   if (!forcedIds || forcedIds.length === 0) return loadedData;
 
-  let nextExercices = [...loadedData.exercices];
+  const nextExercices = [...loadedData.exercices];
   for (const forcedId of forcedIds) {
     const sourceIndex = sourceData.exercices.findIndex((exercise) => Number(exercise.id) === forcedId);
     const sourceExercise = sourceData.exercices[sourceIndex];
     if (!sourceExercise) continue;
-    nextExercices = nextExercices.filter((exercise) => Number(exercise.id) !== forcedId);
-    const insertAt = Math.max(0, Math.min(sourceIndex, nextExercices.length));
-    nextExercices.splice(insertAt, 0, JSON.parse(JSON.stringify(sourceExercise)));
+
+    const loadedIndex = nextExercices.findIndex((exercise) => Number(exercise.id) === forcedId);
+    if (loadedIndex === -1) {
+      const insertAt = Math.max(0, Math.min(sourceIndex, nextExercices.length));
+      nextExercices.splice(insertAt, 0, JSON.parse(JSON.stringify(sourceExercise)));
+      continue;
+    }
+
+    const loadedExercise = nextExercices[loadedIndex];
+    const sourceQuestionsById = new Map(
+      (sourceExercise.questions ?? []).map((question) => [Number(question.id), question]),
+    );
+
+    const mergedQuestions = (loadedExercise.questions ?? []).map((question) => {
+      const sourceQuestion = sourceQuestionsById.get(Number(question.id));
+      if (!sourceQuestion) return question;
+
+      const patched: ExerciceQuestion = { ...question };
+      // On complète seulement les anciennes lignes qui n'ont jamais eu d'image.
+      // image:null = suppression volontaire admin, à ne jamais restaurer.
+      if (!("image" in question) || (question as any).image === undefined) {
+        if ((sourceQuestion as any).image) patched.image = (sourceQuestion as any).image;
+      }
+      if (!("imageSize" in question) || (question as any).imageSize === undefined) {
+        if ((sourceQuestion as any).imageSize) patched.imageSize = (sourceQuestion as any).imageSize;
+      }
+      return patched;
+    });
+
+    nextExercices[loadedIndex] = { ...loadedExercise, questions: mergedQuestions };
   }
 
   return { ...loadedData, exercices: nextExercices };
@@ -2755,8 +2781,6 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     let preserved = false;
     const previousExerciseMap = new Map((previous.exercices ?? []).map((exo) => [Number(exo.id), exo]));
     const incomingExercices = (incoming.exercices ?? []).map((incomingExo) => {
-      if (isBilanExamGestionExercise(module.id, incomingExo.id)) return incomingExo;
-
       const previousExo = previousExerciseMap.get(Number(incomingExo.id));
       if (!previousExo?.questions || !incomingExo.questions) return incomingExo;
 
@@ -3962,7 +3986,6 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       exercices: prev.exercices.map(e => {
         if (e.id !== exerciceId) return e;
         // Stamp _editedAt on questions that actually changed (for admin vs fournisseur conflict resolution)
-          const shouldKeepSourcePriority = isBilanExamGestionExercise(module.id, exerciceId);
           const stampedQuestions = questions.map(q => {
           const prevQ = e.questions?.find(pq => pq.id === q.id);
           const changed = !prevQ ||
@@ -3971,7 +3994,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             (prevQ as any).image !== (q as any).image;
           // Mark as manually_edited when admin changes the question, so the cross-module
           // propagation system never overwrites it. Once true, the flag is preserved.
-            if (changed && !shouldKeepSourcePriority) return { ...q, _editedAt: now, manually_edited: true } as any;
+            if (changed) return { ...q, _editedAt: now, manually_edited: true } as any;
           return (q as any)._editedAt ? q : { ...q };
         });
         const updated: any = { ...e, questions: stampedQuestions };

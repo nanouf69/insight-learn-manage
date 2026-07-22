@@ -9,9 +9,9 @@
  *   Problème: le fingerprint inclut les shared overrides (localStorage), donc
  *   il change dès qu'un admin modifie un autre module → reset → perte des modifs.
  *
- * Après: reset uniquement quand il y a des doublons réels (corruption de données).
- *   Le merge normal (mergeSourceExercices) gère les changements de source en
- *   préservant les modifications admin.
+ * Règle actuelle: aucun reset destructif vers la source.
+ * Même en cas de doublons/anciens IDs, on garde la base admin prioritaire afin
+ * de ne jamais restaurer d'anciennes questions/réponses.
  */
 
 export const GENERATED_BILAN_MODULE_IDS = new Set([4, 9, 27, 29, 81, 82]);
@@ -76,18 +76,10 @@ export function shouldForceBilanReset(
   moduleId: number | string,
   savedData: BilanModuleData | null | undefined,
 ): boolean {
-  if (!GENERATED_BILAN_MODULE_IDS.has(Number(moduleId))) return false;
-  if (hasDuplicateGeneratedBilanQuestions(savedData)) return true;
+  void moduleId;
+  void savedData;
 
-  // Module 9 (Bilan TAXI): anciens IDs d'exercices (200..206) doivent être
-  // remappés vers les nouveaux IDs alignés sur le bilan VTC (100..105) pour
-  // que les modifs admin se propagent automatiquement entre VTC et TAXI.
-  if (Number(moduleId) === 9 && savedData?.exercices) {
-    const hasLegacyTaxiIds = savedData.exercices.some((e) =>
-      [200, 201, 202, 205, 206].includes(Number(e.id)),
-    );
-    if (hasLegacyTaxiIds) return true;
-  }
-
+  // Interdiction dure: ne jamais remplacer un module édité par les données source.
+  // Les corrections admin doivent rester la source prioritaire.
   return false;
 }
