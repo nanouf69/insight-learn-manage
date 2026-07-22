@@ -691,7 +691,7 @@ export default function RemboursementFCViewer({ apprenantId, completed, onComple
                       <div className="font-medium">{a.titre}</div>
                       <div className="text-muted-foreground">{a.nom_fichier}</div>
                     </div>
-                    <Button size="sm" variant="outline" onClick={() => window.open(a.url, "_blank", "noopener,noreferrer")}>
+                    <Button size="sm" variant="outline" onClick={() => handleOpenAttestation(a.url)}>
                       <Download className="h-3.5 w-3.5 mr-1" />
                       Télécharger
                     </Button>
