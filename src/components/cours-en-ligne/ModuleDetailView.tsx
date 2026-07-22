@@ -2710,6 +2710,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   const moduleEditorStorageKey = `module-editor-state:${module.id}`;
   const skipInitialAutosaveRef = useRef(true);
   const saveErrorShownRef = useRef(false);
+  const lastChangeToastAtRef = useRef<number>(0);
   const dbSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isSavingToDbRef = useRef(false);
   const dbSaveVersionRef = useRef(0);
