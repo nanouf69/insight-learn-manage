@@ -938,7 +938,23 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
             .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
           return toks.some((t) => lib.includes(t));
         });
-        if (matches.length > 0) result[a.id] = matches.slice(0, 5);
+        // Dédoublonnage : même date + même montant + même libellé + même banque
+        // => on considère qu'il s'agit du même virement (doublon d'import).
+        // On garde toutes les lignes distinctes sur au moins un de ces critères.
+        const seen = new Set<string>();
+        const deduped: any[] = [];
+        for (const tx of matches) {
+          const key = [
+            tx.date_operation || '',
+            Number(tx.montant || 0).toFixed(2),
+            String(tx.libelle || '').trim().toLowerCase(),
+            String(tx.banque || '').trim().toLowerCase(),
+          ].join('|');
+          if (seen.has(key)) continue;
+          seen.add(key);
+          deduped.push(tx);
+        }
+        if (deduped.length > 0) result[a.id] = deduped.slice(0, 5);
       }
       return result;
     },
