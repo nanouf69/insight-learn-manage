@@ -764,7 +764,10 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
             ville,
             auth_user_id,
             date_debut_cours_en_ligne,
-            date_fin_cours_en_ligne
+            date_fin_cours_en_ligne,
+            societe_nom,
+            societe_siret,
+            organisme_financeur
           )
         `)
         .eq('session_id', session.id);
@@ -879,6 +882,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       'session-virements-matches',
       session?.id,
       apprenantsInSession.map((sa: any) => sa.apprenant?.id).join(','),
+      Object.keys(financeursFCMap as Record<string, any>).join(','),
     ],
     queryFn: async () => {
       const result: Record<string, any[]> = {};
@@ -886,28 +890,53 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
         .map((sa: any) => sa.apprenant)
         .filter((a: any) => a && (a.nom || a.prenom));
       if (apps.length === 0) return result;
-      const orClauses: string[] = [];
+
+      // Construit pour chaque apprenant la liste des "tokens" à chercher :
+      // nom, prénom, raison sociale du financeur, société de l'apprenant,
+      // local-part de l'email de facturation. On ignore les tokens < 4 chars.
+      const STOP = new Set(['sarl','sasu','eurl','sas','sci','auto','entreprise','societe','société','mr','mme','the','and','les','des','pour']);
+      const tokenize = (s: string) =>
+        String(s || '')
+          .toLowerCase()
+          .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+          .split(/[^a-z0-9]+/)
+          .filter((t) => t.length >= 4 && !STOP.has(t));
+
+      const tokensByApp: Record<string, string[]> = {};
+      const allTokens = new Set<string>();
       for (const a of apps) {
-        const nom = String(a.nom || '').trim();
-        const prenom = String(a.prenom || '').trim();
-        if (nom) orClauses.push(`libelle.ilike.%${nom}%`);
-        if (prenom) orClauses.push(`libelle.ilike.%${prenom}%`);
+        const fin = (financeursFCMap as Record<string, any>)[a.id] || {};
+        const emailLocal = String(fin.email_facturation || a.email || '').split('@')[0] || '';
+        const raw = [
+          a.nom, a.prenom,
+          a.societe_nom, a.organisme_financeur,
+          fin.raison_sociale, fin.organisme_financeur, fin.contact_nom,
+          emailLocal,
+        ].filter(Boolean).join(' ');
+        const toks = Array.from(new Set(tokenize(raw)));
+        tokensByApp[a.id] = toks;
+        toks.forEach((t) => allTokens.add(t));
       }
-      if (!orClauses.length) return result;
+
+      if (allTokens.size === 0) return result;
+      const orClauses = Array.from(allTokens).map((t) => `libelle.ilike.%${t}%`);
       const { data, error } = await supabase
         .from('transactions_bancaires')
         .select('id,date_operation,libelle,montant,banque')
         .gt('montant', 0)
         .or(orClauses.join(','))
         .order('date_operation', { ascending: false })
-        .limit(2000);
+        .limit(3000);
       if (error || !data) return result;
+
       for (const a of apps) {
-        const nom = String(a.nom || '').toLowerCase();
-        const prenom = String(a.prenom || '').toLowerCase();
+        const toks = tokensByApp[a.id] || [];
+        if (!toks.length) continue;
         const matches = (data as any[]).filter((tx) => {
-          const lib = String(tx.libelle || '').toLowerCase();
-          return (nom && lib.includes(nom)) || (prenom && lib.includes(prenom));
+          const lib = String(tx.libelle || '')
+            .toLowerCase()
+            .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+          return toks.some((t) => lib.includes(t));
         });
         if (matches.length > 0) result[a.id] = matches.slice(0, 5);
       }
