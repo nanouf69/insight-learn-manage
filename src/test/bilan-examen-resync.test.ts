@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect } from "vitest";
 
 import { BILAN_EXAMEN_VTC } from "@/components/cours-en-ligne/bilan-examen-vtc-data";
