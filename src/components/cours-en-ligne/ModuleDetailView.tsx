@@ -197,6 +197,13 @@ const BILAN_EXAMEN_GESTION_EXERCISE_IDS: Record<number, number> = {
   [BILAN_EXAMEN_VTC_MODULE_ID]: 501,
   [BILAN_EXAMEN_TAXI_MODULE_ID]: 601,
 };
+// Exercices Bilan Examen à toujours re-synchroniser depuis la source (questions
+// + images) — évite les dérives des snapshots DB (ex. images de panneaux non
+// alignées avec les énoncés côté apprenant).
+const BILAN_EXAMEN_FORCE_FROM_SOURCE_IDS: Record<number, number[]> = {
+  [BILAN_EXAMEN_VTC_MODULE_ID]: [500, 501, 502, 503, 504, 505, 506],
+  [BILAN_EXAMEN_TAXI_MODULE_ID]: [600, 601, 602, 603, 604, 605, 606],
+};
 
 const TRAINER_QUIZ_IDS_BY_MODULE_ID: Record<number, string[]> = {
   7: ["connaissance-ville"],
@@ -275,16 +282,18 @@ const isBilanExamGestionExercise = (moduleId: number | string, exerciseId: numbe
   BILAN_EXAMEN_GESTION_EXERCISE_IDS[Number(moduleId)] === Number(exerciseId);
 
 const forceBilanExamGestionFromSource = (moduleId: number | string, loadedData: ModuleData, sourceData: ModuleData): ModuleData => {
-  const gestionExerciseId = BILAN_EXAMEN_GESTION_EXERCISE_IDS[Number(moduleId)];
-  if (!gestionExerciseId) return loadedData;
+  const forcedIds = BILAN_EXAMEN_FORCE_FROM_SOURCE_IDS[Number(moduleId)];
+  if (!forcedIds || forcedIds.length === 0) return loadedData;
 
-  const sourceGestionIndex = sourceData.exercices.findIndex((exercise) => Number(exercise.id) === gestionExerciseId);
-  const sourceGestion = sourceData.exercices[sourceGestionIndex];
-  if (!sourceGestion) return loadedData;
-
-  const nextExercices = loadedData.exercices.filter((exercise) => Number(exercise.id) !== gestionExerciseId);
-  const insertAt = Math.max(0, Math.min(sourceGestionIndex, nextExercices.length));
-  nextExercices.splice(insertAt, 0, JSON.parse(JSON.stringify(sourceGestion)));
+  let nextExercices = [...loadedData.exercices];
+  for (const forcedId of forcedIds) {
+    const sourceIndex = sourceData.exercices.findIndex((exercise) => Number(exercise.id) === forcedId);
+    const sourceExercise = sourceData.exercices[sourceIndex];
+    if (!sourceExercise) continue;
+    nextExercices = nextExercices.filter((exercise) => Number(exercise.id) !== forcedId);
+    const insertAt = Math.max(0, Math.min(sourceIndex, nextExercices.length));
+    nextExercices.splice(insertAt, 0, JSON.parse(JSON.stringify(sourceExercise)));
+  }
 
   return { ...loadedData, exercices: nextExercices };
 };
