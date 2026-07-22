@@ -1982,7 +1982,7 @@ function QuestionEditor({
         <div className="flex gap-2">
           <Button size="sm" variant="ghost" onClick={onCancel}><X className="w-4 h-4" /></Button>
           <Button size="sm" variant="destructive" onClick={onDelete}><Trash2 className="w-3 h-3" /></Button>
-          <Button size="sm" onClick={() => onSave({ ...question, enonce, choix, image: image ?? undefined, imageSize, _editedAt: new Date().toISOString() } as ExerciceQuestion)} className="gap-1">
+          <Button size="sm" onClick={() => onSave({ ...question, enonce, choix, image: image as any, imageSize, _editedAt: new Date().toISOString() } as ExerciceQuestion)} className="gap-1">
             <Save className="w-3 h-3" /> Enregistrer
           </Button>
         </div>
@@ -1997,14 +1997,15 @@ function QuestionEditor({
         imageSize={imageSize}
         onImageSizeChange={(sz) => {
           setImageSize(sz);
-          onDraftSave({ ...question, enonce, choix, image: image ?? undefined, imageSize: sz, _editedAt: new Date().toISOString() } as ExerciceQuestion);
+          onDraftSave({ ...question, enonce, choix, image: image as any, imageSize: sz, _editedAt: new Date().toISOString() } as ExerciceQuestion);
         }}
         context="module"
         contextId={moduleId}
         questionId={question.id}
         onImageChange={(newImage) => {
           setImage(newImage);
-          onDraftSave({ ...question, enonce, choix, image: newImage ?? undefined, imageSize, _editedAt: new Date().toISOString() } as ExerciceQuestion);
+          // newImage === null ⇒ suppression explicite (doit être persistée telle quelle).
+          onDraftSave({ ...question, enonce, choix, image: newImage as any, imageSize, _editedAt: new Date().toISOString() } as ExerciceQuestion);
         }}
 
       />
