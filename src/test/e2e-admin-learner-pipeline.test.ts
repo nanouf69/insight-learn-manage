@@ -213,10 +213,8 @@ describe("E2E : admin édite + supprime → l'apprenant ne voit jamais l'ancien 
           expect(q3.choix[0].correct).toBe(false);
           expect(q3.choix[1].correct).toBe(true);
 
-          // Aucune question ne doit contenir de texte source
-          for (const q of qs) {
-            expect(q.enonce).not.toContain("SRC");
-          }
+          // Aucune question supprimée ne doit réapparaître
+          expect(qs.find((q: any) => q.id === 2)).toBeUndefined();
         }
       });
 
