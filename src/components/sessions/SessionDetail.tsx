@@ -2707,11 +2707,25 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   const totalCount = apprenantsInSession.length;
   const formateursCount = formateursInSession.length;
 
-  // Exclure les absents (présence pratique ou résultat examen) pour la facturation FC
+  // Marquer automatiquement "absent" les apprenants sans AUCUNE feuille d'émargement signée
+  // dès lors que la session est terminée (date_fin passée).
+  const sessionFinIso = session?.dateFin ? String(session.dateFin).slice(0, 10) : null;
+  const todayIso = new Date().toISOString().slice(0, 10);
+  const sessionIsOver = !!sessionFinIso && todayIso > sessionFinIso;
+  const hasNoSignature = (apprenantId?: string | null): boolean => {
+    if (!apprenantId) return false;
+    const h = (emargementsHoursMap as Record<string, number>)[apprenantId];
+    return sessionIsOver && (!h || h <= 0);
+  };
+
+  // Exclure les absents (présence pratique, résultat examen, ou aucune signature) pour la facturation FC
   const nonAbsentApprenants = (apprenantsInSession as any[]).filter((sa: any) => {
     const ap = sa.apprenant;
-    return sa.presence_pratique !== 'absent' && ap?.resultat_examen !== 'absent';
+    if (sa.presence_pratique === 'absent' || ap?.resultat_examen === 'absent') return false;
+    if (hasNoSignature(ap?.id)) return false;
+    return true;
   });
+
 
   const mainContent = (
     <>
