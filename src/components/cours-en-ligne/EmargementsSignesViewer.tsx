@@ -68,7 +68,7 @@ const emargementSlotKey = (date: string, creneau: CreneauKey) => `${date}|${cren
 const labelDemi = (d: string) => {
   const k = normalizeDemi(d);
   if (k === "matin") return "Matin (09h00 — 12h00)";
-  if (k === "apres-midi" || k === "après-midi") return "Après-midi (13h00 — 16h00)";
+  if (k === "apres-midi" || k === "après-midi") return "Après-midi (13h00 — 17h00)";
   if (k === "soir") return "Soir (17h00 — 21h00)";
   if (k === "soir-1") return "Soir 1 (17h00 — 18h30)";
   if (k === "soir-2") return "Soir 2 (18h30 — 21h00)";
