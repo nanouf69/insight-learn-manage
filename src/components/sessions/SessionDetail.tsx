@@ -2711,7 +2711,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   // dès lors que la session est terminée (date_fin passée).
   const sessionFinIso = session?.dateFin ? String(session.dateFin).slice(0, 10) : null;
   const todayIso = new Date().toISOString().slice(0, 10);
-  const sessionIsOver = !!sessionFinIso && todayIso > sessionFinIso;
+  const sessionIsOver = !!sessionFinIso && todayIso >= sessionFinIso;
   const hasNoSignature = (apprenantId?: string | null): boolean => {
     if (!apprenantId) return false;
     const h = (emargementsHoursMap as Record<string, number>)[apprenantId];
