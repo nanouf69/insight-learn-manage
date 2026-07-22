@@ -3886,7 +3886,19 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                  <CheckCircle className="w-4 h-4" />
                                  {totalPaye > 0 ? 'Paiements' : 'Acquitter'}
                                </Button>
-                             )}
+                              )}
+                             <Button
+                               size="sm"
+                               variant="outline"
+                               className="gap-1 border-red-300 text-red-700 hover:bg-red-50"
+                               title="Marquer absent et retirer de la facturation"
+                               onClick={async () => {
+                                 if (!confirm(`Marquer ${a.prenom} ${a.nom} comme absent et le retirer de la facturation FC ?`)) return;
+                                 await updateSessionApprenant(sa.id, { presence_pratique: 'absent' });
+                               }}
+                             >
+                               <X className="w-4 h-4" />
+                             </Button>
                            </div>
                          </div>
                        </div>
