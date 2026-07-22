@@ -2180,10 +2180,12 @@ function ExerciceCard({
                   <QuestionEditor
                     question={q}
                     onSave={saveQuestion}
+                    onDraftSave={saveQuestionDraft}
                     onDelete={() => deleteQuestion(q.id)}
                     onCancel={() => setEditingQId(null)}
                     moduleId={moduleId}
                   />
+
                 ) : (
                   <div className="flex items-start gap-3 p-3 border rounded-lg hover:bg-muted/20 group transition-colors">
                     <Badge className="text-xs shrink-0 mt-0.5">Q{qi + 1}</Badge>
