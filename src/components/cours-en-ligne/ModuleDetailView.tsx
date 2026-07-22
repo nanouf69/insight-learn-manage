@@ -2096,7 +2096,7 @@ function ExerciceCard({
 
   // Dé-doublonnage défensif par id (évite tout mélange d'affichage entre questions
   // partageant accidentellement le même id — la 1re occurrence gagne).
-  const safeQuestions = React.useMemo(() => {
+  const safeQuestions = useMemo(() => {
     if (!item.questions) return [] as ExerciceQuestion[];
     const seen = new Set<number>();
     const out: ExerciceQuestion[] = [];
