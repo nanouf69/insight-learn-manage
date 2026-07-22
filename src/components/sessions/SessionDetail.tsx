@@ -872,6 +872,50 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     enabled: !!session?.id && open && factureIdsForPaiements.length > 0,
   });
 
+  // Charger les virements reçus (transactions_bancaires) correspondant aux apprenants de la session
+  // pour afficher automatiquement date + montant à côté de chaque ligne facture.
+  const { data: virementsByApprenantId = {} } = useQuery({
+    queryKey: [
+      'session-virements-matches',
+      session?.id,
+      apprenantsInSession.map((sa: any) => sa.apprenant?.id).join(','),
+    ],
+    queryFn: async () => {
+      const result: Record<string, any[]> = {};
+      const apps = (apprenantsInSession || [])
+        .map((sa: any) => sa.apprenant)
+        .filter((a: any) => a && (a.nom || a.prenom));
+      if (apps.length === 0) return result;
+      const orClauses: string[] = [];
+      for (const a of apps) {
+        const nom = String(a.nom || '').trim();
+        const prenom = String(a.prenom || '').trim();
+        if (nom) orClauses.push(`libelle.ilike.%${nom}%`);
+        if (prenom) orClauses.push(`libelle.ilike.%${prenom}%`);
+      }
+      if (!orClauses.length) return result;
+      const { data, error } = await supabase
+        .from('transactions_bancaires')
+        .select('id,date_operation,libelle,montant,banque')
+        .gt('montant', 0)
+        .or(orClauses.join(','))
+        .order('date_operation', { ascending: false })
+        .limit(2000);
+      if (error || !data) return result;
+      for (const a of apps) {
+        const nom = String(a.nom || '').toLowerCase();
+        const prenom = String(a.prenom || '').toLowerCase();
+        const matches = (data as any[]).filter((tx) => {
+          const lib = String(tx.libelle || '').toLowerCase();
+          return (nom && lib.includes(nom)) || (prenom && lib.includes(prenom));
+        });
+        if (matches.length > 0) result[a.id] = matches.slice(0, 5);
+      }
+      return result;
+    },
+    enabled: !!session?.id && open && apprenantsInSession.length > 0,
+  });
+
   // Charger les formateurs de cette session
   const { data: formateursInSession = [], isLoading: loadingFormateurs, refetch: refetchFormateurs } = useQuery({
     queryKey: ['session-formateurs', session?.id],
