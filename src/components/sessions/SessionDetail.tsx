@@ -3871,9 +3871,30 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                    {restantDu > 0 && <span className="text-orange-600"> (reste {restantDu.toFixed(2)} €)</span>}
                                  </span>
                                </div>
-                             ) : facture ? (
-                               <div className="mt-1.5 text-sm text-muted-foreground italic">Aucun paiement enregistré</div>
-                             ) : null}
+                              ) : facture ? (
+                                (() => {
+                                  const vmatches: any[] = (virementsByApprenantId as any)?.[a.id] || [];
+                                  if (vmatches.length === 0) {
+                                    return <div className="mt-1.5 text-sm text-muted-foreground italic">Aucun paiement enregistré</div>;
+                                  }
+                                  return (
+                                    <div className="mt-1.5 flex flex-wrap gap-1.5 items-center">
+                                      <span className="text-xs font-medium text-blue-700">Virements reçus correspondants :</span>
+                                      {vmatches.map((tx) => (
+                                        <span
+                                          key={tx.id}
+                                          className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-blue-50 border border-blue-200 text-blue-900 text-xs"
+                                          title={tx.libelle}
+                                        >
+                                          <span className="font-semibold">{Number(tx.montant).toFixed(2)} €</span>
+                                          <span>•</span>
+                                          <span>{formatDateShortFR(tx.date_operation)}</span>
+                                        </span>
+                                      ))}
+                                    </div>
+                                  );
+                                })()
+                              ) : null}
 
                              {/* Ligne 3 : financeur */}
                              <div className="text-xs text-muted-foreground truncate mt-1">
