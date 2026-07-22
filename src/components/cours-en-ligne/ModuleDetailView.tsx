@@ -3756,6 +3756,14 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             moduleNom: module.nom,
             summary,
           });
+          // Toast admin : confirmer visuellement l'enregistrement des modifs/suppressions de questions
+          if (/question|exercice/i.test(summary)) {
+            const now = Date.now();
+            if (now - (lastChangeToastAtRef.current ?? 0) > 1500) {
+              lastChangeToastAtRef.current = now;
+              toast.success("✅ Changement enregistré");
+            }
+          }
         }
       } catch (e) {
         console.error("[ModuleNotif] diff/publish error:", e);
