@@ -1045,6 +1045,47 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
           <p className="text-sm">pour voir son rapport d'activité détaillé</p>
         </div>
       )}
+
+      <Dialog open={!!editingConn} onOpenChange={(o) => { if (!o) setEditingConn(null); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Modifier la connexion</DialogTitle>
+            <DialogDescription>
+              Ajustez la date et les heures de début/fin. Les durées et le rapport sont recalculés automatiquement.
+            </DialogDescription>
+          </DialogHeader>
+          {editingConn && (
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <Label htmlFor="edit-conn-start">Début</Label>
+                <Input
+                  id="edit-conn-start"
+                  type="datetime-local"
+                  value={editingConn.started_at}
+                  onChange={(e) => setEditingConn({ ...editingConn, started_at: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="edit-conn-end">Fin</Label>
+                <Input
+                  id="edit-conn-end"
+                  type="datetime-local"
+                  value={editingConn.ended_at}
+                  onChange={(e) => setEditingConn({ ...editingConn, ended_at: e.target.value })}
+                />
+                <p className="text-xs text-muted-foreground">Laisser vide pour une session « en cours ».</p>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingConn(null)} disabled={savingConn}>Annuler</Button>
+            <Button onClick={saveEditConn} disabled={savingConn}>
+              {savingConn ? "Enregistrement..." : "Enregistrer"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
+
