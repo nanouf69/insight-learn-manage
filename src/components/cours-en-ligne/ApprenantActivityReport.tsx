@@ -948,6 +948,17 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
                             <span className="text-muted-foreground">—</span>
                           )}
                         </TableCell>
+                        <TableCell className="text-center print:hidden">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7"
+                            title="Modifier date/heure"
+                            onClick={() => openEditConn(c)}
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                        </TableCell>
                       </TableRow>
                     );
                   })}
