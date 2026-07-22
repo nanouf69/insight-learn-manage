@@ -2327,8 +2327,9 @@ function ExerciceCard({
             </div>
             {hasQuestions ? (
               <div className="space-y-3">
-                {item.questions!.map((q, qi) => (
-                  <div key={q.id}>
+                {safeQuestions.map((q, qi) => (
+                  <div key={`${q.id}-${qi}`}>
+
                     {editingQId === q.id ? (
                       <QuestionEditor
                         question={q}
