@@ -3796,7 +3796,12 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                            <div className="flex-1 min-w-0">
                              {/* Ligne 1 : Nom + Prénom + statut */}
                              <div className="flex items-center gap-2 flex-wrap">
-                               <span className="font-semibold text-base truncate">{a.prenom} {a.nom?.toUpperCase()}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => onNavigateToApprenant?.(a.id)}
+                                  className="font-semibold text-base truncate hover:underline hover:text-primary text-left"
+                                  title="Ouvrir la fiche CRM de l'apprenant"
+                                >{a.prenom} {a.nom?.toUpperCase()}</button>
                                <Badge variant={statutVariant} className="text-xs">{statutLabel}</Badge>
                                {facture?.numero && <span className="text-xs text-muted-foreground">N° {facture.numero}</span>}
                              </div>
