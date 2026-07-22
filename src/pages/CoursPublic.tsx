@@ -325,7 +325,7 @@ const FORMATION_DEFAULT_MODULES: Record<FormationId, number[]> = {
   "taxi-pour-vtc": [31, 40, 7, 64, 12, 3, 27, 13, 28, 37, 62, 72, 6, 84, 52],
   "taxi-pour-vtc-elearning": [32, 40, 7, 64, 12, 3, 27, 13, 28, 37, 62, 72, 6, 52],
   "vtc-pour-taxi": [33, 41, 3, 29, 30, 38, 63, 73, 8, 83, 53],
-  "continue-vtc": [81, 87, 83, 85, 88],
+  "continue-vtc": [81, 5, 87, 83, 85, 88],
   "continue-taxi": [82, 84, 86],
   "mobilite-taxi": [90, 84, 86],
 };
