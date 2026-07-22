@@ -2710,6 +2710,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   const moduleEditorStorageKey = `module-editor-state:${module.id}`;
   const skipInitialAutosaveRef = useRef(true);
   const saveErrorShownRef = useRef(false);
+  const lastChangeToastAtRef = useRef<number>(0);
   const dbSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isSavingToDbRef = useRef(false);
   const dbSaveVersionRef = useRef(0);
@@ -3756,6 +3757,14 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             moduleNom: module.nom,
             summary,
           });
+          // Toast admin : confirmer visuellement l'enregistrement des modifs/suppressions de questions
+          if (/question|exercice/i.test(summary)) {
+            const now = Date.now();
+            if (now - (lastChangeToastAtRef.current ?? 0) > 1500) {
+              lastChangeToastAtRef.current = now;
+              toast.success("✅ Changement enregistré");
+            }
+          }
         }
       } catch (e) {
         console.error("[ModuleNotif] diff/publish error:", e);
