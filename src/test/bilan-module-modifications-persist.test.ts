@@ -107,14 +107,16 @@ describe("shouldForceBilanReset (bug fix: ne reset PAS sur fingerprint mismatch)
     expect(shouldForceBilanReset(4, adminModified)).toBe(false);
   });
 
-  it("reset un module bilan AVEC doublons (corruption de données)", () => {
+  it("ne reset JAMAIS un module bilan, même avec doublons (politique anti-reset destructive)", () => {
+    // shouldForceBilanReset renvoie toujours false: on refuse tout reset vers la
+    // source pour ne jamais restaurer d'anciennes questions/réponses écrasées.
     const corrupted = makeBilanModule(4, [
       {
         id: 100,
         questions: [makeQuestion(1), makeQuestion(2), makeQuestion(1)],
       },
     ]);
-    expect(shouldForceBilanReset(4, corrupted)).toBe(true);
+    expect(shouldForceBilanReset(4, corrupted)).toBe(false);
   });
 
   it("couvre tous les module IDs bilan générés", () => {
