@@ -1182,6 +1182,16 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     setCompletedModuleIds(prev => new Set([...prev, moduleId]));
   }, []);
 
+  // Scroll auto en haut lors de l'ouverture d'un module
+  useEffect(() => {
+    if (selectedModule) {
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: 0, behavior: "auto" });
+        document.scrollingElement?.scrollTo?.({ top: 0, behavior: "auto" });
+      });
+    }
+  }, [selectedModule?.id]);
+
   const handleTrackCours = useCallback((moduleId: number, coursTitle: string) => {
     trackModuleActivity(moduleId, coursTitle, "open_cours");
   }, [trackModuleActivity]);
