@@ -1918,6 +1918,28 @@ function QuestionEditor({
   const [image, setImage] = useState<string | null>(question.image ?? null);
   const [imageSize, setImageSize] = useState<ImageSize>((question.imageSize as ImageSize) ?? "sm");
 
+  // Auto-save live: propage chaque modification (énoncé, choix, bonne réponse)
+  // vers le parent qui déclenche la persistance DB debouncée.
+  const isFirstAutoSaveRef = useRef(true);
+  useEffect(() => {
+    if (isFirstAutoSaveRef.current) {
+      isFirstAutoSaveRef.current = false;
+      return;
+    }
+    const t = setTimeout(() => {
+      onSave({
+        ...question,
+        enonce,
+        choix,
+        image: image ?? undefined,
+        imageSize,
+        _editedAt: new Date().toISOString(),
+      } as ExerciceQuestion);
+    }, 400);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enonce, choix, imageSize]);
+
   const handleChoixTexte = (i: number, val: string) => {
     setChoix(prev => prev.map((c, idx) => idx === i ? { ...c, texte: val } : c));
   };
@@ -1934,6 +1956,7 @@ function QuestionEditor({
   const removeChoix = (i: number) => {
     setChoix(prev => prev.filter((_, idx) => idx !== i));
   };
+
 
   return (
     <div className="border-2 border-primary/30 rounded-lg p-4 bg-primary/5 space-y-3">
