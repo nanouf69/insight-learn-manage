@@ -12,7 +12,6 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // --- Auth check (admin only) ---
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -39,15 +38,15 @@ Deno.serve(async (req) => {
       });
     }
 
-    // --- Parse optional query params ---
+    // --- Parse optional query params (from body or URL) ---
+    let body: Record<string, string> = {};
+    try { body = await req.json(); } catch { /* no body */ }
     const url = new URL(req.url);
-    const from = url.searchParams.get("from") || "";
-    const to = url.searchParams.get("to") || "";
-    const count = url.searchParams.get("count") || "50";
+    const from = body.from || url.searchParams.get("from") || "";
+    const toParam = body.to || url.searchParams.get("to") || "";
 
-    // --- Get latest Revolut token from DB ---
+    // --- Get latest Revolut token ---
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
-
     const { data: tokenRow, error: tokenError } = await supabaseAdmin
       .from("revolut_tokens")
       .select("access_token, expires_at")
@@ -58,57 +57,73 @@ Deno.serve(async (req) => {
     if (tokenError || !tokenRow) {
       return new Response(
         JSON.stringify({ error: "No Revolut token found. Please reconnect." }),
-        {
-          status: 401,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-
-    // Check token expiry
     if (tokenRow.expires_at && new Date(tokenRow.expires_at) < new Date()) {
       return new Response(
         JSON.stringify({ error: "Revolut token expired. Please reconnect." }),
-        {
-          status: 401,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // --- Fetch transactions from Revolut ---
-    const params = new URLSearchParams({ count });
-    if (from) params.set("from", from);
-    if (to) params.set("to", to);
+    // --- Pagination: walk backward until no more results or hit `from` bound ---
+    const all: any[] = [];
+    const seen = new Set<string>();
+    let cursor = toParam || ""; // ISO timestamp, exclusive upper bound for next page
+    const MAX_PAGES = 40; // safety cap → up to 40 * 1000 = 40k tx
+    let pages = 0;
 
-    const revolutResponse = await fetch(
-      `https://b2b.revolut.com/api/1.0/transactions?${params.toString()}`,
-      {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${tokenRow.access_token}`,
-          "Content-Type": "application/json",
-        },
+    while (pages < MAX_PAGES) {
+      const params = new URLSearchParams({ count: "1000" });
+      if (from) params.set("from", from);
+      if (cursor) params.set("to", cursor);
+
+      const revolutResponse = await fetch(
+        `https://b2b.revolut.com/api/1.0/transactions?${params.toString()}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${tokenRow.access_token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const revolutData = await revolutResponse.json();
+      if (!revolutResponse.ok) {
+        console.error("Revolut fetch failed:", revolutData);
+        return new Response(
+          JSON.stringify({ error: "Failed to fetch transactions", details: revolutData }),
+          { status: revolutResponse.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
       }
-    );
 
-    const revolutData = await revolutResponse.json();
+      const batch: any[] = Array.isArray(revolutData) ? revolutData : [];
+      if (batch.length === 0) break;
 
-    if (!revolutResponse.ok) {
-      console.error("Revolut transactions fetch failed:", revolutData);
-      return new Response(
-        JSON.stringify({
-          error: "Failed to fetch transactions",
-          details: revolutData,
-        }),
-        {
-          status: revolutResponse.status,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+      let addedThisPage = 0;
+      let oldest: string | null = null;
+      for (const tx of batch) {
+        if (!seen.has(tx.id)) {
+          seen.add(tx.id);
+          all.push(tx);
+          addedThisPage++;
         }
-      );
+        const ts = tx.created_at || tx.completed_at;
+        if (ts && (!oldest || ts < oldest)) oldest = ts;
+      }
+
+      pages++;
+      if (addedThisPage === 0 || !oldest) break;
+      // Next page: fetch older than the oldest we've seen
+      cursor = oldest;
+      if (batch.length < 1000) break; // no more pages
     }
 
-    return new Response(JSON.stringify({ transactions: revolutData }), {
+    console.log(`[revolut-transactions] Fetched ${all.length} transactions across ${pages} pages`);
+
+    return new Response(JSON.stringify({ transactions: all, pages }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
