@@ -1985,15 +1985,16 @@ function QuestionEditor({
         imageSize={imageSize}
         onImageSizeChange={(sz) => {
           setImageSize(sz);
-          onSave({ ...question, enonce, choix, image: image ?? undefined, imageSize: sz, _editedAt: new Date().toISOString() } as ExerciceQuestion);
+          onDraftSave({ ...question, enonce, choix, image: image ?? undefined, imageSize: sz, _editedAt: new Date().toISOString() } as ExerciceQuestion);
         }}
         context="module"
         contextId={moduleId}
         questionId={question.id}
         onImageChange={(newImage) => {
           setImage(newImage);
-          onSave({ ...question, enonce, choix, image: newImage ?? undefined, imageSize, _editedAt: new Date().toISOString() } as ExerciceQuestion);
+          onDraftSave({ ...question, enonce, choix, image: newImage ?? undefined, imageSize, _editedAt: new Date().toISOString() } as ExerciceQuestion);
         }}
+
       />
       <div className="space-y-3">
         <label className="text-xs font-semibold">Réponses (cochez les bonnes réponses — plusieurs possibles)</label>
