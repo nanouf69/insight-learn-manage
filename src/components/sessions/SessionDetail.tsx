@@ -63,6 +63,7 @@ import { saveAs } from "file-saver";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { computePresenceHours, formatPresenceHours, isEveningTrainingValue } from "@/lib/emargementHours";
 import { filterAndSortApprenants } from "@/lib/apprenantSearch";
+import { SmallTransfersTable } from "@/components/dashboard/SmallTransfersTable";
 
 interface Session {
   id: string;
@@ -4021,6 +4022,9 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                   })}
                 </div>
               </ScrollArea>
+              <div className="mt-4">
+                <SmallTransfersTable />
+              </div>
             </TabsContent>
           )}
 
