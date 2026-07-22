@@ -3507,6 +3507,12 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         },
         handleTrainerOverrideChange
       )
+      // Broadcast complémentaire émis par l'admin après chaque autosave
+      // (permet un refresh apprenant instantané même si postgres_changes est retardé)
+      .on('broadcast', { event: 'module-updated' }, () => {
+        console.log(`[Realtime/Broadcast] module-updated received for module ${module.id}`);
+        void refetchModuleFromDb();
+      })
       .subscribe((status) => {
         console.log(`[Realtime] Channel module-editor-live-${module.id} status:`, status);
         setRealtimeStatus(status);
@@ -3516,17 +3522,25 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         }
       });
 
-    // Continuous polling fallback (every 15s) → catches any missed realtime event
-    // so admin corrections ALWAYS reach the learner within 15s max.
+    // Polling fallback — plus rapide côté apprenant pour garantir que
+    // toute modification admin (suppression d'image, édition de réponse…)
+    // soit visible en moins de 5 s même si Realtime rate un événement.
+    const pollIntervalMs = studentOnly ? 5_000 : 15_000;
     const pollTimer = setInterval(() => {
       void refetchModuleFromDb();
-    }, 15_000);
+    }, pollIntervalMs);
+
+    // Refetch immédiat quand l'onglet reprend le focus (l'apprenant revient sur la page)
+    const handleFocusRefresh = () => { void refetchModuleFromDb(); };
+    window.addEventListener('focus', handleFocusRefresh);
 
     return () => {
       clearInterval(pollTimer);
+      window.removeEventListener('focus', handleFocusRefresh);
       supabase.removeChannel(channel);
     };
   }, [module.id, studentOnly, realtimeReconnectKey]);
+
 
   // Polling fallback for students: if realtime subscription fails or misses events,
   // re-fetch from DB when the tab becomes visible again (e.g. student switches back).
