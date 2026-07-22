@@ -827,7 +827,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
                 <TableBody>
                   {tableRows.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                      <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                         Aucune connexion enregistrée
                       </TableCell>
                     </TableRow>
