@@ -21,6 +21,11 @@ function normalizeSignedUrl(signedUrl: string): string {
  */
 async function toDisplayableUrl(url: string): Promise<string> {
   try {
+    if (/^question-images\//i.test(url)) {
+      const { data, error } = await supabase.storage.from("cours-fichiers").createSignedUrl(url, 60 * 60);
+      if (!error && data?.signedUrl) return normalizeSignedUrl(data.signedUrl);
+    }
+
     // Match both public and sign paths so we recover from either
     const m = url.match(/\/storage\/v1\/object\/(?:public|sign)\/([^/]+)\/([^?#]+)/);
     if (!m) return url;
