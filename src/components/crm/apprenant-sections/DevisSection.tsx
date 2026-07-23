@@ -1287,6 +1287,11 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
       }
 
       const fileName = `Devis_${apprenant.prenom}_${apprenant.nom}_${format(new Date(), 'ddMMyyyy')}.pdf`;
+      if (opts?.returnBase64) {
+        const dataUri = doc.output('datauristring');
+        const base64 = dataUri.split(',')[1] || '';
+        return { base64, fileName };
+      }
       doc.save(fileName);
       toast.success("Devis PDF généré avec succès !");
     } catch (err) {
@@ -1294,6 +1299,65 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
       toast.error("Erreur lors de la génération du devis PDF");
     } finally {
       setGenerating(false);
+    }
+  };
+
+  const envoyerDevisParEmail = async () => {
+    if (!apprenant.email) {
+      toast.error("L'apprenant n'a pas d'adresse email.");
+      return;
+    }
+    setSendingDevisEmail(true);
+    try {
+      const result = await generateDevisPDF({ returnBase64: true });
+      if (!result) throw new Error("Impossible de générer le PDF");
+      const { base64, fileName } = result;
+
+      // Upload dans storage
+      const bin = atob(base64);
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      const storagePath = `envois/${apprenant.id}/${Date.now()}_${fileName}`;
+      await supabase.storage.from('devis').upload(storagePath, bytes, {
+        contentType: 'application/pdf', upsert: true,
+      });
+      const { data: urlData } = supabase.storage.from('devis').getPublicUrl(storagePath);
+
+      // Enregistrer l'envoi
+      const { data: devisRecord } = await supabase.from('devis_envois').insert({
+        apprenant_id: apprenant.id,
+        modele: selectedTemplate || 'devis',
+        montant: `${totalTTC.toFixed(2)} €`,
+        formation: (selectedTemplateConfig as any)?.label || apprenant.formation_choisie || '',
+        fichier_url: urlData.publicUrl,
+        statut: 'envoye',
+      }).select('token').single();
+
+      const appUrl = 'https://insight-learn-manage.lovable.app';
+      const devisLink = devisRecord?.token ? `${appUrl}/devis?token=${devisRecord.token}` : '';
+      const em = getEmailContent();
+      const bodyHtml = em.body.replace(/\n/g, '<br/>') +
+        (devisLink ? `<br/><br/>📝 <a href="${devisLink}" style="display:inline-block;padding:10px 20px;background:#2563eb;color:#fff;text-decoration:none;border-radius:6px;font-weight:bold;">Consulter et signer le devis en ligne</a>` : '') +
+        `<br/><br/><em style="font-size:12px;color:#888;">Le devis est également joint en PDF à cet email.</em>`;
+
+      const { error } = await supabase.functions.invoke('sync-outlook-emails', {
+        body: {
+          action: 'send',
+          userEmail: 'contact@ftransport.fr',
+          to: apprenant.email,
+          subject: em.subject,
+          body: bodyHtml,
+          apprenantId: apprenant.id,
+          attachments: [{ name: fileName, contentType: 'application/pdf', contentBytes: base64 }],
+        },
+      });
+      if (error) throw error;
+      toast.success(`Devis envoyé par email à ${apprenant.email}`);
+    } catch (err: any) {
+      console.error(err);
+      toast.error("Erreur envoi devis : " + (err.message || ""));
+    } finally {
+      setSendingDevisEmail(false);
     }
   };
 
