@@ -1027,7 +1027,7 @@ export default function DevisPersonnel() {
                       <Select value={creneauSouhaite} onValueChange={setCreneauSouhaite}>
                         <SelectTrigger><SelectValue placeholder="Choisir..." /></SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="Journée (9h-17h)">Journée (9h-17h)</SelectItem>
+                          <SelectItem value="Journée (9h-12h / 13h-16h)">Journée (9h-12h / 13h-16h)</SelectItem>
                           <SelectItem value="Soirée (17h-21h)">Soirée (17h-21h)</SelectItem>
                           
                         </SelectContent>
