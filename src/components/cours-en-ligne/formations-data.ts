@@ -379,7 +379,13 @@ export const MODULES_DATA: ModuleInfo[] = [
   },
   {
     id: 82,
-    nom: "1.COURS FC TAXI",
+    nom: "1.BILAN EXERCICES FORMATION CONTINUE TAXI",
+    description: "Exercices FC TAXI par matière : T3P, Sécurité Routière, Réglementation Nationale et Locale",
+    formations: ["continue-taxi"],
+  },
+  {
+    id: 92,
+    nom: "2.COURS FC TAXI (PDF)",
     description: "Formation continue TAXI — 4 modules pédagogiques téléchargeables + QCM Final",
     formations: ["continue-taxi"],
   },
