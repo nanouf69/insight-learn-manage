@@ -280,15 +280,82 @@ const getExerciseById = (data: ModuleData | null | undefined, exerciseId: number
   return data?.exercices?.find((exercise) => Number(exercise.id) === exerciseId) ?? null;
 };
 
+const getManualQuestionTimestamp = (question: unknown): number => {
+  if (!question || typeof question !== "object") return 0;
+  const editedAt = (question as any)._editedAt;
+  const ts = editedAt ? new Date(String(editedAt)).getTime() : 0;
+  if (Number.isFinite(ts) && ts > 0) return ts;
+  return (question as any).manually_edited ? 1 : 0;
+};
+
+const mergeManualExerciseEditsFromSource = (targetExercise: ExerciceItem, sourceExercise: ExerciceItem): ExerciceItem => {
+  if (!Array.isArray(targetExercise.questions) || !Array.isArray(sourceExercise.questions)) return targetExercise;
+
+  const sourceQuestionsById = new Map(sourceExercise.questions.map((question) => [Number(question.id), question]));
+  let changed = false;
+
+  const mergedQuestions = targetExercise.questions.map((targetQuestion) => {
+    const sourceQuestion = sourceQuestionsById.get(Number(targetQuestion.id));
+    if (!sourceQuestion) return targetQuestion;
+
+    const sourceTs = getManualQuestionTimestamp(sourceQuestion);
+    if (sourceTs <= 0) return targetQuestion;
+
+    const targetTs = getManualQuestionTimestamp(targetQuestion);
+    if (targetTs > sourceTs) return targetQuestion;
+
+    changed = true;
+    return {
+      ...targetQuestion,
+      enonce: sourceQuestion.enonce,
+      choix: Array.isArray(sourceQuestion.choix) ? sourceQuestion.choix.map((choice) => ({ ...choice })) : targetQuestion.choix,
+      image: (sourceQuestion as any).image,
+      imageSize: (sourceQuestion as any).imageSize ?? (targetQuestion as any).imageSize,
+      manually_edited: true,
+      _editedAt: (sourceQuestion as any)._editedAt ?? (targetQuestion as any)._editedAt ?? new Date().toISOString(),
+    } as ExerciceQuestion;
+  });
+
+  return changed ? { ...targetExercise, questions: mergedQuestions } : targetExercise;
+};
+
+const applyManualExerciseEditsFromSource = (
+  targetData: ModuleData,
+  sourceData: ModuleData | null | undefined,
+): ModuleData => {
+  if (!sourceData?.exercices?.length) return targetData;
+
+  const sourceExerciseById = new Map(sourceData.exercices.map((exercise) => [Number(exercise.id), exercise]));
+  let changed = false;
+
+  const exercices = targetData.exercices.map((exercise) => {
+    const sourceExercise = sourceExerciseById.get(Number(exercise.id));
+    if (!sourceExercise) return exercise;
+    const merged = mergeManualExerciseEditsFromSource(exercise, sourceExercise);
+    if (merged !== exercise) changed = true;
+    return merged;
+  });
+
+  return changed ? { ...targetData, exercices } : targetData;
+};
+
 const forceTaxiSecurityFromVtc = (taxiData: ModuleData, vtcSecurityExercise: ExerciceItem | null): ModuleData => {
   if (Number(taxiData.id) !== BILAN_TAXI_MODULE_ID || !vtcSecurityExercise) return taxiData;
 
-  // Ne jamais écraser une matière TAXI déjà enregistrée en base : si l'admin a
-  // modifié/supprimé des réponses directement dans TAXI, ces données gagnent.
   const existingSecurity = taxiData.exercices.find(
     (exercise) => Number(exercise.id) === SECURITE_ROUTIERE_BILAN_ID,
   );
-  if (existingSecurity?.questions && existingSecurity.questions.length > 0) return taxiData;
+  if (existingSecurity?.questions && existingSecurity.questions.length > 0) {
+    const mergedSecurity = mergeManualExerciseEditsFromSource(existingSecurity, vtcSecurityExercise);
+    return mergedSecurity === existingSecurity
+      ? taxiData
+      : {
+          ...taxiData,
+          exercices: taxiData.exercices.map((exercise) =>
+            Number(exercise.id) === SECURITE_ROUTIERE_BILAN_ID ? mergedSecurity : exercise,
+          ),
+        };
+  }
 
   return {
     ...taxiData,
@@ -301,6 +368,36 @@ const forceTaxiSecurityFromVtc = (taxiData: ModuleData, vtcSecurityExercise: Exe
       : [...taxiData.exercices, JSON.parse(JSON.stringify(vtcSecurityExercise))],
   };
 };
+
+async function loadSyncedVtcBilanFromCours(
+  apprenantType?: string | null,
+  studentOnly?: boolean,
+): Promise<ModuleData | null> {
+  try {
+    const { data: sourceState } = await supabase
+      .from("module_editor_state")
+      .select("module_data, deleted_exercices")
+      .eq("module_id", BILAN_VTC_SOURCE_MODULE_ID)
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const sourceMd = sourceState?.module_data as unknown as ModuleData | undefined;
+    if (!sourceMd?.exercices || !Array.isArray(sourceMd.exercices)) return null;
+
+    const sourceInitial = JSON.parse(JSON.stringify(VTC_COURS_DATA)) as ModuleData;
+    const deletedSourceIds = Array.isArray(sourceState?.deleted_exercices)
+      ? (sourceState.deleted_exercices as any[]).map((e: any) => Number(e?.id)).filter((n) => !Number.isNaN(n))
+      : [];
+    const sourceExercices = mergeSourceExercices(sourceMd.exercices, sourceInitial.exercices, deletedSourceIds);
+    const bilanInitial = getInitialModuleDataRaw({ id: BILAN_VTC_MODULE_ID, nom: "4.BILAN EXERCICES VTC" }, apprenantType, studentOnly);
+
+    return getSyncedBilanVtcModuleData(bilanInitial, sourceExercices, true);
+  } catch (e) {
+    console.error("[Bilan VTC] Erreur chargement source module 2:", e);
+    return null;
+  }
+}
 
 const buildFcBilanModuleFromParent = (
   fcModuleId: number | string,
