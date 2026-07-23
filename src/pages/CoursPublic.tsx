@@ -1407,16 +1407,17 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
           start: sessionAccessWindow?.date_debut || apprenant.date_debut_formation || apprenant.date_debut_cours_en_ligne,
           end: sessionAccessWindow?.date_fin || apprenant.date_fin_formation || apprenant.date_debut_formation || apprenant.date_debut_cours_en_ligne,
           allowDayBefore: false,
-          extendMonths: isFcVtc ? 6 : 0,
+          extendMonths: isFC ? 6 : 0,
         }]
         : []),
       {
         start: apprenant.date_debut_cours_en_ligne || apprenant.date_debut_formation,
         end: apprenant.date_fin_cours_en_ligne,
         allowDayBefore: false,
-        extendMonths: isFcVtc ? 6 : 0,
+        extendMonths: isFC ? 6 : 0,
       },
     ]
+
       .map((window) => {
         const start = parseAccessDate(window.start);
         const end = parseAccessDate(window.end);
