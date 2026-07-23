@@ -569,6 +569,7 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
   const [isDrawing, setIsDrawing] = useState(false);
   const [showEmailPreview, setShowEmailPreview] = useState(false);
   const [sendingEmail, setSendingEmail] = useState(false);
+  const [sendingDevisEmail, setSendingDevisEmail] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const lastPos = useRef<{ x: number; y: number } | null>(null);
 
