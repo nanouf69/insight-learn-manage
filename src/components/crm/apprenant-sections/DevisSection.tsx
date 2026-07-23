@@ -697,7 +697,14 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
     const f = FORMATIONS_CATALOGUE.find(f => f.label === formationLabel);
     if (!f) return;
     setLignes(prev => prev.map((l, i) => i === 0 ? { ...l, designation: f.designation, prixUnitaire: f.prix } : l));
+    const lower = formationLabel.toLowerCase();
+    if (lower.includes('taxi')) setFormationType('taxi');
+    else if (lower.includes('vtc')) setFormationType('vtc');
+    else setFormationType(null);
+    setSessionDate("");
   };
+
+  const availableSessionDates = formationType === 'taxi' ? DATES_TAXI : formationType === 'vtc' ? DATES_VTC : [];
 
   const totalHT = lignes.reduce((sum, l) => sum + (l.quantite * l.prixUnitaire), 0);
   const montantTVA = totalHT * (tvaTaux / 100);
