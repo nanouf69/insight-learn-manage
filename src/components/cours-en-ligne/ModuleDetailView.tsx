@@ -7497,6 +7497,18 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
   return (
     <div className="space-y-6 animate-fade-in">
+      {studentOnly && maintenanceActive && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="flex items-center gap-3 rounded-lg border border-amber-400 bg-amber-50 px-4 py-3 text-amber-900 shadow-sm"
+        >
+          <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-amber-500" />
+          <div className="text-sm font-medium">
+            Opération de maintenance en cours — le formateur met à jour ce module. Vos réponses sont conservées, la page se rafraîchira automatiquement.
+          </div>
+        </div>
+      )}
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <Button variant="outline" size="icon" onClick={onBack}>
