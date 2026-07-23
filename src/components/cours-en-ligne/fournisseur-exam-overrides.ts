@@ -47,12 +47,25 @@ export const FOURNISSEUR_QUIZ_TO_EXAM: Record<string, { examId: string; baseSect
 };
 
 /**
+ * Bilan exam blancs (bilan-vtc, bilan-taxi, bilan-ta, bilan-va) are
+ * ADMIN-AUTHORITATIVE. Their state lives in `module_editor_state` and any
+ * admin correction there is the source of truth. Historically, an older
+ * fournisseur override could win here whenever the saved admin question had
+ * no `_editedAt` / `manually_edited` marker (which is the default for legacy
+ * rows written before those flags existed), silently reverting the admin's
+ * fix. We now refuse to overwrite Bilan exam questions from the fournisseur
+ * override table under any circumstance — even when the metadata is missing.
+ */
+const ADMIN_AUTHORITATIVE_EXAM_IDS = new Set(["bilan-vtc", "bilan-taxi", "bilan-ta", "bilan-va"]);
+
+/**
  * Apply fournisseur overrides on the matiere questions of the matching exam blancs.
  * Mutates the input examens array in place. Returns the same array for chaining.
  *
- * Last-write-wins between fournisseur overrides only. If the admin has already
- * edited the question, the admin copy is authoritative and older fournisseur
- * overrides must not be re-applied over it.
+ * Rules:
+ *  - Bilan exam blancs listed in ADMIN_AUTHORITATIVE_EXAM_IDS are NEVER touched.
+ *  - For other exams, the admin edit wins as soon as `_editedAt` or
+ *    `manually_edited` is set on the saved question.
  */
 export function applyFournisseurOverridesToExamens(
   examens: ExamenBlanc[],
@@ -63,7 +76,6 @@ export function applyFournisseurOverridesToExamens(
   const examById = new Map<string, ExamenBlanc>();
   examens.forEach((ex) => examById.set(ex.id, ex));
 
-  // Build keyed map: keep latest per (quiz_id, section_id, question_id)
   const sortedOverrides = [...overrides].sort((a, b) => {
     const ta = a.updated_at ? new Date(a.updated_at).getTime() : 0;
     const tb = b.updated_at ? new Date(b.updated_at).getTime() : 0;
@@ -77,6 +89,10 @@ export function applyFournisseurOverridesToExamens(
 
     const mapping = FOURNISSEUR_QUIZ_TO_EXAM[ov.quiz_id];
     if (!mapping) continue;
+
+    // Hard block: never let a legacy fournisseur override rewrite admin state
+    // on the Bilan exam blancs. The admin editor is the sole source of truth.
+    if (ADMIN_AUTHORITATIVE_EXAM_IDS.has(mapping.examId)) continue;
 
     const exam = examById.get(mapping.examId);
     if (!exam || !Array.isArray(exam.matieres)) continue;
@@ -94,9 +110,7 @@ export function applyFournisseurOverridesToExamens(
     const adminEditedAt = original._editedAt || (original.manually_edited ? new Date(0).toISOString() : undefined);
     const winner = resolveOverrideConflict(adminEditedAt, ov.updated_at ?? "");
 
-    if (winner === "admin") {
-      continue;
-    }
+    if (winner === "admin") continue;
 
     if (ov.enonce === "__DELETED__") {
       matiere.questions = matiere.questions.filter((q: Question) => Number(q.id) !== Number(ov.question_id));
@@ -112,3 +126,4 @@ export function applyFournisseurOverridesToExamens(
 
   return examens;
 }
+
