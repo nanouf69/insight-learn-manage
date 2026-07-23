@@ -4065,6 +4065,68 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       saveErrorShownRef.current = false;
       markDbSnapshotApplied(savedAt);
 
+      // Les modules FC 81/82 sont affichés aux apprenants depuis leur Bilan parent
+      // (4/9) pour éviter les anciennes copies obsolètes. Donc si l'admin modifie
+      // directement le module FC, on répercute immédiatement ces exercices dans le
+      // parent, sinon l'admin voit bien la correction mais l'apprenant relit l'ancien parent.
+      const fcParentId = FC_BILAN_PARENT_BY_MODULE_ID[Number(dataToSave.module_id)];
+      if (fcParentId) {
+        try {
+          const { data: parentRow, error: parentReadError } = await supabase
+            .from("module_editor_state")
+            .select("module_data, deleted_cours, deleted_exercices, source_fingerprint")
+            .eq("module_id", fcParentId)
+            .maybeSingle();
+
+          if (parentReadError) throw parentReadError;
+
+          const parentModuleData = (parentRow?.module_data as unknown as ModuleData | undefined)
+            ?? getInitialModuleDataRaw({ id: fcParentId, nom: `Module ${fcParentId}` }, apprenantType, false);
+          const nextParentModuleData = buildParentBilanModuleFromFcChild(parentModuleData, normalizedModuleData);
+
+          if (nextParentModuleData) {
+            const parentSavedAt = new Date().toISOString();
+            const { error: parentSaveError } = await supabase.from("module_editor_state").upsert(
+              [{
+                module_id: fcParentId,
+                module_data: normalizeManualQuestionFlags(nextParentModuleData) as any,
+                deleted_cours: parentRow?.deleted_cours ?? [],
+                deleted_exercices: parentRow?.deleted_exercices ?? [],
+                source_fingerprint: parentRow?.source_fingerprint ?? buildSourceFingerprint(parentModuleData),
+                updated_at: parentSavedAt,
+              }],
+              { onConflict: "module_id" },
+            );
+
+            if (parentSaveError) throw parentSaveError;
+
+            try {
+              const parentChan = supabase.channel(`module-editor-live-${fcParentId}`);
+              await new Promise<void>((resolve) => {
+                const timeout = setTimeout(resolve, 500);
+                parentChan.subscribe((status) => {
+                  if (status === 'SUBSCRIBED') {
+                    clearTimeout(timeout);
+                    resolve();
+                  }
+                });
+              });
+              await parentChan.send({
+                type: 'broadcast',
+                event: 'module-updated',
+                payload: { moduleId: fcParentId, at: parentSavedAt, syncedFromFc: dataToSave.module_id },
+              });
+              await supabase.removeChannel(parentChan);
+            } catch (parentBroadcastErr) {
+              console.warn('[FC-Bilan] Broadcast parent failed (non-bloquant):', parentBroadcastErr);
+            }
+          }
+        } catch (fcParentSyncError) {
+          console.error('[FC-Bilan] Synchronisation module FC → parent impossible:', fcParentSyncError);
+          toast.error("Correction enregistrée, mais la synchronisation apprenant a échoué. Réessayez.");
+        }
+      }
+
       // 📣 Broadcast complémentaire : force un refresh instantané côté apprenant
       // (backup de postgres_changes ; utile quand l'image d'une question est supprimée
       // et que l'apprenant doit voir la mise à jour sans attendre le polling).
