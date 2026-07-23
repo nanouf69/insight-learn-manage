@@ -1446,9 +1446,14 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
       const bytes = new Uint8Array(bin.length);
       for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
       const storagePath = `envois/${apprenant.id}/${Date.now()}_${fileName}`;
-      await supabase.storage.from('devis').upload(storagePath, bytes, {
+      const { error: upErr } = await supabase.storage.from('devis').upload(storagePath, bytes, {
         contentType: 'application/pdf', upsert: true,
       });
+      if (upErr) {
+        console.error('Upload devis error:', upErr);
+        toast.error(`Upload impossible: ${upErr.message}`);
+        return;
+      }
       const { data: urlData } = supabase.storage.from('devis').getPublicUrl(storagePath);
 
       // Enregistrer l'envoi

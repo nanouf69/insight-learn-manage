@@ -1,0 +1,3 @@
+CREATE POLICY "Admins can read devis files" ON storage.objects FOR SELECT TO authenticated USING (bucket_id = 'devis' AND has_role(auth.uid(), 'admin'::app_role));
+CREATE POLICY "Admins can update devis files" ON storage.objects FOR UPDATE TO authenticated USING (bucket_id = 'devis' AND has_role(auth.uid(), 'admin'::app_role));
+CREATE POLICY "Admins can delete devis files" ON storage.objects FOR DELETE TO authenticated USING (bucket_id = 'devis' AND has_role(auth.uid(), 'admin'::app_role));
