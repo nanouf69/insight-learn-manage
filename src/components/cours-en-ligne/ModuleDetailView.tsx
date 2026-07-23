@@ -1653,6 +1653,45 @@ function getInitialModuleDataRaw(
     };
   }
 
+  // Demande de Carte Professionnelle TAXI — Formation Continue TAXI (93)
+  if (module.id === 93) {
+    return {
+      id: 93,
+      nom: "🪪 DEMANDE DE CARTE PROFESSIONNELLE TAXI",
+      description: "Démarche officielle de renouvellement de la carte professionnelle TAXI auprès de la préfecture après la formation continue.",
+      cours: [
+        {
+          id: 1,
+          titre: "Renouvellement de la carte professionnelle TAXI",
+          description: "Liste des pièces à fournir et démarche auprès de la préfecture",
+          actif: true,
+          checklistType: "demande-carte-taxi" as const,
+        },
+      ],
+      exercices: [],
+    };
+  }
+
+  // Remboursement Formation Continue TAXI (94) — documents pour le financeur
+  if (module.id === 94) {
+    return {
+      id: 94,
+      nom: "💶 REMBOURSEMENT FORMATION CONTINUE TAXI",
+      description: "Téléchargez l'ensemble des documents nécessaires au remboursement par votre financeur.",
+      cours: [
+        {
+          id: 1,
+          titre: "Documents pour le remboursement de la formation",
+          description: "Programme, émargements, attestation et facture acquittée.",
+          actif: true,
+          checklistType: "remboursement-fc-taxi" as const,
+        },
+      ],
+      exercices: [],
+    };
+  }
+
+
   // Bilan Exercices TAXI (module 9) — toutes les matières
   if (module.id === 9) {
     return {
