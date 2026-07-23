@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import jsPDF from "jspdf";
+import { buildCanonicalDevisPDF } from "@/lib/pdf/devis-canonical";
 import { saveAs } from "file-saver";
 import Docxtemplater from "docxtemplater";
 import PizZip from "pizzip";
@@ -1078,404 +1079,56 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
   const generateDevisPDF = async (opts?: { returnBase64?: boolean }): Promise<{ base64: string; fileName: string } | void> => {
     setGenerating(true);
     try {
-      const doc = new jsPDF({ unit: 'mm', format: 'a4' });
-      const pageW = 210;
-      const margin = 15;
-      const contentW = pageW - margin * 2;
-      let y = 15;
-
-      // === PAGE 1 : DEVIS ===
-      doc.setFillColor(30, 58, 138);
-      doc.rect(0, 0, pageW, 38, 'F');
-      doc.setTextColor(255, 255, 255);
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(22);
-      doc.text('FTRANSPORT', margin, 18);
-      doc.setFontSize(9);
-      doc.setFont('helvetica', 'normal');
-      doc.text('Organisme de formation professionnelle', margin, 25);
-      doc.text('86 route de Genas - 69003 Lyon', margin, 30);
-      doc.text('04.28.29.60.91 | contact@ftransport.fr', margin, 35);
-
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(18);
-      doc.text('DEVIS', pageW - margin - 35, 18, { align: 'right' });
-      doc.setFontSize(9);
-      doc.setFont('helvetica', 'normal');
       const numDevis = `DEV-${format(new Date(), 'yyyyMM')}-${String(Math.floor(Math.random() * 9000) + 1000)}`;
-      doc.text(`N° ${numDevis}`, pageW - margin, 25, { align: 'right' });
-      doc.text(`Date : ${format(new Date(dateDevis), 'dd MMMM yyyy', { locale: fr })}`, pageW - margin, 30, { align: 'right' });
-      doc.text(`Valide jusqu'au : ${format(new Date(dateValidite), 'dd MMMM yyyy', { locale: fr })}`, pageW - margin, 35, { align: 'right' });
-      if (sessionDate) {
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(30, 58, 138);
-        doc.text(`Dates de formation : ${sessionDate}`, pageW - margin, 40, { align: 'right' });
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(0, 0, 0);
-      }
 
-      y = 50;
-      doc.setTextColor(0, 0, 0);
+      const isElearning = /e-?learning/i.test(
+        (selectedTemplateConfig?.label || apprenant.formation_choisie || '') as string,
+      );
 
-      doc.setFillColor(243, 244, 246);
-      doc.rect(margin, y, contentW, 28, 'F');
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(9);
-      doc.setTextColor(30, 58, 138);
-      doc.text('CLIENT', margin + 3, y + 7);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(0, 0, 0);
-      doc.setFontSize(10);
-      doc.text(`${apprenant.civilite || ''} ${apprenant.prenom} ${apprenant.nom}`.trim(), margin + 3, y + 14);
-      doc.setFontSize(9);
-      if (apprenant.adresse) doc.text(apprenant.adresse, margin + 3, y + 19);
-      const villeCP = [apprenant.code_postal, apprenant.ville].filter(Boolean).join(' ');
-      if (villeCP) doc.text(villeCP, margin + 3, y + 24);
-      if (apprenant.email) doc.text(apprenant.email, margin + contentW / 2, y + 19);
-      if (apprenant.telephone) doc.text(apprenant.telephone, margin + contentW / 2, y + 24);
-
-      y += 35;
-
-      const dateDebut = apprenant.date_debut_formation;
-      const dateFin = apprenant.date_fin_formation;
-      const dateCatalogue = apprenant.date_formation_catalogue;
-
-      if (dateDebut || dateFin || dateCatalogue) {
-        doc.setFillColor(239, 246, 255);
-        doc.rect(margin, y, contentW, 14, 'F');
-        doc.setDrawColor(191, 219, 254);
-        doc.rect(margin, y, contentW, 14);
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(8.5);
-        doc.setTextColor(30, 58, 138);
-        doc.text('DATES DE LA FORMATION', margin + 3, y + 5.5);
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(8);
-        doc.setTextColor(0, 0, 0);
-        const dateInfos: string[] = [];
-        if (dateCatalogue) dateInfos.push(`Session catalogue : ${dateCatalogue}`);
-        if (dateDebut) {
-          try { dateInfos.push(`Debut : ${format(new Date(dateDebut + 'T12:00:00'), 'dd MMMM yyyy', { locale: fr })}`); }
-          catch { dateInfos.push(`Debut : ${dateDebut}`); }
-        }
-        if (dateFin) {
-          try { dateInfos.push(`Fin : ${format(new Date(dateFin + 'T12:00:00'), 'dd MMMM yyyy', { locale: fr })}`); }
-          catch { dateInfos.push(`Fin : ${dateFin}`); }
-        }
-        doc.text(dateInfos.join('   |   '), margin + 3, y + 11);
-        y += 20;
-      } else {
-        y += 6;
-      }
-
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(11);
-      doc.setTextColor(30, 58, 138);
-      doc.text('DETAIL DE LA PRESTATION', margin, y);
-      y += 6;
-
-      const col0x = margin;
-      const col1x = margin + 100;
-      const col2x = margin + 125;
-      const col3x = margin + 152;
-      const tableRight = pageW - margin;
-
-      doc.setFillColor(30, 58, 138);
-      doc.rect(margin, y, contentW, 8, 'F');
-      doc.setTextColor(255, 255, 255);
-      doc.setFontSize(8.5);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Designation', col0x + 2, y + 5.5);
-      doc.text('Qte', col1x + 10, y + 5.5, { align: 'center' });
-      doc.text('Prix unitaire', col2x + 21, y + 5.5, { align: 'center' });
-      doc.text('Total TTC', tableRight - 2, y + 5.5, { align: 'right' });
-      y += 8;
-
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(0, 0, 0);
-      lignes.forEach((ligne, idx) => {
-        const designW = col1x - col0x - 4;
-        const designLines = doc.splitTextToSize(ligne.designation, designW);
-        const nbLines = Math.max(1, Math.min(designLines.length, 3));
-        const rowH = Math.max(10, nbLines * 4.5 + 4);
-
-        doc.setFillColor(idx % 2 === 0 ? 248 : 255, idx % 2 === 0 ? 249 : 255, idx % 2 === 0 ? 250 : 255);
-        doc.rect(margin, y, contentW, rowH, 'F');
-        doc.setDrawColor(210, 210, 210);
-        doc.line(margin, y, tableRight, y);
-        doc.line(margin, y + rowH, tableRight, y + rowH);
-        doc.line(col1x, y, col1x, y + rowH);
-        doc.line(col2x, y, col2x, y + rowH);
-        doc.line(col3x, y, col3x, y + rowH);
-        doc.line(margin, y, margin, y + rowH);
-        doc.line(tableRight, y, tableRight, y + rowH);
-
-        doc.setFontSize(8);
-        const vertCenter = y + rowH / 2 + 1;
-        const linesToShow = designLines.slice(0, 3);
-        const textStartY = y + 4;
-        linesToShow.forEach((l: string, li: number) => {
-          doc.text(l, col0x + 2, textStartY + li * 4);
-        });
-        doc.text(String(ligne.quantite), col1x + 10, vertCenter, { align: 'center' });
-        doc.text(formatEUR(ligne.prixUnitaire), col2x + 26, vertCenter, { align: 'right' });
-        const total = ligne.quantite * ligne.prixUnitaire;
-        doc.text(formatEUR(total), tableRight - 2, vertCenter, { align: 'right' });
-        y += rowH;
+      const doc = buildCanonicalDevisPDF({
+        numDevis,
+        dateDevis: new Date(dateDevis),
+        dateValidite: new Date(dateValidite),
+        client: {
+          civilite: apprenant.civilite,
+          prenom: apprenant.prenom,
+          nom: apprenant.nom,
+          adresse: apprenant.adresse,
+          codePostal: apprenant.code_postal,
+          ville: apprenant.ville,
+          telephone: apprenant.telephone,
+          email: apprenant.email,
+          dateNaissance: apprenant.date_naissance,
+        },
+        typeFinancement: apprenant.financeur_nom ? 'organisme' : 'personnel',
+        financeur: apprenant.financeur_nom ? {
+          nom: apprenant.financeur_nom,
+          type: apprenant.financeur_type,
+          adresse: apprenant.financeur_adresse,
+          codePostal: apprenant.financeur_code_postal,
+          ville: apprenant.financeur_ville,
+          siret: apprenant.financeur_siret,
+          email: apprenant.financeur_email,
+          telephone: apprenant.financeur_telephone,
+          contactNom: apprenant.financeur_contact_nom,
+        } : undefined,
+        formation: {
+          designation: lignes[0]?.designation || apprenant.formation_choisie || 'Formation professionnelle',
+          duree: selectedTemplateConfig ? undefined : undefined,
+          agrement: undefined,
+          type: formationType,
+          isElearning,
+        },
+        lignes: lignes.map(l => ({
+          designation: l.designation,
+          quantite: l.quantite,
+          prixUnitaire: l.prixUnitaire,
+        })),
+        tvaTaux,
+        sessionDate,
+        notes,
+        signatureDataUrl,
       });
-
-      doc.setDrawColor(210, 210, 210);
-      doc.line(margin, y, tableRight, y);
-
-      y += 6;
-      const totBoxX = margin + contentW * 0.55;
-      const totBoxW = contentW * 0.45;
-      const totBoxH = 22;
-      doc.setFillColor(243, 244, 246);
-      doc.rect(totBoxX, y, totBoxW, totBoxH, 'F');
-      doc.setDrawColor(210, 210, 210);
-      doc.rect(totBoxX, y, totBoxW, totBoxH);
-
-      const totSepX = totBoxX + totBoxW * 0.58;
-      doc.line(totSepX, y, totSepX, y + totBoxH);
-      doc.line(totBoxX, y + 8, totBoxX + totBoxW, y + 8);
-      doc.line(totBoxX, y + 15, totBoxX + totBoxW, y + 15);
-
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8);
-      doc.setTextColor(80, 80, 80);
-      doc.text('Total HT :', totSepX - 2, y + 5.5, { align: 'right' });
-      doc.text(`TVA (${tvaTaux}%${tvaTaux === 0 ? ' - Non assujetti' : ''}) :`, totSepX - 2, y + 12.5, { align: 'right' });
-
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(8.5);
-      doc.setTextColor(30, 58, 138);
-      doc.text('TOTAL TTC :', totSepX - 2, y + 19.5, { align: 'right' });
-
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8);
-      doc.setTextColor(0, 0, 0);
-      doc.text(formatEUR(totalHT), totBoxX + totBoxW - 3, y + 5.5, { align: 'right' });
-      doc.text(formatEUR(montantTVA), totBoxX + totBoxW - 3, y + 12.5, { align: 'right' });
-
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(9);
-      doc.setTextColor(30, 58, 138);
-      doc.text(formatEUR(totalTTC), totBoxX + totBoxW - 3, y + 19.5, { align: 'right' });
-
-      y += totBoxH + 8;
-
-      const notesPdf = [
-        sessionDate ? `Dates de formation choisies : ${sessionDate}` : '',
-        notes || '',
-      ].filter(Boolean).join('\n');
-      if (notesPdf) {
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(8);
-        doc.setTextColor(60, 60, 60);
-        doc.text('Notes :', margin, y);
-        y += 4;
-        const noteLines = doc.splitTextToSize(notesPdf, contentW);
-        doc.text(noteLines, margin, y);
-        y += noteLines.length * 4 + 4;
-      }
-
-      y = Math.max(y + 8, 215);
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8);
-      doc.setTextColor(0, 0, 0);
-      doc.text(`A Lyon, le ${format(new Date(dateDevis), 'dd MMMM yyyy', { locale: fr })}`, margin, y);
-      y += 6;
-
-      const sigBoxW = 80;
-      const sigBoxH = 30;
-      const sigClientX = margin;
-      const sigFtransX = pageW - margin - sigBoxW;
-
-      doc.setDrawColor(180, 180, 180);
-      doc.rect(sigClientX, y, sigBoxW, sigBoxH);
-      doc.setFontSize(7.5);
-      doc.setTextColor(100, 100, 100);
-      doc.text('Signature client + "Bon pour accord"', sigClientX + 2, y + 5);
-
-      if (signatureDataUrl) {
-        doc.addImage(signatureDataUrl, 'PNG', sigClientX + 2, y + 7, sigBoxW - 4, sigBoxH - 9);
-        doc.setFontSize(6.5);
-        doc.setTextColor(30, 58, 138);
-        doc.text(`Signe electroniquement le ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, sigClientX + 2, y + sigBoxH - 2);
-      }
-
-      doc.setDrawColor(180, 180, 180);
-      doc.rect(sigFtransX, y, sigBoxW, sigBoxH);
-      doc.setFontSize(7.5);
-      doc.setTextColor(100, 100, 100);
-      doc.text('Pour FTRANSPORT', sigFtransX + 2, y + 5);
-      doc.setFontSize(7);
-      doc.text('Le responsable de formation', sigFtransX + 2, y + 9);
-
-      doc.setFontSize(6.5);
-      doc.setTextColor(140, 140, 140);
-      doc.text('FTRANSPORT - SASU au capital de 5 000 EUR - SIRET : 82346156100018 - N Decl. : 84 69 15114 69', margin, 288);
-      doc.text('Non assujetti TVA | contact@ftransport.fr | 04.28.29.60.91 | 86 route de Genas, 69003 Lyon', margin, 293);
-
-      // === PAGE 2 : CGV ===
-      doc.addPage();
-      doc.setFillColor(30, 58, 138);
-      doc.rect(0, 0, pageW, 20, 'F');
-      doc.setTextColor(255, 255, 255);
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(13);
-      doc.text('CONDITIONS GENERALES DE VENTE', pageW / 2, 13, { align: 'center' });
-
-      y = 28;
-      doc.setTextColor(0, 0, 0);
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(7.5);
-
-      const cgvLines = CGV_TEXT.split('\n');
-      for (const line of cgvLines) {
-        if (y > 285) {
-          doc.addPage();
-          y = 15;
-          doc.setFont('helvetica', 'normal');
-          doc.setFontSize(7.5);
-        }
-        const trimmed = line.trim();
-        if (trimmed === '') { y += 2; continue; }
-        const isTitle = trimmed.startsWith('ARTICLE') || trimmed === 'CONDITIONS GENERALES DE VENTE - FTRANSPORT' || trimmed === 'DEFINITIONS';
-        if (isTitle) {
-          doc.setFont('helvetica', 'bold');
-          doc.setFontSize(8);
-          doc.setTextColor(30, 58, 138);
-        } else {
-          doc.setFont('helvetica', 'normal');
-          doc.setFontSize(7.5);
-          doc.setTextColor(0, 0, 0);
-        }
-        const wrapped = doc.splitTextToSize(trimmed, contentW);
-        doc.text(wrapped, margin, y);
-        y += wrapped.length * (isTitle ? 4.5 : 3.5) + (isTitle ? 1 : 0);
-      }
-
-      // === PAGE BORDEREAU DE RENONCIATION AU DELAI DE RETRACTATION ===
-      doc.addPage();
-      doc.setFillColor(30, 58, 138);
-      doc.rect(0, 0, pageW, 20, 'F');
-      doc.setTextColor(255, 255, 255);
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(12);
-      doc.text('BORDEREAU DE RENONCIATION AU DELAI DE RETRACTATION', pageW / 2, 13, { align: 'center' });
-
-      y = 30;
-      doc.setTextColor(0, 0, 0);
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8.5);
-
-      const renonciationText = [
-        "Conformement a l'article L6353-5 du Code du travail, tout client beneficie d'un delai de retractation de dix (10) jours a compter de la signature du contrat de formation professionnelle.",
-        "",
-        "Toutefois, si le client souhaite que la formation debute avant l'expiration de ce delai, il peut renoncer expressement a son droit de retractation en remplissant et signant le present bordereau.",
-        "",
-        "Cette renonciation n'emporte aucune consequence financiere pour le client si elle est exercee avant le debut effectif de la formation.",
-      ];
-      for (const line of renonciationText) {
-        if (line === '') { y += 3; continue; }
-        const wrapped = doc.splitTextToSize(line, contentW);
-        doc.text(wrapped, margin, y);
-        y += wrapped.length * 4;
-      }
-
-      y += 8;
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(9);
-      doc.setTextColor(30, 58, 138);
-      doc.text('INFORMATIONS DU CLIENT', margin, y);
-      y += 6;
-
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8.5);
-      doc.setTextColor(0, 0, 0);
-      const clientInfoRenonciation = [
-        `Nom et prenom : ${apprenant.civilite || ''} ${apprenant.prenom} ${apprenant.nom}`.trim(),
-        `Adresse : ${apprenant.adresse ? apprenant.adresse + ', ' : ''}${apprenant.code_postal || ''} ${apprenant.ville || ''}`.trim(),
-        `Telephone : ${apprenant.telephone || '_______________'}`,
-        `Email : ${apprenant.email || '_______________'}`,
-      ];
-      clientInfoRenonciation.forEach(l => { doc.text(l, margin, y); y += 5; });
-
-      y += 5;
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(9);
-      doc.setTextColor(30, 58, 138);
-      doc.text('FORMATION CONCERNEE', margin, y);
-      y += 6;
-
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8.5);
-      doc.setTextColor(0, 0, 0);
-      if (lignes.length > 0) {
-        doc.text(`Formation : ${lignes[0].designation}`, margin, y); y += 5;
-      }
-      doc.text(`Montant TTC : ${formatEUR(totalTTC)}`, margin, y); y += 5;
-
-      y += 8;
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(9);
-      doc.setTextColor(30, 58, 138);
-      doc.text('DECLARATION DE RENONCIATION', margin, y);
-      y += 7;
-
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8.5);
-      doc.setTextColor(0, 0, 0);
-      const declarationLinesRenonciation = [
-        `Je soussigne(e), ${apprenant.civilite || ''} ${apprenant.prenom} ${apprenant.nom}`.trim() + ", declare avoir pris connaissance des conditions generales de vente de FTRANSPORT et du delai de retractation de dix (10) jours prevu par l'article L6353-5 du Code du travail.",
-        "",
-        "Par la presente, je renonce expressement a l'exercice de mon droit de retractation et demande que la formation commence avant l'expiration du delai de dix jours.",
-        "",
-        "Je reconnais que cette renonciation est faite librement et sans aucune pression.",
-      ];
-      for (const line of declarationLinesRenonciation) {
-        if (line === '') { y += 3; continue; }
-        const wrapped = doc.splitTextToSize(line, contentW);
-        doc.text(wrapped, margin, y);
-        y += wrapped.length * 4;
-      }
-
-      y += 12;
-      doc.text(`Fait a Lyon, le ${format(new Date(dateDevis), 'dd MMMM yyyy', { locale: fr })}`, margin, y);
-      y += 10;
-
-      doc.setDrawColor(180, 180, 180);
-      doc.rect(margin, y, 80, 30);
-      doc.setFontSize(7.5);
-      doc.setTextColor(100, 100, 100);
-      doc.text('Signature du client', margin + 2, y + 5);
-      doc.text('precedee de la mention', margin + 2, y + 9);
-      doc.text('"Lu et approuve, bon pour renonciation"', margin + 2, y + 13);
-
-      if (signatureDataUrl) {
-        doc.addImage(signatureDataUrl, 'PNG', margin + 2, y + 14, 76, 14);
-      }
-
-      const sigFtransXR = pageW - margin - 80;
-      doc.rect(sigFtransXR, y, 80, 30);
-      doc.text('Pour FTRANSPORT', sigFtransXR + 2, y + 5);
-      doc.text('Le responsable de formation', sigFtransXR + 2, y + 9);
-
-      doc.setFontSize(6.5);
-      doc.setTextColor(140, 140, 140);
-      doc.text('FTRANSPORT - SASU au capital de 5 000 EUR - SIRET : 82346156100018 - N Decl. : 84 69 15114 69', margin, 288);
-      doc.text('Non assujetti TVA | contact@ftransport.fr | 04.28.29.60.91 | 86 route de Genas, 69003 Lyon', margin, 293);
-
-      doc.setFontSize(7);
-      doc.setTextColor(120, 120, 120);
-      doc.setFont('helvetica', 'italic');
-      const pageCount = doc.getNumberOfPages();
-      for (let i = 1; i <= pageCount; i++) {
-        doc.setPage(i);
-        doc.text(`Page ${i} / ${pageCount}`, pageW / 2, 297, { align: 'center' });
-      }
 
       const fileName = `Devis_${apprenant.prenom}_${apprenant.nom}_${format(new Date(), 'ddMMyyyy')}.pdf`;
       if (opts?.returnBase64) {
@@ -1492,6 +1145,7 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
       setGenerating(false);
     }
   };
+
 
   const envoyerDevisParEmail = async () => {
     if (!apprenant.email) {
