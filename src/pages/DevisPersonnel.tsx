@@ -1383,11 +1383,11 @@ export default function DevisPersonnel() {
         </Card>
 
         {/* Download button */}
-        <div className="flex flex-col items-center gap-3 pb-8">
+        <div className="flex flex-col md:flex-row items-center gap-3 pb-8 justify-center">
           <Button
             size="lg"
             className="w-full md:w-auto px-8 bg-[#1e3a8a] hover:bg-[#1e3a8a]/90 text-white text-lg"
-            onClick={generateDevisPDF}
+            onClick={() => generateDevisPDF()}
             disabled={generating || !prenom || !nom || !selectedFormation || !telephone || !email || !codePostal || !ville}
           >
             {generating ? (
@@ -1396,6 +1396,16 @@ export default function DevisPersonnel() {
               <><Download className="w-5 h-5 mr-2" /> Télécharger mon devis PDF</>
             )}
           </Button>
+          <Button
+            size="lg"
+            variant="outline"
+            className="w-full md:w-auto px-8 border-[#1e3a8a] text-[#1e3a8a] hover:bg-[#1e3a8a]/5 text-lg"
+            onClick={() => generateDevisPDF({ sendEmail: true })}
+            disabled={generating || !prenom || !nom || !selectedFormation || !telephone || !email || !codePostal || !ville}
+          >
+            <Send className="w-5 h-5 mr-2" /> Envoyer par mail
+          </Button>
+        </div>
 
           {generated && (
             <div className="space-y-4 w-full max-w-lg">
