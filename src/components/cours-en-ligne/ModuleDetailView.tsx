@@ -141,7 +141,7 @@ interface ContentItem {
   fichiers?: { nom: string; url: string }[];
   slidesKey?: string;
   quiz?: InlineQuizQuestion[];
-  checklistType?: "competences" | "analyse-besoin" | "evaluation-acquis" | "satisfaction" | "projet-professionnel" | "cgv" | "cgv-reglement" | "emargements-fc" | "financeur-fc" | "demande-carte-vtc" | "remboursement-fc-vtc";
+  checklistType?: "competences" | "analyse-besoin" | "evaluation-acquis" | "satisfaction" | "projet-professionnel" | "cgv" | "cgv-reglement" | "emargements-fc" | "financeur-fc" | "demande-carte-vtc" | "demande-carte-taxi" | "remboursement-fc-vtc" | "remboursement-fc-taxi";
   formationType?: string;
 }
 
