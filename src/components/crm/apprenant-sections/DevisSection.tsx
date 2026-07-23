@@ -848,11 +848,29 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
     return { subject, body };
   };
 
+  const validateBeforeSend = (): boolean => {
+    const intitule = lignes[0]?.designation?.trim();
+    if (!intitule) {
+      toast.error("Veuillez renseigner l'intitulé de la formation (désignation)");
+      return false;
+    }
+    if (!sessionDate) {
+      toast.error("Veuillez choisir les dates de formation avant d'envoyer");
+      return false;
+    }
+    if (!dateValidite) {
+      toast.error("Veuillez renseigner la date de fin de validité du devis");
+      return false;
+    }
+    return true;
+  };
+
   const sendDevisEmail = async () => {
     if (!apprenant.email) {
       toast.error("Aucun email renseigné pour cet apprenant");
       return;
     }
+    if (!validateBeforeSend()) return;
     const emailContent = getEmailContent();
     if (!emailContent) {
       toast.error("Aucun modèle d'email pour ce type de devis");
@@ -1416,6 +1434,7 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
       toast.error("L'apprenant n'a pas d'adresse email.");
       return;
     }
+    if (!validateBeforeSend()) return;
     setSendingDevisEmail(true);
     try {
       const result = await generateDevisPDF({ returnBase64: true });
@@ -1575,7 +1594,7 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
               <div className="flex gap-2">
                 <Button
                   onClick={sendDevisEmail}
-                  disabled={sendingEmail}
+                  disabled={sendingEmail || !lignes[0]?.designation?.trim() || !sessionDate || !dateValidite}
                   size="sm"
                   className="gap-2"
                 >
@@ -1824,7 +1843,7 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
               <Download className="w-4 h-4" />
               {generating ? "Génération..." : "Télécharger le devis PDF"}
             </Button>
-            <Button onClick={envoyerDevisParEmail} disabled={sendingDevisEmail || generating || !apprenant.email} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white">
+            <Button onClick={envoyerDevisParEmail} disabled={sendingDevisEmail || generating || !apprenant.email || !lignes[0]?.designation?.trim() || !sessionDate || !dateValidite} title={!lignes[0]?.designation?.trim() ? "Renseignez l'intitulé" : !sessionDate ? "Choisissez les dates de formation" : !dateValidite ? "Renseignez la date de validité" : ""} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white">
               <Send className="w-4 h-4" />
               {sendingDevisEmail ? "Envoi en cours..." : "Envoyer le devis par mail"}
             </Button>
