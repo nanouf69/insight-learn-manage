@@ -34,7 +34,58 @@ async function getSignedDevisUrl(fichierUrl: string | null, download = false): P
   return data.signedUrl;
 }
 
-function DevisHistorique({ apprenantId }: { apprenantId: string }) {
+function DevisHistorique({ apprenantId, apprenant }: { apprenantId: string; apprenant?: any }) {
+  const [sendingId, setSendingId] = useState<string | null>(null);
+
+  const envoyerParMail = async (d: any) => {
+    if (!apprenant?.email) {
+      toast.error("L'apprenant n'a pas d'email");
+      return;
+    }
+    setSendingId(d.id);
+    try {
+      const url = await getSignedDevisUrl(d.fichier_url);
+      if (!url) throw new Error("Fichier introuvable");
+      const resp = await fetch(url);
+      const blob = await resp.blob();
+      const buf = await blob.arrayBuffer();
+      let bin = "";
+      const b = new Uint8Array(buf);
+      for (let i = 0; i < b.length; i += 0x8000) {
+        bin += String.fromCharCode.apply(null, Array.from(b.subarray(i, i + 0x8000)) as any);
+      }
+      const b64 = btoa(bin);
+      const signLink = d.token ? `${window.location.origin}/devis?token=${d.token}` : null;
+      const subject = `Votre devis FTRANSPORT — ${d.modele}`;
+      const htmlBody = `<p>Bonjour ${apprenant.prenom || ''} ${apprenant.nom || ''},</p>
+<p>Veuillez trouver ci-joint votre devis${d.montant ? ` d'un montant de <strong>${d.montant}</strong>` : ''}.</p>
+${d.dates_formation ? `<p>Dates de formation : <strong>${d.dates_formation}</strong></p>` : ''}
+${d.date_validite ? `<p>Valide jusqu'au ${format(new Date(d.date_validite), "dd/MM/yyyy", { locale: fr })}.</p>` : ''}
+${signLink ? `<p>Pour signer votre devis en ligne : <a href="${signLink}">${signLink}</a></p>` : ''}
+<p>Pour toute question : 04.28.29.60.91 — contact@ftransport.fr</p>
+<p>Cordialement,<br/>FTRANSPORT</p>`;
+      for (const to of [apprenant.email, "contact@ftransport.fr"]) {
+        await supabase.functions.invoke("send-document-email", {
+          body: {
+            recipientEmail: to,
+            recipientName: `${apprenant.prenom || ''} ${apprenant.nom || ''}`.trim(),
+            subject,
+            htmlBody,
+            attachmentName: `devis-${d.modele}-${d.id}.pdf`,
+            attachmentBase64: b64,
+            attachmentContentType: "application/pdf",
+          },
+        });
+      }
+      toast.success(`Devis envoyé à ${apprenant.email}`);
+    } catch (e: any) {
+      console.error(e);
+      toast.error("Envoi impossible: " + (e?.message || e));
+    } finally {
+      setSendingId(null);
+    }
+  };
+
   const [devisEnvoyes, setDevisEnvoyes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -145,6 +196,19 @@ function DevisHistorique({ apprenantId }: { apprenantId: string }) {
                     }}
                   >
                     <PenLine className="w-3 h-3 mr-1" /> Signer
+                  </Button>
+                )}
+                {apprenant?.email && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={sendingId === d.id}
+                    title={`Envoyer par mail à ${apprenant.email}`}
+                    onClick={() => envoyerParMail(d)}
+                    className="bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
+                  >
+                    <Send className="w-3 h-3 mr-1" />
+                    {sendingId === d.id ? "Envoi..." : "Envoyer par mail"}
                   </Button>
                 )}
               </div>
@@ -1619,7 +1683,7 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
       </Card>
 
       {/* ═══ SECTION 1b : HISTORIQUE DEVIS ENVOYÉS ═══ */}
-      <DevisHistorique apprenantId={apprenant.id} />
+      <DevisHistorique apprenantId={apprenant.id} apprenant={apprenant} />
 
       {/* ═══ SECTION 2 : DEVIS PDF PERSONNALISÉ (existant) ═══ */}
       <Card>
