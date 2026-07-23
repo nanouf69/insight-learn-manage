@@ -98,6 +98,8 @@ import EmargementsSignesViewer from "./EmargementsSignesViewer";
 import RemboursementFCViewer from "./RemboursementFCViewer";
 import FinanceurFCForm from "./FinanceurFCForm";
 import DemandeCarteVTCViewer from "./DemandeCarteVTCViewer";
+import DemandeCarteTAXIViewer from "./DemandeCarteTAXIViewer";
+
 import AnalyseBesoinForm from "./AnalyseBesoinForm";
 import ProjetProfessionnelForm from "./ProjetProfessionnelForm";
 import EvaluationAcquisForm from "./EvaluationAcquisForm";
