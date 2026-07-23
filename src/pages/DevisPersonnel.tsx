@@ -158,7 +158,7 @@ En cas d'absences repetees ou injustifiees, FTRANSPORT se reserve le droit de me
 
 ARTICLE 9 - HORAIRES ET ACCUEIL
 Les formations en presentiel se deroulent aux horaires suivants, sauf indication contraire mentionnee sur la convocation :
-- Journee : de 09h00 a 12h00 et de 13h00 a 17h00, avec une pause de 15 minutes en milieu de chaque demi-journee.
+- Journee : de 09h00 a 12h00 et de 13h00 a 16h00, avec une pause de 15 minutes en milieu de chaque demi-journee.
 - Soiree : de 17h00 a 21h00.
 Le lieu de formation est situe au 86 route de Genas, 69003 Lyon, sauf indication contraire. FTRANSPORT met a disposition des stagiaires une salle de formation equipee et conforme aux normes de securite et d'accessibilite.
 Pour les formations en E-learning, la plateforme de cours est accessible 24h/24 et 7j/7 pendant toute la duree de validite de l'acces (3 mois a compter de l'inscription).
