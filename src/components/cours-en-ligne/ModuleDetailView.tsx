@@ -7108,18 +7108,95 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           </Button>
           <h2 className="text-2xl font-bold">Détail du module</h2>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          className="gap-2"
-          onClick={() => {
-            const isFs = document.body.classList.toggle("app-fullscreen");
-            if (!isFs) document.body.classList.remove("app-fullscreen");
-          }}
-        >
-          <Maximize className="w-4 h-4" />
-          Plein écran
-        </Button>
+        <div className="flex items-center gap-2">
+          {[4, 9, 81, 82].includes(Number(module.id)) && (
+            <Button
+              variant="default"
+              size="sm"
+              className="gap-2"
+              onClick={async () => {
+                const parentId = [4, 81].includes(Number(module.id)) ? 4 : 9;
+                const siblingId = parentId === 4 ? 9 : 4;
+                const SHARED = new Set([100, 101, 102, 103, 105]);
+                const t = toast.loading("Resynchronisation en cours…");
+                try {
+                  const { data: parentRow, error: parentErr } = await supabase
+                    .from("module_editor_state")
+                    .select("module_data, deleted_cours, deleted_exercices, source_fingerprint")
+                    .eq("module_id", parentId)
+                    .maybeSingle();
+                  if (parentErr) throw parentErr;
+                  const parentData: any = parentRow?.module_data ?? { exercices: [] };
+                  const parentExos: any[] = Array.isArray(parentData.exercices) ? parentData.exercices : [];
+                  const sharedFromParent = parentExos
+                    .filter((e) => SHARED.has(Number(e?.id)))
+                    .map((e) => JSON.parse(JSON.stringify(e)));
+
+                  // Miroir vers l'autre parent (4↔9)
+                  if (sharedFromParent.length > 0) {
+                    const { data: sibRow } = await supabase
+                      .from("module_editor_state")
+                      .select("module_data, deleted_cours, deleted_exercices, source_fingerprint")
+                      .eq("module_id", siblingId)
+                      .maybeSingle();
+                    const sibData: any = sibRow?.module_data ?? { exercices: [] };
+                    const sibExos: any[] = Array.isArray(sibData.exercices) ? sibData.exercices : [];
+                    const kept = sibExos.filter((e) => !SHARED.has(Number(e?.id)));
+                    const nextData = { ...sibData, exercices: [...sharedFromParent, ...kept] };
+                    await supabase.from("module_editor_state").upsert(
+                      [{
+                        module_id: siblingId,
+                        module_data: nextData,
+                        deleted_cours: sibRow?.deleted_cours ?? [],
+                        deleted_exercices: sibRow?.deleted_exercices ?? [],
+                        source_fingerprint: sibRow?.source_fingerprint ?? null,
+                        updated_at: new Date().toISOString(),
+                      }],
+                      { onConflict: "module_id" },
+                    );
+                  }
+
+                  // Broadcast vers TOUS les modules concernés (parents + FC)
+                  const at = new Date().toISOString();
+                  for (const mid of [4, 9, 81, 82]) {
+                    try {
+                      const ch = supabase.channel(`module-editor-live-${mid}`);
+                      await new Promise<void>((resolve) => {
+                        const to = setTimeout(resolve, 350);
+                        ch.subscribe((s) => { if (s === "SUBSCRIBED") { clearTimeout(to); resolve(); } });
+                      });
+                      await ch.send({
+                        type: "broadcast",
+                        event: "module-updated",
+                        payload: { moduleId: mid, at, resyncFrom: parentId },
+                      });
+                      await supabase.removeChannel(ch);
+                    } catch {}
+                  }
+                  toast.success("✅ Réponses FC resynchronisées côté apprenant", { id: t });
+                } catch (e: any) {
+                  console.error("[Resync Bilan] échec:", e);
+                  toast.error(`Échec resynchronisation : ${e?.message ?? "erreur"}`, { id: t });
+                }
+              }}
+            >
+              <RefreshCw className="w-4 h-4" />
+              Resynchroniser maintenant
+            </Button>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            onClick={() => {
+              const isFs = document.body.classList.toggle("app-fullscreen");
+              if (!isFs) document.body.classList.remove("app-fullscreen");
+            }}
+          >
+            <Maximize className="w-4 h-4" />
+            Plein écran
+          </Button>
+        </div>
       </div>
 
       <Tabs defaultValue="edition" className="w-full">
