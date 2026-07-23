@@ -1369,6 +1369,9 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
         formation: (selectedTemplateConfig as any)?.label || apprenant.formation_choisie || '',
         fichier_url: urlData.publicUrl,
         statut: 'envoye',
+        dates_formation: sessionDate || null,
+        date_devis: dateDevis || null,
+        date_validite: dateValidite || null,
       }).select('token').single();
 
       const appUrl = 'https://insight-learn-manage.lovable.app';
