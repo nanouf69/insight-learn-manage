@@ -4279,7 +4279,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           // Mark as manually_edited when admin changes the question, so the cross-module
           // propagation system never overwrites it. Once true, the flag is preserved.
             if (changed) return { ...q, _editedAt: now, manually_edited: true } as any;
-          return (q as any)._editedAt ? q : { ...q };
+          return {
+            ...q,
+            ...(((q as any)._editedAt ?? (prevQ as any)?._editedAt) ? { _editedAt: (q as any)._editedAt ?? (prevQ as any)?._editedAt } : {}),
+            ...(((q as any).manually_edited ?? (prevQ as any)?.manually_edited) ? { manually_edited: true } : {}),
+          } as any;
         });
         const updated: any = { ...e, questions: stampedQuestions };
         // Track deleted question IDs so mergeSourceExercices won't restore them from source
