@@ -3928,7 +3928,23 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       // (permet un refresh apprenant instantané même si postgres_changes est retardé)
       .on('broadcast', { event: 'module-updated' }, () => {
         console.log(`[Realtime/Broadcast] module-updated received for module ${module.id}`);
+        // Fin de la maintenance : les nouvelles données arrivent, on masque la bannière.
+        if (maintenanceHideTimerRef.current) {
+          clearTimeout(maintenanceHideTimerRef.current);
+          maintenanceHideTimerRef.current = null;
+        }
+        setMaintenanceActive(false);
         void refetchModuleFromDb();
+      })
+      .on('broadcast', { event: 'maintenance-start' }, () => {
+        console.log(`[Realtime/Broadcast] maintenance-start received for module ${module.id}`);
+        setMaintenanceActive(true);
+        // Auto-clear après 10s si aucun module-updated n'arrive (garde-fou).
+        if (maintenanceHideTimerRef.current) clearTimeout(maintenanceHideTimerRef.current);
+        maintenanceHideTimerRef.current = setTimeout(() => {
+          setMaintenanceActive(false);
+          maintenanceHideTimerRef.current = null;
+        }, 10_000);
       })
       .subscribe((status) => {
         console.log(`[Realtime] Channel module-editor-live-${module.id} status:`, status);
