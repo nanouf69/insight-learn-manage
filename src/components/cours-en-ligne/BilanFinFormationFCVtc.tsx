@@ -45,7 +45,7 @@ export default function BilanFinFormationFCVtc({ onBack }: Props) {
 
               {q.image && (
                 <div className="my-3">
-                  <ImageLightbox
+                  <ExamQuestionImage
                     image={q.image}
                     alt={`Illustration question ${idx + 1}`}
                     className="max-h-48 rounded-lg border"
