@@ -22,6 +22,7 @@
  */
 
 import type { ExamenBlanc, Question } from "./examens-blancs-data";
+import { resolveOverrideConflict } from "@/components/fournisseurs/quiz-editor-utils";
 
 interface QuizOverrideRow {
   quiz_id: string;
@@ -31,6 +32,11 @@ interface QuizOverrideRow {
   choix: { lettre: string; texte: string; correct?: boolean }[];
   updated_at?: string;
 }
+
+type AdminEditableQuestion = Question & {
+  _editedAt?: string;
+  manually_edited?: boolean;
+};
 
 /** Mapping quiz_id (fournisseur portal) → exam blanc id + section base id */
 export const FOURNISSEUR_QUIZ_TO_EXAM: Record<string, { examId: string; baseSectionId: number }> = {
@@ -44,8 +50,9 @@ export const FOURNISSEUR_QUIZ_TO_EXAM: Record<string, { examId: string; baseSect
  * Apply fournisseur overrides on the matiere questions of the matching exam blancs.
  * Mutates the input examens array in place. Returns the same array for chaining.
  *
- * Last-write-wins: if multiple fournisseurs override the same question, the latest
- * one (sorted by updated_at desc) wins. Caller should sort overrides accordingly.
+ * Last-write-wins between fournisseur overrides only. If the admin has already
+ * edited the question, the admin copy is authoritative and older fournisseur
+ * overrides must not be re-applied over it.
  */
 export function applyFournisseurOverridesToExamens(
   examens: ExamenBlanc[],
@@ -80,15 +87,22 @@ export function applyFournisseurOverridesToExamens(
     const matiere = exam.matieres[matiereIndex];
     if (!matiere || !Array.isArray(matiere.questions)) continue;
 
+    const qIndex = matiere.questions.findIndex((q: Question) => Number(q.id) === Number(ov.question_id));
+    if (qIndex < 0) continue;
+
+    const original = matiere.questions[qIndex] as AdminEditableQuestion;
+    const adminEditedAt = original._editedAt || (original.manually_edited ? new Date(0).toISOString() : undefined);
+    const winner = resolveOverrideConflict(adminEditedAt, ov.updated_at ?? "");
+
+    if (winner === "admin") {
+      continue;
+    }
+
     if (ov.enonce === "__DELETED__") {
       matiere.questions = matiere.questions.filter((q: Question) => Number(q.id) !== Number(ov.question_id));
       continue;
     }
 
-    const qIndex = matiere.questions.findIndex((q: Question) => Number(q.id) === Number(ov.question_id));
-    if (qIndex < 0) continue;
-
-    const original = matiere.questions[qIndex];
     matiere.questions[qIndex] = {
       ...original,
       enonce: ov.enonce,

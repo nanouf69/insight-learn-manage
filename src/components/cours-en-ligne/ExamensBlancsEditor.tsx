@@ -650,7 +650,13 @@ function MatiereEditor({
   );
 
   const updateQuestion = (updated: Question, closeEditor: boolean) => {
-    const newQuestions = questionsSafe.map(q => q.id === updated.id ? updated : q);
+    const updatedAt = new Date().toISOString();
+    const manualUpdated = {
+      ...updated,
+      manually_edited: true,
+      _editedAt: updatedAt,
+    } as Question & { manually_edited: boolean; _editedAt: string };
+    const newQuestions = questionsSafe.map(q => q.id === updated.id ? manualUpdated : q);
     onChange({ ...matiere, questions: newQuestions });
     if (closeEditor) setEditingQId(null);
   };

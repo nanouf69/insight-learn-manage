@@ -177,6 +177,78 @@ describe("applyFournisseurOverridesToExamens — bug Rim TOUIL", () => {
     expect(ids).toEqual([1, 3]);
   });
 
+  it("n'écrase pas une question modifiée par l'admin avec un override fournisseur obsolète", () => {
+    const examens = [
+      makeBilanTA([
+        {
+          id: "m",
+          nom: "M",
+          duree: 60,
+          coefficient: 3,
+          noteEliminatoire: 0,
+          noteSur: 1,
+          questions: [
+            {
+              ...makeQ(1, "Version admin", "C"),
+              manually_edited: true,
+              _editedAt: "2026-07-23T10:00:00Z",
+            },
+          ],
+        },
+      ]),
+    ] as any;
+
+    const overrides = [
+      {
+        quiz_id: "bilan-examen-ta",
+        section_id: 700,
+        question_id: 1,
+        enonce: "Ancienne version fournisseur",
+        choix: [{ lettre: "A", texte: "A", correct: true }],
+        updated_at: "2026-07-23T11:00:00Z",
+      },
+    ];
+
+    const result = applyFournisseurOverridesToExamens(examens, overrides);
+    const q1 = result[0].matieres[0].questions[0];
+    expect(q1.enonce).toBe("Version admin");
+    expect(q1.choix.find((c: any) => c.correct)?.lettre).toBe("C");
+  });
+
+  it("ne supprime pas une question déjà marquée comme modifiée manuellement par l'admin", () => {
+    const examens = [
+      makeBilanTA([
+        {
+          id: "m",
+          nom: "M",
+          duree: 60,
+          coefficient: 3,
+          noteEliminatoire: 0,
+          noteSur: 2,
+          questions: [
+            { ...makeQ(1, "Question admin"), manually_edited: true },
+            makeQ(2, "Q2"),
+          ],
+        },
+      ]),
+    ] as any;
+
+    const overrides = [
+      {
+        quiz_id: "bilan-examen-ta",
+        section_id: 700,
+        question_id: 1,
+        enonce: "__DELETED__",
+        choix: [],
+        updated_at: "2026-07-23T11:00:00Z",
+      },
+    ];
+
+    const result = applyFournisseurOverridesToExamens(examens, overrides);
+    const ids = result[0].matieres[0].questions.map((q: any) => q.id);
+    expect(ids).toEqual([1, 2]);
+  });
+
   it("last-write-wins quand 2 overrides sur la même question", () => {
     const examens = [
       makeBilanTA([
