@@ -1509,11 +1509,23 @@ function getInitialModuleDataRaw(
     };
   }
 
-  // Cours Formation Continue TAXI (module 82) — 4 modules PDF + QCM Final
+  // Bilan Exercices Formation Continue TAXI (module 82)
+  // Matières : T3P + Sécurité Routière + Réglementation Nationale + Locale
   if (module.id === 82) {
     return {
       id: 82,
-      nom: "1.COURS FC TAXI",
+      nom: "1.BILAN EXERCICES FORMATION CONTINUE TAXI",
+      description: "Tous les exercices regroupés par matière (T3P, Sécurité Routière, Réglementation Nationale et Locale). Refaites-les autant de fois que nécessaire.",
+      cours: [],
+      exercices: JSON.parse(JSON.stringify(BILAN_EXERCICES_FC_TAXI)),
+    };
+  }
+
+  // Cours Formation Continue TAXI — PDFs pédagogiques + QCM Final (module 92)
+  if (module.id === 92) {
+    return {
+      id: 92,
+      nom: "2.COURS FC TAXI (PDF)",
       description: "Formation continue TAXI — 4 modules pédagogiques téléchargeables (Droit du T3P, Réglementation, Sécurité Routière, Gestion & Développement Commercial) + QCM Final de validation.",
       cours: JSON.parse(JSON.stringify(COURS_FC_TAXI)),
       exercices: JSON.parse(JSON.stringify(QCM_FINAL_FC_TAXI)),
