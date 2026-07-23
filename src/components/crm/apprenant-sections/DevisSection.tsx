@@ -19,6 +19,21 @@ import { saveAs } from "file-saver";
 import Docxtemplater from "docxtemplater";
 import PizZip from "pizzip";
 
+async function getSignedDevisUrl(fichierUrl: string | null, download = false): Promise<string | null> {
+  if (!fichierUrl) return null;
+  // Extract storage path after "/devis/"
+  const match = fichierUrl.match(/\/devis\/(.+)$/);
+  const path = match ? decodeURIComponent(match[1]) : fichierUrl;
+  const { data, error } = await supabase.storage
+    .from("devis")
+    .createSignedUrl(path, 3600, download ? { download: true } : undefined);
+  if (error || !data?.signedUrl) {
+    console.error("Signed URL error:", error);
+    return null;
+  }
+  return data.signedUrl;
+}
+
 function DevisHistorique({ apprenantId }: { apprenantId: string }) {
   const [devisEnvoyes, setDevisEnvoyes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
