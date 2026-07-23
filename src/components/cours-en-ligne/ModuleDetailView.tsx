@@ -3677,7 +3677,16 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         const sourceModuleData = getInitialModuleData(module, apprenantType, studentOnly);
 
         if (parentModuleId) {
-          const fcMerged = buildFcBilanModuleFromParent(module.id, latest.module_data as unknown as ModuleData, sourceModuleData);
+          const syncedVtcBilan = parentModuleId === BILAN_VTC_MODULE_ID || parentModuleId === BILAN_TAXI_MODULE_ID
+            ? await loadSyncedVtcBilanFromCours(apprenantType, studentOnly)
+            : null;
+          const parentMd = latest.module_data as unknown as ModuleData;
+          const authoritativeParentMd = parentModuleId === BILAN_VTC_MODULE_ID && syncedVtcBilan
+            ? applyManualExerciseEditsFromSource(parentMd, syncedVtcBilan)
+            : parentModuleId === BILAN_TAXI_MODULE_ID && syncedVtcBilan
+              ? forceTaxiSecurityFromVtc(parentMd, getExerciseById(syncedVtcBilan, SECURITE_ROUTIERE_BILAN_ID))
+              : parentMd;
+          const fcMerged = buildFcBilanModuleFromParent(module.id, authoritativeParentMd, sourceModuleData);
           if (!fcMerged) return;
           console.log("[Realtime] Refetched FC bilan from parent module", parentModuleId, "for module", module.id);
           setModuleData((prev) => preserveNewerLocalQuestionEdits(fcMerged, prev, "realtime FC parent refetch"));
@@ -3712,7 +3721,13 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             ...md,
             exercices: mergeSourceExercices(md.exercices, sourceModuleData.exercices, deletedExoIdsRt),
           };
-          const resolvedRealtimeModuleData = forceBilanExamGestionFromSource(module.id, mergedRealtimeModuleData, sourceModuleData);
+          let resolvedRealtimeModuleData = forceBilanExamGestionFromSource(module.id, mergedRealtimeModuleData, sourceModuleData);
+          if (shouldSyncVtcBilanFromCours(module.id)) {
+            const syncedVtcBilan = await loadSyncedVtcBilanFromCours(apprenantType, studentOnly);
+            if (syncedVtcBilan) {
+              resolvedRealtimeModuleData = applyManualExerciseEditsFromSource(resolvedRealtimeModuleData, syncedVtcBilan);
+            }
+          }
           setModuleData((prev) => preserveNewerLocalQuestionEdits(resolvedRealtimeModuleData, prev, "realtime module_editor_state refetch"));
           setDeletedCours(Array.isArray(latest.deleted_cours) ? (latest.deleted_cours as unknown as ContentItem[]) : []);
           setDeletedExercices(Array.isArray(latest.deleted_exercices) ? (latest.deleted_exercices as unknown as ExerciceItem[]) : []);
@@ -3741,7 +3756,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               ? (sourceState.deleted_exercices as any[]).map((e: any) => Number(e?.id)).filter((n) => !Number.isNaN(n))
               : [];
             const sourceExercices = mergeSourceExercices(sourceMd.exercices, sourceInitial.exercices, deletedSourceIds);
-            setModuleData((prev) => getSyncedBilanVtcModuleData(prev, sourceExercices, Number(module.id) === 4));
+            setModuleData((prev) => applyManualExerciseEditsFromSource(
+              getSyncedBilanVtcModuleData(prev, sourceExercices, Number(module.id) === 4),
+              getSyncedBilanVtcModuleData(sourceModuleData, sourceExercices, Number(module.id) === 4),
+            ));
             setDeletedCours([]);
             setDeletedExercices([]);
             setLoadedModuleEditorState(true);
@@ -3929,7 +3947,16 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         const sourceModuleData = getInitialModuleData(module, apprenantType, studentOnly);
 
         if (parentModuleId) {
-          const fcMerged = buildFcBilanModuleFromParent(module.id, latest.module_data as unknown as ModuleData, sourceModuleData);
+          const syncedVtcBilan = parentModuleId === BILAN_VTC_MODULE_ID || parentModuleId === BILAN_TAXI_MODULE_ID
+            ? await loadSyncedVtcBilanFromCours(apprenantType, studentOnly)
+            : null;
+          const parentMd = latest.module_data as unknown as ModuleData;
+          const authoritativeParentMd = parentModuleId === BILAN_VTC_MODULE_ID && syncedVtcBilan
+            ? applyManualExerciseEditsFromSource(parentMd, syncedVtcBilan)
+            : parentModuleId === BILAN_TAXI_MODULE_ID && syncedVtcBilan
+              ? forceTaxiSecurityFromVtc(parentMd, getExerciseById(syncedVtcBilan, SECURITE_ROUTIERE_BILAN_ID))
+              : parentMd;
+          const fcMerged = buildFcBilanModuleFromParent(module.id, authoritativeParentMd, sourceModuleData);
           if (!fcMerged) return;
 
           let didUpdate = false;
@@ -3958,7 +3985,13 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           ...md,
           exercices: mergeSourceExercices(md.exercices, sourceModuleData.exercices, deletedExoIdsPoll),
         };
-        const resolved = forceBilanExamGestionFromSource(module.id, merged, sourceModuleData);
+        let resolved = forceBilanExamGestionFromSource(module.id, merged, sourceModuleData);
+        if (shouldSyncVtcBilanFromCours(module.id)) {
+          const syncedVtcBilan = await loadSyncedVtcBilanFromCours(apprenantType, studentOnly);
+          if (syncedVtcBilan) {
+            resolved = applyManualExerciseEditsFromSource(resolved, syncedVtcBilan);
+          }
+        }
 
         // Only update if data actually changed
         let didUpdate = false;
