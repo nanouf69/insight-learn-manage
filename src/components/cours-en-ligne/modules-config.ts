@@ -55,6 +55,9 @@ export const ALL_MODULES: ModuleDefinition[] = [
   { id: 85, nom: "3.INFORMATIONS FINANCEUR VTC" },
   { id: 86, nom: "3.INFORMATIONS FINANCEUR TAXI" },
   { id: 88, nom: "🪪 DEMANDE DE CARTE PROFESSIONNELLE VTC" },
+  { id: 93, nom: "🪪 DEMANDE DE CARTE PROFESSIONNELLE TAXI" },
+  { id: 94, nom: "💶 REMBOURSEMENT FORMATION CONTINUE TAXI" },
+
   // 5. EXAMENS BLANCS
   { id: 35, nom: "5.EXAMENS BLANCS VTC" },
   { id: 36, nom: "5.EXAMENS BLANCS TAXI" },
