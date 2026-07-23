@@ -1105,13 +1105,17 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
 
       y += totBoxH + 8;
 
-      if (notes) {
+      const notesPdf = [
+        sessionDate ? `Dates de formation choisies : ${sessionDate}` : '',
+        notes || '',
+      ].filter(Boolean).join('\n');
+      if (notesPdf) {
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(8);
         doc.setTextColor(60, 60, 60);
         doc.text('Notes :', margin, y);
         y += 4;
-        const noteLines = doc.splitTextToSize(notes, contentW);
+        const noteLines = doc.splitTextToSize(notesPdf, contentW);
         doc.text(noteLines, margin, y);
         y += noteLines.length * 4 + 4;
       }
