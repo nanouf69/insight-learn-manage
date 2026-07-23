@@ -13,6 +13,7 @@ import {
 import { tousLesExamens, getPointsParQuestion, type ExamenBlanc, type Matiere, type Question, type Choix } from "./examens-blancs-data";
 import { mergeQuestionsForMatiere, moveQuestionToPosition } from "./examens-blancs-utils";
 import { QuestionImageUpload } from "./QuestionImageUpload";
+import { ExamQuestionImage } from "./ExamQuestionImage";
 import {
   applyFournisseurOverridesToExamens,
   FOURNISSEUR_QUIZ_TO_EXAM,
@@ -850,7 +851,7 @@ function MatiereEditor({
                       <div className="flex-1 min-w-0">
                         <p className="text-base font-medium text-foreground leading-relaxed"><RichText value={q.enonce} /></p>
                         {q.image && (
-                          <img src={q.image} alt={`Question ${q.id}`} className="mt-2 max-h-32 rounded border" />
+                          <ExamQuestionImage image={q.image} alt={`Question ${q.id}`} className="mt-2 max-h-32 rounded border" fallbackClassName="mt-2 text-xs text-muted-foreground italic" />
                         )}
                       </div>
                       <Badge variant="outline" className="shrink-0 text-xs font-semibold text-primary border-primary/40">

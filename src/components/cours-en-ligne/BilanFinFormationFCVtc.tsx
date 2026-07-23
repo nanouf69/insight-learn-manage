@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, CheckCircle2 } from "lucide-react";
 import { BILAN_FIN_FORMATION_FC_VTC } from "./bilan-fin-formation-fc-vtc-data";
-import { ImageLightbox } from "./ImageLightbox";
+import { ExamQuestionImage } from "./ExamQuestionImage";
 
 interface Props {
   onBack: () => void;
@@ -45,11 +45,11 @@ export default function BilanFinFormationFCVtc({ onBack }: Props) {
 
               {q.image && (
                 <div className="my-3">
-                  <ImageLightbox
-                    src={q.image}
+                  <ExamQuestionImage
+                    image={q.image}
                     alt={`Illustration question ${idx + 1}`}
-                    loading="lazy"
                     className="max-h-48 rounded-lg border"
+                    fallbackClassName="text-xs text-muted-foreground italic"
                   />
                 </div>
               )}

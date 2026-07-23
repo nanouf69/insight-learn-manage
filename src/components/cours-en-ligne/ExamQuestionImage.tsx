@@ -4,6 +4,15 @@ import { ImageLightbox } from "./ImageLightbox";
 import { supabase } from "@/integrations/supabase/client";
 
 const SUPABASE_URL = (import.meta.env.VITE_SUPABASE_URL ?? "").replace(/\/$/, "");
+const STORAGE_URL = SUPABASE_URL ? `${SUPABASE_URL}/storage/v1` : "";
+
+function normalizeSignedUrl(signedUrl: string): string {
+  if (/^https?:\/\//i.test(signedUrl)) return signedUrl;
+  if (signedUrl.startsWith("/storage/v1/")) return SUPABASE_URL ? `${SUPABASE_URL}${signedUrl}` : signedUrl;
+  if (signedUrl.startsWith("/object/")) return STORAGE_URL ? `${STORAGE_URL}${signedUrl}` : signedUrl;
+  if (signedUrl.startsWith("object/")) return STORAGE_URL ? `${STORAGE_URL}/${signedUrl}` : signedUrl;
+  return signedUrl;
+}
 
 /**
  * If url points to a private Supabase Storage object (public URL for a private bucket
@@ -19,7 +28,7 @@ async function toDisplayableUrl(url: string): Promise<string> {
     const path = decodeURIComponent(m[2]);
     const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, 60 * 60);
     if (error || !data?.signedUrl) return url;
-    return data.signedUrl;
+    return normalizeSignedUrl(data.signedUrl);
   } catch {
     return url;
   }
