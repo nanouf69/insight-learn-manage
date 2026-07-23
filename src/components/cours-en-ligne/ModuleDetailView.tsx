@@ -98,6 +98,8 @@ import EmargementsSignesViewer from "./EmargementsSignesViewer";
 import RemboursementFCViewer from "./RemboursementFCViewer";
 import FinanceurFCForm from "./FinanceurFCForm";
 import DemandeCarteVTCViewer from "./DemandeCarteVTCViewer";
+import DemandeCarteTAXIViewer from "./DemandeCarteTAXIViewer";
+
 import AnalyseBesoinForm from "./AnalyseBesoinForm";
 import ProjetProfessionnelForm from "./ProjetProfessionnelForm";
 import EvaluationAcquisForm from "./EvaluationAcquisForm";
@@ -139,7 +141,7 @@ interface ContentItem {
   fichiers?: { nom: string; url: string }[];
   slidesKey?: string;
   quiz?: InlineQuizQuestion[];
-  checklistType?: "competences" | "analyse-besoin" | "evaluation-acquis" | "satisfaction" | "projet-professionnel" | "cgv" | "cgv-reglement" | "emargements-fc" | "financeur-fc" | "demande-carte-vtc" | "remboursement-fc-vtc";
+  checklistType?: "competences" | "analyse-besoin" | "evaluation-acquis" | "satisfaction" | "projet-professionnel" | "cgv" | "cgv-reglement" | "emargements-fc" | "financeur-fc" | "demande-carte-vtc" | "demande-carte-taxi" | "remboursement-fc-vtc" | "remboursement-fc-taxi";
   formationType?: string;
 }
 
@@ -1650,6 +1652,45 @@ function getInitialModuleDataRaw(
       exercices: [],
     };
   }
+
+  // Demande de Carte Professionnelle TAXI — Formation Continue TAXI (93)
+  if (module.id === 93) {
+    return {
+      id: 93,
+      nom: "🪪 DEMANDE DE CARTE PROFESSIONNELLE TAXI",
+      description: "Démarche officielle de renouvellement de la carte professionnelle TAXI auprès de la préfecture après la formation continue.",
+      cours: [
+        {
+          id: 1,
+          titre: "Renouvellement de la carte professionnelle TAXI",
+          description: "Liste des pièces à fournir et démarche auprès de la préfecture",
+          actif: true,
+          checklistType: "demande-carte-taxi" as const,
+        },
+      ],
+      exercices: [],
+    };
+  }
+
+  // Remboursement Formation Continue TAXI (94) — documents pour le financeur
+  if (module.id === 94) {
+    return {
+      id: 94,
+      nom: "💶 REMBOURSEMENT FORMATION CONTINUE TAXI",
+      description: "Téléchargez l'ensemble des documents nécessaires au remboursement par votre financeur.",
+      cours: [
+        {
+          id: 1,
+          titre: "Documents pour le remboursement de la formation",
+          description: "Programme, émargements, attestation et facture acquittée.",
+          actif: true,
+          checklistType: "remboursement-fc-taxi" as const,
+        },
+      ],
+      exercices: [],
+    };
+  }
+
 
   // Bilan Exercices TAXI (module 9) — toutes les matières
   if (module.id === 9) {
@@ -5179,6 +5220,33 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           />
         );
       }
+
+      if (cours.checklistType === "remboursement-fc-taxi") {
+        return (
+          <RemboursementFCViewer
+            apprenantId={apprenantId || undefined}
+            formation="TAXI"
+            completed={completedPages.has(currentPage)}
+            onComplete={() => {
+              markPageCompleted(currentPage);
+              if (currentPage < totalPages - 1) goToPage(currentPage + 1);
+            }}
+          />
+        );
+      }
+
+      if (cours.checklistType === "demande-carte-taxi") {
+        return (
+          <DemandeCarteTAXIViewer
+            completed={completedPages.has(currentPage)}
+            onComplete={() => {
+              markPageCompleted(currentPage);
+              if (currentPage < totalPages - 1) goToPage(currentPage + 1);
+            }}
+          />
+        );
+      }
+
 
       if (cours.checklistType === "financeur-fc") {
         return (

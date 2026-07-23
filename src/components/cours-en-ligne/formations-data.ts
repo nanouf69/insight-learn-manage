@@ -390,6 +390,19 @@ export const MODULES_DATA: ModuleInfo[] = [
     formations: ["continue-taxi"],
   },
   {
+    id: 93,
+    nom: "🪪 DEMANDE DE CARTE PROFESSIONNELLE TAXI",
+    description: "Renouvellement de la carte professionnelle TAXI auprès de la préfecture — démarche après formation continue.",
+    formations: ["continue-taxi"],
+  },
+  {
+    id: 94,
+    nom: "💶 REMBOURSEMENT FORMATION CONTINUE TAXI",
+    description: "Documents pour le remboursement par le financeur — Formation Continue TAXI",
+    formations: ["continue-taxi"],
+  },
+
+  {
     id: 83,
     nom: "3.FEUILLES D'ÉMARGEMENT SIGNÉES VTC",
     description: "Historique des feuilles d'émargement signées — VTC / VA présentiel et formation continue VTC",
