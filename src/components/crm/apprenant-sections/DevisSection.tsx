@@ -19,6 +19,21 @@ import { saveAs } from "file-saver";
 import Docxtemplater from "docxtemplater";
 import PizZip from "pizzip";
 
+async function getSignedDevisUrl(fichierUrl: string | null, download = false): Promise<string | null> {
+  if (!fichierUrl) return null;
+  // Extract storage path after "/devis/"
+  const match = fichierUrl.match(/\/devis\/(.+)$/);
+  const path = match ? decodeURIComponent(match[1]) : fichierUrl;
+  const { data, error } = await supabase.storage
+    .from("devis")
+    .createSignedUrl(path, 3600, download ? { download: true } : undefined);
+  if (error || !data?.signedUrl) {
+    console.error("Signed URL error:", error);
+    return null;
+  }
+  return data.signedUrl;
+}
+
 function DevisHistorique({ apprenantId }: { apprenantId: string }) {
   const [devisEnvoyes, setDevisEnvoyes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -72,20 +87,66 @@ function DevisHistorique({ apprenantId }: { apprenantId: string }) {
               </div>
               <div className="flex items-center gap-2">
                 {d.statut === "signe" ? (
-                  <>
-                    <Badge variant="default" className="bg-green-600 text-xs">Signé</Badge>
-                    {d.devis_signe_url && (
-                      <a href={d.devis_signe_url} target="_blank" rel="noopener noreferrer">
-                        <Button variant="ghost" size="sm"><Download className="w-3 h-3" /></Button>
-                      </a>
-                    )}
-                  </>
+                  <Badge variant="default" className="bg-green-600 text-xs">Signé</Badge>
                 ) : (
                   <Badge variant="secondary" className="text-xs">En attente</Badge>
                 )}
-                <a href={d.fichier_url} target="_blank" rel="noopener noreferrer">
-                  <Button variant="ghost" size="sm" title="Voir le devis envoyé"><Eye className="w-3 h-3" /></Button>
-                </a>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  title="Voir / télécharger le devis"
+                  onClick={async () => {
+                    const url = await getSignedDevisUrl(d.fichier_url);
+                    if (url) window.open(url, "_blank");
+                    else toast.error("Impossible d'ouvrir le devis");
+                  }}
+                >
+                  <Eye className="w-3 h-3" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  title="Télécharger"
+                  onClick={async () => {
+                    const url = await getSignedDevisUrl(d.fichier_url, true);
+                    if (url) {
+                      const a = document.createElement("a");
+                      a.href = url;
+                      a.download = `devis-${d.modele}-${d.id}.pdf`;
+                      a.click();
+                    } else toast.error("Téléchargement impossible");
+                  }}
+                >
+                  <Download className="w-3 h-3" />
+                </Button>
+                {d.statut === "signe" && d.devis_signe_url && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    title="Voir devis signé"
+                    onClick={async () => {
+                      const url = await getSignedDevisUrl(d.devis_signe_url);
+                      if (url) window.open(url, "_blank");
+                    }}
+                  >
+                    <FileDown className="w-3 h-3 text-green-600" />
+                  </Button>
+                )}
+                {d.statut !== "signe" && d.token && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    title="Lien de signature"
+                    onClick={() => {
+                      const link = `${window.location.origin}/devis?token=${d.token}`;
+                      navigator.clipboard.writeText(link);
+                      toast.success("Lien de signature copié");
+                      window.open(link, "_blank");
+                    }}
+                  >
+                    <PenLine className="w-3 h-3 mr-1" /> Signer
+                  </Button>
+                )}
               </div>
             </div>
           ))}
