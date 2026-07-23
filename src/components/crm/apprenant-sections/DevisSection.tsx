@@ -413,6 +413,24 @@ const FORMATIONS_CATALOGUE = [
   { label: "Formation mobilité TAXI 14h - 349 €", prix: 349, designation: "Formation mobilité TAXI (14h) - Formation obligatoire de mobilité pour exercer dans un autre département" },
 ];
 
+/* ─── DATES DE FORMATION CATALOGUE (présentiel) ─── */
+const DATES_VTC = [
+  "Du 12 au 25 janvier 2026",
+  "Du 16 au 30 mars 2026",
+  "Du 11 au 24 mai 2026",
+  "Du 6 au 19 juillet 2026",
+  "Du 14 au 27 septembre 2026",
+  "Du 2 au 15 novembre 2026",
+];
+const DATES_TAXI = [
+  "Du 5 au 26 janvier 2026",
+  "Du 9 au 30 mars 2026",
+  "Du 4 au 25 mai 2026",
+  "Du 29 juin au 20 juillet 2026",
+  "Du 7 au 28 septembre 2026",
+  "Du 26 octobre au 16 novembre 2026",
+];
+
 const CGV_TEXT = `CONDITIONS GENERALES DE VENTE - FTRANSPORT
 
 FTRANSPORT est un organisme de formation professionnelle specialise dans le secteur du transport.
