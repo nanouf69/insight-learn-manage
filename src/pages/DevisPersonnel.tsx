@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
-import { FileText, Download, Loader2, Eraser, CheckCircle2, Building2, User, CalendarDays } from "lucide-react";
+import { FileText, Download, Loader2, Eraser, CheckCircle2, Building2, User, CalendarDays, Send } from "lucide-react";
 import { toast } from "sonner";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import jsPDF from "jspdf";
