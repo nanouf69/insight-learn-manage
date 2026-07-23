@@ -3884,6 +3884,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     isSavingToDbRef.current = true;
     try {
       const savedAt = new Date().toISOString();
+      const normalizedModuleData = normalizeManualQuestionFlags(dataToSave.module_data as ModuleData);
       // Snapshot ancienne version pour détecter les changements pédagogiques
       let previousModuleData: any = null;
       try {
@@ -3898,6 +3899,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       const { error } = await supabase.from("module_editor_state").upsert(
         [{
           ...dataToSave,
+          module_data: normalizedModuleData as any,
           updated_at: savedAt,
         }],
         { onConflict: "module_id" }
@@ -3933,7 +3935,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
       // 🔎 DEBUG carte grise : log the exact choix array we just wrote to DB
       try {
-        const exos = (dataToSave.module_data?.exercices ?? []) as any[];
+        const exos = (normalizedModuleData?.exercices ?? []) as any[];
         for (const exo of exos) {
           for (const q of (exo?.questions ?? [])) {
             const enonce = String(q?.enonce ?? "").toLowerCase();
@@ -4002,14 +4004,14 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         dataToSave.module_id,
         module.nom,
         previousModuleData,
-        dataToSave.module_data,
+        normalizedModuleData,
         "ModuleDetailView.performDbSave",
       );
 
       // Sync shared exercises to ALL sibling modules (handles edits, adds, deletes)
       await syncSharedExercisesToSiblingModules(
         dataToSave.module_id,
-        dataToSave.module_data.exercices ?? [],
+        normalizedModuleData.exercices ?? [],
         (dataToSave.deleted_exercices ?? []).map((e: any) => e.id),
       );
 
@@ -4023,7 +4025,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         const BILAN_MIRROR: Record<number, number> = { 4: 9, 9: 4 };
         const siblingId = BILAN_MIRROR[Number(dataToSave.module_id)];
         if (siblingId) {
-          const savedExos = (dataToSave.module_data?.exercices ?? []) as any[];
+          const savedExos = (normalizedModuleData?.exercices ?? []) as any[];
           const sharedFromSaved = savedExos
             .filter((e) => SHARED_BILAN_IDS.has(Number(e?.id)))
             .map((e) => JSON.parse(JSON.stringify(e)));
