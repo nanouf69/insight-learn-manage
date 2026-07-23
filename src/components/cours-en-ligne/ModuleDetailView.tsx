@@ -3045,6 +3045,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   const adminLocalEditAtRef = useRef(0);
   const lastAppliedDbUpdatedAtRef = useRef(0);
   const lastDbUpdatedAtRef = useRef<string | null>(null);
+  const lastMaintenanceBroadcastRef = useRef(0);
+  const [maintenanceActive, setMaintenanceActive] = useState(false);
+  const maintenanceHideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const toSafeTimestamp = (value: unknown) => {
     const ts = new Date(String(value ?? "")).getTime();
@@ -3052,7 +3055,33 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   };
 
   const markAdminLocalEdit = () => {
-    if (!studentOnly) adminLocalEditAtRef.current = Date.now();
+    if (studentOnly) return;
+    adminLocalEditAtRef.current = Date.now();
+    // Throttled maintenance broadcast (max 1 every 3s) → learners voient
+    // instantanément une bannière "Opération de maintenance" pendant que
+    // l'admin est en train d'éditer une question/réponse.
+    const now = Date.now();
+    if (now - lastMaintenanceBroadcastRef.current < 3000) return;
+    lastMaintenanceBroadcastRef.current = now;
+    (async () => {
+      try {
+        const chan = supabase.channel(`module-editor-live-${module.id}`);
+        await new Promise<void>((resolve) => {
+          const timeout = setTimeout(resolve, 500);
+          chan.subscribe((status) => {
+            if (status === "SUBSCRIBED") { clearTimeout(timeout); resolve(); }
+          });
+        });
+        await chan.send({
+          type: "broadcast",
+          event: "maintenance-start",
+          payload: { moduleId: module.id, at: new Date().toISOString() },
+        });
+        await supabase.removeChannel(chan);
+      } catch (err) {
+        console.warn("[Realtime] Broadcast maintenance-start failed (non-bloquant):", err);
+      }
+    })();
   };
 
   const markDbSnapshotApplied = (updatedAt: unknown) => {
