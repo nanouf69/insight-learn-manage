@@ -55,9 +55,19 @@ function DevisHistorique({ apprenantId }: { apprenantId: string }) {
                 <div>
                   <p className="font-medium">{d.modele}</p>
                   <p className="text-xs text-muted-foreground">
-                    {format(new Date(d.created_at), "dd/MM/yyyy à HH:mm", { locale: fr })}
+                    Envoyé le {format(new Date(d.created_at), "dd/MM/yyyy à HH:mm", { locale: fr })}
                     {d.montant && ` — ${d.montant}`}
                   </p>
+                  {(d.date_devis || d.date_validite) && (
+                    <p className="text-xs text-muted-foreground">
+                      {d.date_devis && `Devis du ${format(new Date(d.date_devis), "dd/MM/yyyy", { locale: fr })}`}
+                      {d.date_devis && d.date_validite && ' · '}
+                      {d.date_validite && `valide jusqu'au ${format(new Date(d.date_validite), "dd/MM/yyyy", { locale: fr })}`}
+                    </p>
+                  )}
+                  {d.dates_formation && (
+                    <p className="text-xs text-primary font-medium">📅 {d.dates_formation}</p>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-2">
