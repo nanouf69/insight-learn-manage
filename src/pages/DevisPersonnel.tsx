@@ -1440,7 +1440,6 @@ export default function DevisPersonnel() {
               </p>
             </div>
           )}
-        </div>
       </div>
     </div>
   );
