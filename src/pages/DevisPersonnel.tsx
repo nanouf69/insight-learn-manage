@@ -368,7 +368,7 @@ export default function DevisPersonnel() {
       const signatureDataUrl = hasSigned && canvasRef.current ? canvasRef.current.toDataURL("image/png") : null;
       const numDevis = `DEV-${format(new Date(), "yyyyMM")}-${String(Math.floor(Math.random() * 9000) + 1000)}`;
       const dateToday = format(new Date(), "dd MMMM yyyy", { locale: fr });
-      const validite = format(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), "dd MMMM yyyy", { locale: fr });
+      const validite = format(new Date(Date.now() + 60 * 24 * 60 * 60 * 1000), "dd MMMM yyyy", { locale: fr });
 
       // === PAGE 1 : DEVIS ===
       // Header
