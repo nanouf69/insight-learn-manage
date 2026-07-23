@@ -1036,6 +1036,9 @@ export type Database = {
         Row: {
           apprenant_id: string
           created_at: string
+          date_devis: string | null
+          date_validite: string | null
+          dates_formation: string | null
           devis_signe_url: string | null
           fichier_url: string
           formation: string | null
@@ -1049,6 +1052,9 @@ export type Database = {
         Insert: {
           apprenant_id: string
           created_at?: string
+          date_devis?: string | null
+          date_validite?: string | null
+          dates_formation?: string | null
           devis_signe_url?: string | null
           fichier_url: string
           formation?: string | null
@@ -1062,6 +1068,9 @@ export type Database = {
         Update: {
           apprenant_id?: string
           created_at?: string
+          date_devis?: string | null
+          date_validite?: string | null
+          dates_formation?: string | null
           devis_signe_url?: string | null
           fichier_url?: string
           formation?: string | null

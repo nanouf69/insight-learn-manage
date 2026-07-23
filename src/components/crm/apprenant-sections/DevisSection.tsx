@@ -55,9 +55,19 @@ function DevisHistorique({ apprenantId }: { apprenantId: string }) {
                 <div>
                   <p className="font-medium">{d.modele}</p>
                   <p className="text-xs text-muted-foreground">
-                    {format(new Date(d.created_at), "dd/MM/yyyy à HH:mm", { locale: fr })}
+                    Envoyé le {format(new Date(d.created_at), "dd/MM/yyyy à HH:mm", { locale: fr })}
                     {d.montant && ` — ${d.montant}`}
                   </p>
+                  {(d.date_devis || d.date_validite) && (
+                    <p className="text-xs text-muted-foreground">
+                      {d.date_devis && `Devis du ${format(new Date(d.date_devis), "dd/MM/yyyy", { locale: fr })}`}
+                      {d.date_devis && d.date_validite && ' · '}
+                      {d.date_validite && `valide jusqu'au ${format(new Date(d.date_validite), "dd/MM/yyyy", { locale: fr })}`}
+                    </p>
+                  )}
+                  {d.dates_formation && (
+                    <p className="text-xs text-primary font-medium">📅 {d.dates_formation}</p>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -953,6 +963,13 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
       doc.text(`N° ${numDevis}`, pageW - margin, 25, { align: 'right' });
       doc.text(`Date : ${format(new Date(dateDevis), 'dd MMMM yyyy', { locale: fr })}`, pageW - margin, 30, { align: 'right' });
       doc.text(`Valide jusqu'au : ${format(new Date(dateValidite), 'dd MMMM yyyy', { locale: fr })}`, pageW - margin, 35, { align: 'right' });
+      if (sessionDate) {
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(30, 58, 138);
+        doc.text(`Dates de formation : ${sessionDate}`, pageW - margin, 40, { align: 'right' });
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(0, 0, 0);
+      }
 
       y = 50;
       doc.setTextColor(0, 0, 0);
@@ -1362,6 +1379,9 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
         formation: (selectedTemplateConfig as any)?.label || apprenant.formation_choisie || '',
         fichier_url: urlData.publicUrl,
         statut: 'envoye',
+        dates_formation: sessionDate || null,
+        date_devis: dateDevis || null,
+        date_validite: dateValidite || null,
       }).select('token').single();
 
       const appUrl = 'https://insight-learn-manage.lovable.app';
