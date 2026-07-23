@@ -1699,10 +1699,19 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     ? orderedAuthorizedModules
     : (fallbackModules.length > 0 ? fallbackModules : allModules);
 
-  const modules = sourceModules.map((module) => ({
+  // Blacklist stricte pour Formation Continue TAXI : jamais afficher les modules
+  // 1 (intro présentiel), 2/10/25/14-19/20-24/39 (cours & exercices VTC/TAXI),
+  // 4/9 (bilan exercices VTC/TAXI), 12 (cas pratique TAXI).
+  const FC_TAXI_BLACKLIST = new Set([1, 2, 4, 9, 10, 12, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 39]);
+  const filteredSourceModules = selectedFormation === "continue-taxi"
+    ? sourceModules.filter((m) => !FC_TAXI_BLACKLIST.has(m.id))
+    : sourceModules;
+
+  const modules = filteredSourceModules.map((module) => ({
     ...module,
     nom: getModuleDisplayName(selectedFormation, module.id, module.nom),
   }));
+
 
   const completionsByModuleId = moduleCompletionsForNotes.reduce<Record<number, any[]>>((acc, completion) => {
     const normalizedId = normalizeModuleIdForDashboard(Number(completion.module_id));
