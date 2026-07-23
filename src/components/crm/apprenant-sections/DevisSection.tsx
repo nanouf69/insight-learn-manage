@@ -1848,9 +1848,9 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
               <Download className="w-4 h-4" />
               {generating ? "Génération..." : "Télécharger le devis PDF"}
             </Button>
-            <Button onClick={envoyerDevisParEmail} disabled={sendingDevisEmail || generating || !apprenant.email || !lignes[0]?.designation?.trim() || !sessionDate || !dateValidite} title={!lignes[0]?.designation?.trim() ? "Renseignez l'intitulé" : !sessionDate ? "Choisissez les dates de formation" : !dateValidite ? "Renseignez la date de validité" : ""} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white">
+            <Button onClick={envoyerDevisParEmail} disabled={sendingDevisEmail || generating || !apprenant.email || !lignes[0]?.designation?.trim() || !sessionDate || !dateValidite} title={!apprenant.email ? "L'apprenant n'a pas d'email" : !lignes[0]?.designation?.trim() ? "Renseignez l'intitulé" : !sessionDate ? "Choisissez les dates de formation" : !dateValidite ? "Renseignez la date de validité" : `Envoi à ${apprenant.email}`} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white">
               <Send className="w-4 h-4" />
-              {sendingDevisEmail ? "Envoi en cours..." : "Envoyer le devis par mail"}
+              {sendingDevisEmail ? "Envoi en cours..." : `Envoyer par mail au client${apprenant.email ? ` (${apprenant.email})` : ''}`}
             </Button>
             <Button variant="outline" onClick={() => setShowPreview(!showPreview)} className="flex items-center gap-2">
               <Eye className="w-4 h-4" />
