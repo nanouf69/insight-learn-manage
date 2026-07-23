@@ -953,6 +953,13 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
       doc.text(`N° ${numDevis}`, pageW - margin, 25, { align: 'right' });
       doc.text(`Date : ${format(new Date(dateDevis), 'dd MMMM yyyy', { locale: fr })}`, pageW - margin, 30, { align: 'right' });
       doc.text(`Valide jusqu'au : ${format(new Date(dateValidite), 'dd MMMM yyyy', { locale: fr })}`, pageW - margin, 35, { align: 'right' });
+      if (sessionDate) {
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(30, 58, 138);
+        doc.text(`Dates de formation : ${sessionDate}`, pageW - margin, 40, { align: 'right' });
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(0, 0, 0);
+      }
 
       y = 50;
       doc.setTextColor(0, 0, 0);
