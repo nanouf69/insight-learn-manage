@@ -848,11 +848,29 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
     return { subject, body };
   };
 
+  const validateBeforeSend = (): boolean => {
+    const intitule = lignes[0]?.designation?.trim();
+    if (!intitule) {
+      toast.error("Veuillez renseigner l'intitulé de la formation (désignation)");
+      return false;
+    }
+    if (!sessionDate) {
+      toast.error("Veuillez choisir les dates de formation avant d'envoyer");
+      return false;
+    }
+    if (!dateValidite) {
+      toast.error("Veuillez renseigner la date de fin de validité du devis");
+      return false;
+    }
+    return true;
+  };
+
   const sendDevisEmail = async () => {
     if (!apprenant.email) {
       toast.error("Aucun email renseigné pour cet apprenant");
       return;
     }
+    if (!validateBeforeSend()) return;
     const emailContent = getEmailContent();
     if (!emailContent) {
       toast.error("Aucun modèle d'email pour ce type de devis");
