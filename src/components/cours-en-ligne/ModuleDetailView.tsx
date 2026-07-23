@@ -3045,6 +3045,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   const adminLocalEditAtRef = useRef(0);
   const lastAppliedDbUpdatedAtRef = useRef(0);
   const lastDbUpdatedAtRef = useRef<string | null>(null);
+  const lastMaintenanceBroadcastRef = useRef(0);
+  const [maintenanceActive, setMaintenanceActive] = useState(false);
+  const maintenanceHideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const toSafeTimestamp = (value: unknown) => {
     const ts = new Date(String(value ?? "")).getTime();
@@ -3052,7 +3055,33 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   };
 
   const markAdminLocalEdit = () => {
-    if (!studentOnly) adminLocalEditAtRef.current = Date.now();
+    if (studentOnly) return;
+    adminLocalEditAtRef.current = Date.now();
+    // Throttled maintenance broadcast (max 1 every 3s) → learners voient
+    // instantanément une bannière "Opération de maintenance" pendant que
+    // l'admin est en train d'éditer une question/réponse.
+    const now = Date.now();
+    if (now - lastMaintenanceBroadcastRef.current < 3000) return;
+    lastMaintenanceBroadcastRef.current = now;
+    (async () => {
+      try {
+        const chan = supabase.channel(`module-editor-live-${module.id}`);
+        await new Promise<void>((resolve) => {
+          const timeout = setTimeout(resolve, 500);
+          chan.subscribe((status) => {
+            if (status === "SUBSCRIBED") { clearTimeout(timeout); resolve(); }
+          });
+        });
+        await chan.send({
+          type: "broadcast",
+          event: "maintenance-start",
+          payload: { moduleId: module.id, at: new Date().toISOString() },
+        });
+        await supabase.removeChannel(chan);
+      } catch (err) {
+        console.warn("[Realtime] Broadcast maintenance-start failed (non-bloquant):", err);
+      }
+    })();
   };
 
   const markDbSnapshotApplied = (updatedAt: unknown) => {
@@ -3899,7 +3928,23 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       // (permet un refresh apprenant instantané même si postgres_changes est retardé)
       .on('broadcast', { event: 'module-updated' }, () => {
         console.log(`[Realtime/Broadcast] module-updated received for module ${module.id}`);
+        // Fin de la maintenance : les nouvelles données arrivent, on masque la bannière.
+        if (maintenanceHideTimerRef.current) {
+          clearTimeout(maintenanceHideTimerRef.current);
+          maintenanceHideTimerRef.current = null;
+        }
+        setMaintenanceActive(false);
         void refetchModuleFromDb();
+      })
+      .on('broadcast', { event: 'maintenance-start' }, () => {
+        console.log(`[Realtime/Broadcast] maintenance-start received for module ${module.id}`);
+        setMaintenanceActive(true);
+        // Auto-clear après 10s si aucun module-updated n'arrive (garde-fou).
+        if (maintenanceHideTimerRef.current) clearTimeout(maintenanceHideTimerRef.current);
+        maintenanceHideTimerRef.current = setTimeout(() => {
+          setMaintenanceActive(false);
+          maintenanceHideTimerRef.current = null;
+        }, 10_000);
       })
       .subscribe((status) => {
         console.log(`[Realtime] Channel module-editor-live-${module.id} status:`, status);
@@ -7452,6 +7497,18 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
   return (
     <div className="space-y-6 animate-fade-in">
+      {studentOnly && maintenanceActive && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="flex items-center gap-3 rounded-lg border border-amber-400 bg-amber-50 px-4 py-3 text-amber-900 shadow-sm"
+        >
+          <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-amber-500" />
+          <div className="text-sm font-medium">
+            Opération de maintenance en cours — le formateur met à jour ce module. Vos réponses sont conservées, la page se rafraîchira automatiquement.
+          </div>
+        </div>
+      )}
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <Button variant="outline" size="icon" onClick={onBack}>
