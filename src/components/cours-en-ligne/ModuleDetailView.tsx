@@ -199,6 +199,11 @@ const FC_BILAN_EXCLUDED_EXERCISE_IDS = new Set([101, 103, 105]);
 const BILAN_EXAMEN_VTC_MODULE_ID = 5;
 const BILAN_EXAMEN_TAXI_MODULE_ID = 11;
 const SECURITE_ROUTIERE_BILAN_ID = 102;
+// Ces modules sont édités depuis l'admin et leur source de vérité est
+// exclusivement module_editor_state. L'ancienne table quiz_questions_overrides
+// peut contenir des copies fournisseur obsolètes : elle ne doit jamais repasser
+// au-dessus des corrections admin sur les Bilans.
+const ADMIN_AUTHORITATIVE_QUIZ_MODULE_IDS = new Set([4, 5, 9, 11, 27, 28, 29, 81, 82, 90]);
 const BILAN_EXAMEN_GESTION_EXERCISE_IDS: Record<number, number> = {
   [BILAN_EXAMEN_VTC_MODULE_ID]: 501,
   [BILAN_EXAMEN_TAXI_MODULE_ID]: 601,
@@ -225,7 +230,11 @@ const TRAINER_QUIZ_IDS_BY_MODULE_ID: Record<number, string[]> = {
   64: ["equipements-taxi"],
 };
 
-const getTrainerQuizIdsForModule = (moduleId: number | string) => TRAINER_QUIZ_IDS_BY_MODULE_ID[Number(moduleId)] || [];
+const isAdminAuthoritativeQuizModule = (moduleId: number | string) =>
+  ADMIN_AUTHORITATIVE_QUIZ_MODULE_IDS.has(Number(moduleId));
+
+const getTrainerQuizIdsForModule = (moduleId: number | string) =>
+  isAdminAuthoritativeQuizModule(moduleId) ? [] : (TRAINER_QUIZ_IDS_BY_MODULE_ID[Number(moduleId)] || []);
 
 const buildTrainerOverrideMap = (rows: any[] | null | undefined) => {
   const overrideMap = new Map<string, TrainerOverrideInfo>();
@@ -245,6 +254,25 @@ const buildTrainerOverrideMap = (rows: any[] | null | undefined) => {
   }
   return overrideMap;
 };
+
+const normalizeManualQuestionFlags = (data: ModuleData): ModuleData => ({
+  ...data,
+  exercices: (data.exercices ?? []).map((exercise) => ({
+    ...exercise,
+    questions: Array.isArray(exercise.questions)
+      ? exercise.questions.map((question) => {
+          const q = question as ExerciceQuestion & { manually_edited?: boolean };
+          const hasManualMarker = Boolean(q.manually_edited) || Boolean(q._editedAt);
+          if (!hasManualMarker) return question;
+          return {
+            ...q,
+            manually_edited: true,
+            _editedAt: q._editedAt ?? new Date().toISOString(),
+          } as ExerciceQuestion;
+        })
+      : exercise.questions,
+  })),
+});
 
 const shouldSyncVtcBilanFromCours = (moduleId: number | string) => [4, 81].includes(Number(moduleId));
 
