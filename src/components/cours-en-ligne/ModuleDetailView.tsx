@@ -4157,6 +4157,67 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         }
       }
 
+      const siblingBilanId = BILAN_SECURITY_SIBLING_BY_MODULE_ID[Number(dataToSave.module_id)];
+      if (siblingBilanId) {
+        try {
+          const sourceSecurity = getExerciseById(normalizedModuleData, SECURITE_ROUTIERE_BILAN_ID);
+          if (sourceSecurity?.questions?.length) {
+            const { data: siblingRow, error: siblingReadError } = await supabase
+              .from("module_editor_state")
+              .select("module_data, deleted_cours, deleted_exercices, source_fingerprint")
+              .eq("module_id", siblingBilanId)
+              .maybeSingle();
+
+            if (siblingReadError) throw siblingReadError;
+
+            const siblingModuleData = (siblingRow?.module_data as unknown as ModuleData | undefined)
+              ?? getInitialModuleDataRaw({ id: siblingBilanId, nom: `Module ${siblingBilanId}` }, apprenantType, false);
+            const nextSiblingModuleData = buildSiblingBilanSecurityModule(siblingModuleData, normalizedModuleData);
+
+            if (nextSiblingModuleData) {
+              const siblingSavedAt = new Date().toISOString();
+              const { error: siblingSaveError } = await supabase.from("module_editor_state").upsert(
+                [{
+                  module_id: siblingBilanId,
+                  module_data: normalizeManualQuestionFlags(nextSiblingModuleData) as any,
+                  deleted_cours: siblingRow?.deleted_cours ?? [],
+                  deleted_exercices: siblingRow?.deleted_exercices ?? [],
+                  source_fingerprint: siblingRow?.source_fingerprint ?? buildSourceFingerprint(siblingModuleData),
+                  updated_at: siblingSavedAt,
+                }],
+                { onConflict: "module_id" },
+              );
+
+              if (siblingSaveError) throw siblingSaveError;
+
+              try {
+                const siblingChan = supabase.channel(`module-editor-live-${siblingBilanId}`);
+                await new Promise<void>((resolve) => {
+                  const timeout = setTimeout(resolve, 500);
+                  siblingChan.subscribe((status) => {
+                    if (status === 'SUBSCRIBED') {
+                      clearTimeout(timeout);
+                      resolve();
+                    }
+                  });
+                });
+                await siblingChan.send({
+                  type: 'broadcast',
+                  event: 'module-updated',
+                  payload: { moduleId: siblingBilanId, at: siblingSavedAt, syncedSecurityFrom: dataToSave.module_id },
+                });
+                await supabase.removeChannel(siblingChan);
+              } catch (siblingBroadcastErr) {
+                console.warn('[Bilan Sécurité] Broadcast sibling failed (non-bloquant):', siblingBroadcastErr);
+              }
+            }
+          }
+        } catch (siblingSyncError) {
+          console.error('[Bilan Sécurité] Synchronisation VTC/TAXI impossible:', siblingSyncError);
+          toast.error("Correction enregistrée, mais la synchronisation VTC/TAXI a échoué. Réessayez.");
+        }
+      }
+
       // 📣 Broadcast complémentaire : force un refresh instantané côté apprenant
       // (backup de postgres_changes ; utile quand l'image d'une question est supprimée
       // et que l'apprenant doit voir la mise à jour sans attendre le polling).
