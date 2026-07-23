@@ -1551,6 +1551,27 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
             </Select>
           </div>
 
+          {availableSessionDates.length > 0 && (
+            <div className="space-y-2">
+              <Label>Dates de formation à choisir ({formationType === 'taxi' ? 'TAXI' : 'VTC'})</Label>
+              <Select value={sessionDate} onValueChange={setSessionDate}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner une session..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableSessionDates.map(d => (
+                    <SelectItem key={d} value={d}>{d}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {sessionDate && (
+                <p className="text-xs text-muted-foreground">
+                  ✓ Cette session sera imprimée dans les notes du devis.
+                </p>
+              )}
+            </div>
+          )}
+
           <Separator />
 
           {/* Lignes du devis */}
