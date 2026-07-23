@@ -158,7 +158,7 @@ En cas d'absences repetees ou injustifiees, FTRANSPORT se reserve le droit de me
 
 ARTICLE 9 - HORAIRES ET ACCUEIL
 Les formations en presentiel se deroulent aux horaires suivants, sauf indication contraire mentionnee sur la convocation :
-- Journee : de 09h00 a 12h00 et de 13h00 a 17h00, avec une pause de 15 minutes en milieu de chaque demi-journee.
+- Journee : de 09h00 a 12h00 et de 13h00 a 16h00, avec une pause de 15 minutes en milieu de chaque demi-journee.
 - Soiree : de 17h00 a 21h00.
 Le lieu de formation est situe au 86 route de Genas, 69003 Lyon, sauf indication contraire. FTRANSPORT met a disposition des stagiaires une salle de formation equipee et conforme aux normes de securite et d'accessibilite.
 Pour les formations en E-learning, la plateforme de cours est accessible 24h/24 et 7j/7 pendant toute la duree de validite de l'acces (3 mois a compter de l'inscription).
@@ -368,7 +368,7 @@ export default function DevisPersonnel() {
       const signatureDataUrl = hasSigned && canvasRef.current ? canvasRef.current.toDataURL("image/png") : null;
       const numDevis = `DEV-${format(new Date(), "yyyyMM")}-${String(Math.floor(Math.random() * 9000) + 1000)}`;
       const dateToday = format(new Date(), "dd MMMM yyyy", { locale: fr });
-      const validite = format(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), "dd MMMM yyyy", { locale: fr });
+      const validite = format(new Date(Date.now() + 60 * 24 * 60 * 60 * 1000), "dd MMMM yyyy", { locale: fr });
 
       // === PAGE 1 : DEVIS ===
       // Header
@@ -1027,7 +1027,7 @@ export default function DevisPersonnel() {
                       <Select value={creneauSouhaite} onValueChange={setCreneauSouhaite}>
                         <SelectTrigger><SelectValue placeholder="Choisir..." /></SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="Journée (9h-17h)">Journée (9h-17h)</SelectItem>
+                          <SelectItem value="Journée (9h-12h / 13h-16h)">Journée (9h-12h / 13h-16h)</SelectItem>
                           <SelectItem value="Soirée (17h-21h)">Soirée (17h-21h)</SelectItem>
                           
                         </SelectContent>
