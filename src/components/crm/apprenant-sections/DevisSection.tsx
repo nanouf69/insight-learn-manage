@@ -1434,6 +1434,7 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
       toast.error("L'apprenant n'a pas d'adresse email.");
       return;
     }
+    if (!validateBeforeSend()) return;
     setSendingDevisEmail(true);
     try {
       const result = await generateDevisPDF({ returnBase64: true });
