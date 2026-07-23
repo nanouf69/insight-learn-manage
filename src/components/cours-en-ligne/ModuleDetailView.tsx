@@ -426,6 +426,34 @@ const buildFcBilanModuleFromParent = (
   };
 };
 
+const buildParentBilanModuleFromFcChild = (
+  parentModuleData: ModuleData,
+  fcChildModuleData: ModuleData,
+): ModuleData | null => {
+  const parentExercices = Array.isArray(parentModuleData.exercices) ? parentModuleData.exercices : [];
+  const fcExercices = Array.isArray(fcChildModuleData.exercices) ? fcChildModuleData.exercices : [];
+  if (parentExercices.length === 0 || fcExercices.length === 0) return null;
+
+  const fcByExerciseId = new Map<number, ExerciceItem>();
+  for (const exercise of fcExercices) {
+    const exerciseId = Number(exercise?.id);
+    if (!Number.isFinite(exerciseId) || FC_BILAN_EXCLUDED_EXERCISE_IDS.has(exerciseId)) continue;
+    fcByExerciseId.set(exerciseId, JSON.parse(JSON.stringify(exercise)) as ExerciceItem);
+  }
+  if (fcByExerciseId.size === 0) return null;
+
+  let changed = false;
+  const nextParentExercices = parentExercices.map((exercise) => {
+    const replacement = fcByExerciseId.get(Number(exercise?.id));
+    if (!replacement) return exercise;
+    changed = true;
+    return replacement;
+  });
+
+  if (!changed) return null;
+  return { ...parentModuleData, exercices: nextParentExercices };
+};
+
 const forceSourceExerciseTitles = (moduleId: number | string, loadedData: ModuleData, sourceData: ModuleData): ModuleData => {
   if (Number(moduleId) !== 9) return loadedData;
 
