@@ -576,6 +576,8 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
   const [dateDevis, setDateDevis] = useState(today);
   const [dateValidite, setDateValidite] = useState(validiteDate);
   const [notes, setNotes] = useState("");
+  const [sessionDate, setSessionDate] = useState<string>("");
+  const [formationType, setFormationType] = useState<'vtc' | 'taxi' | null>(null);
   const [tvaTaux, setTvaTaux] = useState<number>(0);
   const [generating, setGenerating] = useState(false);
   const [generatingDocx, setGeneratingDocx] = useState(false);
