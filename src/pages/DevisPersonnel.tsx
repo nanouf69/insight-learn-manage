@@ -345,7 +345,7 @@ export default function DevisPersonnel() {
 
   const formation = FORMATIONS.find(f => f.id === selectedFormation);
 
-  const generateDevisPDF = async () => {
+  const generateDevisPDF = async (opts: { sendEmail?: boolean } = {}) => {
     if (!prenom || !nom) { toast.error("Veuillez renseigner votre nom et prénom"); return; }
     if (!selectedFormation || !formation) { toast.error("Veuillez sélectionner une formation"); return; }
     if (!telephone) { toast.error("Veuillez renseigner votre téléphone"); return; }
