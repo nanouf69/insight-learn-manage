@@ -14,6 +14,30 @@ function normalizeSignedUrl(signedUrl: string): string {
   return signedUrl;
 }
 
+function extractStorageObject(input: string): { bucket: string; path: string } | null {
+  if (/^question-images\//i.test(input)) {
+    return { bucket: "cours-fichiers", path: input };
+  }
+
+  const fullUrlMatch = input.match(/\/storage\/v1\/object\/(?:public|sign)\/([^/]+)\/([^?#]+)/);
+  if (fullUrlMatch) {
+    return {
+      bucket: decodeURIComponent(fullUrlMatch[1]),
+      path: decodeURIComponent(fullUrlMatch[2]),
+    };
+  }
+
+  const relativeMatch = input.match(/^\/?object\/(?:public|sign)\/([^/]+)\/([^?#]+)/);
+  if (relativeMatch) {
+    return {
+      bucket: decodeURIComponent(relativeMatch[1]),
+      path: decodeURIComponent(relativeMatch[2]),
+    };
+  }
+
+  return null;
+}
+
 /**
  * If url points to a private Supabase Storage object (public URL for a private bucket
  * like `cours-fichiers` returns 400), extract bucket + path and return a signed URL.
@@ -21,16 +45,9 @@ function normalizeSignedUrl(signedUrl: string): string {
  */
 async function toDisplayableUrl(url: string): Promise<string> {
   try {
-    if (/^question-images\//i.test(url)) {
-      const { data, error } = await supabase.storage.from("cours-fichiers").createSignedUrl(url, 60 * 60);
-      if (!error && data?.signedUrl) return normalizeSignedUrl(data.signedUrl);
-    }
-
-    // Match both public and sign paths so we recover from either
-    const m = url.match(/\/storage\/v1\/object\/(?:public|sign)\/([^/]+)\/([^?#]+)/);
-    if (!m) return url;
-    const bucket = decodeURIComponent(m[1]);
-    const path = decodeURIComponent(m[2]);
+    const object = extractStorageObject(url);
+    if (!object) return url;
+    const { bucket, path } = object;
     const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, 60 * 60);
     if (error || !data?.signedUrl) return url;
     return normalizeSignedUrl(data.signedUrl);
@@ -58,8 +75,8 @@ export function ExamQuestionImage({
   useEffect(() => {
     let cancelled = false;
     setHasError(false);
+    setDisplayUrl(null);
     if (!resolvedUrl) {
-      setDisplayUrl(null);
       return;
     }
     setCacheToken(Date.now());

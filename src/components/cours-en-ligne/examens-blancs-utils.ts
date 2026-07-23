@@ -109,7 +109,6 @@ export function shareLookupKey(a: string[], b: string[]): boolean {
 const STORAGE_PUBLIC_PATH = "/storage/v1/object/public/";
 const SUPABASE_PUBLIC_BASE = (import.meta.env.VITE_SUPABASE_URL ?? "").replace(/\/$/, "");
 const QUESTION_IMAGES_PREFIX = "question-images/";
-const QUESTION_IMAGES_BUCKET = "cours-fichiers";
 
 export function resolveExamQuestionImageUrl(image: unknown): string | null {
   const raw = safeStr(image).trim();
@@ -120,9 +119,7 @@ export function resolveExamQuestionImageUrl(image: unknown): string | null {
   }
   if (raw.startsWith("/")) return raw;
   if (raw.startsWith(QUESTION_IMAGES_PREFIX)) {
-    return SUPABASE_PUBLIC_BASE
-      ? `${SUPABASE_PUBLIC_BASE}${STORAGE_PUBLIC_PATH}${QUESTION_IMAGES_BUCKET}/${raw}`
-      : raw;
+    return raw;
   }
   if (SUPABASE_PUBLIC_BASE && /^[^/]+\/.+/.test(raw)) {
     return `${SUPABASE_PUBLIC_BASE}${STORAGE_PUBLIC_PATH}${raw}`;
