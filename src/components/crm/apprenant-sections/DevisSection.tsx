@@ -895,7 +895,7 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
     }
   };
 
-  const generateDevisPDF = async () => {
+  const generateDevisPDF = async (opts?: { returnBase64?: boolean }): Promise<{ base64: string; fileName: string } | void> => {
     setGenerating(true);
     try {
       const doc = new jsPDF({ unit: 'mm', format: 'a4' });
