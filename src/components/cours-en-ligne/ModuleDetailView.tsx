@@ -5221,6 +5221,33 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         );
       }
 
+      if (cours.checklistType === "remboursement-fc-taxi") {
+        return (
+          <RemboursementFCViewer
+            apprenantId={apprenantId || undefined}
+            formation="TAXI"
+            completed={completedPages.has(currentPage)}
+            onComplete={() => {
+              markPageCompleted(currentPage);
+              if (currentPage < totalPages - 1) goToPage(currentPage + 1);
+            }}
+          />
+        );
+      }
+
+      if (cours.checklistType === "demande-carte-taxi") {
+        return (
+          <DemandeCarteTAXIViewer
+            completed={completedPages.has(currentPage)}
+            onComplete={() => {
+              markPageCompleted(currentPage);
+              if (currentPage < totalPages - 1) goToPage(currentPage + 1);
+            }}
+          />
+        );
+      }
+
+
       if (cours.checklistType === "financeur-fc") {
         return (
           <FinanceurFCForm
