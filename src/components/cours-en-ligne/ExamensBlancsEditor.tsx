@@ -1003,10 +1003,14 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
 
     persistChainRef.current = persistChainRef.current.then(async () => {
     try {
+      // IMPORTANT: no destructive cross-exam sync here.
+      // Historically we called syncVtcTaxi/VtcVa/TaxiTa which cloned VTC/TAXI
+      // matieres over their TAXI/VA/TA siblings on every save. That silently
+      // erased shared-subject edits made on the sibling exam. Each exam is now
+      // persisted exactly as edited; propagation, if any, must be an explicit
+      // admin action, never a side-effect of Save.
       const synced = JSON.parse(JSON.stringify(snapshot)) as ExamenBlanc[];
-      syncVtcTaxiMatieres(synced);
-      syncVtcVaMatieres(synced);
-      syncTaxiTaMatieres(synced);
+
 
       const now = new Date().toISOString();
       const changedModuleFingerprints: Record<number, string> = {};
