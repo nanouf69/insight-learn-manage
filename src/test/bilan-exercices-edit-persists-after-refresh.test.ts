@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * Régression: une édition (ou suppression) admin sur un Bilan/exercice doit
  * TENIR après ≥ 10-15 minutes + changement d'onglet + rafraîchissement, même
