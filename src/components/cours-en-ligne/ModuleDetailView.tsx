@@ -288,6 +288,11 @@ const getExerciseById = (data: ModuleData | null | undefined, exerciseId: number
   return data?.exercices?.find((exercise) => Number(exercise.id) === exerciseId) ?? null;
 };
 
+const usesDatabaseOnlyEditorState = (moduleId: number | string) => {
+  const id = Number(moduleId);
+  return ADMIN_AUTHORITATIVE_QUIZ_MODULE_IDS.has(id) || Boolean(FC_BILAN_PARENT_BY_MODULE_ID[id]);
+};
+
 const getManualQuestionTimestamp = (question: unknown): number => {
   if (!question || typeof question !== "object") return 0;
   const editedAt = (question as any)._editedAt;
@@ -348,33 +353,11 @@ const applyManualExerciseEditsFromSource = (
 };
 
 const forceTaxiSecurityFromVtc = (taxiData: ModuleData, vtcSecurityExercise: ExerciceItem | null): ModuleData => {
-  if (Number(taxiData.id) !== BILAN_TAXI_MODULE_ID || !vtcSecurityExercise) return taxiData;
-
-  const existingSecurity = taxiData.exercices.find(
-    (exercise) => Number(exercise.id) === SECURITE_ROUTIERE_BILAN_ID,
-  );
-  if (existingSecurity?.questions && existingSecurity.questions.length > 0) {
-    const mergedSecurity = mergeManualExerciseEditsFromSource(existingSecurity, vtcSecurityExercise);
-    return mergedSecurity === existingSecurity
-      ? taxiData
-      : {
-          ...taxiData,
-          exercices: taxiData.exercices.map((exercise) =>
-            Number(exercise.id) === SECURITE_ROUTIERE_BILAN_ID ? mergedSecurity : exercise,
-          ),
-        };
-  }
-
-  return {
-    ...taxiData,
-    exercices: existingSecurity
-      ? taxiData.exercices.map((exercise) =>
-          Number(exercise.id) === SECURITE_ROUTIERE_BILAN_ID
-            ? JSON.parse(JSON.stringify(vtcSecurityExercise))
-            : exercise,
-        )
-      : [...taxiData.exercices, JSON.parse(JSON.stringify(vtcSecurityExercise))],
-  };
+  // Désactivé volontairement : VTC et TAXI ne doivent jamais se réécrire au
+  // chargement. Seule une vraie action admin déclenche une propagation, sinon
+  // un ancien état ouvert dans un onglet peut remettre les vieilles réponses.
+  void vtcSecurityExercise;
+  return taxiData;
 };
 
 async function loadSyncedVtcBilanFromCours(
@@ -3329,7 +3312,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
     const loadLocalState = () => {
       if (typeof window === "undefined") return false;
-      if (Number(module.id) === BILAN_TAXI_MODULE_ID) {
+      if (usesDatabaseOnlyEditorState(module.id)) {
         window.localStorage.removeItem(moduleEditorStorageKey);
         return false;
       }
@@ -3579,14 +3562,16 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               ...md,
               exercices: mergeSourceExercices(md.exercices, initialData.exercices, deletedExerciceIdsFromDb),
             };
-            let resolvedModuleData = forceBilanExamGestionFromSource(
-              module.id,
-              forceTaxiSecurityFromVtc(
-                forceSourceExerciseTitles(module.id, mergedModuleData, initialData),
-                vtcSecurityForTaxi,
-              ),
-              initialData,
-            );
+            let resolvedModuleData = usesDatabaseOnlyEditorState(module.id)
+              ? forceSourceExerciseTitles(module.id, mergedModuleData, initialData)
+              : forceBilanExamGestionFromSource(
+                module.id,
+                forceTaxiSecurityFromVtc(
+                  forceSourceExerciseTitles(module.id, mergedModuleData, initialData),
+                  vtcSecurityForTaxi,
+                ),
+                initialData,
+              );
             if (shouldSyncVtcBilanFromCours(module.id)) {
               const syncedVtcBilan = await loadSyncedVtcBilanFromCours(apprenantType, studentOnly);
               if (syncedVtcBilan) {
@@ -3758,7 +3743,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             ...md,
             exercices: mergeSourceExercices(md.exercices, sourceModuleData.exercices, deletedExoIdsRt),
           };
-          let resolvedRealtimeModuleData = forceBilanExamGestionFromSource(module.id, mergedRealtimeModuleData, sourceModuleData);
+          let resolvedRealtimeModuleData = usesDatabaseOnlyEditorState(module.id)
+            ? forceSourceExerciseTitles(module.id, mergedRealtimeModuleData, sourceModuleData)
+            : forceBilanExamGestionFromSource(module.id, mergedRealtimeModuleData, sourceModuleData);
           if (shouldSyncVtcBilanFromCours(module.id)) {
             const syncedVtcBilan = await loadSyncedVtcBilanFromCours(apprenantType, studentOnly);
             if (syncedVtcBilan) {
@@ -4015,7 +4002,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           ...md,
           exercices: mergeSourceExercices(md.exercices, sourceModuleData.exercices, deletedExoIdsPoll),
         };
-        let resolved = forceBilanExamGestionFromSource(module.id, merged, sourceModuleData);
+        let resolved = usesDatabaseOnlyEditorState(module.id)
+          ? forceSourceExerciseTitles(module.id, merged, sourceModuleData)
+          : forceBilanExamGestionFromSource(module.id, merged, sourceModuleData);
         if (shouldSyncVtcBilanFromCours(module.id)) {
           const syncedVtcBilan = await loadSyncedVtcBilanFromCours(apprenantType, studentOnly);
           if (syncedVtcBilan) {
@@ -4070,7 +4059,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     isSavingToDbRef.current = true;
     try {
       const savedAt = new Date().toISOString();
-      const normalizedModuleData = normalizeManualQuestionFlags(dataToSave.module_data as ModuleData);
+      let normalizedModuleData = normalizeManualQuestionFlags(dataToSave.module_data as ModuleData);
       // Snapshot ancienne version pour détecter les changements pédagogiques
       let previousModuleData: any = null;
       try {
@@ -4094,6 +4083,22 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       if (error) throw error;
       saveErrorShownRef.current = false;
       markDbSnapshotApplied(savedAt);
+
+      // Le trigger DB peut refuser une question plus ancienne envoyée par un onglet
+      // resté ouvert. Toutes les propagations/audits ci-dessous doivent donc partir
+      // de la version réellement conservée en base, pas du payload navigateur.
+      try {
+        const { data: confirmedRow, error: confirmedError } = await supabase
+          .from("module_editor_state")
+          .select("module_data")
+          .eq("module_id", dataToSave.module_id)
+          .maybeSingle();
+        if (!confirmedError && confirmedRow?.module_data) {
+          normalizedModuleData = confirmedRow.module_data as unknown as ModuleData;
+        }
+      } catch (confirmReadError) {
+        console.warn("[ModuleEditor] Lecture confirmation sauvegarde impossible:", confirmReadError);
+      }
 
       // Les modules FC 81/82 sont affichés aux apprenants depuis leur Bilan parent
       // (4/9) pour éviter les anciennes copies obsolètes. Donc si l'admin modifie
@@ -4421,11 +4426,18 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       savedAt: new Date().toISOString(),
     };
 
-    // Save to localStorage immediately (synchronous, no race risk)
-    try {
-      window.localStorage.setItem(moduleEditorStorageKey, JSON.stringify(payload));
-    } catch (error) {
-      console.error("Erreur sauvegarde état édition module:", error);
+      // Les Bilans et modules FC sont DB-only : un cache local stale a déjà
+      // réinjecté d'anciennes réponses après retour dans le module.
+      if (usesDatabaseOnlyEditorState(module.id)) {
+        try {
+          window.localStorage.removeItem(moduleEditorStorageKey);
+        } catch {}
+      } else {
+        try {
+          window.localStorage.setItem(moduleEditorStorageKey, JSON.stringify(payload));
+        } catch (error) {
+          console.error("Erreur sauvegarde état édition module:", error);
+        }
     }
 
     // Debounced save to database (1.5s after last change)
