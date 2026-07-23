@@ -274,7 +274,11 @@ const normalizeManualQuestionFlags = (data: ModuleData): ModuleData => ({
   })),
 });
 
-const shouldSyncVtcBilanFromCours = (moduleId: number | string) => [4, 81].includes(Number(moduleId));
+// IMPORTANT: les Bilans affichés aux apprenants ne doivent plus être réhydratés
+// depuis le module de cours source (module 2). Ce module peut contenir des
+// questions intermédiaires/anciennes et a déjà provoqué des décalages de réponses
+// après rafraîchissement. La source fiable est module_editor_state du Bilan parent.
+const shouldSyncVtcBilanFromCours = (_moduleId: number | string) => false;
 
 const getExerciseById = (data: ModuleData | null | undefined, exerciseId: number): ExerciceItem | null => {
   return data?.exercices?.find((exercise) => Number(exercise.id) === exerciseId) ?? null;
@@ -3354,12 +3358,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               .limit(1)
               .maybeSingle();
 
-            const syncedVtcBilan = await loadSyncedVtcBilanFromCours(apprenantType, studentOnly);
             const vtcBilanData = vtcBilanState?.module_data as unknown as ModuleData | undefined;
-            const authoritativeVtcBilan = syncedVtcBilan
-              ? applyManualExerciseEditsFromSource(vtcBilanData ?? syncedVtcBilan, syncedVtcBilan)
-              : vtcBilanData;
-            vtcSecurityForTaxi = getExerciseById(authoritativeVtcBilan, SECURITE_ROUTIERE_BILAN_ID)
+            vtcSecurityForTaxi = getExerciseById(vtcBilanData, SECURITE_ROUTIERE_BILAN_ID)
               ?? getExerciseById(getInitialModuleDataRaw({ id: BILAN_VTC_MODULE_ID, nom: "4.BILAN EXERCICES VTC" }, apprenantType, studentOnly), SECURITE_ROUTIERE_BILAN_ID);
           } catch (e) {
             console.error("[Bilan TAXI] Erreur récupération Sécurité Routière VTC:", e);
@@ -3420,14 +3420,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               .maybeSingle();
 
             const parentMd = parentData?.module_data as unknown as ModuleData | undefined;
-            const syncedVtcBilan = parentModuleId === BILAN_VTC_MODULE_ID || parentModuleId === BILAN_TAXI_MODULE_ID
-              ? await loadSyncedVtcBilanFromCours(apprenantType, studentOnly)
-              : null;
-            const authoritativeParentMd = parentModuleId === BILAN_VTC_MODULE_ID && syncedVtcBilan
-              ? applyManualExerciseEditsFromSource(parentMd ?? syncedVtcBilan, syncedVtcBilan)
-              : parentModuleId === BILAN_TAXI_MODULE_ID && syncedVtcBilan
-                ? forceTaxiSecurityFromVtc(parentMd ?? initialData, getExerciseById(syncedVtcBilan, SECURITE_ROUTIERE_BILAN_ID))
-                : parentMd;
+            const authoritativeParentMd = parentMd;
             const fcMerged = buildFcBilanModuleFromParent(module.id, authoritativeParentMd, initialData);
             if (fcMerged) {
                 console.log(`[FC-Bilan] Module ${module.id} forcé depuis module ${parentModuleId} (sans Gestion)`);
@@ -3586,14 +3579,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               .limit(1)
               .maybeSingle();
             const parentMd = parentData?.module_data as unknown as ModuleData | undefined;
-            const syncedVtcBilan = parentModuleId === BILAN_VTC_MODULE_ID || parentModuleId === BILAN_TAXI_MODULE_ID
-              ? await loadSyncedVtcBilanFromCours(apprenantType, studentOnly)
-              : null;
-            const authoritativeParentMd = parentModuleId === BILAN_VTC_MODULE_ID && syncedVtcBilan
-              ? applyManualExerciseEditsFromSource(parentMd ?? syncedVtcBilan, syncedVtcBilan)
-              : parentModuleId === BILAN_TAXI_MODULE_ID && syncedVtcBilan
-                ? forceTaxiSecurityFromVtc(parentMd ?? initialData, getExerciseById(syncedVtcBilan, SECURITE_ROUTIERE_BILAN_ID))
-                : parentMd;
+            const authoritativeParentMd = parentMd;
             const fcMerged = buildFcBilanModuleFromParent(module.id, authoritativeParentMd, initialData);
             if (fcMerged) {
                 console.log(`[FC-Bilan] Module ${module.id} hydraté depuis module ${parentModuleId} (sans Gestion)`);
@@ -3677,15 +3663,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         const sourceModuleData = getInitialModuleData(module, apprenantType, studentOnly);
 
         if (parentModuleId) {
-          const syncedVtcBilan = parentModuleId === BILAN_VTC_MODULE_ID || parentModuleId === BILAN_TAXI_MODULE_ID
-            ? await loadSyncedVtcBilanFromCours(apprenantType, studentOnly)
-            : null;
           const parentMd = latest.module_data as unknown as ModuleData;
-          const authoritativeParentMd = parentModuleId === BILAN_VTC_MODULE_ID && syncedVtcBilan
-            ? applyManualExerciseEditsFromSource(parentMd, syncedVtcBilan)
-            : parentModuleId === BILAN_TAXI_MODULE_ID && syncedVtcBilan
-              ? forceTaxiSecurityFromVtc(parentMd, getExerciseById(syncedVtcBilan, SECURITE_ROUTIERE_BILAN_ID))
-              : parentMd;
+          const authoritativeParentMd = parentMd;
           const fcMerged = buildFcBilanModuleFromParent(module.id, authoritativeParentMd, sourceModuleData);
           if (!fcMerged) return;
           console.log("[Realtime] Refetched FC bilan from parent module", parentModuleId, "for module", module.id);
@@ -3947,15 +3926,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         const sourceModuleData = getInitialModuleData(module, apprenantType, studentOnly);
 
         if (parentModuleId) {
-          const syncedVtcBilan = parentModuleId === BILAN_VTC_MODULE_ID || parentModuleId === BILAN_TAXI_MODULE_ID
-            ? await loadSyncedVtcBilanFromCours(apprenantType, studentOnly)
-            : null;
           const parentMd = latest.module_data as unknown as ModuleData;
-          const authoritativeParentMd = parentModuleId === BILAN_VTC_MODULE_ID && syncedVtcBilan
-            ? applyManualExerciseEditsFromSource(parentMd, syncedVtcBilan)
-            : parentModuleId === BILAN_TAXI_MODULE_ID && syncedVtcBilan
-              ? forceTaxiSecurityFromVtc(parentMd, getExerciseById(syncedVtcBilan, SECURITE_ROUTIERE_BILAN_ID))
-              : parentMd;
+          const authoritativeParentMd = parentMd;
           const fcMerged = buildFcBilanModuleFromParent(module.id, authoritativeParentMd, sourceModuleData);
           if (!fcMerged) return;
 

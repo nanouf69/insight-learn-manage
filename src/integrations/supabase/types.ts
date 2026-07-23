@@ -3121,6 +3121,10 @@ export type Database = {
         }
         Returns: string
       }
+      repair_bilan_security_questions_from_payload: {
+        Args: { _questions: Json }
+        Returns: number
+      }
       search_apprenant_onboarding: {
         Args: { p_nom: string; p_prenom: string }
         Returns: {
