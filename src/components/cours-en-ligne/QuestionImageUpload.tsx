@@ -58,11 +58,7 @@ export function QuestionImageUpload({
 
       if (error) throw error;
 
-      const { data: publicUrlData } = supabase.storage
-        .from("cours-fichiers")
-        .getPublicUrl(path);
-
-      onImageChange(publicUrlData.publicUrl);
+      onImageChange(path);
       toast.success("Image ajoutée");
     } catch (err: any) {
       console.error("[QuestionImageUpload] Upload error:", err);
