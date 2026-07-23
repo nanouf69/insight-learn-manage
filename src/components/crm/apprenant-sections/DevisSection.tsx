@@ -1594,7 +1594,7 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
               <div className="flex gap-2">
                 <Button
                   onClick={sendDevisEmail}
-                  disabled={sendingEmail}
+                  disabled={sendingEmail || !lignes[0]?.designation?.trim() || !sessionDate || !dateValidite}
                   size="sm"
                   className="gap-2"
                 >
