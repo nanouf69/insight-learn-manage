@@ -196,6 +196,10 @@ const BILAN_VTC_MODULE_ID = 4;
 const BILAN_TAXI_MODULE_ID = 9;
 const FC_BILAN_PARENT_BY_MODULE_ID: Record<number, number> = { 81: BILAN_VTC_MODULE_ID, 82: BILAN_TAXI_MODULE_ID };
 const FC_BILAN_EXCLUDED_EXERCISE_IDS = new Set([101, 103, 105]);
+const BILAN_SECURITY_SIBLING_BY_MODULE_ID: Record<number, number> = {
+  [BILAN_VTC_MODULE_ID]: BILAN_TAXI_MODULE_ID,
+  [BILAN_TAXI_MODULE_ID]: BILAN_VTC_MODULE_ID,
+};
 const BILAN_EXAMEN_VTC_MODULE_ID = 5;
 const BILAN_EXAMEN_TAXI_MODULE_ID = 11;
 const SECURITE_ROUTIERE_BILAN_ID = 102;
@@ -452,6 +456,32 @@ const buildParentBilanModuleFromFcChild = (
 
   if (!changed) return null;
   return { ...parentModuleData, exercices: nextParentExercices };
+};
+
+const buildSiblingBilanSecurityModule = (
+  siblingModuleData: ModuleData,
+  sourceModuleData: ModuleData,
+): ModuleData | null => {
+  const sourceSecurity = getExerciseById(sourceModuleData, SECURITE_ROUTIERE_BILAN_ID);
+  if (!sourceSecurity?.questions?.length) return null;
+
+  let changed = false;
+  const securityClone = JSON.parse(JSON.stringify(sourceSecurity)) as ExerciceItem;
+  const siblingExercices = Array.isArray(siblingModuleData.exercices) ? siblingModuleData.exercices : [];
+  const nextExercices = siblingExercices.map((exercise) => {
+    if (Number(exercise.id) !== SECURITE_ROUTIERE_BILAN_ID) return exercise;
+    changed = true;
+    return securityClone;
+  });
+
+  if (!changed) {
+    nextExercices.push(securityClone);
+  }
+
+  return {
+    ...siblingModuleData,
+    exercices: nextExercices,
+  };
 };
 
 const forceSourceExerciseTitles = (moduleId: number | string, loadedData: ModuleData, sourceData: ModuleData): ModuleData => {
@@ -4124,6 +4154,67 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         } catch (fcParentSyncError) {
           console.error('[FC-Bilan] Synchronisation module FC → parent impossible:', fcParentSyncError);
           toast.error("Correction enregistrée, mais la synchronisation apprenant a échoué. Réessayez.");
+        }
+      }
+
+      const siblingBilanId = BILAN_SECURITY_SIBLING_BY_MODULE_ID[Number(dataToSave.module_id)];
+      if (siblingBilanId) {
+        try {
+          const sourceSecurity = getExerciseById(normalizedModuleData, SECURITE_ROUTIERE_BILAN_ID);
+          if (sourceSecurity?.questions?.length) {
+            const { data: siblingRow, error: siblingReadError } = await supabase
+              .from("module_editor_state")
+              .select("module_data, deleted_cours, deleted_exercices, source_fingerprint")
+              .eq("module_id", siblingBilanId)
+              .maybeSingle();
+
+            if (siblingReadError) throw siblingReadError;
+
+            const siblingModuleData = (siblingRow?.module_data as unknown as ModuleData | undefined)
+              ?? getInitialModuleDataRaw({ id: siblingBilanId, nom: `Module ${siblingBilanId}` }, apprenantType, false);
+            const nextSiblingModuleData = buildSiblingBilanSecurityModule(siblingModuleData, normalizedModuleData);
+
+            if (nextSiblingModuleData) {
+              const siblingSavedAt = new Date().toISOString();
+              const { error: siblingSaveError } = await supabase.from("module_editor_state").upsert(
+                [{
+                  module_id: siblingBilanId,
+                  module_data: normalizeManualQuestionFlags(nextSiblingModuleData) as any,
+                  deleted_cours: siblingRow?.deleted_cours ?? [],
+                  deleted_exercices: siblingRow?.deleted_exercices ?? [],
+                  source_fingerprint: siblingRow?.source_fingerprint ?? buildSourceFingerprint(siblingModuleData),
+                  updated_at: siblingSavedAt,
+                }],
+                { onConflict: "module_id" },
+              );
+
+              if (siblingSaveError) throw siblingSaveError;
+
+              try {
+                const siblingChan = supabase.channel(`module-editor-live-${siblingBilanId}`);
+                await new Promise<void>((resolve) => {
+                  const timeout = setTimeout(resolve, 500);
+                  siblingChan.subscribe((status) => {
+                    if (status === 'SUBSCRIBED') {
+                      clearTimeout(timeout);
+                      resolve();
+                    }
+                  });
+                });
+                await siblingChan.send({
+                  type: 'broadcast',
+                  event: 'module-updated',
+                  payload: { moduleId: siblingBilanId, at: siblingSavedAt, syncedSecurityFrom: dataToSave.module_id },
+                });
+                await supabase.removeChannel(siblingChan);
+              } catch (siblingBroadcastErr) {
+                console.warn('[Bilan Sécurité] Broadcast sibling failed (non-bloquant):', siblingBroadcastErr);
+              }
+            }
+          }
+        } catch (siblingSyncError) {
+          console.error('[Bilan Sécurité] Synchronisation VTC/TAXI impossible:', siblingSyncError);
+          toast.error("Correction enregistrée, mais la synchronisation VTC/TAXI a échoué. Réessayez.");
         }
       }
 
