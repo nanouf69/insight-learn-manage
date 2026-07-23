@@ -287,8 +287,11 @@ export const FORMATION_MODULES: Record<string, FormationDefinition> = {
     { id: 92, label: "2.COURS FC TAXI (PDF)" },
     { id: 84, label: "3.DOCUMENTS ADMINISTRATIFS (ÉMARGEMENTS SIGNÉS)" },
     { id: 86, label: "4.INFORMATIONS FINANCEUR TAXI" },
-    { id: 51, label: "5.📋 FIN DE FORMATION TAXI" },
+    { id: 93, label: "5.🪪 DEMANDE DE CARTE PROFESSIONNELLE TAXI" },
+    { id: 94, label: "6.💶 REMBOURSEMENT FORMATION CONTINUE TAXI" },
+    { id: 51, label: "7.📋 FIN DE FORMATION TAXI" },
   ]},
+
   "mobilite-taxi": { label: "Formation Mobilité TAXI", color: "bg-teal-100 text-teal-800 border-teal-300", modules: [
     { id: 90, label: "1.COURS MOBILITÉ TAXI" },
     { id: 84, label: "2.FEUILLES D'ÉMARGEMENT SIGNÉES TAXI" },
