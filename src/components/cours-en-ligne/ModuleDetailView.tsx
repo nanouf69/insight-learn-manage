@@ -194,6 +194,8 @@ interface TrainerOverrideInfo {
 const BILAN_VTC_SOURCE_MODULE_ID = 2;
 const BILAN_VTC_MODULE_ID = 4;
 const BILAN_TAXI_MODULE_ID = 9;
+const FC_BILAN_PARENT_BY_MODULE_ID: Record<number, number> = { 81: BILAN_VTC_MODULE_ID, 82: BILAN_TAXI_MODULE_ID };
+const FC_BILAN_EXCLUDED_EXERCISE_IDS = new Set([101, 103, 105]);
 const BILAN_EXAMEN_VTC_MODULE_ID = 5;
 const BILAN_EXAMEN_TAXI_MODULE_ID = 11;
 const SECURITE_ROUTIERE_BILAN_ID = 102;
@@ -269,6 +271,29 @@ const forceTaxiSecurityFromVtc = (taxiData: ModuleData, vtcSecurityExercise: Exe
             : exercise,
         )
       : [...taxiData.exercices, JSON.parse(JSON.stringify(vtcSecurityExercise))],
+  };
+};
+
+const buildFcBilanModuleFromParent = (
+  fcModuleId: number | string,
+  parentModuleData: ModuleData | null | undefined,
+  fcSourceData: ModuleData,
+): ModuleData | null => {
+  if (!FC_BILAN_PARENT_BY_MODULE_ID[Number(fcModuleId)]) return null;
+  const parentExercices = Array.isArray(parentModuleData?.exercices) ? parentModuleData.exercices : [];
+  if (parentExercices.length === 0 || fcSourceData.exercices.length === 0) return null;
+
+  const allowedExerciseIds = new Set(fcSourceData.exercices.map((exercise) => Number(exercise.id)));
+  const filteredParentExercices = parentExercices.filter((exercise) => {
+    const exerciseId = Number(exercise?.id);
+    return allowedExerciseIds.has(exerciseId) && !FC_BILAN_EXCLUDED_EXERCISE_IDS.has(exerciseId);
+  });
+
+  if (filteredParentExercices.length === 0) return null;
+
+  return {
+    ...fcSourceData,
+    exercices: mergeSourceExercices(filteredParentExercices, fcSourceData.exercices),
   };
 };
 
@@ -3191,8 +3216,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         // module_editor_state, otherwise old answers from localStorage can restore
         // previous corrections after a reload or a stale tab.
 
-        const FC_BILAN_PARENT: Record<number, number> = { 81: 4, 82: 9 };
-        const parentModuleId = FC_BILAN_PARENT[Number(module.id)];
+        const parentModuleId = FC_BILAN_PARENT_BY_MODULE_ID[Number(module.id)];
 
         let vtcSecurityForTaxi: ExerciceItem | null = null;
         if (Number(module.id) === BILAN_TAXI_MODULE_ID) {
@@ -3256,7 +3280,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         // Modules FC: toujours refléter le bilan parent (4 VTC / 9 TAXI), même si
         // un ancien état propre au module 81/82 existe en base. Sinon les élèves
         // FC gardent des questions/réponses obsolètes.
-        if (studentOnly && parentModuleId && initialData.exercices.length > 0) {
+        if (parentModuleId && initialData.exercices.length > 0) {
           try {
             const { data: parentData } = await supabase
               .from("module_editor_state")
@@ -3266,21 +3290,15 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               .limit(1)
               .maybeSingle();
 
-            const parentMd = parentData?.module_data as any;
-            if (parentMd?.exercices && Array.isArray(parentMd.exercices)) {
-              const filtered = parentMd.exercices.filter((exo: any) => Number(exo?.id) !== 101);
-              if (filtered.length > 0) {
-                const fcMerged: ModuleData = {
-                  ...initialData,
-                  exercices: mergeSourceExercices(filtered, initialData.exercices),
-                };
+            const parentMd = parentData?.module_data as unknown as ModuleData | undefined;
+            const fcMerged = buildFcBilanModuleFromParent(module.id, parentMd, initialData);
+            if (fcMerged) {
                 console.log(`[FC-Bilan] Module ${module.id} forcé depuis module ${parentModuleId} (sans Gestion)`);
                 setModuleData(fcMerged);
                 setDeletedCours([]);
                 setDeletedExercices([]);
                 setLoadedModuleEditorState(true);
                 return;
-              }
             }
           } catch (e) {
             console.error(`[FC-Bilan] Erreur hydratation forcée module ${module.id} depuis ${parentModuleId}:`, e);
@@ -3424,21 +3442,15 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               .order("updated_at", { ascending: false })
               .limit(1)
               .maybeSingle();
-            const parentMd = parentData?.module_data as any;
-            if (parentMd?.exercices && Array.isArray(parentMd.exercices)) {
-              const filtered = parentMd.exercices.filter((exo: any) => Number(exo?.id) !== 101);
-              if (filtered.length > 0) {
-                const fcMerged: ModuleData = {
-                  ...initialData,
-                  exercices: mergeSourceExercices(filtered, initialData.exercices),
-                };
+            const parentMd = parentData?.module_data as unknown as ModuleData | undefined;
+            const fcMerged = buildFcBilanModuleFromParent(module.id, parentMd, initialData);
+            if (fcMerged) {
                 console.log(`[FC-Bilan] Module ${module.id} hydraté depuis module ${parentModuleId} (sans Gestion)`);
                 setModuleData(fcMerged);
                 setDeletedCours([]);
                 setDeletedExercices([]);
                 setLoadedModuleEditorState(false);
                 return;
-              }
             }
           } catch (e) {
             console.error(`[FC-Bilan] Erreur hydratation module ${module.id} depuis ${parentModuleId}:`, e);
@@ -3490,17 +3502,42 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     const refetchModuleFromDb = async () => {
       try {
         const fetchStartedAt = Date.now();
-        const { data, error } = await supabase
+        const parentModuleId = FC_BILAN_PARENT_BY_MODULE_ID[Number(module.id)];
+        let query = supabase
           .from("module_editor_state")
-          .select("module_data, deleted_cours, deleted_exercices, updated_at")
-          .eq("module_id", module.id)
+          .select("module_id, module_data, deleted_cours, deleted_exercices, updated_at")
           .order("updated_at", { ascending: false })
-          .limit(1);
+          .limit(parentModuleId ? 2 : 1);
+
+        query = parentModuleId
+          ? query.in("module_id", [Number(module.id), parentModuleId])
+          : query.eq("module_id", module.id);
+
+        const { data, error } = await query;
 
         if (error) throw error;
-        const latest = Array.isArray(data) ? data[0] : null;
+        const rows = Array.isArray(data) ? data : [];
+        const latest = parentModuleId
+          ? (rows.find((row: any) => Number(row?.module_id) === parentModuleId) ?? rows[0] ?? null)
+          : (rows[0] ?? null);
         if (!latest?.module_data) return;
         if (shouldSkipFetchedQuestionState(latest.updated_at, fetchStartedAt, "realtime module_editor_state refetch")) return;
+
+        const sourceModuleData = getInitialModuleData(module, apprenantType, studentOnly);
+
+        if (parentModuleId) {
+          const fcMerged = buildFcBilanModuleFromParent(module.id, latest.module_data as unknown as ModuleData, sourceModuleData);
+          if (!fcMerged) return;
+          console.log("[Realtime] Refetched FC bilan from parent module", parentModuleId, "for module", module.id);
+          setModuleData((prev) => preserveNewerLocalQuestionEdits(fcMerged, prev, "realtime FC parent refetch"));
+          setDeletedCours([]);
+          setDeletedExercices([]);
+          setLoadedModuleEditorState(true);
+          markDbSnapshotApplied(latest.updated_at);
+          setLastSyncAt(new Date());
+          setTrainerOverridesReapplyKey((k) => k + 1);
+          return;
+        }
 
         const md = latest.module_data as unknown as ModuleData;
         const hasValidModuleData =
@@ -3517,7 +3554,6 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
         if (hasValidModuleData) {
           console.log("[Realtime] Refetched module data from DB for module", module.id);
-          const sourceModuleData = getInitialModuleData(module, apprenantType, studentOnly);
           const deletedExoIdsRt = Array.isArray(latest.deleted_exercices)
             ? (latest.deleted_exercices as any[]).map((e: any) => Number(e?.id)).filter((n) => !Number.isNaN(n))
             : [];
@@ -3571,7 +3607,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       const newData = payload.new as any;
       const eventModule = newData?.module_id != null ? Number(newData.module_id) : null;
 
-        if (eventModule === Number(module.id) || (shouldSyncVtcBilanFromCours(module.id) && eventModule === BILAN_VTC_SOURCE_MODULE_ID)) {
+        if (
+          eventModule === Number(module.id) ||
+          eventModule === FC_BILAN_PARENT_BY_MODULE_ID[Number(module.id)] ||
+          (shouldSyncVtcBilanFromCours(module.id) && eventModule === BILAN_VTC_SOURCE_MODULE_ID)
+        ) {
         // Direct module match — refetch full data from DB (payload may be truncated)
         await refetchModuleFromDb();
       } else {
@@ -3713,24 +3753,53 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
       try {
         const fetchStartedAt = Date.now();
-        const { data, error } = await supabase
+        const parentModuleId = FC_BILAN_PARENT_BY_MODULE_ID[Number(module.id)];
+        let query = supabase
           .from("module_editor_state")
-          .select("module_data, deleted_cours, deleted_exercices, updated_at")
-          .eq("module_id", module.id)
+          .select("module_id, module_data, deleted_cours, deleted_exercices, updated_at")
           .order("updated_at", { ascending: false })
-          .limit(1);
+          .limit(parentModuleId ? 2 : 1);
+
+        query = parentModuleId
+          ? query.in("module_id", [Number(module.id), parentModuleId])
+          : query.eq("module_id", module.id);
+
+        const { data, error } = await query;
 
         if (error || !data || data.length === 0) return;
 
-        const latest = data[0];
+        const rows = Array.isArray(data) ? data : [];
+        const latest = parentModuleId
+          ? (rows.find((row: any) => Number(row?.module_id) === parentModuleId) ?? rows[0] ?? null)
+          : (rows[0] ?? null);
         if (!latest?.module_data) return;
         if (shouldSkipFetchedQuestionState(latest.updated_at, fetchStartedAt, "visibility module_editor_state refresh")) return;
+
+        const sourceModuleData = getInitialModuleData(module, apprenantType, studentOnly);
+
+        if (parentModuleId) {
+          const fcMerged = buildFcBilanModuleFromParent(module.id, latest.module_data as unknown as ModuleData, sourceModuleData);
+          if (!fcMerged) return;
+
+          let didUpdate = false;
+          setModuleData((prev) => {
+            if (JSON.stringify(prev.exercices) === JSON.stringify(fcMerged.exercices) &&
+                JSON.stringify(prev.cours) === JSON.stringify(fcMerged.cours)) {
+              return prev;
+            }
+            console.log("[Visibility] Refreshed FC bilan from parent module", parentModuleId, "for module", module.id);
+            didUpdate = true;
+            return preserveNewerLocalQuestionEdits(fcMerged, prev, "visibility FC parent refresh");
+          });
+          markDbSnapshotApplied(latest.updated_at);
+          if (didUpdate) setTrainerOverridesReapplyKey((k) => k + 1);
+          return;
+        }
 
         const md = latest.module_data as unknown as ModuleData;
         if (!Array.isArray(md.cours) || !Array.isArray(md.exercices)) return;
         if (Number(md.id) !== Number(module.id)) return;
 
-        const sourceModuleData = getInitialModuleData(module, apprenantType, studentOnly);
         const deletedExoIdsPoll = Array.isArray(latest.deleted_exercices)
           ? (latest.deleted_exercices as any[]).map((e: any) => Number(e?.id)).filter((n) => !Number.isNaN(n))
           : [];
@@ -4210,7 +4279,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           // Mark as manually_edited when admin changes the question, so the cross-module
           // propagation system never overwrites it. Once true, the flag is preserved.
             if (changed) return { ...q, _editedAt: now, manually_edited: true } as any;
-          return (q as any)._editedAt ? q : { ...q };
+          return {
+            ...q,
+            ...(((q as any)._editedAt ?? (prevQ as any)?._editedAt) ? { _editedAt: (q as any)._editedAt ?? (prevQ as any)?._editedAt } : {}),
+            ...(((q as any).manually_edited ?? (prevQ as any)?.manually_edited) ? { manually_edited: true } : {}),
+          } as any;
         });
         const updated: any = { ...e, questions: stampedQuestions };
         // Track deleted question IDs so mergeSourceExercices won't restore them from source
