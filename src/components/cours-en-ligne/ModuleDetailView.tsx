@@ -4059,7 +4059,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     isSavingToDbRef.current = true;
     try {
       const savedAt = new Date().toISOString();
-      const normalizedModuleData = normalizeManualQuestionFlags(dataToSave.module_data as ModuleData);
+      let normalizedModuleData = normalizeManualQuestionFlags(dataToSave.module_data as ModuleData);
       // Snapshot ancienne version pour détecter les changements pédagogiques
       let previousModuleData: any = null;
       try {
@@ -4083,6 +4083,22 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       if (error) throw error;
       saveErrorShownRef.current = false;
       markDbSnapshotApplied(savedAt);
+
+      // Le trigger DB peut refuser une question plus ancienne envoyée par un onglet
+      // resté ouvert. Toutes les propagations/audits ci-dessous doivent donc partir
+      // de la version réellement conservée en base, pas du payload navigateur.
+      try {
+        const { data: confirmedRow, error: confirmedError } = await supabase
+          .from("module_editor_state")
+          .select("module_data")
+          .eq("module_id", dataToSave.module_id)
+          .maybeSingle();
+        if (!confirmedError && confirmedRow?.module_data) {
+          normalizedModuleData = confirmedRow.module_data as unknown as ModuleData;
+        }
+      } catch (confirmReadError) {
+        console.warn("[ModuleEditor] Lecture confirmation sauvegarde impossible:", confirmReadError);
+      }
 
       // Les modules FC 81/82 sont affichés aux apprenants depuis leur Bilan parent
       // (4/9) pour éviter les anciennes copies obsolètes. Donc si l'admin modifie
