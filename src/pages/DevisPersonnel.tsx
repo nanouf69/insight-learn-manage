@@ -873,9 +873,11 @@ export default function DevisPersonnel() {
       }
 
       const fileName = `Devis_${prenom}_${nom}_${format(new Date(), "ddMMyyyy")}.pdf`;
-      doc.save(fileName);
+      if (!opts.sendEmail) {
+        doc.save(fileName);
+      }
       setGenerated(true);
-      toast.success("Votre devis a été téléchargé !");
+      toast.success(opts.sendEmail ? "Envoi du devis par email..." : "Votre devis a été téléchargé !");
       setTimeout(() => ribRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 300);
 
       // ── Notify admin (email + alerte système) — fire & forget ──
