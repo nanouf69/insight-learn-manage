@@ -1683,7 +1683,7 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
       </Card>
 
       {/* ═══ SECTION 1b : HISTORIQUE DEVIS ENVOYÉS ═══ */}
-      <DevisHistorique apprenantId={apprenant.id} />
+      <DevisHistorique apprenantId={apprenant.id} apprenant={apprenant} />
 
       {/* ═══ SECTION 2 : DEVIS PDF PERSONNALISÉ (existant) ═══ */}
       <Card>
