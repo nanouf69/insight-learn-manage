@@ -49,6 +49,7 @@ import { VILLE_ARRONDISSEMENTS_SLIDES } from "./slides/ville-arrondissements-dat
 import { VILLE_STATIONS_TAXI_SLIDES } from "./slides/ville-stations-taxi-data";
 import { QuestionImageUpload } from "./QuestionImageUpload";
 import { ImageLightbox } from "./ImageLightbox";
+import { ExamQuestionImage } from "./ExamQuestionImage";
 import { mergeSourceExercices, moveQuestionToPosition } from "./examens-blancs-utils";
 
 // Images des monuments et lieux de Lyon
@@ -2354,12 +2355,11 @@ function ExerciceCard({
                   <div className="flex items-start gap-3 p-3 border rounded-lg hover:bg-muted/20 group transition-colors">
                     <Badge className="text-xs shrink-0 mt-0.5">Q{qi + 1}</Badge>
                     {q.image && (
-                      <img
-                        src={q.image}
+                      <ExamQuestionImage
+                        image={q.image}
                         alt={`Illustration Q${qi + 1}`}
-                        loading="lazy"
                         className="w-20 h-20 object-contain rounded border shrink-0 bg-white"
-                        onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                        fallbackClassName="hidden"
                       />
                     )}
                     <div className="flex-1">
@@ -2461,12 +2461,11 @@ function ExerciceCard({
                             </div>
                           )}
                           {q.image && (
-                            <ImageLightbox
-                              src={q.image}
+                            <ExamQuestionImage
+                              image={q.image}
                               alt={`Illustration Q${qi + 1}`}
-                              loading="lazy"
                               className="max-h-48 object-contain rounded border mb-3 bg-white cursor-zoom-in"
-                              onError={() => {}}
+                              fallbackClassName="mb-3 text-xs text-muted-foreground italic"
                             />
                           )}
                           <div className="flex flex-wrap gap-2">
@@ -6012,7 +6011,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                       };
                       const sizeClass = sizeMap[q.imageSize ?? "sm"] ?? "max-h-40";
                       return (
-                        <ImageLightbox src={q.image} alt="Illustration" className={`${sizeClass} rounded border object-contain ml-2`} loading="eager" onError={() => {}} />
+                        <ExamQuestionImage image={q.image} alt="Illustration" className={`${sizeClass} rounded border object-contain ml-2`} fallbackClassName="ml-2 text-xs text-muted-foreground italic" />
                       );
                     })()}
                     {multi && (

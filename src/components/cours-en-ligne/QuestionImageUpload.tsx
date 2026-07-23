@@ -4,6 +4,7 @@ import { ImagePlus, X, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { buildQuestionImagePath, validateQuestionImageFile } from "./examens-blancs-utils";
+import { ExamQuestionImage } from "./ExamQuestionImage";
 
 type ImageSize = "sm" | "md" | "lg" | "xl" | "2xl";
 
@@ -83,10 +84,11 @@ export function QuestionImageUpload({
       {image ? (
         <div className="space-y-2">
           <div className="relative inline-block">
-            <img
-              src={image}
+            <ExamQuestionImage
+              image={image}
               alt="Image question"
               className={`${currentSizeOption.previewClass} rounded border object-contain`}
+              fallbackClassName="text-xs text-muted-foreground italic"
             />
             <Button
               size="sm"
