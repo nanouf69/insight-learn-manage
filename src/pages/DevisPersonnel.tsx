@@ -15,6 +15,7 @@ import jsPDF from "jspdf";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { sendAdminNotification } from "@/lib/sendAdminNotification";
+import { buildCanonicalDevisPDF } from "@/lib/pdf/devis-canonical";
 
 /* ─── HELPER: parse "Du 12 au 25 janvier 2026" / "Du 26 octobre au 16 novembre 2026" ─── */
 const FR_MONTHS: Record<string, number> = {
