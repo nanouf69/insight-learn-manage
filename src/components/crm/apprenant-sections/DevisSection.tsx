@@ -1687,9 +1687,13 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
 
           {/* Actions PDF */}
           <div className="flex items-center gap-3 pt-2 flex-wrap">
-            <Button onClick={generateDevisPDF} disabled={generating} className="flex items-center gap-2">
+            <Button onClick={() => generateDevisPDF()} disabled={generating} className="flex items-center gap-2">
               <Download className="w-4 h-4" />
               {generating ? "Génération..." : "Télécharger le devis PDF"}
+            </Button>
+            <Button onClick={envoyerDevisParEmail} disabled={sendingDevisEmail || generating || !apprenant.email} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white">
+              <Send className="w-4 h-4" />
+              {sendingDevisEmail ? "Envoi en cours..." : "Envoyer le devis par mail"}
             </Button>
             <Button variant="outline" onClick={() => setShowPreview(!showPreview)} className="flex items-center gap-2">
               <Eye className="w-4 h-4" />
