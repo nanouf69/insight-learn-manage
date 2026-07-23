@@ -198,6 +198,19 @@ ${signLink ? `<p>Pour signer votre devis en ligne : <a href="${signLink}">${sign
                     <PenLine className="w-3 h-3 mr-1" /> Signer
                   </Button>
                 )}
+                {apprenant?.email && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={sendingId === d.id}
+                    title={`Envoyer par mail à ${apprenant.email}`}
+                    onClick={() => envoyerParMail(d)}
+                    className="bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
+                  >
+                    <Send className="w-3 h-3 mr-1" />
+                    {sendingId === d.id ? "Envoi..." : "Envoyer par mail"}
+                  </Button>
+                )}
               </div>
             </div>
           ))}
