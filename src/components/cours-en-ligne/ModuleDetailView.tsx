@@ -196,6 +196,10 @@ const BILAN_VTC_MODULE_ID = 4;
 const BILAN_TAXI_MODULE_ID = 9;
 const FC_BILAN_PARENT_BY_MODULE_ID: Record<number, number> = { 81: BILAN_VTC_MODULE_ID, 82: BILAN_TAXI_MODULE_ID };
 const FC_BILAN_EXCLUDED_EXERCISE_IDS = new Set([101, 103, 105]);
+const BILAN_SECURITY_SIBLING_BY_MODULE_ID: Record<number, number> = {
+  [BILAN_VTC_MODULE_ID]: BILAN_TAXI_MODULE_ID,
+  [BILAN_TAXI_MODULE_ID]: BILAN_VTC_MODULE_ID,
+};
 const BILAN_EXAMEN_VTC_MODULE_ID = 5;
 const BILAN_EXAMEN_TAXI_MODULE_ID = 11;
 const SECURITE_ROUTIERE_BILAN_ID = 102;
@@ -452,6 +456,32 @@ const buildParentBilanModuleFromFcChild = (
 
   if (!changed) return null;
   return { ...parentModuleData, exercices: nextParentExercices };
+};
+
+const buildSiblingBilanSecurityModule = (
+  siblingModuleData: ModuleData,
+  sourceModuleData: ModuleData,
+): ModuleData | null => {
+  const sourceSecurity = getExerciseById(sourceModuleData, SECURITE_ROUTIERE_BILAN_ID);
+  if (!sourceSecurity?.questions?.length) return null;
+
+  let changed = false;
+  const securityClone = JSON.parse(JSON.stringify(sourceSecurity)) as ExerciceItem;
+  const siblingExercices = Array.isArray(siblingModuleData.exercices) ? siblingModuleData.exercices : [];
+  const nextExercices = siblingExercices.map((exercise) => {
+    if (Number(exercise.id) !== SECURITE_ROUTIERE_BILAN_ID) return exercise;
+    changed = true;
+    return securityClone;
+  });
+
+  if (!changed) {
+    nextExercices.push(securityClone);
+  }
+
+  return {
+    ...siblingModuleData,
+    exercices: nextExercices,
+  };
 };
 
 const forceSourceExerciseTitles = (moduleId: number | string, loadedData: ModuleData, sourceData: ModuleData): ModuleData => {
