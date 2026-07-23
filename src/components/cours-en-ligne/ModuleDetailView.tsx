@@ -3915,6 +3915,73 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         dataToSave.module_data.exercices ?? [],
         (dataToSave.deleted_exercices ?? []).map((e: any) => e.id),
       );
+
+      // 🔁 Miroir ciblé Bilan VTC (mod. 4) ↔ Bilan TAXI (mod. 9) pour les 5
+      // matières communes (T3P=100, Gestion=101, Sécurité Routière=102,
+      // Français=103, Anglais=105). Toute modif faite d'un côté est répliquée
+      // de l'autre. Les matières spécifiques (104/106 VTC, 203/204 TAXI) ne
+      // sont jamais touchées.
+      try {
+        const SHARED_BILAN_IDS = new Set([100, 101, 102, 103, 105]);
+        const BILAN_MIRROR: Record<number, number> = { 4: 9, 9: 4 };
+        const siblingId = BILAN_MIRROR[Number(dataToSave.module_id)];
+        if (siblingId) {
+          const savedExos = (dataToSave.module_data?.exercices ?? []) as any[];
+          const sharedFromSaved = savedExos
+            .filter((e) => SHARED_BILAN_IDS.has(Number(e?.id)))
+            .map((e) => JSON.parse(JSON.stringify(e)));
+
+          if (sharedFromSaved.length > 0) {
+            const { data: siblingRow } = await supabase
+              .from("module_editor_state")
+              .select("module_data, deleted_cours, deleted_exercices, source_fingerprint")
+              .eq("module_id", siblingId)
+              .maybeSingle();
+
+            const siblingData: any = siblingRow?.module_data ?? { exercices: [] };
+            const siblingExos: any[] = Array.isArray(siblingData.exercices) ? siblingData.exercices : [];
+            const kept = siblingExos.filter((e) => !SHARED_BILAN_IDS.has(Number(e?.id)));
+            // Ordre : partagées d'abord (comme dans la source), puis spécifiques
+            const nextExos = [...sharedFromSaved, ...kept];
+
+            const nextSiblingData = { ...siblingData, exercices: nextExos };
+            const mirrorSavedAt = new Date().toISOString();
+            const { error: mirrorErr } = await supabase
+              .from("module_editor_state")
+              .upsert(
+                [{
+                  module_id: siblingId,
+                  module_data: nextSiblingData,
+                  deleted_cours: siblingRow?.deleted_cours ?? [],
+                  deleted_exercices: siblingRow?.deleted_exercices ?? [],
+                  source_fingerprint: siblingRow?.source_fingerprint ?? null,
+                  updated_at: mirrorSavedAt,
+                }],
+                { onConflict: "module_id" },
+              );
+            if (mirrorErr) {
+              console.warn("[BilanMirror] échec miroir VTC↔TAXI:", mirrorErr);
+            } else {
+              // Ping realtime pour rafraîchir les apprenants sur le module miroir
+              try {
+                const ch = supabase.channel(`module-editor-live-${siblingId}`);
+                await new Promise<void>((resolve) => {
+                  const t = setTimeout(resolve, 400);
+                  ch.subscribe((s) => { if (s === "SUBSCRIBED") { clearTimeout(t); resolve(); } });
+                });
+                await ch.send({
+                  type: "broadcast",
+                  event: "module-updated",
+                  payload: { moduleId: siblingId, at: mirrorSavedAt, mirroredFrom: dataToSave.module_id },
+                });
+                await supabase.removeChannel(ch);
+              } catch {}
+            }
+          }
+        }
+      } catch (mirrorErr) {
+        console.warn("[BilanMirror] exception non-bloquante:", mirrorErr);
+      }
     } catch (err) {
       console.error("Erreur sauvegarde DB module_editor_state:", err);
       if (!saveErrorShownRef.current) {
