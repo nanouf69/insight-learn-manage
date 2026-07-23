@@ -203,11 +203,7 @@ const SECURITE_ROUTIERE_BILAN_ID = 102;
 // exclusivement module_editor_state. L'ancienne table quiz_questions_overrides
 // peut contenir des copies fournisseur obsolètes : elle ne doit jamais repasser
 // au-dessus des corrections admin sur les Bilans.
-// Tous les modules à Bilans/quiz édités par l'admin: leurs corrections gagnent
-// systématiquement sur les anciens overrides fournisseur (quiz_questions_overrides).
-const ADMIN_AUTHORITATIVE_QUIZ_MODULE_IDS = new Set([
-  4, 5, 7, 9, 10, 11, 12, 13, 24, 27, 28, 29, 40, 42, 64, 81, 82, 90,
-]);
+const ADMIN_AUTHORITATIVE_QUIZ_MODULE_IDS = new Set([4, 5, 9, 11, 27, 28, 29, 81, 82, 90]);
 const BILAN_EXAMEN_GESTION_EXERCISE_IDS: Record<number, number> = {
   [BILAN_EXAMEN_VTC_MODULE_ID]: 501,
   [BILAN_EXAMEN_TAXI_MODULE_ID]: 601,
