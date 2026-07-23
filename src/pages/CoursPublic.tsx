@@ -1704,12 +1704,12 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     ? orderedAuthorizedModules
     : (fallbackModules.length > 0 ? fallbackModules : allModules);
 
-  // Blacklist stricte pour Formation Continue TAXI : jamais afficher les modules
-  // 1 (intro présentiel), 2/10/25/14-19/20-24/39 (cours & exercices VTC/TAXI),
-  // 4/9 (bilan exercices VTC/TAXI), 12 (cas pratique TAXI).
-  const FC_TAXI_BLACKLIST = new Set([1, 2, 4, 9, 10, 12, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 39]);
+  // Whitelist stricte pour Formation Continue TAXI : uniquement les modules
+  // officiels du parcours FC TAXI (bilan, cours+QCM, émargements, financeur,
+  // demande carte pro, remboursement, fin de formation).
+  const FC_TAXI_WHITELIST = new Set([82, 92, 84, 86, 93, 94, 51]);
   const filteredSourceModules = selectedFormation === "continue-taxi"
-    ? sourceModules.filter((m) => !FC_TAXI_BLACKLIST.has(m.id))
+    ? sourceModules.filter((m) => FC_TAXI_WHITELIST.has(m.id))
     : sourceModules;
 
   const modules = filteredSourceModules.map((module) => ({
