@@ -32,6 +32,7 @@ import AdminAuditModules from "./pages/AdminAuditModules";
 
 // Onboarding pages
 import OnboardingWelcome from "./pages/onboarding/OnboardingWelcome";
+import OnboardingFCFinish from "./pages/onboarding/OnboardingFCFinish";
 import Step1 from "./pages/onboarding/steps/Step1";
 import Step2 from "./pages/onboarding/steps/Step2";
 import Step3 from "./pages/onboarding/steps/Step3";
