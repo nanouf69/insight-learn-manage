@@ -407,6 +407,13 @@ export const MODULES_DATA: ModuleInfo[] = [
     description: "QCM de synthèse de 100 questions (T3P, Sécurité Routière, Réglementation Nationale, Développement Commercial) — Formation Continue TAXI",
     formations: ["continue-taxi"],
   },
+  {
+    id: 96,
+    nom: "🗺️ QUIZZ VILLE DE LYON",
+    description: "Quizz Ville de Lyon — connaissances géographiques (autoroutes, avenues, boulevards, cours, places, quais, rues et lieux emblématiques). Repris de la formation pratique TAXI.",
+    formations: ["continue-taxi"],
+  },
+
 
   {
     id: 83,
