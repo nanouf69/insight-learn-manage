@@ -9,22 +9,23 @@ const COMPANY = {
   siret: '53516371400044',
 };
 
-const buildDemiLabels = (isFCVtc: boolean): Record<string, string> => ({
+const buildDemiLabels = (isFC: boolean): Record<string, string> => ({
   matin: 'Matin (09h-12h)',
-  apres_midi: isFCVtc ? 'Après-midi (13h-17h)' : 'Après-midi (13h-16h)',
+  apres_midi: isFC ? 'Après-midi (13h-17h)' : 'Après-midi (13h-16h)',
   soir: 'Soir (17h-21h)',
   soir_1: 'Soir 1 (17h-18h30)',
   soir_2: 'Soir 2 (18h30-21h)',
 });
 
-const isFormationContinueVTC = (type?: string): boolean => {
+// Formation continue (VTC ou TAXI) => créneau après-midi 13h-17h (4 signatures / 2 jours)
+const isFormationContinue = (type?: string): boolean => {
   if (!type) return false;
   const t = type.toLowerCase().replace(/[_\s]+/g, '-');
-  // Match: continue-vtc, fc-vtc, formation-continue-vtc, vtc-continue, vtc-fc…
-  const hasVtc = /(^|[-])vtc([-]|$)/.test(t);
-  const hasFC = t.includes('continue') || /(^|[-])fc([-]|$)/.test(t);
-  return hasVtc && hasFC;
+  const hasKind = /(^|[-])(vtc|taxi)([-]|$)/.test(t) || t.includes('mobilite');
+  const hasFC = t.includes('continue') || /(^|[-])fc([-]|$)/.test(t) || t.includes('mobilite');
+  return hasKind && hasFC;
 };
+
 
 
 const DEMI_ORDER = ['matin', 'apres_midi', 'soir', 'soir_1', 'soir_2'];
@@ -47,7 +48,7 @@ export function generateEmargementSemainePdf(
   formateurNom: string = 'GUENICHI Naoufal',
   opts?: { returnBlob?: boolean },
 ): { blob: Blob; fileName: string } | void {
-  const isFCVtc = isFormationContinueVTC(apprenant.type_apprenant);
+  const isFCVtc = isFormationContinue(apprenant.type_apprenant);
   const DEMI_LABELS = buildDemiLabels(isFCVtc);
   const doc = new jsPDF();
   const pw = doc.internal.pageSize.getWidth();
