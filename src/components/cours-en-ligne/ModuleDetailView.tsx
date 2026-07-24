@@ -4841,9 +4841,15 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       window.setTimeout(() => scrollToRevisionStart(exoId), 420);
     }, [scrollToRevisionStart]);
 
-    const confirmWrongQuestionRevision = () => {
-      const pending = pendingWrongQuestionRevision;
-      if (!pending) return;
+    const startWrongQuestionRevision = (pending: {
+      exoId: number;
+      total: number;
+      snapCorrect: number;
+      snapshot: Record<string, string | string[]>;
+      wrongKeys: string[];
+      wrongIds: (number | string)[];
+    }) => {
+      if (!pending || pending.wrongKeys.length === 0) return;
 
       flushSync(() => {
         if (Object.keys(pending.snapshot).length > 0) {
@@ -4855,19 +4861,40 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             ],
           }));
         }
+        // Clear wrong QCM answers
         setSelectedAnswers(prev => {
           const next = { ...prev };
           pending.wrongKeys.forEach(k => delete next[k]);
           autoSaveAnswers(next);
           return next;
         });
+        // Clear wrong QRC state (answers, results, "not answered" flags)
+        setQrcAnswers(prev => {
+          const next = { ...prev };
+          pending.wrongKeys.forEach(k => delete next[k]);
+          return next;
+        });
+        setQrcResults(prev => {
+          const next = { ...prev };
+          pending.wrongKeys.forEach(k => delete next[k]);
+          return next;
+        });
+        setUnansweredKeys(new Set());
         setShowResultsFor(prev => { const next = new Set(prev); next.delete(pending.exoId); return next; });
         setPendingResultRestore((prev) => (prev?.exoId === pending.exoId ? null : prev));
         setRevisionQuestionsFor(prev => ({ ...prev, [pending.exoId]: new Set(pending.wrongIds) }));
         setPendingWrongQuestionRevision(null);
       });
 
+      toast.success(`🎯 Mode révision activé — ${pending.wrongKeys.length} question${pending.wrongKeys.length > 1 ? "s" : ""} à refaire`);
       scheduleScrollToRevisionStart(pending.exoId);
+    };
+
+    // Backward-compat alias — the confirmation banner still calls this name.
+    const confirmWrongQuestionRevision = () => {
+      const pending = pendingWrongQuestionRevision;
+      if (!pending) return;
+      startWrongQuestionRevision(pending);
     };
 
     // === Subject number mapping for stepper numbering (e.g. 1.1, 1.2, 2.1…) ===
