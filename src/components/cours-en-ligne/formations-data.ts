@@ -184,7 +184,7 @@ export const MODULES_DATA: ModuleInfo[] = [
     id: 11,
     nom: "6.BILAN EXAMEN TAXI",
     description: "Très important, il s'agit de questions que vous pouvez retrouver en examen Taxi",
-    formations: TAXI_FORMATIONS,
+    formations: [...TAXI_FORMATIONS, "continue-taxi"],
   },
   {
     id: 12,
