@@ -86,17 +86,16 @@ export default function DemandeCarteTAXIViewer({ completed, onComplete }: Props)
         </CardHeader>
         <CardContent className="space-y-3">
           <p className="text-sm">
-            La demande de renouvellement doit être adressée à la <strong>préfecture</strong> de votre département
-            de résidence. Vérifiez le site officiel de votre préfecture pour connaître les modalités de dépôt
-            (guichet, courrier ou téléservice) et les éventuels formulaires spécifiques.
+            La demande de renouvellement s'effectue désormais en ligne via <strong>démarches-simplifiées.fr</strong>.
+            Vérifiez également le site officiel de votre préfecture pour les modalités locales éventuelles.
           </p>
           <LinkButton
-            url="https://www.service-public.fr/particuliers/vosdroits/F22499"
+            url="https://www.demarches-simplifiees.fr/commencer/demande-de-carte-pro-de-taxi-renouvellement"
             size="lg"
             className="bg-blue-700 hover:bg-blue-800"
           >
             <ExternalLink className="h-4 w-4 mr-2" />
-            Accéder à la fiche officielle service-public.fr
+            Déposer ma demande sur démarches-simplifiées.fr
           </LinkButton>
         </CardContent>
       </Card>
