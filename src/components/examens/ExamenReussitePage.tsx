@@ -24,6 +24,48 @@ import { Eye, Edit, IdCard, Car } from "lucide-react";
 import { generateEmargementPratiquePDF } from "@/lib/pdf/emargement-pratique";
 import listeMedecinsAgrees from "@/assets/medecins/liste-medecins-agrees.pdf.asset.json";
 
+function InlineDossierCma({ apprenantId, value, onSaved }: { apprenantId: string; value: string | null; onSaved?: () => void }) {
+  const [editing, setEditing] = useState(false);
+  const [val, setVal] = useState(value || "");
+  const [saving, setSaving] = useState(false);
+  useEffect(() => { setVal(value || ""); }, [value]);
+
+  const save = async () => {
+    const trimmed = val.trim();
+    if ((trimmed || null) === (value || null)) { setEditing(false); return; }
+    setSaving(true);
+    const { error } = await supabase.from('apprenants').update({ numero_dossier_cma: trimmed || null }).eq('id', apprenantId);
+    setSaving(false);
+    if (error) { toast.error("Erreur : " + error.message); return; }
+    toast.success("N° dossier enregistré");
+    setEditing(false);
+    onSaved?.();
+  };
+
+  if (editing) {
+    return (
+      <Input
+        autoFocus
+        value={val}
+        disabled={saving}
+        onChange={(e) => setVal(e.target.value)}
+        onBlur={save}
+        onKeyDown={(e) => { if (e.key === 'Enter') save(); if (e.key === 'Escape') { setVal(value || ""); setEditing(false); } }}
+        placeholder="N° dossier CMA"
+        className="h-8 w-32 text-xs font-mono"
+      />
+    );
+  }
+  return (
+    <button type="button" onClick={() => setEditing(true)} className="inline-block" title="Cliquer pour modifier">
+      <Badge variant="outline" className={`cursor-pointer hover:bg-muted ${!value ? "border-destructive text-destructive" : ""}`}>
+        {value || "-"}
+      </Badge>
+    </button>
+  );
+}
+
+
 // Trouve la date d'examen la plus récente passée (ou la première à venir)
 function getDefaultExamDate(): string {
   const MONTH_MAP: Record<string, number> = {
