@@ -2188,8 +2188,9 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
             console.error('[bulkSendFactures] send error', error || (resp as any)?.error);
           }
 
-          if (error) { failed++; continue; }
+          if (error || (resp as any)?.error) { failed++; continue; }
           sent++;
+
         } catch (e) {
           console.error('Erreur envoi facture', e);
           failed++;
