@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, ExternalLink, FileText, Stethoscope, IdCard, AlertCircle, Download } from "lucide-react";
+import { CheckCircle2, ExternalLink, FileText, Stethoscope, IdCard, AlertCircle, Download, HeartPulse } from "lucide-react";
 import type { ComponentProps, ReactNode } from "react";
 import attestationHebergement from "@/assets/attestation-hebergement.pdf.asset.json";
 import medecins01Ain from "@/assets/medecins/01-ain.pdf.asset.json";
