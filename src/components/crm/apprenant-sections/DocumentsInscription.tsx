@@ -208,10 +208,36 @@ export function DocumentsInscription({ apprenant }: DocumentsInscriptionProps) {
     return options;
   })();
 
-  // Fetch existing documents on mount
+  // Fetch existing documents on mount + refresh en temps réel dès qu'un doc
+  // est ajouté/modifié depuis l'onboarding (Step 1)
   useEffect(() => {
     fetchDocuments();
+
+    // Supabase Realtime : re-fetch dès qu'une ligne bouge pour cet apprenant
+    const channel = supabase
+      .channel(`docs-inscription-${apprenant.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'documents_inscription',
+          filter: `apprenant_id=eq.${apprenant.id}`,
+        },
+        () => { fetchDocuments(); }
+      )
+      .subscribe();
+
+    // Refresh également au retour de focus (backup si Realtime indisponible)
+    const onFocus = () => fetchDocuments();
+    window.addEventListener('focus', onFocus);
+
+    return () => {
+      supabase.removeChannel(channel);
+      window.removeEventListener('focus', onFocus);
+    };
   }, [apprenant.id]);
+
 
   const fetchDocuments = async () => {
     try {
