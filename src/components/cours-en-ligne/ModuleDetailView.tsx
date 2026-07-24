@@ -4851,6 +4851,24 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     }) => {
       if (!pending || pending.wrongKeys.length === 0) return;
 
+      const wrongKeySet = new Set(pending.wrongKeys);
+
+      // Build the cleared answer maps up front so the actual state update is
+      // purely a value swap — no side-effects inside the setState updater and
+      // no chance of a stale closure re-introducing the previous selections.
+      const clearedSelected: Record<string, string | string[]> = {};
+      for (const [k, v] of Object.entries(selectedAnswers)) {
+        if (!wrongKeySet.has(k)) clearedSelected[k] = v;
+      }
+      const clearedQrc: Record<string, string> = {};
+      for (const [k, v] of Object.entries(qrcAnswers)) {
+        if (!wrongKeySet.has(k)) clearedQrc[k] = v;
+      }
+      const clearedQrcResults: typeof qrcResults = {} as typeof qrcResults;
+      for (const [k, v] of Object.entries(qrcResults)) {
+        if (!wrongKeySet.has(k)) (clearedQrcResults as any)[k] = v;
+      }
+
       flushSync(() => {
         if (Object.keys(pending.snapshot).length > 0) {
           setAttemptHistoryFor(prev => ({
@@ -4861,24 +4879,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             ],
           }));
         }
-        // Clear wrong QCM answers
-        setSelectedAnswers(prev => {
-          const next = { ...prev };
-          pending.wrongKeys.forEach(k => delete next[k]);
-          autoSaveAnswers(next);
-          return next;
-        });
-        // Clear wrong QRC state (answers, results, "not answered" flags)
-        setQrcAnswers(prev => {
-          const next = { ...prev };
-          pending.wrongKeys.forEach(k => delete next[k]);
-          return next;
-        });
-        setQrcResults(prev => {
-          const next = { ...prev };
-          pending.wrongKeys.forEach(k => delete next[k]);
-          return next;
-        });
+        // Force-overwrite: previous checked answers for wrong questions are wiped.
+        setSelectedAnswers(clearedSelected);
+        setQrcAnswers(clearedQrc);
+        setQrcResults(clearedQrcResults);
         setUnansweredKeys(new Set());
         setShowResultsFor(prev => { const next = new Set(prev); next.delete(pending.exoId); return next; });
         setPendingResultRestore((prev) => (prev?.exoId === pending.exoId ? null : prev));
@@ -4886,7 +4890,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         setPendingWrongQuestionRevision(null);
       });
 
-      toast.success(`🎯 Mode révision activé — ${pending.wrongKeys.length} question${pending.wrongKeys.length > 1 ? "s" : ""} à refaire`);
+      // Persist the wiped selections after state has settled.
+      autoSaveAnswers(clearedSelected);
+
+      toast.success(`🎯 Mode révision activé — ${pending.wrongKeys.length} question${pending.wrongKeys.length > 1 ? "s" : ""} à refaire (réponses effacées)`);
       scheduleScrollToRevisionStart(pending.exoId);
     };
 
