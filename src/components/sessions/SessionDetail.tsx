@@ -2172,8 +2172,9 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
               <p>Pour tout règlement par virement, merci de nous indiquer le numéro de facture en référence.</p>
               <p>Cordialement,<br/>Services pro Ftransport<br/>contact@ftransport.fr</p>
             </div>`;
-          const { error } = await supabase.functions.invoke('send-document-email', {
+          const { data: resp, error } = await supabase.functions.invoke('send-document-email', {
             body: {
+              apprenantId: apprenant.id,
               recipientEmail: recipient,
               recipientName: `${apprenant.prenom} ${apprenant.nom}`,
               subject,
@@ -2183,6 +2184,10 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
               attachmentContentType: 'application/pdf',
             },
           });
+          if (error || (resp as any)?.error) {
+            console.error('[bulkSendFactures] send error', error || (resp as any)?.error);
+          }
+
           if (error) { failed++; continue; }
           sent++;
         } catch (e) {
