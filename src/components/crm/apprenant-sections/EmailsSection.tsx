@@ -1260,6 +1260,31 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
                       <p className={`text-sm truncate ${!email.is_read ? 'text-foreground/70 font-medium' : 'text-muted-foreground'}`}>
                         {email.body_preview}
                       </p>
+                      {email.type === 'sent' && (() => {
+                        const history = sendHistoryBySubject.get(normalizeSubject(email.subject)) || [];
+                        if (history.length < 2) return null;
+                        const currentTs = new Date(email.sent_at || email.created_at).getTime();
+                        const currentIdx = history.findIndex((t) => t === currentTs);
+                        return (
+                          <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px]">
+                            <Badge variant="secondary" className="text-[10px] py-0 h-5">
+                              🔁 {history.length} envois
+                            </Badge>
+                            {history.map((t, i) => (
+                              <span
+                                key={t}
+                                className={`px-1.5 py-0.5 rounded border ${
+                                  i === currentIdx
+                                    ? 'bg-blue-100 border-blue-300 text-blue-800 font-medium'
+                                    : 'bg-muted/50 border-border text-muted-foreground'
+                                }`}
+                              >
+                                {ordinalSend(i + 1)} : {format(new Date(t), 'dd/MM/yyyy HH:mm', { locale: fr })}
+                              </span>
+                            ))}
+                          </div>
+                        );
+                      })()}
                     </div>
                     <div className="flex items-center gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
                       {email.type === 'sent' && (
