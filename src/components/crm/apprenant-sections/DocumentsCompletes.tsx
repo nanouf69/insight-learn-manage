@@ -53,6 +53,7 @@ const TYPE_COLORS: Record<string, string> = {
   "emargement-fc": "bg-rose-100 text-rose-800",
   "emargement-fc-semaine": "bg-green-500 text-white",
   "doc-fournisseur": "bg-violet-100 text-violet-800",
+  "document-inscription": "bg-sky-100 text-sky-800",
 };
 
 const FIELD_LABELS: Record<string, string> = {
