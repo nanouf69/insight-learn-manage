@@ -172,6 +172,40 @@ export default function DemandeCarteTAXIViewer({ completed, onComplete }: Props)
         </CardContent>
       </Card>
 
+      <Card className="border-rose-200 bg-rose-50/40">
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <HeartPulse className="h-5 w-5 text-rose-700" />
+            Formation PSC1 (Prévention et Secours Civiques niveau 1)
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-sm">
+            Le <strong>PSC1</strong> est obligatoire pour les conducteurs de taxi. Choisissez l'organisme
+            avec lequel vous souhaitez suivre cette formation :
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <LinkButton
+              url="https://www.croix-rouge.fr/formation/prevention-et-secours-civique-de-niveau-1-psc1"
+              className="bg-rose-700 hover:bg-rose-800 justify-start"
+            >
+              <ExternalLink className="h-4 w-4 mr-2" />
+              Croix-Rouge française — PSC1
+            </LinkButton>
+            <LinkButton
+              url="https://formations.protection-civile.org/formation-psc/"
+              className="bg-orange-600 hover:bg-orange-700 justify-start"
+            >
+              <ExternalLink className="h-4 w-4 mr-2" />
+              Protection Civile — PSC1
+            </LinkButton>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Comparez les dates, lieux et tarifs proposés par les deux organismes et inscrivez-vous directement en ligne.
+          </p>
+        </CardContent>
+      </Card>
+
       <div className="flex justify-end pt-4">
         <Button onClick={onComplete} size="lg" disabled={completed}>
           <CheckCircle2 className="h-4 w-4 mr-2" />
