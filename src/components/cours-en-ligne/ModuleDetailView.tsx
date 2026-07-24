@@ -1736,6 +1736,9 @@ function getInitialModuleDataRaw(
       cours: [],
       exercices: JSON.parse(JSON.stringify(QCM_100_FC_TAXI)),
     };
+  }
+
+
 
   // Cours Formation Continue TAXI — PDFs pédagogiques + QCM Final (module 92)
   if (module.id === 92) {
