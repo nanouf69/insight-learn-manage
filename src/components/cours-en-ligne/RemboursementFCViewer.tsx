@@ -21,6 +21,7 @@ import { generateAttestationFCVTC } from "@/lib/pdf/attestation-fc-vtc";
 import { generateFactureFC } from "@/lib/pdf/facture-fc";
 import { toast } from "sonner";
 import agrementVtcAsset from "@/assets/agrement-vtc-ftransport.pdf.asset.json";
+import agrementTaxiAsset from "@/assets/agrement-taxi-ftransport.pdf.asset.json";
 import programmeFcTaxiAsset from "@/assets/programme-formation-continue-taxi.pdf.asset.json";
 
 interface DbFacture {
