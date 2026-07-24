@@ -1800,40 +1800,28 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       });
       return;
     }
-    // Aperçu avant envoi : on génère le PDF fusionné et on l'ouvre dans un nouvel onglet
-    let previewUrl: string | null = null;
-    try {
-      let mergedDoc: any = null;
-      for (const sa of apprenantsInSession) {
-        const apprenant = sa.apprenant;
-        if (!apprenant?.email) continue;
-        const { data } = buildAttestationDataForApprenant(apprenant, sa);
-        const result: any = await generateAttestationFCVTC(data, {
-          returnDoc: true,
-          existingDoc: mergedDoc ?? undefined,
-          addPage: !!mergedDoc,
-        });
-        if (result?.doc) mergedDoc = result.doc;
-      }
-      if (mergedDoc) {
-        const blob: Blob = mergedDoc.output('blob');
-        previewUrl = URL.createObjectURL(blob);
-        window.open(previewUrl, '_blank');
-      }
-    } catch (e) {
-      console.error('[bulkSendAttestations] preview error', e);
+    // Vérifie qu'au moins un apprenant a un email
+    const withEmail = apprenantsInSession.filter(sa => sa.apprenant?.email);
+    if (withEmail.length === 0) {
+      toast({
+        title: "Aucun destinataire",
+        description: "Aucun apprenant de cette session n'a d'email renseigné.",
+        variant: "destructive",
+      });
+      return;
     }
 
-    // Confirmation après aperçu
-    const confirmed = window.confirm(
-      "Aperçu des attestations ouvert dans un nouvel onglet.\n\n" +
-      "Envoyer maintenant ?\n\n" +
-      "Une fois envoyées, elles seront déposées dans l'espace apprenant " +
-      "(module « Remboursement formation continue ») et envoyées par email.\n\n" +
-      "Cliquez sur Annuler si vous souhaitez encore les éditer."
-    );
-    if (previewUrl) setTimeout(() => URL.revokeObjectURL(previewUrl!), 60000);
-    if (!confirmed) return;
+    // Confirmation : window.confirm est bloqué dans l'iframe de preview Lovable,
+    // on ne l'utilise donc qu'en fenêtre principale.
+    const inIframe = (() => { try { return window.self !== window.top; } catch { return true; } })();
+    if (!inIframe) {
+      const confirmed = window.confirm(
+        `Envoyer ${withEmail.length} attestation(s) par email ?\n\n` +
+        "Elles seront aussi déposées dans l'espace apprenant " +
+        "(module « Remboursement formation continue »)."
+      );
+      if (!confirmed) return;
+    }
     setBulkSendingAttestations(true);
     let sent = 0;
     let skipped = 0;
