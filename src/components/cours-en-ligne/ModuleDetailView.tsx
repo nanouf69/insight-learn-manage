@@ -6859,15 +6859,18 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                                   wrongIds.push(q.id);
                                 }
                               });
-                              const nbWrong = wrongKeys.length;
-                              if (nbWrong === 0) {
+                              if (wrongKeys.length === 0) {
                                 toast.success("🎉 Aucune question fausse à refaire !");
-                              } else {
-                                flushSync(() => {
-                                  setPendingWrongQuestionRevision({ exoId: exo.id, total: questionsSafe.length, snapCorrect, snapshot, wrongKeys, wrongIds });
-                                });
-                                scheduleScrollToRevisionStart(exo.id);
+                                return;
                               }
+                              startWrongQuestionRevision({
+                                exoId: exo.id,
+                                total: questionsSafe.length,
+                                snapCorrect,
+                                snapshot,
+                                wrongKeys,
+                                wrongIds,
+                              });
                             }}>
                               🎯 Refaire les fausses ({(() => {
                                 let count = 0;
