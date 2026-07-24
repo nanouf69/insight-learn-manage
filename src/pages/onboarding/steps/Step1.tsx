@@ -631,10 +631,10 @@ export default function Step1() {
         <div className="flex justify-end pt-4">
           {canProceed ? (
             <Link
-              to="/bienvenue/etape-2"
+              to={localStorage.getItem('onboarding_is_fc') === 'true' ? '/bienvenue/termine' : '/bienvenue/etape-2'}
               className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-3 rounded-xl transition-colors shadow-sm"
             >
-              Étape suivante
+              {localStorage.getItem('onboarding_is_fc') === 'true' ? 'Terminer mon inscription' : 'Étape suivante'}
               <ArrowRight className="w-4 h-4" />
             </Link>
           ) : (
@@ -642,11 +642,12 @@ export default function Step1() {
               onClick={() => setAttempted(true)}
               className="inline-flex items-center gap-2 bg-gray-300 hover:bg-gray-400 text-gray-600 font-medium px-6 py-3 rounded-xl transition-colors cursor-pointer"
             >
-              Étape suivante
+              {localStorage.getItem('onboarding_is_fc') === 'true' ? 'Terminer mon inscription' : 'Étape suivante'}
               <ArrowRight className="w-4 h-4" />
             </button>
           )}
         </div>
+
       </div>
     </OnboardingLayout>
   );
