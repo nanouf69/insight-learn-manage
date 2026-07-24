@@ -159,6 +159,26 @@ const SKIP_KEYS = new Set(['_status', '_signature_image', 'apprenant_nom', 'appr
 
 export function DocumentsCompletes({ apprenant }: Props) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+
+  // Rafraîchissement temps réel : dès qu'un document d'inscription est ajouté/modifié
+  // par l'apprenant (étape 1 du tunnel), on ré-hydrate l'onglet Formulaires.
+  useEffect(() => {
+    if (!apprenant?.id) return;
+    const channel = supabase
+      .channel(`docs-completes-${apprenant.id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "documents_inscription", filter: `apprenant_id=eq.${apprenant.id}` },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["apprenant-documents-completes", apprenant.id] });
+        },
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [apprenant?.id, queryClient]);
 
   const { data: documents, isLoading } = useQuery({
     queryKey: ["apprenant-documents-completes", apprenant.id],
