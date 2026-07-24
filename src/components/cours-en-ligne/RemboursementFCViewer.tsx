@@ -21,6 +21,7 @@ import { generateAttestationFCVTC } from "@/lib/pdf/attestation-fc-vtc";
 import { generateFactureFC } from "@/lib/pdf/facture-fc";
 import { toast } from "sonner";
 import agrementVtcAsset from "@/assets/agrement-vtc-ftransport.pdf.asset.json";
+import agrementTaxiAsset from "@/assets/agrement-taxi-ftransport.pdf.asset.json";
 import programmeFcTaxiAsset from "@/assets/programme-formation-continue-taxi.pdf.asset.json";
 
 interface DbFacture {
@@ -804,30 +805,31 @@ export default function RemboursementFCViewer({ apprenantId, completed, onComple
         </div>
       </Card>
 
-      {/* 5. Agrément VTC du centre */}
+      {/* 5. Agrément du centre */}
       <Card className="p-4">
         <div className="flex items-start gap-3">
           <Award className="h-6 w-6 text-amber-600 shrink-0 mt-1" />
           <div className="flex-1">
-            <h3 className="font-semibold">5. Agrément VTC du centre de formation</h3>
+            <h3 className="font-semibold">5. Agrément {formation} du centre de formation</h3>
             <p className="text-xs text-muted-foreground mt-0.5">
               Agrément préfectoral du centre FTRANSPORT (à joindre à votre dossier de remboursement).
             </p>
             <div className="mt-2">
               <a
-                href={agrementVtcAsset.url}
+                href={formation === "TAXI" ? agrementTaxiAsset.url : agrementVtcAsset.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                download="Agrement-VTC-FTRANSPORT.pdf"
+                download={formation === "TAXI" ? "Agrement-TAXI-FTRANSPORT.pdf" : "Agrement-VTC-FTRANSPORT.pdf"}
                 className="inline-flex items-center gap-1.5 text-xs font-medium text-white bg-amber-600 hover:bg-amber-700 rounded-md px-3 py-1.5 transition-colors"
               >
                 <Download className="h-3.5 w-3.5" />
-                Télécharger l'agrément VTC
+                Télécharger l'agrément {formation}
               </a>
             </div>
           </div>
         </div>
       </Card>
+
 
       {!completed && (
         <div className="flex justify-end pt-2">
