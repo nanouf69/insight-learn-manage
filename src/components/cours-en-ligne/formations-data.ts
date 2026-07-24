@@ -401,6 +401,12 @@ export const MODULES_DATA: ModuleInfo[] = [
     description: "Documents pour le remboursement par le financeur — Formation Continue TAXI",
     formations: ["continue-taxi"],
   },
+  {
+    id: 95,
+    nom: "📝 QCM 100 QUESTIONS FC TAXI",
+    description: "QCM de synthèse de 100 questions (T3P, Sécurité Routière, Réglementation Nationale, Développement Commercial) — Formation Continue TAXI",
+    formations: ["continue-taxi"],
+  },
 
   {
     id: 83,
