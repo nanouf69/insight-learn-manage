@@ -589,6 +589,23 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
     },
   });
 
+  // Normalise le sujet pour regrouper original + renvois
+  const normalizeSubject = (s: string | null | undefined) =>
+    (s || '').replace(/^(?:re|fwd|tr|fw)\s*:\s*/gi, '').trim().toLowerCase();
+
+  // Historique des envois par sujet (uniquement type='sent') : liste des timestamps triés ascendants
+  const sendHistoryBySubject = new Map<string, number[]>();
+  emails.forEach((e) => {
+    if (e.type !== 'sent') return;
+    const key = normalizeSubject(e.subject);
+    if (!key) return;
+    const ts = new Date(e.sent_at || e.created_at).getTime();
+    const arr = sendHistoryBySubject.get(key) || [];
+    arr.push(ts);
+    sendHistoryBySubject.set(key, arr);
+  });
+  sendHistoryBySubject.forEach((arr) => arr.sort((a, b) => a - b));
+
   const filteredEmails = emails
     .filter(email => {
       if (activeTab === 'sent') return email.type === 'sent';
@@ -608,6 +625,11 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
       const dateB = new Date(b.sent_at || b.received_at || b.created_at).getTime();
       return dateB - dateA;
     });
+
+  const ordinalSend = (n: number) => {
+    if (n === 1) return '1er envoi';
+    return `${n}e envoi`;
+  };
 
   const sentCount = emails.filter(e => e.type === 'sent').length;
   const receivedCount = emails.filter(e => e.type === 'received').length;
@@ -1238,6 +1260,31 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
                       <p className={`text-sm truncate ${!email.is_read ? 'text-foreground/70 font-medium' : 'text-muted-foreground'}`}>
                         {email.body_preview}
                       </p>
+                      {email.type === 'sent' && (() => {
+                        const history = sendHistoryBySubject.get(normalizeSubject(email.subject)) || [];
+                        if (history.length < 2) return null;
+                        const currentTs = new Date(email.sent_at || email.created_at).getTime();
+                        const currentIdx = history.findIndex((t) => t === currentTs);
+                        return (
+                          <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px]">
+                            <Badge variant="secondary" className="text-[10px] py-0 h-5">
+                              🔁 {history.length} envois
+                            </Badge>
+                            {history.map((t, i) => (
+                              <span
+                                key={t}
+                                className={`px-1.5 py-0.5 rounded border ${
+                                  i === currentIdx
+                                    ? 'bg-blue-100 border-blue-300 text-blue-800 font-medium'
+                                    : 'bg-muted/50 border-border text-muted-foreground'
+                                }`}
+                              >
+                                {ordinalSend(i + 1)} : {format(new Date(t), 'dd/MM/yyyy HH:mm', { locale: fr })}
+                              </span>
+                            ))}
+                          </div>
+                        );
+                      })()}
                     </div>
                     <div className="flex items-center gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
                       {email.type === 'sent' && (
