@@ -48,7 +48,7 @@ export function generateEmargementSemainePdf(
   formateurNom: string = 'GUENICHI Naoufal',
   opts?: { returnBlob?: boolean },
 ): { blob: Blob; fileName: string } | void {
-  const isFCVtc = isFormationContinueVTC(apprenant.type_apprenant);
+  const isFCVtc = isFormationContinue(apprenant.type_apprenant);
   const DEMI_LABELS = buildDemiLabels(isFCVtc);
   const doc = new jsPDF();
   const pw = doc.internal.pageSize.getWidth();
