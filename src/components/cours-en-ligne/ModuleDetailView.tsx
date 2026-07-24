@@ -4739,8 +4739,23 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   // === Aperçu apprenant ===
   // Garder le type de composant stable évite un démontage/remontage complet
   // lors des heartbeats/autosaves, ce qui faisait repartir le navigateur en haut.
+  //
+  // BUGFIX (apprenant Bilans/exercices) : `moduleData` ne DOIT PAS figurer dans
+  // les dépendances de ce `useMemo`. Chaque refresh en arrière-plan (polling
+  // toutes les ~5s, Realtime, réconciliation `usesDatabaseOnlyEditorState`)
+  // change la référence de `moduleData`, ce qui recréait le type du composant
+  // et provoquait un **démontage/remontage complet** de LearnerPreview :
+  //   - `selectedAnswers` revenait à `{}` → les cases se décochaient toutes
+  //     seules pendant que l'apprenant répondait.
+  //   - le scroll partait en haut de la page.
+  // On lit désormais `moduleData` via un ref lu à chaque render → toujours
+  // frais, mais sans invalider l'identité du composant.
+  const moduleDataRef = useRef(moduleData);
+  useEffect(() => { moduleDataRef.current = moduleData; }, [moduleData]);
+
   const LearnerPreview = useMemo(() => {
     const LearnerPreviewComponent = ({ secureMode = true }: { secureMode?: boolean }) => {
+    const moduleData = moduleDataRef.current;
     const [selectedAnswers, setSelectedAnswers] = useState<Record<string, string | string[]>>({});
     const preserveScrollRef = useRef<{ top: number; left: number; anchorId?: string; anchorTop?: number; capturedAt: number } | null>(null);
     const restoreScrollFrameRef = useRef<number | null>(null);
@@ -7270,7 +7285,13 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     };
 
     return LearnerPreviewComponent;
-  }, [apprenantId, apprenantInfo, apprenantType, hideFormulaires, isPresentiel, module.id, moduleData, onBack, onLearnerActivity, onModuleCompleted, onTrackCours, slidesByKey, studentOnly]);
+    // NB : `moduleData` volontairement omis — voir commentaire au-dessus
+    // de la définition de LearnerPreview. Il est lu via `moduleDataRef.current`
+    // pour éviter tout démontage/remontage lors des refresh en arrière-plan
+    // (polling ~5s, Realtime, réconciliation Bilans), ce qui décochait les
+    // réponses de l'apprenant et provoquait un scroll vers le haut.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [apprenantId, apprenantInfo, apprenantType, hideFormulaires, isPresentiel, module.id, onBack, onLearnerActivity, onModuleCompleted, onTrackCours, slidesByKey, studentOnly]);
 
   if (studentOnly) {
     return (
