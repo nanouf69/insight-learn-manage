@@ -306,12 +306,13 @@ const FORMATION_DISPLAY_LABELS: Partial<Record<FormationId, Record<number, strin
   },
   "continue-taxi": {
     82: "1.BILAN EXERCICES FORMATION CONTINUE TAXI",
-    92: "2.COURS FC TAXI (PDF)",
-    84: "3.DOCUMENTS ADMINISTRATIFS (ÉMARGEMENTS SIGNÉS)",
-    86: "4.INFORMATIONS FINANCEUR TAXI",
-    93: "5.🪪 DEMANDE DE CARTE PROFESSIONNELLE TAXI",
-    94: "6.💶 REMBOURSEMENT FORMATION CONTINUE TAXI",
-    51: "7.📋 FIN DE FORMATION TAXI",
+    11: "2.BILAN EXAMEN TAXI",
+    92: "3.COURS FC TAXI (PDF)",
+    84: "4.DOCUMENTS ADMINISTRATIFS (ÉMARGEMENTS SIGNÉS)",
+    86: "5.INFORMATIONS FINANCEUR TAXI",
+    93: "6.🪪 DEMANDE DE CARTE PROFESSIONNELLE TAXI",
+    94: "7.💶 REMBOURSEMENT FORMATION CONTINUE TAXI",
+    51: "8.📋 FIN DE FORMATION TAXI",
   },
 
   "mobilite-taxi": {
@@ -331,7 +332,7 @@ const FORMATION_DEFAULT_MODULES: Record<FormationId, number[]> = {
   "taxi-pour-vtc-elearning": [32, 40, 7, 64, 12, 3, 27, 13, 28, 37, 62, 72, 6, 52],
   "vtc-pour-taxi": [33, 41, 3, 29, 30, 38, 63, 73, 8, 83, 53],
   "continue-vtc": [81, 5, 87, 83, 85, 88, 89],
-  "continue-taxi": [82, 92, 84, 86, 93, 94, 51],
+  "continue-taxi": [82, 11, 92, 84, 86, 93, 94, 51],
   "mobilite-taxi": [90, 84, 86],
 };
 
@@ -1708,7 +1709,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   // Whitelist stricte pour Formation Continue TAXI : uniquement les modules
   // officiels du parcours FC TAXI (bilan, cours+QCM, émargements, financeur,
   // demande carte pro, remboursement, fin de formation).
-  const FC_TAXI_WHITELIST = new Set([82, 92, 84, 86, 93, 94, 51]);
+  const FC_TAXI_WHITELIST = new Set([82, 11, 92, 84, 86, 93, 94, 51]);
   const filteredSourceModules = selectedFormation === "continue-taxi"
     ? sourceModules.filter((m) => FC_TAXI_WHITELIST.has(m.id))
     : sourceModules;
