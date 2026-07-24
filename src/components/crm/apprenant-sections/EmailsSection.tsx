@@ -589,6 +589,23 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
     },
   });
 
+  // Normalise le sujet pour regrouper original + renvois
+  const normalizeSubject = (s: string | null | undefined) =>
+    (s || '').replace(/^(?:re|fwd|tr|fw)\s*:\s*/gi, '').trim().toLowerCase();
+
+  // Historique des envois par sujet (uniquement type='sent') : liste des timestamps triés ascendants
+  const sendHistoryBySubject = new Map<string, number[]>();
+  emails.forEach((e) => {
+    if (e.type !== 'sent') return;
+    const key = normalizeSubject(e.subject);
+    if (!key) return;
+    const ts = new Date(e.sent_at || e.created_at).getTime();
+    const arr = sendHistoryBySubject.get(key) || [];
+    arr.push(ts);
+    sendHistoryBySubject.set(key, arr);
+  });
+  sendHistoryBySubject.forEach((arr) => arr.sort((a, b) => a - b));
+
   const filteredEmails = emails
     .filter(email => {
       if (activeTab === 'sent') return email.type === 'sent';
@@ -608,6 +625,11 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
       const dateB = new Date(b.sent_at || b.received_at || b.created_at).getTime();
       return dateB - dateA;
     });
+
+  const ordinalSend = (n: number) => {
+    if (n === 1) return '1er envoi';
+    return `${n}e envoi`;
+  };
 
   const sentCount = emails.filter(e => e.type === 'sent').length;
   const receivedCount = emails.filter(e => e.type === 'received').length;
