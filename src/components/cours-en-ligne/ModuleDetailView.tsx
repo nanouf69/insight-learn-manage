@@ -87,6 +87,7 @@ import { BILAN_EXERCICES_VA } from "./bilan-exercices-va-data";
 import { BILAN_EXERCICES_FC_VTC } from "./bilan-exercices-fc-vtc-data";
 import { BILAN_FIN_FORMATION_FC_VTC_EXERCICE } from "./bilan-fin-formation-fc-vtc-exercice";
 import { BILAN_EXERCICES_FC_TAXI } from "./bilan-exercices-fc-taxi-data";
+import { QCM_100_FC_TAXI } from "./qcm-100-fc-taxi-data";
 import { COURS_FC_TAXI, QCM_FINAL_FC_TAXI } from "./cours-fc-taxi-data";
 import { COURS_MOBILITE_TAXI, QCM_FINAL_MOBILITE_TAXI } from "./cours-mobilite-taxi-data";
 import { BILAN_EXAMEN_VTC } from "./bilan-examen-vtc-data";
@@ -1724,6 +1725,17 @@ function getInitialModuleDataRaw(
       exercices: JSON.parse(JSON.stringify(BILAN_EXERCICES_FC_TAXI)),
     };
   }
+
+  // QCM 100 QUESTIONS FC TAXI (module 95)
+  // T3P + Sécurité Routière + Réglementation Nationale + Développement Commercial
+  if (module.id === 95) {
+    return {
+      id: 95,
+      nom: "📝 QCM 100 QUESTIONS FC TAXI",
+      description: "QCM de synthèse — 100 questions au total réparties en 4 matières (T3P, Sécurité Routière, Réglementation Nationale, Développement Commercial).",
+      cours: [],
+      exercices: JSON.parse(JSON.stringify(QCM_100_FC_TAXI)),
+    };
 
   // Cours Formation Continue TAXI — PDFs pédagogiques + QCM Final (module 92)
   if (module.id === 92) {
