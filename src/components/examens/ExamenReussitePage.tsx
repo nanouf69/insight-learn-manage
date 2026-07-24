@@ -1556,9 +1556,11 @@ export function ExamenReussitePage() {
                           </Select>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline" className={!apprenant.numero_dossier_cma ? "border-destructive text-destructive" : ""}>
-                            {apprenant.numero_dossier_cma || "-"}
-                          </Badge>
+                          <InlineDossierCma
+                            apprenantId={apprenant.id}
+                            value={apprenant.numero_dossier_cma}
+                            onSaved={() => queryClient.invalidateQueries({ queryKey: ['apprenants-examen', selectedExamDate] })}
+                          />
                         </TableCell>
                         <TableCell className={!apprenant.telephone ? "text-destructive font-medium" : ""}>
                           {apprenant.telephone || "-"}
