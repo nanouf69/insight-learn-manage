@@ -1,4 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -35,6 +36,7 @@ const TYPE_LABELS: Record<string, string> = {
   "emargement-fc": "Feuille d'émargement",
   "emargement-fc-semaine": "Émargement hebdomadaire",
   "doc-fournisseur": "Document fournisseur",
+  "document-inscription": "Document d'inscription",
 };
 
 const TYPE_COLORS: Record<string, string> = {
@@ -51,6 +53,7 @@ const TYPE_COLORS: Record<string, string> = {
   "emargement-fc": "bg-rose-100 text-rose-800",
   "emargement-fc-semaine": "bg-green-500 text-white",
   "doc-fournisseur": "bg-violet-100 text-violet-800",
+  "document-inscription": "bg-sky-100 text-sky-800",
 };
 
 const FIELD_LABELS: Record<string, string> = {
@@ -156,6 +159,26 @@ const SKIP_KEYS = new Set(['_status', '_signature_image', 'apprenant_nom', 'appr
 
 export function DocumentsCompletes({ apprenant }: Props) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+
+  // Rafraîchissement temps réel : dès qu'un document d'inscription est ajouté/modifié
+  // par l'apprenant (étape 1 du tunnel), on ré-hydrate l'onglet Formulaires.
+  useEffect(() => {
+    if (!apprenant?.id) return;
+    const channel = supabase
+      .channel(`docs-completes-${apprenant.id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "documents_inscription", filter: `apprenant_id=eq.${apprenant.id}` },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["apprenant-documents-completes", apprenant.id] });
+        },
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [apprenant?.id, queryClient]);
 
   const { data: documents, isLoading } = useQuery({
     queryKey: ["apprenant-documents-completes", apprenant.id],
@@ -180,7 +203,7 @@ export function DocumentsCompletes({ apprenant }: Props) {
             ].filter(Boolean).join(","))
         : Promise.resolve({ data: [], error: null } as any);
 
-      const [docsRes, devisRes, emargRes, fournApprRes] = await Promise.all([
+      const [docsRes, devisRes, emargRes, fournApprRes, inscriptionRes] = await Promise.all([
         supabase
           .from("apprenant_documents_completes" as any)
           .select("*")
@@ -197,6 +220,11 @@ export function DocumentsCompletes({ apprenant }: Props) {
           .eq("apprenant_id", apprenant.id)
           .order("signed_at", { ascending: false }),
         fournApprPromise,
+        supabase
+          .from("documents_inscription" as any)
+          .select("id, type_document, nom_fichier, url, statut, created_at")
+          .eq("apprenant_id", apprenant.id)
+          .order("created_at", { ascending: false }),
       ]);
 
       if (docsRes.error) throw docsRes.error;
@@ -332,7 +360,47 @@ export function DocumentsCompletes({ apprenant }: Props) {
         }));
       }
 
-      const all = [...baseDocs, ...devisDocs, ...emargDocs, ...weekDocs, ...fournDocs];
+      // Documents d'inscription (étape 1 du tunnel : pièce d'identité recto/verso, photo, justificatif de domicile…)
+      // Indispensable pour les apprenants en formation continue qui ne remplissent que l'étape 1.
+      const INSCRIPTION_LABELS: Record<string, string> = {
+        piece_identite_recto: "Pièce d'identité (recto)",
+        piece_identite_verso: "Pièce d'identité (verso)",
+        photo_identite: "Photo d'identité",
+        justificatif_domicile: "Justificatif de domicile",
+        permis_conduire_recto: "Permis de conduire (recto)",
+        permis_conduire_verso: "Permis de conduire (verso)",
+        carte_vitale: "Carte vitale",
+        signature: "Signature",
+      };
+      const inscriptionRows = ((inscriptionRes as any)?.data as any[]) || [];
+      const inscriptionDocs: any[] = [];
+      if (inscriptionRows.length > 0) {
+        const paths = inscriptionRows.map((r) => r.url).filter(Boolean);
+        const { data: signed } = await supabase.storage
+          .from("documents-inscription")
+          .createSignedUrls(paths, 3600);
+        const urlByPath = new Map<string, string>();
+        (signed || []).forEach((s: any, i: number) => {
+          if (s?.signedUrl) urlByPath.set(paths[i], s.signedUrl);
+        });
+        for (const r of inscriptionRows) {
+          const signedUrl = urlByPath.get(r.url) || r.url;
+          inscriptionDocs.push({
+            id: `inscription-${r.id}`,
+            type_document: "document-inscription",
+            titre: `${INSCRIPTION_LABELS[r.type_document] || r.type_document} — ${r.nom_fichier || ""}`.trim(),
+            donnees: {
+              nom_fichier: r.nom_fichier,
+              type_document: r.type_document,
+              statut: r.statut,
+              fichier_url: signedUrl,
+            },
+            completed_at: r.created_at,
+          });
+        }
+      }
+
+      const all = [...baseDocs, ...devisDocs, ...emargDocs, ...weekDocs, ...fournDocs, ...inscriptionDocs];
       all.sort((a, b) => new Date(b.completed_at).getTime() - new Date(a.completed_at).getTime());
       return all;
     },
