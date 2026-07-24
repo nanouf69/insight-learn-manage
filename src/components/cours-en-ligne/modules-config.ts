@@ -284,12 +284,13 @@ export const FORMATION_MODULES: Record<string, FormationDefinition> = {
   ]},
   "continue-taxi": { label: "Formation Continue TAXI", color: "bg-amber-100 text-amber-800 border-amber-300", modules: [
     { id: 82, label: "1.BILAN EXERCICES FORMATION CONTINUE TAXI" },
-    { id: 92, label: "2.COURS FC TAXI (PDF)" },
-    { id: 84, label: "3.DOCUMENTS ADMINISTRATIFS (ÉMARGEMENTS SIGNÉS)" },
-    { id: 86, label: "4.INFORMATIONS FINANCEUR TAXI" },
-    { id: 93, label: "5.🪪 DEMANDE DE CARTE PROFESSIONNELLE TAXI" },
-    { id: 94, label: "6.💶 REMBOURSEMENT FORMATION CONTINUE TAXI" },
-    { id: 51, label: "7.📋 FIN DE FORMATION TAXI" },
+    { id: 11, label: "2.BILAN EXAMEN TAXI" },
+    { id: 92, label: "3.COURS FC TAXI (PDF)" },
+    { id: 84, label: "4.DOCUMENTS ADMINISTRATIFS (ÉMARGEMENTS SIGNÉS)" },
+    { id: 86, label: "5.INFORMATIONS FINANCEUR TAXI" },
+    { id: 93, label: "6.🪪 DEMANDE DE CARTE PROFESSIONNELLE TAXI" },
+    { id: 94, label: "7.💶 REMBOURSEMENT FORMATION CONTINUE TAXI" },
+    { id: 51, label: "8.📋 FIN DE FORMATION TAXI" },
   ]},
 
   "mobilite-taxi": { label: "Formation Mobilité TAXI", color: "bg-teal-100 text-teal-800 border-teal-300", modules: [
