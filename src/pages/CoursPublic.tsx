@@ -1709,7 +1709,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   // Whitelist stricte pour Formation Continue TAXI : uniquement les modules
   // officiels du parcours FC TAXI (bilan, cours+QCM, émargements, financeur,
   // demande carte pro, remboursement, fin de formation).
-  const FC_TAXI_WHITELIST = new Set([82, 92, 84, 86, 93, 94, 51]);
+  const FC_TAXI_WHITELIST = new Set([82, 11, 92, 84, 86, 93, 94, 51]);
   const filteredSourceModules = selectedFormation === "continue-taxi"
     ? sourceModules.filter((m) => FC_TAXI_WHITELIST.has(m.id))
     : sourceModules;
