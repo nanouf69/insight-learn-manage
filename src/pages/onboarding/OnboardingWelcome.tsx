@@ -63,7 +63,7 @@ export default function OnboardingWelcome() {
   const [attempted, setAttempted] = useState(false);
   const [candidates, setCandidates] = useState<Candidate[]>([]);
 
-  const selectCandidate = (found: Candidate) => {
+  const selectCandidate = async (found: Candidate) => {
     localStorage.setItem('onboarding_apprenant_id', found.id);
     localStorage.setItem('onboarding_email', found.email || '');
     localStorage.setItem('onboarding_telephone', found.telephone || '');
@@ -73,9 +73,25 @@ export default function OnboardingWelcome() {
     localStorage.setItem('onboarding_found', 'true');
     localStorage.setItem('onboarding_nom', found.nom);
     localStorage.setItem('onboarding_prenom', found.prenom);
+
+    // Détecter formation continue (VTC/TAXI) → parcours simplifié : uniquement étape 1
+    try {
+      const { data: ap } = await supabase
+        .from('apprenants')
+        .select('type_apprenant, formation_choisie')
+        .eq('id', found.id)
+        .maybeSingle();
+      const blob = `${ap?.type_apprenant || ''} ${ap?.formation_choisie || ''}`.toLowerCase();
+      const isFC = /continu|\bfc\b|formation\s*continue/.test(blob);
+      localStorage.setItem('onboarding_is_fc', isFC ? 'true' : 'false');
+    } catch {
+      localStorage.setItem('onboarding_is_fc', 'false');
+    }
+
     toast.success(`Bienvenue ${found.prenom} !`);
     navigate('/bienvenue/etape-1');
   };
+
 
   const handleSearch = async () => {
     setAttempted(true);
