@@ -36,6 +36,7 @@ const TYPE_LABELS: Record<string, string> = {
   "emargement-fc": "Feuille d'émargement",
   "emargement-fc-semaine": "Émargement hebdomadaire",
   "doc-fournisseur": "Document fournisseur",
+  "document-inscription": "Document d'inscription",
 };
 
 const TYPE_COLORS: Record<string, string> = {
