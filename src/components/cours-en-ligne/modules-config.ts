@@ -58,6 +58,7 @@ export const ALL_MODULES: ModuleDefinition[] = [
   { id: 93, nom: "🪪 DEMANDE DE CARTE PROFESSIONNELLE TAXI" },
   { id: 94, nom: "💶 REMBOURSEMENT FORMATION CONTINUE TAXI" },
   { id: 95, nom: "📝 QCM 100 QUESTIONS FC TAXI" },
+  { id: 96, nom: "🗺️ QUIZZ VILLE DE LYON" },
 
   // 5. EXAMENS BLANCS
   { id: 35, nom: "5.EXAMENS BLANCS VTC" },
@@ -292,7 +293,8 @@ export const FORMATION_MODULES: Record<string, FormationDefinition> = {
     { id: 93, label: "6.🪪 DEMANDE DE CARTE PROFESSIONNELLE TAXI" },
     { id: 94, label: "7.💶 REMBOURSEMENT FORMATION CONTINUE TAXI" },
     { id: 95, label: "8.📝 QCM 100 QUESTIONS FC TAXI" },
-    { id: 51, label: "9.📋 FIN DE FORMATION TAXI" },
+    { id: 96, label: "9.🗺️ QUIZZ VILLE DE LYON" },
+    { id: 51, label: "10.📋 FIN DE FORMATION TAXI" },
   ]},
 
   "mobilite-taxi": { label: "Formation Mobilité TAXI", color: "bg-teal-100 text-teal-800 border-teal-300", modules: [

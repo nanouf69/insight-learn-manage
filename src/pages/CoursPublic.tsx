@@ -316,7 +316,8 @@ const FORMATION_DISPLAY_LABELS: Partial<Record<FormationId, Record<number, strin
     93: "6.🪪 DEMANDE DE CARTE PROFESSIONNELLE TAXI",
     94: "7.💶 REMBOURSEMENT FORMATION CONTINUE TAXI",
     95: "8.📝 QCM 100 QUESTIONS FC TAXI",
-    51: "9.📋 FIN DE FORMATION TAXI",
+    96: "9.🗺️ QUIZZ VILLE DE LYON",
+    51: "10.📋 FIN DE FORMATION TAXI",
   },
 
   "mobilite-taxi": {
@@ -336,11 +337,11 @@ const FORMATION_DEFAULT_MODULES: Record<FormationId, number[]> = {
   "taxi-pour-vtc-elearning": [32, 40, 7, 64, 12, 3, 27, 13, 28, 37, 62, 72, 6, 52],
   "vtc-pour-taxi": [33, 41, 3, 29, 30, 38, 63, 73, 8, 83, 53],
   "continue-vtc": [81, 5, 87, 83, 85, 88, 89],
-  "continue-taxi": [82, 11, 92, 84, 86, 93, 94, 95, 51],
+  "continue-taxi": [82, 11, 92, 84, 86, 93, 94, 95, 96, 51],
   "mobilite-taxi": [90, 84, 86],
 };
 
-const MANAGED_MODULE_IDS = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 50, 51, 52, 53, 60, 61, 62, 63, 64, 70, 71, 72, 73, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 92, 93, 94, 95]);
+const MANAGED_MODULE_IDS = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 50, 51, 52, 53, 60, 61, 62, 63, 64, 70, 71, 72, 73, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 92, 93, 94, 95, 96]);
 const DASHBOARD_PARENT_MODULE_IDS: Partial<Record<number, number>> = {
   25: 2,
   14: 2,
@@ -1713,7 +1714,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   // Whitelist stricte pour Formation Continue TAXI : uniquement les modules
   // officiels du parcours FC TAXI (bilan, cours+QCM, émargements, financeur,
   // demande carte pro, remboursement, fin de formation).
-  const FC_TAXI_WHITELIST = new Set([82, 11, 92, 84, 86, 93, 94, 95, 51]);
+  const FC_TAXI_WHITELIST = new Set([82, 11, 92, 84, 86, 93, 94, 95, 96, 51]);
   const filteredSourceModules = selectedFormation === "continue-taxi"
     ? sourceModules.filter((m) => FC_TAXI_WHITELIST.has(m.id))
     : sourceModules;

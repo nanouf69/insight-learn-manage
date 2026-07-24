@@ -1738,6 +1738,22 @@ function getInitialModuleDataRaw(
     };
   }
 
+  // Quizz Ville de Lyon FC TAXI (module 96) — repris de CONNAISSANCES_VILLE_TAXI (module pratique 7)
+  if (module.id === 96) {
+    const villeExercices = (CONNAISSANCES_VILLE_TAXI_DATA.exercices || []).filter(
+      (e: any) => Array.isArray(e?.questions) && e.questions.length > 0,
+    );
+    return {
+      id: 96,
+      nom: "🗺️ QUIZZ VILLE DE LYON",
+      description: "Quizz Ville de Lyon — connaissances géographiques de Lyon et sa métropole (autoroutes, avenues, boulevards, cours, places, quais, rues et lieux emblématiques).",
+      cours: [],
+      exercices: JSON.parse(JSON.stringify(villeExercices)),
+    };
+  }
+
+
+
 
 
   // Cours Formation Continue TAXI — PDFs pédagogiques + QCM Final (module 92)
