@@ -77,6 +77,13 @@ export function OnboardingLayout({ children, currentStep, totalSteps, title }: O
   }, []);
   useOnboardingPersistence(apprenantId);
 
+  // Formation continue : bloque tout accès aux étapes > 1
+  if (isFC && currentStep > 1) {
+    return <Navigate to="/bienvenue/termine" replace />;
+  }
+
+
+
   return (
     <div className="min-h-screen bg-white text-gray-900">
       {/* Progress bar at the very top */}
