@@ -360,7 +360,47 @@ export function DocumentsCompletes({ apprenant }: Props) {
         }));
       }
 
-      const all = [...baseDocs, ...devisDocs, ...emargDocs, ...weekDocs, ...fournDocs];
+      // Documents d'inscription (étape 1 du tunnel : pièce d'identité recto/verso, photo, justificatif de domicile…)
+      // Indispensable pour les apprenants en formation continue qui ne remplissent que l'étape 1.
+      const INSCRIPTION_LABELS: Record<string, string> = {
+        piece_identite_recto: "Pièce d'identité (recto)",
+        piece_identite_verso: "Pièce d'identité (verso)",
+        photo_identite: "Photo d'identité",
+        justificatif_domicile: "Justificatif de domicile",
+        permis_conduire_recto: "Permis de conduire (recto)",
+        permis_conduire_verso: "Permis de conduire (verso)",
+        carte_vitale: "Carte vitale",
+        signature: "Signature",
+      };
+      const inscriptionRows = ((inscriptionRes as any)?.data as any[]) || [];
+      const inscriptionDocs: any[] = [];
+      if (inscriptionRows.length > 0) {
+        const paths = inscriptionRows.map((r) => r.url).filter(Boolean);
+        const { data: signed } = await supabase.storage
+          .from("documents-inscription")
+          .createSignedUrls(paths, 3600);
+        const urlByPath = new Map<string, string>();
+        (signed || []).forEach((s: any, i: number) => {
+          if (s?.signedUrl) urlByPath.set(paths[i], s.signedUrl);
+        });
+        for (const r of inscriptionRows) {
+          const signedUrl = urlByPath.get(r.url) || r.url;
+          inscriptionDocs.push({
+            id: `inscription-${r.id}`,
+            type_document: "document-inscription",
+            titre: `${INSCRIPTION_LABELS[r.type_document] || r.type_document} — ${r.nom_fichier || ""}`.trim(),
+            donnees: {
+              nom_fichier: r.nom_fichier,
+              type_document: r.type_document,
+              statut: r.statut,
+              fichier_url: signedUrl,
+            },
+            completed_at: r.created_at,
+          });
+        }
+      }
+
+      const all = [...baseDocs, ...devisDocs, ...emargDocs, ...weekDocs, ...fournDocs, ...inscriptionDocs];
       all.sort((a, b) => new Date(b.completed_at).getTime() - new Date(a.completed_at).getTime());
       return all;
     },
