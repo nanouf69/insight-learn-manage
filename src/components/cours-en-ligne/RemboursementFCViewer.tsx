@@ -383,6 +383,10 @@ export default function RemboursementFCViewer({ apprenantId, completed, onComple
   };
 
   const handleDownloadProgramme = () => {
+    if (formation === "TAXI") {
+      window.open(programmeFcTaxiAsset.url, "_blank", "noopener,noreferrer");
+      return;
+    }
     openHtmlInNewWindow(buildProgrammeHTML(formation));
   };
 
