@@ -1,8 +1,10 @@
 import { ReactNode, useEffect, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, Navigate } from "react-router-dom";
 import { Check, ChevronRight, Home } from "lucide-react";
 import logoFtransport from "@/assets/logo-ftransport.png";
 import { useOnboardingPersistence } from "@/hooks/useOnboardingPersistence";
+import { supabase } from "@/integrations/supabase/client";
+
 
 interface OnboardingLayoutProps {
   children: ReactNode;
@@ -34,6 +36,33 @@ export function OnboardingLayout({ children, currentStep, totalSteps, title }: O
   const [apprenantId, setApprenantId] = useState<string | null>(
     () => localStorage.getItem("onboarding_apprenant_id")
   );
+
+  // Formation continue (VTC/TAXI) : uniquement l'étape 1, puis redirection vers la page de fin
+  const [isFC, setIsFC] = useState<boolean>(
+    () => localStorage.getItem("onboarding_is_fc") === "true"
+  );
+  useEffect(() => {
+    // Re-vérifie en base au cas où le flag localStorage n'est pas encore posé
+    let cancelled = false;
+    (async () => {
+      const id = localStorage.getItem("onboarding_apprenant_id");
+      if (!id) return;
+      try {
+        const { data } = await supabase
+          .from("apprenants")
+          .select("type_apprenant, formation_choisie")
+          .eq("id", id)
+          .maybeSingle();
+        const blob = `${data?.type_apprenant || ""} ${data?.formation_choisie || ""}`.toLowerCase();
+        const fc = /continu|\bfc\b|formation\s*continue/.test(blob);
+        localStorage.setItem("onboarding_is_fc", fc ? "true" : "false");
+        if (!cancelled) setIsFC(fc);
+      } catch { /* ignore */ }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+
   useEffect(() => {
     const refresh = () => setApprenantId(localStorage.getItem("onboarding_apprenant_id"));
     window.addEventListener("storage", refresh);
@@ -47,6 +76,13 @@ export function OnboardingLayout({ children, currentStep, totalSteps, title }: O
     };
   }, []);
   useOnboardingPersistence(apprenantId);
+
+  // Formation continue : bloque tout accès aux étapes > 1
+  if (isFC && currentStep > 1) {
+    return <Navigate to="/bienvenue/termine" replace />;
+  }
+
+
 
   return (
     <div className="min-h-screen bg-white text-gray-900">
