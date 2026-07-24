@@ -91,7 +91,9 @@ function App() {
                 <Route path="/bienvenue/etape-10" element={<ErrorBoundary><Step10 /></ErrorBoundary>} />
                 <Route path="/bienvenue/etape-11" element={<ErrorBoundary><Step11 /></ErrorBoundary>} />
                 <Route path="/bienvenue/etape-12" element={<ErrorBoundary><Step12 /></ErrorBoundary>} />
+                <Route path="/bienvenue/termine" element={<ErrorBoundary><OnboardingFCFinish /></ErrorBoundary>} />
                 
+
                 {/* Reservation pratique - public */}
                 <Route path="/reservation-pratique" element={<ErrorBoundary><ReservationPratique /></ErrorBoundary>} />
                 <Route path="/reservation-carte-vtc" element={<ErrorBoundary><ReservationCarteVtc /></ErrorBoundary>} />
