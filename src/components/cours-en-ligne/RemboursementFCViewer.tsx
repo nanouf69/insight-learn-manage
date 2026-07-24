@@ -21,6 +21,7 @@ import { generateAttestationFCVTC } from "@/lib/pdf/attestation-fc-vtc";
 import { generateFactureFC } from "@/lib/pdf/facture-fc";
 import { toast } from "sonner";
 import agrementVtcAsset from "@/assets/agrement-vtc-ftransport.pdf.asset.json";
+import programmeFcTaxiAsset from "@/assets/programme-formation-continue-taxi.pdf.asset.json";
 
 interface DbFacture {
   id: string;
@@ -382,6 +383,10 @@ export default function RemboursementFCViewer({ apprenantId, completed, onComple
   };
 
   const handleDownloadProgramme = () => {
+    if (formation === "TAXI") {
+      window.open(programmeFcTaxiAsset.url, "_blank", "noopener,noreferrer");
+      return;
+    }
     openHtmlInNewWindow(buildProgrammeHTML(formation));
   };
 

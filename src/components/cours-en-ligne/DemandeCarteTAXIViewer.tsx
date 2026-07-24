@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, ExternalLink, FileText, Stethoscope, IdCard, AlertCircle, Download } from "lucide-react";
+import { CheckCircle2, ExternalLink, FileText, Stethoscope, IdCard, AlertCircle, Download, HeartPulse } from "lucide-react";
 import type { ComponentProps, ReactNode } from "react";
 import attestationHebergement from "@/assets/attestation-hebergement.pdf.asset.json";
 import medecins01Ain from "@/assets/medecins/01-ain.pdf.asset.json";
@@ -86,17 +86,16 @@ export default function DemandeCarteTAXIViewer({ completed, onComplete }: Props)
         </CardHeader>
         <CardContent className="space-y-3">
           <p className="text-sm">
-            La demande de renouvellement doit être adressée à la <strong>préfecture</strong> de votre département
-            de résidence. Vérifiez le site officiel de votre préfecture pour connaître les modalités de dépôt
-            (guichet, courrier ou téléservice) et les éventuels formulaires spécifiques.
+            La demande de renouvellement s'effectue désormais en ligne via <strong>démarches-simplifiées.fr</strong>.
+            Vérifiez également le site officiel de votre préfecture pour les modalités locales éventuelles.
           </p>
           <LinkButton
-            url="https://www.service-public.fr/particuliers/vosdroits/F22499"
+            url="https://www.demarches-simplifiees.fr/commencer/demande-de-carte-pro-de-taxi-renouvellement"
             size="lg"
             className="bg-blue-700 hover:bg-blue-800"
           >
             <ExternalLink className="h-4 w-4 mr-2" />
-            Accéder à la fiche officielle service-public.fr
+            Déposer ma demande sur démarches-simplifiées.fr
           </LinkButton>
         </CardContent>
       </Card>
@@ -170,6 +169,40 @@ export default function DemandeCarteTAXIViewer({ completed, onComplete }: Props)
               Télécharger le modèle d'attestation d'hébergement
             </LinkButton>
           </div>
+        </CardContent>
+      </Card>
+
+      <Card className="border-rose-200 bg-rose-50/40">
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <HeartPulse className="h-5 w-5 text-rose-700" />
+            Formation PSC1 (Prévention et Secours Civiques niveau 1)
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-sm">
+            Le <strong>PSC1</strong> est obligatoire pour les conducteurs de taxi. Choisissez l'organisme
+            avec lequel vous souhaitez suivre cette formation :
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <LinkButton
+              url="https://www.croix-rouge.fr/formation/prevention-et-secours-civique-de-niveau-1-psc1"
+              className="bg-rose-700 hover:bg-rose-800 justify-start"
+            >
+              <ExternalLink className="h-4 w-4 mr-2" />
+              Croix-Rouge française — PSC1
+            </LinkButton>
+            <LinkButton
+              url="https://formations.protection-civile.org/formation-psc/"
+              className="bg-orange-600 hover:bg-orange-700 justify-start"
+            >
+              <ExternalLink className="h-4 w-4 mr-2" />
+              Protection Civile — PSC1
+            </LinkButton>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Comparez les dates, lieux et tarifs proposés par les deux organismes et inscrivez-vous directement en ligne.
+          </p>
         </CardContent>
       </Card>
 
