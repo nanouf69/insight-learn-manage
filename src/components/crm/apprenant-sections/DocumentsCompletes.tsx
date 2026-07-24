@@ -203,7 +203,7 @@ export function DocumentsCompletes({ apprenant }: Props) {
             ].filter(Boolean).join(","))
         : Promise.resolve({ data: [], error: null } as any);
 
-      const [docsRes, devisRes, emargRes, fournApprRes] = await Promise.all([
+      const [docsRes, devisRes, emargRes, fournApprRes, inscriptionRes] = await Promise.all([
         supabase
           .from("apprenant_documents_completes" as any)
           .select("*")
@@ -220,6 +220,11 @@ export function DocumentsCompletes({ apprenant }: Props) {
           .eq("apprenant_id", apprenant.id)
           .order("signed_at", { ascending: false }),
         fournApprPromise,
+        supabase
+          .from("documents_inscription" as any)
+          .select("id, type_document, nom_fichier, url, statut, created_at")
+          .eq("apprenant_id", apprenant.id)
+          .order("created_at", { ascending: false }),
       ]);
 
       if (docsRes.error) throw docsRes.error;
