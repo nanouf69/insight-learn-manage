@@ -330,13 +330,18 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
       const isPdf = data.nom_fichier?.toLowerCase().endsWith('.pdf') || data.url.toLowerCase().endsWith('.pdf');
       if (isPdf) return null;
 
-      let fullUrl = data.url;
-      if (!fullUrl.startsWith('http')) {
-        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-        fullUrl = `${supabaseUrl}/storage/v1/object/public/documents-inscription/${fullUrl}`;
+      // Le bucket documents-inscription est privé : on doit signer l'URL pour afficher la photo.
+      if (data.url.startsWith('http')) {
+        return { url: data.url };
       }
-
-      return { url: fullUrl };
+      const { data: signed, error: signErr } = await supabase.storage
+        .from('documents-inscription')
+        .createSignedUrl(data.url, 3600);
+      if (signErr || !signed?.signedUrl) {
+        console.error('Signed URL error (photo):', signErr);
+        return null;
+      }
+      return { url: signed.signedUrl };
     },
     enabled: !!apprenantId,
     staleTime: 0,
