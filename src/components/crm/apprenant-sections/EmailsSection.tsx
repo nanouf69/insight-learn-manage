@@ -1239,9 +1239,28 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
                         {email.body_preview}
                       </p>
                     </div>
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
-                      <Clock className="w-3 h-3" />
-                      {format(getEmailDate(email), 'dd MMM yyyy HH:mm', { locale: fr })}
+                    <div className="flex items-center gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
+                      {email.type === 'sent' && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 gap-1 text-xs"
+                          disabled={resendMutation.isPending || !apprenant.email}
+                          onClick={() => resendMutation.mutate(email)}
+                          title={apprenant.email ? `Renvoyer à ${apprenant.email}` : "Aucune adresse email"}
+                        >
+                          {resendMutation.isPending && resendMutation.variables?.id === email.id ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : (
+                            <Send className="w-3 h-3" />
+                          )}
+                          Renvoyer
+                        </Button>
+                      )}
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Clock className="w-3 h-3" />
+                        {format(getEmailDate(email), 'dd MMM yyyy HH:mm', { locale: fr })}
+                      </div>
                     </div>
                   </div>
                 ))}
