@@ -4891,7 +4891,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       });
 
       // Persist the wiped selections after state has settled.
-      autoSaveAnswers(clearedSelected);
+      autoSaveAnswers(clearedSelected, [pending.exoId]);
 
       toast.success(`🎯 Mode révision activé — ${pending.wrongKeys.length} question${pending.wrongKeys.length > 1 ? "s" : ""} à refaire (réponses effacées)`);
       scheduleScrollToRevisionStart(pending.exoId);
@@ -6842,7 +6842,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                               setSelectedAnswers(prev => {
                                 const next = { ...prev };
                                 exoKeys.forEach(k => delete next[k]);
-                autoSaveAnswers(next);
+                autoSaveAnswers(next, [exo.id]);
                                 return next;
                               });
                               setShowResultsFor(prev => { const next = new Set(prev); next.delete(exo.id); return next; });
