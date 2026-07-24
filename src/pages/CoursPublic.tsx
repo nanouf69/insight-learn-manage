@@ -66,6 +66,9 @@ const FORMATION_ALIASES: Record<string, FormationId> = {
   "continue-vtc": "continue-vtc",
   "pa-vtc": "continue-vtc",
   "formation-continue-vtc": "continue-vtc",
+  "continue-taxi": "continue-taxi",
+  "pa-taxi": "continue-taxi",
+  "formation-continue-taxi": "continue-taxi",
 };
 
 const normalizeFormationKey = (value: string | null | undefined): string =>
