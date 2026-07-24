@@ -4891,7 +4891,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       });
 
       // Persist the wiped selections after state has settled.
-      autoSaveAnswers(clearedSelected);
+      autoSaveAnswers(clearedSelected, [pending.exoId]);
 
       toast.success(`🎯 Mode révision activé — ${pending.wrongKeys.length} question${pending.wrongKeys.length > 1 ? "s" : ""} à refaire (réponses effacées)`);
       scheduleScrollToRevisionStart(pending.exoId);
@@ -5393,7 +5393,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     }, [apprenantId, module.id, savedAnswersLoaded, activeExercices, pages]);
 
     // --- Auto-save partial answers to DB (debounced) ---
-    const autoSaveAnswers = (answers: Record<string, string | string[]>) => {
+    const autoSaveAnswers = (
+      answers: Record<string, string | string[]>,
+      forceExerciceIds: number[] = []
+    ) => {
       if (!apprenantId) return;
 
       // Save to reponses_apprenants per exercice (500ms debounce)
@@ -5411,6 +5414,14 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             if (!byExo.has(exoId)) byExo.set(exoId, {});
             byExo.get(exoId)![key] = val;
           }
+
+          // If all answers for an exercise are cleared, force an empty row so
+          // the old DB answers are actually overwritten instead of reappearing.
+          forceExerciceIds.forEach((exoId) => {
+            if (Number.isFinite(exoId) && !byExo.has(exoId)) {
+              byExo.set(exoId, {});
+            }
+          });
           
           const rows = Array.from(byExo.entries()).map(([exoId, exoAnswers]) => ({
             apprenant_id: apprenantId,
@@ -6842,7 +6853,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                               setSelectedAnswers(prev => {
                                 const next = { ...prev };
                                 exoKeys.forEach(k => delete next[k]);
-                autoSaveAnswers(next);
+                autoSaveAnswers(next, [exo.id]);
                                 return next;
                               });
                               setShowResultsFor(prev => { const next = new Set(prev); next.delete(exo.id); return next; });
