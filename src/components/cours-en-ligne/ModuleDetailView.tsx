@@ -7285,7 +7285,13 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     };
 
     return LearnerPreviewComponent;
-  }, [apprenantId, apprenantInfo, apprenantType, hideFormulaires, isPresentiel, module.id, moduleData, onBack, onLearnerActivity, onModuleCompleted, onTrackCours, slidesByKey, studentOnly]);
+    // NB : `moduleData` volontairement omis — voir commentaire au-dessus
+    // de la définition de LearnerPreview. Il est lu via `moduleDataRef.current`
+    // pour éviter tout démontage/remontage lors des refresh en arrière-plan
+    // (polling ~5s, Realtime, réconciliation Bilans), ce qui décochait les
+    // réponses de l'apprenant et provoquait un scroll vers le haut.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [apprenantId, apprenantInfo, apprenantType, hideFormulaires, isPresentiel, module.id, onBack, onLearnerActivity, onModuleCompleted, onTrackCours, slidesByKey, studentOnly]);
 
   if (studentOnly) {
     return (
