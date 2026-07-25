@@ -37,17 +37,21 @@ serve(async (req) => {
       throw fetchErr;
     }
 
-    // Filter: identifiants envoyés uniquement le premier jour réel de formation/access.
-    // Le compteur d'accès ne doit jamais démarrer la veille.
+    // Filter: envoyer les identifiants dès que la date de début est atteinte OU passée
+    // (fenêtre d'accès encore ouverte) et que l'apprenant n'a pas encore de compte.
+    // Cela couvre les dossiers finalisés APRÈS la date de début prévue.
     const eligibleApprenants = (apprenants || []).filter((a: any) => {
-      const formationDate = a.date_debut_formation;
-      const coursDate = a.date_debut_cours_en_ligne;
-      const effective = formationDate || coursDate;
+      const effective = a.date_debut_formation || a.date_debut_cours_en_ligne;
+      const finAcces = a.date_fin_cours_en_ligne || a.date_fin_formation;
       if (!effective) return false;
-      return effective === today;
+      if (effective > today) return false; // pas encore commencé
+      if (finAcces && finAcces < today) return false; // fenêtre d'accès terminée
+      // Si le compte auth existe déjà ET que des identifiants ont été envoyés récemment,
+      // le dédoublonnage par emails plus bas s'en occupera.
+      return true;
     });
 
-    console.log(`[auto-send-credentials] Found ${eligibleApprenants.length} apprenants starting today or tomorrow`);
+    console.log(`[auto-send-credentials] Found ${eligibleApprenants.length} apprenants éligibles (début ≤ aujourd'hui, accès encore valide)`);
 
     if (eligibleApprenants.length === 0) {
       return new Response(
@@ -57,15 +61,15 @@ serve(async (req) => {
     }
 
     // Check which ones already received credentials in the last 3 days (avoid duplicates with J-1)
+    // Dédoublonnage : si un email d'identifiants a déjà été envoyé (quelle que soit la date),
+    // ne pas renvoyer automatiquement. L'admin peut toujours utiliser resend-credentials.
     const apprenantIds = eligibleApprenants.map((a: any) => a.id);
-    const sinceDate = new Date();
-    sinceDate.setDate(sinceDate.getDate() - 3);
     const { data: existingEmails } = await supabaseAdmin
       .from("emails")
       .select("apprenant_id")
       .in("apprenant_id", apprenantIds)
-      .like("subject", "%identifiants%")
-      .gte("sent_at", sinceDate.toISOString());
+      .eq("type", "sent")
+      .or("subject.ilike.%identifiants%,subject.ilike.%identifiant%");
 
     const alreadySent = new Set((existingEmails || []).map((e: any) => e.apprenant_id));
 
@@ -239,7 +243,12 @@ serve(async (req) => {
 
         const effectiveStart = apprenant.date_debut_formation || apprenant.date_debut_cours_en_ligne;
         const startsTomorrow = effectiveStart === tomorrow;
-        const startPhrase = startsTomorrow ? "Votre formation commence demain" : "Votre formation commence aujourd'hui";
+        const alreadyStarted = effectiveStart && effectiveStart < today;
+        const startPhrase = alreadyStarted
+          ? "Votre formation a déjà démarré"
+          : startsTomorrow
+            ? "Votre formation commence demain"
+            : "Votre formation commence aujourd'hui";
         const subjectLine = `🎓 ${startPhrase} – Vos identifiants de connexion`;
 
         const emailBody = `
