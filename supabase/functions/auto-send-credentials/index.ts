@@ -243,7 +243,12 @@ serve(async (req) => {
 
         const effectiveStart = apprenant.date_debut_formation || apprenant.date_debut_cours_en_ligne;
         const startsTomorrow = effectiveStart === tomorrow;
-        const startPhrase = startsTomorrow ? "Votre formation commence demain" : "Votre formation commence aujourd'hui";
+        const alreadyStarted = effectiveStart && effectiveStart < today;
+        const startPhrase = alreadyStarted
+          ? "Votre formation a déjà démarré"
+          : startsTomorrow
+            ? "Votre formation commence demain"
+            : "Votre formation commence aujourd'hui";
         const subjectLine = `🎓 ${startPhrase} – Vos identifiants de connexion`;
 
         const emailBody = `
