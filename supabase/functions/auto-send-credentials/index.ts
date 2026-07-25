@@ -37,17 +37,21 @@ serve(async (req) => {
       throw fetchErr;
     }
 
-    // Filter: identifiants envoyés uniquement le premier jour réel de formation/access.
-    // Le compteur d'accès ne doit jamais démarrer la veille.
+    // Filter: envoyer les identifiants dès que la date de début est atteinte OU passée
+    // (fenêtre d'accès encore ouverte) et que l'apprenant n'a pas encore de compte.
+    // Cela couvre les dossiers finalisés APRÈS la date de début prévue.
     const eligibleApprenants = (apprenants || []).filter((a: any) => {
-      const formationDate = a.date_debut_formation;
-      const coursDate = a.date_debut_cours_en_ligne;
-      const effective = formationDate || coursDate;
+      const effective = a.date_debut_formation || a.date_debut_cours_en_ligne;
+      const finAcces = a.date_fin_cours_en_ligne || a.date_fin_formation;
       if (!effective) return false;
-      return effective === today;
+      if (effective > today) return false; // pas encore commencé
+      if (finAcces && finAcces < today) return false; // fenêtre d'accès terminée
+      // Si le compte auth existe déjà ET que des identifiants ont été envoyés récemment,
+      // le dédoublonnage par emails plus bas s'en occupera.
+      return true;
     });
 
-    console.log(`[auto-send-credentials] Found ${eligibleApprenants.length} apprenants starting today or tomorrow`);
+    console.log(`[auto-send-credentials] Found ${eligibleApprenants.length} apprenants éligibles (début ≤ aujourd'hui, accès encore valide)`);
 
     if (eligibleApprenants.length === 0) {
       return new Response(
