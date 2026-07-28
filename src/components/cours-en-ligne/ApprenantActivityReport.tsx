@@ -65,6 +65,12 @@ interface Apprenant {
   email: string | null;
   type_apprenant: string | null;
   formation_choisie: string | null;
+  heures_totales: number | null;
+  heures_elearning: number | null;
+  date_examen_theorique: string | null;
+  resultat_examen: string | null;
+  date_debut_cours_en_ligne: string | null;
+  date_fin_cours_en_ligne: string | null;
 }
 
 interface Connexion {
@@ -243,7 +249,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
       while (true) {
         const { data } = await supabase
           .from("apprenants")
-          .select("id, nom, prenom, email, type_apprenant, formation_choisie")
+          .select("id, nom, prenom, email, type_apprenant, formation_choisie, heures_totales, heures_elearning, date_examen_theorique, resultat_examen, date_debut_cours_en_ligne, date_fin_cours_en_ligne")
           .not("auth_user_id", "is", null)
           .order("nom")
           .range(from, from + PAGE - 1);
@@ -703,12 +709,53 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
             <p className="text-sm text-muted-foreground">Connexions, heures et modules consultés</p>
           </div>
         </div>
-        {selectedId && (
-          <Button onClick={handlePrint} className="gap-2">
-            <Printer className="w-4 h-4" />
-            Imprimer le rapport
-          </Button>
-        )}
+        <div className="flex items-center gap-3">
+          {selectedId && selectedApprenant && (() => {
+            const heuresRequises = Number(selectedApprenant.heures_totales) || Number(selectedApprenant.heures_elearning) || 0;
+            const heuresFaites = totalMinutes / 60;
+            const pct = heuresRequises > 0 ? Math.min(100, Math.round((heuresFaites / heuresRequises) * 100)) : 0;
+            const dateExam = selectedApprenant.date_examen_theorique;
+            const resultat = (selectedApprenant.resultat_examen || "").toLowerCase().trim();
+            const reussi = /admis|reussi|réussi|ok|valid/i.test(resultat);
+            const echoue = /ajourn|echec|échec|refus|ko/i.test(resultat);
+            let dateExamStr = "—";
+            if (dateExam) {
+              try { dateExamStr = format(parseISO(dateExam), "dd/MM/yyyy", { locale: fr }); }
+              catch { dateExamStr = dateExam; }
+            }
+            return (
+              <div className="hidden md:flex items-center gap-3 border rounded-lg px-4 py-2 bg-muted/40">
+                <div className="text-center">
+                  <div className="text-xs text-muted-foreground">Réalisation</div>
+                  <div className={cn("text-lg font-bold", pct >= 100 ? "text-green-600" : pct >= 50 ? "text-primary" : "text-orange-500")}>
+                    {pct}%
+                  </div>
+                  <div className="text-[10px] text-muted-foreground">
+                    {heuresFaites.toFixed(1)}h / {heuresRequises}h
+                  </div>
+                </div>
+                <div className="w-px h-10 bg-border" />
+                <div className="text-center">
+                  <div className="text-xs text-muted-foreground">Examen théorique</div>
+                  <div className="text-sm font-semibold">{dateExamStr}</div>
+                  {resultat ? (
+                    <Badge variant={reussi ? "default" : echoue ? "destructive" : "secondary"} className="text-[10px] mt-0.5">
+                      {reussi ? "✅ Réussi" : echoue ? "❌ Échoué" : resultat}
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-[10px] mt-0.5">En attente</Badge>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
+          {selectedId && (
+            <Button onClick={handlePrint} className="gap-2">
+              <Printer className="w-4 h-4" />
+              Imprimer le rapport
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Sélection apprenant + période */}
