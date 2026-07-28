@@ -3600,18 +3600,17 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
               if (!studentOnly) {
                 console.log("[ModuleEditor] Fingerprint mismatch on generated bilan module — resetting exercises from source");
-                supabase.from("module_editor_state").upsert(
-                  [{
-                    module_id: module.id,
-                    module_data: resetModuleData as any,
-                    deleted_cours: [] as any,
-                    deleted_exercices: [] as any,
-                    source_fingerprint: sourceFingerprint,
-                    updated_at: new Date().toISOString(),
-                  }],
-                  { onConflict: "module_id" }
-                ).then(({ error }) => {
-                  if (error) console.error("[ModuleEditor] Generated bilan reset error:", error);
+                saveModuleEditorStateWithCas({
+                  moduleId: Number(module.id),
+                  moduleData: resetModuleData,
+                  deletedCours: [],
+                  deletedExercices: [],
+                  sourceFingerprint,
+                  expectedUpdatedAt: latestState.updated_at,
+                }).then((updatedAt) => {
+                  markDbSnapshotApplied(updatedAt);
+                }).catch((error) => {
+                  console.error("[ModuleEditor] Generated bilan reset error:", error);
                 });
               }
               return;
@@ -3654,18 +3653,17 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             // Admin: also re-save with updated fingerprint so future loads match
             if (!studentOnly && !hasMatchingSourceFingerprint) {
               console.log("[ModuleEditor] Fingerprint mismatch — re-saving with updated fingerprint");
-              supabase.from("module_editor_state").upsert(
-                [{
-                  module_id: module.id,
-                  module_data: resolvedModuleData as any,
-                  deleted_cours: (latestState.deleted_cours ?? []) as any,
-                  deleted_exercices: (latestState.deleted_exercices ?? []) as any,
-                  source_fingerprint: sourceFingerprint,
-                  updated_at: new Date().toISOString(),
-                }],
-                { onConflict: "module_id" }
-              ).then(({ error }) => {
-                if (error) console.error("[ModuleEditor] Re-save fingerprint error:", error);
+              saveModuleEditorStateWithCas({
+                moduleId: Number(module.id),
+                moduleData: resolvedModuleData,
+                deletedCours: latestState.deleted_cours ?? [],
+                deletedExercices: latestState.deleted_exercices ?? [],
+                sourceFingerprint,
+                expectedUpdatedAt: latestState.updated_at,
+              }).then((updatedAt) => {
+                markDbSnapshotApplied(updatedAt);
+              }).catch((error) => {
+                console.error("[ModuleEditor] Re-save fingerprint error:", error);
               });
             }
             return;
@@ -4131,6 +4129,41 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   }, [module.id, studentOnly, editorStateHydrated, apprenantType]);
 
 
+  const isStaleModuleEditorStateError = (error: unknown): boolean => {
+    const maybeError = error as { code?: string; message?: string } | null | undefined;
+    const msg = String(maybeError?.message ?? "");
+    return maybeError?.code === "P0409" || msg.includes("stale_module_editor_state_write");
+  };
+
+  const saveModuleEditorStateWithCas = async ({
+    moduleId,
+    moduleData,
+    deletedCours,
+    deletedExercices,
+    sourceFingerprint,
+    expectedUpdatedAt,
+  }: {
+    moduleId: number;
+    moduleData: ModuleData | Record<string, unknown>;
+    deletedCours: unknown[] | unknown;
+    deletedExercices: unknown[] | unknown;
+    sourceFingerprint: string | null;
+    expectedUpdatedAt: string | null | undefined;
+  }): Promise<string> => {
+    const fallbackSavedAt = new Date().toISOString();
+    const { data: casData, error } = await supabase.rpc("save_module_editor_state", {
+      p_module_id: moduleId,
+      p_module_data: moduleData as any,
+      p_deleted_cours: (deletedCours ?? []) as any,
+      p_deleted_exercices: (deletedExercices ?? []) as any,
+      p_source_fingerprint: sourceFingerprint,
+      p_expected_updated_at: expectedUpdatedAt ?? null,
+    });
+
+    if (error) throw error;
+    return (Array.isArray(casData) ? casData[0]?.updated_at : (casData as any)?.updated_at) ?? fallbackSavedAt;
+  };
+
   const performDbSave = async (dataToSave: {
     module_id: number;
     module_data: any;
@@ -4157,34 +4190,15 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       // celle que cet onglet a lue (protection contre les onglets admin restés
       // ouverts avec un vieux snapshot qui rétabliraient de mauvaises réponses).
       const expectedUpdatedAt = lastDbUpdatedAtRef.current;
-      const { data: casData, error } = await supabase.rpc("save_module_editor_state", {
-        p_module_id: dataToSave.module_id,
-        p_module_data: normalizedModuleData as any,
-        p_deleted_cours: (dataToSave.deleted_cours ?? []) as any,
-        p_deleted_exercices: (dataToSave.deleted_exercices ?? []) as any,
-        p_source_fingerprint: dataToSave.source_fingerprint ?? null,
-        p_expected_updated_at: expectedUpdatedAt ?? null,
+      const persistedUpdatedAt = await saveModuleEditorStateWithCas({
+        moduleId: dataToSave.module_id,
+        moduleData: normalizedModuleData,
+        deletedCours: dataToSave.deleted_cours ?? [],
+        deletedExercices: dataToSave.deleted_exercices ?? [],
+        sourceFingerprint: dataToSave.source_fingerprint ?? null,
+        expectedUpdatedAt,
       });
-
-      if (error) {
-        const msg = String((error as any)?.message ?? "");
-        if (msg.includes("stale_module_editor_state_write") || (error as any)?.code === "P0409") {
-          console.warn("[ModuleEditor] Stale write blocked by DB compare-and-swap", {
-            moduleId: dataToSave.module_id,
-            expectedUpdatedAt,
-            error,
-          });
-          toast.error(
-            "Une version plus récente de ce module existe en base. Rechargez la page pour récupérer la dernière version avant de ré-enregistrer.",
-            { duration: 8000 },
-          );
-          saveErrorShownRef.current = true;
-          return;
-        }
-        throw error;
-      }
       saveErrorShownRef.current = false;
-      const persistedUpdatedAt = (Array.isArray(casData) ? casData[0]?.updated_at : (casData as any)?.updated_at) ?? savedAt;
       markDbSnapshotApplied(persistedUpdatedAt);
 
       // Le trigger DB peut refuser une question plus ancienne envoyée par un onglet
@@ -4212,7 +4226,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         try {
           const { data: parentRow, error: parentReadError } = await supabase
             .from("module_editor_state")
-            .select("module_data, deleted_cours, deleted_exercices, source_fingerprint")
+            .select("module_data, deleted_cours, deleted_exercices, source_fingerprint, updated_at")
             .eq("module_id", fcParentId)
             .maybeSingle();
 
@@ -4223,20 +4237,14 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           const nextParentModuleData = buildParentBilanModuleFromFcChild(parentModuleData, normalizedModuleData);
 
           if (nextParentModuleData) {
-            const parentSavedAt = new Date().toISOString();
-            const { error: parentSaveError } = await supabase.from("module_editor_state").upsert(
-              [{
-                module_id: fcParentId,
-                module_data: normalizeManualQuestionFlags(nextParentModuleData) as any,
-                deleted_cours: parentRow?.deleted_cours ?? [],
-                deleted_exercices: parentRow?.deleted_exercices ?? [],
-                source_fingerprint: parentRow?.source_fingerprint ?? buildSourceFingerprint(parentModuleData),
-                updated_at: parentSavedAt,
-              }],
-              { onConflict: "module_id" },
-            );
-
-            if (parentSaveError) throw parentSaveError;
+            const parentSavedAt = await saveModuleEditorStateWithCas({
+              moduleId: fcParentId,
+              moduleData: normalizeManualQuestionFlags(nextParentModuleData),
+              deletedCours: parentRow?.deleted_cours ?? [],
+              deletedExercices: parentRow?.deleted_exercices ?? [],
+              sourceFingerprint: parentRow?.source_fingerprint ?? buildSourceFingerprint(parentModuleData),
+              expectedUpdatedAt: parentRow?.updated_at ?? null,
+            });
 
             try {
               const parentChan = supabase.channel(`module-editor-live-${fcParentId}`);
@@ -4272,7 +4280,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           if (sourceSecurity?.questions?.length) {
             const { data: siblingRow, error: siblingReadError } = await supabase
               .from("module_editor_state")
-              .select("module_data, deleted_cours, deleted_exercices, source_fingerprint")
+              .select("module_data, deleted_cours, deleted_exercices, source_fingerprint, updated_at")
               .eq("module_id", siblingBilanId)
               .maybeSingle();
 
@@ -4283,20 +4291,14 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             const nextSiblingModuleData = buildSiblingBilanSecurityModule(siblingModuleData, normalizedModuleData);
 
             if (nextSiblingModuleData) {
-              const siblingSavedAt = new Date().toISOString();
-              const { error: siblingSaveError } = await supabase.from("module_editor_state").upsert(
-                [{
-                  module_id: siblingBilanId,
-                  module_data: normalizeManualQuestionFlags(nextSiblingModuleData) as any,
-                  deleted_cours: siblingRow?.deleted_cours ?? [],
-                  deleted_exercices: siblingRow?.deleted_exercices ?? [],
-                  source_fingerprint: siblingRow?.source_fingerprint ?? buildSourceFingerprint(siblingModuleData),
-                  updated_at: siblingSavedAt,
-                }],
-                { onConflict: "module_id" },
-              );
-
-              if (siblingSaveError) throw siblingSaveError;
+              const siblingSavedAt = await saveModuleEditorStateWithCas({
+                moduleId: siblingBilanId,
+                moduleData: normalizeManualQuestionFlags(nextSiblingModuleData),
+                deletedCours: siblingRow?.deleted_cours ?? [],
+                deletedExercices: siblingRow?.deleted_exercices ?? [],
+                sourceFingerprint: siblingRow?.source_fingerprint ?? buildSourceFingerprint(siblingModuleData),
+                expectedUpdatedAt: siblingRow?.updated_at ?? null,
+              });
 
               try {
                 const siblingChan = supabase.channel(`module-editor-live-${siblingBilanId}`);
@@ -4450,7 +4452,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           if (sharedFromSaved.length > 0) {
             const { data: siblingRow } = await supabase
               .from("module_editor_state")
-              .select("module_data, deleted_cours, deleted_exercices, source_fingerprint")
+              .select("module_data, deleted_cours, deleted_exercices, source_fingerprint, updated_at")
               .eq("module_id", siblingId)
               .maybeSingle();
 
@@ -4461,23 +4463,15 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             const nextExos = [...sharedFromSaved, ...kept];
 
             const nextSiblingData = { ...siblingData, exercices: nextExos };
-            const mirrorSavedAt = new Date().toISOString();
-            const { error: mirrorErr } = await supabase
-              .from("module_editor_state")
-              .upsert(
-                [{
-                  module_id: siblingId,
-                  module_data: nextSiblingData,
-                  deleted_cours: siblingRow?.deleted_cours ?? [],
-                  deleted_exercices: siblingRow?.deleted_exercices ?? [],
-                  source_fingerprint: siblingRow?.source_fingerprint ?? null,
-                  updated_at: mirrorSavedAt,
-                }],
-                { onConflict: "module_id" },
-              );
-            if (mirrorErr) {
-              console.warn("[BilanMirror] échec miroir VTC↔TAXI:", mirrorErr);
-            } else {
+            try {
+              const mirrorSavedAt = await saveModuleEditorStateWithCas({
+                moduleId: siblingId,
+                moduleData: nextSiblingData,
+                deletedCours: siblingRow?.deleted_cours ?? [],
+                deletedExercices: siblingRow?.deleted_exercices ?? [],
+                sourceFingerprint: siblingRow?.source_fingerprint ?? null,
+                expectedUpdatedAt: siblingRow?.updated_at ?? null,
+              });
               // Ping realtime pour rafraîchir les apprenants sur le module miroir
               try {
                 const ch = supabase.channel(`module-editor-live-${siblingId}`);
@@ -4492,6 +4486,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 });
                 await supabase.removeChannel(ch);
               } catch {}
+            } catch (mirrorErr) {
+              console.warn("[BilanMirror] échec miroir VTC↔TAXI:", mirrorErr);
             }
           }
         }
@@ -4500,6 +4496,19 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       }
     } catch (err) {
       console.error("Erreur sauvegarde DB module_editor_state:", err);
+      if (isStaleModuleEditorStateError(err)) {
+        console.warn("[ModuleEditor] Stale write blocked by DB compare-and-swap", {
+          moduleId: dataToSave.module_id,
+          expectedUpdatedAt: lastDbUpdatedAtRef.current,
+          error: err,
+        });
+        toast.error(
+          "Une version plus récente de ce module existe en base. Rechargez la page pour récupérer la dernière version avant de ré-enregistrer.",
+          { duration: 8000 },
+        );
+        saveErrorShownRef.current = true;
+        return;
+      }
       if (!saveErrorShownRef.current) {
         toast.error("Sauvegarde impossible pour ce module. Réessayez ou contactez l'admin.");
         saveErrorShownRef.current = true;
@@ -7671,24 +7680,21 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                   if (sharedFromParent.length > 0) {
                     const { data: sibRow } = await supabase
                       .from("module_editor_state")
-                      .select("module_data, deleted_cours, deleted_exercices, source_fingerprint")
+                      .select("module_data, deleted_cours, deleted_exercices, source_fingerprint, updated_at")
                       .eq("module_id", siblingId)
                       .maybeSingle();
                     const sibData: any = sibRow?.module_data ?? { exercices: [] };
                     const sibExos: any[] = Array.isArray(sibData.exercices) ? sibData.exercices : [];
                     const kept = sibExos.filter((e) => !SHARED.has(Number(e?.id)));
                     const nextData = { ...sibData, exercices: [...sharedFromParent, ...kept] };
-                    await supabase.from("module_editor_state").upsert(
-                      [{
-                        module_id: siblingId,
-                        module_data: nextData,
-                        deleted_cours: sibRow?.deleted_cours ?? [],
-                        deleted_exercices: sibRow?.deleted_exercices ?? [],
-                        source_fingerprint: sibRow?.source_fingerprint ?? null,
-                        updated_at: new Date().toISOString(),
-                      }],
-                      { onConflict: "module_id" },
-                    );
+                    await saveModuleEditorStateWithCas({
+                      moduleId: siblingId,
+                      moduleData: nextData,
+                      deletedCours: sibRow?.deleted_cours ?? [],
+                      deletedExercices: sibRow?.deleted_exercices ?? [],
+                      sourceFingerprint: sibRow?.source_fingerprint ?? null,
+                      expectedUpdatedAt: sibRow?.updated_at ?? null,
+                    });
                   }
 
                   // Broadcast vers TOUS les modules concernés (parents + FC)
