@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 
-const PUBLICS_CIBLES = ["TAXI", "TA", "VTC", "VA"] as const;
+const PUBLICS_CIBLES = ["TAXI", "TA", "VTC", "VA", "FORMATION CONTINUE TAXI", "FORMATION CONTINUE VTC"] as const;
 type PublicCible = typeof PUBLICS_CIBLES[number];
 import { ChevronLeft, ChevronRight, Plus, X, User, Clock, BookOpen, Layers, Loader2, Upload } from "lucide-react";
 import { format, addDays, startOfWeek, isSameDay } from "date-fns";
