@@ -47,7 +47,11 @@ export function FormationsBientotTerminees({ onNavigateToApprenant }: Props) {
         .lte("date_fin_cours_en_ligne", endHorizon);
       if (error) throw error;
 
-      const list = (apprenants || []) as any[];
+      const isElearning = (a: any) => {
+        const s = `${a.type_apprenant || ""} ${a.formation_choisie || ""}`.toLowerCase();
+        return s.includes("learning") || s.includes("elearning") || s.includes("e-learning") || s.includes("en ligne");
+      };
+      const list = ((apprenants || []) as any[]).filter(isElearning);
       if (list.length === 0) return [];
 
       const ids = list.map((a) => a.id);
