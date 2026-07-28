@@ -65,6 +65,12 @@ interface Apprenant {
   email: string | null;
   type_apprenant: string | null;
   formation_choisie: string | null;
+  heures_totales: number | null;
+  heures_elearning: number | null;
+  date_examen_theorique: string | null;
+  resultat_examen: string | null;
+  date_debut_cours_en_ligne: string | null;
+  date_fin_cours_en_ligne: string | null;
 }
 
 interface Connexion {
