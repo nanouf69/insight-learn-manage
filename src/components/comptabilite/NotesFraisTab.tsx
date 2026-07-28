@@ -44,6 +44,7 @@ const categories = [
   "Fournitures",
   "Téléphonie & Internet",
   "Abonnement logiciel / CRM",
+  "Prestations de service",
   "Loyer",
   "Assurance",
   "Formateurs",
