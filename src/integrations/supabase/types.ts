@@ -3130,6 +3130,19 @@ export type Database = {
         }
         Returns: string
       }
+      save_module_editor_state: {
+        Args: {
+          p_deleted_cours: Json
+          p_deleted_exercices: Json
+          p_expected_updated_at?: string
+          p_module_data: Json
+          p_module_id: number
+          p_source_fingerprint: string
+        }
+        Returns: {
+          updated_at: string
+        }[]
+      }
       search_apprenant_onboarding: {
         Args: { p_nom: string; p_prenom: string }
         Returns: {
