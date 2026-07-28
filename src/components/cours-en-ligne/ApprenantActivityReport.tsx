@@ -766,7 +766,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
         <div className="flex items-center gap-3">
           {selectedId && selectedApprenant && (() => {
             const heuresRequises = Number(selectedApprenant.heures_totales) || Number(selectedApprenant.heures_elearning) || 0;
-            const heuresFaites = totalMinutes / 60;
+            const heuresFaites = allHistoryMinutes / 60;
             const pct = heuresRequises > 0 ? Math.min(100, Math.round((heuresFaites / heuresRequises) * 100)) : 0;
             const dateExam = selectedApprenant.date_examen_theorique;
             const resultat = (selectedApprenant.resultat_examen || "").toLowerCase().trim();
