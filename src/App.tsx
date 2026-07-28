@@ -29,6 +29,7 @@ import DiagnosticExamensBlancs from "./pages/DiagnosticExamensBlancs";
 import AdminErrorLogs from "./pages/AdminErrorLogs";
 import AdminAuditT3P from "./pages/AdminAuditT3P";
 import AdminAuditModules from "./pages/AdminAuditModules";
+import AdminAuditDBvsLearner from "./pages/AdminAuditDBvsLearner";
 
 // Onboarding pages
 import OnboardingWelcome from "./pages/onboarding/OnboardingWelcome";
@@ -142,6 +143,12 @@ function App() {
                 <Route path="/admin/audit-modules" element={
                   <ProtectedRoute>
                     <ErrorBoundary><AdminAuditModules /></ErrorBoundary>
+                  </ProtectedRoute>
+                } />
+
+                <Route path="/admin/audit-db-vs-apprenant" element={
+                  <ProtectedRoute>
+                    <ErrorBoundary><AdminAuditDBvsLearner /></ErrorBoundary>
                   </ProtectedRoute>
                 } />
 
