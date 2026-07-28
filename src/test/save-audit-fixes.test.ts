@@ -251,4 +251,48 @@ describe("Bug 4: Propagation must not lose concurrent changes (TOCTOU)", () => {
     // The fix: merge before writing (read latest → merge → write)
     // Or: eliminate concurrent writes by using a single propagation point
   });
+
+  it("compare-and-swap refuses a stale module_editor_state write", () => {
+    type Row = { moduleData: any; updatedAt: string };
+    const db: Row = {
+      moduleData: {
+        id: 4,
+        exercices: [makeExercice(102, [makeQuestion(4, "Q4", "A")])],
+      },
+      updatedAt: "2026-07-28T13:55:00.000Z",
+    };
+
+    const tabAExpectedUpdatedAt = db.updatedAt;
+    const tabBExpectedUpdatedAt = db.updatedAt;
+
+    // Onglet A sauvegarde une correction récente.
+    const tabACorrection = {
+      id: 4,
+      exercices: [makeExercice(102, [makeQuestion(4, "Q4", "A")])],
+    };
+    if (db.updatedAt > tabAExpectedUpdatedAt) {
+      throw new Error("stale_module_editor_state_write");
+    }
+    db.moduleData = tabACorrection;
+    db.updatedAt = "2026-07-28T13:56:00.000Z";
+
+    // Onglet B avait encore l'ancien snapshot et tente de remettre C.
+    const tabBStaleWrite = {
+      id: 4,
+      exercices: [makeExercice(102, [makeQuestion(4, "Q4", "C")])],
+    };
+
+    let blocked = false;
+    try {
+      if (db.updatedAt > tabBExpectedUpdatedAt) {
+        throw new Error("stale_module_editor_state_write");
+      }
+      db.moduleData = tabBStaleWrite;
+    } catch (error) {
+      blocked = String((error as Error).message).includes("stale_module_editor_state_write");
+    }
+
+    expect(blocked).toBe(true);
+    expect(db.moduleData.exercices[0].questions[0].choix.find((c: any) => c.correct)?.lettre).toBe("A");
+  });
 });

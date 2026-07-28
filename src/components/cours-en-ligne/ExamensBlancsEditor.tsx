@@ -60,6 +60,35 @@ export function getModuleIdForExamId(examId: string): number {
   return EXAM_ID_TO_MODULE_ID[examId] ?? (EXAMEN_BLANC_MODULE_BASE + 100 + Math.abs(hashCode(examId)));
 }
 
+function isStaleModuleEditorStateError(error: unknown): boolean {
+  const maybeError = error as { code?: string; message?: string } | null | undefined;
+  const msg = String(maybeError?.message ?? "");
+  return maybeError?.code === "P0409" || msg.includes("stale_module_editor_state_write");
+}
+
+async function saveExamModuleWithCas({
+  moduleId,
+  moduleData,
+  expectedUpdatedAt,
+}: {
+  moduleId: number;
+  moduleData: Record<string, unknown>;
+  expectedUpdatedAt: string | null | undefined;
+}): Promise<string> {
+  const fallbackSavedAt = new Date().toISOString();
+  const { data, error } = await supabase.rpc("save_module_editor_state", {
+    p_module_id: moduleId,
+    p_module_data: moduleData as any,
+    p_deleted_cours: [] as any,
+    p_deleted_exercices: [] as any,
+    p_source_fingerprint: null,
+    p_expected_updated_at: expectedUpdatedAt ?? null,
+  });
+
+  if (error) throw error;
+  return (Array.isArray(data) ? data[0]?.updated_at : (data as any)?.updated_at) ?? fallbackSavedAt;
+}
+
 function hashCode(s: string): number {
   let h = 0;
   for (let i = 0; i < s.length; i++) h = (Math.imul(31, h) + s.charCodeAt(i)) | 0;
@@ -1031,7 +1060,6 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
             } as any,
             deleted_cours: [] as any,
             deleted_exercices: [] as any,
-            updated_at: now,
           };
         })
         .filter((row): row is NonNullable<typeof row> => row !== null);
@@ -1046,46 +1074,28 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
         return true;
       }
 
-      // ANTI-CONFLICT CHECK: warn (don't block) if another tab/session appears to
-      // have saved these same modules more recently than what this tab last knew
-      // about. A 3s tolerance absorbs clock differences between client and server
-      // so this never produces a false positive that silently prevents saving —
-      // a rare missed warning is far better than blocking legitimate edits.
       const moduleIdsToCheck = rows.map((r) => r.module_id);
-      const { data: currentServerRows } = await supabase
-        .from("module_editor_state")
-        .select("module_id, updated_at")
-        .in("module_id", moduleIdsToCheck);
+      const persistedUpdatedAtByModule: Record<number, string> = {};
 
-      const CONFLICT_TOLERANCE_MS = 3000;
-      const conflictingModuleIds = new Set<number>();
-      for (const serverRow of (currentServerRows as any[]) || []) {
-        const known = lastKnownServerUpdatedAtRef.current[serverRow.module_id];
-        if (known && new Date(serverRow.updated_at).getTime() > new Date(known).getTime() + CONFLICT_TOLERANCE_MS) {
-          conflictingModuleIds.add(serverRow.module_id);
+      for (const row of rows) {
+        try {
+          persistedUpdatedAtByModule[row.module_id] = await saveExamModuleWithCas({
+            moduleId: row.module_id,
+            moduleData: row.module_data as Record<string, unknown>,
+            expectedUpdatedAt: lastKnownServerUpdatedAtRef.current[row.module_id] ?? null,
+          });
+        } catch (error) {
+          console.error("[ExamensEditor] Save error:", error);
+          if (isStaleModuleEditorStateError(error)) {
+            toast.error(
+              "Une version plus récente de cet examen existe en base. Rechargez la page avant de ré-enregistrer.",
+              { duration: 10000 },
+            );
+          } else {
+            toast.error(`Sauvegarde impossible: ${(error as any)?.message ?? "erreur inconnue"}`);
+          }
+          return false;
         }
-      }
-
-      if (conflictingModuleIds.size > 0) {
-        console.warn("[ExamensEditor] Conflit potentiel détecté (sauvegarde non bloquée) pour les modules :", [...conflictingModuleIds]);
-        toast.warning(
-          "⚠️ Un autre onglet ou une autre session semble avoir modifié cet examen entre-temps. " +
-          "Votre modification a quand même été enregistrée. Si quelque chose semble incohérent, rechargez la page.",
-          { duration: 10000 },
-        );
-        // Do NOT return false here — a false positive (clock skew, etc.) must never
-        // silently prevent a real, legitimate save. Warn and proceed.
-      }
-
-      // Save only changed exams in one batch request
-      const { error } = await supabase
-        .from("module_editor_state")
-        .upsert(rows, { onConflict: "module_id" });
-
-      if (error) {
-        console.error("[ExamensEditor] Save error:", error);
-        toast.error(`Sauvegarde impossible: ${error.message}`);
-        return false;
       }
 
       lastSavedFingerprintRef.current = JSON.stringify(synced);
@@ -1094,7 +1104,7 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
         ...changedModuleFingerprints,
       };
       for (const moduleId of moduleIdsToCheck) {
-        lastKnownServerUpdatedAtRef.current[moduleId] = now;
+        lastKnownServerUpdatedAtRef.current[moduleId] = persistedUpdatedAtByModule[moduleId] ?? now;
       }
 
       if (showSuccessToast) {
