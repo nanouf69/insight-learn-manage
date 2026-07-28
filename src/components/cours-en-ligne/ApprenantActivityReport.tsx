@@ -177,6 +177,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
   const [apprenants, setApprenants] = useState<Apprenant[]>([]);
   const [selectedId, setSelectedId] = useState<string>(lockedApprenantId || "");
   const [connexions, setConnexions] = useState<Connexion[]>([]);
+  const [allHistoryMinutes, setAllHistoryMinutes] = useState<number>(0);
   const [activites, setActivites] = useState<ModuleActivite[]>([]);
   const [completedModuleIds, setCompletedModuleIds] = useState<Set<number>>(new Set());
   const [exercicesCompletes, setExercicesCompletes] = useState<ExerciceComplete[]>([]);
