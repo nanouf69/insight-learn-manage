@@ -4153,18 +4153,39 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         previousModuleData = prev?.module_data ?? null;
       } catch {}
 
-      const { error } = await supabase.from("module_editor_state").upsert(
-        [{
-          ...dataToSave,
-          module_data: normalizedModuleData as any,
-          updated_at: savedAt,
-        }],
-        { onConflict: "module_id" }
-      );
+      // Compare-and-swap: refuse d'écraser une version en base plus récente que
+      // celle que cet onglet a lue (protection contre les onglets admin restés
+      // ouverts avec un vieux snapshot qui rétabliraient de mauvaises réponses).
+      const expectedUpdatedAt = lastDbUpdatedAtRef.current;
+      const { data: casData, error } = await supabase.rpc("save_module_editor_state", {
+        p_module_id: dataToSave.module_id,
+        p_module_data: normalizedModuleData as any,
+        p_deleted_cours: (dataToSave.deleted_cours ?? []) as any,
+        p_deleted_exercices: (dataToSave.deleted_exercices ?? []) as any,
+        p_source_fingerprint: dataToSave.source_fingerprint ?? null,
+        p_expected_updated_at: expectedUpdatedAt ?? null,
+      });
 
-      if (error) throw error;
+      if (error) {
+        const msg = String((error as any)?.message ?? "");
+        if (msg.includes("stale_module_editor_state_write") || (error as any)?.code === "P0409") {
+          console.warn("[ModuleEditor] Stale write blocked by DB compare-and-swap", {
+            moduleId: dataToSave.module_id,
+            expectedUpdatedAt,
+            error,
+          });
+          toast.error(
+            "Une version plus récente de ce module existe en base. Rechargez la page pour récupérer la dernière version avant de ré-enregistrer.",
+            { duration: 8000 },
+          );
+          saveErrorShownRef.current = true;
+          return;
+        }
+        throw error;
+      }
       saveErrorShownRef.current = false;
-      markDbSnapshotApplied(savedAt);
+      const persistedUpdatedAt = (Array.isArray(casData) ? casData[0]?.updated_at : (casData as any)?.updated_at) ?? savedAt;
+      markDbSnapshotApplied(persistedUpdatedAt);
 
       // Le trigger DB peut refuser une question plus ancienne envoyée par un onglet
       // resté ouvert. Toutes les propagations/audits ci-dessous doivent donc partir
