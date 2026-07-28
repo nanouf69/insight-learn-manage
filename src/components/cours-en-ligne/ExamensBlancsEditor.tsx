@@ -60,6 +60,35 @@ export function getModuleIdForExamId(examId: string): number {
   return EXAM_ID_TO_MODULE_ID[examId] ?? (EXAMEN_BLANC_MODULE_BASE + 100 + Math.abs(hashCode(examId)));
 }
 
+function isStaleModuleEditorStateError(error: unknown): boolean {
+  const maybeError = error as { code?: string; message?: string } | null | undefined;
+  const msg = String(maybeError?.message ?? "");
+  return maybeError?.code === "P0409" || msg.includes("stale_module_editor_state_write");
+}
+
+async function saveExamModuleWithCas({
+  moduleId,
+  moduleData,
+  expectedUpdatedAt,
+}: {
+  moduleId: number;
+  moduleData: Record<string, unknown>;
+  expectedUpdatedAt: string | null | undefined;
+}): Promise<string> {
+  const fallbackSavedAt = new Date().toISOString();
+  const { data, error } = await supabase.rpc("save_module_editor_state", {
+    p_module_id: moduleId,
+    p_module_data: moduleData as any,
+    p_deleted_cours: [] as any,
+    p_deleted_exercices: [] as any,
+    p_source_fingerprint: null,
+    p_expected_updated_at: expectedUpdatedAt ?? null,
+  });
+
+  if (error) throw error;
+  return (Array.isArray(data) ? data[0]?.updated_at : (data as any)?.updated_at) ?? fallbackSavedAt;
+}
+
 function hashCode(s: string): number {
   let h = 0;
   for (let i = 0; i < s.length; i++) h = (Math.imul(31, h) + s.charCodeAt(i)) | 0;
