@@ -177,6 +177,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
   const [apprenants, setApprenants] = useState<Apprenant[]>([]);
   const [selectedId, setSelectedId] = useState<string>(lockedApprenantId || "");
   const [connexions, setConnexions] = useState<Connexion[]>([]);
+  const [allHistoryMinutes, setAllHistoryMinutes] = useState<number>(0);
   const [activites, setActivites] = useState<ModuleActivite[]>([]);
   const [completedModuleIds, setCompletedModuleIds] = useState<Set<number>>(new Set());
   const [exercicesCompletes, setExercicesCompletes] = useState<ExerciceComplete[]>([]);
@@ -329,6 +330,59 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
     };
     load();
   }, [selectedId, period]);
+
+  // Charge TOUT l'historique (indépendant du filtre période) pour le taux de réalisation
+  useEffect(() => {
+    if (!selectedId) { setAllHistoryMinutes(0); return; }
+    let cancelled = false;
+    (async () => {
+      const PAGE = 1000;
+      const fetchAll = async (table: string, cols: string, orderCol: string) => {
+        let from = 0; let out: any[] = [];
+        while (true) {
+          const { data } = await supabase.from(table as any).select(cols).eq("apprenant_id", selectedId).order(orderCol, { ascending: false }).range(from, from + PAGE - 1);
+          const batch = (data as any[]) || [];
+          out = out.concat(batch);
+          if (batch.length < PAGE) break;
+          from += PAGE;
+        }
+        return out;
+      };
+      const [conns, mods, exos, quizz] = await Promise.all([
+        fetchAll("apprenant_connexions", "started_at, ended_at, last_seen_at", "started_at"),
+        fetchAll("apprenant_module_activites", "occurred_at, action_type, module_nom", "occurred_at"),
+        fetchAll("reponses_apprenants", "updated_at, completed", "updated_at"),
+        fetchAll("apprenant_quiz_results", "completed_at", "completed_at"),
+      ]);
+      if (cancelled) return;
+      const isAccueil = (n?: string | null) => !!n && /accueil|liste\s+des\s+modules/i.test(n);
+      const tsArr = [
+        ...mods.filter((m: any) => (m.action_type === "open_module" || m.action_type === "open_section" || m.action_type === "open_cours") && !isAccueil(m.module_nom)).map((m: any) => Date.parse(m.occurred_at)),
+        ...exos.filter((e: any) => e.completed).map((e: any) => Date.parse(e.updated_at)),
+        ...quizz.map((q: any) => Date.parse(q.completed_at)),
+      ].filter(t => !Number.isNaN(t)).sort((a, b) => a - b);
+      const MAX = 7 * 60 * 60 * 1000;
+      let total = 0;
+      for (const c of conns) {
+        const start = Date.parse(c.started_at);
+        if (Number.isNaN(start)) continue;
+        const rawEnd = c.ended_at ? Date.parse(c.ended_at) : Date.parse(c.last_seen_at);
+        const end = Number.isNaN(rawEnd) ? start : Math.min(rawEnd, start + MAX);
+        if (end <= start) continue;
+        let lo = 0, hi = tsArr.length - 1, found = false;
+        while (lo <= hi) {
+          const mid = (lo + hi) >> 1;
+          const v = tsArr[mid];
+          if (v < start) lo = mid + 1;
+          else if (v > end) hi = mid - 1;
+          else { found = true; break; }
+        }
+        if (found) total += Math.max(0, Math.floor((end - start) / 60000));
+      }
+      setAllHistoryMinutes(total);
+    })();
+    return () => { cancelled = true; };
+  }, [selectedId]);
 
   const selectedApprenant = apprenants.find((a) => a.id === selectedId);
 
@@ -712,7 +766,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
         <div className="flex items-center gap-3">
           {selectedId && selectedApprenant && (() => {
             const heuresRequises = Number(selectedApprenant.heures_totales) || Number(selectedApprenant.heures_elearning) || 0;
-            const heuresFaites = totalMinutes / 60;
+            const heuresFaites = allHistoryMinutes / 60;
             const pct = heuresRequises > 0 ? Math.min(100, Math.round((heuresFaites / heuresRequises) * 100)) : 0;
             const dateExam = selectedApprenant.date_examen_theorique;
             const resultat = (selectedApprenant.resultat_examen || "").toLowerCase().trim();
