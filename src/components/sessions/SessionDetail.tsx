@@ -1592,6 +1592,38 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       if (isPratiqueSession && willBePresent && !wasPresent) {
         sendSatisfactionEmailPratique(sessionApprenantId);
       }
+
+      // Extension automatique de +1 mois de l'accès e-learning
+      // pour les apprenants VTC/TAXI marqués présents en présentiel
+      if (willBePresent && !wasPresent) {
+        try {
+          const app = previous?.apprenant;
+          const type = String(app?.type_apprenant || '').toLowerCase();
+          const isVtcOrTaxi = type.startsWith('vtc') || type.startsWith('taxi');
+          if (app?.id && isVtcOrTaxi) {
+            const baseStr = app.date_fin_cours_en_ligne || null;
+            const base = baseStr ? new Date(baseStr) : new Date();
+            const extended = new Date(base);
+            extended.setMonth(extended.getMonth() + 1);
+            const newEndIso = extended.toISOString().slice(0, 10);
+            // N'étend que si la nouvelle date est postérieure à l'existante
+            if (!baseStr || newEndIso > String(baseStr).slice(0, 10)) {
+              const { error: extErr } = await supabase
+                .from('apprenants')
+                .update({ date_fin_cours_en_ligne: newEndIso })
+                .eq('id', app.id);
+              if (!extErr) {
+                toast({
+                  title: '📅 Accès prolongé (+1 mois)',
+                  description: `Nouvel accès jusqu'au ${extended.toLocaleDateString('fr-FR')}.`,
+                });
+              }
+            }
+          }
+        } catch (extErr) {
+          console.error('[SessionDetail] Erreur extension accès e-learning:', extErr);
+        }
+      }
     } catch (error: any) {
       toast({
         title: "Erreur",
