@@ -71,6 +71,8 @@ const formationsList = [
   "Formation TAXI (TAXI)",
   "Formation VTC (VTC)",
   "Formation TAXI et TA (TAXI/TA)",
+  "Formation Continue TAXI (FC TAXI)",
+  "Formation Continue VTC (FC VTC)",
 ];
 
 // Liste complète des matières avec leurs couleurs
