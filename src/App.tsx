@@ -29,6 +29,7 @@ import DiagnosticExamensBlancs from "./pages/DiagnosticExamensBlancs";
 import AdminErrorLogs from "./pages/AdminErrorLogs";
 import AdminAuditT3P from "./pages/AdminAuditT3P";
 import AdminAuditModules from "./pages/AdminAuditModules";
+import AdminAuditDBvsLearner from "./pages/AdminAuditDBvsLearner";
 
 // Onboarding pages
 import OnboardingWelcome from "./pages/onboarding/OnboardingWelcome";
