@@ -23,10 +23,39 @@ const daysBetween = (fromIso: string, toIso: string) => {
 };
 
 const LOOKAHEAD_DAYS = 30;
-const MAX_SESSION_MS = 12 * 60 * 60 * 1000;
+const MAX_SESSION_MS = 7 * 60 * 60 * 1000;
+
+const HEURES_REQUISES: Record<string, number> = {
+  "vtc-e": 60,
+  "taxi-e": 90,
+  "continue-vtc": 14,
+  "continue-taxi": 14,
+  "ta-e": 35,
+  "va-e": 7,
+};
 
 interface Props {
   onNavigateToApprenant?: (id: string) => void;
+}
+
+async function fetchAllPaged<T>(builder: () => any): Promise<T[]> {
+  const PAGE = 1000;
+  let from = 0;
+  let all: T[] = [];
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    const { data, error } = await builder().range(from, from + PAGE - 1);
+    if (error) throw error;
+    const batch = (data as T[]) || [];
+    all = all.concat(batch);
+    if (batch.length < PAGE) break;
+    from += PAGE;
+  }
+  return all;
+}
+
+function isAccueilModule(nom?: string | null): boolean {
+  return !!nom && /accueil|liste\s+des\s+modules/i.test(nom);
 }
 
 export function FormationsBientotTerminees({ onNavigateToApprenant }: Props) {
@@ -54,47 +83,91 @@ export function FormationsBientotTerminees({ onNavigateToApprenant }: Props) {
       const list = ((apprenants || []) as any[]).filter(isElearning);
       if (list.length === 0) return [];
 
-      const ids = list.map((a) => a.id);
+      // Calcule les heures effectives par apprenant (même règle que le Rapport d'activité)
+      const results = await Promise.all(
+        list.map(async (a) => {
+          try {
+            const [conns, mods, exos, quizz] = await Promise.all([
+              fetchAllPaged<any>(() =>
+                supabase
+                  .from("apprenant_connexions" as any)
+                  .select("started_at, ended_at, last_seen_at")
+                  .eq("apprenant_id", a.id)
+              ),
+              fetchAllPaged<any>(() =>
+                supabase
+                  .from("apprenant_module_activites" as any)
+                  .select("occurred_at, action_type, module_nom")
+                  .eq("apprenant_id", a.id)
+              ),
+              fetchAllPaged<any>(() =>
+                supabase
+                  .from("reponses_apprenants")
+                  .select("updated_at")
+                  .eq("apprenant_id", a.id)
+                  .eq("completed", true)
+              ),
+              fetchAllPaged<any>(() =>
+                supabase
+                  .from("apprenant_quiz_results" as any)
+                  .select("completed_at")
+                  .eq("apprenant_id", a.id)
+              ),
+            ]);
 
-      // Récupère toutes les connexions (paginé)
-      const durations = new Map<string, number>(); // apprenant_id -> hours
-      const PAGE = 1000;
-      let from = 0;
-      // eslint-disable-next-line no-constant-condition
-      while (true) {
-        const { data: cx, error: e2 } = await supabase
-          .from("apprenant_connexions")
-          .select("apprenant_id, started_at, ended_at, last_seen_at")
-          .in("apprenant_id", ids)
-          .range(from, from + PAGE - 1);
-        if (e2) throw e2;
-        const rows = (cx || []) as any[];
-        for (const row of rows) {
-          if (!row.started_at) continue;
-          const start = new Date(row.started_at).getTime();
-          const rawEnd = new Date(row.ended_at || row.last_seen_at || row.started_at).getTime();
-          const end = Math.min(rawEnd, start + MAX_SESSION_MS);
-          const hours = Math.max(0, (end - start) / 3600000);
-          durations.set(row.apprenant_id, (durations.get(row.apprenant_id) || 0) + hours);
-        }
-        if (rows.length < PAGE) break;
-        from += PAGE;
-      }
+            const actTimestamps: number[] = [
+              ...mods
+                .filter((m: any) =>
+                  (m.action_type === "open_module" || m.action_type === "open_section" || m.action_type === "open_cours") &&
+                  !isAccueilModule(m.module_nom)
+                )
+                .map((m: any) => Date.parse(m.occurred_at)),
+              ...exos.map((e: any) => Date.parse(e.updated_at)),
+              ...quizz.map((q: any) => Date.parse(q.completed_at)),
+            ].filter((t) => !Number.isNaN(t)).sort((x, y) => x - y);
 
-      return list
-        .map((a) => {
-          const done = durations.get(a.id) || 0;
-          const required =
-            Number(a.heures_totales) ||
-            Number(a.heures_elearning) ||
-            66;
-          const percent = Math.min(100, Math.round((done / required) * 100));
-          const remainingDays = daysBetween(today, a.date_fin_cours_en_ligne);
-          return { apprenant: a, done, required, percent, remainingDays };
+            let totalMs = 0;
+            if (actTimestamps.length > 0) {
+              for (const c of conns) {
+                const start = Date.parse(c.started_at);
+                if (Number.isNaN(start)) continue;
+                const rawEnd = c.ended_at ? Date.parse(c.ended_at) : Date.parse(c.last_seen_at);
+                const end = Number.isNaN(rawEnd) ? start : Math.min(rawEnd, start + MAX_SESSION_MS);
+                if (end <= start) continue;
+                // dichotomie : une activité pédagogique doit exister dans la session
+                let lo = 0, hi = actTimestamps.length - 1, found = false;
+                while (lo <= hi) {
+                  const mid = (lo + hi) >> 1;
+                  const v = actTimestamps[mid];
+                  if (v < start) lo = mid + 1;
+                  else if (v > end) hi = mid - 1;
+                  else { found = true; break; }
+                }
+                if (found) totalMs += end - start;
+              }
+            }
+
+            const done = totalMs / 3600000;
+            const required =
+              HEURES_REQUISES[(a.type_apprenant || "").toLowerCase()] ||
+              Number(a.heures_totales) ||
+              Number(a.heures_elearning) ||
+              60;
+            const percent = required > 0 ? Math.min(100, Math.round((done / required) * 100)) : 0;
+            const remainingDays = daysBetween(today, a.date_fin_cours_en_ligne);
+            return { apprenant: a, done, required, percent, remainingDays };
+          } catch (err) {
+            console.error("[FormationsBientotTerminees] apprenant load error", a.id, err);
+            const required = HEURES_REQUISES[(a.type_apprenant || "").toLowerCase()] || 60;
+            return { apprenant: a, done: 0, required, percent: 0, remainingDays: daysBetween(today, a.date_fin_cours_en_ligne) };
+          }
         })
-        .sort((x, y) => x.remainingDays - y.remainingDays);
+      );
+
+      return results.sort((x, y) => x.remainingDays - y.remainingDays);
     },
   });
+
 
   const results = data ?? [];
 
