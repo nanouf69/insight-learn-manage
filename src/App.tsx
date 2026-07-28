@@ -146,6 +146,12 @@ function App() {
                   </ProtectedRoute>
                 } />
 
+                <Route path="/admin/audit-db-vs-apprenant" element={
+                  <ProtectedRoute>
+                    <ErrorBoundary><AdminAuditDBvsLearner /></ErrorBoundary>
+                  </ProtectedRoute>
+                } />
+
 
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
