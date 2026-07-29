@@ -7603,7 +7603,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 variant="outline"
                 size="sm"
                 className="gap-2 border-primary/30 text-primary hover:bg-primary/5"
-                onClick={() => {
+                onClick={async () => {
                   const allFiles = moduleData.cours.flatMap(c => c.fichiers || []);
                   const printableFiles = allFiles.filter(f => 
                     f.nom.endsWith(".pdf") || f.url.endsWith(".pdf")
@@ -7612,13 +7612,13 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                     f.nom.endsWith(".docx") || f.nom.endsWith(".doc") || f.url.endsWith(".docx") || f.url.endsWith(".doc")
                   );
                   // Open PDFs in new tabs for printing
-                  printableFiles.forEach(f => {
-                    const url = f.url.startsWith("http") ? f.url : f.url.startsWith("/") ? f.url : `/${f.url}`;
+                  const signedPrintableUrls = await Promise.all(printableFiles.map(f => toDisplayableCourseUrl(f.url)));
+                  signedPrintableUrls.forEach(url => {
                     window.open(url, "_blank");
                   });
                   // Open DOCX files via Google Docs viewer print-friendly mode
-                  docxFiles.forEach(f => {
-                    const absoluteUrl = f.url.startsWith("http") ? f.url : `${window.location.origin}${f.url.startsWith("/") ? f.url : `/${f.url}`}`;
+                  const signedDocxUrls = await Promise.all(docxFiles.map(f => toDisplayableCourseUrl(f.url)));
+                  signedDocxUrls.forEach(absoluteUrl => {
                     window.open(`https://docs.google.com/viewer?url=${encodeURIComponent(absoluteUrl)}&embedded=false`, "_blank");
                   });
                   if (printableFiles.length + docxFiles.length === 0) {
