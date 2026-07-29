@@ -2480,7 +2480,10 @@ function ExerciceCard({
     onUpdateQuestions(item.id, item.questions.filter(q => q.id !== confirmDeleteQId), confirmDeleteQId);
     setEditingQId(null);
     setConfirmDeleteQId(null);
-    toast.success("Question supprimée avec succès");
+    // Pas de toast optimiste ici : la confirmation « ✅ Changement enregistré »
+    // est déclenchée uniquement par performDbSave après un UPSERT réussi (CAS)
+    // dans module_editor_state. En cas d'erreur DB, un toast d'erreur exact
+    // sera affiché à la place.
   };
 
   const moveQuestion = (qId: number, direction: "up" | "down") => {
@@ -2830,7 +2833,7 @@ function CoursEditor({ item, onSave, onCancel }: { item: ContentItem; onSave: (u
           <Badge>Modifier le cours</Badge>
           <div className="flex gap-2">
             <Button size="sm" variant="ghost" onClick={onCancel}><X className="w-4 h-4" /></Button>
-            <Button size="sm" onClick={() => { onSave({ ...item, titre, sousTitre: sousTitre || undefined, description: description || undefined }); toast.success("Cours modifié"); }} className="gap-1">
+            <Button size="sm" onClick={() => { onSave({ ...item, titre, sousTitre: sousTitre || undefined, description: description || undefined }); /* Toast affiché uniquement après confirmation DB dans performDbSave */ }} className="gap-1">
               <Save className="w-3 h-3" /> Enregistrer
             </Button>
           </div>
@@ -4494,8 +4497,13 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       } catch (mirrorErr) {
         console.warn("[BilanMirror] exception non-bloquante:", mirrorErr);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Erreur sauvegarde DB module_editor_state:", err);
+      // Extraction du message d'erreur exact (Supabase/Postgres)
+      const rawMsg = err?.message || err?.error_description || err?.details || err?.hint || (typeof err === "string" ? err : "");
+      const code = err?.code ? ` [${err.code}]` : "";
+      const exactMsg = rawMsg ? `${rawMsg}${code}` : "Erreur inconnue";
+
       if (isStaleModuleEditorStateError(err)) {
         console.warn("[ModuleEditor] Stale write blocked by DB compare-and-swap", {
           moduleId: dataToSave.module_id,
@@ -4503,16 +4511,15 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           error: err,
         });
         toast.error(
-          "Une version plus récente de ce module existe en base. Rechargez la page pour récupérer la dernière version avant de ré-enregistrer.",
-          { duration: 8000 },
+          `Version obsolète bloquée par le serveur : une correction plus récente existe déjà en base. Rechargez la page avant de ré-enregistrer.\n\nDétail : ${exactMsg}`,
+          { duration: 10000 },
         );
         saveErrorShownRef.current = true;
         return;
       }
-      if (!saveErrorShownRef.current) {
-        toast.error("Sauvegarde impossible pour ce module. Réessayez ou contactez l'admin.");
-        saveErrorShownRef.current = true;
-      }
+      // Toujours afficher le message exact renvoyé par Supabase — plus de message générique masqué
+      toast.error(`❌ Sauvegarde refusée par la base : ${exactMsg}`, { duration: 10000 });
+      saveErrorShownRef.current = true;
     } finally {
       isSavingToDbRef.current = false;
     }
