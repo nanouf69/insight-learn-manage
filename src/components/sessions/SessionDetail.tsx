@@ -4310,6 +4310,28 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                       size="sm"
                                       variant="outline"
                                       className="gap-1.5"
+                                      disabled={extraFactureActionId === ef.id}
+                                      onClick={() => handleDownloadExtraFacture(a, ef)}
+                                      title="Voir / télécharger la facture"
+                                    >
+                                      {extraFactureActionId === ef.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileText className="w-3.5 h-3.5" />}
+                                      Voir
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="gap-1.5 border-blue-300 text-blue-700 hover:bg-blue-50"
+                                      disabled={extraFactureActionId === ef.id}
+                                      onClick={() => handleSendExtraFacture(a, ef)}
+                                      title="Envoyer la facture par email au financeur"
+                                    >
+                                      {extraFactureActionId === ef.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                                      Envoyer
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="gap-1.5"
                                       onClick={() => {
                                         setAcquittementApprenant({ ...a, __extraFactureId: ef.id });
                                         setAcquittementDate(new Date().toISOString().split('T')[0]);
