@@ -2438,7 +2438,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
         })
         .eq('id', facture.id);
 
-      await Promise.all([refetchFacturesFC(), refetchPaiements()]);
+      await Promise.all([refetchFacturesFC(), refetchExtraFactures(), refetchPaiements()]);
       toast({ title: "Paiement enregistré", description: `${montantNum.toFixed(2)} € le ${acquittementDate} • ${acquittementMoyen}` });
       // Réinitialiser le formulaire mais garder la modale ouverte pour ajouter un autre paiement
       setAcquittementMontant('');
@@ -2472,7 +2472,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
           date_paiement: newStatut === 'payee' ? (last?.date_paiement || null) : null,
         })
         .eq('id', factureId);
-      await Promise.all([refetchFacturesFC(), refetchPaiements()]);
+      await Promise.all([refetchFacturesFC(), refetchExtraFactures(), refetchPaiements()]);
       toast({ title: "Paiement supprimé" });
     } catch (e: any) {
       toast({ title: "Erreur", description: e?.message || "Suppression impossible", variant: "destructive" });
@@ -2520,7 +2520,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
           .eq('id', facture.id);
         count++;
       }
-      await Promise.all([refetchFacturesFC(), refetchPaiements()]);
+      await Promise.all([refetchFacturesFC(), refetchExtraFactures(), refetchPaiements()]);
       toast({ title: "Acquittement effectué", description: `${count} facture(s) acquittée(s) le ${bulkAcquitterDate} • ${bulkAcquitterMoyen}` });
       setBulkAcquitterOpen(false);
     } catch (e: any) {
