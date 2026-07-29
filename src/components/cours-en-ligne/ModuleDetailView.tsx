@@ -2480,7 +2480,10 @@ function ExerciceCard({
     onUpdateQuestions(item.id, item.questions.filter(q => q.id !== confirmDeleteQId), confirmDeleteQId);
     setEditingQId(null);
     setConfirmDeleteQId(null);
-    toast.success("Question supprimée avec succès");
+    // Pas de toast optimiste ici : la confirmation « ✅ Changement enregistré »
+    // est déclenchée uniquement par performDbSave après un UPSERT réussi (CAS)
+    // dans module_editor_state. En cas d'erreur DB, un toast d'erreur exact
+    // sera affiché à la place.
   };
 
   const moveQuestion = (qId: number, direction: "up" | "down") => {
