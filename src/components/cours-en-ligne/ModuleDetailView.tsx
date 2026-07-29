@@ -4497,8 +4497,13 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       } catch (mirrorErr) {
         console.warn("[BilanMirror] exception non-bloquante:", mirrorErr);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Erreur sauvegarde DB module_editor_state:", err);
+      // Extraction du message d'erreur exact (Supabase/Postgres)
+      const rawMsg = err?.message || err?.error_description || err?.details || err?.hint || (typeof err === "string" ? err : "");
+      const code = err?.code ? ` [${err.code}]` : "";
+      const exactMsg = rawMsg ? `${rawMsg}${code}` : "Erreur inconnue";
+
       if (isStaleModuleEditorStateError(err)) {
         console.warn("[ModuleEditor] Stale write blocked by DB compare-and-swap", {
           moduleId: dataToSave.module_id,
@@ -4506,16 +4511,15 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           error: err,
         });
         toast.error(
-          "Une version plus récente de ce module existe en base. Rechargez la page pour récupérer la dernière version avant de ré-enregistrer.",
-          { duration: 8000 },
+          `Version obsolète bloquée par le serveur : une correction plus récente existe déjà en base. Rechargez la page avant de ré-enregistrer.\n\nDétail : ${exactMsg}`,
+          { duration: 10000 },
         );
         saveErrorShownRef.current = true;
         return;
       }
-      if (!saveErrorShownRef.current) {
-        toast.error("Sauvegarde impossible pour ce module. Réessayez ou contactez l'admin.");
-        saveErrorShownRef.current = true;
-      }
+      // Toujours afficher le message exact renvoyé par Supabase — plus de message générique masqué
+      toast.error(`❌ Sauvegarde refusée par la base : ${exactMsg}`, { duration: 10000 });
+      saveErrorShownRef.current = true;
     } finally {
       isSavingToDbRef.current = false;
     }
