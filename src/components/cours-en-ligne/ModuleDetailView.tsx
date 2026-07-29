@@ -4565,7 +4565,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
       // Détection et publication d'une notification de changement
       try {
-        const summary = diffModuleData(previousModuleData, dataToSave.module_data);
+        const summary = diffModuleData(previousModuleData, normalizedModuleData);
         if (summary) {
           publishModuleChangeNotification({
             moduleId: dataToSave.module_id,
@@ -4689,6 +4689,25 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     }
   };
 
+  const enqueueDbSave = (payload: ModuleEditorSavePayload) => {
+    latestQueuedDbSaveRef.current = payload;
+    const generation = dbSaveGenerationRef.current;
+
+    dbSaveQueueRef.current = dbSaveQueueRef.current
+      .catch(() => undefined)
+      .then(async () => {
+        while (generation === dbSaveGenerationRef.current) {
+          const nextPayload = latestQueuedDbSaveRef.current;
+          if (!nextPayload) return;
+          latestQueuedDbSaveRef.current = null;
+          await performDbSave(nextPayload, { retryStaleOnce: true });
+          pendingDbSaveDataRef.current = latestQueuedDbSaveRef.current;
+        }
+      });
+
+    return dbSaveQueueRef.current;
+  };
+
   useEffect(() => {
     if (!editorStateHydrated || studentOnly || typeof window === "undefined") return;
     if (Number(moduleData.id) !== Number(module.id)) return;
@@ -4736,6 +4755,12 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       source_fingerprint: sourceFingerprint,
     };
 
+    const saveSignature = getSavePayloadSignature(dataToSave);
+    if (saveSignature === lastSavedPayloadSignatureRef.current) {
+      pendingDbSaveDataRef.current = null;
+      return;
+    }
+
     // Track pending data for beforeunload flush
     pendingDbSaveDataRef.current = dataToSave;
 
@@ -4743,20 +4768,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     dbSaveTimerRef.current = setTimeout(async () => {
       // Skip if a newer save was queued while we waited
       if (dbSaveVersionRef.current !== saveVersion) return;
-      // If another save is in flight, wait for it then retry
-      if (isSavingToDbRef.current) {
-        dbSaveTimerRef.current = setTimeout(() => {
-          if (dbSaveVersionRef.current === saveVersion && !isSavingToDbRef.current) {
-            performDbSave(dataToSave);
-            pendingDbSaveDataRef.current = null;
-          }
-        }, 500);
-        return;
-      }
-
-      await performDbSave(dataToSave);
-      pendingDbSaveDataRef.current = null;
-    }, 300);
+      await enqueueDbSave(dataToSave);
+    }, 600);
 
     return () => {
       if (dbSaveTimerRef.current) clearTimeout(dbSaveTimerRef.current);
@@ -4774,9 +4787,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       }
       const pending = pendingDbSaveDataRef.current;
       if (pending && !isSavingToDbRef.current) {
-        // Fire-and-forget: browser is closing, we can't await
-        // but the request will be sent before unload
-        performDbSave(pending);
+        enqueueDbSave(pending);
         pendingDbSaveDataRef.current = null;
       }
     };
