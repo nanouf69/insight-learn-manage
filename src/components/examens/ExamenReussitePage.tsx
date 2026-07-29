@@ -2697,8 +2697,11 @@ export function ExamenReussitePage() {
                                 let sent = 0;
                                 try {
                                   for (const a of vtcSansResa) {
+                                    const hasPratique = pratiqueDoneIds?.has(a.id);
                                     const bookingUrl = getBookingUrl(a.id, 'vtc');
-                                    const message = `Bonjour, vous n'avez pas encore choisi votre date de formation pratique VTC. Reservez ici: ${bookingUrl} Attention, il n'y aura pas d'autres dates. Tel: 04.28.29.60.91`;
+                                    const message = hasPratique
+                                      ? `Bonjour, vous n'avez pas encore choisi votre date de formation pratique VTC. Reservez ici: ${bookingUrl} Attention, il n'y aura pas d'autres dates. Tel: 04.28.29.60.91`
+                                      : buildInvitePratiqueSMS(a, 'vtc');
                                     const { data, error } = await supabase.functions.invoke('send-sms-ovh', {
                                       body: { receivers: [a.telephone!], message, sender: 'FTRANSPORT' },
                                     });
