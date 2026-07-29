@@ -551,6 +551,10 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
     };
 
     try {
+      const oldEmail = (apprenant.email || "").trim().toLowerCase();
+      const newEmail = (updateData.email || "").trim().toLowerCase();
+      const emailChanged = !!newEmail && newEmail !== oldEmail;
+
       const { error } = await supabase
         .from('apprenants')
         .update(updateData)
@@ -559,6 +563,30 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
       if (error) throw error;
 
       toast.success("Apprenant modifié avec succès");
+
+      if (emailChanged) {
+        const confirmResend = window.confirm(
+          `L'email a changé (${oldEmail || "aucun"} → ${newEmail}).\n\nRenvoyer tous les emails précédents à la nouvelle adresse ?`
+        );
+        if (confirmResend) {
+          toast.info("Renvoi des emails en cours…");
+          try {
+            const { data: resendData, error: resendErr } = await supabase.functions.invoke(
+              "resend-emails-to-new-address",
+              { body: { apprenant_id: apprenant.id, new_email: newEmail, old_email: oldEmail || null } }
+            );
+            if (resendErr) throw resendErr;
+            const sent = resendData?.resent ?? 0;
+            const failed = resendData?.failed ?? 0;
+            if (sent > 0) toast.success(`✅ ${sent} email(s) renvoyé(s) à ${newEmail}${failed ? ` (${failed} échec(s))` : ""}`);
+            else toast.info(resendData?.message || "Aucun email à renvoyer");
+          } catch (rErr: any) {
+            console.error("Resend emails error:", rErr);
+            toast.error(`Impossible de renvoyer les emails : ${rErr?.message || rErr}`);
+          }
+        }
+      }
+
       queryClient.invalidateQueries({ queryKey: ['apprenants'] });
       queryClient.invalidateQueries({ queryKey: ['apprenant-detail', apprenant.id] });
       onOpenChange(false);
@@ -570,6 +598,7 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
       submitInProgressRef.current = false;
     }
   };
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
