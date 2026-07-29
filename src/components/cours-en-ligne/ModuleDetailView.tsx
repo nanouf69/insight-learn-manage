@@ -8045,7 +8045,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                     flushImmediateRef.current = true;
                     setModuleData((prev) => ({
                       ...prev,
-                      cours: prev.cours.map(c => c.id === updated.id ? { ...c, images: updated.images, image: updated.image } : c),
+                      cours: prev.cours.map(c => c.id === updated.id ? { ...c, images: updated.images, image: updated.image, fichiers: updated.fichiers } : c),
                     }));
                   }}
                   onCancel={() => setEditingCoursId(null)}
