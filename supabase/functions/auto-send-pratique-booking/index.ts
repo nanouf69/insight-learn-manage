@@ -135,6 +135,7 @@ serve(async (req) => {
     for (const a of apprenants || []) {
       if (a.deleted_at) continue;
       if (!a.email) continue;
+      if (onlyIds && !onlyIds.includes(a.id)) continue;
       if ((a as any).resultat_examen !== 'oui') continue;
       const t = String(a.type_apprenant || '').toLowerCase().trim();
       let type: 'vtc' | 'taxi' | null = null;
@@ -142,6 +143,7 @@ serve(async (req) => {
       else if (PRACTICE_TAXI_TYPES.has(t) && doneTaxi.has(a.id)) type = 'taxi';
       if (!type) continue;
       eligible.push({ a, type });
+      if (limit && eligible.length >= limit) break;
     }
 
     if (dryRun) {
