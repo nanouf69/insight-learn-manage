@@ -2076,8 +2076,6 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
         client_nom: clientNom,
         client_adresse: clientAdresse || null,
         client_siret: isPro ? (fc?.siret || fc?.siren || null) : null,
-        client_email: fc?.email_facturation || fc?.contact_email || apprenant.email || null,
-        client_telephone: fc?.contact_telephone || apprenant.telephone || null,
         montant_ht: montant,
         tva_taux: 0,
         montant_tva: 0,
