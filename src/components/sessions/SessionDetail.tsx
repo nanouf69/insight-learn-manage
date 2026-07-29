@@ -849,15 +849,46 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       }
       const map: Record<string, any> = {};
       (data || []).forEach((row: any) => {
-        if (row.apprenant_id) map[row.apprenant_id] = row;
+        // Exclure les factures "extras" (marquées via numero_convention = EXTRA::...)
+        const nc = String(row.numero_convention || '');
+        if (nc.startsWith('EXTRA::')) return;
+        if (row.apprenant_id && !map[row.apprenant_id]) map[row.apprenant_id] = row;
       });
       return map;
     },
     enabled: !!session?.id && open,
   });
 
-  // Charger tous les paiements pour les factures de cette session
-  const factureIdsForPaiements = Object.values(facturesFCMap as Record<string, any>).map((f: any) => f?.id).filter(Boolean);
+  // Factures additionnelles par apprenant (marquées EXTRA::<libellé>)
+  const { data: extraFacturesByApprenantId = {}, refetch: refetchExtraFactures } = useQuery({
+    queryKey: ['session-extra-factures', session?.id],
+    queryFn: async () => {
+      if (!session?.id) return {} as Record<string, any[]>;
+      const { data, error } = await supabase
+        .from('factures')
+        .select('*')
+        .eq('session_id', session.id)
+        .like('numero_convention', 'EXTRA::%')
+        .order('created_at', { ascending: true });
+      if (error) {
+        console.error('[SessionDetail] Erreur chargement factures extras:', error);
+        return {} as Record<string, any[]>;
+      }
+      const map: Record<string, any[]> = {};
+      (data || []).forEach((row: any) => {
+        if (!row.apprenant_id) return;
+        (map[row.apprenant_id] = map[row.apprenant_id] || []).push(row);
+      });
+      return map;
+    },
+    enabled: !!session?.id && open,
+  });
+
+  // Charger tous les paiements pour les factures (principales + extras) de cette session
+  const factureIdsForPaiements = [
+    ...Object.values(facturesFCMap as Record<string, any>).map((f: any) => f?.id).filter(Boolean),
+    ...Object.values(extraFacturesByApprenantId as Record<string, any[]>).flat().map((f: any) => f?.id).filter(Boolean),
+  ];
   const { data: paiementsByFactureId = {}, refetch: refetchPaiements } = useQuery({
     queryKey: ['session-facture-paiements', session?.id, factureIdsForPaiements.join(',')],
     queryFn: async () => {
