@@ -267,6 +267,7 @@ function CourseFileViewer({
   const isPptx = lowerName.endsWith(".pptx") || lowerName.endsWith(".ppt") || lowerUrl.endsWith(".pptx") || lowerUrl.endsWith(".ppt");
   const isPdf = lowerName.endsWith(".pdf") || lowerUrl.endsWith(".pdf");
   const isDocx = lowerName.endsWith(".docx") || lowerName.endsWith(".doc") || lowerUrl.endsWith(".docx") || lowerUrl.endsWith(".doc");
+  const isImage = /\.(png|jpe?g|webp|gif|bmp|svg)(?:[?#].*)?$/i.test(fichier.nom) || /\.(png|jpe?g|webp|gif|bmp|svg)(?:[?#].*)?$/i.test(fichier.url);
   const shouldShowViewers = Boolean((isPptx || isDocx) && !hasInteractiveSlides);
 
   if (!displayUrl) {
@@ -282,7 +283,7 @@ function CourseFileViewer({
 
   return (
     <div className="space-y-3">
-      {!secureMode && !isDocx && !isPdf && (
+      {!secureMode && !isDocx && !isPdf && !isImage && (
         <div className="flex items-center gap-2 flex-wrap">
           <a
             href={displayUrl}
@@ -293,6 +294,16 @@ function CourseFileViewer({
             {fichier.nom}
             <Download className="w-3 h-3" />
           </a>
+        </div>
+      )}
+
+      {isImage && (
+        <div className="mt-2">
+          <CourseImageLightbox
+            src={displayUrl}
+            alt={fichier.nom}
+            className="w-full max-h-[70vh] object-contain rounded-lg border bg-muted"
+          />
         </div>
       )}
 
