@@ -3735,19 +3735,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               setLoadedModuleEditorState(true);
 
               if (!studentOnly) {
-                console.log("[ModuleEditor] Fingerprint mismatch on generated bilan module — resetting exercises from source");
-                saveModuleEditorStateWithCas({
-                  moduleId: Number(module.id),
-                  moduleData: resetModuleData,
-                  deletedCours: [],
-                  deletedExercices: [],
-                  sourceFingerprint,
-                  expectedUpdatedAt: latestState.updated_at,
-                }).then((updatedAt) => {
-                  markDbSnapshotApplied(updatedAt);
-                }).catch((error) => {
-                  console.error("[ModuleEditor] Generated bilan reset error:", error);
-                });
+                console.warn("[ModuleEditor] Reset source détecté au chargement — aucune écriture DB automatique n'est lancée");
               }
               return;
             }
@@ -3786,21 +3774,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             hydratedModuleIdRef.current = Number(module.id);
             markDbSnapshotApplied(latestState.updated_at);
 
-            // Admin: also re-save with updated fingerprint so future loads match
+            // Ne jamais ré-écrire automatiquement au chargement pour "corriger"
+            // un fingerprint : cela modifie updated_at et crée exactement les
+            // conflits P0409 observés entre deux écritures admin rapprochées.
             if (!studentOnly && !hasMatchingSourceFingerprint) {
-              console.log("[ModuleEditor] Fingerprint mismatch — re-saving with updated fingerprint");
-              saveModuleEditorStateWithCas({
-                moduleId: Number(module.id),
-                moduleData: resolvedModuleData,
-                deletedCours: latestState.deleted_cours ?? [],
-                deletedExercices: latestState.deleted_exercices ?? [],
-                sourceFingerprint,
-                expectedUpdatedAt: latestState.updated_at,
-              }).then((updatedAt) => {
-                markDbSnapshotApplied(updatedAt);
-              }).catch((error) => {
-                console.error("[ModuleEditor] Re-save fingerprint error:", error);
-              });
+              console.log("[ModuleEditor] Fingerprint mismatch ignoré sans écriture DB automatique");
             }
             return;
           }
