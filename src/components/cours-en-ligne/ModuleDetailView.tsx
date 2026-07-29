@@ -3505,6 +3505,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       adminLocalEditAtRef.current = 0;
       lastAppliedDbUpdatedAtRef.current = 0;
       lastDbUpdatedAtRef.current = null;
+      latestQueuedDbSaveRef.current = null;
+      lastSavedPayloadSignatureRef.current = null;
+      dbSaveGenerationRef.current += 1;
       setLastDbUpdatedAt(null);
       setTrainerOverrideWarnings(new Map());
     }
