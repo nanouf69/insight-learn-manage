@@ -2941,10 +2941,60 @@ function RichDescriptionEditor({ value, onChange }: { value: string; onChange: (
 }
 
 // ===== Éditeur inline pour un cours =====
-function CoursEditor({ item, onSave, onCancel }: { item: ContentItem; onSave: (updated: ContentItem) => void; onCancel: () => void }) {
+function CoursEditor({ item, onSave, onCancel, onPersist }: { item: ContentItem; onSave: (updated: ContentItem) => void; onCancel: () => void; onPersist?: (updated: ContentItem) => void }) {
   const [titre, setTitre] = useState(item.titre);
   const [sousTitre, setSousTitre] = useState(item.sousTitre || "");
   const [description, setDescription] = useState(item.description || "");
+  const [images, setImages] = useState<string[]>(Array.isArray(item.images) ? item.images : (item.image ? [item.image] : []));
+  const [uploadingImg, setUploadingImg] = useState(false);
+  const imgInputRef = useRef<HTMLInputElement>(null);
+
+  const persistImages = (next: string[]) => {
+    setImages(next);
+    onPersist?.({ ...item, titre, sousTitre: sousTitre || undefined, description: description || undefined, images: next, image: next[0] });
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    setUploadingImg(true);
+    try {
+      const uploaded: string[] = [];
+      for (const file of files) {
+        if (!file.type.startsWith("image/")) {
+          toast.error(`"${file.name}" n'est pas une image`);
+          continue;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+          toast.error(`"${file.name}" dépasse 5 Mo`);
+          continue;
+        }
+        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 80);
+        const path = `cours-images/cours-${item.id}_${Date.now()}_${safeName}`;
+        const { error } = await supabase.storage.from("cours-fichiers").upload(path, file, { upsert: true });
+        if (error) throw error;
+        const { data } = supabase.storage.from("cours-fichiers").getPublicUrl(path);
+        uploaded.push(data.publicUrl);
+      }
+      if (uploaded.length) {
+        persistImages([...images, ...uploaded]);
+        toast.success(`${uploaded.length} photo(s) ajoutée(s) et enregistrée(s)`);
+      }
+    } catch (err: any) {
+      console.error("Upload image cours error:", err);
+      toast.error(err?.message || "Erreur lors de l'upload de l'image");
+    } finally {
+      setUploadingImg(false);
+      if (imgInputRef.current) imgInputRef.current.value = "";
+    }
+  };
+
+  const removeImage = (idx: number) => {
+    const next = images.filter((_, i) => i !== idx);
+    persistImages(next);
+    toast.success("Photo supprimée");
+  };
+
   return (
     <Card className="border-2 border-primary/30 transition-all">
       <CardContent className="p-4 space-y-3">
@@ -2952,7 +3002,7 @@ function CoursEditor({ item, onSave, onCancel }: { item: ContentItem; onSave: (u
           <Badge>Modifier le cours</Badge>
           <div className="flex gap-2">
             <Button size="sm" variant="ghost" onClick={onCancel}><X className="w-4 h-4" /></Button>
-            <Button size="sm" onClick={() => { onSave({ ...item, titre, sousTitre: sousTitre || undefined, description: description || undefined }); /* Toast affiché uniquement après confirmation DB dans performDbSave */ }} className="gap-1">
+            <Button size="sm" onClick={() => { onSave({ ...item, titre, sousTitre: sousTitre || undefined, description: description || undefined, images, image: images[0] }); }} className="gap-1">
               <Save className="w-3 h-3" /> Enregistrer
             </Button>
           </div>
@@ -2970,10 +3020,44 @@ function CoursEditor({ item, onSave, onCancel }: { item: ContentItem; onSave: (u
           <RichDescriptionEditor value={description} onChange={setDescription} />
           <p className="text-[10px] text-muted-foreground">Sélectionnez le texte puis choisissez une taille ou une couleur.</p>
         </div>
+        <div className="space-y-2">
+          <label className="text-xs font-semibold">Photos du cours</label>
+          {images.length > 0 && (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+              {images.map((url, i) => (
+                <div key={`${url}-${i}`} className="relative group border rounded overflow-hidden bg-muted">
+                  <img src={url} alt={`Photo ${i + 1}`} className="w-full h-24 object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => removeImage(i)}
+                    className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1 opacity-90 hover:opacity-100"
+                    title="Supprimer"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          <input
+            ref={imgInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={handleImageUpload}
+          />
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => imgInputRef.current?.click()} disabled={uploadingImg}>
+            {uploadingImg ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+            {uploadingImg ? "Upload en cours..." : "Ajouter une ou plusieurs photos"}
+          </Button>
+          <p className="text-[10px] text-muted-foreground">Formats acceptés : JPG, PNG, WebP, GIF (max 5 Mo). L'ajout et la suppression sont enregistrés immédiatement.</p>
+        </div>
       </CardContent>
     </Card>
   );
 }
+
 
 const ContentCard = ({
   item,
