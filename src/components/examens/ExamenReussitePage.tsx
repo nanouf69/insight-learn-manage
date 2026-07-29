@@ -1071,6 +1071,30 @@ export function ExamenReussitePage() {
     },
   });
 
+  // Fetch apprenants ayant ouvert/effectué le module Pratique (VTC=8, TAXI=6)
+  const { data: pratiqueDoneIds } = useQuery({
+    queryKey: ['pratique-module-done-ids'],
+    queryFn: async () => {
+      const ids = new Set<string>();
+      const pageSize = 1000;
+      let from = 0;
+      while (true) {
+        const { data, error } = await supabase
+          .from('apprenant_module_activites')
+          .select('apprenant_id, module_id')
+          .in('module_id', [6, 8])
+          .range(from, from + pageSize - 1);
+        if (error) throw error;
+        (data || []).forEach((r: any) => r.apprenant_id && ids.add(r.apprenant_id));
+        if (!data || data.length < pageSize) break;
+        from += pageSize;
+      }
+      return ids;
+    },
+  });
+
+
+
   // Fetch existing sessions (théorique = formation continue, etc.) to auto-exclude from planning
   const { data: existingSessions } = useQuery({
     queryKey: ['sessions-for-planning-exclusion', planningStartDate, planningEndDate],
