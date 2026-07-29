@@ -3205,6 +3205,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   } | null>(null);
   const hydratedModuleIdRef = useRef<number | null>(null);
   const adminLocalEditAtRef = useRef(0);
+  const lastQueuedAdminLocalEditAtRef = useRef(0);
   const lastAppliedDbUpdatedAtRef = useRef(0);
   const lastDbUpdatedAtRef = useRef<string | null>(null);
   const lastMaintenanceBroadcastRef = useRef(0);
@@ -3496,6 +3497,16 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   useEffect(() => {
     const initialData = getInitialModuleData(module, apprenantType, studentOnly);
     const sourceFingerprint = buildSourceFingerprint(initialData);
+    const adminEditAtForThisSave = adminLocalEditAtRef.current;
+
+    // Remote refreshes/realtime echoes update moduleData too, but they must never
+    // be written back as a new admin save. Only a real local admin action calls
+    // markAdminLocalEdit(), so this guard removes the double UPDATE that created
+    // P0409 conflicts a few seconds after the first successful save.
+    if (adminEditAtForThisSave <= lastQueuedAdminLocalEditAtRef.current) {
+      pendingDbSaveDataRef.current = null;
+      return;
+    }
     setLoadedModuleEditorState(false);
     const moduleIdNumber = Number(module.id);
     const isNewModuleHydration = hydratedModuleIdRef.current !== moduleIdNumber;
@@ -4656,6 +4667,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     dbSaveTimerRef.current = setTimeout(async () => {
       // Skip if a newer save was queued while we waited
       if (dbSaveVersionRef.current !== saveVersion) return;
+      lastQueuedAdminLocalEditAtRef.current = adminEditAtForThisSave;
       await enqueueDbSave(dataToSave);
     }, 600);
 
