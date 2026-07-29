@@ -67,6 +67,9 @@ serve(async (req) => {
     const body = await req.json().catch(() => ({} as any));
     const dryRun: boolean = !!body?.dryRun;
     const sendSms: boolean = body?.sendSms !== false; // default true
+    // Pilot mode: restrict the run to specific learners or a max count
+    const onlyIds: string[] | null = Array.isArray(body?.onlyIds) && body.onlyIds.length ? body.onlyIds.map(String) : null;
+    const limit: number | null = Number.isFinite(body?.limit) && body.limit > 0 ? Math.floor(body.limit) : null;
 
     // 1. Toutes les completions des modules pratique
     const doneVtc = new Set<string>();
