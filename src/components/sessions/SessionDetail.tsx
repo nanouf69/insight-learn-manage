@@ -696,6 +696,11 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   const [bulkAcquitterDate, setBulkAcquitterDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [bulkAcquitterMoyen, setBulkAcquitterMoyen] = useState<string>('virement');
   const [bulkAcquitterSaving, setBulkAcquitterSaving] = useState(false);
+  const [addExtraFactureFor, setAddExtraFactureFor] = useState<any | null>(null);
+  const [extraFactureMontant, setExtraFactureMontant] = useState<string>('');
+  const [extraFactureLibelle, setExtraFactureLibelle] = useState<string>('');
+  const [extraFactureSaving, setExtraFactureSaving] = useState(false);
+  const [extraFactureDeleting, setExtraFactureDeleting] = useState<string | null>(null);
   const [bulkPreview, setBulkPreview] = useState<{ template: any; apprenants: any[]; previewBody: string; previewSubject: string; editedBody?: string; editedSubject?: string } | null>(null);
   const [bulkPreviewEditing, setBulkPreviewEditing] = useState(false);
   const [editingMailType, setEditingMailType] = useState<any | null>(null);
