@@ -2390,7 +2390,15 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     if (!acquittementApprenant) return;
     setAcquittementSaving(true);
     try {
-      const facture = (facturesFCMap as any)?.[acquittementApprenant.id];
+      // Si on paye une facture extra, on la retrouve via __extraFactureId
+      let facture: any = null;
+      const extraId = (acquittementApprenant as any).__extraFactureId as string | undefined;
+      if (extraId) {
+        const list: any[] = ((extraFacturesByApprenantId as any)?.[acquittementApprenant.id]) || [];
+        facture = list.find((f) => f.id === extraId) || null;
+      } else {
+        facture = (facturesFCMap as any)?.[acquittementApprenant.id];
+      }
       if (!facture) {
         toast({ title: "Aucune facture", description: "Téléchargez d'abord la facture pour la créer.", variant: "destructive" });
         return;
