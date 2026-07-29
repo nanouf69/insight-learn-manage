@@ -4278,58 +4278,111 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     return (Array.isArray(casData) ? casData[0]?.updated_at : (casData as any)?.updated_at) ?? fallbackSavedAt;
   };
 
-  const performDbSave = async (dataToSave: {
-    module_id: number;
-    module_data: any;
-    deleted_cours: any;
-    deleted_exercices: any;
-    source_fingerprint: string;
-  }) => {
+  const loadModuleEditorStateRow = async (moduleId: number) => {
+    const { data, error } = await supabase
+      .from("module_editor_state")
+      .select("module_data, deleted_cours, deleted_exercices, source_fingerprint, updated_at")
+      .eq("module_id", moduleId)
+      .maybeSingle();
+
+    if (error) throw error;
+    return data as {
+      module_data: ModuleData | null;
+      deleted_cours: unknown[] | null;
+      deleted_exercices: unknown[] | null;
+      source_fingerprint: string | null;
+      updated_at: string | null;
+    } | null;
+  };
+
+  const performDbSave = async (dataToSave: ModuleEditorSavePayload, options: { retryStaleOnce?: boolean } = {}) => {
     isSavingToDbRef.current = true;
     try {
-      const savedAt = new Date().toISOString();
       let normalizedModuleData = normalizeManualQuestionFlags(dataToSave.module_data as ModuleData);
       // Snapshot ancienne version pour détecter les changements pédagogiques
       let previousModuleData: any = null;
+      let currentRow: Awaited<ReturnType<typeof loadModuleEditorStateRow>> = null;
       try {
-        const { data: prev } = await supabase
-          .from("module_editor_state")
-          .select("module_data")
-          .eq("module_id", dataToSave.module_id)
-          .maybeSingle();
-        previousModuleData = prev?.module_data ?? null;
-      } catch {}
+        currentRow = await loadModuleEditorStateRow(dataToSave.module_id);
+        previousModuleData = currentRow?.module_data ?? null;
+      } catch (readError) {
+        console.warn("[ModuleEditor] Lecture pré-sauvegarde impossible:", readError);
+      }
 
       // Compare-and-swap: refuse d'écraser une version en base plus récente que
       // celle que cet onglet a lue (protection contre les onglets admin restés
       // ouverts avec un vieux snapshot qui rétabliraient de mauvaises réponses).
-      const expectedUpdatedAt = lastDbUpdatedAtRef.current;
-      const persistedUpdatedAt = await saveModuleEditorStateWithCas({
-        moduleId: dataToSave.module_id,
-        moduleData: normalizedModuleData,
-        deletedCours: dataToSave.deleted_cours ?? [],
-        deletedExercices: dataToSave.deleted_exercices ?? [],
-        sourceFingerprint: dataToSave.source_fingerprint ?? null,
-        expectedUpdatedAt,
-      });
+      let persistedUpdatedAt: string;
+      try {
+        persistedUpdatedAt = await saveModuleEditorStateWithCas({
+          moduleId: dataToSave.module_id,
+          moduleData: normalizedModuleData,
+          deletedCours: dataToSave.deleted_cours ?? [],
+          deletedExercices: dataToSave.deleted_exercices ?? [],
+          sourceFingerprint: dataToSave.source_fingerprint ?? null,
+          expectedUpdatedAt: lastDbUpdatedAtRef.current,
+        });
+      } catch (saveError) {
+        if (!options.retryStaleOnce || !isStaleModuleEditorStateError(saveError)) {
+          throw saveError;
+        }
+
+        const latestRow = await loadModuleEditorStateRow(dataToSave.module_id);
+        previousModuleData = latestRow?.module_data ?? previousModuleData;
+        markDbSnapshotApplied(latestRow?.updated_at ?? null);
+
+        normalizedModuleData = normalizeManualQuestionFlags(
+          mergeLatestDbModuleWithLocalIntent(
+            latestRow?.module_data ?? null,
+            normalizedModuleData,
+            dataToSave.deleted_exercices,
+          ),
+        );
+
+        console.warn("[ModuleEditor] P0409 détecté : dernière version rechargée, modification locale refusionnée, retry unique", {
+          moduleId: dataToSave.module_id,
+          latestUpdatedAt: latestRow?.updated_at,
+        });
+
+        persistedUpdatedAt = await saveModuleEditorStateWithCas({
+          moduleId: dataToSave.module_id,
+          moduleData: normalizedModuleData,
+          deletedCours: dataToSave.deleted_cours ?? latestRow?.deleted_cours ?? [],
+          deletedExercices: dataToSave.deleted_exercices ?? latestRow?.deleted_exercices ?? [],
+          sourceFingerprint: dataToSave.source_fingerprint ?? latestRow?.source_fingerprint ?? null,
+          expectedUpdatedAt: latestRow?.updated_at ?? null,
+        });
+      }
+
       saveErrorShownRef.current = false;
       markDbSnapshotApplied(persistedUpdatedAt);
 
       // Le trigger DB peut refuser une question plus ancienne envoyée par un onglet
       // resté ouvert. Toutes les propagations/audits ci-dessous doivent donc partir
       // de la version réellement conservée en base, pas du payload navigateur.
+      let confirmedRow: Awaited<ReturnType<typeof loadModuleEditorStateRow>> = null;
       try {
-        const { data: confirmedRow, error: confirmedError } = await supabase
-          .from("module_editor_state")
-          .select("module_data")
-          .eq("module_id", dataToSave.module_id)
-          .maybeSingle();
-        if (!confirmedError && confirmedRow?.module_data) {
+        confirmedRow = await loadModuleEditorStateRow(dataToSave.module_id);
+        if (confirmedRow?.module_data) {
           normalizedModuleData = confirmedRow.module_data as unknown as ModuleData;
+          markDbSnapshotApplied(confirmedRow.updated_at ?? persistedUpdatedAt);
+          const confirmedSignature = getSavePayloadSignature({
+            ...dataToSave,
+            module_data: normalizedModuleData,
+            deleted_cours: confirmedRow.deleted_cours ?? dataToSave.deleted_cours ?? [],
+            deleted_exercices: confirmedRow.deleted_exercices ?? dataToSave.deleted_exercices ?? [],
+            source_fingerprint: confirmedRow.source_fingerprint ?? dataToSave.source_fingerprint ?? null,
+          });
+          lastSavedPayloadSignatureRef.current = confirmedSignature;
+          setModuleData(normalizedModuleData);
+          setDeletedCours(Array.isArray(confirmedRow.deleted_cours) ? (confirmedRow.deleted_cours as ContentItem[]) : []);
+          setDeletedExercices(Array.isArray(confirmedRow.deleted_exercices) ? (confirmedRow.deleted_exercices as ExerciceItem[]) : []);
         }
       } catch (confirmReadError) {
         console.warn("[ModuleEditor] Lecture confirmation sauvegarde impossible:", confirmReadError);
       }
+
+      const savedAt = confirmedRow?.updated_at ?? persistedUpdatedAt;
 
       // Les modules FC 81/82 sont affichés aux apprenants depuis leur Bilan parent
       // (4/9) pour éviter les anciennes copies obsolètes. Donc si l'admin modifie
@@ -4622,7 +4675,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           error: err,
         });
         toast.error(
-          `Version obsolète bloquée par le serveur : une correction plus récente existe déjà en base. Rechargez la page avant de ré-enregistrer.\n\nDétail : ${exactMsg}`,
+          `Version obsolète bloquée par le serveur après le retry automatique : rechargez la page avant de ré-enregistrer.\n\nDétail : ${exactMsg}`,
           { duration: 10000 },
         );
         saveErrorShownRef.current = true;
