@@ -346,6 +346,27 @@ function formatPratiqueCreneauxForMessage(slot: PratiqueDaySlot, type: 'vtc' | '
     .join(' puis ') || 'À confirmer';
 }
 
+// Email/SMS d'invitation à compléter le module Pratique AVANT d'obtenir le lien de réservation
+export function buildInvitePratiqueEmail(a: any, type: 'vtc' | 'taxi') {
+  const label = type === 'vtc' ? 'VTC' : 'TAXI';
+  const elearningLink = type === 'vtc'
+    ? 'https://app.formative.com/join/DNFDZS'
+    : 'https://app.formative.com/join/ZT924H';
+  const exercicesLabel = type === 'vtc'
+    ? '"Formation Pratique VTC" : Quizz Lyon et Questions à apprendre'
+    : '"Formation Pratique TAXI" : QCM Taximètre, Cas pratique, Quizz Lyon et Questions à apprendre';
+  const subject = `Action requise - Terminez le module Pratique ${label} avant de réserver - ${a.prenom} ${a.nom}`;
+  const body = `Bonjour ${a.prenom},<br><br>Félicitations, vous venez de réussir votre épreuve d'admissibilité !<br><br>⚠️ <strong>Avant de pouvoir choisir votre date d'entraînement pratique</strong>, vous devez d'abord effectuer le module <strong>Formation Pratique ${label}</strong> sur votre plateforme e-learning.<br><br>📚 Merci de bien réviser le cours sur la pratique et d'effectuer les exercices.<br><br>Notamment les exercices suivants dans ${exercicesLabel}.<br>Ou cliquez ici : <a href="${elearningLink}">${elearningLink}</a><br><br>👉 <strong>Dès que le module Pratique sera terminé, nous vous enverrons le lien pour choisir votre date d'entraînement.</strong><br><br>⚠️ Attention, si vous n'effectuez pas les exercices et que vous n'apprenez pas les éléments de la ville, vous risquez fortement d'échouer votre examen pratique.<br><br>Cordialement,<br><br>FTRANSPORT<br>Centre de formation<br>86 Route de Genas 69003 Lyon<br>📞 04.28.29.60.91<br>De 9h à 17h sur rendez-vous`;
+  return { subject, body };
+}
+
+export function buildInvitePratiqueSMS(a: any, type: 'vtc' | 'taxi') {
+  const label = type === 'vtc' ? 'VTC' : 'TAXI';
+  return `Bonjour ${a.prenom}, avant de reserver votre date d'entrainement pratique ${label}, merci de terminer d'abord le module "Formation Pratique ${label}" sur votre plateforme e-learning. Le lien de reservation vous sera envoye ensuite. FTRANSPORT 04.28.29.60.91`;
+}
+
+
+
 function AddCandidateToDayPicker({
   allApprenants,
   reservationsPratique,
