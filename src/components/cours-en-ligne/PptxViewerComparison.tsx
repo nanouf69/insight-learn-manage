@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
-import { Eye, FileImage, ZoomIn, ZoomOut, Images, FileText, Loader2 } from "lucide-react";
+import { Download, ExternalLink, Eye, FileImage, ZoomIn, ZoomOut, Images, FileText, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import PdfSlideViewer from "./PdfSlideViewer";
@@ -18,6 +18,7 @@ interface PptxViewerComparisonProps {
 export default function PptxViewerComparison({
   googleViewerUrl,
   msViewerUrl,
+  absoluteFileUrl,
   nom,
   imageUrls,
   pdfUrl,
@@ -25,7 +26,7 @@ export default function PptxViewerComparison({
   onLastPageReached,
 }: PptxViewerComparisonProps) {
   const [mode, setMode] = useState<"google" | "google-zoom" | "ms-office" | "images" | "pdf">(
-    pdfUrl ? "pdf" : "google"
+    pdfUrl ? "pdf" : "ms-office"
   );
   const [zoomLevel, setZoomLevel] = useState(1.2);
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -82,7 +83,7 @@ export default function PptxViewerComparison({
     }
 
     if (isStudentRestricted) {
-      setMode("google");
+      setMode("ms-office");
       return;
     }
 
@@ -191,6 +192,28 @@ export default function PptxViewerComparison({
       )}
 
       <div className="w-full max-w-[1280px] mx-auto">
+        {!pdfUrl && !hasImages && (
+          <div className="mb-3 flex flex-col gap-2 rounded-lg border border-warning/30 bg-warning/10 p-3 text-sm text-warning sm:flex-row sm:items-center sm:justify-between">
+            <span>
+              Si l’aperçu indique que le fichier est trop volumineux, ouvrez le document directement.
+            </span>
+            <div className="flex flex-wrap gap-2">
+              <Button asChild variant="outline" size="sm" className="gap-2 bg-background">
+                <a href={absoluteFileUrl} target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="h-4 w-4" /> Ouvrir
+                </a>
+              </Button>
+              {!studentOnly && (
+                <Button asChild variant="outline" size="sm" className="gap-2 bg-background">
+                  <a href={absoluteFileUrl} download>
+                    <Download className="h-4 w-4" /> Télécharger
+                  </a>
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
+
         {effectiveMode === "pdf" && pdfUrl && (
           <PdfSlideViewer url={pdfUrl} nom={nom} onLastPageReached={onLastPageReached} />
         )}
