@@ -172,6 +172,7 @@ interface ExerciceItem {
   actif: boolean;
   questions?: ExerciceQuestion[];
   fichiers?: { nom: string; url: string }[];
+  deletedQuestionIds?: number[];
 }
 
 interface ModuleData {
@@ -284,6 +285,123 @@ const normalizeManualQuestionFlags = (data: ModuleData): ModuleData => ({
       : exercise.questions,
   })),
 });
+
+type ModuleEditorSavePayload = {
+  module_id: number;
+  module_data: any;
+  deleted_cours: any;
+  deleted_exercices: any;
+  source_fingerprint: string;
+};
+
+const cloneJson = <T,>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
+
+const getQuestionEditTs = (question: unknown): number => {
+  if (!question || typeof question !== "object") return 0;
+  const editedAt = (question as any)._editedAt;
+  const ts = editedAt ? new Date(String(editedAt)).getTime() : 0;
+  if (Number.isFinite(ts) && ts > 0) return ts;
+  return (question as any).manually_edited ? 1 : 0;
+};
+
+const sameJson = (a: unknown, b: unknown) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
+
+const mergeLatestDbModuleWithLocalIntent = (
+  latestData: ModuleData | null | undefined,
+  localIntent: ModuleData,
+  localDeletedExercices: unknown,
+): ModuleData => {
+  const latest = latestData?.exercices ? cloneJson(latestData) : cloneJson(localIntent);
+  const intent = cloneJson(localIntent);
+  const deletedExerciseIds = new Set(
+    (Array.isArray(localDeletedExercices) ? localDeletedExercices : [])
+      .map((exercise: any) => Number(exercise?.id))
+      .filter((id: number) => Number.isFinite(id)),
+  );
+
+  const latestExercisesById = new Map((latest.exercices ?? []).map((exercise) => [Number(exercise.id), exercise]));
+  const intentExercisesById = new Map((intent.exercices ?? []).map((exercise) => [Number(exercise.id), exercise]));
+  const nextExercises: ExerciceItem[] = [];
+
+  for (const latestExercise of latest.exercices ?? []) {
+    const exerciseId = Number(latestExercise.id);
+    if (deletedExerciseIds.has(exerciseId)) continue;
+
+    const intentExercise = intentExercisesById.get(exerciseId);
+    if (!intentExercise) {
+      nextExercises.push(latestExercise);
+      continue;
+    }
+
+    const deletedQuestionIds = new Set<number>([
+      ...((Array.isArray((latestExercise as any).deletedQuestionIds) ? (latestExercise as any).deletedQuestionIds : []) as any[]),
+      ...((Array.isArray((intentExercise as any).deletedQuestionIds) ? (intentExercise as any).deletedQuestionIds : []) as any[]),
+    ].map((id) => Number(id)).filter((id) => Number.isFinite(id)));
+
+    const latestQuestionsById = new Map((latestExercise.questions ?? []).map((question) => [Number(question.id), question]));
+    const intentQuestionsById = new Map((intentExercise.questions ?? []).map((question) => [Number(question.id), question]));
+    const mergedQuestionsById = new Map<number, ExerciceQuestion>();
+
+    for (const latestQuestion of latestExercise.questions ?? []) {
+      const questionId = Number(latestQuestion.id);
+      if (deletedQuestionIds.has(questionId)) continue;
+      const intentQuestion = intentQuestionsById.get(questionId);
+      if (!intentQuestion) {
+        mergedQuestionsById.set(questionId, latestQuestion);
+        continue;
+      }
+
+      const intentTs = getQuestionEditTs(intentQuestion);
+      const latestTs = getQuestionEditTs(latestQuestion);
+      const intentChanged = !sameJson(intentQuestion, latestQuestion);
+      mergedQuestionsById.set(
+        questionId,
+        intentChanged && intentTs >= latestTs ? intentQuestion : latestQuestion,
+      );
+    }
+
+    for (const intentQuestion of intentExercise.questions ?? []) {
+      const questionId = Number(intentQuestion.id);
+      if (deletedQuestionIds.has(questionId) || mergedQuestionsById.has(questionId)) continue;
+      mergedQuestionsById.set(questionId, intentQuestion);
+    }
+
+    const orderedQuestionIds = [
+      ...(intentExercise.questions ?? []).map((question) => Number(question.id)),
+      ...(latestExercise.questions ?? []).map((question) => Number(question.id)),
+    ];
+    const seenQuestionIds = new Set<number>();
+    const mergedQuestions = orderedQuestionIds
+      .filter((questionId) => {
+        if (seenQuestionIds.has(questionId)) return false;
+        seenQuestionIds.add(questionId);
+        return mergedQuestionsById.has(questionId);
+      })
+      .map((questionId) => mergedQuestionsById.get(questionId))
+      .filter((question): question is ExerciceQuestion => Boolean(question));
+
+    nextExercises.push({
+      ...latestExercise,
+      ...intentExercise,
+      questions: mergedQuestions,
+      ...(deletedQuestionIds.size > 0 ? { deletedQuestionIds: Array.from(deletedQuestionIds) } : {}),
+    });
+  }
+
+  for (const intentExercise of intent.exercices ?? []) {
+    const exerciseId = Number(intentExercise.id);
+    if (deletedExerciseIds.has(exerciseId) || latestExercisesById.has(exerciseId)) continue;
+    nextExercises.push(intentExercise);
+  }
+
+  return {
+    ...latest,
+    nom: intent.nom ?? latest.nom,
+    description: intent.description ?? latest.description,
+    cours: intent.cours ?? latest.cours,
+    exercices: nextExercises,
+  };
+};
 
 // IMPORTANT: les Bilans affichés aux apprenants ne doivent plus être réhydratés
 // depuis le module de cours source (module 2). Ce module peut contenir des
