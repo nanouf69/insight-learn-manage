@@ -4286,7 +4286,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       .maybeSingle();
 
     if (error) throw error;
-    return data as {
+    return data as unknown as {
       module_data: ModuleData | null;
       deleted_cours: unknown[] | null;
       deleted_exercices: unknown[] | null;
