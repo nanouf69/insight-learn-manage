@@ -4618,6 +4618,14 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
     const initialData = getInitialModuleData(module, apprenantType, studentOnly);
     const sourceFingerprint = buildSourceFingerprint(initialData);
+    const adminEditAtForThisSave = adminLocalEditAtRef.current;
+
+    // Remote refreshes/realtime echoes also change moduleData, but they are not
+    // admin edits and must not be written back as a second UPDATE.
+    if (adminEditAtForThisSave <= lastQueuedAdminLocalEditAtRef.current) {
+      pendingDbSaveDataRef.current = null;
+      return;
+    }
 
     const payload = {
       moduleData,
