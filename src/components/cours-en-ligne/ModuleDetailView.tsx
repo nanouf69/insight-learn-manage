@@ -4748,12 +4748,14 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     pendingDbSaveDataRef.current = dataToSave;
 
     if (dbSaveTimerRef.current) clearTimeout(dbSaveTimerRef.current);
+    const debounceMs = flushImmediateRef.current ? 0 : 600;
+    flushImmediateRef.current = false;
     dbSaveTimerRef.current = setTimeout(async () => {
       // Skip if a newer save was queued while we waited
       if (dbSaveVersionRef.current !== saveVersion) return;
       lastQueuedAdminLocalEditAtRef.current = adminEditAtForThisSave;
       await enqueueDbSave(dataToSave);
-    }, 600);
+    }, debounceMs);
 
     return () => {
       if (dbSaveTimerRef.current) clearTimeout(dbSaveTimerRef.current);
