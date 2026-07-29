@@ -2422,8 +2422,25 @@ export function ExamenReussitePage() {
           calWeekdays.sort((a, b) => a.getTime() - b.getTime());
         }
         const formatDateFr = (d: Date) => d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
-        const vtcCalDays = calWeekdays.slice(0, joursVTC);
-        const taxiCalDays = calWeekdays.slice(joursVTC, joursVTC + joursTAXI);
+        // Partitionne les jours du planning en respectant le type manuel (vtc/taxi/libre)
+        // et complète les besoins restants sur les jours "auto/libre" (VTC d'abord, puis TAXI).
+        const dayTypeOf = (d: Date): 'vtc' | 'taxi' | 'libre' | undefined => {
+          const slot = dayTimeSlots[toKeyF(d)];
+          const t = typeof slot === 'object' ? (slot as any)?.type : undefined;
+          return t as any;
+        };
+        const manualVtc = calWeekdays.filter(d => dayTypeOf(d) === 'vtc');
+        const manualTaxi = calWeekdays.filter(d => dayTypeOf(d) === 'taxi');
+        const autoDays = calWeekdays.filter(d => {
+          const t = dayTypeOf(d);
+          return t === undefined || t === 'libre';
+        });
+        const needVtcAuto = Math.max(0, joursVTC - manualVtc.length);
+        const needTaxiAuto = Math.max(0, joursTAXI - manualTaxi.length);
+        const vtcAuto = autoDays.slice(0, needVtcAuto);
+        const taxiAuto = autoDays.slice(needVtcAuto, needVtcAuto + needTaxiAuto);
+        const vtcCalDays = [...manualVtc, ...vtcAuto].sort((a, b) => a.getTime() - b.getTime());
+        const taxiCalDays = [...manualTaxi, ...taxiAuto].sort((a, b) => a.getTime() - b.getTime());
         const vtcDateRange = vtcCalDays.length > 0
           ? `du ${formatDateFr(vtcCalDays[0])} au ${formatDateFr(vtcCalDays[vtcCalDays.length - 1])}`
           : 'dates non définies';
