@@ -2040,6 +2040,80 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     return (fc?.email_facturation || fc?.contact_email || apprenant.email || '').trim() || null;
   };
 
+  // Créer une facture additionnelle pour un apprenant (montant + libellé libres)
+  const handleCreateExtraFacture = async () => {
+    if (!addExtraFactureFor) return;
+    const apprenant = addExtraFactureFor;
+    const montant = parseFloat(extraFactureMontant.replace(',', '.'));
+    const libelle = extraFactureLibelle.trim();
+    if (!Number.isFinite(montant) || montant <= 0) {
+      toast({ title: "Montant invalide", description: "Saisir un montant TTC > 0.", variant: "destructive" });
+      return;
+    }
+    if (!libelle) {
+      toast({ title: "Libellé requis", description: "Décrire la prestation facturée.", variant: "destructive" });
+      return;
+    }
+    try {
+      setExtraFactureSaving(true);
+      const fc: any = (financeursFCMap as any)?.[apprenant.id] || null;
+      const isPro = fc?.type_financeur === 'professionnel';
+      const numero = await generateNextNumeroFacture();
+      const clientNom = isPro
+        ? (fc?.raison_sociale || `${apprenant.prenom} ${apprenant.nom}`)
+        : `${apprenant.prenom} ${apprenant.nom}`;
+      const clientAdresse = [
+        (apprenant.adresse || fc?.adresse) || '',
+        [(apprenant.code_postal || fc?.code_postal) || '', (apprenant.ville || fc?.ville) || ''].filter(Boolean).join(' ')
+      ].filter(Boolean).join(', ');
+      const payload: any = {
+        numero,
+        date_emission: new Date().toISOString().split('T')[0],
+        date_echeance: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        type_financement: isPro ? 'professionnel' : 'particulier',
+        client_nom: clientNom,
+        client_adresse: clientAdresse || null,
+        client_siret: isPro ? (fc?.siret || fc?.siren || null) : null,
+        montant_ht: montant,
+        tva_taux: 0,
+        montant_tva: 0,
+        montant_ttc: montant,
+        statut: 'en_attente',
+        session_id: session.id,
+        apprenant_id: apprenant.id,
+        numero_convention: `EXTRA::${libelle}`,
+      };
+      const { error } = await supabase.from('factures').insert(payload);
+      if (error) throw error;
+      await refetchExtraFactures();
+      toast({ title: "Facture ajoutée", description: `${libelle} — ${montant.toFixed(2)} € — ${apprenant.prenom} ${apprenant.nom}` });
+      setAddExtraFactureFor(null);
+      setExtraFactureMontant('');
+      setExtraFactureLibelle('');
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e?.message || "Impossible d'ajouter la facture.", variant: "destructive" });
+    } finally {
+      setExtraFactureSaving(false);
+    }
+  };
+
+  const handleDeleteExtraFacture = async (factureId: string) => {
+    if (!confirm("Supprimer cette facture additionnelle ?")) return;
+    try {
+      setExtraFactureDeleting(factureId);
+      // Supprimer d'abord les paiements liés
+      await supabase.from('facture_paiements' as any).delete().eq('facture_id', factureId);
+      const { error } = await supabase.from('factures').delete().eq('id', factureId);
+      if (error) throw error;
+      await Promise.all([refetchExtraFactures(), refetchPaiements()]);
+      toast({ title: "Facture supprimée" });
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e?.message || "Suppression impossible.", variant: "destructive" });
+    } finally {
+      setExtraFactureDeleting(null);
+    }
+  };
+
   // Upsert d'une facture en BDD comme brouillon (créée si absente, sinon retournée)
   const ensureFactureBrouillon = async (apprenant: any, sessionApprenant: any): Promise<any> => {
     const existing = (facturesFCMap as any)?.[apprenant.id];
