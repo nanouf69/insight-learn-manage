@@ -172,6 +172,7 @@ interface ExerciceItem {
   actif: boolean;
   questions?: ExerciceQuestion[];
   fichiers?: { nom: string; url: string }[];
+  deletedQuestionIds?: number[];
 }
 
 interface ModuleData {
@@ -284,6 +285,123 @@ const normalizeManualQuestionFlags = (data: ModuleData): ModuleData => ({
       : exercise.questions,
   })),
 });
+
+type ModuleEditorSavePayload = {
+  module_id: number;
+  module_data: any;
+  deleted_cours: any;
+  deleted_exercices: any;
+  source_fingerprint: string;
+};
+
+const cloneJson = <T,>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
+
+const getQuestionEditTs = (question: unknown): number => {
+  if (!question || typeof question !== "object") return 0;
+  const editedAt = (question as any)._editedAt;
+  const ts = editedAt ? new Date(String(editedAt)).getTime() : 0;
+  if (Number.isFinite(ts) && ts > 0) return ts;
+  return (question as any).manually_edited ? 1 : 0;
+};
+
+const sameJson = (a: unknown, b: unknown) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
+
+const mergeLatestDbModuleWithLocalIntent = (
+  latestData: ModuleData | null | undefined,
+  localIntent: ModuleData,
+  localDeletedExercices: unknown,
+): ModuleData => {
+  const latest = latestData?.exercices ? cloneJson(latestData) : cloneJson(localIntent);
+  const intent = cloneJson(localIntent);
+  const deletedExerciseIds = new Set(
+    (Array.isArray(localDeletedExercices) ? localDeletedExercices : [])
+      .map((exercise: any) => Number(exercise?.id))
+      .filter((id: number) => Number.isFinite(id)),
+  );
+
+  const latestExercisesById = new Map((latest.exercices ?? []).map((exercise) => [Number(exercise.id), exercise]));
+  const intentExercisesById = new Map((intent.exercices ?? []).map((exercise) => [Number(exercise.id), exercise]));
+  const nextExercises: ExerciceItem[] = [];
+
+  for (const latestExercise of latest.exercices ?? []) {
+    const exerciseId = Number(latestExercise.id);
+    if (deletedExerciseIds.has(exerciseId)) continue;
+
+    const intentExercise = intentExercisesById.get(exerciseId);
+    if (!intentExercise) {
+      nextExercises.push(latestExercise);
+      continue;
+    }
+
+    const deletedQuestionIds = new Set<number>([
+      ...((Array.isArray((latestExercise as any).deletedQuestionIds) ? (latestExercise as any).deletedQuestionIds : []) as any[]),
+      ...((Array.isArray((intentExercise as any).deletedQuestionIds) ? (intentExercise as any).deletedQuestionIds : []) as any[]),
+    ].map((id) => Number(id)).filter((id) => Number.isFinite(id)));
+
+    const latestQuestionsById = new Map((latestExercise.questions ?? []).map((question) => [Number(question.id), question]));
+    const intentQuestionsById = new Map((intentExercise.questions ?? []).map((question) => [Number(question.id), question]));
+    const mergedQuestionsById = new Map<number, ExerciceQuestion>();
+
+    for (const latestQuestion of latestExercise.questions ?? []) {
+      const questionId = Number(latestQuestion.id);
+      if (deletedQuestionIds.has(questionId)) continue;
+      const intentQuestion = intentQuestionsById.get(questionId);
+      if (!intentQuestion) {
+        mergedQuestionsById.set(questionId, latestQuestion);
+        continue;
+      }
+
+      const intentTs = getQuestionEditTs(intentQuestion);
+      const latestTs = getQuestionEditTs(latestQuestion);
+      const intentChanged = !sameJson(intentQuestion, latestQuestion);
+      mergedQuestionsById.set(
+        questionId,
+        intentChanged && intentTs >= latestTs ? intentQuestion : latestQuestion,
+      );
+    }
+
+    for (const intentQuestion of intentExercise.questions ?? []) {
+      const questionId = Number(intentQuestion.id);
+      if (deletedQuestionIds.has(questionId) || mergedQuestionsById.has(questionId)) continue;
+      mergedQuestionsById.set(questionId, intentQuestion);
+    }
+
+    const orderedQuestionIds = [
+      ...(intentExercise.questions ?? []).map((question) => Number(question.id)),
+      ...(latestExercise.questions ?? []).map((question) => Number(question.id)),
+    ];
+    const seenQuestionIds = new Set<number>();
+    const mergedQuestions = orderedQuestionIds
+      .filter((questionId) => {
+        if (seenQuestionIds.has(questionId)) return false;
+        seenQuestionIds.add(questionId);
+        return mergedQuestionsById.has(questionId);
+      })
+      .map((questionId) => mergedQuestionsById.get(questionId))
+      .filter((question): question is ExerciceQuestion => Boolean(question));
+
+    nextExercises.push({
+      ...latestExercise,
+      ...intentExercise,
+      questions: mergedQuestions,
+      ...(deletedQuestionIds.size > 0 ? { deletedQuestionIds: Array.from(deletedQuestionIds) } : {}),
+    });
+  }
+
+  for (const intentExercise of intent.exercices ?? []) {
+    const exerciseId = Number(intentExercise.id);
+    if (deletedExerciseIds.has(exerciseId) || latestExercisesById.has(exerciseId)) continue;
+    nextExercises.push(intentExercise);
+  }
+
+  return {
+    ...latest,
+    nom: intent.nom ?? latest.nom,
+    description: intent.description ?? latest.description,
+    cours: intent.cours ?? latest.cours,
+    exercices: nextExercises,
+  };
+};
 
 // IMPORTANT: les Bilans affichés aux apprenants ne doivent plus être réhydratés
 // depuis le module de cours source (module 2). Ce module peut contenir des
@@ -3074,6 +3192,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   const dbSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isSavingToDbRef = useRef(false);
   const dbSaveVersionRef = useRef(0);
+  const dbSaveQueueRef = useRef<Promise<void>>(Promise.resolve());
+  const latestQueuedDbSaveRef = useRef<ModuleEditorSavePayload | null>(null);
+  const dbSaveGenerationRef = useRef(0);
+  const lastSavedPayloadSignatureRef = useRef<string | null>(null);
   const pendingDbSaveDataRef = useRef<{
     module_id: number;
     module_data: any;
@@ -3083,6 +3205,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   } | null>(null);
   const hydratedModuleIdRef = useRef<number | null>(null);
   const adminLocalEditAtRef = useRef(0);
+  const lastQueuedAdminLocalEditAtRef = useRef(0);
   const lastAppliedDbUpdatedAtRef = useRef(0);
   const lastDbUpdatedAtRef = useRef<string | null>(null);
   const lastMaintenanceBroadcastRef = useRef(0);
@@ -3135,6 +3258,14 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       setLastDbUpdatedAt(updatedAtString);
     }
   };
+
+  const getSavePayloadSignature = (payload: ModuleEditorSavePayload) => JSON.stringify({
+    module_id: payload.module_id,
+    module_data: payload.module_data ?? null,
+    deleted_cours: payload.deleted_cours ?? [],
+    deleted_exercices: payload.deleted_exercices ?? [],
+    source_fingerprint: payload.source_fingerprint ?? null,
+  });
 
   const shouldSkipFetchedQuestionState = (remoteUpdatedAt: unknown, fetchStartedAt: number, context: string) => {
     const remoteTs = toSafeTimestamp(remoteUpdatedAt);
@@ -3375,6 +3506,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       adminLocalEditAtRef.current = 0;
       lastAppliedDbUpdatedAtRef.current = 0;
       lastDbUpdatedAtRef.current = null;
+      latestQueuedDbSaveRef.current = null;
+      lastSavedPayloadSignatureRef.current = null;
+      dbSaveGenerationRef.current += 1;
       setLastDbUpdatedAt(null);
       setTrainerOverrideWarnings(new Map());
     }
@@ -3602,19 +3736,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               setLoadedModuleEditorState(true);
 
               if (!studentOnly) {
-                console.log("[ModuleEditor] Fingerprint mismatch on generated bilan module — resetting exercises from source");
-                saveModuleEditorStateWithCas({
-                  moduleId: Number(module.id),
-                  moduleData: resetModuleData,
-                  deletedCours: [],
-                  deletedExercices: [],
-                  sourceFingerprint,
-                  expectedUpdatedAt: latestState.updated_at,
-                }).then((updatedAt) => {
-                  markDbSnapshotApplied(updatedAt);
-                }).catch((error) => {
-                  console.error("[ModuleEditor] Generated bilan reset error:", error);
-                });
+                console.warn("[ModuleEditor] Reset source détecté au chargement — aucune écriture DB automatique n'est lancée");
               }
               return;
             }
@@ -3653,21 +3775,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             hydratedModuleIdRef.current = Number(module.id);
             markDbSnapshotApplied(latestState.updated_at);
 
-            // Admin: also re-save with updated fingerprint so future loads match
+            // Ne jamais ré-écrire automatiquement au chargement pour "corriger"
+            // un fingerprint : cela modifie updated_at et crée exactement les
+            // conflits P0409 observés entre deux écritures admin rapprochées.
             if (!studentOnly && !hasMatchingSourceFingerprint) {
-              console.log("[ModuleEditor] Fingerprint mismatch — re-saving with updated fingerprint");
-              saveModuleEditorStateWithCas({
-                moduleId: Number(module.id),
-                moduleData: resolvedModuleData,
-                deletedCours: latestState.deleted_cours ?? [],
-                deletedExercices: latestState.deleted_exercices ?? [],
-                sourceFingerprint,
-                expectedUpdatedAt: latestState.updated_at,
-              }).then((updatedAt) => {
-                markDbSnapshotApplied(updatedAt);
-              }).catch((error) => {
-                console.error("[ModuleEditor] Re-save fingerprint error:", error);
-              });
+              console.log("[ModuleEditor] Fingerprint mismatch ignoré sans écriture DB automatique");
             }
             return;
           }
@@ -4167,58 +4279,111 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     return (Array.isArray(casData) ? casData[0]?.updated_at : (casData as any)?.updated_at) ?? fallbackSavedAt;
   };
 
-  const performDbSave = async (dataToSave: {
-    module_id: number;
-    module_data: any;
-    deleted_cours: any;
-    deleted_exercices: any;
-    source_fingerprint: string;
-  }) => {
+  const loadModuleEditorStateRow = async (moduleId: number) => {
+    const { data, error } = await supabase
+      .from("module_editor_state")
+      .select("module_data, deleted_cours, deleted_exercices, source_fingerprint, updated_at")
+      .eq("module_id", moduleId)
+      .maybeSingle();
+
+    if (error) throw error;
+    return data as unknown as {
+      module_data: ModuleData | null;
+      deleted_cours: unknown[] | null;
+      deleted_exercices: unknown[] | null;
+      source_fingerprint: string | null;
+      updated_at: string | null;
+    } | null;
+  };
+
+  const performDbSave = async (dataToSave: ModuleEditorSavePayload, options: { retryStaleOnce?: boolean } = {}) => {
     isSavingToDbRef.current = true;
     try {
-      const savedAt = new Date().toISOString();
       let normalizedModuleData = normalizeManualQuestionFlags(dataToSave.module_data as ModuleData);
       // Snapshot ancienne version pour détecter les changements pédagogiques
       let previousModuleData: any = null;
+      let currentRow: Awaited<ReturnType<typeof loadModuleEditorStateRow>> = null;
       try {
-        const { data: prev } = await supabase
-          .from("module_editor_state")
-          .select("module_data")
-          .eq("module_id", dataToSave.module_id)
-          .maybeSingle();
-        previousModuleData = prev?.module_data ?? null;
-      } catch {}
+        currentRow = await loadModuleEditorStateRow(dataToSave.module_id);
+        previousModuleData = currentRow?.module_data ?? null;
+      } catch (readError) {
+        console.warn("[ModuleEditor] Lecture pré-sauvegarde impossible:", readError);
+      }
 
       // Compare-and-swap: refuse d'écraser une version en base plus récente que
       // celle que cet onglet a lue (protection contre les onglets admin restés
       // ouverts avec un vieux snapshot qui rétabliraient de mauvaises réponses).
-      const expectedUpdatedAt = lastDbUpdatedAtRef.current;
-      const persistedUpdatedAt = await saveModuleEditorStateWithCas({
-        moduleId: dataToSave.module_id,
-        moduleData: normalizedModuleData,
-        deletedCours: dataToSave.deleted_cours ?? [],
-        deletedExercices: dataToSave.deleted_exercices ?? [],
-        sourceFingerprint: dataToSave.source_fingerprint ?? null,
-        expectedUpdatedAt,
-      });
+      let persistedUpdatedAt: string;
+      try {
+        persistedUpdatedAt = await saveModuleEditorStateWithCas({
+          moduleId: dataToSave.module_id,
+          moduleData: normalizedModuleData,
+          deletedCours: dataToSave.deleted_cours ?? [],
+          deletedExercices: dataToSave.deleted_exercices ?? [],
+          sourceFingerprint: dataToSave.source_fingerprint ?? null,
+          expectedUpdatedAt: lastDbUpdatedAtRef.current,
+        });
+      } catch (saveError) {
+        if (!options.retryStaleOnce || !isStaleModuleEditorStateError(saveError)) {
+          throw saveError;
+        }
+
+        const latestRow = await loadModuleEditorStateRow(dataToSave.module_id);
+        previousModuleData = latestRow?.module_data ?? previousModuleData;
+        markDbSnapshotApplied(latestRow?.updated_at ?? null);
+
+        normalizedModuleData = normalizeManualQuestionFlags(
+          mergeLatestDbModuleWithLocalIntent(
+            latestRow?.module_data ?? null,
+            normalizedModuleData,
+            dataToSave.deleted_exercices,
+          ),
+        );
+
+        console.warn("[ModuleEditor] P0409 détecté : dernière version rechargée, modification locale refusionnée, retry unique", {
+          moduleId: dataToSave.module_id,
+          latestUpdatedAt: latestRow?.updated_at,
+        });
+
+        persistedUpdatedAt = await saveModuleEditorStateWithCas({
+          moduleId: dataToSave.module_id,
+          moduleData: normalizedModuleData,
+          deletedCours: dataToSave.deleted_cours ?? latestRow?.deleted_cours ?? [],
+          deletedExercices: dataToSave.deleted_exercices ?? latestRow?.deleted_exercices ?? [],
+          sourceFingerprint: dataToSave.source_fingerprint ?? latestRow?.source_fingerprint ?? null,
+          expectedUpdatedAt: latestRow?.updated_at ?? null,
+        });
+      }
+
       saveErrorShownRef.current = false;
       markDbSnapshotApplied(persistedUpdatedAt);
 
       // Le trigger DB peut refuser une question plus ancienne envoyée par un onglet
       // resté ouvert. Toutes les propagations/audits ci-dessous doivent donc partir
       // de la version réellement conservée en base, pas du payload navigateur.
+      let confirmedRow: Awaited<ReturnType<typeof loadModuleEditorStateRow>> = null;
       try {
-        const { data: confirmedRow, error: confirmedError } = await supabase
-          .from("module_editor_state")
-          .select("module_data")
-          .eq("module_id", dataToSave.module_id)
-          .maybeSingle();
-        if (!confirmedError && confirmedRow?.module_data) {
+        confirmedRow = await loadModuleEditorStateRow(dataToSave.module_id);
+        if (confirmedRow?.module_data) {
           normalizedModuleData = confirmedRow.module_data as unknown as ModuleData;
+          markDbSnapshotApplied(confirmedRow.updated_at ?? persistedUpdatedAt);
+          const confirmedSignature = getSavePayloadSignature({
+            ...dataToSave,
+            module_data: normalizedModuleData,
+            deleted_cours: confirmedRow.deleted_cours ?? dataToSave.deleted_cours ?? [],
+            deleted_exercices: confirmedRow.deleted_exercices ?? dataToSave.deleted_exercices ?? [],
+            source_fingerprint: confirmedRow.source_fingerprint ?? dataToSave.source_fingerprint ?? null,
+          });
+          lastSavedPayloadSignatureRef.current = confirmedSignature;
+          setModuleData(normalizedModuleData);
+          setDeletedCours(Array.isArray(confirmedRow.deleted_cours) ? (confirmedRow.deleted_cours as ContentItem[]) : []);
+          setDeletedExercices(Array.isArray(confirmedRow.deleted_exercices) ? (confirmedRow.deleted_exercices as ExerciceItem[]) : []);
         }
       } catch (confirmReadError) {
         console.warn("[ModuleEditor] Lecture confirmation sauvegarde impossible:", confirmReadError);
       }
+
+      const savedAt = confirmedRow?.updated_at ?? persistedUpdatedAt;
 
       // Les modules FC 81/82 sont affichés aux apprenants depuis leur Bilan parent
       // (4/9) pour éviter les anciennes copies obsolètes. Donc si l'admin modifie
@@ -4273,61 +4438,6 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         } catch (fcParentSyncError) {
           console.error('[FC-Bilan] Synchronisation module FC → parent impossible:', fcParentSyncError);
           toast.error("Correction enregistrée, mais la synchronisation apprenant a échoué. Réessayez.");
-        }
-      }
-
-      const siblingBilanId = BILAN_SECURITY_SIBLING_BY_MODULE_ID[Number(dataToSave.module_id)];
-      if (siblingBilanId) {
-        try {
-          const sourceSecurity = getExerciseById(normalizedModuleData, SECURITE_ROUTIERE_BILAN_ID);
-          if (sourceSecurity?.questions?.length) {
-            const { data: siblingRow, error: siblingReadError } = await supabase
-              .from("module_editor_state")
-              .select("module_data, deleted_cours, deleted_exercices, source_fingerprint, updated_at")
-              .eq("module_id", siblingBilanId)
-              .maybeSingle();
-
-            if (siblingReadError) throw siblingReadError;
-
-            const siblingModuleData = (siblingRow?.module_data as unknown as ModuleData | undefined)
-              ?? getInitialModuleDataRaw({ id: siblingBilanId, nom: `Module ${siblingBilanId}` }, apprenantType, false);
-            const nextSiblingModuleData = buildSiblingBilanSecurityModule(siblingModuleData, normalizedModuleData);
-
-            if (nextSiblingModuleData) {
-              const siblingSavedAt = await saveModuleEditorStateWithCas({
-                moduleId: siblingBilanId,
-                moduleData: normalizeManualQuestionFlags(nextSiblingModuleData),
-                deletedCours: siblingRow?.deleted_cours ?? [],
-                deletedExercices: siblingRow?.deleted_exercices ?? [],
-                sourceFingerprint: siblingRow?.source_fingerprint ?? buildSourceFingerprint(siblingModuleData),
-                expectedUpdatedAt: siblingRow?.updated_at ?? null,
-              });
-
-              try {
-                const siblingChan = supabase.channel(`module-editor-live-${siblingBilanId}`);
-                await new Promise<void>((resolve) => {
-                  const timeout = setTimeout(resolve, 500);
-                  siblingChan.subscribe((status) => {
-                    if (status === 'SUBSCRIBED') {
-                      clearTimeout(timeout);
-                      resolve();
-                    }
-                  });
-                });
-                await siblingChan.send({
-                  type: 'broadcast',
-                  event: 'module-updated',
-                  payload: { moduleId: siblingBilanId, at: siblingSavedAt, syncedSecurityFrom: dataToSave.module_id },
-                });
-                await supabase.removeChannel(siblingChan);
-              } catch (siblingBroadcastErr) {
-                console.warn('[Bilan Sécurité] Broadcast sibling failed (non-bloquant):', siblingBroadcastErr);
-              }
-            }
-          }
-        } catch (siblingSyncError) {
-          console.error('[Bilan Sécurité] Synchronisation VTC/TAXI impossible:', siblingSyncError);
-          toast.error("Correction enregistrée, mais la synchronisation VTC/TAXI a échoué. Réessayez.");
         }
       }
 
@@ -4401,7 +4511,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
       // Détection et publication d'une notification de changement
       try {
-        const summary = diffModuleData(previousModuleData, dataToSave.module_data);
+        const summary = diffModuleData(previousModuleData, normalizedModuleData);
         if (summary) {
           publishModuleChangeNotification({
             moduleId: dataToSave.module_id,
@@ -4437,66 +4547,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         (dataToSave.deleted_exercices ?? []).map((e: any) => e.id),
       );
 
-      // 🔁 Miroir ciblé Bilan VTC (mod. 4) ↔ Bilan TAXI (mod. 9) pour les 5
-      // matières communes (T3P=100, Gestion=101, Sécurité Routière=102,
-      // Français=103, Anglais=105). Toute modif faite d'un côté est répliquée
-      // de l'autre. Les matières spécifiques (104/106 VTC, 203/204 TAXI) ne
-      // sont jamais touchées.
-      try {
-        const SHARED_BILAN_IDS = new Set([100, 101, 102, 103, 105]);
-        const BILAN_MIRROR: Record<number, number> = { 4: 9, 9: 4 };
-        const siblingId = BILAN_MIRROR[Number(dataToSave.module_id)];
-        if (siblingId) {
-          const savedExos = (normalizedModuleData?.exercices ?? []) as any[];
-          const sharedFromSaved = savedExos
-            .filter((e) => SHARED_BILAN_IDS.has(Number(e?.id)))
-            .map((e) => JSON.parse(JSON.stringify(e)));
-
-          if (sharedFromSaved.length > 0) {
-            const { data: siblingRow } = await supabase
-              .from("module_editor_state")
-              .select("module_data, deleted_cours, deleted_exercices, source_fingerprint, updated_at")
-              .eq("module_id", siblingId)
-              .maybeSingle();
-
-            const siblingData: any = siblingRow?.module_data ?? { exercices: [] };
-            const siblingExos: any[] = Array.isArray(siblingData.exercices) ? siblingData.exercices : [];
-            const kept = siblingExos.filter((e) => !SHARED_BILAN_IDS.has(Number(e?.id)));
-            // Ordre : partagées d'abord (comme dans la source), puis spécifiques
-            const nextExos = [...sharedFromSaved, ...kept];
-
-            const nextSiblingData = { ...siblingData, exercices: nextExos };
-            try {
-              const mirrorSavedAt = await saveModuleEditorStateWithCas({
-                moduleId: siblingId,
-                moduleData: nextSiblingData,
-                deletedCours: siblingRow?.deleted_cours ?? [],
-                deletedExercices: siblingRow?.deleted_exercices ?? [],
-                sourceFingerprint: siblingRow?.source_fingerprint ?? null,
-                expectedUpdatedAt: siblingRow?.updated_at ?? null,
-              });
-              // Ping realtime pour rafraîchir les apprenants sur le module miroir
-              try {
-                const ch = supabase.channel(`module-editor-live-${siblingId}`);
-                await new Promise<void>((resolve) => {
-                  const t = setTimeout(resolve, 400);
-                  ch.subscribe((s) => { if (s === "SUBSCRIBED") { clearTimeout(t); resolve(); } });
-                });
-                await ch.send({
-                  type: "broadcast",
-                  event: "module-updated",
-                  payload: { moduleId: siblingId, at: mirrorSavedAt, mirroredFrom: dataToSave.module_id },
-                });
-                await supabase.removeChannel(ch);
-              } catch {}
-            } catch (mirrorErr) {
-              console.warn("[BilanMirror] échec miroir VTC↔TAXI:", mirrorErr);
-            }
-          }
-        }
-      } catch (mirrorErr) {
-        console.warn("[BilanMirror] exception non-bloquante:", mirrorErr);
-      }
+      // Aucun miroir VTC↔TAXI automatique ici : chaque écriture implicite sur un
+      // autre module crée un updated_at concurrent et peut réintroduire d'anciens
+      // snapshots. Les modules FC continuent seulement de lire leur parent.
     } catch (err: any) {
       console.error("Erreur sauvegarde DB module_editor_state:", err);
       // Extraction du message d'erreur exact (Supabase/Postgres)
@@ -4511,7 +4564,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           error: err,
         });
         toast.error(
-          `Version obsolète bloquée par le serveur : une correction plus récente existe déjà en base. Rechargez la page avant de ré-enregistrer.\n\nDétail : ${exactMsg}`,
+          `Version obsolète bloquée par le serveur après le retry automatique : rechargez la page avant de ré-enregistrer.\n\nDétail : ${exactMsg}`,
           { duration: 10000 },
         );
         saveErrorShownRef.current = true;
@@ -4525,6 +4578,25 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     }
   };
 
+  const enqueueDbSave = (payload: ModuleEditorSavePayload) => {
+    latestQueuedDbSaveRef.current = payload;
+    const generation = dbSaveGenerationRef.current;
+
+    dbSaveQueueRef.current = dbSaveQueueRef.current
+      .catch(() => undefined)
+      .then(async () => {
+        while (generation === dbSaveGenerationRef.current) {
+          const nextPayload = latestQueuedDbSaveRef.current;
+          if (!nextPayload) return;
+          latestQueuedDbSaveRef.current = null;
+          await performDbSave(nextPayload, { retryStaleOnce: true });
+          pendingDbSaveDataRef.current = latestQueuedDbSaveRef.current;
+        }
+      });
+
+    return dbSaveQueueRef.current;
+  };
+
   useEffect(() => {
     if (!editorStateHydrated || studentOnly || typeof window === "undefined") return;
     if (Number(moduleData.id) !== Number(module.id)) return;
@@ -4536,6 +4608,14 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
     const initialData = getInitialModuleData(module, apprenantType, studentOnly);
     const sourceFingerprint = buildSourceFingerprint(initialData);
+    const adminEditAtForThisSave = adminLocalEditAtRef.current;
+
+    // Remote refreshes/realtime echoes also change moduleData, but they are not
+    // admin edits and must not be written back as a second UPDATE.
+    if (adminEditAtForThisSave <= lastQueuedAdminLocalEditAtRef.current) {
+      pendingDbSaveDataRef.current = null;
+      return;
+    }
 
     const payload = {
       moduleData,
@@ -4572,6 +4652,12 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       source_fingerprint: sourceFingerprint,
     };
 
+    const saveSignature = getSavePayloadSignature(dataToSave);
+    if (saveSignature === lastSavedPayloadSignatureRef.current) {
+      pendingDbSaveDataRef.current = null;
+      return;
+    }
+
     // Track pending data for beforeunload flush
     pendingDbSaveDataRef.current = dataToSave;
 
@@ -4579,20 +4665,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     dbSaveTimerRef.current = setTimeout(async () => {
       // Skip if a newer save was queued while we waited
       if (dbSaveVersionRef.current !== saveVersion) return;
-      // If another save is in flight, wait for it then retry
-      if (isSavingToDbRef.current) {
-        dbSaveTimerRef.current = setTimeout(() => {
-          if (dbSaveVersionRef.current === saveVersion && !isSavingToDbRef.current) {
-            performDbSave(dataToSave);
-            pendingDbSaveDataRef.current = null;
-          }
-        }, 500);
-        return;
-      }
-
-      await performDbSave(dataToSave);
-      pendingDbSaveDataRef.current = null;
-    }, 300);
+      lastQueuedAdminLocalEditAtRef.current = adminEditAtForThisSave;
+      await enqueueDbSave(dataToSave);
+    }, 600);
 
     return () => {
       if (dbSaveTimerRef.current) clearTimeout(dbSaveTimerRef.current);
@@ -4610,10 +4685,12 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       }
       const pending = pendingDbSaveDataRef.current;
       if (pending && !isSavingToDbRef.current) {
-        // Fire-and-forget: browser is closing, we can't await
-        // but the request will be sent before unload
-        performDbSave(pending);
         pendingDbSaveDataRef.current = null;
+        lastQueuedAdminLocalEditAtRef.current = Math.max(
+          lastQueuedAdminLocalEditAtRef.current,
+          adminLocalEditAtRef.current,
+        );
+        enqueueDbSave(pending);
       }
     };
 
@@ -4667,7 +4744,6 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       }
       return { ...prev, [type]: prev[type].filter((i) => i.id !== id) };
     });
-    toast.success(`${type === "cours" ? "Cours" : "Exercice"} supprimé — retrouvez-le dans la Corbeille`);
   };
 
   const restoreItem = (type: "cours" | "exercices", id: number) => {
@@ -4685,7 +4761,6 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         setDeletedExercices((d) => d.filter((i) => i.id !== id));
       }
     }
-    toast.success(`${type === "cours" ? "Cours" : "Exercice"} restauré`);
   };
 
   const toggleItem = (type: "cours" | "exercices", id: number) => {
@@ -4714,7 +4789,6 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       const newItem: ContentItem = { id: newId, titre: type === "cours" ? "Nouveau cours" : "Nouvel exercice", actif: true };
       return { ...prev, [type]: [...prev[type], newItem] };
     });
-    toast.success(`${type === "cours" ? "Cours" : "Exercice"} ajouté`);
   };
 
   const updateExerciceQuestions = (exerciceId: number, questions: ExerciceQuestion[], deletedQuestionId?: number) => {
@@ -4800,8 +4874,6 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         console.warn("Impossible de supprimer le fichier du bucket:", error);
       }
     }
-
-    toast.success("Fichier supprimé");
   };
 
   // === Aperçu apprenant ===
