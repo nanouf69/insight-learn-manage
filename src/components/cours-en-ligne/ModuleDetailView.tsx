@@ -3275,6 +3275,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   const saveErrorShownRef = useRef(false);
   const lastChangeToastAtRef = useRef<number>(0);
   const dbSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const flushImmediateRef = useRef(false);
   const isSavingToDbRef = useRef(false);
   const dbSaveVersionRef = useRef(0);
   const dbSaveQueueRef = useRef<Promise<void>>(Promise.resolve());
@@ -4747,12 +4748,14 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     pendingDbSaveDataRef.current = dataToSave;
 
     if (dbSaveTimerRef.current) clearTimeout(dbSaveTimerRef.current);
+    const debounceMs = flushImmediateRef.current ? 0 : 600;
+    flushImmediateRef.current = false;
     dbSaveTimerRef.current = setTimeout(async () => {
       // Skip if a newer save was queued while we waited
       if (dbSaveVersionRef.current !== saveVersion) return;
       lastQueuedAdminLocalEditAtRef.current = adminEditAtForThisSave;
       await enqueueDbSave(dataToSave);
-    }, 600);
+    }, debounceMs);
 
     return () => {
       if (dbSaveTimerRef.current) clearTimeout(dbSaveTimerRef.current);
@@ -7957,6 +7960,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                   }}
                   onPersist={(updated) => {
                     markAdminLocalEdit();
+                    flushImmediateRef.current = true;
                     setModuleData((prev) => ({
                       ...prev,
                       cours: prev.cours.map(c => c.id === updated.id ? { ...c, images: updated.images, image: updated.image } : c),
