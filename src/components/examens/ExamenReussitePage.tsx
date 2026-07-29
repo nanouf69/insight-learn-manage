@@ -2582,6 +2582,7 @@ export function ExamenReussitePage() {
                           <AlertDialogDescription asChild>
                             <div className="space-y-3 text-sm">
                               <p>Envoyer l'email "Félicitations VTC - Choix date pratique" à {vtcList.filter(a => a.email).length} candidat(s) ayant un email renseigné ?</p>
+                              <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2">⚠️ Les candidats n'ayant pas encore ouvert le module <strong>Formation Pratique VTC</strong> recevront à la place une invitation à terminer ce module avant d'obtenir le lien de réservation. ({vtcList.filter(a => a.email && !pratiqueDoneIds?.has(a.id)).length} concerné(s))</p>
                               <p className="font-medium text-blue-700">📅 Entraînement VTC : {vtcDateRange}</p>
                               <details className="border rounded-lg">
                                 <summary className="cursor-pointer px-3 py-2 text-xs font-semibold bg-muted/50 rounded-t-lg hover:bg-muted">👁️ Aperçu de l'email (exemple avec {vtcList[0]?.prenom || 'Prénom'})</summary>
