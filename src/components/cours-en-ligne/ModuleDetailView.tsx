@@ -2946,12 +2946,16 @@ function CoursEditor({ item, onSave, onCancel, onPersist }: { item: ContentItem;
   const [sousTitre, setSousTitre] = useState(item.sousTitre || "");
   const [description, setDescription] = useState(item.description || "");
   const [images, setImages] = useState<string[]>(Array.isArray(item.images) ? item.images : (item.image ? [item.image] : []));
+  const [fichiers, setFichiers] = useState<{ nom: string; url: string }[]>(Array.isArray(item.fichiers) ? item.fichiers : []);
   const [uploadingImg, setUploadingImg] = useState(false);
+  const [uploadingPdf, setUploadingPdf] = useState(false);
   const imgInputRef = useRef<HTMLInputElement>(null);
+  const pdfInputRef = useRef<HTMLInputElement>(null);
 
-  const persistImages = (next: string[]) => {
-    setImages(next);
-    onPersist?.({ ...item, titre, sousTitre: sousTitre || undefined, description: description || undefined, images: next, image: next[0] });
+  const persistAll = (nextImages: string[], nextFichiers: { nom: string; url: string }[]) => {
+    setImages(nextImages);
+    setFichiers(nextFichiers);
+    onPersist?.({ ...item, titre, sousTitre: sousTitre || undefined, description: description || undefined, images: nextImages, image: nextImages[0], fichiers: nextFichiers });
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -2977,7 +2981,7 @@ function CoursEditor({ item, onSave, onCancel, onPersist }: { item: ContentItem;
         uploaded.push(data.publicUrl);
       }
       if (uploaded.length) {
-        persistImages([...images, ...uploaded]);
+        persistAll([...images, ...uploaded], fichiers);
         toast.success(`${uploaded.length} photo(s) ajoutée(s) et enregistrée(s)`);
       }
     } catch (err: any) {
@@ -2989,10 +2993,52 @@ function CoursEditor({ item, onSave, onCancel, onPersist }: { item: ContentItem;
     }
   };
 
+  const handlePdfUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    setUploadingPdf(true);
+    try {
+      const uploaded: { nom: string; url: string }[] = [];
+      for (const file of files) {
+        const isPdf = file.type === "application/pdf" || /\.pdf$/i.test(file.name);
+        if (!isPdf) {
+          toast.error(`"${file.name}" n'est pas un PDF`);
+          continue;
+        }
+        if (file.size > 20 * 1024 * 1024) {
+          toast.error(`"${file.name}" dépasse 20 Mo`);
+          continue;
+        }
+        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 80);
+        const path = `cours-pdfs/cours-${item.id}_${Date.now()}_${safeName}`;
+        const { error } = await supabase.storage.from("cours-fichiers").upload(path, file, { upsert: true, contentType: "application/pdf" });
+        if (error) throw error;
+        const { data } = supabase.storage.from("cours-fichiers").getPublicUrl(path);
+        uploaded.push({ nom: file.name, url: data.publicUrl });
+      }
+      if (uploaded.length) {
+        persistAll(images, [...fichiers, ...uploaded]);
+        toast.success(`${uploaded.length} PDF ajouté(s) et enregistré(s)`);
+      }
+    } catch (err: any) {
+      console.error("Upload PDF cours error:", err);
+      toast.error(err?.message || "Erreur lors de l'upload du PDF");
+    } finally {
+      setUploadingPdf(false);
+      if (pdfInputRef.current) pdfInputRef.current.value = "";
+    }
+  };
+
   const removeImage = (idx: number) => {
     const next = images.filter((_, i) => i !== idx);
-    persistImages(next);
+    persistAll(next, fichiers);
     toast.success("Photo supprimée");
+  };
+
+  const removePdf = (idx: number) => {
+    const next = fichiers.filter((_, i) => i !== idx);
+    persistAll(images, next);
+    toast.success("PDF supprimé");
   };
 
   return (
@@ -3002,7 +3048,7 @@ function CoursEditor({ item, onSave, onCancel, onPersist }: { item: ContentItem;
           <Badge>Modifier le cours</Badge>
           <div className="flex gap-2">
             <Button size="sm" variant="ghost" onClick={onCancel}><X className="w-4 h-4" /></Button>
-            <Button size="sm" onClick={() => { onSave({ ...item, titre, sousTitre: sousTitre || undefined, description: description || undefined, images, image: images[0] }); }} className="gap-1">
+            <Button size="sm" onClick={() => { onSave({ ...item, titre, sousTitre: sousTitre || undefined, description: description || undefined, images, image: images[0], fichiers }); }} className="gap-1">
               <Save className="w-3 h-3" /> Enregistrer
             </Button>
           </div>
@@ -3051,12 +3097,48 @@ function CoursEditor({ item, onSave, onCancel, onPersist }: { item: ContentItem;
             {uploadingImg ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
             {uploadingImg ? "Upload en cours..." : "Ajouter une ou plusieurs photos"}
           </Button>
-          <p className="text-[10px] text-muted-foreground">Formats acceptés : JPG, PNG, WebP, GIF (max 5 Mo). L'ajout et la suppression sont enregistrés immédiatement.</p>
+          <p className="text-[10px] text-muted-foreground">Formats acceptés : JPG, PNG, WebP, GIF (max 5 Mo). Enregistrement immédiat.</p>
+        </div>
+        <div className="space-y-2">
+          <label className="text-xs font-semibold">PDF du cours</label>
+          {fichiers.length > 0 && (
+            <div className="space-y-1">
+              {fichiers.map((f, i) => (
+                <div key={`${f.url}-${i}`} className="flex items-center justify-between gap-2 border rounded px-2 py-1.5 bg-muted/40">
+                  <a href={f.url} target="_blank" rel="noreferrer" className="text-xs text-primary hover:underline truncate flex-1">
+                    📄 {f.nom}
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => removePdf(i)}
+                    className="bg-destructive text-destructive-foreground rounded-full p-1"
+                    title="Supprimer"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          <input
+            ref={pdfInputRef}
+            type="file"
+            accept="application/pdf,.pdf"
+            multiple
+            className="hidden"
+            onChange={handlePdfUpload}
+          />
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => pdfInputRef.current?.click()} disabled={uploadingPdf}>
+            {uploadingPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+            {uploadingPdf ? "Upload en cours..." : "Ajouter un ou plusieurs PDF"}
+          </Button>
+          <p className="text-[10px] text-muted-foreground">Format PDF uniquement (max 20 Mo). Enregistrement immédiat.</p>
         </div>
       </CardContent>
     </Card>
   );
 }
+
 
 
 const ContentCard = ({
