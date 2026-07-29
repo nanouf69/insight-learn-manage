@@ -2116,6 +2116,125 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     }
   };
 
+  // Construit les données PDF pour une facture additionnelle (EXTRA::)
+  const buildExtraFactureData = (apprenant: any, ef: any) => {
+    const fc: any = (financeursFCMap as any)?.[apprenant.id] || null;
+    const typeApp = `${apprenant.type_apprenant || ''} ${apprenant.formation_choisie || ''}`.toUpperCase();
+    const formation: 'VTC' | 'TAXI' = typeApp.includes('TAXI') ? 'TAXI' : 'VTC';
+    const libelle = String(ef.numero_convention || '').replace(/^EXTRA::/, '') || 'Prestation complémentaire';
+    const montantTTC = Number(ef.montant_ttc || 0);
+    const paiements: any[] = (paiementsByFactureId as any)?.[ef.id] || [];
+    const totalPaye = paiements.reduce((s: number, p: any) => s + Number(p?.montant || 0), 0);
+    const isAcquittee = ef.statut === 'payee' || (totalPaye + 0.001 >= montantTTC && paiements.length > 0);
+    const lastPaiement = paiements.length ? paiements[paiements.length - 1] : null;
+    return {
+      numero: ef.numero,
+      dateEmission: ef.date_emission || new Date().toISOString().split('T')[0],
+      dateEcheance: ef.date_echeance || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      apprenant: {
+        nom: apprenant.nom,
+        prenom: apprenant.prenom,
+        adresse: apprenant.adresse || fc?.adresse,
+        code_postal: apprenant.code_postal || fc?.code_postal,
+        ville: apprenant.ville || fc?.ville,
+        email: apprenant.email,
+        telephone: apprenant.telephone,
+      },
+      financeur: fc,
+      formation,
+      designation: libelle,
+      montantHT: montantTTC,
+      tvaTaux: 0,
+      duree: '',
+      refDossier: fc?.numero_dossier || apprenant.numero_dossier_cma || undefined,
+      acquittee: isAcquittee,
+      dateAcquittement: isAcquittee ? (ef.date_paiement || lastPaiement?.date_paiement || undefined) : undefined,
+      moyenPaiement: isAcquittee ? (lastPaiement?.moyen_paiement || undefined) : undefined,
+    };
+  };
+
+  const [extraFactureActionId, setExtraFactureActionId] = useState<string | null>(null);
+
+  const handleDownloadExtraFacture = async (apprenant: any, ef: any) => {
+    try {
+      setExtraFactureActionId(ef.id);
+      const data = buildExtraFactureData(apprenant, ef);
+      const result: any = await generateFactureFC(data, { returnBlob: true });
+      if (result?.blob && result?.fileName) {
+        const url = URL.createObjectURL(result.blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = result.fileName; a.click();
+        URL.revokeObjectURL(url);
+        await saveFactureToCRM({
+          apprenantId: apprenant.id,
+          numero: ef.numero,
+          fileName: result.fileName,
+          blob: result.blob,
+        });
+        toast({ title: "Facture téléchargée", description: `${ef.numero} — archivée dans le dossier de formation` });
+      }
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e?.message || "Impossible de générer la facture.", variant: "destructive" });
+    } finally {
+      setExtraFactureActionId(null);
+    }
+  };
+
+  const handleSendExtraFacture = async (apprenant: any, ef: any) => {
+    const recipient = getFactureRecipientEmail(apprenant);
+    if (!recipient) {
+      toast({ title: "Aucun email destinataire", description: "Renseignez l'email du financeur ou de l'apprenant.", variant: "destructive" });
+      return;
+    }
+    try {
+      setExtraFactureActionId(ef.id);
+      const data = buildExtraFactureData(apprenant, ef);
+      const result: any = await generateFactureFC(data, { returnBlob: true });
+      if (!result?.blob) throw new Error("PDF non généré");
+      const arrayBuffer = await result.blob.arrayBuffer();
+      const bytes = new Uint8Array(arrayBuffer);
+      let binary = '';
+      const chunkSize = 0x8000;
+      for (let i2 = 0; i2 < bytes.length; i2 += chunkSize) {
+        binary += String.fromCharCode.apply(null, Array.from(bytes.subarray(i2, i2 + chunkSize)));
+      }
+      const base64 = btoa(binary);
+      const libelle = String(ef.numero_convention || '').replace(/^EXTRA::/, '') || 'Prestation';
+      const subject = `Votre facture ${ef.numero} - ${libelle}`;
+      const htmlBody = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <p>Bonjour,</p>
+          <p>Veuillez trouver ci-joint la facture <strong>${ef.numero}</strong> (${libelle}) concernant <strong>${apprenant.prenom} ${apprenant.nom}</strong>.</p>
+          <p>Pour tout règlement par virement, merci de nous indiquer le numéro de facture en référence.</p>
+          <p>Cordialement,<br/>Services pro Ftransport<br/>contact@ftransport.fr</p>
+        </div>`;
+      const { data: resp, error } = await supabase.functions.invoke('send-document-email', {
+        body: {
+          apprenantId: apprenant.id,
+          recipientEmail: recipient,
+          recipientName: `${apprenant.prenom} ${apprenant.nom}`,
+          subject,
+          htmlBody,
+          attachmentBase64: base64,
+          attachmentName: result.fileName,
+          attachmentContentType: 'application/pdf',
+        },
+      });
+      if (error || (resp as any)?.error) throw new Error((error as any)?.message || (resp as any)?.error || 'Envoi échoué');
+      await saveFactureToCRM({
+        apprenantId: apprenant.id,
+        numero: ef.numero,
+        fileName: result.fileName,
+        blob: result.blob,
+      });
+      toast({ title: "Facture envoyée", description: `${ef.numero} → ${recipient}` });
+    } catch (e: any) {
+      toast({ title: "Erreur envoi", description: e?.message || "Impossible d'envoyer la facture.", variant: "destructive" });
+    } finally {
+      setExtraFactureActionId(null);
+    }
+  };
+
   // Upsert d'une facture en BDD comme brouillon (créée si absente, sinon retournée)
   const ensureFactureBrouillon = async (apprenant: any, sessionApprenant: any): Promise<any> => {
     const existing = (facturesFCMap as any)?.[apprenant.id];
