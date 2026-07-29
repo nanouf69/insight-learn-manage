@@ -6217,6 +6217,19 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 dangerouslySetInnerHTML={{ __html: cours.description }}
               />
             )}
+            {Array.isArray(cours.images) && cours.images.length > 0 && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mt-3">
+                {cours.images.map((url, i) => (
+                  <ImageLightbox
+                    key={`${url}-${i}`}
+                    src={url}
+                    alt={`${cours.titre} - photo ${i + 1}`}
+                    className="w-full h-48 object-cover rounded border"
+                  />
+                ))}
+              </div>
+            )}
+
             {(() => {
               return (
                 <>
