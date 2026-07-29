@@ -165,8 +165,10 @@ function resolveAppFileUrl(fileUrl: string): string {
   if (fileUrl.startsWith("/storage/v1/")) return SUPABASE_URL ? `${SUPABASE_URL}${fileUrl}` : fileUrl;
 
   const normalizedPath = fileUrl.startsWith("/") ? fileUrl : `/${fileUrl}`;
+  if (typeof window === "undefined") return normalizedPath;
+
   const fallbackPublicOrigin = "https://insight-learn-manage.lovable.app";
-  const isPreviewHost = typeof window !== "undefined" && window.location.hostname.endsWith("lovableproject.com");
+  const isPreviewHost = window.location.hostname.endsWith("lovableproject.com");
   const baseOrigin = isPreviewHost ? fallbackPublicOrigin : window.location.origin;
   return `${baseOrigin}${normalizedPath}`;
 }
