@@ -319,7 +319,7 @@ function CourseFileViewer({
   );
 }
 
-function CourseFileLink({ fichier }: { fichier: { nom: string; url: string } }) {
+function CourseFileLink({ fichier, compact = false }: { fichier: { nom: string; url: string }; compact?: boolean }) {
   const displayUrl = useDisplayableCourseUrl(fichier.url);
   const isExternal = /^https?:\/\//i.test(fichier.url);
 
@@ -328,9 +328,11 @@ function CourseFileLink({ fichier }: { fichier: { nom: string; url: string } }) 
       href={displayUrl ?? resolveAppFileUrl(fichier.url)}
       target="_blank"
       rel="noopener noreferrer"
-      className="inline-flex items-center gap-2 px-4 py-3 rounded-lg border-2 border-primary/20 bg-primary/5 hover:bg-primary/10 text-primary font-medium transition-all"
+      className={compact
+        ? "inline-flex items-center gap-1 text-xs text-primary hover:underline"
+        : "inline-flex items-center gap-2 px-4 py-3 rounded-lg border-2 border-primary/20 bg-primary/5 hover:bg-primary/10 text-primary font-medium transition-all"}
     >
-      {isExternal ? <Maximize className="w-4 h-4" /> : <Download className="w-4 h-4" />}
+      {isExternal ? <Maximize className={compact ? "w-3 h-3" : "w-4 h-4"} /> : compact ? <FileText className="w-3 h-3" /> : <Download className="w-4 h-4" />}
       {fichier.nom}
     </a>
   );
