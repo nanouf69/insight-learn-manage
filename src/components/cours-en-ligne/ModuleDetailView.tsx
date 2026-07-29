@@ -2830,7 +2830,7 @@ function CoursEditor({ item, onSave, onCancel }: { item: ContentItem; onSave: (u
           <Badge>Modifier le cours</Badge>
           <div className="flex gap-2">
             <Button size="sm" variant="ghost" onClick={onCancel}><X className="w-4 h-4" /></Button>
-            <Button size="sm" onClick={() => { onSave({ ...item, titre, sousTitre: sousTitre || undefined, description: description || undefined }); toast.success("Cours modifié"); }} className="gap-1">
+            <Button size="sm" onClick={() => { onSave({ ...item, titre, sousTitre: sousTitre || undefined, description: description || undefined }); /* Toast affiché uniquement après confirmation DB dans performDbSave */ }} className="gap-1">
               <Save className="w-3 h-3" /> Enregistrer
             </Button>
           </div>
