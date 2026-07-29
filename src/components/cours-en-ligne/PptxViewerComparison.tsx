@@ -193,7 +193,7 @@ export default function PptxViewerComparison({
 
       <div className="w-full max-w-[1280px] mx-auto">
         {!pdfUrl && !hasImages && (
-          <div className="mb-3 flex flex-col gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 sm:flex-row sm:items-center sm:justify-between dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-100">
+          <div className="mb-3 flex flex-col gap-2 rounded-lg border border-warning/30 bg-warning/10 p-3 text-sm text-warning sm:flex-row sm:items-center sm:justify-between">
             <span>
               Si l’aperçu indique que le fichier est trop volumineux, ouvrez le document directement.
             </span>
