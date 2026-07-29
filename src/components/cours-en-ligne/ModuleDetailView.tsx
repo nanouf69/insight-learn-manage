@@ -139,6 +139,7 @@ interface ContentItem {
   sousTitre?: string;
   description?: string;
   image?: string;
+  images?: string[];
   actif: boolean;
   fichiers?: { nom: string; url: string }[];
   slidesKey?: string;
