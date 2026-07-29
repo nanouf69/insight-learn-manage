@@ -2843,9 +2843,7 @@ function ExerciceCard({
           {item.fichiers && item.fichiers.length > 0 && (
             <div className="flex flex-wrap gap-2 mt-1">
               {item.fichiers.map((f, i) => (
-                <a key={i} href={f.url} download className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline">
-                  <FileText className="w-3 h-3" /> {f.nom}
-                </a>
+                <CourseFileLink key={`${f.url}-${i}`} fichier={f} compact />
               ))}
             </div>
           )}
@@ -3264,7 +3262,7 @@ function CoursEditor({ item, onSave, onCancel, onPersist }: { item: ContentItem;
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
               {images.map((url, i) => (
                 <div key={`${url}-${i}`} className="relative group border rounded overflow-hidden bg-muted">
-                  <img src={url} alt={`Photo ${i + 1}`} className="w-full h-24 object-cover" />
+                  <CourseImageLightbox src={url} alt={`Photo ${i + 1}`} className="w-full h-24 object-cover" />
                   <button
                     type="button"
                     onClick={() => removeImage(i)}
@@ -3297,9 +3295,9 @@ function CoursEditor({ item, onSave, onCancel, onPersist }: { item: ContentItem;
             <div className="space-y-1">
               {fichiers.map((f, i) => (
                 <div key={`${f.url}-${i}`} className="flex items-center justify-between gap-2 border rounded px-2 py-1.5 bg-muted/40">
-                  <a href={f.url} target="_blank" rel="noreferrer" className="text-xs text-primary hover:underline truncate flex-1">
-                    📄 {f.nom}
-                  </a>
+                  <div className="truncate flex-1">
+                    <CourseFileLink fichier={f} compact />
+                  </div>
                   <button
                     type="button"
                     onClick={() => removePdf(i)}
@@ -3416,15 +3414,7 @@ const ContentCard = ({
           <div className="flex flex-wrap gap-2">
             {item.fichiers.map((f, i) => (
               <div key={i} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary/10 text-primary text-sm font-medium">
-                <a
-                  href={f.url}
-                  download
-                  className="inline-flex items-center gap-1.5 hover:underline"
-                >
-                  <FileText className="w-4 h-4" />
-                  {f.nom}
-                  <Download className="w-3 h-3" />
-                </a>
+                <CourseFileLink fichier={f} compact />
                 <button
                   onClick={() => onFileDeleted?.(item.id, i, f.url)}
                   className="ml-1 p-0.5 rounded hover:bg-destructive/20 text-destructive transition-colors"
