@@ -4685,8 +4685,12 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       }
       const pending = pendingDbSaveDataRef.current;
       if (pending && !isSavingToDbRef.current) {
-        enqueueDbSave(pending);
         pendingDbSaveDataRef.current = null;
+        lastQueuedAdminLocalEditAtRef.current = Math.max(
+          lastQueuedAdminLocalEditAtRef.current,
+          adminLocalEditAtRef.current,
+        );
+        enqueueDbSave(pending);
       }
     };
 
