@@ -10,7 +10,7 @@ import { fr } from "date-fns/locale";
 import { generateControleQualitePdf } from "@/lib/pdf/controle-qualite";
 import { generateEmargementSemainePdf } from "@/lib/pdf/emargement-semaine";
 import { generateReleveConnexionsPdf } from "@/lib/pdf/releve-connexions";
-import { generateEmailsApprenantPdf } from "@/lib/pdf/emails-apprenant";
+import { generateEmailsApprenantPdf, maskPasswords } from "@/lib/pdf/emails-apprenant";
 import { generateProgrammeFormationPdf } from "@/lib/pdf/programme-formation";
 import { buildRapportActiviteHtml } from "@/lib/reports/rapport-activite-html";
 import { generateFicheProgression, type FicheProgressionData, type ProgressionModule } from "@/lib/pdf/fiche-progression";
@@ -876,7 +876,7 @@ export function ControleQualiteTab({ apprenant }: Props) {
           destinataires: Array.isArray(e.recipients) ? e.recipients.join(", ") : (e.recipients || ""),
           lu: e.is_read ? "Oui" : "Non",
           pieces_jointes: e.has_attachments ? "Oui" : "Non",
-          apercu: (e.body_preview || "").replace(/\s+/g, " ").slice(0, 500),
+          apercu: maskPasswords((e.body_preview || "").replace(/\s+/g, " ").slice(0, 500)),
         }));
         const emailCsv = toCsv(emailRows, ["type","date","sujet","expediteur","destinataires","lu","pieces_jointes","apercu"]);
         const emailsFolder = zip.folder("emails")!;
