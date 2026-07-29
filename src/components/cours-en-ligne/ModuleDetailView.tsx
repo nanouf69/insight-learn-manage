@@ -6107,12 +6107,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     }, 0);
 
     const resolvePublicFileUrl = (fileUrl: string) => {
-      if (fileUrl.startsWith("http")) return fileUrl;
-      const normalizedPath = fileUrl.startsWith("/") ? fileUrl : `/${fileUrl}`;
-      const fallbackPublicOrigin = "https://insight-learn-manage.lovable.app";
-      const isPreviewHost = window.location.hostname.endsWith("lovableproject.com");
-      const baseOrigin = isPreviewHost ? fallbackPublicOrigin : window.location.origin;
-      return `${baseOrigin}${normalizedPath}`;
+      return resolveAppFileUrl(fileUrl);
     };
 
     const completionPersistedRef = useRef(false);
@@ -6478,7 +6473,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         <Card key={cours.id} className="overflow-hidden">
           {cours.image && (
             <div className="w-full h-48 sm:h-64 overflow-hidden">
-              <img src={cours.image} alt={cours.titre} className="w-full h-full object-cover" />
+              <CourseImageLightbox src={cours.image} alt={cours.titre} className="w-full h-full object-cover" />
             </div>
           )}
           <CardContent className="p-5 space-y-2">
@@ -6493,7 +6488,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             {Array.isArray(cours.images) && cours.images.length > 0 && (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mt-3">
                 {cours.images.map((url, i) => (
-                  <ImageLightbox
+                  <CourseImageLightbox
                     key={`${url}-${i}`}
                     src={url}
                     alt={`${cours.titre} - photo ${i + 1}`}
@@ -6508,63 +6503,20 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 <>
                   {cours.fichiers && cours.fichiers.length > 0 && (() => {
                     const pdfFile = cours.fichiers!.find(f => f.nom.endsWith(".pdf") || f.url.endsWith(".pdf"));
-                    const pdfLocalUrl = pdfFile ? (pdfFile.url.startsWith("http") ? pdfFile.url : pdfFile.url.startsWith("/") ? pdfFile.url : `/${pdfFile.url}`) : undefined;
+                    const pdfLocalUrl = pdfFile?.url;
 
                     return (
                       <div className="space-y-3 mt-3">
-                        {cours.fichiers!.map((f, i) => {
-                          const isPptx = f.nom.endsWith(".pptx") || f.nom.endsWith(".ppt") || f.url.endsWith(".pptx") || f.url.endsWith(".ppt");
-                          const isPdf = f.nom.endsWith(".pdf") || f.url.endsWith(".pdf");
-                          const isDocx = f.nom.endsWith(".docx") || f.nom.endsWith(".doc") || f.url.endsWith(".docx") || f.url.endsWith(".doc");
-                          const absoluteFileUrl = resolvePublicFileUrl(f.url);
-                          const googleViewerUrl = (isPptx || isDocx)
-                            ? `https://docs.google.com/viewer?url=${encodeURIComponent(absoluteFileUrl)}&embedded=true`
-                            : null;
-                          const msViewerUrl = (isPptx || isDocx)
-                            ? `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(absoluteFileUrl)}`
-                            : null;
-                          const shouldShowViewers = Boolean((isPptx || isDocx) && !hasInteractiveSlides);
-
-                          return (
-                            <div key={i} className="space-y-3">
-                              {!secureMode && !isDocx && !isPdf && (
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <a
-                                    href={f.url}
-                                    download
-                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 transition-colors"
-                                  >
-                                    <FileText className="w-4 h-4" />
-                                    {f.nom}
-                                    <Download className="w-3 h-3" />
-                                  </a>
-                                </div>
-                              )}
-
-                              {shouldShowViewers && (
-                                <PptxViewerComparison
-                                  googleViewerUrl={googleViewerUrl!}
-                                  msViewerUrl={msViewerUrl!}
-                                  absoluteFileUrl={absoluteFileUrl}
-                                  nom={f.nom}
-                                  pdfUrl={pdfLocalUrl}
-                                  onLastPageReached={() => markPageCompleted(currentPage)}
-                                  studentOnly={secureMode}
-                                />
-                              )}
-
-                              {isPdf && !shouldShowViewers && (
-                                <div className="mt-2">
-                                  <PdfSlideViewer
-                                    url={f.url.startsWith("http") ? f.url : (f.url.startsWith("/") ? f.url : `/${f.url}`)}
-                                    nom={f.nom}
-                                    onLastPageReached={() => markPageCompleted(currentPage)}
-                                  />
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
+                        {cours.fichiers!.map((f, i) => (
+                          <CourseFileViewer
+                            key={`${f.url}-${i}`}
+                            fichier={f}
+                            pdfFallbackUrl={pdfLocalUrl}
+                            hasInteractiveSlides={hasInteractiveSlides}
+                            secureMode={secureMode}
+                            onLastPageReached={() => markPageCompleted(currentPage)}
+                          />
+                        ))}
                       </div>
                     );
                   })()}
@@ -6918,19 +6870,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 </div>
                 <div className="flex flex-col gap-3 mt-4">
                   {exo.fichiers.map((f, i) => {
-                    const isExternal = f.url.startsWith("http");
-                    const resolvedUrl = isExternal ? f.url : resolvePublicFileUrl(f.url);
                     return (
-                      <a
-                        key={i}
-                        href={resolvedUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 px-4 py-3 rounded-lg border-2 border-primary/20 bg-primary/5 hover:bg-primary/10 text-primary font-medium transition-all"
-                      >
-                        {isExternal ? <Maximize className="w-4 h-4" /> : <Download className="w-4 h-4" />}
-                        {f.nom}
-                      </a>
+                      <CourseFileLink key={`${f.url}-${i}`} fichier={f} />
                     );
                   })}
                 </div>
