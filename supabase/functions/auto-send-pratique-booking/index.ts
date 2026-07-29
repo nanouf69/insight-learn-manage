@@ -108,7 +108,7 @@ serve(async (req) => {
       (data || []).forEach((r: any) => r.apprenant_id && reserved.add(r.apprenant_id));
     }
 
-    // 3. Deja envoye
+    // 3. Deja envoye (marqueur unique dans outlook_message_id)
     const alreadySent = new Set<string>();
     {
       const ids = Array.from(doneIds);
@@ -117,8 +117,8 @@ serve(async (req) => {
         const slice = ids.slice(i, i + chunk);
         const { data } = await supabase
           .from("emails")
-          .select("apprenant_id")
-          .eq("type", EMAIL_TYPE)
+          .select("apprenant_id, outlook_message_id")
+          .like("outlook_message_id", `${EMAIL_TYPE}:%`)
           .in("apprenant_id", slice);
         (data || []).forEach((r: any) => r.apprenant_id && alreadySent.add(r.apprenant_id));
       }
