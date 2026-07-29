@@ -4312,7 +4312,58 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     )}
 
 
+    {/* Modale d'ajout d'une facture additionnelle */}
+    <Dialog open={!!addExtraFactureFor} onOpenChange={(o) => { if (!o) { setAddExtraFactureFor(null); setExtraFactureLibelle(''); setExtraFactureMontant(''); } }}>
+      <DialogContent className="sm:max-w-[520px]">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Plus className="w-5 h-5 text-blue-600" />
+            Ajouter une facture
+          </DialogTitle>
+        </DialogHeader>
+        {addExtraFactureFor && (
+          <div className="space-y-4">
+            <div className="text-sm text-muted-foreground">
+              Apprenant : <span className="font-semibold text-foreground">{addExtraFactureFor.prenom} {addExtraFactureFor.nom}</span>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="extra-libelle">Libellé de la prestation</Label>
+              <Input
+                id="extra-libelle"
+                placeholder="Ex : Formation initiale VTC, frais de dossier, rattrapage examen…"
+                value={extraFactureLibelle}
+                onChange={(e) => setExtraFactureLibelle(e.target.value)}
+                disabled={extraFactureSaving}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="extra-montant">Montant TTC (€)</Label>
+              <Input
+                id="extra-montant"
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="0.00"
+                value={extraFactureMontant}
+                onChange={(e) => setExtraFactureMontant(e.target.value)}
+                disabled={extraFactureSaving}
+              />
+              <p className="text-xs text-muted-foreground">TVA non applicable (art. 293 B du CGI).</p>
+            </div>
+          </div>
+        )}
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setAddExtraFactureFor(null)} disabled={extraFactureSaving}>Annuler</Button>
+          <Button onClick={handleCreateExtraFacture} disabled={extraFactureSaving}>
+            {extraFactureSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
+            Créer la facture
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
     {/* Modale d'acquittement */}
+
     <Dialog open={!!acquittementApprenant} onOpenChange={(open) => !open && setAcquittementApprenant(null)}>
       <DialogContent className="sm:max-w-[720px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
