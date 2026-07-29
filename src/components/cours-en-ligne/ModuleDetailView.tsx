@@ -148,6 +148,194 @@ interface ContentItem {
   formationType?: string;
 }
 
+const SUPABASE_URL = (import.meta.env.VITE_SUPABASE_URL ?? "").replace(/\/$/, "");
+const STORAGE_URL = SUPABASE_URL ? `${SUPABASE_URL}/storage/v1` : "";
+
+function normalizeSignedStorageUrl(signedUrl: string): string {
+  if (/^https?:\/\//i.test(signedUrl)) return signedUrl;
+  if (signedUrl.startsWith("/storage/v1/")) return SUPABASE_URL ? `${SUPABASE_URL}${signedUrl}` : signedUrl;
+  if (signedUrl.startsWith("/object/")) return STORAGE_URL ? `${STORAGE_URL}${signedUrl}` : signedUrl;
+  if (signedUrl.startsWith("object/")) return STORAGE_URL ? `${STORAGE_URL}/${signedUrl}` : signedUrl;
+  return signedUrl;
+}
+
+function resolveAppFileUrl(fileUrl: string): string {
+  if (!fileUrl) return "";
+  if (/^https?:\/\//i.test(fileUrl)) return fileUrl;
+  if (fileUrl.startsWith("/storage/v1/")) return SUPABASE_URL ? `${SUPABASE_URL}${fileUrl}` : fileUrl;
+
+  const normalizedPath = fileUrl.startsWith("/") ? fileUrl : `/${fileUrl}`;
+  const fallbackPublicOrigin = "https://insight-learn-manage.lovable.app";
+  const isPreviewHost = typeof window !== "undefined" && window.location.hostname.endsWith("lovableproject.com");
+  const baseOrigin = isPreviewHost ? fallbackPublicOrigin : window.location.origin;
+  return `${baseOrigin}${normalizedPath}`;
+}
+
+function extractCourseStorageObject(input: string): { bucket: string; path: string } | null {
+  if (/^(question-images|cours-images|cours-pdfs|vtc)\//i.test(input)) {
+    return { bucket: "cours-fichiers", path: input };
+  }
+
+  const storageMatch = input.match(/\/storage\/v1\/object\/(?:public|sign)\/([^/]+)\/([^?#]+)/);
+  if (storageMatch) {
+    return {
+      bucket: decodeURIComponent(storageMatch[1]),
+      path: decodeURIComponent(storageMatch[2]),
+    };
+  }
+
+  const objectMatch = input.match(/^\/?object\/(?:public|sign)\/([^/]+)\/([^?#]+)/);
+  if (objectMatch) {
+    return {
+      bucket: decodeURIComponent(objectMatch[1]),
+      path: decodeURIComponent(objectMatch[2]),
+    };
+  }
+
+  return null;
+}
+
+async function toDisplayableCourseUrl(fileUrl: string): Promise<string> {
+  const resolvedUrl = resolveAppFileUrl(fileUrl);
+  try {
+    const storageObject = extractCourseStorageObject(fileUrl) ?? extractCourseStorageObject(resolvedUrl);
+    if (!storageObject) return resolvedUrl;
+
+    const { data, error } = await supabase.storage
+      .from(storageObject.bucket)
+      .createSignedUrl(storageObject.path, 60 * 60);
+
+    if (error || !data?.signedUrl) return resolvedUrl;
+    return normalizeSignedStorageUrl(data.signedUrl);
+  } catch {
+    return resolvedUrl;
+  }
+}
+
+function useDisplayableCourseUrl(fileUrl?: string) {
+  const [displayUrl, setDisplayUrl] = useState<string | null>(fileUrl ? resolveAppFileUrl(fileUrl) : null);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!fileUrl) {
+      setDisplayUrl(null);
+      return;
+    }
+
+    setDisplayUrl(resolveAppFileUrl(fileUrl));
+    toDisplayableCourseUrl(fileUrl).then((url) => {
+      if (!cancelled) setDisplayUrl(url);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [fileUrl]);
+
+  return displayUrl;
+}
+
+function CourseImageLightbox({ src, alt, className }: { src: string; alt: string; className?: string }) {
+  const displayUrl = useDisplayableCourseUrl(src);
+
+  if (!displayUrl) {
+    return <div className={className ?? "h-48 rounded border bg-muted animate-pulse"} />;
+  }
+
+  return <ImageLightbox src={displayUrl} alt={alt} className={className} />;
+}
+
+function CourseFileViewer({
+  fichier,
+  pdfFallbackUrl,
+  hasInteractiveSlides,
+  secureMode,
+  onLastPageReached,
+}: {
+  fichier: { nom: string; url: string };
+  pdfFallbackUrl?: string;
+  hasInteractiveSlides: boolean;
+  secureMode: boolean;
+  onLastPageReached: () => void;
+}) {
+  const displayUrl = useDisplayableCourseUrl(fichier.url);
+  const pdfDisplayUrl = useDisplayableCourseUrl(pdfFallbackUrl);
+  const lowerName = fichier.nom.toLowerCase();
+  const lowerUrl = fichier.url.toLowerCase();
+  const isPptx = lowerName.endsWith(".pptx") || lowerName.endsWith(".ppt") || lowerUrl.endsWith(".pptx") || lowerUrl.endsWith(".ppt");
+  const isPdf = lowerName.endsWith(".pdf") || lowerUrl.endsWith(".pdf");
+  const isDocx = lowerName.endsWith(".docx") || lowerName.endsWith(".doc") || lowerUrl.endsWith(".docx") || lowerUrl.endsWith(".doc");
+  const shouldShowViewers = Boolean((isPptx || isDocx) && !hasInteractiveSlides);
+
+  if (!displayUrl) {
+    return <div className="h-20 rounded-lg border bg-muted animate-pulse" />;
+  }
+
+  const googleViewerUrl = shouldShowViewers
+    ? `https://docs.google.com/viewer?url=${encodeURIComponent(displayUrl)}&embedded=true`
+    : null;
+  const msViewerUrl = shouldShowViewers
+    ? `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(displayUrl)}`
+    : null;
+
+  return (
+    <div className="space-y-3">
+      {!secureMode && !isDocx && !isPdf && (
+        <div className="flex items-center gap-2 flex-wrap">
+          <a
+            href={displayUrl}
+            download
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 transition-colors"
+          >
+            <FileText className="w-4 h-4" />
+            {fichier.nom}
+            <Download className="w-3 h-3" />
+          </a>
+        </div>
+      )}
+
+      {shouldShowViewers && googleViewerUrl && msViewerUrl && (
+        <PptxViewerComparison
+          googleViewerUrl={googleViewerUrl}
+          msViewerUrl={msViewerUrl}
+          absoluteFileUrl={displayUrl}
+          nom={fichier.nom}
+          pdfUrl={pdfDisplayUrl ?? undefined}
+          onLastPageReached={onLastPageReached}
+          studentOnly={secureMode}
+        />
+      )}
+
+      {isPdf && !shouldShowViewers && (
+        <div className="mt-2">
+          <PdfSlideViewer
+            url={displayUrl}
+            nom={fichier.nom}
+            onLastPageReached={onLastPageReached}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CourseFileLink({ fichier }: { fichier: { nom: string; url: string } }) {
+  const displayUrl = useDisplayableCourseUrl(fichier.url);
+  const isExternal = /^https?:\/\//i.test(fichier.url);
+
+  return (
+    <a
+      href={displayUrl ?? resolveAppFileUrl(fichier.url)}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex items-center gap-2 px-4 py-3 rounded-lg border-2 border-primary/20 bg-primary/5 hover:bg-primary/10 text-primary font-medium transition-all"
+    >
+      {isExternal ? <Maximize className="w-4 h-4" /> : <Download className="w-4 h-4" />}
+      {fichier.nom}
+    </a>
+  );
+}
+
 interface ExerciceChoix {
   lettre: string;
   texte: string;
