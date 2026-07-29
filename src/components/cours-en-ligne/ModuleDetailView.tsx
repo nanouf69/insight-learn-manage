@@ -7942,6 +7942,13 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                     }));
                     setEditingCoursId(null);
                   }}
+                  onPersist={(updated) => {
+                    markAdminLocalEdit();
+                    setModuleData((prev) => ({
+                      ...prev,
+                      cours: prev.cours.map(c => c.id === updated.id ? { ...c, images: updated.images, image: updated.image } : c),
+                    }));
+                  }}
                   onCancel={() => setEditingCoursId(null)}
                 />
               ) : (
