@@ -3275,6 +3275,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   const saveErrorShownRef = useRef(false);
   const lastChangeToastAtRef = useRef<number>(0);
   const dbSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const flushImmediateRef = useRef(false);
   const isSavingToDbRef = useRef(false);
   const dbSaveVersionRef = useRef(0);
   const dbSaveQueueRef = useRef<Promise<void>>(Promise.resolve());
