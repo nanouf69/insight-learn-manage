@@ -1,0 +1,254 @@
+// Envoi automatique du lien de reservation de la formation pratique
+// des qu'un candidat (VTC ou TAXI) a termine le module Pratique correspondant
+// (module_id 8 pour VTC, 6 pour TAXI) et a reussi l'examen theorique.
+// Deduplique via la table emails (type = 'auto_pratique_booking').
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "npm:@supabase/supabase-js@2";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+const PRACTICE_VTC_TYPES = new Set(['vtc', 'vtc-e', 'vtc-e-presentiel', 'va', 'va-e', 'va-e-presentiel', 'pa-vtc', 'rp-vtc']);
+const PRACTICE_TAXI_TYPES = new Set(['taxi', 'taxi-e', 'taxi-e-presentiel', 'ta', 'ta-e', 'ta-e-presentiel', 'pa-taxi', 'rp-taxi']);
+const EMAIL_TYPE = 'auto_pratique_booking';
+const APP_BASE = 'https://insight-learn-manage.lovable.app';
+
+function buildUrl(id: string, type: 'vtc' | 'taxi', exam: string, pratique?: string | null) {
+  const p = new URLSearchParams({ id, type, exam });
+  if (pratique) p.set('pratique', pratique);
+  return `${APP_BASE}/reservation-pratique?${p.toString()}`;
+}
+
+function buildEmail(prenom: string, nom: string, type: 'vtc' | 'taxi', bookingUrl: string) {
+  const label = type === 'vtc' ? 'VTC' : 'TAXI';
+  const exercicesLabel = type === 'vtc'
+    ? '"Formation Pratique VTC" : Quizz Lyon et Questions à apprendre'
+    : '"Formation Pratique TAXI" : QCM Taximètre, Cas pratique, Quizz Lyon et Questions à apprendre';
+  const subject = `Félicitations - Choisissez votre date de formation pratique ${label} - ${prenom} ${nom}`;
+  const body = `Bonjour ${prenom},<br><br>Félicitations, vous venez de terminer le module <strong>Formation Pratique ${label}</strong> !<br><br>Vous pouvez désormais choisir votre date d'entraînement pratique (journée complète de 9h à 16h - 9h/12h puis 13h/16h).<br><br>👉 <a href="${bookingUrl}" style="background:#2563eb;color:#fff;padding:10px 18px;border-radius:6px;text-decoration:none;font-weight:bold;display:inline-block">CHOISISSEZ VOTRE DATE ICI</a><br><br>⚠️ Attention : une seule date, aucun changement possible.<br><br>📚 Continuez à réviser les exercices de ${exercicesLabel}.<br><br>📍 RDV au 86 Route de Genas 69003 Lyon à la date que vous aurez choisie.<br><br>Cordialement,<br><br>FTRANSPORT<br>📞 04.28.29.60.91`;
+  return { subject, body };
+}
+
+function buildSms(prenom: string, type: 'vtc' | 'taxi', bookingUrl: string) {
+  const label = type === 'vtc' ? 'VTC' : 'TAXI';
+  return `Bonjour ${prenom}, felicitations vous avez termine le module Pratique ${label}. Reservez votre date d'entrainement ici: ${bookingUrl} FTRANSPORT 04.28.29.60.91`;
+}
+
+async function getGraphToken() {
+  const tenantId = Deno.env.get("MS_GRAPH_TENANT_ID");
+  const clientId = Deno.env.get("MS_GRAPH_CLIENT_ID");
+  const clientSecret = Deno.env.get("MS_GRAPH_CLIENT_SECRET");
+  if (!tenantId || !clientId || !clientSecret) return null;
+  const res = await fetch(`https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      client_id: clientId,
+      client_secret: clientSecret,
+      scope: "https://graph.microsoft.com/.default",
+      grant_type: "client_credentials",
+    }).toString(),
+  });
+  const j = await res.json();
+  return j.access_token ?? null;
+}
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+
+  try {
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+
+    const body = await req.json().catch(() => ({} as any));
+    const dryRun: boolean = !!body?.dryRun;
+    const sendSms: boolean = body?.sendSms !== false; // default true
+
+    // 1. Toutes les completions des modules pratique
+    const doneVtc = new Set<string>();
+    const doneTaxi = new Set<string>();
+    {
+      const pageSize = 1000;
+      let from = 0;
+      while (true) {
+        const { data, error } = await supabase
+          .from("apprenant_module_completion")
+          .select("apprenant_id, module_id")
+          .in("module_id", [6, 8])
+          .range(from, from + pageSize - 1);
+        if (error) throw error;
+        (data || []).forEach((r: any) => {
+          if (!r.apprenant_id) return;
+          if (r.module_id === 8) doneVtc.add(r.apprenant_id);
+          if (r.module_id === 6) doneTaxi.add(r.apprenant_id);
+        });
+        if (!data || data.length < pageSize) break;
+        from += pageSize;
+      }
+    }
+
+    const doneIds = new Set<string>([...doneVtc, ...doneTaxi]);
+    if (doneIds.size === 0) {
+      return new Response(JSON.stringify({ ok: true, sent: 0, note: "aucune completion" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // 2. Reservations existantes
+    const reserved = new Set<string>();
+    {
+      const { data } = await supabase.from("reservations_pratique").select("apprenant_id");
+      (data || []).forEach((r: any) => r.apprenant_id && reserved.add(r.apprenant_id));
+    }
+
+    // 3. Deja envoye
+    const alreadySent = new Set<string>();
+    {
+      const ids = Array.from(doneIds);
+      const chunk = 200;
+      for (let i = 0; i < ids.length; i += chunk) {
+        const slice = ids.slice(i, i + chunk);
+        const { data } = await supabase
+          .from("emails")
+          .select("apprenant_id")
+          .eq("type", EMAIL_TYPE)
+          .in("apprenant_id", slice);
+        (data || []).forEach((r: any) => r.apprenant_id && alreadySent.add(r.apprenant_id));
+      }
+    }
+
+    // 4. Apprenants eligibles
+    const { data: apprenants, error: appErr } = await supabase
+      .from("apprenants")
+      .select("id, nom, prenom, email, telephone, type_apprenant, resultat_examen, date_examen_theorique, deleted_at")
+      .in("id", Array.from(doneIds).filter((id) => !reserved.has(id) && !alreadySent.has(id)));
+    if (appErr) throw appErr;
+
+    const eligible: Array<{ a: any; type: 'vtc' | 'taxi' }> = [];
+    for (const a of apprenants || []) {
+      if (a.deleted_at) continue;
+      if (!a.email) continue;
+      if ((a as any).resultat_examen !== 'oui') continue;
+      const t = String(a.type_apprenant || '').toLowerCase().trim();
+      let type: 'vtc' | 'taxi' | null = null;
+      if (PRACTICE_VTC_TYPES.has(t) && doneVtc.has(a.id)) type = 'vtc';
+      else if (PRACTICE_TAXI_TYPES.has(t) && doneTaxi.has(a.id)) type = 'taxi';
+      if (!type) continue;
+      eligible.push({ a, type });
+    }
+
+    if (dryRun) {
+      return new Response(JSON.stringify({
+        ok: true, dryRun: true, count: eligible.length,
+        candidates: eligible.map(({ a, type }) => ({ id: a.id, nom: a.nom, prenom: a.prenom, type, email: a.email })),
+      }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // 5. Planning config cache par exam_date
+    const planningCache = new Map<string, string | null>();
+    async function pratiqueForExam(examDate: string | null | undefined): Promise<string | null> {
+      if (!examDate) return null;
+      if (planningCache.has(examDate)) return planningCache.get(examDate) ?? null;
+      const { data } = await supabase
+        .from("planning_pratique_config")
+        .select("date_pratique")
+        .ilike("exam_date", `%${examDate}%`)
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      const val = (data as any)?.date_pratique || null;
+      planningCache.set(examDate, val);
+      return val;
+    }
+
+    const graphToken = await getGraphToken();
+    const senderEmail = "contact@ftransport.fr";
+    let sent = 0;
+    let smsSent = 0;
+    const failures: any[] = [];
+
+    for (const { a, type } of eligible) {
+      try {
+        const examLabel = String(a.date_examen_theorique || '').trim();
+        const pratiqueLabel = await pratiqueForExam(examLabel);
+        const url = buildUrl(a.id, type, examLabel || 'na', pratiqueLabel);
+        const { subject, body: html } = buildEmail(a.prenom || '', a.nom || '', type, url);
+
+        let okSend = false;
+        let errText = '';
+
+        if (graphToken) {
+          const res = await fetch(`https://graph.microsoft.com/v1.0/users/${senderEmail}/sendMail`, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${graphToken}`, "Content-Type": "application/json" },
+            body: JSON.stringify({
+              message: {
+                subject,
+                body: { contentType: "HTML", content: html },
+                toRecipients: [{ emailAddress: { address: a.email } }],
+              },
+              saveToSentItems: true,
+            }),
+          });
+          okSend = res.ok;
+          if (!okSend) errText = await res.text();
+        } else {
+          errText = 'MS Graph non configure';
+        }
+
+        await supabase.from("emails").insert({
+          apprenant_id: a.id,
+          type: EMAIL_TYPE,
+          subject,
+          body_html: html,
+          body_preview: `Lien reservation pratique ${type.toUpperCase()} envoye automatiquement${okSend ? '' : ' - ECHEC: ' + errText.slice(0, 200)}`,
+          sender_email: senderEmail,
+          sender_name: "FTRANSPORT",
+          recipients: [a.email],
+          is_read: true,
+          has_attachments: false,
+          sent_at: new Date().toISOString(),
+        });
+
+        if (okSend) {
+          sent++;
+          if (sendSms && a.telephone) {
+            try {
+              const { data: smsData, error: smsErr } = await supabase.functions.invoke('send-sms-ovh', {
+                body: { receivers: [a.telephone], message: buildSms(a.prenom || '', type, url), sender: 'FTRANSPORT' },
+              });
+              if (!smsErr && (smsData as any)?.success) smsSent++;
+            } catch (_) { /* SMS best-effort */ }
+          }
+        } else {
+          failures.push({ id: a.id, email: a.email, error: errText });
+        }
+      } catch (e) {
+        failures.push({ id: a.id, error: String(e) });
+      }
+    }
+
+    if (sent > 0 || failures.length > 0) {
+      await supabase.from("alertes_systeme").insert({
+        type: "auto_pratique_booking",
+        titre: `🚗 Envoi automatique lien réservation pratique`,
+        message: `${sent} lien(s) envoyé(s), ${smsSent} SMS, ${failures.length} échec(s)`,
+        details: JSON.stringify({ sent, smsSent, failures }),
+        lu: false,
+      });
+    }
+
+    return new Response(JSON.stringify({ ok: true, eligible: eligible.length, sent, smsSent, failures }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  } catch (e) {
+    return new Response(JSON.stringify({ error: String(e) }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+});
