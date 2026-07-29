@@ -228,7 +228,7 @@ export function generateEmailsApprenantPdf(
       doc.setFont("helvetica", "normal");
       doc.setFontSize(9);
       const rawBody = e.body_html ? htmlToText(e.body_html) : (e.body_preview || "");
-      const body = sanitize(rawBody) || "(corps vide)";
+      const body = maskPasswords(sanitize(rawBody)) || "(corps vide)";
       const bodyLines = doc.splitTextToSize(body, pw - margin * 2) as string[];
 
       const lineHeight = 4.4;
