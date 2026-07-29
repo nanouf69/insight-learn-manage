@@ -182,6 +182,29 @@ serve(async (req) => {
         const pratiqueLabel = await pratiqueForExam(examLabel);
         const url = buildUrl(a.id, type, examLabel || 'na', pratiqueLabel);
         const { subject, body: html } = buildEmail(a.prenom || '', a.nom || '', type, url);
+        const marker = `${EMAIL_TYPE}:${a.id}`;
+
+        // Verrou anti-doublon : la contrainte UNIQUE sur outlook_message_id
+        // empeche tout second envoi, meme en cas d'appels concurrents.
+        const { data: lockRow, error: lockErr } = await supabase
+          .from("emails")
+          .insert({
+            apprenant_id: a.id,
+            type: 'sent',
+            outlook_message_id: marker,
+            subject,
+            body_html: html,
+            body_preview: `Lien reservation pratique ${type.toUpperCase()} - envoi en cours`,
+            sender_email: senderEmail,
+            sender_name: "FTRANSPORT",
+            recipients: [a.email],
+            is_read: true,
+            has_attachments: false,
+            sent_at: new Date().toISOString(),
+          })
+          .select("id")
+          .single();
+        if (lockErr) { continue; } // deja envoye
 
         let okSend = false;
         let errText = '';
@@ -205,21 +228,10 @@ serve(async (req) => {
           errText = 'MS Graph non configure';
         }
 
-        await supabase.from("emails").insert({
-          apprenant_id: a.id,
-          type: EMAIL_TYPE,
-          subject,
-          body_html: html,
-          body_preview: `Lien reservation pratique ${type.toUpperCase()} envoye automatiquement${okSend ? '' : ' - ECHEC: ' + errText.slice(0, 200)}`,
-          sender_email: senderEmail,
-          sender_name: "FTRANSPORT",
-          recipients: [a.email],
-          is_read: true,
-          has_attachments: false,
-          sent_at: new Date().toISOString(),
-        });
-
         if (okSend) {
+          await supabase.from("emails")
+            .update({ body_preview: `Lien reservation pratique ${type.toUpperCase()} envoye automatiquement` })
+            .eq("id", (lockRow as any).id);
           sent++;
           if (sendSms && a.telephone) {
             try {
@@ -230,6 +242,8 @@ serve(async (req) => {
             } catch (_) { /* SMS best-effort */ }
           }
         } else {
+          // libere le verrou pour permettre une nouvelle tentative
+          await supabase.from("emails").delete().eq("id", (lockRow as any).id);
           failures.push({ id: a.id, email: a.email, error: errText });
         }
       } catch (e) {
