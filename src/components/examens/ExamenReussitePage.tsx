@@ -346,6 +346,27 @@ function formatPratiqueCreneauxForMessage(slot: PratiqueDaySlot, type: 'vtc' | '
     .join(' puis ') || 'À confirmer';
 }
 
+// Email/SMS d'invitation à compléter le module Pratique AVANT d'obtenir le lien de réservation
+export function buildInvitePratiqueEmail(a: any, type: 'vtc' | 'taxi') {
+  const label = type === 'vtc' ? 'VTC' : 'TAXI';
+  const elearningLink = type === 'vtc'
+    ? 'https://app.formative.com/join/DNFDZS'
+    : 'https://app.formative.com/join/ZT924H';
+  const exercicesLabel = type === 'vtc'
+    ? '"Formation Pratique VTC" : Quizz Lyon et Questions à apprendre'
+    : '"Formation Pratique TAXI" : QCM Taximètre, Cas pratique, Quizz Lyon et Questions à apprendre';
+  const subject = `Action requise - Terminez le module Pratique ${label} avant de réserver - ${a.prenom} ${a.nom}`;
+  const body = `Bonjour ${a.prenom},<br><br>Félicitations, vous venez de réussir votre épreuve d'admissibilité !<br><br>⚠️ <strong>Avant de pouvoir choisir votre date d'entraînement pratique</strong>, vous devez d'abord effectuer le module <strong>Formation Pratique ${label}</strong> sur votre plateforme e-learning.<br><br>📚 Merci de bien réviser le cours sur la pratique et d'effectuer les exercices.<br><br>Notamment les exercices suivants dans ${exercicesLabel}.<br>Ou cliquez ici : <a href="${elearningLink}">${elearningLink}</a><br><br>👉 <strong>Dès que le module Pratique sera terminé, nous vous enverrons le lien pour choisir votre date d'entraînement.</strong><br><br>⚠️ Attention, si vous n'effectuez pas les exercices et que vous n'apprenez pas les éléments de la ville, vous risquez fortement d'échouer votre examen pratique.<br><br>Cordialement,<br><br>FTRANSPORT<br>Centre de formation<br>86 Route de Genas 69003 Lyon<br>📞 04.28.29.60.91<br>De 9h à 17h sur rendez-vous`;
+  return { subject, body };
+}
+
+export function buildInvitePratiqueSMS(a: any, type: 'vtc' | 'taxi') {
+  const label = type === 'vtc' ? 'VTC' : 'TAXI';
+  return `Bonjour ${a.prenom}, avant de reserver votre date d'entrainement pratique ${label}, merci de terminer d'abord le module "Formation Pratique ${label}" sur votre plateforme e-learning. Le lien de reservation vous sera envoye ensuite. FTRANSPORT 04.28.29.60.91`;
+}
+
+
+
 function AddCandidateToDayPicker({
   allApprenants,
   reservationsPratique,
@@ -1070,6 +1091,30 @@ export function ExamenReussitePage() {
       return data || [];
     },
   });
+
+  // Fetch apprenants ayant ouvert/effectué le module Pratique (VTC=8, TAXI=6)
+  const { data: pratiqueDoneIds } = useQuery({
+    queryKey: ['pratique-module-done-ids'],
+    queryFn: async () => {
+      const ids = new Set<string>();
+      const pageSize = 1000;
+      let from = 0;
+      while (true) {
+        const { data, error } = await supabase
+          .from('apprenant_module_activites')
+          .select('apprenant_id, module_id')
+          .in('module_id', [6, 8])
+          .range(from, from + pageSize - 1);
+        if (error) throw error;
+        (data || []).forEach((r: any) => r.apprenant_id && ids.add(r.apprenant_id));
+        if (!data || data.length < pageSize) break;
+        from += pageSize;
+      }
+      return ids;
+    },
+  });
+
+
 
   // Fetch existing sessions (théorique = formation continue, etc.) to auto-exclude from planning
   const { data: existingSessions } = useQuery({
@@ -2537,6 +2582,7 @@ export function ExamenReussitePage() {
                           <AlertDialogDescription asChild>
                             <div className="space-y-3 text-sm">
                               <p>Envoyer l'email "Félicitations VTC - Choix date pratique" à {vtcList.filter(a => a.email).length} candidat(s) ayant un email renseigné ?</p>
+                              <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2">⚠️ Les candidats n'ayant pas encore ouvert le module <strong>Formation Pratique VTC</strong> recevront à la place une invitation à terminer ce module avant d'obtenir le lien de réservation. ({vtcList.filter(a => a.email && !pratiqueDoneIds?.has(a.id)).length} concerné(s))</p>
                               <p className="font-medium text-blue-700">📅 Entraînement VTC : {vtcDateRange}</p>
                               <details className="border rounded-lg">
                                 <summary className="cursor-pointer px-3 py-2 text-xs font-semibold bg-muted/50 rounded-t-lg hover:bg-muted">👁️ Aperçu de l'email (exemple avec {vtcList[0]?.prenom || 'Prénom'})</summary>
@@ -2557,9 +2603,11 @@ export function ExamenReussitePage() {
                             setSendingVTCPratique(true);
                             let sent = 0;
                             for (const a of candidates) {
+                              const hasPratique = pratiqueDoneIds?.has(a.id);
                               const bookingUrl = getBookingUrl(a.id, 'vtc');
-                              const subject = `Félicitations - Choix de votre date de formation pratique VTC - ${a.prenom} ${a.nom}`;
-                              const body = `Bonjour ${a.prenom},<br><br>Félicitations, vous venez de réussir votre épreuve d'admissibilité, face à l'épreuve d'admission.<br><br>Vous devrez choisir une journée complète d'entraînement pratique de 9h à 16h (de 9h à 12h puis de 13h à 16h).<br><br>👉 <a href="${bookingUrl}">CHOISISSEZ VOTRE DATE ICI</a><br><br>⚠️ Attention : vous ne pouvez choisir qu'UNE SEULE date. Tout créneau choisi ne pourra pas être modifié.<br><br>📚 Merci de bien réviser le cours sur la pratique et d'effectuer les exercices.<br><br>Notamment les exercices suivants dans "Formation Pratique VTC" : Quizz Lyon et Questions à apprendre.<br>Ou cliquez sur le lien suivant : <a href="https://app.formative.com/join/DNFDZS">https://app.formative.com/join/DNFDZS</a><br><br>⚠️ Attention, si vous n'effectuez pas les exercices et que vous n'apprenez pas les éléments de la ville, vous risquez fortement d'échouer votre examen pratique.<br><br>🍽️ Vous aurez une pause à Confluences aux alentours de 12h jusqu'à 13h.<br><br>📍 RDV au 86 Route de Genas 69003 Lyon à la date que vous aurez choisie.<br><br>Cordialement,<br><br>FTRANSPORT<br>Centre de formation<br>86 Route de Genas 69003 Lyon<br>📞 04.28.29.60.91<br>De 9h à 17h sur rendez-vous`;
+                              const invite = !hasPratique ? buildInvitePratiqueEmail(a, 'vtc') : null;
+                              const subject = invite ? invite.subject : `Félicitations - Choix de votre date de formation pratique VTC - ${a.prenom} ${a.nom}`;
+                              const body = invite ? invite.body : `Bonjour ${a.prenom},<br><br>Félicitations, vous venez de réussir votre épreuve d'admissibilité, face à l'épreuve d'admission.<br><br>Vous devrez choisir une journée complète d'entraînement pratique de 9h à 16h (de 9h à 12h puis de 13h à 16h).<br><br>👉 <a href="${bookingUrl}">CHOISISSEZ VOTRE DATE ICI</a><br><br>⚠️ Attention : vous ne pouvez choisir qu'UNE SEULE date. Tout créneau choisi ne pourra pas être modifié.<br><br>📚 Merci de bien réviser le cours sur la pratique et d'effectuer les exercices.<br><br>Notamment les exercices suivants dans "Formation Pratique VTC" : Quizz Lyon et Questions à apprendre.<br>Ou cliquez sur le lien suivant : <a href="https://app.formative.com/join/DNFDZS">https://app.formative.com/join/DNFDZS</a><br><br>⚠️ Attention, si vous n'effectuez pas les exercices et que vous n'apprenez pas les éléments de la ville, vous risquez fortement d'échouer votre examen pratique.<br><br>🍽️ Vous aurez une pause à Confluences aux alentours de 12h jusqu'à 13h.<br><br>📍 RDV au 86 Route de Genas 69003 Lyon à la date que vous aurez choisie.<br><br>Cordialement,<br><br>FTRANSPORT<br>Centre de formation<br>86 Route de Genas 69003 Lyon<br>📞 04.28.29.60.91<br>De 9h à 17h sur rendez-vous`;
                               try {
                                 const { error } = await supabase.functions.invoke('sync-outlook-emails', {
                                   body: { action: 'send', userEmail: 'contact@ftransport.fr', to: a.email, subject, body, apprenantId: a.id }
@@ -2601,9 +2649,11 @@ export function ExamenReussitePage() {
                                 setSendingVTCRelance(true);
                                 let sent = 0;
                                 for (const a of vtcSansResa) {
+                                  const hasPratique = pratiqueDoneIds?.has(a.id);
                                   const bookingUrl = getBookingUrl(a.id, 'vtc');
-                                  const subject = `RAPPEL - Choisissez votre date de formation pratique VTC - ${a.prenom} ${a.nom}`;
-                                  const body = `Bonjour ${a.prenom},<br><br>Nous n'avons pas encore reçu votre choix de date pour la formation pratique VTC.<br><br>⚠️ Il est impératif de réserver votre créneau au plus vite.<br><br>👉 <a href="${bookingUrl}">CHOISISSEZ VOTRE DATE ICI</a><br><br>📚 Merci de bien réviser le cours sur la pratique et d'effectuer les exercices.<br><br>Notamment les exercices suivants dans "Formation Pratique VTC" : Quizz Lyon et Questions à apprendre.<br>Ou cliquez sur le lien suivant : <a href="https://app.formative.com/join/DNFDZS">https://app.formative.com/join/DNFDZS</a><br><br>📍 RDV au 86 Route de Genas 69003 Lyon à la date que vous aurez choisie (horaire 9h-16h).<br><br>Cordialement,<br><br>FTRANSPORT<br>Centre de formation<br>86 Route de Genas 69003 Lyon<br>📞 04.28.29.60.91<br>De 9h à 17h sur rendez-vous`;
+                                  const invite = !hasPratique ? buildInvitePratiqueEmail(a, 'vtc') : null;
+                                  const subject = invite ? invite.subject : `RAPPEL - Choisissez votre date de formation pratique VTC - ${a.prenom} ${a.nom}`;
+                                  const body = invite ? invite.body : `Bonjour ${a.prenom},<br><br>Nous n'avons pas encore reçu votre choix de date pour la formation pratique VTC.<br><br>⚠️ Il est impératif de réserver votre créneau au plus vite.<br><br>👉 <a href="${bookingUrl}">CHOISISSEZ VOTRE DATE ICI</a><br><br>📚 Merci de bien réviser le cours sur la pratique et d'effectuer les exercices.<br><br>Notamment les exercices suivants dans "Formation Pratique VTC" : Quizz Lyon et Questions à apprendre.<br>Ou cliquez sur le lien suivant : <a href="https://app.formative.com/join/DNFDZS">https://app.formative.com/join/DNFDZS</a><br><br>📍 RDV au 86 Route de Genas 69003 Lyon à la date que vous aurez choisie (horaire 9h-16h).<br><br>Cordialement,<br><br>FTRANSPORT<br>Centre de formation<br>86 Route de Genas 69003 Lyon<br>📞 04.28.29.60.91<br>De 9h à 17h sur rendez-vous`;
                                   try {
                                     const { error } = await supabase.functions.invoke('sync-outlook-emails', {
                                       body: { action: 'send', userEmail: 'contact@ftransport.fr', to: a.email, subject, body, apprenantId: a.id }
@@ -2652,8 +2702,11 @@ export function ExamenReussitePage() {
                                 let sent = 0;
                                 try {
                                   for (const a of vtcSansResa) {
+                                    const hasPratique = pratiqueDoneIds?.has(a.id);
                                     const bookingUrl = getBookingUrl(a.id, 'vtc');
-                                    const message = `Bonjour, vous n'avez pas encore choisi votre date de formation pratique VTC. Reservez ici: ${bookingUrl} Attention, il n'y aura pas d'autres dates. Tel: 04.28.29.60.91`;
+                                    const message = hasPratique
+                                      ? `Bonjour, vous n'avez pas encore choisi votre date de formation pratique VTC. Reservez ici: ${bookingUrl} Attention, il n'y aura pas d'autres dates. Tel: 04.28.29.60.91`
+                                      : buildInvitePratiqueSMS(a, 'vtc');
                                     const { data, error } = await supabase.functions.invoke('send-sms-ovh', {
                                       body: { receivers: [a.telephone!], message, sender: 'FTRANSPORT' },
                                     });
@@ -2886,6 +2939,7 @@ export function ExamenReussitePage() {
                           <AlertDialogDescription asChild>
                             <div className="space-y-3 text-sm">
                               <p>Envoyer l'email "Félicitations TAXI - Choix date pratique" à {taxiList.filter(a => a.email).length} candidat(s) ayant un email renseigné ?</p>
+                              <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2">⚠️ Les candidats n'ayant pas encore ouvert le module <strong>Formation Pratique TAXI</strong> recevront à la place une invitation à terminer ce module avant d'obtenir le lien de réservation. ({taxiList.filter(a => a.email && !pratiqueDoneIds?.has(a.id)).length} concerné(s))</p>
                               <p className="font-medium text-amber-700">📅 Entraînement TAXI : {taxiDateRange}</p>
                               <details className="border rounded-lg">
                                 <summary className="cursor-pointer px-3 py-2 text-xs font-semibold bg-muted/50 rounded-t-lg hover:bg-muted">👁️ Aperçu de l'email (exemple avec {taxiList[0]?.prenom || 'Prénom'})</summary>
@@ -2906,9 +2960,11 @@ export function ExamenReussitePage() {
                             setSendingTAXIPratique(true);
                             let sent = 0;
                             for (const a of candidates) {
+                              const hasPratique = pratiqueDoneIds?.has(a.id);
                               const bookingUrl = getBookingUrl(a.id, 'taxi');
-                              const subject = `Félicitations - Choix de votre date de formation pratique TAXI - ${a.prenom} ${a.nom}`;
-                              const body = `Bonjour ${a.prenom},<br><br>Félicitations, vous venez de réussir votre épreuve d'admissibilité, face à l'épreuve d'admission.<br><br>Vous devrez choisir une journée complète d'entraînement pratique de 9h à 17h.<br><br>👉 <a href="${bookingUrl}">CHOISISSEZ VOTRE DATE ICI</a><br><br>⚠️ Attention : vous ne pouvez choisir qu'UNE SEULE date. Tout créneau choisi ne pourra pas être modifié.<br><br>📚 Merci de bien réviser le cours sur la pratique et d'effectuer les exercices.<br><br>Notamment les exercices suivants dans "Formation Pratique TAXI" : QCM Taximètre, Cas pratique, Quizz Lyon et Questions à apprendre.<br>Ou cliquez ici : <a href="https://app.formative.com/join/ZT924H">https://app.formative.com/join/ZT924H</a><br><br>⚠️ Attention, si vous n'effectuez pas les exercices et que vous n'apprenez pas les éléments de la ville, vous risquez fortement d'échouer votre examen pratique.<br><br>🍽️ Vous aurez une pause à Confluences aux alentours de 12h jusqu'à 13h.<br><br>📍 RDV au 86 Route de Genas 69003 Lyon à la date que vous aurez choisie.<br><br>Cordialement,<br><br>FTRANSPORT<br>Centre de formation<br>86 Route de Genas 69003 Lyon<br>📞 04.28.29.60.91<br>De 9h à 17h sur rendez-vous`;
+                              const invite = !hasPratique ? buildInvitePratiqueEmail(a, 'taxi') : null;
+                              const subject = invite ? invite.subject : `Félicitations - Choix de votre date de formation pratique TAXI - ${a.prenom} ${a.nom}`;
+                              const body = invite ? invite.body : `Bonjour ${a.prenom},<br><br>Félicitations, vous venez de réussir votre épreuve d'admissibilité, face à l'épreuve d'admission.<br><br>Vous devrez choisir une journée complète d'entraînement pratique de 9h à 17h.<br><br>👉 <a href="${bookingUrl}">CHOISISSEZ VOTRE DATE ICI</a><br><br>⚠️ Attention : vous ne pouvez choisir qu'UNE SEULE date. Tout créneau choisi ne pourra pas être modifié.<br><br>📚 Merci de bien réviser le cours sur la pratique et d'effectuer les exercices.<br><br>Notamment les exercices suivants dans "Formation Pratique TAXI" : QCM Taximètre, Cas pratique, Quizz Lyon et Questions à apprendre.<br>Ou cliquez ici : <a href="https://app.formative.com/join/ZT924H">https://app.formative.com/join/ZT924H</a><br><br>⚠️ Attention, si vous n'effectuez pas les exercices et que vous n'apprenez pas les éléments de la ville, vous risquez fortement d'échouer votre examen pratique.<br><br>🍽️ Vous aurez une pause à Confluences aux alentours de 12h jusqu'à 13h.<br><br>📍 RDV au 86 Route de Genas 69003 Lyon à la date que vous aurez choisie.<br><br>Cordialement,<br><br>FTRANSPORT<br>Centre de formation<br>86 Route de Genas 69003 Lyon<br>📞 04.28.29.60.91<br>De 9h à 17h sur rendez-vous`;
                               try {
                                 const { error } = await supabase.functions.invoke('sync-outlook-emails', {
                                   body: { action: 'send', userEmail: 'contact@ftransport.fr', to: a.email, subject, body, apprenantId: a.id }
@@ -2950,9 +3006,11 @@ export function ExamenReussitePage() {
                                 setSendingTAXIRelance(true);
                                 let sent = 0;
                                 for (const a of taxiSansResa) {
+                                  const hasPratique = pratiqueDoneIds?.has(a.id);
                                   const bookingUrl = getBookingUrl(a.id, 'taxi');
-                                  const subject = `RAPPEL - Choisissez votre date de formation pratique TAXI - ${a.prenom} ${a.nom}`;
-                                  const body = `Bonjour ${a.prenom},<br><br>Nous n'avons pas encore reçu votre choix de date pour la formation pratique TAXI.<br><br>⚠️ Il est impératif de réserver votre créneau au plus vite.<br><br>👉 <a href="${bookingUrl}">CHOISISSEZ VOTRE DATE ICI</a><br><br>📚 Merci de bien réviser le cours sur la pratique et d'effectuer les exercices.<br><br>Notamment les exercices suivants dans "Formation Pratique TAXI" : QCM Taximètre, Cas pratique, Quizz Lyon et Questions à apprendre.<br>Ou cliquez ici : <a href="https://app.formative.com/join/ZT924H">https://app.formative.com/join/ZT924H</a><br><br>📍 RDV au 86 Route de Genas 69003 Lyon à la date que vous aurez choisie.<br><br>Cordialement,<br><br>FTRANSPORT<br>Centre de formation<br>86 Route de Genas 69003 Lyon<br>📞 04.28.29.60.91<br>De 9h à 17h sur rendez-vous`;
+                                  const invite = !hasPratique ? buildInvitePratiqueEmail(a, 'taxi') : null;
+                                  const subject = invite ? invite.subject : `RAPPEL - Choisissez votre date de formation pratique TAXI - ${a.prenom} ${a.nom}`;
+                                  const body = invite ? invite.body : `Bonjour ${a.prenom},<br><br>Nous n'avons pas encore reçu votre choix de date pour la formation pratique TAXI.<br><br>⚠️ Il est impératif de réserver votre créneau au plus vite.<br><br>👉 <a href="${bookingUrl}">CHOISISSEZ VOTRE DATE ICI</a><br><br>📚 Merci de bien réviser le cours sur la pratique et d'effectuer les exercices.<br><br>Notamment les exercices suivants dans "Formation Pratique TAXI" : QCM Taximètre, Cas pratique, Quizz Lyon et Questions à apprendre.<br>Ou cliquez ici : <a href="https://app.formative.com/join/ZT924H">https://app.formative.com/join/ZT924H</a><br><br>📍 RDV au 86 Route de Genas 69003 Lyon à la date que vous aurez choisie.<br><br>Cordialement,<br><br>FTRANSPORT<br>Centre de formation<br>86 Route de Genas 69003 Lyon<br>📞 04.28.29.60.91<br>De 9h à 17h sur rendez-vous`;
                                   try {
                                     const { error } = await supabase.functions.invoke('sync-outlook-emails', {
                                       body: { action: 'send', userEmail: 'contact@ftransport.fr', to: a.email, subject, body, apprenantId: a.id }
@@ -3001,8 +3059,11 @@ export function ExamenReussitePage() {
                                 let sent = 0;
                                 try {
                                   for (const a of taxiSansResa) {
+                                    const hasPratique = pratiqueDoneIds?.has(a.id);
                                     const bookingUrl = getBookingUrl(a.id, 'taxi');
-                                    const message = `Bonjour, vous n'avez pas encore choisi votre date de formation pratique TAXI. Reservez ici: ${bookingUrl} Attention, il n'y aura pas d'autres dates. Tel: 04.28.29.60.91`;
+                                    const message = hasPratique
+                                      ? `Bonjour, vous n'avez pas encore choisi votre date de formation pratique TAXI. Reservez ici: ${bookingUrl} Attention, il n'y aura pas d'autres dates. Tel: 04.28.29.60.91`
+                                      : buildInvitePratiqueSMS(a, 'taxi');
                                     const { data, error } = await supabase.functions.invoke('send-sms-ovh', {
                                       body: { receivers: [a.telephone!], message, sender: 'FTRANSPORT' },
                                     });
