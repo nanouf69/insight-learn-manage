@@ -67,6 +67,9 @@ serve(async (req) => {
     const body = await req.json().catch(() => ({} as any));
     const dryRun: boolean = !!body?.dryRun;
     const sendSms: boolean = body?.sendSms !== false; // default true
+    // Pilot mode: restrict the run to specific learners or a max count
+    const onlyIds: string[] | null = Array.isArray(body?.onlyIds) && body.onlyIds.length ? body.onlyIds.map(String) : null;
+    const limit: number | null = Number.isFinite(body?.limit) && body.limit > 0 ? Math.floor(body.limit) : null;
 
     // 1. Toutes les completions des modules pratique
     const doneVtc = new Set<string>();
@@ -105,7 +108,7 @@ serve(async (req) => {
       (data || []).forEach((r: any) => r.apprenant_id && reserved.add(r.apprenant_id));
     }
 
-    // 3. Deja envoye
+    // 3. Deja envoye (marqueur unique dans outlook_message_id)
     const alreadySent = new Set<string>();
     {
       const ids = Array.from(doneIds);
@@ -114,8 +117,8 @@ serve(async (req) => {
         const slice = ids.slice(i, i + chunk);
         const { data } = await supabase
           .from("emails")
-          .select("apprenant_id")
-          .eq("type", EMAIL_TYPE)
+          .select("apprenant_id, outlook_message_id")
+          .like("outlook_message_id", `${EMAIL_TYPE}:%`)
           .in("apprenant_id", slice);
         (data || []).forEach((r: any) => r.apprenant_id && alreadySent.add(r.apprenant_id));
       }
@@ -132,6 +135,7 @@ serve(async (req) => {
     for (const a of apprenants || []) {
       if (a.deleted_at) continue;
       if (!a.email) continue;
+      if (onlyIds && !onlyIds.includes(a.id)) continue;
       if ((a as any).resultat_examen !== 'oui') continue;
       const t = String(a.type_apprenant || '').toLowerCase().trim();
       let type: 'vtc' | 'taxi' | null = null;
@@ -139,6 +143,7 @@ serve(async (req) => {
       else if (PRACTICE_TAXI_TYPES.has(t) && doneTaxi.has(a.id)) type = 'taxi';
       if (!type) continue;
       eligible.push({ a, type });
+      if (limit && eligible.length >= limit) break;
     }
 
     if (dryRun) {
@@ -177,6 +182,29 @@ serve(async (req) => {
         const pratiqueLabel = await pratiqueForExam(examLabel);
         const url = buildUrl(a.id, type, examLabel || 'na', pratiqueLabel);
         const { subject, body: html } = buildEmail(a.prenom || '', a.nom || '', type, url);
+        const marker = `${EMAIL_TYPE}:${a.id}`;
+
+        // Verrou anti-doublon : la contrainte UNIQUE sur outlook_message_id
+        // empeche tout second envoi, meme en cas d'appels concurrents.
+        const { data: lockRow, error: lockErr } = await supabase
+          .from("emails")
+          .insert({
+            apprenant_id: a.id,
+            type: 'sent',
+            outlook_message_id: marker,
+            subject,
+            body_html: html,
+            body_preview: `Lien reservation pratique ${type.toUpperCase()} - envoi en cours`,
+            sender_email: senderEmail,
+            sender_name: "FTRANSPORT",
+            recipients: [a.email],
+            is_read: true,
+            has_attachments: false,
+            sent_at: new Date().toISOString(),
+          })
+          .select("id")
+          .single();
+        if (lockErr) { continue; } // deja envoye
 
         let okSend = false;
         let errText = '';
@@ -200,21 +228,10 @@ serve(async (req) => {
           errText = 'MS Graph non configure';
         }
 
-        await supabase.from("emails").insert({
-          apprenant_id: a.id,
-          type: EMAIL_TYPE,
-          subject,
-          body_html: html,
-          body_preview: `Lien reservation pratique ${type.toUpperCase()} envoye automatiquement${okSend ? '' : ' - ECHEC: ' + errText.slice(0, 200)}`,
-          sender_email: senderEmail,
-          sender_name: "FTRANSPORT",
-          recipients: [a.email],
-          is_read: true,
-          has_attachments: false,
-          sent_at: new Date().toISOString(),
-        });
-
         if (okSend) {
+          await supabase.from("emails")
+            .update({ body_preview: `Lien reservation pratique ${type.toUpperCase()} envoye automatiquement` })
+            .eq("id", (lockRow as any).id);
           sent++;
           if (sendSms && a.telephone) {
             try {
@@ -225,6 +242,8 @@ serve(async (req) => {
             } catch (_) { /* SMS best-effort */ }
           }
         } else {
+          // libere le verrou pour permettre une nouvelle tentative
+          await supabase.from("emails").delete().eq("id", (lockRow as any).id);
           failures.push({ id: a.id, email: a.email, error: errText });
         }
       } catch (e) {
