@@ -4730,7 +4730,6 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       }
       return { ...prev, [type]: prev[type].filter((i) => i.id !== id) };
     });
-    toast.success(`${type === "cours" ? "Cours" : "Exercice"} supprimé — retrouvez-le dans la Corbeille`);
   };
 
   const restoreItem = (type: "cours" | "exercices", id: number) => {
@@ -4748,7 +4747,6 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         setDeletedExercices((d) => d.filter((i) => i.id !== id));
       }
     }
-    toast.success(`${type === "cours" ? "Cours" : "Exercice"} restauré`);
   };
 
   const toggleItem = (type: "cours" | "exercices", id: number) => {
@@ -4777,7 +4775,6 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       const newItem: ContentItem = { id: newId, titre: type === "cours" ? "Nouveau cours" : "Nouvel exercice", actif: true };
       return { ...prev, [type]: [...prev[type], newItem] };
     });
-    toast.success(`${type === "cours" ? "Cours" : "Exercice"} ajouté`);
   };
 
   const updateExerciceQuestions = (exerciceId: number, questions: ExerciceQuestion[], deletedQuestionId?: number) => {
@@ -4863,8 +4860,6 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         console.warn("Impossible de supprimer le fichier du bucket:", error);
       }
     }
-
-    toast.success("Fichier supprimé");
   };
 
   // === Aperçu apprenant ===
