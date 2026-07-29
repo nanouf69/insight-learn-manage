@@ -2059,13 +2059,15 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       const fc: any = (financeursFCMap as any)?.[apprenant.id] || null;
       const isPro = fc?.type_financeur === 'professionnel';
       const numero = await generateNextNumeroFacture();
-      const clientNom = isPro
-        ? (fc?.raison_sociale || `${apprenant.prenom} ${apprenant.nom}`)
+      // La facture additionnelle est TOUJOURS émise au nom du financeur si présent
+      const clientNom = fc
+        ? (isPro
+            ? (fc?.raison_sociale || fc?.contact_nom || `${apprenant.prenom} ${apprenant.nom}`)
+            : (fc?.contact_nom || fc?.raison_sociale || `${apprenant.prenom} ${apprenant.nom}`))
         : `${apprenant.prenom} ${apprenant.nom}`;
-      const clientAdresse = [
-        (apprenant.adresse || fc?.adresse) || '',
-        [(apprenant.code_postal || fc?.code_postal) || '', (apprenant.ville || fc?.ville) || ''].filter(Boolean).join(' ')
-      ].filter(Boolean).join(', ');
+      const clientAdresse = fc
+        ? [fc?.adresse || '', [fc?.code_postal || '', fc?.ville || ''].filter(Boolean).join(' ')].filter(Boolean).join(', ')
+        : [apprenant.adresse || '', [apprenant.code_postal || '', apprenant.ville || ''].filter(Boolean).join(' ')].filter(Boolean).join(', ');
       const payload: any = {
         numero,
         date_emission: new Date().toISOString().split('T')[0],
@@ -2074,6 +2076,8 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
         client_nom: clientNom,
         client_adresse: clientAdresse || null,
         client_siret: isPro ? (fc?.siret || fc?.siren || null) : null,
+        client_email: fc?.email_facturation || fc?.contact_email || apprenant.email || null,
+        client_telephone: fc?.contact_telephone || apprenant.telephone || null,
         montant_ht: montant,
         tva_taux: 0,
         montant_tva: 0,
