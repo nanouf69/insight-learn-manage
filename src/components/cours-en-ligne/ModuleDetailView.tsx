@@ -3192,6 +3192,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   const dbSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isSavingToDbRef = useRef(false);
   const dbSaveVersionRef = useRef(0);
+  const dbSaveQueueRef = useRef<Promise<void>>(Promise.resolve());
+  const latestQueuedDbSaveRef = useRef<ModuleEditorSavePayload | null>(null);
+  const dbSaveGenerationRef = useRef(0);
+  const lastSavedPayloadSignatureRef = useRef<string | null>(null);
   const pendingDbSaveDataRef = useRef<{
     module_id: number;
     module_data: any;
@@ -3253,6 +3257,14 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       setLastDbUpdatedAt(updatedAtString);
     }
   };
+
+  const getSavePayloadSignature = (payload: ModuleEditorSavePayload) => JSON.stringify({
+    module_id: payload.module_id,
+    module_data: payload.module_data ?? null,
+    deleted_cours: payload.deleted_cours ?? [],
+    deleted_exercices: payload.deleted_exercices ?? [],
+    source_fingerprint: payload.source_fingerprint ?? null,
+  });
 
   const shouldSkipFetchedQuestionState = (remoteUpdatedAt: unknown, fetchStartedAt: number, context: string) => {
     const remoteTs = toSafeTimestamp(remoteUpdatedAt);
