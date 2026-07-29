@@ -1594,13 +1594,11 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       }
 
       // Extension automatique de +1 mois de l'accès e-learning
-      // pour les apprenants VTC/TAXI marqués présents en présentiel
+      // pour TOUS les apprenants marqués présents en présentiel
       if (willBePresent && !wasPresent) {
         try {
           const app = previous?.apprenant;
-          const type = String(app?.type_apprenant || '').toLowerCase();
-          const isVtcOrTaxi = type.startsWith('vtc') || type.startsWith('taxi');
-          if (app?.id && isVtcOrTaxi) {
+          if (app?.id) {
             const baseStr = app.date_fin_cours_en_ligne || null;
             const base = baseStr ? new Date(baseStr) : new Date();
             const extended = new Date(base);
@@ -1624,6 +1622,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
           console.error('[SessionDetail] Erreur extension accès e-learning:', extErr);
         }
       }
+
     } catch (error: any) {
       toast({
         title: "Erreur",
