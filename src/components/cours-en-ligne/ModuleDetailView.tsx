@@ -6962,16 +6962,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               {/* Show file links if present alongside questions */}
               {exo.fichiers && exo.fichiers.length > 0 && (
                 <div className="flex flex-wrap gap-2">
-                  {exo.fichiers.map((f, i) => {
-                    const isExternal = f.url.startsWith("http");
-                    const resolvedUrl = isExternal ? f.url : resolvePublicFileUrl(f.url);
-                    return (
-                      <a key={i} href={resolvedUrl} target="_blank" rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
-                        {isExternal ? <Maximize className="w-3 h-3" /> : <FileText className="w-3 h-3" />} {f.nom}
-                      </a>
-                    );
-                  })}
+                  {exo.fichiers.map((f, i) => (
+                    <CourseFileLink key={`${f.url}-${i}`} fichier={f} compact />
+                  ))}
                 </div>
               )}
               {(() => {
