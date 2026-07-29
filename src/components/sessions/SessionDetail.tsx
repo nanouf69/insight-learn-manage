@@ -696,6 +696,11 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   const [bulkAcquitterDate, setBulkAcquitterDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [bulkAcquitterMoyen, setBulkAcquitterMoyen] = useState<string>('virement');
   const [bulkAcquitterSaving, setBulkAcquitterSaving] = useState(false);
+  const [addExtraFactureFor, setAddExtraFactureFor] = useState<any | null>(null);
+  const [extraFactureMontant, setExtraFactureMontant] = useState<string>('');
+  const [extraFactureLibelle, setExtraFactureLibelle] = useState<string>('');
+  const [extraFactureSaving, setExtraFactureSaving] = useState(false);
+  const [extraFactureDeleting, setExtraFactureDeleting] = useState<string | null>(null);
   const [bulkPreview, setBulkPreview] = useState<{ template: any; apprenants: any[]; previewBody: string; previewSubject: string; editedBody?: string; editedSubject?: string } | null>(null);
   const [bulkPreviewEditing, setBulkPreviewEditing] = useState(false);
   const [editingMailType, setEditingMailType] = useState<any | null>(null);
@@ -844,15 +849,46 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       }
       const map: Record<string, any> = {};
       (data || []).forEach((row: any) => {
-        if (row.apprenant_id) map[row.apprenant_id] = row;
+        // Exclure les factures "extras" (marquées via numero_convention = EXTRA::...)
+        const nc = String(row.numero_convention || '');
+        if (nc.startsWith('EXTRA::')) return;
+        if (row.apprenant_id && !map[row.apprenant_id]) map[row.apprenant_id] = row;
       });
       return map;
     },
     enabled: !!session?.id && open,
   });
 
-  // Charger tous les paiements pour les factures de cette session
-  const factureIdsForPaiements = Object.values(facturesFCMap as Record<string, any>).map((f: any) => f?.id).filter(Boolean);
+  // Factures additionnelles par apprenant (marquées EXTRA::<libellé>)
+  const { data: extraFacturesByApprenantId = {}, refetch: refetchExtraFactures } = useQuery({
+    queryKey: ['session-extra-factures', session?.id],
+    queryFn: async () => {
+      if (!session?.id) return {} as Record<string, any[]>;
+      const { data, error } = await supabase
+        .from('factures')
+        .select('*')
+        .eq('session_id', session.id)
+        .like('numero_convention', 'EXTRA::%')
+        .order('created_at', { ascending: true });
+      if (error) {
+        console.error('[SessionDetail] Erreur chargement factures extras:', error);
+        return {} as Record<string, any[]>;
+      }
+      const map: Record<string, any[]> = {};
+      (data || []).forEach((row: any) => {
+        if (!row.apprenant_id) return;
+        (map[row.apprenant_id] = map[row.apprenant_id] || []).push(row);
+      });
+      return map;
+    },
+    enabled: !!session?.id && open,
+  });
+
+  // Charger tous les paiements pour les factures (principales + extras) de cette session
+  const factureIdsForPaiements = [
+    ...Object.values(facturesFCMap as Record<string, any>).map((f: any) => f?.id).filter(Boolean),
+    ...Object.values(extraFacturesByApprenantId as Record<string, any[]>).flat().map((f: any) => f?.id).filter(Boolean),
+  ];
   const { data: paiementsByFactureId = {}, refetch: refetchPaiements } = useQuery({
     queryKey: ['session-facture-paiements', session?.id, factureIdsForPaiements.join(',')],
     queryFn: async () => {
@@ -2004,6 +2040,80 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     return (fc?.email_facturation || fc?.contact_email || apprenant.email || '').trim() || null;
   };
 
+  // Créer une facture additionnelle pour un apprenant (montant + libellé libres)
+  const handleCreateExtraFacture = async () => {
+    if (!addExtraFactureFor) return;
+    const apprenant = addExtraFactureFor;
+    const montant = parseFloat(extraFactureMontant.replace(',', '.'));
+    const libelle = extraFactureLibelle.trim();
+    if (!Number.isFinite(montant) || montant <= 0) {
+      toast({ title: "Montant invalide", description: "Saisir un montant TTC > 0.", variant: "destructive" });
+      return;
+    }
+    if (!libelle) {
+      toast({ title: "Libellé requis", description: "Décrire la prestation facturée.", variant: "destructive" });
+      return;
+    }
+    try {
+      setExtraFactureSaving(true);
+      const fc: any = (financeursFCMap as any)?.[apprenant.id] || null;
+      const isPro = fc?.type_financeur === 'professionnel';
+      const numero = await generateNextNumeroFacture();
+      const clientNom = isPro
+        ? (fc?.raison_sociale || `${apprenant.prenom} ${apprenant.nom}`)
+        : `${apprenant.prenom} ${apprenant.nom}`;
+      const clientAdresse = [
+        (apprenant.adresse || fc?.adresse) || '',
+        [(apprenant.code_postal || fc?.code_postal) || '', (apprenant.ville || fc?.ville) || ''].filter(Boolean).join(' ')
+      ].filter(Boolean).join(', ');
+      const payload: any = {
+        numero,
+        date_emission: new Date().toISOString().split('T')[0],
+        date_echeance: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        type_financement: isPro ? 'professionnel' : 'particulier',
+        client_nom: clientNom,
+        client_adresse: clientAdresse || null,
+        client_siret: isPro ? (fc?.siret || fc?.siren || null) : null,
+        montant_ht: montant,
+        tva_taux: 0,
+        montant_tva: 0,
+        montant_ttc: montant,
+        statut: 'en_attente',
+        session_id: session.id,
+        apprenant_id: apprenant.id,
+        numero_convention: `EXTRA::${libelle}`,
+      };
+      const { error } = await supabase.from('factures').insert(payload);
+      if (error) throw error;
+      await refetchExtraFactures();
+      toast({ title: "Facture ajoutée", description: `${libelle} — ${montant.toFixed(2)} € — ${apprenant.prenom} ${apprenant.nom}` });
+      setAddExtraFactureFor(null);
+      setExtraFactureMontant('');
+      setExtraFactureLibelle('');
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e?.message || "Impossible d'ajouter la facture.", variant: "destructive" });
+    } finally {
+      setExtraFactureSaving(false);
+    }
+  };
+
+  const handleDeleteExtraFacture = async (factureId: string) => {
+    if (!confirm("Supprimer cette facture additionnelle ?")) return;
+    try {
+      setExtraFactureDeleting(factureId);
+      // Supprimer d'abord les paiements liés
+      await supabase.from('facture_paiements' as any).delete().eq('facture_id', factureId);
+      const { error } = await supabase.from('factures').delete().eq('id', factureId);
+      if (error) throw error;
+      await Promise.all([refetchExtraFactures(), refetchPaiements()]);
+      toast({ title: "Facture supprimée" });
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e?.message || "Suppression impossible.", variant: "destructive" });
+    } finally {
+      setExtraFactureDeleting(null);
+    }
+  };
+
   // Upsert d'une facture en BDD comme brouillon (créée si absente, sinon retournée)
   const ensureFactureBrouillon = async (apprenant: any, sessionApprenant: any): Promise<any> => {
     const existing = (facturesFCMap as any)?.[apprenant.id];
@@ -2280,7 +2390,15 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     if (!acquittementApprenant) return;
     setAcquittementSaving(true);
     try {
-      const facture = (facturesFCMap as any)?.[acquittementApprenant.id];
+      // Si on paye une facture extra, on la retrouve via __extraFactureId
+      let facture: any = null;
+      const extraId = (acquittementApprenant as any).__extraFactureId as string | undefined;
+      if (extraId) {
+        const list: any[] = ((extraFacturesByApprenantId as any)?.[acquittementApprenant.id]) || [];
+        facture = list.find((f) => f.id === extraId) || null;
+      } else {
+        facture = (facturesFCMap as any)?.[acquittementApprenant.id];
+      }
       if (!facture) {
         toast({ title: "Aucune facture", description: "Téléchargez d'abord la facture pour la créer.", variant: "destructive" });
         return;
@@ -2320,7 +2438,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
         })
         .eq('id', facture.id);
 
-      await Promise.all([refetchFacturesFC(), refetchPaiements()]);
+      await Promise.all([refetchFacturesFC(), refetchExtraFactures(), refetchPaiements()]);
       toast({ title: "Paiement enregistré", description: `${montantNum.toFixed(2)} € le ${acquittementDate} • ${acquittementMoyen}` });
       // Réinitialiser le formulaire mais garder la modale ouverte pour ajouter un autre paiement
       setAcquittementMontant('');
@@ -2354,7 +2472,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
           date_paiement: newStatut === 'payee' ? (last?.date_paiement || null) : null,
         })
         .eq('id', factureId);
-      await Promise.all([refetchFacturesFC(), refetchPaiements()]);
+      await Promise.all([refetchFacturesFC(), refetchExtraFactures(), refetchPaiements()]);
       toast({ title: "Paiement supprimé" });
     } catch (e: any) {
       toast({ title: "Erreur", description: e?.message || "Suppression impossible", variant: "destructive" });
@@ -2402,7 +2520,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
           .eq('id', facture.id);
         count++;
       }
-      await Promise.all([refetchFacturesFC(), refetchPaiements()]);
+      await Promise.all([refetchFacturesFC(), refetchExtraFactures(), refetchPaiements()]);
       toast({ title: "Acquittement effectué", description: `${count} facture(s) acquittée(s) le ${bulkAcquitterDate} • ${bulkAcquitterMoyen}` });
       setBulkAcquitterOpen(false);
     } catch (e: any) {
@@ -4011,21 +4129,92 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                  {totalPaye > 0 ? 'Paiements' : 'Acquitter'}
                                </Button>
                               )}
-                             <Button
-                               size="sm"
-                               variant="outline"
-                               className="border-red-300 text-red-700 hover:bg-red-50"
-                               title="Marquer absent et déplacer dans l'onglet Absents"
-                               onClick={async () => {
-                                 if (!confirm(`Marquer ${a.prenom} ${a.nom} comme absent et le déplacer dans l'onglet Absents ?`)) return;
-                                 await updateSessionApprenant(sa.id, { presence_pratique: 'absent' });
-                               }}
-                             >
-                               Absent
-                             </Button>
-                           </div>
-                         </div>
-                       </div>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="gap-2 border-blue-300 text-blue-700 hover:bg-blue-50"
+                                title="Ajouter une facture supplémentaire pour cet apprenant"
+                                onClick={() => {
+                                  setAddExtraFactureFor(a);
+                                  setExtraFactureMontant('');
+                                  setExtraFactureLibelle('');
+                                }}
+                              >
+                                <Plus className="w-4 h-4" />
+                                Facture
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="border-red-300 text-red-700 hover:bg-red-50"
+                                title="Marquer absent et déplacer dans l'onglet Absents"
+                                onClick={async () => {
+                                  if (!confirm(`Marquer ${a.prenom} ${a.nom} comme absent et le déplacer dans l'onglet Absents ?`)) return;
+                                  await updateSessionApprenant(sa.id, { presence_pratique: 'absent' });
+                                }}
+                              >
+                                Absent
+                              </Button>
+                            </div>
+                          </div>
+
+                          {/* Factures additionnelles */}
+                          {((extraFacturesByApprenantId as any)?.[a.id] || []).length > 0 && (
+                            <div className="mt-1 pl-8 space-y-1.5">
+                              {((extraFacturesByApprenantId as any)[a.id] as any[]).map((ef: any) => {
+                                const libelle = String(ef.numero_convention || '').replace(/^EXTRA::/, '') || 'Facture additionnelle';
+                                const efPaiements: any[] = (paiementsByFactureId as any)?.[ef.id] || [];
+                                const efTotalPaye = efPaiements.reduce((s, p) => s + Number(p.montant || 0), 0);
+                                const efMontant = Number(ef.montant_ttc || 0);
+                                const efRestant = Math.max(0, efMontant - efTotalPaye);
+                                const efStatut = ef.statut === 'payee' || (efTotalPaye + 0.001 >= efMontant && efPaiements.length > 0)
+                                  ? 'Acquittée' : (efTotalPaye > 0 ? 'Partiellement payée' : 'Non payée');
+                                return (
+                                  <div key={ef.id} className="flex items-center gap-2 p-2 rounded-md border bg-muted/40 text-sm">
+                                    <FileText className="w-4 h-4 text-blue-600 shrink-0" />
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-2 flex-wrap">
+                                        <span className="font-medium truncate">{libelle}</span>
+                                        <Badge variant="outline" className="text-xs">N° {ef.numero}</Badge>
+                                        <Badge variant={efStatut === 'Acquittée' ? 'default' : 'secondary'} className="text-xs">{efStatut}</Badge>
+                                        <span className="font-semibold">{efMontant.toFixed(2)} €</span>
+                                        {efTotalPaye > 0 && (
+                                          <span className="text-xs text-emerald-700">
+                                            payé {efTotalPaye.toFixed(2)} €{efRestant > 0 ? ` (reste ${efRestant.toFixed(2)} €)` : ''}
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="gap-1.5"
+                                      onClick={() => {
+                                        setAcquittementApprenant({ ...a, __extraFactureId: ef.id });
+                                        setAcquittementDate(new Date().toISOString().split('T')[0]);
+                                        setAcquittementMoyen('virement');
+                                        setAcquittementMontant(efRestant > 0 ? efRestant.toFixed(2) : efMontant.toFixed(2));
+                                      }}
+                                    >
+                                      <CheckCircle className="w-3.5 h-3.5" />
+                                      {efTotalPaye > 0 ? 'Paiements' : 'Acquitter'}
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      className="text-red-600 hover:bg-red-50"
+                                      disabled={extraFactureDeleting === ef.id}
+                                      onClick={() => handleDeleteExtraFacture(ef.id)}
+                                    >
+                                      {extraFactureDeleting === ef.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <X className="w-3.5 h-3.5" />}
+                                    </Button>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+
                     );
                   })}
                 </div>
@@ -4123,7 +4312,58 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     )}
 
 
+    {/* Modale d'ajout d'une facture additionnelle */}
+    <Dialog open={!!addExtraFactureFor} onOpenChange={(o) => { if (!o) { setAddExtraFactureFor(null); setExtraFactureLibelle(''); setExtraFactureMontant(''); } }}>
+      <DialogContent className="sm:max-w-[520px]">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Plus className="w-5 h-5 text-blue-600" />
+            Ajouter une facture
+          </DialogTitle>
+        </DialogHeader>
+        {addExtraFactureFor && (
+          <div className="space-y-4">
+            <div className="text-sm text-muted-foreground">
+              Apprenant : <span className="font-semibold text-foreground">{addExtraFactureFor.prenom} {addExtraFactureFor.nom}</span>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="extra-libelle">Libellé de la prestation</Label>
+              <Input
+                id="extra-libelle"
+                placeholder="Ex : Formation initiale VTC, frais de dossier, rattrapage examen…"
+                value={extraFactureLibelle}
+                onChange={(e) => setExtraFactureLibelle(e.target.value)}
+                disabled={extraFactureSaving}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="extra-montant">Montant TTC (€)</Label>
+              <Input
+                id="extra-montant"
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="0.00"
+                value={extraFactureMontant}
+                onChange={(e) => setExtraFactureMontant(e.target.value)}
+                disabled={extraFactureSaving}
+              />
+              <p className="text-xs text-muted-foreground">TVA non applicable (art. 293 B du CGI).</p>
+            </div>
+          </div>
+        )}
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setAddExtraFactureFor(null)} disabled={extraFactureSaving}>Annuler</Button>
+          <Button onClick={handleCreateExtraFacture} disabled={extraFactureSaving}>
+            {extraFactureSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
+            Créer la facture
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
     {/* Modale d'acquittement */}
+
     <Dialog open={!!acquittementApprenant} onOpenChange={(open) => !open && setAcquittementApprenant(null)}>
       <DialogContent className="sm:max-w-[720px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
