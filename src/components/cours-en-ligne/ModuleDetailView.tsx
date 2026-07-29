@@ -7960,6 +7960,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                   }}
                   onPersist={(updated) => {
                     markAdminLocalEdit();
+                    flushImmediateRef.current = true;
                     setModuleData((prev) => ({
                       ...prev,
                       cours: prev.cours.map(c => c.id === updated.id ? { ...c, images: updated.images, image: updated.image } : c),
