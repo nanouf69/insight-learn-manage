@@ -4121,21 +4121,92 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                  {totalPaye > 0 ? 'Paiements' : 'Acquitter'}
                                </Button>
                               )}
-                             <Button
-                               size="sm"
-                               variant="outline"
-                               className="border-red-300 text-red-700 hover:bg-red-50"
-                               title="Marquer absent et déplacer dans l'onglet Absents"
-                               onClick={async () => {
-                                 if (!confirm(`Marquer ${a.prenom} ${a.nom} comme absent et le déplacer dans l'onglet Absents ?`)) return;
-                                 await updateSessionApprenant(sa.id, { presence_pratique: 'absent' });
-                               }}
-                             >
-                               Absent
-                             </Button>
-                           </div>
-                         </div>
-                       </div>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="gap-2 border-blue-300 text-blue-700 hover:bg-blue-50"
+                                title="Ajouter une facture supplémentaire pour cet apprenant"
+                                onClick={() => {
+                                  setAddExtraFactureFor(a);
+                                  setExtraFactureMontant('');
+                                  setExtraFactureLibelle('');
+                                }}
+                              >
+                                <Plus className="w-4 h-4" />
+                                Facture
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="border-red-300 text-red-700 hover:bg-red-50"
+                                title="Marquer absent et déplacer dans l'onglet Absents"
+                                onClick={async () => {
+                                  if (!confirm(`Marquer ${a.prenom} ${a.nom} comme absent et le déplacer dans l'onglet Absents ?`)) return;
+                                  await updateSessionApprenant(sa.id, { presence_pratique: 'absent' });
+                                }}
+                              >
+                                Absent
+                              </Button>
+                            </div>
+                          </div>
+
+                          {/* Factures additionnelles */}
+                          {((extraFacturesByApprenantId as any)?.[a.id] || []).length > 0 && (
+                            <div className="mt-1 pl-8 space-y-1.5">
+                              {((extraFacturesByApprenantId as any)[a.id] as any[]).map((ef: any) => {
+                                const libelle = String(ef.numero_convention || '').replace(/^EXTRA::/, '') || 'Facture additionnelle';
+                                const efPaiements: any[] = (paiementsByFactureId as any)?.[ef.id] || [];
+                                const efTotalPaye = efPaiements.reduce((s, p) => s + Number(p.montant || 0), 0);
+                                const efMontant = Number(ef.montant_ttc || 0);
+                                const efRestant = Math.max(0, efMontant - efTotalPaye);
+                                const efStatut = ef.statut === 'payee' || (efTotalPaye + 0.001 >= efMontant && efPaiements.length > 0)
+                                  ? 'Acquittée' : (efTotalPaye > 0 ? 'Partiellement payée' : 'Non payée');
+                                return (
+                                  <div key={ef.id} className="flex items-center gap-2 p-2 rounded-md border bg-muted/40 text-sm">
+                                    <FileText className="w-4 h-4 text-blue-600 shrink-0" />
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-2 flex-wrap">
+                                        <span className="font-medium truncate">{libelle}</span>
+                                        <Badge variant="outline" className="text-xs">N° {ef.numero}</Badge>
+                                        <Badge variant={efStatut === 'Acquittée' ? 'default' : 'secondary'} className="text-xs">{efStatut}</Badge>
+                                        <span className="font-semibold">{efMontant.toFixed(2)} €</span>
+                                        {efTotalPaye > 0 && (
+                                          <span className="text-xs text-emerald-700">
+                                            payé {efTotalPaye.toFixed(2)} €{efRestant > 0 ? ` (reste ${efRestant.toFixed(2)} €)` : ''}
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="gap-1.5"
+                                      onClick={() => {
+                                        setAcquittementApprenant({ ...a, __extraFactureId: ef.id });
+                                        setAcquittementDate(new Date().toISOString().split('T')[0]);
+                                        setAcquittementMoyen('virement');
+                                        setAcquittementMontant(efRestant > 0 ? efRestant.toFixed(2) : efMontant.toFixed(2));
+                                      }}
+                                    >
+                                      <CheckCircle className="w-3.5 h-3.5" />
+                                      {efTotalPaye > 0 ? 'Paiements' : 'Acquitter'}
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      className="text-red-600 hover:bg-red-50"
+                                      disabled={extraFactureDeleting === ef.id}
+                                      onClick={() => handleDeleteExtraFacture(ef.id)}
+                                    >
+                                      {extraFactureDeleting === ef.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <X className="w-3.5 h-3.5" />}
+                                    </Button>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+
                     );
                   })}
                 </div>
