@@ -6100,10 +6100,6 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       }).length;
     }, 0);
 
-    const resolvePublicFileUrl = (fileUrl: string) => {
-      return resolveAppFileUrl(fileUrl);
-    };
-
     const completionPersistedRef = useRef(false);
     // True once we've confirmed a row exists in apprenant_module_completion
     // for this (apprenant, module). Module becomes frozen: no more writes
