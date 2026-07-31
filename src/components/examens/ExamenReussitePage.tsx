@@ -3866,9 +3866,9 @@ export function ExamenReussitePage() {
                                   <Download className="h-3 w-3" /> Émargement VTC
                                 </Button>
                               )}
-                              {vtcReserved.length > 0 ? vtcReserved.map((a: any) => (
+                              {vtcReserved.length > 0 ? vtcReserved.map((a: any, idx: number) => (
                                 <div key={a.id} className={`text-[11px] px-1 py-0.5 rounded mb-0.5 font-semibold flex items-center justify-between gap-1 group ${vtcOverbooked ? 'bg-destructive/10 text-destructive' : 'bg-blue-100'}`} title={`${a.nom} ${a.prenom}`}>
-                                  <span className="truncate flex-1">{a.nom} {a.prenom} ✓</span>
+                                  <span className="truncate flex-1">{a.nom} {a.prenom} {idx >= dayMax ? '⛔ en trop' : '✓'}</span>
                                   <select
                                     value={a._creneau || 'journee'}
                                     onChange={(e) => handleAssignDate(a.id, `${a.nom} ${a.prenom}`, key, 'vtc', e.target.value as any)}
@@ -3900,9 +3900,9 @@ export function ExamenReussitePage() {
                                   <Download className="h-3 w-3" /> Émargement TAXI
                                 </Button>
                               )}
-                              {taxiReserved.length > 0 ? taxiReserved.map((a: any) => (
+                              {taxiReserved.length > 0 ? taxiReserved.map((a: any, idx: number) => (
                                 <div key={a.id} className={`text-[11px] px-1 py-0.5 rounded mb-0.5 font-semibold flex items-center justify-between gap-1 group ${taxiOverbooked ? 'bg-destructive/10 text-destructive' : 'bg-amber-100'}`} title={`${a.nom} ${a.prenom}`}>
-                                  <span className="truncate flex-1">{a.nom} {a.prenom} ✓</span>
+                                  <span className="truncate flex-1">{a.nom} {a.prenom} {idx >= dayMax ? '⛔ en trop' : '✓'}</span>
                                   <select
                                     value={a._creneau || 'journee'}
                                     onChange={(e) => handleAssignDate(a.id, `${a.nom} ${a.prenom}`, key, 'taxi', e.target.value as any)}
