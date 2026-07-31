@@ -3825,8 +3825,32 @@ export function ExamenReussitePage() {
                           )}
 
                           {(vtcOverbooked || taxiOverbooked) && (
-                            <div className="text-[10px] font-bold text-destructive text-center mb-1">
-                              ⚠️ Max {dayMax} dépassé
+                            <div className="mb-1 space-y-1">
+                              <div className="text-[10px] font-bold text-destructive text-center">
+                                ⚠️ Max {dayMax} dépassé
+                              </div>
+                              {vtcOverbooked && (
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  className="h-6 w-full text-[9px]"
+                                  onClick={() => handleReleaseSurplus(key, 'vtc', vtcReserved, dayMax)}
+                                  title="Annule la réservation des derniers inscrits et leur demande de choisir une autre date"
+                                >
+                                  Libérer {vtcReserved.length - dayMax} VTC en trop
+                                </Button>
+                              )}
+                              {taxiOverbooked && (
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  className="h-6 w-full text-[9px]"
+                                  onClick={() => handleReleaseSurplus(key, 'taxi', taxiReserved, dayMax)}
+                                  title="Annule la réservation des derniers inscrits et leur demande de choisir une autre date"
+                                >
+                                  Libérer {taxiReserved.length - dayMax} TAXI en trop
+                                </Button>
+                              )}
                             </div>
                           )}
 
