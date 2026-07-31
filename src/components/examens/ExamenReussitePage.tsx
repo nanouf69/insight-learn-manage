@@ -882,6 +882,55 @@ export function ExamenReussitePage() {
     }
   };
 
+  // Libère les derniers inscrits d'un jour en surnombre (> max) et leur demande de choisir une autre date
+  const handleReleaseSurplus = async (
+    date: string,
+    typeFormation: 'vtc' | 'taxi',
+    dayList: any[],
+    dayMax: number,
+  ) => {
+    try {
+      // Trie par date d'inscription : les derniers inscrits sont libérés en premier
+      const sorted = [...dayList].sort(
+        (a, b) => new Date(a._createdAt || 0).getTime() - new Date(b._createdAt || 0).getTime(),
+      );
+      const surplus = sorted.slice(dayMax);
+      if (surplus.length === 0) {
+        toast.info('Aucun dépassement sur ce jour');
+        return;
+      }
+
+      for (const app of surplus) {
+        const { error } = await supabase
+          .from('reservations_pratique')
+          .delete()
+          .eq('apprenant_id', app.id)
+          .eq('date_choisie', date);
+        if (error) throw error;
+
+        if (app.email) {
+          const link = buildPratiqueReservationUrl(app.id, typeFormation, selectedExamDate, selectedDatePratique);
+          const subject = `Changement de date — formation pratique ${typeFormation.toUpperCase()}`;
+          const body = `Bonjour ${app.prenom},<br><br>La journée du <strong>${formatDateFR(date)}</strong> est complète (${dayMax} candidats maximum par jour).<br>Votre réservation a été annulée, merci de choisir une autre date disponible :<br><br><a href="${link}">${link}</a><br><br>Nous restons à votre disposition au 04.28.29.60.91.<br><br>Cordialement,<br><br>FTRANSPORT<br>Centre de formation<br>86 Route de Genas 69003 Lyon`;
+          try {
+            await supabase.functions.invoke('sync-outlook-emails', {
+              body: { action: 'send', userEmail: 'contact@ftransport.fr', to: app.email, subject, body, apprenantId: app.id },
+            });
+          } catch {
+            toast.error(`Email non envoyé à ${app.nom} ${app.prenom}`);
+          }
+        }
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['reservations-pratique-planning'] });
+      toast.success(
+        `${surplus.length} candidat(s) libéré(s) du ${formatDateFR(date)} : ${surplus.map((a) => `${a.nom} ${a.prenom}`).join(', ')}`,
+      );
+    } catch (err: any) {
+      toast.error('Erreur: ' + (err.message || 'Échec'));
+    }
+  };
+
   // Assign a date to a candidate and notify by email
   const handleAssignDate = async (apprenantId: string, apprenantNom: string, date: string, typeFormation: string, creneau: 'matin' | 'apresmidi' | 'journee' = 'journee') => {
     try {
