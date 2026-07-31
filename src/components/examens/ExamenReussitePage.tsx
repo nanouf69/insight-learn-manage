@@ -882,6 +882,55 @@ export function ExamenReussitePage() {
     }
   };
 
+  // Libère les derniers inscrits d'un jour en surnombre (> max) et leur demande de choisir une autre date
+  const handleReleaseSurplus = async (
+    date: string,
+    typeFormation: 'vtc' | 'taxi',
+    dayList: any[],
+    dayMax: number,
+  ) => {
+    try {
+      // Trie par date d'inscription : les derniers inscrits sont libérés en premier
+      const sorted = [...dayList].sort(
+        (a, b) => new Date(a._createdAt || 0).getTime() - new Date(b._createdAt || 0).getTime(),
+      );
+      const surplus = sorted.slice(dayMax);
+      if (surplus.length === 0) {
+        toast.info('Aucun dépassement sur ce jour');
+        return;
+      }
+
+      for (const app of surplus) {
+        const { error } = await supabase
+          .from('reservations_pratique')
+          .delete()
+          .eq('apprenant_id', app.id)
+          .eq('date_choisie', date);
+        if (error) throw error;
+
+        if (app.email) {
+          const link = buildPratiqueReservationUrl(app.id, typeFormation, selectedExamDate, selectedDatePratique);
+          const subject = `Changement de date — formation pratique ${typeFormation.toUpperCase()}`;
+          const body = `Bonjour ${app.prenom},<br><br>La journée du <strong>${formatDateFR(date)}</strong> est complète (${dayMax} candidats maximum par jour).<br>Votre réservation a été annulée, merci de choisir une autre date disponible :<br><br><a href="${link}">${link}</a><br><br>Nous restons à votre disposition au 04.28.29.60.91.<br><br>Cordialement,<br><br>FTRANSPORT<br>Centre de formation<br>86 Route de Genas 69003 Lyon`;
+          try {
+            await supabase.functions.invoke('sync-outlook-emails', {
+              body: { action: 'send', userEmail: 'contact@ftransport.fr', to: app.email, subject, body, apprenantId: app.id },
+            });
+          } catch {
+            toast.error(`Email non envoyé à ${app.nom} ${app.prenom}`);
+          }
+        }
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['reservations-pratique-planning'] });
+      toast.success(
+        `${surplus.length} candidat(s) libéré(s) du ${formatDateFR(date)} : ${surplus.map((a) => `${a.nom} ${a.prenom}`).join(', ')}`,
+      );
+    } catch (err: any) {
+      toast.error('Erreur: ' + (err.message || 'Échec'));
+    }
+  };
+
   // Assign a date to a candidate and notify by email
   const handleAssignDate = async (apprenantId: string, apprenantNom: string, date: string, typeFormation: string, creneau: 'matin' | 'apresmidi' | 'journee' = 'journee') => {
     try {
@@ -3364,12 +3413,18 @@ export function ExamenReussitePage() {
         (reservationsPratique || []).forEach(r => {
           if (!byDate[r.date_choisie]) byDate[r.date_choisie] = { vtc: [], taxi: [] };
           const baseApp = appMap[r.apprenant_id] || { id: r.apprenant_id, nom: '?', prenom: '?', type_apprenant: null, telephone: '', email: '' };
-          const app = { ...baseApp, _creneau: (r as any).creneau || 'journee' };
+          const app = { ...baseApp, _creneau: (r as any).creneau || 'journee', _createdAt: (r as any).created_at || null };
           if (String(r.type_formation).toLowerCase() === 'vtc') {
             byDate[r.date_choisie].vtc.push(app);
           } else {
             byDate[r.date_choisie].taxi.push(app);
           }
+        });
+        // Ordre d'inscription (les derniers inscrits en bas de liste)
+        Object.values(byDate).forEach(d => {
+          const byCreated = (a: any, b: any) => new Date(a._createdAt || 0).getTime() - new Date(b._createdAt || 0).getTime();
+          d.vtc.sort(byCreated);
+          d.taxi.sort(byCreated);
         });
 
         // Count unreserved candidates
@@ -3770,8 +3825,32 @@ export function ExamenReussitePage() {
                           )}
 
                           {(vtcOverbooked || taxiOverbooked) && (
-                            <div className="text-[10px] font-bold text-destructive text-center mb-1">
-                              ⚠️ Max {dayMax} dépassé
+                            <div className="mb-1 space-y-1">
+                              <div className="text-[10px] font-bold text-destructive text-center">
+                                ⚠️ Max {dayMax} dépassé
+                              </div>
+                              {vtcOverbooked && (
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  className="h-6 w-full text-[9px]"
+                                  onClick={() => handleReleaseSurplus(key, 'vtc', vtcReserved, dayMax)}
+                                  title="Annule la réservation des derniers inscrits et leur demande de choisir une autre date"
+                                >
+                                  Libérer {vtcReserved.length - dayMax} VTC en trop
+                                </Button>
+                              )}
+                              {taxiOverbooked && (
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  className="h-6 w-full text-[9px]"
+                                  onClick={() => handleReleaseSurplus(key, 'taxi', taxiReserved, dayMax)}
+                                  title="Annule la réservation des derniers inscrits et leur demande de choisir une autre date"
+                                >
+                                  Libérer {taxiReserved.length - dayMax} TAXI en trop
+                                </Button>
+                              )}
                             </div>
                           )}
 
@@ -3787,9 +3866,9 @@ export function ExamenReussitePage() {
                                   <Download className="h-3 w-3" /> Émargement VTC
                                 </Button>
                               )}
-                              {vtcReserved.length > 0 ? vtcReserved.map((a: any) => (
+                              {vtcReserved.length > 0 ? vtcReserved.map((a: any, idx: number) => (
                                 <div key={a.id} className={`text-[11px] px-1 py-0.5 rounded mb-0.5 font-semibold flex items-center justify-between gap-1 group ${vtcOverbooked ? 'bg-destructive/10 text-destructive' : 'bg-blue-100'}`} title={`${a.nom} ${a.prenom}`}>
-                                  <span className="truncate flex-1">{a.nom} {a.prenom} ✓</span>
+                                  <span className="truncate flex-1">{a.nom} {a.prenom} {idx >= dayMax ? '⛔ en trop' : '✓'}</span>
                                   <select
                                     value={a._creneau || 'journee'}
                                     onChange={(e) => handleAssignDate(a.id, `${a.nom} ${a.prenom}`, key, 'vtc', e.target.value as any)}
@@ -3821,9 +3900,9 @@ export function ExamenReussitePage() {
                                   <Download className="h-3 w-3" /> Émargement TAXI
                                 </Button>
                               )}
-                              {taxiReserved.length > 0 ? taxiReserved.map((a: any) => (
+                              {taxiReserved.length > 0 ? taxiReserved.map((a: any, idx: number) => (
                                 <div key={a.id} className={`text-[11px] px-1 py-0.5 rounded mb-0.5 font-semibold flex items-center justify-between gap-1 group ${taxiOverbooked ? 'bg-destructive/10 text-destructive' : 'bg-amber-100'}`} title={`${a.nom} ${a.prenom}`}>
-                                  <span className="truncate flex-1">{a.nom} {a.prenom} ✓</span>
+                                  <span className="truncate flex-1">{a.nom} {a.prenom} {idx >= dayMax ? '⛔ en trop' : '✓'}</span>
                                   <select
                                     value={a._creneau || 'journee'}
                                     onChange={(e) => handleAssignDate(a.id, `${a.nom} ${a.prenom}`, key, 'taxi', e.target.value as any)}
