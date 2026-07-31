@@ -3413,12 +3413,18 @@ export function ExamenReussitePage() {
         (reservationsPratique || []).forEach(r => {
           if (!byDate[r.date_choisie]) byDate[r.date_choisie] = { vtc: [], taxi: [] };
           const baseApp = appMap[r.apprenant_id] || { id: r.apprenant_id, nom: '?', prenom: '?', type_apprenant: null, telephone: '', email: '' };
-          const app = { ...baseApp, _creneau: (r as any).creneau || 'journee' };
+          const app = { ...baseApp, _creneau: (r as any).creneau || 'journee', _createdAt: (r as any).created_at || null };
           if (String(r.type_formation).toLowerCase() === 'vtc') {
             byDate[r.date_choisie].vtc.push(app);
           } else {
             byDate[r.date_choisie].taxi.push(app);
           }
+        });
+        // Ordre d'inscription (les derniers inscrits en bas de liste)
+        Object.values(byDate).forEach(d => {
+          const byCreated = (a: any, b: any) => new Date(a._createdAt || 0).getTime() - new Date(b._createdAt || 0).getTime();
+          d.vtc.sort(byCreated);
+          d.taxi.sort(byCreated);
         });
 
         // Count unreserved candidates
