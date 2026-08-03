@@ -1970,7 +1970,56 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   };
 
   // ===== FACTURES FORMATION CONTINUE =====
-  const FC_MONTANT_TTC = 200; // Formation continue VTC/TAXI : 200 €
+  const FC_MONTANT_TTC = 200; // Formation continue VTC/TAXI : 200 € (montant par défaut, modifiable)
+
+  // Montant facturé pour un apprenant : facture existante > montant personnalisé de la session > défaut
+  const getMontantFactureFor = (apprenant: any, sessionApprenant?: any): number => {
+    const facture: any = (facturesFCMap as any)?.[apprenant?.id] || null;
+    if (facture?.montant_ttc != null) return Number(facture.montant_ttc);
+    const sa = sessionApprenant
+      || (apprenantsInSession as any[]).find((s: any) => s.apprenant_id === apprenant?.id);
+    if (sa?.montant_total != null && Number(sa.montant_total) > 0) return Number(sa.montant_total);
+    return FC_MONTANT_TTC;
+  };
+
+  // Édition inline du montant TTC
+  const [editMontantFor, setEditMontantFor] = useState<string | null>(null);
+  const [editMontantValue, setEditMontantValue] = useState('');
+  const [editMontantSaving, setEditMontantSaving] = useState(false);
+
+  const handleSaveMontantFacture = async (apprenant: any, sessionApprenant: any) => {
+    const montant = parseFloat(String(editMontantValue).replace(',', '.'));
+    if (!Number.isFinite(montant) || montant <= 0) {
+      toast({ title: "Montant invalide", description: "Saisir un montant TTC > 0.", variant: "destructive" });
+      return;
+    }
+    try {
+      setEditMontantSaving(true);
+      if (sessionApprenant?.id) {
+        const { error } = await supabase
+          .from('session_apprenants')
+          .update({ montant_total: montant })
+          .eq('id', sessionApprenant.id);
+        if (error) throw error;
+      }
+      const facture: any = (facturesFCMap as any)?.[apprenant.id] || null;
+      if (facture?.id) {
+        const { error } = await supabase
+          .from('factures')
+          .update({ montant_ht: montant, montant_tva: 0, tva_taux: 0, montant_ttc: montant })
+          .eq('id', facture.id);
+        if (error) throw error;
+      }
+      await Promise.all([refetchApprenants(), refetchFacturesFC()]);
+      setEditMontantFor(null);
+      toast({ title: "Montant mis à jour", description: `${apprenant.prenom} ${apprenant.nom} — ${montant.toFixed(2)} € TTC` });
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e?.message || "Impossible de modifier le montant.", variant: "destructive" });
+    } finally {
+      setEditMontantSaving(false);
+    }
+  };
+
 
   // Génère le prochain numéro YYYYMMDD### selon la BDD
   const generateNextNumeroFacture = async (): Promise<string> => {
