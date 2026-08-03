@@ -1970,7 +1970,56 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   };
 
   // ===== FACTURES FORMATION CONTINUE =====
-  const FC_MONTANT_TTC = 200; // Formation continue VTC/TAXI : 200 €
+  const FC_MONTANT_TTC = 200; // Formation continue VTC/TAXI : 200 € (montant par défaut, modifiable)
+
+  // Montant facturé pour un apprenant : facture existante > montant personnalisé de la session > défaut
+  const getMontantFactureFor = (apprenant: any, sessionApprenant?: any): number => {
+    const facture: any = (facturesFCMap as any)?.[apprenant?.id] || null;
+    if (facture?.montant_ttc != null) return Number(facture.montant_ttc);
+    const sa = sessionApprenant
+      || (apprenantsInSession as any[]).find((s: any) => s.apprenant_id === apprenant?.id);
+    if (sa?.montant_total != null && Number(sa.montant_total) > 0) return Number(sa.montant_total);
+    return FC_MONTANT_TTC;
+  };
+
+  // Édition inline du montant TTC
+  const [editMontantFor, setEditMontantFor] = useState<string | null>(null);
+  const [editMontantValue, setEditMontantValue] = useState('');
+  const [editMontantSaving, setEditMontantSaving] = useState(false);
+
+  const handleSaveMontantFacture = async (apprenant: any, sessionApprenant: any) => {
+    const montant = parseFloat(String(editMontantValue).replace(',', '.'));
+    if (!Number.isFinite(montant) || montant <= 0) {
+      toast({ title: "Montant invalide", description: "Saisir un montant TTC > 0.", variant: "destructive" });
+      return;
+    }
+    try {
+      setEditMontantSaving(true);
+      if (sessionApprenant?.id) {
+        const { error } = await supabase
+          .from('session_apprenants')
+          .update({ montant_total: montant })
+          .eq('id', sessionApprenant.id);
+        if (error) throw error;
+      }
+      const facture: any = (facturesFCMap as any)?.[apprenant.id] || null;
+      if (facture?.id) {
+        const { error } = await supabase
+          .from('factures')
+          .update({ montant_ht: montant, montant_tva: 0, tva_taux: 0, montant_ttc: montant })
+          .eq('id', facture.id);
+        if (error) throw error;
+      }
+      await Promise.all([refetchApprenants(), refetchFacturesFC()]);
+      setEditMontantFor(null);
+      toast({ title: "Montant mis à jour", description: `${apprenant.prenom} ${apprenant.nom} — ${montant.toFixed(2)} € TTC` });
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e?.message || "Impossible de modifier le montant.", variant: "destructive" });
+    } finally {
+      setEditMontantSaving(false);
+    }
+  };
+
 
   // Génère le prochain numéro YYYYMMDD### selon la BDD
   const generateNextNumeroFacture = async (): Promise<string> => {
@@ -1995,7 +2044,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     const fc: any = (financeursFCMap as any)?.[apprenant.id] || null;
     const typeApp = `${apprenant.type_apprenant || ''} ${apprenant.formation_choisie || ''}`.toUpperCase();
     const formation: 'VTC' | 'TAXI' = typeApp.includes('TAXI') ? 'TAXI' : 'VTC';
-    const montantTTC = FC_MONTANT_TTC; // forcé à 200 €
+    const montantTTC = getMontantFactureFor(apprenant, sessionApprenant);
     const tva = 0; // TVA non applicable - art 293 B
     const montantHT = montantTTC / (1 + tva / 100);
     const yyyymmdd = overrides?.dateEmission || new Date().toISOString().split('T')[0];
@@ -2257,10 +2306,10 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       client_nom: clientNom,
       client_adresse: clientAdresse || null,
       client_siret: isPro ? (fc?.siret || fc?.siren || null) : null,
-      montant_ht: FC_MONTANT_TTC,
+      montant_ht: getMontantFactureFor(apprenant, sessionApprenant),
       tva_taux: 0,
       montant_tva: 0,
-      montant_ttc: FC_MONTANT_TTC,
+      montant_ttc: getMontantFactureFor(apprenant, sessionApprenant),
       statut: 'brouillon',
       session_id: session.id,
       apprenant_id: apprenant.id,
@@ -4111,7 +4160,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                     const statut = facture?.statut || null;
                     const paiements: any[] = (facture?.id ? (paiementsByFactureId as any)?.[facture.id] : []) || [];
                     const totalPaye = paiements.reduce((s, p) => s + Number(p.montant || 0), 0);
-                    const montantTtc = Number(facture?.montant_ttc || 200);
+                    const montantTtc = getMontantFactureFor(a, sa);
                     const restantDu = Math.max(0, montantTtc - totalPaye);
                     const statutLabel = statut === 'payee' ? 'Acquittée' : statut === 'en_attente' ? (totalPaye > 0 ? 'Partiellement payée' : 'Validée') : statut === 'brouillon' ? 'Brouillon' : 'Non générée';
                     const statutVariant: any = statut === 'payee' ? 'default' : statut === 'en_attente' ? 'secondary' : statut === 'brouillon' ? 'outline' : 'outline';
@@ -4202,11 +4251,42 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                  <span className="text-orange-600">Aucun financeur saisi — facturation à l'apprenant</span>
                                )}
                              </div>
-                             <div className="text-xs text-muted-foreground truncate">
-                               Email facturation : {recipient || <span className="text-destructive">manquant</span>}
-                               {' • '}Tél : {a.telephone ? <a href={`tel:${a.telephone}`} className="text-foreground font-medium hover:underline">{a.telephone}</a> : <span className="text-destructive">manquant</span>}
-                               {' • '}Montant TTC : <span className="font-medium text-foreground">{montantTtc.toFixed(2)} €</span>
+                             <div className="text-xs text-muted-foreground flex flex-wrap items-center gap-x-1 gap-y-1">
+                               <span>Email facturation : {recipient || <span className="text-destructive">manquant</span>}</span>
+                               <span>{' • '}Tél : {a.telephone ? <a href={`tel:${a.telephone}`} className="text-foreground font-medium hover:underline">{a.telephone}</a> : <span className="text-destructive">manquant</span>}</span>
+                               <span>{' • '}Montant TTC :</span>
+                               {editMontantFor === a.id ? (
+                                 <span className="inline-flex items-center gap-1">
+                                   <Input
+                                     type="number"
+                                     step="0.01"
+                                     min="0"
+                                     autoFocus
+                                     value={editMontantValue}
+                                     onChange={(e) => setEditMontantValue(e.target.value)}
+                                     onKeyDown={(e) => {
+                                       if (e.key === 'Enter') handleSaveMontantFacture(a, sa);
+                                       if (e.key === 'Escape') setEditMontantFor(null);
+                                     }}
+                                     className="h-7 w-24 text-xs"
+                                   />
+                                   <Button size="sm" className="h-7 px-2" disabled={editMontantSaving} onClick={() => handleSaveMontantFacture(a, sa)}>
+                                     {editMontantSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : 'OK'}
+                                   </Button>
+                                   <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => setEditMontantFor(null)}>Annuler</Button>
+                                 </span>
+                               ) : (
+                                 <button
+                                   type="button"
+                                   title="Modifier le montant TTC"
+                                   onClick={() => { setEditMontantFor(a.id); setEditMontantValue(montantTtc.toFixed(2)); }}
+                                   className="font-medium text-foreground underline decoration-dotted hover:text-primary"
+                                 >
+                                   {montantTtc.toFixed(2)} € ✏️
+                                 </button>
+                               )}
                              </div>
+
                            </div>
                            <div className="flex items-center gap-2 shrink-0">
                              <Button
