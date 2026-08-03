@@ -298,15 +298,23 @@ function resolvePlanningBounds(config: {
 }) {
   const storedStart = config.planning_start_date || null;
   const storedEnd = config.planning_end_date || null;
+  const labelPeriod = parsePratiquePeriod(config.date_pratique);
 
-  // If stored dates exist, always use them (admin configured manually)
   if (storedStart && storedEnd) {
+    // Guard: stale rows can keep bounds from a previous period (ex: février
+    // alors que la période affichée est "Du 1er au 11 septembre"). Dans ce cas
+    // le libellé de la période fait foi.
+    if (labelPeriod) {
+      const overlaps = storedStart <= labelPeriod.end && storedEnd >= labelPeriod.start;
+      if (!overlaps) return labelPeriod;
+    }
     return { start: storedStart, end: storedEnd };
   }
 
   // Fallback: parse from date_pratique label
-  return parsePratiquePeriod(config.date_pratique);
+  return labelPeriod;
 }
+
 
 function buildPratiqueReservationUrl(apprenantId: string, type: 'vtc' | 'taxi', examDate: string, pratiqueDate?: string | null) {
   const params = new URLSearchParams({
