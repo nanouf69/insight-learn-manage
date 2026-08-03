@@ -2044,7 +2044,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     const fc: any = (financeursFCMap as any)?.[apprenant.id] || null;
     const typeApp = `${apprenant.type_apprenant || ''} ${apprenant.formation_choisie || ''}`.toUpperCase();
     const formation: 'VTC' | 'TAXI' = typeApp.includes('TAXI') ? 'TAXI' : 'VTC';
-    const montantTTC = FC_MONTANT_TTC; // forcé à 200 €
+    const montantTTC = getMontantFactureFor(apprenant, sessionApprenant);
     const tva = 0; // TVA non applicable - art 293 B
     const montantHT = montantTTC / (1 + tva / 100);
     const yyyymmdd = overrides?.dateEmission || new Date().toISOString().split('T')[0];
@@ -2306,10 +2306,10 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       client_nom: clientNom,
       client_adresse: clientAdresse || null,
       client_siret: isPro ? (fc?.siret || fc?.siren || null) : null,
-      montant_ht: FC_MONTANT_TTC,
+      montant_ht: getMontantFactureFor(apprenant, sessionApprenant),
       tva_taux: 0,
       montant_tva: 0,
-      montant_ttc: FC_MONTANT_TTC,
+      montant_ttc: getMontantFactureFor(apprenant, sessionApprenant),
       statut: 'brouillon',
       session_id: session.id,
       apprenant_id: apprenant.id,
@@ -4160,7 +4160,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                     const statut = facture?.statut || null;
                     const paiements: any[] = (facture?.id ? (paiementsByFactureId as any)?.[facture.id] : []) || [];
                     const totalPaye = paiements.reduce((s, p) => s + Number(p.montant || 0), 0);
-                    const montantTtc = Number(facture?.montant_ttc || 200);
+                    const montantTtc = getMontantFactureFor(a, sa);
                     const restantDu = Math.max(0, montantTtc - totalPaye);
                     const statutLabel = statut === 'payee' ? 'Acquittée' : statut === 'en_attente' ? (totalPaye > 0 ? 'Partiellement payée' : 'Validée') : statut === 'brouillon' ? 'Brouillon' : 'Non générée';
                     const statutVariant: any = statut === 'payee' ? 'default' : statut === 'en_attente' ? 'secondary' : statut === 'brouillon' ? 'outline' : 'outline';
