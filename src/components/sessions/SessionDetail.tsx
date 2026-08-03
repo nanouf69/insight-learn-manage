@@ -4251,11 +4251,42 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                  <span className="text-orange-600">Aucun financeur saisi — facturation à l'apprenant</span>
                                )}
                              </div>
-                             <div className="text-xs text-muted-foreground truncate">
-                               Email facturation : {recipient || <span className="text-destructive">manquant</span>}
-                               {' • '}Tél : {a.telephone ? <a href={`tel:${a.telephone}`} className="text-foreground font-medium hover:underline">{a.telephone}</a> : <span className="text-destructive">manquant</span>}
-                               {' • '}Montant TTC : <span className="font-medium text-foreground">{montantTtc.toFixed(2)} €</span>
+                             <div className="text-xs text-muted-foreground flex flex-wrap items-center gap-x-1 gap-y-1">
+                               <span>Email facturation : {recipient || <span className="text-destructive">manquant</span>}</span>
+                               <span>{' • '}Tél : {a.telephone ? <a href={`tel:${a.telephone}`} className="text-foreground font-medium hover:underline">{a.telephone}</a> : <span className="text-destructive">manquant</span>}</span>
+                               <span>{' • '}Montant TTC :</span>
+                               {editMontantFor === a.id ? (
+                                 <span className="inline-flex items-center gap-1">
+                                   <Input
+                                     type="number"
+                                     step="0.01"
+                                     min="0"
+                                     autoFocus
+                                     value={editMontantValue}
+                                     onChange={(e) => setEditMontantValue(e.target.value)}
+                                     onKeyDown={(e) => {
+                                       if (e.key === 'Enter') handleSaveMontantFacture(a, sa);
+                                       if (e.key === 'Escape') setEditMontantFor(null);
+                                     }}
+                                     className="h-7 w-24 text-xs"
+                                   />
+                                   <Button size="sm" className="h-7 px-2" disabled={editMontantSaving} onClick={() => handleSaveMontantFacture(a, sa)}>
+                                     {editMontantSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : 'OK'}
+                                   </Button>
+                                   <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => setEditMontantFor(null)}>Annuler</Button>
+                                 </span>
+                               ) : (
+                                 <button
+                                   type="button"
+                                   title="Modifier le montant TTC"
+                                   onClick={() => { setEditMontantFor(a.id); setEditMontantValue(montantTtc.toFixed(2)); }}
+                                   className="font-medium text-foreground underline decoration-dotted hover:text-primary"
+                                 >
+                                   {montantTtc.toFixed(2)} € ✏️
+                                 </button>
+                               )}
                              </div>
+
                            </div>
                            <div className="flex items-center gap-2 shrink-0">
                              <Button
