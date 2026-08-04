@@ -211,7 +211,7 @@ serve(async (req) => {
         const examLabel = String(a.date_examen_theorique || '').trim();
         const pratiqueLabel = await pratiqueForExam(examLabel);
         const url = buildUrl(a.id, type, examLabel || 'na', pratiqueLabel);
-        const { subject, body: html } = buildEmail(a.prenom || '', a.nom || '', type, url);
+        const { subject, body: html } = buildEmail(a.prenom || '', a.nom || '', type, url, ignoreModule);
         const marker = `${EMAIL_TYPE}:${a.id}`;
 
         // Verrou anti-doublon : la contrainte UNIQUE sur outlook_message_id
