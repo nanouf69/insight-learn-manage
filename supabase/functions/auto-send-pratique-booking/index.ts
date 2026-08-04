@@ -97,7 +97,7 @@ serve(async (req) => {
     }
 
     const doneIds = new Set<string>([...doneVtc, ...doneTaxi]);
-    if (doneIds.size === 0) {
+    if (doneIds.size === 0 && !ignoreModule) {
       return new Response(JSON.stringify({ ok: true, sent: 0, note: "aucune completion" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -113,36 +113,56 @@ serve(async (req) => {
     // 3. Deja envoye (marqueur unique dans outlook_message_id)
     const alreadySent = new Set<string>();
     {
-      const ids = Array.from(doneIds);
-      const chunk = 200;
-      for (let i = 0; i < ids.length; i += chunk) {
-        const slice = ids.slice(i, i + chunk);
+      const pageSize = 1000;
+      let from = 0;
+      while (true) {
         const { data } = await supabase
           .from("emails")
           .select("apprenant_id, outlook_message_id")
           .like("outlook_message_id", `${EMAIL_TYPE}:%`)
-          .in("apprenant_id", slice);
+          .range(from, from + pageSize - 1);
         (data || []).forEach((r: any) => r.apprenant_id && alreadySent.add(r.apprenant_id));
+        if (!data || data.length < pageSize) break;
+        from += pageSize;
       }
     }
 
     // 4. Apprenants eligibles
-    const { data: apprenants, error: appErr } = await supabase
-      .from("apprenants")
-      .select("id, nom, prenom, email, telephone, type_apprenant, resultat_examen, date_examen_theorique, deleted_at")
-      .in("id", Array.from(doneIds).filter((id) => !reserved.has(id) && !alreadySent.has(id)));
-    if (appErr) throw appErr;
+    let apprenants: any[] = [];
+    if (ignoreModule) {
+      const pageSize = 1000;
+      let from = 0;
+      while (true) {
+        const { data, error } = await supabase
+          .from("apprenants")
+          .select("id, nom, prenom, email, telephone, type_apprenant, resultat_examen, date_examen_theorique, deleted_at")
+          .eq("resultat_examen", "oui")
+          .range(from, from + pageSize - 1);
+        if (error) throw error;
+        apprenants.push(...(data || []));
+        if (!data || data.length < pageSize) break;
+        from += pageSize;
+      }
+      apprenants = apprenants.filter((a) => !reserved.has(a.id) && !alreadySent.has(a.id));
+    } else {
+      const { data, error: appErr } = await supabase
+        .from("apprenants")
+        .select("id, nom, prenom, email, telephone, type_apprenant, resultat_examen, date_examen_theorique, deleted_at")
+        .in("id", Array.from(doneIds).filter((id) => !reserved.has(id) && !alreadySent.has(id)));
+      if (appErr) throw appErr;
+      apprenants = data || [];
+    }
 
     const eligible: Array<{ a: any; type: 'vtc' | 'taxi' }> = [];
-    for (const a of apprenants || []) {
+    for (const a of apprenants) {
       if (a.deleted_at) continue;
       if (!a.email) continue;
       if (onlyIds && !onlyIds.includes(a.id)) continue;
       if ((a as any).resultat_examen !== 'oui') continue;
       const t = String(a.type_apprenant || '').toLowerCase().trim();
       let type: 'vtc' | 'taxi' | null = null;
-      if (PRACTICE_VTC_TYPES.has(t) && doneVtc.has(a.id)) type = 'vtc';
-      else if (PRACTICE_TAXI_TYPES.has(t) && doneTaxi.has(a.id)) type = 'taxi';
+      if (PRACTICE_VTC_TYPES.has(t) && (ignoreModule || doneVtc.has(a.id))) type = 'vtc';
+      else if (PRACTICE_TAXI_TYPES.has(t) && (ignoreModule || doneTaxi.has(a.id))) type = 'taxi';
       if (!type) continue;
       eligible.push({ a, type });
       if (limit && eligible.length >= limit) break;
