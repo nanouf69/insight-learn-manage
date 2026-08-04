@@ -70,6 +70,8 @@ serve(async (req) => {
     // Pilot mode: restrict the run to specific learners or a max count
     const onlyIds: string[] | null = Array.isArray(body?.onlyIds) && body.onlyIds.length ? body.onlyIds.map(String) : null;
     const limit: number | null = Number.isFinite(body?.limit) && body.limit > 0 ? Math.floor(body.limit) : null;
+    // Envoi a tous ceux qui n'ont pas encore choisi de date, meme sans module Pratique termine
+    const ignoreModule: boolean = !!body?.ignoreModule;
 
     // 1. Toutes les completions des modules pratique
     const doneVtc = new Set<string>();
