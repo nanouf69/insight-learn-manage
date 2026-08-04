@@ -21,13 +21,21 @@ function buildUrl(id: string, type: 'vtc' | 'taxi', exam: string, pratique?: str
   return `${APP_BASE}/reservation-pratique?${p.toString()}`;
 }
 
-function buildEmail(prenom: string, nom: string, type: 'vtc' | 'taxi', bookingUrl: string) {
+function buildEmail(prenom: string, nom: string, type: 'vtc' | 'taxi', bookingUrl: string, ignoreModule = false) {
   const label = type === 'vtc' ? 'VTC' : 'TAXI';
   const exercicesLabel = type === 'vtc'
     ? '"Formation Pratique VTC" : Quizz Lyon et Questions à apprendre'
     : '"Formation Pratique TAXI" : QCM Taximètre, Cas pratique, Quizz Lyon et Questions à apprendre';
-  const subject = `Félicitations - Choisissez votre date de formation pratique ${label} - ${prenom} ${nom}`;
-  const body = `Bonjour ${prenom},<br><br>Félicitations, vous venez de terminer le module <strong>Formation Pratique ${label}</strong> !<br><br>Vous pouvez désormais choisir votre date d'entraînement pratique (journée complète de 9h à 16h - 9h/12h puis 13h/16h).<br><br>👉 <a href="${bookingUrl}" style="background:#2563eb;color:#fff;padding:10px 18px;border-radius:6px;text-decoration:none;font-weight:bold;display:inline-block">CHOISISSEZ VOTRE DATE ICI</a><br><br>⚠️ Attention : une seule date, aucun changement possible.<br><br>📚 Continuez à réviser les exercices de ${exercicesLabel}.<br><br>📍 RDV au 86 Route de Genas 69003 Lyon à la date que vous aurez choisie.<br><br>Cordialement,<br><br>FTRANSPORT<br>📞 04.28.29.60.91`;
+  const subject = ignoreModule
+    ? `Choisissez votre date de formation pratique ${label} - ${prenom} ${nom}`
+    : `Félicitations - Choisissez votre date de formation pratique ${label} - ${prenom} ${nom}`;
+  const intro = ignoreModule
+    ? `Vous n'avez pas encore choisi votre date d'entraînement pratique <strong>${label}</strong>.`
+    : `Félicitations, vous venez de terminer le module <strong>Formation Pratique ${label}</strong> !`;
+  const rappel = ignoreModule
+    ? `<br><br>📚 Pensez à terminer le module e-learning <strong>Formation Pratique ${label}</strong> avant votre journée d'entraînement.`
+    : '';
+  const body = `Bonjour ${prenom},<br><br>${intro}<br><br>Vous pouvez dès maintenant choisir votre date d'entraînement pratique (journée complète de 9h à 16h - 9h/12h puis 13h/16h).<br><br>👉 <a href="${bookingUrl}" style="background:#2563eb;color:#fff;padding:10px 18px;border-radius:6px;text-decoration:none;font-weight:bold;display:inline-block">CHOISISSEZ VOTRE DATE ICI</a><br><br>⚠️ Attention : une seule date, aucun changement possible.${rappel}<br><br>📚 Continuez à réviser les exercices de ${exercicesLabel}.<br><br>📍 RDV au 86 Route de Genas 69003 Lyon à la date que vous aurez choisie.<br><br>Cordialement,<br><br>FTRANSPORT<br>📞 04.28.29.60.91`;
   return { subject, body };
 }
 
@@ -70,6 +78,8 @@ serve(async (req) => {
     // Pilot mode: restrict the run to specific learners or a max count
     const onlyIds: string[] | null = Array.isArray(body?.onlyIds) && body.onlyIds.length ? body.onlyIds.map(String) : null;
     const limit: number | null = Number.isFinite(body?.limit) && body.limit > 0 ? Math.floor(body.limit) : null;
+    // Envoi a tous ceux qui n'ont pas encore choisi de date, meme sans module Pratique termine
+    const ignoreModule: boolean = !!body?.ignoreModule;
 
     // 1. Toutes les completions des modules pratique
     const doneVtc = new Set<string>();
@@ -95,7 +105,7 @@ serve(async (req) => {
     }
 
     const doneIds = new Set<string>([...doneVtc, ...doneTaxi]);
-    if (doneIds.size === 0) {
+    if (doneIds.size === 0 && !ignoreModule) {
       return new Response(JSON.stringify({ ok: true, sent: 0, note: "aucune completion" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -111,36 +121,56 @@ serve(async (req) => {
     // 3. Deja envoye (marqueur unique dans outlook_message_id)
     const alreadySent = new Set<string>();
     {
-      const ids = Array.from(doneIds);
-      const chunk = 200;
-      for (let i = 0; i < ids.length; i += chunk) {
-        const slice = ids.slice(i, i + chunk);
+      const pageSize = 1000;
+      let from = 0;
+      while (true) {
         const { data } = await supabase
           .from("emails")
           .select("apprenant_id, outlook_message_id")
           .like("outlook_message_id", `${EMAIL_TYPE}:%`)
-          .in("apprenant_id", slice);
+          .range(from, from + pageSize - 1);
         (data || []).forEach((r: any) => r.apprenant_id && alreadySent.add(r.apprenant_id));
+        if (!data || data.length < pageSize) break;
+        from += pageSize;
       }
     }
 
     // 4. Apprenants eligibles
-    const { data: apprenants, error: appErr } = await supabase
-      .from("apprenants")
-      .select("id, nom, prenom, email, telephone, type_apprenant, resultat_examen, date_examen_theorique, deleted_at")
-      .in("id", Array.from(doneIds).filter((id) => !reserved.has(id) && !alreadySent.has(id)));
-    if (appErr) throw appErr;
+    let apprenants: any[] = [];
+    if (ignoreModule) {
+      const pageSize = 1000;
+      let from = 0;
+      while (true) {
+        const { data, error } = await supabase
+          .from("apprenants")
+          .select("id, nom, prenom, email, telephone, type_apprenant, resultat_examen, date_examen_theorique, deleted_at")
+          .eq("resultat_examen", "oui")
+          .range(from, from + pageSize - 1);
+        if (error) throw error;
+        apprenants.push(...(data || []));
+        if (!data || data.length < pageSize) break;
+        from += pageSize;
+      }
+      apprenants = apprenants.filter((a) => !reserved.has(a.id) && !alreadySent.has(a.id));
+    } else {
+      const { data, error: appErr } = await supabase
+        .from("apprenants")
+        .select("id, nom, prenom, email, telephone, type_apprenant, resultat_examen, date_examen_theorique, deleted_at")
+        .in("id", Array.from(doneIds).filter((id) => !reserved.has(id) && !alreadySent.has(id)));
+      if (appErr) throw appErr;
+      apprenants = data || [];
+    }
 
     const eligible: Array<{ a: any; type: 'vtc' | 'taxi' }> = [];
-    for (const a of apprenants || []) {
+    for (const a of apprenants) {
       if (a.deleted_at) continue;
       if (!a.email) continue;
       if (onlyIds && !onlyIds.includes(a.id)) continue;
       if ((a as any).resultat_examen !== 'oui') continue;
       const t = String(a.type_apprenant || '').toLowerCase().trim();
       let type: 'vtc' | 'taxi' | null = null;
-      if (PRACTICE_VTC_TYPES.has(t) && doneVtc.has(a.id)) type = 'vtc';
-      else if (PRACTICE_TAXI_TYPES.has(t) && doneTaxi.has(a.id)) type = 'taxi';
+      if (PRACTICE_VTC_TYPES.has(t) && (ignoreModule || doneVtc.has(a.id))) type = 'vtc';
+      else if (PRACTICE_TAXI_TYPES.has(t) && (ignoreModule || doneTaxi.has(a.id))) type = 'taxi';
       if (!type) continue;
       eligible.push({ a, type });
       if (limit && eligible.length >= limit) break;
@@ -181,7 +211,7 @@ serve(async (req) => {
         const examLabel = String(a.date_examen_theorique || '').trim();
         const pratiqueLabel = await pratiqueForExam(examLabel);
         const url = buildUrl(a.id, type, examLabel || 'na', pratiqueLabel);
-        const { subject, body: html } = buildEmail(a.prenom || '', a.nom || '', type, url);
+        const { subject, body: html } = buildEmail(a.prenom || '', a.nom || '', type, url, ignoreModule);
         const marker = `${EMAIL_TYPE}:${a.id}`;
 
         // Verrou anti-doublon : la contrainte UNIQUE sur outlook_message_id
