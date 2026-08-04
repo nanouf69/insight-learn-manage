@@ -21,13 +21,21 @@ function buildUrl(id: string, type: 'vtc' | 'taxi', exam: string, pratique?: str
   return `${APP_BASE}/reservation-pratique?${p.toString()}`;
 }
 
-function buildEmail(prenom: string, nom: string, type: 'vtc' | 'taxi', bookingUrl: string) {
+function buildEmail(prenom: string, nom: string, type: 'vtc' | 'taxi', bookingUrl: string, ignoreModule = false) {
   const label = type === 'vtc' ? 'VTC' : 'TAXI';
   const exercicesLabel = type === 'vtc'
     ? '"Formation Pratique VTC" : Quizz Lyon et Questions à apprendre'
     : '"Formation Pratique TAXI" : QCM Taximètre, Cas pratique, Quizz Lyon et Questions à apprendre';
-  const subject = `Félicitations - Choisissez votre date de formation pratique ${label} - ${prenom} ${nom}`;
-  const body = `Bonjour ${prenom},<br><br>Félicitations, vous venez de terminer le module <strong>Formation Pratique ${label}</strong> !<br><br>Vous pouvez désormais choisir votre date d'entraînement pratique (journée complète de 9h à 16h - 9h/12h puis 13h/16h).<br><br>👉 <a href="${bookingUrl}" style="background:#2563eb;color:#fff;padding:10px 18px;border-radius:6px;text-decoration:none;font-weight:bold;display:inline-block">CHOISISSEZ VOTRE DATE ICI</a><br><br>⚠️ Attention : une seule date, aucun changement possible.<br><br>📚 Continuez à réviser les exercices de ${exercicesLabel}.<br><br>📍 RDV au 86 Route de Genas 69003 Lyon à la date que vous aurez choisie.<br><br>Cordialement,<br><br>FTRANSPORT<br>📞 04.28.29.60.91`;
+  const subject = ignoreModule
+    ? `Choisissez votre date de formation pratique ${label} - ${prenom} ${nom}`
+    : `Félicitations - Choisissez votre date de formation pratique ${label} - ${prenom} ${nom}`;
+  const intro = ignoreModule
+    ? `Vous n'avez pas encore choisi votre date d'entraînement pratique <strong>${label}</strong>.`
+    : `Félicitations, vous venez de terminer le module <strong>Formation Pratique ${label}</strong> !`;
+  const rappel = ignoreModule
+    ? `<br><br>📚 Pensez à terminer le module e-learning <strong>Formation Pratique ${label}</strong> avant votre journée d'entraînement.`
+    : '';
+  const body = `Bonjour ${prenom},<br><br>${intro}<br><br>Vous pouvez dès maintenant choisir votre date d'entraînement pratique (journée complète de 9h à 16h - 9h/12h puis 13h/16h).<br><br>👉 <a href="${bookingUrl}" style="background:#2563eb;color:#fff;padding:10px 18px;border-radius:6px;text-decoration:none;font-weight:bold;display:inline-block">CHOISISSEZ VOTRE DATE ICI</a><br><br>⚠️ Attention : une seule date, aucun changement possible.${rappel}<br><br>📚 Continuez à réviser les exercices de ${exercicesLabel}.<br><br>📍 RDV au 86 Route de Genas 69003 Lyon à la date que vous aurez choisie.<br><br>Cordialement,<br><br>FTRANSPORT<br>📞 04.28.29.60.91`;
   return { subject, body };
 }
 
