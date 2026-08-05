@@ -30,8 +30,37 @@ const ts = (v?: string | null): number | null => {
   return Number.isFinite(t) ? t : null;
 };
 
+/**
+ * Convertit une date de fin d'accès (YYYY-MM-DD ou ISO) en timestamp de coupure :
+ * fin du jour (23:59:59.999) de cette date. Aucune heure/minute de connexion
+ * postérieure à cette coupure n'est comptabilisée (écran, PDF, dashboards).
+ */
+export function getAccessCutoffMs(dateFin?: string | null): number | null {
+  if (!dateFin) return null;
+  const base = String(dateFin).slice(0, 10);
+  const [y, m, d] = base.split("-").map(Number);
+  if (!y || !m || !d) return null;
+  return new Date(y, m - 1, d, 23, 59, 59, 999).getTime();
+}
+
+/** true si la session doit être totalement ignorée (démarrée après la fin d'accès). */
+export function isSessionAfterAccessEnd(c: SessionLike, cutoffMs?: number | null): boolean {
+  if (!cutoffMs) return false;
+  const start = ts(c.started_at);
+  return start !== null && start > cutoffMs;
+}
+
+/** Filtre les connexions postérieures à la fin d'accès à la formation. */
+export function filterSessionsWithinAccess<T extends SessionLike>(
+  list: T[],
+  cutoffMs?: number | null,
+): T[] {
+  if (!cutoffMs) return list;
+  return list.filter((c) => !isSessionAfterAccessEnd(c, cutoffMs));
+}
+
 /** Retourne la fin réelle de la session (timestamp ms), plafonnée. */
-export function getSessionEndMs(c: SessionLike): number {
+export function getSessionEndMs(c: SessionLike, cutoffMs?: number | null): number {
   const start = ts(c.started_at) ?? 0;
   const rawEnd = ts(c.ended_at) ?? ts(c.last_seen_at) ?? start;
 
@@ -43,8 +72,12 @@ export function getSessionEndMs(c: SessionLike): number {
     end = Math.min(end, lastActivity + INACTIVITY_GRACE_MS);
   }
 
+  // Plafonnement sur la fin d'accès à la formation
+  if (cutoffMs) end = Math.min(end, cutoffMs);
+
   return Math.max(start, end);
 }
+
 
 /** Fin réelle sous forme de Date. */
 export function getSessionEndDate(c: SessionLike): Date {
