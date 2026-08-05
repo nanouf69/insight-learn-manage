@@ -819,9 +819,6 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
         </div>
         <div className="flex items-center gap-3">
           {selectedId && selectedApprenant && (() => {
-            const heuresRequises = Number(selectedApprenant.heures_totales) || Number(selectedApprenant.heures_elearning) || 0;
-            const heuresFaites = allHistoryMinutes / 60;
-            const pct = heuresRequises > 0 ? Math.min(100, Math.round((heuresFaites / heuresRequises) * 100)) : 0;
             const dateExam = selectedApprenant.date_examen_theorique;
             const resultat = (selectedApprenant.resultat_examen || "").toLowerCase().trim();
             const reussi = /admis|reussi|réussi|ok|valid/i.test(resultat);
@@ -834,15 +831,36 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
             return (
               <div className="hidden md:flex items-center gap-3 border rounded-lg px-4 py-2 bg-muted/40">
                 <div className="text-center">
-                  <div className="text-xs text-muted-foreground">Réalisation</div>
-                  <div className={cn("text-lg font-bold", pct >= 100 ? "text-green-600" : pct >= 50 ? "text-primary" : "text-orange-500")}>
-                    {pct}%
+                  <div className="text-xs text-muted-foreground">Connexion (e-learning)</div>
+                  <div className={cn("text-lg font-bold", taux.pctElearning >= 100 ? "text-green-600" : taux.pctElearning >= 50 ? "text-primary" : "text-orange-500")}>
+                    {taux.pctElearning}%
                   </div>
                   <div className="text-[10px] text-muted-foreground">
-                    {heuresFaites.toFixed(1)}h / {heuresRequises}h
+                    {taux.doneElearning.toFixed(1)}h / {taux.requiredElearning}h
                   </div>
                 </div>
                 <div className="w-px h-10 bg-border" />
+                <div className="text-center">
+                  <div className="text-xs text-muted-foreground">Présentiel</div>
+                  <div className={cn("text-lg font-bold", taux.pctPresentiel >= 100 ? "text-green-600" : taux.pctPresentiel > 0 ? "text-primary" : "text-orange-500")}>
+                    {taux.pctPresentiel}%
+                  </div>
+                  <div className="text-[10px] text-muted-foreground">
+                    {taux.donePresentiel.toFixed(1)}h / {taux.requiredPresentiel}h
+                  </div>
+                </div>
+                <div className="w-px h-10 bg-border" />
+                <div className="text-center">
+                  <div className="text-xs text-muted-foreground">Total formation</div>
+                  <div className={cn("text-lg font-bold", taux.pctTotal >= 100 ? "text-green-600" : taux.pctTotal >= 50 ? "text-primary" : "text-orange-500")}>
+                    {taux.pctTotal}%
+                  </div>
+                  <div className="text-[10px] text-muted-foreground">
+                    {taux.doneTotal.toFixed(1)}h / {taux.requiredTotal}h
+                  </div>
+                </div>
+                <div className="w-px h-10 bg-border" />
+
                 <div className="text-center">
                   <div className="text-xs text-muted-foreground">Examen théorique</div>
                   <div className="text-sm font-semibold">{dateExamStr}</div>
