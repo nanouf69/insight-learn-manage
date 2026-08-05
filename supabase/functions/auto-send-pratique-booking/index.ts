@@ -21,16 +21,22 @@ function buildUrl(id: string, type: 'vtc' | 'taxi', exam: string, pratique?: str
   return `${APP_BASE}/reservation-pratique?${p.toString()}`;
 }
 
-function buildEmail(prenom: string, nom: string, type: 'vtc' | 'taxi', bookingUrl: string, ignoreModule = false, apology = false) {
+function buildEmail(prenom: string, nom: string, type: 'vtc' | 'taxi', bookingUrl: string, ignoreModule = false, apology = false, relance = false) {
   const label = type === 'vtc' ? 'VTC' : 'TAXI';
   const exercicesLabel = type === 'vtc'
     ? '"Formation Pratique VTC" : Quizz Lyon et Questions à apprendre'
     : '"Formation Pratique TAXI" : QCM Taximètre, Cas pratique, Quizz Lyon et Questions à apprendre';
+  if (relance) {
+    const subject = `RAPPEL URGENT - Choisissez votre date d'entraînement pratique ${label}`;
+    const body = `Bonjour ${prenom},<br><br>Vous n'avez <strong>toujours pas choisi votre date d'entraînement pratique ${label}</strong>.<br><br>Merci de la choisir dès maintenant parmi les journées disponibles :<br><strong>24, 25, 26 et 27 août 2026</strong>.<br><br>👉 <a href="${bookingUrl}" style="background:#2563eb;color:#fff;padding:10px 18px;border-radius:6px;text-decoration:none;font-weight:bold;display:inline-block">CHOISIR MA DATE</a><br><br>⚠️ Places limitées à <strong>3 candidats par journée</strong> : premier arrivé, premier servi.<br><br>📍 RDV au 86 Route de Genas 69003 Lyon (journée complète 9h/12h puis 13h/16h).<br><br>📚 Pensez à réviser les exercices de ${exercicesLabel}.<br><br>Cordialement,<br><br>FTRANSPORT<br>📞 04.28.29.60.91`;
+    return { subject, body };
+  }
   if (apology) {
     const subject = `Important - Merci de rechoisir votre date de formation pratique ${label}`;
     const body = `Bonjour ${prenom},<br><br>Suite à un <strong>dysfonctionnement informatique</strong> de notre plateforme, des dates d'entraînement pratique ont été proposées par erreur (notamment les 3 et 4 septembre), alors que le véhicule n'est pas disponible ces jours-là.<br><br>Nous vous prions de nous excuser pour cette erreur qui nous est entièrement imputable.<br><br>👉 Merci de <strong>choisir à nouveau votre date</strong> parmi les journées réellement disponibles :<br><br><a href="${bookingUrl}" style="background:#2563eb;color:#fff;padding:10px 18px;border-radius:6px;text-decoration:none;font-weight:bold;display:inline-block">CHOISIR MA NOUVELLE DATE</a><br><br>⚠️ Places limitées à <strong>3 candidats par journée</strong> : premier arrivé, premier servi.<br><br>📍 RDV au 86 Route de Genas 69003 Lyon (journée complète 9h/12h puis 13h/16h).<br><br>Encore toutes nos excuses,<br><br>FTRANSPORT<br>📞 04.28.29.60.91`;
     return { subject, body };
   }
+
   const subject = ignoreModule
     ? `Choisissez votre date de formation pratique ${label} - ${prenom} ${nom}`
     : `Félicitations - Choisissez votre date de formation pratique ${label} - ${prenom} ${nom}`;
