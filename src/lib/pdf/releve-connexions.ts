@@ -3,6 +3,9 @@ import autoTable from "jspdf-autotable";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import logoImage from "@/assets/logo-ftransport.png";
+import signatureImage from "@/assets/signature-dirigeant.png";
+import tamponImage from "@/assets/tampon-entreprise.png";
+
 
 const COMPANY = {
   name: "Ftransport",
