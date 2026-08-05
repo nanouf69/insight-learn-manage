@@ -268,8 +268,14 @@ serve(async (req) => {
           okSend = res.ok;
           if (!okSend) errText = await res.text();
         } else {
-          errText = 'MS Graph non configure';
+          // Repli : passer par la fonction sync-outlook-emails
+          const { data: sendData, error: sendErr } = await supabase.functions.invoke('sync-outlook-emails', {
+            body: { action: 'send', userEmail: senderEmail, to: a.email, subject, body: html },
+          });
+          okSend = !sendErr && !!(sendData as any)?.success;
+          if (!okSend) errText = sendErr ? String(sendErr.message || sendErr) : 'Echec envoi via sync-outlook-emails';
         }
+
 
         if (okSend) {
           await supabase.from("emails")
