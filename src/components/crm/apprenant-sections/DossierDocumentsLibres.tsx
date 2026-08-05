@@ -95,6 +95,23 @@ export function DossierDocumentsLibres({ apprenantId }: Props) {
     window.open(data.signedUrl, "_blank");
   };
 
+  const handleRename = async (doc: LibreDoc) => {
+    const next = window.prompt("Nouveau nom du document", doc.titre || doc.nom_fichier || "");
+    if (next === null) return;
+    const titre = next.trim();
+    if (!titre || titre === doc.titre) return;
+    const { error } = await supabase
+      .from("documents_inscription")
+      .update({ titre })
+      .eq("id", doc.id);
+    if (error) {
+      toast.error("Renommage impossible");
+      return;
+    }
+    setDocs((prev) => prev.map((d) => (d.id === doc.id ? { ...d, titre } : d)));
+    toast.success("Document renommé");
+  };
+
   const handleDelete = async (doc: LibreDoc) => {
     const { error } = await supabase.from("documents_inscription").delete().eq("id", doc.id);
     if (error) {
