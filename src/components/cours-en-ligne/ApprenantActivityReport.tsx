@@ -67,6 +67,7 @@ interface Apprenant {
   formation_choisie: string | null;
   heures_totales: number | null;
   heures_elearning: number | null;
+  heures_presentiel: number | null;
   date_examen_theorique: string | null;
   resultat_examen: string | null;
   date_debut_cours_en_ligne: string | null;
@@ -251,7 +252,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
       while (true) {
         const { data } = await supabase
           .from("apprenants")
-          .select("id, nom, prenom, email, type_apprenant, formation_choisie, heures_totales, heures_elearning, date_examen_theorique, resultat_examen, date_debut_cours_en_ligne, date_fin_cours_en_ligne")
+          .select("id, nom, prenom, email, type_apprenant, formation_choisie, heures_totales, heures_elearning, heures_presentiel, date_examen_theorique, resultat_examen, date_debut_cours_en_ligne, date_fin_cours_en_ligne")
           .not("auth_user_id", "is", null)
           .order("nom")
           .range(from, from + PAGE - 1);
@@ -473,6 +474,44 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
     return rows.sort((a, b) => b.date.localeCompare(a.date));
   }, [emargements]);
 
+  // Synthèse des taux : e-learning (plafonné au volume prévu), présentiel (confirmé) et total
+  const taux = useMemo(() => {
+    const a = selectedApprenant;
+    const requiredElearning =
+      Number(a?.heures_elearning) ||
+      Math.max(0, (Number(a?.heures_totales) || 0) - (Number(a?.heures_presentiel) || 0));
+    const requiredPresentiel = Number(a?.heures_presentiel) || 0;
+    const requiredTotal =
+      Number(a?.heures_totales) || requiredElearning + requiredPresentiel;
+
+    const doneElearningRaw = allHistoryMinutes / 60;
+    const doneElearning = requiredElearning > 0
+      ? Math.min(doneElearningRaw, requiredElearning)
+      : doneElearningRaw;
+    const donePresentielRaw = pratiqueRows.reduce((s, p) => s + (p.hours || 0), 0);
+    const donePresentiel = requiredPresentiel > 0
+      ? Math.min(donePresentielRaw, requiredPresentiel)
+      : donePresentielRaw;
+
+    const pct = (done: number, req: number) =>
+      req > 0 ? Math.min(100, Math.round((done / req) * 100)) : 0;
+
+    return {
+      requiredElearning,
+      requiredPresentiel,
+      requiredTotal,
+      doneElearning,
+      doneElearningRaw,
+      donePresentiel,
+      doneTotal: doneElearning + donePresentiel,
+      pctElearning: pct(doneElearning, requiredElearning),
+      pctPresentiel: pct(donePresentiel, requiredPresentiel),
+      pctTotal: pct(doneElearning + donePresentiel, requiredTotal),
+    };
+  }, [selectedApprenant, allHistoryMinutes, pratiqueRows]);
+
+
+
   // Merge connexions + pratique into table rows sorted by date desc
   const tableRows = useMemo(() => {
     const connRows = connexions.map((c) => ({
@@ -653,6 +692,23 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
           </div>
         </div>
 
+        <h2>Taux de réalisation</h2>
+        <div class="stats">
+          <div class="stat-card">
+            <div class="stat-value">${taux.pctElearning}%</div>
+            <div class="stat-label">Connexion e-learning<br/>${taux.doneElearning.toFixed(1)}h / ${taux.requiredElearning}h</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${taux.pctPresentiel}%</div>
+            <div class="stat-label">Présentiel<br/>${taux.donePresentiel.toFixed(1)}h / ${taux.requiredPresentiel}h</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${taux.pctTotal}%</div>
+            <div class="stat-label">TOTAL formation<br/>${taux.doneTotal.toFixed(1)}h / ${taux.requiredTotal}h</div>
+          </div>
+        </div>
+
+
         <h2>Détail des connexions</h2>
         <table>
           <thead>
@@ -780,9 +836,6 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
         </div>
         <div className="flex items-center gap-3">
           {selectedId && selectedApprenant && (() => {
-            const heuresRequises = Number(selectedApprenant.heures_totales) || Number(selectedApprenant.heures_elearning) || 0;
-            const heuresFaites = allHistoryMinutes / 60;
-            const pct = heuresRequises > 0 ? Math.min(100, Math.round((heuresFaites / heuresRequises) * 100)) : 0;
             const dateExam = selectedApprenant.date_examen_theorique;
             const resultat = (selectedApprenant.resultat_examen || "").toLowerCase().trim();
             const reussi = /admis|reussi|réussi|ok|valid/i.test(resultat);
@@ -795,15 +848,36 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
             return (
               <div className="hidden md:flex items-center gap-3 border rounded-lg px-4 py-2 bg-muted/40">
                 <div className="text-center">
-                  <div className="text-xs text-muted-foreground">Réalisation</div>
-                  <div className={cn("text-lg font-bold", pct >= 100 ? "text-green-600" : pct >= 50 ? "text-primary" : "text-orange-500")}>
-                    {pct}%
+                  <div className="text-xs text-muted-foreground">Connexion (e-learning)</div>
+                  <div className={cn("text-lg font-bold", taux.pctElearning >= 100 ? "text-green-600" : taux.pctElearning >= 50 ? "text-primary" : "text-orange-500")}>
+                    {taux.pctElearning}%
                   </div>
                   <div className="text-[10px] text-muted-foreground">
-                    {heuresFaites.toFixed(1)}h / {heuresRequises}h
+                    {taux.doneElearning.toFixed(1)}h / {taux.requiredElearning}h
                   </div>
                 </div>
                 <div className="w-px h-10 bg-border" />
+                <div className="text-center">
+                  <div className="text-xs text-muted-foreground">Présentiel</div>
+                  <div className={cn("text-lg font-bold", taux.pctPresentiel >= 100 ? "text-green-600" : taux.pctPresentiel > 0 ? "text-primary" : "text-orange-500")}>
+                    {taux.pctPresentiel}%
+                  </div>
+                  <div className="text-[10px] text-muted-foreground">
+                    {taux.donePresentiel.toFixed(1)}h / {taux.requiredPresentiel}h
+                  </div>
+                </div>
+                <div className="w-px h-10 bg-border" />
+                <div className="text-center">
+                  <div className="text-xs text-muted-foreground">Total formation</div>
+                  <div className={cn("text-lg font-bold", taux.pctTotal >= 100 ? "text-green-600" : taux.pctTotal >= 50 ? "text-primary" : "text-orange-500")}>
+                    {taux.pctTotal}%
+                  </div>
+                  <div className="text-[10px] text-muted-foreground">
+                    {taux.doneTotal.toFixed(1)}h / {taux.requiredTotal}h
+                  </div>
+                </div>
+                <div className="w-px h-10 bg-border" />
+
                 <div className="text-center">
                   <div className="text-xs text-muted-foreground">Examen théorique</div>
                   <div className="text-sm font-semibold">{dateExamStr}</div>

@@ -821,12 +821,23 @@ export function ControleQualiteTab({ apprenant }: Props) {
               };
             });
 
+            const reqElearning =
+              Number(apprenant.heures_elearning) ||
+              Math.max(0, (Number(apprenant.heures_totales) || 0) - (Number(apprenant.heures_presentiel) || 0));
+            const reqPresentiel = Number(apprenant.heures_presentiel) || 0;
+            const reqTotal = Number(apprenant.heures_totales) || reqElearning + reqPresentiel;
+
             const relevePdf = generateReleveConnexionsPdf(apprenant, enrichedRows, {
               returnBlob: true,
               tempsEnLearning: fmtDur(onlineSec),
               tempsPresentielTheorie: fmtDur(theorieSec),
               tempsPratique: fmtDur(pratiqueSec),
               tempsTotal: fmtDur(grandTotalSec),
+              heuresPrevuesElearning: reqElearning,
+              heuresPrevuesPresentiel: reqPresentiel,
+              heuresPrevuesTotal: reqTotal,
+              heuresFaitesElearning: onlineSec / 3600,
+              heuresFaitesPresentiel: (theorieSec + pratiqueSec) / 3600,
             }) as { blob: Blob; fileName: string } | undefined;
             if (relevePdf?.blob) {
               releveFolder.file(relevePdf.fileName, relevePdf.blob);
