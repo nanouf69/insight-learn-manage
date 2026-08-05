@@ -244,7 +244,7 @@ export default function SuiviHeuresElearning() {
       result.set(appId, total);
     }
     return result;
-  }, [connByApp, actByApp]);
+  }, [connByApp, actByApp, windowByApp]);
 
 
   const rows = useMemo(() => {
