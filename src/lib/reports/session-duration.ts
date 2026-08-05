@@ -91,3 +91,31 @@ export function getSessionDurationMinutes(c: SessionLike, cutoffMs?: number | nu
   return Math.max(0, Math.floor((getSessionEndMs(c, cutoffMs) - start) / 60000));
 }
 
+
+/**
+ * Filtre + tronque une liste de connexions à la date de fin d'accès à la formation.
+ * - les sessions démarrées après la fin d'accès sont supprimées
+ * - les sessions à cheval sont tronquées à la fin d'accès
+ * Utilisé par tous les rapports (écran, PDF, ZIP, CSV) pour garantir la parité.
+ */
+export function clampConnexionsToAccessEnd<T extends SessionLike>(
+  rows: T[],
+  dateFin?: string | null,
+): T[] {
+  const cutoff = getAccessCutoffMs(dateFin);
+  if (!cutoff) return rows;
+  const cutIso = new Date(cutoff).toISOString();
+  const trunc = (v?: string | null) => {
+    const t = ts(v);
+    if (t === null) return v ?? null;
+    return t > cutoff ? cutIso : v!;
+  };
+  return rows
+    .filter((r) => !isSessionAfterAccessEnd(r, cutoff))
+    .map((r) => ({
+      ...r,
+      ended_at: trunc(r.ended_at),
+      last_seen_at: trunc(r.last_seen_at),
+      last_action_at: trunc(r.last_action_at),
+    }));
+}
