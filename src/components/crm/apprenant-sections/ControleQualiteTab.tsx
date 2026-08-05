@@ -21,6 +21,7 @@ import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import { useToast } from "@/hooks/use-toast";
 import { DossierDocumentsLibres } from "./DossierDocumentsLibres";
+import { getSessionEndMs, getSessionDurationMinutes } from "@/lib/reports/session-duration";
 
 
 /** Renders donnees content with real question texts instead of raw JSON */
@@ -650,7 +651,7 @@ export function ControleQualiteTab({ apprenant }: Props) {
             const startMs = new Date(s).getTime();
             const rawEndMs = new Date(e).getTime();
             if (!isFinite(startMs) || !isFinite(rawEndMs)) continue;
-            const endMs = Math.min(rawEndMs, startMs + MAX_SESSION_MS);
+            const endMs = getSessionEndMs(c as any);
             const ms = endMs - startMs;
             if (ms <= 0) continue;
             if (!hasActivityInWindow(startMs, endMs)) continue;

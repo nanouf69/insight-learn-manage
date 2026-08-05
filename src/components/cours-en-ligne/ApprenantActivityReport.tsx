@@ -31,6 +31,7 @@ import { FORMULES_DATA } from "./formules-data";
 import { CONNAISSANCES_VILLE_TAXI_DATA } from "./connaissances-ville-taxi-data";
 import { CONTROLE_CONNAISSANCES_TAXI_DATA } from "./controle-connaissances-taxi-data";
 import { EQUIPEMENTS_TAXI_DATA } from "./equipements-taxi-data";
+import { getSessionEndMs, getSessionDurationMinutes } from "@/lib/reports/session-duration";
 
 // Build a static map: exercice_id → human-readable title
 const EXERCICE_TITLE_MAP = new Map<string, string>();
@@ -402,12 +403,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
 
   const selectedApprenant = apprenants.find((a) => a.id === selectedId);
 
-  const getCappedSessionEnd = (connexion: Connexion) => {
-    const start = parseISO(connexion.started_at);
-    const rawEnd = connexion.ended_at ? parseISO(connexion.ended_at) : parseISO(connexion.last_seen_at);
-    const cappedEnd = new Date(start.getTime() + MAX_SESSION_DURATION_MS);
-    return rawEnd > cappedEnd ? cappedEnd : rawEnd;
-  };
+  const getCappedSessionEnd = (connexion: Connexion) => new Date(getSessionEndMs(connexion as any));
 
   // Une connexion n'est comptabilisée que si l'apprenant a réellement ouvert
   // un module/section pédagogique OU complété un exercice/quiz pendant la fenêtre.
@@ -436,8 +432,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
 
   const getSessionMinutes = (connexion: Connexion) => {
     if (!hasPedagogicalActivity(connexion)) return 0;
-    const start = parseISO(connexion.started_at);
-    return Math.max(0, differenceInMinutes(getCappedSessionEnd(connexion), start));
+    return getSessionDurationMinutes(connexion as any);
   };
 
   // Build pratique rows from emargements

@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CalendarClock, Phone, Mail, X, RotateCcw } from "lucide-react";
+import { getSessionEndMs, getSessionDurationMinutes } from "@/lib/reports/session-duration";
 
 const isoDate = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -173,8 +174,7 @@ export function FormationsBientotTerminees({ onNavigateToApprenant }: Props) {
               for (const c of conns) {
                 const start = Date.parse(c.started_at);
                 if (Number.isNaN(start)) continue;
-                const rawEnd = c.ended_at ? Date.parse(c.ended_at) : Date.parse(c.last_seen_at);
-                const end = Number.isNaN(rawEnd) ? start : Math.min(rawEnd, start + MAX_SESSION_MS);
+                const end = getSessionEndMs(c as any);
                 if (end <= start) continue;
                 // dichotomie : une activité pédagogique doit exister dans la session
                 let lo = 0, hi = actTimestamps.length - 1, found = false;

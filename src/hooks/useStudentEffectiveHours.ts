@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { getSessionEndMs, getSessionDurationMinutes } from "@/lib/reports/session-duration";
 
 export interface ConnexionRow {
   apprenant_id: string;
@@ -181,8 +182,7 @@ export function useStudentEffectiveHours(
     for (const c of connexions) {
       const start = Date.parse(c.started_at);
       if (Number.isNaN(start)) continue;
-      const rawEnd = c.ended_at ? Date.parse(c.ended_at) : Date.parse(c.last_seen_at);
-      const end = Number.isNaN(rawEnd) ? start : Math.min(rawEnd, start + MAX_SESSION_MS);
+      const end = getSessionEndMs(c as any);
       if (end <= start) continue;
 
       // Une activité pédagogique doit exister dans la session (même règle que le Rapport d'activité)

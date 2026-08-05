@@ -5,6 +5,7 @@ import { fr } from "date-fns/locale";
 import logoImage from "@/assets/logo-ftransport.png";
 import signatureImage from "@/assets/signature-dirigeant.png";
 import tamponImage from "@/assets/tampon-entreprise.png";
+import { getSessionEndMs, getSessionDurationMinutes } from "@/lib/reports/session-duration";
 
 
 const COMPANY = {
@@ -167,7 +168,7 @@ export function generateReleveConnexionsPdf(
       const startMs = new Date(s).getTime();
       const rawEndMs = new Date(e).getTime();
       if (!isFinite(startMs) || !isFinite(rawEndMs)) continue;
-      const endMs = Math.min(rawEndMs, startMs + MAX_SESSION_MS);
+      const endMs = getSessionEndMs(r as any);
       const ms = endMs - startMs;
       if (ms > 0) totalMin += Math.floor(ms / 60000);
     }

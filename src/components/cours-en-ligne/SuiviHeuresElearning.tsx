@@ -7,6 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Loader2, Search, Clock, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { differenceInMinutes, parseISO } from "date-fns";
+import { getSessionEndMs, getSessionDurationMinutes } from "@/lib/reports/session-duration";
 
 // Heures e-learning requises par type d'apprenant
 const HEURES_REQUISES: Record<string, number> = {
@@ -220,8 +221,7 @@ export default function SuiviHeuresElearning() {
       for (const c of conns) {
         const start = Date.parse(c.started_at);
         if (Number.isNaN(start)) continue;
-        const rawEnd = c.ended_at ? Date.parse(c.ended_at) : Date.parse(c.last_seen_at);
-        const end = Number.isNaN(rawEnd) ? start : Math.min(rawEnd, start + MAX_SESSION_MS);
+        const end = getSessionEndMs(c as any);
         if (end <= start) continue;
 
         // recherche binaire : existe-t-il une activité dans [start, end] ?
