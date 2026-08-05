@@ -468,5 +468,36 @@ export async function buildDossierApprenantIntoZip(
     }
   } catch (e) { console.error("[dossier] identifiants PDF failed", e); }
 
+  // ---------- 5) Documents libres ajoutés au dossier ----------
+  try {
+    const { data: libres } = await supabase
+      .from("documents_inscription")
+      .select("titre, nom_fichier, url, type_document")
+      .eq("apprenant_id", apprenant.id)
+      .like("type_document", "libre%")
+      .order("created_at", { ascending: false });
+    const libreRows = (libres as any[]) || [];
+    if (libreRows.length > 0) {
+      const libreFolder = root.folder("documents-ajoutes")!;
+      for (const d of libreRows) {
+        if (!d.url) continue;
+        const path = String(d.url).includes("/documents-inscription/")
+          ? String(d.url).split("/documents-inscription/")[1]
+          : String(d.url);
+        const { data: signed } = await supabase.storage
+          .from("documents-inscription")
+          .createSignedUrl(path, 3600);
+        if (!signed?.signedUrl) continue;
+        const resp = await fetch(signed.signedUrl);
+        if (!resp.ok) continue;
+        const blob = await resp.blob();
+        const ext = (d.nom_fichier || path).split(".").pop() || "pdf";
+        const base = (d.titre || d.nom_fichier || "document").replace(/\.[^.]+$/, "");
+        const safe = base.replace(/[^a-zA-Z0-9-_ ]+/g, "_").trim() || "document";
+        libreFolder.file(`${safe}.${ext}`, blob);
+      }
+    }
+  } catch (e) { console.error("[dossier] documents libres failed", e); }
+
   return { weeks: weekMap.size, connexions: cnxRows.length, emails: emailRows.length };
 }
