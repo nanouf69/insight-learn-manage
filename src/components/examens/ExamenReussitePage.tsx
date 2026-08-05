@@ -341,9 +341,10 @@ function resolvePratiqueDayCreneaux(slot: PratiqueDaySlot, type: 'vtc' | 'taxi')
   const apresmidi = typeof slot === 'object' ? slot?.apresmidi?.trim() : undefined;
 
   return {
-    matin: matin || undefined,
-    apresmidi: apresmidi || undefined,
+    matin: matin || '9h-12h',
+    apresmidi: apresmidi || '13h-16h',
   };
+
 }
 
 function formatPratiqueCreneauxForMessage(slot: PratiqueDaySlot, type: 'vtc' | 'taxi') {
@@ -659,6 +660,18 @@ export function ExamenReussitePage() {
     maxPerDay,
     maxPerDayMap,
   ]);
+
+  // Sauvegarde différée (pour la saisie des horaires : évite qu'un upsert par frappe
+  // écrase/réinitialise le champ pendant la frappe)
+  const timeSlotsSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const saveDayTimeSlotsDebounced = useCallback((next: typeof dayTimeSlots) => {
+    if (timeSlotsSaveTimer.current) clearTimeout(timeSlotsSaveTimer.current);
+    timeSlotsSaveTimer.current = setTimeout(() => {
+      void saveDayTimeSlotsNow(next);
+    }, 700);
+  }, [saveDayTimeSlotsNow]);
+
+
 
   const handleSendRepassageEmails = async () => {
     const echoues = apprenants?.filter(a => (a as any).resultat_examen === 'non' && a.email) || [];
@@ -3779,12 +3792,15 @@ export function ExamenReussitePage() {
                                 type="text"
                                 placeholder="ex: 9h-12h"
                                 value={typeof dayTimeSlots[key] === 'object' ? (dayTimeSlots[key] as any)?.matin || '' : ''}
-                                onChange={(e) => setDayTimeSlots(prev => {
-                                  const current = typeof prev[key] === 'object' ? prev[key] as any : {};
-                                  const next = { ...prev, [key]: { ...current, matin: e.target.value } };
-                                  void saveDayTimeSlotsNow(next);
-                                  return next;
-                                })}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  setDayTimeSlots(prev => {
+                                    const current = typeof prev[key] === 'object' ? prev[key] as any : {};
+                                    const next = { ...prev, [key]: { ...current, matin: val } };
+                                    saveDayTimeSlotsDebounced(next);
+                                    return next;
+                                  });
+                                }}
                                 className="h-5 text-[9px] border rounded bg-muted/50 focus:outline-none focus:ring-1 focus:ring-primary px-1 flex-1 min-w-0"
                               />
                             </div>
@@ -3792,16 +3808,20 @@ export function ExamenReussitePage() {
                               <span className="text-[8px] text-muted-foreground">PM:</span>
                               <input
                                 type="text"
-                                placeholder="ex: 13h-17h"
+                                placeholder="ex: 13h-16h"
                                 value={typeof dayTimeSlots[key] === 'object' ? (dayTimeSlots[key] as any)?.apresmidi || '' : ''}
-                                onChange={(e) => setDayTimeSlots(prev => {
-                                  const current = typeof prev[key] === 'object' ? prev[key] as any : {};
-                                  const next = { ...prev, [key]: { ...current, apresmidi: e.target.value } };
-                                  void saveDayTimeSlotsNow(next);
-                                  return next;
-                                })}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  setDayTimeSlots(prev => {
+                                    const current = typeof prev[key] === 'object' ? prev[key] as any : {};
+                                    const next = { ...prev, [key]: { ...current, apresmidi: val } };
+                                    saveDayTimeSlotsDebounced(next);
+                                    return next;
+                                  });
+                                }}
                                 className="h-5 text-[9px] border rounded bg-muted/50 focus:outline-none focus:ring-1 focus:ring-primary px-1 flex-1 min-w-0"
                               />
+
                             </div>
                           </div>
 
