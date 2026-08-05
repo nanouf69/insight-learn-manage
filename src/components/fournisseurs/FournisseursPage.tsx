@@ -603,25 +603,11 @@ export function FournisseursPage() {
                       <div className="min-w-0 flex-1"><p className="font-medium truncate">{d.titre}</p><p className="text-sm text-muted-foreground truncate">{d.nom_fichier}</p></div>
                       {d.url && (
                         <div className="flex gap-2 shrink-0">
-                          <Button size="sm" variant="outline" onClick={() => window.open(d.url, '_blank')}>
+                          <Button size="sm" variant="outline" onClick={() => openDoc(d.url)}>
                             <Eye className="w-4 h-4 mr-1" />Voir
                           </Button>
-                          <Button size="sm" variant="outline" onClick={async () => {
-                            try {
-                              const res = await fetch(d.url);
-                              const blob = await res.blob();
-                              const blobUrl = URL.createObjectURL(blob);
-                              const a = document.createElement('a');
-                              a.href = blobUrl;
-                              a.download = d.nom_fichier || d.titre || 'document';
-                              document.body.appendChild(a);
-                              a.click();
-                              a.remove();
-                              setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
-                            } catch {
-                              window.open(d.url, '_blank');
-                            }
-                          }}>
+                          <Button size="sm" variant="outline" onClick={() => downloadDoc(d.url, d.nom_fichier || d.titre)}>
+
                             <FolderOpen className="w-4 h-4 mr-1" />Télécharger
                           </Button>
                         </div>
