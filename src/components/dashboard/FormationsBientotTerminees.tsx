@@ -184,15 +184,20 @@ export function FormationsBientotTerminees({ onNavigateToApprenant }: Props) {
             }
 
             const done = totalMs / 3600000;
-            const required =
-              Number(a.heures_totales) ||
-              HEURES_REQUISES[(a.type_apprenant || "").toLowerCase()] ||
+            const requiredElearning =
               Number(a.heures_elearning) ||
+              HEURES_REQUISES[(a.type_apprenant || "").toLowerCase()] ||
               60;
-            const presentiel = confirmedPresentiel.has(a.id) ? Number(a.heures_presentiel) || 0 : 0;
-            const percent = required > 0 ? Math.min(100, Math.round((done / required) * 100)) : 0;
+            const requiredPresentiel = Number(a.heures_presentiel) || 0;
+            const required =
+              Number(a.heures_totales) || requiredElearning + requiredPresentiel;
+            const presentiel = confirmedPresentiel.has(a.id) ? requiredPresentiel : 0;
+            // Les heures e-learning sont plafonnées au volume prévu (ex. 90h),
+            // le présentiel n'est ajouté que s'il est confirmé => pas de 100% sans présentiel.
+            const doneCapped = Math.min(done, requiredElearning) + presentiel;
+            const percent = required > 0 ? Math.min(100, Math.round((doneCapped / required) * 100)) : 0;
             const remainingDays = daysBetween(today, a.date_fin_cours_en_ligne);
-            return { apprenant: a, done, required, presentiel, percent, remainingDays };
+            return { apprenant: a, done, required: requiredElearning, presentiel, percent, remainingDays };
           } catch (err) {
             console.error("[FormationsBientotTerminees] apprenant load error", a.id, err);
             const required = Number(a.heures_totales) || HEURES_REQUISES[(a.type_apprenant || "").toLowerCase()] || 60;
