@@ -213,6 +213,7 @@ export default function SuiviHeuresElearning() {
     const result = new Map<string, number>(); // minutes
     for (const [appId, conns] of connByApp.entries()) {
       const acts = actByApp.get(appId) || [];
+      const cutoff = windowByApp.get(appId)?.end ?? null;
       if (acts.length === 0) {
         result.set(appId, 0);
         continue;
@@ -221,8 +222,11 @@ export default function SuiviHeuresElearning() {
       for (const c of conns) {
         const start = Date.parse(c.started_at);
         if (Number.isNaN(start)) continue;
-        const end = getSessionEndMs(c as any);
+        // Aucune heure comptabilisée après la fin d'accès à la formation
+        if (cutoff && start > cutoff) continue;
+        const end = getSessionEndMs(c as any, cutoff);
         if (end <= start) continue;
+
 
         // recherche binaire : existe-t-il une activité dans [start, end] ?
         let lo = 0, hi = acts.length - 1, found = false;
