@@ -10,6 +10,7 @@ import { fr } from "date-fns/locale";
 import { generateControleQualitePdf } from "@/lib/pdf/controle-qualite";
 import { generateEmargementSemainePdf } from "@/lib/pdf/emargement-semaine";
 import { generateReleveConnexionsPdf } from "@/lib/pdf/releve-connexions";
+import { enrichConnexionRows } from "@/lib/reports/connexion-detail-rows";
 import { generateEmailsApprenantPdf, maskPasswords } from "@/lib/pdf/emails-apprenant";
 import { generateProgrammeFormationPdf } from "@/lib/pdf/programme-formation";
 import { buildRapportActiviteHtml } from "@/lib/reports/rapport-activite-html";
@@ -750,78 +751,10 @@ export function ControleQualiteTab({ apprenant }: Props) {
 
           // Relevé de connexions enrichi (module consulté, quiz, exercices, IP, navigateur)
           try {
-            // Index par module_id → nom (pour résoudre les exercices "module_X_exo_Y")
-            const moduleNameById = new Map<number, string>();
-            for (const a of acts) {
-              if (a?.module_id != null && a?.module_nom && !moduleNameById.has(a.module_id)) {
-                moduleNameById.set(a.module_id, String(a.module_nom));
-              }
-            }
-            const resolveExerciceLabel = (exerciceId: string): string => {
-              if (!exerciceId) return "Exercice";
-              const match = exerciceId.match(/^module_(\d+)_exo_(\d+)$/);
-              if (match) {
-                const modName = moduleNameById.get(parseInt(match[1]));
-                if (modName) return `${modName} — Exo ${match[2]}`;
-              }
-              return exerciceId;
-            };
-            const isAccueilLabel = (nom?: string | null) =>
-              !!nom && /accueil|liste\s+des\s+modules/i.test(nom);
+            const enrichedRows = enrichConnexionRows(
+              cnxRawRows as any[], acts as any[], quizzes as any[], exos as any[],
+            );
 
-            const enrichedRows = cnxRawRows.map((c: any) => {
-              const startMs = c.started_at ? new Date(c.started_at).getTime() : NaN;
-              const rawEndMs = (c.ended_at || c.last_seen_at)
-                ? new Date(c.ended_at || c.last_seen_at).getTime()
-                : NaN;
-              if (!isFinite(startMs) || !isFinite(rawEndMs)) {
-                return { ...c, modules_consultes: [], quiz_realises: [], cours_exercices: [] };
-              }
-              const endMs = Math.min(rawEndMs, startMs + MAX_SESSION_MS);
-
-              // Modules / sections consultés (hors accueil)
-              const modules: string[] = [];
-              for (const a of acts) {
-                if (!a?.occurred_at) continue;
-                const t = new Date(a.occurred_at).getTime();
-                if (t < startMs || t > endMs) continue;
-                if (a.action_type !== "open_module" && a.action_type !== "open_section" && a.action_type !== "open_cours") continue;
-                if (isAccueilLabel(a.module_nom)) continue;
-                const icon = a.action_type === "open_section" ? "» " : "";
-                modules.push(`${icon}${a.module_nom || `Module ${a.module_id ?? "?"}`}`);
-              }
-
-              // Quiz / examens réalisés
-              const quizList: string[] = [];
-              for (const q of quizzes) {
-                if (!q?.completed_at) continue;
-                const t = new Date(q.completed_at).getTime();
-                if (t < startMs || t > endMs) continue;
-                const matiere = q.matiere_nom ? ` — ${q.matiere_nom}` : "";
-                const scorePct = q.score_max
-                  ? ` (${Math.round((Number(q.score_obtenu) / Number(q.score_max)) * 100)}%)`
-                  : q.note_sur_20 != null
-                    ? ` (${Number(q.note_sur_20).toFixed(1)}/20)`
-                    : "";
-                quizList.push(`${q.quiz_titre || "Quiz"}${matiere}${scorePct}`);
-              }
-
-              // Exercices complétés
-              const exosList: string[] = [];
-              for (const e of exos) {
-                if (!e?.updated_at) continue;
-                const t = new Date(e.updated_at).getTime();
-                if (t < startMs || t > endMs) continue;
-                exosList.push(resolveExerciceLabel(String(e.exercice_id || "")));
-              }
-
-              return {
-                ...c,
-                modules_consultes: modules,
-                quiz_realises: quizList,
-                cours_exercices: exosList,
-              };
-            });
 
             const reqElearning =
               Number(apprenant.heures_elearning) ||
