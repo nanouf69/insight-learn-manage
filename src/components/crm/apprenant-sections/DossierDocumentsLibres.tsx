@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { FolderPlus, Upload, Eye, Trash2, Loader2, FileText } from "lucide-react";
+import { FolderPlus, Upload, Eye, Trash2, Loader2, FileText, Pencil } from "lucide-react";
 import { format } from "date-fns";
 
 interface Props {
