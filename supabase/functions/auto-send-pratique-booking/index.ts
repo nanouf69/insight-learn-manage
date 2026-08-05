@@ -92,6 +92,7 @@ serve(async (req) => {
     // Envoi a tous ceux qui n'ont pas encore choisi de date, meme sans module Pratique termine
     const ignoreModule: boolean = !!body?.ignoreModule;
     const apology: boolean = !!body?.apology;
+    const relance: boolean = !!body?.relance;
 
     // 1. Toutes les completions des modules pratique
     const doneVtc = new Set<string>();
@@ -163,7 +164,7 @@ serve(async (req) => {
         if (!data || data.length < pageSize) break;
         from += pageSize;
       }
-      apprenants = apprenants.filter((a) => !reserved.has(a.id) && !alreadySent.has(a.id));
+      apprenants = apprenants.filter((a) => !reserved.has(a.id) && (relance || !alreadySent.has(a.id)));
     } else {
       const { data, error: appErr } = await supabase
         .from("apprenants")
@@ -223,8 +224,8 @@ serve(async (req) => {
         const examLabel = String(a.date_examen_theorique || '').trim();
         const pratiqueLabel = await pratiqueForExam(examLabel);
         const url = buildUrl(a.id, type, examLabel || 'na', pratiqueLabel);
-        const { subject, body: html } = buildEmail(a.prenom || '', a.nom || '', type, url, ignoreModule, apology);
-        const marker = `${EMAIL_TYPE}:${a.id}`;
+        const { subject, body: html } = buildEmail(a.prenom || '', a.nom || '', type, url, ignoreModule, apology, relance);
+        const marker = relance ? `${EMAIL_TYPE}:relance-aout:${a.id}` : `${EMAIL_TYPE}:${a.id}`;
 
         // Verrou anti-doublon : la contrainte UNIQUE sur outlook_message_id
         // empeche tout second envoi, meme en cas d'appels concurrents.
