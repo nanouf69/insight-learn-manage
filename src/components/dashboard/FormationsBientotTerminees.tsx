@@ -73,6 +73,13 @@ function isAccueilModule(nom?: string | null): boolean {
 export function FormationsBientotTerminees({ onNavigateToApprenant }: Props) {
   const today = todayISO();
   const endHorizon = useMemo(() => addDays(today, LOOKAHEAD_DAYS), [today]);
+  const startHorizon = useMemo(() => addDays(today, -LOOKBACK_DAYS), [today]);
+  const [dismissed, setDismissed] = useState<string[]>(() => loadDismissed());
+
+  const persistDismissed = (ids: string[]) => {
+    setDismissed(ids);
+    try { localStorage.setItem(DISMISS_KEY, JSON.stringify(ids)); } catch { /* ignore */ }
+  };
 
   const { data, isLoading } = useQuery({
     queryKey: ["formations-bientot-terminees", today],
@@ -84,7 +91,7 @@ export function FormationsBientotTerminees({ onNavigateToApprenant }: Props) {
           "id, nom, prenom, email, telephone, type_apprenant, formation_choisie, date_fin_cours_en_ligne, heures_totales, heures_elearning, heures_presentiel"
         )
         .is("deleted_at", null)
-        .gte("date_fin_cours_en_ligne", today)
+        .gte("date_fin_cours_en_ligne", startHorizon)
         .lte("date_fin_cours_en_ligne", endHorizon);
       if (error) throw error;
 
