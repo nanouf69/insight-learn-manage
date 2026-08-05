@@ -520,7 +520,7 @@ export function ControleQualiteTab({ apprenant }: Props) {
               .range(from, to)),
             fetchAllRows<any>((from, to) => supabase
               .from("apprenant_connexions")
-              .select("started_at, ended_at, last_seen_at")
+              .select("started_at, ended_at, last_seen_at, last_action_at")
               .eq("apprenant_id", apprenant.id)
               .range(from, to)),
             fetchAllRows<any>((from, to) => supabase

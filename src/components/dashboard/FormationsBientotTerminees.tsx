@@ -134,7 +134,7 @@ export function FormationsBientotTerminees({ onNavigateToApprenant }: Props) {
               fetchAllPaged<any>(() =>
                 supabase
                   .from("apprenant_connexions" as any)
-                  .select("started_at, ended_at, last_seen_at")
+                  .select("started_at, ended_at, last_seen_at, last_action_at")
                   .eq("apprenant_id", a.id)
               ),
               fetchAllPaged<any>(() =>

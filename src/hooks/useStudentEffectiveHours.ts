@@ -104,7 +104,7 @@ export function useStudentEffectiveHours(
           fetchAll<ConnexionRow>(() =>
             supabase
               .from("apprenant_connexions" as any)
-              .select("apprenant_id, started_at, ended_at, last_seen_at")
+              .select("apprenant_id, started_at, ended_at, last_seen_at, last_action_at")
               .eq("apprenant_id", apprenantId)
               .order("started_at", { ascending: false })
           ),

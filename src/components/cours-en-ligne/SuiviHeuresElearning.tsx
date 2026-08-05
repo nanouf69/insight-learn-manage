@@ -119,7 +119,7 @@ export default function SuiviHeuresElearning() {
         const conns = await fetchAll<Connexion>(() =>
           supabase
             .from("apprenant_connexions" as any)
-            .select("apprenant_id, started_at, ended_at, last_seen_at")
+            .select("apprenant_id, started_at, ended_at, last_seen_at, last_action_at")
             .in("apprenant_id", Array.from(ids))
             .order("started_at", { ascending: false }),
         );
