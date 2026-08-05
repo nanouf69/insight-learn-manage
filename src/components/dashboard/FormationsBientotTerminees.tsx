@@ -190,6 +190,16 @@ export function FormationsBientotTerminees({ onNavigateToApprenant }: Props) {
             }
 
             const done = totalMs / 3600000;
+            // Dernier jour de connexion e-learning (dernière activité réelle observée)
+            const lastConnexionMs = Math.max(
+              0,
+              ...conns
+                .map((c: any) => Date.parse(c.ended_at || c.last_seen_at || c.started_at))
+                .filter((t: number) => !Number.isNaN(t)),
+              ...actTimestamps,
+            );
+            const lastConnexion = lastConnexionMs > 0 ? new Date(lastConnexionMs) : null;
+            const lastPresentiel = lastPresentielByAppr.get(a.id) || null;
             const requiredElearning =
               Number(a.heures_elearning) ||
               HEURES_REQUISES[(a.type_apprenant || "").toLowerCase()] ||
@@ -203,11 +213,11 @@ export function FormationsBientotTerminees({ onNavigateToApprenant }: Props) {
             const doneCapped = Math.min(done, requiredElearning) + presentiel;
             const percent = required > 0 ? Math.min(100, Math.round((doneCapped / required) * 100)) : 0;
             const remainingDays = daysBetween(today, a.date_fin_cours_en_ligne);
-            return { apprenant: a, done, required: requiredElearning, presentiel, percent, remainingDays };
+            return { apprenant: a, done, required: requiredElearning, presentiel, percent, remainingDays, lastConnexion, lastPresentiel };
           } catch (err) {
             console.error("[FormationsBientotTerminees] apprenant load error", a.id, err);
             const required = Number(a.heures_elearning) || HEURES_REQUISES[(a.type_apprenant || "").toLowerCase()] || 60;
-            return { apprenant: a, done: 0, required, presentiel: confirmedPresentiel.has(a.id) ? Number(a.heures_presentiel) || 0 : 0, percent: 0, remainingDays: daysBetween(today, a.date_fin_cours_en_ligne) };
+            return { apprenant: a, done: 0, required, presentiel: confirmedPresentiel.has(a.id) ? Number(a.heures_presentiel) || 0 : 0, percent: 0, remainingDays: daysBetween(today, a.date_fin_cours_en_ligne), lastConnexion: null as Date | null, lastPresentiel: lastPresentielByAppr.get(a.id) || null };
           }
 
         })
