@@ -3,6 +3,9 @@ import autoTable from "jspdf-autotable";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import logoImage from "@/assets/logo-ftransport.png";
+import signatureImage from "@/assets/signature-dirigeant.png";
+import tamponImage from "@/assets/tampon-entreprise.png";
+
 
 const COMPANY = {
   name: "Ftransport",
@@ -303,7 +306,35 @@ export function generateReleveConnexionsPdf(
   }
 
 
+  // ── Signature + cachet (dernière page) ──
+  {
+    doc.setPage(doc.getNumberOfPages());
+    const lastY = (doc as any).lastAutoTable?.finalY ?? 90;
+    let sy = lastY + 12;
+    if (sy > ph - 60) {
+      doc.addPage();
+      sy = 30;
+    }
+    doc.setFontSize(9);
+    doc.setTextColor(60, 60, 60);
+    doc.text(
+      `Fait à Lyon, le ${format(new Date(), "dd MMMM yyyy", { locale: fr })}`,
+      margin,
+      sy,
+    );
+    doc.setFont("helvetica", "bold");
+    doc.text("Le Responsable Pédagogique,", pw - margin - 70, sy);
+    doc.setFont("helvetica", "normal");
+    try {
+      doc.addImage(signatureImage, "PNG", pw - margin - 70, sy + 4, 45, 22);
+    } catch (e) { /* ignore */ }
+    try {
+      doc.addImage(tamponImage, "PNG", pw - margin - 75, sy + 28, 55, 28);
+    } catch (e) { /* ignore */ }
+  }
+
   const totalPages = doc.getNumberOfPages();
+
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
     doc.setFontSize(7);
