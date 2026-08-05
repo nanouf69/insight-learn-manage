@@ -21,6 +21,7 @@ import { FORMULES_DATA } from "@/components/cours-en-ligne/formules-data";
 import { CONNAISSANCES_VILLE_TAXI_DATA } from "@/components/cours-en-ligne/connaissances-ville-taxi-data";
 import { CONTROLE_CONNAISSANCES_TAXI_DATA } from "@/components/cours-en-ligne/controle-connaissances-taxi-data";
 import { EQUIPEMENTS_TAXI_DATA } from "@/components/cours-en-ligne/equipements-taxi-data";
+import { getSessionEndMs, getSessionDurationMinutes } from "@/lib/reports/session-duration";
 
 const EXERCICE_TITLE_MAP = new Map<string, string>();
 const registerModuleExercises = (moduleId: number, exercices: { id: number; titre: string }[] = []) => {
@@ -95,7 +96,7 @@ export function computeConnexionDetail(
   if (!isFinite(startMs) || !isFinite(rawEndMs)) {
     return { modules_consultes: [], quiz_realises: [], cours_exercices: [] };
   }
-  const endMs = Math.min(rawEndMs, startMs + MAX_SESSION_MS);
+  const endMs = getSessionEndMs(c as any);
   const inWindow = (iso?: string | null) => {
     if (!iso) return false;
     const t = new Date(iso).getTime();

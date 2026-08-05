@@ -31,6 +31,7 @@ import { FORMULES_DATA } from "./formules-data";
 import { CONNAISSANCES_VILLE_TAXI_DATA } from "./connaissances-ville-taxi-data";
 import { CONTROLE_CONNAISSANCES_TAXI_DATA } from "./controle-connaissances-taxi-data";
 import { EQUIPEMENTS_TAXI_DATA } from "./equipements-taxi-data";
+import { getSessionEndMs, getSessionDurationMinutes } from "@/lib/reports/session-duration";
 
 // Build a static map: exercice_id → human-readable title
 const EXERCICE_TITLE_MAP = new Map<string, string>();
@@ -302,7 +303,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
       };
 
       const [connRes, actRes, complRes, exRes, qrRes, emgRes, resPratRes] = await Promise.all([
-        fetchAllRows("apprenant_connexions", "id, started_at, ended_at, last_seen_at, current_module", "started_at"),
+        fetchAllRows("apprenant_connexions", "id, started_at, ended_at, last_seen_at, last_action_at, current_module", "started_at"),
         fetchAllRows("apprenant_module_activites", "id, module_id, module_nom, action_type, occurred_at", "occurred_at"),
 
         supabase
@@ -365,7 +366,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
         return out;
       };
       const [conns, mods, exos, quizz] = await Promise.all([
-        fetchAll("apprenant_connexions", "started_at, ended_at, last_seen_at", "started_at"),
+        fetchAll("apprenant_connexions", "started_at, ended_at, last_seen_at, last_action_at", "started_at"),
         fetchAll("apprenant_module_activites", "occurred_at, action_type, module_nom", "occurred_at"),
         fetchAll("reponses_apprenants", "updated_at, completed", "updated_at"),
         fetchAll("apprenant_quiz_results", "completed_at", "completed_at"),
@@ -382,8 +383,8 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
       for (const c of conns) {
         const start = Date.parse(c.started_at);
         if (Number.isNaN(start)) continue;
-        const rawEnd = c.ended_at ? Date.parse(c.ended_at) : Date.parse(c.last_seen_at);
-        const end = Number.isNaN(rawEnd) ? start : Math.min(rawEnd, start + MAX);
+        const end = getSessionEndMs(c as any);
+
         if (end <= start) continue;
         let lo = 0, hi = tsArr.length - 1, found = false;
         while (lo <= hi) {
@@ -402,12 +403,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
 
   const selectedApprenant = apprenants.find((a) => a.id === selectedId);
 
-  const getCappedSessionEnd = (connexion: Connexion) => {
-    const start = parseISO(connexion.started_at);
-    const rawEnd = connexion.ended_at ? parseISO(connexion.ended_at) : parseISO(connexion.last_seen_at);
-    const cappedEnd = new Date(start.getTime() + MAX_SESSION_DURATION_MS);
-    return rawEnd > cappedEnd ? cappedEnd : rawEnd;
-  };
+  const getCappedSessionEnd = (connexion: Connexion) => new Date(getSessionEndMs(connexion as any));
 
   // Une connexion n'est comptabilisée que si l'apprenant a réellement ouvert
   // un module/section pédagogique OU complété un exercice/quiz pendant la fenêtre.
@@ -436,8 +432,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
 
   const getSessionMinutes = (connexion: Connexion) => {
     if (!hasPedagogicalActivity(connexion)) return 0;
-    const start = parseISO(connexion.started_at);
-    return Math.max(0, differenceInMinutes(getCappedSessionEnd(connexion), start));
+    return getSessionDurationMinutes(connexion as any);
   };
 
   // Build pratique rows from emargements

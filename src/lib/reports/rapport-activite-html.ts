@@ -1,5 +1,6 @@
 import { format, parseISO, differenceInMinutes } from "date-fns";
 import { fr } from "date-fns/locale";
+import { getSessionEndMs, getSessionDurationMinutes } from "@/lib/reports/session-duration";
 
 const MAX_SESSION_DURATION_MS = 7 * 60 * 60 * 1000;
 
@@ -42,15 +43,11 @@ export interface BuildRapportArgs {
 }
 
 function getCappedSessionEnd(c: RapportConnexion): Date {
-  const start = parseISO(c.started_at);
-  const rawEnd = c.ended_at ? parseISO(c.ended_at) : parseISO(c.last_seen_at);
-  const maxEnd = new Date(start.getTime() + MAX_SESSION_DURATION_MS);
-  return rawEnd > maxEnd ? maxEnd : rawEnd;
+  return new Date(getSessionEndMs(c as any));
 }
 
 function getSessionMinutes(c: RapportConnexion): number {
-  const start = parseISO(c.started_at);
-  return Math.max(0, differenceInMinutes(getCappedSessionEnd(c), start));
+  return getSessionDurationMinutes(c as any);
 }
 
 export function buildRapportActiviteHtml({
