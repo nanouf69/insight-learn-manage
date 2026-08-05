@@ -262,7 +262,7 @@ export function FormationsBientotTerminees({ onNavigateToApprenant }: Props) {
             Aucune formation à afficher.
           </p>
         ) : (
-          results.map(({ apprenant: a, done, required, percent, remainingDays }) => (
+          results.map(({ apprenant: a, done, required, presentiel, percent, remainingDays }) => (
             <div
               key={a.id}
               className={`p-3 rounded-lg border space-y-1.5 cursor-pointer transition-colors ${
