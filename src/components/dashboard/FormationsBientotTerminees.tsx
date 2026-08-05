@@ -1,9 +1,10 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CalendarClock, Phone, Mail } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { CalendarClock, Phone, Mail, X, RotateCcw } from "lucide-react";
 
 const isoDate = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -23,6 +24,17 @@ const daysBetween = (fromIso: string, toIso: string) => {
 };
 
 const LOOKAHEAD_DAYS = 30;
+const LOOKBACK_DAYS = 60;
+const DISMISS_KEY = "formations-bientot-terminees-masques";
+
+const loadDismissed = (): string[] => {
+  try {
+    const raw = localStorage.getItem(DISMISS_KEY);
+    return raw ? (JSON.parse(raw) as string[]) : [];
+  } catch {
+    return [];
+  }
+};
 const MAX_SESSION_MS = 7 * 60 * 60 * 1000;
 
 const HEURES_REQUISES: Record<string, number> = {
