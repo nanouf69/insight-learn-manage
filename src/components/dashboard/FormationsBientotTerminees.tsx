@@ -104,15 +104,21 @@ export function FormationsBientotTerminees({ onNavigateToApprenant }: Props) {
 
       // Présentiel : uniquement si la présence est confirmée sur une session de type "pratique"
       const confirmedPresentiel = new Set<string>();
+      const lastPresentielByAppr = new Map<string, string>();
       {
         const { data: sa } = await supabase
           .from("session_apprenants")
-          .select("apprenant_id, presence_pratique, sessions!inner(type_session)")
+          .select("apprenant_id, presence_pratique, sessions!inner(type_session, date_debut, date_fin)")
           .in("apprenant_id", list.map((a) => a.id))
           .eq("sessions.type_session", "pratique");
         ((sa || []) as any[]).forEach((r) => {
           if ((r.presence_pratique || "").toLowerCase() === "present") {
             confirmedPresentiel.add(r.apprenant_id);
+            const d = r.sessions?.date_fin || r.sessions?.date_debut;
+            if (d) {
+              const prev = lastPresentielByAppr.get(r.apprenant_id);
+              if (!prev || d > prev) lastPresentielByAppr.set(r.apprenant_id, d);
+            }
           }
         });
       }
