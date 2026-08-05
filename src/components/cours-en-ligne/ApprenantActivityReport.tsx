@@ -67,6 +67,7 @@ interface Apprenant {
   formation_choisie: string | null;
   heures_totales: number | null;
   heures_elearning: number | null;
+  heures_presentiel: number | null;
   date_examen_theorique: string | null;
   resultat_examen: string | null;
   date_debut_cours_en_ligne: string | null;
