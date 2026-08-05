@@ -83,6 +83,53 @@ export function FournisseursPage() {
 
   useEffect(() => { loadFournisseurs(); loadAllDocs(); }, []);
 
+  // Les buckets fournisseurs sont privés : on génère une URL signée à la volée
+  const getSignedDocUrl = async (url: string | null): Promise<string | null> => {
+    if (!url) return null;
+    const buckets = ['fournisseur-shared-docs', 'fournisseur-documents'];
+    for (const bucket of buckets) {
+      const marker = `/${bucket}/`;
+      if (url.includes(marker)) {
+        const path = decodeURIComponent(url.split(marker)[1].split('?')[0]);
+        const { data } = await supabase.storage.from(bucket).createSignedUrl(path, 3600);
+        if (data?.signedUrl) return data.signedUrl;
+        return null;
+      }
+    }
+    return url;
+  };
+
+  const openDoc = async (url: string | null) => {
+    const signed = await getSignedDocUrl(url);
+    if (!signed) {
+      toast({ title: "Impossible d'ouvrir le document", variant: "destructive" });
+      return;
+    }
+    window.open(signed, '_blank');
+  };
+
+  const downloadDoc = async (url: string | null, filename: string) => {
+    const signed = await getSignedDocUrl(url);
+    if (!signed) {
+      toast({ title: "Impossible de télécharger le document", variant: "destructive" });
+      return;
+    }
+    try {
+      const res = await fetch(signed);
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = filename || 'document';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+    } catch {
+      window.open(signed, '_blank');
+    }
+  };
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsCreating(true);
