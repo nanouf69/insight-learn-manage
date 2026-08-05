@@ -181,6 +181,9 @@ export function DossierDocumentsLibres({ apprenantId }: Props) {
                 <Button size="sm" variant="ghost" onClick={() => handleView(doc)}>
                   <Eye className="w-4 h-4" />
                 </Button>
+                <Button size="sm" variant="ghost" onClick={() => handleRename(doc)} title="Renommer">
+                  <Pencil className="w-4 h-4" />
+                </Button>
                 <Button
                   size="sm"
                   variant="ghost"
