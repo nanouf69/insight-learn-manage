@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CalendarClock, Phone, Mail, X, RotateCcw } from "lucide-react";
-import { getSessionEndMs, getSessionDurationMinutes } from "@/lib/reports/session-duration";
+import { getSessionEndMs, getSessionDurationMinutes, getAccessCutoffMs } from "@/lib/reports/session-duration";
 
 const isoDate = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
