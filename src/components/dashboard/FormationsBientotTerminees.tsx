@@ -1,9 +1,10 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CalendarClock, Phone, Mail } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { CalendarClock, Phone, Mail, X, RotateCcw } from "lucide-react";
 
 const isoDate = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -23,6 +24,17 @@ const daysBetween = (fromIso: string, toIso: string) => {
 };
 
 const LOOKAHEAD_DAYS = 30;
+const LOOKBACK_DAYS = 60;
+const DISMISS_KEY = "formations-bientot-terminees-masques";
+
+const loadDismissed = (): string[] => {
+  try {
+    const raw = localStorage.getItem(DISMISS_KEY);
+    return raw ? (JSON.parse(raw) as string[]) : [];
+  } catch {
+    return [];
+  }
+};
 const MAX_SESSION_MS = 7 * 60 * 60 * 1000;
 
 const HEURES_REQUISES: Record<string, number> = {
@@ -61,6 +73,13 @@ function isAccueilModule(nom?: string | null): boolean {
 export function FormationsBientotTerminees({ onNavigateToApprenant }: Props) {
   const today = todayISO();
   const endHorizon = useMemo(() => addDays(today, LOOKAHEAD_DAYS), [today]);
+  const startHorizon = useMemo(() => addDays(today, -LOOKBACK_DAYS), [today]);
+  const [dismissed, setDismissed] = useState<string[]>(() => loadDismissed());
+
+  const persistDismissed = (ids: string[]) => {
+    setDismissed(ids);
+    try { localStorage.setItem(DISMISS_KEY, JSON.stringify(ids)); } catch { /* ignore */ }
+  };
 
   const { data, isLoading } = useQuery({
     queryKey: ["formations-bientot-terminees", today],
@@ -72,7 +91,7 @@ export function FormationsBientotTerminees({ onNavigateToApprenant }: Props) {
           "id, nom, prenom, email, telephone, type_apprenant, formation_choisie, date_fin_cours_en_ligne, heures_totales, heures_elearning, heures_presentiel"
         )
         .is("deleted_at", null)
-        .gte("date_fin_cours_en_ligne", today)
+        .gte("date_fin_cours_en_ligne", startHorizon)
         .lte("date_fin_cours_en_ligne", endHorizon);
       if (error) throw error;
 
@@ -169,7 +188,9 @@ export function FormationsBientotTerminees({ onNavigateToApprenant }: Props) {
   });
 
 
-  const results = data ?? [];
+  const all = data ?? [];
+  const results = all.filter((r: any) => !dismissed.includes(r.apprenant.id));
+  const hiddenCount = all.length - results.length;
 
   const getTypeLabel = (a: any) => {
     const s = `${a.type_apprenant || ""} ${a.formation_choisie || ""}`.toLowerCase();
@@ -219,19 +240,34 @@ export function FormationsBientotTerminees({ onNavigateToApprenant }: Props) {
           )}
         </CardTitle>
         <p className="text-xs text-muted-foreground">
-          Accès e-learning se terminant dans les {LOOKAHEAD_DAYS} prochains jours, avec taux de réalisation.
+          Accès e-learning terminés depuis moins de {LOOKBACK_DAYS} jours ou se terminant dans les {LOOKAHEAD_DAYS} prochains jours, avec taux de réalisation.
         </p>
+        {hiddenCount > 0 && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 px-2 self-start text-xs text-muted-foreground"
+            onClick={() => persistDismissed([])}
+          >
+            <RotateCcw className="h-3 w-3 mr-1" />
+            Réafficher {hiddenCount} masquée(s)
+          </Button>
+        )}
       </CardHeader>
       <CardContent className="space-y-2">
         {results.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-2">
-            Aucune formation ne se termine dans les {LOOKAHEAD_DAYS} prochains jours.
+            Aucune formation à afficher.
           </p>
         ) : (
           results.map(({ apprenant: a, done, required, percent, remainingDays }) => (
             <div
               key={a.id}
-              className="p-3 rounded-lg bg-amber-50 border border-amber-200 space-y-1.5 cursor-pointer hover:bg-amber-100 transition-colors"
+              className={`p-3 rounded-lg border space-y-1.5 cursor-pointer transition-colors ${
+                remainingDays < 0
+                  ? "bg-muted/40 border-border hover:bg-muted"
+                  : "bg-amber-50 border-amber-200 hover:bg-amber-100"
+              }`}
               onClick={() => onNavigateToApprenant?.(a.id)}
             >
               <div className="flex items-start justify-between gap-2">
@@ -245,6 +281,18 @@ export function FormationsBientotTerminees({ onNavigateToApprenant }: Props) {
                   <Badge variant="outline" className="text-xs">
                     {getTypeLabel(a)}
                   </Badge>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                    title="Retirer de la liste"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      persistDismissed([...dismissed, a.id]);
+                    }}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
                 </div>
               </div>
               <div className="w-full h-1.5 bg-white rounded-full overflow-hidden border border-amber-200">
@@ -258,9 +306,16 @@ export function FormationsBientotTerminees({ onNavigateToApprenant }: Props) {
                 />
               </div>
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                <span className="font-medium text-amber-800">
-                  Fin le {fmt(a.date_fin_cours_en_ligne)} ({remainingDays === 0 ? "aujourd'hui" : `dans ${remainingDays}j`})
+                <span className={`font-medium ${remainingDays < 0 ? "text-muted-foreground" : "text-amber-800"}`}>
+                  Fin le {fmt(a.date_fin_cours_en_ligne)} (
+                  {remainingDays === 0
+                    ? "aujourd'hui"
+                    : remainingDays < 0
+                      ? `terminée il y a ${Math.abs(remainingDays)}j`
+                      : `dans ${remainingDays}j`}
+                  )
                 </span>
+
                 <span>
                   {done.toFixed(1)}h / {required}h
                 </span>
