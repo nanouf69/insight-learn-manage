@@ -184,7 +184,8 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
   const [quizResults, setQuizResults] = useState<QuizResult[]>([]);
   const [emargements, setEmargements] = useState<EmargementRow[]>([]);
   const [loading, setLoading] = useState(false);
-  const [period, setPeriod] = useState<"7" | "30" | "90" | "all">("30");
+  // Par défaut on affiche TOUT l'historique (conservé à vie), jamais une fenêtre glissante.
+  const [period, setPeriod] = useState<"7" | "30" | "90" | "all">("all");
   const printRef = useRef<HTMLDivElement>(null);
   const [editingConn, setEditingConn] = useState<{ id: string; started_at: string; ended_at: string } | null>(null);
   const [savingConn, setSavingConn] = useState(false);
@@ -276,19 +277,33 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
       setLoading(true);
       const since = period === "all" ? "2000-01-01" : format(subDays(new Date(), parseInt(period)), "yyyy-MM-dd");
 
+      // Pagination complète : l'historique est conservé à vie, on ne doit jamais
+      // le tronquer au cap de 1000 lignes de l'API.
+      const fetchAllRows = async (table: string, cols: string, dateCol: string) => {
+        const PAGE = 1000;
+        let from = 0;
+        let out: any[] = [];
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+          const { data } = await supabase
+            .from(table as any)
+            .select(cols)
+            .eq("apprenant_id", selectedId)
+            .gte(dateCol, since)
+            .order(dateCol, { ascending: false })
+            .range(from, from + PAGE - 1);
+          const batch = (data as any[]) || [];
+          out = out.concat(batch);
+          if (batch.length < PAGE) break;
+          from += PAGE;
+        }
+        return { data: out };
+      };
+
       const [connRes, actRes, complRes, exRes, qrRes, emgRes, resPratRes] = await Promise.all([
-        supabase
-          .from("apprenant_connexions" as any)
-          .select("id, started_at, ended_at, last_seen_at, current_module")
-          .eq("apprenant_id", selectedId)
-          .gte("started_at", since)
-          .order("started_at", { ascending: false }),
-        supabase
-          .from("apprenant_module_activites" as any)
-          .select("id, module_id, module_nom, action_type, occurred_at")
-          .eq("apprenant_id", selectedId)
-          .gte("occurred_at", since)
-          .order("occurred_at", { ascending: false }),
+        fetchAllRows("apprenant_connexions", "id, started_at, ended_at, last_seen_at, current_module", "started_at"),
+        fetchAllRows("apprenant_module_activites", "id, module_id, module_nom, action_type, occurred_at", "occurred_at"),
+
         supabase
           .from("apprenant_module_completion")
           .select("module_id")
