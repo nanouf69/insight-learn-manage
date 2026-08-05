@@ -3791,12 +3791,15 @@ export function ExamenReussitePage() {
                                 type="text"
                                 placeholder="ex: 9h-12h"
                                 value={typeof dayTimeSlots[key] === 'object' ? (dayTimeSlots[key] as any)?.matin || '' : ''}
-                                onChange={(e) => setDayTimeSlots(prev => {
-                                  const current = typeof prev[key] === 'object' ? prev[key] as any : {};
-                                  const next = { ...prev, [key]: { ...current, matin: e.target.value } };
-                                  void saveDayTimeSlotsNow(next);
-                                  return next;
-                                })}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  setDayTimeSlots(prev => {
+                                    const current = typeof prev[key] === 'object' ? prev[key] as any : {};
+                                    const next = { ...prev, [key]: { ...current, matin: val } };
+                                    saveDayTimeSlotsDebounced(next);
+                                    return next;
+                                  });
+                                }}
                                 className="h-5 text-[9px] border rounded bg-muted/50 focus:outline-none focus:ring-1 focus:ring-primary px-1 flex-1 min-w-0"
                               />
                             </div>
@@ -3804,16 +3807,20 @@ export function ExamenReussitePage() {
                               <span className="text-[8px] text-muted-foreground">PM:</span>
                               <input
                                 type="text"
-                                placeholder="ex: 13h-17h"
+                                placeholder="ex: 13h-16h"
                                 value={typeof dayTimeSlots[key] === 'object' ? (dayTimeSlots[key] as any)?.apresmidi || '' : ''}
-                                onChange={(e) => setDayTimeSlots(prev => {
-                                  const current = typeof prev[key] === 'object' ? prev[key] as any : {};
-                                  const next = { ...prev, [key]: { ...current, apresmidi: e.target.value } };
-                                  void saveDayTimeSlotsNow(next);
-                                  return next;
-                                })}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  setDayTimeSlots(prev => {
+                                    const current = typeof prev[key] === 'object' ? prev[key] as any : {};
+                                    const next = { ...prev, [key]: { ...current, apresmidi: val } };
+                                    saveDayTimeSlotsDebounced(next);
+                                    return next;
+                                  });
+                                }}
                                 className="h-5 text-[9px] border rounded bg-muted/50 focus:outline-none focus:ring-1 focus:ring-primary px-1 flex-1 min-w-0"
                               />
+
                             </div>
                           </div>
 
