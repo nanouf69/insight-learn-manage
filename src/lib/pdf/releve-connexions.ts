@@ -105,7 +105,20 @@ function joinList(items?: string[] | null): string {
 export function generateReleveConnexionsPdf(
   apprenant: { nom: string; prenom: string; civilite?: string; type_apprenant?: string },
   rows: ConnexionRow[],
-  opts?: { returnBlob?: boolean; tempsEnLearning?: string; tempsPratique?: string; tempsPresentielTheorie?: string; tempsTotal?: string },
+  opts?: {
+    returnBlob?: boolean;
+    tempsEnLearning?: string;
+    tempsPratique?: string;
+    tempsPresentielTheorie?: string;
+    tempsTotal?: string;
+    /** Heures prevues (pour les taux) */
+    heuresPrevuesElearning?: number;
+    heuresPrevuesPresentiel?: number;
+    heuresPrevuesTotal?: number;
+    /** Heures realisees en decimal (pour les taux) */
+    heuresFaitesElearning?: number;
+    heuresFaitesPresentiel?: number;
+  },
 ): { blob: Blob; fileName: string } | void {
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
   const pw = doc.internal.pageSize.getWidth();
