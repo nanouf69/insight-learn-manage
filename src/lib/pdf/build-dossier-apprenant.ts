@@ -339,7 +339,10 @@ export async function buildDossierApprenantIntoZip(
     const prog = generateFicheProgression(data, { returnBlob: true }) as { blob: Blob; fileName: string } | undefined;
     if (prog?.blob) root.folder("suivi-progression")!.file(prog.fileName, prog.blob);
 
+    // Relevé enrichi (mêmes colonnes que l'écran "Détail des connexions")
+    try {
       const enrichedRows = enrichConnexionRows(cnxRawRows as any[], acts as any[], quizzes as any[], exos as any[]);
+
 
       const reqElearning =
         Number((apprenant as any).heures_elearning) ||
