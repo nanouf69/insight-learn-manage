@@ -185,6 +185,29 @@ export function generateReleveConnexionsPdf(
     doc.text(`TOTAL formation : ${opts.tempsTotal}`, margin, 68);
     doc.setTextColor(40, 40, 40);
   }
+
+  // Taux de realisation (e-learning plafonne au volume prevu + presentiel confirme)
+  const reqEl = Number(opts?.heuresPrevuesElearning) || 0;
+  const reqPr = Number(opts?.heuresPrevuesPresentiel) || 0;
+  const reqTot = Number(opts?.heuresPrevuesTotal) || reqEl + reqPr;
+  let tauxLine = "";
+  if (reqTot > 0) {
+    const doneEl = Math.min(
+      Number(opts?.heuresFaitesElearning ?? totalMin / 60) || 0,
+      reqEl > 0 ? reqEl : Number.MAX_SAFE_INTEGER,
+    );
+    const donePr = Math.min(Number(opts?.heuresFaitesPresentiel) || 0, reqPr > 0 ? reqPr : 0);
+    const pct = (d: number, r: number) => (r > 0 ? Math.min(100, Math.round((d / r) * 100)) : 0);
+    tauxLine =
+      `Taux e-learning : ${pct(doneEl, reqEl)}% (${doneEl.toFixed(1)}h / ${reqEl}h)` +
+      `   |   Taux presentiel : ${pct(donePr, reqPr)}% (${donePr.toFixed(1)}h / ${reqPr}h)` +
+      `   |   TAUX TOTAL : ${pct(doneEl + donePr, reqTot)}% (${(doneEl + donePr).toFixed(1)}h / ${reqTot}h)`;
+    doc.setTextColor(13, 37, 64);
+    doc.setFontSize(9);
+    doc.text(tauxLine, margin, 74);
+    doc.setFontSize(10);
+    doc.setTextColor(40, 40, 40);
+  }
   doc.setFont("helvetica", "normal");
 
   // Rappel méthodologique
@@ -192,8 +215,9 @@ export function generateReleveConnexionsPdf(
   doc.setTextColor(110, 110, 110);
   doc.text(
     "Note : chaque session est plafonnee a 7h. Une session n'est comptabilisee que si l'apprenant a consulte un module, un exercice ou un quiz.",
-    margin, 73,
+    margin, tauxLine ? 79 : 73,
   );
+
   doc.setTextColor(40, 40, 40);
 
   if (!rows || rows.length === 0) {
