@@ -11,6 +11,7 @@ import { generateControleQualitePdf } from "@/lib/pdf/controle-qualite";
 import { generateEmargementSemainePdf } from "@/lib/pdf/emargement-semaine";
 import { generateReleveConnexionsPdf } from "@/lib/pdf/releve-connexions";
 import { enrichConnexionRows } from "@/lib/reports/connexion-detail-rows";
+import { fetchAllRows } from "@/lib/supabase/fetch-all-rows";
 import { generateEmailsApprenantPdf, maskPasswords } from "@/lib/pdf/emails-apprenant";
 import { generateProgrammeFormationPdf } from "@/lib/pdf/programme-formation";
 import { buildRapportActiviteHtml } from "@/lib/reports/rapport-activite-html";
@@ -439,34 +440,40 @@ export function ControleQualiteTab({ apprenant }: Props) {
         }
 
         // 3) Relevé de connexion (PDF + CSV)
-        const { data: cnxData } = await supabase
-          .from("apprenant_connexions")
-          .select("started_at, ended_at, last_seen_at, last_action_at, end_reason, source, current_module, ip_address, user_agent")
-          .eq("apprenant_id", apprenant.id)
-          .order("started_at", { ascending: false });
-        const cnxRawRows = (cnxData as any[]) || [];
+        const cnxRawRows = await fetchAllRows<any>((from, to) =>
+          supabase
+            .from("apprenant_connexions")
+            .select("started_at, ended_at, last_seen_at, last_action_at, end_reason, source, current_module, ip_address, user_agent")
+            .eq("apprenant_id", apprenant.id)
+            .order("started_at", { ascending: false })
+            .range(from, to),
+        ).catch(() => [] as any[]);
         const releveFolder = zip.folder("releve-connexions")!;
         // Le PDF du relevé est généré plus bas (après le calcul des temps présentiel/pratique)
         // pour inclure la synthèse complète des durées.
 
         // 3b) Rapport d'activité élève (HTML — même vue que "Imprimer le rapport")
         try {
-          const [actRes, complRes, qrRes] = await Promise.all([
-            supabase
+          const [actRows0, complRows0, qrRows0] = await Promise.all([
+            fetchAllRows<any>((from, to) => supabase
               .from("apprenant_module_activites")
               .select("id, module_id, module_nom, action_type, occurred_at")
               .eq("apprenant_id", apprenant.id)
-              .order("occurred_at", { ascending: false }),
-            supabase
+              .order("occurred_at", { ascending: false })
+              .range(from, to)),
+            fetchAllRows<any>((from, to) => supabase
               .from("apprenant_module_completion")
               .select("module_id")
-              .eq("apprenant_id", apprenant.id),
-            supabase
+              .eq("apprenant_id", apprenant.id)
+              .range(from, to)),
+            fetchAllRows<any>((from, to) => supabase
               .from("apprenant_quiz_results")
               .select("id, quiz_titre, matiere_nom, completed_at")
               .eq("apprenant_id", apprenant.id)
-              .order("completed_at", { ascending: false }),
+              .order("completed_at", { ascending: false })
+              .range(from, to)),
           ]);
+          const actRes = { data: actRows0 }; const complRes = { data: complRows0 }; const qrRes = { data: qrRows0 };
           const html = buildRapportActiviteHtml({
             apprenant: {
               nom: apprenant.nom,
@@ -492,49 +499,46 @@ export function ControleQualiteTab({ apprenant }: Props) {
 
         // 3c) Suivi de progression e-learning (PDF Qualiopi)
         try {
-          const [actAllRes, complAllRes, qrAllRes, cnxAllRes, emargAllRes, sessInscritsRes, exosRes] = await Promise.all([
-            supabase
+          const [acts, compls, quizzes, cnxAll, emargAll, sessInscrits, exos] = await Promise.all([
+            fetchAllRows<any>((from, to) => supabase
               .from("apprenant_module_activites")
               .select("module_id, module_nom, action_type, occurred_at")
               .eq("apprenant_id", apprenant.id)
-              .order("occurred_at", { ascending: true }),
-            supabase
+              .order("occurred_at", { ascending: true })
+              .range(from, to)),
+            fetchAllRows<any>((from, to) => supabase
               .from("apprenant_module_completion")
               .select("module_id, completed_at")
-              .eq("apprenant_id", apprenant.id),
-            supabase
+              .eq("apprenant_id", apprenant.id)
+              .range(from, to)),
+            fetchAllRows<any>((from, to) => supabase
               .from("apprenant_quiz_results")
               .select("quiz_titre, matiere_nom, score_obtenu, score_max, note_sur_20, reussi, duree_secondes, completed_at")
               .eq("apprenant_id", apprenant.id)
-              .order("completed_at", { ascending: true }),
-            supabase
+              .order("completed_at", { ascending: true })
+              .range(from, to)),
+            fetchAllRows<any>((from, to) => supabase
               .from("apprenant_connexions")
               .select("started_at, ended_at, last_seen_at")
-              .eq("apprenant_id", apprenant.id),
-            supabase
+              .eq("apprenant_id", apprenant.id)
+              .range(from, to)),
+            fetchAllRows<any>((from, to) => supabase
               .from("emargements_fc" as any)
               .select("date_emargement, demi_journee, absent")
-              .eq("apprenant_id", apprenant.id),
-            supabase
+              .eq("apprenant_id", apprenant.id)
+              .range(from, to)),
+            fetchAllRows<any>((from, to) => supabase
               .from("session_apprenants")
               .select("session_id, heure_debut_personnalisee, heure_fin_personnalisee, sessions:session_id(type_session, heure_debut, heure_fin, date_debut, date_fin)")
-              .eq("apprenant_id", apprenant.id),
-            supabase
+              .eq("apprenant_id", apprenant.id)
+              .range(from, to)),
+            fetchAllRows<any>((from, to) => supabase
               .from("reponses_apprenants")
               .select("exercice_id, updated_at")
               .eq("apprenant_id", apprenant.id)
-              .eq("completed", true),
+              .eq("completed", true)
+              .range(from, to)),
           ]);
-          if (actAllRes.error) console.error("[bulk-download] activites error:", actAllRes.error);
-          if (complAllRes.error) console.error("[bulk-download] completion error:", complAllRes.error);
-          if (qrAllRes.error) console.error("[bulk-download] quiz error:", qrAllRes.error);
-          const acts = (actAllRes.data as any[]) || [];
-          const compls = (complAllRes.data as any[]) || [];
-          const quizzes = (qrAllRes.data as any[]) || [];
-          const cnxAll = (cnxAllRes.data as any[]) || [];
-          const emargAll = (emargAllRes.data as any[]) || [];
-          const sessInscrits = (sessInscritsRes.data as any[]) || [];
-          const exos = (exosRes.data as any[]) || [];
           const completedIds = new Set(compls.map((c: any) => c.module_id));
 
           // Group activités by module — derive duration from consecutive occurred_at within same module (cap 15min)
