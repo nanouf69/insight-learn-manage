@@ -300,7 +300,7 @@ export function FormationsBientotTerminees({ onNavigateToApprenant }: Props) {
             Aucune formation à afficher.
           </p>
         ) : (
-          results.map(({ apprenant: a, done, required, presentiel, percent, remainingDays }) => (
+          results.map(({ apprenant: a, done, required, presentiel, percent, remainingDays, lastConnexion, lastPresentiel }) => (
             <div
               key={a.id}
               className={`p-3 rounded-lg border space-y-1.5 cursor-pointer transition-colors ${
@@ -361,6 +361,15 @@ export function FormationsBientotTerminees({ onNavigateToApprenant }: Props) {
                 </span>
                 <span title="Heures à réaliser en présentiel">
                   Présentiel : {presentiel}h
+                </span>
+                <span title="Dernier jour de connexion e-learning">
+                  Dernière connexion :{" "}
+                  {lastConnexion
+                    ? lastConnexion.toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "2-digit" })
+                    : "—"}
+                </span>
+                <span title="Dernier jour de présentiel confirmé">
+                  Dernier présentiel : {lastPresentiel ? fmt(lastPresentiel) : "—"}
                 </span>
 
                 {a.telephone && (
