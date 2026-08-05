@@ -440,7 +440,7 @@ export async function buildDossierApprenantIntoZip(
     destinataires: Array.isArray(e.recipients) ? e.recipients.join(", ") : (e.recipients || ""),
     lu: e.is_read ? "Oui" : "Non",
     pieces_jointes: e.has_attachments ? "Oui" : "Non",
-    apercu: (e.body_preview || "").replace(/\s+/g, " ").slice(0, 500),
+    apercu: maskPasswords((e.body_preview || "").replace(/\s+/g, " ")).slice(0, 500),
   }));
   const emailsFolder = root.folder("emails")!;
   emailsFolder.file(`emails_${slug}.csv`, toCsv(emailRows, ["type","date","sujet","expediteur","destinataires","lu","pieces_jointes","apercu"]));
