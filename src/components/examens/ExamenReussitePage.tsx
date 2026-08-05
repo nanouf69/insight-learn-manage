@@ -1162,6 +1162,18 @@ export function ExamenReussitePage() {
     },
   });
 
+  // Apprenants déjà inscrits sur une session pratique (quel que soit le statut de présence)
+  const { data: inscritsSessionPratique } = useQuery({
+    queryKey: ['inscrits-session-pratique'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('session_apprenants')
+        .select('apprenant_id, sessions!inner(type_session)')
+        .eq('sessions.type_session', 'pratique');
+      return [...new Set((data || []).map((d: any) => d.apprenant_id))];
+    },
+  });
+
   // Fetch apprenants ayant ouvert/effectué le module Pratique (VTC=8, TAXI=6)
   const { data: pratiqueDoneIds } = useQuery({
     queryKey: ['pratique-module-done-ids'],
