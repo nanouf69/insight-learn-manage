@@ -80,12 +80,14 @@ export function getSessionEndMs(c: SessionLike, cutoffMs?: number | null): numbe
 
 
 /** Fin réelle sous forme de Date. */
-export function getSessionEndDate(c: SessionLike): Date {
-  return new Date(getSessionEndMs(c));
+export function getSessionEndDate(c: SessionLike, cutoffMs?: number | null): Date {
+  return new Date(getSessionEndMs(c, cutoffMs));
 }
 
 /** Durée réelle de la session en minutes (entier). */
-export function getSessionDurationMinutes(c: SessionLike): number {
+export function getSessionDurationMinutes(c: SessionLike, cutoffMs?: number | null): number {
   const start = ts(c.started_at) ?? 0;
-  return Math.max(0, Math.floor((getSessionEndMs(c) - start) / 60000));
+  if (isSessionAfterAccessEnd(c, cutoffMs)) return 0;
+  return Math.max(0, Math.floor((getSessionEndMs(c, cutoffMs) - start) / 60000));
 }
+
