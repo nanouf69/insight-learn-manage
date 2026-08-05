@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { FolderPlus, Upload, Eye, Trash2, Loader2, FileText } from "lucide-react";
+import { FolderPlus, Upload, Eye, Trash2, Loader2, FileText, Pencil } from "lucide-react";
 import { format } from "date-fns";
 
 interface Props {
@@ -95,6 +95,23 @@ export function DossierDocumentsLibres({ apprenantId }: Props) {
     window.open(data.signedUrl, "_blank");
   };
 
+  const handleRename = async (doc: LibreDoc) => {
+    const next = window.prompt("Nouveau nom du document", doc.titre || doc.nom_fichier || "");
+    if (next === null) return;
+    const titre = next.trim();
+    if (!titre || titre === doc.titre) return;
+    const { error } = await supabase
+      .from("documents_inscription")
+      .update({ titre })
+      .eq("id", doc.id);
+    if (error) {
+      toast.error("Renommage impossible");
+      return;
+    }
+    setDocs((prev) => prev.map((d) => (d.id === doc.id ? { ...d, titre } : d)));
+    toast.success("Document renommé");
+  };
+
   const handleDelete = async (doc: LibreDoc) => {
     const { error } = await supabase.from("documents_inscription").delete().eq("id", doc.id);
     if (error) {
@@ -163,6 +180,9 @@ export function DossierDocumentsLibres({ apprenantId }: Props) {
               <div className="flex items-center gap-1 shrink-0">
                 <Button size="sm" variant="ghost" onClick={() => handleView(doc)}>
                   <Eye className="w-4 h-4" />
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => handleRename(doc)} title="Renommer">
+                  <Pencil className="w-4 h-4" />
                 </Button>
                 <Button
                   size="sm"
