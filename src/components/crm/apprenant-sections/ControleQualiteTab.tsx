@@ -926,6 +926,45 @@ export function ControleQualiteTab({ apprenant }: Props) {
           console.error("[bulk-download] identifiants PDF failed:", credentialsErr);
         }
 
+        // Documents libres ajoutés manuellement au dossier
+        try {
+          const { data: libres } = await supabase
+            .from("documents_inscription")
+            .select("titre, nom_fichier, url, type_document, created_at")
+            .eq("apprenant_id", apprenant.id)
+            .like("type_document", "libre%")
+            .order("created_at", { ascending: false });
+          const libreRows = (libres as any[]) || [];
+          if (libreRows.length > 0) {
+            const libreFolder = zip.folder("documents-ajoutes")!;
+            for (const d of libreRows) {
+              if (!d.url) continue;
+              try {
+                const raw = String(d.url);
+                const path = raw.includes("/documents-inscription/")
+                  ? raw.split("/documents-inscription/")[1].split("?")[0]
+                  : raw;
+                const { data: signed } = await supabase.storage
+                  .from("documents-inscription")
+                  .createSignedUrl(decodeURIComponent(path), 3600);
+                const fetchUrl = signed?.signedUrl || (raw.startsWith("http") ? raw : null);
+                if (!fetchUrl) continue;
+                const resp = await fetch(fetchUrl);
+                if (!resp.ok) continue;
+                const fileBlob = await resp.blob();
+                const ext = (d.nom_fichier || path).split(".").pop()?.split("?")[0] || "pdf";
+                const base = (d.titre || d.nom_fichier || "document").replace(/\.[^.]+$/, "");
+                const safe = base.replace(/[^a-zA-Z0-9-_ ]+/g, "_").trim() || "document";
+                libreFolder.file(`${safe}.${ext}`, fileBlob);
+              } catch (oneErr) {
+                console.error("[bulk-download] document libre failed", d?.titre, oneErr);
+              }
+            }
+          }
+        } catch (libreErr) {
+          console.error("[bulk-download] documents ajoutés failed:", libreErr);
+        }
+
         const blob = await zip.generateAsync({ type: "blob" });
         const today = format(new Date(), "yyyy-MM-dd");
         saveAs(blob, `dossier-complet_${slug}_${today}.zip`);
