@@ -11,6 +11,7 @@ import { generateControleQualitePdf } from "@/lib/pdf/controle-qualite";
 import { generateEmargementSemainePdf } from "@/lib/pdf/emargement-semaine";
 import { generateReleveConnexionsPdf } from "@/lib/pdf/releve-connexions";
 import { enrichConnexionRows } from "@/lib/reports/connexion-detail-rows";
+import { fetchAllRows } from "@/lib/supabase/fetch-all-rows";
 import { generateEmailsApprenantPdf, maskPasswords } from "@/lib/pdf/emails-apprenant";
 import { generateProgrammeFormationPdf } from "@/lib/pdf/programme-formation";
 import { buildRapportActiviteHtml } from "@/lib/reports/rapport-activite-html";
