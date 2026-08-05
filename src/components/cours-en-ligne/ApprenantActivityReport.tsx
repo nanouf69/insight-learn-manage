@@ -252,7 +252,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
       while (true) {
         const { data } = await supabase
           .from("apprenants")
-          .select("id, nom, prenom, email, type_apprenant, formation_choisie, heures_totales, heures_elearning, date_examen_theorique, resultat_examen, date_debut_cours_en_ligne, date_fin_cours_en_ligne")
+          .select("id, nom, prenom, email, type_apprenant, formation_choisie, heures_totales, heures_elearning, heures_presentiel, date_examen_theorique, resultat_examen, date_debut_cours_en_ligne, date_fin_cours_en_ligne")
           .not("auth_user_id", "is", null)
           .order("nom")
           .range(from, from + PAGE - 1);
