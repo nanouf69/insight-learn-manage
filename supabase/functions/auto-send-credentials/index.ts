@@ -64,14 +64,27 @@ serve(async (req) => {
     // Dédoublonnage : si un email d'identifiants a déjà été envoyé (quelle que soit la date),
     // ne pas renvoyer automatiquement. L'admin peut toujours utiliser resend-credentials.
     const apprenantIds = eligibleApprenants.map((a: any) => a.id);
-    const { data: existingEmails } = await supabaseAdmin
-      .from("emails")
-      .select("apprenant_id")
-      .in("apprenant_id", apprenantIds)
-      .eq("type", "sent")
-      .or("subject.ilike.%identifiants%,subject.ilike.%identifiant%");
+    // On récupère les sujets et on filtre côté JS (le filtre .or/ilike PostgREST
+    // matchait tous les emails et bloquait les envois légitimes).
+    const alreadySent = new Set<string>();
+    {
+      const CHUNK = 200;
+      for (let i = 0; i < apprenantIds.length; i += CHUNK) {
+        const slice = apprenantIds.slice(i, i + CHUNK);
+        const { data: existingEmails } = await supabaseAdmin
+          .from("emails")
+          .select("apprenant_id, subject")
+          .in("apprenant_id", slice)
+          .eq("type", "sent")
+          .limit(5000);
+        for (const e of existingEmails || []) {
+          if (e.apprenant_id && /identifiant/i.test(String(e.subject || ""))) {
+            alreadySent.add(e.apprenant_id);
+          }
+        }
+      }
+    }
 
-    const alreadySent = new Set((existingEmails || []).map((e: any) => e.apprenant_id));
 
     const toProcess = eligibleApprenants.filter((a: any) => !alreadySent.has(a.id));
 
