@@ -10,7 +10,7 @@ import {
 import { generateProgrammeFormationPdf } from "@/lib/pdf/programme-formation";
 import { generateEmargementSemainePdf } from "@/lib/pdf/emargement-semaine";
 import { generateReleveConnexionsPdf } from "@/lib/pdf/releve-connexions";
-import { generateEmailsApprenantPdf } from "@/lib/pdf/emails-apprenant";
+import { generateEmailsApprenantPdf, maskPasswords } from "@/lib/pdf/emails-apprenant";
 import { buildRapportActiviteHtml } from "@/lib/reports/rapport-activite-html";
 import { generateFicheProgression, type FicheProgressionData, type ProgressionModule } from "@/lib/pdf/fiche-progression";
 
@@ -440,7 +440,7 @@ export async function buildDossierApprenantIntoZip(
     destinataires: Array.isArray(e.recipients) ? e.recipients.join(", ") : (e.recipients || ""),
     lu: e.is_read ? "Oui" : "Non",
     pieces_jointes: e.has_attachments ? "Oui" : "Non",
-    apercu: (e.body_preview || "").replace(/\s+/g, " ").slice(0, 500),
+    apercu: maskPasswords((e.body_preview || "").replace(/\s+/g, " ")).slice(0, 500),
   }));
   const emailsFolder = root.folder("emails")!;
   emailsFolder.file(`emails_${slug}.csv`, toCsv(emailRows, ["type","date","sujet","expediteur","destinataires","lu","pieces_jointes","apercu"]));
@@ -448,6 +448,25 @@ export async function buildDossierApprenantIntoZip(
     const emailsPdf = generateEmailsApprenantPdf({ ...apprenant, email: apprenant.email }, emailsRaw, { returnBlob: true }) as { blob: Blob; fileName: string } | undefined;
     if (emailsPdf?.blob) emailsFolder.file(emailsPdf.fileName, emailsPdf.blob);
   } catch (e) { console.error("[dossier] emails PDF failed", e); }
+
+  // ---------- 4bis) Email des identifiants (mot de passe masqué) ----------
+  try {
+    const isCredentialEmail = (e: any) => {
+      const hay = `${e.subject || ""} ${e.body_preview || ""}`.toLowerCase();
+      return /identifiant|acc[eè]s [aà] la plateforme|mot de passe|connexion/.test(hay);
+    };
+    const credRows = emailsRaw.filter(isCredentialEmail);
+    if (credRows.length > 0) {
+      const credPdf = generateEmailsApprenantPdf(
+        { ...apprenant, email: apprenant.email },
+        credRows,
+        { returnBlob: true },
+      ) as { blob: Blob; fileName: string } | undefined;
+      if (credPdf?.blob) {
+        emailsFolder.file(`identifiants_${slug}.pdf`, credPdf.blob);
+      }
+    }
+  } catch (e) { console.error("[dossier] identifiants PDF failed", e); }
 
   return { weeks: weekMap.size, connexions: cnxRows.length, emails: emailRows.length };
 }
