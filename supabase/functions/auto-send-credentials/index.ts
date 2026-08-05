@@ -64,26 +64,36 @@ serve(async (req) => {
     // Dédoublonnage : si un email d'identifiants a déjà été envoyé (quelle que soit la date),
     // ne pas renvoyer automatiquement. L'admin peut toujours utiliser resend-credentials.
     const apprenantIds = eligibleApprenants.map((a: any) => a.id);
-    // On récupère les sujets et on filtre côté JS (le filtre .or/ilike PostgREST
-    // matchait tous les emails et bloquait les envois légitimes).
+    // Dédoublonnage robuste : pagination complète (le cap PostgREST à 1000 lignes
+    // tronquait la liste et provoquait des renvois indus) + filtre côté JS.
     const alreadySent = new Set<string>();
     {
-      const CHUNK = 200;
+      const CHUNK = 100;
+      const PAGE = 1000;
       for (let i = 0; i < apprenantIds.length; i += CHUNK) {
         const slice = apprenantIds.slice(i, i + CHUNK);
-        const { data: existingEmails } = await supabaseAdmin
-          .from("emails")
-          .select("apprenant_id, subject")
-          .in("apprenant_id", slice)
-          .eq("type", "sent")
-          .limit(5000);
-        for (const e of existingEmails || []) {
-          if (e.apprenant_id && /identifiant/i.test(String(e.subject || ""))) {
-            alreadySent.add(e.apprenant_id);
+        let from = 0;
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+          const { data: existingEmails, error: mailErr } = await supabaseAdmin
+            .from("emails")
+            .select("apprenant_id, subject")
+            .in("apprenant_id", slice)
+            .eq("type", "sent")
+            .order("id", { ascending: true })
+            .range(from, from + PAGE - 1);
+          if (mailErr) throw mailErr;
+          for (const e of existingEmails || []) {
+            if (e.apprenant_id && /identifiant/i.test(String(e.subject || ""))) {
+              alreadySent.add(e.apprenant_id);
+            }
           }
+          if (!existingEmails || existingEmails.length < PAGE) break;
+          from += PAGE;
         }
       }
     }
+
 
 
     const toProcess = eligibleApprenants.filter((a: any) => !alreadySent.has(a.id));
