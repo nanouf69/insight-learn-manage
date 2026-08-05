@@ -905,6 +905,27 @@ export function ControleQualiteTab({ apprenant }: Props) {
           console.error("[bulk-download] emails PDF failed:", mailErr);
         }
 
+        // PDF séparé contenant uniquement le mail d'identifiants.
+        // Le générateur masque systématiquement toute valeur suivant « Mot de passe ».
+        try {
+          const credentialEmails = emailsRaw.filter((email: any) => {
+            const searchable = `${email.subject || ""} ${email.body_preview || ""} ${email.body_html || ""}`.toLowerCase();
+            return /identifiant|vos codes|compte de cours en ligne|acc[eè]s (?:aux cours|[aà] la plateforme)|mot de passe/.test(searchable);
+          });
+          if (credentialEmails.length > 0) {
+            const credentialsPdf = generateEmailsApprenantPdf(
+              { ...apprenant, email: apprenant.email },
+              credentialEmails,
+              { returnBlob: true },
+            ) as { blob: Blob; fileName: string } | undefined;
+            if (credentialsPdf?.blob) {
+              emailsFolder.file(`identifiants_${slug}.pdf`, credentialsPdf.blob);
+            }
+          }
+        } catch (credentialsErr) {
+          console.error("[bulk-download] identifiants PDF failed:", credentialsErr);
+        }
+
         const blob = await zip.generateAsync({ type: "blob" });
         const today = format(new Date(), "yyyy-MM-dd");
         saveAs(blob, `dossier-complet_${slug}_${today}.zip`);
