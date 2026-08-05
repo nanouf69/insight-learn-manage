@@ -474,6 +474,44 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
     return rows.sort((a, b) => b.date.localeCompare(a.date));
   }, [emargements]);
 
+  // Synthèse des taux : e-learning (plafonné au volume prévu), présentiel (confirmé) et total
+  const taux = useMemo(() => {
+    const a = selectedApprenant;
+    const requiredElearning =
+      Number(a?.heures_elearning) ||
+      Math.max(0, (Number(a?.heures_totales) || 0) - (Number(a?.heures_presentiel) || 0));
+    const requiredPresentiel = Number(a?.heures_presentiel) || 0;
+    const requiredTotal =
+      Number(a?.heures_totales) || requiredElearning + requiredPresentiel;
+
+    const doneElearningRaw = allHistoryMinutes / 60;
+    const doneElearning = requiredElearning > 0
+      ? Math.min(doneElearningRaw, requiredElearning)
+      : doneElearningRaw;
+    const donePresentielRaw = pratiqueRows.reduce((s, p) => s + (p.hours || 0), 0);
+    const donePresentiel = requiredPresentiel > 0
+      ? Math.min(donePresentielRaw, requiredPresentiel)
+      : donePresentielRaw;
+
+    const pct = (done: number, req: number) =>
+      req > 0 ? Math.min(100, Math.round((done / req) * 100)) : 0;
+
+    return {
+      requiredElearning,
+      requiredPresentiel,
+      requiredTotal,
+      doneElearning,
+      doneElearningRaw,
+      donePresentiel,
+      doneTotal: doneElearning + donePresentiel,
+      pctElearning: pct(doneElearning, requiredElearning),
+      pctPresentiel: pct(donePresentiel, requiredPresentiel),
+      pctTotal: pct(doneElearning + donePresentiel, requiredTotal),
+    };
+  }, [selectedApprenant, allHistoryMinutes, pratiqueRows]);
+
+
+
   // Merge connexions + pratique into table rows sorted by date desc
   const tableRows = useMemo(() => {
     const connRows = connexions.map((c) => ({
