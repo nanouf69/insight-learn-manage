@@ -148,26 +148,31 @@ export async function buildDossierApprenantIntoZip(
   }
 
   // ---------- 3) Relevé connexions + rapport activité + suivi progression ----------
-  const { data: cnxData } = await supabase
-    .from("apprenant_connexions")
-    .select("started_at, ended_at, last_seen_at, last_action_at, end_reason, source, current_module, ip_address, user_agent")
-    .eq("apprenant_id", apprenant.id)
-    .order("started_at", { ascending: false });
-  const cnxRawRows = (cnxData as any[]) || [];
+  const cnxRawRows = await fetchAllRows<any>((from, to) =>
+    supabase
+      .from("apprenant_connexions")
+      .select("started_at, ended_at, last_seen_at, last_action_at, end_reason, source, current_module, ip_address, user_agent")
+      .eq("apprenant_id", apprenant.id)
+      .order("started_at", { ascending: false })
+      .range(from, to),
+  ).catch(() => [] as any[]);
   const releveFolder = root.folder("releve-connexions")!;
 
   try {
-    const [actRes, complRes, qrRes] = await Promise.all([
-      supabase.from("apprenant_module_activites")
+    const [actRows, complRows, qrRows] = await Promise.all([
+      fetchAllRows<any>((from, to) => supabase.from("apprenant_module_activites")
         .select("id, module_id, module_nom, action_type, occurred_at")
         .eq("apprenant_id", apprenant.id)
-        .order("occurred_at", { ascending: false }),
-      supabase.from("apprenant_module_completion").select("module_id").eq("apprenant_id", apprenant.id),
-      supabase.from("apprenant_quiz_results")
+        .order("occurred_at", { ascending: false })
+        .range(from, to)),
+      fetchAllRows<any>((from, to) => supabase.from("apprenant_module_completion").select("module_id").eq("apprenant_id", apprenant.id).range(from, to)),
+      fetchAllRows<any>((from, to) => supabase.from("apprenant_quiz_results")
         .select("id, quiz_titre, matiere_nom, completed_at")
         .eq("apprenant_id", apprenant.id)
-        .order("completed_at", { ascending: false }),
+        .order("completed_at", { ascending: false })
+        .range(from, to)),
     ]);
+    const actRes = { data: actRows }; const complRes = { data: complRows }; const qrRes = { data: qrRows };
     const html = buildRapportActiviteHtml({
       apprenant: { nom: apprenant.nom, prenom: apprenant.prenom, email: apprenant.email, type_apprenant: apprenant.type_apprenant },
       connexions: cnxRawRows.map((r: any) => ({ id: r.id || "", started_at: r.started_at, ended_at: r.ended_at, last_seen_at: r.last_seen_at, current_module: r.current_module })),
@@ -179,20 +184,14 @@ export async function buildDossierApprenantIntoZip(
   } catch (e) { console.error("[dossier] rapport activite failed", e); }
 
   try {
-    const [actAllRes, complAllRes, qrAllRes, emargAllRes, sessInscritsRes, exosRes] = await Promise.all([
-      supabase.from("apprenant_module_activites").select("module_id, module_nom, action_type, occurred_at").eq("apprenant_id", apprenant.id).order("occurred_at", { ascending: true }),
-      supabase.from("apprenant_module_completion").select("module_id, completed_at").eq("apprenant_id", apprenant.id),
-      supabase.from("apprenant_quiz_results").select("quiz_titre, matiere_nom, score_obtenu, score_max, note_sur_20, reussi, duree_secondes, completed_at").eq("apprenant_id", apprenant.id).order("completed_at", { ascending: true }),
-      supabase.from("emargements_fc" as any).select("date_emargement, demi_journee, absent").eq("apprenant_id", apprenant.id),
-      supabase.from("session_apprenants").select("session_id, heure_debut_personnalisee, heure_fin_personnalisee, sessions:session_id(type_session, heure_debut, heure_fin, date_debut, date_fin)").eq("apprenant_id", apprenant.id),
-      supabase.from("reponses_apprenants").select("exercice_id, updated_at").eq("apprenant_id", apprenant.id).eq("completed", true),
+    const [acts, compls, quizzes, emargAll, sessInscrits, exos] = await Promise.all([
+      fetchAllRows<any>((from, to) => supabase.from("apprenant_module_activites").select("module_id, module_nom, action_type, occurred_at").eq("apprenant_id", apprenant.id).order("occurred_at", { ascending: true }).range(from, to)),
+      fetchAllRows<any>((from, to) => supabase.from("apprenant_module_completion").select("module_id, completed_at").eq("apprenant_id", apprenant.id).range(from, to)),
+      fetchAllRows<any>((from, to) => supabase.from("apprenant_quiz_results").select("quiz_titre, matiere_nom, score_obtenu, score_max, note_sur_20, reussi, duree_secondes, completed_at").eq("apprenant_id", apprenant.id).order("completed_at", { ascending: true }).range(from, to)),
+      fetchAllRows<any>((from, to) => supabase.from("emargements_fc" as any).select("date_emargement, demi_journee, absent").eq("apprenant_id", apprenant.id).range(from, to)),
+      fetchAllRows<any>((from, to) => supabase.from("session_apprenants").select("session_id, heure_debut_personnalisee, heure_fin_personnalisee, sessions:session_id(type_session, heure_debut, heure_fin, date_debut, date_fin)").eq("apprenant_id", apprenant.id).range(from, to)),
+      fetchAllRows<any>((from, to) => supabase.from("reponses_apprenants").select("exercice_id, updated_at").eq("apprenant_id", apprenant.id).eq("completed", true).range(from, to)),
     ]);
-    const acts = (actAllRes.data as any[]) || [];
-    const compls = (complAllRes.data as any[]) || [];
-    const quizzes = (qrAllRes.data as any[]) || [];
-    const emargAll = (emargAllRes.data as any[]) || [];
-    const sessInscrits = (sessInscritsRes.data as any[]) || [];
-    const exos = (exosRes.data as any[]) || [];
     const completedIds = new Set(compls.map((c: any) => c.module_id));
 
     const modulesMap = new Map<string, { firstDate?: string; lastDate?: string; totalSec: number; moduleId?: number }>();
