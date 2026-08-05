@@ -104,15 +104,21 @@ export function FormationsBientotTerminees({ onNavigateToApprenant }: Props) {
 
       // Présentiel : uniquement si la présence est confirmée sur une session de type "pratique"
       const confirmedPresentiel = new Set<string>();
+      const lastPresentielByAppr = new Map<string, string>();
       {
         const { data: sa } = await supabase
           .from("session_apprenants")
-          .select("apprenant_id, presence_pratique, sessions!inner(type_session)")
+          .select("apprenant_id, presence_pratique, sessions!inner(type_session, date_debut, date_fin)")
           .in("apprenant_id", list.map((a) => a.id))
           .eq("sessions.type_session", "pratique");
         ((sa || []) as any[]).forEach((r) => {
           if ((r.presence_pratique || "").toLowerCase() === "present") {
             confirmedPresentiel.add(r.apprenant_id);
+            const d = r.sessions?.date_fin || r.sessions?.date_debut;
+            if (d) {
+              const prev = lastPresentielByAppr.get(r.apprenant_id);
+              if (!prev || d > prev) lastPresentielByAppr.set(r.apprenant_id, d);
+            }
           }
         });
       }
@@ -184,6 +190,16 @@ export function FormationsBientotTerminees({ onNavigateToApprenant }: Props) {
             }
 
             const done = totalMs / 3600000;
+            // Dernier jour de connexion e-learning (dernière activité réelle observée)
+            const lastConnexionMs = Math.max(
+              0,
+              ...conns
+                .map((c: any) => Date.parse(c.ended_at || c.last_seen_at || c.started_at))
+                .filter((t: number) => !Number.isNaN(t)),
+              ...actTimestamps,
+            );
+            const lastConnexion = lastConnexionMs > 0 ? new Date(lastConnexionMs) : null;
+            const lastPresentiel = lastPresentielByAppr.get(a.id) || null;
             const requiredElearning =
               Number(a.heures_elearning) ||
               HEURES_REQUISES[(a.type_apprenant || "").toLowerCase()] ||
@@ -197,11 +213,11 @@ export function FormationsBientotTerminees({ onNavigateToApprenant }: Props) {
             const doneCapped = Math.min(done, requiredElearning) + presentiel;
             const percent = required > 0 ? Math.min(100, Math.round((doneCapped / required) * 100)) : 0;
             const remainingDays = daysBetween(today, a.date_fin_cours_en_ligne);
-            return { apprenant: a, done, required: requiredElearning, presentiel, percent, remainingDays };
+            return { apprenant: a, done, required: requiredElearning, presentiel, percent, remainingDays, lastConnexion, lastPresentiel };
           } catch (err) {
             console.error("[FormationsBientotTerminees] apprenant load error", a.id, err);
             const required = Number(a.heures_elearning) || HEURES_REQUISES[(a.type_apprenant || "").toLowerCase()] || 60;
-            return { apprenant: a, done: 0, required, presentiel: confirmedPresentiel.has(a.id) ? Number(a.heures_presentiel) || 0 : 0, percent: 0, remainingDays: daysBetween(today, a.date_fin_cours_en_ligne) };
+            return { apprenant: a, done: 0, required, presentiel: confirmedPresentiel.has(a.id) ? Number(a.heures_presentiel) || 0 : 0, percent: 0, remainingDays: daysBetween(today, a.date_fin_cours_en_ligne), lastConnexion: null as Date | null, lastPresentiel: lastPresentielByAppr.get(a.id) || null };
           }
 
         })
@@ -284,7 +300,7 @@ export function FormationsBientotTerminees({ onNavigateToApprenant }: Props) {
             Aucune formation à afficher.
           </p>
         ) : (
-          results.map(({ apprenant: a, done, required, presentiel, percent, remainingDays }) => (
+          results.map(({ apprenant: a, done, required, presentiel, percent, remainingDays, lastConnexion, lastPresentiel }) => (
             <div
               key={a.id}
               className={`p-3 rounded-lg border space-y-1.5 cursor-pointer transition-colors ${
@@ -345,6 +361,15 @@ export function FormationsBientotTerminees({ onNavigateToApprenant }: Props) {
                 </span>
                 <span title="Heures à réaliser en présentiel">
                   Présentiel : {presentiel}h
+                </span>
+                <span title="Dernier jour de connexion e-learning">
+                  Dernière connexion :{" "}
+                  {lastConnexion
+                    ? lastConnexion.toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "2-digit" })
+                    : "—"}
+                </span>
+                <span title="Dernier jour de présentiel confirmé">
+                  Dernier présentiel : {lastPresentiel ? fmt(lastPresentiel) : "—"}
                 </span>
 
                 {a.telephone && (
