@@ -168,18 +168,20 @@ export function FormationsBientotTerminees({ onNavigateToApprenant }: Props) {
 
             const done = totalMs / 3600000;
             const required =
-              HEURES_REQUISES[(a.type_apprenant || "").toLowerCase()] ||
               Number(a.heures_totales) ||
+              HEURES_REQUISES[(a.type_apprenant || "").toLowerCase()] ||
               Number(a.heures_elearning) ||
               60;
+            const presentiel = Number(a.heures_presentiel) || 0;
             const percent = required > 0 ? Math.min(100, Math.round((done / required) * 100)) : 0;
             const remainingDays = daysBetween(today, a.date_fin_cours_en_ligne);
-            return { apprenant: a, done, required, percent, remainingDays };
+            return { apprenant: a, done, required, presentiel, percent, remainingDays };
           } catch (err) {
             console.error("[FormationsBientotTerminees] apprenant load error", a.id, err);
-            const required = HEURES_REQUISES[(a.type_apprenant || "").toLowerCase()] || 60;
-            return { apprenant: a, done: 0, required, percent: 0, remainingDays: daysBetween(today, a.date_fin_cours_en_ligne) };
+            const required = Number(a.heures_totales) || HEURES_REQUISES[(a.type_apprenant || "").toLowerCase()] || 60;
+            return { apprenant: a, done: 0, required, presentiel: Number(a.heures_presentiel) || 0, percent: 0, remainingDays: daysBetween(today, a.date_fin_cours_en_ligne) };
           }
+
         })
       );
 
