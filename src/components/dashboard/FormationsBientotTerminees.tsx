@@ -102,6 +102,21 @@ export function FormationsBientotTerminees({ onNavigateToApprenant }: Props) {
       const list = ((apprenants || []) as any[]).filter(isElearning);
       if (list.length === 0) return [];
 
+      // Présentiel : uniquement si la présence est confirmée sur une session pratique
+      const confirmedPresentiel = new Set<string>();
+      {
+        const { data: sa } = await supabase
+          .from("session_apprenants")
+          .select("apprenant_id, presence_pratique")
+          .in("apprenant_id", list.map((a) => a.id));
+        ((sa || []) as any[]).forEach((r) => {
+          if ((r.presence_pratique || "").toLowerCase() === "present") {
+            confirmedPresentiel.add(r.apprenant_id);
+          }
+        });
+      }
+
+
       // Calcule les heures effectives par apprenant (même règle que le Rapport d'activité)
       const results = await Promise.all(
         list.map(async (a) => {
@@ -172,14 +187,14 @@ export function FormationsBientotTerminees({ onNavigateToApprenant }: Props) {
               HEURES_REQUISES[(a.type_apprenant || "").toLowerCase()] ||
               Number(a.heures_elearning) ||
               60;
-            const presentiel = Number(a.heures_presentiel) || 0;
+            const presentiel = confirmedPresentiel.has(a.id) ? Number(a.heures_presentiel) || 0 : 0;
             const percent = required > 0 ? Math.min(100, Math.round((done / required) * 100)) : 0;
             const remainingDays = daysBetween(today, a.date_fin_cours_en_ligne);
             return { apprenant: a, done, required, presentiel, percent, remainingDays };
           } catch (err) {
             console.error("[FormationsBientotTerminees] apprenant load error", a.id, err);
             const required = Number(a.heures_totales) || HEURES_REQUISES[(a.type_apprenant || "").toLowerCase()] || 60;
-            return { apprenant: a, done: 0, required, presentiel: Number(a.heures_presentiel) || 0, percent: 0, remainingDays: daysBetween(today, a.date_fin_cours_en_ligne) };
+            return { apprenant: a, done: 0, required, presentiel: confirmedPresentiel.has(a.id) ? Number(a.heures_presentiel) || 0 : 0, percent: 0, remainingDays: daysBetween(today, a.date_fin_cours_en_ligne) };
           }
 
         })
