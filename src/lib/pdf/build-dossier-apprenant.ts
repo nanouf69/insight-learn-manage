@@ -149,14 +149,18 @@ export async function buildDossierApprenantIntoZip(
   }
 
   // ---------- 3) Relevé connexions + rapport activité + suivi progression ----------
-  const cnxRawRows = await fetchAllRows<any>((from, to) =>
-    supabase
-      .from("apprenant_connexions")
-      .select("started_at, ended_at, last_seen_at, last_action_at, end_reason, source, current_module, ip_address, user_agent")
-      .eq("apprenant_id", apprenant.id)
-      .order("started_at", { ascending: false })
-      .range(from, to),
-  ).catch(() => [] as any[]);
+  const cnxRawRows = clampConnexionsToAccessEnd(
+    await fetchAllRows<any>((from, to) =>
+      supabase
+        .from("apprenant_connexions")
+        .select("started_at, ended_at, last_seen_at, last_action_at, end_reason, source, current_module, ip_address, user_agent")
+        .eq("apprenant_id", apprenant.id)
+        .order("started_at", { ascending: false })
+        .range(from, to),
+    ).catch(() => [] as any[]),
+    apprenant.date_fin_cours_en_ligne || apprenant.date_fin_formation,
+  );
+
   const releveFolder = root.folder("releve-connexions")!;
 
   try {
