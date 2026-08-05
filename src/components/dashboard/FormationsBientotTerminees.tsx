@@ -321,6 +321,10 @@ export function FormationsBientotTerminees({ onNavigateToApprenant }: Props) {
                 <span>
                   {done.toFixed(1)}h / {required}h
                 </span>
+                <span title="Heures à réaliser en présentiel">
+                  Présentiel : {presentiel}h
+                </span>
+
                 {a.telephone && (
                   <a
                     href={`tel:${a.telephone}`}
