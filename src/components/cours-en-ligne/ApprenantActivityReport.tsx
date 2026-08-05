@@ -383,8 +383,8 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
       for (const c of conns) {
         const start = Date.parse(c.started_at);
         if (Number.isNaN(start)) continue;
-        const rawEnd = c.ended_at ? Date.parse(c.ended_at) : Date.parse(c.last_seen_at);
-        const end = Number.isNaN(rawEnd) ? start : Math.min(rawEnd, start + MAX);
+        const end = getSessionEndMs(c as any);
+
         if (end <= start) continue;
         let lo = 0, hi = tsArr.length - 1, found = false;
         while (lo <= hi) {
