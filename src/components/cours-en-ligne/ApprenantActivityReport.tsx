@@ -378,12 +378,16 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
         ...exos.filter((e: any) => e.completed).map((e: any) => Date.parse(e.updated_at)),
         ...quizz.map((q: any) => Date.parse(q.completed_at)),
       ].filter(t => !Number.isNaN(t)).sort((a, b) => a - b);
-      const MAX = 7 * 60 * 60 * 1000;
+      const cutoffAll = getAccessCutoffMs(
+        apprenants.find((a) => a.id === selectedId)?.date_fin_cours_en_ligne ?? null,
+      );
       let total = 0;
       for (const c of conns) {
         const start = Date.parse(c.started_at);
         if (Number.isNaN(start)) continue;
-        const end = getSessionEndMs(c as any);
+        // Aucune heure comptabilisée après la fin d'accès à la formation
+        if (cutoffAll && start > cutoffAll) continue;
+        const end = getSessionEndMs(c as any, cutoffAll);
 
         if (end <= start) continue;
         let lo = 0, hi = tsArr.length - 1, found = false;
@@ -399,11 +403,22 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
       setAllHistoryMinutes(total);
     })();
     return () => { cancelled = true; };
-  }, [selectedId]);
+  }, [selectedId, apprenants]);
 
   const selectedApprenant = apprenants.find((a) => a.id === selectedId);
 
-  const getCappedSessionEnd = (connexion: Connexion) => new Date(getSessionEndMs(connexion as any));
+  // Fin d'accès à la formation : aucune connexion / minute n'est comptée au-delà
+  const accessCutoffMs = useMemo(
+    () => getAccessCutoffMs(selectedApprenant?.date_fin_cours_en_ligne ?? null),
+    [selectedApprenant?.date_fin_cours_en_ligne],
+  );
+  const connexions = useMemo(
+    () => filterSessionsWithinAccess(connexionsAll as any[], accessCutoffMs) as Connexion[],
+    [connexionsAll, accessCutoffMs],
+  );
+
+  const getCappedSessionEnd = (connexion: Connexion) => new Date(getSessionEndMs(connexion as any, accessCutoffMs));
+
 
   // Une connexion n'est comptabilisée que si l'apprenant a réellement ouvert
   // un module/section pédagogique OU complété un exercice/quiz pendant la fenêtre.
