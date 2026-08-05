@@ -303,7 +303,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
       };
 
       const [connRes, actRes, complRes, exRes, qrRes, emgRes, resPratRes] = await Promise.all([
-        fetchAllRows("apprenant_connexions", "id, started_at, ended_at, last_seen_at, current_module", "started_at"),
+        fetchAllRows("apprenant_connexions", "id, started_at, ended_at, last_seen_at, last_action_at, current_module", "started_at"),
         fetchAllRows("apprenant_module_activites", "id, module_id, module_nom, action_type, occurred_at", "occurred_at"),
 
         supabase
@@ -366,7 +366,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
         return out;
       };
       const [conns, mods, exos, quizz] = await Promise.all([
-        fetchAll("apprenant_connexions", "started_at, ended_at, last_seen_at", "started_at"),
+        fetchAll("apprenant_connexions", "started_at, ended_at, last_seen_at, last_action_at", "started_at"),
         fetchAll("apprenant_module_activites", "occurred_at, action_type, module_nom", "occurred_at"),
         fetchAll("reponses_apprenants", "updated_at, completed", "updated_at"),
         fetchAll("apprenant_quiz_results", "completed_at", "completed_at"),
