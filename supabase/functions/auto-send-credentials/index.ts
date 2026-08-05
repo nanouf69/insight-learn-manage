@@ -64,14 +64,37 @@ serve(async (req) => {
     // Dédoublonnage : si un email d'identifiants a déjà été envoyé (quelle que soit la date),
     // ne pas renvoyer automatiquement. L'admin peut toujours utiliser resend-credentials.
     const apprenantIds = eligibleApprenants.map((a: any) => a.id);
-    const { data: existingEmails } = await supabaseAdmin
-      .from("emails")
-      .select("apprenant_id")
-      .in("apprenant_id", apprenantIds)
-      .eq("type", "sent")
-      .or("subject.ilike.%identifiants%,subject.ilike.%identifiant%");
+    // Dédoublonnage robuste : pagination complète (le cap PostgREST à 1000 lignes
+    // tronquait la liste et provoquait des renvois indus) + filtre côté JS.
+    const alreadySent = new Set<string>();
+    {
+      const CHUNK = 100;
+      const PAGE = 1000;
+      for (let i = 0; i < apprenantIds.length; i += CHUNK) {
+        const slice = apprenantIds.slice(i, i + CHUNK);
+        let from = 0;
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+          const { data: existingEmails, error: mailErr } = await supabaseAdmin
+            .from("emails")
+            .select("apprenant_id, subject")
+            .in("apprenant_id", slice)
+            .eq("type", "sent")
+            .order("id", { ascending: true })
+            .range(from, from + PAGE - 1);
+          if (mailErr) throw mailErr;
+          for (const e of existingEmails || []) {
+            if (e.apprenant_id && /identifiant/i.test(String(e.subject || ""))) {
+              alreadySent.add(e.apprenant_id);
+            }
+          }
+          if (!existingEmails || existingEmails.length < PAGE) break;
+          from += PAGE;
+        }
+      }
+    }
 
-    const alreadySent = new Set((existingEmails || []).map((e: any) => e.apprenant_id));
+
 
     const toProcess = eligibleApprenants.filter((a: any) => !alreadySent.has(a.id));
 
