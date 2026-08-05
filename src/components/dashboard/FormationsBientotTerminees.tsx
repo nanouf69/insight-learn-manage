@@ -188,7 +188,9 @@ export function FormationsBientotTerminees({ onNavigateToApprenant }: Props) {
   });
 
 
-  const results = data ?? [];
+  const all = data ?? [];
+  const results = all.filter((r: any) => !dismissed.includes(r.apprenant.id));
+  const hiddenCount = all.length - results.length;
 
   const getTypeLabel = (a: any) => {
     const s = `${a.type_apprenant || ""} ${a.formation_choisie || ""}`.toLowerCase();
