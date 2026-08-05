@@ -660,6 +660,18 @@ export function ExamenReussitePage() {
     maxPerDayMap,
   ]);
 
+  // Sauvegarde différée (pour la saisie des horaires : évite qu'un upsert par frappe
+  // écrase/réinitialise le champ pendant la frappe)
+  const timeSlotsSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const saveDayTimeSlotsDebounced = useCallback((next: typeof dayTimeSlots) => {
+    if (timeSlotsSaveTimer.current) clearTimeout(timeSlotsSaveTimer.current);
+    timeSlotsSaveTimer.current = setTimeout(() => {
+      void saveDayTimeSlotsNow(next);
+    }, 700);
+  }, [saveDayTimeSlotsNow]);
+
+
+
   const handleSendRepassageEmails = async () => {
     const echoues = apprenants?.filter(a => (a as any).resultat_examen === 'non' && a.email) || [];
     if (echoues.length === 0) return;
