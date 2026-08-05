@@ -341,9 +341,10 @@ function resolvePratiqueDayCreneaux(slot: PratiqueDaySlot, type: 'vtc' | 'taxi')
   const apresmidi = typeof slot === 'object' ? slot?.apresmidi?.trim() : undefined;
 
   return {
-    matin: matin || undefined,
-    apresmidi: apresmidi || undefined,
+    matin: matin || '9h-12h',
+    apresmidi: apresmidi || '13h-16h',
   };
+
 }
 
 function formatPratiqueCreneauxForMessage(slot: PratiqueDaySlot, type: 'vtc' | 'taxi') {
