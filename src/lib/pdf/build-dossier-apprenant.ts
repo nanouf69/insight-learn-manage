@@ -452,8 +452,8 @@ export async function buildDossierApprenantIntoZip(
   // ---------- 4bis) Email des identifiants (mot de passe masqué) ----------
   try {
     const isCredentialEmail = (e: any) => {
-      const hay = `${e.subject || ""} ${e.body_preview || ""}`.toLowerCase();
-      return /identifiant|acc[eè]s [aà] la plateforme|mot de passe|connexion/.test(hay);
+      const hay = `${e.subject || ""} ${e.body_preview || ""} ${e.body_html || ""}`.toLowerCase();
+      return /identifiant|vos codes|compte de cours en ligne|acc[eè]s (?:aux cours|[aà] la plateforme)|mot de passe/.test(hay);
     };
     const credRows = emailsRaw.filter(isCredentialEmail);
     if (credRows.length > 0) {
