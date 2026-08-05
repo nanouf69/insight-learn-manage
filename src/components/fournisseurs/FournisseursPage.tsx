@@ -275,9 +275,9 @@ export function FournisseursPage() {
                         </div>
                       </div>
                       <div className="flex gap-2 mt-auto">
-                        <a href={doc.url} target="_blank" rel="noopener noreferrer" className="flex-1">
-                          <Button variant="outline" size="sm" className="gap-1 w-full"><Eye className="w-3 h-3" />Voir</Button>
-                        </a>
+                        <Button variant="outline" size="sm" className="gap-1 flex-1" onClick={() => openDoc(doc.url)}><Eye className="w-3 h-3" />Voir</Button>
+                        <Button variant="outline" size="sm" className="gap-1" onClick={() => downloadDoc(doc.url, doc.nom_fichier || doc.titre)}><FolderOpen className="w-3 h-3" /></Button>
+
                         <Button variant="ghost" size="sm" className="text-destructive" onClick={async () => {
                           await supabase.from('fournisseur_shared_docs').delete().eq('id', doc.id);
                           loadAllDocs();
