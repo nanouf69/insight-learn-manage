@@ -972,6 +972,11 @@ export function ControleQualiteTab({ apprenant }: Props) {
         </CardContent>
       </Card>
 
+      {/* Documents libres ajoutés depuis l'ordinateur */}
+      <DossierDocumentsLibres apprenantId={apprenant.id} />
+
+
+
       {/* Documents by category */}
       {categories.map(cat => {
         const docs = CONTROLE_DOCUMENTS.filter(d => d.category === cat);
