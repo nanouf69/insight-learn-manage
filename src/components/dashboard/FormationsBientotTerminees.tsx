@@ -200,7 +200,7 @@ export function FormationsBientotTerminees({ onNavigateToApprenant }: Props) {
             return { apprenant: a, done, required: requiredElearning, presentiel, percent, remainingDays };
           } catch (err) {
             console.error("[FormationsBientotTerminees] apprenant load error", a.id, err);
-            const required = Number(a.heures_totales) || HEURES_REQUISES[(a.type_apprenant || "").toLowerCase()] || 60;
+            const required = Number(a.heures_elearning) || HEURES_REQUISES[(a.type_apprenant || "").toLowerCase()] || 60;
             return { apprenant: a, done: 0, required, presentiel: confirmedPresentiel.has(a.id) ? Number(a.heures_presentiel) || 0 : 0, percent: 0, remainingDays: daysBetween(today, a.date_fin_cours_en_ligne) };
           }
 
