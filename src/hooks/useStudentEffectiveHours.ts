@@ -182,8 +182,11 @@ export function useStudentEffectiveHours(
     for (const c of connexions) {
       const start = Date.parse(c.started_at);
       if (Number.isNaN(start)) continue;
-      const end = getSessionEndMs(c as any);
+      // Aucune heure comptabilisée après la fin d'accès à la formation
+      if (windowEnd && start > windowEnd) continue;
+      const end = getSessionEndMs(c as any, windowEnd);
       if (end <= start) continue;
+
 
       // Une activité pédagogique doit exister dans la session (même règle que le Rapport d'activité)
       let lo = 0, hi = actTimestamps.length - 1, found = false;
