@@ -15,7 +15,7 @@ import { fetchAllRows } from "@/lib/supabase/fetch-all-rows";
 import { generateEmailsApprenantPdf, maskPasswords } from "@/lib/pdf/emails-apprenant";
 import { buildRapportActiviteHtml } from "@/lib/reports/rapport-activite-html";
 import { generateFicheProgression, type FicheProgressionData, type ProgressionModule } from "@/lib/pdf/fiche-progression";
-import { getSessionEndMs, getSessionDurationMinutes } from "@/lib/reports/session-duration";
+import { getSessionEndMs, getSessionDurationMinutes, clampConnexionsToAccessEnd } from "@/lib/reports/session-duration";
 
 const escapeCsv = (v: any) => {
   if (v === null || v === undefined) return "";
