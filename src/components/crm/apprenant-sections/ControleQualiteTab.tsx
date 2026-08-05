@@ -21,7 +21,7 @@ import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import { useToast } from "@/hooks/use-toast";
 import { DossierDocumentsLibres } from "./DossierDocumentsLibres";
-import { getSessionEndMs, getSessionDurationMinutes } from "@/lib/reports/session-duration";
+import { getSessionEndMs, getSessionDurationMinutes, clampConnexionsToAccessEnd } from "@/lib/reports/session-duration";
 
 
 /** Renders donnees content with real question texts instead of raw JSON */
@@ -441,14 +441,18 @@ export function ControleQualiteTab({ apprenant }: Props) {
         }
 
         // 3) Relevé de connexion (PDF + CSV)
-        const cnxRawRows = await fetchAllRows<any>((from, to) =>
-          supabase
-            .from("apprenant_connexions")
-            .select("started_at, ended_at, last_seen_at, last_action_at, end_reason, source, current_module, ip_address, user_agent")
-            .eq("apprenant_id", apprenant.id)
-            .order("started_at", { ascending: false })
-            .range(from, to),
-        ).catch(() => [] as any[]);
+        const cnxRawRows = clampConnexionsToAccessEnd(
+          await fetchAllRows<any>((from, to) =>
+            supabase
+              .from("apprenant_connexions")
+              .select("started_at, ended_at, last_seen_at, last_action_at, end_reason, source, current_module, ip_address, user_agent")
+              .eq("apprenant_id", apprenant.id)
+              .order("started_at", { ascending: false })
+              .range(from, to),
+          ).catch(() => [] as any[]),
+          (apprenant as any).date_fin_cours_en_ligne || (apprenant as any).date_fin_formation,
+        );
+
         const releveFolder = zip.folder("releve-connexions")!;
         // Le PDF du relevé est généré plus bas (après le calcul des temps présentiel/pratique)
         // pour inclure la synthèse complète des durées.

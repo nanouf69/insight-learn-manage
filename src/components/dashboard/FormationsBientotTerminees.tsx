@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CalendarClock, Phone, Mail, X, RotateCcw } from "lucide-react";
-import { getSessionEndMs, getSessionDurationMinutes } from "@/lib/reports/session-duration";
+import { getSessionEndMs, getSessionDurationMinutes, getAccessCutoffMs } from "@/lib/reports/session-duration";
 
 const isoDate = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -169,18 +169,30 @@ export function FormationsBientotTerminees({ onNavigateToApprenant }: Props) {
               ...quizz.map((q: any) => Date.parse(q.completed_at)),
             ].filter((t) => !Number.isNaN(t)).sort((x, y) => x - y);
 
+            // Aucune heure/minute comptée après la fin d'accès à la formation
+            const cutoffMs = getAccessCutoffMs(a.date_fin_cours_en_ligne);
+            const validConns = cutoffMs
+              ? conns.filter((c: any) => {
+                  const s = Date.parse(c.started_at);
+                  return Number.isNaN(s) || s <= cutoffMs;
+                })
+              : conns;
+            const boundedActTimestamps = cutoffMs
+              ? actTimestamps.filter((t) => t <= cutoffMs)
+              : actTimestamps;
+
             let totalMs = 0;
-            if (actTimestamps.length > 0) {
-              for (const c of conns) {
+            if (boundedActTimestamps.length > 0) {
+              for (const c of validConns) {
                 const start = Date.parse(c.started_at);
                 if (Number.isNaN(start)) continue;
-                const end = getSessionEndMs(c as any);
+                const end = getSessionEndMs(c as any, cutoffMs);
                 if (end <= start) continue;
                 // dichotomie : une activité pédagogique doit exister dans la session
-                let lo = 0, hi = actTimestamps.length - 1, found = false;
+                let lo = 0, hi = boundedActTimestamps.length - 1, found = false;
                 while (lo <= hi) {
                   const mid = (lo + hi) >> 1;
-                  const v = actTimestamps[mid];
+                  const v = boundedActTimestamps[mid];
                   if (v < start) lo = mid + 1;
                   else if (v > end) hi = mid - 1;
                   else { found = true; break; }
@@ -193,11 +205,15 @@ export function FormationsBientotTerminees({ onNavigateToApprenant }: Props) {
             // Dernier jour de connexion e-learning (dernière activité réelle observée)
             const lastConnexionMs = Math.max(
               0,
-              ...conns
-                .map((c: any) => Date.parse(c.ended_at || c.last_seen_at || c.started_at))
+              ...validConns
+                .map((c: any) => Math.min(
+                  Date.parse(c.ended_at || c.last_seen_at || c.started_at),
+                  cutoffMs ?? Number.POSITIVE_INFINITY,
+                ))
                 .filter((t: number) => !Number.isNaN(t)),
-              ...actTimestamps,
+              ...boundedActTimestamps,
             );
+
             const lastConnexion = lastConnexionMs > 0 ? new Date(lastConnexionMs) : null;
             const lastPresentiel = lastPresentielByAppr.get(a.id) || null;
             const requiredElearning =

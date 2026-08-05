@@ -31,7 +31,7 @@ import { FORMULES_DATA } from "./formules-data";
 import { CONNAISSANCES_VILLE_TAXI_DATA } from "./connaissances-ville-taxi-data";
 import { CONTROLE_CONNAISSANCES_TAXI_DATA } from "./controle-connaissances-taxi-data";
 import { EQUIPEMENTS_TAXI_DATA } from "./equipements-taxi-data";
-import { getSessionEndMs, getSessionDurationMinutes } from "@/lib/reports/session-duration";
+import { getSessionEndMs, getSessionDurationMinutes, getAccessCutoffMs, filterSessionsWithinAccess } from "@/lib/reports/session-duration";
 
 // Build a static map: exercice_id → human-readable title
 const EXERCICE_TITLE_MAP = new Map<string, string>();
@@ -178,7 +178,7 @@ interface Props {
 export default function ApprenantActivityReport({ onBack, lockedApprenantId }: Props) {
   const [apprenants, setApprenants] = useState<Apprenant[]>([]);
   const [selectedId, setSelectedId] = useState<string>(lockedApprenantId || "");
-  const [connexions, setConnexions] = useState<Connexion[]>([]);
+  const [connexionsAll, setConnexions] = useState<Connexion[]>([]);
   const [allHistoryMinutes, setAllHistoryMinutes] = useState<number>(0);
   const [activites, setActivites] = useState<ModuleActivite[]>([]);
   const [completedModuleIds, setCompletedModuleIds] = useState<Set<number>>(new Set());
@@ -378,12 +378,16 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
         ...exos.filter((e: any) => e.completed).map((e: any) => Date.parse(e.updated_at)),
         ...quizz.map((q: any) => Date.parse(q.completed_at)),
       ].filter(t => !Number.isNaN(t)).sort((a, b) => a - b);
-      const MAX = 7 * 60 * 60 * 1000;
+      const cutoffAll = getAccessCutoffMs(
+        apprenants.find((a) => a.id === selectedId)?.date_fin_cours_en_ligne ?? null,
+      );
       let total = 0;
       for (const c of conns) {
         const start = Date.parse(c.started_at);
         if (Number.isNaN(start)) continue;
-        const end = getSessionEndMs(c as any);
+        // Aucune heure comptabilisée après la fin d'accès à la formation
+        if (cutoffAll && start > cutoffAll) continue;
+        const end = getSessionEndMs(c as any, cutoffAll);
 
         if (end <= start) continue;
         let lo = 0, hi = tsArr.length - 1, found = false;
@@ -399,11 +403,22 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
       setAllHistoryMinutes(total);
     })();
     return () => { cancelled = true; };
-  }, [selectedId]);
+  }, [selectedId, apprenants]);
 
   const selectedApprenant = apprenants.find((a) => a.id === selectedId);
 
-  const getCappedSessionEnd = (connexion: Connexion) => new Date(getSessionEndMs(connexion as any));
+  // Fin d'accès à la formation : aucune connexion / minute n'est comptée au-delà
+  const accessCutoffMs = useMemo(
+    () => getAccessCutoffMs(selectedApprenant?.date_fin_cours_en_ligne ?? null),
+    [selectedApprenant?.date_fin_cours_en_ligne],
+  );
+  const connexions = useMemo(
+    () => filterSessionsWithinAccess(connexionsAll as any[], accessCutoffMs) as Connexion[],
+    [connexionsAll, accessCutoffMs],
+  );
+
+  const getCappedSessionEnd = (connexion: Connexion) => new Date(getSessionEndMs(connexion as any, accessCutoffMs));
+
 
   // Une connexion n'est comptabilisée que si l'apprenant a réellement ouvert
   // un module/section pédagogique OU complété un exercice/quiz pendant la fenêtre.
@@ -432,7 +447,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
 
   const getSessionMinutes = (connexion: Connexion) => {
     if (!hasPedagogicalActivity(connexion)) return 0;
-    return getSessionDurationMinutes(connexion as any);
+    return getSessionDurationMinutes(connexion as any, accessCutoffMs);
   };
 
   // Build pratique rows from emargements
