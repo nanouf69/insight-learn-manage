@@ -18,6 +18,8 @@ import { getCompetencesForFormation } from "@/components/cours-en-ligne/competen
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import { useToast } from "@/hooks/use-toast";
+import { DossierDocumentsLibres } from "./DossierDocumentsLibres";
+
 
 /** Renders donnees content with real question texts instead of raw JSON */
 function DonneesRenderer({ donnees }: { donnees: any }) {
@@ -971,6 +973,11 @@ export function ControleQualiteTab({ apprenant }: Props) {
           </div>
         </CardContent>
       </Card>
+
+      {/* Documents libres ajoutés depuis l'ordinateur */}
+      <DossierDocumentsLibres apprenantId={apprenant.id} />
+
+
 
       {/* Documents by category */}
       {categories.map(cat => {
