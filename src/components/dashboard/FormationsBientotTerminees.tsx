@@ -202,19 +202,15 @@ export function FormationsBientotTerminees({ onNavigateToApprenant }: Props) {
             }
 
             const done = totalMs / 3600000;
-            // Dernier jour de connexion e-learning (dernière activité réelle observée)
-            const lastConnexionMs = Math.max(
-              0,
-              ...validConns
-                .map((c: any) => Math.min(
-                  Date.parse(c.ended_at || c.last_seen_at || c.started_at),
-                  cutoffMs ?? Number.POSITIVE_INFINITY,
-                ))
-                .filter((t: number) => !Number.isNaN(t)),
+            // Dernier jour de connexion e-learning : uniquement dans les dates de formation.
+            // Toute connexion postérieure à la fin d'accès est ignorée (non affichée).
+            const connCandidates = [
+              ...validConns.map((c: any) => Date.parse(c.ended_at || c.last_seen_at || c.started_at)),
               ...boundedActTimestamps,
-            );
+            ].filter((t: number) => Number.isFinite(t) && t > 0 && (!cutoffMs || t <= cutoffMs));
 
-            const lastConnexion = lastConnexionMs > 0 ? new Date(lastConnexionMs) : null;
+            const lastConnexion = connCandidates.length > 0 ? new Date(Math.max(...connCandidates)) : null;
+
             const lastPresentiel = lastPresentielByAppr.get(a.id) || null;
             const requiredElearning =
               Number(a.heures_elearning) ||
