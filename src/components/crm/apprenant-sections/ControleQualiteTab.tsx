@@ -21,7 +21,7 @@ import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import { useToast } from "@/hooks/use-toast";
 import { DossierDocumentsLibres } from "./DossierDocumentsLibres";
-import { getSessionEndMs, getSessionDurationMinutes } from "@/lib/reports/session-duration";
+import { getSessionEndMs, getSessionDurationMinutes, clampConnexionsToAccessEnd } from "@/lib/reports/session-duration";
 
 
 /** Renders donnees content with real question texts instead of raw JSON */
