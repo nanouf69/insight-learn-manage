@@ -387,12 +387,22 @@ export async function buildDossierApprenantIntoZip(
         }
         return { ...c, modules_consultes: modules, quiz_realises: quizList, cours_exercices: exosList };
       });
+      const reqElearning =
+        Number((apprenant as any).heures_elearning) ||
+        Math.max(0, (Number((apprenant as any).heures_totales) || 0) - (Number((apprenant as any).heures_presentiel) || 0));
+      const reqPresentiel = Number((apprenant as any).heures_presentiel) || 0;
+      const reqTotal = Number((apprenant as any).heures_totales) || reqElearning + reqPresentiel;
       const relevePdf = generateReleveConnexionsPdf(apprenant, enrichedRows, {
         returnBlob: true,
         tempsEnLearning: fmtDur(onlineSec),
         tempsPresentielTheorie: fmtDur(theorieSec),
         tempsPratique: fmtDur(pratiqueSec),
         tempsTotal: fmtDur(grandTotalSec),
+        heuresPrevuesElearning: reqElearning,
+        heuresPrevuesPresentiel: reqPresentiel,
+        heuresPrevuesTotal: reqTotal,
+        heuresFaitesElearning: onlineSec / 3600,
+        heuresFaitesPresentiel: (theorieSec + pratiqueSec) / 3600,
       }) as { blob: Blob; fileName: string } | undefined;
       if (relevePdf?.blob) releveFolder.file(relevePdf.fileName, relevePdf.blob);
     } catch (e) { console.error("[dossier] releve PDF failed", e); }
