@@ -2458,6 +2458,7 @@ export function ExamenReussitePage() {
 
         // Tous les candidats à former : uniquement ceux qui ont réussi l'examen théorique.
         const dejaFormesSet = new Set(dejaFormesPratique || []);
+        const inscritsPratiqueSet = new Set(inscritsSessionPratique || []);
         const removedFormationSet = new Set(removedCandidatsFormation);
         const paTypes = ['pa-vtc', 'pa-taxi'];
         const hasEligibleTheoryStatus = (resultat: string | null | undefined) => {
@@ -2706,7 +2707,7 @@ export function ExamenReussitePage() {
                     </AlertDialog>
                     {/* Relancer VTC */}
                     {(() => {
-                      const vtcSansResa = vtcList.filter(a => a.email && !reservationsPratique?.some(r => r.apprenant_id === a.id));
+                      const vtcSansResa = vtcList.filter(a => a.email && !reservationsPratique?.some(r => r.apprenant_id === a.id) && !inscritsPratiqueSet.has(a.id));
                       return vtcSansResa.length > 0 ? (
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
@@ -2754,7 +2755,7 @@ export function ExamenReussitePage() {
                     })()}
                     {/* SMS VTC */}
                     {(() => {
-                      const vtcSansResa = vtcList.filter(a => a.telephone && !reservationsPratique?.some(r => r.apprenant_id === a.id));
+                      const vtcSansResa = vtcList.filter(a => a.telephone && !reservationsPratique?.some(r => r.apprenant_id === a.id) && !inscritsPratiqueSet.has(a.id));
                       return vtcSansResa.length > 0 ? (
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
@@ -3063,7 +3064,7 @@ export function ExamenReussitePage() {
                     </AlertDialog>
                     {/* Relancer TAXI */}
                     {(() => {
-                      const taxiSansResa = taxiList.filter(a => a.email && !reservationsPratique?.some(r => r.apprenant_id === a.id));
+                      const taxiSansResa = taxiList.filter(a => a.email && !reservationsPratique?.some(r => r.apprenant_id === a.id) && !inscritsPratiqueSet.has(a.id));
                       return taxiSansResa.length > 0 ? (
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
@@ -3111,7 +3112,7 @@ export function ExamenReussitePage() {
                     })()}
                     {/* SMS TAXI */}
                     {(() => {
-                      const taxiSansResa = taxiList.filter(a => a.telephone && !reservationsPratique?.some(r => r.apprenant_id === a.id));
+                      const taxiSansResa = taxiList.filter(a => a.telephone && !reservationsPratique?.some(r => r.apprenant_id === a.id) && !inscritsPratiqueSet.has(a.id));
                       return taxiSansResa.length > 0 ? (
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
