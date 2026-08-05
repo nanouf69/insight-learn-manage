@@ -328,14 +328,17 @@ const Index = () => {
             {/* Two Column Layout */}
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
               <UpcomingSessions />
-              <RecentActivity onNavigateToApprenant={handleNavigateToApprenant} />
+              <div className="space-y-4">
+                <RecentActivity onNavigateToApprenant={handleNavigateToApprenant} />
+                <FormationsBientotTerminees onNavigateToApprenant={handleNavigateToApprenant} />
+              </div>
               <div className="space-y-4">
                 <EmargementsManquants onNavigateToApprenant={handleNavigateToApprenant} />
                 <EmargementsFinFormation onNavigateToApprenant={handleNavigateToApprenant} />
-                <FormationsBientotTerminees onNavigateToApprenant={handleNavigateToApprenant} />
                 <PaymentReminders />
                 <FournisseurInvoiceAlerts onNavigateToComptabilite={() => handleNavigate("comptabilite")} />
               </div>
+
             </div>
 
             {/* Questions des apprenants */}
