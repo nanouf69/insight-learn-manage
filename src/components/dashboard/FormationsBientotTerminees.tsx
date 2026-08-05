@@ -362,15 +362,16 @@ export function FormationsBientotTerminees({ onNavigateToApprenant }: Props) {
                 <span title="Heures à réaliser en présentiel">
                   Présentiel : {presentiel}h
                 </span>
-                <span title="Dernier jour de connexion e-learning">
+                <span className="font-semibold text-destructive" title="Dernier jour de connexion e-learning">
                   Dernière connexion :{" "}
                   {lastConnexion
                     ? lastConnexion.toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "2-digit" })
                     : "—"}
                 </span>
-                <span title="Dernier jour de présentiel confirmé">
+                <span className="font-semibold text-destructive" title="Dernier jour de présentiel confirmé">
                   Dernier présentiel : {lastPresentiel ? fmt(lastPresentiel) : "—"}
                 </span>
+
 
                 {a.telephone && (
                   <a
