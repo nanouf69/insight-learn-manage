@@ -449,5 +449,24 @@ export async function buildDossierApprenantIntoZip(
     if (emailsPdf?.blob) emailsFolder.file(emailsPdf.fileName, emailsPdf.blob);
   } catch (e) { console.error("[dossier] emails PDF failed", e); }
 
+  // ---------- 4bis) Email des identifiants (mot de passe masqué) ----------
+  try {
+    const isCredentialEmail = (e: any) => {
+      const hay = `${e.subject || ""} ${e.body_preview || ""}`.toLowerCase();
+      return /identifiant|acc[eè]s [aà] la plateforme|mot de passe|connexion/.test(hay);
+    };
+    const credRows = emailsRaw.filter(isCredentialEmail);
+    if (credRows.length > 0) {
+      const credPdf = generateEmailsApprenantPdf(
+        { ...apprenant, email: apprenant.email },
+        credRows,
+        { returnBlob: true },
+      ) as { blob: Blob; fileName: string } | undefined;
+      if (credPdf?.blob) {
+        emailsFolder.file(`identifiants_${slug}.pdf`, credPdf.blob);
+      }
+    }
+  } catch (e) { console.error("[dossier] identifiants PDF failed", e); }
+
   return { weeks: weekMap.size, connexions: cnxRows.length, emails: emailRows.length };
 }
