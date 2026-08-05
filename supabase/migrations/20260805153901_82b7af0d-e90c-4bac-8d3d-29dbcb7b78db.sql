@@ -1,0 +1,1 @@
+UPDATE public.planning_pratique_config SET planning_start_date = '2026-08-24', excluded_days = ARRAY['2026-09-03','2026-09-04'], updated_at = now() WHERE id = '27dade77-002f-4519-9b4e-173b22510b96';
