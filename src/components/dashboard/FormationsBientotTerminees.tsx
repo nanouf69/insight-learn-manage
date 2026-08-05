@@ -102,6 +102,21 @@ export function FormationsBientotTerminees({ onNavigateToApprenant }: Props) {
       const list = ((apprenants || []) as any[]).filter(isElearning);
       if (list.length === 0) return [];
 
+      // Présentiel : uniquement si la présence est confirmée sur une session pratique
+      const confirmedPresentiel = new Set<string>();
+      {
+        const { data: sa } = await supabase
+          .from("session_apprenants")
+          .select("apprenant_id, presence_pratique")
+          .in("apprenant_id", list.map((a) => a.id));
+        ((sa || []) as any[]).forEach((r) => {
+          if ((r.presence_pratique || "").toLowerCase() === "present") {
+            confirmedPresentiel.add(r.apprenant_id);
+          }
+        });
+      }
+
+
       // Calcule les heures effectives par apprenant (même règle que le Rapport d'activité)
       const results = await Promise.all(
         list.map(async (a) => {
