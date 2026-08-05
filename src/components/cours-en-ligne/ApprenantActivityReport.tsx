@@ -692,6 +692,23 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
           </div>
         </div>
 
+        <h2>Taux de réalisation</h2>
+        <div class="stats">
+          <div class="stat-card">
+            <div class="stat-value">${taux.pctElearning}%</div>
+            <div class="stat-label">Connexion e-learning<br/>${taux.doneElearning.toFixed(1)}h / ${taux.requiredElearning}h</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${taux.pctPresentiel}%</div>
+            <div class="stat-label">Présentiel<br/>${taux.donePresentiel.toFixed(1)}h / ${taux.requiredPresentiel}h</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${taux.pctTotal}%</div>
+            <div class="stat-label">TOTAL formation<br/>${taux.doneTotal.toFixed(1)}h / ${taux.requiredTotal}h</div>
+          </div>
+        </div>
+
+
         <h2>Détail des connexions</h2>
         <table>
           <thead>
