@@ -447,7 +447,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
 
   const getSessionMinutes = (connexion: Connexion) => {
     if (!hasPedagogicalActivity(connexion)) return 0;
-    return getSessionDurationMinutes(connexion as any);
+    return getSessionDurationMinutes(connexion as any, accessCutoffMs);
   };
 
   // Build pratique rows from emargements
