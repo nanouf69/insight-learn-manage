@@ -202,7 +202,7 @@ export function useStudentEffectiveHours(
       }
     }
     return total;
-  }, [connexions, actTimestamps]);
+  }, [connexions, actTimestamps, windowEnd]);
 
 
   const requis = HEURES_REQUISES[(typeApprenant || "").toLowerCase()] ?? 0;
