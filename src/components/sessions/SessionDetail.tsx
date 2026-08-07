@@ -1240,8 +1240,15 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
         );
         result[id] = computePresenceHours(
           (data || []).filter((row: any) => row.apprenant_id === id),
-          { isEvening: learnerIsEvening, maxHours: learnerIsEvening ? 40 : maxHeuresSession, dateStart: dateDebut, dateEnd: dateFin },
+          {
+            isEvening: learnerIsEvening,
+            isFormationContinue: isFormationContinueValue(apprenant?.type_apprenant, apprenant?.formation_choisie),
+            maxHours: learnerIsEvening ? 40 : maxHeuresSession,
+            dateStart: dateDebut,
+            dateEnd: dateFin,
+          },
         );
+
       });
       return result;
     },
