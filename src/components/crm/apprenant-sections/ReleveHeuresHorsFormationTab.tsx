@@ -235,12 +235,17 @@ export function ReleveHeuresHorsFormationTab({ apprenant }: Props) {
           <p className="text-sm text-muted-foreground">Aucune session pour cet apprenant.</p>
         ) : (
           <div className="space-y-6">
-            <div className="flex items-center gap-2 text-sm">
-              <span className="text-muted-foreground">Total global :</span>
+            <div className="flex flex-wrap items-center gap-2 text-sm">
+              <span className="text-muted-foreground">Total e-learning (hors présentiel) :</span>
               <Badge variant="secondary" className="text-base">
                 {formatPresenceHours(totalGlobal)}
               </Badge>
+              <span className="text-muted-foreground">Total présentiel (émargements signés) :</span>
+              <Badge variant="secondary" className="text-base">
+                {formatPresenceHours(reports.reduce((s, r) => s + r.presentielHours, 0))}
+              </Badge>
             </div>
+
             {reports.map((r) => (
               <div key={r.session.id} className="border rounded-lg overflow-hidden">
                 <div className="bg-muted/50 px-4 py-3 flex flex-wrap items-center justify-between gap-2">
@@ -255,16 +260,16 @@ export function ReleveHeuresHorsFormationTab({ apprenant }: Props) {
                     </div>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
-                    {r.isPratique && (
-                      <Badge variant="outline" className="bg-blue-50">
-                        <MapPin className="w-3 h-3 mr-1" />
-                        {formatPresenceHours(r.presentielHours)} en présentiel
-                      </Badge>
-                    )}
+                    <Badge variant="outline" className="bg-blue-50">
+                      <MapPin className="w-3 h-3 mr-1" />
+                      Présentiel : {formatPresenceHours(r.presentielHours)}
+                    </Badge>
                     <Badge variant="outline">
-                      🌐 {formatPresenceHours(r.totalHours)}
+                      <Globe className="w-3 h-3 mr-1" />
+                      E-learning : {formatPresenceHours(r.totalHours)}
                     </Badge>
                   </div>
+
                 </div>
                 {r.connexions.length === 0 ? (
                   <div className="px-4 py-3 text-sm text-muted-foreground">
