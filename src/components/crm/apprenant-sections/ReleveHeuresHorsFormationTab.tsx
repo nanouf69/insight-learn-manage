@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Download, Globe, MapPin } from "lucide-react";
-import { computePresenceHours, formatPresenceHours, isEveningTrainingValue } from "@/lib/emargementHours";
+import { computePresenceHours, formatPresenceHours, isEveningTrainingValue, isFormationContinueValue } from "@/lib/emargementHours";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -140,9 +140,11 @@ export function ReleveHeuresHorsFormationTab({ apprenant }: Props) {
         const isEvening = isEveningTrainingValue(sessTypeRaw, sessNomRaw);
         const presentielHours = computePresenceHours(emargements as any, {
           isEvening,
+          isFormationContinue: isFormationContinueValue(sessTypeRaw, sessNomRaw),
           dateStart: dStart || null,
           dateEnd: dEnd || null,
         });
+
         return { session, totalHours, presentielHours, isPratique, connexions: details };
       });
   }, [sessions, connexions, emargements, isVTC]);

@@ -61,7 +61,7 @@ import { saveEmargementToCRM } from "@/lib/saveEmargementToCRM";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { computePresenceHours, formatPresenceHours, isEveningTrainingValue } from "@/lib/emargementHours";
+import { computePresenceHours, formatPresenceHours, isEveningTrainingValue, isFormationContinueValue } from "@/lib/emargementHours";
 import { filterAndSortApprenants } from "@/lib/apprenantSearch";
 import { SmallTransfersTable } from "@/components/dashboard/SmallTransfersTable";
 
@@ -1240,8 +1240,15 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
         );
         result[id] = computePresenceHours(
           (data || []).filter((row: any) => row.apprenant_id === id),
-          { isEvening: learnerIsEvening, maxHours: learnerIsEvening ? 40 : maxHeuresSession, dateStart: dateDebut, dateEnd: dateFin },
+          {
+            isEvening: learnerIsEvening,
+            isFormationContinue: isFormationContinueValue(apprenant?.type_apprenant, apprenant?.formation_choisie),
+            maxHours: learnerIsEvening ? 40 : maxHeuresSession,
+            dateStart: dateDebut,
+            dateEnd: dateFin,
+          },
         );
+
       });
       return result;
     },
