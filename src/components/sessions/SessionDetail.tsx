@@ -3371,8 +3371,32 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                 </div>
               ) : (
                 <div className="space-y-3 p-1">
-                  {apprenantsInSession.map((sessionApprenant: any) => {
+                  {(() => {
+                    const resolveA = (sa: any) => sa.apprenant ?? allApprenants.find((a) => a.id === sa.apprenant_id);
+                    const isEl = (a: any) => /e-?\s?learning/i.test(`${a?.type_apprenant || ''} ${a?.formation_choisie || ''}`);
+                    const rows = apprenantsInSession as any[];
+                    const pres = rows.filter((sa) => !isEl(resolveA(sa)));
+                    const elearn = rows.filter((sa) => isEl(resolveA(sa)));
+                    return [...pres, ...elearn].map((sa: any) => ({
+                      sa,
+                      group: isEl(resolveA(sa)) ? 'elearning' : 'presentiel',
+                    }));
+                  })().map((entry: any, idx: number, arr: any[]) => {
+                    const sessionApprenant = entry.sa;
+                    const showHeader = idx === 0 || arr[idx - 1].group !== entry.group;
+                    const header = showHeader ? (
+                      <div key={`h-${entry.group}`} className="flex items-center gap-2 pt-2 pb-1">
+                        <Badge variant={entry.group === 'elearning' ? 'outline' : 'secondary'} className="text-[11px]">
+                          {entry.group === 'elearning' ? '🌐 E-learning' : '🏫 Présentiel'}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">
+                          {arr.filter((e: any) => e.group === entry.group).length} apprenant(s)
+                        </span>
+                        <div className="flex-1 h-px bg-border" />
+                      </div>
+                    ) : null;
                     const apprenant = sessionApprenant.apprenant ?? allApprenants.find((a) => a.id === sessionApprenant.apprenant_id);
+
                     if (!apprenant) {
                       console.warn('[SessionDetail] apprenant introuvable pour session_apprenant:', sessionApprenant.id, 'apprenant_id:', sessionApprenant.apprenant_id);
                       return (
