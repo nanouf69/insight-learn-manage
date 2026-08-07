@@ -16,7 +16,7 @@ import {
 import { useState } from "react";
 import { format, startOfWeek, endOfWeek, getISOWeek, getYear } from "date-fns";
 import { fr } from "date-fns/locale";
-import { computePresenceHours, formatPresenceHours, isEveningTrainingValue } from "@/lib/emargementHours";
+import { computePresenceHours, formatPresenceHours, isEveningTrainingValue, isFormationContinueValue } from "@/lib/emargementHours";
 
 interface Props {
   apprenant: any;
