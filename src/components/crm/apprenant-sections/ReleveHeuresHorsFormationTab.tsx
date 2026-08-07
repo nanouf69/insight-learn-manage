@@ -235,12 +235,17 @@ export function ReleveHeuresHorsFormationTab({ apprenant }: Props) {
           <p className="text-sm text-muted-foreground">Aucune session pour cet apprenant.</p>
         ) : (
           <div className="space-y-6">
-            <div className="flex items-center gap-2 text-sm">
-              <span className="text-muted-foreground">Total global :</span>
+            <div className="flex flex-wrap items-center gap-2 text-sm">
+              <span className="text-muted-foreground">Total e-learning (hors présentiel) :</span>
               <Badge variant="secondary" className="text-base">
                 {formatPresenceHours(totalGlobal)}
               </Badge>
+              <span className="text-muted-foreground">Total présentiel (émargements signés) :</span>
+              <Badge variant="secondary" className="text-base">
+                {formatPresenceHours(reports.reduce((s, r) => s + r.presentielHours, 0))}
+              </Badge>
             </div>
+
             {reports.map((r) => (
               <div key={r.session.id} className="border rounded-lg overflow-hidden">
                 <div className="bg-muted/50 px-4 py-3 flex flex-wrap items-center justify-between gap-2">
