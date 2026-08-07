@@ -3400,17 +3400,22 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                     if (!apprenant) {
                       console.warn('[SessionDetail] apprenant introuvable pour session_apprenant:', sessionApprenant.id, 'apprenant_id:', sessionApprenant.apprenant_id);
                       return (
-                        <div key={sessionApprenant.id} className="block static p-4 rounded-xl border border-destructive/30 bg-destructive/5">
-                          <p className="text-sm text-destructive">Apprenant introuvable (ID: {sessionApprenant.apprenant_id?.slice(0, 8)}…)</p>
+                        <div key={sessionApprenant.id}>
+                          {header}
+                          <div className="block static p-4 rounded-xl border border-destructive/30 bg-destructive/5">
+                            <p className="text-sm text-destructive">Apprenant introuvable (ID: {sessionApprenant.apprenant_id?.slice(0, 8)}…)</p>
+                          </div>
                         </div>
                       );
                     }
                     
                     return (
+                      <div key={sessionApprenant.id}>
+                        {header}
                       <div 
-                        key={sessionApprenant.id}
                         className="block static p-3 rounded-xl border bg-card hover:shadow-md transition-shadow"
                       >
+
                         {/* Ligne 1: Checkbox + Avatar + Nom + Badge */}
                         <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                           <Checkbox 
