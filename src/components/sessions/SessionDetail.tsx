@@ -3909,7 +3909,9 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                           </Button>
                         </div>
                       </div>
+                      </div>
                     );
+
                   })}
                   
                   {apprenantsInSession.length === 0 && (
