@@ -140,9 +140,11 @@ export function ReleveHeuresHorsFormationTab({ apprenant }: Props) {
         const isEvening = isEveningTrainingValue(sessTypeRaw, sessNomRaw);
         const presentielHours = computePresenceHours(emargements as any, {
           isEvening,
+          isFormationContinue: isFormationContinueValue(sessTypeRaw, sessNomRaw),
           dateStart: dStart || null,
           dateEnd: dEnd || null,
         });
+
         return { session, totalHours, presentielHours, isPratique, connexions: details };
       });
   }, [sessions, connexions, emargements, isVTC]);
