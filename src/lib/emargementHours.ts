@@ -88,7 +88,11 @@ export const computePresenceHours = (
         total += 4;
       }
     } else {
-      total += Math.min((slots.has("matin") ? 3 : 0) + (slots.has("apres_midi") ? 3 : 0), 6);
+      total += Math.min(
+        (slots.has("matin") ? 3 : 0) + (slots.has("apres_midi") ? afternoonHours : 0),
+        3 + afternoonHours,
+      );
+
     }
   }
 
