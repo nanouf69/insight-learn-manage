@@ -108,11 +108,28 @@ export const scoreApprenantSearch = (apprenant: ApprenantSearchLike, query: stri
   const tokens = normalizedQuery.split(" ").filter(Boolean);
   const queryCompact = compact(normalizedQuery);
   const values = buildSearchValues(apprenant);
+  const queryDigits = query.replace(/\D/g, "");
+  const isNumericQuery = queryDigits.length > 0 && /^[\s\d.+-]+$/.test(query.trim());
+
+  // Requête 100% numérique (code postal / téléphone / n° dossier) :
+  // correspondance stricte sur les chiffres, sans fuzzy ni tokens texte
+  if (isNumericQuery) {
+    const cp = String(apprenant.code_postal ?? "").replace(/\D/g, "");
+    const tel = String(apprenant.telephone ?? "").replace(/\D/g, "");
+    const dossier = String(apprenant.numero_dossier_cma ?? "").replace(/\D/g, "");
+
+    const cpMatch = cp.length > 0 && (queryDigits.length >= 5 ? cp === queryDigits : cp.startsWith(queryDigits));
+    const telMatch = queryDigits.length >= 4 && tel.length > 0 && tel.includes(queryDigits);
+    const dossierMatch = queryDigits.length >= 4 && dossier.length > 0 && dossier.includes(queryDigits);
+
+    if (!cpMatch && !telMatch && !dossierMatch) return null;
+    return cpMatch ? 2 : 3;
+  }
 
   const tokenMatches = tokens.every((token) => {
     if (values.searchable.includes(token)) return true;
     if (token.length >= 3 && values.words.some((word) => word.startsWith(token) || word.includes(token))) return true;
-    if (token.length >= 4) {
+    if (token.length >= 4 && !/\d/.test(token)) {
       const maxDistance = token.length >= 7 ? 2 : 1;
       return values.words.some((word) => levenshteinLimited(word, token, maxDistance) <= maxDistance);
     }
@@ -121,19 +138,18 @@ export const scoreApprenantSearch = (apprenant: ApprenantSearchLike, query: stri
 
   const compactMatch = queryCompact.length >= 3 && values.compactSearchable.includes(queryCompact);
 
-  // Recherche par téléphone / code postal (chiffres uniquement)
-  const queryDigits = query.replace(/\D/g, "");
   const digitsMatch =
-    queryDigits.length >= 2 &&
+    queryDigits.length >= 4 &&
     values.digitsSearchable
       .split(" ")
       .some((d) => d.includes(queryDigits));
 
   // Recherche par ville / code postal / adresse
   const localisationMatch =
-    normalizedQuery.length >= 2 && values.localisation.includes(normalizedQuery);
+    normalizedQuery.length >= 3 && values.localisation.includes(normalizedQuery);
 
   if (!tokenMatches && !compactMatch && !digitsMatch && !localisationMatch) return null;
+
 
   if (values.fullName === normalizedQuery || values.reverseName === normalizedQuery) return 0;
   if (values.fullName.startsWith(normalizedQuery) || values.reverseName.startsWith(normalizedQuery)) return 1;
