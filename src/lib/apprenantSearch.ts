@@ -120,13 +120,28 @@ export const scoreApprenantSearch = (apprenant: ApprenantSearchLike, query: stri
   });
 
   const compactMatch = queryCompact.length >= 3 && values.compactSearchable.includes(queryCompact);
-  if (!tokenMatches && !compactMatch) return null;
+
+  // Recherche par téléphone / code postal (chiffres uniquement)
+  const queryDigits = query.replace(/\D/g, "");
+  const digitsMatch =
+    queryDigits.length >= 2 &&
+    values.digitsSearchable
+      .split(" ")
+      .some((d) => d.includes(queryDigits));
+
+  // Recherche par ville / code postal / adresse
+  const localisationMatch =
+    normalizedQuery.length >= 2 && values.localisation.includes(normalizedQuery);
+
+  if (!tokenMatches && !compactMatch && !digitsMatch && !localisationMatch) return null;
 
   if (values.fullName === normalizedQuery || values.reverseName === normalizedQuery) return 0;
   if (values.fullName.startsWith(normalizedQuery) || values.reverseName.startsWith(normalizedQuery)) return 1;
   if (tokens.every((token) => values.fullName.includes(token) || values.reverseName.includes(token))) return 2;
   if (values.lastName.startsWith(normalizedQuery) || values.firstName.startsWith(normalizedQuery)) return 3;
+  if (digitsMatch) return 3;
   if (compactMatch) return 4;
+  if (localisationMatch) return 4;
   return 5;
 };
 
