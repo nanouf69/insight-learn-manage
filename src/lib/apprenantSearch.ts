@@ -75,12 +75,27 @@ const buildSearchValues = (apprenant: ApprenantSearchLike) => {
     ].join(" "),
   );
 
+  const digitsSearchable = [
+    apprenant.telephone,
+    apprenant.code_postal,
+    apprenant.numero_dossier_cma,
+  ]
+    .map((v) => String(v ?? "").replace(/\D/g, ""))
+    .filter(Boolean)
+    .join(" ");
+
+  const localisation = normalizeApprenantSearchText(
+    [apprenant.ville, apprenant.code_postal, apprenant.adresse].join(" "),
+  );
+
   return {
     firstName,
     lastName,
     fullName,
     reverseName,
     searchable,
+    digitsSearchable,
+    localisation,
     words: searchable.split(" ").filter(Boolean),
     compactSearchable: compact(searchable),
   };
