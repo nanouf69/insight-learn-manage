@@ -35,7 +35,7 @@ export function GlobalSearch({ onSelectApprenant, onNavigate }: GlobalSearchProp
     enabled: open,
     staleTime: 60_000,
     queryFn: async () => {
-      const columns = "id, nom, prenom, email, telephone, numero_dossier_cma, type_apprenant, formation_choisie";
+      const columns = "id, nom, prenom, email, telephone, adresse, code_postal, ville, numero_dossier_cma, type_apprenant, formation_choisie";
       const pageSize = 1000;
       let from = 0;
       const rows: any[] = [];
@@ -180,7 +180,7 @@ export function GlobalSearch({ onSelectApprenant, onNavigate }: GlobalSearchProp
 
       <CommandDialog open={open} onOpenChange={setOpen} shouldFilter={false}>
         <CommandInput
-          placeholder="Rechercher un apprenant, formation, session..."
+          placeholder="Nom, téléphone, ville, code postal, formation, session..."
           value={query}
           onValueChange={setQuery}
         />
