@@ -101,6 +101,7 @@ export function CRMDashboard({ initialApprenantId, onApprenantClosed }: CRMDashb
       // On limite aux colonnes affichées dans la liste pour accélérer le chargement.
       const columns = [
         'id', 'nom', 'prenom', 'email', 'telephone',
+        'adresse', 'code_postal', 'ville',
         'statut', 'created_at', 'type_apprenant', 'formation_choisie',
         'mode_financement', 'organisme_financeur',
         'montant_ttc', 'montant_paye',
