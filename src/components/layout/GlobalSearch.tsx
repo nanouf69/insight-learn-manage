@@ -180,7 +180,7 @@ export function GlobalSearch({ onSelectApprenant, onNavigate }: GlobalSearchProp
 
       <CommandDialog open={open} onOpenChange={setOpen} shouldFilter={false}>
         <CommandInput
-          placeholder="Rechercher un apprenant, formation, session..."
+          placeholder="Nom, téléphone, ville, code postal, formation, session..."
           value={query}
           onValueChange={setQuery}
         />
