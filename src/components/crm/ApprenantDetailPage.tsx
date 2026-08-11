@@ -476,19 +476,6 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
                 {financementLabels[apprenant.mode_financement || ''] || apprenant.mode_financement || '-'}
               </Badge>
             </div>
-            {taux && (
-              <div className="flex items-center gap-2 mt-2 flex-wrap text-xs">
-                <Badge variant="outline" className="font-medium">
-                  Taux e-learning : {taux.pctElearning}% ({taux.doneElearning.toFixed(1)}h / {taux.reqElearning}h)
-                </Badge>
-                <Badge variant="outline" className="font-medium">
-                  Taux présentiel : {taux.pctPresentiel}% ({taux.donePresentiel.toFixed(1)}h / {taux.reqPresentiel}h)
-                </Badge>
-                <Badge className="font-semibold">
-                  TAUX TOTAL : {taux.pctTotal}% ({(taux.doneElearning + taux.donePresentiel).toFixed(1)}h / {taux.reqTotal}h)
-                </Badge>
-              </div>
-            )}
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -545,6 +532,17 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
           </Button>
         </div>
       </div>
+
+      {/* Taux de réalisation (format identique au relevé de connexions) */}
+      {taux && (
+        <div className="w-full rounded-md border bg-muted/40 px-4 py-2 text-sm font-medium text-primary">
+          Taux e-learning : {taux.pctElearning}% ({taux.doneElearning.toFixed(1)}h / {taux.reqElearning}h)
+          {"   |   "}Taux presentiel : {taux.pctPresentiel}% ({taux.donePresentiel.toFixed(1)}h / {taux.reqPresentiel}h)
+          {"   |   "}TAUX TOTAL : {taux.pctTotal}% ({(taux.doneElearning + taux.donePresentiel).toFixed(1)}h / {taux.reqTotal}h)
+        </div>
+      )}
+
+
 
       {/* Soft Delete Confirmation */}
       {showSoftDeleteDialog && (
