@@ -10,6 +10,7 @@ import { fr } from "date-fns/locale";
 import { generateControleQualitePdf } from "@/lib/pdf/controle-qualite";
 import { generateEmargementSemainePdf } from "@/lib/pdf/emargement-semaine";
 import { generateReleveConnexionsPdf } from "@/lib/pdf/releve-connexions";
+import { buildJourneesPresentiel } from "@/lib/pdf/journees-presentiel";
 import { enrichConnexionRows } from "@/lib/reports/connexion-detail-rows";
 import { fetchAllRows } from "@/lib/supabase/fetch-all-rows";
 import { generateEmailsApprenantPdf, maskPasswords } from "@/lib/pdf/emails-apprenant";
@@ -503,6 +504,7 @@ export function ControleQualiteTab({ apprenant }: Props) {
         }
 
         // 3c) Suivi de progression e-learning (PDF Qualiopi)
+        let fallbackJourneesPresentiel: { date: string; label?: string }[] = [];
         try {
           const [acts, compls, quizzes, cnxAll, emargAll, sessInscrits, exos] = await Promise.all([
             fetchAllRows<any>((from, to) => supabase
@@ -698,14 +700,8 @@ export function ControleQualiteTab({ apprenant }: Props) {
           };
           const MAX_PRATIQUE_MIN_PER_SESSION = 6 * 60; // la pratique dépasse rarement 6h par session
           let pratiqueMinutes = 0;
-          const journeesPresentiel: { date: string; label?: string }[] = [];
-          for (const [d, slots] of byDate.entries()) {
-            const labels: string[] = [];
-            if (slots.has("matin")) labels.push("matin");
-            if (slots.has("apres_midi")) labels.push("apres-midi");
-            if (slots.has("soir") || slots.has("soir_1") || slots.has("soir_2")) labels.push("soir");
-            journeesPresentiel.push({ date: d, label: `theorie${labels.length ? " " + labels.join("+") : ""}` });
-          }
+          const journeesPresentiel = buildJourneesPresentiel(emargAll, sessInscrits);
+          fallbackJourneesPresentiel = journeesPresentiel;
           for (const si of sessInscrits) {
             const sess = si.sessions;
             const type = String(sess?.type_session || "").toLowerCase();
@@ -719,8 +715,6 @@ export function ControleQualiteTab({ apprenant }: Props) {
               dur = 3 * 60; // valeur par défaut d'une session pratique
             }
             pratiqueMinutes += Math.min(dur, MAX_PRATIQUE_MIN_PER_SESSION);
-            const dPr = String(sess?.date_debut || "").slice(0, 10);
-            if (dPr) journeesPresentiel.push({ date: dPr, label: "pratique" });
           }
           const pratiqueSec = pratiqueMinutes * 60;
 
@@ -805,7 +799,7 @@ export function ControleQualiteTab({ apprenant }: Props) {
           console.error("[bulk-download] suivi progression failed:", progErr);
           // Fallback: relevé simple sans synthèse
           try {
-            const relevePdf = generateReleveConnexionsPdf(apprenant, cnxRawRows, { returnBlob: true }) as { blob: Blob; fileName: string } | undefined;
+            const relevePdf = generateReleveConnexionsPdf(apprenant, cnxRawRows, { returnBlob: true, journeesPresentiel: fallbackJourneesPresentiel }) as { blob: Blob; fileName: string } | undefined;
             if (relevePdf?.blob) releveFolder.file(relevePdf.fileName, relevePdf.blob);
           } catch {}
         }

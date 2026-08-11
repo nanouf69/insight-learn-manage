@@ -10,6 +10,7 @@ import {
 import { generateProgrammeFormationPdf } from "@/lib/pdf/programme-formation";
 import { generateEmargementSemainePdf } from "@/lib/pdf/emargement-semaine";
 import { generateReleveConnexionsPdf } from "@/lib/pdf/releve-connexions";
+import { buildJourneesPresentiel } from "@/lib/pdf/journees-presentiel";
 import { enrichConnexionRows } from "@/lib/reports/connexion-detail-rows";
 import { fetchAllRows } from "@/lib/supabase/fetch-all-rows";
 import { generateEmailsApprenantPdf, maskPasswords } from "@/lib/pdf/emails-apprenant";
@@ -188,6 +189,7 @@ export async function buildDossierApprenantIntoZip(
     releveFolder.file(`rapport-activite_${slug}.html`, html);
   } catch (e) { console.error("[dossier] rapport activite failed", e); }
 
+  let fallbackJourneesPresentiel: { date: string; label?: string }[] = [];
   try {
     const [acts, compls, quizzes, emargAll, sessInscrits, exos] = await Promise.all([
       fetchAllRows<any>((from, to) => supabase.from("apprenant_module_activites").select("module_id, module_nom, action_type, occurred_at").eq("apprenant_id", apprenant.id).order("occurred_at", { ascending: true }).range(from, to)),
@@ -311,14 +313,8 @@ export async function buildDossierApprenantIntoZip(
     };
     const MAX_PRATIQUE_MIN_PER_SESSION = 6 * 60;
     let pratiqueMinutes = 0;
-    const journeesPresentiel: { date: string; label?: string }[] = [];
-    for (const [d, slots] of byDate.entries()) {
-      const labels: string[] = [];
-      if (slots.has("matin")) labels.push("matin");
-      if (slots.has("apres_midi")) labels.push("apres-midi");
-      if (slots.has("soir") || slots.has("soir_1") || slots.has("soir_2")) labels.push("soir");
-      journeesPresentiel.push({ date: d, label: `theorie${labels.length ? " " + labels.join("+") : ""}` });
-    }
+    const journeesPresentiel = buildJourneesPresentiel(emargAll, sessInscrits);
+    fallbackJourneesPresentiel = journeesPresentiel;
     for (const si of sessInscrits) {
       const sess = si.sessions;
       const type = String(sess?.type_session || "").toLowerCase();
@@ -327,8 +323,6 @@ export async function buildDossierApprenantIntoZip(
       const hf = parseHM(si.heure_fin_personnalisee) ?? parseHM(sess?.heure_fin);
       let dur = (hd != null && hf != null && hf > hd) ? hf - hd : 3 * 60;
       pratiqueMinutes += Math.min(dur, MAX_PRATIQUE_MIN_PER_SESSION);
-      const dPr = String(sess?.date_debut || "").slice(0, 10);
-      if (dPr) journeesPresentiel.push({ date: dPr, label: "pratique" });
     }
     const pratiqueSec = pratiqueMinutes * 60;
     const presentielTotalSec = theorieSec + pratiqueSec;
@@ -383,7 +377,7 @@ export async function buildDossierApprenantIntoZip(
   } catch (e) {
     console.error("[dossier] suivi progression failed", e);
     try {
-      const relevePdf = generateReleveConnexionsPdf(apprenant, cnxRawRows, { returnBlob: true }) as { blob: Blob; fileName: string } | undefined;
+      const relevePdf = generateReleveConnexionsPdf(apprenant, cnxRawRows, { returnBlob: true, journeesPresentiel: fallbackJourneesPresentiel }) as { blob: Blob; fileName: string } | undefined;
       if (relevePdf?.blob) releveFolder.file(relevePdf.fileName, relevePdf.blob);
     } catch {}
   }

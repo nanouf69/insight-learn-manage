@@ -216,33 +216,33 @@ export function generateReleveConnexionsPdf(
   }
   doc.setFont("helvetica", "normal");
 
-  // Journees realisees en presentiel (dates precises)
-  let presentielLines: string[] = [];
+  // Journees realisees en presentiel (dates precises) - toujours affichee
   const jp = (opts?.journeesPresentiel || []).filter((j) => j && j.date);
-  if (jp.length > 0) {
-    const seenD = new Set<string>();
-    const items: string[] = [];
-    for (const j of [...jp].sort((a, b) => a.date.localeCompare(b.date))) {
-      const key = `${j.date}|${j.label || ""}`;
-      if (seenD.has(key)) continue;
-      seenD.add(key);
-      const [y, m, d] = j.date.slice(0, 10).split("-");
-      items.push(`${d}/${m}/${y}${j.label ? ` (${sanitize(j.label)})` : ""}`);
-    }
-    const baseY = tauxLine ? 80 : 74;
-    doc.setFontSize(8);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(13, 37, 64);
-    presentielLines = doc.splitTextToSize(
-      `Journees en presentiel (${items.length}) : ${items.join("  |  ")}`,
-      pw - margin * 2,
-    ) as string[];
-    doc.text(presentielLines, margin, baseY);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-    doc.setTextColor(40, 40, 40);
+  const seenD = new Set<string>();
+  const items: string[] = [];
+  for (const j of [...jp].sort((a, b) => a.date.localeCompare(b.date))) {
+    const key = `${j.date}|${j.label || ""}`;
+    if (seenD.has(key)) continue;
+    seenD.add(key);
+    const [y, m, d] = j.date.slice(0, 10).split("-");
+    items.push(`${d}/${m}/${y}${j.label ? ` (${sanitize(j.label)})` : ""}`);
   }
+  const baseY = tauxLine ? 80 : 74;
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(13, 37, 64);
+  const presentielLines = doc.splitTextToSize(
+    items.length > 0
+      ? `Journees en presentiel (${items.length}) : ${items.join("  |  ")}`
+      : "Journees en presentiel : aucune journee en presentiel enregistree",
+    pw - margin * 2,
+  ) as string[];
+  doc.text(presentielLines, margin, baseY);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  doc.setTextColor(40, 40, 40);
   const presentielHeight = presentielLines.length * 4;
+
 
   // Rappel méthodologique
   doc.setFontSize(7);
