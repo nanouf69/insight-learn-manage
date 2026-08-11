@@ -964,6 +964,30 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
             </SelectContent>
           </Select>
         </div>
+        {period === "custom" && (
+          <>
+            <div className="w-40">
+              <label className="text-sm font-medium mb-1 block">Du :</label>
+              <input
+                type="date"
+                value={customStart}
+                max={customEnd || undefined}
+                onChange={(e) => setCustomStart(e.target.value)}
+                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+              />
+            </div>
+            <div className="w-40">
+              <label className="text-sm font-medium mb-1 block">Au :</label>
+              <input
+                type="date"
+                value={customEnd}
+                min={customStart || undefined}
+                onChange={(e) => setCustomEnd(e.target.value)}
+                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+              />
+            </div>
+          </>
+        )}
       </div>
 
       {loading && (
