@@ -187,7 +187,10 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
   const [emargements, setEmargements] = useState<EmargementRow[]>([]);
   const [loading, setLoading] = useState(false);
   // Par défaut on affiche TOUT l'historique (conservé à vie), jamais une fenêtre glissante.
-  const [period, setPeriod] = useState<"7" | "30" | "90" | "all">("all");
+  const [period, setPeriod] = useState<"7" | "30" | "90" | "all" | "custom">("all");
+  const [customStart, setCustomStart] = useState<string>("");
+  const [customEnd, setCustomEnd] = useState<string>("");
+
   const printRef = useRef<HTMLDivElement>(null);
   const [editingConn, setEditingConn] = useState<{ id: string; started_at: string; ended_at: string } | null>(null);
   const [savingConn, setSavingConn] = useState(false);
