@@ -122,6 +122,8 @@ export function generateReleveConnexionsPdf(
     /** Heures realisees en decimal (pour les taux) */
     heuresFaitesElearning?: number;
     heuresFaitesPresentiel?: number;
+    /** Journees realisees en presentiel (theorie + pratique) */
+    journeesPresentiel?: { date: string; label?: string }[];
   },
 ): { blob: Blob; fileName: string } | void {
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
