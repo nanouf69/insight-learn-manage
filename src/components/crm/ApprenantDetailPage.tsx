@@ -476,13 +476,13 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
                 {financementLabels[apprenant.mode_financement || ''] || apprenant.mode_financement || '-'}
               </Badge>
             </div>
-            {taux && taux.reqTotal > 0 && (
+            {taux && (
               <div className="flex items-center gap-2 mt-2 flex-wrap text-xs">
                 <Badge variant="outline" className="font-medium">
-                  E-learning : {taux.pctElearning}% ({taux.doneElearning.toFixed(1)}h / {taux.reqElearning}h)
+                  Taux e-learning : {taux.pctElearning}% ({taux.doneElearning.toFixed(1)}h / {taux.reqElearning}h)
                 </Badge>
                 <Badge variant="outline" className="font-medium">
-                  Présentiel : {taux.pctPresentiel}% ({taux.donePresentiel.toFixed(1)}h / {taux.reqPresentiel}h)
+                  Taux présentiel : {taux.pctPresentiel}% ({taux.donePresentiel.toFixed(1)}h / {taux.reqPresentiel}h)
                 </Badge>
                 <Badge className="font-semibold">
                   TAUX TOTAL : {taux.pctTotal}% ({(taux.doneElearning + taux.donePresentiel).toFixed(1)}h / {taux.reqTotal}h)
