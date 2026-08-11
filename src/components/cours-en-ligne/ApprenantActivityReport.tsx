@@ -728,6 +728,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
           </div>
         </div>
 
+        ${period === "custom" ? "" : `
         <h2>Taux de réalisation</h2>
         <div class="stats">
           <div class="stat-card">
@@ -742,7 +743,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
             <div class="stat-value">${taux.pctTotal}%</div>
             <div class="stat-label">TOTAL formation<br/>${taux.doneTotal.toFixed(1)}h / ${taux.requiredTotal}h</div>
           </div>
-        </div>
+        </div>`}
 
 
         <h2>Détail des connexions</h2>
