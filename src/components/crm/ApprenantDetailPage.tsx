@@ -533,6 +533,17 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
         </div>
       </div>
 
+      {/* Taux de réalisation (format identique au relevé de connexions) */}
+      {taux && (
+        <div className="w-full rounded-md border bg-muted/40 px-4 py-2 text-sm font-medium text-primary">
+          Taux e-learning : {taux.pctElearning}% ({taux.doneElearning.toFixed(1)}h / {taux.reqElearning}h)
+          {"   |   "}Taux presentiel : {taux.pctPresentiel}% ({taux.donePresentiel.toFixed(1)}h / {taux.reqPresentiel}h)
+          {"   |   "}TAUX TOTAL : {taux.pctTotal}% ({(taux.doneElearning + taux.donePresentiel).toFixed(1)}h / {taux.reqTotal}h)
+        </div>
+      )}
+
+
+
       {/* Soft Delete Confirmation */}
       {showSoftDeleteDialog && (
         <Dialog open={showSoftDeleteDialog} onOpenChange={setShowSoftDeleteDialog}>
