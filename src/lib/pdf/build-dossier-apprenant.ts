@@ -311,6 +311,14 @@ export async function buildDossierApprenantIntoZip(
     };
     const MAX_PRATIQUE_MIN_PER_SESSION = 6 * 60;
     let pratiqueMinutes = 0;
+    const journeesPresentiel: { date: string; label?: string }[] = [];
+    for (const [d, slots] of byDate.entries()) {
+      const labels: string[] = [];
+      if (slots.has("matin")) labels.push("matin");
+      if (slots.has("apres_midi")) labels.push("apres-midi");
+      if (slots.has("soir") || slots.has("soir_1") || slots.has("soir_2")) labels.push("soir");
+      journeesPresentiel.push({ date: d, label: `theorie${labels.length ? " " + labels.join("+") : ""}` });
+    }
     for (const si of sessInscrits) {
       const sess = si.sessions;
       const type = String(sess?.type_session || "").toLowerCase();
@@ -319,6 +327,8 @@ export async function buildDossierApprenantIntoZip(
       const hf = parseHM(si.heure_fin_personnalisee) ?? parseHM(sess?.heure_fin);
       let dur = (hd != null && hf != null && hf > hd) ? hf - hd : 3 * 60;
       pratiqueMinutes += Math.min(dur, MAX_PRATIQUE_MIN_PER_SESSION);
+      const dPr = String(sess?.date_debut || "").slice(0, 10);
+      if (dPr) journeesPresentiel.push({ date: dPr, label: "pratique" });
     }
     const pratiqueSec = pratiqueMinutes * 60;
     const presentielTotalSec = theorieSec + pratiqueSec;
@@ -366,6 +376,7 @@ export async function buildDossierApprenantIntoZip(
         heuresPrevuesTotal: reqTotal,
         heuresFaitesElearning: onlineSec / 3600,
         heuresFaitesPresentiel: (theorieSec + pratiqueSec) / 3600,
+        journeesPresentiel,
       }) as { blob: Blob; fileName: string } | undefined;
       if (relevePdf?.blob) releveFolder.file(relevePdf.fileName, relevePdf.blob);
     } catch (e) { console.error("[dossier] releve PDF failed", e); }
