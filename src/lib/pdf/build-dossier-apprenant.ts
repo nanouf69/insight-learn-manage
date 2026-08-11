@@ -376,6 +376,7 @@ export async function buildDossierApprenantIntoZip(
         heuresPrevuesTotal: reqTotal,
         heuresFaitesElearning: onlineSec / 3600,
         heuresFaitesPresentiel: (theorieSec + pratiqueSec) / 3600,
+        journeesPresentiel,
       }) as { blob: Blob; fileName: string } | undefined;
       if (relevePdf?.blob) releveFolder.file(relevePdf.fileName, relevePdf.blob);
     } catch (e) { console.error("[dossier] releve PDF failed", e); }
