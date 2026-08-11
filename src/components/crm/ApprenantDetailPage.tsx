@@ -308,6 +308,8 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
     },
   });
 
+  const { data: taux } = useApprenantTauxRealisation(apprenantId, apprenant);
+
   const { data: photoDoc } = useQuery({
     queryKey: ['apprenant-photo', apprenantId],
     queryFn: async () => {
