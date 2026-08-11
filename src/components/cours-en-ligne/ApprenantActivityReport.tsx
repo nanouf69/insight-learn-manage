@@ -277,7 +277,14 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
 
     const load = async () => {
       setLoading(true);
-      const since = period === "all" ? "2000-01-01" : format(subDays(new Date(), parseInt(period)), "yyyy-MM-dd");
+      const since = period === "custom"
+        ? (customStart || "2000-01-01")
+        : period === "all"
+          ? "2000-01-01"
+          : format(subDays(new Date(), parseInt(period)), "yyyy-MM-dd");
+      // Bornes hautes (inclusives) pour la période personnalisée
+      const untilDate = period === "custom" && customEnd ? customEnd : null;
+      const untilTs = untilDate ? `${untilDate}T23:59:59.999` : null;
 
       // Pagination complète : l'historique est conservé à vie, on ne doit jamais
       // le tronquer au cap de 1000 lignes de l'API.
@@ -287,11 +294,13 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
         let out: any[] = [];
         // eslint-disable-next-line no-constant-condition
         while (true) {
-          const { data } = await supabase
+          let q = supabase
             .from(table as any)
             .select(cols)
             .eq("apprenant_id", selectedId)
-            .gte(dateCol, since)
+            .gte(dateCol, since);
+          if (untilTs) q = q.lte(dateCol, untilTs);
+          const { data } = await q
             .order(dateCol, { ascending: false })
             .range(from, from + PAGE - 1);
           const batch = (data as any[]) || [];
@@ -302,6 +311,9 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
         return { data: out };
       };
 
+      const withUntil = (q: any, col: string, isDateOnly = false) =>
+        untilDate ? q.lte(col, isDateOnly ? untilDate : untilTs) : q;
+
       const [connRes, actRes, complRes, exRes, qrRes, emgRes, resPratRes] = await Promise.all([
         fetchAllRows("apprenant_connexions", "id, started_at, ended_at, last_seen_at, last_action_at, current_module", "started_at"),
         fetchAllRows("apprenant_module_activites", "id, module_id, module_nom, action_type, occurred_at", "occurred_at"),
@@ -310,32 +322,43 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
           .from("apprenant_module_completion")
           .select("module_id")
           .eq("apprenant_id", selectedId),
-        supabase
-          .from("reponses_apprenants")
-          .select("id, exercice_id, completed, updated_at")
-          .eq("apprenant_id", selectedId)
-          .eq("completed", true)
-          .gte("updated_at", since)
-          .order("updated_at", { ascending: false }),
-        supabase
-          .from("apprenant_quiz_results")
-          .select("id, quiz_titre, matiere_nom, completed_at")
-          .eq("apprenant_id", selectedId)
-          .gte("completed_at", since)
-          .order("completed_at", { ascending: false }),
-        supabase
-          .from("emargements_fc")
-          .select("apprenant_id, date_emargement, demi_journee, absent")
-          .eq("apprenant_id", selectedId)
-          .gte("date_emargement", since)
-          .order("date_emargement", { ascending: false }),
-        supabase
-          .from("reservations_pratique")
-          .select("date_choisie")
-          .eq("apprenant_id", selectedId)
-          .gte("date_choisie", since)
-          .order("date_choisie", { ascending: false }),
+        withUntil(
+          supabase
+            .from("reponses_apprenants")
+            .select("id, exercice_id, completed, updated_at")
+            .eq("apprenant_id", selectedId)
+            .eq("completed", true)
+            .gte("updated_at", since),
+          "updated_at",
+        ).order("updated_at", { ascending: false }),
+        withUntil(
+          supabase
+            .from("apprenant_quiz_results")
+            .select("id, quiz_titre, matiere_nom, completed_at")
+            .eq("apprenant_id", selectedId)
+            .gte("completed_at", since),
+          "completed_at",
+        ).order("completed_at", { ascending: false }),
+        withUntil(
+          supabase
+            .from("emargements_fc")
+            .select("apprenant_id, date_emargement, demi_journee, absent")
+            .eq("apprenant_id", selectedId)
+            .gte("date_emargement", since),
+          "date_emargement",
+          true,
+        ).order("date_emargement", { ascending: false }),
+        withUntil(
+          supabase
+            .from("reservations_pratique")
+            .select("date_choisie")
+            .eq("apprenant_id", selectedId)
+            .gte("date_choisie", since),
+          "date_choisie",
+          true,
+        ).order("date_choisie", { ascending: false }),
       ]);
+
 
       setConnexions(((connRes.data as any[]) || []) as Connexion[]);
       setActivites(((actRes.data as any[]) || []) as ModuleActivite[]);
