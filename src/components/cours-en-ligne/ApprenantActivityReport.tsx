@@ -372,7 +372,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
       setLoading(false);
     };
     load();
-  }, [selectedId, period]);
+  }, [selectedId, period, customStart, customEnd]);
 
   // Charge TOUT l'historique (indépendant du filtre période) pour le taux de réalisation
   useEffect(() => {
@@ -710,7 +710,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
         <h1>Rapport d'activité — ${selectedApprenant?.prenom} ${selectedApprenant?.nom}</h1>
         <p class="subtitle">
           ${selectedApprenant?.email || "Pas d'email"} · ${selectedApprenant?.type_apprenant || "—"}<br/>
-          Période : ${period === "all" ? "Tout l'historique" : `${period} derniers jours`} · Généré le ${format(new Date(), "dd/MM/yyyy à HH:mm", { locale: fr })}
+          Période : ${period === "all" ? "Tout l'historique" : period === "custom" ? `du ${customStart ? format(new Date(customStart), "dd/MM/yyyy") : "…"} au ${customEnd ? format(new Date(customEnd), "dd/MM/yyyy") : "…"}` : `${period} derniers jours`} · Généré le ${format(new Date(), "dd/MM/yyyy à HH:mm", { locale: fr })}
         </p>
 
         <div class="stats">
@@ -960,6 +960,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
               <SelectItem value="30">30 derniers jours</SelectItem>
               <SelectItem value="90">90 derniers jours</SelectItem>
               <SelectItem value="all">Tout l'historique</SelectItem>
+              <SelectItem value="custom">Dates personnalisées</SelectItem>
             </SelectContent>
           </Select>
         </div>
