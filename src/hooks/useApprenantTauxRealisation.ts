@@ -20,13 +20,22 @@ const pct = (d: number, r: number) => (r > 0 ? Math.min(100, Math.round((d / r) 
  * Calcule les taux de realisation (e-learning / presentiel / total)
  * avec EXACTEMENT la meme logique que le releve de connexions PDF.
  */
-export function useApprenantTauxRealisation(apprenantId?: string, apprenant?: any) {
+export function useApprenantTauxRealisation(apprenantId?: string, apprenantProp?: any) {
   return useQuery<TauxRealisation | null>({
     queryKey: ["apprenant-taux-realisation", apprenantId],
     enabled: !!apprenantId,
     staleTime: 5 * 60 * 1000,
     queryFn: async () => {
       if (!apprenantId) return null;
+
+      // Toujours relire les heures contractuelles en base : le prop peut ne pas
+      // encore etre charge au premier rendu (sinon taux calcules sur 0h).
+      const { data: apprenantRow } = await supabase
+        .from("apprenants")
+        .select("heures_elearning, heures_presentiel, heures_totales, date_fin_cours_en_ligne, date_fin_formation")
+        .eq("id", apprenantId)
+        .maybeSingle();
+      const apprenant = { ...(apprenantProp || {}), ...(apprenantRow || {}) } as any;
 
       const [acts, quizzes, exos, cnxAll, emargAll, sessInscrits] = await Promise.all([
         fetchAllRows<any>((from, to) => supabase
