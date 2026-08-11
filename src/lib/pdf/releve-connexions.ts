@@ -299,7 +299,7 @@ export function generateReleveConnexionsPdf(
     });
 
     autoTable(doc, {
-      startY: tauxLine ? 84 : 78,
+      startY: (tauxLine ? 84 : 78) + presentielHeight,
       head: [[
         "Date",
         "Debut",
