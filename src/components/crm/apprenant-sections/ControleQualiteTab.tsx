@@ -10,6 +10,7 @@ import { fr } from "date-fns/locale";
 import { generateControleQualitePdf } from "@/lib/pdf/controle-qualite";
 import { generateEmargementSemainePdf } from "@/lib/pdf/emargement-semaine";
 import { generateReleveConnexionsPdf } from "@/lib/pdf/releve-connexions";
+import { buildJourneesPresentiel } from "@/lib/pdf/journees-presentiel";
 import { enrichConnexionRows } from "@/lib/reports/connexion-detail-rows";
 import { fetchAllRows } from "@/lib/supabase/fetch-all-rows";
 import { generateEmailsApprenantPdf, maskPasswords } from "@/lib/pdf/emails-apprenant";
@@ -805,7 +806,7 @@ export function ControleQualiteTab({ apprenant }: Props) {
           console.error("[bulk-download] suivi progression failed:", progErr);
           // Fallback: relevé simple sans synthèse
           try {
-            const relevePdf = generateReleveConnexionsPdf(apprenant, cnxRawRows, { returnBlob: true }) as { blob: Blob; fileName: string } | undefined;
+            const relevePdf = generateReleveConnexionsPdf(apprenant, cnxRawRows, { returnBlob: true, journeesPresentiel: fallbackJourneesPresentiel }) as { blob: Blob; fileName: string } | undefined;
             if (relevePdf?.blob) releveFolder.file(relevePdf.fileName, relevePdf.blob);
           } catch {}
         }

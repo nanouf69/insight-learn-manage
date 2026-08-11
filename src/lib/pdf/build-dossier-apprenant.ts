@@ -10,6 +10,7 @@ import {
 import { generateProgrammeFormationPdf } from "@/lib/pdf/programme-formation";
 import { generateEmargementSemainePdf } from "@/lib/pdf/emargement-semaine";
 import { generateReleveConnexionsPdf } from "@/lib/pdf/releve-connexions";
+import { buildJourneesPresentiel } from "@/lib/pdf/journees-presentiel";
 import { enrichConnexionRows } from "@/lib/reports/connexion-detail-rows";
 import { fetchAllRows } from "@/lib/supabase/fetch-all-rows";
 import { generateEmailsApprenantPdf, maskPasswords } from "@/lib/pdf/emails-apprenant";
@@ -383,7 +384,7 @@ export async function buildDossierApprenantIntoZip(
   } catch (e) {
     console.error("[dossier] suivi progression failed", e);
     try {
-      const relevePdf = generateReleveConnexionsPdf(apprenant, cnxRawRows, { returnBlob: true }) as { blob: Blob; fileName: string } | undefined;
+      const relevePdf = generateReleveConnexionsPdf(apprenant, cnxRawRows, { returnBlob: true, journeesPresentiel: fallbackJourneesPresentiel }) as { blob: Blob; fileName: string } | undefined;
       if (relevePdf?.blob) releveFolder.file(relevePdf.fileName, relevePdf.blob);
     } catch {}
   }
