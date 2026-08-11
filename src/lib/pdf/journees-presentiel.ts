@@ -33,7 +33,10 @@ export function buildJourneesPresentiel(
     const type = String(sess?.type_session || "").toLowerCase();
     if (!type.includes("pratique")) continue;
     const d = String(sess?.date_debut || "").slice(0, 10);
-    if (d) out.push({ date: d, label: "pratique" });
+    const isTaxi = `${type} ${String(sess?.formation || sess?.nom || "")}`.toLowerCase().includes("taxi");
+    // Horaires contractuels pratique VTC : 9h-12h / 13h-16h
+    const horaires = isTaxi ? "" : " 9h-12h / 13h-16h";
+    if (d) out.push({ date: d, label: `pratique${horaires}` });
   }
 
   const seen = new Set<string>();
