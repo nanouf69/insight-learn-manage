@@ -793,6 +793,7 @@ export function ControleQualiteTab({ apprenant }: Props) {
               heuresPrevuesTotal: reqTotal,
               heuresFaitesElearning: onlineSec / 3600,
               heuresFaitesPresentiel: (theorieSec + pratiqueSec) / 3600,
+              journeesPresentiel,
             }) as { blob: Blob; fileName: string } | undefined;
             if (relevePdf?.blob) {
               releveFolder.file(relevePdf.fileName, relevePdf.blob);
