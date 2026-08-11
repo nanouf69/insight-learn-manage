@@ -533,14 +533,40 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
         </div>
       </div>
 
-      {/* Taux de réalisation (format identique au relevé de connexions) */}
+      {/* Taux de réalisation (mêmes valeurs que le relevé de connexions) */}
       {taux && (
-        <div className="w-full rounded-md border bg-muted/40 px-4 py-2 text-sm font-medium text-primary">
-          Taux e-learning : {taux.pctElearning}% ({taux.doneElearning.toFixed(1)}h / {taux.reqElearning}h)
-          {"   |   "}Taux presentiel : {taux.pctPresentiel}% ({taux.donePresentiel.toFixed(1)}h / {taux.reqPresentiel}h)
-          {"   |   "}TAUX TOTAL : {taux.pctTotal}% ({(taux.doneElearning + taux.donePresentiel).toFixed(1)}h / {taux.reqTotal}h)
+        <div className="w-full rounded-lg border bg-card shadow-sm px-4 py-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {[
+              { label: "Taux e-learning", pct: taux.pctElearning, done: taux.doneElearning, req: taux.reqElearning, strong: false },
+              { label: "Taux présentiel", pct: taux.pctPresentiel, done: taux.donePresentiel, req: taux.reqPresentiel, strong: false },
+              { label: "TAUX TOTAL", pct: taux.pctTotal, done: taux.doneElearning + taux.donePresentiel, req: taux.reqTotal, strong: true },
+            ].map((t) => (
+              <div
+                key={t.label}
+                className={`rounded-md px-3 py-2 ${t.strong ? "bg-primary/10 border border-primary/30" : "bg-muted/50"}`}
+              >
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className={`text-xs uppercase tracking-wide ${t.strong ? "text-primary font-semibold" : "text-muted-foreground"}`}>
+                    {t.label}
+                  </span>
+                  <span className={`text-lg font-bold ${t.strong ? "text-primary" : "text-foreground"}`}>{t.pct}%</span>
+                </div>
+                <div className="mt-1.5 h-1.5 w-full rounded-full bg-border overflow-hidden">
+                  <div
+                    className={`h-full rounded-full ${t.strong ? "bg-primary" : "bg-foreground/60"}`}
+                    style={{ width: `${Math.min(100, t.pct)}%` }}
+                  />
+                </div>
+                <div className="mt-1 text-xs text-muted-foreground">
+                  {t.done.toFixed(1)}h / {t.req}h
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
+
 
 
 
