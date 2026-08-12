@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CalendarClock, Phone, Mail, X, RotateCcw } from "lucide-react";
 import { getSessionEndMs, getSessionDurationMinutes, getAccessCutoffMs } from "@/lib/reports/session-duration";
+import { toast } from "sonner";
 
 const isoDate = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -80,6 +81,18 @@ export function FormationsBientotTerminees({ onNavigateToApprenant }: Props) {
   const persistDismissed = (ids: string[]) => {
     setDismissed(ids);
     try { localStorage.setItem(DISMISS_KEY, JSON.stringify(ids)); } catch { /* ignore */ }
+  };
+
+  const dismiss = (id: string) => {
+    // Always re-read the latest localStorage value to avoid overwriting concurrent/other-tab changes.
+    const latest = loadDismissed();
+    if (latest.includes(id)) return;
+    const next = [...latest, id];
+    persistDismissed(next);
+    toast.success("Apprenant masqué", {
+      description: "Il ne réapparaîtra plus dans cette liste. Utilisez « Réafficher » si besoin.",
+      duration: 2500,
+    });
   };
 
   const { data, isLoading } = useQuery({
@@ -340,7 +353,7 @@ export function FormationsBientotTerminees({ onNavigateToApprenant }: Props) {
                     title="Retirer de la liste"
                     onClick={(e) => {
                       e.stopPropagation();
-                      persistDismissed([...dismissed, a.id]);
+                      dismiss(a.id);
                     }}
                   >
                     <X className="h-3.5 w-3.5" />
