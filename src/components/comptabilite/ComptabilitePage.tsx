@@ -521,7 +521,7 @@ export function ComptabilitePage() {
         montant_tva: montantTVA,
         montant_ttc: montantTTC,
         statut: "en_attente",
-        apprenant_id: d.typeFinanceur === "particulier" ? d.selectedApprenantId : null,
+        apprenant_id: d.selectedApprenantId || null,
         session_id: sessionLine?.sessionId || null,
       };
 
