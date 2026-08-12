@@ -908,7 +908,50 @@ export function FactureForm() {
         </div>
       </div>
 
-      {/* (Aperçu de l'en-tête déplacé plus bas) */}
+      {/* Récapitulatif du financeur — visible en permanence pendant la création */}
+      {(() => {
+        const client = getClientInfo();
+        return (
+          <Card className={`border-2 ${client ? "border-primary/40 bg-primary/5" : "border-dashed border-destructive/40 bg-destructive/5"}`}>
+            <CardContent className="py-4">
+              <div className="flex items-start gap-3">
+                {data.typeFinanceur === "professionnel"
+                  ? <Building2 className="w-5 h-5 mt-0.5 text-primary shrink-0" />
+                  : <User className="w-5 h-5 mt-0.5 text-primary shrink-0" />}
+                <div className="min-w-0 flex-1">
+                  <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                    Financeur (facture adressée à)
+                  </div>
+                  {client ? (
+                    <>
+                      <div className="font-semibold text-base truncate">{client.nom}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {[client.adresse, client.email, client.telephone].filter(Boolean).join(" · ")}
+                      </div>
+                      {(client.siret || client.tvaIntra || client.contactNom) && (
+                        <div className="text-xs text-muted-foreground mt-1">
+                          {[client.siret && `SIRET : ${client.siret}`, client.tvaIntra && `TVA : ${client.tvaIntra}`, client.contactNom && `Contact : ${client.contactNom}`].filter(Boolean).join(" · ")}
+                        </div>
+                      )}
+                      {client.stagiaire && (
+                        <div className="text-xs mt-1">
+                          <span className="text-muted-foreground">Stagiaire : </span>
+                          <span className="font-medium">{client.stagiaire}</span>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="text-sm font-medium text-destructive">
+                      Aucun financeur sélectionné — choisissez un apprenant ou une organisation.
+                    </div>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })()}
+
 
       {/* Type de financeur (déplacé en haut) */}
       <Card>
