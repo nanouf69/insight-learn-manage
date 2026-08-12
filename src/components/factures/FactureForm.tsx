@@ -831,6 +831,11 @@ export function FactureForm() {
   };
 
   const handleSaveToAccounting = async () => {
+    // Blocage absolu : une facture ne peut pas être validée sans apprenant rattaché.
+    if (!data.selectedApprenantId) {
+      toast.error("Veuillez sélectionner un apprenant avant de valider la facture");
+      return;
+    }
     const client = getClientInfo();
     if (!client) {
       toast.error("Veuillez sélectionner un client (apprenant ou organisation)");
