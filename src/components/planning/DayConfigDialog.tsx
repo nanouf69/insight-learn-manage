@@ -50,14 +50,32 @@ export function DayConfigDialog({ open, onClose, date, initialType, initialSlots
   useEffect(() => {
     if (!open) return;
     (async () => {
-      const { data } = await supabase
-        .from("apprenants")
-        .select("id, nom, prenom, formation_choisie")
-        .is("deleted_at", null)
-        .order("nom");
-      setAllApprenants(data || []);
+      // Pagination : Supabase limite à 1000 lignes par requête, certains apprenants
+      // (ex. HAMID ARGA) n'apparaissaient pas dans la liste.
+      const PAGE = 1000;
+      let from = 0;
+      const all: Apprenant[] = [];
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const { data, error } = await supabase
+          .from("apprenants")
+          .select("id, nom, prenom, formation_choisie")
+          .is("deleted_at", null)
+          .order("nom")
+          .range(from, from + PAGE - 1);
+        if (error || !data || data.length === 0) break;
+        all.push(...data);
+        if (data.length < PAGE) break;
+        from += PAGE;
+      }
+      setAllApprenants(all);
     })();
   }, [open]);
+
+  // Recherche insensible aux accents / à la casse (nom, prénom, ordre inversé)
+  const normalize = (s: string) =>
+    (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+
 
   const isExamen = type.startsWith("examen_");
   const isTaxi = type.endsWith("_taxi");
