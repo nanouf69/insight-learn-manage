@@ -3898,69 +3898,100 @@ export function ExamenReussitePage() {
                           {(expectedType === 'vtc' || vtcReserved.length > 0) && (
                             <div className="mb-2 space-y-1">
                               {vtcReserved.length > 0 && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="h-6 w-full text-[10px] gap-1"
-                                  onClick={() => downloadEmargement('vtc', vtcReserved)}
-                                >
-                                  <Download className="h-3 w-3" /> Émargement VTC
-                                </Button>
+                                <>
+                                  <div className="flex items-center justify-between text-[9px] font-bold uppercase tracking-wide text-blue-700">
+                                    <span>VTC</span>
+                                    <span>{vtcReserved.length}/{dayMax}</span>
+                                  </div>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-6 w-full text-[10px] gap-1"
+                                    onClick={() => downloadEmargement('vtc', vtcReserved)}
+                                  >
+                                    <Download className="h-3 w-3" /> Émargement VTC
+                                  </Button>
+                                </>
                               )}
                               {vtcReserved.length > 0 ? vtcReserved.map((a: any, idx: number) => (
-                                <div key={a.id} className={`text-[11px] px-1 py-0.5 rounded mb-0.5 font-semibold flex items-center justify-between gap-1 group ${vtcOverbooked ? 'bg-destructive/10 text-destructive' : 'bg-blue-100'}`} title={`${a.nom} ${a.prenom}`}>
-                                  <span className="truncate flex-1">{a.nom} {a.prenom} {idx >= dayMax ? '⛔ en trop' : '✓'}</span>
-                                  <select
-                                    value={a._creneau || 'journee'}
-                                    onChange={(e) => handleAssignDate(a.id, `${a.nom} ${a.prenom}`, key, 'vtc', e.target.value as any)}
-                                    className="text-[9px] px-0.5 py-0 border rounded bg-white/70 shrink-0"
-                                    title="Créneau"
-                                  >
-                                    <option value="journee">Journée</option>
-                                    <option value="matin">Matin</option>
-                                    <option value="apresmidi">Après-midi</option>
-                                  </select>
-                                  <button onClick={() => handleCancelReservation(a.id, `${a.nom} ${a.prenom}`)} className="opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-700 shrink-0" title="Annuler">
-                                    <X className="h-3 w-3" />
-                                  </button>
+                                <div key={a.id} className={`text-[11px] px-1.5 py-1 rounded mb-1 border ${vtcOverbooked && idx >= dayMax ? 'bg-destructive/10 border-destructive/40 text-destructive' : 'bg-blue-100 border-blue-200'}`}>
+                                  <div className="flex items-start gap-1">
+                                    <span className="text-[9px] font-bold opacity-60 mt-[1px]">{idx + 1}.</span>
+                                    <span className="flex-1 font-semibold leading-tight break-words">
+                                      {a.nom?.toUpperCase()} {a.prenom}
+                                    </span>
+                                    <button onClick={() => handleCancelReservation(a.id, `${a.nom} ${a.prenom}`)} className="text-red-500 hover:text-red-700 shrink-0" title="Annuler">
+                                      <X className="h-3 w-3" />
+                                    </button>
+                                  </div>
+                                  <div className="flex items-center gap-1 mt-1">
+                                    <select
+                                      value={a._creneau || 'journee'}
+                                      onChange={(e) => handleAssignDate(a.id, `${a.nom} ${a.prenom}`, key, 'vtc', e.target.value as any)}
+                                      className="text-[9px] px-1 py-0 border rounded bg-white/80 flex-1 min-w-0"
+                                      title="Créneau"
+                                    >
+                                      <option value="journee">Journée</option>
+                                      <option value="matin">Matin</option>
+                                      <option value="apresmidi">Après-midi</option>
+                                    </select>
+                                    <span className="text-[9px] shrink-0">{idx >= dayMax ? '⛔' : '✓'}</span>
+                                  </div>
                                 </div>
                               )) : (
                                 <div className="text-[10px] text-muted-foreground italic">En attente (max {dayMax})</div>
                               )}
                             </div>
                           )}
+
                           {(expectedType === 'taxi' || taxiReserved.length > 0) && (
                             <div className="mb-2 space-y-1">
                               {taxiReserved.length > 0 && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="h-6 w-full text-[10px] gap-1"
-                                  onClick={() => downloadEmargement('taxi', taxiReserved)}
-                                >
-                                  <Download className="h-3 w-3" /> Émargement TAXI
-                                </Button>
-                              )}
-                              {taxiReserved.length > 0 ? taxiReserved.map((a: any, idx: number) => (
-                                <div key={a.id} className={`text-[11px] px-1 py-0.5 rounded mb-0.5 font-semibold flex items-center justify-between gap-1 group ${taxiOverbooked ? 'bg-destructive/10 text-destructive' : 'bg-amber-100'}`} title={`${a.nom} ${a.prenom}`}>
-                                  <span className="truncate flex-1">{a.nom} {a.prenom} {idx >= dayMax ? '⛔ en trop' : '✓'}</span>
-                                  <select
-                                    value={a._creneau || 'journee'}
-                                    onChange={(e) => handleAssignDate(a.id, `${a.nom} ${a.prenom}`, key, 'taxi', e.target.value as any)}
-                                    className="text-[9px] px-0.5 py-0 border rounded bg-white/70 shrink-0"
-                                    title="Créneau"
+                                <>
+                                  <div className="flex items-center justify-between text-[9px] font-bold uppercase tracking-wide text-amber-700">
+                                    <span>TAXI</span>
+                                    <span>{taxiReserved.length}/{dayMax}</span>
+                                  </div>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-6 w-full text-[10px] gap-1"
+                                    onClick={() => downloadEmargement('taxi', taxiReserved)}
                                   >
-                                    <option value="journee">Journée</option>
-                                    <option value="matin">Matin</option>
-                                    <option value="apresmidi">Après-midi</option>
-                                  </select>
-                                  <button onClick={() => handleCancelReservation(a.id, `${a.nom} ${a.prenom}`)} className="opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-700 shrink-0" title="Annuler">
-                                    <X className="h-3 w-3" />
-                                  </button>
+                                    <Download className="h-3 w-3" /> Émargement TAXI
+                                  </Button>
+                                </>
+                              )}
+
+                              {taxiReserved.length > 0 ? taxiReserved.map((a: any, idx: number) => (
+                                <div key={a.id} className={`text-[11px] px-1.5 py-1 rounded mb-1 border ${taxiOverbooked && idx >= dayMax ? 'bg-destructive/10 border-destructive/40 text-destructive' : 'bg-amber-100 border-amber-200'}`}>
+                                  <div className="flex items-start gap-1">
+                                    <span className="text-[9px] font-bold opacity-60 mt-[1px]">{idx + 1}.</span>
+                                    <span className="flex-1 font-semibold leading-tight break-words">
+                                      {a.nom?.toUpperCase()} {a.prenom}
+                                    </span>
+                                    <button onClick={() => handleCancelReservation(a.id, `${a.nom} ${a.prenom}`)} className="text-red-500 hover:text-red-700 shrink-0" title="Annuler">
+                                      <X className="h-3 w-3" />
+                                    </button>
+                                  </div>
+                                  <div className="flex items-center gap-1 mt-1">
+                                    <select
+                                      value={a._creneau || 'journee'}
+                                      onChange={(e) => handleAssignDate(a.id, `${a.nom} ${a.prenom}`, key, 'taxi', e.target.value as any)}
+                                      className="text-[9px] px-1 py-0 border rounded bg-white/80 flex-1 min-w-0"
+                                      title="Créneau"
+                                    >
+                                      <option value="journee">Journée</option>
+                                      <option value="matin">Matin</option>
+                                      <option value="apresmidi">Après-midi</option>
+                                    </select>
+                                    <span className="text-[9px] shrink-0">{idx >= dayMax ? '⛔' : '✓'}</span>
+                                  </div>
                                 </div>
                               )) : (
                                 <div className="text-[10px] text-muted-foreground italic">En attente (max {dayMax})</div>
                               )}
+
                             </div>
                           )}
                           {expectedType === 'libre' && !hasReservations && (
