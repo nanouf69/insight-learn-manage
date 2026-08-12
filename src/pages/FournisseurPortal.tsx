@@ -484,12 +484,6 @@ export default function FournisseurPortal() {
           .limit(100);
         if (emailData) setComptableEmails(emailData);
 
-        const { data: relevesData } = await supabase
-          .from('releves_bancaires')
-          .select('*')
-          .order('mois_annee', { ascending: false });
-        if (relevesData) setReleves(relevesData);
-
         // Utiliser l'edge function sécurisée pour récupérer les factures (bypasse le RLS admin)
         const { data: facturesResp, error: facturesErr } = await supabase.functions.invoke('get-comptable-factures', {
           body: { token },
@@ -497,6 +491,7 @@ export default function FournisseurPortal() {
         if (!facturesErr && facturesResp) {
           setFacturesVentes(facturesResp.ventes || []);
           setFacturesAchats(facturesResp.achats || []);
+          setReleves(facturesResp.releves || []);
         }
       }
 

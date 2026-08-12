@@ -79,10 +79,17 @@ Deno.serve(async (req) => {
       .select("id, nom_fichier, url, destinataire, montant, description, statut, mois_annee, moyen_paiement, date_paiement, created_at, fournisseur_id, fournisseurs(nom)")
       .order("created_at", { ascending: false });
 
+    // Relevés bancaires (RLS admin-only → lecture via service role)
+    const { data: relevesData } = await supabase
+      .from("releves_bancaires")
+      .select("*")
+      .order("mois_annee", { ascending: false });
+
     return new Response(
       JSON.stringify({
         ventes,
         achats: achatsData || [],
+        releves: relevesData || [],
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
