@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo, useDeferredValue } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
@@ -410,8 +410,14 @@ export function FactureForm() {
     setData(prev => ({ ...prev, [field]: value }));
   };
 
-  const selectedApprenant = apprenants.find(a => a.id === data.selectedApprenantId);
-  const selectedOrganisation = organisations.find(o => o.id === data.selectedOrganisationId);
+  const selectedApprenant = useMemo(
+    () => apprenants.find(a => a.id === data.selectedApprenantId),
+    [apprenants, data.selectedApprenantId]
+  );
+  const selectedOrganisation = useMemo(
+    () => organisations.find(o => o.id === data.selectedOrganisationId),
+    [organisations, data.selectedOrganisationId]
+  );
 
   // Charge le financeur (table financeurs_fc) pour l'apprenant sélectionné — fallback société
   useEffect(() => {
@@ -536,23 +542,45 @@ export function FactureForm() {
   }, [selectedOrganisation?.id]);
 
 
-  const filteredApprenants = apprenants.filter(a => 
-    a.name.toLowerCase().includes(searchApprenant.toLowerCase()) ||
-    a.email.toLowerCase().includes(searchApprenant.toLowerCase())
-  );
+  // Recherche différée + limitation d'affichage : évite de rendre des milliers de cartes
+  const deferredSearchApprenant = useDeferredValue(searchApprenant);
+  const MAX_RESULTATS = 50;
 
-  const filteredOrganisations = organisations.filter(o => 
-    o.name.toLowerCase().includes(searchOrganisation.toLowerCase()) ||
-    o.contact.toLowerCase().includes(searchOrganisation.toLowerCase())
-  );
+  const apprenantsMatches = useMemo(() => {
+    const q = deferredSearchApprenant.trim().toLowerCase();
+    if (!q) return apprenants;
+    return apprenants.filter(a =>
+      a.name.toLowerCase().includes(q) || a.email.toLowerCase().includes(q)
+    );
+  }, [apprenants, deferredSearchApprenant]);
 
-  const filteredSessions = sessions.filter(s => 
-    s.title.toLowerCase().includes(searchSession.toLowerCase()) ||
-    s.formation.toLowerCase().includes(searchSession.toLowerCase())
-  );
+  const filteredApprenants = useMemo(() => {
+    const base = apprenantsMatches.slice(0, MAX_RESULTATS);
+    if (selectedApprenant && !base.some(a => a.id === selectedApprenant.id)) {
+      return [selectedApprenant, ...base];
+    }
+    return base;
+  }, [apprenantsMatches, selectedApprenant]);
 
-  const filteredProduits = produits.filter(p => 
-    p.nom.toLowerCase().includes(searchProduit.toLowerCase())
+  const filteredOrganisations = useMemo(() => {
+    const q = searchOrganisation.trim().toLowerCase();
+    const list = q
+      ? organisations.filter(o => o.name.toLowerCase().includes(q) || o.contact.toLowerCase().includes(q))
+      : organisations;
+    return list.slice(0, MAX_RESULTATS);
+  }, [organisations, searchOrganisation]);
+
+  const filteredSessions = useMemo(() => {
+    const q = searchSession.trim().toLowerCase();
+    const list = q
+      ? sessions.filter(s => s.title.toLowerCase().includes(q) || s.formation.toLowerCase().includes(q))
+      : sessions;
+    return list.slice(0, MAX_RESULTATS);
+  }, [sessions, searchSession]);
+
+  const filteredProduits = useMemo(
+    () => produits.filter(p => p.nom.toLowerCase().includes(searchProduit.trim().toLowerCase())),
+    [searchProduit]
   );
 
   const getTypeBadge = (type: string) => {
@@ -1055,6 +1083,11 @@ export function FactureForm() {
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input placeholder="Rechercher un apprenant..." className="pl-10" value={searchApprenant} onChange={(e) => setSearchApprenant(e.target.value)} />
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {apprenantsMatches.length > 50
+                    ? `${apprenantsMatches.length} apprenants trouvés — 50 affichés, affinez la recherche`
+                    : `${apprenantsMatches.length} apprenant(s)`}
                 </div>
                 <ScrollArea className="h-[300px] rounded-md border">
                   <div className="p-2 space-y-2">
