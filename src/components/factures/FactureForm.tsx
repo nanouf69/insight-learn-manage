@@ -490,6 +490,38 @@ export function FactureForm() {
     }
   }, [selectedApprenant?.id]);
 
+  // Repli agenda : si la fiche apprenant n'a pas de dates, on récupère celles de sa session
+  useEffect(() => {
+    const apprenantId = data.selectedApprenantId;
+    if (!apprenantId) return;
+    if (selectedApprenant?.dateDebutFormation && selectedApprenant?.dateFinFormation) return;
+    let cancelled = false;
+    (async () => {
+      const { data: sa } = await supabase
+        .from('session_apprenants')
+        .select('sessions:session_id(date_debut, date_fin)')
+        .eq('apprenant_id', apprenantId)
+        .order('created_at', { ascending: false })
+        .limit(1);
+      const s: any = sa?.[0]?.sessions;
+      if (cancelled || !s) return;
+      const debut = s.date_debut || '';
+      const fin = s.date_fin || s.date_debut || '';
+      if (!debut) return;
+      setData(prev => ({
+        ...prev,
+        lignes: prev.lignes.map(l =>
+          l.type === 'session' && l.stagiaire === selectedApprenant?.name && !l.dateDebut
+            ? { ...l, dateDebut: debut, dateFin: l.dateFin || fin }
+            : l
+        ),
+      }));
+    })();
+    return () => { cancelled = true; };
+  }, [data.selectedApprenantId, selectedApprenant?.name, selectedApprenant?.dateDebutFormation, selectedApprenant?.dateFinFormation]);
+
+
+
   // Auto-remplit la réf dossier à la sélection d'une organisation (sans nom de stagiaire)
   useEffect(() => {
     if (!selectedOrganisation) return;
