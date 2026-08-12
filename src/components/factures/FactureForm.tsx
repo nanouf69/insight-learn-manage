@@ -856,6 +856,8 @@ export function FactureForm() {
       if (error) throw error;
 
       toast.success(`Facture N°${numeroDefinitif} enregistrée en comptabilité — nouvelle facture vierge`);
+      setFactureValidee(numeroDefinitif);
+
       // Nettoyer le brouillon une fois la facture validée
       try { localStorage.removeItem(DRAFT_KEY); } catch {}
 
