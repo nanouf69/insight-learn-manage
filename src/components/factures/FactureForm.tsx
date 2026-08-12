@@ -367,7 +367,7 @@ export function FactureForm() {
       while (hasMore) {
         const { data, error } = await supabase
           .from('apprenants')
-          .select('id, nom, prenom, email, telephone, adresse, ville, code_postal, civilite, formation_choisie, type_apprenant, date_debut_formation, date_fin_formation, montant_ttc, organisme_financeur, societe_nom, societe_siret, societe_tva_intra, societe_adresse, societe_code_postal, societe_ville, facture_contact_nom, facture_contact_email, facture_contact_telephone')
+          .select('id, nom, prenom, email, telephone, adresse, ville, code_postal, civilite, formation_choisie, type_apprenant, date_debut_formation, date_fin_formation, date_debut_cours_en_ligne, date_fin_cours_en_ligne, montant_ttc, organisme_financeur, societe_nom, societe_siret, societe_tva_intra, societe_adresse, societe_code_postal, societe_ville, facture_contact_nom, facture_contact_email, facture_contact_telephone')
           .range(offset, offset + batchSize - 1);
         if (error) break;
         if (data && data.length > 0) {
