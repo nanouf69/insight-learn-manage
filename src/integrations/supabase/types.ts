@@ -1545,6 +1545,54 @@ export type Database = {
           },
         ]
       }
+      factures_supprimees: {
+        Row: {
+          client_nom: string | null
+          date_emission: string | null
+          deleted_at: string
+          deleted_by: string | null
+          deleted_by_email: string | null
+          facture_id: string | null
+          id: string
+          montant_ttc: number | null
+          motif: string | null
+          numero: string
+          snapshot: Json
+          statut: string | null
+          type_financement: string | null
+        }
+        Insert: {
+          client_nom?: string | null
+          date_emission?: string | null
+          deleted_at?: string
+          deleted_by?: string | null
+          deleted_by_email?: string | null
+          facture_id?: string | null
+          id?: string
+          montant_ttc?: number | null
+          motif?: string | null
+          numero: string
+          snapshot?: Json
+          statut?: string | null
+          type_financement?: string | null
+        }
+        Update: {
+          client_nom?: string | null
+          date_emission?: string | null
+          deleted_at?: string
+          deleted_by?: string | null
+          deleted_by_email?: string | null
+          facture_id?: string | null
+          id?: string
+          montant_ttc?: number | null
+          motif?: string | null
+          numero?: string
+          snapshot?: Json
+          statut?: string | null
+          type_financement?: string | null
+        }
+        Relationships: []
+      }
       financeurs_fc: {
         Row: {
           adresse: string | null
