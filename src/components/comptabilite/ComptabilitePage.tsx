@@ -222,7 +222,10 @@ export function ComptabilitePage() {
       date_paiement: f.date_paiement || "",
       numero_engagement: (f as any).numero_engagement || "",
       numero_convention: (f as any).numero_convention || "",
+      apprenant_id: (f as any).apprenant_id || "",
     });
+    setApprenantSearch("");
+    loadApprenantOptions();
   };
 
   const saveFactureEdit = async () => {
