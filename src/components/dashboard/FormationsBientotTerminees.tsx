@@ -83,6 +83,18 @@ export function FormationsBientotTerminees({ onNavigateToApprenant }: Props) {
     try { localStorage.setItem(DISMISS_KEY, JSON.stringify(ids)); } catch { /* ignore */ }
   };
 
+  const dismiss = (id: string) => {
+    // Always re-read the latest localStorage value to avoid overwriting concurrent/other-tab changes.
+    const latest = loadDismissed();
+    if (latest.includes(id)) return;
+    const next = [...latest, id];
+    persistDismissed(next);
+    toast.success("Apprenant masqué", {
+      description: "Il ne réapparaîtra plus dans cette liste. Utilisez « Réafficher » si besoin.",
+      duration: 2500,
+    });
+  };
+
   const { data, isLoading } = useQuery({
     queryKey: ["formations-bientot-terminees", today],
     refetchOnWindowFocus: false,
