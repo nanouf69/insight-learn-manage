@@ -189,7 +189,8 @@ const FACTURE_COUNTER_START = 20260423037;
 const NUMERO_PLACEHOLDER = "À attribuer (brouillon)";
 
 // Réserve un numéro définitif uniquement au moment de la comptabilisation,
-// en se basant sur le max présent en base + 1 (et en respectant le compteur local).
+// en se basant sur le max réel présent en base + 1 (numéros purement numériques),
+// avec vérification d'unicité pour ne jamais réutiliser un numéro déjà enregistré.
 const reserveNumeroFacture = async (): Promise<string> => {
   let baseLocal = FACTURE_COUNTER_START;
   try {
@@ -197,22 +198,48 @@ const reserveNumeroFacture = async (): Promise<string> => {
     const current = stored ? parseInt(stored, 10) : FACTURE_COUNTER_START;
     if (!isNaN(current) && current >= FACTURE_COUNTER_START) baseLocal = current;
   } catch {}
+
   let maxDb = NaN;
   try {
+    // On ignore les brouillons (BR-...) qui sortent en tête d'un tri texte
     const { data: rows } = await supabase
       .from("factures")
       .select("numero")
+      .not("numero", "like", "BR-%")
       .order("numero", { ascending: false })
-      .limit(1);
-    maxDb = rows?.[0]?.numero ? parseInt(String(rows[0].numero), 10) : NaN;
+      .limit(50);
+    const numeros = (rows || [])
+      .map((r: any) => String(r.numero || ""))
+      .filter((n) => /^\d+$/.test(n))
+      .map((n) => parseInt(n, 10))
+      .filter((n) => !isNaN(n));
+    if (numeros.length > 0) maxDb = Math.max(...numeros);
   } catch {}
-  const next = Math.max(
+
+  let next = Math.max(
     baseLocal,
     !isNaN(maxDb) && maxDb >= FACTURE_COUNTER_START ? maxDb + 1 : FACTURE_COUNTER_START
   );
+
+  // Sécurité : si le numéro existe déjà en base, on incrémente jusqu'à en trouver un libre
+  for (let i = 0; i < 50; i++) {
+    try {
+      const { data: existing } = await supabase
+        .from("factures")
+        .select("id")
+        .eq("numero", String(next))
+        .limit(1);
+      if (!existing || existing.length === 0) break;
+    } catch {
+      break;
+    }
+    next += 1;
+  }
+
   try { localStorage.setItem(FACTURE_COUNTER_KEY, String(next + 1)); } catch {}
   return String(next);
 };
+
 
 const defaultFactureData: FactureData = {
   numero: NUMERO_PLACEHOLDER,
