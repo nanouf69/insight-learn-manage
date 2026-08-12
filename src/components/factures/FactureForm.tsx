@@ -491,8 +491,8 @@ export function FactureForm() {
     });
     autoRefDossierRef.current = nouvelleRef;
     if (injected) {
+      // On reste sur l'onglet Financeur pour ne pas perdre la sélection en cours
       toast.success(`Prestation pré-remplie pour ${selectedApprenant.name}`);
-      setActiveMainTab("prestations");
     }
   }, [selectedApprenant?.id]);
 
@@ -1083,15 +1083,15 @@ export function FactureForm() {
       <Card>
         <CardHeader><CardTitle>Type de financeur</CardTitle></CardHeader>
         <CardContent>
-          <RadioGroup value={data.typeFinanceur} onValueChange={(v) => { updateField('typeFinanceur', v as "particulier" | "professionnel"); updateField('selectedApprenantId', null); updateField('selectedOrganisationId', null); }} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className={`flex items-center space-x-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${data.typeFinanceur === "particulier" ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"}`} onClick={() => { updateField('typeFinanceur', "particulier"); updateField('selectedApprenantId', null); updateField('selectedOrganisationId', null); }}>
+          <RadioGroup value={data.typeFinanceur} onValueChange={(v) => updateField('typeFinanceur', v as "particulier" | "professionnel")} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className={`flex items-center space-x-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${data.typeFinanceur === "particulier" ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"}`} onClick={() => updateField('typeFinanceur', "particulier")}>
               <RadioGroupItem value="particulier" id="particulier-top" />
               <Label htmlFor="particulier-top" className="flex items-center gap-3 cursor-pointer flex-1">
                 <User className="w-5 h-5 text-muted-foreground" />
                 <div><div className="font-medium">Particulier</div><div className="text-sm text-muted-foreground">Personne physique finançant à titre personnel</div></div>
               </Label>
             </div>
-            <div className={`flex items-center space-x-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${data.typeFinanceur === "professionnel" ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"}`} onClick={() => { updateField('typeFinanceur', "professionnel"); updateField('selectedApprenantId', null); updateField('selectedOrganisationId', null); }}>
+            <div className={`flex items-center space-x-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${data.typeFinanceur === "professionnel" ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"}`} onClick={() => updateField('typeFinanceur', "professionnel")}>
               <RadioGroupItem value="professionnel" id="professionnel-top" />
               <Label htmlFor="professionnel-top" className="flex items-center gap-3 cursor-pointer flex-1">
                 <Building2 className="w-5 h-5 text-muted-foreground" />
