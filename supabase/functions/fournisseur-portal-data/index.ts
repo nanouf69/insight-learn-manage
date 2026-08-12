@@ -124,11 +124,14 @@ Deno.serve(async (req) => {
     }
 
     // init: return fournisseur + all base collections
-    const [appRes, docRes, facRes, sharedRes] = await Promise.all([
+    const [appRes, docRes, facRes, sharedRes, relevesRes] = await Promise.all([
       supabase.from("fournisseur_apprenants").select("*").eq("fournisseur_id", fid).order("created_at", { ascending: false }),
       supabase.from("fournisseur_documents").select("*").eq("fournisseur_id", fid).order("created_at", { ascending: false }),
       supabase.from("fournisseur_factures").select("*").eq("fournisseur_id", fid).order("created_at", { ascending: false }),
       supabase.from("fournisseur_shared_docs").select("*").eq("fournisseur_id", fid).order("created_at", { ascending: false }),
+      f.comptable_only
+        ? supabase.from("releves_bancaires").select("*").order("mois_annee", { ascending: false })
+        : Promise.resolve({ data: [] }),
     ]);
 
     return json({
@@ -137,6 +140,7 @@ Deno.serve(async (req) => {
       documents: docRes.data || [],
       factures: facRes.data || [],
       shared_docs: sharedRes.data || [],
+      releves: relevesRes.data || [],
     });
   } catch (err) {
     return new Response(
