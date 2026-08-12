@@ -149,15 +149,56 @@ export function ComptabilitePage() {
     date_paiement: string;
     numero_engagement: string;
     numero_convention: string;
+    apprenant_id: string;
   }>({
     numero: "", client_nom: "", type_financement: "particulier",
     montant_ht: "0", tva_taux: "20", statut: "en_attente",
     date_emission: "", date_echeance: "", date_paiement: "",
     numero_engagement: "",
     numero_convention: "",
+    apprenant_id: "",
   });
   const [savingFactureEdit, setSavingFactureEdit] = useState(false);
   const [creatingAvoir, setCreatingAvoir] = useState<string | null>(null);
+  const [apprenantOptions, setApprenantOptions] = useState<any[]>([]);
+  const [apprenantsLoading, setApprenantsLoading] = useState(false);
+  const [apprenantSearch, setApprenantSearch] = useState("");
+
+  const loadApprenantOptions = useCallback(async () => {
+    if (apprenantOptions.length > 0 || apprenantsLoading) return;
+    setApprenantsLoading(true);
+    try {
+      const pageSize = 1000;
+      let from = 0;
+      const rows: any[] = [];
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const { data, error } = await supabase
+          .from("apprenants")
+          .select("id, nom, prenom, email, telephone, ville, code_postal, numero_dossier_cma, formation_choisie, type_apprenant")
+          .is("deleted_at" as any, null)
+          .order("nom", { ascending: true })
+          .range(from, from + pageSize - 1);
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        rows.push(...data);
+        if (data.length < pageSize) break;
+        from += pageSize;
+      }
+      setApprenantOptions(rows);
+    } catch (e) {
+      console.error(e);
+      toast.error("Erreur lors du chargement des apprenants");
+    } finally {
+      setApprenantsLoading(false);
+    }
+  }, [apprenantOptions.length, apprenantsLoading]);
+
+  const filteredApprenantOptions = useMemo(() => {
+    const q = apprenantSearch.trim();
+    if (q.length < 2) return apprenantOptions.slice(0, 30);
+    return filterAndSortApprenants(apprenantOptions, q).slice(0, 30);
+  }, [apprenantOptions, apprenantSearch]);
 
   const openEditFacture = (f: Facture) => {
     if (String(f.id).startsWith("draft-")) {
