@@ -491,8 +491,8 @@ export function FactureForm() {
     });
     autoRefDossierRef.current = nouvelleRef;
     if (injected) {
+      // On reste sur l'onglet Financeur pour ne pas perdre la sélection en cours
       toast.success(`Prestation pré-remplie pour ${selectedApprenant.name}`);
-      setActiveMainTab("prestations");
     }
   }, [selectedApprenant?.id]);
 
