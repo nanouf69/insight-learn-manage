@@ -1084,6 +1084,11 @@ export function FactureForm() {
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input placeholder="Rechercher un apprenant..." className="pl-10" value={searchApprenant} onChange={(e) => setSearchApprenant(e.target.value)} />
                 </div>
+                <div className="text-xs text-muted-foreground">
+                  {apprenantsMatches.length > 50
+                    ? `${apprenantsMatches.length} apprenants trouvés — 50 affichés, affinez la recherche`
+                    : `${apprenantsMatches.length} apprenant(s)`}
+                </div>
                 <ScrollArea className="h-[300px] rounded-md border">
                   <div className="p-2 space-y-2">
                     {filteredApprenants.map((apprenant) => (
