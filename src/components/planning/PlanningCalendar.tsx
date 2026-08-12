@@ -178,12 +178,37 @@ export function PlanningCalendar() {
         .gte("date_debut", monthStart)
         .lte("date_debut", monthEnd);
 
-      const { data: allApprenants } = await supabase
-        .from("apprenants")
-        .select("id, nom, prenom, telephone, email, date_examen_pratique, heure_examen_pratique, formation_choisie");
+      // Charger tous les apprenants : l'API limite chaque réponse à 1 000 lignes.
+      // Sans pagination, les candidats plus anciens/récents hors de cette première
+      // page (par exemple HAMID ARGA) sont enregistrés mais invisibles au planning.
+      const allApprenants: Array<{
+        id: string;
+        nom: string;
+        prenom: string;
+        telephone: string | null;
+        email: string | null;
+        date_examen_pratique: string | null;
+        heure_examen_pratique: string | null;
+        formation_choisie: string | null;
+      }> = [];
+      const pageSize = 1000;
+      let pageStart = 0;
+      while (true) {
+        const { data: apprenantsPage, error: apprenantsError } = await supabase
+          .from("apprenants")
+          .select("id, nom, prenom, telephone, email, date_examen_pratique, heure_examen_pratique, formation_choisie")
+          .is("deleted_at", null)
+          .order("id")
+          .range(pageStart, pageStart + pageSize - 1);
+        if (apprenantsError) throw apprenantsError;
+        if (!apprenantsPage || apprenantsPage.length === 0) break;
+        allApprenants.push(...apprenantsPage);
+        if (apprenantsPage.length < pageSize) break;
+        pageStart += pageSize;
+      }
 
       const appMap: Record<string, { nom: string; prenom: string; telephone: string; email: string; dateExam: string; formation: string }> = {};
-      (allApprenants || []).forEach(a => {
+      allApprenants.forEach(a => {
         appMap[a.id] = {
           nom: a.nom,
           prenom: a.prenom,
@@ -250,7 +275,7 @@ export function PlanningCalendar() {
       // est renseignée (via import planning CMA, saisie manuelle ou document CMA).
       // L'heure par défaut est "À définir" si elle n'a pas encore été extraite/saisie.
       const examByDate: Record<string, ExamCandidate[]> = {};
-      (allApprenants || []).forEach(a => {
+      allApprenants.forEach(a => {
         if (a.date_examen_pratique) {
           if (!examByDate[a.date_examen_pratique]) examByDate[a.date_examen_pratique] = [];
           const type = (a.formation_choisie || '').toLowerCase().includes('taxi') ? 'TAXI' : 'VTC';
