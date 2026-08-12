@@ -2288,6 +2288,90 @@ export function ComptabilitePage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Confirmation de suppression avec motif */}
+      <Dialog open={!!deletingTarget} onOpenChange={(o) => { if (!o && !deleteBusy) { setDeletingTarget(null); setDeleteMotif(""); } }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-destructive">Supprimer la facture</DialogTitle>
+          </DialogHeader>
+          {deletingTarget && (
+            <div className="space-y-3">
+              <p className="text-sm">
+                Facture <strong>{deletingTarget.numero}</strong> — {deletingTarget.client_nom} —{" "}
+                <strong>{formatMontant(Number(deletingTarget.montant_ttc))}</strong>
+              </p>
+              <p className="text-xs text-muted-foreground">
+                La facture sera retirée de la liste, mais une trace permanente (numéro, client, montant, date, auteur de la suppression) sera conservée dans « Factures supprimées ».
+              </p>
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">Motif de la suppression (recommandé)</label>
+                <Input
+                  placeholder="Ex : doublon, erreur de saisie…"
+                  value={deleteMotif}
+                  onChange={(e) => setDeleteMotif(e.target.value)}
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setDeletingTarget(null); setDeleteMotif(""); }} disabled={deleteBusy}>
+              Annuler
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteFacture} disabled={deleteBusy}>
+              <Trash2 className="h-4 w-4 mr-2" />
+              {deleteBusy ? "Suppression..." : "Supprimer"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Registre des factures supprimées */}
+      <Dialog open={showTrash} onOpenChange={setShowTrash}>
+        <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Trash2 className="h-4 w-4 text-destructive" /> Factures supprimées (trace)
+              <Badge variant="secondary">{facturesSupprimees.length}</Badge>
+            </DialogTitle>
+          </DialogHeader>
+          {trashLoading ? (
+            <p className="text-sm text-muted-foreground py-6 text-center">Chargement...</p>
+          ) : facturesSupprimees.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-6 text-center">Aucune facture supprimée</p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>N°</TableHead>
+                  <TableHead>Client</TableHead>
+                  <TableHead className="text-right">Montant TTC</TableHead>
+                  <TableHead>Émission</TableHead>
+                  <TableHead>Motif</TableHead>
+                  <TableHead>Supprimée par</TableHead>
+                  <TableHead>Le</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {facturesSupprimees.map((d) => (
+                  <TableRow key={d.id}>
+                    <TableCell className="font-medium">{d.numero}</TableCell>
+                    <TableCell>{d.client_nom || "—"}</TableCell>
+                    <TableCell className="text-right">{formatMontant(Number(d.montant_ttc || 0))}</TableCell>
+                    <TableCell>{formatDate(d.date_emission)}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground">{d.motif || "—"}</TableCell>
+                    <TableCell className="text-xs">{d.deleted_by_email || "—"}</TableCell>
+                    <TableCell className="text-xs">
+                      {d.deleted_at ? format(new Date(d.deleted_at), "dd/MM/yyyy HH:mm", { locale: fr }) : "—"}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
+
   );
 }
