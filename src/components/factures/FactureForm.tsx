@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo, useDeferredValue } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
@@ -410,8 +410,14 @@ export function FactureForm() {
     setData(prev => ({ ...prev, [field]: value }));
   };
 
-  const selectedApprenant = apprenants.find(a => a.id === data.selectedApprenantId);
-  const selectedOrganisation = organisations.find(o => o.id === data.selectedOrganisationId);
+  const selectedApprenant = useMemo(
+    () => apprenants.find(a => a.id === data.selectedApprenantId),
+    [apprenants, data.selectedApprenantId]
+  );
+  const selectedOrganisation = useMemo(
+    () => organisations.find(o => o.id === data.selectedOrganisationId),
+    [organisations, data.selectedOrganisationId]
+  );
 
   // Charge le financeur (table financeurs_fc) pour l'apprenant sélectionné — fallback société
   useEffect(() => {
