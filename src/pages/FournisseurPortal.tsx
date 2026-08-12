@@ -429,6 +429,7 @@ export default function FournisseurPortal() {
         if (Array.isArray(payload.documents)) setDocuments(payload.documents as FournisseurDocument[]);
         if (Array.isArray(payload.factures)) setFactures(payload.factures as FournisseurFacture[]);
         if (Array.isArray(payload.shared_docs)) setSharedDocs(payload.shared_docs);
+        if (Array.isArray(payload.releves)) setReleves(payload.releves);
       } catch (e) {
         setError("Erreur de chargement");
       } finally {
