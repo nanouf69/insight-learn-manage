@@ -129,6 +129,12 @@ export function ComptabilitePage() {
   const [draftPreview, setDraftPreview] = useState<Facture | null>(null);
   const [validatingDraft, setValidatingDraft] = useState(false);
   const [editingFacture, setEditingFacture] = useState<Facture | null>(null);
+  const [deletingTarget, setDeletingTarget] = useState<Facture | null>(null);
+  const [deleteMotif, setDeleteMotif] = useState("");
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [showTrash, setShowTrash] = useState(false);
+  const [facturesSupprimees, setFacturesSupprimees] = useState<any[]>([]);
+  const [trashLoading, setTrashLoading] = useState(false);
   const [editFactureForm, setEditFactureForm] = useState<{
     numero: string;
     client_nom: string;
