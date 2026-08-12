@@ -551,6 +551,20 @@ export function ComptabilitePage() {
     } else {
       const drafts = loadDrafts();
       setFactures([...drafts, ...(data || [])]);
+      const ids = Array.from(
+        new Set((data || []).map((f: any) => f.apprenant_id).filter(Boolean)),
+      ) as string[];
+      if (ids.length) {
+        const { data: apprs } = await supabase
+          .from("apprenants")
+          .select("id, nom, prenom")
+          .in("id", ids);
+        const map: Record<string, string> = {};
+        (apprs || []).forEach((a: any) => {
+          map[a.id] = `${a.prenom || ""} ${a.nom || ""}`.trim();
+        });
+        setApprenantNames(map);
+      }
     }
     setLoading(false);
   };
