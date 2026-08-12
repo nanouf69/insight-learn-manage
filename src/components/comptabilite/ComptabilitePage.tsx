@@ -1326,6 +1326,14 @@ export function ComptabilitePage() {
             <Button variant="outline" onClick={handleExportCSV} className="gap-2">
               <Download className="h-4 w-4" /> Export CSV
             </Button>
+            <Button
+              variant="outline"
+              className="gap-2 text-destructive hover:text-destructive"
+              onClick={() => { setShowTrash(true); fetchFacturesSupprimees(); }}
+            >
+              <Trash2 className="h-4 w-4" /> Factures supprimées
+            </Button>
+
           </div>
 
           <Card>
