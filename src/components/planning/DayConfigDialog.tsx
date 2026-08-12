@@ -234,7 +234,14 @@ export function DayConfigDialog({ open, onClose, date, initialType, initialSlots
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-[380px] p-0" align="start">
-                      <Command>
+                      <Command
+                        filter={(value, search) => {
+                          const q = normalize(search);
+                          if (!q) return 1;
+                          const v = normalize(value);
+                          return q.split(/\s+/).every((t) => v.includes(t)) ? 1 : 0;
+                        }}
+                      >
                         <CommandInput placeholder="Rechercher nom ou prénom…" />
                         <CommandList>
                           <CommandEmpty>Aucun résultat</CommandEmpty>
