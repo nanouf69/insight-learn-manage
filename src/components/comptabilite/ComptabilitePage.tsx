@@ -853,7 +853,7 @@ export function ComptabilitePage() {
         (filterTypeFlux === "ventes" && !isAchat);
       return matchSearch && matchStatut && matchFinancement && matchTypeFlux;
     });
-  }, [allFactures, search, filterStatut, filterFinancement, filterTypeFlux]);
+  }, [allFactures, search, filterStatut, filterFinancement, filterTypeFlux, apprenantNames]);
 
   const totalCA = useMemo(() => factures.reduce((s, f) => (f.statut !== "annulee" && f.statut !== "brouillon") ? s + Number(f.montant_ttc) : s, 0), [factures]);
   const totalPaye = useMemo(() => factures.filter(f => f.statut === "payee").reduce((s, f) => s + Number(f.montant_ttc), 0), [factures]);
