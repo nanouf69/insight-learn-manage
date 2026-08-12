@@ -13,6 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
 import { supabase } from "@/integrations/supabase/client";
+import { filterAndSortApprenants } from "@/lib/apprenantSearch";
 import { generateDraftPDF, factureToDraftShape } from "@/lib/pdf/draft-facture";
 import { 
   Search, Euro, TrendingUp, Clock, CheckCircle, AlertTriangle,
@@ -149,15 +150,56 @@ export function ComptabilitePage() {
     date_paiement: string;
     numero_engagement: string;
     numero_convention: string;
+    apprenant_id: string;
   }>({
     numero: "", client_nom: "", type_financement: "particulier",
     montant_ht: "0", tva_taux: "20", statut: "en_attente",
     date_emission: "", date_echeance: "", date_paiement: "",
     numero_engagement: "",
     numero_convention: "",
+    apprenant_id: "",
   });
   const [savingFactureEdit, setSavingFactureEdit] = useState(false);
   const [creatingAvoir, setCreatingAvoir] = useState<string | null>(null);
+  const [apprenantOptions, setApprenantOptions] = useState<any[]>([]);
+  const [apprenantsLoading, setApprenantsLoading] = useState(false);
+  const [apprenantSearch, setApprenantSearch] = useState("");
+
+  const loadApprenantOptions = useCallback(async () => {
+    if (apprenantOptions.length > 0 || apprenantsLoading) return;
+    setApprenantsLoading(true);
+    try {
+      const pageSize = 1000;
+      let from = 0;
+      const rows: any[] = [];
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const { data, error } = await supabase
+          .from("apprenants")
+          .select("id, nom, prenom, email, telephone, ville, code_postal, numero_dossier_cma, formation_choisie, type_apprenant")
+          .is("deleted_at" as any, null)
+          .order("nom", { ascending: true })
+          .range(from, from + pageSize - 1);
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        rows.push(...data);
+        if (data.length < pageSize) break;
+        from += pageSize;
+      }
+      setApprenantOptions(rows);
+    } catch (e) {
+      console.error(e);
+      toast.error("Erreur lors du chargement des apprenants");
+    } finally {
+      setApprenantsLoading(false);
+    }
+  }, [apprenantOptions.length, apprenantsLoading]);
+
+  const filteredApprenantOptions = useMemo(() => {
+    const q = apprenantSearch.trim();
+    if (q.length < 2) return apprenantOptions.slice(0, 30);
+    return filterAndSortApprenants(apprenantOptions, q).slice(0, 30);
+  }, [apprenantOptions, apprenantSearch]);
 
   const openEditFacture = (f: Facture) => {
     if (String(f.id).startsWith("draft-")) {
@@ -180,7 +222,10 @@ export function ComptabilitePage() {
       date_paiement: f.date_paiement || "",
       numero_engagement: (f as any).numero_engagement || "",
       numero_convention: (f as any).numero_convention || "",
+      apprenant_id: (f as any).apprenant_id || "",
     });
+    setApprenantSearch("");
+    loadApprenantOptions();
   };
 
   const saveFactureEdit = async () => {
@@ -205,6 +250,7 @@ export function ComptabilitePage() {
         date_paiement: editFactureForm.date_paiement || null,
         numero_engagement: editFactureForm.numero_engagement?.trim() || null,
         numero_convention: editFactureForm.numero_convention?.trim() || null,
+        apprenant_id: editFactureForm.apprenant_id || null,
       };
       const { error } = await supabase.from("factures").update(payload).eq("id", editingFacture.id);
       if (error) throw error;
@@ -2210,6 +2256,64 @@ export function ComptabilitePage() {
                 value={editFactureForm.client_nom}
                 onChange={(e) => setEditFactureForm(f => ({ ...f, client_nom: e.target.value }))}
               />
+            </div>
+            <div className="col-span-2 space-y-1 rounded-md border p-3 bg-muted/30">
+              <label className="text-xs font-medium">Apprenant rattaché</label>
+              <div className="text-sm">
+                {editFactureForm.apprenant_id ? (
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-medium">
+                      👤 {(() => {
+                        const a = apprenantOptions.find((x) => x.id === editFactureForm.apprenant_id);
+                        return a ? `${a.prenom || ""} ${a.nom || ""}`.trim() : (apprenantNames[editFactureForm.apprenant_id] || "Apprenant sélectionné");
+                      })()}
+                    </span>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 px-2 text-destructive"
+                      onClick={() => setEditFactureForm(f => ({ ...f, apprenant_id: "" }))}
+                    >
+                      Retirer
+                    </Button>
+                  </div>
+                ) : (
+                  <span className="text-muted-foreground">Aucun apprenant rattaché</span>
+                )}
+              </div>
+              <Input
+                className="mt-2"
+                placeholder="Rechercher un apprenant (nom, ville, tél, code postal...)"
+                value={apprenantSearch}
+                onChange={(e) => setApprenantSearch(e.target.value)}
+                onFocus={loadApprenantOptions}
+              />
+              {apprenantsLoading && (
+                <p className="text-xs text-muted-foreground">Chargement des apprenants...</p>
+              )}
+              {!apprenantsLoading && apprenantSearch.trim().length >= 2 && (
+                <div className="max-h-48 overflow-y-auto border rounded-md divide-y bg-background">
+                  {filteredApprenantOptions.length === 0 && (
+                    <div className="p-2 text-xs text-muted-foreground">Aucun apprenant trouvé</div>
+                  )}
+                  {filteredApprenantOptions.map((a) => (
+                    <button
+                      key={a.id}
+                      type="button"
+                      className="w-full text-left p-2 text-sm hover:bg-muted"
+                      onClick={() => {
+                        setEditFactureForm(f => ({ ...f, apprenant_id: a.id }));
+                        setApprenantSearch("");
+                      }}
+                    >
+                      <div className="font-medium">{`${a.prenom || ""} ${a.nom || ""}`.trim()}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {[a.email, a.telephone, a.ville, a.code_postal].filter(Boolean).join(" · ")}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             <div className="space-y-1">
               <label className="text-xs text-muted-foreground">Type de financement</label>
