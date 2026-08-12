@@ -2959,6 +2959,25 @@ export function ExamenReussitePage() {
                                     </AlertDialogContent>
                                   </AlertDialog>
                                 )}
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-7 w-7" title="Déplacer à la prochaine session">
+                                      <CalendarPlus className="h-3.5 w-3.5 text-orange-600" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Déplacer {a.prenom} {a.nom} à la prochaine session ?</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Le candidat sera marqué « Décalé », sa réservation actuelle sera annulée et il sera automatiquement inclus dans la prochaine session (lettre CMA + candidats à former).
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                      <AlertDialogAction onClick={() => handleDecalerProchaineSession(a.id, `${a.nom} ${a.prenom}`)}>Déplacer</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
                                 <Popover>
                                   <PopoverTrigger asChild>
                                     <Button variant="ghost" size="icon" className="h-7 w-7" title={hasReservation ? "Changer la date" : "Choisir une date"}>
@@ -3316,6 +3335,25 @@ export function ExamenReussitePage() {
                                     </AlertDialogContent>
                                   </AlertDialog>
                                 )}
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-7 w-7" title="Déplacer à la prochaine session">
+                                      <CalendarPlus className="h-3.5 w-3.5 text-orange-600" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Déplacer {a.prenom} {a.nom} à la prochaine session ?</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Le candidat sera marqué « Décalé », sa réservation actuelle sera annulée et il sera automatiquement inclus dans la prochaine session (lettre CMA + candidats à former).
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                      <AlertDialogAction onClick={() => handleDecalerProchaineSession(a.id, `${a.nom} ${a.prenom}`)}>Déplacer</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
                                 <Popover>
                                   <PopoverTrigger asChild>
                                     <Button variant="ghost" size="icon" className="h-7 w-7" title={hasReservation ? "Changer la date" : "Choisir une date"}>
