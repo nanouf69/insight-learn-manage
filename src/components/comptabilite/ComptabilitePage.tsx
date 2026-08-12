@@ -553,6 +553,65 @@ export function ComptabilitePage() {
     setLoading(false);
   };
 
+  const fetchFacturesSupprimees = useCallback(async () => {
+    setTrashLoading(true);
+    const { data, error } = await supabase
+      .from("factures_supprimees")
+      .select("*")
+      .order("deleted_at", { ascending: false });
+    if (error) {
+      console.error(error);
+      toast.error("Erreur lors du chargement des factures supprimées");
+    } else {
+      setFacturesSupprimees(data || []);
+    }
+    setTrashLoading(false);
+  }, []);
+
+  const handleDeleteFacture = async () => {
+    if (!deletingTarget) return;
+    setDeleteBusy(true);
+    try {
+      const f = deletingTarget;
+      const { data: userData } = await supabase.auth.getUser();
+      const user = userData?.user;
+
+      // 1) Trace permanente AVANT suppression
+      const { error: traceError } = await supabase.from("factures_supprimees").insert({
+        facture_id: f.id,
+        numero: f.numero,
+        client_nom: f.client_nom,
+        type_financement: f.type_financement,
+        montant_ttc: Number(f.montant_ttc),
+        date_emission: f.date_emission,
+        statut: f.statut,
+        motif: deleteMotif.trim() || null,
+        snapshot: f as any,
+        deleted_by: user?.id ?? null,
+        deleted_by_email: user?.email ?? null,
+      });
+      if (traceError) throw traceError;
+
+      // 2) Suppression des paiements liés puis de la facture
+      await supabase.from("facture_paiements").delete().eq("facture_id", f.id);
+      const { error: delError } = await supabase.from("factures").delete().eq("id", f.id);
+      if (delError) throw delError;
+
+      toast.success(`Facture ${f.numero} supprimée — trace conservée`);
+      setDeletingTarget(null);
+      setDeleteMotif("");
+      await fetchFactures();
+      await fetchFacturesSupprimees();
+    } catch (e: any) {
+      console.error(e);
+      toast.error(`Suppression impossible : ${e.message ?? e}`);
+    } finally {
+      setDeleteBusy(false);
+    }
+  };
+
+
+
   const fetchReleves = useCallback(async () => {
     setRelevesLoading(true);
     const { data, error } = await supabase
