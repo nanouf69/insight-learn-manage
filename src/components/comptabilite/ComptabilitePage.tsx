@@ -120,6 +120,7 @@ const GC_REQUISITION_KEY = "ftransport_gc_requisition";
 
 export function ComptabilitePage() {
   const [factures, setFactures] = useState<Facture[]>([]);
+  const [apprenantNames, setApprenantNames] = useState<Record<string, string>>({});
   const [fournisseurFactures, setFournisseurFactures] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
