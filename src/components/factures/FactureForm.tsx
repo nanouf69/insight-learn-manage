@@ -367,7 +367,7 @@ export function FactureForm() {
       while (hasMore) {
         const { data, error } = await supabase
           .from('apprenants')
-          .select('id, nom, prenom, email, telephone, adresse, ville, code_postal, civilite, formation_choisie, type_apprenant, date_debut_formation, date_fin_formation, montant_ttc, organisme_financeur, societe_nom, societe_siret, societe_tva_intra, societe_adresse, societe_code_postal, societe_ville, facture_contact_nom, facture_contact_email, facture_contact_telephone')
+          .select('id, nom, prenom, email, telephone, adresse, ville, code_postal, civilite, formation_choisie, type_apprenant, date_debut_formation, date_fin_formation, date_debut_cours_en_ligne, date_fin_cours_en_ligne, montant_ttc, organisme_financeur, societe_nom, societe_siret, societe_tva_intra, societe_adresse, societe_code_postal, societe_ville, facture_contact_nom, facture_contact_email, facture_contact_telephone')
           .range(offset, offset + batchSize - 1);
         if (error) break;
         if (data && data.length > 0) {
@@ -489,6 +489,38 @@ export function FactureForm() {
       setActiveMainTab("prestations");
     }
   }, [selectedApprenant?.id]);
+
+  // Repli agenda : si la fiche apprenant n'a pas de dates, on récupère celles de sa session
+  useEffect(() => {
+    const apprenantId = data.selectedApprenantId;
+    if (!apprenantId) return;
+    if (selectedApprenant?.dateDebutFormation && selectedApprenant?.dateFinFormation) return;
+    let cancelled = false;
+    (async () => {
+      const { data: sa } = await supabase
+        .from('session_apprenants')
+        .select('sessions:session_id(date_debut, date_fin)')
+        .eq('apprenant_id', apprenantId)
+        .order('created_at', { ascending: false })
+        .limit(1);
+      const s: any = sa?.[0]?.sessions;
+      if (cancelled || !s) return;
+      const debut = s.date_debut || '';
+      const fin = s.date_fin || s.date_debut || '';
+      if (!debut) return;
+      setData(prev => ({
+        ...prev,
+        lignes: prev.lignes.map(l =>
+          l.type === 'session' && l.stagiaire === selectedApprenant?.name && !l.dateDebut
+            ? { ...l, dateDebut: debut, dateFin: l.dateFin || fin }
+            : l
+        ),
+      }));
+    })();
+    return () => { cancelled = true; };
+  }, [data.selectedApprenantId, selectedApprenant?.name, selectedApprenant?.dateDebutFormation, selectedApprenant?.dateFinFormation]);
+
+
 
   // Auto-remplit la réf dossier à la sélection d'une organisation (sans nom de stagiaire)
   useEffect(() => {
