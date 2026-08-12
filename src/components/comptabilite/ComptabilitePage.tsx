@@ -49,6 +49,7 @@ interface Facture {
   date_echeance: string | null;
   date_paiement: string | null;
   client_opco: string | null;
+  apprenant_id?: string | null;
   _draftRaw?: any;
 }
 
