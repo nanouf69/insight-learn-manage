@@ -3947,15 +3947,22 @@ export function ExamenReussitePage() {
                           {(expectedType === 'taxi' || taxiReserved.length > 0) && (
                             <div className="mb-2 space-y-1">
                               {taxiReserved.length > 0 && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="h-6 w-full text-[10px] gap-1"
-                                  onClick={() => downloadEmargement('taxi', taxiReserved)}
-                                >
-                                  <Download className="h-3 w-3" /> Émargement TAXI
-                                </Button>
+                                <>
+                                  <div className="flex items-center justify-between text-[9px] font-bold uppercase tracking-wide text-amber-700">
+                                    <span>TAXI</span>
+                                    <span>{taxiReserved.length}/{dayMax}</span>
+                                  </div>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-6 w-full text-[10px] gap-1"
+                                    onClick={() => downloadEmargement('taxi', taxiReserved)}
+                                  >
+                                    <Download className="h-3 w-3" /> Émargement TAXI
+                                  </Button>
+                                </>
                               )}
+
                               {taxiReserved.length > 0 ? taxiReserved.map((a: any, idx: number) => (
                                 <div key={a.id} className={`text-[11px] px-1.5 py-1 rounded mb-1 border ${taxiOverbooked && idx >= dayMax ? 'bg-destructive/10 border-destructive/40 text-destructive' : 'bg-amber-100 border-amber-200'}`}>
                                   <div className="flex items-start gap-1">
