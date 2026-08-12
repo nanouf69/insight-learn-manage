@@ -542,23 +542,45 @@ export function FactureForm() {
   }, [selectedOrganisation?.id]);
 
 
-  const filteredApprenants = apprenants.filter(a => 
-    a.name.toLowerCase().includes(searchApprenant.toLowerCase()) ||
-    a.email.toLowerCase().includes(searchApprenant.toLowerCase())
-  );
+  // Recherche différée + limitation d'affichage : évite de rendre des milliers de cartes
+  const deferredSearchApprenant = useDeferredValue(searchApprenant);
+  const MAX_RESULTATS = 50;
 
-  const filteredOrganisations = organisations.filter(o => 
-    o.name.toLowerCase().includes(searchOrganisation.toLowerCase()) ||
-    o.contact.toLowerCase().includes(searchOrganisation.toLowerCase())
-  );
+  const apprenantsMatches = useMemo(() => {
+    const q = deferredSearchApprenant.trim().toLowerCase();
+    if (!q) return apprenants;
+    return apprenants.filter(a =>
+      a.name.toLowerCase().includes(q) || a.email.toLowerCase().includes(q)
+    );
+  }, [apprenants, deferredSearchApprenant]);
 
-  const filteredSessions = sessions.filter(s => 
-    s.title.toLowerCase().includes(searchSession.toLowerCase()) ||
-    s.formation.toLowerCase().includes(searchSession.toLowerCase())
-  );
+  const filteredApprenants = useMemo(() => {
+    const base = apprenantsMatches.slice(0, MAX_RESULTATS);
+    if (selectedApprenant && !base.some(a => a.id === selectedApprenant.id)) {
+      return [selectedApprenant, ...base];
+    }
+    return base;
+  }, [apprenantsMatches, selectedApprenant]);
 
-  const filteredProduits = produits.filter(p => 
-    p.nom.toLowerCase().includes(searchProduit.toLowerCase())
+  const filteredOrganisations = useMemo(() => {
+    const q = searchOrganisation.trim().toLowerCase();
+    const list = q
+      ? organisations.filter(o => o.name.toLowerCase().includes(q) || o.contact.toLowerCase().includes(q))
+      : organisations;
+    return list.slice(0, MAX_RESULTATS);
+  }, [organisations, searchOrganisation]);
+
+  const filteredSessions = useMemo(() => {
+    const q = searchSession.trim().toLowerCase();
+    const list = q
+      ? sessions.filter(s => s.title.toLowerCase().includes(q) || s.formation.toLowerCase().includes(q))
+      : sessions;
+    return list.slice(0, MAX_RESULTATS);
+  }, [sessions, searchSession]);
+
+  const filteredProduits = useMemo(
+    () => produits.filter(p => p.nom.toLowerCase().includes(searchProduit.trim().toLowerCase())),
+    [searchProduit]
   );
 
   const getTypeBadge = (type: string) => {
