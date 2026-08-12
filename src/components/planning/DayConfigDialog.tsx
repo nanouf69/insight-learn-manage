@@ -249,7 +249,7 @@ export function DayConfigDialog({ open, onClose, date, initialType, initialSlots
                             {allApprenants.map((a) => (
                               <CommandItem
                                 key={a.id}
-                                value={`${a.nom} ${a.prenom}`}
+                                value={`${a.nom} ${a.prenom} ${a.prenom} ${a.nom} ${a.formation_choisie ?? ""} ${a.id}`}
                                 onSelect={() => {
                                   updateSlot(i, { apprenant_id: a.id, nom: a.nom, prenom: a.prenom });
                                   setPickerOpenIdx(null);
