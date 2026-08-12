@@ -272,6 +272,7 @@ export function FactureForm() {
   const [searchSession, setSearchSession] = useState("");
   const [activeMainTab, setActiveMainTab] = useState<"financeur" | "prestations">("financeur");
   const [searchProduit, setSearchProduit] = useState("");
+  const [factureValidee, setFactureValidee] = useState<string | null>(null);
   const [isAddLineDialogOpen, setIsAddLineDialogOpen] = useState(false);
   const [addLineType, setAddLineType] = useState<"session" | "produit">("session");
   const [apprenants, setApprenants] = useState<ApprenantItem[]>([]);
@@ -855,6 +856,8 @@ export function FactureForm() {
       if (error) throw error;
 
       toast.success(`Facture N°${numeroDefinitif} enregistrée en comptabilité — nouvelle facture vierge`);
+      setFactureValidee(numeroDefinitif);
+
       // Nettoyer le brouillon une fois la facture validée
       try { localStorage.removeItem(DRAFT_KEY); } catch {}
 
@@ -907,6 +910,30 @@ export function FactureForm() {
           <Button onClick={handleExport}><Download className="w-4 h-4 mr-2" />Télécharger PDF</Button>
         </div>
       </div>
+
+      {/* Confirmation visuelle : facture validée */}
+      {factureValidee && (
+        <Card className="border-4 border-green-600 bg-green-50 dark:bg-green-950/30">
+          <CardContent className="py-6 text-center relative">
+            <button
+              onClick={() => setFactureValidee(null)}
+              className="absolute right-3 top-3 text-sm text-muted-foreground hover:text-foreground"
+              aria-label="Fermer"
+            >
+              ✕
+            </button>
+            <p className="text-3xl sm:text-4xl font-extrabold tracking-wide text-green-700 dark:text-green-400">
+              ✅ FACTURE VALIDÉE
+            </p>
+            <p className="mt-2 text-4xl sm:text-5xl font-black text-green-800 dark:text-green-300">
+              N° {factureValidee}
+            </p>
+            <p className="mt-2 text-sm text-green-700/80 dark:text-green-400/80">
+              Enregistrée en comptabilité — vous pouvez saisir une nouvelle facture.
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Récapitulatif du financeur — visible en permanence pendant la création */}
       {(() => {
