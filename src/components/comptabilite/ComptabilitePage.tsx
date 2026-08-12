@@ -49,6 +49,7 @@ interface Facture {
   date_echeance: string | null;
   date_paiement: string | null;
   client_opco: string | null;
+  apprenant_id?: string | null;
   _draftRaw?: any;
 }
 
@@ -119,6 +120,7 @@ const GC_REQUISITION_KEY = "ftransport_gc_requisition";
 
 export function ComptabilitePage() {
   const [factures, setFactures] = useState<Facture[]>([]);
+  const [apprenantNames, setApprenantNames] = useState<Record<string, string>>({});
   const [fournisseurFactures, setFournisseurFactures] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -549,6 +551,20 @@ export function ComptabilitePage() {
     } else {
       const drafts = loadDrafts();
       setFactures([...drafts, ...(data || [])]);
+      const ids = Array.from(
+        new Set((data || []).map((f: any) => f.apprenant_id).filter(Boolean)),
+      ) as string[];
+      if (ids.length) {
+        const { data: apprs } = await supabase
+          .from("apprenants")
+          .select("id, nom, prenom")
+          .in("id", ids);
+        const map: Record<string, string> = {};
+        (apprs || []).forEach((a: any) => {
+          map[a.id] = `${a.prenom || ""} ${a.nom || ""}`.trim();
+        });
+        setApprenantNames(map);
+      }
     }
     setLoading(false);
   };
@@ -826,7 +842,8 @@ export function ComptabilitePage() {
     return allFactures.filter((f) => {
       const matchSearch =
         f.numero.toLowerCase().includes(search.toLowerCase()) ||
-        f.client_nom.toLowerCase().includes(search.toLowerCase());
+        f.client_nom.toLowerCase().includes(search.toLowerCase()) ||
+        (f.apprenant_id ? (apprenantNames[f.apprenant_id] || "").toLowerCase().includes(search.toLowerCase()) : false);
       const matchStatut = filterStatut === "all" || f.statut === filterStatut;
       const matchFinancement = filterFinancement === "all" || f.type_financement === filterFinancement;
       const isAchat = f.type_financement === "fournisseur";
@@ -836,7 +853,7 @@ export function ComptabilitePage() {
         (filterTypeFlux === "ventes" && !isAchat);
       return matchSearch && matchStatut && matchFinancement && matchTypeFlux;
     });
-  }, [allFactures, search, filterStatut, filterFinancement, filterTypeFlux]);
+  }, [allFactures, search, filterStatut, filterFinancement, filterTypeFlux, apprenantNames]);
 
   const totalCA = useMemo(() => factures.reduce((s, f) => (f.statut !== "annulee" && f.statut !== "brouillon") ? s + Number(f.montant_ttc) : s, 0), [factures]);
   const totalPaye = useMemo(() => factures.filter(f => f.statut === "payee").reduce((s, f) => s + Number(f.montant_ttc), 0), [factures]);
@@ -1405,7 +1422,14 @@ export function ComptabilitePage() {
                             )}
                           </div>
                         </TableCell>
-                        <TableCell>{f.client_nom}</TableCell>
+                        <TableCell>
+                          <div>{f.client_nom}</div>
+                          {f.apprenant_id && apprenantNames[f.apprenant_id] && (
+                            <div className="text-xs text-muted-foreground mt-0.5">
+                              👤 {apprenantNames[f.apprenant_id]}
+                            </div>
+                          )}
+                        </TableCell>
                         <TableCell>
                           <Badge variant="outline">{financementLabels[f.type_financement] || f.type_financement}</Badge>
                         </TableCell>
