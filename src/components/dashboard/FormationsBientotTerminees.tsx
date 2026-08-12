@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CalendarClock, Phone, Mail, X, RotateCcw } from "lucide-react";
 import { getSessionEndMs, getSessionDurationMinutes, getAccessCutoffMs } from "@/lib/reports/session-duration";
+import { toast } from "sonner";
 
 const isoDate = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
