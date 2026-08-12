@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
@@ -432,18 +432,27 @@ export function FactureForm() {
     return () => { cancelled = true; };
   }, [data.selectedApprenantId]);
 
+  // Mémorise la dernière réf dossier remplie automatiquement pour pouvoir la remplacer
+  const autoRefDossierRef = useRef<string>("");
+  const refDossierEstAuto = (valeur: string) =>
+    !valeur || valeur === autoRefDossierRef.current;
+
   // Auto-remplit la facture (réf dossier + ligne formation) à la sélection d'un apprenant
   useEffect(() => {
     if (!selectedApprenant) return;
     let injected = false;
+    const nouvelleRef = selectedApprenant.name;
     setData(prev => {
       const dejaInjecte = prev.lignes.some(
         l => l.type === "session" && l.stagiaire === selectedApprenant.name
       );
       const fcKey = (selectedApprenant.formationChoisie || '').trim();
       const designation = FORMATION_LABELS[fcKey] || fcKey || selectedApprenant.typeApprenant || "Formation";
+      // Nouveau stagiaire => nouveau numéro à attribuer à l'enregistrement
+      const numeroReinitialise = NUMERO_PLACEHOLDER;
+      const refDossier = refDossierEstAuto(prev.refDossier) ? nouvelleRef : prev.refDossier;
       if (dejaInjecte) {
-        return { ...prev, refDossier: prev.refDossier || selectedApprenant.name };
+        return { ...prev, refDossier, numero: numeroReinitialise, numeroInterne: numeroReinitialise };
       }
       injected = true;
       // Remplace les lignes "session" d'autres stagiaires par celle de l'apprenant sélectionné
@@ -452,7 +461,9 @@ export function FactureForm() {
       );
       return {
         ...prev,
-        refDossier: prev.refDossier || selectedApprenant.name,
+        refDossier,
+        numero: numeroReinitialise,
+        numeroInterne: numeroReinitialise,
         lignes: [
           ...lignesConservees,
           {
@@ -471,6 +482,7 @@ export function FactureForm() {
         ],
       };
     });
+    autoRefDossierRef.current = nouvelleRef;
     if (injected) {
       toast.success(`Prestation pré-remplie pour ${selectedApprenant.name}`);
       setActiveMainTab("prestations");
@@ -480,11 +492,16 @@ export function FactureForm() {
   // Auto-remplit la réf dossier à la sélection d'une organisation (sans nom de stagiaire)
   useEffect(() => {
     if (!selectedOrganisation) return;
+    const nouvelleRef = selectedOrganisation.name;
     setData(prev => ({
       ...prev,
-      refDossier: prev.refDossier || selectedOrganisation.name,
+      refDossier: refDossierEstAuto(prev.refDossier) ? nouvelleRef : prev.refDossier,
+      numero: NUMERO_PLACEHOLDER,
+      numeroInterne: NUMERO_PLACEHOLDER,
     }));
+    autoRefDossierRef.current = nouvelleRef;
   }, [selectedOrganisation?.id]);
+
 
   const filteredApprenants = apprenants.filter(a => 
     a.name.toLowerCase().includes(searchApprenant.toLowerCase()) ||
