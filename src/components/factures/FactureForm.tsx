@@ -272,6 +272,7 @@ export function FactureForm() {
   const [searchSession, setSearchSession] = useState("");
   const [activeMainTab, setActiveMainTab] = useState<"financeur" | "prestations">("financeur");
   const [searchProduit, setSearchProduit] = useState("");
+  const [factureValidee, setFactureValidee] = useState<string | null>(null);
   const [isAddLineDialogOpen, setIsAddLineDialogOpen] = useState(false);
   const [addLineType, setAddLineType] = useState<"session" | "produit">("session");
   const [apprenants, setApprenants] = useState<ApprenantItem[]>([]);
