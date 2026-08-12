@@ -854,12 +854,25 @@ export function FactureForm() {
       }
       if (error) throw error;
 
-      // Met à jour l'UI avec le numéro définitif réservé
-      setData((prev) => ({ ...prev, numero: numeroDefinitif, numeroInterne: numeroDefinitif }));
-
-      toast.success(`Facture N°${numeroDefinitif} enregistrée en comptabilité`);
+      toast.success(`Facture N°${numeroDefinitif} enregistrée en comptabilité — nouvelle facture vierge`);
       // Nettoyer le brouillon une fois la facture validée
       try { localStorage.removeItem(DRAFT_KEY); } catch {}
+
+      // Réinitialise complètement le formulaire pour une nouvelle facture
+      autoRefDossierRef.current = "";
+      setSearchApprenant("");
+      setSearchOrganisation("");
+      setSearchSession("");
+      setSearchProduit("");
+      setApprenantFinanceur(null);
+      setActiveMainTab("financeur");
+      setData({
+        ...defaultFactureData,
+        date: new Date().toISOString().split('T')[0],
+        dateEcheance: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        lignes: [],
+      });
+
     } catch (e: any) {
       console.error(e);
       toast.error(`Erreur lors de l'enregistrement : ${e.message ?? e}`);
