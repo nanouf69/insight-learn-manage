@@ -842,7 +842,8 @@ export function ComptabilitePage() {
     return allFactures.filter((f) => {
       const matchSearch =
         f.numero.toLowerCase().includes(search.toLowerCase()) ||
-        f.client_nom.toLowerCase().includes(search.toLowerCase());
+        f.client_nom.toLowerCase().includes(search.toLowerCase()) ||
+        (f.apprenant_id ? (apprenantNames[f.apprenant_id] || "").toLowerCase().includes(search.toLowerCase()) : false);
       const matchStatut = filterStatut === "all" || f.statut === filterStatut;
       const matchFinancement = filterFinancement === "all" || f.type_financement === filterFinancement;
       const isAchat = f.type_financement === "fournisseur";
