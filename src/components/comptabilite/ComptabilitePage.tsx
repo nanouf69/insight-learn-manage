@@ -1468,7 +1468,17 @@ export function ComptabilitePage() {
                                     <span className="ml-1 text-xs">Avoir</span>
                                   </Button>
                                 )}
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-7 px-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                  onClick={() => { setDeleteMotif(""); setDeletingTarget(f); }}
+                                  title="Supprimer la facture (trace conservée)"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
                               </div>
+
                             )}
                           </TableCell>
                         )}
