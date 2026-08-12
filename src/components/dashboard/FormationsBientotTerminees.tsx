@@ -353,7 +353,7 @@ export function FormationsBientotTerminees({ onNavigateToApprenant }: Props) {
                     title="Retirer de la liste"
                     onClick={(e) => {
                       e.stopPropagation();
-                      persistDismissed([...dismissed, a.id]);
+                      dismiss(a.id);
                     }}
                   >
                     <X className="h-3.5 w-3.5" />
