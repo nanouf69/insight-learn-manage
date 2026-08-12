@@ -50,14 +50,32 @@ export function DayConfigDialog({ open, onClose, date, initialType, initialSlots
   useEffect(() => {
     if (!open) return;
     (async () => {
-      const { data } = await supabase
-        .from("apprenants")
-        .select("id, nom, prenom, formation_choisie")
-        .is("deleted_at", null)
-        .order("nom");
-      setAllApprenants(data || []);
+      // Pagination : Supabase limite à 1000 lignes par requête, certains apprenants
+      // (ex. HAMID ARGA) n'apparaissaient pas dans la liste.
+      const PAGE = 1000;
+      let from = 0;
+      const all: Apprenant[] = [];
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const { data, error } = await supabase
+          .from("apprenants")
+          .select("id, nom, prenom, formation_choisie")
+          .is("deleted_at", null)
+          .order("nom")
+          .range(from, from + PAGE - 1);
+        if (error || !data || data.length === 0) break;
+        all.push(...data);
+        if (data.length < PAGE) break;
+        from += PAGE;
+      }
+      setAllApprenants(all);
     })();
   }, [open]);
+
+  // Recherche insensible aux accents / à la casse (nom, prénom, ordre inversé)
+  const normalize = (s: string) =>
+    (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+
 
   const isExamen = type.startsWith("examen_");
   const isTaxi = type.endsWith("_taxi");
@@ -216,7 +234,14 @@ export function DayConfigDialog({ open, onClose, date, initialType, initialSlots
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-[380px] p-0" align="start">
-                      <Command>
+                      <Command
+                        filter={(value, search) => {
+                          const q = normalize(search);
+                          if (!q) return 1;
+                          const v = normalize(value);
+                          return q.split(/\s+/).every((t) => v.includes(t)) ? 1 : 0;
+                        }}
+                      >
                         <CommandInput placeholder="Rechercher nom ou prénom…" />
                         <CommandList>
                           <CommandEmpty>Aucun résultat</CommandEmpty>
@@ -224,7 +249,7 @@ export function DayConfigDialog({ open, onClose, date, initialType, initialSlots
                             {allApprenants.map((a) => (
                               <CommandItem
                                 key={a.id}
-                                value={`${a.nom} ${a.prenom}`}
+                                value={`${a.nom} ${a.prenom} ${a.prenom} ${a.nom} ${a.formation_choisie ?? ""} ${a.id}`}
                                 onSelect={() => {
                                   updateSlot(i, { apprenant_id: a.id, nom: a.nom, prenom: a.prenom });
                                   setPickerOpenIdx(null);
