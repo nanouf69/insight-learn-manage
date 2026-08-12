@@ -2257,6 +2257,64 @@ export function ComptabilitePage() {
                 onChange={(e) => setEditFactureForm(f => ({ ...f, client_nom: e.target.value }))}
               />
             </div>
+            <div className="col-span-2 space-y-1 rounded-md border p-3 bg-muted/30">
+              <label className="text-xs font-medium">Apprenant rattaché</label>
+              <div className="text-sm">
+                {editFactureForm.apprenant_id ? (
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-medium">
+                      👤 {(() => {
+                        const a = apprenantOptions.find((x) => x.id === editFactureForm.apprenant_id);
+                        return a ? `${a.prenom || ""} ${a.nom || ""}`.trim() : (apprenantNames[editFactureForm.apprenant_id] || "Apprenant sélectionné");
+                      })()}
+                    </span>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 px-2 text-destructive"
+                      onClick={() => setEditFactureForm(f => ({ ...f, apprenant_id: "" }))}
+                    >
+                      Retirer
+                    </Button>
+                  </div>
+                ) : (
+                  <span className="text-muted-foreground">Aucun apprenant rattaché</span>
+                )}
+              </div>
+              <Input
+                className="mt-2"
+                placeholder="Rechercher un apprenant (nom, ville, tél, code postal...)"
+                value={apprenantSearch}
+                onChange={(e) => setApprenantSearch(e.target.value)}
+                onFocus={loadApprenantOptions}
+              />
+              {apprenantsLoading && (
+                <p className="text-xs text-muted-foreground">Chargement des apprenants...</p>
+              )}
+              {!apprenantsLoading && apprenantSearch.trim().length >= 2 && (
+                <div className="max-h-48 overflow-y-auto border rounded-md divide-y bg-background">
+                  {filteredApprenantOptions.length === 0 && (
+                    <div className="p-2 text-xs text-muted-foreground">Aucun apprenant trouvé</div>
+                  )}
+                  {filteredApprenantOptions.map((a) => (
+                    <button
+                      key={a.id}
+                      type="button"
+                      className="w-full text-left p-2 text-sm hover:bg-muted"
+                      onClick={() => {
+                        setEditFactureForm(f => ({ ...f, apprenant_id: a.id }));
+                        setApprenantSearch("");
+                      }}
+                    >
+                      <div className="font-medium">{`${a.prenom || ""} ${a.nom || ""}`.trim()}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {[a.email, a.telephone, a.ville, a.code_postal].filter(Boolean).join(" · ")}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
             <div className="space-y-1">
               <label className="text-xs text-muted-foreground">Type de financement</label>
               <Select value={editFactureForm.type_financement} onValueChange={(v) => setEditFactureForm(f => ({ ...f, type_financement: v }))}>
