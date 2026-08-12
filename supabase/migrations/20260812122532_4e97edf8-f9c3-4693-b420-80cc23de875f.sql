@@ -1,0 +1,1 @@
+DELETE FROM public.agenda_blocs WHERE id = 'd1b0a615-b2c8-42b8-ac22-13abdf19d65e';
