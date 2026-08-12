@@ -1421,7 +1421,14 @@ export function ComptabilitePage() {
                             )}
                           </div>
                         </TableCell>
-                        <TableCell>{f.client_nom}</TableCell>
+                        <TableCell>
+                          <div>{f.client_nom}</div>
+                          {f.apprenant_id && apprenantNames[f.apprenant_id] && (
+                            <div className="text-xs text-muted-foreground mt-0.5">
+                              👤 {apprenantNames[f.apprenant_id]}
+                            </div>
+                          )}
+                        </TableCell>
                         <TableCell>
                           <Badge variant="outline">{financementLabels[f.type_financement] || f.type_financement}</Badge>
                         </TableCell>
