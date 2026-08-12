@@ -1000,7 +1000,41 @@ export function FactureForm() {
         </Card>
       )}
 
+      {/* Récapitulatif de l'apprenant sélectionné — visible en haut */}
+      {selectedApprenant && (
+        <Card className="border-2 border-blue-500/30 bg-blue-500/5">
+          <CardContent className="py-4">
+            <div className="flex items-start gap-3">
+              <Avatar className="w-12 h-12 shrink-0">
+                <AvatarImage src={selectedApprenant.avatar} />
+                <AvatarFallback>{selectedApprenant.name.split(" ").map(n => n[0]).join("")}</AvatarFallback>
+              </Avatar>
+              <div className="min-w-0 flex-1">
+                <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                  Apprenant sélectionné
+                </div>
+                <div className="font-semibold text-base truncate">{selectedApprenant.name}</div>
+                <div className="text-sm text-muted-foreground">
+                  {[selectedApprenant.email, selectedApprenant.phone, selectedApprenant.address].filter(Boolean).join(" · ")}
+                </div>
+                <div className="text-xs text-muted-foreground mt-1">
+                  {FORMATION_LABELS[selectedApprenant.formationChoisie] || selectedApprenant.formationChoisie}
+                  {selectedApprenant.typeApprenant && ` · ${selectedApprenant.typeApprenant}`}
+                </div>
+                {(selectedApprenant.dateDebutFormation || selectedApprenant.dateFinFormation) && (
+                  <div className="text-xs text-muted-foreground mt-1">
+                    {selectedApprenant.dateDebutFormation && `Du ${selectedApprenant.dateDebutFormation}`}
+                    {selectedApprenant.dateFinFormation && ` au ${selectedApprenant.dateFinFormation}`}
+                  </div>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Récapitulatif du financeur — visible en permanence pendant la création */}
+
       {(() => {
         const client = getClientInfo();
         return (
