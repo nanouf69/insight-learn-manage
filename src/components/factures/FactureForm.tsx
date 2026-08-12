@@ -670,7 +670,7 @@ export function FactureForm() {
         montant_ttc: montantTTC,
         statut: "brouillon",
         date_paiement: null,
-        apprenant_id: data.typeFinanceur === "particulier" ? data.selectedApprenantId : null,
+        apprenant_id: data.selectedApprenantId || null,
         session_id: sessionLine?.sessionId || null,
       };
 
@@ -838,7 +838,7 @@ export function FactureForm() {
         montant_ttc: montantTTC,
         statut: data.acquittee ? "payee" : "en_attente",
         date_paiement: data.acquittee && data.datePaiement ? data.datePaiement : null,
-        apprenant_id: data.typeFinanceur === "particulier" ? data.selectedApprenantId : null,
+        apprenant_id: data.selectedApprenantId || null,
         session_id: sessionLine?.sessionId || null,
       };
 
