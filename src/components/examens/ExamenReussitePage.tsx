@@ -3760,7 +3760,39 @@ export function ExamenReussitePage() {
                               <X className="h-3 w-3" />
                             </button>
                           </div>
-                          
+
+                          {/* Résumé occupation & créneaux */}
+                          {(() => {
+                            const all = [...vtcReserved, ...taxiReserved];
+                            const total = all.length;
+                            const restantes = Math.max(0, dayMax - total);
+                            const nbMatin = all.filter((a: any) => a._creneau === 'matin' || !a._creneau || a._creneau === 'journee').length;
+                            const nbPm = all.filter((a: any) => a._creneau === 'apresmidi' || !a._creneau || a._creneau === 'journee').length;
+                            const pct = Math.min(100, Math.round((total / Math.max(1, dayMax)) * 100));
+                            const full = total >= dayMax;
+                            return (
+                              <div className="mb-1.5 rounded-md border bg-muted/40 px-1.5 py-1 space-y-1">
+                                <div className="flex items-center justify-between text-[9px] font-semibold">
+                                  <span className="text-muted-foreground">{total}/{dayMax} inscrits</span>
+                                  <span className={total > dayMax ? "text-destructive" : full ? "text-orange-600" : "text-emerald-600"}>
+                                    {total > dayMax ? "Surbooké" : full ? "Complet" : `${restantes} place${restantes > 1 ? "s" : ""}`}
+                                  </span>
+                                </div>
+                                <div className="h-1.5 w-full rounded-full bg-background overflow-hidden">
+                                  <div
+                                    className={`h-full rounded-full transition-all ${total > dayMax ? "bg-destructive" : full ? "bg-orange-500" : "bg-emerald-500"}`}
+                                    style={{ width: `${pct}%` }}
+                                  />
+                                </div>
+                                <div className="flex items-center justify-between text-[9px] text-muted-foreground">
+                                  <span>☀️ {daySlot?.matin || "9h-12h"} · {nbMatin}</span>
+                                  <span>🌙 {daySlot?.apresmidi || "13h-16h"} · {nbPm}</span>
+                                </div>
+                              </div>
+                            );
+                          })()}
+
+
                           {/* Per-day max + formation type + time slot */}
                           <div className="flex items-center justify-center gap-2 mb-1 flex-wrap">
                             <div className="flex items-center gap-1">
