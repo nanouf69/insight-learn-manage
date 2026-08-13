@@ -3832,6 +3832,32 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                             </DropdownMenuContent>
                           </DropdownMenu>
 
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 gap-1.5 text-muted-foreground hover:text-primary"
+                            title="Mail dossier de bienvenue"
+                            disabled={sendingEmailForApprenant === apprenant.id}
+                            onClick={() => handlePreviewTemplateEmail('bienvenue', apprenant)}
+                          >
+                            <Send className="w-4 h-4" />
+                            <span className="text-xs">📄 Mail dossier de bienvenue</span>
+                          </Button>
+
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 gap-1.5 text-muted-foreground hover:text-primary"
+                            title="Mail pré-information"
+                            disabled={sendingEmailForApprenant === apprenant.id}
+                            onClick={() => handlePreviewTemplateEmail(getPreInformationTemplateId(apprenant), apprenant)}
+                          >
+                            <Send className="w-4 h-4" />
+                            <span className="text-xs">📋 Mail pré-information</span>
+                          </Button>
+
+
+
                           <NotesPopover 
                             sessionApprenantId={sessionApprenant.id}
                             notes={sessionApprenant.notes || apprenant.notes || ""}
