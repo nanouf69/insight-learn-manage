@@ -46,27 +46,23 @@ serve(async (req) => {
       if (m) return `${m[3]}-${m[2]}-${m[1]}`;
       return null;
     };
-    const minDate = (...d: (string | null)[]) => d.filter(Boolean).sort()[0] || null;
-    const maxDate = (...d: (string | null)[]) => d.filter(Boolean).sort().slice(-1)[0] || null;
-
-    // Envoyer dès que la date de début (e-learning OU présentiel, la plus précoce)
-    // est atteinte, tant que la fenêtre d'accès (la plus tardive) n'est pas terminée.
+    // On se base STRICTEMENT sur les dates du CRM de l'apprenant :
+    // priorité aux dates "cours en ligne" si renseignées, sinon les dates de formation.
     const eligibleApprenants = (apprenants || []).filter((a: any) => {
-      const effective = minDate(
-        normalizeDate(a.date_debut_cours_en_ligne),
-        normalizeDate(a.date_debut_formation)
-      );
-      const finAcces = maxDate(
-        normalizeDate(a.date_fin_cours_en_ligne),
-        normalizeDate(a.date_fin_formation)
-      );
-      if (!effective) return false;
-      if (effective > today) return false; // pas encore commencé
-      if (finAcces && finAcces < today) return false; // fenêtre d'accès terminée
+      const debut =
+        normalizeDate(a.date_debut_cours_en_ligne) ??
+        normalizeDate(a.date_debut_formation);
+      const fin =
+        normalizeDate(a.date_fin_cours_en_ligne) ??
+        normalizeDate(a.date_fin_formation);
+      if (!debut) return false;
+      if (debut > today) return false; // formation pas encore commencée
+      if (fin && fin < today) return false; // accès terminé
       return true;
     });
 
-    console.log(`[auto-send-credentials] Found ${eligibleApprenants.length} apprenants éligibles (début ≤ aujourd'hui, accès encore valide)`);
+    console.log(`[auto-send-credentials] Found ${eligibleApprenants.length} apprenants éligibles (dates CRM: début ≤ aujourd'hui, fin ≥ aujourd'hui)`);
+
 
 
     if (eligibleApprenants.length === 0) {
