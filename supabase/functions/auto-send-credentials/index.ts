@@ -278,14 +278,22 @@ serve(async (req) => {
         const rawFormation = apprenant.formation_choisie || "";
         const formationParts = rawFormation.split(" + ").map((p: string) => formationLabels[p.trim()] || p.trim()).filter(Boolean);
         const formation = formationParts.length > 0 ? formationParts.join(" + ") : "Non spécifiée";
-        const dateDebut = apprenant.date_debut_formation || apprenant.date_debut_cours_en_ligne || "Non définie";
-        const dateFin = apprenant.date_fin_cours_en_ligne || apprenant.date_fin_formation || "Non définie";
+        const effectiveStart = minDate(
+          normalizeDate(apprenant.date_debut_cours_en_ligne),
+          normalizeDate(apprenant.date_debut_formation)
+        );
+        const effectiveEnd = maxDate(
+          normalizeDate(apprenant.date_fin_cours_en_ligne),
+          normalizeDate(apprenant.date_fin_formation)
+        );
+        const dateDebut = effectiveStart || "Non définie";
+        const dateFin = effectiveEnd || "Non définie";
         const prenom = apprenant.prenom || "";
         const nom = apprenant.nom || "";
 
-        const effectiveStart = apprenant.date_debut_formation || apprenant.date_debut_cours_en_ligne;
         const startsTomorrow = effectiveStart === tomorrow;
-        const alreadyStarted = effectiveStart && effectiveStart < today;
+        const alreadyStarted = !!effectiveStart && effectiveStart < today;
+
         const startPhrase = alreadyStarted
           ? "Votre formation a déjà démarré"
           : startsTomorrow
