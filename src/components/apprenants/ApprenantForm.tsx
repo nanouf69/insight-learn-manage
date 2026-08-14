@@ -402,6 +402,7 @@ export function ApprenantForm() {
       organisme_financeur: organismeFinanceur || null,
       numero_dossier_cma: numeroDossierCma.trim() || null,
       statut: typeApprenant === "prospect" ? "prospect" : "inscrit",
+      source_inscription: "manuel",
       type_apprenant: secondTypeApprenant ? `${typeApprenantFormation} + ${secondTypeApprenant}` : (typeApprenantFormation || null),
       formation_choisie: secondFormation ? `${selectedFormation} + ${secondFormation}` : (selectedFormation || null),
       montant_ttc: montantTtc ? parseFloat(montantTtc) : null,

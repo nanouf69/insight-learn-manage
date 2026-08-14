@@ -33,6 +33,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { ApprenantForm } from "./ApprenantForm";
+import { ImportApprenantsExcel } from "./ImportApprenantsExcel";
 import { ApprenantEditForm } from "./ApprenantEditForm";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -594,7 +595,10 @@ export function ApprenantsList() {
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-        <ApprenantForm />
+        <div className="flex items-center gap-2">
+          <ImportApprenantsExcel onImported={() => window.location.reload()} />
+          <ApprenantForm />
+        </div>
       </div>
 
       {/* Liste */}
