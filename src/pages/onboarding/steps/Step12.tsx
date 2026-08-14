@@ -313,6 +313,7 @@ export default function Step12() {
             date_examen_theorique: dateExamen,
             lieu_examen: selectedExamFinal?.lieu || '',
             b2_vierge: b2Vierge,
+            parcours_chauffeur_ack: parcoursAck,
             etapes_confirmees: {
               etape_3_departement: localStorage.getItem('onboarding_step3_confirmed') === 'true',
               etape_4_type_epreuve: localStorage.getItem('onboarding_step4_confirmed') === 'true',
@@ -670,11 +671,11 @@ export default function Step12() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
             <button
               onClick={handleSubmit}
-              disabled={isSubmitting || isSubmitted || !b2Vierge || !signature || !motDePasseCma.trim()}
+              disabled={isSubmitting || isSubmitted || !b2Vierge || !parcoursAck || !signature || !motDePasseCma.trim()}
               className={`inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-medium text-lg transition-colors ${
                 isSubmitted 
                   ? "bg-green-500 text-white cursor-default" 
-                  : (b2Vierge && signature && motDePasseCma.trim())
+                  : (b2Vierge && parcoursAck && signature && motDePasseCma.trim())
                     ? "bg-blue-600 hover:bg-blue-700 text-white"
                     : "bg-gray-300 text-gray-500 cursor-not-allowed"
               }`}
