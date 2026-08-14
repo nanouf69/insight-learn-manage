@@ -44,7 +44,8 @@ import {
   Printer,
   Trash2,
   Maximize2,
-  Minimize2
+  Minimize2,
+  ChevronLeft,
 } from "lucide-react";
 import { MODULES_DATA } from "@/components/cours-en-ligne/formations-data";
 import { ALL_MODULES, FORMATION_MODULES, MANAGED_MODULE_IDS, DEFAULT_MODULES_BY_TYPE } from "@/components/cours-en-ligne/modules-config";
@@ -4589,11 +4590,22 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     <>
     {asPage ? (
       <div className="w-full max-w-[1200px] mx-auto p-4 md:p-6 space-y-4">
-        {onBack && (
-          <Button variant="ghost" size="sm" onClick={onBack} className="gap-2 -ml-2">
-            <X className="w-4 h-4" /> Retour
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => window.history.back()}
+            className="gap-2"
+          >
+            <ChevronLeft className="w-4 h-4" /> Précédent
           </Button>
-        )}
+          {onBack && (
+            <Button variant="ghost" size="sm" onClick={onBack} className="gap-2">
+              <X className="w-4 h-4" /> Retour
+            </Button>
+          )}
+        </div>
+
         {mainContent}
       </div>
     ) : (
