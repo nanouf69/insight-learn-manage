@@ -79,7 +79,7 @@ export function SessionsTab({ apprenant }: { apprenant: { id: string } }) {
         <Card
           key={s.id}
           className="p-4 hover:shadow-md transition cursor-pointer"
-          onClick={() => navigate(`/sessions/${s.id}`)}
+          onClick={() => navigate(`/sessions/${s.id}`, { state: { from: window.location.search.includes("section=") ? window.location.pathname + window.location.search : "/?section=apprenants" } })}
         >
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1 min-w-0">
@@ -112,7 +112,7 @@ export function SessionsTab({ apprenant }: { apprenant: { id: string } }) {
               variant="outline"
               onClick={(e) => {
                 e.stopPropagation();
-                navigate(`/sessions/${s.id}`);
+                navigate(`/sessions/${s.id}`, { state: { from: window.location.search.includes("section=") ? window.location.pathname + window.location.search : "/?section=apprenants" } });
               }}
             >
               <ExternalLink className="w-3.5 h-3.5 mr-1" />

@@ -895,7 +895,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
                               variant="outline"
                               size="sm"
                               className="w-full justify-start gap-2"
-                              onClick={() => navigate(`/sessions/${s.id}`)}
+                              onClick={() => navigate(`/sessions/${s.id}`, { state: { from: window.location.search.includes("section=") ? window.location.pathname + window.location.search : "/?section=apprenants" } })}
                             >
                               <Calendar className="w-4 h-4" />
                               <span className="truncate">
