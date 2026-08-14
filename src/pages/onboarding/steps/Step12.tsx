@@ -84,6 +84,7 @@ export default function Step12() {
   const [typeExamen, setTypeExamen] = useState('');
   const [motDePasseCma, setMotDePasseCma] = useState('');
   const [b2Vierge, setB2Vierge] = useState(false);
+  const [parcoursAck, setParcoursAck] = useState(false);
   const [signature, setSignature] = useState('');
   
   // Edit dialogs state
