@@ -44,7 +44,7 @@ import {
   Printer,
   Trash2,
   Maximize2,
-  Minimize2
+  Minimize2,
   ChevronLeft,
 } from "lucide-react";
 import { MODULES_DATA } from "@/components/cours-en-ligne/formations-data";
