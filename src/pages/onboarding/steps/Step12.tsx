@@ -27,6 +27,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { generateRecapitulatifPDF } from "@/lib/pdf/recapitulatif-inscription";
 import { supabase } from "@/integrations/supabase/client";
+import parcoursChauffeurImg from "@/assets/parcours-chauffeur-vtc-taxi.png.asset.json";
 import type { Database } from "@/integrations/supabase/types";
 
 // Dates centralisées
@@ -83,6 +84,7 @@ export default function Step12() {
   const [typeExamen, setTypeExamen] = useState('');
   const [motDePasseCma, setMotDePasseCma] = useState('');
   const [b2Vierge, setB2Vierge] = useState(false);
+  const [parcoursAck, setParcoursAck] = useState(false);
   const [signature, setSignature] = useState('');
   
   // Edit dialogs state
@@ -221,7 +223,12 @@ export default function Step12() {
   };
 
   const handleSubmit = async () => {
-      if (!b2Vierge) {
+      if (!parcoursAck) {
+      toast.error("Veuillez confirmer avoir pris en compte le parcours pour devenir chauffeur Taxi ou VTC");
+      return;
+    }
+
+    if (!b2Vierge) {
       toast.error("Veuillez confirmer que votre B2 est vierge");
       return;
     }
@@ -306,6 +313,7 @@ export default function Step12() {
             date_examen_theorique: dateExamen,
             lieu_examen: selectedExamFinal?.lieu || '',
             b2_vierge: b2Vierge,
+            parcours_chauffeur_ack: parcoursAck,
             etapes_confirmees: {
               etape_3_departement: localStorage.getItem('onboarding_step3_confirmed') === 'true',
               etape_4_type_epreuve: localStorage.getItem('onboarding_step4_confirmed') === 'true',
@@ -610,6 +618,34 @@ export default function Step12() {
             />
           </div>
 
+          {/* Parcours pour devenir chauffeur VTC ou Taxi */}
+          <div className={`border rounded-xl p-5 mb-6 ${parcoursAck ? 'border-green-200 bg-green-50' : 'border-blue-200 bg-blue-50'}`}>
+            <div className="flex items-center gap-3 mb-4">
+              <GraduationCap className="w-5 h-5 text-blue-500" />
+              <h3 className="font-semibold text-gray-900">
+                Parcours pour devenir chauffeur VTC ou Taxi <span className="text-red-500">*</span>
+              </h3>
+            </div>
+            <img
+              src={parcoursChauffeurImg.url}
+              alt="Infographie du parcours pour devenir chauffeur VTC ou Taxi : formation, examen théorique, entraînement et examen pratique, carte professionnelle, création d'entreprise, véhicule, inscription au registre"
+              loading="lazy"
+              className="w-full rounded-lg border border-gray-200 bg-white mb-4"
+            />
+            <div className="flex items-start gap-3">
+              <Checkbox
+                id="parcours-ack"
+                checked={parcoursAck}
+                onCheckedChange={(checked) => setParcoursAck(checked === true)}
+                disabled={isSubmitted}
+                className="mt-0.5"
+              />
+              <Label htmlFor="parcours-ack" className="text-gray-700 cursor-pointer leading-relaxed">
+                J'ai bien pris en compte le parcours pour devenir chauffeur Taxi ou VTC.
+              </Label>
+            </div>
+          </div>
+
           {/* Confirmation B2 vierge */}
           <div className={`border rounded-xl p-5 mb-6 ${!b2Vierge && isSubmitted === false ? 'border-gray-200 bg-amber-50' : b2Vierge ? 'border-green-200 bg-green-50' : 'border-gray-200'}`}>
             <div className="flex items-center gap-3 mb-4">
@@ -630,15 +666,16 @@ export default function Step12() {
             </div>
           </div>
 
+
           {/* Boutons d'action */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
             <button
               onClick={handleSubmit}
-              disabled={isSubmitting || isSubmitted || !b2Vierge || !signature || !motDePasseCma.trim()}
+              disabled={isSubmitting || isSubmitted || !b2Vierge || !parcoursAck || !signature || !motDePasseCma.trim()}
               className={`inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-medium text-lg transition-colors ${
                 isSubmitted 
                   ? "bg-green-500 text-white cursor-default" 
-                  : (b2Vierge && signature && motDePasseCma.trim())
+                  : (b2Vierge && parcoursAck && signature && motDePasseCma.trim())
                     ? "bg-blue-600 hover:bg-blue-700 text-white"
                     : "bg-gray-300 text-gray-500 cursor-not-allowed"
               }`}
