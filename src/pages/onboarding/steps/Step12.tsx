@@ -223,7 +223,12 @@ export default function Step12() {
   };
 
   const handleSubmit = async () => {
-      if (!b2Vierge) {
+      if (!parcoursAck) {
+      toast.error("Veuillez confirmer avoir pris en compte le parcours pour devenir chauffeur Taxi ou VTC");
+      return;
+    }
+
+    if (!b2Vierge) {
       toast.error("Veuillez confirmer que votre B2 est vierge");
       return;
     }
