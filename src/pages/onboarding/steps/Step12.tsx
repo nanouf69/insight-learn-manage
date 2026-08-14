@@ -27,6 +27,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { generateRecapitulatifPDF } from "@/lib/pdf/recapitulatif-inscription";
 import { supabase } from "@/integrations/supabase/client";
+import parcoursChauffeurImg from "@/assets/parcours-chauffeur-vtc-taxi.png.asset.json";
 import type { Database } from "@/integrations/supabase/types";
 
 // Dates centralisées
