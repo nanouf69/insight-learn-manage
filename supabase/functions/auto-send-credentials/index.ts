@@ -37,21 +37,37 @@ serve(async (req) => {
       throw fetchErr;
     }
 
-    // Filter: envoyer les identifiants dès que la date de début est atteinte OU passée
-    // (fenêtre d'accès encore ouverte) et que l'apprenant n'a pas encore de compte.
-    // Cela couvre les dossiers finalisés APRÈS la date de début prévue.
+    // Normalisation : certaines dates sont stockées en texte au format JJ/MM/AAAA
+    const normalizeDate = (value: any): string | null => {
+      if (!value) return null;
+      const s = String(value).trim();
+      if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+      const m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+      if (m) return `${m[3]}-${m[2]}-${m[1]}`;
+      return null;
+    };
+    const minDate = (...d: (string | null)[]) => d.filter(Boolean).sort()[0] || null;
+    const maxDate = (...d: (string | null)[]) => d.filter(Boolean).sort().slice(-1)[0] || null;
+
+    // Envoyer dès que la date de début (e-learning OU présentiel, la plus précoce)
+    // est atteinte, tant que la fenêtre d'accès (la plus tardive) n'est pas terminée.
     const eligibleApprenants = (apprenants || []).filter((a: any) => {
-      const effective = a.date_debut_formation || a.date_debut_cours_en_ligne;
-      const finAcces = a.date_fin_cours_en_ligne || a.date_fin_formation;
+      const effective = minDate(
+        normalizeDate(a.date_debut_cours_en_ligne),
+        normalizeDate(a.date_debut_formation)
+      );
+      const finAcces = maxDate(
+        normalizeDate(a.date_fin_cours_en_ligne),
+        normalizeDate(a.date_fin_formation)
+      );
       if (!effective) return false;
       if (effective > today) return false; // pas encore commencé
       if (finAcces && finAcces < today) return false; // fenêtre d'accès terminée
-      // Si le compte auth existe déjà ET que des identifiants ont été envoyés récemment,
-      // le dédoublonnage par emails plus bas s'en occupera.
       return true;
     });
 
     console.log(`[auto-send-credentials] Found ${eligibleApprenants.length} apprenants éligibles (début ≤ aujourd'hui, accès encore valide)`);
+
 
     if (eligibleApprenants.length === 0) {
       return new Response(
@@ -229,16 +245,19 @@ serve(async (req) => {
             .eq("id", apprenant.id);
 
           // Also set cours en ligne dates from the real training window if missing
+          const normDebutFormation = normalizeDate(apprenant.date_debut_formation);
+          const normFinFormation = normalizeDate(apprenant.date_fin_formation);
           const updates: Record<string, string> = {};
-          if (apprenant.date_debut_formation && (!apprenant.date_debut_cours_en_ligne || apprenant.date_debut_cours_en_ligne < apprenant.date_debut_formation)) {
-            updates.date_debut_cours_en_ligne = apprenant.date_debut_formation;
+          if (normDebutFormation && !apprenant.date_debut_cours_en_ligne) {
+            updates.date_debut_cours_en_ligne = normDebutFormation;
           }
-          if (!apprenant.date_fin_cours_en_ligne && apprenant.date_fin_formation) {
-            updates.date_fin_cours_en_ligne = apprenant.date_fin_formation;
+          if (!apprenant.date_fin_cours_en_ligne && normFinFormation) {
+            updates.date_fin_cours_en_ligne = normFinFormation;
           }
           if (Object.keys(updates).length > 0) {
             await supabaseAdmin.from("apprenants").update(updates).eq("id", apprenant.id);
           }
+
 
           console.log(`[auto-send-credentials] ✅ Account created for ${apprenant.email} (${authUserId})`);
         } else {
@@ -259,14 +278,22 @@ serve(async (req) => {
         const rawFormation = apprenant.formation_choisie || "";
         const formationParts = rawFormation.split(" + ").map((p: string) => formationLabels[p.trim()] || p.trim()).filter(Boolean);
         const formation = formationParts.length > 0 ? formationParts.join(" + ") : "Non spécifiée";
-        const dateDebut = apprenant.date_debut_formation || apprenant.date_debut_cours_en_ligne || "Non définie";
-        const dateFin = apprenant.date_fin_cours_en_ligne || apprenant.date_fin_formation || "Non définie";
+        const effectiveStart = minDate(
+          normalizeDate(apprenant.date_debut_cours_en_ligne),
+          normalizeDate(apprenant.date_debut_formation)
+        );
+        const effectiveEnd = maxDate(
+          normalizeDate(apprenant.date_fin_cours_en_ligne),
+          normalizeDate(apprenant.date_fin_formation)
+        );
+        const dateDebut = effectiveStart || "Non définie";
+        const dateFin = effectiveEnd || "Non définie";
         const prenom = apprenant.prenom || "";
         const nom = apprenant.nom || "";
 
-        const effectiveStart = apprenant.date_debut_formation || apprenant.date_debut_cours_en_ligne;
         const startsTomorrow = effectiveStart === tomorrow;
-        const alreadyStarted = effectiveStart && effectiveStart < today;
+        const alreadyStarted = !!effectiveStart && effectiveStart < today;
+
         const startPhrase = alreadyStarted
           ? "Votre formation a déjà démarré"
           : startsTomorrow
