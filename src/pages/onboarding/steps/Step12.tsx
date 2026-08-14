@@ -610,6 +610,34 @@ export default function Step12() {
             />
           </div>
 
+          {/* Parcours pour devenir chauffeur VTC ou Taxi */}
+          <div className={`border rounded-xl p-5 mb-6 ${parcoursAck ? 'border-green-200 bg-green-50' : 'border-blue-200 bg-blue-50'}`}>
+            <div className="flex items-center gap-3 mb-4">
+              <GraduationCap className="w-5 h-5 text-blue-500" />
+              <h3 className="font-semibold text-gray-900">
+                Parcours pour devenir chauffeur VTC ou Taxi <span className="text-red-500">*</span>
+              </h3>
+            </div>
+            <img
+              src={parcoursChauffeurImg.url}
+              alt="Infographie du parcours pour devenir chauffeur VTC ou Taxi : formation, examen théorique, entraînement et examen pratique, carte professionnelle, création d'entreprise, véhicule, inscription au registre"
+              loading="lazy"
+              className="w-full rounded-lg border border-gray-200 bg-white mb-4"
+            />
+            <div className="flex items-start gap-3">
+              <Checkbox
+                id="parcours-ack"
+                checked={parcoursAck}
+                onCheckedChange={(checked) => setParcoursAck(checked === true)}
+                disabled={isSubmitted}
+                className="mt-0.5"
+              />
+              <Label htmlFor="parcours-ack" className="text-gray-700 cursor-pointer leading-relaxed">
+                J'ai bien pris en compte le parcours pour devenir chauffeur Taxi ou VTC.
+              </Label>
+            </div>
+          </div>
+
           {/* Confirmation B2 vierge */}
           <div className={`border rounded-xl p-5 mb-6 ${!b2Vierge && isSubmitted === false ? 'border-gray-200 bg-amber-50' : b2Vierge ? 'border-green-200 bg-green-50' : 'border-gray-200'}`}>
             <div className="flex items-center gap-3 mb-4">
@@ -629,6 +657,7 @@ export default function Step12() {
               </Label>
             </div>
           </div>
+
 
           {/* Boutons d'action */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
