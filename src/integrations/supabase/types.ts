@@ -573,6 +573,7 @@ export type Database = {
           societe_siret: string | null
           societe_tva_intra: string | null
           societe_ville: string | null
+          source_inscription: string
           statut: string | null
           telephone: string | null
           type_apprenant: string | null
@@ -633,6 +634,7 @@ export type Database = {
           societe_siret?: string | null
           societe_tva_intra?: string | null
           societe_ville?: string | null
+          source_inscription?: string
           statut?: string | null
           telephone?: string | null
           type_apprenant?: string | null
@@ -693,6 +695,7 @@ export type Database = {
           societe_siret?: string | null
           societe_tva_intra?: string | null
           societe_ville?: string | null
+          source_inscription?: string
           statut?: string | null
           telephone?: string | null
           type_apprenant?: string | null
