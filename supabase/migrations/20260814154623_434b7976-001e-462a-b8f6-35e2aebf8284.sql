@@ -1,0 +1,1 @@
+ALTER TABLE public.apprenants ADD COLUMN IF NOT EXISTS source_inscription text NOT NULL DEFAULT 'manuel';
