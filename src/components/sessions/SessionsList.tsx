@@ -209,7 +209,7 @@ export function SessionsList({ onNavigateToApprenant }: { onNavigateToApprenant?
   const hasActiveFilters = search || filterStatut !== "tous" || filterType !== "tous";
 
   const openSessionDetail = (session: Session) => {
-    navigate(`/sessions/${session.id}`);
+    navigate(`/sessions/${session.id}`, { state: { from: window.location.pathname + window.location.search } });
   };
 
   const duplicateSession = async (e: React.MouseEvent, session: Session) => {
