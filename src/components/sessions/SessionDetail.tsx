@@ -4594,7 +4594,20 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
           <Button
             variant="outline"
             size="sm"
-            onClick={() => window.history.back()}
+            onClick={() => {
+              const state = (window.history.state?.usr ?? {}) as { from?: string };
+              const from = state?.from;
+              if (from && from !== window.location.pathname) {
+                window.location.assign(from);
+                return;
+              }
+              const idx = window.history.state?.idx;
+              if (typeof idx === "number" && idx > 0) {
+                window.history.back();
+                return;
+              }
+              window.location.assign("/sessions");
+            }}
             className="gap-2"
           >
             <ChevronLeft className="w-4 h-4" /> Précédent
