@@ -245,16 +245,19 @@ serve(async (req) => {
             .eq("id", apprenant.id);
 
           // Also set cours en ligne dates from the real training window if missing
+          const normDebutFormation = normalizeDate(apprenant.date_debut_formation);
+          const normFinFormation = normalizeDate(apprenant.date_fin_formation);
           const updates: Record<string, string> = {};
-          if (apprenant.date_debut_formation && (!apprenant.date_debut_cours_en_ligne || apprenant.date_debut_cours_en_ligne < apprenant.date_debut_formation)) {
-            updates.date_debut_cours_en_ligne = apprenant.date_debut_formation;
+          if (normDebutFormation && !apprenant.date_debut_cours_en_ligne) {
+            updates.date_debut_cours_en_ligne = normDebutFormation;
           }
-          if (!apprenant.date_fin_cours_en_ligne && apprenant.date_fin_formation) {
-            updates.date_fin_cours_en_ligne = apprenant.date_fin_formation;
+          if (!apprenant.date_fin_cours_en_ligne && normFinFormation) {
+            updates.date_fin_cours_en_ligne = normFinFormation;
           }
           if (Object.keys(updates).length > 0) {
             await supabaseAdmin.from("apprenants").update(updates).eq("id", apprenant.id);
           }
+
 
           console.log(`[auto-send-credentials] ✅ Account created for ${apprenant.email} (${authUserId})`);
         } else {
