@@ -214,8 +214,9 @@ export function SessionForm() {
   const [dateFin2, setDateFin2] = useState("");
   const [lieu, setLieu] = useState("");
   const [places, setPlaces] = useState("18");
-  const [heureDebut, setHeureDebut] = useState("08:00");
-  const [heureFin, setHeureFin] = useState("17:00");
+  // Règle projet : journée = 9h-12h / 13h-16h (soir = 17h-21h)
+  const [heureDebut, setHeureDebut] = useState("09:00");
+  const [heureFin, setHeureFin] = useState("16:00");
 
   const resetForm = () => {
     setNom("");

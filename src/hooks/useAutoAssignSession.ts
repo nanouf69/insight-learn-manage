@@ -22,10 +22,12 @@ const mapCreneauToSession = (creneau: string | null): string[] => {
   
   const creneauLower = creneau.toLowerCase();
   if (creneauLower.includes('journée') || creneauLower.includes('journee') || creneauLower === 'journée') {
-    return ['09:00-12:00', '13:00-17:00'];
+    // Règle projet : journée = 9h-12h / 13h-16h
+    return ['09:00-12:00', '13:00-16:00'];
   }
   if (creneauLower.includes('soirée') || creneauLower.includes('soiree') || creneauLower === 'soirée') {
-    return ['18:00-21:00'];
+    // Règle projet : cours du soir = 17h-21h
+    return ['17h-21h'];
   }
   return [];
 };
