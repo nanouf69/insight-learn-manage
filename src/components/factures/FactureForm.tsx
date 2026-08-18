@@ -980,7 +980,29 @@ export function FactureForm() {
         </div>
         <div className="flex gap-2">
           <Button onClick={handleSaveDraft} variant="outline"><Save className="w-4 h-4 mr-2" />Brouillon</Button>
-          <Button onClick={handleSaveToAccounting} variant="secondary"><BookCheck className="w-4 h-4 mr-2" />Enregistrer en comptabilité</Button>
+          <Button onClick={() => setConfirmComptaOpen(true)} variant="secondary"><BookCheck className="w-4 h-4 mr-2" />Enregistrer en comptabilité</Button>
+          <AlertDialog open={confirmComptaOpen} onOpenChange={setConfirmComptaOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Valider la facture ?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Êtes-vous sûr de valider la facture{data.numeroInterne ? ` N°${data.numeroInterne}` : ""} d'un montant de{" "}
+                  <strong>{calculerTotalTTC().toFixed(2)} € TTC</strong> ? Elle sera enregistrée en comptabilité.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Annuler</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => {
+                    setConfirmComptaOpen(false);
+                    handleSaveToAccounting();
+                  }}
+                >
+                  Confirmer
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
           <Button onClick={handleEnvoyer} variant="outline"><Send className="w-4 h-4 mr-2" />Envoyer</Button>
           <Button onClick={handlePrint} variant="outline"><Printer className="w-4 h-4 mr-2" />Imprimer</Button>
           <Button onClick={handleExport}><Download className="w-4 h-4 mr-2" />Télécharger PDF</Button>
