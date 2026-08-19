@@ -47,6 +47,35 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
   const [nativeScrolledToBottom, setNativeScrolledToBottom] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [pageAspectRatio, setPageAspectRatio] = useState(16 / 9);
+  const [lastModified, setLastModified] = useState<string | null>(null);
+
+  // Récupère la date de dernière modification du fichier PDF (header HTTP)
+  useEffect(() => {
+    let cancelled = false;
+    setLastModified(null);
+    (async () => {
+      try {
+        const res = await fetch(url, { method: "HEAD" });
+        const raw = res.headers.get("last-modified");
+        if (!raw || cancelled) return;
+        const d = new Date(raw);
+        if (isNaN(d.getTime())) return;
+        setLastModified(
+          d.toLocaleString("fr-FR", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          })
+        );
+      } catch {
+        /* ignore */
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [url]);
+
 
   const scrollToPage = useCallback((targetPage: number) => {
     const clampedPage = Math.max(1, Math.min(numPages || 1, targetPage));
@@ -593,8 +622,16 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
           </Button>
         </div>
       )}
+
+      {/* Date de dernière mise à jour du document */}
+      <div className="px-3 py-2 border-t bg-muted/30 text-[11px] sm:text-xs text-muted-foreground">
+        {lastModified
+          ? <>Dernière mise à jour du support : <span className="font-semibold text-foreground">{lastModified}</span></>
+          : "Dernière mise à jour du support : non disponible"}
+      </div>
     </div>
   );
+
 
   if (isPseudoFullscreen) {
     return createPortal(viewerContent, document.body);
