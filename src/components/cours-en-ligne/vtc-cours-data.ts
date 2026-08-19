@@ -57,7 +57,7 @@ const MATIERE_A: ContentItem[] = [
     titre: "A. RÉGLEMENTATION T3P — Partie 1",
     sousTitre: "Transport public, loi LOTI, taxis, VTC, VMDTR, assurances, formation continue",
     fichiers: [
-      { nom: "PDF HD Partie 1", url: "/cours/vtc/A_T3P_1.pdf" },
+      { nom: "PDF HD Partie 1", url: "/cours/vtc/A_T3P_1.pdf?v=20260819-1732" },
     ],
   },
   {
@@ -65,7 +65,7 @@ const MATIERE_A: ContentItem[] = [
     titre: "A. RÉGLEMENTATION T3P — Partie 2",
     sousTitre: "Suite de la réglementation T3P",
     fichiers: [
-      { nom: "PDF HD Partie 2", url: "/cours/vtc/A_T3P_2.pdf" },
+      { nom: "PDF HD Partie 2", url: "/cours/vtc/A_T3P_2.pdf?v=20260819-1732" },
     ],
   },
 ];
@@ -80,7 +80,7 @@ const MATIERE_B: ContentItem[] = [
     titre: "B. GESTION — Partie 1",
     sousTitre: "Entrepreneurs et Formes Juridiques",
     fichiers: [
-      { nom: "PDF HD Partie 1", url: "/cours/vtc/B_Gestion_1.pdf" },
+      { nom: "PDF HD Partie 1", url: "/cours/vtc/B_Gestion_1.pdf?v=20260819-1732" },
     ],
   },
   {
@@ -88,7 +88,7 @@ const MATIERE_B: ContentItem[] = [
     titre: "B. GESTION — Partie 2",
     sousTitre: "Comptabilité et Fiscalité",
     fichiers: [
-      { nom: "PDF HD Partie 2", url: "/cours/vtc/B_Gestion_2.pdf" },
+      { nom: "PDF HD Partie 2", url: "/cours/vtc/B_Gestion_2.pdf?v=20260819-1732" },
     ],
   },
   {
@@ -96,7 +96,7 @@ const MATIERE_B: ContentItem[] = [
     titre: "B. GESTION — Partie 3",
     sousTitre: "Gestion financière et Administrative",
     fichiers: [
-      { nom: "PDF HD Partie 3", url: "/cours/vtc/B_Gestion_3.pdf" },
+      { nom: "PDF HD Partie 3", url: "/cours/vtc/B_Gestion_3.pdf?v=20260819-1732" },
     ],
   },
 ];
@@ -111,7 +111,7 @@ const MATIERE_C: ContentItem[] = [
     titre: "C. SÉCURITÉ ROUTIÈRE — Partie 1",
     sousTitre: "Sécurité routière et prévention des risques",
     fichiers: [
-      { nom: "PDF HD Partie 1", url: "/cours/vtc/C_Securite_Routiere_1.pdf" },
+      { nom: "PDF HD Partie 1", url: "/cours/vtc/C_Securite_Routiere_1.pdf?v=20260819-1732" },
     ],
   },
   {
@@ -119,7 +119,7 @@ const MATIERE_C: ContentItem[] = [
     titre: "C. SÉCURITÉ ROUTIÈRE — Partie 2",
     sousTitre: "Sécurité routière (suite)",
     fichiers: [
-      { nom: "PDF HD Partie 2", url: "/cours/vtc/C_Securite_Routiere_2.pdf" },
+      { nom: "PDF HD Partie 2", url: "/cours/vtc/C_Securite_Routiere_2.pdf?v=20260819-1732" },
     ],
   },
   {
@@ -127,7 +127,7 @@ const MATIERE_C: ContentItem[] = [
     titre: "C. SÉCURITÉ ROUTIÈRE — Partie 3",
     sousTitre: "Sécurité routière (fin)",
     fichiers: [
-      { nom: "PDF HD Partie 3", url: "/cours/vtc/C_Securite_Routiere_3.pdf" },
+      { nom: "PDF HD Partie 3", url: "/cours/vtc/C_Securite_Routiere_3.pdf?v=20260819-1732" },
     ],
   },
 ];
@@ -211,7 +211,7 @@ const MATIERE_G: ContentItem[] = [
     titre: "G. RÉGLEMENTATION SPÉCIFIQUE VTC",
     sousTitre: "Réglementation spécifique aux VTC",
     fichiers: [
-      { nom: "PDF HD", url: "/cours/vtc/F_Reglementation_Specifique_1.pdf" },
+      { nom: "PDF HD", url: "/cours/vtc/F_Reglementation_Specifique_1.pdf?v=20260819-1732" },
     ],
   },
 ];
