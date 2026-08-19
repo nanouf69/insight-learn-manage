@@ -593,8 +593,16 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
           </Button>
         </div>
       )}
+
+      {/* Date de dernière mise à jour du document */}
+      <div className="px-3 py-2 border-t bg-muted/30 text-[11px] sm:text-xs text-muted-foreground">
+        {lastModified
+          ? <>Dernière mise à jour du support : <span className="font-semibold text-foreground">{lastModified}</span></>
+          : "Dernière mise à jour du support : non disponible"}
+      </div>
     </div>
   );
+
 
   if (isPseudoFullscreen) {
     return createPortal(viewerContent, document.body);
