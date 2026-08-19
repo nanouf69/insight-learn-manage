@@ -3426,6 +3426,7 @@ const ContentCard = ({
             {item.fichiers.map((f, i) => (
               <div key={i} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary/10 text-primary text-sm font-medium">
                 <CourseFileLink fichier={f} compact />
+                <FileLastModified url={f.url} />
                 <button
                   onClick={() => onFileDeleted?.(item.id, i, f.url)}
                   className="ml-1 p-0.5 rounded hover:bg-destructive/20 text-destructive transition-colors"
@@ -3435,6 +3436,7 @@ const ContentCard = ({
                 </button>
               </div>
             ))}
+
           </div>
         )}
         {/* Upload PowerPoint */}
