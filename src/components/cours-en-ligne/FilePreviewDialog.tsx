@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Eye, ExternalLink } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import PdfSlideViewer from "./PdfSlideViewer";
 
 interface Props {
   url: string;
@@ -14,7 +15,11 @@ interface Props {
  */
 export default function FilePreviewDialog({ url, nom }: Props) {
   const [open, setOpen] = useState(false);
+  const absoluteUrl = /^https?:/i.test(url)
+    ? url
+    : `${typeof window !== "undefined" ? window.location.origin : ""}${url.startsWith("/") ? "" : "/"}${url}`;
   const isPdf = /\.pdf(\?|$)/i.test(url);
+
 
   return (
     <>
