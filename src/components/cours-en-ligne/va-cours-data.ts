@@ -59,7 +59,7 @@ const MATIERE_SPECIFIQUE: ContentItem[] = [
     titre: "G. RÉGLEMENTATION SPÉCIFIQUE VTC",
     sousTitre: "Réglementation spécifique aux VTC",
     fichiers: [
-      { nom: "PDF HD", url: "/cours/vtc/F_Reglementation_Specifique_1.pdf" },
+      { nom: "PDF HD", url: "/cours/vtc/F_Reglementation_Specifique_1.pdf?v=20260819-1732" },
     ],
   },
 ];

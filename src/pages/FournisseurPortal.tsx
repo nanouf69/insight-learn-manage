@@ -1477,7 +1477,7 @@ export default function FournisseurPortal() {
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <a href="/cours/vtc/F_Nationale_1.pdf" target="_blank" rel="noopener noreferrer">
+                      <a href="/cours/vtc/F_Nationale_1.pdf?v=20260819-1732" target="_blank" rel="noopener noreferrer">
                         <div className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/30 transition-colors">
                           <FileText className="w-5 h-5 text-primary" />
                           <div>
@@ -1486,7 +1486,7 @@ export default function FournisseurPortal() {
                           </div>
                         </div>
                       </a>
-                      <a href="/cours/vtc/F_Nationale_2.pdf" target="_blank" rel="noopener noreferrer">
+                      <a href="/cours/vtc/F_Nationale_2.pdf?v=20260819-1732" target="_blank" rel="noopener noreferrer">
                         <div className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/30 transition-colors">
                           <FileText className="w-5 h-5 text-primary" />
                           <div>

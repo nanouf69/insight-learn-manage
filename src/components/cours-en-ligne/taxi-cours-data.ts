@@ -43,7 +43,7 @@ const MATIERE_A: ContentItem[] = [
     titre: "A. RÉGLEMENTATION T3P — Partie 1",
     sousTitre: "Transport public, loi LOTI, taxis, VTC, VMDTR, assurances, formation continue",
     fichiers: [
-      { nom: "PDF HD Partie 1", url: "/cours/vtc/A_T3P_1.pdf" },
+      { nom: "PDF HD Partie 1", url: "/cours/vtc/A_T3P_1.pdf?v=20260819-1732" },
     ],
   },
   {
@@ -51,7 +51,7 @@ const MATIERE_A: ContentItem[] = [
     titre: "A. RÉGLEMENTATION T3P — Partie 2",
     sousTitre: "Suite de la réglementation T3P",
     fichiers: [
-      { nom: "PDF HD Partie 2", url: "/cours/vtc/A_T3P_2.pdf" },
+      { nom: "PDF HD Partie 2", url: "/cours/vtc/A_T3P_2.pdf?v=20260819-1732" },
     ],
   },
 ];
@@ -65,7 +65,7 @@ const MATIERE_B: ContentItem[] = [
     titre: "B. GESTION — Partie 1",
     sousTitre: "Entrepreneurs et Formes Juridiques",
     fichiers: [
-      { nom: "PDF HD Partie 1", url: "/cours/vtc/B_Gestion_1.pdf" },
+      { nom: "PDF HD Partie 1", url: "/cours/vtc/B_Gestion_1.pdf?v=20260819-1732" },
     ],
   },
   {
@@ -73,7 +73,7 @@ const MATIERE_B: ContentItem[] = [
     titre: "B. GESTION — Partie 2",
     sousTitre: "Comptabilité et Fiscalité",
     fichiers: [
-      { nom: "PDF HD Partie 2", url: "/cours/vtc/B_Gestion_2.pdf" },
+      { nom: "PDF HD Partie 2", url: "/cours/vtc/B_Gestion_2.pdf?v=20260819-1732" },
     ],
   },
   {
@@ -81,7 +81,7 @@ const MATIERE_B: ContentItem[] = [
     titre: "B. GESTION — Partie 3",
     sousTitre: "Gestion financière et Administrative",
     fichiers: [
-      { nom: "PDF HD Partie 3", url: "/cours/vtc/B_Gestion_3.pdf" },
+      { nom: "PDF HD Partie 3", url: "/cours/vtc/B_Gestion_3.pdf?v=20260819-1732" },
     ],
   },
 ];
@@ -95,7 +95,7 @@ const MATIERE_C: ContentItem[] = [
     titre: "C. SÉCURITÉ ROUTIÈRE — Partie 1",
     sousTitre: "Sécurité routière et prévention des risques",
     fichiers: [
-      { nom: "PDF HD Partie 1", url: "/cours/vtc/C_Securite_Routiere_1.pdf" },
+      { nom: "PDF HD Partie 1", url: "/cours/vtc/C_Securite_Routiere_1.pdf?v=20260819-1732" },
     ],
   },
   {
@@ -103,7 +103,7 @@ const MATIERE_C: ContentItem[] = [
     titre: "C. SÉCURITÉ ROUTIÈRE — Partie 2",
     sousTitre: "Sécurité routière (suite)",
     fichiers: [
-      { nom: "PDF HD Partie 2", url: "/cours/vtc/C_Securite_Routiere_2.pdf" },
+      { nom: "PDF HD Partie 2", url: "/cours/vtc/C_Securite_Routiere_2.pdf?v=20260819-1732" },
     ],
   },
   {
@@ -111,7 +111,7 @@ const MATIERE_C: ContentItem[] = [
     titre: "C. SÉCURITÉ ROUTIÈRE — Partie 3",
     sousTitre: "Sécurité routière (fin)",
     fichiers: [
-      { nom: "PDF HD Partie 3", url: "/cours/vtc/C_Securite_Routiere_3.pdf" },
+      { nom: "PDF HD Partie 3", url: "/cours/vtc/C_Securite_Routiere_3.pdf?v=20260819-1732" },
     ],
   },
 ];
@@ -178,7 +178,7 @@ const MATIERE_F: ContentItem[] = [
     titre: "F. RÉGLEMENTATION NATIONALE — Partie 1",
     sousTitre: "Réglementation nationale",
     fichiers: [
-      { nom: "PDF HD Partie 1", url: "/cours/vtc/F_Nationale_1.pdf" },
+      { nom: "PDF HD Partie 1", url: "/cours/vtc/F_Nationale_1.pdf?v=20260819-1732" },
     ],
   },
   {
@@ -186,7 +186,7 @@ const MATIERE_F: ContentItem[] = [
     titre: "F. RÉGLEMENTATION NATIONALE — Partie 2",
     sousTitre: "Réglementation nationale (suite)",
     fichiers: [
-      { nom: "PDF HD Partie 2", url: "/cours/vtc/F_Nationale_2.pdf" },
+      { nom: "PDF HD Partie 2", url: "/cours/vtc/F_Nationale_2.pdf?v=20260819-1732" },
     ],
   },
   {
@@ -194,7 +194,7 @@ const MATIERE_F: ContentItem[] = [
     titre: "F. RÉGLEMENTATION LOCALE — Partie 1",
     sousTitre: "Réglementation locale",
     fichiers: [
-      { nom: "PDF HD Partie 1", url: "/cours/vtc/F_Locale_1.pdf" },
+      { nom: "PDF HD Partie 1", url: "/cours/vtc/F_Locale_1.pdf?v=20260819-1732" },
     ],
   },
   {
@@ -202,7 +202,7 @@ const MATIERE_F: ContentItem[] = [
     titre: "F. RÉGLEMENTATION LOCALE — Partie 2",
     sousTitre: "Réglementation locale (suite)",
     fichiers: [
-      { nom: "PowerPoint Partie 2", url: "/cours/vtc/F_Locale_2.pptx" },
+      { nom: "PDF HD Partie 2", url: "/cours/vtc/F_Locale_2.pdf?v=20260819-1732" },
     ],
   },
   {
@@ -210,7 +210,7 @@ const MATIERE_F: ContentItem[] = [
     titre: "F. RÉGLEMENTATION LOCALE — Partie 3",
     sousTitre: "Réglementation locale (fin)",
     fichiers: [
-      { nom: "PDF HD Partie 3", url: "/cours/vtc/F_Locale_3.pdf" },
+      { nom: "PDF HD Partie 3", url: "/cours/vtc/F_Locale_3.pdf?v=20260819-1732" },
     ],
   },
 ];
