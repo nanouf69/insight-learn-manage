@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Eye, ExternalLink } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import PdfSlideViewer from "./PdfSlideViewer";
 
 interface Props {
   url: string;
@@ -14,7 +15,11 @@ interface Props {
  */
 export default function FilePreviewDialog({ url, nom }: Props) {
   const [open, setOpen] = useState(false);
+  const absoluteUrl = /^https?:/i.test(url)
+    ? url
+    : `${typeof window !== "undefined" ? window.location.origin : ""}${url.startsWith("/") ? "" : "/"}${url}`;
   const isPdf = /\.pdf(\?|$)/i.test(url);
+
 
   return (
     <>
@@ -41,31 +46,28 @@ export default function FilePreviewDialog({ url, nom }: Props) {
               variant="outline"
               size="sm"
               className="gap-1.5 mr-8"
-              onClick={() => window.open(url, "_blank", "noopener,noreferrer")}
+              onClick={() => window.open(absoluteUrl, "_blank", "noopener,noreferrer")}
             >
               <ExternalLink className="w-4 h-4" />
               Ouvrir
             </Button>
           </DialogHeader>
 
-          <div className="flex-1 min-h-0 rounded-md border overflow-hidden bg-muted">
+          <div className="flex-1 min-h-0 rounded-md border overflow-auto bg-muted">
             {isPdf ? (
-              <iframe
-                src={url}
-                title={nom || "Aperçu"}
-                className="w-full h-full"
-              />
+              <PdfSlideViewer url={absoluteUrl} nom={nom || "Aperçu"} />
             ) : (
               <div className="h-full flex flex-col items-center justify-center gap-3 p-6 text-center text-sm text-muted-foreground">
                 <p>Ce format ne peut pas être affiché directement dans le navigateur.</p>
-                <Button onClick={() => window.open(url, "_blank", "noopener,noreferrer")}>
+                <Button onClick={() => window.open(absoluteUrl, "_blank", "noopener,noreferrer")}>
                   Télécharger / ouvrir le fichier
                 </Button>
               </div>
             )}
           </div>
 
-          <p className="text-[11px] text-muted-foreground break-all">{url}</p>
+          <p className="text-[11px] text-muted-foreground break-all">{absoluteUrl}</p>
+
         </DialogContent>
       </Dialog>
     </>
