@@ -161,8 +161,9 @@ Deno.serve(async (req) => {
     return json({
       fournisseur: f,
       apprenants: appRes.data || [],
-      documents: docRes.data || [],
-      factures: facRes.data || [],
+      documents: await signRows(docRes.data || []),
+      factures: await signRows(facRes.data || []),
+
       shared_docs: sharedRes.data || [],
       releves: relevesRes.data || [],
     });
