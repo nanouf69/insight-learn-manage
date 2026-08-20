@@ -13,6 +13,7 @@ import { CRMDashboard } from "@/components/crm/CRMDashboard";
 import { PlanningCalendar } from "@/components/planning/PlanningCalendar";
 import { DocumentsList } from "@/components/documents/DocumentsList";
 import { SettingsPage } from "@/components/settings/SettingsPage";
+import { RenouvellementsPage } from "@/components/renouvellements/RenouvellementsPage";
 import { SessionsList } from "@/components/sessions/SessionsList";
 import { OrganisationsList } from "@/components/organisations/OrganisationsList";
 import { FormateursList } from "@/components/formateurs/FormateursList";
@@ -66,6 +67,7 @@ const pageConfig = {
   fournisseurs: { title: "Fournisseurs", subtitle: "Gérez vos fournisseurs et leurs espaces" },
   corbeille: { title: "Corbeille", subtitle: "Éléments supprimés — restaurer ou supprimer définitivement" },
   "diagnostic-acces": { title: "Diagnostic accès", subtitle: "État d'accès e-learning de tous les apprenants" },
+  renouvellements: { title: "Renouvellements", subtitle: "Échéances véhicules, agréments TAXI/VTC et Qualiopi" },
   "creneaux-25-mai": { title: "Créneaux lundi 25 mai", subtitle: "Q/R avant l'examen du 26 mai — temps réel" },
 };
 
@@ -395,6 +397,8 @@ const Index = () => {
         return <DiagnosticAccesGlobal onOpenApprenant={handleNavigateToApprenant} />;
       case "creneaux-25-mai":
         return <CreneauxRdvAdmin />;
+      case "renouvellements":
+        return <RenouvellementsPage />;
       case "settings":
         return <SettingsPage />;
       default:
