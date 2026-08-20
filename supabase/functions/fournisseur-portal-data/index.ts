@@ -93,7 +93,8 @@ Deno.serve(async (req) => {
         .select("*")
         .eq("fournisseur_id", fid)
         .order("created_at", { ascending: false });
-      return json({ data: data || [] });
+      return json({ data: await signRows(data || []) });
+
     }
     if (action === "shared_docs") {
       const { data } = await supabase
