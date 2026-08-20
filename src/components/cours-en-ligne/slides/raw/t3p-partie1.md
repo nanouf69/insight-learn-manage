@@ -710,12 +710,7 @@ FTRANSPORT - SERVICES PRO • Formation certifiée Qualiopi • Éligible CPF �
 | ✔ Prise en charge immédiate dans la rue | ✘ Jamais de prise en charge sans réservation |
 | ✘ Hors zone → réservation obligatoire   | ✔ Réservation → prise en charge autorisée    |
 
-# Conditions du véhicule taxi (exemple Lyon — à vérifier selon votre département) :
 
-| < 10 ans            | Min 3 pass.        | Couleur                        | Signalétique                       | Taximètre |
-| ------------------- | ------------------ | ------------------------------ | ---------------------------------- | --------- |
-| Âge max du véhicule | Capacité d'accueil | Blanche, grise ou noire (Lyon) | Dispositif lumineux TAXI + commune | Homologué |
-|                     |                    |                                | Carnet métrologique                |           |
 
 FTRANSPORT - SERVICES PRO • Formation certifiée Qualiopi • Éligible CPF • Lyon    25/88
 
