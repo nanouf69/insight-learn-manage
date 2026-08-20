@@ -2716,6 +2716,45 @@ export type Database = {
         }
         Relationships: []
       }
+      renouvellements: {
+        Row: {
+          categorie: string
+          created_at: string
+          date_debut: string | null
+          date_echeance: string | null
+          id: string
+          libelle: string
+          notes: string | null
+          ordre: number
+          reference: string | null
+          updated_at: string
+        }
+        Insert: {
+          categorie: string
+          created_at?: string
+          date_debut?: string | null
+          date_echeance?: string | null
+          id?: string
+          libelle: string
+          notes?: string | null
+          ordre?: number
+          reference?: string | null
+          updated_at?: string
+        }
+        Update: {
+          categorie?: string
+          created_at?: string
+          date_debut?: string | null
+          date_echeance?: string | null
+          id?: string
+          libelle?: string
+          notes?: string | null
+          ordre?: number
+          reference?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       reponses_apprenants: {
         Row: {
           apprenant_id: string

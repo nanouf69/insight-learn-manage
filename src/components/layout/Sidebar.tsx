@@ -20,7 +20,8 @@ import {
   Package,
   Trash2,
   ShieldCheck,
-  CalendarClock
+  CalendarClock,
+  BadgeCheck
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -51,6 +52,7 @@ const menuItems = [
   { id: "bpf", label: "BPF", icon: ClipboardList },
   { id: "cours-en-ligne", label: "Cours en ligne", icon: Monitor },
   { id: "fournisseurs", label: "Fournisseurs", icon: Package },
+  { id: "renouvellements", label: "Renouvellements", icon: BadgeCheck },
   { id: "diagnostic-acces", label: "Diagnostic accès", icon: ShieldCheck },
   { id: "corbeille", label: "Corbeille", icon: Trash2 },
 ];
