@@ -65,14 +65,13 @@ Deno.serve(async (req) => {
     const timestamp = Date.now();
     const bucketName = "fournisseur-documents";
 
-    // Ensure bucket exists and is public
+    // Ensure bucket exists and stays PRIVATE (documents contain learner PII)
     const { data: buckets } = await supabase.storage.listBuckets();
     const existingBucket = buckets?.find((b: any) => b.name === bucketName);
     if (!existingBucket) {
-      await supabase.storage.createBucket(bucketName, { public: true });
-    } else if (!existingBucket.public) {
-      await supabase.storage.updateBucket(bucketName, { public: true });
+      await supabase.storage.createBucket(bucketName, { public: false });
     }
+
 
     if (type === "facture") {
       const filePath = `factures/${fournisseurId}/${timestamp}_${file.name}`;

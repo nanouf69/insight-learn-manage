@@ -48,6 +48,28 @@ Deno.serve(async (req) => {
 
     const fid = f.id;
 
+    // 'fournisseur-documents' is a PRIVATE bucket: rewrite stored URLs into
+    // short-lived signed URLs so files stay unreachable without a valid token.
+    const signRows = async <T extends { url?: string | null }>(rows: T[]): Promise<T[]> => {
+      const marker = "/fournisseur-documents/";
+      return await Promise.all(
+        (rows || []).map(async (row) => {
+          const url = row?.url || "";
+          const idx = url.indexOf(marker);
+          if (idx === -1) return row;
+          try {
+            const path = decodeURIComponent(url.slice(idx + marker.length));
+            const { data: signed } = await supabase.storage
+              .from("fournisseur-documents")
+              .createSignedUrl(path, 3600);
+            return signed?.signedUrl ? { ...row, url: signed.signedUrl } : row;
+          } catch (_) {
+            return row;
+          }
+        }),
+      );
+    };
+
     if (action === "apprenants") {
       const { data } = await supabase
         .from("fournisseur_apprenants")
@@ -62,15 +84,17 @@ Deno.serve(async (req) => {
         .select("*")
         .eq("fournisseur_id", fid)
         .order("created_at", { ascending: false });
-      return json({ data: data || [] });
+      return json({ data: await signRows(data || []) });
     }
+
     if (action === "factures") {
       const { data } = await supabase
         .from("fournisseur_factures")
         .select("*")
         .eq("fournisseur_id", fid)
         .order("created_at", { ascending: false });
-      return json({ data: data || [] });
+      return json({ data: await signRows(data || []) });
+
     }
     if (action === "shared_docs") {
       const { data } = await supabase
@@ -137,8 +161,9 @@ Deno.serve(async (req) => {
     return json({
       fournisseur: f,
       apprenants: appRes.data || [],
-      documents: docRes.data || [],
-      factures: facRes.data || [],
+      documents: await signRows(docRes.data || []),
+      factures: await signRows(facRes.data || []),
+
       shared_docs: sharedRes.data || [],
       releves: relevesRes.data || [],
     });
