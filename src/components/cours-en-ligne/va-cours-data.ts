@@ -45,7 +45,7 @@ const MATIERE_MARKETING: ContentItem[] = [
     titre: "F. DÉVELOPPEMENT COMMERCIAL",
     sousTitre: "Marketing et développement commercial VTC",
     fichiers: [
-      { nom: "PDF HD Marketing", url: "/cours/vtc/G_Marketing_1.pdf" },
+      { nom: "PDF HD Développement Commercial", url: "/cours/vtc/G_Marketing_1.pdf?v=20260820-1736" },
     ],
   },
 ];
