@@ -2543,10 +2543,11 @@ export function ExamenReussitePage() {
             }
           }
           extraDays.forEach(ed => {
-            if (!calWeekdays.some(d => toKeyF(d) === ed) && !excludedDays.includes(ed)) {
+            if (!calWeekdays.some(d => toKeyF(d) === ed)) {
               calWeekdays.push(new Date(ed + 'T00:00:00'));
             }
           });
+
           calWeekdays.sort((a, b) => a.getTime() - b.getTime());
         }
         const formatDateFr = (d: Date) => d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
