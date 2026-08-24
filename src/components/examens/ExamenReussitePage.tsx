@@ -3526,12 +3526,13 @@ export function ExamenReussitePage() {
             cur.setDate(cur.getDate() + 1);
           }
         }
-        // Add extra days
+        // Add extra days (priorité absolue : même si exclus ou occupés)
         extraDays.forEach(ed => {
-          if (!weekdays.some(d => toKey(d) === ed) && !excludedDays.includes(ed)) {
+          if (!weekdays.some(d => toKey(d) === ed)) {
             weekdays.push(new Date(ed + 'T00:00:00'));
           }
         });
+
         weekdays.sort((a, b) => a.getTime() - b.getTime());
 
         const totalVTC = tousPlanning.filter(a => isPracticeVTCType(a.type_apprenant)).length;
