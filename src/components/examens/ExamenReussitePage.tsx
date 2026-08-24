@@ -2543,10 +2543,11 @@ export function ExamenReussitePage() {
             }
           }
           extraDays.forEach(ed => {
-            if (!calWeekdays.some(d => toKeyF(d) === ed) && !excludedDays.includes(ed)) {
+            if (!calWeekdays.some(d => toKeyF(d) === ed)) {
               calWeekdays.push(new Date(ed + 'T00:00:00'));
             }
           });
+
           calWeekdays.sort((a, b) => a.getTime() - b.getTime());
         }
         const formatDateFr = (d: Date) => d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -3526,12 +3527,13 @@ export function ExamenReussitePage() {
             cur.setDate(cur.getDate() + 1);
           }
         }
-        // Add extra days
+        // Add extra days (priorité absolue : même si exclus ou occupés)
         extraDays.forEach(ed => {
-          if (!weekdays.some(d => toKey(d) === ed) && !excludedDays.includes(ed)) {
+          if (!weekdays.some(d => toKey(d) === ed)) {
             weekdays.push(new Date(ed + 'T00:00:00'));
           }
         });
+
         weekdays.sort((a, b) => a.getTime() - b.getTime());
 
         const totalVTC = tousPlanning.filter(a => isPracticeVTCType(a.type_apprenant)).length;
@@ -3688,10 +3690,13 @@ export function ExamenReussitePage() {
                       onClick={() => {
                         if (newExtraDay && !extraDays.includes(newExtraDay)) {
                           setExtraDays(prev => [...prev, newExtraDay]);
+                          // Un jour ajouté manuellement prime sur un jour supprimé
+                          setExcludedDays(prev => prev.filter(x => x !== newExtraDay));
                           setNewExtraDay("");
                           toast.success(`Jour ajouté : ${formatDateLabel(newExtraDay)}`);
                         }
                       }}
+
                     >
                       <Plus className="h-3 w-3" /> Ajouter
                     </Button>
