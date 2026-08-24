@@ -4628,18 +4628,19 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
             variant="outline"
             size="sm"
             onClick={() => {
-              const state = (window.history.state?.usr ?? {}) as { from?: string };
-              const from = state?.from;
-              if (from && from !== window.location.pathname) {
-                window.location.assign(from);
-                return;
-              }
+              // Priorité : vrai retour navigateur (conserve la page précédente et son état)
               const idx = window.history.state?.idx;
               if (typeof idx === "number" && idx > 0) {
                 window.history.back();
                 return;
               }
-              window.location.assign("/sessions");
+              const state = (window.history.state?.usr ?? {}) as { from?: string };
+              const from = state?.from;
+              if (from && from !== window.location.pathname + window.location.search) {
+                window.location.assign(from);
+                return;
+              }
+              window.location.assign("/?section=sessions");
             }}
             className="gap-2"
           >
