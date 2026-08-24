@@ -1169,6 +1169,38 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     return convocationApprenantIds.has(apprenantId);
   };
 
+  const normalizeSubj = (s?: string | null) =>
+    (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+  const bienvenueApprenantIds = useMemo(
+    () =>
+      new Set(
+        sentSessionEmails
+          .filter((e: any) => normalizeSubj(e.subject).includes('bienvenue chez ftransport'))
+          .map((e: any) => e.apprenant_id)
+          .filter(Boolean)
+      ),
+    [sentSessionEmails]
+  );
+
+  const preInfoApprenantIds = useMemo(
+    () =>
+      new Set(
+        sentSessionEmails
+          .filter((e: any) => {
+            const s = normalizeSubj(e.subject);
+            return s.includes('pre-information') || s.includes('pre information') || s.includes('preinformation');
+          })
+          .map((e: any) => e.apprenant_id)
+          .filter(Boolean)
+      ),
+    [sentSessionEmails]
+  );
+
+  const hasBienvenueEmail = (apprenantId: string) => bienvenueApprenantIds.has(apprenantId);
+  const hasPreInfoEmail = (apprenantId: string) => preInfoApprenantIds.has(apprenantId);
+
+
    // Charger les identifiants envoyés pour les apprenants de cette session
     const { data: identifiantsSent = [] } = useQuery({
       queryKey: ['identifiants-sent', session?.id, apprenantsInSession.map((sa: any) => sa.apprenant?.id).join(',')],
