@@ -1169,6 +1169,38 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     return convocationApprenantIds.has(apprenantId);
   };
 
+  const normalizeSubj = (s?: string | null) =>
+    (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+  const bienvenueApprenantIds = useMemo(
+    () =>
+      new Set(
+        sentSessionEmails
+          .filter((e: any) => normalizeSubj(e.subject).includes('bienvenue chez ftransport'))
+          .map((e: any) => e.apprenant_id)
+          .filter(Boolean)
+      ),
+    [sentSessionEmails]
+  );
+
+  const preInfoApprenantIds = useMemo(
+    () =>
+      new Set(
+        sentSessionEmails
+          .filter((e: any) => {
+            const s = normalizeSubj(e.subject);
+            return s.includes('pre-information') || s.includes('pre information') || s.includes('preinformation');
+          })
+          .map((e: any) => e.apprenant_id)
+          .filter(Boolean)
+      ),
+    [sentSessionEmails]
+  );
+
+  const hasBienvenueEmail = (apprenantId: string) => bienvenueApprenantIds.has(apprenantId);
+  const hasPreInfoEmail = (apprenantId: string) => preInfoApprenantIds.has(apprenantId);
+
+
    // Charger les identifiants envoyés pour les apprenants de cette session
     const { data: identifiantsSent = [] } = useQuery({
       queryKey: ['identifiants-sent', session?.id, apprenantsInSession.map((sa: any) => sa.apprenant?.id).join(',')],
@@ -3847,26 +3879,27 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-8 gap-1.5 text-muted-foreground hover:text-primary"
-                            title="Mail dossier de bienvenue"
+                            className={`h-8 gap-1.5 ${hasBienvenueEmail(apprenant.id) ? 'text-green-700 bg-green-100 hover:bg-green-200 hover:text-green-800' : 'text-muted-foreground hover:text-primary'}`}
+                            title={hasBienvenueEmail(apprenant.id) ? "Mail dossier de bienvenue déjà envoyé" : "Mail dossier de bienvenue"}
                             disabled={sendingEmailForApprenant === apprenant.id}
                             onClick={() => handlePreviewTemplateEmail('bienvenue', apprenant)}
                           >
-                            <Send className="w-4 h-4" />
+                            {hasBienvenueEmail(apprenant.id) ? <CheckCircle2 className="w-4 h-4" /> : <Send className="w-4 h-4" />}
                             <span className="text-xs">📄 Mail dossier de bienvenue</span>
                           </Button>
 
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-8 gap-1.5 text-muted-foreground hover:text-primary"
-                            title="Mail pré-information"
+                            className={`h-8 gap-1.5 ${hasPreInfoEmail(apprenant.id) ? 'text-green-700 bg-green-100 hover:bg-green-200 hover:text-green-800' : 'text-muted-foreground hover:text-primary'}`}
+                            title={hasPreInfoEmail(apprenant.id) ? "Mail pré-information déjà envoyé" : "Mail pré-information"}
                             disabled={sendingEmailForApprenant === apprenant.id}
                             onClick={() => handlePreviewTemplateEmail(getPreInformationTemplateId(apprenant), apprenant)}
                           >
-                            <Send className="w-4 h-4" />
+                            {hasPreInfoEmail(apprenant.id) ? <CheckCircle2 className="w-4 h-4" /> : <Send className="w-4 h-4" />}
                             <span className="text-xs">📋 Mail pré-information</span>
                           </Button>
+
 
 
 
