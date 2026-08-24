@@ -3688,10 +3688,13 @@ export function ExamenReussitePage() {
                       onClick={() => {
                         if (newExtraDay && !extraDays.includes(newExtraDay)) {
                           setExtraDays(prev => [...prev, newExtraDay]);
+                          // Un jour ajouté manuellement prime sur un jour supprimé
+                          setExcludedDays(prev => prev.filter(x => x !== newExtraDay));
                           setNewExtraDay("");
                           toast.success(`Jour ajouté : ${formatDateLabel(newExtraDay)}`);
                         }
                       }}
+
                     >
                       <Plus className="h-3 w-3" /> Ajouter
                     </Button>
