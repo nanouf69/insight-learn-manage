@@ -3593,6 +3593,12 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                             <Phone className="w-3 h-3 shrink-0" />
                             {apprenant.telephone || "—"}
                           </span>
+                          <span className="flex items-center gap-1 font-medium text-foreground/80">
+                            <CalendarIcon className="w-3 h-3 shrink-0" />
+                            Inscrit le {sessionApprenant.created_at
+                              ? format(new Date(sessionApprenant.created_at), "dd/MM/yyyy 'à' HH'h'mm", { locale: fr })
+                              : "—"}
+                          </span>
                         </div>
 
 
