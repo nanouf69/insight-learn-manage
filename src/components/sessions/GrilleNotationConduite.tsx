@@ -99,6 +99,8 @@ interface Props {
   formation: Formation;
   sessionId?: string;
   datePassage?: string;
+  /** Lecture seule (vue apprenant) : aucune case cochable, aucun enregistrement. */
+  readOnly?: boolean;
 }
 
 const GrilleNotationConduite = ({
@@ -108,6 +110,7 @@ const GrilleNotationConduite = ({
   formation,
   sessionId,
   datePassage,
+  readOnly = false,
 }: Props) => {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -315,21 +318,22 @@ const GrilleNotationConduite = ({
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="grille-passage">Passage</Label>
-                <Input id="grille-passage" value={passage} onChange={(e) => setPassage(e.target.value)} placeholder="Ex : 1er passage" />
+                <Input id="grille-passage" value={passage} onChange={(e) => setPassage(e.target.value)} placeholder="Ex : 1er passage" readOnly={readOnly} disabled={readOnly} />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="grille-date">Date</Label>
-                <Input id="grille-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+                <Input id="grille-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} readOnly={readOnly} disabled={readOnly} />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="grille-evaluateur">Évaluateur</Label>
-                <Input id="grille-evaluateur" value={evaluateur} onChange={(e) => setEvaluateur(e.target.value)} placeholder="Nom du formateur" />
+                <Input id="grille-evaluateur" value={evaluateur} onChange={(e) => setEvaluateur(e.target.value)} placeholder="Nom du formateur" readOnly={readOnly} disabled={readOnly} />
               </div>
             </div>
 
             <p className="text-xs text-muted-foreground">
-              Cochez les éléments <strong>non assimilés</strong> par l'apprenant. La note de chaque thème est
-              calculée automatiquement sur 20.
+              {readOnly
+                ? "Grille remplie par le formateur : les éléments cochés sont ceux non assimilés. Consultation uniquement."
+                : "Cochez les éléments non assimilés par l'apprenant. La note de chaque thème est calculée automatiquement sur 20."}
             </p>
 
             {themes.map(theme => {
@@ -353,6 +357,7 @@ const GrilleNotationConduite = ({
                           id={`crit-${c.id}`}
                           checked={!!coches[c.id]}
                           onCheckedChange={(v) => setCoches(prev => ({ ...prev, [c.id]: !!v }))}
+                          disabled={readOnly}
                         />
                         <Label htmlFor={`crit-${c.id}`} className="text-sm font-normal cursor-pointer leading-snug">
                           {c.label}
@@ -377,6 +382,8 @@ const GrilleNotationConduite = ({
                 onChange={(e) => setObservations(e.target.value)}
                 rows={3}
                 placeholder="Points à travailler, remarques du formateur..."
+                readOnly={readOnly}
+                disabled={readOnly}
               />
             </div>
 
@@ -392,10 +399,12 @@ const GrilleNotationConduite = ({
             </div>
 
             <div className="flex flex-col sm:flex-row gap-2">
-              <Button className="flex-1 gap-2" onClick={handleSave} disabled={saving}>
-                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                Enregistrer la grille
-              </Button>
+              {!readOnly && (
+                <Button className="flex-1 gap-2" onClick={handleSave} disabled={saving}>
+                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                  Enregistrer la grille
+                </Button>
+              )}
               <Button variant="outline" className="flex-1 gap-2" onClick={handlePdf}>
                 <Download className="w-4 h-4" />
                 Télécharger en PDF
