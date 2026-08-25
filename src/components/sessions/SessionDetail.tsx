@@ -4055,6 +4055,18 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                             </SelectContent>
                           </Select>
 
+                          {session.type_session === 'pratique' && (
+                            <GrilleNotationConduite
+                              apprenantId={apprenant.id}
+                              apprenantNom={apprenant.nom}
+                              apprenantPrenom={apprenant.prenom}
+                              formation={`${apprenant.type_apprenant || ''} ${apprenant.formation_choisie || ''} ${session.type_formation || ''}`.toUpperCase().includes('TAXI') ? 'taxi' : 'vtc'}
+                              sessionId={session.id}
+                            />
+                          )}
+
+
+
                           {(sessionApprenant.mode_financement === "personnel" || apprenant.mode_financement === "personnel") && (
                             <PaiementPopover 
                               apprenantId={apprenant.id}
