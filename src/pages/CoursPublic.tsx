@@ -1126,7 +1126,6 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
       ]);
       if (cancelled) return;
 
-      const pratiqueKeys = new Set(pratiqueExpected.map((e) => `${e.date}|${e.creneau}`));
       const merged = new Map<string, { date: string; creneau: CreneauKey }>();
       for (const e of [...baseExpected, ...pratiqueExpected]) merged.set(`${e.date}|${e.creneau}`, e);
       const expected = Array.from(merged.values()).sort((a, b) =>

@@ -107,20 +107,45 @@ Deno.serve(async (req) => {
     
     const isFC = isFormationContinue(apprenant.type_apprenant, apprenant.formation_choisie);
     const isPres = isPresentielType(apprenant.type_apprenant, apprenant.formation_choisie, apprenant.creneau_horaire);
-    if (!isFC && !isPres) return json({ error: "Émargement non prévu pour cette formation" }, 403);
-    if (isFC && ["soir", "soir_1", "soir_2"].includes(demi)) return json({ error: "Créneau du soir non prévu pour cette formation" }, 403);
+
+    // Journée de formation PRATIQUE (planning) : émargement toujours autorisé,
+    // même pour un apprenant e-learning.
+    const { data: reservationRows } = await supabase
+      .from("reservations_pratique")
+      .select("date_choisie")
+      .eq("apprenant_id", apprenantId);
+    let isPratiqueDay = ((reservationRows as any[]) || []).some(
+      (r) => String(r?.date_choisie || "").slice(0, 10) === dateEmargement,
+    );
+
+    if (!isFC && !isPres && !isPratiqueDay) return json({ error: "Émargement non prévu pour cette formation" }, 403);
+    if (isFC && !isPratiqueDay && ["soir", "soir_1", "soir_2"].includes(demi)) return json({ error: "Créneau du soir non prévu pour cette formation" }, 403);
 
     const { data: sessionRows } = await supabase
       .from("session_apprenants")
-      .select("sessions:session_id(nom, creneaux, date_debut, date_fin)")
+      .select("sessions:session_id(nom, creneaux, date_debut, date_fin, type_session)")
       .eq("apprenant_id", apprenantId);
+    if (!isPratiqueDay) {
+      isPratiqueDay = ((sessionRows as any[]) || []).some((row) => {
+        const s = row?.sessions;
+        if (!s || String(s.type_session || "") !== "pratique") return false;
+        const debut = String(s.date_debut || "").slice(0, 10);
+        const fin = String(s.date_fin || debut).slice(0, 10);
+        return debut <= dateEmargement && fin >= dateEmargement;
+      });
+    }
     const matchingSession = ((sessionRows as any[]) || []).map((row) => row?.sessions).find((s) => {
       if (!s) return false;
       const debut = String(s.date_debut || "").slice(0, 10);
       const fin = String(s.date_fin || debut).slice(0, 10);
       return debut <= dateEmargement && fin >= dateEmargement;
     });
-    if (isPres && matchingSession) {
+    if (isPratiqueDay) {
+      // Formation pratique : uniquement matin / après-midi, pas de contrôle soir.
+      if (["soir", "soir_1", "soir_2"].includes(demi)) {
+        return json({ error: "Émargement pratique : choisir matin ou après-midi" }, 403);
+      }
+    } else if (isPres && matchingSession) {
       const creneaux = Array.isArray(matchingSession.creneaux) ? matchingSession.creneaux : [];
       const isEveningSession = isEveningText(apprenant.creneau_horaire) || isEveningText(matchingSession.nom) || creneaux.some((c: string) => isEveningText(c));
       const isEveningSignature = ["soir", "soir_1", "soir_2"].includes(demi);
