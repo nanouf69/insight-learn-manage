@@ -22,6 +22,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Eye, Edit, IdCard, Car } from "lucide-react";
 import { generateEmargementPratiquePDF } from "@/lib/pdf/emargement-pratique";
+import { fetchPratiqueSignatures } from "@/lib/pratiqueEmargements";
 import listeMedecinsAgrees from "@/assets/medecins/liste-medecins-agrees.pdf.asset.json";
 
 function InlineDossierCma({ apprenantId, value, onSaved }: { apprenantId: string; value: string | null; onSaved?: () => void }) {
@@ -3787,7 +3788,11 @@ export function ExamenReussitePage() {
                       const taxiOverbooked = taxiReserved.length > dayMax;
                       const daySlot = typeof dayTimeSlots[key] === 'object' ? (dayTimeSlots[key] as any) : {};
                       const dayFormateur: string | undefined = daySlot?.formateur;
-                      const downloadEmargement = (formation: 'vtc' | 'taxi', candidats: any[]) => {
+                      const downloadEmargement = async (formation: 'vtc' | 'taxi', candidats: any[]) => {
+                        const sigs = await fetchPratiqueSignatures(
+                          key,
+                          candidats.map((c) => c.apprenant_id || c.id).filter(Boolean),
+                        );
                         generateEmargementPratiquePDF(
                           new Date(key + 'T00:00:00'),
                           formation,
@@ -3796,6 +3801,10 @@ export function ExamenReussitePage() {
                             prenom: c.prenom || '',
                             telephone: c.telephone || '',
                             email: c.email || '',
+                            signatureMatin: sigs[c.apprenant_id || c.id]?.matin || null,
+                            signatureApresMidi: sigs[c.apprenant_id || c.id]?.apres_midi || null,
+                            absentMatin: sigs[c.apprenant_id || c.id]?.matinAbsent,
+                            absentApresMidi: sigs[c.apprenant_id || c.id]?.apresMidiAbsent,
                           })),
                           resolvePratiqueDayCreneaux(dayTimeSlots[key], formation),
                           dayFormateur || (formation === 'taxi' ? 'Rim TOUIL' : 'Naoufal GUENICHI')

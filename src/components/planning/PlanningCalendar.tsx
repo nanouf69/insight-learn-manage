@@ -5,6 +5,7 @@ import { PlanningForm } from "./PlanningForm";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { generateEmargementPratiquePDF } from "@/lib/pdf/emargement-pratique";
+import { fetchPratiqueSignatures } from "@/lib/pratiqueEmargements";
 import { saveEmargementToCRMForMany } from "@/lib/saveEmargementToCRM";
 import PlanningMensuelFormateurs from "@/components/agenda/PlanningMensuelFormateurs";
 import { DayConfigDialog, type DayType } from "./DayConfigDialog";
@@ -600,6 +601,10 @@ export function PlanningCalendar() {
                       size="sm"
                       className="w-full gap-1 text-xs h-7"
                       onClick={async () => {
+                        const sigs = await fetchPratiqueSignatures(
+                          day.dateKey,
+                          day.reservedCandidates.map(c => c.apprenantId).filter((x): x is string => !!x),
+                        );
                         const result = generateEmargementPratiquePDF(
                           day.date,
                           day.expectedType as 'vtc' | 'taxi',
@@ -608,6 +613,10 @@ export function PlanningCalendar() {
                             prenom: c.prenom,
                             telephone: c.telephone,
                             email: c.email,
+                            signatureMatin: (c.apprenantId && sigs[c.apprenantId]?.matin) || null,
+                            signatureApresMidi: (c.apprenantId && sigs[c.apprenantId]?.apres_midi) || null,
+                            absentMatin: c.apprenantId ? sigs[c.apprenantId]?.matinAbsent : undefined,
+                            absentApresMidi: c.apprenantId ? sigs[c.apprenantId]?.apresMidiAbsent : undefined,
                           })),
                           day.creneaux
                         );
