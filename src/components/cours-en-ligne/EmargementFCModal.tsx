@@ -455,7 +455,10 @@ export const EmargementFCModal = ({
                 required
               />
               <span className="text-sm text-amber-900">
-                <strong>Je confirme que je suis bien au lieu de formation</strong> pour ce créneau ({creneauLabel(demi)} — {creneauHoraire(demi)}).
+                <strong>Je confirme que je suis bien au lieu de formation</strong>{" "}
+                {isMultiCreneau
+                  ? "pour toute la journée (matin et après-midi)."
+                  : `pour ce créneau (${creneauLabel(demi)} — ${creneauHoraire(demi)}).`}
               </span>
             </label>
             <p className="text-xs text-muted-foreground flex items-start gap-2">
