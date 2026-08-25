@@ -207,21 +207,26 @@ export const EmargementFCModal = ({
         }
       }
 
-      await saveEmargement({
-        apprenant_id: apprenantId,
-        user_id: userId,
-        date_emargement: effectiveDate,
-        demi_journee: demi,
-        signature_data_url: signatureToSave,
-        absent: false,
-        replace_existing: replaceExisting,
-        user_agent: navigator.userAgent.slice(0, 500),
-        confirme_presence_lieu: confirmPresenceLieu,
-        confirme_identite: identityConfirmed,
-      });
+      // Formation pratique : matin + après-midi signés en une seule fois.
+      for (const c of allCreneaux) {
+        await saveEmargement({
+          apprenant_id: apprenantId,
+          user_id: userId,
+          date_emargement: effectiveDate,
+          demi_journee: c,
+          signature_data_url: signatureToSave,
+          absent: false,
+          replace_existing: replaceExisting,
+          user_agent: navigator.userAgent.slice(0, 500),
+          confirme_presence_lieu: confirmPresenceLieu,
+          confirme_identite: identityConfirmed,
+        });
+      }
       toast({
         title: "Émargement validé",
-        description: `Signature ${creneauLabel(demi).toLowerCase()} enregistrée. Bonne formation !`,
+        description: isMultiCreneau
+          ? `Signatures ${allCreneaux.map((c) => creneauLabel(c).toLowerCase()).join(" et ")} enregistrées. Bonne formation !`
+          : `Signature ${creneauLabel(demi).toLowerCase()} enregistrée. Bonne formation !`,
       });
       setDone(true);
       onSigned?.();
