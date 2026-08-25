@@ -1431,6 +1431,73 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     }
   };
 
+  // Envoi des identifiants de connexion (e-learning) à un apprenant
+  const [sendingCredentialsFor, setSendingCredentialsFor] = useState<string | null>(null);
+  const [bulkSendingCredentials, setBulkSendingCredentials] = useState(false);
+
+  const sendCredentialsToApprenant = async (apprenant: any): Promise<boolean> => {
+    if (!apprenant?.email) {
+      toast({ title: "Email manquant", description: `${apprenant?.prenom || ''} ${apprenant?.nom || ''} n'a pas d'adresse email.`, variant: "destructive" });
+      return false;
+    }
+    const { error } = await supabase.functions.invoke("resend-credentials", {
+      body: { apprenant_id: apprenant.id },
+    });
+    if (error) throw error;
+    await supabase.from("emails").insert({
+      apprenant_id: apprenant.id,
+      subject: "Identifiants de connexion - Cours en ligne",
+      type: "sent",
+      sent_at: new Date().toISOString(),
+      recipients: [apprenant.email],
+      sender_email: "noreply@ftransport.fr",
+    });
+    return true;
+  };
+
+  const handleSendCredentials = async (apprenant: any) => {
+    setSendingCredentialsFor(apprenant.id);
+    try {
+      const ok = await sendCredentialsToApprenant(apprenant);
+      if (ok) {
+        toast({ title: "Identifiants envoyés", description: `Email envoyé à ${apprenant.email}` });
+        queryClient.invalidateQueries({ queryKey: ['identifiants-sent'] });
+      }
+    } catch (err: any) {
+      toast({ title: "Erreur", description: err?.message || "Impossible d'envoyer les identifiants", variant: "destructive" });
+    } finally {
+      setSendingCredentialsFor(null);
+    }
+  };
+
+  const handleBulkSendCredentials = async () => {
+    const cibles = apprenantsInSession
+      .map((sa: any) => sa.apprenant)
+      .filter((a: any) => a && selectedApprenants.has(a.id));
+    if (cibles.length === 0) return;
+    setBulkSendingCredentials(true);
+    let ok = 0;
+    const echecs: string[] = [];
+    for (const a of cibles) {
+      try {
+        const sent = await sendCredentialsToApprenant(a);
+        if (sent) ok++;
+        else echecs.push(`${a.nom} ${a.prenom}`);
+      } catch (err: any) {
+        echecs.push(`${a.nom} ${a.prenom}`);
+      }
+    }
+    queryClient.invalidateQueries({ queryKey: ['identifiants-sent'] });
+    setBulkSendingCredentials(false);
+    toast({
+      title: `Identifiants envoyés à ${ok}/${cibles.length} apprenant(s)`,
+      description: echecs.length > 0 ? `Échecs : ${echecs.join(', ')}` : undefined,
+      variant: echecs.length > 0 ? "destructive" : undefined,
+    });
+  };
+
+
+
   if (!session) return null;
 
   const sessionApprenantIds = apprenantsInSession.map((sa: any) => sa.apprenant?.id);
@@ -3349,9 +3416,21 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                 <Printer className="w-4 h-4" />
                 Imprimer ({selectedApprenants.size})
               </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-2"
+                disabled={selectedApprenants.size === 0 || bulkSendingCredentials}
+                onClick={handleBulkSendCredentials}
+                title="Envoyer les identifiants de connexion à la plateforme e-learning"
+              >
+                {bulkSendingCredentials ? <Loader2 className="w-4 h-4 animate-spin" /> : <KeyRound className="w-4 h-4" />}
+                Identifiants ({selectedApprenants.size})
+              </Button>
               <Button 
                 size="sm" 
                 variant={showAddApprenant ? "secondary" : "outline"}
+
                 onClick={() => setShowAddApprenant(!showAddApprenant)}
                 className="gap-1"
               >
@@ -3900,7 +3979,19 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                             <span className="text-xs">📋 Mail pré-information</span>
                           </Button>
 
-
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className={`h-8 gap-1.5 ${hasIdentifiants(apprenant.id) ? 'text-green-700 bg-green-100 hover:bg-green-200 hover:text-green-800' : 'text-muted-foreground hover:text-primary'}`}
+                            title={hasIdentifiants(apprenant.id) ? "Identifiants déjà envoyés — cliquer pour renvoyer" : "Envoyer les identifiants de connexion"}
+                            disabled={sendingCredentialsFor === apprenant.id}
+                            onClick={() => handleSendCredentials(apprenant)}
+                          >
+                            {sendingCredentialsFor === apprenant.id
+                              ? <Loader2 className="w-4 h-4 animate-spin" />
+                              : hasIdentifiants(apprenant.id) ? <CheckCircle2 className="w-4 h-4" /> : <KeyRound className="w-4 h-4" />}
+                            <span className="text-xs">🔑 Identifiants de connexion</span>
+                          </Button>
 
 
                           <NotesPopover 
