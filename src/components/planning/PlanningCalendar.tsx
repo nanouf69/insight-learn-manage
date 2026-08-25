@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, Download, RefreshCw, CalendarDays, Settings2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, RefreshCw, CalendarDays, Settings2, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { PlanningForm } from "./PlanningForm";
@@ -8,6 +8,8 @@ import { generateEmargementPratiquePDF } from "@/lib/pdf/emargement-pratique";
 import { saveEmargementToCRMForMany } from "@/lib/saveEmargementToCRM";
 import PlanningMensuelFormateurs from "@/components/agenda/PlanningMensuelFormateurs";
 import { DayConfigDialog, type DayType } from "./DayConfigDialog";
+import { syncPratiqueSessionsFromPlanning } from "@/lib/syncPratiqueSessions";
+
 
 const DAY_NAMES = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
 const MONTH_NAMES = ['jan', 'fév', 'mar', 'avr', 'mai', 'jun', 'jul', 'aoû', 'sep', 'oct', 'nov', 'déc'];
