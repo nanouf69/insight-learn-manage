@@ -406,7 +406,16 @@ export const EmargementFCModal = ({
             {isRattrapage && <><strong>Créneau passé à régulariser.</strong><br /></>}
             Date : <strong>{dateLabel}</strong>
             <br />
-            Créneau : <strong>{creneauLabel(demi)} ({creneauHoraire(demi)})</strong>
+            Créneau{isMultiCreneau ? "x" : ""} :{" "}
+            <strong>
+              {allCreneaux.map((c) => `${creneauLabel(c)} (${creneauHoraire(c)})`).join(" + ")}
+            </strong>
+            {isMultiCreneau && (
+              <>
+                <br />
+                ✅ <strong>Une seule signature</strong> valide toute la journée.
+              </>
+            )}
           </AlertDescription>
         </Alert>
 
