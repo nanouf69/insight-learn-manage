@@ -1440,18 +1440,15 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       toast({ title: "Email manquant", description: `${apprenant?.prenom || ''} ${apprenant?.nom || ''} n'a pas d'adresse email.`, variant: "destructive" });
       return false;
     }
-    const { error } = await supabase.functions.invoke("resend-credentials", {
+    const { data, error } = await supabase.functions.invoke("resend-credentials", {
       body: { apprenant_id: apprenant.id },
     });
     if (error) throw error;
-    await supabase.from("emails").insert({
-      apprenant_id: apprenant.id,
-      subject: "Identifiants de connexion - Cours en ligne",
-      type: "sent",
-      sent_at: new Date().toISOString(),
-      recipients: [apprenant.email],
-      sender_email: "noreply@ftransport.fr",
-    });
+    // La fonction journalise elle-même l'email envoyé : ne rien tracer si l'envoi a échoué,
+    // sinon le bouton passe au vert alors que l'apprenant n'a rien reçu.
+    if (!(data as any)?.emailSent) {
+      throw new Error((data as any)?.message || `L'email n'a pas pu être envoyé à ${apprenant.email}`);
+    }
     return true;
   };
 
@@ -5269,23 +5266,15 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                   onClick={async () => {
                     setResendingCredentials(true);
                     try {
-                      const { error } = await supabase.functions.invoke("resend-credentials", {
+                      const { data, error } = await supabase.functions.invoke("resend-credentials", {
                         body: { apprenant_id: accountDialogApprenant.id },
                       });
                       if (error) throw error;
-                      // Log email for identifiants badge
-                      await supabase.from("emails").insert({
-                        apprenant_id: accountDialogApprenant.id,
-                        subject: "Identifiants de connexion - Cours en ligne",
-                        type: "sent",
-                        sent_at: new Date().toISOString(),
-                        recipients: [accountDialogApprenant.email],
-                        sender_email: "noreply@ftransport.fr",
-                      });
+                      if (!(data as any)?.emailSent) throw new Error((data as any)?.message || "Envoi email impossible");
                       queryClient.invalidateQueries({ queryKey: ['identifiants-sent'] });
                       toast({ title: "Identifiants renvoyés par email" });
-                    } catch {
-                      toast({ title: "Erreur", description: "Erreur lors de l'envoi", variant: "destructive" });
+                    } catch (e: any) {
+                      toast({ title: "Erreur", description: e?.message || "Erreur lors de l'envoi", variant: "destructive" });
                     } finally {
                       setResendingCredentials(false);
                     }
