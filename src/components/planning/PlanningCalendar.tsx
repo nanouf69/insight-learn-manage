@@ -8,7 +8,7 @@ import { generateEmargementPratiquePDF } from "@/lib/pdf/emargement-pratique";
 import { saveEmargementToCRMForMany } from "@/lib/saveEmargementToCRM";
 import PlanningMensuelFormateurs from "@/components/agenda/PlanningMensuelFormateurs";
 import { DayConfigDialog, type DayType } from "./DayConfigDialog";
-import { syncPratiqueSessionsFromPlanning } from "@/lib/syncPratiqueSessions";
+import { syncPratiqueSessionsFromPlanning, checkPratiqueSessionsCoherence, type PratiqueCoherenceReport } from "@/lib/syncPratiqueSessions";
 
 
 const DAY_NAMES = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
