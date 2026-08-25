@@ -23,6 +23,11 @@ interface EmargementFCModalProps {
   mode?: "fc" | "presentiel";
   /** Date de l'émargement à signer (YYYY-MM-DD). Par défaut : aujourd'hui (rattrapage des jours passés). */
   dateEmargement?: string;
+  /**
+   * Créneaux supplémentaires à émarger avec la MÊME signature, en un seul clic.
+   * Utilisé pour la formation pratique : matin + après-midi signés en une fois.
+   */
+  extraCreneaux?: CreneauKey[];
   replaceExisting?: boolean;
   required?: boolean;
   onSigned?: () => void;
