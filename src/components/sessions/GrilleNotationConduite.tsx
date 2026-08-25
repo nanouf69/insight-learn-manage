@@ -99,6 +99,8 @@ interface Props {
   formation: Formation;
   sessionId?: string;
   datePassage?: string;
+  /** Lecture seule (vue apprenant) : aucune case cochable, aucun enregistrement. */
+  readOnly?: boolean;
 }
 
 const GrilleNotationConduite = ({
@@ -108,6 +110,7 @@ const GrilleNotationConduite = ({
   formation,
   sessionId,
   datePassage,
+  readOnly = false,
 }: Props) => {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
