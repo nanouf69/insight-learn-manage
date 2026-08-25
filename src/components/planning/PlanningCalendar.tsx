@@ -85,9 +85,34 @@ export function PlanningCalendar() {
   const [weeks, setWeeks] = useState<WeekInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
+  const [syncingSessions, setSyncingSessions] = useState(false);
   const [isPlanningMensuelOpen, setIsPlanningMensuelOpen] = useState(false);
   const [configDay, setConfigDay] = useState<DayInfo | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+
+  // Aligne les sessions "pratique" sur le planning : crée les sessions manquantes
+  // et inscrit tous les candidats réservés qui n'y figurent pas encore.
+  const handleSyncSessions = async () => {
+    setSyncingSessions(true);
+    try {
+      const res = await syncPratiqueSessionsFromPlanning();
+      if (res.errors.length > 0) {
+        toast.warning(
+          `Sync partielle : ${res.sessionsCreated} session(s) créée(s), ${res.apprenantsAdded} apprenant(s) ajouté(s). Erreurs : ${res.errors.slice(0, 2).join(' | ')}`
+        );
+      } else {
+        toast.success(
+          `✅ Sessions alignées sur le planning : ${res.sessionsCreated} session(s) créée(s), ${res.apprenantsAdded} apprenant(s) ajouté(s) sur ${res.datesChecked} date(s)`
+        );
+      }
+      setRefreshKey(k => k + 1);
+    } catch (err: any) {
+      toast.error("Erreur de synchronisation : " + (err?.message || 'Échec'));
+    } finally {
+      setSyncingSessions(false);
+    }
+  };
+
 
   const goPreviousMonth = () => {
     if (viewMonth === 0) { setViewYear(y => y - 1); setViewMonth(11); }
