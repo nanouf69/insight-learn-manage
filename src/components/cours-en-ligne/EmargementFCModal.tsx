@@ -110,6 +110,7 @@ export const EmargementFCModal = ({
   creneau,
   mode = "fc",
   dateEmargement,
+  extraCreneaux,
   replaceExisting = false,
   required = false,
   onSigned,
