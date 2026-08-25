@@ -731,6 +731,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
         .from('session_apprenants')
         .select(`
           id,
+          created_at,
           apprenant_id,
           mode_financement,
           date_debut,
@@ -3494,7 +3495,9 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                   {(() => {
                     const resolveA = (sa: any) => sa.apprenant ?? allApprenants.find((a) => a.id === sa.apprenant_id);
                     const isEl = (a: any) => /e-?\s?learning/i.test(`${a?.type_apprenant || ''} ${a?.formation_choisie || ''}`);
-                    const rows = apprenantsInSession as any[];
+                    const byRecent = (a: any, b: any) =>
+                      String(b.created_at || '').localeCompare(String(a.created_at || ''));
+                    const rows = [...(apprenantsInSession as any[])].sort(byRecent);
                     const pres = rows.filter((sa) => !isEl(resolveA(sa)));
                     const elearn = rows.filter((sa) => isEl(resolveA(sa)));
                     return [...pres, ...elearn].map((sa: any) => ({
@@ -3589,6 +3592,12 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                           <span className="flex items-center gap-1">
                             <Phone className="w-3 h-3 shrink-0" />
                             {apprenant.telephone || "—"}
+                          </span>
+                          <span className="flex items-center gap-1 font-medium text-foreground/80">
+                            <Calendar className="w-3 h-3 shrink-0" />
+                            Inscrit le {sessionApprenant.created_at
+                              ? format(new Date(sessionApprenant.created_at), "dd/MM/yyyy 'à' HH'h'mm", { locale: fr })
+                              : "—"}
                           </span>
                         </div>
 
