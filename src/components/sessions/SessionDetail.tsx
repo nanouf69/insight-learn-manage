@@ -65,6 +65,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { computePresenceHours, formatPresenceHours, isEveningTrainingValue, isFormationContinueValue } from "@/lib/emargementHours";
 import { filterAndSortApprenants } from "@/lib/apprenantSearch";
 import { SmallTransfersTable } from "@/components/dashboard/SmallTransfersTable";
+import GrilleNotationConduite from "./GrilleNotationConduite";
 
 interface Session {
   id: string;
@@ -4054,6 +4055,18 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                               <SelectItem value="deplace">📅 Déplacé</SelectItem>
                             </SelectContent>
                           </Select>
+
+                          {session.type_session === 'pratique' && (
+                            <GrilleNotationConduite
+                              apprenantId={apprenant.id}
+                              apprenantNom={apprenant.nom}
+                              apprenantPrenom={apprenant.prenom}
+                              formation={`${apprenant.type_apprenant || ''} ${apprenant.formation_choisie || ''} ${(session as any).type_formation || ''}`.toUpperCase().includes('TAXI') ? 'taxi' : 'vtc'}
+                              sessionId={session.id}
+                            />
+                          )}
+
+
 
                           {(sessionApprenant.mode_financement === "personnel" || apprenant.mode_financement === "personnel") && (
                             <PaiementPopover 
