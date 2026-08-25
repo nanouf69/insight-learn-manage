@@ -82,12 +82,16 @@ async function toDisplayableCourseUrl(fileUrl: string): Promise<string> {
  */
 export default function FilePreviewDialog({ url, nom }: Props) {
   const [open, setOpen] = useState(false);
-  const [displayUrl, setDisplayUrl] = useState(() => resolveAppFileUrl(url));
+  const [displayUrl, setDisplayUrl] = useState<string | null>(() => {
+    const storageObject = extractCourseStorageObject(url) ?? extractCourseStorageObject(resolveAppFileUrl(url));
+    return storageObject ? null : resolveAppFileUrl(url);
+  });
   const isPdf = /\.pdf(\?|$)/i.test(url);
 
   useEffect(() => {
     let cancelled = false;
-    setDisplayUrl(resolveAppFileUrl(url));
+    const storageObject = extractCourseStorageObject(url) ?? extractCourseStorageObject(resolveAppFileUrl(url));
+    setDisplayUrl(storageObject ? null : resolveAppFileUrl(url));
     toDisplayableCourseUrl(url).then((nextUrl) => {
       if (!cancelled) setDisplayUrl(nextUrl);
     });
@@ -122,7 +126,11 @@ export default function FilePreviewDialog({ url, nom }: Props) {
               variant="outline"
               size="sm"
               className="gap-1.5 mr-8"
-              onClick={() => window.open(displayUrl, "_blank", "noopener,noreferrer")}
+              disabled={!displayUrl}
+              onClick={() => {
+                if (!displayUrl) return;
+                window.open(displayUrl, "_blank", "noopener,noreferrer");
+              }}
             >
               <ExternalLink className="w-4 h-4" />
               Ouvrir
@@ -130,7 +138,11 @@ export default function FilePreviewDialog({ url, nom }: Props) {
           </DialogHeader>
 
           <div className="flex-1 min-h-0 rounded-md border overflow-auto bg-muted">
-            {isPdf ? (
+            {!displayUrl ? (
+              <div className="h-full flex items-center justify-center p-6 text-sm text-muted-foreground">
+                Préparation du PDF sécurisé…
+              </div>
+            ) : isPdf ? (
               <PdfSlideViewer url={displayUrl} nom={nom || "Aperçu"} />
             ) : (
               <div className="h-full flex flex-col items-center justify-center gap-3 p-6 text-center text-sm text-muted-foreground">
@@ -142,7 +154,7 @@ export default function FilePreviewDialog({ url, nom }: Props) {
             )}
           </div>
 
-          <p className="text-[11px] text-muted-foreground break-all">{displayUrl}</p>
+          {displayUrl && <p className="text-[11px] text-muted-foreground break-all">{displayUrl}</p>}
 
         </DialogContent>
       </Dialog>
