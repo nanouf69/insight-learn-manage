@@ -4121,7 +4121,50 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                   </div>
                 </div>
               </div>
+
+              {/* Liste d'attente (au-delà de 18 inscrits) */}
+              {(() => {
+                const resolveA = (sa: any) => sa.apprenant ?? allApprenants.find((a) => a.id === sa.apprenant_id);
+                const byOldest = (a: any, b: any) =>
+                  String(a.created_at || '').localeCompare(String(b.created_at || ''));
+                const ordered = [...(apprenantsInSession as any[])].sort(byOldest);
+                const waiting = ordered.slice(18);
+                if (waiting.length === 0) return null;
+                return (
+                  <div className="mt-4 rounded-lg border border-orange-300 bg-orange-50 p-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Badge className="bg-orange-100 text-orange-700 hover:bg-orange-100">⏳ Liste d'attente</Badge>
+                      <span className="text-sm font-medium text-orange-800">
+                        {waiting.length} apprenant(s) au-delà des 18 places
+                      </span>
+                    </div>
+                    <div className="space-y-2">
+                      {waiting.map((sa: any, i: number) => {
+                        const a = resolveA(sa) || {};
+                        return (
+                          <div
+                            key={sa.id || sa.apprenant_id || i}
+                            className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-md bg-background/70 border px-3 py-2 text-sm"
+                          >
+                            <span className="font-semibold text-foreground">
+                              {i + 19}. {(a.nom || '').toUpperCase()} {a.prenom || ''}
+                            </span>
+                            <span className="text-muted-foreground">📞 {a.telephone || '—'}</span>
+                            <span className="text-muted-foreground">✉️ {a.email || '—'}</span>
+                            <span className="text-xs text-muted-foreground">
+                              {sa.created_at
+                                ? `Inscrit le ${format(new Date(sa.created_at), "dd/MM/yyyy 'à' HH'h'mm", { locale: fr })}`
+                                : ''}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
+
 
           </TabsContent>
 
