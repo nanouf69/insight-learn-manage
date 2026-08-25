@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, Download, RefreshCw, CalendarDays, Settings2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, RefreshCw, CalendarDays, Settings2, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { PlanningForm } from "./PlanningForm";
@@ -8,6 +8,8 @@ import { generateEmargementPratiquePDF } from "@/lib/pdf/emargement-pratique";
 import { saveEmargementToCRMForMany } from "@/lib/saveEmargementToCRM";
 import PlanningMensuelFormateurs from "@/components/agenda/PlanningMensuelFormateurs";
 import { DayConfigDialog, type DayType } from "./DayConfigDialog";
+import { syncPratiqueSessionsFromPlanning } from "@/lib/syncPratiqueSessions";
+
 
 const DAY_NAMES = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
 const MONTH_NAMES = ['jan', 'fév', 'mar', 'avr', 'mai', 'jun', 'jul', 'aoû', 'sep', 'oct', 'nov', 'déc'];
@@ -83,9 +85,34 @@ export function PlanningCalendar() {
   const [weeks, setWeeks] = useState<WeekInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
+  const [syncingSessions, setSyncingSessions] = useState(false);
   const [isPlanningMensuelOpen, setIsPlanningMensuelOpen] = useState(false);
   const [configDay, setConfigDay] = useState<DayInfo | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+
+  // Aligne les sessions "pratique" sur le planning : crée les sessions manquantes
+  // et inscrit tous les candidats réservés qui n'y figurent pas encore.
+  const handleSyncSessions = async () => {
+    setSyncingSessions(true);
+    try {
+      const res = await syncPratiqueSessionsFromPlanning();
+      if (res.errors.length > 0) {
+        toast.warning(
+          `Sync partielle : ${res.sessionsCreated} session(s) créée(s), ${res.apprenantsAdded} apprenant(s) ajouté(s). Erreurs : ${res.errors.slice(0, 2).join(' | ')}`
+        );
+      } else {
+        toast.success(
+          `✅ Sessions alignées sur le planning : ${res.sessionsCreated} session(s) créée(s), ${res.apprenantsAdded} apprenant(s) ajouté(s) sur ${res.datesChecked} date(s)`
+        );
+      }
+      setRefreshKey(k => k + 1);
+    } catch (err: any) {
+      toast.error("Erreur de synchronisation : " + (err?.message || 'Échec'));
+    } finally {
+      setSyncingSessions(false);
+    }
+  };
+
 
   const goPreviousMonth = () => {
     if (viewMonth === 0) { setViewYear(y => y - 1); setViewMonth(11); }
@@ -392,7 +419,19 @@ export function PlanningCalendar() {
             <RefreshCw className={`h-3.5 w-3.5 ${syncing ? 'animate-spin' : ''}`} />
             {syncing ? 'Synchronisation...' : 'Sync dates examen'}
           </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleSyncSessions}
+            disabled={syncingSessions}
+            className="gap-1.5 text-xs"
+            title="Créer/compléter les sessions pratiques pour qu'elles correspondent exactement au planning"
+          >
+            <Users className={`h-3.5 w-3.5 ${syncingSessions ? 'animate-pulse' : ''}`} />
+            {syncingSessions ? 'Synchronisation...' : 'Sync sessions ↔ planning'}
+          </Button>
           <PlanningForm />
+
         </div>
       </div>
 
