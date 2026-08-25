@@ -2190,6 +2190,57 @@ export type Database = {
           },
         ]
       }
+      grilles_notation_conduite: {
+        Row: {
+          apprenant_id: string
+          created_at: string
+          created_by: string | null
+          criteres: Json
+          date_passage: string
+          evaluateur: string | null
+          id: string
+          note_globale: number | null
+          notes_themes: Json
+          observations: string | null
+          passage: string | null
+          session_id: string | null
+          type_formation: string
+          updated_at: string
+        }
+        Insert: {
+          apprenant_id: string
+          created_at?: string
+          created_by?: string | null
+          criteres?: Json
+          date_passage?: string
+          evaluateur?: string | null
+          id?: string
+          note_globale?: number | null
+          notes_themes?: Json
+          observations?: string | null
+          passage?: string | null
+          session_id?: string | null
+          type_formation?: string
+          updated_at?: string
+        }
+        Update: {
+          apprenant_id?: string
+          created_at?: string
+          created_by?: string | null
+          criteres?: Json
+          date_passage?: string
+          evaluateur?: string | null
+          id?: string
+          note_globale?: number | null
+          notes_themes?: Json
+          observations?: string | null
+          passage?: string | null
+          session_id?: string | null
+          type_formation?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       justificatifs: {
         Row: {
           categorie: string | null
