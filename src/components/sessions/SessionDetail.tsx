@@ -3495,7 +3495,9 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                   {(() => {
                     const resolveA = (sa: any) => sa.apprenant ?? allApprenants.find((a) => a.id === sa.apprenant_id);
                     const isEl = (a: any) => /e-?\s?learning/i.test(`${a?.type_apprenant || ''} ${a?.formation_choisie || ''}`);
-                    const rows = apprenantsInSession as any[];
+                    const byRecent = (a: any, b: any) =>
+                      String(b.created_at || '').localeCompare(String(a.created_at || ''));
+                    const rows = [...(apprenantsInSession as any[])].sort(byRecent);
                     const pres = rows.filter((sa) => !isEl(resolveA(sa)));
                     const elearn = rows.filter((sa) => isEl(resolveA(sa)));
                     return [...pres, ...elearn].map((sa: any) => ({
