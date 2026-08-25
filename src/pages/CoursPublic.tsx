@@ -1516,7 +1516,9 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
 
 
   if (needsEmargement) {
-    const formationLabel = isPres ? "formation en présentiel" : "formation continue";
+    const formationLabel = !isFC && !isPres && emargementPratiquePending
+      ? "formation pratique"
+      : isPres ? "formation en présentiel" : "formation continue";
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
         <div className="text-center max-w-md mb-6">
