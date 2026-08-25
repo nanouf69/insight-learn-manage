@@ -113,6 +113,22 @@ export function PlanningCalendar() {
     }
   };
 
+  // Vérification de cohérence planning ↔ sessions (lecture seule, avant affichage)
+  const [coherence, setCoherence] = useState<PratiqueCoherenceReport | null>(null);
+  const [checkingCoherence, setCheckingCoherence] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    setCheckingCoherence(true);
+    checkPratiqueSessionsCoherence()
+      .then((rep) => { if (!cancelled) setCoherence(rep); })
+      .catch(() => { if (!cancelled) setCoherence(null); })
+      .finally(() => { if (!cancelled) setCheckingCoherence(false); });
+    return () => { cancelled = true; };
+  }, [refreshKey]);
+
+
+
 
   const goPreviousMonth = () => {
     if (viewMonth === 0) { setViewYear(y => y - 1); setViewMonth(11); }
