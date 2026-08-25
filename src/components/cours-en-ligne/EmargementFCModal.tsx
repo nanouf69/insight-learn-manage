@@ -294,18 +294,20 @@ export const EmargementFCModal = ({
         justUrl = urlData?.publicUrl || "";
       }
 
-      await saveEmargement({
-        apprenant_id: apprenantId,
-        user_id: userId,
-        date_emargement: effectiveDate,
-        demi_journee: demi,
-        signature_data_url: null,
-        absent: true,
-        justificatif_url: justUrl,
-        motif_absence: motif.trim() || null,
-        user_agent: navigator.userAgent.slice(0, 500),
-        confirme_identite: identityConfirmed,
-      });
+      for (const c of allCreneaux) {
+        await saveEmargement({
+          apprenant_id: apprenantId,
+          user_id: userId,
+          date_emargement: effectiveDate,
+          demi_journee: c,
+          signature_data_url: null,
+          absent: true,
+          justificatif_url: justUrl,
+          motif_absence: motif.trim() || null,
+          user_agent: navigator.userAgent.slice(0, 500),
+          confirme_identite: identityConfirmed,
+        });
+      }
 
       toast({
         title: "Absence enregistrée",
