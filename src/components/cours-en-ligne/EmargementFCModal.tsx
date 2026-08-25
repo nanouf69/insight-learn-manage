@@ -130,6 +130,9 @@ export const EmargementFCModal = ({
   const [identityConfirmed, setIdentityConfirmed] = useState(true);
   const [confirmPresenceLieu, setConfirmPresenceLieu] = useState(false);
   const effectiveDate = dateEmargement || todayISO();
+  const extras = (extraCreneaux || []).filter((c) => c && c !== demi);
+  const allCreneaux: CreneauKey[] = [demi, ...extras];
+  const isMultiCreneau = extras.length > 0;
   const isRattrapage = effectiveDate !== todayISO();
   const dateLabel = (() => {
     const [y, m, d] = effectiveDate.split("-").map((x) => parseInt(x, 10));
