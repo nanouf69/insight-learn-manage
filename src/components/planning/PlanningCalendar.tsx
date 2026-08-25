@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, Download, RefreshCw, CalendarDays, Settings2, Users } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, RefreshCw, CalendarDays, Settings2, Users, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { PlanningForm } from "./PlanningForm";
