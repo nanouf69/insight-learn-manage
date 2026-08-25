@@ -3151,7 +3151,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
           });
 
         const saForEmargement = apprenant._sa || {};
-        const finalAgendaDays = isFCVTC
+        const rawAgendaDays = isFCVTC
           ? applyFCVTCPersonalizedSchedule(
               agendaDays,
               session.dateDebut,
@@ -3169,6 +3169,9 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                 heureFinPersonnalisee: saForEmargement.heure_fin_personnalisee,
               })
             : agendaDays;
+        const finalAgendaDays = (session.type_session === 'pratique')
+          ? ensureFullPratiqueDays(rawAgendaDays, isTaxi)
+          : rawAgendaDays;
 
         if (finalAgendaDays.length === 0) {
           failed++;
@@ -3846,7 +3849,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                   });
 
                                 const isPratiqueIndiv = session.type_session === 'pratique';
-                                const finalAgendaDays = isFCVTC
+                                const rawAgendaDays = isFCVTC
                                   ? applyFCVTCPersonalizedSchedule(
                                       agendaDays,
                                       session.dateDebut,
@@ -3864,6 +3867,9 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                         heureFinPersonnalisee: sessionApprenant.heure_fin_personnalisee,
                                       })
                                     : agendaDays;
+                                const finalAgendaDays = (session.type_session === 'pratique')
+                                  ? ensureFullPratiqueDays(rawAgendaDays, isTaxi)
+                                  : rawAgendaDays;
 
                                 if (finalAgendaDays.length === 0) {
                                   toast({ title: "Aucun cours trouvé", description: "Aucun bloc agenda trouvé pour cette session.", variant: "destructive" });
