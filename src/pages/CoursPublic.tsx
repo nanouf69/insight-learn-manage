@@ -1106,16 +1106,32 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
       const endDate = endDateRaw < today ? endDateRaw : today;
 
       // Liste de tous les créneaux attendus sur la plage
-      const expected = await getExpectedEmargements({
-        mode,
-        formationChoisie: apprenant.formation_choisie,
-        creneauHoraire: apprenant.creneau_horaire,
-        typeApprenant: apprenant.type_apprenant,
-        apprenantId: apprenant.id!,
-        startDate,
-        endDate,
-      });
+      const [baseExpected, pratiqueExpected] = await Promise.all([
+        isFC || isPres
+          ? getExpectedEmargements({
+              mode,
+              formationChoisie: apprenant.formation_choisie,
+              creneauHoraire: apprenant.creneau_horaire,
+              typeApprenant: apprenant.type_apprenant,
+              apprenantId: apprenant.id!,
+              startDate,
+              endDate,
+            })
+          : Promise.resolve([] as Array<{ date: string; creneau: CreneauKey }>),
+        // Journées de formation PRATIQUE : basées sur le planning (réservations
+        // + sessions de type pratique), quel que soit le mode de formation.
+        getExpectedPratiqueEmargements(apprenant.id!),
+      ]);
       if (cancelled) return;
+
+      const pratiqueKeys = new Set(pratiqueExpected.map((e) => `${e.date}|${e.creneau}`));
+      const merged = new Map<string, { date: string; creneau: CreneauKey }>();
+      for (const e of [...baseExpected, ...pratiqueExpected]) merged.set(`${e.date}|${e.creneau}`, e);
+      const expected = Array.from(merged.values()).sort((a, b) =>
+        a.date === b.date ? (a.creneau === "matin" ? -1 : 1) : a.date.localeCompare(b.date),
+      );
+
+      setEmargementPratiquePending(pratiqueExpected.length > 0);
 
       if (expected.length === 0) {
         setEmargementFCStatus("n/a");
@@ -1123,6 +1139,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         setEmargementDate(null);
         return;
       }
+
 
       // Récupère les créneaux déjà signés (ou déclarés absents) sur la plage
       const fromISO = expected[0].date;
