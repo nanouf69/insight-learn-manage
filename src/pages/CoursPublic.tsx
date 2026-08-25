@@ -1077,13 +1077,6 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     const isFC = isFormationContinue(apprenant.type_apprenant, apprenant.formation_choisie);
     const isPres = !isFC && isPresentielType(apprenant.type_apprenant, apprenant.formation_choisie, apprenant.creneau_horaire);
 
-    if (!isFC && !isPres) {
-      setEmargementFCStatus("n/a");
-      setEmargementCreneau(null);
-      setEmargementDate(null);
-      return;
-    }
-
     let cancelled = false;
     setEmargementFCStatus("checking");
     const mode: "fc" | "presentiel" = isFC ? "fc" : "presentiel";
