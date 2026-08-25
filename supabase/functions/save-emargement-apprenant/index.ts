@@ -118,9 +118,6 @@ Deno.serve(async (req) => {
       (r) => String(r?.date_choisie || "").slice(0, 10) === dateEmargement,
     );
 
-    if (!isFC && !isPres && !isPratiqueDay) return json({ error: "Émargement non prévu pour cette formation" }, 403);
-    if (isFC && !isPratiqueDay && ["soir", "soir_1", "soir_2"].includes(demi)) return json({ error: "Créneau du soir non prévu pour cette formation" }, 403);
-
     const { data: sessionRows } = await supabase
       .from("session_apprenants")
       .select("sessions:session_id(nom, creneaux, date_debut, date_fin, type_session)")
@@ -134,6 +131,9 @@ Deno.serve(async (req) => {
         return debut <= dateEmargement && fin >= dateEmargement;
       });
     }
+
+    if (!isFC && !isPres && !isPratiqueDay) return json({ error: "Émargement non prévu pour cette formation" }, 403);
+    if (isFC && !isPratiqueDay && ["soir", "soir_1", "soir_2"].includes(demi)) return json({ error: "Créneau du soir non prévu pour cette formation" }, 403);
     const matchingSession = ((sessionRows as any[]) || []).map((row) => row?.sessions).find((s) => {
       if (!s) return false;
       const debut = String(s.date_debut || "").slice(0, 10);
