@@ -451,6 +451,67 @@ export function PlanningCalendar() {
         </div>
       </div>
 
+      {!checkingCoherence && coherence && coherence.total > 0 && (
+        <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-4 space-y-3">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-center gap-2 text-destructive font-semibold text-sm">
+              <AlertTriangle className="h-4 w-4" />
+              Incohérences planning ↔ sessions ({coherence.total})
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-xs h-7"
+              onClick={handleSyncSessions}
+              disabled={syncingSessions}
+            >
+              {syncingSessions ? 'Correction...' : 'Corriger automatiquement'}
+            </Button>
+          </div>
+
+          {coherence.datesSansSession.length > 0 && (
+            <div className="text-xs space-y-1">
+              <p className="font-medium text-foreground">Journées réservées sans session créée :</p>
+              {coherence.datesSansSession.map((d) => (
+                <p key={d.date} className="text-muted-foreground">
+                  • {d.label} — {d.reservations} candidat{d.reservations > 1 ? 's' : ''} au planning, aucune session
+                </p>
+              ))}
+            </div>
+          )}
+
+          {coherence.apprenantsManquants.length > 0 && (
+            <div className="text-xs space-y-1">
+              <p className="font-medium text-foreground">Apprenants du planning absents de la session :</p>
+              {coherence.apprenantsManquants.map((d) => (
+                <p key={d.date} className="text-muted-foreground">
+                  • {d.label} — {d.sessionNom} : {d.apprenants.join(', ')}
+                </p>
+              ))}
+            </div>
+          )}
+
+          {coherence.sessionsHorsCalendrier.length > 0 && (
+            <div className="text-xs space-y-1">
+              <p className="font-medium text-foreground">Sessions hors calendrier (aucune réservation ce jour) :</p>
+              {coherence.sessionsHorsCalendrier.map((d) => (
+                <p key={d.date} className="text-muted-foreground">
+                  • {d.label} — {d.sessionNom} ({d.inscrits} inscrit{d.inscrits > 1 ? 's' : ''})
+                </p>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {!checkingCoherence && coherence && coherence.total === 0 && (
+        <div className="rounded-lg border border-emerald-500/40 bg-emerald-500/5 px-4 py-2 text-xs text-emerald-700 dark:text-emerald-400 flex items-center gap-2">
+          <CheckCircle2 className="h-3.5 w-3.5" />
+          Planning et sessions cohérents : tous les candidats réservés sont inscrits.
+        </div>
+      )}
+
+
       {weeks.map((week) => (
         <div key={week.label} className="space-y-3">
           <h3 className="text-base font-semibold text-foreground italic">{week.label}</h3>
