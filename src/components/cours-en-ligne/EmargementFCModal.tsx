@@ -343,13 +343,16 @@ export const EmargementFCModal = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {creneauIcon(demi)}
-            {isRattrapage ? "Rattrapage d'émargement" : "Émargement"} — {creneauLabel(demi)}
+            {isRattrapage ? "Rattrapage d'émargement" : "Émargement"} —{" "}
+            {isMultiCreneau ? "Journée complète (matin + après-midi)" : creneauLabel(demi)}
           </DialogTitle>
           <DialogDescription>
             Bonjour <strong>{apprenantPrenom} {apprenantNom}</strong>, vous suivez une <strong>{formationLabel}</strong>.
-            {isRattrapage
-              ? " Un créneau passé n'a pas été émargé. Merci de signer votre présence ou de déclarer une absence avec justificatif."
-              : " Merci de signer votre présence ou de déclarer une absence avec justificatif."}
+            {isMultiCreneau
+              ? " Une seule signature suffit : elle vaut pour le matin et l'après-midi de cette journée."
+              : isRattrapage
+                ? " Un créneau passé n'a pas été émargé. Merci de signer votre présence ou de déclarer une absence avec justificatif."
+                : " Merci de signer votre présence ou de déclarer une absence avec justificatif."}
           </DialogDescription>
         </DialogHeader>
 
