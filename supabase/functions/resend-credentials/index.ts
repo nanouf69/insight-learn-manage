@@ -55,6 +55,7 @@ serve(async (req) => {
     }
 
     const { apprenant_id } = await req.json();
+    console.log("[resend-credentials] request", { apprenant_id });
 
     if (!apprenant_id) {
       return new Response(
@@ -141,6 +142,7 @@ serve(async (req) => {
 
     let emailSent = false;
 
+    console.log("[resend-credentials] graph env", { hasTenantId: !!tenantId, hasClientId: !!clientId, hasClientSecret: !!clientSecret });
     if (tenantId && clientId && clientSecret) {
       try {
         const tokenUrl = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`;
@@ -157,6 +159,7 @@ serve(async (req) => {
         });
         const tokenData = await tokenRes.json();
         const accessToken = tokenData.access_token;
+        console.log("[resend-credentials] graph token", { ok: tokenRes.ok, hasToken: !!accessToken });
 
         if (accessToken) {
           const formationLabels: Record<string, string> = {
@@ -256,6 +259,7 @@ serve(async (req) => {
             }),
           });
 
+          console.log("[resend-credentials] sendMail status", sendRes.status);
           if (sendRes.ok) {
             emailSent = true;
             await supabaseAdmin.from("emails").insert({
