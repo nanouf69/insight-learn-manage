@@ -392,7 +392,19 @@ export function PlanningCalendar() {
             <RefreshCw className={`h-3.5 w-3.5 ${syncing ? 'animate-spin' : ''}`} />
             {syncing ? 'Synchronisation...' : 'Sync dates examen'}
           </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleSyncSessions}
+            disabled={syncingSessions}
+            className="gap-1.5 text-xs"
+            title="Créer/compléter les sessions pratiques pour qu'elles correspondent exactement au planning"
+          >
+            <Users className={`h-3.5 w-3.5 ${syncingSessions ? 'animate-pulse' : ''}`} />
+            {syncingSessions ? 'Synchronisation...' : 'Sync sessions ↔ planning'}
+          </Button>
           <PlanningForm />
+
         </div>
       </div>
 
