@@ -731,6 +731,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
         .from('session_apprenants')
         .select(`
           id,
+          created_at,
           apprenant_id,
           mode_financement,
           date_debut,
