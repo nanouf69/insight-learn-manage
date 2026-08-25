@@ -763,6 +763,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const [emargementDate, setEmargementDate] = useState<string | null>(null);
   const [emargementMode, setEmargementMode] = useState<"fc" | "presentiel">("fc");
   const [emargementPratiquePending, setEmargementPratiquePending] = useState(false);
+  const [emargementExtraCreneaux, setEmargementExtraCreneaux] = useState<CreneauKey[]>([]);
   const [emargementRefreshTick, setEmargementRefreshTick] = useState(0);
   const [forceDisconnecting, setForceDisconnecting] = useState(false);
   const [sessionAccessWindow, setSessionAccessWindow] = useState<SessionAccessWindow | null>(null);
@@ -1163,9 +1164,20 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
       if (!next) {
         setEmargementCreneau(null);
         setEmargementDate(null);
+        setEmargementExtraCreneaux([]);
         setEmargementFCStatus("signed");
         return;
       }
+      // Formation pratique : signature unique pour matin + après-midi de la journée
+      const pratiqueSameDay = pratiqueExpected.filter((e) => e.date === next.date);
+      const isPratiqueDay = pratiqueSameDay.some((e) => e.creneau === next.creneau);
+      setEmargementExtraCreneaux(
+        isPratiqueDay
+          ? pratiqueSameDay
+              .filter((e) => e.creneau !== next.creneau && !signedSet.has(`${e.date}|${e.creneau}`))
+              .map((e) => e.creneau)
+          : [],
+      );
       setEmargementCreneau(next.creneau);
       setEmargementDate(next.date);
       setEmargementFCStatus("needed");
@@ -1556,6 +1568,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
             apprenantNom={apprenant!.nom}
             apprenantPrenom={apprenant!.prenom}
             creneau={emargementCreneau}
+            extraCreneaux={emargementExtraCreneaux}
             mode={emargementMode}
             dateEmargement={emargementDate || undefined}
             required={false}

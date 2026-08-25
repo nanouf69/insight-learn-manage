@@ -23,6 +23,11 @@ interface EmargementFCModalProps {
   mode?: "fc" | "presentiel";
   /** Date de l'émargement à signer (YYYY-MM-DD). Par défaut : aujourd'hui (rattrapage des jours passés). */
   dateEmargement?: string;
+  /**
+   * Créneaux supplémentaires à émarger avec la MÊME signature, en un seul clic.
+   * Utilisé pour la formation pratique : matin + après-midi signés en une fois.
+   */
+  extraCreneaux?: CreneauKey[];
   replaceExisting?: boolean;
   required?: boolean;
   onSigned?: () => void;
@@ -105,6 +110,7 @@ export const EmargementFCModal = ({
   creneau,
   mode = "fc",
   dateEmargement,
+  extraCreneaux,
   replaceExisting = false,
   required = false,
   onSigned,
@@ -124,6 +130,9 @@ export const EmargementFCModal = ({
   const [identityConfirmed, setIdentityConfirmed] = useState(true);
   const [confirmPresenceLieu, setConfirmPresenceLieu] = useState(false);
   const effectiveDate = dateEmargement || todayISO();
+  const extras = (extraCreneaux || []).filter((c) => c && c !== demi);
+  const allCreneaux: CreneauKey[] = [demi, ...extras];
+  const isMultiCreneau = extras.length > 0;
   const isRattrapage = effectiveDate !== todayISO();
   const dateLabel = (() => {
     const [y, m, d] = effectiveDate.split("-").map((x) => parseInt(x, 10));
@@ -198,21 +207,26 @@ export const EmargementFCModal = ({
         }
       }
 
-      await saveEmargement({
-        apprenant_id: apprenantId,
-        user_id: userId,
-        date_emargement: effectiveDate,
-        demi_journee: demi,
-        signature_data_url: signatureToSave,
-        absent: false,
-        replace_existing: replaceExisting,
-        user_agent: navigator.userAgent.slice(0, 500),
-        confirme_presence_lieu: confirmPresenceLieu,
-        confirme_identite: identityConfirmed,
-      });
+      // Formation pratique : matin + après-midi signés en une seule fois.
+      for (const c of allCreneaux) {
+        await saveEmargement({
+          apprenant_id: apprenantId,
+          user_id: userId,
+          date_emargement: effectiveDate,
+          demi_journee: c,
+          signature_data_url: signatureToSave,
+          absent: false,
+          replace_existing: replaceExisting,
+          user_agent: navigator.userAgent.slice(0, 500),
+          confirme_presence_lieu: confirmPresenceLieu,
+          confirme_identite: identityConfirmed,
+        });
+      }
       toast({
         title: "Émargement validé",
-        description: `Signature ${creneauLabel(demi).toLowerCase()} enregistrée. Bonne formation !`,
+        description: isMultiCreneau
+          ? `Signatures ${allCreneaux.map((c) => creneauLabel(c).toLowerCase()).join(" et ")} enregistrées. Bonne formation !`
+          : `Signature ${creneauLabel(demi).toLowerCase()} enregistrée. Bonne formation !`,
       });
       setDone(true);
       onSigned?.();
@@ -280,18 +294,20 @@ export const EmargementFCModal = ({
         justUrl = urlData?.publicUrl || "";
       }
 
-      await saveEmargement({
-        apprenant_id: apprenantId,
-        user_id: userId,
-        date_emargement: effectiveDate,
-        demi_journee: demi,
-        signature_data_url: null,
-        absent: true,
-        justificatif_url: justUrl,
-        motif_absence: motif.trim() || null,
-        user_agent: navigator.userAgent.slice(0, 500),
-        confirme_identite: identityConfirmed,
-      });
+      for (const c of allCreneaux) {
+        await saveEmargement({
+          apprenant_id: apprenantId,
+          user_id: userId,
+          date_emargement: effectiveDate,
+          demi_journee: c,
+          signature_data_url: null,
+          absent: true,
+          justificatif_url: justUrl,
+          motif_absence: motif.trim() || null,
+          user_agent: navigator.userAgent.slice(0, 500),
+          confirme_identite: identityConfirmed,
+        });
+      }
 
       toast({
         title: "Absence enregistrée",
@@ -327,13 +343,16 @@ export const EmargementFCModal = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {creneauIcon(demi)}
-            {isRattrapage ? "Rattrapage d'émargement" : "Émargement"} — {creneauLabel(demi)}
+            {isRattrapage ? "Rattrapage d'émargement" : "Émargement"} —{" "}
+            {isMultiCreneau ? "Journée complète (matin + après-midi)" : creneauLabel(demi)}
           </DialogTitle>
           <DialogDescription>
             Bonjour <strong>{apprenantPrenom} {apprenantNom}</strong>, vous suivez une <strong>{formationLabel}</strong>.
-            {isRattrapage
-              ? " Un créneau passé n'a pas été émargé. Merci de signer votre présence ou de déclarer une absence avec justificatif."
-              : " Merci de signer votre présence ou de déclarer une absence avec justificatif."}
+            {isMultiCreneau
+              ? " Une seule signature suffit : elle vaut pour le matin et l'après-midi de cette journée."
+              : isRattrapage
+                ? " Un créneau passé n'a pas été émargé. Merci de signer votre présence ou de déclarer une absence avec justificatif."
+                : " Merci de signer votre présence ou de déclarer une absence avec justificatif."}
           </DialogDescription>
         </DialogHeader>
 
@@ -387,7 +406,16 @@ export const EmargementFCModal = ({
             {isRattrapage && <><strong>Créneau passé à régulariser.</strong><br /></>}
             Date : <strong>{dateLabel}</strong>
             <br />
-            Créneau : <strong>{creneauLabel(demi)} ({creneauHoraire(demi)})</strong>
+            Créneau{isMultiCreneau ? "x" : ""} :{" "}
+            <strong>
+              {allCreneaux.map((c) => `${creneauLabel(c)} (${creneauHoraire(c)})`).join(" + ")}
+            </strong>
+            {isMultiCreneau && (
+              <>
+                <br />
+                ✅ <strong>Une seule signature</strong> valide toute la journée.
+              </>
+            )}
           </AlertDescription>
         </Alert>
 
@@ -427,7 +455,10 @@ export const EmargementFCModal = ({
                 required
               />
               <span className="text-sm text-amber-900">
-                <strong>Je confirme que je suis bien au lieu de formation</strong> pour ce créneau ({creneauLabel(demi)} — {creneauHoraire(demi)}).
+                <strong>Je confirme que je suis bien au lieu de formation</strong>{" "}
+                {isMultiCreneau
+                  ? "pour toute la journée (matin et après-midi)."
+                  : `pour ce créneau (${creneauLabel(demi)} — ${creneauHoraire(demi)}).`}
               </span>
             </label>
             <p className="text-xs text-muted-foreground flex items-start gap-2">
