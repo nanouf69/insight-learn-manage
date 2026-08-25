@@ -265,6 +265,25 @@ const buildFallbackAgendaDays = (
   return days;
 };
 
+/**
+ * Formation PRATIQUE = journée complète (6h) : matin 09h-12h + après-midi 13h-16h
+ * (TAXI : 13h-17h30). Les blocs agenda ne contiennent parfois qu'un créneau du
+ * matin, ce qui affichait à tort 3h seulement sur la feuille d'émargement.
+ */
+const ensureFullPratiqueDays = (
+  days: AgendaDaySlot[],
+  isTaxi?: boolean,
+): AgendaDaySlot[] =>
+  days.map((d) => ({
+    ...d,
+    matinDebut: d.matinDebut || '09:00',
+    matinFin: d.matinFin || '12:00',
+    apremDebut: d.apremDebut || '13:00',
+    apremFin: d.apremFin || (isTaxi ? '17:30' : '16:00'),
+  }));
+
+
+
 const formatLocalDateKey = (date: Date) => {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
