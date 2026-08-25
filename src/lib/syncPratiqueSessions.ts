@@ -144,3 +144,139 @@ export async function syncPratiqueSessionsFromPlanning(
 
   return result;
 }
+
+export interface CoherenceIssueApprenant {
+  date: string;
+  label: string;
+  sessionNom: string;
+  apprenants: string[];
+}
+
+export interface CoherenceIssueSession {
+  date: string;
+  label: string;
+  sessionNom: string;
+  inscrits: number;
+}
+
+export interface PratiqueCoherenceReport {
+  apprenantsManquants: CoherenceIssueApprenant[];
+  sessionsHorsCalendrier: CoherenceIssueSession[];
+  datesSansSession: Array<{ date: string; label: string; reservations: number }>;
+  total: number;
+}
+
+/**
+ * Vérifie la cohérence entre le planning (reservations_pratique) et les sessions
+ * pratiques, sans rien modifier. Utilisé pour alerter l'admin avant l'affichage
+ * du planning.
+ */
+export async function checkPratiqueSessionsCoherence(
+  fromDate?: string
+): Promise<PratiqueCoherenceReport> {
+  const report: PratiqueCoherenceReport = {
+    apprenantsManquants: [],
+    sessionsHorsCalendrier: [],
+    datesSansSession: [],
+    total: 0,
+  };
+
+  let query = supabase
+    .from("reservations_pratique")
+    .select("date_choisie, type_formation, apprenant_id");
+  if (fromDate) query = query.gte("date_choisie", fromDate);
+  const { data: reservations } = await query;
+
+  const byDate = new Map<string, Set<string>>();
+  (reservations || []).forEach((r: any) => {
+    if (!r.date_choisie || !r.apprenant_id) return;
+    const set = byDate.get(r.date_choisie) || new Set<string>();
+    set.add(r.apprenant_id);
+    byDate.set(r.date_choisie, set);
+  });
+
+  let sessionsQuery = supabase
+    .from("sessions")
+    .select("id, nom, date_debut")
+    .eq("type_session", "pratique");
+  if (fromDate) sessionsQuery = sessionsQuery.gte("date_debut", fromDate);
+  const { data: sessions } = await sessionsQuery;
+
+  const sessionIds = (sessions || []).map((s: any) => s.id);
+  const membersBySession = new Map<string, Set<string>>();
+  if (sessionIds.length > 0) {
+    const { data: links } = await supabase
+      .from("session_apprenants")
+      .select("session_id, apprenant_id")
+      .in("session_id", sessionIds);
+    (links || []).forEach((l: any) => {
+      const set = membersBySession.get(l.session_id) || new Set<string>();
+      set.add(l.apprenant_id);
+      membersBySession.set(l.session_id, set);
+    });
+  }
+
+  // Noms des apprenants concernés
+  const allIds = new Set<string>();
+  byDate.forEach((set) => set.forEach((id) => allIds.add(id)));
+  const nameById = new Map<string, string>();
+  if (allIds.size > 0) {
+    const { data: apprenants } = await supabase
+      .from("apprenants")
+      .select("id, nom, prenom")
+      .in("id", Array.from(allIds));
+    (apprenants || []).forEach((a: any) =>
+      nameById.set(a.id, `${(a.nom || "").toUpperCase()} ${a.prenom || ""}`.trim())
+    );
+  }
+
+  const sessionByDate = new Map<string, any>();
+  (sessions || []).forEach((s: any) => sessionByDate.set(s.date_debut, s));
+
+  // 1) Dates réservées sans aucune session
+  byDate.forEach((set, date) => {
+    if (!sessionByDate.has(date)) {
+      report.datesSansSession.push({ date, label: labelDate(date), reservations: set.size });
+    }
+  });
+
+  // 2) Apprenants du planning absents de la session correspondante
+  byDate.forEach((set, date) => {
+    const session = sessionByDate.get(date);
+    if (!session) return;
+    const members = membersBySession.get(session.id) || new Set<string>();
+    const missing = Array.from(set)
+      .filter((id) => !members.has(id))
+      .map((id) => nameById.get(id) || id);
+    if (missing.length > 0) {
+      report.apprenantsManquants.push({
+        date,
+        label: labelDate(date),
+        sessionNom: session.nom || "Session pratique",
+        apprenants: missing.sort(),
+      });
+    }
+  });
+
+  // 3) Sessions pratiques qui ne correspondent à aucune date du planning
+  (sessions || []).forEach((s: any) => {
+    if (!byDate.has(s.date_debut)) {
+      report.sessionsHorsCalendrier.push({
+        date: s.date_debut,
+        label: labelDate(s.date_debut),
+        sessionNom: s.nom || "Session pratique",
+        inscrits: (membersBySession.get(s.id) || new Set()).size,
+      });
+    }
+  });
+
+  report.apprenantsManquants.sort((a, b) => a.date.localeCompare(b.date));
+  report.sessionsHorsCalendrier.sort((a, b) => a.date.localeCompare(b.date));
+  report.datesSansSession.sort((a, b) => a.date.localeCompare(b.date));
+  report.total =
+    report.apprenantsManquants.length +
+    report.sessionsHorsCalendrier.length +
+    report.datesSansSession.length;
+
+  return report;
+}
