@@ -32,6 +32,7 @@ import { IdentityConfirmModal } from "@/components/cours-en-ligne/IdentityConfir
 import { ApprenantChatWidget } from "@/components/chat/ApprenantChatWidget";
 import { EmargementFCModal, isFormationContinue } from "@/components/cours-en-ligne/EmargementFCModal";
 import { isPresentielType, getExpectedEmargements, type CreneauKey } from "@/lib/agendaSlots";
+import { getExpectedPratiqueEmargements } from "@/lib/pratiqueEmargements";
 import { useAuth } from "@/contexts/AuthContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { computeUnlockState, isModuleLocked as computeIsModuleLocked } from "@/lib/moduleUnlockLogic";
@@ -761,6 +762,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const [emargementCreneau, setEmargementCreneau] = useState<CreneauKey | null>(null);
   const [emargementDate, setEmargementDate] = useState<string | null>(null);
   const [emargementMode, setEmargementMode] = useState<"fc" | "presentiel">("fc");
+  const [emargementPratiquePending, setEmargementPratiquePending] = useState(false);
   const [emargementRefreshTick, setEmargementRefreshTick] = useState(0);
   const [forceDisconnecting, setForceDisconnecting] = useState(false);
   const [sessionAccessWindow, setSessionAccessWindow] = useState<SessionAccessWindow | null>(null);
@@ -1508,7 +1510,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   })();
 
   const needsEmargement =
-    (isFC || isPres) &&
+    (isFC || isPres || emargementPratiquePending) &&
     emargementFCStatus !== "signed" &&
     emargementFCStatus !== "n/a" &&
     (isFCLastDay ? emargementFCStatus !== "checking" : emargementFCStatus !== "skipped");
