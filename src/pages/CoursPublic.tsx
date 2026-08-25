@@ -32,6 +32,7 @@ import { IdentityConfirmModal } from "@/components/cours-en-ligne/IdentityConfir
 import { ApprenantChatWidget } from "@/components/chat/ApprenantChatWidget";
 import { EmargementFCModal, isFormationContinue } from "@/components/cours-en-ligne/EmargementFCModal";
 import { isPresentielType, getExpectedEmargements, type CreneauKey } from "@/lib/agendaSlots";
+import { getExpectedPratiqueEmargements } from "@/lib/pratiqueEmargements";
 import { useAuth } from "@/contexts/AuthContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { computeUnlockState, isModuleLocked as computeIsModuleLocked } from "@/lib/moduleUnlockLogic";
@@ -761,6 +762,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const [emargementCreneau, setEmargementCreneau] = useState<CreneauKey | null>(null);
   const [emargementDate, setEmargementDate] = useState<string | null>(null);
   const [emargementMode, setEmargementMode] = useState<"fc" | "presentiel">("fc");
+  const [emargementPratiquePending, setEmargementPratiquePending] = useState(false);
   const [emargementRefreshTick, setEmargementRefreshTick] = useState(0);
   const [forceDisconnecting, setForceDisconnecting] = useState(false);
   const [sessionAccessWindow, setSessionAccessWindow] = useState<SessionAccessWindow | null>(null);
@@ -1077,13 +1079,6 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     const isFC = isFormationContinue(apprenant.type_apprenant, apprenant.formation_choisie);
     const isPres = !isFC && isPresentielType(apprenant.type_apprenant, apprenant.formation_choisie, apprenant.creneau_horaire);
 
-    if (!isFC && !isPres) {
-      setEmargementFCStatus("n/a");
-      setEmargementCreneau(null);
-      setEmargementDate(null);
-      return;
-    }
-
     let cancelled = false;
     setEmargementFCStatus("checking");
     const mode: "fc" | "presentiel" = isFC ? "fc" : "presentiel";
@@ -1113,16 +1108,31 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
       const endDate = endDateRaw < today ? endDateRaw : today;
 
       // Liste de tous les créneaux attendus sur la plage
-      const expected = await getExpectedEmargements({
-        mode,
-        formationChoisie: apprenant.formation_choisie,
-        creneauHoraire: apprenant.creneau_horaire,
-        typeApprenant: apprenant.type_apprenant,
-        apprenantId: apprenant.id!,
-        startDate,
-        endDate,
-      });
+      const [baseExpected, pratiqueExpected] = await Promise.all([
+        isFC || isPres
+          ? getExpectedEmargements({
+              mode,
+              formationChoisie: apprenant.formation_choisie,
+              creneauHoraire: apprenant.creneau_horaire,
+              typeApprenant: apprenant.type_apprenant,
+              apprenantId: apprenant.id!,
+              startDate,
+              endDate,
+            })
+          : Promise.resolve([] as Array<{ date: string; creneau: CreneauKey }>),
+        // Journées de formation PRATIQUE : basées sur le planning (réservations
+        // + sessions de type pratique), quel que soit le mode de formation.
+        getExpectedPratiqueEmargements(apprenant.id!),
+      ]);
       if (cancelled) return;
+
+      const merged = new Map<string, { date: string; creneau: CreneauKey }>();
+      for (const e of [...baseExpected, ...pratiqueExpected]) merged.set(`${e.date}|${e.creneau}`, e);
+      const expected = Array.from(merged.values()).sort((a, b) =>
+        a.date === b.date ? (a.creneau === "matin" ? -1 : 1) : a.date.localeCompare(b.date),
+      );
+
+      setEmargementPratiquePending(pratiqueExpected.length > 0);
 
       if (expected.length === 0) {
         setEmargementFCStatus("n/a");
@@ -1130,6 +1140,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         setEmargementDate(null);
         return;
       }
+
 
       // Récupère les créneaux déjà signés (ou déclarés absents) sur la plage
       const fromISO = expected[0].date;
@@ -1498,14 +1509,16 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   })();
 
   const needsEmargement =
-    (isFC || isPres) &&
+    (isFC || isPres || emargementPratiquePending) &&
     emargementFCStatus !== "signed" &&
     emargementFCStatus !== "n/a" &&
     (isFCLastDay ? emargementFCStatus !== "checking" : emargementFCStatus !== "skipped");
 
 
   if (needsEmargement) {
-    const formationLabel = isPres ? "formation en présentiel" : "formation continue";
+    const formationLabel = !isFC && !isPres && emargementPratiquePending
+      ? "formation pratique"
+      : isPres ? "formation en présentiel" : "formation continue";
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
         <div className="text-center max-w-md mb-6">

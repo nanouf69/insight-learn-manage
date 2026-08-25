@@ -9,6 +9,11 @@ interface CandidatPratique {
   prenom: string;
   telephone: string;
   email: string;
+  /** Signature numérique (data URL PNG) collectée sur la plateforme apprenant */
+  signatureMatin?: string | null;
+  signatureApresMidi?: string | null;
+  absentMatin?: boolean;
+  absentApresMidi?: boolean;
 }
 
 const organisme = {
@@ -177,9 +182,9 @@ export function generateEmargementPratiquePDF(
   const emargementRows = candidats.map((c) => [
     `${c.nom.toUpperCase()} ${c.prenom}`,
     matinLabel || "—",
-    "",
+    c.absentMatin ? "ABSENT" : "",
     apresLabel || "—",
-    "",
+    c.absentApresMidi ? "ABSENT" : "",
   ]);
 
   doc.setFont("helvetica", "bold");
@@ -225,7 +230,45 @@ export function generateEmargementPratiquePDF(
       4: { cellWidth: 40, halign: "center" },
     },
     margin: { left: margin, right: margin },
+    // Injection des signatures numériques déjà collectées côté apprenant
+    didDrawCell: (data: any) => {
+      if (data.section !== "body") return;
+      if (data.column.index !== 2 && data.column.index !== 4) return;
+      const cand = candidats[data.row.index];
+      if (!cand) return;
+      const sig = data.column.index === 2 ? cand.signatureMatin : cand.signatureApresMidi;
+      if (!sig || !String(sig).startsWith("data:image")) return;
+      try {
+        const w = Math.min(data.cell.width - 6, 34);
+        const h = Math.min(data.cell.height - 4, 14);
+        doc.addImage(
+          String(sig),
+          "PNG",
+          data.cell.x + (data.cell.width - w) / 2,
+          data.cell.y + (data.cell.height - h) / 2,
+          w,
+          h,
+        );
+      } catch (e) {
+        console.log("Signature non rendue", e);
+      }
+    },
   });
+
+  const signedCount = candidats.filter((c) => c.signatureMatin || c.signatureApresMidi).length;
+  if (signedCount > 0) {
+    const afterEmargement = (doc as any).lastAutoTable.finalY + 6;
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "italic");
+    doc.setTextColor(80, 80, 80);
+    doc.text(
+      "Signatures recueillies électroniquement par l'apprenant sur la plateforme FTRANSPORT (horodatées).",
+      margin,
+      afterEmargement,
+    );
+    doc.setTextColor(0, 0, 0);
+    doc.setFont("helvetica", "normal");
+  }
 
   // ===== PIED DE PAGE =====
   const footerY = doc.internal.pageSize.getHeight() - 18;
