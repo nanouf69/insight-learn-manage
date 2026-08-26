@@ -27,12 +27,14 @@ const NotationPratiqueTab = () => {
     const load = async () => {
       setLoading(true);
       try {
-        const { data } = await supabase
-          .from("session_apprenants")
-          .select(
-            "apprenant_id, session_id, apprenants:apprenant_id(nom, prenom, type_apprenant), sessions:session_id(type_session, date_debut, types_apprenant, nom)"
-          )
-          .limit(5000);
+        const data = await fetchAllRows((from, to) =>
+          supabase
+            .from("session_apprenants")
+            .select(
+              "apprenant_id, session_id, apprenants:apprenant_id(nom, prenom, type_apprenant), sessions:session_id(type_session, date_debut, types_apprenant, nom)"
+            )
+            .range(from, to)
+        );
 
         const list: Row[] = [];
         for (const r of ((data as any[]) || [])) {
@@ -52,20 +54,23 @@ const NotationPratiqueTab = () => {
           });
         }
 
-        const ids = Array.from(new Set(list.map((l) => l.apprenantId)));
-        const notes = new Map<string, number>();
-        if (ids.length > 0) {
-          const { data: grilles } = await supabase
+        const grilles = await fetchAllRows((from, to) =>
+          supabase
             .from("grilles_notation_conduite" as any)
-            .select("apprenant_id, session_id, note_globale");
-          for (const g of ((grilles as any[]) || [])) {
-            notes.set(`${g.apprenant_id}|${g.session_id || ""}`, Number(g.note_globale));
-          }
+            .select("apprenant_id, session_id, avis, passage")
+            .range(from, to)
+        );
+        const byKey = new Map<string, any>();
+        for (const g of ((grilles as any[]) || [])) {
+          byKey.set(`${g.apprenant_id}|${g.session_id || ""}`, g);
         }
 
         list.forEach((l) => {
-          const v = notes.get(`${l.apprenantId}|${l.sessionId}`) ?? notes.get(`${l.apprenantId}|`);
-          if (typeof v === "number" && !Number.isNaN(v)) l.noteGlobale = v;
+          const g = byKey.get(`${l.apprenantId}|${l.sessionId}`) ?? byKey.get(`${l.apprenantId}|`);
+          if (g) {
+            l.avis = g.avis ?? null;
+            l.passage = g.passage ?? null;
+          }
         });
 
         list.sort((a, b) => (b.datePassage || "").localeCompare(a.datePassage || ""));
