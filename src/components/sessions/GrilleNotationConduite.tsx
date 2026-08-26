@@ -128,6 +128,7 @@ const GrilleNotationConduite = ({
   const [hasGrille, setHasGrille] = useState(false);
   const [grillesCount, setGrillesCount] = useState(0);
   const [avis, setAvis] = useState<"favorable" | "defavorable" | null>(null);
+  const [tempsPreparation, setTempsPreparation] = useState("");
   const [formateurs, setFormateurs] = useState<{ id: string; nom: string; prenom: string }[]>([]);
 
   const themes = useMemo(
