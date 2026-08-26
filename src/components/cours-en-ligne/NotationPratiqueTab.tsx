@@ -14,7 +14,8 @@ interface Row {
   formation: "vtc" | "taxi";
   sessionId: string;
   datePassage: string;
-  noteGlobale?: number | null;
+  avis?: "favorable" | "defavorable" | null;
+  passage?: string | null;
 }
 
 const NotationPratiqueTab = () => {
