@@ -180,15 +180,17 @@ const GrilleNotationConduite = ({
     }
   };
 
+  const refreshCount = async () => {
+    const { count } = await supabase
+      .from("grilles_notation_conduite" as any)
+      .select("id", { count: "exact", head: true })
+      .eq("apprenant_id", apprenantId);
+    setGrillesCount(count || 0);
+    setHasGrille((count || 0) > 0);
+  };
+
   useEffect(() => {
-    // Indicateur discret : grille déjà existante ?
-    (async () => {
-      const { count } = await supabase
-        .from("grilles_notation_conduite" as any)
-        .select("id", { count: "exact", head: true })
-        .eq("apprenant_id", apprenantId);
-      setHasGrille((count || 0) > 0);
-    })();
+    refreshCount();
   }, [apprenantId]);
 
   useEffect(() => {
