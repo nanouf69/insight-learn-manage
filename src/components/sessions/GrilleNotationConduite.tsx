@@ -471,6 +471,20 @@ const GrilleNotationConduite = ({
                 </Select>
               </div>
               <div className="space-y-1.5">
+                <Label htmlFor="grille-temps-preparation">Temps de préparation</Label>
+                <Select value={tempsPreparation} onValueChange={setTempsPreparation} disabled={readOnly}>
+                  <SelectTrigger id="grille-temps-preparation">
+                    <SelectValue placeholder="Sélectionner le temps" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 10 }, (_, i) => {
+                      const m = String(i + 1);
+                      return <SelectItem key={m} value={`${m}m`}>{m} minute{m !== "1" ? "s" : ""}</SelectItem>;
+                    })}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
                 <Label htmlFor="grille-date">Date</Label>
                 <Input id="grille-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} readOnly={readOnly} disabled={readOnly} />
               </div>
