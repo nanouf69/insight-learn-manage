@@ -81,13 +81,20 @@ export const getExpectedPratiqueEmargements = async (
 
   const out: Array<{ date: string; creneau: CreneauKey }> = [];
   for (const detail of details) {
+    // Journée pratique : dès que la journée est commencée (créneau le plus tôt échu),
+    // on propose TOUS les créneaux du jour (matin ET après-midi) en une seule fois.
+    const earliestStart = detail.parts.reduce<number | null>((min, part) => {
+      const s = part.startMinute ?? 9 * 60;
+      return min == null || s < min ? s : min;
+    }, null);
+    const dayDue = isDue(detail.date, earliestStart, todayISO, nowMin);
+    if (!dayDue) continue;
     for (const part of detail.parts) {
-      if (isDue(detail.date, part.startMinute, todayISO, nowMin)) {
-        out.push({ date: detail.date, creneau: part.creneau as CreneauKey });
-      }
+      out.push({ date: detail.date, creneau: part.creneau as CreneauKey });
     }
   }
   return out;
+
 };
 
 export interface PratiqueSignatureRow {
