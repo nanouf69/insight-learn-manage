@@ -1,0 +1,1 @@
+ALTER TABLE public.grilles_notation_conduite ADD COLUMN IF NOT EXISTS temps_preparation TEXT;

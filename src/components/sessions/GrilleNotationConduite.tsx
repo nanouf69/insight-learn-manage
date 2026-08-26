@@ -128,6 +128,7 @@ const GrilleNotationConduite = ({
   const [hasGrille, setHasGrille] = useState(false);
   const [grillesCount, setGrillesCount] = useState(0);
   const [avis, setAvis] = useState<"favorable" | "defavorable" | null>(null);
+  const [tempsPreparation, setTempsPreparation] = useState("");
   const [formateurs, setFormateurs] = useState<{ id: string; nom: string; prenom: string }[]>([]);
 
   const themes = useMemo(
@@ -172,6 +173,7 @@ const GrilleNotationConduite = ({
         setDate(row.date_passage || date);
         setObservations(row.observations || "");
         setEvaluateur(row.evaluateur || "");
+        setTempsPreparation(row.temps_preparation || "");
         setAvis(row.avis === "favorable" || row.avis === "defavorable" ? row.avis : null);
         setHasGrille(true);
       }
@@ -224,6 +226,7 @@ const GrilleNotationConduite = ({
       avis: avis,
       observations: observations || null,
       evaluateur: evaluateur || null,
+      temps_preparation: tempsPreparation || null,
       created_by: user?.id || null,
     };
 
@@ -266,6 +269,7 @@ const GrilleNotationConduite = ({
     setPassage("");
     setObservations("");
     setAvis(null);
+    setTempsPreparation("");
     setDate(datePassage || new Date().toISOString().slice(0, 10));
   };
 
@@ -329,6 +333,8 @@ const GrilleNotationConduite = ({
     y += 6;
     doc.text(`Passage : ${passage || "-"}`, 15, y);
     doc.text(`Date : ${date}`, 150, y);
+    y += 6;
+    doc.text(`Temps de préparation : ${tempsPreparation || "-"}`, 15, y);
     y += 8;
 
     themes.forEach(t => {
@@ -463,6 +469,20 @@ const GrilleNotationConduite = ({
                     {Array.from({ length: 10 }, (_, i) => String(i + 1)).map((p) => (
                       <SelectItem key={p} value={p}>Passage {p}</SelectItem>
                     ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="grille-temps-preparation">Temps de préparation</Label>
+                <Select value={tempsPreparation} onValueChange={setTempsPreparation} disabled={readOnly}>
+                  <SelectTrigger id="grille-temps-preparation">
+                    <SelectValue placeholder="Sélectionner le temps" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 10 }, (_, i) => {
+                      const m = String(i + 1);
+                      return <SelectItem key={m} value={`${m}m`}>{m} minute{m !== "1" ? "s" : ""}</SelectItem>;
+                    })}
                   </SelectContent>
                 </Select>
               </div>
