@@ -269,6 +269,7 @@ const GrilleNotationConduite = ({
     setPassage("");
     setObservations("");
     setAvis(null);
+    setTempsPreparation("");
     setDate(datePassage || new Date().toISOString().slice(0, 10));
   };
 
