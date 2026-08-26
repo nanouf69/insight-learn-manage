@@ -495,6 +495,18 @@ const GrilleNotationConduite = ({
                 Télécharger en PDF
               </Button>
             </div>
+
+            {!readOnly && (
+              <Button
+                className="w-full gap-2 bg-emerald-600 hover:bg-emerald-700"
+                onClick={handleValiderEtEnvoyer}
+                disabled={sending || saving}
+              >
+                {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                Valider et envoyer à l'élève (puis remise à zéro)
+              </Button>
+            )}
+
           </div>
         )}
       </DialogContent>
