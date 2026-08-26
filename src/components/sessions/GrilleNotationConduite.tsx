@@ -173,6 +173,7 @@ const GrilleNotationConduite = ({
         setDate(row.date_passage || date);
         setObservations(row.observations || "");
         setEvaluateur(row.evaluateur || "");
+        setTempsPreparation(row.temps_preparation || "");
         setAvis(row.avis === "favorable" || row.avis === "defavorable" ? row.avis : null);
         setHasGrille(true);
       }
