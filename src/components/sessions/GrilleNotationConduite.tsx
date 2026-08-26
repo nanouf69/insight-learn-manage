@@ -132,26 +132,17 @@ const GrilleNotationConduite = ({
     [formation]
   );
 
-  const notesThemes = useMemo(() => {
-    const result: Record<string, { note: number; nonAcquis: number; total: number }> = {};
+  const statsThemes = useMemo(() => {
+    const result: Record<string, { nonAcquis: number; total: number }> = {};
     themes.forEach(t => {
-      const total = t.criteres.length;
-      const nonAcquis = t.criteres.filter(c => coches[c.id]).length;
       result[t.id] = {
-        total,
-        nonAcquis,
-        note: total > 0 ? Math.round(((total - nonAcquis) / total) * 20 * 10) / 10 : 0,
+        total: t.criteres.length,
+        nonAcquis: t.criteres.filter(c => coches[c.id]).length,
       };
     });
     return result;
   }, [themes, coches]);
 
-  const noteGlobale = useMemo(() => {
-    const totalCriteres = themes.reduce((s, t) => s + t.criteres.length, 0);
-    const totalNonAcquis = themes.reduce((s, t) => s + t.criteres.filter(c => coches[c.id]).length, 0);
-    if (totalCriteres === 0) return 0;
-    return Math.round(((totalCriteres - totalNonAcquis) / totalCriteres) * 20 * 10) / 10;
-  }, [themes, coches]);
 
   const loadGrille = async () => {
     setLoading(true);
