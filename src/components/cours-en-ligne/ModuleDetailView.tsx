@@ -7601,6 +7601,19 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             <p className="text-muted-foreground text-sm">{moduleData.description}</p>
           </div>
 
+          {/* Grilles d'évaluation pratique (tous les passages) */}
+          {[6, 8].includes(Number(module.id)) && apprenantId && (
+            <GrillesPratiqueApprenant
+              apprenantId={apprenantId}
+              apprenantNom={apprenantInfo?.nom || ""}
+              apprenantPrenom={apprenantInfo?.prenom || ""}
+              formation={Number(module.id) === 6 ? "taxi" : "vtc"}
+              readOnly
+            />
+          )}
+
+
+
           {/* Print all revision sheets button for modules 70-73 */}
           {[70, 71, 72, 73].includes(module.id) && moduleData.cours && moduleData.cours.length > 0 && (
             <div className="flex justify-center">
