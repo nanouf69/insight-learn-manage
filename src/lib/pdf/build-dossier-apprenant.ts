@@ -17,6 +17,7 @@ import { generateEmailsApprenantPdf, maskPasswords } from "@/lib/pdf/emails-appr
 import { buildRapportActiviteHtml } from "@/lib/reports/rapport-activite-html";
 import { generateFicheProgression, type FicheProgressionData, type ProgressionModule } from "@/lib/pdf/fiche-progression";
 import { getSessionEndMs, getSessionDurationMinutes, clampConnexionsToAccessEnd } from "@/lib/reports/session-duration";
+import { fetchPratiqueSlotDetails, pratiqueSlotDetailsToMinutes } from "@/lib/pratiqueSlots";
 
 const escapeCsv = (v: any) => {
   if (v === null || v === undefined) return "";
@@ -311,19 +312,11 @@ export async function buildDossierApprenantIntoZip(
       if (!m) return null;
       return parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
     };
-    const MAX_PRATIQUE_MIN_PER_SESSION = 6 * 60;
     let pratiqueMinutes = 0;
     const journeesPresentiel = buildJourneesPresentiel(emargAll, sessInscrits);
     fallbackJourneesPresentiel = journeesPresentiel;
-    for (const si of sessInscrits) {
-      const sess = si.sessions;
-      const type = String(sess?.type_session || "").toLowerCase();
-      if (!type.includes("pratique")) continue;
-      const hd = parseHM(si.heure_debut_personnalisee) ?? parseHM(sess?.heure_debut);
-      const hf = parseHM(si.heure_fin_personnalisee) ?? parseHM(sess?.heure_fin);
-      let dur = (hd != null && hf != null && hf > hd) ? hf - hd : 3 * 60;
-      pratiqueMinutes += Math.min(dur, MAX_PRATIQUE_MIN_PER_SESSION);
-    }
+    const pratiqueDetails = await fetchPratiqueSlotDetails(apprenant.id).catch(() => []);
+    pratiqueMinutes = pratiqueSlotDetailsToMinutes(pratiqueDetails);
     const pratiqueSec = pratiqueMinutes * 60;
     const presentielTotalSec = theorieSec + pratiqueSec;
     const grandTotalSec = onlineSec + presentielTotalSec;

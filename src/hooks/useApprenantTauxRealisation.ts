@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchAllRows } from "@/lib/supabase/fetch-all-rows";
 import { getSessionEndMs, clampConnexionsToAccessEnd } from "@/lib/reports/session-duration";
+import { fetchPratiqueSlotDetails, pratiqueSlotDetailsToMinutes } from "@/lib/pratiqueSlots";
 
 export interface TauxRealisation {
   doneElearning: number;
@@ -37,7 +38,7 @@ export function useApprenantTauxRealisation(apprenantId?: string, apprenantProp?
         .maybeSingle();
       const apprenant = { ...(apprenantProp || {}), ...(apprenantRow || {}) } as any;
 
-      const [acts, quizzes, exos, cnxAll, emargAll, sessInscrits] = await Promise.all([
+      const [acts, quizzes, exos, cnxAll, emargAll, pratiqueDetails] = await Promise.all([
         fetchAllRows<any>((from, to) => supabase
           .from("apprenant_module_activites")
           .select("module_nom, action_type, occurred_at")
@@ -64,11 +65,7 @@ export function useApprenantTauxRealisation(apprenantId?: string, apprenantProp?
           .select("date_emargement, demi_journee, absent")
           .eq("apprenant_id", apprenantId)
           .range(from, to)).catch(() => [] as any[]),
-        fetchAllRows<any>((from, to) => supabase
-          .from("session_apprenants")
-          .select("heure_debut_personnalisee, heure_fin_personnalisee, sessions:session_id(type_session, heure_debut, heure_fin)")
-          .eq("apprenant_id", apprenantId)
-          .range(from, to)).catch(() => [] as any[]),
+        fetchPratiqueSlotDetails(apprenantId).catch(() => []),
       ]);
 
       const cnxRows = clampConnexionsToAccessEnd(
@@ -137,23 +134,8 @@ export function useApprenantTauxRealisation(apprenantId?: string, apprenantProp?
         }
       }
 
-      // ---- Pratique (presentiel)
-      const parseHM = (s?: string | null) => {
-        if (!s) return null;
-        const m = String(s).match(/^(\d{1,2}):(\d{2})/);
-        if (!m) return null;
-        return parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
-      };
-      const MAX_PRATIQUE_MIN_PER_SESSION = 6 * 60;
-      let pratiqueMinutes = 0;
-      for (const si of sessInscrits as any[]) {
-        const sess = si.sessions;
-        if (!String(sess?.type_session || "").toLowerCase().includes("pratique")) continue;
-        const hd = parseHM(si.heure_debut_personnalisee) ?? parseHM(sess?.heure_debut);
-        const hf = parseHM(si.heure_fin_personnalisee) ?? parseHM(sess?.heure_fin);
-        const dur = hd != null && hf != null && hf > hd ? hf - hd : 3 * 60;
-        pratiqueMinutes += Math.min(dur, MAX_PRATIQUE_MIN_PER_SESSION);
-      }
+      // ---- Pratique (présentiel) : le planning et son créneau réel font foi.
+      const pratiqueMinutes = pratiqueSlotDetailsToMinutes(pratiqueDetails);
 
       const reqElearning =
         Number(apprenant?.heures_elearning) ||
