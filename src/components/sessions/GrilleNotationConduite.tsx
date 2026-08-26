@@ -333,6 +333,8 @@ const GrilleNotationConduite = ({
     y += 6;
     doc.text(`Passage : ${passage || "-"}`, 15, y);
     doc.text(`Date : ${date}`, 150, y);
+    y += 6;
+    doc.text(`Temps de préparation : ${tempsPreparation || "-"}`, 15, y);
     y += 8;
 
     themes.forEach(t => {
