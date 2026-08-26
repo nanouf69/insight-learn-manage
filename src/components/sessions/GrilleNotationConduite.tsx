@@ -302,7 +302,7 @@ const GrilleNotationConduite = ({
     }
   };
 
-  const handlePdf = async () => {
+  const buildPdf = async () => {
     const { default: jsPDF } = await import("jspdf");
     const doc = new jsPDF({ unit: "mm", format: "a4" });
     let y = 18;
@@ -343,6 +343,11 @@ const GrilleNotationConduite = ({
       y += 12;
     }
     doc.text(`Évaluateur : ${evaluateur || "-"}`, 15, y);
+    return doc;
+  };
+
+  const handlePdf = async () => {
+    const doc = await buildPdf();
     doc.save(`grille-notation-${apprenantNom}-${apprenantPrenom}.pdf`);
   };
 
