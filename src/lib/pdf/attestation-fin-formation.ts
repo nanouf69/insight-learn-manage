@@ -42,6 +42,10 @@ interface SessionInfo {
   date_fin: string;
 }
 
+interface PratiqueDurationInfo {
+  minutes?: number | null;
+}
+
 interface ConnexionInfo {
   started_at: string;
   ended_at?: string | null;
@@ -66,7 +70,11 @@ function countWorkingDays(dateDebut: string, dateFin: string): number {
   return Math.max(count, 1);
 }
 
-function calculateSessionHours(sessions: SessionInfo[], type: string): number {
+function calculateSessionHours(sessions: SessionInfo[], type: string, pratiqueDurations: PratiqueDurationInfo[] = []): number {
+  if (type === 'pratique' && pratiqueDurations.length > 0) {
+    const minutes = pratiqueDurations.reduce((sum, item) => sum + Math.max(0, Number(item.minutes) || 0), 0);
+    return Math.round(minutes / 6) / 10;
+  }
   let totalMinutes = 0;
   for (const s of sessions) {
     if (s.type_session?.toLowerCase() !== type) continue;
@@ -81,8 +89,8 @@ function calculateSessionHours(sessions: SessionInfo[], type: string): number {
       }
       if (dailyMins > 0) totalMinutes += dailyMins * nbDays;
     } else {
-      // Fallback: 6h par jour
-      totalMinutes += 6 * 60 * nbDays;
+      // Sans horaire exploitable, compter un seul créneau standard de 3h.
+      totalMinutes += 3 * 60 * nbDays;
     }
   }
   return Math.round(totalMinutes / 60 * 10) / 10;
@@ -113,7 +121,8 @@ function formatHours(h: number): string {
 export async function generateAttestationFinFormation(
   apprenant: any,
   sessions: SessionInfo[] = [],
-  connexions: ConnexionInfo[] = []
+  connexions: ConnexionInfo[] = [],
+  pratiqueDurations: PratiqueDurationInfo[] = [],
 ) {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -172,7 +181,7 @@ export async function generateAttestationFinFormation(
   
   // Calcul des heures
   const practicalSessions = sessions.filter(s => s.type_session?.toLowerCase() === 'pratique');
-  const heuresPratique = calculateSessionHours(sessions, 'pratique');
+  const heuresPratique = calculateSessionHours(sessions, 'pratique', pratiqueDurations);
   const heuresElearning = calculateElearningHours(connexions);
   const heuresTotal = heuresPratique + heuresElearning;
   

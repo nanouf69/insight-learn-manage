@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { CreneauKey } from "@/lib/agendaSlots";
+import { fetchPratiqueSlotDetails } from "@/lib/pratiqueSlots";
 
 /**
  * Émargement numérique des journées de formation PRATIQUE.
@@ -8,7 +9,7 @@ import type { CreneauKey } from "@/lib/agendaSlots";
  *  - `reservations_pratique` (date choisie par l'apprenant dans le portail)
  *  - complété par les sessions de type "pratique" auxquelles il est inscrit.
  *
- * Chaque journée pratique attend 2 signatures : matin + après-midi.
+ * Les signatures attendues suivent exactement les créneaux du planning.
  */
 
 const formatISO = (d: Date) => {
@@ -18,10 +19,10 @@ const formatISO = (d: Date) => {
   return `${yyyy}-${mm}-${dd}`;
 };
 
-const isDue = (iso: string, creneau: CreneauKey, todayISO: string, nowMin: number) => {
+const isDue = (iso: string, startMinute: number | null, todayISO: string, nowMin: number) => {
   if (iso < todayISO) return true;
   if (iso > todayISO) return false;
-  return creneau === "matin" ? nowMin >= 8 * 60 + 30 : nowMin >= 12 * 60 + 30;
+  return nowMin >= Math.max(0, (startMinute ?? 9 * 60) - 30);
 };
 
 /** Toutes les dates de formation pratique planifiées pour un apprenant (ISO, triées). */
@@ -71,17 +72,19 @@ export const getPratiqueDates = async (apprenantId: string): Promise<string[]> =
 export const getExpectedPratiqueEmargements = async (
   apprenantId: string,
 ): Promise<Array<{ date: string; creneau: CreneauKey }>> => {
-  const dates = await getPratiqueDates(apprenantId);
-  if (dates.length === 0) return [];
+  const details = await fetchPratiqueSlotDetails(apprenantId);
+  if (details.length === 0) return [];
 
   const now = new Date();
   const todayISO = formatISO(now);
   const nowMin = now.getHours() * 60 + now.getMinutes();
 
   const out: Array<{ date: string; creneau: CreneauKey }> = [];
-  for (const date of dates) {
-    for (const creneau of ["matin", "apres_midi"] as CreneauKey[]) {
-      if (isDue(date, creneau, todayISO, nowMin)) out.push({ date, creneau });
+  for (const detail of details) {
+    for (const part of detail.parts) {
+      if (isDue(detail.date, part.startMinute, todayISO, nowMin)) {
+        out.push({ date: detail.date, creneau: part.creneau as CreneauKey });
+      }
     }
   }
   return out;

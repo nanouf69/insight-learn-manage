@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectSeparator, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { generateAttestationInscription } from "@/lib/pdf/attestation-inscription";
 import { generateAttestationFinFormation } from "@/lib/pdf/attestation-fin-formation";
+import { fetchPratiqueSlotDetails } from "@/lib/pratiqueSlots";
 import { generateAttestationFranceTravail } from "@/lib/pdf/attestation-france-travail";
 import { generateBienvenueFtransport } from "@/lib/pdf/bienvenue-ftransport";
 import { generateEmargementPDF } from "@/components/sessions/EmargementGenerator";
@@ -111,7 +112,8 @@ export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
           .eq('apprenant_id', apprenant.id)
           .not('ended_at', 'is', null);
 
-        await generateAttestationFinFormation(apprenant, sessions, connexions || []);
+        const pratiqueDurations = await fetchPratiqueSlotDetails(apprenant.id);
+        await generateAttestationFinFormation(apprenant, sessions, connexions || [], pratiqueDurations);
         toast.success("Attestation de fin de formation générée");
       } else if (type === 'france-travail') {
         await generateAttestationFranceTravail(apprenant);

@@ -66,6 +66,7 @@ import { computePresenceHours, formatPresenceHours, isEveningTrainingValue, isFo
 import { filterAndSortApprenants } from "@/lib/apprenantSearch";
 import { SmallTransfersTable } from "@/components/dashboard/SmallTransfersTable";
 import GrilleNotationConduite from "./GrilleNotationConduite";
+import { fetchPlanningDaySlotsForDates, normalizePratiqueCreneau, resolvePratiqueSlotParts } from "@/lib/pratiqueSlots";
 
 interface Session {
   id: string;
@@ -249,10 +250,9 @@ const buildFallbackAgendaDays = (
       day.matinDebut = options.heureDebutPersonnalisee.slice(0, 5);
       day.matinFin = options.heureFinPersonnalisee.slice(0, 5);
     } else if (options.isPratique) {
+      // Sans créneau de planning exploitable, une pratique vaut un seul créneau de 3h.
       day.matinDebut = '09:00';
       day.matinFin = '12:00';
-      day.apremDebut = '13:00';
-      day.apremFin = options.isTaxi ? '17:30' : '16:00';
     } else {
       day.matinDebut = '09:00';
       day.matinFin = '12:00';
@@ -264,25 +264,6 @@ const buildFallbackAgendaDays = (
   }
   return days;
 };
-
-/**
- * Formation PRATIQUE = journée complète (6h) : matin 09h-12h + après-midi 13h-16h
- * (TAXI : 13h-17h30). Les blocs agenda ne contiennent parfois qu'un créneau du
- * matin, ce qui affichait à tort 3h seulement sur la feuille d'émargement.
- */
-const ensureFullPratiqueDays = (
-  days: AgendaDaySlot[],
-  isTaxi?: boolean,
-): AgendaDaySlot[] =>
-  days.map((d) => ({
-    ...d,
-    matinDebut: d.matinDebut || '09:00',
-    matinFin: d.matinFin || '12:00',
-    apremDebut: d.apremDebut || '13:00',
-    apremFin: d.apremFin || (isTaxi ? '17:30' : '16:00'),
-  }));
-
-
 
 const formatLocalDateKey = (date: Date) => {
   const year = date.getFullYear();
@@ -319,6 +300,46 @@ const getPracticalReservationDates = async (apprenantId?: string | null) => {
   return Array.from(new Set(((data || []) as any[])
     .map((r) => normalizeISODate(r.date_choisie))
     .filter(Boolean)));
+};
+
+const applyPratiquePlanningSlots = async (
+  days: AgendaDaySlot[],
+  apprenantId: string,
+  isTaxi: boolean,
+) => {
+  const { data: reservations } = await supabase
+    .from('reservations_pratique' as any)
+    .select('date_choisie, creneau')
+    .eq('apprenant_id', apprenantId);
+  const byDate = new Map(((reservations as any[]) || []).map((row) => [normalizeISODate(row.date_choisie), row]));
+  const dates = Array.from(byDate.keys()).filter(Boolean);
+  const planningSlots = await fetchPlanningDaySlotsForDates(dates);
+
+  return days.map((day) => {
+    const date = formatLocalDateKey(day.date);
+    const reservation = byDate.get(date);
+    if (!reservation) return day;
+    const parts = resolvePratiqueSlotParts(
+      planningSlots.get(date),
+      isTaxi ? 'taxi' : 'vtc',
+      normalizePratiqueCreneau(reservation.creneau),
+    );
+    const result: AgendaDaySlot = { date: new Date(day.date) };
+    for (const part of parts) {
+      const start = part.startMinute;
+      const end = part.endMinute;
+      if (start == null || end == null) continue;
+      const toHM = (minutes: number) => `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
+      if (part.creneau === 'matin') {
+        result.matinDebut = toHM(start);
+        result.matinFin = toHM(end);
+      } else {
+        result.apremDebut = toHM(start);
+        result.apremFin = toHM(end);
+      }
+    }
+    return result.matinDebut || result.apremDebut ? result : day;
+  });
 };
 
 const applyFCVTCPersonalizedSchedule = (
@@ -3169,8 +3190,8 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                 heureFinPersonnalisee: saForEmargement.heure_fin_personnalisee,
               })
             : agendaDays;
-        const finalAgendaDays = (session.type_session === 'pratique')
-          ? ensureFullPratiqueDays(rawAgendaDays, isTaxi)
+        const finalAgendaDays = isPratique
+          ? await applyPratiquePlanningSlots(rawAgendaDays, apprenant.id, isTaxi)
           : rawAgendaDays;
 
         if (finalAgendaDays.length === 0) {
@@ -3867,8 +3888,8 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                         heureFinPersonnalisee: sessionApprenant.heure_fin_personnalisee,
                                       })
                                     : agendaDays;
-                                const finalAgendaDays = (session.type_session === 'pratique')
-                                  ? ensureFullPratiqueDays(rawAgendaDays, isTaxi)
+                                const finalAgendaDays = isPratique
+                                  ? await applyPratiquePlanningSlots(rawAgendaDays, apprenant.id, isTaxi)
                                   : rawAgendaDays;
 
                                 if (finalAgendaDays.length === 0) {

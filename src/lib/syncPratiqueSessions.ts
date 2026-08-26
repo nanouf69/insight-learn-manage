@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { fetchPlanningDaySlotsForDates, normalizePratiqueCreneau, resolvePratiqueSlotParts } from "@/lib/pratiqueSlots";
 
 /**
  * Synchronise les sessions "pratique" avec le planning (table reservations_pratique).
@@ -39,7 +40,7 @@ export async function syncPratiqueSessionsFromPlanning(
 
   let query = supabase
     .from("reservations_pratique")
-    .select("date_choisie, type_formation, apprenant_id");
+    .select("date_choisie, type_formation, apprenant_id, creneau");
   if (fromDate) query = query.gte("date_choisie", fromDate);
 
   const { data: reservations, error: resError } = await query;
@@ -49,19 +50,20 @@ export async function syncPratiqueSessionsFromPlanning(
   }
 
   // Regroupement par date
-  const byDate = new Map<string, { type: "vtc" | "taxi"; apprenants: Set<string> }>();
+  const byDate = new Map<string, { type: "vtc" | "taxi"; apprenants: Map<string, string | null> }>();
   (reservations || []).forEach((r: any) => {
     if (!r.date_choisie || !r.apprenant_id) return;
     const type: "vtc" | "taxi" = (r.type_formation || "vtc").toLowerCase() === "taxi" ? "taxi" : "vtc";
-    const entry = byDate.get(r.date_choisie) || { type, apprenants: new Set<string>() };
+    const entry = byDate.get(r.date_choisie) || { type, apprenants: new Map<string, string | null>() };
     entry.type = type;
-    entry.apprenants.add(r.apprenant_id);
+    entry.apprenants.set(r.apprenant_id, r.creneau || null);
     byDate.set(r.date_choisie, entry);
   });
 
   const dates = Array.from(byDate.keys()).sort();
   if (dates.length === 0) return result;
   result.datesChecked = dates.length;
+  const planningSlots = await fetchPlanningDaySlotsForDates(dates);
 
   // Sessions pratiques existantes sur la plage concernée
   const { data: sessions } = await supabase
@@ -76,6 +78,14 @@ export async function syncPratiqueSessionsFromPlanning(
 
   for (const date of dates) {
     const { type, apprenants } = byDate.get(date)!;
+    const allParts = resolvePratiqueSlotParts(planningSlots.get(date), type, "journee");
+    const firstStart = allParts.map((part) => part.startMinute).filter((value): value is number => value != null).sort((a, b) => a - b)[0];
+    const lastEnd = allParts.map((part) => part.endMinute).filter((value): value is number => value != null).sort((a, b) => b - a)[0];
+    const toTime = (minutes: number | undefined, fallback: string) => minutes == null
+      ? fallback
+      : `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
+    const sessionStart = toTime(firstStart, "09:00");
+    const sessionEnd = toTime(lastEnd, "12:00");
     let session = sessionByDate.get(date);
 
     // 1) Créer la session manquante
@@ -88,8 +98,8 @@ export async function syncPratiqueSessionsFromPlanning(
           type_session: "pratique",
           date_debut: date,
           date_fin: date,
-          heure_debut: "09:00",
-          heure_fin: type === "taxi" ? "17:30" : "17:00",
+          heure_debut: sessionStart,
+          heure_fin: sessionEnd,
           lieu: "86 Route de Genas, 69003 Lyon",
           statut: "planifiee",
           places_disponibles: 3,
@@ -113,6 +123,7 @@ export async function syncPratiqueSessionsFromPlanning(
         await supabase.from("sessions").update({ nom: nouveauNom }).eq("id", session.id);
         session.nom = nouveauNom;
       }
+      await supabase.from("sessions").update({ heure_debut: sessionStart, heure_fin: sessionEnd }).eq("id", session.id);
     }
 
     // 3) Inscrire les apprenants manquants
@@ -122,15 +133,22 @@ export async function syncPratiqueSessionsFromPlanning(
       .eq("session_id", session.id);
     const already = new Set((existing || []).map((e: any) => e.apprenant_id));
 
-    const toInsert = Array.from(apprenants)
-      .filter((id) => !already.has(id))
-      .map((id) => ({
+    const toInsert = Array.from(apprenants.entries())
+      .filter(([id]) => !already.has(id))
+      .map(([id, creneau]) => {
+        const parts = resolvePratiqueSlotParts(planningSlots.get(date), type, normalizePratiqueCreneau(creneau));
+        const starts = parts.map((part) => part.startMinute).filter((value): value is number => value != null).sort((a, b) => a - b);
+        const ends = parts.map((part) => part.endMinute).filter((value): value is number => value != null).sort((a, b) => b - a);
+        return {
         session_id: session!.id,
         apprenant_id: id,
         montant_total: 0,
         montant_paye: 0,
         mode_financement: "personnel",
-      }));
+        heure_debut_personnalisee: toTime(starts[0], sessionStart),
+        heure_fin_personnalisee: toTime(ends[0], sessionEnd),
+      };
+      });
 
     if (toInsert.length > 0) {
       const { error: insErr } = await supabase.from("session_apprenants").insert(toInsert as any);
