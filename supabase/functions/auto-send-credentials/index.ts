@@ -62,6 +62,15 @@ serve(async (req) => {
       if (m) return `${m[3]}-${m[2]}-${m[1]}`;
       return null;
     };
+    const minDate = (...values: Array<string | null>): string | null => {
+      const list = values.filter((v): v is string => !!v);
+      return list.length ? list.sort()[0] : null;
+    };
+    const maxDate = (...values: Array<string | null>): string | null => {
+      const list = values.filter((v): v is string => !!v);
+      return list.length ? list.sort()[list.length - 1] : null;
+    };
+
     // On se base STRICTEMENT sur les dates du CRM de l'apprenant :
     // priorité aux dates "cours en ligne" si renseignées, sinon les dates de formation.
     const eligibleApprenants = (apprenants || []).filter((a: any) => {
