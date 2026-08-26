@@ -425,8 +425,19 @@ const GrilleNotationConduite = ({
                 <Input id="grille-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} readOnly={readOnly} disabled={readOnly} />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="grille-evaluateur">Évaluateur</Label>
-                <Input id="grille-evaluateur" value={evaluateur} onChange={(e) => setEvaluateur(e.target.value)} placeholder="Nom du formateur" readOnly={readOnly} disabled={readOnly} />
+                <Label htmlFor="grille-evaluateur">Formateur</Label>
+                <Select value={evaluateur} onValueChange={setEvaluateur} disabled={readOnly}>
+                  <SelectTrigger id="grille-evaluateur">
+                    <SelectValue placeholder="Choisir un formateur..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {formateurs.map((f) => (
+                      <SelectItem key={f.id} value={`${f.prenom} ${f.nom}`}>
+                        {f.prenom} {f.nom}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
