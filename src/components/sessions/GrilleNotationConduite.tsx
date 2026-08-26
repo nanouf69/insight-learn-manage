@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ClipboardCheck, Download, Loader2, Save, Send, ThumbsDown, ThumbsUp } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -127,6 +128,7 @@ const GrilleNotationConduite = ({
   const [hasGrille, setHasGrille] = useState(false);
   const [grillesCount, setGrillesCount] = useState(0);
   const [avis, setAvis] = useState<"favorable" | "defavorable" | null>(null);
+  const [formateurs, setFormateurs] = useState<{ id: string; nom: string; prenom: string }[]>([]);
 
   const themes = useMemo(
     () =>
@@ -192,6 +194,18 @@ const GrilleNotationConduite = ({
   useEffect(() => {
     refreshCount();
   }, [apprenantId]);
+
+  // Liste des formateurs déjà inscrits (menu déroulant Évaluateur)
+  useEffect(() => {
+    const load = async () => {
+      const { data } = await supabase
+        .from("formateurs")
+        .select("id, nom, prenom")
+        .order("nom");
+      if (data) setFormateurs(data as any);
+    };
+    load();
+  }, []);
 
   useEffect(() => {
     if (open) loadGrille();
@@ -395,15 +409,35 @@ const GrilleNotationConduite = ({
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="grille-passage">Passage</Label>
-                <Input id="grille-passage" value={passage} onChange={(e) => setPassage(e.target.value)} placeholder="Ex : 1er passage" readOnly={readOnly} disabled={readOnly} />
+                <Select value={passage} onValueChange={setPassage} disabled={readOnly}>
+                  <SelectTrigger id="grille-passage">
+                    <SelectValue placeholder="Sélectionner le passage" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 10 }, (_, i) => String(i + 1)).map((p) => (
+                      <SelectItem key={p} value={p}>Passage {p}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="grille-date">Date</Label>
                 <Input id="grille-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} readOnly={readOnly} disabled={readOnly} />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="grille-evaluateur">Évaluateur</Label>
-                <Input id="grille-evaluateur" value={evaluateur} onChange={(e) => setEvaluateur(e.target.value)} placeholder="Nom du formateur" readOnly={readOnly} disabled={readOnly} />
+                <Label htmlFor="grille-evaluateur">Formateur</Label>
+                <Select value={evaluateur} onValueChange={setEvaluateur} disabled={readOnly}>
+                  <SelectTrigger id="grille-evaluateur">
+                    <SelectValue placeholder="Choisir un formateur..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {formateurs.map((f) => (
+                      <SelectItem key={f.id} value={`${f.prenom} ${f.nom}`}>
+                        {f.prenom} {f.nom}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
