@@ -226,6 +226,7 @@ const GrilleNotationConduite = ({
       avis: avis,
       observations: observations || null,
       evaluateur: evaluateur || null,
+      temps_preparation: tempsPreparation || null,
       created_by: user?.id || null,
     };
 
