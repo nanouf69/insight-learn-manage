@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Loader2, Search, Car } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import GrilleNotationConduite from "@/components/sessions/GrilleNotationConduite";
+import { fetchAllRows } from "@/lib/supabase/fetch-all-rows";
 
 interface Row {
   apprenantId: string;
