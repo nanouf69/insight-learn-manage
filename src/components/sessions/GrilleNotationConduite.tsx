@@ -356,7 +356,53 @@ const GrilleNotationConduite = ({
       doc.text(doc.splitTextToSize(observations, 175), 20, y);
       y += 12;
     }
-    doc.text(`Évaluateur : ${evaluateur || "-"}`, 15, y);
+    doc.text(`Formateur : ${evaluateur || "-"}`, 15, y);
+    y += 10;
+
+    // --- Synthèse en rouge : éléments non assimilés ---
+    const criteresNonAcquis = themes.flatMap(t =>
+      t.criteres.filter(c => coches[c.id]).map(c => ({ theme: t.titre, label: c.label }))
+    );
+
+    if (y > 230) { doc.addPage(); y = 20; }
+    doc.setTextColor(220, 38, 38);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.text("Synthèse - Éléments non assimilés", 15, y);
+    y += 7;
+    doc.setFontSize(10);
+
+    if (criteresNonAcquis.length === 0) {
+      doc.setFont("helvetica", "normal");
+      doc.text("Aucun élément signalé comme non assimilé.", 15, y);
+      y += 6;
+    } else {
+      doc.setFont("helvetica", "normal");
+      doc.text(`${criteresNonAcquis.length} élément(s) non assimilé(s) :`, 15, y);
+      y += 6;
+      criteresNonAcquis.forEach(({ theme, label }) => {
+        if (y > 280) { doc.addPage(); y = 20; }
+        const themeShort = theme.replace(/^\d+\.\s*/, "");
+        const line = `- ${themeShort} : ${label}`;
+        const split = doc.splitTextToSize(line, 175);
+        doc.text(split, 20, y);
+        y += 5 * split.length;
+      });
+    }
+
+    y += 6;
+    if (y > 270) { doc.addPage(); y = 20; }
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.text(
+      `Avis final : ${avis === "favorable" ? "FAVORABLE" : avis === "defavorable" ? "DÉFAVORABLE" : "Non renseigné"}`,
+      15,
+      y
+    );
+    doc.setTextColor(0, 0, 0);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+
     return doc;
   };
 
