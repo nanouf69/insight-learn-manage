@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Loader2, Search, Car } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import GrilleNotationConduite from "@/components/sessions/GrilleNotationConduite";
+import { fetchAllRows } from "@/lib/supabase/fetch-all-rows";
 
 interface Row {
   apprenantId: string;
@@ -14,7 +15,8 @@ interface Row {
   formation: "vtc" | "taxi";
   sessionId: string;
   datePassage: string;
-  noteGlobale?: number | null;
+  avis?: "favorable" | "defavorable" | null;
+  passage?: string | null;
 }
 
 const NotationPratiqueTab = () => {
@@ -26,12 +28,14 @@ const NotationPratiqueTab = () => {
     const load = async () => {
       setLoading(true);
       try {
-        const { data } = await supabase
-          .from("session_apprenants")
-          .select(
-            "apprenant_id, session_id, apprenants:apprenant_id(nom, prenom, type_apprenant), sessions:session_id(type_session, date_debut, types_apprenant, nom)"
-          )
-          .limit(5000);
+        const data = await fetchAllRows((from, to) =>
+          supabase
+            .from("session_apprenants")
+            .select(
+              "apprenant_id, session_id, apprenants:apprenant_id(nom, prenom, type_apprenant), sessions:session_id(type_session, date_debut, types_apprenant, nom)"
+            )
+            .range(from, to)
+        );
 
         const list: Row[] = [];
         for (const r of ((data as any[]) || [])) {
@@ -51,20 +55,23 @@ const NotationPratiqueTab = () => {
           });
         }
 
-        const ids = Array.from(new Set(list.map((l) => l.apprenantId)));
-        const notes = new Map<string, number>();
-        if (ids.length > 0) {
-          const { data: grilles } = await supabase
+        const grilles = await fetchAllRows((from, to) =>
+          supabase
             .from("grilles_notation_conduite" as any)
-            .select("apprenant_id, session_id, note_globale");
-          for (const g of ((grilles as any[]) || [])) {
-            notes.set(`${g.apprenant_id}|${g.session_id || ""}`, Number(g.note_globale));
-          }
+            .select("apprenant_id, session_id, avis, passage")
+            .range(from, to)
+        );
+        const byKey = new Map<string, any>();
+        for (const g of ((grilles as any[]) || [])) {
+          byKey.set(`${g.apprenant_id}|${g.session_id || ""}`, g);
         }
 
         list.forEach((l) => {
-          const v = notes.get(`${l.apprenantId}|${l.sessionId}`) ?? notes.get(`${l.apprenantId}|`);
-          if (typeof v === "number" && !Number.isNaN(v)) l.noteGlobale = v;
+          const g = byKey.get(`${l.apprenantId}|${l.sessionId}`) ?? byKey.get(`${l.apprenantId}|`);
+          if (g) {
+            l.avis = g.avis ?? null;
+            l.passage = g.passage ?? null;
+          }
         });
 
         list.sort((a, b) => (b.datePassage || "").localeCompare(a.datePassage || ""));
@@ -117,7 +124,8 @@ const NotationPratiqueTab = () => {
                 <TableHead>Candidat</TableHead>
                 <TableHead>Formation</TableHead>
                 <TableHead>Date pratique</TableHead>
-                <TableHead>Note</TableHead>
+                <TableHead>Passage</TableHead>
+                <TableHead>Avis</TableHead>
                 <TableHead className="text-right">Grille</TableHead>
               </TableRow>
             </TableHeader>
@@ -131,19 +139,12 @@ const NotationPratiqueTab = () => {
                     <Badge variant="outline">{r.formation.toUpperCase()}</Badge>
                   </TableCell>
                   <TableCell>{r.datePassage || "-"}</TableCell>
+                  <TableCell className="text-sm">{r.passage || "-"}</TableCell>
                   <TableCell>
-                    {typeof r.noteGlobale === "number" ? (
-                      <span
-                        className={
-                          r.noteGlobale >= 15
-                            ? "text-emerald-600 font-semibold"
-                            : r.noteGlobale >= 10
-                              ? "text-amber-600 font-semibold"
-                              : "text-destructive font-semibold"
-                        }
-                      >
-                        {r.noteGlobale}/20
-                      </span>
+                    {r.avis === "favorable" ? (
+                      <span className="text-emerald-600 font-semibold">Favorable</span>
+                    ) : r.avis === "defavorable" ? (
+                      <span className="text-destructive font-semibold">Défavorable</span>
                     ) : (
                       <span className="text-muted-foreground text-sm">Non notée</span>
                     )}
