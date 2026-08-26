@@ -1,0 +1,1 @@
+ALTER TABLE public.grilles_notation_conduite ADD COLUMN IF NOT EXISTS avis text CHECK (avis IN ('favorable','defavorable'));
