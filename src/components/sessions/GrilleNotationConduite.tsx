@@ -362,6 +362,11 @@ const GrilleNotationConduite = ({
         >
           <ClipboardCheck className="w-3.5 h-3.5" />
           Grille conduite
+          {grillesCount > 0 && (
+            <span className="ml-1 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700">
+              {grillesCount}
+            </span>
+          )}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
@@ -369,7 +374,13 @@ const GrilleNotationConduite = ({
           <DialogTitle>
             Grille de notation - Conduite ({formation.toUpperCase()})
           </DialogTitle>
+          <p className="text-sm text-muted-foreground">
+            {grillesCount === 0
+              ? "Aucune grille d'évaluation remplie pour cet apprenant"
+              : `${grillesCount} grille${grillesCount > 1 ? "s" : ""} d'évaluation remplie${grillesCount > 1 ? "s" : ""}`}
+          </p>
         </DialogHeader>
+
 
         {loading ? (
           <div className="flex items-center justify-center py-10">
