@@ -32,6 +32,7 @@ import { CONNAISSANCES_VILLE_TAXI_DATA } from "./connaissances-ville-taxi-data";
 import { CONTROLE_CONNAISSANCES_TAXI_DATA } from "./controle-connaissances-taxi-data";
 import { EQUIPEMENTS_TAXI_DATA } from "./equipements-taxi-data";
 import { getSessionEndMs, getSessionDurationMinutes, getAccessCutoffMs, filterSessionsWithinAccess } from "@/lib/reports/session-duration";
+import { fetchPratiqueSlotDetails, type PratiqueSlotDetail } from "@/lib/pratiqueSlots";
 
 // Build a static map: exercice_id → human-readable title
 const EXERCICE_TITLE_MAP = new Map<string, string>();
@@ -185,6 +186,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
   const [exercicesCompletes, setExercicesCompletes] = useState<ExerciceComplete[]>([]);
   const [quizResults, setQuizResults] = useState<QuizResult[]>([]);
   const [emargements, setEmargements] = useState<EmargementRow[]>([]);
+  const [pratiqueDetails, setPratiqueDetails] = useState<PratiqueSlotDetail[]>([]);
   const [loading, setLoading] = useState(false);
   // Par défaut on affiche TOUT l'historique (conservé à vie), jamais une fenêtre glissante.
   const [period, setPeriod] = useState<"7" | "30" | "90" | "all" | "custom">("all");
@@ -275,6 +277,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
     if (!selectedId) {
       setConnexions([]);
       setActivites([]);
+      setPratiqueDetails([]);
       return;
     }
 
@@ -317,7 +320,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
       const withUntil = (q: any, col: string, isDateOnly = false) =>
         untilDate ? q.lte(col, isDateOnly ? untilDate : untilTs) : q;
 
-      const [connRes, actRes, complRes, exRes, qrRes, emgRes, resPratRes] = await Promise.all([
+      const [connRes, actRes, complRes, exRes, qrRes, emgRes, pratiqueRes] = await Promise.all([
         fetchAllRows("apprenant_connexions", "id, started_at, ended_at, last_seen_at, last_action_at, current_module", "started_at"),
         fetchAllRows("apprenant_module_activites", "id, module_id, module_nom, action_type, occurred_at", "occurred_at"),
 
@@ -351,15 +354,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
           "date_emargement",
           true,
         ).order("date_emargement", { ascending: false }),
-        withUntil(
-          supabase
-            .from("reservations_pratique")
-            .select("date_choisie")
-            .eq("apprenant_id", selectedId)
-            .gte("date_choisie", since),
-          "date_choisie",
-          true,
-        ).order("date_choisie", { ascending: false }),
+        fetchPratiqueSlotDetails(selectedId),
       ]);
 
 
@@ -369,6 +364,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
       setExercicesCompletes(((exRes.data as any[]) || []) as ExerciceComplete[]);
       setQuizResults(((qrRes.data as any[]) || []) as QuizResult[]);
       setEmargements(((emgRes.data as any[]) || []) as EmargementRow[]);
+      setPratiqueDetails(pratiqueRes.filter((row) => row.date >= since && (!untilDate || row.date <= untilDate)));
       setLoading(false);
     };
     load();
@@ -476,7 +472,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
     return getSessionDurationMinutes(connexion as any, accessCutoffMs);
   };
 
-  // Build pratique rows from emargements
+  // Présentiel : les journées pratiques utilisent la durée exacte du planning.
   const pratiqueRows = useMemo(() => {
     const byDate = new Map<string, { date: string; slots: Set<string>; hours: number }>();
     for (const row of emargements) {
@@ -488,7 +484,14 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
       byDate.get(date)!.slots.add(slot);
     }
     const rows: { date: string; label: string; hours: number }[] = [];
+    const pratiqueByDate = new Map(pratiqueDetails.map((detail) => [detail.date, detail]));
     for (const { date, slots } of byDate.values()) {
+      const pratique = pratiqueByDate.get(date);
+      if (pratique) {
+        rows.push({ date, label: `Pratique · ${pratique.label}`, hours: pratique.minutes / 60 });
+        pratiqueByDate.delete(date);
+        continue;
+      }
       let hours = 0;
       const hasSoir = slots.has("soir") || slots.has("soir_1") || slots.has("soir_2");
       if (hasSoir) {
@@ -507,8 +510,11 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
       if (slots.has("soir") || slots.has("soir_1") || slots.has("soir_2")) labels.push("Soir");
       rows.push({ date, label: labels.join(" + ") || "Présentiel", hours });
     }
+    for (const pratique of pratiqueByDate.values()) {
+      rows.push({ date: pratique.date, label: `Pratique · ${pratique.label}`, hours: pratique.minutes / 60 });
+    }
     return rows.sort((a, b) => b.date.localeCompare(a.date));
-  }, [emargements]);
+  }, [emargements, pratiqueDetails]);
 
   // Synthèse des taux : e-learning (plafonné au volume prévu), présentiel (confirmé) et total
   const taux = useMemo(() => {

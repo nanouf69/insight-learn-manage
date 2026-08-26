@@ -306,12 +306,6 @@ export async function buildDossierApprenantIntoZip(
     }
     const theorieSec = Math.round(theorieHours * 3600);
 
-    const parseHM = (s?: string | null) => {
-      if (!s) return null;
-      const m = String(s).match(/^(\d{1,2}):(\d{2})/);
-      if (!m) return null;
-      return parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
-    };
     let pratiqueMinutes = 0;
     const journeesPresentiel = buildJourneesPresentiel(emargAll, sessInscrits);
     fallbackJourneesPresentiel = journeesPresentiel;
