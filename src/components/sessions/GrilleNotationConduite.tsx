@@ -117,6 +117,7 @@ const GrilleNotationConduite = ({
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [sending, setSending] = useState(false);
   const [grilleId, setGrilleId] = useState<string | null>(null);
   const [coches, setCoches] = useState<Record<string, boolean>>({});
   const [passage, setPassage] = useState("");
@@ -124,6 +125,7 @@ const GrilleNotationConduite = ({
   const [observations, setObservations] = useState("");
   const [evaluateur, setEvaluateur] = useState("");
   const [hasGrille, setHasGrille] = useState(false);
+  const [grillesCount, setGrillesCount] = useState(0);
   const [avis, setAvis] = useState<"favorable" | "defavorable" | null>(null);
 
   const themes = useMemo(
