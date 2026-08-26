@@ -57,6 +57,8 @@ const THEMES: Theme[] = [
     titre: "3. Respect de la réglementation et sécurité",
     criteres: [
       { id: "signalisation", label: "Ne respecte pas la signalisation" },
+      { id: "stop", label: "Ne respecte pas le STOP ou STOP pas assez long" },
+      { id: "ligne_continue", label: "Franchissement de la ligne continue" },
       { id: "vitesse", label: "Ne respecte pas la vitesse" },
       { id: "priorite_droite", label: "Ne respecte pas la priorité à droite" },
       { id: "pietons", label: "Ne laisse pas la priorité aux piétons" },
