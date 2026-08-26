@@ -5,7 +5,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ClipboardCheck, Download, Loader2, Save, ThumbsDown, ThumbsUp } from "lucide-react";
+import { ClipboardCheck, Download, Loader2, Save, Send, ThumbsDown, ThumbsUp } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -117,6 +117,7 @@ const GrilleNotationConduite = ({
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [sending, setSending] = useState(false);
   const [grilleId, setGrilleId] = useState<string | null>(null);
   const [coches, setCoches] = useState<Record<string, boolean>>({});
   const [passage, setPassage] = useState("");
@@ -124,6 +125,7 @@ const GrilleNotationConduite = ({
   const [observations, setObservations] = useState("");
   const [evaluateur, setEvaluateur] = useState("");
   const [hasGrille, setHasGrille] = useState(false);
+  const [grillesCount, setGrillesCount] = useState(0);
   const [avis, setAvis] = useState<"favorable" | "defavorable" | null>(null);
 
   const themes = useMemo(
@@ -178,55 +180,62 @@ const GrilleNotationConduite = ({
     }
   };
 
+  const refreshCount = async () => {
+    const { count } = await supabase
+      .from("grilles_notation_conduite" as any)
+      .select("id", { count: "exact", head: true })
+      .eq("apprenant_id", apprenantId);
+    setGrillesCount(count || 0);
+    setHasGrille((count || 0) > 0);
+  };
+
   useEffect(() => {
-    // Indicateur discret : grille déjà existante ?
-    (async () => {
-      const { count } = await supabase
-        .from("grilles_notation_conduite" as any)
-        .select("id", { count: "exact", head: true })
-        .eq("apprenant_id", apprenantId);
-      setHasGrille((count || 0) > 0);
-    })();
+    refreshCount();
   }, [apprenantId]);
 
   useEffect(() => {
     if (open) loadGrille();
   }, [open]);
 
+  const saveGrille = async (): Promise<boolean> => {
+    const { data: { user } } = await supabase.auth.getUser();
+    const payload: any = {
+      apprenant_id: apprenantId,
+      session_id: sessionId || null,
+      date_passage: date,
+      passage: passage || null,
+      type_formation: formation,
+      criteres: coches,
+      notes_themes: statsThemes,
+      avis: avis,
+      observations: observations || null,
+      evaluateur: evaluateur || null,
+      created_by: user?.id || null,
+    };
+
+    if (grilleId) {
+      const { error } = await supabase
+        .from("grilles_notation_conduite" as any)
+        .update(payload)
+        .eq("id", grilleId);
+      if (error) throw error;
+    } else {
+      const { data, error } = await supabase
+        .from("grilles_notation_conduite" as any)
+        .insert(payload)
+        .select("id")
+        .single();
+      if (error) throw error;
+      setGrilleId((data as any)?.id || null);
+    }
+    await refreshCount();
+    return true;
+  };
+
   const handleSave = async () => {
     setSaving(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      const payload: any = {
-        apprenant_id: apprenantId,
-        session_id: sessionId || null,
-        date_passage: date,
-        passage: passage || null,
-        type_formation: formation,
-        criteres: coches,
-        notes_themes: statsThemes,
-        avis: avis,
-        observations: observations || null,
-        evaluateur: evaluateur || null,
-        created_by: user?.id || null,
-      };
-
-      if (grilleId) {
-        const { error } = await supabase
-          .from("grilles_notation_conduite" as any)
-          .update(payload)
-          .eq("id", grilleId);
-        if (error) throw error;
-      } else {
-        const { data, error } = await supabase
-          .from("grilles_notation_conduite" as any)
-          .insert(payload)
-          .select("id")
-          .single();
-        if (error) throw error;
-        setGrilleId((data as any)?.id || null);
-      }
-      setHasGrille(true);
+      await saveGrille();
       toast.success("Grille de notation enregistrée");
     } catch (e: any) {
       console.error("[GrilleNotation] save error", e);
@@ -236,7 +245,64 @@ const GrilleNotationConduite = ({
     }
   };
 
-  const handlePdf = async () => {
+  /** Remet le formulaire à zéro pour saisir un nouveau passage. */
+  const resetForm = () => {
+    setGrilleId(null);
+    setCoches({});
+    setPassage("");
+    setObservations("");
+    setAvis(null);
+    setDate(datePassage || new Date().toISOString().slice(0, 10));
+  };
+
+  const handleValiderEtEnvoyer = async () => {
+    if (!avis) {
+      toast.error("Indiquez d'abord l'avis final (favorable ou défavorable)");
+      return;
+    }
+    setSending(true);
+    try {
+      await saveGrille();
+
+      const { data: appr } = await supabase
+        .from("apprenants")
+        .select("email")
+        .eq("id", apprenantId)
+        .maybeSingle();
+      const email = (appr as any)?.email;
+      if (!email) {
+        toast.error("Aucune adresse email pour cet apprenant");
+        return;
+      }
+
+      const doc = await buildPdf();
+      const b64 = doc.output("datauristring").split(",")[1];
+
+      const { error } = await supabase.functions.invoke("send-document-email", {
+        body: {
+          apprenantId,
+          recipientEmail: email,
+          recipientName: `${apprenantPrenom} ${apprenantNom}`,
+          subject: `Grille d'évaluation pratique ${formation.toUpperCase()} — ${passage || "passage"}`,
+          htmlBody: `<p>Bonjour ${apprenantPrenom} ${apprenantNom},</p><p>Veuillez trouver ci-joint votre grille d'évaluation de conduite du ${date}.</p><p>Avis du formateur : <strong>${avis === "favorable" ? "FAVORABLE" : "DÉFAVORABLE"}</strong>.</p><p>Cordialement,<br/>FTRANSPORT</p>`,
+          attachmentName: `grille-notation-${apprenantNom}-${apprenantPrenom}.pdf`,
+          attachmentBase64: b64,
+          attachmentContentType: "application/pdf",
+        },
+      });
+      if (error) throw error;
+
+      toast.success(`Grille validée et envoyée à ${email}`);
+      resetForm();
+    } catch (e: any) {
+      console.error("[GrilleNotation] send error", e);
+      toast.error(`Erreur d'envoi : ${e?.message || "inconnue"}`);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const buildPdf = async () => {
     const { default: jsPDF } = await import("jspdf");
     const doc = new jsPDF({ unit: "mm", format: "a4" });
     let y = 18;
@@ -277,6 +343,11 @@ const GrilleNotationConduite = ({
       y += 12;
     }
     doc.text(`Évaluateur : ${evaluateur || "-"}`, 15, y);
+    return doc;
+  };
+
+  const handlePdf = async () => {
+    const doc = await buildPdf();
     doc.save(`grille-notation-${apprenantNom}-${apprenantPrenom}.pdf`);
   };
 
@@ -291,6 +362,11 @@ const GrilleNotationConduite = ({
         >
           <ClipboardCheck className="w-3.5 h-3.5" />
           Grille conduite
+          {grillesCount > 0 && (
+            <span className="ml-1 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700">
+              {grillesCount}
+            </span>
+          )}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
@@ -298,7 +374,13 @@ const GrilleNotationConduite = ({
           <DialogTitle>
             Grille de notation - Conduite ({formation.toUpperCase()})
           </DialogTitle>
+          <p className="text-sm text-muted-foreground">
+            {grillesCount === 0
+              ? "Aucune grille d'évaluation remplie pour cet apprenant"
+              : `${grillesCount} grille${grillesCount > 1 ? "s" : ""} d'évaluation remplie${grillesCount > 1 ? "s" : ""}`}
+          </p>
         </DialogHeader>
+
 
         {loading ? (
           <div className="flex items-center justify-center py-10">
@@ -413,6 +495,18 @@ const GrilleNotationConduite = ({
                 Télécharger en PDF
               </Button>
             </div>
+
+            {!readOnly && (
+              <Button
+                className="w-full gap-2 bg-emerald-600 hover:bg-emerald-700"
+                onClick={handleValiderEtEnvoyer}
+                disabled={sending || saving}
+              >
+                {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                Valider et envoyer à l'élève (puis remise à zéro)
+              </Button>
+            )}
+
           </div>
         )}
       </DialogContent>
