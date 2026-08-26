@@ -2193,6 +2193,7 @@ export type Database = {
       grilles_notation_conduite: {
         Row: {
           apprenant_id: string
+          avis: string | null
           created_at: string
           created_by: string | null
           criteres: Json
@@ -2209,6 +2210,7 @@ export type Database = {
         }
         Insert: {
           apprenant_id: string
+          avis?: string | null
           created_at?: string
           created_by?: string | null
           criteres?: Json
@@ -2225,6 +2227,7 @@ export type Database = {
         }
         Update: {
           apprenant_id?: string
+          avis?: string | null
           created_at?: string
           created_by?: string | null
           criteres?: Json
