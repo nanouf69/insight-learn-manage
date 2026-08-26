@@ -195,6 +195,18 @@ const GrilleNotationConduite = ({
     refreshCount();
   }, [apprenantId]);
 
+  // Liste des formateurs déjà inscrits (menu déroulant Évaluateur)
+  useEffect(() => {
+    const load = async () => {
+      const { data } = await supabase
+        .from("formateurs")
+        .select("id, nom, prenom")
+        .order("nom");
+      if (data) setFormateurs(data as any);
+    };
+    load();
+  }, []);
+
   useEffect(() => {
     if (open) loadGrille();
   }, [open]);
