@@ -26,16 +26,32 @@ serve(async (req) => {
     console.log(`[auto-send-credentials] Running for dates: today=${today}, tomorrow=${tomorrow}`);
 
     // Find ALL apprenants whose formation starts today OR tomorrow (J-1 send)
-    const { data: apprenants, error: fetchErr } = await supabaseAdmin
-      .from("apprenants")
-      .select("id, nom, prenom, email, auth_user_id, formation_choisie, date_debut_cours_en_ligne, date_fin_cours_en_ligne, date_debut_formation, date_fin_formation")
-      .not("email", "is", null)
-      .is("deleted_at", null);
-
-    if (fetchErr) {
-      console.error("[auto-send-credentials] Fetch error:", fetchErr);
-      throw fetchErr;
+    // ⚠️ Pagination obligatoire : PostgREST plafonne à 1000 lignes et la base
+    // contient > 3000 apprenants (des inscrits récents étaient donc ignorés).
+    const apprenants: any[] = [];
+    {
+      const PAGE = 1000;
+      let from = 0;
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const { data: page, error: fetchErr } = await supabaseAdmin
+          .from("apprenants")
+          .select("id, nom, prenom, email, auth_user_id, formation_choisie, date_debut_cours_en_ligne, date_fin_cours_en_ligne, date_debut_formation, date_fin_formation")
+          .not("email", "is", null)
+          .is("deleted_at", null)
+          .order("id", { ascending: true })
+          .range(from, from + PAGE - 1);
+        if (fetchErr) {
+          console.error("[auto-send-credentials] Fetch error:", fetchErr);
+          throw fetchErr;
+        }
+        apprenants.push(...(page || []));
+        if (!page || page.length < PAGE) break;
+        from += PAGE;
+      }
+      console.log(`[auto-send-credentials] ${apprenants.length} apprenants chargés (pagination)`);
     }
+
 
     // Normalisation : certaines dates sont stockées en texte au format JJ/MM/AAAA
     const normalizeDate = (value: any): string | null => {
