@@ -409,7 +409,16 @@ const GrilleNotationConduite = ({
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="grille-passage">Passage</Label>
-                <Input id="grille-passage" value={passage} onChange={(e) => setPassage(e.target.value)} placeholder="Ex : 1er passage" readOnly={readOnly} disabled={readOnly} />
+                <Select value={passage} onValueChange={setPassage} disabled={readOnly}>
+                  <SelectTrigger id="grille-passage">
+                    <SelectValue placeholder="Sélectionner le passage" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 10 }, (_, i) => String(i + 1)).map((p) => (
+                      <SelectItem key={p} value={p}>Passage {p}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="grille-date">Date</Label>
