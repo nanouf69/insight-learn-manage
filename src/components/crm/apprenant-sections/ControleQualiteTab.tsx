@@ -23,6 +23,7 @@ import { saveAs } from "file-saver";
 import { useToast } from "@/hooks/use-toast";
 import { DossierDocumentsLibres } from "./DossierDocumentsLibres";
 import { getSessionEndMs, getSessionDurationMinutes, clampConnexionsToAccessEnd } from "@/lib/reports/session-duration";
+import { fetchPratiqueSlotDetails, pratiqueSlotDetailsToMinutes } from "@/lib/pratiqueSlots";
 
 
 /** Renders donnees content with real question texts instead of raw JSON */
@@ -691,31 +692,11 @@ export function ControleQualiteTab({ apprenant }: Props) {
           }
           const theorieSec = Math.round(theorieHours * 3600);
 
-          // ---- Pratique (présentiel) : sessions de type "pratique" auxquelles l'apprenant est inscrit
-          const parseHM = (s?: string | null) => {
-            if (!s) return null;
-            const m = String(s).match(/^(\d{1,2}):(\d{2})/);
-            if (!m) return null;
-            return parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
-          };
-          const MAX_PRATIQUE_MIN_PER_SESSION = 6 * 60; // la pratique dépasse rarement 6h par session
-          let pratiqueMinutes = 0;
+          // ---- Pratique (présentiel) : durée exacte issue du planning et de la réservation
           const journeesPresentiel = buildJourneesPresentiel(emargAll, sessInscrits);
           fallbackJourneesPresentiel = journeesPresentiel;
-          for (const si of sessInscrits) {
-            const sess = si.sessions;
-            const type = String(sess?.type_session || "").toLowerCase();
-            if (!type.includes("pratique")) continue;
-            const hd = parseHM(si.heure_debut_personnalisee) ?? parseHM(sess?.heure_debut);
-            const hf = parseHM(si.heure_fin_personnalisee) ?? parseHM(sess?.heure_fin);
-            let dur: number;
-            if (hd != null && hf != null && hf > hd) {
-              dur = hf - hd;
-            } else {
-              dur = 3 * 60; // valeur par défaut d'une session pratique
-            }
-            pratiqueMinutes += Math.min(dur, MAX_PRATIQUE_MIN_PER_SESSION);
-          }
+          const pratiqueDetails = await fetchPratiqueSlotDetails(apprenant.id).catch(() => []);
+          const pratiqueMinutes = pratiqueSlotDetailsToMinutes(pratiqueDetails);
           const pratiqueSec = pratiqueMinutes * 60;
 
           const presentielTotalSec = theorieSec + pratiqueSec;
