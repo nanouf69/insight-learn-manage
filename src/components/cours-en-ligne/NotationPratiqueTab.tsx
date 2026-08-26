@@ -123,7 +123,8 @@ const NotationPratiqueTab = () => {
                 <TableHead>Candidat</TableHead>
                 <TableHead>Formation</TableHead>
                 <TableHead>Date pratique</TableHead>
-                <TableHead>Note</TableHead>
+                <TableHead>Passage</TableHead>
+                <TableHead>Avis</TableHead>
                 <TableHead className="text-right">Grille</TableHead>
               </TableRow>
             </TableHeader>
@@ -137,19 +138,12 @@ const NotationPratiqueTab = () => {
                     <Badge variant="outline">{r.formation.toUpperCase()}</Badge>
                   </TableCell>
                   <TableCell>{r.datePassage || "-"}</TableCell>
+                  <TableCell className="text-sm">{r.passage || "-"}</TableCell>
                   <TableCell>
-                    {typeof r.noteGlobale === "number" ? (
-                      <span
-                        className={
-                          r.noteGlobale >= 15
-                            ? "text-emerald-600 font-semibold"
-                            : r.noteGlobale >= 10
-                              ? "text-amber-600 font-semibold"
-                              : "text-destructive font-semibold"
-                        }
-                      >
-                        {r.noteGlobale}/20
-                      </span>
+                    {r.avis === "favorable" ? (
+                      <span className="text-emerald-600 font-semibold">Favorable</span>
+                    ) : r.avis === "defavorable" ? (
+                      <span className="text-destructive font-semibold">Défavorable</span>
                     ) : (
                       <span className="text-muted-foreground text-sm">Non notée</span>
                     )}
