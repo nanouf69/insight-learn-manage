@@ -5,14 +5,14 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ClipboardCheck, Download, Loader2, Save } from "lucide-react";
+import { ClipboardCheck, Download, Loader2, Save, ThumbsDown, ThumbsUp } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
 /**
  * Grille de notation conduite (module pratique TAXI / VTC).
  * Chaque critère coché = élément NON assimilé par l'apprenant.
- * La note par thème est calculée sur 20 : (critères acquis / total) * 20.
+ * Le formateur conclut par un avis : favorable ou défavorable.
  */
 
 type Formation = "vtc" | "taxi";
@@ -122,6 +122,7 @@ const GrilleNotationConduite = ({
   const [observations, setObservations] = useState("");
   const [evaluateur, setEvaluateur] = useState("");
   const [hasGrille, setHasGrille] = useState(false);
+  const [avis, setAvis] = useState<"favorable" | "defavorable" | null>(null);
 
   const themes = useMemo(
     () =>
@@ -165,6 +166,7 @@ const GrilleNotationConduite = ({
         setDate(row.date_passage || date);
         setObservations(row.observations || "");
         setEvaluateur(row.evaluateur || "");
+        setAvis(row.avis === "favorable" || row.avis === "defavorable" ? row.avis : null);
         setHasGrille(true);
       }
     } catch (e) {
@@ -200,8 +202,8 @@ const GrilleNotationConduite = ({
         passage: passage || null,
         type_formation: formation,
         criteres: coches,
-        notes_themes: notesThemes,
-        note_globale: noteGlobale,
+        notes_themes: statsThemes,
+        avis: avis,
         observations: observations || null,
         evaluateur: evaluateur || null,
         created_by: user?.id || null,
@@ -250,7 +252,7 @@ const GrilleNotationConduite = ({
     themes.forEach(t => {
       if (y > 265) { doc.addPage(); y = 20; }
       doc.setFont("helvetica", "bold");
-      doc.text(`${t.titre}  —  ${notesThemes[t.id]?.note ?? 0}/20`, 15, y);
+      doc.text(t.titre, 15, y);
       doc.setFont("helvetica", "normal");
       y += 5.5;
       t.criteres.forEach(c => {
@@ -263,7 +265,7 @@ const GrilleNotationConduite = ({
 
     if (y > 250) { doc.addPage(); y = 20; }
     doc.setFont("helvetica", "bold");
-    doc.text(`Note globale : ${noteGlobale}/20`, 15, y);
+    doc.text(`Avis : ${avis === "favorable" ? "FAVORABLE" : avis === "defavorable" ? "DEFAVORABLE" : "-"}`, 15, y);
     doc.setFont("helvetica", "normal");
     y += 7;
     if (observations) {
@@ -324,22 +326,15 @@ const GrilleNotationConduite = ({
             <p className="text-xs text-muted-foreground">
               {readOnly
                 ? "Grille remplie par le formateur : les éléments cochés sont ceux non assimilés. Consultation uniquement."
-                : "Cochez les éléments non assimilés par l'apprenant. La note de chaque thème est calculée automatiquement sur 20."}
+                : "Cochez les éléments non assimilés par l'apprenant, puis indiquez votre avis final."}
             </p>
 
             {themes.map(theme => {
-              const n = notesThemes[theme.id];
+              const n = statsThemes[theme.id];
               return (
                 <div key={theme.id} className="rounded-lg border p-4 space-y-3">
                   <div className="flex items-center justify-between gap-3 border-b pb-2">
                     <h3 className="font-semibold text-sm">{theme.titre}</h3>
-                    <span
-                      className={`text-sm font-bold ${
-                        n.note >= 15 ? "text-emerald-600" : n.note >= 10 ? "text-amber-600" : "text-destructive"
-                      }`}
-                    >
-                      {n.note}/20
-                    </span>
                   </div>
                   <div className="space-y-2">
                     {theme.criteres.map(c => (
@@ -378,15 +373,30 @@ const GrilleNotationConduite = ({
               />
             </div>
 
-            <div className="rounded-lg border bg-muted/40 p-4 flex items-center justify-between">
-              <span className="font-semibold text-sm">Note globale</span>
-              <span
-                className={`text-lg font-bold ${
-                  noteGlobale >= 15 ? "text-emerald-600" : noteGlobale >= 10 ? "text-amber-600" : "text-destructive"
-                }`}
-              >
-                {noteGlobale}/20
-              </span>
+            <div className="rounded-lg border bg-muted/40 p-4 space-y-3">
+              <span className="font-semibold text-sm">Avis final</span>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button
+                  type="button"
+                  variant={avis === "favorable" ? "default" : "outline"}
+                  className={`flex-1 gap-2 ${avis === "favorable" ? "bg-emerald-600 hover:bg-emerald-700" : ""}`}
+                  onClick={() => !readOnly && setAvis("favorable")}
+                  disabled={readOnly}
+                >
+                  <ThumbsUp className="w-4 h-4" />
+                  Favorable
+                </Button>
+                <Button
+                  type="button"
+                  variant={avis === "defavorable" ? "destructive" : "outline"}
+                  className="flex-1 gap-2"
+                  onClick={() => !readOnly && setAvis("defavorable")}
+                  disabled={readOnly}
+                >
+                  <ThumbsDown className="w-4 h-4" />
+                  Défavorable
+                </Button>
+              </div>
             </div>
 
             <div className="flex flex-col sm:flex-row gap-2">
