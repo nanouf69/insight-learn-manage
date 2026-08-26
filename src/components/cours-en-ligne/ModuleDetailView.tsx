@@ -114,6 +114,7 @@ import CGVAcceptanceForm from "./CGVAcceptanceForm";
 import CGVReglementForm from "./CGVReglementForm";
 import { getCompetencesForFormation } from "./competences-checklist-data";
 import Calculatrice from "./Calculatrice";
+import GrillesPratiqueApprenant from "./GrillesPratiqueApprenant";
 import {
   applyOverridesToModuleExercices,
   detectAndSaveOverrides,
