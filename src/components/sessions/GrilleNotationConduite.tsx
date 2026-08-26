@@ -197,46 +197,108 @@ const GrilleNotationConduite = ({
     if (open) loadGrille();
   }, [open]);
 
+  const saveGrille = async (): Promise<boolean> => {
+    const { data: { user } } = await supabase.auth.getUser();
+    const payload: any = {
+      apprenant_id: apprenantId,
+      session_id: sessionId || null,
+      date_passage: date,
+      passage: passage || null,
+      type_formation: formation,
+      criteres: coches,
+      notes_themes: statsThemes,
+      avis: avis,
+      observations: observations || null,
+      evaluateur: evaluateur || null,
+      created_by: user?.id || null,
+    };
+
+    if (grilleId) {
+      const { error } = await supabase
+        .from("grilles_notation_conduite" as any)
+        .update(payload)
+        .eq("id", grilleId);
+      if (error) throw error;
+    } else {
+      const { data, error } = await supabase
+        .from("grilles_notation_conduite" as any)
+        .insert(payload)
+        .select("id")
+        .single();
+      if (error) throw error;
+      setGrilleId((data as any)?.id || null);
+    }
+    await refreshCount();
+    return true;
+  };
+
   const handleSave = async () => {
     setSaving(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      const payload: any = {
-        apprenant_id: apprenantId,
-        session_id: sessionId || null,
-        date_passage: date,
-        passage: passage || null,
-        type_formation: formation,
-        criteres: coches,
-        notes_themes: statsThemes,
-        avis: avis,
-        observations: observations || null,
-        evaluateur: evaluateur || null,
-        created_by: user?.id || null,
-      };
-
-      if (grilleId) {
-        const { error } = await supabase
-          .from("grilles_notation_conduite" as any)
-          .update(payload)
-          .eq("id", grilleId);
-        if (error) throw error;
-      } else {
-        const { data, error } = await supabase
-          .from("grilles_notation_conduite" as any)
-          .insert(payload)
-          .select("id")
-          .single();
-        if (error) throw error;
-        setGrilleId((data as any)?.id || null);
-      }
-      setHasGrille(true);
+      await saveGrille();
       toast.success("Grille de notation enregistrée");
     } catch (e: any) {
       console.error("[GrilleNotation] save error", e);
       toast.error(`Erreur d'enregistrement : ${e?.message || "inconnue"}`);
     } finally {
       setSaving(false);
+    }
+  };
+
+  /** Remet le formulaire à zéro pour saisir un nouveau passage. */
+  const resetForm = () => {
+    setGrilleId(null);
+    setCoches({});
+    setPassage("");
+    setObservations("");
+    setAvis(null);
+    setDate(datePassage || new Date().toISOString().slice(0, 10));
+  };
+
+  const handleValiderEtEnvoyer = async () => {
+    if (!avis) {
+      toast.error("Indiquez d'abord l'avis final (favorable ou défavorable)");
+      return;
+    }
+    setSending(true);
+    try {
+      await saveGrille();
+
+      const { data: appr } = await supabase
+        .from("apprenants")
+        .select("email")
+        .eq("id", apprenantId)
+        .maybeSingle();
+      const email = (appr as any)?.email;
+      if (!email) {
+        toast.error("Aucune adresse email pour cet apprenant");
+        return;
+      }
+
+      const doc = await buildPdf();
+      const b64 = doc.output("datauristring").split(",")[1];
+
+      const { error } = await supabase.functions.invoke("send-document-email", {
+        body: {
+          apprenantId,
+          recipientEmail: email,
+          recipientName: `${apprenantPrenom} ${apprenantNom}`,
+          subject: `Grille d'évaluation pratique ${formation.toUpperCase()} — ${passage || "passage"}`,
+          htmlBody: `<p>Bonjour ${apprenantPrenom} ${apprenantNom},</p><p>Veuillez trouver ci-joint votre grille d'évaluation de conduite du ${date}.</p><p>Avis du formateur : <strong>${avis === "favorable" ? "FAVORABLE" : "DÉFAVORABLE"}</strong>.</p><p>Cordialement,<br/>FTRANSPORT</p>`,
+          attachmentName: `grille-notation-${apprenantNom}-${apprenantPrenom}.pdf`,
+          attachmentBase64: b64,
+          attachmentContentType: "application/pdf",
+        },
+      });
+      if (error) throw error;
+
+      toast.success(`Grille validée et envoyée à ${email}`);
+      resetForm();
+    } catch (e: any) {
+      console.error("[GrilleNotation] send error", e);
+      toast.error(`Erreur d'envoi : ${e?.message || "inconnue"}`);
+    } finally {
+      setSending(false);
     }
   };
 
