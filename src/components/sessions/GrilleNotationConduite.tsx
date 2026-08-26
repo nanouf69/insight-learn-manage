@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ClipboardCheck, Download, Loader2, Save, Send, ThumbsDown, ThumbsUp } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -127,6 +128,7 @@ const GrilleNotationConduite = ({
   const [hasGrille, setHasGrille] = useState(false);
   const [grillesCount, setGrillesCount] = useState(0);
   const [avis, setAvis] = useState<"favorable" | "defavorable" | null>(null);
+  const [formateurs, setFormateurs] = useState<{ id: string; nom: string; prenom: string }[]>([]);
 
   const themes = useMemo(
     () =>
