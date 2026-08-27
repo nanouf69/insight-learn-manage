@@ -2927,7 +2927,12 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     const dateFinRaw = a.date_fin_formation || session.dateFin || null;
     const dateDebut = formatDateFr(dateDebutRaw);
     const dateFin = formatDateFr(dateFinRaw);
-    const dateExamenTheorique = formatDateFr(a.date_examen_theorique);
+    const theoriqueAuto = getTheoriqueDateForFormation(dateFinRaw);
+    const dateExamenTheorique = a.date_examen_theorique
+      ? formatDateFr(a.date_examen_theorique)
+      : (theoriqueAuto.date || '[date à compléter]');
+    const lieuExamenTheorique = theoriqueAuto.lieu || '[lieu à compléter]';
+    const horaireExamenTheorique = theoriqueAuto.horaire || 'après-midi';
     const pratiqueAuto = getPratiqueDatesForFormation(dateFinRaw);
     const dateExamenPratique = a.date_examen_pratique
       ? formatDateFr(a.date_examen_pratique)
