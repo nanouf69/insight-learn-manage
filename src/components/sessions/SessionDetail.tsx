@@ -3646,6 +3646,17 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                           <Badge className={`text-[10px] shrink-0 ${getTypeBadgeColor(apprenant.type_apprenant)}`}>
                             {apprenant.type_apprenant?.toUpperCase() || "N/A"}
                           </Badge>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="h-6 text-[11px] px-2 gap-1 border-blue-200 text-blue-700 hover:bg-blue-50 hover:text-blue-800"
+                            onClick={(e) => { e.stopPropagation(); downloadDossierBienvenue(apprenant); }}
+                            title="Télécharger le dossier de bienvenue en PDF"
+                          >
+                            <FileText className="w-3 h-3" />
+                            Dossier de bienvenue
+                          </Button>
                           <Button 
                             size="sm" 
                             variant="ghost" 
