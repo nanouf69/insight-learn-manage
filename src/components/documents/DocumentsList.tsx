@@ -124,6 +124,11 @@ export function DocumentsList() {
             <Mail className="h-4 w-4" />
             Mails Type
           </TabsTrigger>
+          <TabsTrigger value="a-signer" className="gap-2">
+            <FileSignature className="h-4 w-4" />
+            À remplir / signer
+          </TabsTrigger>
+
         </TabsList>
 
         <TabsContent value="documents" className="space-y-6 mt-4">
