@@ -3132,24 +3132,46 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       return;
     }
 
-    if (!confirm(`Envoyer la convocation de formation à ${selectedList.length} apprenant(s) ?`)) return;
+    // Préparer l'aperçu personnalisé de chaque convocation avant envoi
+    const items = selectedList
+      .map((apprenant) => {
+        const template = emailTemplates.find((t: any) => t.id === getConvocationTemplateId(apprenant));
+        if (!template) return null;
+        return {
+          apprenant,
+          subject: replaceTemplateVars(template.subject_template, apprenant),
+          body: replaceTemplateVars(template.body_template, apprenant),
+        };
+      })
+      .filter(Boolean) as { apprenant: any; subject: string; body: string }[];
 
+    if (items.length === 0) {
+      toast({ title: "Aucun modèle de convocation trouvé", variant: "destructive" });
+      return;
+    }
+
+    setConvocationPreviewIndex(0);
+    setConvocationPreview({ items });
+  };
+
+  const handleConfirmBulkConvocations = async () => {
+    if (!convocationPreview) return;
+    const items = convocationPreview.items;
+    setConvocationPreview(null);
     setBulkSending(true);
     let sent = 0;
     let failed = 0;
 
-    for (const apprenant of selectedList) {
-      const template = emailTemplates.find((t: any) => t.id === getConvocationTemplateId(apprenant));
-      if (!template) { failed++; continue; }
+    for (const item of items) {
       try {
         await supabase.functions.invoke('sync-outlook-emails', {
           body: {
             action: 'send',
-            apprenantId: apprenant.id,
+            apprenantId: item.apprenant.id,
             userEmail: 'contact@ftransport.fr',
-            to: apprenant.email,
-            subject: replaceTemplateVars(template.subject_template, apprenant),
-            body: replaceTemplateVars(template.body_template, apprenant),
+            to: item.apprenant.email,
+            subject: item.subject,
+            body: item.body,
           },
         });
         sent++;
