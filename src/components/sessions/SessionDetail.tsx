@@ -1272,6 +1272,28 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       return identifiantsSent.some((c: any) => c.apprenant_id === apprenantId);
     };
 
+    // Dernière date d'envoi des identifiants (codes d'accès) pour un apprenant
+    const getIdentifiantsLastDate = (apprenantId: string): string | null => {
+      const mails = identifiantsSent
+        .filter((c: any) => c.apprenant_id === apprenantId && c.sent_at)
+        .sort((a: any, b: any) => new Date(b.sent_at).getTime() - new Date(a.sent_at).getTime());
+      return mails.length > 0 ? mails[0].sent_at : null;
+    };
+
+    // Liste récapitulative : apprenants ayant reçu leurs codes d'accès (plus récent en premier)
+    const identifiantsRecap = useMemo(() => {
+      const rows = apprenantsInSession
+        .map((sa: any) => {
+          const ap = sa.apprenant;
+          if (!ap?.id) return null;
+          const date = getIdentifiantsLastDate(ap.id);
+          if (!date) return null;
+          return { id: ap.id, prenom: ap.prenom, nom: ap.nom, email: ap.email, sentAt: date };
+        })
+        .filter(Boolean) as { id: string; prenom: string; nom: string; email: string | null; sentAt: string }[];
+      return rows.sort((a, b) => new Date(b.sentAt).getTime() - new Date(a.sentAt).getTime());
+    }, [apprenantsInSession, identifiantsSent]);
+
     // Télécharge le dossier de bienvenue (PDF) d'un apprenant
     const downloadDossierBienvenue = async (apprenant: any) => {
       try {
@@ -3503,6 +3525,28 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
           )}
         </div>
 
+        {/* Récapitulatif des codes d'accès envoyés */}
+        <div className="shrink-0 rounded-xl border bg-card p-3">
+          <div className="flex items-center gap-2 text-sm font-medium">
+            <KeyRound className="w-4 h-4 text-primary" />
+            <span>🔑 Codes d'accès envoyés : {identifiantsRecap.length}/{totalCount} apprenant(s)</span>
+          </div>
+          {identifiantsRecap.length === 0 ? (
+            <p className="mt-1 text-xs text-muted-foreground">Aucun apprenant n'a encore reçu ses codes d'accès.</p>
+          ) : (
+            <div className="mt-2 max-h-32 overflow-y-auto divide-y">
+              {identifiantsRecap.map((r) => (
+                <div key={r.id} className="flex items-center justify-between py-1 text-xs">
+                  <span className="font-medium truncate">{r.prenom} {r.nom}{r.email ? <span className="text-muted-foreground font-normal"> · {r.email}</span> : null}</span>
+                  <Badge variant="secondary" className="ml-2 shrink-0 bg-green-100 text-green-700 hover:bg-green-100">
+                    ✓ {format(new Date(r.sentAt), "dd/MM/yyyy 'à' HH:mm", { locale: fr })}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         {(() => {
           const absentApprenants = (apprenantsInSession as any[]).filter((sa: any) => {
             const ap = sa.apprenant;
@@ -4209,14 +4253,19 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                             variant="ghost"
                             size="sm"
                             className={`h-8 gap-1.5 ${hasIdentifiants(apprenant.id) ? 'text-green-700 bg-green-100 hover:bg-green-200 hover:text-green-800' : 'text-muted-foreground hover:text-primary'}`}
-                            title={hasIdentifiants(apprenant.id) ? "Identifiants déjà envoyés — cliquer pour renvoyer" : "Envoyer les identifiants de connexion"}
+                            title={hasIdentifiants(apprenant.id) ? `Codes d'accès envoyés le ${format(new Date(getIdentifiantsLastDate(apprenant.id)!), "dd/MM/yyyy 'à' HH:mm", { locale: fr })} — cliquer pour renvoyer` : "Envoyer les identifiants de connexion"}
                             disabled={sendingCredentialsFor === apprenant.id}
                             onClick={() => handleSendCredentials(apprenant)}
                           >
                             {sendingCredentialsFor === apprenant.id
                               ? <Loader2 className="w-4 h-4 animate-spin" />
                               : hasIdentifiants(apprenant.id) ? <CheckCircle2 className="w-4 h-4" /> : <KeyRound className="w-4 h-4" />}
-                            <span className="text-xs">🔑 Identifiants de connexion</span>
+                            <span className="text-xs">
+                              🔑 Identifiants
+                              {hasIdentifiants(apprenant.id) && (
+                                <span className="font-semibold"> · {format(new Date(getIdentifiantsLastDate(apprenant.id)!), "dd/MM/yy", { locale: fr })}</span>
+                              )}
+                            </span>
                           </Button>
 
 
