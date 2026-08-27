@@ -11,6 +11,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Pencil, Save, X, Mail, Info } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { RichHtmlEditor } from "./RichHtmlEditor";
+
 
 interface EmailTemplate {
   id: string;
@@ -139,13 +141,10 @@ export function EmailTemplatesEditor() {
               <Input value={editSubject} onChange={(e) => setEditSubject(e.target.value)} />
             </div>
             <div>
-              <Label>Corps de l'email (HTML autorisé)</Label>
-              <Textarea
-                value={editBody}
-                onChange={(e) => setEditBody(e.target.value)}
-                className="min-h-[300px] font-mono text-xs"
-              />
+              <Label>Corps de l'email</Label>
+              <RichHtmlEditor value={editBody} onChange={setEditBody} className="mt-1" />
             </div>
+
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setEditingTemplate(null)}>
                 <X className="h-4 w-4 mr-1" /> Annuler
