@@ -255,7 +255,10 @@ export function DocumentsASigner() {
     chargerDocs();
   };
 
-  const lienSignature = (token: string) => `${window.location.origin}/document-a-signer/${token}`;
+  // Toujours utiliser le domaine public : les URL de preview Lovable exigent une connexion
+  const PUBLIC_BASE_URL = "https://gestion.ftransport.fr";
+  const lienSignature = (token: string) => `${PUBLIC_BASE_URL}/document-a-signer/${token}`;
+
 
   const envoyer = async () => {
     if (!selected) return;
