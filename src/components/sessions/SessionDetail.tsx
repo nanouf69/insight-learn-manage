@@ -3550,6 +3550,17 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
               </DropdownMenu>
               <Button
                 size="sm"
+                variant="default"
+                className="gap-2 bg-[#F4A227] hover:bg-[#d8901c] text-white"
+                disabled={selectedApprenants.size === 0 || bulkSending}
+                onClick={handleBulkSendConvocations}
+                title="Envoyer à chaque apprenant sélectionné la convocation adaptée à sa formation (VTC / VTC soir / TAXI / TA)"
+              >
+                {bulkSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                Convocations ({selectedApprenants.size})
+              </Button>
+              <Button
+                size="sm"
                 variant="outline"
                 className="gap-2"
                 disabled={selectedApprenants.size === 0 || bulkPrintingEmargement}
