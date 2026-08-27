@@ -188,8 +188,8 @@ function generatePage(
       colSpan: 2,
       styles: { halign: "center", fontSize: 7 },
     });
-    headRow2.push({ content: isSoir ? "17h-18h30" : "Matin", styles: { halign: "center", fontSize: 6 } });
-    headRow2.push({ content: isSoir ? "18h30-21h" : "Apres-midi", styles: { halign: "center", fontSize: 6 } });
+    headRow2.push({ content: isSoir ? "17h-18h30" : "Matin 9h-12h", styles: { halign: "center", fontSize: 6 } });
+    headRow2.push({ content: isSoir ? "18h30-21h" : "Apres-midi 13h-16h", styles: { halign: "center", fontSize: 6 } });
   });
 
   // Construire les lignes avec tous les apprenants
@@ -265,7 +265,7 @@ function generatePage(
   doc.setFontSize(8);
   const horairesLine = isSoir
     ? "Horaires : 1ere partie 17h00 - 18h30 / 2eme partie 18h30 - 21h00"
-    : "Horaires : Matin 09h00 - 12h00 / Apres-midi 13h00 - 17h00";
+    : "Horaires : Matin 09h00 - 12h00 / Apres-midi 13h00 - 16h00";
   doc.text(horairesLine, margin, yPos);
 
   // ===== ZONE DE SIGNATURE =====
