@@ -4231,14 +4231,19 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                             variant="ghost"
                             size="sm"
                             className={`h-8 gap-1.5 ${hasIdentifiants(apprenant.id) ? 'text-green-700 bg-green-100 hover:bg-green-200 hover:text-green-800' : 'text-muted-foreground hover:text-primary'}`}
-                            title={hasIdentifiants(apprenant.id) ? "Identifiants déjà envoyés — cliquer pour renvoyer" : "Envoyer les identifiants de connexion"}
+                            title={hasIdentifiants(apprenant.id) ? `Codes d'accès envoyés le ${format(new Date(getIdentifiantsLastDate(apprenant.id)!), "dd/MM/yyyy 'à' HH:mm", { locale: fr })} — cliquer pour renvoyer` : "Envoyer les identifiants de connexion"}
                             disabled={sendingCredentialsFor === apprenant.id}
                             onClick={() => handleSendCredentials(apprenant)}
                           >
                             {sendingCredentialsFor === apprenant.id
                               ? <Loader2 className="w-4 h-4 animate-spin" />
                               : hasIdentifiants(apprenant.id) ? <CheckCircle2 className="w-4 h-4" /> : <KeyRound className="w-4 h-4" />}
-                            <span className="text-xs">🔑 Identifiants de connexion</span>
+                            <span className="text-xs">
+                              🔑 Identifiants
+                              {hasIdentifiants(apprenant.id) && (
+                                <span className="font-semibold"> · {format(new Date(getIdentifiantsLastDate(apprenant.id)!), "dd/MM/yy", { locale: fr })}</span>
+                              )}
+                            </span>
                           </Button>
 
 
