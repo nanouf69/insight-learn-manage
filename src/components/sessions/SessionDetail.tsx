@@ -2963,6 +2963,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       .replace(/\{\{date_examen_theorique\}\}/g, dateExamenTheorique)
       .replace(/\{\{lieu_examen_theorique\}\}/g, lieuExamenTheorique)
       .replace(/\{\{horaire_examen_theorique\}\}/g, horaireExamenTheorique)
+      .replace(/\{\{date_veille_examen\}\}/g, dateVeilleExamen)
       .replace(/\{\{date_examen_pratique\}\}/g, dateExamenPratique)
       .replace(/\{\{periode_examen_pratique\}\}/g, periodeExamenPratique)
       .replace(/\{\{periode_entrainement_pratique\}\}/g, periodeEntrainementPratique)
