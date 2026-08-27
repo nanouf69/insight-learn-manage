@@ -228,6 +228,9 @@ export function CRMDashboard({ initialApprenantId, onApprenantClosed }: CRMDashb
         ))}
       </div>
 
+      {/* Codes d'accès envoyés aujourd'hui */}
+      <CodesAccesEnvoyes onNavigateToApprenant={(id) => setSelectedApprenantId(id)} />
+
       {/* Actions Bar */}
       <div className="flex flex-col sm:flex-row gap-4 justify-between">
         <div className="flex gap-3 flex-1">
