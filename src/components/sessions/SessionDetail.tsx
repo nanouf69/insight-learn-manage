@@ -3525,6 +3525,28 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
           )}
         </div>
 
+        {/* Récapitulatif des codes d'accès envoyés */}
+        <div className="shrink-0 rounded-xl border bg-card p-3">
+          <div className="flex items-center gap-2 text-sm font-medium">
+            <KeyRound className="w-4 h-4 text-primary" />
+            <span>🔑 Codes d'accès envoyés : {identifiantsRecap.length}/{totalCount} apprenant(s)</span>
+          </div>
+          {identifiantsRecap.length === 0 ? (
+            <p className="mt-1 text-xs text-muted-foreground">Aucun apprenant n'a encore reçu ses codes d'accès.</p>
+          ) : (
+            <div className="mt-2 max-h-32 overflow-y-auto divide-y">
+              {identifiantsRecap.map((r) => (
+                <div key={r.id} className="flex items-center justify-between py-1 text-xs">
+                  <span className="font-medium truncate">{r.prenom} {r.nom}{r.email ? <span className="text-muted-foreground font-normal"> · {r.email}</span> : null}</span>
+                  <Badge variant="secondary" className="ml-2 shrink-0 bg-green-100 text-green-700 hover:bg-green-100">
+                    ✓ {format(new Date(r.sentAt), "dd/MM/yyyy 'à' HH:mm", { locale: fr })}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         {(() => {
           const absentApprenants = (apprenantsInSession as any[]).filter((sa: any) => {
             const ap = sa.apprenant;
