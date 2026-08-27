@@ -2970,6 +2970,14 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     return hasDate ? base : `${base}-sans-date`;
   };
 
+  // Convocation adaptée à la formation de l'apprenant (VTC / VTC soir / TAXI / TA)
+  const getConvocationTemplateId = (a: any): string => {
+    const { isTA, isTaxi } = getSessionTrainingFlags(a?.type_apprenant);
+    if (isTA) return 'convocation-ta';
+    if (isTaxi) return 'convocation-taxi';
+    return isSessionSoir ? 'convocation-vtc-soir' : 'convocation-vtc';
+  };
+
   const handlePreviewTemplateEmail = (templateId: string, apprenant: any) => {
 
     const template = emailTemplates.find((t: any) => t.id === templateId);
