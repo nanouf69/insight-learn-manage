@@ -3,13 +3,15 @@ import { useParams } from "react-router-dom";
 import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
-import { CheckCircle2, Loader2, FileSignature } from "lucide-react";
+import { CheckCircle2, Loader2, FileSignature, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { SignaturePad } from "@/components/onboarding/SignaturePad";
 import { ChampDocument } from "@/lib/documentsASigner";
+import { genererPdfRempli, telechargerPdf } from "@/lib/documentSigneDownload";
+
 
 if (typeof (Promise as any).withResolvers === "undefined") {
   (Promise as any).withResolvers = function <T>() {
