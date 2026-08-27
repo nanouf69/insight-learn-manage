@@ -2937,10 +2937,10 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       || (a.date_examen_theorique ? formatDateFr(a.date_examen_theorique) : '[date à compléter]');
     const lieuExamenTheorique = theoriqueAuto.lieu || '[lieu à compléter]';
     const horaireExamenTheorique = theoriqueAuto.horaire || 'après-midi';
+    // Même règle pour le pratique : la période qui suit la fin de formation prime.
     const pratiqueAuto = getPratiqueDatesForFormation(dateFinRaw);
-    const dateExamenPratique = a.date_examen_pratique
-      ? formatDateFr(a.date_examen_pratique)
-      : (pratiqueAuto.examenPratique || '[date à compléter]');
+    const dateExamenPratique = pratiqueAuto.examenPratique
+      || (a.date_examen_pratique ? formatDateFr(a.date_examen_pratique) : '[date à compléter]');
     const periodeExamenPratique = pratiqueAuto.examenPratique || '[dates à compléter]';
     const periodeEntrainementPratique = pratiqueAuto.entrainementPratique || '[dates à compléter]';
     const today = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
