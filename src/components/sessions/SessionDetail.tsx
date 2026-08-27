@@ -745,6 +745,8 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   const [extraFactureSaving, setExtraFactureSaving] = useState(false);
   const [extraFactureDeleting, setExtraFactureDeleting] = useState<string | null>(null);
   const [bulkPreview, setBulkPreview] = useState<{ template: any; apprenants: any[]; previewBody: string; previewSubject: string; editedBody?: string; editedSubject?: string } | null>(null);
+  const [convocationPreview, setConvocationPreview] = useState<{ items: { apprenant: any; subject: string; body: string }[] } | null>(null);
+  const [convocationPreviewIndex, setConvocationPreviewIndex] = useState(0);
   const [bulkPreviewEditing, setBulkPreviewEditing] = useState(false);
   const [editingMailType, setEditingMailType] = useState<any | null>(null);
   const [editLabel, setEditLabel] = useState("");
@@ -3130,24 +3132,46 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       return;
     }
 
-    if (!confirm(`Envoyer la convocation de formation à ${selectedList.length} apprenant(s) ?`)) return;
+    // Préparer l'aperçu personnalisé de chaque convocation avant envoi
+    const items = selectedList
+      .map((apprenant) => {
+        const template = emailTemplates.find((t: any) => t.id === getConvocationTemplateId(apprenant));
+        if (!template) return null;
+        return {
+          apprenant,
+          subject: replaceTemplateVars(template.subject_template, apprenant),
+          body: replaceTemplateVars(template.body_template, apprenant),
+        };
+      })
+      .filter(Boolean) as { apprenant: any; subject: string; body: string }[];
 
+    if (items.length === 0) {
+      toast({ title: "Aucun modèle de convocation trouvé", variant: "destructive" });
+      return;
+    }
+
+    setConvocationPreviewIndex(0);
+    setConvocationPreview({ items });
+  };
+
+  const handleConfirmBulkConvocations = async () => {
+    if (!convocationPreview) return;
+    const items = convocationPreview.items;
+    setConvocationPreview(null);
     setBulkSending(true);
     let sent = 0;
     let failed = 0;
 
-    for (const apprenant of selectedList) {
-      const template = emailTemplates.find((t: any) => t.id === getConvocationTemplateId(apprenant));
-      if (!template) { failed++; continue; }
+    for (const item of items) {
       try {
         await supabase.functions.invoke('sync-outlook-emails', {
           body: {
             action: 'send',
-            apprenantId: apprenant.id,
+            apprenantId: item.apprenant.id,
             userEmail: 'contact@ftransport.fr',
-            to: apprenant.email,
-            subject: replaceTemplateVars(template.subject_template, apprenant),
-            body: replaceTemplateVars(template.body_template, apprenant),
+            to: item.apprenant.email,
+            subject: item.subject,
+            body: item.body,
           },
         });
         sent++;
@@ -5429,6 +5453,76 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
             </div>
           </div>
         )}
+      </DialogContent>
+    </Dialog>
+
+    {/* Modale aperçu convocations groupées */}
+    <Dialog open={!!convocationPreview} onOpenChange={(open) => !open && setConvocationPreview(null)}>
+      <DialogContent className="sm:max-w-[650px] max-h-[85vh] overflow-hidden flex flex-col">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Send className="w-5 h-5" />
+            Convocations — Aperçu avant envoi
+          </DialogTitle>
+        </DialogHeader>
+        {convocationPreview && (() => {
+          const items = convocationPreview.items;
+          const idx = Math.min(convocationPreviewIndex, items.length - 1);
+          const current = items[idx];
+          return (
+            <div className="flex-1 overflow-auto space-y-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Destinataires ({items.length})</Label>
+                <div className="flex flex-wrap gap-2 p-3 rounded-lg border bg-muted/30 max-h-[100px] overflow-y-auto">
+                  {items.map((it: any, i: number) => (
+                    <Badge
+                      key={it.apprenant.id}
+                      variant={i === idx ? "default" : "secondary"}
+                      className="text-xs gap-1 cursor-pointer"
+                      onClick={() => setConvocationPreviewIndex(i)}
+                    >
+                      <Mail className="w-3 h-3" />
+                      {it.apprenant.prenom} {it.apprenant.nom}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <Button variant="outline" size="sm" disabled={idx === 0} onClick={() => setConvocationPreviewIndex(idx - 1)}>
+                  ← Précédent
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                  {current.apprenant.prenom} {current.apprenant.nom} ({idx + 1}/{items.length})
+                </span>
+                <Button variant="outline" size="sm" disabled={idx === items.length - 1} onClick={() => setConvocationPreviewIndex(idx + 1)}>
+                  Suivant →
+                </Button>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-sm font-medium">Objet</Label>
+                <div className="text-sm font-semibold p-2 rounded border bg-muted/20">{current.subject}</div>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-sm font-medium">Contenu</Label>
+                <div className="border rounded-lg p-4 bg-muted/30 overflow-auto max-h-[300px]">
+                  <div
+                    className="prose prose-sm max-w-none text-foreground"
+                    dangerouslySetInnerHTML={{ __html: current.body }}
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <Button variant="outline" onClick={() => setConvocationPreview(null)}>
+                  Annuler
+                </Button>
+                <Button onClick={handleConfirmBulkConvocations} disabled={bulkSending} className="gap-2">
+                  <Send className="w-4 h-4" />
+                  Envoyer à {items.length} élève(s)
+                </Button>
+              </div>
+            </div>
+          );
+        })()}
       </DialogContent>
     </Dialog>
 
