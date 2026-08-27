@@ -92,6 +92,32 @@ export function DocumentsASigner() {
   const [outil, setOutil] = useState<ChampType>("signature");
   const [email, setEmail] = useState("");
   const [nomDest, setNomDest] = useState("");
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+
+  const telechargerDocument = useCallback(
+    async (doc: DocRow) => {
+      setDownloadingId(doc.id);
+      try {
+        const { data, error } = await supabase.storage
+          .from("documents-a-signer")
+          .createSignedUrl(doc.file_path, 600);
+        if (error || !data?.signedUrl) throw new Error(error?.message || "Document introuvable");
+
+        const champsDoc = Array.isArray(doc.champs) ? doc.champs : [];
+        const reponsesDoc = (doc.reponses || {}) as Record<string, string>;
+        const bytes = await genererPdfRempli(data.signedUrl, champsDoc, reponsesDoc);
+        const suffixe = doc.statut === "signe" ? "signe" : "vierge";
+        telechargerPdf(bytes, `${doc.nom}_${suffixe}.pdf`);
+      } catch (e: any) {
+        toast({ title: "Téléchargement impossible", description: e.message, variant: "destructive" });
+      } finally {
+        setDownloadingId(null);
+      }
+    },
+    [toast],
+  );
+
+
 
   const chargerDocs = useCallback(async () => {
     setLoading(true);
