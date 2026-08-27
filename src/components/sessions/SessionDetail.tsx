@@ -2939,6 +2939,10 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       || (a.date_examen_theorique ? formatDateFr(a.date_examen_theorique) : '[date à compléter]');
     const lieuExamenTheorique = theoriqueAuto.lieu || '[lieu à compléter]';
     const horaireExamenTheorique = theoriqueAuto.horaire || 'après-midi';
+    // Veille de l'examen théorique (J-1) — TA/TAXI : horaires 14h-16h uniquement
+    const dateVeilleExamen = theoriqueAuto.dateObj
+      ? new Date(theoriqueAuto.dateObj.getTime() - 24 * 60 * 60 * 1000).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+      : '[date à compléter]';
     // Même règle pour le pratique : la période qui suit la fin de formation prime.
     const pratiqueAuto = getPratiqueDatesForFormation(dateFinRaw);
     const dateExamenPratique = pratiqueAuto.examenPratique
@@ -2959,6 +2963,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       .replace(/\{\{date_examen_theorique\}\}/g, dateExamenTheorique)
       .replace(/\{\{lieu_examen_theorique\}\}/g, lieuExamenTheorique)
       .replace(/\{\{horaire_examen_theorique\}\}/g, horaireExamenTheorique)
+      .replace(/\{\{date_veille_examen\}\}/g, dateVeilleExamen)
       .replace(/\{\{date_examen_pratique\}\}/g, dateExamenPratique)
       .replace(/\{\{periode_examen_pratique\}\}/g, periodeExamenPratique)
       .replace(/\{\{periode_entrainement_pratique\}\}/g, periodeEntrainementPratique)
