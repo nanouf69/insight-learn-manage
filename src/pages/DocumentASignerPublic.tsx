@@ -58,6 +58,22 @@ export default function DocumentASignerPublic() {
   const [reponses, setReponses] = useState<Record<string, string>>({});
   const [numPages, setNumPages] = useState(0);
   const [largeur, setLargeur] = useState(720);
+  const [downloading, setDownloading] = useState(false);
+
+  const telecharger = async () => {
+    if (!doc?.fileUrl) return;
+    setDownloading(true);
+    try {
+      const bytes = await genererPdfRempli(doc.fileUrl, doc.champs || [], reponses);
+      telechargerPdf(bytes, `${doc.nom}_signe.pdf`);
+    } catch (e: any) {
+      toast({ title: "Téléchargement impossible", description: e.message, variant: "destructive" });
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+
 
   useEffect(() => {
     const maj = () => setLargeur(Math.min(720, (containerRef.current?.clientWidth || 720) - 8));
