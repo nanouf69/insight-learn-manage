@@ -14,7 +14,9 @@ import {
   Loader2,
   FileSignature,
   CheckCircle2,
+  Download,
 } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,6 +31,8 @@ import {
   defaultTaille,
   newChampId,
 } from "@/lib/documentsASigner";
+import { genererPdfRempli, telechargerPdf } from "@/lib/documentSigneDownload";
+
 
 if (typeof (Promise as any).withResolvers === "undefined") {
   (Promise as any).withResolvers = function <T>() {
@@ -60,10 +64,12 @@ interface DocRow {
   destinataire_email: string | null;
   token: string;
   statut: string;
+  reponses: Record<string, string> | null;
   sent_at: string | null;
   signed_at: string | null;
   created_at: string;
 }
+
 
 const PAGE_WIDTH = 720;
 
@@ -86,6 +92,32 @@ export function DocumentsASigner() {
   const [outil, setOutil] = useState<ChampType>("signature");
   const [email, setEmail] = useState("");
   const [nomDest, setNomDest] = useState("");
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+
+  const telechargerDocument = useCallback(
+    async (doc: DocRow) => {
+      setDownloadingId(doc.id);
+      try {
+        const { data, error } = await supabase.storage
+          .from("documents-a-signer")
+          .createSignedUrl(doc.file_path, 600);
+        if (error || !data?.signedUrl) throw new Error(error?.message || "Document introuvable");
+
+        const champsDoc = Array.isArray(doc.champs) ? doc.champs : [];
+        const reponsesDoc = (doc.reponses || {}) as Record<string, string>;
+        const bytes = await genererPdfRempli(data.signedUrl, champsDoc, reponsesDoc);
+        const suffixe = doc.statut === "signe" ? "signe" : "vierge";
+        telechargerPdf(bytes, `${doc.nom}_${suffixe}.pdf`);
+      } catch (e: any) {
+        toast({ title: "Téléchargement impossible", description: e.message, variant: "destructive" });
+      } finally {
+        setDownloadingId(null);
+      }
+    },
+    [toast],
+  );
+
+
 
   const chargerDocs = useCallback(async () => {
     setLoading(true);
@@ -319,18 +351,38 @@ export function DocumentsASigner() {
                     {doc.destinataire_email ? ` · ${doc.destinataire_email}` : ""}
                   </p>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 shrink-0"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    supprimer(doc);
-                  }}
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </Button>
+                <div className="flex items-center gap-1 shrink-0">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    title="Télécharger le document (rempli et signé si disponible)"
+                    disabled={downloadingId === doc.id}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      telechargerDocument(doc);
+                    }}
+                  >
+                    {downloadingId === doc.id ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Download className="h-3.5 w-3.5" />
+                    )}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      supprimer(doc);
+                    }}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
               </div>
+
               <div className="mt-2">
                 {doc.statut === "signe" ? (
                   <Badge className="bg-success/15 text-success gap-1">
@@ -454,6 +506,25 @@ export function DocumentsASigner() {
                   {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} Envoyer par email
                 </Button>
                 <Button
+                  variant="outline"
+                  className="gap-2"
+                  disabled={downloadingId === selected.id}
+                  onClick={() =>
+                    telechargerDocument({
+                      ...selected,
+                      champs,
+                      reponses: (selected.reponses || {}) as Record<string, string>,
+                    })
+                  }
+                >
+                  {downloadingId === selected.id ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Download className="h-4 w-4" />
+                  )}
+                  Télécharger le document
+                </Button>
+                <Button
                   variant="ghost"
                   size="sm"
                   className="gap-2"
@@ -464,6 +535,7 @@ export function DocumentsASigner() {
                 >
                   <Copy className="h-3.5 w-3.5" /> Copier le lien de signature
                 </Button>
+
               </div>
             </div>
           </div>

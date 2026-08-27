@@ -3,13 +3,15 @@ import { useParams } from "react-router-dom";
 import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
-import { CheckCircle2, Loader2, FileSignature } from "lucide-react";
+import { CheckCircle2, Loader2, FileSignature, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { SignaturePad } from "@/components/onboarding/SignaturePad";
 import { ChampDocument } from "@/lib/documentsASigner";
+import { genererPdfRempli, telechargerPdf } from "@/lib/documentSigneDownload";
+
 
 if (typeof (Promise as any).withResolvers === "undefined") {
   (Promise as any).withResolvers = function <T>() {
@@ -56,6 +58,22 @@ export default function DocumentASignerPublic() {
   const [reponses, setReponses] = useState<Record<string, string>>({});
   const [numPages, setNumPages] = useState(0);
   const [largeur, setLargeur] = useState(720);
+  const [downloading, setDownloading] = useState(false);
+
+  const telecharger = async () => {
+    if (!doc?.fileUrl) return;
+    setDownloading(true);
+    try {
+      const bytes = await genererPdfRempli(doc.fileUrl, doc.champs || [], reponses);
+      telechargerPdf(bytes, `${doc.nom}_signe.pdf`);
+    } catch (e: any) {
+      toast({ title: "Téléchargement impossible", description: e.message, variant: "destructive" });
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+
 
   useEffect(() => {
     const maj = () => setLargeur(Math.min(720, (containerRef.current?.clientWidth || 720) - 8));
@@ -149,10 +167,17 @@ export default function DocumentASignerPublic() {
         </header>
 
         {signe && (
-          <div className="flex items-center justify-center gap-2 p-4 rounded-lg bg-success/10 text-success">
-            <CheckCircle2 className="h-5 w-5" /> Document signé et transmis
+          <div className="flex flex-col items-center justify-center gap-3 p-4 rounded-lg bg-success/10 text-success">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="h-5 w-5" /> Document signé et transmis
+            </div>
+            <Button variant="outline" className="gap-2" onClick={telecharger} disabled={downloading}>
+              {downloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+              Télécharger mon document signé
+            </Button>
           </div>
         )}
+
 
         <div ref={containerRef} className="bg-card border rounded-xl p-3 overflow-auto">
           {doc.fileUrl && (
