@@ -254,8 +254,13 @@ export function FormationsBientotTerminees({ onNavigateToApprenant }: Props) {
 
 
   const all = data ?? [];
-  const results = all.filter((r: any) => !dismissed.includes(r.apprenant.id));
-  const hiddenCount = all.length - results.length;
+  const visible = all.filter((r: any) => !dismissed.includes(r.apprenant.id));
+  // Sécurité d'affichage : si TOUT a été masqué, on réaffiche quand même la liste
+  // (sinon la carte reste vide et l'information devient inaccessible).
+  const allHidden = all.length > 0 && visible.length === 0;
+  const results = allHidden ? all : visible;
+  const hiddenCount = all.length - visible.length;
+
 
   const getTypeLabel = (a: any) => {
     const s = `${a.type_apprenant || ""} ${a.formation_choisie || ""}`.toLowerCase();
@@ -312,12 +317,18 @@ export function FormationsBientotTerminees({ onNavigateToApprenant }: Props) {
             variant="ghost"
             size="sm"
             className="h-7 px-2 self-start text-xs text-muted-foreground"
-            onClick={() => persistDismissed([])}
+            onClick={() => {
+              persistDismissed([]);
+              try { localStorage.removeItem(DISMISS_KEY); } catch { /* ignore */ }
+            }}
           >
             <RotateCcw className="h-3 w-3 mr-1" />
-            Réafficher {hiddenCount} masquée(s)
+            {allHidden
+              ? `Tout était masqué (${hiddenCount}) — cliquer pour réinitialiser`
+              : `Réafficher ${hiddenCount} masquée(s)`}
           </Button>
         )}
+
       </CardHeader>
       <CardContent className="space-y-2">
         {results.length === 0 ? (
