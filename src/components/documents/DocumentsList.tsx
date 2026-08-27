@@ -27,6 +27,8 @@ import {
 import { DocumentForm } from "./DocumentForm";
 import { EmailTemplatesEditor } from "./EmailTemplatesEditor";
 import { BulkDownloadDialog } from "./BulkDownloadDialog";
+import { DocumentsASigner } from "./DocumentsASigner";
+
 
 const documents = [
   {
