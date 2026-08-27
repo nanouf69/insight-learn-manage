@@ -31,7 +31,10 @@ import AdminAuditT3P from "./pages/AdminAuditT3P";
 import AdminAuditModules from "./pages/AdminAuditModules";
 import AdminAuditDBvsLearner from "./pages/AdminAuditDBvsLearner";
 
+import DocumentASignerPublic from "./pages/DocumentASignerPublic";
+
 // Onboarding pages
+
 import OnboardingWelcome from "./pages/onboarding/OnboardingWelcome";
 import OnboardingFCFinish from "./pages/onboarding/OnboardingFCFinish";
 import Step1 from "./pages/onboarding/steps/Step1";
