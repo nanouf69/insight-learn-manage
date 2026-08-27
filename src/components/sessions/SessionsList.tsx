@@ -72,6 +72,17 @@ const formatDate = (dateString: string) => {
   }
 };
 
+const getSessionDayType = (session: Session): "journee" | "soir" | null => {
+  const creneaux = session.creneaux || [];
+  const hd = session.heure_debut;
+  // Evening if any creneau explicitly mentions soir or 17h/18h start, or heure_debut >= 17
+  const isSoir = creneaux.some(c => /soir|17h|18h/i.test(c)) || (!!hd && parseInt(hd.split(':')[0], 10) >= 17);
+  const isJournee = creneaux.some(c => /9h|journ/i.test(c)) || (!!hd && parseInt(hd.split(':')[0], 10) < 17);
+  if (isSoir) return "soir";
+  if (isJournee) return "journee";
+  return null;
+};
+
 export function SessionsList({ onNavigateToApprenant }: { onNavigateToApprenant?: (apprenantId: string) => void }) {
   const navigate = useNavigate();
   const [selectedSession, setSelectedSession] = useState<any | null>(null);
@@ -429,8 +440,18 @@ export function SessionsList({ onNavigateToApprenant }: { onNavigateToApprenant?
                     </div>
                     
                     {/* Tags types apprenant et créneaux */}
-                    {((session.types_apprenant && session.types_apprenant.length > 0) || (session.creneaux && session.creneaux.length > 0)) && (
+                    {((session.types_apprenant && session.types_apprenant.length > 0) || (session.creneaux && session.creneaux.length > 0) || getSessionDayType(session)) && (
                       <div className="flex flex-wrap gap-1.5">
+                        {getSessionDayType(session) === "journee" && (
+                          <Badge className="bg-sky-100 text-sky-700 hover:bg-sky-100 text-xs font-bold uppercase">
+                            ☀️ Cours en journée
+                          </Badge>
+                        )}
+                        {getSessionDayType(session) === "soir" && (
+                          <Badge className="bg-indigo-100 text-indigo-700 hover:bg-indigo-100 text-xs font-bold uppercase">
+                            🌙 Cours en soirée
+                          </Badge>
+                        )}
                         {session.types_apprenant?.map((type) => (
                           <Badge 
                             key={type} 
