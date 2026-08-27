@@ -2927,10 +2927,16 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     const dateDebut = formatDateFr(dateDebutRaw);
     const dateFin = formatDateFr(dateFinRaw);
     const dateExamenTheorique = formatDateFr(a.date_examen_theorique);
-    const dateExamenPratique = formatDateFr(a.date_examen_pratique);
+    const pratiqueAuto = getPratiqueDatesForFormation(dateFinRaw);
+    const dateExamenPratique = a.date_examen_pratique
+      ? formatDateFr(a.date_examen_pratique)
+      : (pratiqueAuto.examenPratique || '[date à compléter]');
+    const periodeExamenPratique = pratiqueAuto.examenPratique || '[dates à compléter]';
+    const periodeEntrainementPratique = pratiqueAuto.entrainementPratique || '[dates à compléter]';
     const today = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
     const bookingUrl = `https://insight-learn-manage.lovable.app/reservation-pratique?id=${a.id}`;
     const onboardingUrl = 'https://insight-learn-manage.lovable.app/bienvenue';
+
 
     return template
       .replace(/\{\{prenom\}\}/g, a.prenom || '')
