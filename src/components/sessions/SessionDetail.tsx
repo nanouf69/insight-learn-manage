@@ -5243,7 +5243,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
           </div>
           <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 border border-border">
             <span className="text-xs text-muted-foreground">
-              Variables : <code className="bg-muted px-1 rounded">{"{{prenom}}"}</code> <code className="bg-muted px-1 rounded">{"{{nom}}"}</code> <code className="bg-muted px-1 rounded">{"{{formation}}"}</code> <code className="bg-muted px-1 rounded">{"{{date_debut}}"}</code> <code className="bg-muted px-1 rounded">{"{{date_fin}}"}</code> <code className="bg-muted px-1 rounded">{"{{date_examen_theorique}}"}</code> <code className="bg-muted px-1 rounded">{"{{date_examen_pratique}}"}</code> <code className="bg-muted px-1 rounded">{"{{civilite}}"}</code>
+              Variables : <code className="bg-muted px-1 rounded">{"{{prenom}}"}</code> <code className="bg-muted px-1 rounded">{"{{nom}}"}</code> <code className="bg-muted px-1 rounded">{"{{formation}}"}</code> <code className="bg-muted px-1 rounded">{"{{date_debut}}"}</code> <code className="bg-muted px-1 rounded">{"{{date_fin}}"}</code> <code className="bg-muted px-1 rounded">{"{{date_examen_theorique}}"}</code> <code className="bg-muted px-1 rounded">{"{{date_examen_pratique}}"}</code> <code className="bg-muted px-1 rounded">{"{{periode_examen_pratique}}"}</code> <code className="bg-muted px-1 rounded">{"{{periode_entrainement_pratique}}"}</code> <code className="bg-muted px-1 rounded">{"{{civilite}}"}</code>
             </span>
           </div>
           <div className="flex justify-end gap-2">
