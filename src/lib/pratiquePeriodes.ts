@@ -114,3 +114,41 @@ export function getPratiqueDatesForFormation(
     entrainementFin,
   };
 }
+
+/* ─────────── Examen théorique ─────────── */
+import { ALL_DATES_EXAMEN_THEORIQUE } from "@/lib/examDatesConfig";
+
+export interface TheoriqueDateResult {
+  /** ex: "29 septembre 2026" */
+  date: string | null;
+  /** lieu complet avec adresse */
+  lieu: string | null;
+  horaire: string | null;
+  dateObj: Date | null;
+}
+
+const parseDateFr = (label: string): Date | null => {
+  const m = label.match(/(\d{1,2})(?:er)?\s+([a-zéûôà]+)\s+(\d{4})/i);
+  if (!m) return null;
+  const mi = moisIndex(m[2]);
+  if (mi < 0) return null;
+  return new Date(parseInt(m[3], 10), mi, parseInt(m[1], 10));
+};
+
+/** Première date d'examen théorique qui suit la fin de la formation. */
+export function getTheoriqueDateForFormation(
+  dateFinFormation: string | Date | null | undefined
+): TheoriqueDateResult {
+  const empty: TheoriqueDateResult = { date: null, lieu: null, horaire: null, dateObj: null };
+  const fin = toDate(dateFinFormation);
+  if (!fin) return empty;
+
+  const candidats = ALL_DATES_EXAMEN_THEORIQUE
+    .map((d) => ({ ...d, dateObj: parseDateFr(d.date) }))
+    .filter((d): d is typeof d & { dateObj: Date } => !!d.dateObj)
+    .sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime());
+
+  const found = candidats.find((d) => d.dateObj.getTime() >= fin.getTime());
+  if (!found) return empty;
+  return { date: found.date, lieu: found.lieu, horaire: found.horaire, dateObj: found.dateObj };
+}
