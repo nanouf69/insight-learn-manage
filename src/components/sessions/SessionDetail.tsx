@@ -59,7 +59,7 @@ import { generateFactureFC } from "@/lib/pdf/facture-fc";
 import { saveFactureToCRM } from "@/lib/saveFactureToCRM";
 import { saveAttestationToCRM } from "@/lib/saveAttestationToCRM";
 import { saveEmargementToCRM } from "@/lib/saveEmargementToCRM";
-import { getPratiqueDatesForFormation } from "@/lib/pratiquePeriodes";
+import { getPratiqueDatesForFormation, getTheoriqueDateForFormation } from "@/lib/pratiquePeriodes";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -2951,6 +2951,8 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       .replace(/\{\{date_debut\}\}/g, dateDebut)
       .replace(/\{\{date_fin\}\}/g, dateFin)
       .replace(/\{\{date_examen_theorique\}\}/g, dateExamenTheorique)
+      .replace(/\{\{lieu_examen_theorique\}\}/g, lieuExamenTheorique)
+      .replace(/\{\{horaire_examen_theorique\}\}/g, horaireExamenTheorique)
       .replace(/\{\{date_examen_pratique\}\}/g, dateExamenPratique)
       .replace(/\{\{periode_examen_pratique\}\}/g, periodeExamenPratique)
       .replace(/\{\{periode_entrainement_pratique\}\}/g, periodeEntrainementPratique)
@@ -5268,7 +5270,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
           </div>
           <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 border border-border">
             <span className="text-xs text-muted-foreground">
-              Variables : <code className="bg-muted px-1 rounded">{"{{prenom}}"}</code> <code className="bg-muted px-1 rounded">{"{{nom}}"}</code> <code className="bg-muted px-1 rounded">{"{{formation}}"}</code> <code className="bg-muted px-1 rounded">{"{{date_debut}}"}</code> <code className="bg-muted px-1 rounded">{"{{date_fin}}"}</code> <code className="bg-muted px-1 rounded">{"{{date_examen_theorique}}"}</code> <code className="bg-muted px-1 rounded">{"{{date_examen_pratique}}"}</code> <code className="bg-muted px-1 rounded">{"{{periode_examen_pratique}}"}</code> <code className="bg-muted px-1 rounded">{"{{periode_entrainement_pratique}}"}</code> <code className="bg-muted px-1 rounded">{"{{civilite}}"}</code>
+              Variables : <code className="bg-muted px-1 rounded">{"{{prenom}}"}</code> <code className="bg-muted px-1 rounded">{"{{nom}}"}</code> <code className="bg-muted px-1 rounded">{"{{formation}}"}</code> <code className="bg-muted px-1 rounded">{"{{date_debut}}"}</code> <code className="bg-muted px-1 rounded">{"{{date_fin}}"}</code> <code className="bg-muted px-1 rounded">{"{{date_examen_theorique}}"}</code> <code className="bg-muted px-1 rounded">{"{{lieu_examen_theorique}}"}</code> <code className="bg-muted px-1 rounded">{"{{horaire_examen_theorique}}"}</code> <code className="bg-muted px-1 rounded">{"{{date_examen_pratique}}"}</code> <code className="bg-muted px-1 rounded">{"{{periode_examen_pratique}}"}</code> <code className="bg-muted px-1 rounded">{"{{periode_entrainement_pratique}}"}</code> <code className="bg-muted px-1 rounded">{"{{civilite}}"}</code>
             </span>
           </div>
           <div className="flex justify-end gap-2">
