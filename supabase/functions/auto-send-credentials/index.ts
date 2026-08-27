@@ -382,6 +382,7 @@ serve(async (req) => {
             message: {
               subject: subjectLine,
               body: { contentType: "HTML", content: emailBody },
+              from: { emailAddress: { address: senderEmail, name: "FTRANSPORT" } },
               toRecipients: [{ emailAddress: { address: apprenant.email } }],
             },
             saveToSentItems: true,

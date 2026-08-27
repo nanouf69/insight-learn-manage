@@ -149,6 +149,7 @@ serve(async (req) => {
         message: {
           subject,
           body: { contentType: "HTML", content: finalHtml },
+          from: { emailAddress: { address: senderEmail, name: "FTRANSPORT" } },
           toRecipients: [{ emailAddress: { address: recipientEmail } }],
           ...(attachments ? { attachments } : {}),
         },

@@ -543,6 +543,7 @@ serve(async (req) => {
               message: {
                 subject: `🎓 Vos identifiants de cours en ligne – ${formation}`,
                 body: { contentType: "HTML", content: emailBody },
+                from: { emailAddress: { address: senderEmail, name: "FTRANSPORT" } },
                 toRecipients: [{ emailAddress: { address: email } }],
               },
               saveToSentItems: true,
