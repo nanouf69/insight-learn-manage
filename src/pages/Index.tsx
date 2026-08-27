@@ -34,6 +34,7 @@ import { PersonalFinancingTransfersTable } from "@/components/dashboard/Personal
 import { ApprenantQuestionsPanel } from "@/components/dashboard/ApprenantQuestionsPanel";
 import { EmargementsManquants } from "@/components/dashboard/EmargementsManquants";
 import { EmargementsFinFormation } from "@/components/dashboard/EmargementsFinFormation";
+import { CodesAccesEnvoyes } from "@/components/dashboard/CodesAccesEnvoyes";
 import { FormationsBientotTerminees } from "@/components/dashboard/FormationsBientotTerminees";
 import { CreneauxRdvAdmin } from "@/components/dashboard/CreneauxRdvAdmin";
 import { GraduationCap, Users, ArrowDownCircle, ArrowUpCircle, Menu, X, Send, Loader2 } from "lucide-react";
