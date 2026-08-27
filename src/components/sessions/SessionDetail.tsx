@@ -1269,6 +1269,39 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       return identifiantsSent.some((c: any) => c.apprenant_id === apprenantId);
     };
 
+    // Télécharge le dossier de bienvenue (PDF) d'un apprenant
+    const downloadDossierBienvenue = async (apprenant: any) => {
+      try {
+        const { data, error } = await supabase
+          .from("apprenant_documents_completes")
+          .select("type_document, donnees, completed_at")
+          .eq("apprenant_id", apprenant.id)
+          .eq("type_document", "dossier-bienvenue")
+          .order("completed_at", { ascending: false })
+          .limit(1);
+        if (error) throw error;
+        const doc = data?.[0];
+        if (!doc) {
+          toast({
+            title: "Aucun dossier de bienvenue",
+            description: `${apprenant.prenom} ${apprenant.nom} n'a pas encore complété son dossier de bienvenue.`,
+            variant: "destructive",
+          });
+          return;
+        }
+        const { generateDocumentIndividuelPdf } = await import("@/lib/pdf/document-individuel");
+        await generateDocumentIndividuelPdf(apprenant, {
+          type_document: "dossier-bienvenue",
+          titre: "Dossier de bienvenue - Inscription CMA",
+          donnees: doc.donnees,
+          completed_at: doc.completed_at,
+        });
+      } catch (e: any) {
+        toast({ title: "Erreur", description: e?.message || "Impossible de générer le PDF", variant: "destructive" });
+      }
+    };
+
+
   // Détection session du soir (4h/jour, max 40h) vs jour (6h/jour, max 60h)
   const isSessionSoir = (() => {
     const creneaux = Array.isArray((session as any)?.creneaux)
