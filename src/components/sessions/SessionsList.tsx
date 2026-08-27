@@ -72,6 +72,17 @@ const formatDate = (dateString: string) => {
   }
 };
 
+const getSessionDayType = (session: Session): "journee" | "soir" | null => {
+  const creneaux = session.creneaux || [];
+  const hd = session.heure_debut;
+  // Evening if any creneau explicitly mentions soir or 17h/18h start, or heure_debut >= 17
+  const isSoir = creneaux.some(c => /soir|17h|18h/i.test(c)) || (!!hd && parseInt(hd.split(':')[0], 10) >= 17);
+  const isJournee = creneaux.some(c => /9h|journ/i.test(c)) || (!!hd && parseInt(hd.split(':')[0], 10) < 17);
+  if (isSoir) return "soir";
+  if (isJournee) return "journee";
+  return null;
+};
+
 export function SessionsList({ onNavigateToApprenant }: { onNavigateToApprenant?: (apprenantId: string) => void }) {
   const navigate = useNavigate();
   const [selectedSession, setSelectedSession] = useState<any | null>(null);
