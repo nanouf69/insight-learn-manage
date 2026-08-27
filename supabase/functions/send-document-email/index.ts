@@ -106,7 +106,17 @@ serve(async (req) => {
       );
     }
 
-    const senderEmail = "contact@ftransport.fr";
+    const ALLOWED_SENDERS = [
+      "contact@ftransport.fr",
+      "formation@ftransport.fr",
+      "notifications@ftransport.fr",
+      "noreply@ftransport.fr",
+    ];
+    const senderEmail =
+      typeof senderEmailInput === "string" && ALLOWED_SENDERS.includes(senderEmailInput.trim().toLowerCase())
+        ? senderEmailInput.trim().toLowerCase()
+        : "contact@ftransport.fr";
+
     const finalHtml = htmlBody || `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background-color: #1a1a2e; padding: 20px; text-align: center;">
