@@ -745,6 +745,8 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   const [extraFactureSaving, setExtraFactureSaving] = useState(false);
   const [extraFactureDeleting, setExtraFactureDeleting] = useState<string | null>(null);
   const [bulkPreview, setBulkPreview] = useState<{ template: any; apprenants: any[]; previewBody: string; previewSubject: string; editedBody?: string; editedSubject?: string } | null>(null);
+  const [convocationPreview, setConvocationPreview] = useState<{ items: { apprenant: any; subject: string; body: string }[] } | null>(null);
+  const [convocationPreviewIndex, setConvocationPreviewIndex] = useState(0);
   const [bulkPreviewEditing, setBulkPreviewEditing] = useState(false);
   const [editingMailType, setEditingMailType] = useState<any | null>(null);
   const [editLabel, setEditLabel] = useState("");
