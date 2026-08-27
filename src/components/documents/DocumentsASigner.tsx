@@ -291,8 +291,10 @@ export function DocumentsASigner() {
         body: {
           recipientEmail: email.trim(),
           recipientName: nomDest || email.trim(),
+          senderEmail: expediteur,
           subject: `Document à compléter et signer : ${selected.nom}`,
-          htmlBody: `Bonjour ${nomDest || ""},<br><br>Merci de compléter et signer le document <strong>${selected.nom}</strong> en cliquant sur le lien sécurisé ci-dessous :<br><br><a href="${lien}">${lien}</a><br><br>Cordialement,<br><br>FTRANSPORT<br>Centre de formation<br>86 Route de Genas 69003 Lyon<br>📞 04.28.29.60.91`,
+          htmlBody: `Bonjour ${nomDest || ""},<br><br>Merci de compléter et signer le document <strong>${selected.nom}</strong> en cliquant sur le lien sécurisé ci-dessous :<br><br><a href="${lien}">${lien}</a><br><br>Cordialement,`,
+
         },
       });
       if (error) throw error;
