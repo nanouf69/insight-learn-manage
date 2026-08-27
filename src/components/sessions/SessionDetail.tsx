@@ -3119,6 +3119,54 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     setSelectedApprenants(new Set());
   };
 
+  // Envoi groupé des convocations : chaque apprenant reçoit le modèle adapté à sa formation
+  const handleBulkSendConvocations = async () => {
+    const selectedList = apprenantsInSession
+      .filter((sa: any) => sa.apprenant && selectedApprenants.has(sa.apprenant.id) && sa.apprenant.email)
+      .map((sa: any) => sa.apprenant);
+
+    if (selectedList.length === 0) {
+      toast({ title: "Aucun apprenant sélectionné", description: "Cochez au moins un apprenant avec une adresse email.", variant: "destructive" });
+      return;
+    }
+
+    if (!confirm(`Envoyer la convocation de formation à ${selectedList.length} apprenant(s) ?`)) return;
+
+    setBulkSending(true);
+    let sent = 0;
+    let failed = 0;
+
+    for (const apprenant of selectedList) {
+      const template = emailTemplates.find((t: any) => t.id === getConvocationTemplateId(apprenant));
+      if (!template) { failed++; continue; }
+      try {
+        await supabase.functions.invoke('sync-outlook-emails', {
+          body: {
+            action: 'send',
+            apprenantId: apprenant.id,
+            userEmail: 'contact@ftransport.fr',
+            to: apprenant.email,
+            subject: replaceTemplateVars(template.subject_template, apprenant),
+            body: replaceTemplateVars(template.body_template, apprenant),
+          },
+        });
+        sent++;
+      } catch {
+        failed++;
+      }
+    }
+
+    toast({
+      title: "Convocations envoyées",
+      description: `${sent} convocation(s) envoyée(s)${failed > 0 ? `, ${failed} échec(s)` : ''}.`,
+    });
+    await queryClient.invalidateQueries({ queryKey: ['convocations-sent'] });
+    setBulkSending(false);
+    setSelectedApprenants(new Set());
+  };
+
+
+
 
   const handleBulkEmargement = async (isPrint: boolean) => {
     const selectedSAs = apprenantsInSession
@@ -3500,6 +3548,17 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                   )}
                 </DropdownMenuContent>
               </DropdownMenu>
+              <Button
+                size="sm"
+                variant="default"
+                className="gap-2 bg-[#F4A227] hover:bg-[#d8901c] text-white"
+                disabled={selectedApprenants.size === 0 || bulkSending}
+                onClick={handleBulkSendConvocations}
+                title="Envoyer à chaque apprenant sélectionné la convocation adaptée à sa formation (VTC / VTC soir / TAXI / TA)"
+              >
+                {bulkSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                Convocations ({selectedApprenants.size})
+              </Button>
               <Button
                 size="sm"
                 variant="outline"
