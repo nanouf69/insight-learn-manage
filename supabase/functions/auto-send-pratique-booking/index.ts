@@ -260,6 +260,7 @@ serve(async (req) => {
               message: {
                 subject,
                 body: { contentType: "HTML", content: html },
+                from: { emailAddress: { address: senderEmail, name: "FTRANSPORT" } },
                 toRecipients: [{ emailAddress: { address: a.email } }],
               },
               saveToSentItems: true,
