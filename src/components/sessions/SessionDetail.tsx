@@ -2970,6 +2970,14 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     return hasDate ? base : `${base}-sans-date`;
   };
 
+  // Convocation adaptée à la formation de l'apprenant (VTC / VTC soir / TAXI / TA)
+  const getConvocationTemplateId = (a: any): string => {
+    const { isTA, isTaxi } = getSessionTrainingFlags(a?.type_apprenant);
+    if (isTA) return 'convocation-ta';
+    if (isTaxi) return 'convocation-taxi';
+    return isSessionSoir ? 'convocation-vtc-soir' : 'convocation-vtc';
+  };
+
   const handlePreviewTemplateEmail = (templateId: string, apprenant: any) => {
 
     const template = emailTemplates.find((t: any) => t.id === templateId);
@@ -4084,6 +4092,18 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                           >
                             {hasPreInfoEmail(apprenant.id) ? <CheckCircle2 className="w-4 h-4" /> : <Send className="w-4 h-4" />}
                             <span className="text-xs">📋 Mail pré-information</span>
+                          </Button>
+
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className={`h-8 gap-1.5 ${hasConvocation(apprenant.id) ? 'text-green-700 bg-green-100 hover:bg-green-200 hover:text-green-800' : 'text-muted-foreground hover:text-primary'}`}
+                            title={hasConvocation(apprenant.id) ? "Convocation déjà envoyée — cliquer pour renvoyer" : "Convocation formation (modèle adapté à la formation de l'apprenant)"}
+                            disabled={sendingEmailForApprenant === apprenant.id}
+                            onClick={() => handlePreviewTemplateEmail(getConvocationTemplateId(apprenant), apprenant)}
+                          >
+                            {hasConvocation(apprenant.id) ? <CheckCircle2 className="w-4 h-4" /> : <Send className="w-4 h-4" />}
+                            <span className="text-xs">📨 Convocation formation</span>
                           </Button>
 
                           <Button
