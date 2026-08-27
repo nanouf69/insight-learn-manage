@@ -31,6 +31,8 @@ import {
   defaultTaille,
   newChampId,
 } from "@/lib/documentsASigner";
+import { genererPdfRempli, telechargerPdf } from "@/lib/documentSigneDownload";
+
 
 if (typeof (Promise as any).withResolvers === "undefined") {
   (Promise as any).withResolvers = function <T>() {
