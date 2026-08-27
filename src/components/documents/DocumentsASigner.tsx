@@ -503,6 +503,19 @@ export function DocumentsASigner() {
                 <Input id="dest-nom" value={nomDest} onChange={(e) => setNomDest(e.target.value)} placeholder="Nom Prénom" />
                 <Label htmlFor="dest-email">Adresse email</Label>
                 <Input id="dest-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="exemple@email.com" />
+                <Label htmlFor="exp-email">Adresse d'expédition</Label>
+                <select
+                  id="exp-email"
+                  value={expediteur}
+                  onChange={(e) => setExpediteur(e.target.value)}
+                  className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
+                >
+                  <option value="contact@ftransport.fr">contact@ftransport.fr</option>
+                  <option value="formation@ftransport.fr">formation@ftransport.fr</option>
+                  <option value="notifications@ftransport.fr">notifications@ftransport.fr</option>
+                  <option value="noreply@ftransport.fr">noreply@ftransport.fr</option>
+                </select>
+
               </div>
 
               <div className="flex flex-col gap-2">
