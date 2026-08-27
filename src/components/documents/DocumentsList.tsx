@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Search, Filter, MoreVertical, FileText, FileCheck, FileWarning, Download, Eye, Mail, X } from "lucide-react";
+import { Search, Filter, MoreVertical, FileText, FileCheck, FileWarning, Download, Eye, Mail, X, FileSignature } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -27,6 +27,8 @@ import {
 import { DocumentForm } from "./DocumentForm";
 import { EmailTemplatesEditor } from "./EmailTemplatesEditor";
 import { BulkDownloadDialog } from "./BulkDownloadDialog";
+import { DocumentsASigner } from "./DocumentsASigner";
+
 
 const documents = [
   {
@@ -124,6 +126,11 @@ export function DocumentsList() {
             <Mail className="h-4 w-4" />
             Mails Type
           </TabsTrigger>
+          <TabsTrigger value="a-signer" className="gap-2">
+            <FileSignature className="h-4 w-4" />
+            À remplir / signer
+          </TabsTrigger>
+
         </TabsList>
 
         <TabsContent value="documents" className="space-y-6 mt-4">
@@ -298,6 +305,11 @@ export function DocumentsList() {
         <TabsContent value="mails-type" className="mt-4">
           <EmailTemplatesEditor />
         </TabsContent>
+
+        <TabsContent value="a-signer" className="mt-4">
+          <DocumentsASigner />
+        </TabsContent>
+
       </Tabs>
     </div>
   );

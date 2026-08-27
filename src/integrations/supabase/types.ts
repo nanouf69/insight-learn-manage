@@ -1155,6 +1155,57 @@ export type Database = {
           },
         ]
       }
+      documents_a_signer: {
+        Row: {
+          champs: Json
+          created_at: string
+          created_by: string | null
+          destinataire_email: string | null
+          destinataire_nom: string | null
+          file_path: string
+          id: string
+          nom: string
+          reponses: Json
+          sent_at: string | null
+          signed_at: string | null
+          statut: string
+          token: string
+          updated_at: string
+        }
+        Insert: {
+          champs?: Json
+          created_at?: string
+          created_by?: string | null
+          destinataire_email?: string | null
+          destinataire_nom?: string | null
+          file_path: string
+          id?: string
+          nom: string
+          reponses?: Json
+          sent_at?: string | null
+          signed_at?: string | null
+          statut?: string
+          token?: string
+          updated_at?: string
+        }
+        Update: {
+          champs?: Json
+          created_at?: string
+          created_by?: string | null
+          destinataire_email?: string | null
+          destinataire_nom?: string | null
+          file_path?: string
+          id?: string
+          nom?: string
+          reponses?: Json
+          sent_at?: string | null
+          signed_at?: string | null
+          statut?: string
+          token?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       documents_inscription: {
         Row: {
           analyse_ia_date: string | null

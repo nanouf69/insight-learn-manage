@@ -31,7 +31,10 @@ import AdminAuditT3P from "./pages/AdminAuditT3P";
 import AdminAuditModules from "./pages/AdminAuditModules";
 import AdminAuditDBvsLearner from "./pages/AdminAuditDBvsLearner";
 
+import DocumentASignerPublic from "./pages/DocumentASignerPublic";
+
 // Onboarding pages
+
 import OnboardingWelcome from "./pages/onboarding/OnboardingWelcome";
 import OnboardingFCFinish from "./pages/onboarding/OnboardingFCFinish";
 import Step1 from "./pages/onboarding/steps/Step1";
@@ -103,6 +106,8 @@ function App() {
                 <Route path="/pre-information" element={<ErrorBoundary><PreInformationPublic /></ErrorBoundary>} />
                 <Route path="/cours" element={<ErrorBoundary><CoursPublic /></ErrorBoundary>} />
                 <Route path="/cours-public" element={<ErrorBoundary><CoursPublic /></ErrorBoundary>} />
+                <Route path="/document-a-signer/:token" element={<ErrorBoundary><DocumentASignerPublic /></ErrorBoundary>} />
+
                 <Route path="/reset-password" element={<ErrorBoundary><ResetPassword /></ErrorBoundary>} />
                 <Route path="/auth/callback" element={<ErrorBoundary><AuthCallback /></ErrorBoundary>} />
                 <Route path="/revolut-connect" element={<ErrorBoundary><RevolutConnect /></ErrorBoundary>} />
