@@ -2929,10 +2929,12 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     const dateFinRaw = session.dateFin || a.date_fin_formation || null;
     const dateDebut = formatDateFr(dateDebutRaw);
     const dateFin = formatDateFr(dateFinRaw);
+    // L'examen théorique est TOUJOURS la première date qui suit la fin de formation
+    // (ex: formation finissant le 27 sept → examen du 29 sept). Le calcul automatique
+    // prime sur une éventuelle date manuelle obsolète de l'apprenant.
     const theoriqueAuto = getTheoriqueDateForFormation(dateFinRaw);
-    const dateExamenTheorique = a.date_examen_theorique
-      ? formatDateFr(a.date_examen_theorique)
-      : (theoriqueAuto.date || '[date à compléter]');
+    const dateExamenTheorique = theoriqueAuto.date
+      || (a.date_examen_theorique ? formatDateFr(a.date_examen_theorique) : '[date à compléter]');
     const lieuExamenTheorique = theoriqueAuto.lieu || '[lieu à compléter]';
     const horaireExamenTheorique = theoriqueAuto.horaire || 'après-midi';
     const pratiqueAuto = getPratiqueDatesForFormation(dateFinRaw);
