@@ -59,6 +59,7 @@ import { generateFactureFC } from "@/lib/pdf/facture-fc";
 import { saveFactureToCRM } from "@/lib/saveFactureToCRM";
 import { saveAttestationToCRM } from "@/lib/saveAttestationToCRM";
 import { saveEmargementToCRM } from "@/lib/saveEmargementToCRM";
+import { getPratiqueDatesForFormation } from "@/lib/pratiquePeriodes";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
