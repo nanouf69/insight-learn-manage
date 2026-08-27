@@ -21,6 +21,7 @@ import { ApprenantForm } from "@/components/apprenants/ApprenantForm";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { getAvatarUrl } from "@/lib/avatarUrl";
 import { filterAndSortApprenants } from "@/lib/apprenantSearch";
+import { CodesAccesEnvoyes } from "@/components/dashboard/CodesAccesEnvoyes";
 const typeLabels: Record<string, string> = {
   'vtc': 'VTC',
   'vtc-e': 'VTC E',
