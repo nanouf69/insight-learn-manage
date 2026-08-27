@@ -298,6 +298,11 @@ export function DocumentsList() {
         <TabsContent value="mails-type" className="mt-4">
           <EmailTemplatesEditor />
         </TabsContent>
+
+        <TabsContent value="a-signer" className="mt-4">
+          <DocumentsASigner />
+        </TabsContent>
+
       </Tabs>
     </div>
   );
