@@ -317,12 +317,18 @@ export function FormationsBientotTerminees({ onNavigateToApprenant }: Props) {
             variant="ghost"
             size="sm"
             className="h-7 px-2 self-start text-xs text-muted-foreground"
-            onClick={() => persistDismissed([])}
+            onClick={() => {
+              persistDismissed([]);
+              try { localStorage.removeItem(DISMISS_KEY); } catch { /* ignore */ }
+            }}
           >
             <RotateCcw className="h-3 w-3 mr-1" />
-            Réafficher {hiddenCount} masquée(s)
+            {allHidden
+              ? `Tout était masqué (${hiddenCount}) — cliquer pour réinitialiser`
+              : `Réafficher ${hiddenCount} masquée(s)`}
           </Button>
         )}
+
       </CardHeader>
       <CardContent className="space-y-2">
         {results.length === 0 ? (
