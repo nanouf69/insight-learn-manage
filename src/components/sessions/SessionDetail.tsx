@@ -59,6 +59,7 @@ import { generateFactureFC } from "@/lib/pdf/facture-fc";
 import { saveFactureToCRM } from "@/lib/saveFactureToCRM";
 import { saveAttestationToCRM } from "@/lib/saveAttestationToCRM";
 import { saveEmargementToCRM } from "@/lib/saveEmargementToCRM";
+import { getPratiqueDatesForFormation } from "@/lib/pratiquePeriodes";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -2927,10 +2928,16 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     const dateDebut = formatDateFr(dateDebutRaw);
     const dateFin = formatDateFr(dateFinRaw);
     const dateExamenTheorique = formatDateFr(a.date_examen_theorique);
-    const dateExamenPratique = formatDateFr(a.date_examen_pratique);
+    const pratiqueAuto = getPratiqueDatesForFormation(dateFinRaw);
+    const dateExamenPratique = a.date_examen_pratique
+      ? formatDateFr(a.date_examen_pratique)
+      : (pratiqueAuto.examenPratique || '[date à compléter]');
+    const periodeExamenPratique = pratiqueAuto.examenPratique || '[dates à compléter]';
+    const periodeEntrainementPratique = pratiqueAuto.entrainementPratique || '[dates à compléter]';
     const today = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
     const bookingUrl = `https://insight-learn-manage.lovable.app/reservation-pratique?id=${a.id}`;
     const onboardingUrl = 'https://insight-learn-manage.lovable.app/bienvenue';
+
 
     return template
       .replace(/\{\{prenom\}\}/g, a.prenom || '')
@@ -2940,7 +2947,10 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       .replace(/\{\{date_fin\}\}/g, dateFin)
       .replace(/\{\{date_examen_theorique\}\}/g, dateExamenTheorique)
       .replace(/\{\{date_examen_pratique\}\}/g, dateExamenPratique)
+      .replace(/\{\{periode_examen_pratique\}\}/g, periodeExamenPratique)
+      .replace(/\{\{periode_entrainement_pratique\}\}/g, periodeEntrainementPratique)
       .replace(/\{\{date_jour\}\}/g, today)
+
       .replace(/\{\{civilite\}\}/g, a.civilite || '')
       .replace(/\{\{adresse\}\}/g, a.adresse || '')
       .replace(/\{\{code_postal\}\}/g, a.code_postal || '')
@@ -5233,7 +5243,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
           </div>
           <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 border border-border">
             <span className="text-xs text-muted-foreground">
-              Variables : <code className="bg-muted px-1 rounded">{"{{prenom}}"}</code> <code className="bg-muted px-1 rounded">{"{{nom}}"}</code> <code className="bg-muted px-1 rounded">{"{{formation}}"}</code> <code className="bg-muted px-1 rounded">{"{{date_debut}}"}</code> <code className="bg-muted px-1 rounded">{"{{date_fin}}"}</code> <code className="bg-muted px-1 rounded">{"{{date_examen_theorique}}"}</code> <code className="bg-muted px-1 rounded">{"{{date_examen_pratique}}"}</code> <code className="bg-muted px-1 rounded">{"{{civilite}}"}</code>
+              Variables : <code className="bg-muted px-1 rounded">{"{{prenom}}"}</code> <code className="bg-muted px-1 rounded">{"{{nom}}"}</code> <code className="bg-muted px-1 rounded">{"{{formation}}"}</code> <code className="bg-muted px-1 rounded">{"{{date_debut}}"}</code> <code className="bg-muted px-1 rounded">{"{{date_fin}}"}</code> <code className="bg-muted px-1 rounded">{"{{date_examen_theorique}}"}</code> <code className="bg-muted px-1 rounded">{"{{date_examen_pratique}}"}</code> <code className="bg-muted px-1 rounded">{"{{periode_examen_pratique}}"}</code> <code className="bg-muted px-1 rounded">{"{{periode_entrainement_pratique}}"}</code> <code className="bg-muted px-1 rounded">{"{{civilite}}"}</code>
             </span>
           </div>
           <div className="flex justify-end gap-2">
