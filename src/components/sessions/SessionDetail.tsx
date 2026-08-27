@@ -3724,6 +3724,15 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                           {apprenant.resultat_examen === 'oui' && (
                             <span className="inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-full bg-green-100 text-green-700">✅ Théorie réussie</span>
                           )}
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); downloadDossierBienvenue(apprenant); }}
+                            title="Télécharger le dossier de bienvenue en PDF"
+                            className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors"
+                          >
+                            📄 Dossier de bienvenue PDF
+                          </button>
+
                           {apprenant.resultat_examen === 'non' && (
                             <span className="inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-full bg-red-100 text-red-700">❌ Théorie échouée</span>
                           )}
