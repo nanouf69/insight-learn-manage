@@ -92,6 +92,8 @@ export function DocumentsASigner() {
   const [outil, setOutil] = useState<ChampType>("signature");
   const [email, setEmail] = useState("");
   const [nomDest, setNomDest] = useState("");
+  const [expediteur, setExpediteur] = useState("contact@ftransport.fr");
+
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   const telechargerDocument = useCallback(
