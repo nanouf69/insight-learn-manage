@@ -440,8 +440,18 @@ export function SessionsList({ onNavigateToApprenant }: { onNavigateToApprenant?
                     </div>
                     
                     {/* Tags types apprenant et créneaux */}
-                    {((session.types_apprenant && session.types_apprenant.length > 0) || (session.creneaux && session.creneaux.length > 0)) && (
+                    {((session.types_apprenant && session.types_apprenant.length > 0) || (session.creneaux && session.creneaux.length > 0) || getSessionDayType(session)) && (
                       <div className="flex flex-wrap gap-1.5">
+                        {getSessionDayType(session) === "journee" && (
+                          <Badge className="bg-sky-100 text-sky-700 hover:bg-sky-100 text-xs font-bold uppercase">
+                            ☀️ Cours en journée
+                          </Badge>
+                        )}
+                        {getSessionDayType(session) === "soir" && (
+                          <Badge className="bg-indigo-100 text-indigo-700 hover:bg-indigo-100 text-xs font-bold uppercase">
+                            🌙 Cours en soirée
+                          </Badge>
+                        )}
                         {session.types_apprenant?.map((type) => (
                           <Badge 
                             key={type} 
