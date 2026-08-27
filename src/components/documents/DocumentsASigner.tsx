@@ -64,10 +64,12 @@ interface DocRow {
   destinataire_email: string | null;
   token: string;
   statut: string;
+  reponses: Record<string, string> | null;
   sent_at: string | null;
   signed_at: string | null;
   created_at: string;
 }
+
 
 const PAGE_WIDTH = 720;
 
