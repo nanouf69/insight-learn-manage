@@ -2923,8 +2923,10 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
 
   const replaceTemplateVars = (template: string, a: any): string => {
     const formation = getFormationTypeLocal(a.type_apprenant);
-    const dateDebutRaw = a.date_debut_formation || session.dateDebut || null;
-    const dateFinRaw = a.date_fin_formation || session.dateFin || null;
+    // Toujours privilégier les dates de la SESSION (les dates apprenant peuvent
+    // couvrir la période e-learning et fausser la convocation)
+    const dateDebutRaw = session.dateDebut || a.date_debut_formation || null;
+    const dateFinRaw = session.dateFin || a.date_fin_formation || null;
     const dateDebut = formatDateFr(dateDebutRaw);
     const dateFin = formatDateFr(dateFinRaw);
     const theoriqueAuto = getTheoriqueDateForFormation(dateFinRaw);
