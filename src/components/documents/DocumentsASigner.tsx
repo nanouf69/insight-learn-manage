@@ -351,18 +351,38 @@ export function DocumentsASigner() {
                     {doc.destinataire_email ? ` · ${doc.destinataire_email}` : ""}
                   </p>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 shrink-0"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    supprimer(doc);
-                  }}
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </Button>
+                <div className="flex items-center gap-1 shrink-0">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    title="Télécharger le document (rempli et signé si disponible)"
+                    disabled={downloadingId === doc.id}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      telechargerDocument(doc);
+                    }}
+                  >
+                    {downloadingId === doc.id ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Download className="h-3.5 w-3.5" />
+                    )}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      supprimer(doc);
+                    }}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
               </div>
+
               <div className="mt-2">
                 {doc.statut === "signe" ? (
                   <Badge className="bg-success/15 text-success gap-1">
