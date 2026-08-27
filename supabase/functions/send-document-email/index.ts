@@ -19,6 +19,7 @@ serve(async (req) => {
       recipientName,
       subject,
       htmlBody,
+      senderEmail: senderEmailInput,
       attachmentName,
       attachmentBase64,
       attachmentContentType,
@@ -26,6 +27,7 @@ serve(async (req) => {
       attachmentPath,
       attachmentBucket,
     } = await req.json();
+
 
     if (!recipientEmail || !subject) {
       return new Response(
