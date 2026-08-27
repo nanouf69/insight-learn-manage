@@ -92,6 +92,8 @@ export function DocumentsASigner() {
   const [outil, setOutil] = useState<ChampType>("signature");
   const [email, setEmail] = useState("");
   const [nomDest, setNomDest] = useState("");
+  const [expediteur, setExpediteur] = useState("contact@ftransport.fr");
+
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   const telechargerDocument = useCallback(
@@ -289,8 +291,10 @@ export function DocumentsASigner() {
         body: {
           recipientEmail: email.trim(),
           recipientName: nomDest || email.trim(),
+          senderEmail: expediteur,
           subject: `Document à compléter et signer : ${selected.nom}`,
-          htmlBody: `Bonjour ${nomDest || ""},<br><br>Merci de compléter et signer le document <strong>${selected.nom}</strong> en cliquant sur le lien sécurisé ci-dessous :<br><br><a href="${lien}">${lien}</a><br><br>Cordialement,<br><br>FTRANSPORT<br>Centre de formation<br>86 Route de Genas 69003 Lyon<br>📞 04.28.29.60.91`,
+          htmlBody: `Bonjour ${nomDest || ""},<br><br>Merci de compléter et signer le document <strong>${selected.nom}</strong> en cliquant sur le lien sécurisé ci-dessous :<br><br><a href="${lien}">${lien}</a><br><br>Cordialement,`,
+
         },
       });
       if (error) throw error;
@@ -499,6 +503,19 @@ export function DocumentsASigner() {
                 <Input id="dest-nom" value={nomDest} onChange={(e) => setNomDest(e.target.value)} placeholder="Nom Prénom" />
                 <Label htmlFor="dest-email">Adresse email</Label>
                 <Input id="dest-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="exemple@email.com" />
+                <Label htmlFor="exp-email">Adresse d'expédition</Label>
+                <select
+                  id="exp-email"
+                  value={expediteur}
+                  onChange={(e) => setExpediteur(e.target.value)}
+                  className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
+                >
+                  <option value="contact@ftransport.fr">contact@ftransport.fr</option>
+                  <option value="formation@ftransport.fr">formation@ftransport.fr</option>
+                  <option value="notifications@ftransport.fr">notifications@ftransport.fr</option>
+                  <option value="noreply@ftransport.fr">noreply@ftransport.fr</option>
+                </select>
+
               </div>
 
               <div className="flex flex-col gap-2">
