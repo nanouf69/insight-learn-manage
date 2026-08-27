@@ -2929,16 +2929,18 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     const dateFinRaw = session.dateFin || a.date_fin_formation || null;
     const dateDebut = formatDateFr(dateDebutRaw);
     const dateFin = formatDateFr(dateFinRaw);
+    // L'examen théorique est TOUJOURS la première date qui suit la fin de formation
+    // (ex: formation finissant le 27 sept → examen du 29 sept). Le calcul automatique
+    // prime sur une éventuelle date manuelle obsolète de l'apprenant.
     const theoriqueAuto = getTheoriqueDateForFormation(dateFinRaw);
-    const dateExamenTheorique = a.date_examen_theorique
-      ? formatDateFr(a.date_examen_theorique)
-      : (theoriqueAuto.date || '[date à compléter]');
+    const dateExamenTheorique = theoriqueAuto.date
+      || (a.date_examen_theorique ? formatDateFr(a.date_examen_theorique) : '[date à compléter]');
     const lieuExamenTheorique = theoriqueAuto.lieu || '[lieu à compléter]';
     const horaireExamenTheorique = theoriqueAuto.horaire || 'après-midi';
+    // Même règle pour le pratique : la période qui suit la fin de formation prime.
     const pratiqueAuto = getPratiqueDatesForFormation(dateFinRaw);
-    const dateExamenPratique = a.date_examen_pratique
-      ? formatDateFr(a.date_examen_pratique)
-      : (pratiqueAuto.examenPratique || '[date à compléter]');
+    const dateExamenPratique = pratiqueAuto.examenPratique
+      || (a.date_examen_pratique ? formatDateFr(a.date_examen_pratique) : '[date à compléter]');
     const periodeExamenPratique = pratiqueAuto.examenPratique || '[dates à compléter]';
     const periodeEntrainementPratique = pratiqueAuto.entrainementPratique || '[dates à compléter]';
     const today = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
