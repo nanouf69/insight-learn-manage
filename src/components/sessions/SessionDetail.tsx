@@ -5456,6 +5456,76 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       </DialogContent>
     </Dialog>
 
+    {/* Modale aperçu convocations groupées */}
+    <Dialog open={!!convocationPreview} onOpenChange={(open) => !open && setConvocationPreview(null)}>
+      <DialogContent className="sm:max-w-[650px] max-h-[85vh] overflow-hidden flex flex-col">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Send className="w-5 h-5" />
+            Convocations — Aperçu avant envoi
+          </DialogTitle>
+        </DialogHeader>
+        {convocationPreview && (() => {
+          const items = convocationPreview.items;
+          const idx = Math.min(convocationPreviewIndex, items.length - 1);
+          const current = items[idx];
+          return (
+            <div className="flex-1 overflow-auto space-y-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Destinataires ({items.length})</Label>
+                <div className="flex flex-wrap gap-2 p-3 rounded-lg border bg-muted/30 max-h-[100px] overflow-y-auto">
+                  {items.map((it: any, i: number) => (
+                    <Badge
+                      key={it.apprenant.id}
+                      variant={i === idx ? "default" : "secondary"}
+                      className="text-xs gap-1 cursor-pointer"
+                      onClick={() => setConvocationPreviewIndex(i)}
+                    >
+                      <Mail className="w-3 h-3" />
+                      {it.apprenant.prenom} {it.apprenant.nom}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <Button variant="outline" size="sm" disabled={idx === 0} onClick={() => setConvocationPreviewIndex(idx - 1)}>
+                  ← Précédent
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                  {current.apprenant.prenom} {current.apprenant.nom} ({idx + 1}/{items.length})
+                </span>
+                <Button variant="outline" size="sm" disabled={idx === items.length - 1} onClick={() => setConvocationPreviewIndex(idx + 1)}>
+                  Suivant →
+                </Button>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-sm font-medium">Objet</Label>
+                <div className="text-sm font-semibold p-2 rounded border bg-muted/20">{current.subject}</div>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-sm font-medium">Contenu</Label>
+                <div className="border rounded-lg p-4 bg-muted/30 overflow-auto max-h-[300px]">
+                  <div
+                    className="prose prose-sm max-w-none text-foreground"
+                    dangerouslySetInnerHTML={{ __html: current.body }}
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <Button variant="outline" onClick={() => setConvocationPreview(null)}>
+                  Annuler
+                </Button>
+                <Button onClick={handleConfirmBulkConvocations} disabled={bulkSending} className="gap-2">
+                  <Send className="w-4 h-4" />
+                  Envoyer à {items.length} élève(s)
+                </Button>
+              </div>
+            </div>
+          );
+        })()}
+      </DialogContent>
+    </Dialog>
+
     {/* Account creation/configuration dialog */}
     {accountDialogApprenant && (
       <Dialog open={!!accountDialogApprenant} onOpenChange={(o) => { if (!o) setAccountDialogApprenant(null); }}>
