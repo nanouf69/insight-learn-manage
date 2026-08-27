@@ -328,6 +328,9 @@ const Index = () => {
               </Button>
             </div>
 
+            {/* Codes d'accès envoyés aujourd'hui */}
+            <CodesAccesEnvoyes onNavigateToApprenant={handleNavigateToApprenant} />
+
             {/* Two Column Layout */}
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
               <UpcomingSessions />
