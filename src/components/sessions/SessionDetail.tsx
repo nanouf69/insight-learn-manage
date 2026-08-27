@@ -1272,6 +1272,28 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       return identifiantsSent.some((c: any) => c.apprenant_id === apprenantId);
     };
 
+    // Dernière date d'envoi des identifiants (codes d'accès) pour un apprenant
+    const getIdentifiantsLastDate = (apprenantId: string): string | null => {
+      const mails = identifiantsSent
+        .filter((c: any) => c.apprenant_id === apprenantId && c.sent_at)
+        .sort((a: any, b: any) => new Date(b.sent_at).getTime() - new Date(a.sent_at).getTime());
+      return mails.length > 0 ? mails[0].sent_at : null;
+    };
+
+    // Liste récapitulative : apprenants ayant reçu leurs codes d'accès (plus récent en premier)
+    const identifiantsRecap = useMemo(() => {
+      const rows = apprenantsInSession
+        .map((sa: any) => {
+          const ap = sa.apprenant;
+          if (!ap?.id) return null;
+          const date = getIdentifiantsLastDate(ap.id);
+          if (!date) return null;
+          return { id: ap.id, prenom: ap.prenom, nom: ap.nom, email: ap.email, sentAt: date };
+        })
+        .filter(Boolean) as { id: string; prenom: string; nom: string; email: string | null; sentAt: string }[];
+      return rows.sort((a, b) => new Date(b.sentAt).getTime() - new Date(a.sentAt).getTime());
+    }, [apprenantsInSession, identifiantsSent]);
+
     // Télécharge le dossier de bienvenue (PDF) d'un apprenant
     const downloadDossierBienvenue = async (apprenant: any) => {
       try {
