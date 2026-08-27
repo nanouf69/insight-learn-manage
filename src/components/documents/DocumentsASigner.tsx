@@ -506,6 +506,25 @@ export function DocumentsASigner() {
                   {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} Envoyer par email
                 </Button>
                 <Button
+                  variant="outline"
+                  className="gap-2"
+                  disabled={downloadingId === selected.id}
+                  onClick={() =>
+                    telechargerDocument({
+                      ...selected,
+                      champs,
+                      reponses: (selected.reponses || {}) as Record<string, string>,
+                    })
+                  }
+                >
+                  {downloadingId === selected.id ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Download className="h-4 w-4" />
+                  )}
+                  Télécharger le document
+                </Button>
+                <Button
                   variant="ghost"
                   size="sm"
                   className="gap-2"
@@ -516,6 +535,7 @@ export function DocumentsASigner() {
                 >
                   <Copy className="h-3.5 w-3.5" /> Copier le lien de signature
                 </Button>
+
               </div>
             </div>
           </div>
