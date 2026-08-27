@@ -254,8 +254,13 @@ export function FormationsBientotTerminees({ onNavigateToApprenant }: Props) {
 
 
   const all = data ?? [];
-  const results = all.filter((r: any) => !dismissed.includes(r.apprenant.id));
-  const hiddenCount = all.length - results.length;
+  const visible = all.filter((r: any) => !dismissed.includes(r.apprenant.id));
+  // Sécurité d'affichage : si TOUT a été masqué, on réaffiche quand même la liste
+  // (sinon la carte reste vide et l'information devient inaccessible).
+  const allHidden = all.length > 0 && visible.length === 0;
+  const results = allHidden ? all : visible;
+  const hiddenCount = all.length - visible.length;
+
 
   const getTypeLabel = (a: any) => {
     const s = `${a.type_apprenant || ""} ${a.formation_choisie || ""}`.toLowerCase();
