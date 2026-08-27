@@ -167,10 +167,17 @@ export default function DocumentASignerPublic() {
         </header>
 
         {signe && (
-          <div className="flex items-center justify-center gap-2 p-4 rounded-lg bg-success/10 text-success">
-            <CheckCircle2 className="h-5 w-5" /> Document signé et transmis
+          <div className="flex flex-col items-center justify-center gap-3 p-4 rounded-lg bg-success/10 text-success">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="h-5 w-5" /> Document signé et transmis
+            </div>
+            <Button variant="outline" className="gap-2" onClick={telecharger} disabled={downloading}>
+              {downloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+              Télécharger mon document signé
+            </Button>
           </div>
         )}
+
 
         <div ref={containerRef} className="bg-card border rounded-xl p-3 overflow-auto">
           {doc.fileUrl && (
