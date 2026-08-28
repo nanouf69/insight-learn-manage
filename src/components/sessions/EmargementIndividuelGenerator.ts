@@ -111,15 +111,15 @@ function generateIndividualPage(
   }
 
   doc.setTextColor(255, 255, 255);
-  doc.setFontSize(18);
+  doc.setFontSize(16);
   doc.setFont("helvetica", "bold");
-  doc.text(organisme.nom, margin + 43, 12);
+  doc.text(organisme.nom, margin + 43, 11);
 
-  doc.setFontSize(9);
+  doc.setFontSize(8);
   doc.setFont("helvetica", "normal");
-  doc.text("Specialiste Formations Transport", margin, 18);
+  doc.text("Specialiste Formations Transport", margin + 43, 17);
 
-  doc.setFontSize(14);
+  doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
   doc.text("FEUILLE D'EMARGEMENT INDIVIDUELLE", pageWidth - margin, 14, { align: "right" });
 
@@ -131,70 +131,62 @@ function generateIndividualPage(
   doc.setLineWidth(0.5);
   doc.roundedRect(margin, yPos, pageWidth - margin * 2, 28, 2, 2);
 
-  yPos += 7;
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(10);
-  doc.setTextColor(41, 128, 185);
-  doc.text("Stagiaire :", margin + 4, yPos);
-  doc.setTextColor(0, 0, 0);
-  doc.setFontSize(12);
-  doc.text(`${apprenant.nom.toUpperCase()} ${apprenant.prenom}`, margin + 28, yPos);
+  // Mise en page en 2 colonnes strictes pour eviter tout chevauchement
+  const colLeftX = margin + 4;
+  const colRightX = pageWidth / 2 + 2;
+  const infoColWidth = pageWidth / 2 - margin - 8;
 
-  // Téléphone à droite du nom
-  if (apprenant.telephone) {
-    doc.setFontSize(10);
+  const fit = (text: string, maxWidth: number, size: number) => {
+    doc.setFontSize(size);
+    let t = text || "";
+    if (doc.getTextWidth(t) <= maxWidth) return t;
+    while (t.length > 3 && doc.getTextWidth(t + "...") > maxWidth) t = t.slice(0, -1);
+    return t + "...";
+  };
+
+  const drawField = (label: string, value: string, x: number, y: number, size = 10) => {
     doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
     doc.setTextColor(41, 128, 185);
-    const nameWidth = doc.getTextWidth(`${apprenant.nom.toUpperCase()} ${apprenant.prenom}`);
-    doc.text("Tel :", margin + 28 + nameWidth + 6, yPos);
+    doc.text(label, x, y);
+    const labelW = doc.getTextWidth(label) + 3;
     doc.setTextColor(0, 0, 0);
     doc.setFont("helvetica", "normal");
-    doc.text(apprenant.telephone, margin + 28 + nameWidth + 6 + 10, yPos);
-  }
+    const maxW = infoColWidth - labelW;
+    const txt = fit(value, maxW, size);
+    doc.setFontSize(size);
+    doc.text(txt, x + labelW, y);
+  };
 
   const typeLabel = (apprenant.type_apprenant || '').toUpperCase().replace(/-E$/i, '');
   const formationWithType = typeLabel ? `${session.formation} (${typeLabel})` : session.formation;
 
-  doc.setFontSize(10);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(41, 128, 185);
-  doc.text("Formation :", pageWidth / 2, yPos);
-  doc.setTextColor(0, 0, 0);
-  doc.setFont("helvetica", "normal");
-  doc.text(formationWithType, pageWidth / 2 + 28, yPos);
+  let lineY = yPos + 7;
+  drawField("Stagiaire :", `${apprenant.nom.toUpperCase()} ${apprenant.prenom}`, colLeftX, lineY, 11);
+  if (apprenant.telephone) {
+    drawField("Tel :", apprenant.telephone, colRightX, lineY);
+  }
 
-  yPos += 8;
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(41, 128, 185);
-  doc.text("Dates :", margin + 4, yPos);
-  doc.setTextColor(0, 0, 0);
-  doc.setFont("helvetica", "normal");
-  doc.text(
+  lineY += 7;
+  drawField("Formation :", formationWithType, colLeftX, lineY);
+  drawField("Lieu :", LIEU_FORMATION, colRightX, lineY);
+
+  lineY += 7;
+  drawField(
+    "Dates :",
     `du ${format(parseISO(session.dateDebut), "dd/MM/yyyy")} au ${format(parseISO(session.dateFin), "dd/MM/yyyy")}`,
-    margin + 20,
-    yPos
+    colLeftX,
+    lineY
   );
-
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(41, 128, 185);
-  doc.text("Lieu :", pageWidth / 2, yPos);
-  doc.setTextColor(0, 0, 0);
-  doc.setFont("helvetica", "normal");
-  doc.text(LIEU_FORMATION, pageWidth / 2 + 14, yPos);
-
-  yPos += 8;
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(41, 128, 185);
-  doc.text("Formateur(s) :", margin + 4, yPos);
-  doc.setTextColor(0, 0, 0);
-  doc.setFont("helvetica", "normal");
-  doc.text(session.formateurs.join(", "), margin + 36, yPos);
+  drawField("Formateur(s) :", session.formateurs.join(", "), colRightX, lineY);
 
   if (totalPages > 1) {
     doc.setFont("helvetica", "italic");
     doc.setFontSize(8);
-    doc.text(`Page ${pageNum} / ${totalPages}`, pageWidth - margin - 2, yPos, { align: "right" });
+    doc.setTextColor(0, 0, 0);
+    doc.text(`Page ${pageNum} / ${totalPages}`, pageWidth - margin - 2, yPos + 26, { align: "right" });
   }
+
 
   // ===== TABLEAU D'ÉMARGEMENT =====
   yPos = 62;
