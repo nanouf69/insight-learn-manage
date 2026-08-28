@@ -397,6 +397,23 @@ export function DocumentsASigner() {
                     variant="ghost"
                     size="icon"
                     className="h-7 w-7"
+                    title="Renvoyer le lien de signature par email"
+                    disabled={resendingId === doc.id}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      renvoyer(doc);
+                    }}
+                  >
+                    {resendingId === doc.id ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <MailPlus className="h-3.5 w-3.5" />
+                    )}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
                     title="Télécharger le document (rempli et signé si disponible)"
                     disabled={downloadingId === doc.id}
                     onClick={(e) => {
