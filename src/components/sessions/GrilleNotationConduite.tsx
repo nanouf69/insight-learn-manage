@@ -286,15 +286,23 @@ const GrilleNotationConduite = ({
   };
 
   /** Remet le formulaire à zéro pour saisir un nouveau passage. */
-  const resetForm = () => {
+  const resetForm = async () => {
     setGrilleId(null);
     setCoches({});
-    setPassage("");
     setObservations("");
     setAvis(null);
     setTempsPreparation("");
     setDate(datePassage || new Date().toISOString().slice(0, 10));
+    const { count } = await supabase
+      .from("grilles_notation_conduite" as any)
+      .select("id", { count: "exact", head: true })
+      .eq("apprenant_id", apprenantId);
+    const total = count || 0;
+    setGrillesCount(total);
+    setHasGrille(total > 0);
+    setPassage(String(Math.min(total + 1, 10)));
   };
+
 
   const handleValiderEtEnvoyer = async () => {
     if (!avis) {
