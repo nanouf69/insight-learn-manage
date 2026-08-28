@@ -591,12 +591,21 @@ export function PlanningCalendar() {
                                   ))}
                                 </div>
                               ))}
-                              {withoutTime.map((c, i) => (
-                                <span key={`nt-${i}`} className={`text-xs leading-tight ${c.pasInscritExamen ? 'text-destructive font-bold' : 'text-foreground'}`}>
-                                  {c.pasInscritExamen && '⚠️ '}{c.name}
-                                  {c.pasInscritExamen && <span className="block text-[10px] text-destructive font-normal">Non inscrit à l'examen</span>}
-                                </span>
-                              ))}
+                              {withoutTime.map((c, i) => {
+                                const parts = resolvePratiqueSlotParts(
+                                  day.creneaux,
+                                  normalizePratiqueType(c.type || day.expectedType),
+                                  normalizePratiqueCreneau(c.creneau),
+                                );
+                                const hoursLabel = parts.map(p => p.label).join(' + ');
+                                return (
+                                  <span key={`nt-${i}`} className={`text-xs leading-tight block ${c.pasInscritExamen ? 'text-destructive font-bold' : 'text-foreground'}`}>
+                                    {c.pasInscritExamen && '⚠️ '}{c.name}
+                                    {hoursLabel && <span className="text-[10px] text-muted-foreground font-medium"> ({hoursLabel})</span>}
+                                    {c.pasInscritExamen && <span className="block text-[10px] text-destructive font-normal">Non inscrit à l'examen</span>}
+                                  </span>
+                                );
+                              })}
                             </>
                           );
                         })()
