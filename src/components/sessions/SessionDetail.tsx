@@ -821,7 +821,8 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
             date_fin_cours_en_ligne,
             societe_nom,
             societe_siret,
-            organisme_financeur
+            organisme_financeur,
+            documents_complets
           )
         `)
         .eq('session_id', session.id);
