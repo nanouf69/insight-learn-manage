@@ -22,6 +22,7 @@ const SESSION_TYPE_TO_DISCIPLINE: Record<string, { id: string; nom: string; colo
   "pratique_vtc":  { id: "24", nom: "Pratique VTC",  color: "#8b5cf6", formation: "Formation VTC (VTC)" },
   "pratique_taxi": { id: "23", nom: "Pratique TAXI", color: "#f97316", formation: "Formation TAXI (TAXI)" },
   "mobilite_taxi": { id: "25", nom: "Mobilité TAXI", color: "#f59e0b", formation: "Formation TAXI (TAXI)" },
+  "theorique_pratique": { id: "17", nom: "Formation VTC", color: "#16263b", formation: "Formation TAXI et VTC (TAXI/VTC)" },
 };
 
 function guessFormation(nom: string | null, typeSession: string): string {
@@ -255,7 +256,7 @@ export function SessionForm() {
       const { error } = await supabase
         .from('sessions')
         .insert({
-          nom: nom || null,
+          nom: nom.trim() || null,
           type_session: typeSession,
           date_debut: globalStart,
           date_fin: globalEnd,
@@ -272,7 +273,7 @@ export function SessionForm() {
       const result = await createAgendaBlocs({
         date_debut: dateDebut,
         date_fin: dateFin,
-        nom: nom || null,
+        nom: nom.trim() || null,
         type_session: typeSession,
         heure_debut: heureDebut,
         heure_fin: heureFin,
@@ -283,7 +284,7 @@ export function SessionForm() {
         extra = await createAgendaBlocs({
           date_debut: dateDebut2,
           date_fin: dateFin2,
-          nom: nom || null,
+          nom: nom.trim() || null,
           type_session: typeSession,
           heure_debut: heureDebut,
           heure_fin: heureFin,
