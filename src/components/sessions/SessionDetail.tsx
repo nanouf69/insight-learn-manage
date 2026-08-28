@@ -1534,6 +1534,8 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   // Envoi des identifiants de connexion (e-learning) à un apprenant
   const [sendingCredentialsFor, setSendingCredentialsFor] = useState<string | null>(null);
   const [bulkSendingCredentials, setBulkSendingCredentials] = useState(false);
+  const [bulkResendingCredentials, setBulkResendingCredentials] = useState(false);
+
 
   const sendCredentialsToApprenant = async (apprenant: any): Promise<boolean> => {
     if (!apprenant?.email) {
@@ -1592,6 +1594,37 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       variant: echecs.length > 0 ? "destructive" : undefined,
     });
   };
+
+  const handleResendCredentialsAll = async () => {
+    const cibles = apprenantsInSession
+      .map((sa: any) => sa.apprenant)
+      .filter((a: any) => a && a.email);
+    if (cibles.length === 0) {
+      toast({ title: "Aucun apprenant avec email dans cette session" });
+      return;
+    }
+    if (!window.confirm(`Renvoyer les identifiants de connexion à ${cibles.length} apprenant(s) de la session ?`)) return;
+    setBulkResendingCredentials(true);
+    let ok = 0;
+    const echecs: string[] = [];
+    for (const a of cibles) {
+      try {
+        const sent = await sendCredentialsToApprenant(a);
+        if (sent) ok++;
+        else echecs.push(`${a.nom} ${a.prenom}`);
+      } catch {
+        echecs.push(`${a.nom} ${a.prenom}`);
+      }
+    }
+    queryClient.invalidateQueries({ queryKey: ['identifiants-sent'] });
+    setBulkResendingCredentials(false);
+    toast({
+      title: `Identifiants renvoyés à ${ok}/${cibles.length} apprenant(s)`,
+      description: echecs.length > 0 ? `Échecs : ${echecs.join(', ')}` : undefined,
+      variant: echecs.length > 0 ? "destructive" : undefined,
+    });
+  };
+
 
 
 
@@ -3663,6 +3696,18 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                 {bulkSendingCredentials ? <Loader2 className="w-4 h-4 animate-spin" /> : <KeyRound className="w-4 h-4" />}
                 Identifiants ({selectedApprenants.size})
               </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-2 text-emerald-700 border-emerald-300 hover:bg-emerald-50"
+                disabled={bulkResendingCredentials}
+                onClick={handleResendCredentialsAll}
+                title="Renvoyer les identifiants de connexion à TOUS les apprenants de la session"
+              >
+                {bulkResendingCredentials ? <Loader2 className="w-4 h-4 animate-spin" /> : <KeyRound className="w-4 h-4" />}
+                Renvoyer identifiants (tous)
+              </Button>
+
               <Button 
                 size="sm" 
                 variant={showAddApprenant ? "secondary" : "outline"}
