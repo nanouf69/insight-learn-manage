@@ -10,6 +10,7 @@ import { saveEmargementToCRMForMany } from "@/lib/saveEmargementToCRM";
 import PlanningMensuelFormateurs from "@/components/agenda/PlanningMensuelFormateurs";
 import { DayConfigDialog, type DayType } from "./DayConfigDialog";
 import { syncPratiqueSessionsFromPlanning, checkPratiqueSessionsCoherence, type PratiqueCoherenceReport } from "@/lib/syncPratiqueSessions";
+import { resolvePratiqueSlotParts, normalizePratiqueCreneau, normalizePratiqueType } from "@/lib/pratiqueSlots";
 
 
 const DAY_NAMES = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
@@ -37,6 +38,7 @@ type CandidateInfo = {
   telephone: string;
   email: string;
   heure?: string;
+  creneau?: string;
   pasInscritExamen?: boolean;
 };
 
@@ -210,7 +212,7 @@ export function PlanningCalendar() {
       // Réservations (table reservations_pratique) sur le mois
       const { data: reservations } = await supabase
         .from("reservations_pratique")
-        .select("date_choisie, type_formation, apprenant_id")
+        .select("date_choisie, type_formation, apprenant_id, creneau")
         .gte("date_choisie", monthStart)
         .lte("date_choisie", monthEnd);
 
@@ -277,6 +279,7 @@ export function PlanningCalendar() {
             prenom: app.prenom,
             telephone: app.telephone,
             email: app.email,
+            creneau: (r as any).creneau || undefined,
             pasInscritExamen: false,
           });
         }
@@ -556,6 +559,15 @@ export function PlanningCalendar() {
                       <span className={`text-xs font-bold ${day.expectedType === 'vtc' ? 'text-primary' : 'text-amber-600'}`}>
                         Formation pratique {day.expectedType === 'vtc' ? 'VTC' : 'TAXI'}
                       </span>
+                      {(() => {
+                        const parts = resolvePratiqueSlotParts(day.creneaux, day.expectedType as 'vtc' | 'taxi', 'journee');
+                        if (parts.length === 0) return null;
+                        return (
+                          <span className="text-[10px] font-semibold text-muted-foreground block">
+                            🕒 {parts.map(p => p.label).join(' / ')}
+                          </span>
+                        );
+                      })()}
                       {day.reservedCandidates.length > 0 ? (
                         (() => {
                           const withTime = day.reservedCandidates.filter(c => c.heure);
@@ -579,12 +591,21 @@ export function PlanningCalendar() {
                                   ))}
                                 </div>
                               ))}
-                              {withoutTime.map((c, i) => (
-                                <span key={`nt-${i}`} className={`text-xs leading-tight ${c.pasInscritExamen ? 'text-destructive font-bold' : 'text-foreground'}`}>
-                                  {c.pasInscritExamen && '⚠️ '}{c.name}
-                                  {c.pasInscritExamen && <span className="block text-[10px] text-destructive font-normal">Non inscrit à l'examen</span>}
-                                </span>
-                              ))}
+                              {withoutTime.map((c, i) => {
+                                const parts = resolvePratiqueSlotParts(
+                                  day.creneaux,
+                                  normalizePratiqueType(c.type || day.expectedType),
+                                  normalizePratiqueCreneau(c.creneau),
+                                );
+                                const hoursLabel = parts.map(p => p.label).join(' + ');
+                                return (
+                                  <span key={`nt-${i}`} className={`text-xs leading-tight block ${c.pasInscritExamen ? 'text-destructive font-bold' : 'text-foreground'}`}>
+                                    {c.pasInscritExamen && '⚠️ '}{c.name}
+                                    {hoursLabel && <span className="text-[10px] text-muted-foreground font-medium"> ({hoursLabel})</span>}
+                                    {c.pasInscritExamen && <span className="block text-[10px] text-destructive font-normal">Non inscrit à l'examen</span>}
+                                  </span>
+                                );
+                              })}
                             </>
                           );
                         })()
