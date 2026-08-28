@@ -11,6 +11,7 @@ export const SESSION_TYPES = [
   { value: "pratique_taxi", label: "🚕 Formation pratique TAXI", isPratique: true },
   { value: "mobilite_taxi", label: "🚕 Formation mobilité TAXI", isPratique: false },
   { value: "theorique_pratique", label: "📚🚗 Théorique et présentiel", isPratique: true },
+  { value: "examen", label: "🎓 Session examen", isPratique: false },
 ];
 
 // Options proposées dans le formulaire pour le champ "Type de session"
@@ -18,6 +19,7 @@ export const SESSION_TYPE_OPTIONS = [
   { value: "theorique", label: "📚 Théorique" },
   { value: "pratique", label: "🚗 Présentiel" },
   { value: "theorique_pratique", label: "📚🚗 Théorique et présentiel" },
+  { value: "examen", label: "🎓 Session examen" },
 ];
 
 // Noms de session proposés (liste déroulante) + possibilité d'en saisir un autre
@@ -30,6 +32,7 @@ export const SESSION_NOM_OPTIONS = [
   "Formation pratique VTC",
   "Formation pratique TAXI",
   "Formation mobilité TAXI",
+  "Session examen",
 ];
 
 export const PRATIQUE_TYPES = SESSION_TYPES.filter(t => t.isPratique).map(t => t.value);
