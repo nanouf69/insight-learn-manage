@@ -10,6 +10,7 @@ import { saveEmargementToCRMForMany } from "@/lib/saveEmargementToCRM";
 import PlanningMensuelFormateurs from "@/components/agenda/PlanningMensuelFormateurs";
 import { DayConfigDialog, type DayType } from "./DayConfigDialog";
 import { syncPratiqueSessionsFromPlanning, checkPratiqueSessionsCoherence, type PratiqueCoherenceReport } from "@/lib/syncPratiqueSessions";
+import { resolvePratiqueSlotParts, normalizePratiqueCreneau, normalizePratiqueType } from "@/lib/pratiqueSlots";
 
 
 const DAY_NAMES = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
@@ -37,6 +38,7 @@ type CandidateInfo = {
   telephone: string;
   email: string;
   heure?: string;
+  creneau?: string;
   pasInscritExamen?: boolean;
 };
 
