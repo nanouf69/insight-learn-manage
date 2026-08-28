@@ -15,7 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
-import { SESSION_TYPES, isPratiqueType, getSessionTypeLabel } from "@/lib/sessionTypes";
+import { SESSION_TYPES, SESSION_TYPE_OPTIONS, SESSION_NOM_OPTIONS, isPratiqueType, getSessionTypeLabel } from "@/lib/sessionTypes";
 
 interface Session {
   id: string;
