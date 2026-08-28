@@ -166,12 +166,17 @@ export function SessionsList({ onNavigateToApprenant }: { onNavigateToApprenant?
       const matchType = filterType === "tous"
         ? true
         : filterType.startsWith("nom:")
-          ? normalize(nom).includes(normalize(filterType.slice(4)))
-          : filterType === "theorique_pratique"
-            ? true
-            : filterType === "pratique"
-              ? isPratiqueType(s.type_session)
-              : !isPratiqueType(s.type_session);
+          ? normalize(filterType.slice(4)) === "session examen"
+            ? s.type_session === "examen" || normalize(nom).includes("session examen")
+            : normalize(nom).includes(normalize(filterType.slice(4)))
+          : filterType === "examen"
+            ? s.type_session === "examen"
+            : filterType === "theorique_pratique"
+              ? true
+              : filterType === "pratique"
+                ? isPratiqueType(s.type_session)
+                : !isPratiqueType(s.type_session) && s.type_session !== "examen";
+
 
       return matchSearch && matchStatut && matchType;
     });
