@@ -134,7 +134,7 @@ function generateIndividualPage(
   // Mise en page en 2 colonnes strictes pour eviter tout chevauchement
   const colLeftX = margin + 4;
   const colRightX = pageWidth / 2 + 2;
-  const colWidth = pageWidth / 2 - margin - 8;
+  const infoColWidth = pageWidth / 2 - margin - 8;
 
   const fit = (text: string, maxWidth: number, size: number) => {
     doc.setFontSize(size);
