@@ -152,7 +152,7 @@ function generateIndividualPage(
     const labelW = doc.getTextWidth(label) + 3;
     doc.setTextColor(0, 0, 0);
     doc.setFont("helvetica", "normal");
-    const maxW = colWidth - labelW;
+    const maxW = infoColWidth - labelW;
     const txt = fit(value, maxW, size);
     doc.setFontSize(size);
     doc.text(txt, x + labelW, y);
