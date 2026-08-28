@@ -44,8 +44,9 @@ export async function syncExamenSessions(): Promise<SyncExamenResult> {
 
   const { data: apprenants, error: apErr } = await supabase
     .from("apprenants")
-    .select("id, type_apprenant, date_examen_theorique")
+    .select("id, type_apprenant, statut, date_examen_theorique")
     .is("deleted_at", null);
+
 
   if (apErr) {
     result.errors.push(apErr.message);
