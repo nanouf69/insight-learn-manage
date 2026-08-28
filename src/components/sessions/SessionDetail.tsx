@@ -3696,6 +3696,18 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                 {bulkSendingCredentials ? <Loader2 className="w-4 h-4 animate-spin" /> : <KeyRound className="w-4 h-4" />}
                 Identifiants ({selectedApprenants.size})
               </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-2 text-emerald-700 border-emerald-300 hover:bg-emerald-50"
+                disabled={bulkResendingCredentials}
+                onClick={handleResendCredentialsAll}
+                title="Renvoyer les identifiants de connexion à TOUS les apprenants de la session"
+              >
+                {bulkResendingCredentials ? <Loader2 className="w-4 h-4 animate-spin" /> : <KeyRound className="w-4 h-4" />}
+                Renvoyer identifiants (tous)
+              </Button>
+
               <Button 
                 size="sm" 
                 variant={showAddApprenant ? "secondary" : "outline"}
