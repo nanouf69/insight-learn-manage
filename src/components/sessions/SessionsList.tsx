@@ -162,9 +162,17 @@ export function SessionsList({ onNavigateToApprenant }: { onNavigateToApprenant?
         || (sessionApprenantSearchMap[s.id] || []).some(str => str.includes(q));
       const isTerminee = filterStatut === "terminee" && (s.statut === "terminee" || new Date(s.date_fin) < new Date(new Date().toDateString()));
       const matchStatut = filterStatut === "tous" || s.statut === filterStatut || isTerminee;
+      const normalize = (v: string) => v.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
       const matchType = filterType === "tous"
         ? true
-        : s.type_session === filterType;
+        : filterType.startsWith("nom:")
+          ? normalize(nom).includes(normalize(filterType.slice(4)))
+          : filterType === "theorique_pratique"
+            ? true
+            : filterType === "pratique"
+              ? isPratiqueType(s.type_session)
+              : !isPratiqueType(s.type_session);
+
       return matchSearch && matchStatut && matchType;
     });
 
