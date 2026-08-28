@@ -559,6 +559,15 @@ export function PlanningCalendar() {
                       <span className={`text-xs font-bold ${day.expectedType === 'vtc' ? 'text-primary' : 'text-amber-600'}`}>
                         Formation pratique {day.expectedType === 'vtc' ? 'VTC' : 'TAXI'}
                       </span>
+                      {(() => {
+                        const parts = resolvePratiqueSlotParts(day.creneaux, day.expectedType as 'vtc' | 'taxi', 'journee');
+                        if (parts.length === 0) return null;
+                        return (
+                          <span className="text-[10px] font-semibold text-muted-foreground block">
+                            🕒 {parts.map(p => p.label).join(' / ')}
+                          </span>
+                        );
+                      })()}
                       {day.reservedCandidates.length > 0 ? (
                         (() => {
                           const withTime = day.reservedCandidates.filter(c => c.heure);
