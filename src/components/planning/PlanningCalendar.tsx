@@ -11,6 +11,7 @@ import PlanningMensuelFormateurs from "@/components/agenda/PlanningMensuelFormat
 import { DayConfigDialog, type DayType } from "./DayConfigDialog";
 import { syncPratiqueSessionsFromPlanning, checkPratiqueSessionsCoherence, type PratiqueCoherenceReport } from "@/lib/syncPratiqueSessions";
 import { resolvePratiqueSlotParts, normalizePratiqueCreneau, normalizePratiqueType } from "@/lib/pratiqueSlots";
+import { PRATIQUE_TYPES } from "@/lib/sessionTypes";
 
 
 const DAY_NAMES = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
@@ -220,7 +221,7 @@ export function PlanningCalendar() {
       const { data: sessionsData } = await supabase
         .from("sessions")
         .select("id, nom, type_session, date_debut, date_fin, session_apprenants(apprenant_id, heure_debut_personnalisee)")
-        .eq("type_session", "pratique")
+        .in("type_session", PRATIQUE_TYPES)
         .gte("date_debut", monthStart)
         .lte("date_debut", monthEnd);
 

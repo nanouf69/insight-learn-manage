@@ -78,7 +78,7 @@ export default function InscriptionFormationContinue() {
           .select("id, nom")
           .eq("date_debut", d.value)
           .eq("date_fin", d.fin)
-          .eq("type_session", "theorique");
+          .eq("type_session", type === "taxi" ? "continue_taxi" : "continue_vtc");
 
         const matchingSession = sessions?.find(s =>
           s.nom?.toLowerCase().includes("formation continue") &&
@@ -141,7 +141,7 @@ export default function InscriptionFormationContinue() {
         .select("*")
         .eq("date_debut", selectedDate.value)
         .eq("date_fin", selectedDate.fin)
-        .eq("type_session", "theorique");
+        .eq("type_session", type === "taxi" ? "continue_taxi" : "continue_vtc");
 
       let sessionId: string;
       const matchingSession = existingSessions?.find(s =>
@@ -170,7 +170,7 @@ export default function InscriptionFormationContinue() {
             types_apprenant: [typeApprenant],
             places_disponibles: MAX_PLACES,
             statut: "planifiee",
-            type_session: "theorique",
+            type_session: type === "taxi" ? "continue_taxi" : "continue_vtc",
             lieu: "86 route de genas 69003 Lyon",
             heure_debut: "09:00",
             heure_fin: "17:00",

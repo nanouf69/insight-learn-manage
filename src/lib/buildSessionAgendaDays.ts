@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { isPratiqueType } from "@/lib/sessionTypes";
 import type { AgendaDaySlot } from "@/components/sessions/EmargementIndividuelGenerator";
 
 const formatLocalDateKey = (date: Date) => {
@@ -49,7 +50,7 @@ export async function buildSessionAgendaDays(
   const { dateDebut, dateFin } = ctx;
   if (!dateDebut || !dateFin) return [];
 
-  const isPratique = (ctx.type_session || "") === "pratique";
+  const isPratique = isPratiqueType(ctx.type_session);
   const titleLower = (ctx.title || "").toLowerCase();
   const { isTaxi, isVTC } = getFlags(ctx.typeApprenant, ctx.title || "");
 

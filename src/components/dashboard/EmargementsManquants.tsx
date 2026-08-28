@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PenLine, Phone, Mail, Sun, Moon, ChevronLeft, ChevronRight } from "lucide-react";
+import { isPratiqueType } from "@/lib/sessionTypes";
 
 const isoDate = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -118,7 +119,7 @@ export function EmargementsManquants({ onNavigateToApprenant }: Props) {
       for (const sa of (sessionAppr || []) as any[]) {
         const sess = sa.session;
         if (!sess) continue;
-        if (sess.type_session && sess.type_session !== "theorique") continue;
+        if (sess.type_session && isPratiqueType(sess.type_session)) continue;
         const start = (sa.date_debut && sa.date_debut > sess.date_debut ? sa.date_debut : sess.date_debut) as string;
         const endRaw = sa.date_fin_personnalisee || sa.date_fin || sess.date_fin;
         const end = (endRaw && endRaw < sess.date_fin ? endRaw : sess.date_fin) as string;

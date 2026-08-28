@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
+import { SESSION_TYPES, isPratiqueType, getSessionTypeLabel } from "@/lib/sessionTypes";
 
 interface Session {
   id: string;
@@ -148,17 +149,6 @@ export function SessionsList({ onNavigateToApprenant }: { onNavigateToApprenant?
     return map;
   }, [sessionApprenants]);
 
-  // Sort: upcoming sessions first (closest to today), then past sessions
-  // Formation filter matchers (on session name)
-  const FORMATION_FILTERS: Record<string, (nom: string) => boolean> = {
-    "continue_vtc": (nom) => /continue.*vtc|vtc.*continue/i.test(nom),
-    "soir_vtc": (nom) => /soir/i.test(nom),
-    "ta_taxi": (nom) => /ta.*taxi|taxi.*ta/i.test(nom) && !/vtc/i.test(nom),
-    "vtc_taxi": (nom) => /vtc.*taxi|taxi.*vtc/i.test(nom) && !/continue/i.test(nom) && !/soir/i.test(nom),
-    "pratique_vtc": (nom) => /pratique.*vtc|vtc.*pratique/i.test(nom),
-    "pratique_taxi": (nom) => /pratique.*taxi|taxi.*pratique/i.test(nom) && !/vtc/i.test(nom),
-  };
-
   const filteredSessions = useMemo(() => {
     const now = new Date();
     const q = search.toLowerCase();
@@ -174,9 +164,7 @@ export function SessionsList({ onNavigateToApprenant }: { onNavigateToApprenant?
       const matchStatut = filterStatut === "tous" || s.statut === filterStatut || isTerminee;
       const matchType = filterType === "tous"
         ? true
-        : FORMATION_FILTERS[filterType]
-          ? FORMATION_FILTERS[filterType](nom)
-          : s.type_session === filterType;
+        : s.type_session === filterType;
       return matchSearch && matchStatut && matchType;
     });
 
@@ -307,19 +295,14 @@ export function SessionsList({ onNavigateToApprenant }: { onNavigateToApprenant?
           />
         </div>
         <Select value={filterType} onValueChange={setFilterType}>
-          <SelectTrigger className="w-[220px]">
+          <SelectTrigger className="w-[260px]">
             <SelectValue placeholder="Formation" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="tous">Toutes les formations</SelectItem>
-            <SelectItem value="theorique">📚 Théorique</SelectItem>
-            <SelectItem value="pratique">🚗 Pratique</SelectItem>
-            <SelectItem value="continue_vtc">🔄 Formation continue VTC</SelectItem>
-            <SelectItem value="soir_vtc">🌙 Formation VTC cours du soir</SelectItem>
-            <SelectItem value="ta_taxi">🚕 Formation TA et TAXI</SelectItem>
-            <SelectItem value="vtc_taxi">🚖 Formation VTC et TAXI</SelectItem>
-            <SelectItem value="pratique_vtc">🚗 Formation pratique VTC</SelectItem>
-            <SelectItem value="pratique_taxi">🚕 Formation pratique TAXI</SelectItem>
+            {SESSION_TYPES.map((t) => (
+              <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+            ))}
           </SelectContent>
         </Select>
         <Select value={filterStatut} onValueChange={setFilterStatut}>
@@ -387,9 +370,10 @@ export function SessionsList({ onNavigateToApprenant }: { onNavigateToApprenant?
                       <h3 className="font-semibold text-lg text-foreground">
                         {session.nom || `Session du ${formatDate(session.date_debut)}`}
                       </h3>
-                      {session.type_session === 'pratique' && (
+                      {isPratiqueType(session.type_session) && (
                         <Badge className="bg-emerald-500 text-white text-xs">🚗 Pratique</Badge>
                       )}
+                      <Badge variant="secondary" className="text-xs">{getSessionTypeLabel(session.type_session)}</Badge>
                       <SessionEditor 
                         session={session} 
                         onUpdate={refetch}

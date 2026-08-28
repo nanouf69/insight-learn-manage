@@ -8,11 +8,20 @@ import { Plus, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { format, addDays, startOfWeek, eachDayOfInterval, isWeekend, differenceInCalendarDays } from "date-fns";
+import { SESSION_TYPES, isPratiqueType } from "@/lib/sessionTypes";
 
 // Mapping type_session → discipline dans l'agenda (fallback simple)
 const SESSION_TYPE_TO_DISCIPLINE: Record<string, { id: string; nom: string; color: string; formation: string }> = {
   "theorique": { id: "17", nom: "Formation VTC", color: "#16263b", formation: "Formation TAXI et VTC (TAXI/VTC)" },
+  "vtc": { id: "17", nom: "Formation VTC", color: "#16263b", formation: "Formation VTC (VTC)" },
+  "vtc_soir": { id: "17", nom: "Formation VTC", color: "#16263b", formation: "Formation VTC (VTC)" },
+  "taxi": { id: "19", nom: "Formation TAXI", color: "#f59e0b", formation: "Formation TAXI (TAXI)" },
+  "continue_vtc": { id: "18", nom: "Formation continue VTC", color: "#2563eb", formation: "Formation VTC (VTC)" },
+  "continue_taxi": { id: "20", nom: "Formation continue TAXI", color: "#f97316", formation: "Formation TAXI (TAXI)" },
   "pratique":  { id: "24", nom: "Pratique VTC",  color: "#8b5cf6", formation: "Formation VTC (VTC)" },
+  "pratique_vtc":  { id: "24", nom: "Pratique VTC",  color: "#8b5cf6", formation: "Formation VTC (VTC)" },
+  "pratique_taxi": { id: "23", nom: "Pratique TAXI", color: "#f97316", formation: "Formation TAXI (TAXI)" },
+  "mobilite_taxi": { id: "25", nom: "Mobilité TAXI", color: "#f59e0b", formation: "Formation TAXI (TAXI)" },
 };
 
 function guessFormation(nom: string | null, typeSession: string): string {
@@ -26,9 +35,10 @@ function guessFormation(nom: string | null, typeSession: string): string {
 }
 
 function guessDiscipline(nom: string | null, typeSession: string) {
-  if (!nom) return SESSION_TYPE_TO_DISCIPLINE[typeSession];
+  if (SESSION_TYPE_TO_DISCIPLINE[typeSession]) return SESSION_TYPE_TO_DISCIPLINE[typeSession];
+  if (!nom) return SESSION_TYPE_TO_DISCIPLINE["theorique"];
   const n = nom.toLowerCase();
-  if (typeSession === "pratique") {
+  if (isPratiqueType(typeSession)) {
     if (n.includes("taxi")) return { id: "23", nom: "Pratique TAXI", color: "#f97316", formation: "Formation TAXI (TAXI)" };
     return { id: "24", nom: "Pratique VTC", color: "#8b5cf6", formation: "Formation VTC (VTC)" };
   }
@@ -252,7 +262,7 @@ export function SessionForm() {
           heure_debut: heureDebut || null,
           heure_fin: heureFin || null,
           lieu,
-          places_disponibles: parseInt(places) || (typeSession === 'pratique' ? 4 : 18),
+          places_disponibles: parseInt(places) || (isPratiqueType(typeSession) ? 4 : 18),
           statut: 'planifiee',
         });
 
@@ -317,22 +327,23 @@ export function SessionForm() {
             <Label>Type de session *</Label>
             <Select value={typeSession} onValueChange={(v) => {
               setTypeSession(v);
-              if (v === 'pratique') setPlaces("4");
+              if (isPratiqueType(v)) setPlaces("4");
               else setPlaces("18");
             }}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="theorique">📚 Formation théorique</SelectItem>
-                <SelectItem value="pratique">🚗 Formation pratique</SelectItem>
+                {SESSION_TYPES.map((t) => (
+                  <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="nom">Nom de la session</Label>
-            <Input id="nom" placeholder={typeSession === 'pratique' ? "Ex: Formation pratique VTC Février 2026" : "Ex: Session Janvier 2026"} value={nom} onChange={(e) => setNom(e.target.value)} />
+            <Input id="nom" placeholder={isPratiqueType(typeSession) ? "Ex: Formation pratique VTC Février 2026" : "Ex: Session Janvier 2026"} value={nom} onChange={(e) => setNom(e.target.value)} />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -390,7 +401,7 @@ export function SessionForm() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="places">Places disponibles</Label>
-              <Input id="places" type="number" placeholder={typeSession === 'pratique' ? "4" : "18"} value={places} onChange={(e) => setPlaces(e.target.value)} />
+              <Input id="places" type="number" placeholder={isPratiqueType(typeSession) ? "4" : "18"} value={places} onChange={(e) => setPlaces(e.target.value)} />
             </div>
           </div>
 

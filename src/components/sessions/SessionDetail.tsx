@@ -54,6 +54,7 @@ import { useToast } from "@/hooks/use-toast";
 import { generateEmargementPDF } from "./EmargementGenerator";
 import { generateEmargementIndividuelPDF, AgendaDaySlot } from "./EmargementIndividuelGenerator";
 import { supabase } from "@/integrations/supabase/client";
+import { isPratiqueType } from "@/lib/sessionTypes";
 import { generateAttestationFCVTC } from "@/lib/pdf/attestation-fc-vtc";
 import { generateFactureFC } from "@/lib/pdf/facture-fc";
 import { saveFactureToCRM } from "@/lib/saveFactureToCRM";
@@ -1846,7 +1847,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       const previous = apprenantsInSession.find((x: any) => x.id === sessionApprenantId) as any;
       const wasPresent = (previous?.presence_pratique || 'present') === 'present';
       const willBePresent = updates.presence_pratique === 'present';
-      const isPratiqueSession = session?.type_session === 'pratique';
+      const isPratiqueSession = isPratiqueType(session?.type_session);
 
       const { error } = await supabase
         .from('session_apprenants')
@@ -3267,7 +3268,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       try {
         const { isTA, isVA, isTaxi, isVTC } = getSessionTrainingFlags(apprenant.type_apprenant);
         const isFCVTC = isFormationContinue && isVTC;
-        const isPratique = session.type_session === 'pratique';
+        const isPratique = isPratiqueType(session.type_session);
 
         // FORMATION PRATIQUE : on suit uniquement le planning pratique. Si l'apprenant
         // n'est pas inscrit sur une date du planning (reservations_pratique), on saute
@@ -4014,7 +4015,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                 e.stopPropagation();
                                 const { isTA, isVA, isTaxi, isVTC } = getSessionTrainingFlags(apprenant.type_apprenant);
                                 const isFCVTC = isFormationContinue && isVTC;
-                                const isPratique = session.type_session === 'pratique';
+                                const isPratique = isPratiqueType(session.type_session);
 
                                 // FORMATION PRATIQUE : ne générer l'émargement QUE si l'apprenant
                                 // est inscrit dans le planning pratique (table reservations_pratique).
@@ -4119,7 +4120,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                     return result;
                                   });
 
-                                const isPratiqueIndiv = session.type_session === 'pratique';
+                                const isPratiqueIndiv = isPratiqueType(session.type_session);
                                 const rawAgendaDays = isFCVTC
                                   ? applyFCVTCPersonalizedSchedule(
                                       agendaDays,
@@ -4369,7 +4370,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                             </SelectContent>
                           </Select>
 
-                          {session.type_session === 'pratique' && (
+                          {isPratiqueType(session.type_session) && (
                             <GrilleNotationConduite
                               apprenantId={apprenant.id}
                               apprenantNom={apprenant.nom}

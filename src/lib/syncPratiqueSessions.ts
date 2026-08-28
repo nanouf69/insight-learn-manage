@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { fetchPlanningDaySlotsForDates, normalizePratiqueCreneau, resolvePratiqueSlotParts } from "@/lib/pratiqueSlots";
+import { PRATIQUE_TYPES } from "@/lib/sessionTypes";
 
 /**
  * Synchronise les sessions "pratique" avec le planning (table reservations_pratique).
@@ -69,7 +70,7 @@ export async function syncPratiqueSessionsFromPlanning(
   const { data: sessions } = await supabase
     .from("sessions")
     .select("id, nom, date_debut, date_fin, type_session")
-    .eq("type_session", "pratique")
+    .in("type_session", PRATIQUE_TYPES)
     .gte("date_debut", dates[0])
     .lte("date_debut", dates[dates.length - 1]);
 
@@ -95,7 +96,7 @@ export async function syncPratiqueSessionsFromPlanning(
         .from("sessions")
         .insert({
           nom,
-          type_session: "pratique",
+          type_session: `pratique_${type.toLowerCase()}`,
           date_debut: date,
           date_fin: date,
           heure_debut: sessionStart,
@@ -216,7 +217,7 @@ export async function checkPratiqueSessionsCoherence(
   let sessionsQuery = supabase
     .from("sessions")
     .select("id, nom, date_debut")
-    .eq("type_session", "pratique");
+    .in("type_session", PRATIQUE_TYPES);
   if (fromDate) sessionsQuery = sessionsQuery.gte("date_debut", fromDate);
   const { data: sessions } = await sessionsQuery;
 

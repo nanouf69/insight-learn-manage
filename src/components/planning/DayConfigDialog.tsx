@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { PRATIQUE_TYPES } from "@/lib/sessionTypes";
 
 export type DayType = "formation_vtc" | "formation_taxi" | "examen_vtc" | "examen_taxi";
 
@@ -118,19 +119,20 @@ export function DayConfigDialog({ open, onClose, date, initialType, initialSlots
         await supabase
           .from("sessions")
           .delete()
-          .eq("type_session", "pratique")
+          .in("type_session", PRATIQUE_TYPES)
           .eq("date_debut", dateKey);
         toast.success(`✅ ${validSlots.length} candidat(s) inscrit(s) à l'examen ${isTaxi ? "TAXI" : "VTC"}`);
       } else {
         // Formation pratique : créer/maj une session
         const sessionType = isTaxi ? "TAXI" : "VTC";
+        const sessionTypeValue = isTaxi ? "pratique_taxi" : "pratique_vtc";
         const sessionNom = `Formation pratique ${sessionType} - ${date.toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" })}`;
 
         // Chercher session existante ce jour-là
         const { data: existing } = await supabase
           .from("sessions")
           .select("id")
-          .eq("type_session", "pratique")
+          .in("type_session", PRATIQUE_TYPES)
           .eq("date_debut", dateKey)
           .maybeSingle();
 
@@ -138,7 +140,7 @@ export function DayConfigDialog({ open, onClose, date, initialType, initialSlots
         if (sessionId) {
           await supabase
             .from("sessions")
-            .update({ nom: sessionNom })
+            .update({ nom: sessionNom, type_session: sessionTypeValue })
             .eq("id", sessionId);
           // Purger les liens existants
           await supabase.from("session_apprenants").delete().eq("session_id", sessionId);
@@ -147,7 +149,7 @@ export function DayConfigDialog({ open, onClose, date, initialType, initialSlots
             .from("sessions")
             .insert({
               nom: sessionNom,
-              type_session: "pratique",
+              type_session: sessionTypeValue,
               date_debut: dateKey,
               date_fin: dateKey,
               statut: "planifiee",
