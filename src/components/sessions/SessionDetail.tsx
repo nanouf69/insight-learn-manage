@@ -1295,6 +1295,28 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       return rows.sort((a, b) => new Date(b.sentAt).getTime() - new Date(a.sentAt).getTime());
     }, [apprenantsInSession, identifiantsSent]);
 
+    // Présence d'un dossier de bienvenue complété par apprenant
+    const { data: dossiersBienvenue = [] } = useQuery({
+      queryKey: ['dossiers-bienvenue', session?.id, apprenantsInSession.map((sa: any) => sa.apprenant?.id).join(',')],
+      queryFn: async () => {
+        const apprenantIds = apprenantsInSession
+          .map((sa: any) => sa.apprenant?.id)
+          .filter(Boolean);
+        if (apprenantIds.length === 0) return [];
+        const { data, error } = await supabase
+          .from('apprenant_documents_completes')
+          .select('apprenant_id')
+          .in('apprenant_id', apprenantIds)
+          .eq('type_document', 'dossier-bienvenue');
+        if (error) throw error;
+        return data || [];
+      },
+      enabled: !!session?.id && open && apprenantsInSession.length > 0,
+    });
+
+    const dossierBienvenueIds = useMemo(() => new Set(dossiersBienvenue.map((d: any) => d.apprenant_id)), [dossiersBienvenue]);
+    const hasDossierBienvenue = (apprenantId: string) => dossierBienvenueIds.has(apprenantId);
+
     // Télécharge le dossier de bienvenue (PDF) d'un apprenant
     const downloadDossierBienvenue = async (apprenant: any) => {
       try {
@@ -3862,9 +3884,14 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                             type="button"
                             size="sm"
                             variant="outline"
-                            className="h-6 text-[11px] px-2 gap-1 border-blue-200 text-blue-700 hover:bg-blue-50 hover:text-blue-800"
+                            className={cn(
+                              "h-6 text-[11px] px-2 gap-1",
+                              hasDossierBienvenue(apprenant.id)
+                                ? "border-green-200 text-green-700 bg-green-50 hover:bg-green-100 hover:text-green-800"
+                                : "border-red-200 text-red-700 bg-red-50 hover:bg-red-100 hover:text-red-800"
+                            )}
                             onClick={(e) => { e.stopPropagation(); downloadDossierBienvenue(apprenant); }}
-                            title="Télécharger le dossier de bienvenue en PDF"
+                            title={hasDossierBienvenue(apprenant.id) ? "Dossier présent — télécharger le PDF" : "Dossier absent — cliquer pour vérifier"}
                           >
                             <FileText className="w-3 h-3" />
                             Dossier de bienvenue
