@@ -119,7 +119,7 @@ export function EmargementsManquants({ onNavigateToApprenant }: Props) {
       for (const sa of (sessionAppr || []) as any[]) {
         const sess = sa.session;
         if (!sess) continue;
-        if (sess.type_session && sess.type_session !== "theorique") continue;
+        if (sess.type_session && isPratiqueType(sess.type_session)) continue;
         const start = (sa.date_debut && sa.date_debut > sess.date_debut ? sa.date_debut : sess.date_debut) as string;
         const endRaw = sa.date_fin_personnalisee || sa.date_fin || sess.date_fin;
         const end = (endRaw && endRaw < sess.date_fin ? endRaw : sess.date_fin) as string;
