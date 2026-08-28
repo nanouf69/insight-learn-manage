@@ -1534,6 +1534,8 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   // Envoi des identifiants de connexion (e-learning) à un apprenant
   const [sendingCredentialsFor, setSendingCredentialsFor] = useState<string | null>(null);
   const [bulkSendingCredentials, setBulkSendingCredentials] = useState(false);
+  const [bulkResendingCredentials, setBulkResendingCredentials] = useState(false);
+
 
   const sendCredentialsToApprenant = async (apprenant: any): Promise<boolean> => {
     if (!apprenant?.email) {
