@@ -909,6 +909,10 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
                   </CardContent>
                 </Card>
 
+                <FinancementApprenantCard apprenant={apprenant} />
+
+
+
               </div>
             </div>
           )}
