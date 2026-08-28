@@ -1295,6 +1295,28 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       return rows.sort((a, b) => new Date(b.sentAt).getTime() - new Date(a.sentAt).getTime());
     }, [apprenantsInSession, identifiantsSent]);
 
+    // Présence d'un dossier de bienvenue complété par apprenant
+    const { data: dossiersBienvenue = [] } = useQuery({
+      queryKey: ['dossiers-bienvenue', session?.id, apprenantsInSession.map((sa: any) => sa.apprenant?.id).join(',')],
+      queryFn: async () => {
+        const apprenantIds = apprenantsInSession
+          .map((sa: any) => sa.apprenant?.id)
+          .filter(Boolean);
+        if (apprenantIds.length === 0) return [];
+        const { data, error } = await supabase
+          .from('apprenant_documents_completes')
+          .select('apprenant_id')
+          .in('apprenant_id', apprenantIds)
+          .eq('type_document', 'dossier-bienvenue');
+        if (error) throw error;
+        return data || [];
+      },
+      enabled: !!session?.id && open && apprenantsInSession.length > 0,
+    });
+
+    const dossierBienvenueIds = useMemo(() => new Set(dossiersBienvenue.map((d: any) => d.apprenant_id)), [dossiersBienvenue]);
+    const hasDossierBienvenue = (apprenantId: string) => dossierBienvenueIds.has(apprenantId);
+
     // Télécharge le dossier de bienvenue (PDF) d'un apprenant
     const downloadDossierBienvenue = async (apprenant: any) => {
       try {
