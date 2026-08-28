@@ -3103,6 +3103,41 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     setEmailPreview({ templateId, apprenant, subject, body, label: template.label });
   };
 
+  // Relance dossier de bienvenue : reprend le modèle "relance-dossier-bienvenue"
+  // et ajoute l'avertissement "aucun document reçu" + désinscription + passage au bureau.
+  const handlePreviewRelanceBienvenue = (apprenant: any) => {
+    if (!apprenant.email) {
+      toast({
+        title: "Pas d'email",
+        description: `${apprenant.prenom} ${apprenant.nom} n'a pas d'adresse email.`,
+        variant: "destructive",
+      });
+      return;
+    }
+    const template = emailTemplates.find((t: any) => t.id === 'relance-dossier-bienvenue');
+    if (!template) {
+      toast({ title: "Modèle introuvable", description: "Le mail type « relance-dossier-bienvenue » est introuvable.", variant: "destructive" });
+      return;
+    }
+
+    const warningBlock = `
+      <div style="margin:16px 0;padding:14px 16px;border:2px solid #dc2626;border-radius:8px;background:#fef2f2;color:#991b1b;">
+        <p style="margin:0 0 8px 0;font-weight:bold;">⚠️ Nous n'avons reçu aucun document de votre part pour vous inscrire à l'examen.</p>
+        <p style="margin:0 0 8px 0;">Si vous ne remplissez pas le dossier de bienvenue, nous ne pourrons pas vous inscrire à l'examen et nous serons contraints de vous désinscrire.</p>
+        <p style="margin:0;">Si vous rencontrez des difficultés, vous pouvez passer au bureau <strong>en nous appelant au préalable au 04 28 29 60 91</strong>.</p>
+      </div>`;
+
+    const subject = replaceTemplateVars(template.subject_template, apprenant);
+    let body = replaceTemplateVars(template.body_template, apprenant);
+    // Insérer l'avertissement juste après le premier paragraphe (salutations), sinon en tête
+    const firstPEnd = body.indexOf('</p>');
+    body = firstPEnd !== -1
+      ? body.slice(0, firstPEnd + 4) + warningBlock + body.slice(firstPEnd + 4)
+      : warningBlock + body;
+
+    setEmailPreview({ templateId: 'relance-dossier-bienvenue', apprenant, subject, body, label: 'Relance dossier de bienvenue' });
+  };
+
   const handleConfirmSendEmail = async () => {
     if (!emailPreview) return;
     const { apprenant, subject, body } = emailPreview;
@@ -3904,6 +3939,17 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                           >
                             <FileText className="w-3 h-3" />
                             Dossier de bienvenue
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="h-6 text-[11px] px-2 gap-1 border-orange-200 text-orange-700 bg-orange-50 hover:bg-orange-100 hover:text-orange-800"
+                            onClick={(e) => { e.stopPropagation(); handlePreviewRelanceBienvenue(apprenant); }}
+                            title="Relance dossier de bienvenue — aperçu avant envoi"
+                          >
+                            <Mail className="w-3 h-3" />
+                            Relance
                           </Button>
                           <Button 
                             size="sm" 
