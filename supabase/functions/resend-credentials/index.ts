@@ -54,8 +54,8 @@ serve(async (req) => {
       });
     }
 
-    const { apprenant_id } = await req.json();
-    console.log("[resend-credentials] request", { apprenant_id });
+    const { apprenant_id, reset_password = false } = await req.json();
+    console.log("[resend-credentials] request", { apprenant_id, reset_password });
 
     if (!apprenant_id) {
       return new Response(
@@ -104,35 +104,44 @@ serve(async (req) => {
       Object.assign(apprenant, accessUpdates);
     }
 
-    // Generate new password
-    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
-    let newPassword = "";
-    const randomBytes = new Uint8Array(8);
-    crypto.getRandomValues(randomBytes);
-    for (let i = 0; i < 8; i++) {
-      newPassword += chars[randomBytes[i] % chars.length];
+    let newPassword: string | null = null;
+    if (reset_password) {
+      // Generate new password only when explicitly requested
+      const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
+      let generated = "";
+      const randomBytes = new Uint8Array(8);
+      crypto.getRandomValues(randomBytes);
+      for (let i = 0; i < 8; i++) {
+        generated += chars[randomBytes[i] % chars.length];
+      }
+      newPassword = generated;
     }
 
-    // Sync auth email with apprenant email + update password
+    // Sync auth email with apprenant email and update password only if requested
     // (évite que l'email reçu affiche un email différent de celui du compte de connexion)
     const { data: authUserData } = await supabaseAdmin.auth.admin.getUserById(apprenant.auth_user_id);
     const currentAuthEmail = authUserData?.user?.email?.toLowerCase().trim();
     const targetEmail = apprenant.email.toLowerCase().trim();
-    const updatePayload: { password: string; email?: string; email_confirm?: boolean } = { password: newPassword };
+    const updatePayload: { password?: string; email?: string; email_confirm?: boolean } = {};
+    if (newPassword) {
+      updatePayload.password = newPassword;
+    }
     if (currentAuthEmail && currentAuthEmail !== targetEmail) {
       updatePayload.email = targetEmail;
       updatePayload.email_confirm = true;
     }
-    const { error: updateErr } = await supabaseAdmin.auth.admin.updateUserById(
-      apprenant.auth_user_id,
-      updatePayload
-    );
-
-    if (updateErr) {
-      return new Response(
-        JSON.stringify({ error: updateErr.message }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    if (Object.keys(updatePayload).length > 0) {
+      const { error: updateErr } = await supabaseAdmin.auth.admin.updateUserById(
+        apprenant.auth_user_id,
+        updatePayload
       );
+
+      if (updateErr) {
+        return new Response(
+          JSON.stringify({ error: updateErr.message }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
     }
 
     // Send email via Outlook
