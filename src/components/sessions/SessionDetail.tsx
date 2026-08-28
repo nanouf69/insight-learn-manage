@@ -3884,9 +3884,14 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                             type="button"
                             size="sm"
                             variant="outline"
-                            className="h-6 text-[11px] px-2 gap-1 border-blue-200 text-blue-700 hover:bg-blue-50 hover:text-blue-800"
+                            className={cn(
+                              "h-6 text-[11px] px-2 gap-1",
+                              hasDossierBienvenue(apprenant.id)
+                                ? "border-green-200 text-green-700 bg-green-50 hover:bg-green-100 hover:text-green-800"
+                                : "border-red-200 text-red-700 bg-red-50 hover:bg-red-100 hover:text-red-800"
+                            )}
                             onClick={(e) => { e.stopPropagation(); downloadDossierBienvenue(apprenant); }}
-                            title="Télécharger le dossier de bienvenue en PDF"
+                            title={hasDossierBienvenue(apprenant.id) ? "Dossier présent — télécharger le PDF" : "Dossier absent — cliquer pour vérifier"}
                           >
                             <FileText className="w-3 h-3" />
                             Dossier de bienvenue
