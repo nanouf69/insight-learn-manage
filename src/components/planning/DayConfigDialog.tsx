@@ -125,6 +125,7 @@ export function DayConfigDialog({ open, onClose, date, initialType, initialSlots
       } else {
         // Formation pratique : créer/maj une session
         const sessionType = isTaxi ? "TAXI" : "VTC";
+        const sessionTypeValue = isTaxi ? "pratique_taxi" : "pratique_vtc";
         const sessionNom = `Formation pratique ${sessionType} - ${date.toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" })}`;
 
         // Chercher session existante ce jour-là
@@ -139,7 +140,7 @@ export function DayConfigDialog({ open, onClose, date, initialType, initialSlots
         if (sessionId) {
           await supabase
             .from("sessions")
-            .update({ nom: sessionNom })
+            .update({ nom: sessionNom, type_session: sessionTypeValue })
             .eq("id", sessionId);
           // Purger les liens existants
           await supabase.from("session_apprenants").delete().eq("session_id", sessionId);
@@ -148,7 +149,7 @@ export function DayConfigDialog({ open, onClose, date, initialType, initialSlots
             .from("sessions")
             .insert({
               nom: sessionNom,
-              type_session: "pratique",
+              type_session: sessionTypeValue,
               date_debut: dateKey,
               date_fin: dateKey,
               statut: "planifiee",
