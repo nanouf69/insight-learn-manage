@@ -1593,6 +1593,37 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     });
   };
 
+  const handleResendCredentialsAll = async () => {
+    const cibles = apprenantsInSession
+      .map((sa: any) => sa.apprenant)
+      .filter((a: any) => a && a.email);
+    if (cibles.length === 0) {
+      toast({ title: "Aucun apprenant avec email dans cette session" });
+      return;
+    }
+    if (!window.confirm(`Renvoyer les identifiants de connexion à ${cibles.length} apprenant(s) de la session ?`)) return;
+    setBulkResendingCredentials(true);
+    let ok = 0;
+    const echecs: string[] = [];
+    for (const a of cibles) {
+      try {
+        const sent = await sendCredentialsToApprenant(a);
+        if (sent) ok++;
+        else echecs.push(`${a.nom} ${a.prenom}`);
+      } catch {
+        echecs.push(`${a.nom} ${a.prenom}`);
+      }
+    }
+    queryClient.invalidateQueries({ queryKey: ['identifiants-sent'] });
+    setBulkResendingCredentials(false);
+    toast({
+      title: `Identifiants renvoyés à ${ok}/${cibles.length} apprenant(s)`,
+      description: echecs.length > 0 ? `Échecs : ${echecs.join(', ')}` : undefined,
+      variant: echecs.length > 0 ? "destructive" : undefined,
+    });
+  };
+
+
 
 
   if (!session) return null;
