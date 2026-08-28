@@ -987,6 +987,7 @@ function EcranResultats({
               onClick={() => {
                 setPendingWrongRevisionCount(null);
                 onRefaireFausses();
+                window.scrollTo({ top: 0, behavior: "smooth" });
               }}
               className="w-full sm:w-auto"
             >
@@ -1034,7 +1035,7 @@ function EcranResultats({
           Retour aux examens
         </Button>
         {canRetry && (
-          <Button onClick={() => { if (window.confirm("Êtes-vous sûr de vouloir tout recommencer ? Votre progression actuelle sera perdue.")) onRecommencer(); }} className="flex-1 gap-2">
+          <Button onClick={() => { if (window.confirm("Êtes-vous sûr de vouloir tout recommencer ? Votre progression actuelle sera perdue.")) { onRecommencer(); window.scrollTo({ top: 0, behavior: "smooth" }); } }} className="flex-1 gap-2">
             <RotateCcw className="w-4 h-4" />
             Recommencer
           </Button>
