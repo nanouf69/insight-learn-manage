@@ -15,6 +15,7 @@ import {
   FileSignature,
   CheckCircle2,
   Download,
+  MailPlus,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -308,6 +309,39 @@ export function DocumentsASigner() {
     }
   };
 
+  const [resendingId, setResendingId] = useState<string | null>(null);
+
+  const renvoyer = async (doc: DocRow) => {
+    if (!doc.destinataire_email) {
+      toast({ title: "Aucun destinataire", description: "Ouvrez le document pour renseigner une adresse email.", variant: "destructive" });
+      return;
+    }
+    setResendingId(doc.id);
+    try {
+      const lien = lienSignature(doc.token);
+      const { error } = await supabase.functions.invoke("send-document-email", {
+        body: {
+          recipientEmail: doc.destinataire_email,
+          recipientName: doc.destinataire_nom || doc.destinataire_email,
+          senderEmail: expediteur,
+          subject: `Rappel — Document à compléter et signer : ${doc.nom}`,
+          htmlBody: `Bonjour ${doc.destinataire_nom || ""},<br><br>Nous vous rappelons que le document <strong>${doc.nom}</strong> est en attente de signature. Merci de le compléter et de le signer en cliquant sur le lien sécurisé ci-dessous :<br><br><a href="${lien}">${lien}</a><br><br>Cordialement,`,
+        },
+      });
+      if (error) throw error;
+      await supabase
+        .from("documents_a_signer")
+        .update({ statut: "envoye", sent_at: new Date().toISOString() })
+        .eq("id", doc.id);
+      toast({ title: "Renvoyé", description: `Rappel envoyé à ${doc.destinataire_email}` });
+      chargerDocs();
+    } catch (e: any) {
+      toast({ title: "Renvoi impossible", description: e.message, variant: "destructive" });
+    } finally {
+      setResendingId(null);
+    }
+  };
+
   const supprimer = async (doc: DocRow) => {
     if (!window.confirm(`Supprimer « ${doc.nom} » ?`)) return;
     await supabase.storage.from("documents-a-signer").remove([doc.file_path]);
@@ -359,6 +393,23 @@ export function DocumentsASigner() {
                   </p>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    title="Renvoyer le lien de signature par email"
+                    disabled={resendingId === doc.id}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      renvoyer(doc);
+                    }}
+                  >
+                    {resendingId === doc.id ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <MailPlus className="h-3.5 w-3.5" />
+                    )}
+                  </Button>
                   <Button
                     variant="ghost"
                     size="icon"
