@@ -1248,6 +1248,18 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   const hasBienvenueEmail = (apprenantId: string) => bienvenueApprenantIds.has(apprenantId);
   const hasPreInfoEmail = (apprenantId: string) => preInfoApprenantIds.has(apprenantId);
 
+  const relanceBienvenueApprenantIds = useMemo(
+    () =>
+      new Set(
+        sentSessionEmails
+          .filter((e: any) => normalizeSubj(e.subject).includes('relance'))
+          .map((e: any) => e.apprenant_id)
+          .filter(Boolean)
+      ),
+    [sentSessionEmails]
+  );
+  const hasRelanceBienvenueEmail = (apprenantId: string) => relanceBienvenueApprenantIds.has(apprenantId);
+
 
    // Charger les identifiants envoyés pour les apprenants de cette session
     const { data: identifiantsSent = [] } = useQuery({
