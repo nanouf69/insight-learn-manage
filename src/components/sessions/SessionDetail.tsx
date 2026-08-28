@@ -3940,6 +3940,17 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                             <FileText className="w-3 h-3" />
                             Dossier de bienvenue
                           </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="h-6 text-[11px] px-2 gap-1 border-orange-200 text-orange-700 bg-orange-50 hover:bg-orange-100 hover:text-orange-800"
+                            onClick={(e) => { e.stopPropagation(); handlePreviewRelanceBienvenue(apprenant); }}
+                            title="Relance dossier de bienvenue — aperçu avant envoi"
+                          >
+                            <Mail className="w-3 h-3" />
+                            Relance
+                          </Button>
                           <Button 
                             size="sm" 
                             variant="ghost" 
