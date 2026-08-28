@@ -8,7 +8,7 @@ import { Plus, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { format, addDays, startOfWeek, eachDayOfInterval, isWeekend, differenceInCalendarDays } from "date-fns";
-import { SESSION_TYPES, isPratiqueType } from "@/lib/sessionTypes";
+import { SESSION_TYPES, SESSION_TYPE_OPTIONS, SESSION_NOM_OPTIONS, isPratiqueType } from "@/lib/sessionTypes";
 
 // Mapping type_session → discipline dans l'agenda (fallback simple)
 const SESSION_TYPE_TO_DISCIPLINE: Record<string, { id: string; nom: string; color: string; formation: string }> = {
