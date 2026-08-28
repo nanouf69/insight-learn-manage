@@ -15,6 +15,7 @@ import {
   FileSignature,
   CheckCircle2,
   Download,
+  MailPlus,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
