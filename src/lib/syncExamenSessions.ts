@@ -67,11 +67,12 @@ export async function syncExamenSessions(): Promise<SyncExamenResult> {
     if (!iso) continue;
     result.datesChecked++;
 
-    const inscrits = (apprenants || []).filter(
-      (a: any) =>
-        isElearningType(a.type_apprenant) &&
-        deaccent(String(a.date_examen_theorique || "")) === deaccent(exam.date),
-    );
+    const inscrits = (apprenants || []).filter((a: any) => {
+      const statut = deaccent(String(a.statut || ""));
+      if (["prospect", "annule", "abandon", "desinscrit"].includes(statut)) return false;
+      return deaccent(String(a.date_examen_theorique || "")) === deaccent(exam.date);
+    });
+
 
     const nom = `Session examen — ${exam.date}`;
 
