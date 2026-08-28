@@ -1543,7 +1543,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       return false;
     }
     const { data, error } = await supabase.functions.invoke("resend-credentials", {
-      body: { apprenant_id: apprenant.id },
+      body: { apprenant_id: apprenant.id, reset_password: false },
     });
     if (error) throw error;
     // La fonction journalise elle-même l'email envoyé : ne rien tracer si l'envoi a échoué,
