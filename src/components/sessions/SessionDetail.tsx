@@ -1321,6 +1321,13 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
 
     // Télécharge le dossier de bienvenue (PDF) d'un apprenant
     const downloadDossierBienvenue = async (apprenant: any) => {
+      if (apprenant.documents_complets) {
+        toast({
+          title: "Possession des documents",
+          description: `${apprenant.prenom} ${apprenant.nom} a confirmé posséder tous les documents.`,
+        });
+        return;
+      }
       try {
         const { data, error } = await supabase
           .from("apprenant_documents_completes")
