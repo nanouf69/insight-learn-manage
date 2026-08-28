@@ -300,11 +300,15 @@ export function SessionsList({ onNavigateToApprenant }: { onNavigateToApprenant?
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="tous">Toutes les formations</SelectItem>
-            {SESSION_TYPES.map((t) => (
+            {SESSION_TYPE_OPTIONS.map((t) => (
               <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+            ))}
+            {SESSION_NOM_OPTIONS.map((n) => (
+              <SelectItem key={n} value={`nom:${n}`}>{n}</SelectItem>
             ))}
           </SelectContent>
         </Select>
+
         <Select value={filterStatut} onValueChange={setFilterStatut}>
           <SelectTrigger className="w-[160px]">
             <SelectValue placeholder="Statut" />
