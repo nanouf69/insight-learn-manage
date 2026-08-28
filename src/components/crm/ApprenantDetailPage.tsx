@@ -38,6 +38,7 @@ import { ApprenantEditForm } from "@/components/apprenants/ApprenantEditForm";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { getAvatarUrl } from "@/lib/avatarUrl";
+import { FinancementApprenantCard } from "@/components/crm/apprenant-sections/FinancementApprenantCard";
 import { useApprenantTauxRealisation } from "@/hooks/useApprenantTauxRealisation";
 
 import { ALL_MODULES, FORMATION_MODULES, MANAGED_MODULE_IDS, DEFAULT_MODULES_BY_TYPE } from "@/components/cours-en-ligne/modules-config";
@@ -908,6 +909,10 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
                     )}
                   </CardContent>
                 </Card>
+
+                <FinancementApprenantCard apprenant={apprenant} />
+
+
 
               </div>
             </div>
