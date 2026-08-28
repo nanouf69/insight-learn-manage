@@ -300,12 +300,17 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        password: newPassword,
+        password: reset_password ? newPassword : undefined,
+        reset_password,
         email: apprenant.email,
         emailSent,
         message: emailSent
-          ? `Identifiants renvoyés à ${apprenant.email}`
-          : `Mot de passe réinitialisé mais l'email n'a pas pu être envoyé`,
+          ? reset_password
+            ? `Identifiants renvoyés à ${apprenant.email} avec un nouveau mot de passe`
+            : `Rappel de connexion envoyé à ${apprenant.email} (mot de passe inchangé)`
+          : reset_password
+            ? `Mot de passe réinitialisé mais l'email n'a pas pu être envoyé`
+            : `Rappel non envoyé`,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
