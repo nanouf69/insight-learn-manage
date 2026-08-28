@@ -492,7 +492,15 @@ const GrilleNotationConduite = ({
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="grille-passage">Passage</Label>
-                <Select value={passage} onValueChange={setPassage} disabled={readOnly}>
+<Select value={passage} onValueChange={(v) => {
+                  setPassage(v);
+                  // Changement de passage = nouveau formulaire vierge
+                  setGrilleId(null);
+                  setCoches({});
+                  setObservations("");
+                  setAvis(null);
+                  setTempsPreparation("");
+                }} disabled={readOnly}>
                   <SelectTrigger id="grille-passage">
                     <SelectValue placeholder="Sélectionner le passage" />
                   </SelectTrigger>
