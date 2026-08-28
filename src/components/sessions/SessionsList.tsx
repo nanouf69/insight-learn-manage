@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, Users, MapPin, Loader2, Copy, Trophy, Trash2, Search, X, Clock } from "lucide-react";
+import { Calendar, Users, MapPin, Loader2, Copy, Trophy, Trash2, Search, X, Clock, GraduationCap, RefreshCw } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { SessionForm } from "./SessionForm";
 import { SessionDetail } from "./SessionDetail";
@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
+import { syncExamenSessions } from "@/lib/syncExamenSessions";
 import { SESSION_TYPES, SESSION_TYPE_OPTIONS, SESSION_NOM_OPTIONS, isPratiqueType, getSessionTypeLabel } from "@/lib/sessionTypes";
 
 interface Session {
@@ -220,6 +221,25 @@ export function SessionsList({ onNavigateToApprenant }: { onNavigateToApprenant?
 
   const hasActiveFilters = search || filterStatut !== "tous" || filterType !== "tous";
 
+  const [syncingExamens, setSyncingExamens] = useState(false);
+
+  const handleSyncExamens = async () => {
+    setSyncingExamens(true);
+    try {
+      const res = await syncExamenSessions();
+      toast({
+        title: "Sessions examen synchronisées",
+        description: `${res.sessionsCreated} session(s) créée(s), ${res.apprenantsAdded} apprenant(s) e-learning ajouté(s) sur ${res.datesChecked} date(s) d'examen.${res.errors.length ? ` ${res.errors.length} erreur(s).` : ""}`,
+        variant: res.errors.length ? "destructive" : "default",
+      });
+      refetch();
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally {
+      setSyncingExamens(false);
+    }
+  };
+
   const openSessionDetail = (session: Session) => {
     navigate(`/sessions/${session.id}`, { state: { from: window.location.search.includes("section=") ? window.location.pathname + window.location.search : "/?section=sessions" } });
   };
@@ -293,7 +313,13 @@ export function SessionsList({ onNavigateToApprenant }: { onNavigateToApprenant?
           <h1 className="text-2xl font-bold text-foreground">Sessions</h1>
           <p className="text-muted-foreground">Gérez vos sessions de formation</p>
         </div>
-        <SessionForm />
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={handleSyncExamens} disabled={syncingExamens}>
+            {syncingExamens ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <GraduationCap className="h-4 w-4 mr-2" />}
+            Sessions examen (e-learning)
+          </Button>
+          <SessionForm />
+        </div>
       </div>
 
       {/* Filtres */}
