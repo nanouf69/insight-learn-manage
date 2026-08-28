@@ -222,7 +222,11 @@ serve(async (req) => {
                 <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0; border-radius: 4px;">
                   <h3 style="color: #92400e; margin-top: 0;">🔐 Vos identifiants de connexion</h3>
                   <p><strong>Email :</strong> ${apprenant.email}</p>
-                  <p><strong>Nouveau mot de passe :</strong> <code style="background: #e5e7eb; padding: 2px 8px; border-radius: 4px; font-size: 16px; letter-spacing: 1px;">${newPassword}</code></p>
+                  ${reset_password
+                    ? `<p><strong>Nouveau mot de passe :</strong> <code style="background: #e5e7eb; padding: 2px 8px; border-radius: 4px; font-size: 16px; letter-spacing: 1px;">${newPassword}</code></p>`
+                    : `<p><strong>Mot de passe :</strong> inchangé</p>
+                   <p style="margin-top: 10px; color: #92400e;">Utilisez votre mot de passe habituel pour vous connecter. Si vous l'avez oublié, utilisez la fonction <strong>« Mot de passe oublié »</strong> sur la page de connexion ou contactez votre formateur.</p>`
+                  }
                 </div>
 
                 <p style="color: #6b7280; font-size: 14px;">🔑 Vous pouvez modifier votre mot de passe à tout moment depuis votre espace apprenant.</p>
