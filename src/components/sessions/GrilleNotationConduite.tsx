@@ -72,6 +72,7 @@ const THEMES: Theme[] = [
     titre: "4. Connaissance de la ville",
     criteres: [
       { id: "ville", label: "Ne connaît pas suffisamment la ville" },
+      { id: "destination", label: "N'est pas arrivé à destination" },
     ],
   },
   {
