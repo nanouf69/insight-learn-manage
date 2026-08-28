@@ -1543,7 +1543,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       return false;
     }
     const { data, error } = await supabase.functions.invoke("resend-credentials", {
-      body: { apprenant_id: apprenant.id },
+      body: { apprenant_id: apprenant.id, reset_password: false },
     });
     if (error) throw error;
     // La fonction journalise elle-même l'email envoyé : ne rien tracer si l'envoi a échoué,
@@ -5715,7 +5715,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                     setResendingCredentials(true);
                     try {
                       const { data, error } = await supabase.functions.invoke("resend-credentials", {
-                        body: { apprenant_id: accountDialogApprenant.id },
+                        body: { apprenant_id: accountDialogApprenant.id, reset_password: false },
                       });
                       if (error) throw error;
                       if (!(data as any)?.emailSent) throw new Error((data as any)?.message || "Envoi email impossible");

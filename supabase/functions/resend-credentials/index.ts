@@ -54,8 +54,8 @@ serve(async (req) => {
       });
     }
 
-    const { apprenant_id } = await req.json();
-    console.log("[resend-credentials] request", { apprenant_id });
+    const { apprenant_id, reset_password = false } = await req.json();
+    console.log("[resend-credentials] request", { apprenant_id, reset_password });
 
     if (!apprenant_id) {
       return new Response(
@@ -104,35 +104,44 @@ serve(async (req) => {
       Object.assign(apprenant, accessUpdates);
     }
 
-    // Generate new password
-    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
-    let newPassword = "";
-    const randomBytes = new Uint8Array(8);
-    crypto.getRandomValues(randomBytes);
-    for (let i = 0; i < 8; i++) {
-      newPassword += chars[randomBytes[i] % chars.length];
+    let newPassword: string | null = null;
+    if (reset_password) {
+      // Generate new password only when explicitly requested
+      const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
+      let generated = "";
+      const randomBytes = new Uint8Array(8);
+      crypto.getRandomValues(randomBytes);
+      for (let i = 0; i < 8; i++) {
+        generated += chars[randomBytes[i] % chars.length];
+      }
+      newPassword = generated;
     }
 
-    // Sync auth email with apprenant email + update password
+    // Sync auth email with apprenant email and update password only if requested
     // (évite que l'email reçu affiche un email différent de celui du compte de connexion)
     const { data: authUserData } = await supabaseAdmin.auth.admin.getUserById(apprenant.auth_user_id);
     const currentAuthEmail = authUserData?.user?.email?.toLowerCase().trim();
     const targetEmail = apprenant.email.toLowerCase().trim();
-    const updatePayload: { password: string; email?: string; email_confirm?: boolean } = { password: newPassword };
+    const updatePayload: { password?: string; email?: string; email_confirm?: boolean } = {};
+    if (newPassword) {
+      updatePayload.password = newPassword;
+    }
     if (currentAuthEmail && currentAuthEmail !== targetEmail) {
       updatePayload.email = targetEmail;
       updatePayload.email_confirm = true;
     }
-    const { error: updateErr } = await supabaseAdmin.auth.admin.updateUserById(
-      apprenant.auth_user_id,
-      updatePayload
-    );
-
-    if (updateErr) {
-      return new Response(
-        JSON.stringify({ error: updateErr.message }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    if (Object.keys(updatePayload).length > 0) {
+      const { error: updateErr } = await supabaseAdmin.auth.admin.updateUserById(
+        apprenant.auth_user_id,
+        updatePayload
       );
+
+      if (updateErr) {
+        return new Response(
+          JSON.stringify({ error: updateErr.message }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
     }
 
     // Send email via Outlook
@@ -213,7 +222,11 @@ serve(async (req) => {
                 <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0; border-radius: 4px;">
                   <h3 style="color: #92400e; margin-top: 0;">🔐 Vos identifiants de connexion</h3>
                   <p><strong>Email :</strong> ${apprenant.email}</p>
-                  <p><strong>Nouveau mot de passe :</strong> <code style="background: #e5e7eb; padding: 2px 8px; border-radius: 4px; font-size: 16px; letter-spacing: 1px;">${newPassword}</code></p>
+                  ${reset_password
+                    ? `<p><strong>Nouveau mot de passe :</strong> <code style="background: #e5e7eb; padding: 2px 8px; border-radius: 4px; font-size: 16px; letter-spacing: 1px;">${newPassword}</code></p>`
+                    : `<p><strong>Mot de passe :</strong> inchangé</p>
+                   <p style="margin-top: 10px; color: #92400e;">Utilisez votre mot de passe habituel pour vous connecter. Si vous l'avez oublié, utilisez la fonction <strong>« Mot de passe oublié »</strong> sur la page de connexion ou contactez votre formateur.</p>`
+                  }
                 </div>
 
                 <p style="color: #6b7280; font-size: 14px;">🔑 Vous pouvez modifier votre mot de passe à tout moment depuis votre espace apprenant.</p>
@@ -287,12 +300,17 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        password: newPassword,
+        password: reset_password ? newPassword : undefined,
+        reset_password,
         email: apprenant.email,
         emailSent,
         message: emailSent
-          ? `Identifiants renvoyés à ${apprenant.email}`
-          : `Mot de passe réinitialisé mais l'email n'a pas pu être envoyé`,
+          ? reset_password
+            ? `Identifiants renvoyés à ${apprenant.email} avec un nouveau mot de passe`
+            : `Rappel de connexion envoyé à ${apprenant.email} (mot de passe inchangé)`
+          : reset_password
+            ? `Mot de passe réinitialisé mais l'email n'a pas pu être envoyé`
+            : `Rappel non envoyé`,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

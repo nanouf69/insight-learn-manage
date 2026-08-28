@@ -493,7 +493,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
                   setResendingCredentials(true);
                   try {
                     const { error } = await supabase.functions.invoke("resend-credentials", {
-                      body: { apprenant_id: apprenantId },
+                      body: { apprenant_id: apprenantId, reset_password: false },
                     });
                     if (error) throw error;
                     toast.success("Identifiants renvoyés par email");
@@ -725,7 +725,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
                       setResendingCredentials(true);
                       try {
                         const { error } = await supabase.functions.invoke("resend-credentials", {
-                          body: { apprenant_id: apprenantId },
+                          body: { apprenant_id: apprenantId, reset_password: false },
                         });
                         if (error) throw error;
                         toast.success("Identifiants renvoyés par email");
