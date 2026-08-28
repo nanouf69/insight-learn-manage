@@ -3,7 +3,9 @@ import { ALL_DATES_EXAMEN_THEORIQUE } from "@/lib/examDatesConfig";
 
 /**
  * Sessions "Examen théorique" : une session par date d'examen officielle,
- * contenant UNIQUEMENT les apprenants e-learning inscrits à cette date.
+ * contenant TOUS les apprenants (e-learning et présentiel) inscrits à cette date,
+ * hors prospects / annulés / abandons.
+
  *
  * Aucune suppression de session : on crée les manquantes et on ajoute les
  * apprenants manquants (les inscriptions manuelles sont conservées).
@@ -44,8 +46,9 @@ export async function syncExamenSessions(): Promise<SyncExamenResult> {
 
   const { data: apprenants, error: apErr } = await supabase
     .from("apprenants")
-    .select("id, type_apprenant, date_examen_theorique")
+    .select("id, type_apprenant, statut, date_examen_theorique")
     .is("deleted_at", null);
+
 
   if (apErr) {
     result.errors.push(apErr.message);
@@ -66,11 +69,12 @@ export async function syncExamenSessions(): Promise<SyncExamenResult> {
     if (!iso) continue;
     result.datesChecked++;
 
-    const inscrits = (apprenants || []).filter(
-      (a: any) =>
-        isElearningType(a.type_apprenant) &&
-        deaccent(String(a.date_examen_theorique || "")) === deaccent(exam.date),
-    );
+    const inscrits = (apprenants || []).filter((a: any) => {
+      const statut = deaccent(String(a.statut || ""));
+      if (["prospect", "annule", "abandon", "desinscrit"].includes(statut)) return false;
+      return deaccent(String(a.date_examen_theorique || "")) === deaccent(exam.date);
+    });
+
 
     const nom = `Session examen — ${exam.date}`;
 
