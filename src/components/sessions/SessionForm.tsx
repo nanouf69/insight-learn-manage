@@ -334,7 +334,7 @@ export function SessionForm() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {SESSION_TYPES.map((t) => (
+                {SESSION_TYPE_OPTIONS.map((t) => (
                   <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
                 ))}
               </SelectContent>
@@ -343,8 +343,29 @@ export function SessionForm() {
 
           <div className="space-y-2">
             <Label htmlFor="nom">Nom de la session</Label>
-            <Input id="nom" placeholder={isPratiqueType(typeSession) ? "Ex: Formation pratique VTC Février 2026" : "Ex: Session Janvier 2026"} value={nom} onChange={(e) => setNom(e.target.value)} />
+            <Select
+              value={SESSION_NOM_OPTIONS.includes(nom) || nom === "" ? nom : "__autre__"}
+              onValueChange={(v) => setNom(v === "__autre__" ? " " : v)}
+            >
+              <SelectTrigger id="nom">
+                <SelectValue placeholder="Choisir un nom de session" />
+              </SelectTrigger>
+              <SelectContent>
+                {SESSION_NOM_OPTIONS.map((n) => (
+                  <SelectItem key={n} value={n}>{n}</SelectItem>
+                ))}
+                <SelectItem value="__autre__">✏️ Autre (saisie libre)</SelectItem>
+              </SelectContent>
+            </Select>
+            {!SESSION_NOM_OPTIONS.includes(nom) && nom !== "" && (
+              <Input
+                placeholder="Nom personnalisé de la session"
+                value={nom.trim() === "" ? "" : nom}
+                onChange={(e) => setNom(e.target.value || " ")}
+              />
+            )}
           </div>
+
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
