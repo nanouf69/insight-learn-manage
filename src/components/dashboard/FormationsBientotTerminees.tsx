@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { CalendarClock, Phone, Mail, X, RotateCcw } from "lucide-react";
 import { getSessionEndMs, getSessionDurationMinutes, getAccessCutoffMs } from "@/lib/reports/session-duration";
 import { toast } from "sonner";
+import { PRATIQUE_TYPES } from "@/lib/sessionTypes";
 
 const isoDate = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -124,7 +125,7 @@ export function FormationsBientotTerminees({ onNavigateToApprenant }: Props) {
           .from("session_apprenants")
           .select("apprenant_id, presence_pratique, sessions!inner(type_session, date_debut, date_fin)")
           .in("apprenant_id", list.map((a) => a.id))
-          .eq("sessions.type_session", "pratique");
+          .in("sessions.type_session", PRATIQUE_TYPES);
         ((sa || []) as any[]).forEach((r) => {
           if ((r.presence_pratique || "").toLowerCase() === "present") {
             confirmedPresentiel.add(r.apprenant_id);

@@ -2,6 +2,7 @@ import jsPDF from 'jspdf';
 import { format, differenceInMinutes, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
+import { isPratiqueType } from '@/lib/sessionTypes';
 import signatureImage from '@/assets/signature-dirigeant.png';
 import tamponImage from '@/assets/tampon-entreprise.png';
 import logoImage from '@/assets/logo-ftransport.png';
@@ -77,7 +78,8 @@ function calculateSessionHours(sessions: SessionInfo[], type: string, pratiqueDu
   }
   let totalMinutes = 0;
   for (const s of sessions) {
-    if (s.type_session?.toLowerCase() !== type) continue;
+    const matchesType = type === 'pratique' ? isPratiqueType(s.type_session) : s.type_session?.toLowerCase() === type;
+    if (!matchesType) continue;
     const nbDays = countWorkingDays(s.date_debut, s.date_fin);
     if (s.heure_debut && s.heure_fin) {
       const start = parseTime(s.heure_debut);
@@ -180,7 +182,7 @@ export async function generateAttestationFinFormation(
   y += 12;
   
   // Calcul des heures
-  const practicalSessions = sessions.filter(s => s.type_session?.toLowerCase() === 'pratique');
+  const practicalSessions = sessions.filter(s => isPratiqueType(s.type_session));
   const heuresPratique = calculateSessionHours(sessions, 'pratique', pratiqueDurations);
   const heuresElearning = calculateElearningHours(connexions);
   const heuresTotal = heuresPratique + heuresElearning;

@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { CreneauKey } from "@/lib/agendaSlots";
 import { fetchPratiqueSlotDetails } from "@/lib/pratiqueSlots";
+import { isPratiqueType } from "@/lib/sessionTypes";
 
 /**
  * Émargement numérique des journées de formation PRATIQUE.
@@ -48,7 +49,7 @@ export const getPratiqueDates = async (apprenantId: string): Promise<string[]> =
 
   for (const row of ((sessRes.data as any[]) || [])) {
     const s = row?.sessions;
-    if (!s || String(s.type_session || "") !== "pratique") continue;
+    if (!s || !isPratiqueType(s.type_session)) continue;
     const debut = String(s.date_debut || "").slice(0, 10);
     const fin = String(s.date_fin || s.date_debut || "").slice(0, 10);
     if (!/^\d{4}-\d{2}-\d{2}$/.test(debut)) continue;

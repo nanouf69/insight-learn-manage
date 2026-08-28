@@ -23,6 +23,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Eye, Edit, IdCard, Car } from "lucide-react";
 import { generateEmargementPratiquePDF } from "@/lib/pdf/emargement-pratique";
 import { fetchPratiqueSignatures } from "@/lib/pratiqueEmargements";
+import { PRATIQUE_TYPES, THEORIQUE_TYPES } from "@/lib/sessionTypes";
 import listeMedecinsAgrees from "@/assets/medecins/liste-medecins-agrees.pdf.asset.json";
 
 function InlineDossierCma({ apprenantId, value, onSaved }: { apprenantId: string; value: string | null; onSaved?: () => void }) {
@@ -733,7 +734,7 @@ export function ExamenReussitePage() {
         .from('session_apprenants')
         .select('id, session_id, sessions!inner(type_session)')
         .eq('apprenant_id', apprenantId)
-        .eq('sessions.type_session', 'pratique' as any);
+        .in('sessions.type_session', PRATIQUE_TYPES as any);
       if (sessionsApprenant && sessionsApprenant.length > 0) {
         for (const sa of sessionsApprenant) {
           await supabase
@@ -784,7 +785,7 @@ export function ExamenReussitePage() {
         .select('id, session_id, sessions!inner(type_session)')
         .eq('apprenant_id', apprenantId)
         .eq('presence_pratique', 'deplace')
-        .eq('sessions.type_session', 'pratique' as any);
+        .in('sessions.type_session', PRATIQUE_TYPES as any);
       if (sessionsApprenant && sessionsApprenant.length > 0) {
         for (const sa of sessionsApprenant) {
           await supabase
@@ -1126,7 +1127,7 @@ export function ExamenReussitePage() {
           .from('session_apprenants')
           .select('apprenant_id, session_id, sessions!inner(type_session)')
           .eq('presence_pratique', 'deplace')
-          .eq('sessions.type_session', 'pratique'),
+          .in('sessions.type_session', PRATIQUE_TYPES),
         supabase
           .from('apprenants')
           .select('id')
@@ -1145,7 +1146,7 @@ export function ExamenReussitePage() {
       const { data } = await supabase
         .from('session_apprenants')
         .select('apprenant_id, presence_pratique, sessions!inner(type_session)')
-        .eq('sessions.type_session', 'pratique')
+        .in('sessions.type_session', PRATIQUE_TYPES)
         .eq('presence_pratique', 'present');
       return [...new Set((data || []).map((d: any) => d.apprenant_id))];
     },
@@ -1170,7 +1171,7 @@ export function ExamenReussitePage() {
       const { data } = await supabase
         .from('session_apprenants')
         .select('apprenant_id, sessions!inner(type_session)')
-        .eq('sessions.type_session', 'pratique');
+        .in('sessions.type_session', PRATIQUE_TYPES);
       return [...new Set((data || []).map((d: any) => d.apprenant_id))];
     },
   });
@@ -1206,7 +1207,7 @@ export function ExamenReussitePage() {
       const { data, error } = await supabase
         .from('sessions')
         .select('id, date_debut, date_fin, type_session, nom')
-        .neq('type_session', 'pratique')
+        .not('type_session', 'in', PRATIQUE_TYPES)
         .gte('date_fin', planningStartDate)
         .lte('date_debut', planningEndDate);
       if (error) throw error;
@@ -4380,7 +4381,7 @@ export function ExamenReussitePage() {
                 .from('session_apprenants')
                 .select('id, session_id, sessions!inner(type_session)')
                 .eq('apprenant_id', id)
-                .eq('sessions.type_session', 'pratique' as any);
+                .in('sessions.type_session', PRATIQUE_TYPES as any);
               if (sessionsApprenant && sessionsApprenant.length > 0) {
                 for (const sa of sessionsApprenant) {
                   await supabase

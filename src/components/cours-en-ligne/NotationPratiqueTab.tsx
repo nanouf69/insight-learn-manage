@@ -7,6 +7,7 @@ import { Loader2, Search, Car } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import GrilleNotationConduite from "@/components/sessions/GrilleNotationConduite";
 import { fetchAllRows } from "@/lib/supabase/fetch-all-rows";
+import { isPratiqueType } from "@/lib/sessionTypes";
 
 interface Row {
   apprenantId: string;
@@ -42,7 +43,7 @@ const NotationPratiqueTab = () => {
           const s = r?.sessions;
           const a = r?.apprenants;
           if (!s || !a) continue;
-          if (String(s.type_session || "") !== "pratique") continue;
+          if (!isPratiqueType(s.type_session)) continue;
           const label = `${String(s.nom || "")} ${(s.types_apprenant || []).join(" ")} ${String(a.type_apprenant || "")}`.toLowerCase();
           const formation: "vtc" | "taxi" = label.includes("taxi") ? "taxi" : "vtc";
           list.push({

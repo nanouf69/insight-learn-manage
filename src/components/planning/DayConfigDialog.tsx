@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { PRATIQUE_TYPES } from "@/lib/sessionTypes";
 
 export type DayType = "formation_vtc" | "formation_taxi" | "examen_vtc" | "examen_taxi";
 
@@ -118,7 +119,7 @@ export function DayConfigDialog({ open, onClose, date, initialType, initialSlots
         await supabase
           .from("sessions")
           .delete()
-          .eq("type_session", "pratique")
+          .in("type_session", PRATIQUE_TYPES)
           .eq("date_debut", dateKey);
         toast.success(`✅ ${validSlots.length} candidat(s) inscrit(s) à l'examen ${isTaxi ? "TAXI" : "VTC"}`);
       } else {
@@ -130,7 +131,7 @@ export function DayConfigDialog({ open, onClose, date, initialType, initialSlots
         const { data: existing } = await supabase
           .from("sessions")
           .select("id")
-          .eq("type_session", "pratique")
+          .in("type_session", PRATIQUE_TYPES)
           .eq("date_debut", dateKey)
           .maybeSingle();
 
