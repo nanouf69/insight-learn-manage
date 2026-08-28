@@ -60,12 +60,20 @@ export function FinancementApprenantCard({ apprenant }: Props) {
   const [virements, setVirements] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const modeCode = String(apprenant?.mode_financement || "").toLowerCase().trim();
   const organismeCode = String(apprenant?.organisme_financeur || "").toLowerCase().trim();
+  const rawModeCode = String(apprenant?.mode_financement || "").toLowerCase().trim();
+  // Caisse des Dépôts / CPF implique forcément un financement CPF
+  const isCpfOrganisme =
+    organismeCode === "cpf-cdc" ||
+    organismeCode === "cpf" ||
+    organismeCode === "cpf-a" ||
+    organismeCode.includes("caisse des depots");
+  const modeCode = isCpfOrganisme ? "cpf" : rawModeCode;
   // "Personnel" only when nothing indicates a third-party funder
   const isPersonnel =
     modeCode === "personnel" && (organismeCode === "" || organismeCode === "personnel");
   const incoherent =
+    !isCpfOrganisme &&
     organismeCode !== "" &&
     organismeCode !== "personnel" &&
     modeCode === "personnel";
