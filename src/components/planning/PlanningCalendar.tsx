@@ -212,7 +212,7 @@ export function PlanningCalendar() {
       // Réservations (table reservations_pratique) sur le mois
       const { data: reservations } = await supabase
         .from("reservations_pratique")
-        .select("date_choisie, type_formation, apprenant_id")
+        .select("date_choisie, type_formation, apprenant_id, creneau")
         .gte("date_choisie", monthStart)
         .lte("date_choisie", monthEnd);
 
@@ -279,6 +279,7 @@ export function PlanningCalendar() {
             prenom: app.prenom,
             telephone: app.telephone,
             email: app.email,
+            creneau: (r as any).creneau || undefined,
             pasInscritExamen: false,
           });
         }
