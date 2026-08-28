@@ -3283,15 +3283,20 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
         const creneauxText = Array.isArray((session as any).creneaux) ? (session as any).creneaux.join(' ') : String((session as any).creneaux || '');
         const isCoursDuSoir = isEveningTrainingValue(session.title, (session as any).nom, creneauxText);
         const formationLabel = isFCVTC ? 'Formation Continue VTC' : isPratique ? (isTaxi ? 'Formation pratique TAXI' : 'Formation pratique VTC') : isTaxi ? 'Formation TAXI' : 'Formation VTC';
-        const formateurNames = isPratique
-          ? (isTaxi ? ["Rim TOUIL"] : ["Naoufal GUENICHI"])
-          : isFCVTC
-            ? ["Naoufal GUENICHI"]
-            : (isTA || isVA)
-              ? ["Rim TOUIL"]
-              : isVTC
-                ? ["Naoufal GUENICHI"]
-                : ["Naoufal GUENICHI", "Rim TOUIL"];
+        const assignedFormateurNames = (formateursInSession || [])
+          .map((sf: any) => (sf?.formateur ? `${sf.formateur.prenom} ${sf.formateur.nom}`.trim() : ''))
+          .filter(Boolean);
+        const formateurNames = assignedFormateurNames.length > 0
+          ? assignedFormateurNames
+          : isPratique
+            ? (isTaxi ? ["Rim TOUIL"] : ["Naoufal GUENICHI"])
+            : isFCVTC
+              ? ["Naoufal GUENICHI"]
+              : (isTA || isVA)
+                ? ["Rim TOUIL"]
+                : isVTC
+                  ? ["Naoufal GUENICHI"]
+                  : ["Naoufal GUENICHI", "Rim TOUIL"];
 
         const effectiveStartISO = isPratique && practicalReservationDates.length > 0
           ? getMinISODate([session.dateDebut, ...practicalReservationDates])
@@ -4031,15 +4036,20 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                 const creneauxText = Array.isArray((session as any).creneaux) ? (session as any).creneaux.join(' ') : String((session as any).creneaux || '');
                                 const isCoursDuSoir = isEveningTrainingValue(session.title, (session as any).nom, creneauxText);
                                 const formationLabel = isFCVTC ? 'Formation Continue VTC' : isPratique ? (isTaxi ? 'Formation pratique TAXI' : 'Formation pratique VTC') : isTaxi ? 'Formation TAXI' : 'Formation VTC';
-                                const formateurNames = isPratique
-                                  ? (isTaxi ? ["Rim TOUIL"] : ["Naoufal GUENICHI"])
-                                  : isFCVTC
-                                    ? ["Naoufal GUENICHI"]
-                                    : (isTA || isVA)
-                                      ? ["Rim TOUIL"]
-                                      : isVTC
-                                        ? ["Naoufal GUENICHI"]
-                                        : ["Naoufal GUENICHI", "Rim TOUIL"];
+                                const assignedFormateurNames = (formateursInSession || [])
+                                  .map((sf: any) => (sf?.formateur ? `${sf.formateur.prenom} ${sf.formateur.nom}`.trim() : ''))
+                                  .filter(Boolean);
+                                const formateurNames = assignedFormateurNames.length > 0
+                                  ? assignedFormateurNames
+                                  : isPratique
+                                    ? (isTaxi ? ["Rim TOUIL"] : ["Naoufal GUENICHI"])
+                                    : isFCVTC
+                                      ? ["Naoufal GUENICHI"]
+                                      : (isTA || isVA)
+                                        ? ["Rim TOUIL"]
+                                        : isVTC
+                                          ? ["Naoufal GUENICHI"]
+                                          : ["Naoufal GUENICHI", "Rim TOUIL"];
 
                                 const effectiveStartISO = isPratique && practicalReservationDates.length > 0
                                   ? getMinISODate([session.dateDebut, ...practicalReservationDates])
