@@ -78,7 +78,7 @@ export default function InscriptionFormationContinue() {
           .select("id, nom")
           .eq("date_debut", d.value)
           .eq("date_fin", d.fin)
-          .eq("type_session", "theorique");
+          .eq("type_session", type === "taxi" ? "continue_taxi" : "continue_vtc");
 
         const matchingSession = sessions?.find(s =>
           s.nom?.toLowerCase().includes("formation continue") &&
