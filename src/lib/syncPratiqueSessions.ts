@@ -96,7 +96,7 @@ export async function syncPratiqueSessionsFromPlanning(
         .from("sessions")
         .insert({
           nom,
-          type_session: "pratique",
+          type_session: `pratique_${type.toLowerCase()}`,
           date_debut: date,
           date_fin: date,
           heure_debut: sessionStart,
