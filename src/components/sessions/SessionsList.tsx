@@ -15,7 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
-import { SESSION_TYPES, isPratiqueType, getSessionTypeLabel } from "@/lib/sessionTypes";
+import { SESSION_TYPES, SESSION_TYPE_OPTIONS, SESSION_NOM_OPTIONS, isPratiqueType, getSessionTypeLabel } from "@/lib/sessionTypes";
 
 interface Session {
   id: string;
@@ -162,9 +162,17 @@ export function SessionsList({ onNavigateToApprenant }: { onNavigateToApprenant?
         || (sessionApprenantSearchMap[s.id] || []).some(str => str.includes(q));
       const isTerminee = filterStatut === "terminee" && (s.statut === "terminee" || new Date(s.date_fin) < new Date(new Date().toDateString()));
       const matchStatut = filterStatut === "tous" || s.statut === filterStatut || isTerminee;
+      const normalize = (v: string) => v.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
       const matchType = filterType === "tous"
         ? true
-        : s.type_session === filterType;
+        : filterType.startsWith("nom:")
+          ? normalize(nom).includes(normalize(filterType.slice(4)))
+          : filterType === "theorique_pratique"
+            ? true
+            : filterType === "pratique"
+              ? isPratiqueType(s.type_session)
+              : !isPratiqueType(s.type_session);
+
       return matchSearch && matchStatut && matchType;
     });
 
@@ -300,11 +308,15 @@ export function SessionsList({ onNavigateToApprenant }: { onNavigateToApprenant?
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="tous">Toutes les formations</SelectItem>
-            {SESSION_TYPES.map((t) => (
+            {SESSION_TYPE_OPTIONS.map((t) => (
               <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+            ))}
+            {SESSION_NOM_OPTIONS.map((n) => (
+              <SelectItem key={n} value={`nom:${n}`}>{n}</SelectItem>
             ))}
           </SelectContent>
         </Select>
+
         <Select value={filterStatut} onValueChange={setFilterStatut}>
           <SelectTrigger className="w-[160px]">
             <SelectValue placeholder="Statut" />
