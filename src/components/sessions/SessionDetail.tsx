@@ -115,6 +115,7 @@ interface ApprenantDB {
   date_examen_pratique: string | null;
   statut: string | null;
   creneau_horaire?: string | null;
+  documents_complets?: boolean | null;
 }
 
 const modesFinancement = [
