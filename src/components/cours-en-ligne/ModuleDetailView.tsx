@@ -7314,6 +7314,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                               setShowResultsFor(prev => { const next = new Set(prev); next.delete(exo.id); return next; });
                               setPendingResultRestore((prev) => (prev?.exoId === exo.id ? null : prev));
                               setRevisionQuestionsFor(prev => { const next = { ...prev }; delete next[exo.id]; return next; });
+                              window.scrollTo({ top: 0, behavior: "smooth" });
                             }}>
                               🔄 Recommencer tout
                             </Button>
@@ -7344,6 +7345,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                                 wrongKeys,
                                 wrongIds,
                               });
+                              window.scrollTo({ top: 0, behavior: "smooth" });
                             }}>
                               🎯 Refaire les fausses ({(() => {
                                 let count = 0;
