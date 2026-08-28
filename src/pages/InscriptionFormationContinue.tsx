@@ -141,7 +141,7 @@ export default function InscriptionFormationContinue() {
         .select("*")
         .eq("date_debut", selectedDate.value)
         .eq("date_fin", selectedDate.fin)
-        .eq("type_session", "theorique");
+        .eq("type_session", type === "taxi" ? "continue_taxi" : "continue_vtc");
 
       let sessionId: string;
       const matchingSession = existingSessions?.find(s =>
