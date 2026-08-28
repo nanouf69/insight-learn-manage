@@ -1248,6 +1248,18 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   const hasBienvenueEmail = (apprenantId: string) => bienvenueApprenantIds.has(apprenantId);
   const hasPreInfoEmail = (apprenantId: string) => preInfoApprenantIds.has(apprenantId);
 
+  const relanceBienvenueApprenantIds = useMemo(
+    () =>
+      new Set(
+        sentSessionEmails
+          .filter((e: any) => normalizeSubj(e.subject).includes('relance'))
+          .map((e: any) => e.apprenant_id)
+          .filter(Boolean)
+      ),
+    [sentSessionEmails]
+  );
+  const hasRelanceBienvenueEmail = (apprenantId: string) => relanceBienvenueApprenantIds.has(apprenantId);
+
 
    // Charger les identifiants envoyés pour les apprenants de cette session
     const { data: identifiantsSent = [] } = useQuery({
@@ -3944,12 +3956,17 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                             type="button"
                             size="sm"
                             variant="outline"
-                            className="h-6 text-[11px] px-2 gap-1 border-orange-200 text-orange-700 bg-orange-50 hover:bg-orange-100 hover:text-orange-800"
+                            className={cn(
+                              "h-6 text-[11px] px-2 gap-1",
+                              hasRelanceBienvenueEmail(apprenant.id)
+                                ? "border-green-200 text-green-700 bg-green-50 hover:bg-green-100 hover:text-green-800"
+                                : "border-orange-200 text-orange-700 bg-orange-50 hover:bg-orange-100 hover:text-orange-800"
+                            )}
                             onClick={(e) => { e.stopPropagation(); handlePreviewRelanceBienvenue(apprenant); }}
-                            title="Relance dossier de bienvenue — aperçu avant envoi"
+                            title={hasRelanceBienvenueEmail(apprenant.id) ? "Relance déjà envoyée" : "Relance dossier de bienvenue — aperçu avant envoi"}
                           >
                             <Mail className="w-3 h-3" />
-                            Relance
+                            {hasRelanceBienvenueEmail(apprenant.id) ? "Relance envoyée" : "Relance"}
                           </Button>
                           <Button 
                             size="sm" 
