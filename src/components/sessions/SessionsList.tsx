@@ -164,12 +164,21 @@ export function SessionsList({ onNavigateToApprenant }: { onNavigateToApprenant?
       const isTerminee = filterStatut === "terminee" && (s.statut === "terminee" || new Date(s.date_fin) < new Date(new Date().toDateString()));
       const matchStatut = filterStatut === "tous" || s.statut === filterStatut || isTerminee;
       const normalize = (v: string) => v.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      // Tolerant name matching: all meaningful words of the filter must appear in the session name
+      const STOP = new Set(["formation", "formations", "session", "sessions", "de", "du", "la", "le", "les", "des", "et", "en", "cours"]);
+      const matchNom = (filterNom: string) => {
+        const target = normalize(nom);
+        if (target.includes(normalize(filterNom))) return true;
+        const words = normalize(filterNom).split(/[^a-z0-9]+/).filter(w => w && !STOP.has(w));
+        return words.length > 0 && words.every(w => target.includes(w));
+      };
       const matchType = filterType === "tous"
         ? true
         : filterType.startsWith("nom:")
           ? normalize(filterType.slice(4)) === "session examen"
             ? s.type_session === "examen" || normalize(nom).includes("session examen")
-            : normalize(nom).includes(normalize(filterType.slice(4)))
+            : matchNom(filterType.slice(4))
+
           : filterType === "examen"
             ? s.type_session === "examen"
             : filterType === "theorique_pratique"
