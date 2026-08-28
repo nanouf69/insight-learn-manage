@@ -166,7 +166,18 @@ const GrilleNotationConduite = ({
       const { data, error } = await query;
       if (error) throw error;
       const row: any = data?.[0];
-      if (row) {
+
+      // Compte réel des grilles déjà enregistrées pour cet apprenant
+      const { count } = await supabase
+        .from("grilles_notation_conduite" as any)
+        .select("id", { count: "exact", head: true })
+        .eq("apprenant_id", apprenantId);
+      const total = count || 0;
+      setGrillesCount(total);
+      setHasGrille(total > 0);
+
+      if (readOnly && row) {
+        // Vue apprenant : on affiche la dernière grille telle quelle
         setGrilleId(row.id);
         setCoches((row.criteres as Record<string, boolean>) || {});
         setPassage(row.passage || "");
@@ -175,14 +186,26 @@ const GrilleNotationConduite = ({
         setEvaluateur(row.evaluateur || "");
         setTempsPreparation(row.temps_preparation || "");
         setAvis(row.avis === "favorable" || row.avis === "defavorable" ? row.avis : null);
-        setHasGrille(true);
+        return;
       }
+
+      // Vue formateur : chaque ouverture démarre un NOUVEAU passage
+      // (sinon la 2e grille écrasait la 1re et le compteur restait à 1).
+      setGrilleId(null);
+      setCoches({});
+      setObservations("");
+      setAvis(null);
+      setTempsPreparation("");
+      setDate(datePassage || new Date().toISOString().slice(0, 10));
+      setPassage(String(Math.min(total + 1, 10)));
+      setEvaluateur(row?.evaluateur || "");
     } catch (e) {
       console.error("[GrilleNotation] load error", e);
     } finally {
       setLoading(false);
     }
   };
+
 
   const refreshCount = async () => {
     const { count } = await supabase
@@ -263,15 +286,23 @@ const GrilleNotationConduite = ({
   };
 
   /** Remet le formulaire à zéro pour saisir un nouveau passage. */
-  const resetForm = () => {
+  const resetForm = async () => {
     setGrilleId(null);
     setCoches({});
-    setPassage("");
     setObservations("");
     setAvis(null);
     setTempsPreparation("");
     setDate(datePassage || new Date().toISOString().slice(0, 10));
+    const { count } = await supabase
+      .from("grilles_notation_conduite" as any)
+      .select("id", { count: "exact", head: true })
+      .eq("apprenant_id", apprenantId);
+    const total = count || 0;
+    setGrillesCount(total);
+    setHasGrille(total > 0);
+    setPassage(String(Math.min(total + 1, 10)));
   };
+
 
   const handleValiderEtEnvoyer = async () => {
     if (!avis) {
