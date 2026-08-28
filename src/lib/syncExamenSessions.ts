@@ -3,7 +3,9 @@ import { ALL_DATES_EXAMEN_THEORIQUE } from "@/lib/examDatesConfig";
 
 /**
  * Sessions "Examen théorique" : une session par date d'examen officielle,
- * contenant UNIQUEMENT les apprenants e-learning inscrits à cette date.
+ * contenant TOUS les apprenants (e-learning et présentiel) inscrits à cette date,
+ * hors prospects / annulés / abandons.
+
  *
  * Aucune suppression de session : on crée les manquantes et on ajoute les
  * apprenants manquants (les inscriptions manuelles sont conservées).
