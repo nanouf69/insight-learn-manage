@@ -22,6 +22,7 @@ import {
   Mail, 
   Phone, 
   FileText, 
+  FileCheck,
   Plus, 
   Search,
   UserCog,
@@ -1385,6 +1386,29 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
         toast({ title: "Erreur", description: e?.message || "Impossible de générer le PDF", variant: "destructive" });
       }
     };
+
+    // Bascule la "Possession des documents" d'un apprenant (passe le dossier de bienvenue en vert)
+    const togglePossessionDocuments = async (apprenant: any) => {
+      const next = !apprenant.documents_complets;
+      try {
+        const { error } = await supabase
+          .from("apprenants")
+          .update({ documents_complets: next } as any)
+          .eq("id", apprenant.id);
+        if (error) throw error;
+        toast({
+          title: next ? "Possession des documents confirmée" : "Possession des documents retirée",
+          description: next
+            ? `${apprenant.prenom} ${apprenant.nom} possède tous ses documents.`
+            : `${apprenant.prenom} ${apprenant.nom} ne possède plus tous ses documents.`,
+        });
+        queryClient.invalidateQueries({ queryKey: ['session-apprenants'] });
+        queryClient.invalidateQueries({ queryKey: ['all-apprenants'] });
+      } catch (e: any) {
+        toast({ title: "Erreur", description: e?.message || "Mise à jour impossible", variant: "destructive" });
+      }
+    };
+
 
 
   // Détection session du soir (4h/jour, max 40h) vs jour (6h/jour, max 60h)
@@ -3991,6 +4015,22 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                           >
                             <Mail className="w-3 h-3" />
                             {hasRelanceBienvenueEmail(apprenant.id) ? "Relance envoyée" : "Relance"}
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className={cn(
+                              "h-6 text-[11px] px-2 gap-1",
+                              apprenant.documents_complets
+                                ? "border-green-200 text-green-700 bg-green-50 hover:bg-green-100 hover:text-green-800"
+                                : "border-gray-200 text-gray-600 bg-gray-50 hover:bg-gray-100 hover:text-gray-800"
+                            )}
+                            onClick={(e) => { e.stopPropagation(); togglePossessionDocuments(apprenant); }}
+                            title={apprenant.documents_complets ? "Possession des documents cochée — cliquer pour décocher" : "Marquer la possession des documents"}
+                          >
+                            {apprenant.documents_complets ? <CheckCircle2 className="w-3 h-3" /> : <FileCheck className="w-3 h-3" />}
+                            Possession des documents
                           </Button>
                           <Button 
                             size="sm" 
