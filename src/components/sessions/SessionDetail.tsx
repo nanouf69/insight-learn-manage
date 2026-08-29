@@ -4690,7 +4690,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                             className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-md bg-background/70 border px-3 py-2 text-sm"
                           >
                             <span className="font-semibold text-foreground">
-                              {i + 19}. {(a.nom || '').toUpperCase()} {a.prenom || ''}
+                              {totalCount + i + 1}. {(a.nom || '').toUpperCase()} {a.prenom || ''}
                             </span>
                             <span className="text-muted-foreground">📞 {a.telephone || '—'}</span>
                             <span className="text-muted-foreground">✉️ {a.email || '—'}</span>
