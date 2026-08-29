@@ -3560,8 +3560,11 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     });
   };
 
+  const isListeAttente = (sa: any) => sa.liste_attente === true;
+
   const countByType = (type: string) => {
     return apprenantsInSession.filter((sa: any) => {
+      if (isListeAttente(sa)) return false;
       const t = sa.apprenant?.type_apprenant?.toLowerCase() || "";
       return t.includes(type.toLowerCase());
     }).length;
@@ -3569,7 +3572,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
 
   const taxiCount = countByType("taxi");
   const vtcCount = countByType("vtc");
-  const totalCount = apprenantsInSession.length;
+  const totalCount = apprenantsInSession.filter((sa: any) => !isListeAttente(sa)).length;
   const formateursCount = formateursInSession.length;
 
   // Marquer automatiquement "absent" les apprenants sans AUCUNE feuille d'émargement signée
