@@ -35,6 +35,20 @@ async function getSignedDevisUrl(fichierUrl: string | null, download = false): P
   return data.signedUrl;
 }
 
+function devisStoragePath(fichierUrl: string | null): string | null {
+  if (!fichierUrl) return null;
+  const match = fichierUrl.match(/\/devis\/(.+)$/);
+  return match ? decodeURIComponent(match[1]) : fichierUrl;
+}
+
+async function devisFileExists(fichierUrl: string | null): Promise<boolean> {
+  const path = devisStoragePath(fichierUrl);
+  if (!path) return false;
+  const { data, error } = await supabase.storage.from("devis").createSignedUrl(path, 60);
+  return !error && !!data?.signedUrl;
+}
+
+
 function DevisHistorique({ apprenantId, apprenant }: { apprenantId: string; apprenant?: any }) {
   const [sendingId, setSendingId] = useState<string | null>(null);
 
