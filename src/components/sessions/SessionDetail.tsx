@@ -110,6 +110,7 @@ interface ApprenantDB {
   formation_choisie?: string | null;
   mode_financement: string | null;
   numero_dossier_cma: string | null;
+  mot_de_passe_cma?: string | null;
   date_debut_formation: string | null;
   date_fin_formation: string | null;
   date_examen_theorique: string | null;
@@ -819,6 +820,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
             creneau_horaire,
             mode_financement,
             numero_dossier_cma,
+            mot_de_passe_cma,
             date_debut_formation,
             date_fin_formation,
             date_examen_theorique,
