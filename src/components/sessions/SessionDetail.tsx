@@ -4661,8 +4661,10 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                 const byOldest = (a: any, b: any) =>
                   String(a.created_at || '').localeCompare(String(b.created_at || ''));
                 const ordered = [...(apprenantsInSession as any[])].sort(byOldest);
-                const waiting = ordered.slice(18);
+                const flagged = ordered.filter((sa: any) => sa.liste_attente === true);
+                const waiting = flagged.length > 0 ? flagged : ordered.slice(18);
                 if (waiting.length === 0) return null;
+
                 return (
                   <div className="mt-4 rounded-lg border border-orange-300 bg-orange-50 p-3">
                     <div className="flex items-center gap-2 mb-2">

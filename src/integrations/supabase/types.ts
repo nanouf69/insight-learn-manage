@@ -2988,6 +2988,7 @@ export type Database = {
           heure_debut_personnalisee: string | null
           heure_fin_personnalisee: string | null
           id: string
+          liste_attente: boolean
           mode_financement: string | null
           montant_paye: number | null
           montant_total: number | null
@@ -3006,6 +3007,7 @@ export type Database = {
           heure_debut_personnalisee?: string | null
           heure_fin_personnalisee?: string | null
           id?: string
+          liste_attente?: boolean
           mode_financement?: string | null
           montant_paye?: number | null
           montant_total?: number | null
@@ -3024,6 +3026,7 @@ export type Database = {
           heure_debut_personnalisee?: string | null
           heure_fin_personnalisee?: string | null
           id?: string
+          liste_attente?: boolean
           mode_financement?: string | null
           montant_paye?: number | null
           montant_total?: number | null
