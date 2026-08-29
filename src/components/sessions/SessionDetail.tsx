@@ -3909,7 +3909,9 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                     const isEl = (a: any) => /e-?\s?learning/i.test(`${a?.type_apprenant || ''} ${a?.formation_choisie || ''}`);
                     const byRecent = (a: any, b: any) =>
                       String(b.created_at || '').localeCompare(String(a.created_at || ''));
-                    const rows = [...(apprenantsInSession as any[])].sort(byRecent);
+                    const rows = [...(apprenantsInSession as any[])]
+                      .filter((sa) => !isListeAttente(sa))
+                      .sort(byRecent);
                     const pres = rows.filter((sa) => !isEl(resolveA(sa)));
                     const elearn = rows.filter((sa) => isEl(resolveA(sa)));
                     return [...pres, ...elearn].map((sa: any) => ({
