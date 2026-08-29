@@ -1,0 +1,1 @@
+revoke execute on function public.sync_devis_to_documents_completes() from public, anon, authenticated;
