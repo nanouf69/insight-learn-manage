@@ -144,7 +144,7 @@ export function ApprenantForm() {
   const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
   const [isCheckingDuplicate, setIsCheckingDuplicate] = useState(false);
   const [selectedFormation, setSelectedFormation] = useState("vtc-exam");
-  const [montantTtc, setMontantTtc] = useState("1599");
+  const [montantTtc, setMontantTtc] = useState("1499");
   const [typeApprenantFormation, setTypeApprenantFormation] = useState("vtc");
   const [dateExamenTheorique, setDateExamenTheorique] = useState("27 janvier 2026");
   const [datePaiement, setDatePaiement] = useState<Date | undefined>();
@@ -160,16 +160,16 @@ export function ApprenantForm() {
   // Prix par défaut selon la formation
   const prixFormations: Record<string, string> = {
     "vtc": "1099",
-    "vtc-exam": "1599",
+    "vtc-exam": "1499",
     "taxi": "1299",
     "taxi-exam": "1799",
     "passerelle-taxi": "999",
     "vtc-elearning-1099": "1099",
-    "vtc-elearning": "1599",
+    "vtc-elearning": "1499",
     "taxi-elearning": "1299",
     "passerelle-taxi-elearning": "999",
     "passerelle-vtc-elearning": "499",
-    "vtc-e-presentiel": "1599",
+    "vtc-e-presentiel": "1499",
     "taxi-e-presentiel": "1799",
     "ta-e-presentiel": "999",
     "continue-vtc": "200",
@@ -350,7 +350,7 @@ export function ApprenantForm() {
     setSelectedApprenantId("");
     setDuplicateWarning(null);
     setSelectedFormation("vtc-exam");
-    setMontantTtc("1599");
+    setMontantTtc("1499");
     setTypeApprenantFormation("vtc");
     setDateExamenTheorique("27 janvier 2026");
     setInscritFranceTravail(false);
