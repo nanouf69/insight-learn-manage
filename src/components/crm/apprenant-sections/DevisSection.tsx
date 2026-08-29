@@ -223,14 +223,55 @@ ${signLink ? `<p>Pour signer votre devis en ligne : <a href="${signLink}">${sign
                   {d.dates_formation && (
                     <p className="text-xs text-primary font-medium">📅 {d.dates_formation}</p>
                   )}
+                  {fileStatus[d.id] && !fileStatus[d.id].fichier && !fileStatus[d.id].signe && (
+                    <p className="text-xs text-destructive font-medium">
+                      ⚠️ PDF introuvable — rechargez le document ou relancez la signature
+                    </p>
+                  )}
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap justify-end">
                 {d.statut === "signe" ? (
                   <Badge variant="default" className="bg-green-600 text-xs">Signé</Badge>
                 ) : (
                   <Badge variant="secondary" className="text-xs">En attente</Badge>
                 )}
+                {fileStatus[d.id] && !fileStatus[d.id].fichier && !fileStatus[d.id].signe && (
+                  <>
+                    <input
+                      type="file"
+                      accept="application/pdf,image/*"
+                      className="hidden"
+                      ref={(el) => { uploadInputs.current[d.id] = el; }}
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        e.target.value = "";
+                        if (f) rechargerPdf(d, f, d.statut === "signe" || !!d.signed_at);
+                      }}
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={busyId === d.id}
+                      title="Recharger le PDF du devis"
+                      className="bg-amber-50 hover:bg-amber-100 text-amber-800 border-amber-300"
+                      onClick={() => uploadInputs.current[d.id]?.click()}
+                    >
+                      <Plus className="w-3 h-3 mr-1" />
+                      {busyId === d.id ? "Envoi..." : "Recharger le PDF"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={busyId === d.id}
+                      title="Remettre en attente et générer un lien de signature"
+                      onClick={() => relancerSignature(d)}
+                    >
+                      <RotateCcw className="w-3 h-3 mr-1" /> Re-signer
+                    </Button>
+                  </>
+                )}
+
                 <Button
                   variant="ghost"
                   size="sm"
