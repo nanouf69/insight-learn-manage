@@ -3596,6 +3596,688 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   });
 
 
+  const renderApprenantCard = (sessionApprenant: any, numero: number, waitlist = false) => {
+    const apprenant = sessionApprenant.apprenant ?? allApprenants.find((a) => a.id === sessionApprenant.apprenant_id);
+    if (!apprenant) {
+      return (
+        <div className="block static p-4 rounded-xl border border-destructive/30 bg-destructive/5">
+          <p className="text-sm text-destructive">Apprenant introuvable (ID: {sessionApprenant.apprenant_id?.slice(0, 8)}…)</p>
+        </div>
+      );
+    }
+    return (
+                      <div 
+                        className="block static p-3 rounded-xl border bg-card hover:shadow-md transition-shadow"
+                      >
+
+                        {/* Ligne 1: Checkbox + Avatar + Nom + Badge */}
+                        <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                          <Checkbox 
+                            checked={selectedApprenants.has(apprenant.id)}
+                            onCheckedChange={() => toggleSelectApprenant(apprenant.id)}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                          <span className="text-xs font-mono text-muted-foreground w-5 text-right select-none">
+                            {numero}.
+                          </span>
+                          <button
+                            type="button"
+                            className="flex items-center gap-2 group cursor-pointer"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (onNavigateToApprenant) {
+                                if (!asPage) onOpenChange(false);
+                                onNavigateToApprenant(apprenant.id);
+                              }
+                            }}
+                          >
+                            <Avatar className="w-7 h-7 shrink-0">
+                              <AvatarFallback className="bg-primary/10 text-primary font-semibold text-xs">
+                                {apprenant.prenom?.[0] || ""}{apprenant.nom?.[0] || ""}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span className="font-semibold text-sm text-foreground group-hover:text-primary group-hover:underline transition-colors">
+                              {apprenant.prenom} {apprenant.nom}
+                            </span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); copyToClipboard(apprenant.nom || '', 'Nom'); }}
+                            className="p-1 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                            title="Copier le nom de famille"
+                          >
+                            <Copy className="w-3 h-3" />
+                          </button>
+                          <Badge className={`text-[10px] shrink-0 ${getTypeBadgeColor(apprenant.type_apprenant)}`}>
+                            {apprenant.type_apprenant?.toUpperCase() || "N/A"}
+                          </Badge>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className={cn(
+                              "h-6 text-[11px] px-2 gap-1",
+                              apprenant.documents_complets || hasDossierBienvenue(apprenant.id)
+                                ? "border-green-200 text-green-700 bg-green-50 hover:bg-green-100 hover:text-green-800"
+                                : "border-red-200 text-red-700 bg-red-50 hover:bg-red-100 hover:text-red-800"
+                            )}
+                            onClick={(e) => { e.stopPropagation(); downloadDossierBienvenue(apprenant); }}
+                            title={apprenant.documents_complets ? "Possession des documents confirmée" : hasDossierBienvenue(apprenant.id) ? "Dossier présent — télécharger le PDF" : "Dossier absent — cliquer pour vérifier"}
+                          >
+                            <FileText className="w-3 h-3" />
+                            Dossier de bienvenue
+                          </Button>
+                          {apprenant.mot_de_passe_cma && (
+                            <Badge
+                              variant="outline"
+                              className="h-6 text-[11px] px-2 gap-1 font-mono border-blue-200 text-blue-700 bg-blue-50 cursor-pointer"
+                              onClick={(e) => { e.stopPropagation(); copyToClipboard(apprenant.mot_de_passe_cma || '', 'Mot de passe CMA'); }}
+                              title="Mot de passe CMA — cliquer pour copier"
+                            >
+                              🔑 {apprenant.mot_de_passe_cma}
+                              <Copy className="w-3 h-3" />
+                            </Badge>
+                          )}
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className={cn(
+                              "h-6 text-[11px] px-2 gap-1",
+                              hasRelanceBienvenueEmail(apprenant.id)
+                                ? "border-green-200 text-green-700 bg-green-50 hover:bg-green-100 hover:text-green-800"
+                                : "border-orange-200 text-orange-700 bg-orange-50 hover:bg-orange-100 hover:text-orange-800"
+                            )}
+                            onClick={(e) => { e.stopPropagation(); handlePreviewRelanceBienvenue(apprenant); }}
+                            title={hasRelanceBienvenueEmail(apprenant.id) ? "Relance déjà envoyée" : "Relance dossier de bienvenue — aperçu avant envoi"}
+                          >
+                            <Mail className="w-3 h-3" />
+                            {hasRelanceBienvenueEmail(apprenant.id) ? "Relance envoyée" : "Relance"}
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className={cn(
+                              "h-6 text-[11px] px-2 gap-1",
+                              apprenant.documents_complets
+                                ? "border-green-200 text-green-700 bg-green-50 hover:bg-green-100 hover:text-green-800"
+                                : "border-gray-200 text-gray-600 bg-gray-50 hover:bg-gray-100 hover:text-gray-800"
+                            )}
+                            onClick={(e) => { e.stopPropagation(); togglePossessionDocuments(apprenant); }}
+                            title={apprenant.documents_complets ? "Possession des documents cochée — cliquer pour décocher" : "Marquer la possession des documents"}
+                          >
+                            {apprenant.documents_complets ? <CheckCircle2 className="w-3 h-3" /> : <FileCheck className="w-3 h-3" />}
+                            Possession des documents
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10 h-6 w-6 p-0 ml-auto"
+                            onClick={() => removeApprenant(sessionApprenant.id)}
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+
+                        {/* Ligne 2: Coordonnées compactes sur une seule ligne */}
+                        <div className="flex items-center gap-x-3 gap-y-1 mb-2 pl-[36px] text-xs text-muted-foreground flex-wrap">
+                          <span className="flex items-center gap-1">
+                            <FileText className="w-3 h-3 shrink-0" />
+                            {apprenant.numero_dossier_cma || "CMA n/d"}
+                          </span>
+                          <span className="flex items-center gap-1 group/copy">
+                            <Mail className="w-3 h-3 shrink-0" />
+                            {apprenant.email || "—"}
+                            {apprenant.email && (
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); copyToClipboard(apprenant.email, 'Email'); }}
+                                className="p-0.5 rounded opacity-0 group-hover/copy:opacity-100 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-opacity"
+                                title="Copier l'email"
+                              >
+                                <Copy className="w-3 h-3" />
+                              </button>
+                            )}
+                          </span>
+                          <span className="flex items-center gap-1 group/copy">
+                            <Phone className="w-3 h-3 shrink-0" />
+                            {apprenant.telephone || "—"}
+                            {apprenant.telephone && (
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); copyToClipboard(apprenant.telephone, 'Téléphone'); }}
+                                className="p-0.5 rounded opacity-0 group-hover/copy:opacity-100 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-opacity"
+                                title="Copier le téléphone"
+                              >
+                                <Copy className="w-3 h-3" />
+                              </button>
+                            )}
+                          </span>
+                          <span className="flex items-center gap-1 font-medium text-foreground/80">
+                            <Calendar className="w-3 h-3 shrink-0" />
+                            Inscrit le {sessionApprenant.created_at
+                              ? format(new Date(sessionApprenant.created_at), "dd/MM/yyyy 'à' HH'h'mm", { locale: fr })
+                              : "—"}
+                          </span>
+                        </div>
+
+
+                        {/* Ligne 3: Badges statut */}
+                        <div className="flex items-center gap-1.5 mb-3 pl-[52px] flex-wrap">
+                          <span className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full ${
+                            hasConvocation(apprenant.id) 
+                              ? 'bg-green-100 text-green-700' 
+                              : 'bg-muted text-muted-foreground'
+                          }`}>
+                            {hasConvocation(apprenant.id) ? '✅ Convoqué' : '❌ Non convoqué'}
+                          </span>
+                          <span className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full ${
+                            hasIdentifiants(apprenant.id) 
+                              ? 'bg-blue-100 text-blue-700' 
+                              : 'bg-muted text-muted-foreground'
+                          }`}>
+                            {hasIdentifiants(apprenant.id) ? '🔑 Identifiants' : '🔑 Non envoyés'}
+                          </span>
+                          <Badge className={`text-[10px] px-2 py-0 ${getFinancementBadge(sessionApprenant.mode_financement || apprenant.mode_financement).color}`}>
+                            {getFinancementBadge(sessionApprenant.mode_financement || apprenant.mode_financement).label}
+                          </Badge>
+                          <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">
+                            ⏱️ {formatPresenceHours(getHeuresPresence(apprenant.id))}
+                          </span>
+                          <span
+                            className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700"
+                            title="Heures effectuées en ligne en dehors des dates de formation"
+                          >
+                            🌐 {formatPresenceHours(getHeuresEnLigne(apprenant.id))} en ligne
+                          </span>
+                          {sessionApprenant.statut_suivi && (
+                            <span className={`inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-full ${
+                              sessionApprenant.statut_suivi === 'inscription_validee' || sessionApprenant.statut_suivi === 'document_complet'
+                                ? 'bg-green-100 text-green-700'
+                                : 'bg-orange-100 text-orange-700'
+                            }`}>
+                              {sessionApprenant.statut_suivi === 'inscription_validee' ? '✅ Validé' :
+                               sessionApprenant.statut_suivi === 'document_complet' ? '✅ Dossier complet' :
+                               sessionApprenant.statut_suivi === 'manque_document' ? '📄 Manque doc' :
+                               sessionApprenant.statut_suivi === 'a_payer' ? '💰 À payer' :
+                               sessionApprenant.statut_suivi === 'mdp_change' ? '🔑 MDP changé' :
+                               '⚠️ ' + sessionApprenant.statut_suivi}
+                            </span>
+                          )}
+                          {apprenant.resultat_examen === 'oui' && (
+                            <span className="inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-full bg-green-100 text-green-700">✅ Théorie réussie</span>
+                          )}
+                          {apprenant.resultat_examen === 'non' && (
+                            <span className="inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-full bg-red-100 text-red-700">❌ Théorie échouée</span>
+                          )}
+                          {apprenant.resultat_examen === 'absent' && (
+                            <span className="inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-full bg-orange-100 text-orange-700">🔶 Absent examen</span>
+                          )}
+                          {hasNoSignature(apprenant.id) && sessionApprenant.presence_pratique !== 'absent' && (
+                            <span className="inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-full bg-red-100 text-red-700" title="Aucune feuille d'émargement signée">❌ Absent (aucune signature)</span>
+                          )}
+
+                          {sessionApprenant.presence_pratique && sessionApprenant.presence_pratique !== 'present' && (
+                            <span className={`inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-full ${
+                              sessionApprenant.presence_pratique === 'absent' ? 'bg-red-100 text-red-700' :
+                              'bg-orange-100 text-orange-700'
+                            }`}>
+                              {sessionApprenant.presence_pratique === 'absent' ? '❌ Absent' : '📅 Déplacé'}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Ligne 3.5: Date de fin personnalisée */}
+                        {isFormationContinue && (
+                          <div className="flex items-center gap-3 mb-3 pl-[52px] flex-wrap">
+                            <div className="flex items-center gap-2">
+                              <Label className="text-xs text-muted-foreground whitespace-nowrap">Fin perso :</Label>
+                              <Input
+                                type="date"
+                                className="h-7 w-36 text-xs"
+                                value={sessionApprenant.date_fin_personnalisee || ''}
+                                onChange={(e) => {
+                                  updateSessionApprenant(sessionApprenant.id, { date_fin_personnalisee: e.target.value || null });
+                                }}
+                              />
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Label className="text-xs text-muted-foreground whitespace-nowrap">De</Label>
+                              <Input
+                                type="time"
+                                className="h-7 w-24 text-xs"
+                                value={sessionApprenant.heure_debut_personnalisee || ''}
+                                onChange={(e) => {
+                                  updateSessionApprenant(sessionApprenant.id, { heure_debut_personnalisee: e.target.value || null });
+                                }}
+                              />
+                              <Label className="text-xs text-muted-foreground">a</Label>
+                              <Input
+                                type="time"
+                                className="h-7 w-24 text-xs"
+                                value={sessionApprenant.heure_fin_personnalisee || ''}
+                                onChange={(e) => {
+                                  updateSessionApprenant(sessionApprenant.id, { heure_fin_personnalisee: e.target.value || null });
+                                }}
+                              />
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Ligne 4: Boutons d'action sur ligne séparée */}
+                        <div className="flex items-center gap-2 pt-3 border-t flex-wrap pl-[52px]">
+                          {[
+                            { icon: FileText, title: "Télécharger émargement", print: false },
+                            { icon: Printer, title: "Imprimer émargement", print: true },
+                          ].map(({ icon: Icon, title, print: isPrint }) => (
+                           <Button
+                             key={title}
+                             size="sm"
+                             variant="ghost"
+                              className="h-8 w-8 p-0 text-muted-foreground hover:text-primary"
+                              title={title}
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                const { isTA, isVA, isTaxi, isVTC } = getSessionTrainingFlags(apprenant.type_apprenant);
+                                const isFCVTC = isFormationContinue && isVTC;
+                                const isPratique = isPratiqueType(session.type_session);
+
+                                // FORMATION PRATIQUE : ne générer l'émargement QUE si l'apprenant
+                                // est inscrit dans le planning pratique (table reservations_pratique).
+                                // Si aucune réservation trouvée → pas de feuille (règle ne s'applique
+                                // PAS aux autres types de formation).
+                                 let practicalReservationDates: string[] = [];
+                                 if (isPratique) {
+                                   practicalReservationDates = await getPracticalReservationDates(apprenant.id);
+                                   // Pas de blocage si aucune réservation : on retombe sur les blocs agenda
+                                   // ou sur les dates de session pour toujours pouvoir sortir la feuille.
+                                 }
+
+                                const creneauxText = Array.isArray((session as any).creneaux) ? (session as any).creneaux.join(' ') : String((session as any).creneaux || '');
+                                const isCoursDuSoir = isEveningTrainingValue(session.title, (session as any).nom, creneauxText);
+                                const formationLabel = isFCVTC ? 'Formation Continue VTC' : isPratique ? (isTaxi ? 'Formation pratique TAXI' : 'Formation pratique VTC') : isTaxi ? 'Formation TAXI' : 'Formation VTC';
+                                const assignedFormateurNames = (formateursInSession || [])
+                                  .map((sf: any) => (sf?.formateur ? `${sf.formateur.prenom} ${sf.formateur.nom}`.trim() : ''))
+                                  .filter(Boolean);
+                                const formateurNames = assignedFormateurNames.length > 0
+                                  ? assignedFormateurNames
+                                  : isPratique
+                                    ? (isTaxi ? ["Rim TOUIL"] : ["Naoufal GUENICHI"])
+                                    : isFCVTC
+                                      ? ["Naoufal GUENICHI"]
+                                      : (isTA || isVA)
+                                        ? ["Rim TOUIL"]
+                                        : isVTC
+                                          ? ["Naoufal GUENICHI"]
+                                          : ["Naoufal GUENICHI", "Rim TOUIL"];
+
+                                const effectiveStartISO = isPratique && practicalReservationDates.length > 0
+                                  ? getMinISODate([session.dateDebut, ...practicalReservationDates])
+                                  : session.dateDebut;
+                                const effectiveEndISO = isPratique && practicalReservationDates.length > 0
+                                  ? getMaxISODate([session.dateFin, ...practicalReservationDates])
+                                  : session.dateFin;
+                                const practicalDateSet = new Set(practicalReservationDates);
+                                const dateDebut = new Date(`${effectiveStartISO}T00:00:00`);
+                                const dateFin = new Date(`${effectiveEndISO}T00:00:00`);
+                                // semaine_debut is the Monday of the week; a session day (e.g. Tue 31/03)
+                                // belongs to a week starting up to 6 days earlier, so widen the lower bound.
+                                const semaineDebutMinStr = addDaysToISO(effectiveStartISO, -6);
+                                const { data: blocs } = await supabase
+                                  .from('agenda_blocs')
+                                  .select('*')
+                                  .gte('semaine_debut', semaineDebutMinStr)
+                                  .lte('semaine_debut', effectiveEndISO);
+
+                                const matchFormation = (f: string) => {
+                                  const fl = f.toLowerCase();
+                                  if (fl.includes('taxi et vtc') || fl.includes('taxi & vtc')) return true;
+                                  if (isTaxi && fl.includes('taxi')) return true;
+                                  if (!isTaxi && fl.includes('vtc')) return true;
+                                  return false;
+                                };
+
+                                const relevantBlocs = (blocs || []).filter(b => matchFormation(b.formation));
+
+                                const dayMap = new Map<string, { date: Date; slots: { debut: string; fin: string }[] }>();
+                                for (const bloc of relevantBlocs) {
+                                  const weekStart = new Date(bloc.semaine_debut);
+                                  const actualDate = new Date(weekStart);
+                                  actualDate.setDate(weekStart.getDate() + bloc.jour);
+                                  const key = formatLocalDateKey(actualDate);
+                                  if (isPratique && practicalDateSet.size > 0) {
+                                    if (!practicalDateSet.has(key)) continue;
+                                  } else if (actualDate < dateDebut || actualDate > dateFin) {
+                                    continue;
+                                  }
+                                  if (!dayMap.has(key)) {
+                                    dayMap.set(key, { date: actualDate, slots: [] });
+                                  }
+                                  dayMap.get(key)!.slots.push({ debut: bloc.heure_debut, fin: bloc.heure_fin });
+                                }
+
+                                const agendaDays: AgendaDaySlot[] = Array.from(dayMap.entries())
+                                  .sort(([a], [b]) => a.localeCompare(b))
+                                  .map(([, val]) => {
+                                    const morningSlots = val.slots.filter(s => s.debut < '12:30');
+                                    const afternoonSlots = val.slots.filter(s => s.debut >= '12:30');
+                                    const result: AgendaDaySlot = { date: val.date };
+                                    if (morningSlots.length > 0) {
+                                      result.matinDebut = morningSlots.reduce((min, s) => s.debut < min ? s.debut : min, morningSlots[0].debut);
+                                      result.matinFin = morningSlots.reduce((max, s) => s.fin > max ? s.fin : max, morningSlots[0].fin);
+                                    }
+                                    if (afternoonSlots.length > 0) {
+                                      result.apremDebut = afternoonSlots.reduce((min, s) => s.debut < min ? s.debut : min, afternoonSlots[0].debut);
+                                      result.apremFin = afternoonSlots.reduce((max, s) => s.fin > max ? s.fin : max, afternoonSlots[0].fin);
+                                    }
+                                    // Pour VTC : forcer les horaires selon le créneau
+                                    if (isVTC) {
+                                      if (isCoursDuSoir) {
+                                        result.matinDebut = '17:00';
+                                        result.matinFin = '18:30';
+                                        result.apremDebut = '18:30';
+                                        result.apremFin = '21:00';
+                                        result.isSoir = true;
+                                      } else {
+                                        const apremFinHeure = isFCVTC ? '17:00' : '16:00';
+                                        if (result.matinDebut) { result.matinDebut = '09:00'; result.matinFin = '12:00'; }
+                                        if (result.apremDebut) { result.apremDebut = '13:00'; result.apremFin = apremFinHeure; }
+                                      }
+                                    } else if (isTaxi && isPratique) {
+                                      if (result.matinDebut) { result.matinDebut = '09:00'; result.matinFin = '12:00'; }
+                                      if (result.apremDebut) { result.apremDebut = '13:00'; result.apremFin = '17:30'; }
+                                    }
+                                    return result;
+                                  });
+
+                                const isPratiqueIndiv = isPratiqueType(session.type_session);
+                                const rawAgendaDays = isFCVTC
+                                  ? applyFCVTCPersonalizedSchedule(
+                                      agendaDays,
+                                      session.dateDebut,
+                                      session.dateFin,
+                                      sessionApprenant,
+                                      isCoursDuSoir,
+                                    )
+                                  : agendaDays.length === 0
+                                    ? buildFallbackAgendaDays(session.dateDebut, session.dateFin, {
+                                        isPratique: isPratiqueIndiv,
+                                        isVTC,
+                                        isTaxi,
+                                        isCoursDuSoir,
+                                        heureDebutPersonnalisee: sessionApprenant.heure_debut_personnalisee,
+                                        heureFinPersonnalisee: sessionApprenant.heure_fin_personnalisee,
+                                      })
+                                    : agendaDays;
+                                const finalAgendaDays = isPratique
+                                  ? await applyPratiquePlanningSlots(rawAgendaDays, apprenant.id, isTaxi)
+                                  : rawAgendaDays;
+
+                                if (finalAgendaDays.length === 0) {
+                                  toast({ title: "Aucun cours trouvé", description: "Aucun bloc agenda trouvé pour cette session.", variant: "destructive" });
+                                  return;
+                                }
+
+                                const effectiveDateFinEmargement = sessionApprenant.date_fin_personnalisee || session.dateFin;
+                                const practicalPdfEndDate = isPratique && practicalReservationDates.length > 0
+                                  ? getMaxISODate(practicalReservationDates)
+                                  : effectiveDateFinEmargement;
+
+                                const resIndiv = generateEmargementIndividuelPDF(
+                                  {
+                                    formation: formationLabel,
+                                    dateDebut: session.dateDebut,
+                                    dateFin: practicalPdfEndDate,
+                                    lieu: session.lieu,
+                                    formateurs: formateurNames,
+                                  },
+                                  { nom: apprenant.nom, prenom: apprenant.prenom, type_apprenant: apprenant.type_apprenant || '', telephone: apprenant.telephone || '' },
+                                  finalAgendaDays,
+                                  { print: isPrint }
+                                );
+                                if (resIndiv?.blob && apprenant.id) {
+                                  await saveEmargementToCRM({
+                                    apprenantId: apprenant.id,
+                                    fileName: resIndiv.fileName,
+                                    blob: resIndiv.blob,
+                                    titre: `Feuille d'émargement — ${formationLabel}`,
+                                    dateRef: session.dateDebut,
+                                  });
+                                }
+                                toast({ title: isPrint ? "Impression lancée" : "Emargement individuel genere", description: `Feuille pour ${apprenant.prenom} ${apprenant.nom} ${isPrint ? 'ouverte pour impression.' : 'telechargee et enregistree dans son dossier.'}` });
+                              }}
+                            >
+                              <Icon className="w-4 h-4" />
+                            </Button>
+                          ))}
+
+                          {isFormationContinue && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-8 gap-1.5 text-muted-foreground hover:text-primary"
+                              title="Attestation Formation Continue VTC"
+                              onClick={() => {
+                                const typeApp = `${apprenant.type_apprenant || ''} ${apprenant.formation_choisie || ''}`.toUpperCase();
+                                const formation: 'VTC' | 'TAXI' = typeApp.includes('TAXI') ? 'TAXI' : 'VTC';
+                                generateAttestationFCVTC({
+                                  nom: apprenant.nom,
+                                  prenom: apprenant.prenom,
+                                  dateFin: sessionApprenant.date_fin_personnalisee || session.dateFin || apprenant.date_fin_formation || apprenant.date_debut_formation || new Date().toISOString().split('T')[0],
+                                  dateDebut: sessionApprenant.date_debut || session.dateDebut || apprenant.date_debut_formation,
+                                  adresse: apprenant.adresse || '',
+                                  codePostal: apprenant.code_postal || '',
+                                  ville: apprenant.ville || '',
+                                  telephone: apprenant.telephone || '',
+                                  email: apprenant.email || '',
+                                  dateNaissance: apprenant.date_naissance || '',
+                                  formation,
+                                });
+                                toast({ title: "Attestation generee", description: `Attestation FC ${formation} pour ${apprenant.prenom} ${apprenant.nom} telechargee.` });
+                              }}
+                            >
+                              <GraduationCap className="w-4 h-4" />
+                              <span className="text-xs">Attestation</span>
+                            </Button>
+                          )}
+
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 gap-1.5 text-muted-foreground hover:text-primary"
+                                title="Mail type"
+                                disabled={sendingEmailForApprenant === apprenant.id}
+                              >
+                                {sendingEmailForApprenant === apprenant.id ? (
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                  <Send className="w-4 h-4" />
+                                )}
+                                <span className="text-xs">Mail</span>
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="max-h-80 w-72 overflow-y-auto">
+                              {emailTemplates.map((t: any) => (
+                                <div key={t.id} className="flex items-center">
+                                  <DropdownMenuItem
+                                    onClick={() => handlePreviewTemplateEmail(t.id, apprenant)}
+                                    className="cursor-pointer flex-1"
+                                  >
+                                    <span className="text-sm">{t.label}</span>
+                                  </DropdownMenuItem>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7 shrink-0 mr-1"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setEditingMailType(t);
+                                      setEditLabel(t.label);
+                                      setEditSubject(t.subject_template);
+                                      setEditBody(t.body_template);
+                                    }}
+                                  >
+                                    <Pencil className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                              ))}
+                              {emailTemplates.length === 0 && (
+                                <DropdownMenuItem disabled>Aucun modèle</DropdownMenuItem>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className={`h-8 gap-1.5 ${hasBienvenueEmail(apprenant.id) ? 'text-green-700 bg-green-100 hover:bg-green-200 hover:text-green-800' : 'text-muted-foreground hover:text-primary'}`}
+                            title={hasBienvenueEmail(apprenant.id) ? "Mail dossier de bienvenue déjà envoyé" : "Mail dossier de bienvenue"}
+                            disabled={sendingEmailForApprenant === apprenant.id}
+                            onClick={() => handlePreviewTemplateEmail('bienvenue', apprenant)}
+                          >
+                            {hasBienvenueEmail(apprenant.id) ? <CheckCircle2 className="w-4 h-4" /> : <Send className="w-4 h-4" />}
+                            <span className="text-xs">📄 Mail dossier de bienvenue</span>
+                          </Button>
+
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className={`h-8 gap-1.5 ${hasPreInfoEmail(apprenant.id) ? 'text-green-700 bg-green-100 hover:bg-green-200 hover:text-green-800' : 'text-muted-foreground hover:text-primary'}`}
+                            title={hasPreInfoEmail(apprenant.id) ? "Mail pré-information déjà envoyé" : "Mail pré-information"}
+                            disabled={sendingEmailForApprenant === apprenant.id}
+                            onClick={() => handlePreviewTemplateEmail(getPreInformationTemplateId(apprenant), apprenant)}
+                          >
+                            {hasPreInfoEmail(apprenant.id) ? <CheckCircle2 className="w-4 h-4" /> : <Send className="w-4 h-4" />}
+                            <span className="text-xs">📋 Mail pré-information</span>
+                          </Button>
+
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className={`h-8 gap-1.5 ${hasConvocation(apprenant.id) ? 'text-green-700 bg-green-100 hover:bg-green-200 hover:text-green-800' : 'text-muted-foreground hover:text-primary'}`}
+                            title={hasConvocation(apprenant.id) ? "Convocation déjà envoyée — cliquer pour renvoyer" : "Convocation formation (modèle adapté à la formation de l'apprenant)"}
+                            disabled={sendingEmailForApprenant === apprenant.id}
+                            onClick={() => handlePreviewTemplateEmail(getConvocationTemplateId(apprenant), apprenant)}
+                          >
+                            {hasConvocation(apprenant.id) ? <CheckCircle2 className="w-4 h-4" /> : <Send className="w-4 h-4" />}
+                            <span className="text-xs">📨 Convocation formation</span>
+                          </Button>
+
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className={`h-8 gap-1.5 ${hasIdentifiants(apprenant.id) ? 'text-green-700 bg-green-100 hover:bg-green-200 hover:text-green-800' : 'text-muted-foreground hover:text-primary'}`}
+                            title={hasIdentifiants(apprenant.id) ? `Codes d'accès envoyés le ${format(new Date(getIdentifiantsLastDate(apprenant.id)!), "dd/MM/yyyy 'à' HH:mm", { locale: fr })} — cliquer pour renvoyer` : "Envoyer les identifiants de connexion"}
+                            disabled={sendingCredentialsFor === apprenant.id}
+                            onClick={() => handleSendCredentials(apprenant)}
+                          >
+                            {sendingCredentialsFor === apprenant.id
+                              ? <Loader2 className="w-4 h-4 animate-spin" />
+                              : hasIdentifiants(apprenant.id) ? <CheckCircle2 className="w-4 h-4" /> : <KeyRound className="w-4 h-4" />}
+                            <span className="text-xs">
+                              🔑 Identifiants
+                              {hasIdentifiants(apprenant.id) && (
+                                <span className="font-semibold"> · {format(new Date(getIdentifiantsLastDate(apprenant.id)!), "dd/MM/yy", { locale: fr })}</span>
+                              )}
+                            </span>
+                          </Button>
+
+
+                          <NotesPopover 
+                            sessionApprenantId={sessionApprenant.id}
+                            notes={sessionApprenant.notes || apprenant.notes || ""}
+                            onSave={(notes) => updateSessionApprenant(sessionApprenant.id, { notes })}
+                          />
+
+                          <Select
+                            value={sessionApprenant.statut_suivi || ''}
+                            onValueChange={async (val) => {
+                              await updateSessionApprenant(sessionApprenant.id, { statut_suivi: val || null });
+                            }}
+                          >
+                            <SelectTrigger className={`h-8 w-auto gap-1 text-xs border ${
+                              sessionApprenant.statut_suivi === 'inscription_validee' ? 'border-green-300 text-green-700' :
+                              sessionApprenant.statut_suivi === 'document_complet' ? 'border-green-300 text-green-700' :
+                              sessionApprenant.statut_suivi ? 'border-orange-300 text-orange-700' : ''
+                            }`}>
+                              <SelectValue placeholder="⚙️ Statut" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="manque_document">📄 Manque un document</SelectItem>
+                              <SelectItem value="manque_piece_identite">📋 Manque pièce d'identité</SelectItem>
+                              <SelectItem value="manque_justificatif_domicile">🏠 Manque justificatif domicile</SelectItem>
+                              <SelectItem value="manque_permis">🚗 Manque permis</SelectItem>
+                              <SelectItem value="manque_signature">✍️ Manque signature</SelectItem>
+                              <SelectItem value="manque_photo">📸 Manque photo</SelectItem>
+                              <SelectItem value="document_complet">✅ Dossier complet</SelectItem>
+                              <SelectItem value="mdp_change">🔑 MDP changé</SelectItem>
+                              <SelectItem value="email_non_valide">📧 Email non validé</SelectItem>
+                              <SelectItem value="injoignable">📵 Injoignable</SelectItem>
+                              <SelectItem value="a_payer">💰 À payer</SelectItem>
+                              <SelectItem value="inscription_validee">✅ Inscription validée</SelectItem>
+                            </SelectContent>
+                          </Select>
+
+                          <Select
+                            value={sessionApprenant.presence_pratique || 'present'}
+                            onValueChange={async (val) => {
+                              await updateSessionApprenant(sessionApprenant.id, { presence_pratique: val });
+                            }}
+                          >
+                            <SelectTrigger className={`h-8 w-auto text-xs border ${
+                              sessionApprenant.presence_pratique === 'absent' ? 'border-red-300 text-red-700' :
+                              sessionApprenant.presence_pratique === 'deplace' ? 'border-orange-300 text-orange-700' :
+                              'border-green-300 text-green-700'
+                            }`}>
+                              <SelectValue placeholder="Présence" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="present">✅ Présent</SelectItem>
+                              <SelectItem value="absent">❌ Absent</SelectItem>
+                              <SelectItem value="deplace">📅 Déplacé</SelectItem>
+                            </SelectContent>
+                          </Select>
+
+                          {isPratiqueType(session.type_session) && (
+                            <GrilleNotationConduite
+                              apprenantId={apprenant.id}
+                              apprenantNom={apprenant.nom}
+                              apprenantPrenom={apprenant.prenom}
+                              formation={`${apprenant.type_apprenant || ''} ${apprenant.formation_choisie || ''} ${(session as any).type_formation || ''}`.toUpperCase().includes('TAXI') ? 'taxi' : 'vtc'}
+                              sessionId={session.id}
+                            />
+                          )}
+
+
+
+                          {(sessionApprenant.mode_financement === "personnel" || apprenant.mode_financement === "personnel") && (
+                            <PaiementPopover 
+                              apprenantId={apprenant.id}
+                              montantTotal={apprenant.montant_ttc || 0}
+                              montantPaye={apprenant.montant_paye || 0}
+                              apprenantNom={apprenant.nom}
+                              apprenantPrenom={apprenant.prenom}
+                              onChanged={() => refetchApprenants()}
+                            />
+                          )}
+
+                          <Button
+                            size="sm"
+                            variant={apprenant.auth_user_id ? "outline" : "default"}
+                            className="h-8 gap-1 text-xs"
+                            onClick={(e) => { e.stopPropagation(); openAccountDialog(apprenant); }}
+                          >
+                            <KeyRound className="w-3.5 h-3.5" />
+                            {apprenant.auth_user_id ? "Configurer l'accès" : "Créer un compte"}
+                          </Button>
+                        </div>
+                      </div>
+    );
+  };
+
   const mainContent = (
     <>
         <DialogHeader className={asPage ? "" : "shrink-0"}>
