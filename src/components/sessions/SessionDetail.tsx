@@ -4008,13 +4008,33 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                             <FileText className="w-3 h-3 shrink-0" />
                             {apprenant.numero_dossier_cma || "CMA n/d"}
                           </span>
-                          <span className="flex items-center gap-1">
+                          <span className="flex items-center gap-1 group/copy">
                             <Mail className="w-3 h-3 shrink-0" />
                             {apprenant.email || "—"}
+                            {apprenant.email && (
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); copyToClipboard(apprenant.email, 'Email'); }}
+                                className="p-0.5 rounded opacity-0 group-hover/copy:opacity-100 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-opacity"
+                                title="Copier l'email"
+                              >
+                                <Copy className="w-3 h-3" />
+                              </button>
+                            )}
                           </span>
-                          <span className="flex items-center gap-1">
+                          <span className="flex items-center gap-1 group/copy">
                             <Phone className="w-3 h-3 shrink-0" />
                             {apprenant.telephone || "—"}
+                            {apprenant.telephone && (
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); copyToClipboard(apprenant.telephone, 'Téléphone'); }}
+                                className="p-0.5 rounded opacity-0 group-hover/copy:opacity-100 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-opacity"
+                                title="Copier le téléphone"
+                              >
+                                <Copy className="w-3 h-3" />
+                              </button>
+                            )}
                           </span>
                           <span className="flex items-center gap-1 font-medium text-foreground/80">
                             <Calendar className="w-3 h-3 shrink-0" />
