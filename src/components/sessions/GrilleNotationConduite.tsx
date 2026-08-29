@@ -523,6 +523,7 @@ const GrilleNotationConduite = ({
                       const m = String(i + 1);
                       return <SelectItem key={m} value={`${m}m`}>{m} minute{m !== "1" ? "s" : ""}</SelectItem>;
                     })}
+                    <SelectItem value="respecte">A respecté le temps</SelectItem>
                     <SelectItem value="depasse">A dépassé le temps</SelectItem>
                   </SelectContent>
                 </Select>
