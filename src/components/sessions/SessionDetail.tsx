@@ -4668,9 +4668,9 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                 const resolveA = (sa: any) => sa.apprenant ?? allApprenants.find((a) => a.id === sa.apprenant_id);
                 const byOldest = (a: any, b: any) =>
                   String(a.created_at || '').localeCompare(String(b.created_at || ''));
-                const ordered = [...(apprenantsInSession as any[])].sort(byOldest);
-                const flagged = ordered.filter((sa: any) => sa.liste_attente === true);
-                const waiting = flagged.length > 0 ? flagged : ordered.slice(18);
+                const waiting = [...(apprenantsInSession as any[])]
+                  .filter((sa: any) => isListeAttente(sa))
+                  .sort(byOldest);
                 if (waiting.length === 0) return null;
 
                 return (
