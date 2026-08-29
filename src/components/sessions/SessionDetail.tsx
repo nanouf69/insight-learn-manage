@@ -237,7 +237,9 @@ const buildFallbackAgendaDays = (
   while (cur <= end) {
     const day: AgendaDaySlot = { date: new Date(cur) };
     const dayOfWeek = cur.getDay();
-    if (dayOfWeek === 0 || dayOfWeek === 6) {
+    // Les sessions pratiques ont souvent lieu le samedi : on ne saute le
+    // week-end que pour les formations théoriques classiques.
+    if (!options.isPratique && (dayOfWeek === 0 || dayOfWeek === 6)) {
       cur.setDate(cur.getDate() + 1);
       continue;
     }
