@@ -769,6 +769,20 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  const copyToClipboard = async (text: string | null | undefined, label: string) => {
+    const value = (text || '').trim();
+    if (!value) {
+      toast({ title: `${label} vide`, description: `Aucune valeur à copier pour ce champ.`, variant: "destructive" });
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(value);
+      toast({ title: `${label} copié`, description: `"${value}" a été copié dans le presse-papiers.` });
+    } catch {
+      toast({ title: "Erreur de copie", description: `Impossible de copier ${label.toLowerCase()}.`, variant: "destructive" });
+    }
+  };
+
   // Charger les apprenants de cette session depuis la base de données
   const { data: apprenantsInSession = [], isLoading: loadingApprenants, refetch: refetchApprenants } = useQuery({
     queryKey: ['session-apprenants', session?.id, 'no-elearning-v2'],
@@ -3935,6 +3949,14 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                               {apprenant.prenom} {apprenant.nom}
                             </span>
                           </button>
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); copyToClipboard(`${apprenant.prenom || ''} ${apprenant.nom || ''}`.trim(), 'Nom'); }}
+                            className="p-1 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                            title="Copier le nom"
+                          >
+                            <Copy className="w-3 h-3" />
+                          </button>
                           <Badge className={`text-[10px] shrink-0 ${getTypeBadgeColor(apprenant.type_apprenant)}`}>
                             {apprenant.type_apprenant?.toUpperCase() || "N/A"}
                           </Badge>
@@ -3986,13 +4008,33 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                             <FileText className="w-3 h-3 shrink-0" />
                             {apprenant.numero_dossier_cma || "CMA n/d"}
                           </span>
-                          <span className="flex items-center gap-1">
+                          <span className="flex items-center gap-1 group/copy">
                             <Mail className="w-3 h-3 shrink-0" />
                             {apprenant.email || "—"}
+                            {apprenant.email && (
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); copyToClipboard(apprenant.email, 'Email'); }}
+                                className="p-0.5 rounded opacity-0 group-hover/copy:opacity-100 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-opacity"
+                                title="Copier l'email"
+                              >
+                                <Copy className="w-3 h-3" />
+                              </button>
+                            )}
                           </span>
-                          <span className="flex items-center gap-1">
+                          <span className="flex items-center gap-1 group/copy">
                             <Phone className="w-3 h-3 shrink-0" />
                             {apprenant.telephone || "—"}
+                            {apprenant.telephone && (
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); copyToClipboard(apprenant.telephone, 'Téléphone'); }}
+                                className="p-0.5 rounded opacity-0 group-hover/copy:opacity-100 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-opacity"
+                                title="Copier le téléphone"
+                              >
+                                <Copy className="w-3 h-3" />
+                              </button>
+                            )}
                           </span>
                           <span className="flex items-center gap-1 font-medium text-foreground/80">
                             <Calendar className="w-3 h-3 shrink-0" />
