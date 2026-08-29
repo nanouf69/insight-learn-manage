@@ -22,6 +22,7 @@ import {
   Mail, 
   Phone, 
   FileText, 
+  FileCheck,
   Plus, 
   Search,
   UserCog,
