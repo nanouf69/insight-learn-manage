@@ -4682,27 +4682,15 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                         {waiting.length} apprenant(s) au-delà des 18 places
                       </span>
                     </div>
-                    <div className="space-y-2">
-                      {waiting.map((sa: any, i: number) => {
-                        const a = resolveA(sa) || {};
-                        return (
-                          <div
-                            key={sa.id || sa.apprenant_id || i}
-                            className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-md bg-background/70 border px-3 py-2 text-sm"
-                          >
-                            <span className="font-semibold text-foreground">
-                              {totalCount + i + 1}. {(a.nom || '').toUpperCase()} {a.prenom || ''}
-                            </span>
-                            <span className="text-muted-foreground">📞 {a.telephone || '—'}</span>
-                            <span className="text-muted-foreground">✉️ {a.email || '—'}</span>
-                            <span className="text-xs text-muted-foreground">
-                              {sa.created_at
-                                ? `Inscrit le ${format(new Date(sa.created_at), "dd/MM/yyyy 'à' HH'h'mm", { locale: fr })}`
-                                : ''}
-                            </span>
-                          </div>
-                        );
-                      })}
+                    <div className="space-y-3">
+                      {waiting.map((sa: any, i: number) => (
+                        <div
+                          key={sa.id || sa.apprenant_id || i}
+                          className="rounded-xl ring-1 ring-orange-300"
+                        >
+                          {renderApprenantCard(sa, totalCount + i + 1, true)}
+                        </div>
+                      ))}
                     </div>
                   </div>
                 );
