@@ -809,6 +809,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
           date_fin_personnalisee,
           heure_debut_personnalisee,
           heure_fin_personnalisee,
+          liste_attente,
           apprenant:apprenants (
             id,
             nom,
@@ -3560,8 +3561,11 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     });
   };
 
+  const isListeAttente = (sa: any) => sa.liste_attente === true;
+
   const countByType = (type: string) => {
     return apprenantsInSession.filter((sa: any) => {
+      if (isListeAttente(sa)) return false;
       const t = sa.apprenant?.type_apprenant?.toLowerCase() || "";
       return t.includes(type.toLowerCase());
     }).length;
@@ -3569,7 +3573,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
 
   const taxiCount = countByType("taxi");
   const vtcCount = countByType("vtc");
-  const totalCount = apprenantsInSession.length;
+  const totalCount = apprenantsInSession.filter((sa: any) => !isListeAttente(sa)).length;
   const formateursCount = formateursInSession.length;
 
   // Marquer automatiquement "absent" les apprenants sans AUCUNE feuille d'émargement signée
@@ -3906,7 +3910,9 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                     const isEl = (a: any) => /e-?\s?learning/i.test(`${a?.type_apprenant || ''} ${a?.formation_choisie || ''}`);
                     const byRecent = (a: any, b: any) =>
                       String(b.created_at || '').localeCompare(String(a.created_at || ''));
-                    const rows = [...(apprenantsInSession as any[])].sort(byRecent);
+                    const rows = [...(apprenantsInSession as any[])]
+                      .filter((sa) => !isListeAttente(sa))
+                      .sort(byRecent);
                     const pres = rows.filter((sa) => !isEl(resolveA(sa)));
                     const elearn = rows.filter((sa) => isEl(resolveA(sa)));
                     return [...pres, ...elearn].map((sa: any) => ({
@@ -4663,9 +4669,9 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                 const resolveA = (sa: any) => sa.apprenant ?? allApprenants.find((a) => a.id === sa.apprenant_id);
                 const byOldest = (a: any, b: any) =>
                   String(a.created_at || '').localeCompare(String(b.created_at || ''));
-                const ordered = [...(apprenantsInSession as any[])].sort(byOldest);
-                const flagged = ordered.filter((sa: any) => sa.liste_attente === true);
-                const waiting = flagged.length > 0 ? flagged : ordered.slice(18);
+                const waiting = [...(apprenantsInSession as any[])]
+                  .filter((sa: any) => isListeAttente(sa))
+                  .sort(byOldest);
                 if (waiting.length === 0) return null;
 
                 return (
@@ -4685,7 +4691,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                             className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-md bg-background/70 border px-3 py-2 text-sm"
                           >
                             <span className="font-semibold text-foreground">
-                              {i + 19}. {(a.nom || '').toUpperCase()} {a.prenom || ''}
+                              {totalCount + i + 1}. {(a.nom || '').toUpperCase()} {a.prenom || ''}
                             </span>
                             <span className="text-muted-foreground">📞 {a.telephone || '—'}</span>
                             <span className="text-muted-foreground">✉️ {a.email || '—'}</span>
