@@ -110,6 +110,7 @@ interface ApprenantDB {
   formation_choisie?: string | null;
   mode_financement: string | null;
   numero_dossier_cma: string | null;
+  mot_de_passe_cma?: string | null;
   date_debut_formation: string | null;
   date_fin_formation: string | null;
   date_examen_theorique: string | null;
@@ -819,6 +820,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
             creneau_horaire,
             mode_financement,
             numero_dossier_cma,
+            mot_de_passe_cma,
             date_debut_formation,
             date_fin_formation,
             date_examen_theorique,
@@ -1103,7 +1105,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   const { data: allApprenants = [] } = useQuery({
     queryKey: ['all-apprenants'],
     queryFn: async () => {
-      const columns = 'id, nom, prenom, email, telephone, adresse, code_postal, ville, civilite, type_apprenant, formation_choisie, mode_financement, numero_dossier_cma, date_debut_formation, date_fin_formation, date_examen_theorique, date_examen_pratique, statut';
+      const columns = 'id, nom, prenom, email, telephone, adresse, code_postal, ville, civilite, type_apprenant, formation_choisie, mode_financement, numero_dossier_cma, mot_de_passe_cma, date_debut_formation, date_fin_formation, date_examen_theorique, date_examen_pratique, statut';
       const pageSize = 1000;
       let from = 0;
       const rows: any[] = [];
@@ -4000,6 +4002,17 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                             <FileText className="w-3 h-3" />
                             Dossier de bienvenue
                           </Button>
+                          {apprenant.mot_de_passe_cma && (
+                            <Badge
+                              variant="outline"
+                              className="h-6 text-[11px] px-2 gap-1 font-mono border-blue-200 text-blue-700 bg-blue-50 cursor-pointer"
+                              onClick={(e) => { e.stopPropagation(); copyToClipboard(apprenant.mot_de_passe_cma || '', 'Mot de passe CMA'); }}
+                              title="Mot de passe CMA — cliquer pour copier"
+                            >
+                              🔑 {apprenant.mot_de_passe_cma}
+                              <Copy className="w-3 h-3" />
+                            </Badge>
+                          )}
                           <Button
                             type="button"
                             size="sm"
