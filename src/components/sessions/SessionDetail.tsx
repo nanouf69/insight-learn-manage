@@ -1269,7 +1269,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     () =>
       new Set(
         sentSessionEmails
-          .filter((e: any) => normalizeSubj(e.subject).includes('relance'))
+          .filter((e: any) => normalizeSubj(e.subject).includes("dossier d'inscription n'est pas complet"))
           .map((e: any) => e.apprenant_id)
           .filter(Boolean)
       ),
