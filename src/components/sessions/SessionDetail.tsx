@@ -769,6 +769,20 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  const copyToClipboard = async (text: string | null | undefined, label: string) => {
+    const value = (text || '').trim();
+    if (!value) {
+      toast({ title: `${label} vide`, description: `Aucune valeur à copier pour ce champ.`, variant: "destructive" });
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(value);
+      toast({ title: `${label} copié`, description: `"${value}" a été copié dans le presse-papiers.` });
+    } catch {
+      toast({ title: "Erreur de copie", description: `Impossible de copier ${label.toLowerCase()}.`, variant: "destructive" });
+    }
+  };
+
   // Charger les apprenants de cette session depuis la base de données
   const { data: apprenantsInSession = [], isLoading: loadingApprenants, refetch: refetchApprenants } = useQuery({
     queryKey: ['session-apprenants', session?.id, 'no-elearning-v2'],
