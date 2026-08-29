@@ -4015,6 +4015,22 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                             <Mail className="w-3 h-3" />
                             {hasRelanceBienvenueEmail(apprenant.id) ? "Relance envoyée" : "Relance"}
                           </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className={cn(
+                              "h-6 text-[11px] px-2 gap-1",
+                              apprenant.documents_complets
+                                ? "border-green-200 text-green-700 bg-green-50 hover:bg-green-100 hover:text-green-800"
+                                : "border-gray-200 text-gray-600 bg-gray-50 hover:bg-gray-100 hover:text-gray-800"
+                            )}
+                            onClick={(e) => { e.stopPropagation(); togglePossessionDocuments(apprenant); }}
+                            title={apprenant.documents_complets ? "Possession des documents cochée — cliquer pour décocher" : "Marquer la possession des documents"}
+                          >
+                            {apprenant.documents_complets ? <CheckCircle2 className="w-3 h-3" /> : <FileCheck className="w-3 h-3" />}
+                            Possession des documents
+                          </Button>
                           <Button 
                             size="sm" 
                             variant="ghost" 
