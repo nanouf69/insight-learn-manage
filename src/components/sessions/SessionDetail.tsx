@@ -3975,9 +3975,9 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                           </button>
                           <button
                             type="button"
-                            onClick={(e) => { e.stopPropagation(); copyToClipboard(`${apprenant.prenom || ''} ${apprenant.nom || ''}`.trim(), 'Nom'); }}
+                            onClick={(e) => { e.stopPropagation(); copyToClipboard(apprenant.nom || '', 'Nom'); }}
                             className="p-1 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
-                            title="Copier le nom"
+                            title="Copier le nom de famille"
                           >
                             <Copy className="w-3 h-3" />
                           </button>
