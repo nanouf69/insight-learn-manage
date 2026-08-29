@@ -33,6 +33,7 @@ const TYPE_LABELS: Record<string, string> = {
   "dossier-bienvenue": "Dossier de bienvenue",
   "devis-formation-continue": "Devis Formation Continue",
   "devis-envoi": "Devis envoyé / signé",
+  "devis-personnel": "Devis rempli en ligne",
   "emargement-fc": "Feuille d'émargement",
   "emargement-fc-semaine": "Émargement hebdomadaire",
   "doc-fournisseur": "Document fournisseur",
@@ -50,6 +51,7 @@ const TYPE_COLORS: Record<string, string> = {
   "dossier-bienvenue": "bg-green-100 text-green-800",
   "devis-formation-continue": "bg-indigo-100 text-indigo-800",
   "devis-envoi": "bg-cyan-100 text-cyan-800",
+  "devis-personnel": "bg-cyan-500 text-white",
   "emargement-fc": "bg-rose-100 text-rose-800",
   "emargement-fc-semaine": "bg-green-500 text-white",
   "doc-fournisseur": "bg-violet-100 text-violet-800",
@@ -248,7 +250,7 @@ export function DocumentsCompletes({ apprenant }: Props) {
       });
 
       const devisDocs = ((devisRes.data as any[]) || []).map((d) => {
-        const isSigned = !!d.devis_signe_url;
+        const isSigned = !!d.devis_signe_url || d.statut === "signe" || !!d.signed_at;
         return {
           id: `devis-envoi-${d.id}`,
           type_document: "devis-envoi",
@@ -259,7 +261,8 @@ export function DocumentsCompletes({ apprenant }: Props) {
             montant: d.montant,
             statut: isSigned ? "Signé" : (d.statut || "Envoyé"),
             fichier_url: d.fichier_url,
-            devis_signe_url: d.devis_signe_url,
+            devis_signe_url: d.devis_signe_url || (isSigned ? d.fichier_url : null),
+            pdf_disponible: d.fichier_url ? "Oui" : "Non (PDF non enregistré)",
             signed_at: d.signed_at,
           },
           completed_at: d.signed_at || d.created_at,

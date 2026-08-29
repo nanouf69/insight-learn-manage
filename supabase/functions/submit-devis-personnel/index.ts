@@ -48,13 +48,18 @@ Deno.serve(async (req) => {
     const storagePath = `public/${numDevis}_${safeFile}`;
     const pdfBytes = base64ToBytes(pdfBase64);
 
-    const { error: uploadErr } = await supabase.storage
-      .from("devis")
-      .upload(storagePath, pdfBytes, { contentType: "application/pdf", upsert: true });
-    if (uploadErr) console.error("Upload error:", uploadErr);
+    let uploadOk = false;
+    for (let attempt = 0; attempt < 3 && !uploadOk; attempt++) {
+      const { error: uploadErr } = await supabase.storage
+        .from("devis")
+        .upload(storagePath, pdfBytes, { contentType: "application/pdf", upsert: true });
+      if (!uploadErr) uploadOk = true;
+      else console.error(`Upload error (essai ${attempt + 1}):`, uploadErr);
+    }
 
     const { data: urlData } = supabase.storage.from("devis").getPublicUrl(storagePath);
-    const fichierUrl = urlData?.publicUrl || "";
+    const fichierUrl = uploadOk ? (urlData?.publicUrl || "") : "";
+
 
     // ── Apprenant : trouver ou créer ──
     const { data: matched } = await supabase
@@ -107,6 +112,43 @@ Deno.serve(async (req) => {
         signed_at: hasSigned ? new Date().toISOString() : null,
         statut: hasSigned ? "signe" : "telecharge",
       } as any);
+
+      // ── trace formulaire (onglet Formulaires du CRM) ──
+      try {
+        await supabase.from("apprenant_documents_completes").insert({
+          apprenant_id: apprenantId,
+          type_document: "devis-personnel",
+          titre: `Devis ${numDevis} — ${formation.label}${hasSigned ? " (signé)" : ""}`,
+          donnees: {
+            numero_devis: numDevis,
+            date_devis: dateToday,
+            formation: formation.label,
+            montant: `${formation.prix} €`,
+            duree: formation.duree || null,
+            statut: hasSigned ? "Signé" : "Rempli (non signé)",
+            signe: !!hasSigned,
+            fichier_url: fichierUrl || null,
+            civilite: civilite || null,
+            nom, prenom, email,
+            telephone: telephone || null,
+            adresse: adresse || null,
+            code_postal: codePostal || null,
+            ville: ville || null,
+            date_naissance: dateNaissance || null,
+            mode_financement: typeFinancement === "organisme" ? "Organisme" : "Personnel",
+            financeur: typeFinancement === "organisme" ? financeurNom : null,
+            financeur_siret: typeFinancement === "organisme" ? financeurSiret : null,
+            date_debut_souhaitee: dateDebutSouhaitee || null,
+            creneau_souhaite: creneauSouhaite || null,
+            points_vigilance: Array.isArray(reponsesCritiques) ? reponsesCritiques : [],
+          },
+          completed_at: new Date().toISOString(),
+        } as any);
+      } catch (e) {
+        console.warn("Trace documents_completes échouée:", e);
+      }
+
+
 
       // ── lien session ──
       try {
