@@ -102,7 +102,7 @@ Deno.serve(async (req) => {
 
     // ── devis_envois ──
     if (apprenantId) {
-      await supabase.from("devis_envois").insert({
+      const { data: devisRow } = await supabase.from("devis_envois").insert({
         apprenant_id: apprenantId,
         modele: "devis_personnel",
         montant: `${formation.prix} €`,
@@ -111,15 +111,13 @@ Deno.serve(async (req) => {
         devis_signe_url: hasSigned ? fichierUrl : null,
         signed_at: hasSigned ? new Date().toISOString() : null,
         statut: hasSigned ? "signe" : "telecharge",
-      } as any);
+      } as any).select("id").single();
 
-      // ── trace formulaire (onglet Formulaires du CRM) ──
-      try {
-        await supabase.from("apprenant_documents_completes").insert({
-          apprenant_id: apprenantId,
-          type_document: "devis-personnel",
-          titre: `Devis ${numDevis} — ${formation.label}${hasSigned ? " (signé)" : ""}`,
-          donnees: {
+      // ── enrichit la trace Formulaires créée automatiquement (trigger) ──
+      if (devisRow?.id) {
+        try {
+          const richData = {
+            devis_envoi_id: devisRow.id,
             numero_devis: numDevis,
             date_devis: dateToday,
             formation: formation.label,
@@ -141,11 +139,23 @@ Deno.serve(async (req) => {
             date_debut_souhaitee: dateDebutSouhaitee || null,
             creneau_souhaite: creneauSouhaite || null,
             points_vigilance: Array.isArray(reponsesCritiques) ? reponsesCritiques : [],
-          },
-          completed_at: new Date().toISOString(),
-        } as any);
-      } catch (e) {
-        console.warn("Trace documents_completes échouée:", e);
+          };
+          const { data: existing } = await supabase
+            .from("apprenant_documents_completes")
+            .select("id, donnees")
+            .eq("apprenant_id", apprenantId)
+            .eq("type_document", "devis-personnel")
+            .eq("donnees->>devis_envoi_id", devisRow.id)
+            .limit(1)
+            .maybeSingle();
+          if (existing?.id) {
+            await supabase.from("apprenant_documents_completes")
+              .update({ donnees: { ...(existing.donnees || {}), ...richData } } as any)
+              .eq("id", existing.id);
+          }
+        } catch (e) {
+          console.warn("Enrichissement trace documents_completes échoué:", e);
+        }
       }
 
 

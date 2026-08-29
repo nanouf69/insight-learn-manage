@@ -238,7 +238,7 @@ export type Database = {
           titre: string
           type_document: string
           updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           apprenant_id: string
@@ -250,7 +250,7 @@ export type Database = {
           titre: string
           type_document: string
           updated_at?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           apprenant_id?: string
@@ -262,7 +262,7 @@ export type Database = {
           titre?: string
           type_document?: string
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
