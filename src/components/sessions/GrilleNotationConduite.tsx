@@ -366,7 +366,10 @@ const GrilleNotationConduite = ({
     doc.text(`Passage : ${passage || "-"}`, 15, y);
     doc.text(`Date : ${date}`, 150, y);
     y += 6;
-    doc.text(`Temps de préparation : ${tempsPreparation || "-"}`, 15, y);
+    const tempsLabel = tempsPreparation === "depasse" ? "A dépassé le temps"
+      : tempsPreparation === "respecte" ? "A respecté le temps"
+      : tempsPreparation || "-";
+    doc.text(`Temps de préparation : ${tempsLabel}`, 15, y);
     y += 8;
 
     themes.forEach(t => {
@@ -523,6 +526,7 @@ const GrilleNotationConduite = ({
                       const m = String(i + 1);
                       return <SelectItem key={m} value={`${m}m`}>{m} minute{m !== "1" ? "s" : ""}</SelectItem>;
                     })}
+                    <SelectItem value="respecte">A respecté le temps</SelectItem>
                     <SelectItem value="depasse">A dépassé le temps</SelectItem>
                   </SelectContent>
                 </Select>
