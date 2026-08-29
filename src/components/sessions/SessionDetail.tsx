@@ -3596,362 +3596,18 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   });
 
 
-  const mainContent = (
-    <>
-        <DialogHeader className={asPage ? "" : "shrink-0"}>
-
-          <div className="flex items-center justify-between">
-            {asPage ? (
-              <h1 className="flex items-center gap-3 text-lg font-semibold leading-none tracking-tight">
-                {session.title}
-                {getStatusBadge(session.status)}
-              </h1>
-            ) : (
-              <DialogTitle className="flex items-center gap-3">
-                {session.title}
-                {getStatusBadge(session.status)}
-              </DialogTitle>
-            )}
-            <div className="flex gap-2 flex-wrap items-center">
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => setIsFullscreen(v => !v)}
-                className="gap-2"
-                title={isFullscreen ? "Quitter le plein écran" : "Plein écran"}
-              >
-                {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleDownloadEmargement}
-                className="gap-2"
-              >
-                <Download className="w-4 h-4" />
-                Feuilles d'émargement
-              </Button>
-              {isFormationContinue && (
-                <>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={handleBulkDownloadAttestations}
-                    disabled={bulkDownloadingAttestations || apprenantsInSession.length === 0}
-                    className="gap-2"
-                    title="Télécharger toutes les attestations de formation continue dans un ZIP"
-                  >
-                    {bulkDownloadingAttestations ? <Loader2 className="w-4 h-4 animate-spin" /> : <GraduationCap className="w-4 h-4" />}
-                    Toutes les attestations
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="default"
-                    onClick={handleBulkSendAttestations}
-                    disabled={bulkSendingAttestations || apprenantsInSession.length === 0}
-                    className="gap-2"
-                    title="Envoyer l'attestation par email à chaque élève"
-                  >
-                    {bulkSendingAttestations ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                    Envoyer attestations
-                  </Button>
-                </>
-              )}
-            </div>
-          </div>
-        </DialogHeader>
-
-        {/* Session Info */}
-        <div className="shrink-0 flex flex-wrap gap-4 p-4 rounded-xl bg-muted/50 text-sm">
-          <div className="flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-primary" />
-            <span className="font-medium">{format(new Date(session.dateDebut), "dd MMM yyyy", { locale: fr })} au {format(new Date(session.dateFin), "dd MMM yyyy", { locale: fr })}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <MapPin className="w-4 h-4 text-muted-foreground" />
-            <span>{session.lieu}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Users className="w-4 h-4 text-muted-foreground" />
-            <span>{totalCount}/{session.maxParticipants} participants</span>
-          </div>
-          {formateursInSession.length > 0 && (
-            <div className="flex items-center gap-2">
-              <UserCog className="w-4 h-4 text-muted-foreground" />
-              <span>
-                {formateursInSession.map((sf: any) => {
-                  const f = sf.formateur;
-                  return f ? `${f.prenom} ${f.nom}` : "";
-                }).filter(Boolean).join(", ")}
-              </span>
-            </div>
-          )}
+  const renderApprenantCard = (sessionApprenant: any, numero: number, waitlist = false) => {
+    const apprenant = sessionApprenant.apprenant ?? allApprenants.find((a) => a.id === sessionApprenant.apprenant_id);
+    if (!apprenant) {
+      return (
+        <div className="block static p-4 rounded-xl border border-destructive/30 bg-destructive/5">
+          <p className="text-sm text-destructive">Apprenant introuvable (ID: {sessionApprenant.apprenant_id?.slice(0, 8)}…)</p>
         </div>
-
-        {/* Récapitulatif des codes d'accès envoyés */}
-        <div className="shrink-0 rounded-xl border bg-card p-3">
-          <div className="flex items-center gap-2 text-sm font-medium">
-            <KeyRound className="w-4 h-4 text-primary" />
-            <span>🔑 Codes d'accès envoyés : {identifiantsRecap.length}/{totalCount} apprenant(s)</span>
-          </div>
-          {identifiantsRecap.length === 0 ? (
-            <p className="mt-1 text-xs text-muted-foreground">Aucun apprenant n'a encore reçu ses codes d'accès.</p>
-          ) : (
-            <div className="mt-2 max-h-32 overflow-y-auto divide-y">
-              {identifiantsRecap.map((r) => (
-                <div key={r.id} className="flex items-center justify-between py-1 text-xs">
-                  <span className="font-medium truncate">{r.prenom} {r.nom}{r.email ? <span className="text-muted-foreground font-normal"> · {r.email}</span> : null}</span>
-                  <Badge variant="secondary" className="ml-2 shrink-0 bg-green-100 text-green-700 hover:bg-green-100">
-                    ✓ {format(new Date(r.sentAt), "dd/MM/yyyy 'à' HH:mm", { locale: fr })}
-                  </Badge>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {(() => {
-          const absentApprenants = (apprenantsInSession as any[]).filter((sa: any) => {
-            const ap = sa.apprenant;
-            return sa.presence_pratique === 'absent' || ap?.resultat_examen === 'absent' || hasNoSignature(ap?.id);
-          });
-
-          const absentCount = absentApprenants.length;
-          const absentIds = new Set(absentApprenants.map((sa: any) => sa.apprenant?.id).filter(Boolean));
-          const apprenantsForFactures = (apprenantsInSession as any[]).filter((sa: any) => !absentIds.has(sa.apprenant?.id));
-          const facturesCount = apprenantsForFactures.length;
-          const tabCount = 2 + (isFormationContinue ? 1 : 0) + 1;
-          const gridColsClass = tabCount === 4 ? 'grid-cols-4' : tabCount === 3 ? 'grid-cols-3' : 'grid-cols-2';
-          return (
-        <Tabs defaultValue="apprenants" className="flex-1 min-h-0 flex flex-col">
-          <TabsList className={`shrink-0 grid w-full ${gridColsClass}`}>
-            <TabsTrigger value="apprenants" className="gap-2">
-              <Users className="w-4 h-4" />
-              Apprenants ({totalCount})
-            </TabsTrigger>
-            <TabsTrigger value="formateurs" className="gap-2">
-              <UserCog className="w-4 h-4" />
-              Formateurs ({formateursCount})
-            </TabsTrigger>
-            {isFormationContinue && (
-              <TabsTrigger value="factures" className="gap-2">
-                <FileText className="w-4 h-4" />
-                Factures ({facturesCount})
-              </TabsTrigger>
-            )}
-            <TabsTrigger value="absents" className="gap-2">
-              <X className="w-4 h-4" />
-              Absents ({absentCount})
-            </TabsTrigger>
-          </TabsList>
-
-          {/* Apprenants Tab */}
-          <TabsContent value="apprenants" className="flex-1 min-h-0 flex flex-col mt-4">
-            {/* Barre d'envoi groupé */}
-            <div className="shrink-0 flex items-center gap-3 mb-3 p-3 rounded-lg bg-primary/5 border border-primary/20">
-              <Checkbox 
-                checked={apprenantsInSession.length > 0 && selectedApprenants.size === apprenantsInSession.length}
-                onCheckedChange={toggleSelectAll}
-              />
-              <span className="text-sm font-medium text-foreground">
-                {selectedApprenants.size > 0 ? `${selectedApprenants.size} sélectionné(s)` : "Tout sélectionner"}
-              </span>
-              <div className="flex-1" />
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button 
-                    size="sm" 
-                    variant="default" 
-                    className="gap-2"
-                    disabled={selectedApprenants.size === 0 || bulkSending}
-                  >
-                    {bulkSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                    Envoyer un mail type ({selectedApprenants.size})
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="max-h-80 w-72 overflow-y-auto">
-                  {emailTemplates.map((t: any) => (
-                    <DropdownMenuItem
-                      key={t.id}
-                      onClick={() => handleBulkSendEmail(t.id)}
-                      className="cursor-pointer"
-                    >
-                      <span className="text-sm">{t.label}</span>
-                    </DropdownMenuItem>
-                  ))}
-                  {emailTemplates.length === 0 && (
-                    <DropdownMenuItem disabled>Aucun modèle</DropdownMenuItem>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
-              <Button
-                size="sm"
-                variant="default"
-                className="gap-2 bg-[#F4A227] hover:bg-[#d8901c] text-white"
-                disabled={selectedApprenants.size === 0 || bulkSending}
-                onClick={handleBulkSendConvocations}
-                title="Envoyer à chaque apprenant sélectionné la convocation adaptée à sa formation (VTC / VTC soir / TAXI / TA)"
-              >
-                {bulkSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                Convocations ({selectedApprenants.size})
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="gap-2"
-                disabled={selectedApprenants.size === 0 || bulkPrintingEmargement}
-                onClick={() => handleBulkEmargement(false)}
-              >
-                {bulkPrintingEmargement ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
-                Émargements ({selectedApprenants.size})
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="gap-2"
-                disabled={selectedApprenants.size === 0 || bulkPrintingEmargement}
-                onClick={() => handleBulkEmargement(true)}
-              >
-                <Printer className="w-4 h-4" />
-                Imprimer ({selectedApprenants.size})
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="gap-2"
-                disabled={selectedApprenants.size === 0 || bulkSendingCredentials}
-                onClick={handleBulkSendCredentials}
-                title="Envoyer les identifiants de connexion à la plateforme e-learning"
-              >
-                {bulkSendingCredentials ? <Loader2 className="w-4 h-4 animate-spin" /> : <KeyRound className="w-4 h-4" />}
-                Identifiants ({selectedApprenants.size})
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="gap-2 text-emerald-700 border-emerald-300 hover:bg-emerald-50"
-                disabled={bulkResendingCredentials}
-                onClick={handleResendCredentialsAll}
-                title="Renvoyer les identifiants de connexion à TOUS les apprenants de la session"
-              >
-                {bulkResendingCredentials ? <Loader2 className="w-4 h-4 animate-spin" /> : <KeyRound className="w-4 h-4" />}
-                Renvoyer identifiants (tous)
-              </Button>
-
-              <Button 
-                size="sm" 
-                variant={showAddApprenant ? "secondary" : "outline"}
-
-                onClick={() => setShowAddApprenant(!showAddApprenant)}
-                className="gap-1"
-              >
-                {showAddApprenant ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-                {showAddApprenant ? "Fermer" : "Ajouter"}
-              </Button>
-            </div>
-
-
-            <div className="learners-list flex-1 min-h-0 overflow-y-auto px-2 pb-6">
-              {showAddApprenant && (
-                <div className="mb-4 p-3 border rounded-lg bg-muted/30">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Search className="w-4 h-4 shrink-0 text-muted-foreground" />
-                    <Input
-                      placeholder="Rechercher un apprenant..."
-                      value={searchApprenant}
-                      onChange={(e) => setSearchApprenant(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    {apprenantsNotInSession.slice(0, 10).map((apprenant) => (
+      );
+    }
+    return (
                       <div 
-                        key={apprenant.id}
-                        className="flex items-center justify-between p-2 rounded-lg hover:bg-muted cursor-pointer"
-                        onClick={() => addApprenant(apprenant.id)}
-                      >
-                        <div className="flex items-center gap-2">
-                          <Avatar className="w-8 h-8">
-                            <AvatarFallback className="text-xs bg-primary/10 text-primary">
-                              {apprenant.prenom?.[0]}{apprenant.nom?.[0]}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="text-sm font-medium">{apprenant.prenom} {apprenant.nom}</p>
-                            <p className="text-xs text-muted-foreground">{apprenant.email || "Pas d'email"}</p>
-                          </div>
-                        </div>
-                        <Button size="sm" variant="ghost" className="gap-1">
-                          <Plus className="w-4 h-4" /> Ajouter
-                        </Button>
-                      </div>
-                    ))}
-                    {apprenantsNotInSession.length === 0 && (
-                      <p className="text-sm text-muted-foreground text-center py-4">
-                        Aucun apprenant disponible
-                      </p>
-                    )}
-                    {apprenantsNotInSession.length > 10 && (
-                      <p className="text-sm text-muted-foreground text-center py-2">
-                        ... et {apprenantsNotInSession.length - 10} autres (affinez votre recherche)
-                      </p>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {loadingApprenants ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                </div>
-              ) : (
-                <div className="space-y-3 p-1">
-                  {(() => {
-                    const resolveA = (sa: any) => sa.apprenant ?? allApprenants.find((a) => a.id === sa.apprenant_id);
-                    const isEl = (a: any) => /e-?\s?learning/i.test(`${a?.type_apprenant || ''} ${a?.formation_choisie || ''}`);
-                    const byRecent = (a: any, b: any) =>
-                      String(b.created_at || '').localeCompare(String(a.created_at || ''));
-                    const rows = [...(apprenantsInSession as any[])]
-                      .filter((sa) => !isListeAttente(sa))
-                      .sort(byRecent);
-                    const pres = rows.filter((sa) => !isEl(resolveA(sa)));
-                    const elearn = rows.filter((sa) => isEl(resolveA(sa)));
-                    return [...pres, ...elearn].map((sa: any) => ({
-                      sa,
-                      group: isEl(resolveA(sa)) ? 'elearning' : 'presentiel',
-                    }));
-                  })().map((entry: any, idx: number, arr: any[]) => {
-                    const sessionApprenant = entry.sa;
-                    const showHeader = idx === 0 || arr[idx - 1].group !== entry.group;
-                    const header = showHeader ? (
-                      <div key={`h-${entry.group}`} className="flex items-center gap-2 pt-2 pb-1">
-                        <Badge variant={entry.group === 'elearning' ? 'outline' : 'secondary'} className="text-[11px]">
-                          {entry.group === 'elearning' ? '🌐 E-learning' : '🏫 Présentiel'}
-                        </Badge>
-                        <span className="text-xs text-muted-foreground">
-                          {arr.filter((e: any) => e.group === entry.group).length} apprenant(s)
-                        </span>
-                        <div className="flex-1 h-px bg-border" />
-                      </div>
-                    ) : null;
-                    const apprenant = sessionApprenant.apprenant ?? allApprenants.find((a) => a.id === sessionApprenant.apprenant_id);
-
-                    if (!apprenant) {
-                      console.warn('[SessionDetail] apprenant introuvable pour session_apprenant:', sessionApprenant.id, 'apprenant_id:', sessionApprenant.apprenant_id);
-                      return (
-                        <div key={sessionApprenant.id}>
-                          {header}
-                          <div className="block static p-4 rounded-xl border border-destructive/30 bg-destructive/5">
-                            <p className="text-sm text-destructive">Apprenant introuvable (ID: {sessionApprenant.apprenant_id?.slice(0, 8)}…)</p>
-                          </div>
-                        </div>
-                      );
-                    }
-                    
-                    return (
-                      <div key={sessionApprenant.id}>
-                        {header}
-                      <div 
-                        className="block static p-3 rounded-xl border bg-card hover:shadow-md transition-shadow"
+                        className={`block static p-3 rounded-xl border bg-card hover:shadow-md transition-shadow ${waitlist ? 'border-orange-300 bg-orange-50/40' : ''}`}
                       >
 
                         {/* Ligne 1: Checkbox + Avatar + Nom + Badge */}
@@ -3962,7 +3618,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                             onClick={(e) => e.stopPropagation()}
                           />
                           <span className="text-xs font-mono text-muted-foreground w-5 text-right select-none">
-                            {idx + 1}.
+                            {numero}.
                           </span>
                           <button
                             type="button"
@@ -4619,6 +4275,350 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                           </Button>
                         </div>
                       </div>
+    );
+  };
+
+  const mainContent = (
+    <>
+        <DialogHeader className={asPage ? "" : "shrink-0"}>
+
+          <div className="flex items-center justify-between">
+            {asPage ? (
+              <h1 className="flex items-center gap-3 text-lg font-semibold leading-none tracking-tight">
+                {session.title}
+                {getStatusBadge(session.status)}
+              </h1>
+            ) : (
+              <DialogTitle className="flex items-center gap-3">
+                {session.title}
+                {getStatusBadge(session.status)}
+              </DialogTitle>
+            )}
+            <div className="flex gap-2 flex-wrap items-center">
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setIsFullscreen(v => !v)}
+                className="gap-2"
+                title={isFullscreen ? "Quitter le plein écran" : "Plein écran"}
+              >
+                {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleDownloadEmargement}
+                className="gap-2"
+              >
+                <Download className="w-4 h-4" />
+                Feuilles d'émargement
+              </Button>
+              {isFormationContinue && (
+                <>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleBulkDownloadAttestations}
+                    disabled={bulkDownloadingAttestations || apprenantsInSession.length === 0}
+                    className="gap-2"
+                    title="Télécharger toutes les attestations de formation continue dans un ZIP"
+                  >
+                    {bulkDownloadingAttestations ? <Loader2 className="w-4 h-4 animate-spin" /> : <GraduationCap className="w-4 h-4" />}
+                    Toutes les attestations
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="default"
+                    onClick={handleBulkSendAttestations}
+                    disabled={bulkSendingAttestations || apprenantsInSession.length === 0}
+                    className="gap-2"
+                    title="Envoyer l'attestation par email à chaque élève"
+                  >
+                    {bulkSendingAttestations ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                    Envoyer attestations
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
+        </DialogHeader>
+
+        {/* Session Info */}
+        <div className="shrink-0 flex flex-wrap gap-4 p-4 rounded-xl bg-muted/50 text-sm">
+          <div className="flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-primary" />
+            <span className="font-medium">{format(new Date(session.dateDebut), "dd MMM yyyy", { locale: fr })} au {format(new Date(session.dateFin), "dd MMM yyyy", { locale: fr })}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <MapPin className="w-4 h-4 text-muted-foreground" />
+            <span>{session.lieu}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Users className="w-4 h-4 text-muted-foreground" />
+            <span>{totalCount}/{session.maxParticipants} participants</span>
+          </div>
+          {formateursInSession.length > 0 && (
+            <div className="flex items-center gap-2">
+              <UserCog className="w-4 h-4 text-muted-foreground" />
+              <span>
+                {formateursInSession.map((sf: any) => {
+                  const f = sf.formateur;
+                  return f ? `${f.prenom} ${f.nom}` : "";
+                }).filter(Boolean).join(", ")}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Récapitulatif des codes d'accès envoyés */}
+        <div className="shrink-0 rounded-xl border bg-card p-3">
+          <div className="flex items-center gap-2 text-sm font-medium">
+            <KeyRound className="w-4 h-4 text-primary" />
+            <span>🔑 Codes d'accès envoyés : {identifiantsRecap.length}/{totalCount} apprenant(s)</span>
+          </div>
+          {identifiantsRecap.length === 0 ? (
+            <p className="mt-1 text-xs text-muted-foreground">Aucun apprenant n'a encore reçu ses codes d'accès.</p>
+          ) : (
+            <div className="mt-2 max-h-32 overflow-y-auto divide-y">
+              {identifiantsRecap.map((r) => (
+                <div key={r.id} className="flex items-center justify-between py-1 text-xs">
+                  <span className="font-medium truncate">{r.prenom} {r.nom}{r.email ? <span className="text-muted-foreground font-normal"> · {r.email}</span> : null}</span>
+                  <Badge variant="secondary" className="ml-2 shrink-0 bg-green-100 text-green-700 hover:bg-green-100">
+                    ✓ {format(new Date(r.sentAt), "dd/MM/yyyy 'à' HH:mm", { locale: fr })}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {(() => {
+          const absentApprenants = (apprenantsInSession as any[]).filter((sa: any) => {
+            const ap = sa.apprenant;
+            return sa.presence_pratique === 'absent' || ap?.resultat_examen === 'absent' || hasNoSignature(ap?.id);
+          });
+
+          const absentCount = absentApprenants.length;
+          const absentIds = new Set(absentApprenants.map((sa: any) => sa.apprenant?.id).filter(Boolean));
+          const apprenantsForFactures = (apprenantsInSession as any[]).filter((sa: any) => !absentIds.has(sa.apprenant?.id));
+          const facturesCount = apprenantsForFactures.length;
+          const tabCount = 2 + (isFormationContinue ? 1 : 0) + 1;
+          const gridColsClass = tabCount === 4 ? 'grid-cols-4' : tabCount === 3 ? 'grid-cols-3' : 'grid-cols-2';
+          return (
+        <Tabs defaultValue="apprenants" className="flex-1 min-h-0 flex flex-col">
+          <TabsList className={`shrink-0 grid w-full ${gridColsClass}`}>
+            <TabsTrigger value="apprenants" className="gap-2">
+              <Users className="w-4 h-4" />
+              Apprenants ({totalCount})
+            </TabsTrigger>
+            <TabsTrigger value="formateurs" className="gap-2">
+              <UserCog className="w-4 h-4" />
+              Formateurs ({formateursCount})
+            </TabsTrigger>
+            {isFormationContinue && (
+              <TabsTrigger value="factures" className="gap-2">
+                <FileText className="w-4 h-4" />
+                Factures ({facturesCount})
+              </TabsTrigger>
+            )}
+            <TabsTrigger value="absents" className="gap-2">
+              <X className="w-4 h-4" />
+              Absents ({absentCount})
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Apprenants Tab */}
+          <TabsContent value="apprenants" className="flex-1 min-h-0 flex flex-col mt-4">
+            {/* Barre d'envoi groupé */}
+            <div className="shrink-0 flex items-center gap-3 mb-3 p-3 rounded-lg bg-primary/5 border border-primary/20">
+              <Checkbox 
+                checked={apprenantsInSession.length > 0 && selectedApprenants.size === apprenantsInSession.length}
+                onCheckedChange={toggleSelectAll}
+              />
+              <span className="text-sm font-medium text-foreground">
+                {selectedApprenants.size > 0 ? `${selectedApprenants.size} sélectionné(s)` : "Tout sélectionner"}
+              </span>
+              <div className="flex-1" />
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    size="sm" 
+                    variant="default" 
+                    className="gap-2"
+                    disabled={selectedApprenants.size === 0 || bulkSending}
+                  >
+                    {bulkSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                    Envoyer un mail type ({selectedApprenants.size})
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="max-h-80 w-72 overflow-y-auto">
+                  {emailTemplates.map((t: any) => (
+                    <DropdownMenuItem
+                      key={t.id}
+                      onClick={() => handleBulkSendEmail(t.id)}
+                      className="cursor-pointer"
+                    >
+                      <span className="text-sm">{t.label}</span>
+                    </DropdownMenuItem>
+                  ))}
+                  {emailTemplates.length === 0 && (
+                    <DropdownMenuItem disabled>Aucun modèle</DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <Button
+                size="sm"
+                variant="default"
+                className="gap-2 bg-[#F4A227] hover:bg-[#d8901c] text-white"
+                disabled={selectedApprenants.size === 0 || bulkSending}
+                onClick={handleBulkSendConvocations}
+                title="Envoyer à chaque apprenant sélectionné la convocation adaptée à sa formation (VTC / VTC soir / TAXI / TA)"
+              >
+                {bulkSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                Convocations ({selectedApprenants.size})
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-2"
+                disabled={selectedApprenants.size === 0 || bulkPrintingEmargement}
+                onClick={() => handleBulkEmargement(false)}
+              >
+                {bulkPrintingEmargement ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
+                Émargements ({selectedApprenants.size})
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-2"
+                disabled={selectedApprenants.size === 0 || bulkPrintingEmargement}
+                onClick={() => handleBulkEmargement(true)}
+              >
+                <Printer className="w-4 h-4" />
+                Imprimer ({selectedApprenants.size})
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-2"
+                disabled={selectedApprenants.size === 0 || bulkSendingCredentials}
+                onClick={handleBulkSendCredentials}
+                title="Envoyer les identifiants de connexion à la plateforme e-learning"
+              >
+                {bulkSendingCredentials ? <Loader2 className="w-4 h-4 animate-spin" /> : <KeyRound className="w-4 h-4" />}
+                Identifiants ({selectedApprenants.size})
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-2 text-emerald-700 border-emerald-300 hover:bg-emerald-50"
+                disabled={bulkResendingCredentials}
+                onClick={handleResendCredentialsAll}
+                title="Renvoyer les identifiants de connexion à TOUS les apprenants de la session"
+              >
+                {bulkResendingCredentials ? <Loader2 className="w-4 h-4 animate-spin" /> : <KeyRound className="w-4 h-4" />}
+                Renvoyer identifiants (tous)
+              </Button>
+
+              <Button 
+                size="sm" 
+                variant={showAddApprenant ? "secondary" : "outline"}
+
+                onClick={() => setShowAddApprenant(!showAddApprenant)}
+                className="gap-1"
+              >
+                {showAddApprenant ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                {showAddApprenant ? "Fermer" : "Ajouter"}
+              </Button>
+            </div>
+
+
+            <div className="learners-list flex-1 min-h-0 overflow-y-auto px-2 pb-6">
+              {showAddApprenant && (
+                <div className="mb-4 p-3 border rounded-lg bg-muted/30">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Search className="w-4 h-4 shrink-0 text-muted-foreground" />
+                    <Input
+                      placeholder="Rechercher un apprenant..."
+                      value={searchApprenant}
+                      onChange={(e) => setSearchApprenant(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    {apprenantsNotInSession.slice(0, 10).map((apprenant) => (
+                      <div 
+                        key={apprenant.id}
+                        className="flex items-center justify-between p-2 rounded-lg hover:bg-muted cursor-pointer"
+                        onClick={() => addApprenant(apprenant.id)}
+                      >
+                        <div className="flex items-center gap-2">
+                          <Avatar className="w-8 h-8">
+                            <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                              {apprenant.prenom?.[0]}{apprenant.nom?.[0]}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="text-sm font-medium">{apprenant.prenom} {apprenant.nom}</p>
+                            <p className="text-xs text-muted-foreground">{apprenant.email || "Pas d'email"}</p>
+                          </div>
+                        </div>
+                        <Button size="sm" variant="ghost" className="gap-1">
+                          <Plus className="w-4 h-4" /> Ajouter
+                        </Button>
+                      </div>
+                    ))}
+                    {apprenantsNotInSession.length === 0 && (
+                      <p className="text-sm text-muted-foreground text-center py-4">
+                        Aucun apprenant disponible
+                      </p>
+                    )}
+                    {apprenantsNotInSession.length > 10 && (
+                      <p className="text-sm text-muted-foreground text-center py-2">
+                        ... et {apprenantsNotInSession.length - 10} autres (affinez votre recherche)
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {loadingApprenants ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                </div>
+              ) : (
+                <div className="space-y-3 p-1">
+                  {(() => {
+                    const resolveA = (sa: any) => sa.apprenant ?? allApprenants.find((a) => a.id === sa.apprenant_id);
+                    const isEl = (a: any) => /e-?\s?learning/i.test(`${a?.type_apprenant || ''} ${a?.formation_choisie || ''}`);
+                    const byRecent = (a: any, b: any) =>
+                      String(b.created_at || '').localeCompare(String(a.created_at || ''));
+                    const rows = [...(apprenantsInSession as any[])]
+                      .filter((sa) => !isListeAttente(sa))
+                      .sort(byRecent);
+                    const pres = rows.filter((sa) => !isEl(resolveA(sa)));
+                    const elearn = rows.filter((sa) => isEl(resolveA(sa)));
+                    return [...pres, ...elearn].map((sa: any) => ({
+                      sa,
+                      group: isEl(resolveA(sa)) ? 'elearning' : 'presentiel',
+                    }));
+                  })().map((entry: any, idx: number, arr: any[]) => {
+                    const sessionApprenant = entry.sa;
+                    const showHeader = idx === 0 || arr[idx - 1].group !== entry.group;
+                    const header = showHeader ? (
+                      <div key={`h-${entry.group}`} className="flex items-center gap-2 pt-2 pb-1">
+                        <Badge variant={entry.group === 'elearning' ? 'outline' : 'secondary'} className="text-[11px]">
+                          {entry.group === 'elearning' ? '🌐 E-learning' : '🏫 Présentiel'}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">
+                          {arr.filter((e: any) => e.group === entry.group).length} apprenant(s)
+                        </span>
+                        <div className="flex-1 h-px bg-border" />
+                      </div>
+                    ) : null;
+                    return (
+                      <div key={sessionApprenant.id}>
+                        {header}
+                        {renderApprenantCard(sessionApprenant, idx + 1)}
                       </div>
                     );
 
@@ -4682,27 +4682,15 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                         {waiting.length} apprenant(s) au-delà des 18 places
                       </span>
                     </div>
-                    <div className="space-y-2">
-                      {waiting.map((sa: any, i: number) => {
-                        const a = resolveA(sa) || {};
-                        return (
-                          <div
-                            key={sa.id || sa.apprenant_id || i}
-                            className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-md bg-background/70 border px-3 py-2 text-sm"
-                          >
-                            <span className="font-semibold text-foreground">
-                              {totalCount + i + 1}. {(a.nom || '').toUpperCase()} {a.prenom || ''}
-                            </span>
-                            <span className="text-muted-foreground">📞 {a.telephone || '—'}</span>
-                            <span className="text-muted-foreground">✉️ {a.email || '—'}</span>
-                            <span className="text-xs text-muted-foreground">
-                              {sa.created_at
-                                ? `Inscrit le ${format(new Date(sa.created_at), "dd/MM/yyyy 'à' HH'h'mm", { locale: fr })}`
-                                : ''}
-                            </span>
-                          </div>
-                        );
-                      })}
+                    <div className="space-y-3">
+                      {waiting.map((sa: any, i: number) => (
+                        <div
+                          key={sa.id || sa.apprenant_id || i}
+                          className="rounded-xl ring-1 ring-orange-300"
+                        >
+                          {renderApprenantCard(sa, totalCount + i + 1, true)}
+                        </div>
+                      ))}
                     </div>
                   </div>
                 );
