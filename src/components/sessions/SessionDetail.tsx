@@ -3607,7 +3607,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     }
     return (
                       <div 
-                        className="block static p-3 rounded-xl border bg-card hover:shadow-md transition-shadow"
+                        className={`block static p-3 rounded-xl border bg-card hover:shadow-md transition-shadow ${waitlist ? 'border-orange-300 bg-orange-50/40' : ''}`}
                       >
 
                         {/* Ligne 1: Checkbox + Avatar + Nom + Badge */}
