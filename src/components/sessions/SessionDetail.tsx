@@ -3955,6 +3955,9 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                             onCheckedChange={() => toggleSelectApprenant(apprenant.id)}
                             onClick={(e) => e.stopPropagation()}
                           />
+                          <span className="text-xs font-mono text-muted-foreground w-5 text-right select-none">
+                            {idx + 1}.
+                          </span>
                           <button
                             type="button"
                             className="flex items-center gap-2 group cursor-pointer"
