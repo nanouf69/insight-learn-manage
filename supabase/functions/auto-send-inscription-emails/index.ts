@@ -52,7 +52,12 @@ Deno.serve(async (req) => {
     // Bornes de sécurité : au maximum 50 apprenants traités par exécution
     const LIMIT = Math.min(Number(payload?.limit) || 50, 50);
 
-    // 1) Apprenants candidats : créés récemment ou dont la formation a commencé
+    // Garde-fou : uniquement les apprenants créés récemment (nouvelles inscriptions),
+    // pour ne JAMAIS renvoyer ces emails à d'anciens apprenants historiques.
+    const MAX_AGE_DAYS = Math.min(Number(payload?.maxAgeDays) || 30, 90);
+    const cutoff = new Date(Date.now() - MAX_AGE_DAYS * 86400000).toISOString();
+
+    // 1) Apprenants candidats : créés récemment et dont l'entrée en formation est renseignée
     const apprenants: any[] = [];
     {
       const PAGE = 1000;
@@ -60,12 +65,13 @@ Deno.serve(async (req) => {
       while (true) {
         let q = admin
           .from("apprenants")
-          .select("id, nom, prenom, email, type_apprenant, formation_choisie, statut, date_debut_cours_en_ligne, date_debut_formation")
+          .select("id, nom, prenom, email, type_apprenant, formation_choisie, statut, created_at, date_debut_cours_en_ligne, date_debut_formation")
           .not("email", "is", null)
           .is("deleted_at", null)
           .order("id", { ascending: true })
           .range(from, from + PAGE - 1);
         if (explicitIds) q = q.in("id", explicitIds);
+        else q = q.gte("created_at", cutoff);
         const { data, error } = await q;
         if (error) throw error;
         apprenants.push(...(data || []));
@@ -74,7 +80,6 @@ Deno.serve(async (req) => {
       }
     }
 
-    const today = new Date().toISOString().slice(0, 10);
     const eligibles = apprenants.filter((a) => {
       if (isFormationContinue(a.formation_choisie, a.type_apprenant)) return false;
       const statut = (a.statut || "").toLowerCase();
@@ -83,6 +88,7 @@ Deno.serve(async (req) => {
       const debut = normalizeDate(a.date_debut_cours_en_ligne) ?? normalizeDate(a.date_debut_formation);
       return !!debut; // une date d'entrée en formation est renseignée
     });
+
 
     // 2) Emails déjà envoyés (pré-information / bienvenue)
     const ids = eligibles.map((a) => a.id);
