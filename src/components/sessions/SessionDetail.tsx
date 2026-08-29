@@ -3949,6 +3949,14 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                               {apprenant.prenom} {apprenant.nom}
                             </span>
                           </button>
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); copyToClipboard(`${apprenant.prenom || ''} ${apprenant.nom || ''}`.trim(), 'Nom'); }}
+                            className="p-1 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                            title="Copier le nom"
+                          >
+                            <Copy className="w-3 h-3" />
+                          </button>
                           <Badge className={`text-[10px] shrink-0 ${getTypeBadgeColor(apprenant.type_apprenant)}`}>
                             {apprenant.type_apprenant?.toUpperCase() || "N/A"}
                           </Badge>
