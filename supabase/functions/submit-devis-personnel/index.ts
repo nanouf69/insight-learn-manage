@@ -113,6 +113,43 @@ Deno.serve(async (req) => {
         statut: hasSigned ? "signe" : "telecharge",
       } as any);
 
+      // ── trace formulaire (onglet Formulaires du CRM) ──
+      try {
+        await supabase.from("apprenant_documents_completes").insert({
+          apprenant_id: apprenantId,
+          type_document: "devis-personnel",
+          titre: `Devis ${numDevis} — ${formation.label}${hasSigned ? " (signé)" : ""}`,
+          donnees: {
+            numero_devis: numDevis,
+            date_devis: dateToday,
+            formation: formation.label,
+            montant: `${formation.prix} €`,
+            duree: formation.duree || null,
+            statut: hasSigned ? "Signé" : "Rempli (non signé)",
+            signe: !!hasSigned,
+            fichier_url: fichierUrl || null,
+            civilite: civilite || null,
+            nom, prenom, email,
+            telephone: telephone || null,
+            adresse: adresse || null,
+            code_postal: codePostal || null,
+            ville: ville || null,
+            date_naissance: dateNaissance || null,
+            mode_financement: typeFinancement === "organisme" ? "Organisme" : "Personnel",
+            financeur: typeFinancement === "organisme" ? financeurNom : null,
+            financeur_siret: typeFinancement === "organisme" ? financeurSiret : null,
+            date_debut_souhaitee: dateDebutSouhaitee || null,
+            creneau_souhaite: creneauSouhaite || null,
+            points_vigilance: Array.isArray(reponsesCritiques) ? reponsesCritiques : [],
+          },
+          completed_at: new Date().toISOString(),
+        } as any);
+      } catch (e) {
+        console.warn("Trace documents_completes échouée:", e);
+      }
+
+
+
       // ── lien session ──
       try {
         const range = parseFrenchDateRange(dateDebutSouhaitee || "");
