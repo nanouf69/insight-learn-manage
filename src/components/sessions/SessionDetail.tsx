@@ -1386,6 +1386,29 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       }
     };
 
+    // Bascule la "Possession des documents" d'un apprenant (passe le dossier de bienvenue en vert)
+    const togglePossessionDocuments = async (apprenant: any) => {
+      const next = !apprenant.documents_complets;
+      try {
+        const { error } = await supabase
+          .from("apprenants")
+          .update({ documents_complets: next } as any)
+          .eq("id", apprenant.id);
+        if (error) throw error;
+        toast({
+          title: next ? "Possession des documents confirmée" : "Possession des documents retirée",
+          description: next
+            ? `${apprenant.prenom} ${apprenant.nom} possède tous ses documents.`
+            : `${apprenant.prenom} ${apprenant.nom} ne possède plus tous ses documents.`,
+        });
+        queryClient.invalidateQueries({ queryKey: ['session-apprenants'] });
+        queryClient.invalidateQueries({ queryKey: ['all-apprenants'] });
+      } catch (e: any) {
+        toast({ title: "Erreur", description: e?.message || "Mise à jour impossible", variant: "destructive" });
+      }
+    };
+
+
 
   // Détection session du soir (4h/jour, max 40h) vs jour (6h/jour, max 60h)
   const isSessionSoir = (() => {
