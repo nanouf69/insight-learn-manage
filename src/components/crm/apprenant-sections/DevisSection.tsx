@@ -35,6 +35,20 @@ async function getSignedDevisUrl(fichierUrl: string | null, download = false): P
   return data.signedUrl;
 }
 
+function devisStoragePath(fichierUrl: string | null): string | null {
+  if (!fichierUrl) return null;
+  const match = fichierUrl.match(/\/devis\/(.+)$/);
+  return match ? decodeURIComponent(match[1]) : fichierUrl;
+}
+
+async function devisFileExists(fichierUrl: string | null): Promise<boolean> {
+  const path = devisStoragePath(fichierUrl);
+  if (!path) return false;
+  const { data, error } = await supabase.storage.from("devis").createSignedUrl(path, 60);
+  return !error && !!data?.signedUrl;
+}
+
+
 function DevisHistorique({ apprenantId, apprenant }: { apprenantId: string; apprenant?: any }) {
   const [sendingId, setSendingId] = useState<string | null>(null);
 
@@ -89,21 +103,95 @@ ${signLink ? `<p>Pour signer votre devis en ligne : <a href="${signLink}">${sign
 
   const [devisEnvoyes, setDevisEnvoyes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fileStatus, setFileStatus] = useState<Record<string, { fichier: boolean; signe: boolean }>>({});
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const uploadInputs = useRef<Record<string, HTMLInputElement | null>>({});
+
+  const checkFiles = async (rows: any[]) => {
+    const entries = await Promise.all(
+      rows.map(async (d) => [
+        d.id,
+        {
+          fichier: await devisFileExists(d.fichier_url),
+          signe: d.devis_signe_url ? await devisFileExists(d.devis_signe_url) : false,
+        },
+      ] as const)
+    );
+    setFileStatus(Object.fromEntries(entries));
+  };
+
+  const loadDevis = async () => {
+    const { data } = await supabase
+      .from("devis_envois")
+      .select("*")
+      .eq("apprenant_id", apprenantId)
+      .order("created_at", { ascending: false });
+    const rows = data || [];
+    setDevisEnvoyes(rows);
+    setLoading(false);
+    checkFiles(rows);
+  };
 
   useEffect(() => {
-    const load = async () => {
-      const { data } = await supabase
-        .from("devis_envois")
-        .select("*")
-        .eq("apprenant_id", apprenantId)
-        .order("created_at", { ascending: false });
-      setDevisEnvoyes(data || []);
-      setLoading(false);
-    };
-    load();
+    loadDevis();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [apprenantId]);
 
+  // Recharger manuellement le PDF (signé ou non) quand le fichier est introuvable
+  const rechargerPdf = async (d: any, file: File, asSigned: boolean) => {
+    setBusyId(d.id);
+    try {
+      const ext = (file.name.split(".").pop() || "pdf").toLowerCase();
+      const path = asSigned ? `signes/${d.id}.${ext}` : `devis/${d.id}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("devis")
+        .upload(path, file, { contentType: file.type || "application/pdf", upsert: true });
+      if (upErr) throw upErr;
+
+      const { data: pub } = supabase.storage.from("devis").getPublicUrl(path);
+      const publicUrl = pub.publicUrl;
+
+      const update: any = asSigned
+        ? { devis_signe_url: publicUrl, statut: "signe", signed_at: d.signed_at || new Date().toISOString() }
+        : { fichier_url: publicUrl };
+      const { error: updErr } = await supabase.from("devis_envois").update(update).eq("id", d.id);
+      if (updErr) throw updErr;
+
+      toast.success(asSigned ? "Devis signé rechargé" : "Devis rechargé");
+      await loadDevis();
+    } catch (e: any) {
+      console.error(e);
+      toast.error("Rechargement impossible : " + (e?.message || e));
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  // Remettre le devis en attente de signature et fournir un nouveau lien
+  const relancerSignature = async (d: any) => {
+    setBusyId(d.id);
+    try {
+      const token = d.token || crypto.randomUUID().replace(/-/g, "");
+      const { error } = await supabase
+        .from("devis_envois")
+        .update({ token, devis_signe_url: null, signed_at: null, statut: "en_attente" })
+        .eq("id", d.id);
+      if (error) throw error;
+      const link = `${window.location.origin}/devis?token=${token}`;
+      await navigator.clipboard.writeText(link).catch(() => {});
+      toast.success("Devis remis en attente — lien de signature copié");
+      await loadDevis();
+      window.open(link, "_blank");
+    } catch (e: any) {
+      console.error(e);
+      toast.error("Impossible de relancer la signature : " + (e?.message || e));
+    } finally {
+      setBusyId(null);
+    }
+  };
+
   if (loading || devisEnvoyes.length === 0) return null;
+
 
   return (
     <Card>
@@ -135,14 +223,55 @@ ${signLink ? `<p>Pour signer votre devis en ligne : <a href="${signLink}">${sign
                   {d.dates_formation && (
                     <p className="text-xs text-primary font-medium">📅 {d.dates_formation}</p>
                   )}
+                  {fileStatus[d.id] && !fileStatus[d.id].fichier && !fileStatus[d.id].signe && (
+                    <p className="text-xs text-destructive font-medium">
+                      ⚠️ PDF introuvable — rechargez le document ou relancez la signature
+                    </p>
+                  )}
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap justify-end">
                 {d.statut === "signe" ? (
                   <Badge variant="default" className="bg-green-600 text-xs">Signé</Badge>
                 ) : (
                   <Badge variant="secondary" className="text-xs">En attente</Badge>
                 )}
+                {fileStatus[d.id] && !fileStatus[d.id].fichier && !fileStatus[d.id].signe && (
+                  <>
+                    <input
+                      type="file"
+                      accept="application/pdf,image/*"
+                      className="hidden"
+                      ref={(el) => { uploadInputs.current[d.id] = el; }}
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        e.target.value = "";
+                        if (f) rechargerPdf(d, f, d.statut === "signe" || !!d.signed_at);
+                      }}
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={busyId === d.id}
+                      title="Recharger le PDF du devis"
+                      className="bg-amber-50 hover:bg-amber-100 text-amber-800 border-amber-300"
+                      onClick={() => uploadInputs.current[d.id]?.click()}
+                    >
+                      <Plus className="w-3 h-3 mr-1" />
+                      {busyId === d.id ? "Envoi..." : "Recharger le PDF"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={busyId === d.id}
+                      title="Remettre en attente et générer un lien de signature"
+                      onClick={() => relancerSignature(d)}
+                    >
+                      <RotateCcw className="w-3 h-3 mr-1" /> Re-signer
+                    </Button>
+                  </>
+                )}
+
                 <Button
                   variant="ghost"
                   size="sm"
