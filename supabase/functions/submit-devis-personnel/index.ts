@@ -48,13 +48,18 @@ Deno.serve(async (req) => {
     const storagePath = `public/${numDevis}_${safeFile}`;
     const pdfBytes = base64ToBytes(pdfBase64);
 
-    const { error: uploadErr } = await supabase.storage
-      .from("devis")
-      .upload(storagePath, pdfBytes, { contentType: "application/pdf", upsert: true });
-    if (uploadErr) console.error("Upload error:", uploadErr);
+    let uploadOk = false;
+    for (let attempt = 0; attempt < 3 && !uploadOk; attempt++) {
+      const { error: uploadErr } = await supabase.storage
+        .from("devis")
+        .upload(storagePath, pdfBytes, { contentType: "application/pdf", upsert: true });
+      if (!uploadErr) uploadOk = true;
+      else console.error(`Upload error (essai ${attempt + 1}):`, uploadErr);
+    }
 
     const { data: urlData } = supabase.storage.from("devis").getPublicUrl(storagePath);
-    const fichierUrl = urlData?.publicUrl || "";
+    const fichierUrl = uploadOk ? (urlData?.publicUrl || "") : "";
+
 
     // ── Apprenant : trouver ou créer ──
     const { data: matched } = await supabase
