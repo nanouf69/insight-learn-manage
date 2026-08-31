@@ -1292,19 +1292,21 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     setSelectedModule(null);
     // Re-fetch completions to pick up any quiz results saved during the module
     if (apprenant?.id) {
-      const [{ data }, { data: examData }] = await Promise.all([
-        supabase
-          .from("apprenant_module_completion")
-          .select("id, module_id, score_obtenu, score_max, completed_at, details")
-          .eq("apprenant_id", apprenant.id),
+      const [completionsResult, { data: examData }] = await Promise.all([
+        fetchModuleCompletions(apprenant.id),
         supabase
           .from("apprenant_quiz_results" as any)
           .select("quiz_id")
           .eq("apprenant_id", apprenant.id)
           .eq("quiz_type", "examen_blanc"),
       ]);
-      if (data) {
-        const completionRows = data as any[];
+      if (completionsResult.ok) {
+        const completionRows = completionsResult.rows as any[];
+        await repairInconsistentCompletions(
+          apprenant.id,
+          completionRows,
+          (row) => isLegacyCompletionDone(row),
+        );
         setCompletedModuleIds(computeFullyCompletedModuleIds(completionRows));
 
         const scores: Record<number, { score_obtenu: number | null; score_max: number | null }> = {};
@@ -1313,8 +1315,10 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
           scores[normalizedId] = { score_obtenu: d.score_obtenu, score_max: d.score_max };
         });
         setModuleScores(scores);
-        setModuleCompletionsForNotes(completionRows);
+        setModuleCompletionsForNotes(completionRows as any);
+        setCompletionsLoaded(true);
       }
+
       if (examData) {
         const ids = new Set<string>((examData as any[]).map((r: any) => r.quiz_id));
         setExamBlancCompletedIds(ids);
