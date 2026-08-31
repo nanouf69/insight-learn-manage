@@ -1019,11 +1019,10 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   useEffect(() => {
     if (!apprenant?.id) return;
     const fetchCompletions = async () => {
-      const [{ data }, { data: examData }, { data: lastActivityData }, { data: lastConnData }] = await Promise.all([
-        supabase
-          .from("apprenant_module_completion")
-          .select("id, module_id, score_obtenu, score_max, completed_at, details")
-          .eq("apprenant_id", apprenant.id!),
+      const [completionsResult, { data: examData }, { data: lastActivityData }, { data: lastConnData }] = await Promise.all([
+        // Source of truth: DB progression, with retries so a transient failure
+        // never yields an empty progression (which re-locked validated modules).
+        fetchModuleCompletions(apprenant.id!),
         supabase
           .from("apprenant_quiz_results" as any)
           .select("quiz_id")
@@ -1047,8 +1046,17 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
           .limit(1),
       ]);
 
-      if (data) {
-        const completionRows = data as any[];
+      if (completionsResult.ok) {
+        const completionRows = completionsResult.rows as any[];
+
+        // Self-healing: rows whose activities are all done but not flagged
+        // completed server-side are validated now (repairs broken accounts).
+        await repairInconsistentCompletions(
+          apprenant.id!,
+          completionRows,
+          (row) => isLegacyCompletionDone(row),
+        );
+
         setCompletedModuleIds(computeFullyCompletedModuleIds(completionRows));
 
         const scores: Record<number, { score_obtenu: number | null; score_max: number | null }> = {};
@@ -1057,8 +1065,12 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
           scores[normalizedId] = { score_obtenu: d.score_obtenu, score_max: d.score_max };
         });
         setModuleScores(scores);
-        setModuleCompletionsForNotes(completionRows);
+        setModuleCompletionsForNotes(completionRows as any);
+        setCompletionsLoaded(true);
+      } else {
+        console.error("[CoursPublic] Impossible de charger la progression — verrouillage conservé");
       }
+
 
       if (examData) {
         const ids = new Set<string>((examData as any[]).map((r: any) => r.quiz_id));
