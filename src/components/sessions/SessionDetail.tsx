@@ -6071,11 +6071,12 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
             <SelectContent className="max-h-[300px]">
               {(autresSessions as any[]).map((s: any) => (
                 <SelectItem key={s.id} value={s.id}>
-                  {s.nom || s.type_session || 'Session'}
+                  {getMomentJournee(s)} · {s.nom || s.type_session || 'Session'}
                   {s.date_debut ? ` — ${formatDateShortFR(s.date_debut)}` : ''}
                   {s.lieu ? ` (${s.lieu})` : ''}
                 </SelectItem>
               ))}
+
             </SelectContent>
           </Select>
         </div>
