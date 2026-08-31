@@ -762,6 +762,10 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   if (user?.id) lastKnownUserIdRef.current = user.id;
   const effectiveUserId = user?.id || lastKnownUserIdRef.current;
   const [apprenantLoading, setApprenantLoading] = useState(false);
+  // True once the DB progression has actually been fetched. Locks are NEVER
+  // computed from an empty/optimistic progression before this is true.
+  const [completionsLoaded, setCompletionsLoaded] = useState(false);
+
   const [apprenant, setApprenant] = useState<ApprenantInfo | null>(null);
   const [apprenantFetchError, setApprenantFetchError] = useState<string | null>(null);
   const [fetchNonce, setFetchNonce] = useState(0);
