@@ -336,8 +336,11 @@ export type Database = {
           details: Json | null
           id: string
           module_id: number
+          progress: number
           score_max: number | null
           score_obtenu: number | null
+          status: string
+          updated_at: string
         }
         Insert: {
           apprenant_id: string
@@ -346,8 +349,11 @@ export type Database = {
           details?: Json | null
           id?: string
           module_id: number
+          progress?: number
           score_max?: number | null
           score_obtenu?: number | null
+          status?: string
+          updated_at?: string
         }
         Update: {
           apprenant_id?: string
@@ -356,8 +362,11 @@ export type Database = {
           details?: Json | null
           id?: string
           module_id?: number
+          progress?: number
           score_max?: number | null
           score_obtenu?: number | null
+          status?: string
+          updated_at?: string
         }
         Relationships: [
           {
@@ -3333,6 +3342,36 @@ export type Database = {
           _user_id?: string
         }
         Returns: string
+      }
+      save_module_completion: {
+        Args: {
+          _apprenant_id: string
+          _completed?: boolean
+          _details?: Json
+          _module_id: number
+          _progress?: number
+          _score_max?: number
+          _score_obtenu?: number
+        }
+        Returns: {
+          apprenant_id: string
+          completed_at: string
+          created_at: string
+          details: Json | null
+          id: string
+          module_id: number
+          progress: number
+          score_max: number | null
+          score_obtenu: number | null
+          status: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "apprenant_module_completion"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       save_module_editor_state: {
         Args: {

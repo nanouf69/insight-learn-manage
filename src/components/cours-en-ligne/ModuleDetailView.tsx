@@ -18,6 +18,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { diffModuleData, publishModuleChangeNotification } from "@/lib/moduleChangeNotifications";
 import { logModuleAudit, logAdminEditsDiff } from "@/lib/moduleAuditLog";
 import { RichText } from "@/lib/richText";
+import { saveModuleCompletion, isCompletionDone } from "@/lib/moduleCompletion";
+
 import { ColoredTextField } from "./ColoredTextField";
 
 import SlideViewer from "./slides/SlideViewer";
@@ -5789,12 +5791,13 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           //    only restore answers from the immutable snapshot in details.
           const { data: completionData } = await supabase
             .from("apprenant_module_completion")
-            .select("details, score_obtenu")
+            .select("details, score_obtenu, status, completed_at")
             .eq("apprenant_id", apprenantId)
             .eq("module_id", module.id)
             .maybeSingle();
 
-          const isAlreadyValidated = !!completionData;
+          const isAlreadyValidated = isCompletionDone(completionData as any);
+
 
           if (isAlreadyValidated) {
             // Lock all future writes to reponses_apprenants for this couple.
@@ -5985,18 +5988,24 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           const answeredCount = Object.keys(answers).length;
           const totalQ = activeExercices.reduce((s, e) => s + (e.questions?.length || 0), 0);
           const correctC = questionDetails.filter(d => d.correct).length;
-          const { error: upsertError } = await supabase.from("apprenant_module_completion").upsert({
-            apprenant_id: apprenantId,
-            module_id: module.id,
-            score_obtenu: correctC,
-            score_max: totalQ,
+          // Progress-only autosave: goes through the atomic RPC, which can
+          // NEVER downgrade an already-completed module nor lower progress.
+          const savedOk = await saveModuleCompletion({
+            apprenantId,
+            moduleId: module.id,
+            completed: false,
+            progress: totalQ > 0 ? Math.round((answeredCount / totalQ) * 100) : 0,
+            scoreObtenu: correctC,
+            scoreMax: totalQ,
             details: questionDetails,
-          } as any, { onConflict: "apprenant_id,module_id" });
-          if (upsertError) {
-            console.error("[AutoSave] Erreur upsert:", upsertError);
+            retries: 2,
+          });
+          if (!savedOk) {
+            console.error("[AutoSave] Progression non enregistrée (module", module.id, ")");
             return;
           }
           console.log(`[AutoSave] ${answeredCount}/${totalQ} réponses sauvegardées pour module ${module.id}`);
+
         } catch (e) {
           console.error("Auto-save erreur:", e);
         }
@@ -6125,6 +6134,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     // for this (apprenant, module). Module becomes frozen: no more writes
     // to reponses_apprenants allowed, results read from completion.details only.
     const moduleAlreadyValidatedRef = useRef(false);
+    const [savingCompletion, setSavingCompletion] = useState(false);
+
+
 
     const markPageCompleted = (pageIndex: number) => {
       setCompletedPages(prev => {
@@ -6163,31 +6175,40 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           })
         );
 
-        const { error } = await supabase.from("apprenant_module_completion").upsert({
-          apprenant_id: apprenantId,
-          module_id: module.id,
-          score_obtenu: totalQuestions > 0 ? correctCount : null,
-          score_max: totalQuestions > 0 ? totalQuestions : null,
+        // Terminal validation: MUST be confirmed by the server before the
+        // module is considered done and the next one unlocked.
+        setSavingCompletion(true);
+        const ok = await saveModuleCompletion({
+          apprenantId,
+          moduleId: module.id,
+          completed: true,
+          progress: 100,
+          scoreObtenu: totalQuestions > 0 ? correctCount : null,
+          scoreMax: totalQuestions > 0 ? totalQuestions : null,
           details: questionDetails,
-        } as any, { onConflict: "apprenant_id,module_id" });
+          retries: 5,
+        });
+        setSavingCompletion(false);
 
-        if (error) {
+        if (!ok) {
           completionPersistedRef.current = false;
-          console.error("Erreur completion module:", error);
-          toast.error("Le résultat du quiz n'a pas pu être enregistré");
+          toast.error("Votre progression n'a pas pu être enregistrée. Vérifiez votre connexion et réessayez.");
           return false;
         }
 
         completionPersistedRef.current = true;
+        moduleAlreadyValidatedRef.current = true;
         onModuleCompleted?.(module.id);
         return true;
       } catch (e) {
+        setSavingCompletion(false);
         completionPersistedRef.current = false;
         console.error("Erreur completion module:", e);
         toast.error("Le résultat du quiz n'a pas pu être enregistré");
         return false;
       }
     };
+
 
 
     // Introduction module IDs that require acknowledgment before quiz
@@ -7193,13 +7214,16 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                             );
                             const totalQ = activeExercices.reduce((s, e) => s + (e.questions?.length || 0), 0);
                             const correctC = questionDetails.filter(d => d.correct).length;
-                            await supabase.from("apprenant_module_completion").upsert({
-                              apprenant_id: apprenantId,
-                              module_id: module.id,
-                              score_obtenu: correctC,
-                              score_max: totalQ,
+                            await saveModuleCompletion({
+                              apprenantId,
+                              moduleId: module.id,
+                              completed: false,
+                              progress: totalQ > 0 ? Math.round((questionDetails.filter(d => d.reponseEleve).length / totalQ) * 100) : 0,
+                              scoreObtenu: correctC,
+                              scoreMax: totalQ,
                               details: questionDetails,
-                            } as any, { onConflict: "apprenant_id,module_id" });
+                            });
+
                           } catch (e) {
                             console.error("Erreur sauvegarde quiz:", e);
                           }
@@ -7786,13 +7810,16 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             </Button>
             );
           })() : (
-            <Button variant="secondary" className="gap-2" onClick={async () => {
+            <Button variant="secondary" className="gap-2" disabled={savingCompletion} onClick={async () => {
               const ok = await persistModuleCompletion();
+              if (!ok) return; // on reste sur la page tant que le serveur n'a pas confirmé
               onBack();
-              if (ok) toast.success("🎉 Module terminé !");
+              toast.success("🎉 Module terminé !");
             }}>
-              <CheckCircle2 className="w-4 h-4" /> Terminé
+              <CheckCircle2 className="w-4 h-4" />
+              {savingCompletion ? "Enregistrement…" : "Terminé"}
             </Button>
+
           )}
         </div>
         </div>

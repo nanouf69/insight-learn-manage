@@ -36,6 +36,12 @@ import { getExpectedPratiqueEmargements } from "@/lib/pratiqueEmargements";
 import { useAuth } from "@/contexts/AuthContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { computeUnlockState, isModuleLocked as computeIsModuleLocked } from "@/lib/moduleUnlockLogic";
+import {
+  fetchModuleCompletions,
+  repairInconsistentCompletions,
+  isCompletionDone,
+} from "@/lib/moduleCompletion";
+
 
 const StableModuleDetailView = memo(ModuleDetailView);
 
@@ -427,6 +433,15 @@ const hasModuleCompletionProgress = (completion: any) => {
 
 const isModuleCompletionFullyDone = (completion: any) => {
   if (!completion) return false;
+  // SOURCE OF TRUTH: server-side terminal state.
+  if (isCompletionDone(completion)) return true;
+  // Legacy heuristic (rows written before the `status` column existed).
+  return isLegacyCompletionDone(completion);
+};
+
+/** Legacy heuristic kept ONLY to detect rows that must be auto-repaired. */
+const isLegacyCompletionDone = (completion: any) => {
+  if (!completion) return false;
   // A module is fully done if it has a recorded score (validation was clicked)
   // OR if all question details have been answered
   if (completion.score_max != null && completion.score_max > 0 && completion.score_obtenu != null) {
@@ -436,6 +451,7 @@ const isModuleCompletionFullyDone = (completion: any) => {
   if (!details || details.length === 0) return true;
   return getCompletionAnsweredCount(completion) === details.length;
 };
+
 
 const normalizeLabelText = (value: string) =>
   value
@@ -746,6 +762,10 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   if (user?.id) lastKnownUserIdRef.current = user.id;
   const effectiveUserId = user?.id || lastKnownUserIdRef.current;
   const [apprenantLoading, setApprenantLoading] = useState(false);
+  // True once the DB progression has actually been fetched. Locks are NEVER
+  // computed from an empty/optimistic progression before this is true.
+  const [completionsLoaded, setCompletionsLoaded] = useState(false);
+
   const [apprenant, setApprenant] = useState<ApprenantInfo | null>(null);
   const [apprenantFetchError, setApprenantFetchError] = useState<string | null>(null);
   const [fetchNonce, setFetchNonce] = useState(0);
@@ -1003,11 +1023,10 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   useEffect(() => {
     if (!apprenant?.id) return;
     const fetchCompletions = async () => {
-      const [{ data }, { data: examData }, { data: lastActivityData }, { data: lastConnData }] = await Promise.all([
-        supabase
-          .from("apprenant_module_completion")
-          .select("id, module_id, score_obtenu, score_max, completed_at, details")
-          .eq("apprenant_id", apprenant.id!),
+      const [completionsResult, { data: examData }, { data: lastActivityData }, { data: lastConnData }] = await Promise.all([
+        // Source of truth: DB progression, with retries so a transient failure
+        // never yields an empty progression (which re-locked validated modules).
+        fetchModuleCompletions(apprenant.id!),
         supabase
           .from("apprenant_quiz_results" as any)
           .select("quiz_id")
@@ -1031,8 +1050,17 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
           .limit(1),
       ]);
 
-      if (data) {
-        const completionRows = data as any[];
+      if (completionsResult.ok) {
+        const completionRows = completionsResult.rows as any[];
+
+        // Self-healing: rows whose activities are all done but not flagged
+        // completed server-side are validated now (repairs broken accounts).
+        await repairInconsistentCompletions(
+          apprenant.id!,
+          completionRows,
+          (row) => isLegacyCompletionDone(row),
+        );
+
         setCompletedModuleIds(computeFullyCompletedModuleIds(completionRows));
 
         const scores: Record<number, { score_obtenu: number | null; score_max: number | null }> = {};
@@ -1041,8 +1069,12 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
           scores[normalizedId] = { score_obtenu: d.score_obtenu, score_max: d.score_max };
         });
         setModuleScores(scores);
-        setModuleCompletionsForNotes(completionRows);
+        setModuleCompletionsForNotes(completionRows as any);
+        setCompletionsLoaded(true);
+      } else {
+        console.error("[CoursPublic] Impossible de charger la progression — verrouillage conservé");
       }
+
 
       if (examData) {
         const ids = new Set<string>((examData as any[]).map((r: any) => r.quiz_id));
@@ -1264,19 +1296,21 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     setSelectedModule(null);
     // Re-fetch completions to pick up any quiz results saved during the module
     if (apprenant?.id) {
-      const [{ data }, { data: examData }] = await Promise.all([
-        supabase
-          .from("apprenant_module_completion")
-          .select("id, module_id, score_obtenu, score_max, completed_at, details")
-          .eq("apprenant_id", apprenant.id),
+      const [completionsResult, { data: examData }] = await Promise.all([
+        fetchModuleCompletions(apprenant.id),
         supabase
           .from("apprenant_quiz_results" as any)
           .select("quiz_id")
           .eq("apprenant_id", apprenant.id)
           .eq("quiz_type", "examen_blanc"),
       ]);
-      if (data) {
-        const completionRows = data as any[];
+      if (completionsResult.ok) {
+        const completionRows = completionsResult.rows as any[];
+        await repairInconsistentCompletions(
+          apprenant.id,
+          completionRows,
+          (row) => isLegacyCompletionDone(row),
+        );
         setCompletedModuleIds(computeFullyCompletedModuleIds(completionRows));
 
         const scores: Record<number, { score_obtenu: number | null; score_max: number | null }> = {};
@@ -1285,8 +1319,10 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
           scores[normalizedId] = { score_obtenu: d.score_obtenu, score_max: d.score_max };
         });
         setModuleScores(scores);
-        setModuleCompletionsForNotes(completionRows);
+        setModuleCompletionsForNotes(completionRows as any);
+        setCompletionsLoaded(true);
       }
+
       if (examData) {
         const ids = new Set<string>((examData as any[]).map((r: any) => r.quiz_id));
         setExamBlancCompletedIds(ids);
@@ -1943,7 +1979,10 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     return today.getTime() === lastFriday.getTime();
   })();
 
-  const isModuleLocked = (modId: number) => computeIsModuleLocked(modId, unlockState);
+  // Never decide locks before the server progression has been retrieved.
+  const isModuleLocked = (modId: number) =>
+    !completionsLoaded || computeIsModuleLocked(modId, unlockState);
+
 
   // Introduction modules: once completed, they cannot be re-opened (E-LEARNING ONLY)
   const isIntroLocked = (modId: number) => isElearning && INTRO_MODULE_IDS.has(modId) && effectivelyCompletedIds.has(modId);
@@ -2021,6 +2060,14 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         {/* Accueil tab */}
         {activeTab === "accueil" && (
           <>
+            {!completionsLoaded && (
+              <div className="mx-auto max-w-6xl px-4 pt-4">
+                <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 animate-pulse">
+                  Récupération de votre progression…
+                </div>
+              </div>
+            )}
+
             {/* Gamification: Welcome Banner + XP + Badges + Quiz */}
             {(() => {
               const xp = calculateXP(completedModuleIds, moduleScores);
