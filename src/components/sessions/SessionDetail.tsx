@@ -1809,7 +1809,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
             apprenant_id: (rowToDelete as any)?.apprenant_id ?? null,
             apprenant_nom: `${apprenantToDelete.prenom || ''} ${apprenantToDelete.nom || ''}`.trim(),
             details: {
-              session_id: sessionId,
+              session_id: (session as any)?.id ?? null,
               session_nom: (session as any)?.nom ?? null,
               row: rowToDelete ?? null,
             } as any,
