@@ -1784,15 +1784,44 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   const removeApprenant = async () => {
     if (!apprenantToDelete) return;
     try {
+      // Récupérer la ligne complète avant suppression (pour la corbeille)
+      const { data: rowToDelete } = await supabase
+        .from('session_apprenants')
+        .select('*')
+        .eq('id', apprenantToDelete.id)
+        .maybeSingle();
+
       const { error } = await supabase
         .from('session_apprenants')
         .delete()
         .eq('id', apprenantToDelete.id);
       
       if (error) throw error;
+
+      // Tracer la suppression dans la corbeille
+      try {
+        const { data: userData } = await supabase.auth.getUser();
+        if (userData?.user) {
+          await supabase.from('audit_logs').insert({
+            action: 'retrait_session',
+            admin_user_id: userData.user.id,
+            admin_email: userData.user.email ?? null,
+            apprenant_id: (rowToDelete as any)?.apprenant_id ?? null,
+            apprenant_nom: `${apprenantToDelete.prenom || ''} ${apprenantToDelete.nom || ''}`.trim(),
+            details: {
+              session_id: sessionId,
+              session_nom: (session as any)?.nom ?? null,
+              row: rowToDelete ?? null,
+            } as any,
+          } as any);
+        }
+      } catch (e) {
+        console.warn('Audit retrait_session non enregistré', e);
+      }
       
       setApprenantToDelete(null);
       refetchApprenants();
+
       toast({
         title: "Apprenant retiré",
         description: "L'apprenant a été retiré de la session.",
