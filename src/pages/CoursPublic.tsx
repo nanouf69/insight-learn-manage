@@ -36,6 +36,12 @@ import { getExpectedPratiqueEmargements } from "@/lib/pratiqueEmargements";
 import { useAuth } from "@/contexts/AuthContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { computeUnlockState, isModuleLocked as computeIsModuleLocked } from "@/lib/moduleUnlockLogic";
+import {
+  fetchModuleCompletions,
+  repairInconsistentCompletions,
+  isCompletionDone,
+} from "@/lib/moduleCompletion";
+
 
 const StableModuleDetailView = memo(ModuleDetailView);
 
