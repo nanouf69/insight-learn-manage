@@ -5789,12 +5789,13 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           //    only restore answers from the immutable snapshot in details.
           const { data: completionData } = await supabase
             .from("apprenant_module_completion")
-            .select("details, score_obtenu")
+            .select("details, score_obtenu, status, completed_at")
             .eq("apprenant_id", apprenantId)
             .eq("module_id", module.id)
             .maybeSingle();
 
-          const isAlreadyValidated = !!completionData;
+          const isAlreadyValidated = isCompletionDone(completionData as any);
+
 
           if (isAlreadyValidated) {
             // Lock all future writes to reponses_apprenants for this couple.
