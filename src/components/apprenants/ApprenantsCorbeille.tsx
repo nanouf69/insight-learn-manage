@@ -42,6 +42,7 @@ export function ApprenantsCorbeille() {
   const [restoreDialog, setRestoreDialog] = useState<{ open: boolean; id: string | null; name: string }>({ open: false, id: null, name: "" });
   const [permanentDeleteDialog, setPermanentDeleteDialog] = useState<{ open: boolean; id: string | null; name: string }>({ open: false, id: null, name: "" });
   const [restoreItemDialog, setRestoreItemDialog] = useState<{ open: boolean; item: DeletedItem | null }>({ open: false, item: null });
+  const [restoreRetraitDialog, setRestoreRetraitDialog] = useState<{ open: boolean; log: any | null }>({ open: false, log: null });
 
   // ---- Apprenants supprimés ----
   const { data: deletedApprenants = [], isLoading } = useQuery({
@@ -96,6 +97,44 @@ export function ApprenantsCorbeille() {
       return items;
     },
   });
+
+
+  // ---- Apprenants retirés de sessions ----
+  const { data: retraitsSession = [], isLoading: isLoadingRetraits } = useQuery({
+    queryKey: ["corbeille-retraits-session"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("audit_logs")
+        .select("id, apprenant_nom, apprenant_id, details, created_at")
+        .eq("action", "retrait_session")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data || []).filter((r: any) => !r.details?.restored);
+    },
+  });
+
+  const restoreRetraitMutation = useMutation({
+    mutationFn: async (log: any) => {
+      const row = log.details?.row;
+      if (!row) throw new Error("Données manquantes");
+      const { id: _oldId, created_at: _c, ...insertRow } = row;
+      const { error } = await supabase.from("session_apprenants").insert(insertRow as any);
+      if (error && !`${error.message}`.includes("duplicate")) throw error;
+      const { error: upErr } = await supabase
+        .from("audit_logs")
+        .update({ details: { ...log.details, restored: true } } as any)
+        .eq("id", log.id);
+      if (upErr) throw upErr;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["corbeille-retraits-session"] });
+      queryClient.invalidateQueries({ queryKey: ["session-apprenants"] });
+      toast.success("Apprenant réinscrit à la session");
+      setRestoreRetraitDialog({ open: false, log: null });
+    },
+    onError: (e: any) => toast.error(e?.message || "Erreur lors de la restauration"),
+  });
+
 
   const restoreMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -160,11 +199,12 @@ export function ApprenantsCorbeille() {
     onError: () => toast.error("Erreur lors de la restauration"),
   });
 
-  const totalCorbeille = deletedApprenants.length + deletedItems.length;
+  const totalCorbeille = deletedApprenants.length + deletedItems.length + retraitsSession.length;
 
   // ---- Regroupement de toutes les suppressions par jour ----
   type UnifiedEntry =
     | { kind: "apprenant"; date: string; label: string; sub: string; data: any }
+    | { kind: "retrait"; date: string; label: string; sub: string; data: any }
     | { kind: "item"; date: string; label: string; sub: string; data: DeletedItem };
 
   const entriesParJour = (() => {
@@ -179,6 +219,15 @@ export function ApprenantsCorbeille() {
         data: a,
       });
     }
+    for (const r of retraitsSession as any[]) {
+      entries.push({
+        kind: "retrait",
+        date: r.created_at,
+        label: r.apprenant_nom || "Apprenant",
+        sub: `Retiré de la session — ${r.details?.session_nom || "Session"}`,
+        data: r,
+      });
+    }
     for (const di of deletedItems) {
       entries.push({
         kind: "item",
@@ -189,6 +238,7 @@ export function ApprenantsCorbeille() {
       });
     }
     entries.sort((x, y) => new Date(y.date).getTime() - new Date(x.date).getTime());
+
 
     const groups: { jour: string; jourLabel: string; entries: UnifiedEntry[] }[] = [];
     for (const e of entries) {
@@ -204,7 +254,7 @@ export function ApprenantsCorbeille() {
     return groups;
   })();
 
-  if (isLoading || isLoadingItems) {
+  if (isLoading || isLoadingItems || isLoadingRetraits) {
     return (
       <div className="flex items-center justify-center py-12">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -238,7 +288,53 @@ export function ApprenantsCorbeille() {
             <BookOpen className="w-4 h-4" />
             Cours & Exercices ({deletedItems.length})
           </TabsTrigger>
+          <TabsTrigger value="retraits" className="gap-2">
+            <User className="w-4 h-4" />
+            Retraits de sessions ({retraitsSession.length})
+          </TabsTrigger>
         </TabsList>
+
+        {/* ===== TAB RETRAITS DE SESSIONS ===== */}
+        <TabsContent value="retraits">
+          {retraitsSession.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <Trash2 className="w-12 h-12 mx-auto mb-4 opacity-50" />
+              <p>Aucun apprenant retiré d'une session</p>
+              <p className="text-xs mt-2">Les retraits effectués depuis aujourd'hui apparaîtront ici.</p>
+            </div>
+          ) : (
+            <div className="bg-card rounded-xl border border-border overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/50">
+                    <TableHead className="font-semibold">Apprenant</TableHead>
+                    <TableHead className="font-semibold">Session</TableHead>
+                    <TableHead className="font-semibold">Retiré le</TableHead>
+                    <TableHead className="w-32"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(retraitsSession as any[]).map((r) => (
+                    <TableRow key={r.id} className="hover:bg-muted/50">
+                      <TableCell className="font-medium">{r.apprenant_nom || "-"}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">{r.details?.session_nom || "-"}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {format(new Date(r.created_at), "dd/MM/yyyy HH:mm", { locale: fr })}
+                      </TableCell>
+                      <TableCell>
+                        <Button variant="outline" size="sm" onClick={() => setRestoreRetraitDialog({ open: true, log: r })}>
+                          <RotateCcw className="w-4 h-4 mr-1" />
+                          Restaurer
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </TabsContent>
+
 
         {/* ===== TAB PAR JOUR ===== */}
         <TabsContent value="parjour">
@@ -262,9 +358,11 @@ export function ApprenantsCorbeille() {
                     {group.entries.map((e, i) => (
                       <div key={`${group.jour}-${i}`} className="flex items-center justify-between gap-4 px-4 py-3 hover:bg-muted/40">
                         <div className="flex items-center gap-3 min-w-0">
-                          <Badge variant={e.kind === "apprenant" ? "secondary" : "outline"} className="text-xs shrink-0">
+                          <Badge variant={e.kind === "item" ? "outline" : "secondary"} className="text-xs shrink-0">
                             {e.kind === "apprenant" ? (
                               <><User className="w-3 h-3 mr-1" /> Apprenant</>
+                            ) : e.kind === "retrait" ? (
+                              <><User className="w-3 h-3 mr-1" /> Retrait session</>
                             ) : (
                               <><BookOpen className="w-3 h-3 mr-1" /> {(e.data as DeletedItem).type === "cours" ? "Cours" : "Exercice"}</>
                             )}
@@ -284,11 +382,14 @@ export function ApprenantsCorbeille() {
                             onClick={() => {
                               if (e.kind === "apprenant") {
                                 setRestoreDialog({ open: true, id: e.data.id, name: e.label });
+                              } else if (e.kind === "retrait") {
+                                setRestoreRetraitDialog({ open: true, log: e.data });
                               } else {
                                 setRestoreItemDialog({ open: true, item: e.data as DeletedItem });
                               }
                             }}
                           >
+
                             <RotateCcw className="w-4 h-4 mr-1" />
                             Restaurer
                           </Button>
@@ -501,6 +602,28 @@ export function ApprenantsCorbeille() {
               disabled={restoreItemMutation.isPending}
             >
               {restoreItemMutation.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+              Restaurer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Restore retrait session dialog */}
+      <AlertDialog open={restoreRetraitDialog.open} onOpenChange={(open) => setRestoreRetraitDialog(prev => ({ ...prev, open }))}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Réinscrire cet apprenant ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              <strong>{restoreRetraitDialog.log?.apprenant_nom || "Cet apprenant"}</strong> sera réinscrit dans la session <strong>{restoreRetraitDialog.log?.details?.session_nom || ""}</strong>.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => restoreRetraitDialog.log && restoreRetraitMutation.mutate(restoreRetraitDialog.log)}
+              disabled={restoreRetraitMutation.isPending}
+            >
+              {restoreRetraitMutation.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
               Restaurer
             </AlertDialogAction>
           </AlertDialogFooter>
