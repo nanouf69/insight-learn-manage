@@ -95,7 +95,43 @@ export function ApprenantsCorbeille() {
       }
       return items;
     },
+
+  // ---- Apprenants retirés de sessions ----
+  const { data: retraitsSession = [], isLoading: isLoadingRetraits } = useQuery({
+    queryKey: ["corbeille-retraits-session"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("audit_logs")
+        .select("id, apprenant_nom, apprenant_id, details, created_at")
+        .eq("action", "retrait_session")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data || []).filter((r: any) => !r.details?.restored);
+    },
   });
+
+  const restoreRetraitMutation = useMutation({
+    mutationFn: async (log: any) => {
+      const row = log.details?.row;
+      if (!row) throw new Error("Données manquantes");
+      const { id: _oldId, created_at: _c, ...insertRow } = row;
+      const { error } = await supabase.from("session_apprenants").insert(insertRow as any);
+      if (error && !`${error.message}`.includes("duplicate")) throw error;
+      const { error: upErr } = await supabase
+        .from("audit_logs")
+        .update({ details: { ...log.details, restored: true } } as any)
+        .eq("id", log.id);
+      if (upErr) throw upErr;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["corbeille-retraits-session"] });
+      queryClient.invalidateQueries({ queryKey: ["session-apprenants"] });
+      toast.success("Apprenant réinscrit à la session");
+      setRestoreRetraitDialog({ open: false, log: null });
+    },
+    onError: (e: any) => toast.error(e?.message || "Erreur lors de la restauration"),
+  });
+
 
   const restoreMutation = useMutation({
     mutationFn: async (id: string) => {
