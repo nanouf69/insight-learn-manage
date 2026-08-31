@@ -142,6 +142,14 @@ serve(async (req) => {
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
+      // Mémoriser le nouveau mot de passe pour les futurs renvois
+      if (newPassword) {
+        await supabaseAdmin
+          .from("apprenants")
+          .update({ mot_de_passe_plateforme: newPassword })
+          .eq("id", apprenant_id);
+        apprenant.mot_de_passe_plateforme = newPassword;
+      }
     }
 
     // Send email via Outlook
