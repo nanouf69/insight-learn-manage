@@ -6163,31 +6163,40 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           })
         );
 
-        const { error } = await supabase.from("apprenant_module_completion").upsert({
-          apprenant_id: apprenantId,
-          module_id: module.id,
-          score_obtenu: totalQuestions > 0 ? correctCount : null,
-          score_max: totalQuestions > 0 ? totalQuestions : null,
+        // Terminal validation: MUST be confirmed by the server before the
+        // module is considered done and the next one unlocked.
+        setSavingCompletion(true);
+        const ok = await saveModuleCompletion({
+          apprenantId,
+          moduleId: module.id,
+          completed: true,
+          progress: 100,
+          scoreObtenu: totalQuestions > 0 ? correctCount : null,
+          scoreMax: totalQuestions > 0 ? totalQuestions : null,
           details: questionDetails,
-        } as any, { onConflict: "apprenant_id,module_id" });
+          retries: 5,
+        });
+        setSavingCompletion(false);
 
-        if (error) {
+        if (!ok) {
           completionPersistedRef.current = false;
-          console.error("Erreur completion module:", error);
-          toast.error("Le résultat du quiz n'a pas pu être enregistré");
+          toast.error("Votre progression n'a pas pu être enregistrée. Vérifiez votre connexion et réessayez.");
           return false;
         }
 
         completionPersistedRef.current = true;
+        moduleAlreadyValidatedRef.current = true;
         onModuleCompleted?.(module.id);
         return true;
       } catch (e) {
+        setSavingCompletion(false);
         completionPersistedRef.current = false;
         console.error("Erreur completion module:", e);
         toast.error("Le résultat du quiz n'a pas pu être enregistré");
         return false;
       }
     };
+
 
 
     // Introduction module IDs that require acknowledgment before quiz
