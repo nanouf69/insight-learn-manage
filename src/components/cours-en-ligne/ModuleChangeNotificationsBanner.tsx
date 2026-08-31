@@ -109,12 +109,16 @@ const ModuleChangeNotificationsBanner = ({ apprenantId, moduleId }: Props) => {
   return (
     <div className="space-y-3 mb-4">
       {visible.map((n) => (
-        <Alert key={n.id} className="border-primary/40 bg-primary/5 py-2">
-          <Bell className="h-4 w-4 text-primary" />
+        <Alert
+          key={n.id}
+          variant="destructive"
+          className="border-destructive bg-destructive/10 py-2"
+        >
+          <Bell className="h-4 w-4" />
           <div className="flex justify-between items-center gap-2 w-full">
             <div className="flex-1 min-w-0">
-              <AlertTitle className="text-primary text-sm truncate">
-                MAJ : {n.module_nom}
+              <AlertTitle className="text-sm font-bold">
+                Correction des questions : {n.module_nom}
               </AlertTitle>
               <AlertDescription className="text-xs truncate">
                 {n.change_summary.split("\n")[0]}
@@ -124,7 +128,7 @@ const ModuleChangeNotificationsBanner = ({ apprenantId, moduleId }: Props) => {
               variant="ghost"
               size="sm"
               onClick={() => handleDismiss(n.id)}
-              className="shrink-0 h-7 px-2"
+              className="shrink-0 h-7 px-2 text-destructive hover:text-destructive"
             >
               <Trash2 className="h-3.5 w-3.5" />
             </Button>
@@ -133,6 +137,7 @@ const ModuleChangeNotificationsBanner = ({ apprenantId, moduleId }: Props) => {
       ))}
     </div>
   );
+
 };
 
 export default ModuleChangeNotificationsBanner;
