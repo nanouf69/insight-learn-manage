@@ -6037,7 +6037,45 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       </Dialog>
     )}
 
+    {/* Dialogue de déplacement vers une autre session */}
+    <Dialog open={!!apprenantToMove} onOpenChange={(open) => { if (!open) { setApprenantToMove(null); setTargetSessionId(""); } }}>
+      <DialogContent className="sm:max-w-[520px]">
+        <DialogHeader>
+          <DialogTitle>Déplacer vers une autre session</DialogTitle>
+        </DialogHeader>
+        <div className="py-2 space-y-3">
+          <p className="text-sm text-muted-foreground">
+            Déplacer <span className="font-semibold text-foreground">{apprenantToMove?.prenom} {apprenantToMove?.nom}</span> vers :
+          </p>
+          <Select value={targetSessionId} onValueChange={setTargetSessionId}>
+            <SelectTrigger>
+              <SelectValue placeholder="Choisir une session de formation" />
+            </SelectTrigger>
+            <SelectContent className="max-h-[300px]">
+              {(autresSessions as any[]).map((s: any) => (
+                <SelectItem key={s.id} value={s.id}>
+                  {s.nom || s.type_session || 'Session'}
+                  {s.date_debut ? ` — ${formatDateShortFR(s.date_debut)}` : ''}
+                  {s.lieu ? ` (${s.lieu})` : ''}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <DialogFooter className="gap-2 sm:gap-0">
+          <Button variant="outline" onClick={() => { setApprenantToMove(null); setTargetSessionId(""); }}>
+            Annuler
+          </Button>
+          <Button disabled={!targetSessionId || movingApprenant} onClick={moveApprenant}>
+            {movingApprenant ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <ArrowRightLeft className="w-4 h-4 mr-2" />}
+            Déplacer
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
     {/* Dialogue de confirmation de suppression d'un apprenant */}
+
     <Dialog open={!!apprenantToDelete} onOpenChange={(open) => { if (!open) setApprenantToDelete(null); }}>
       <DialogContent className="sm:max-w-[450px]">
         <DialogHeader>
