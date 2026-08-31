@@ -3717,7 +3717,8 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                             size="sm" 
                             variant="ghost" 
                             className="text-destructive hover:text-destructive hover:bg-destructive/10 h-6 w-6 p-0 ml-auto"
-                            onClick={() => removeApprenant(sessionApprenant.id)}
+                            onClick={() => setApprenantToDelete({ id: sessionApprenant.id, nom: apprenant.nom || '', prenom: apprenant.prenom || '' })}
+                            title="Retirer l'apprenant de la session"
                           >
                             <X className="w-3.5 h-3.5" />
                           </Button>
