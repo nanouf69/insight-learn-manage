@@ -42,6 +42,7 @@ export function ApprenantsCorbeille() {
   const [restoreDialog, setRestoreDialog] = useState<{ open: boolean; id: string | null; name: string }>({ open: false, id: null, name: "" });
   const [permanentDeleteDialog, setPermanentDeleteDialog] = useState<{ open: boolean; id: string | null; name: string }>({ open: false, id: null, name: "" });
   const [restoreItemDialog, setRestoreItemDialog] = useState<{ open: boolean; item: DeletedItem | null }>({ open: false, item: null });
+  const [restoreRetraitDialog, setRestoreRetraitDialog] = useState<{ open: boolean; log: any | null }>({ open: false, log: null });
 
   // ---- Apprenants supprimés ----
   const { data: deletedApprenants = [], isLoading } = useQuery({
