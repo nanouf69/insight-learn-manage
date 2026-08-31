@@ -1,0 +1,1 @@
+REVOKE ALL ON FUNCTION public.protect_module_completion_terminal() FROM PUBLIC, anon, authenticated;
