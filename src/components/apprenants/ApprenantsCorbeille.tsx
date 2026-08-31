@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Trash2, RotateCcw, AlertTriangle, Loader2, User, BookOpen, FileText } from "lucide-react";
+import { Trash2, RotateCcw, AlertTriangle, Loader2, User, BookOpen, FileText, CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
