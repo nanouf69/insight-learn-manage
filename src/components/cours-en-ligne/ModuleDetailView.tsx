@@ -7885,6 +7885,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           .from('apprenant_module_completion')
           .select('apprenant_id, score_obtenu, score_max, completed_at, details')
           .eq('module_id', moduleId)
+          .eq('status', 'completed')
           .order('completed_at', { ascending: false });
         if (error) throw error;
         if (!completions?.length) return [];

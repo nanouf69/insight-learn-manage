@@ -433,8 +433,12 @@ const hasModuleCompletionProgress = (completion: any) => {
 
 const isModuleCompletionFullyDone = (completion: any) => {
   if (!completion) return false;
-  // SOURCE OF TRUTH: server-side terminal state.
+  // SOURCE OF TRUTH: server-side terminal state (status = 'completed').
   if (isCompletionDone(completion)) return true;
+  // Any row that carries an explicit status is governed ONLY by that status:
+  // `completed_at` alone (now written on intermediate autosaves too) never
+  // means "module terminé".
+  if (completion.status != null) return false;
   // Legacy heuristic (rows written before the `status` column existed).
   return isLegacyCompletionDone(completion);
 };
