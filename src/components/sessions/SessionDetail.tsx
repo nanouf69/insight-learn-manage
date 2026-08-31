@@ -1810,15 +1810,32 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   const { data: autresSessions = [] } = useQuery({
     queryKey: ['sessions-cibles-deplacement', session?.id],
     queryFn: async () => {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
       const { data, error } = await supabase
         .from('sessions')
-        .select('id, nom, type_session, date_debut, date_fin, lieu')
+        .select('id, nom, type_session, date_debut, date_fin, lieu, statut, creneaux, heure_debut, heure_fin')
         .order('date_debut', { ascending: false });
       if (error) throw error;
-      return (data || []).filter((s: any) => s.id !== session?.id);
+      return (data || []).filter((s: any) => {
+        if (s.id === session?.id) return false;
+        if (s.statut === 'terminee' || s.statut === 'annulee') return false;
+        const fin = s.date_fin || s.date_debut;
+        if (fin && new Date(fin) < today) return false;
+        return true;
+      });
     },
     enabled: !!session?.id,
   });
+
+  // Détermine si une session se déroule en journée ou en soirée
+  const getMomentJournee = (s: any): string => {
+    const creneaux: string[] = Array.isArray(s?.creneaux) ? s.creneaux : [];
+    const texte = `${creneaux.join(' ')} ${s?.heure_debut || ''} ${s?.nom || ''}`.toLowerCase();
+    if (/soir/.test(texte) || /\b(17|18|19|20)[h:]/.test(texte)) return '🌙 SOIRÉE';
+    return '☀️ JOURNÉE';
+  };
+
 
   const moveApprenant = async () => {
     if (!apprenantToMove || !targetSessionId) return;
