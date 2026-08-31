@@ -770,6 +770,10 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   const [resendingCredentials, setResendingCredentials] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [apprenantToDelete, setApprenantToDelete] = useState<{ id: string; nom: string; prenom: string } | null>(null);
+  // --- Déplacement d'un apprenant vers une autre session ---
+  const [apprenantToMove, setApprenantToMove] = useState<{ id: string; apprenant_id: string; nom: string; prenom: string } | null>(null);
+  const [targetSessionId, setTargetSessionId] = useState("");
+  const [movingApprenant, setMovingApprenant] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
