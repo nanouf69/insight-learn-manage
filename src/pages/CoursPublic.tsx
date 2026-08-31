@@ -2060,6 +2060,14 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         {/* Accueil tab */}
         {activeTab === "accueil" && (
           <>
+            {!completionsLoaded && (
+              <div className="mx-auto max-w-6xl px-4 pt-4">
+                <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 animate-pulse">
+                  Récupération de votre progression…
+                </div>
+              </div>
+            )}
+
             {/* Gamification: Welcome Banner + XP + Badges + Quiz */}
             {(() => {
               const xp = calculateXP(completedModuleIds, moduleScores);
