@@ -197,11 +197,12 @@ export function ApprenantsCorbeille() {
     onError: () => toast.error("Erreur lors de la restauration"),
   });
 
-  const totalCorbeille = deletedApprenants.length + deletedItems.length;
+  const totalCorbeille = deletedApprenants.length + deletedItems.length + retraitsSession.length;
 
   // ---- Regroupement de toutes les suppressions par jour ----
   type UnifiedEntry =
     | { kind: "apprenant"; date: string; label: string; sub: string; data: any }
+    | { kind: "retrait"; date: string; label: string; sub: string; data: any }
     | { kind: "item"; date: string; label: string; sub: string; data: DeletedItem };
 
   const entriesParJour = (() => {
@@ -216,6 +217,15 @@ export function ApprenantsCorbeille() {
         data: a,
       });
     }
+    for (const r of retraitsSession as any[]) {
+      entries.push({
+        kind: "retrait",
+        date: r.created_at,
+        label: r.apprenant_nom || "Apprenant",
+        sub: `Retiré de la session — ${r.details?.session_nom || "Session"}`,
+        data: r,
+      });
+    }
     for (const di of deletedItems) {
       entries.push({
         kind: "item",
@@ -226,6 +236,7 @@ export function ApprenantsCorbeille() {
       });
     }
     entries.sort((x, y) => new Date(y.date).getTime() - new Date(x.date).getTime());
+
 
     const groups: { jour: string; jourLabel: string; entries: UnifiedEntry[] }[] = [];
     for (const e of entries) {
