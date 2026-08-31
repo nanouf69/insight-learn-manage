@@ -899,11 +899,32 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="flex items-center gap-2">
-          <Mail className="w-5 h-5" />
-          Emails &amp; contacts
-        </CardTitle>
+      <CardHeader className="flex flex-row items-start justify-between">
+        <div className="space-y-1">
+          <CardTitle className="flex items-center gap-2">
+            <Mail className="w-5 h-5" />
+            Emails &amp; contacts
+          </CardTitle>
+          {apprenant.email ? (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <span className="font-medium text-foreground">{apprenant.email}</span>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                onClick={() => {
+                  navigator.clipboard.writeText(apprenant.email);
+                  toast({ title: "Adresse email copiée" });
+                }}
+                title="Copier l'adresse email"
+              >
+                <Copy className="w-3.5 h-3.5" />
+              </Button>
+            </div>
+          ) : (
+            <p className="text-sm text-destructive">Aucune adresse email renseignée</p>
+          )}
+        </div>
         <div className="flex gap-2">
           <Button
             variant="outline"
