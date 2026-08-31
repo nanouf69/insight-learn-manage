@@ -6125,6 +6125,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     // for this (apprenant, module). Module becomes frozen: no more writes
     // to reponses_apprenants allowed, results read from completion.details only.
     const moduleAlreadyValidatedRef = useRef(false);
+    const [savingCompletion, setSavingCompletion] = useState(false);
+
+
 
     const markPageCompleted = (pageIndex: number) => {
       setCompletedPages(prev => {
