@@ -295,6 +295,12 @@ serve(async (req) => {
           }
         }
 
+        // Mémoriser le mot de passe de la plateforme pour les futurs renvois d'identifiants
+        await supabaseAdmin
+          .from("apprenants")
+          .update({ mot_de_passe_plateforme: newPassword })
+          .eq("id", apprenant.id);
+
         // ===== STEP 2: Send email =====
         const rawFormation = apprenant.formation_choisie || "";
         const formationParts = rawFormation.split(" + ").map((p: string) => formationLabels[p.trim()] || p.trim()).filter(Boolean);

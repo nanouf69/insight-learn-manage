@@ -349,7 +349,7 @@ serve(async (req) => {
     for (let attempt = 1; attempt <= 3; attempt++) {
       const { error } = await supabaseAdmin
         .from("apprenants")
-        .update({ auth_user_id: authUser.user.id })
+        .update({ auth_user_id: authUser.user.id, mot_de_passe_plateforme: password })
         .eq("id", apprenant_id);
 
       if (!error) {
