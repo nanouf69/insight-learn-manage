@@ -18,6 +18,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { diffModuleData, publishModuleChangeNotification } from "@/lib/moduleChangeNotifications";
 import { logModuleAudit, logAdminEditsDiff } from "@/lib/moduleAuditLog";
 import { RichText } from "@/lib/richText";
+import { saveModuleCompletion, isCompletionDone } from "@/lib/moduleCompletion";
+
 import { ColoredTextField } from "./ColoredTextField";
 
 import SlideViewer from "./slides/SlideViewer";
