@@ -286,7 +286,53 @@ export function ApprenantsCorbeille() {
             <BookOpen className="w-4 h-4" />
             Cours & Exercices ({deletedItems.length})
           </TabsTrigger>
+          <TabsTrigger value="retraits" className="gap-2">
+            <User className="w-4 h-4" />
+            Retraits de sessions ({retraitsSession.length})
+          </TabsTrigger>
         </TabsList>
+
+        {/* ===== TAB RETRAITS DE SESSIONS ===== */}
+        <TabsContent value="retraits">
+          {retraitsSession.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <Trash2 className="w-12 h-12 mx-auto mb-4 opacity-50" />
+              <p>Aucun apprenant retiré d'une session</p>
+              <p className="text-xs mt-2">Les retraits effectués depuis aujourd'hui apparaîtront ici.</p>
+            </div>
+          ) : (
+            <div className="bg-card rounded-xl border border-border overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/50">
+                    <TableHead className="font-semibold">Apprenant</TableHead>
+                    <TableHead className="font-semibold">Session</TableHead>
+                    <TableHead className="font-semibold">Retiré le</TableHead>
+                    <TableHead className="w-32"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(retraitsSession as any[]).map((r) => (
+                    <TableRow key={r.id} className="hover:bg-muted/50">
+                      <TableCell className="font-medium">{r.apprenant_nom || "-"}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">{r.details?.session_nom || "-"}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {format(new Date(r.created_at), "dd/MM/yyyy HH:mm", { locale: fr })}
+                      </TableCell>
+                      <TableCell>
+                        <Button variant="outline" size="sm" onClick={() => setRestoreRetraitDialog({ open: true, log: r })}>
+                          <RotateCcw className="w-4 h-4 mr-1" />
+                          Restaurer
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </TabsContent>
+
 
         {/* ===== TAB PAR JOUR ===== */}
         <TabsContent value="parjour">
