@@ -7193,13 +7193,16 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                             );
                             const totalQ = activeExercices.reduce((s, e) => s + (e.questions?.length || 0), 0);
                             const correctC = questionDetails.filter(d => d.correct).length;
-                            await supabase.from("apprenant_module_completion").upsert({
-                              apprenant_id: apprenantId,
-                              module_id: module.id,
-                              score_obtenu: correctC,
-                              score_max: totalQ,
+                            await saveModuleCompletion({
+                              apprenantId,
+                              moduleId: module.id,
+                              completed: false,
+                              progress: totalQ > 0 ? Math.round((questionDetails.filter(d => d.reponseEleve).length / totalQ) * 100) : 0,
+                              scoreObtenu: correctC,
+                              scoreMax: totalQ,
                               details: questionDetails,
-                            } as any, { onConflict: "apprenant_id,module_id" });
+                            });
+
                           } catch (e) {
                             console.error("Erreur sauvegarde quiz:", e);
                           }
