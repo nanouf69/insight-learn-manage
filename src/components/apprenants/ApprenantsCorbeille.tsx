@@ -162,6 +162,48 @@ export function ApprenantsCorbeille() {
 
   const totalCorbeille = deletedApprenants.length + deletedItems.length;
 
+  // ---- Regroupement de toutes les suppressions par jour ----
+  type UnifiedEntry =
+    | { kind: "apprenant"; date: string; label: string; sub: string; data: any }
+    | { kind: "item"; date: string; label: string; sub: string; data: DeletedItem };
+
+  const entriesParJour = (() => {
+    const entries: UnifiedEntry[] = [];
+    for (const a of deletedApprenants as any[]) {
+      if (!a.deleted_at) continue;
+      entries.push({
+        kind: "apprenant",
+        date: a.deleted_at,
+        label: `${a.civilite ? a.civilite + " " : ""}${a.prenom || ""} ${a.nom || ""}`.trim(),
+        sub: a.email || a.telephone || "Apprenant",
+        data: a,
+      });
+    }
+    for (const di of deletedItems) {
+      entries.push({
+        kind: "item",
+        date: di.updatedAt,
+        label: di.item?.titre || di.item?.enonce || "Sans titre",
+        sub: `${di.type === "cours" ? "Cours" : "Exercice"} — ${di.moduleName}`,
+        data: di,
+      });
+    }
+    entries.sort((x, y) => new Date(y.date).getTime() - new Date(x.date).getTime());
+
+    const groups: { jour: string; jourLabel: string; entries: UnifiedEntry[] }[] = [];
+    for (const e of entries) {
+      const d = new Date(e.date);
+      const jour = format(d, "yyyy-MM-dd");
+      let group = groups.find(g => g.jour === jour);
+      if (!group) {
+        group = { jour, jourLabel: format(d, "EEEE d MMMM yyyy", { locale: fr }), entries: [] };
+        groups.push(group);
+      }
+      group.entries.push(e);
+    }
+    return groups;
+  })();
+
   if (isLoading || isLoadingItems) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -182,8 +224,12 @@ export function ApprenantsCorbeille() {
         </div>
       </div>
 
-      <Tabs defaultValue="apprenants">
+      <Tabs defaultValue="parjour">
         <TabsList>
+          <TabsTrigger value="parjour" className="gap-2">
+            <CalendarDays className="w-4 h-4" />
+            Par jour ({totalCorbeille})
+          </TabsTrigger>
           <TabsTrigger value="apprenants" className="gap-2">
             <User className="w-4 h-4" />
             Apprenants ({deletedApprenants.length})
@@ -193,6 +239,69 @@ export function ApprenantsCorbeille() {
             Cours & Exercices ({deletedItems.length})
           </TabsTrigger>
         </TabsList>
+
+        {/* ===== TAB PAR JOUR ===== */}
+        <TabsContent value="parjour">
+          {entriesParJour.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <Trash2 className="w-12 h-12 mx-auto mb-4 opacity-50" />
+              <p>Aucune suppression enregistrée</p>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {entriesParJour.map(group => (
+                <div key={group.jour} className="bg-card rounded-xl border border-border overflow-hidden">
+                  <div className="flex items-center justify-between px-4 py-3 bg-muted/50 border-b border-border">
+                    <div className="flex items-center gap-2">
+                      <CalendarDays className="w-4 h-4 text-muted-foreground" />
+                      <span className="font-semibold capitalize">{group.jourLabel}</span>
+                    </div>
+                    <Badge variant="outline">{group.entries.length} suppression(s)</Badge>
+                  </div>
+                  <div className="divide-y divide-border">
+                    {group.entries.map((e, i) => (
+                      <div key={`${group.jour}-${i}`} className="flex items-center justify-between gap-4 px-4 py-3 hover:bg-muted/40">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <Badge variant={e.kind === "apprenant" ? "secondary" : "outline"} className="text-xs shrink-0">
+                            {e.kind === "apprenant" ? (
+                              <><User className="w-3 h-3 mr-1" /> Apprenant</>
+                            ) : (
+                              <><BookOpen className="w-3 h-3 mr-1" /> {(e.data as DeletedItem).type === "cours" ? "Cours" : "Exercice"}</>
+                            )}
+                          </Badge>
+                          <div className="min-w-0">
+                            <p className="font-medium truncate">{e.label}</p>
+                            <p className="text-xs text-muted-foreground truncate">{e.sub}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3 shrink-0">
+                          <span className="text-xs text-muted-foreground">
+                            {format(new Date(e.date), "HH:mm", { locale: fr })}
+                          </span>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              if (e.kind === "apprenant") {
+                                setRestoreDialog({ open: true, id: e.data.id, name: e.label });
+                              } else {
+                                setRestoreItemDialog({ open: true, item: e.data as DeletedItem });
+                              }
+                            }}
+                          >
+                            <RotateCcw className="w-4 h-4 mr-1" />
+                            Restaurer
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
 
         {/* ===== TAB APPRENANTS ===== */}
         <TabsContent value="apprenants">
