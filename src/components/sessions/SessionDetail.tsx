@@ -768,6 +768,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   const [creatingAccount, setCreatingAccount] = useState(false);
   const [resendingCredentials, setResendingCredentials] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [apprenantToDelete, setApprenantToDelete] = useState<{ id: string; nom: string; prenom: string } | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -1775,15 +1776,17 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     }
   };
 
-  const removeApprenant = async (sessionApprenantId: string) => {
+  const removeApprenant = async () => {
+    if (!apprenantToDelete) return;
     try {
       const { error } = await supabase
         .from('session_apprenants')
         .delete()
-        .eq('id', sessionApprenantId);
+        .eq('id', apprenantToDelete.id);
       
       if (error) throw error;
       
+      setApprenantToDelete(null);
       refetchApprenants();
       toast({
         title: "Apprenant retiré",
@@ -3714,7 +3717,8 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                             size="sm" 
                             variant="ghost" 
                             className="text-destructive hover:text-destructive hover:bg-destructive/10 h-6 w-6 p-0 ml-auto"
-                            onClick={() => removeApprenant(sessionApprenant.id)}
+                            onClick={() => setApprenantToDelete({ id: sessionApprenant.id, nom: apprenant.nom || '', prenom: apprenant.prenom || '' })}
+                            title="Retirer l'apprenant de la session"
                           >
                             <X className="w-3.5 h-3.5" />
                           </Button>
@@ -5953,6 +5957,28 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
         </DialogContent>
       </Dialog>
     )}
+
+    {/* Dialogue de confirmation de suppression d'un apprenant */}
+    <Dialog open={!!apprenantToDelete} onOpenChange={(open) => { if (!open) setApprenantToDelete(null); }}>
+      <DialogContent className="sm:max-w-[450px]">
+        <DialogHeader>
+          <DialogTitle>Êtes-vous sûr de vouloir supprimer ?</DialogTitle>
+        </DialogHeader>
+        <div className="py-4">
+          <p className="text-sm text-muted-foreground">
+            L'apprenant <span className="font-semibold text-foreground">{apprenantToDelete?.prenom} {apprenantToDelete?.nom}</span> sera retiré de cette session. Cette action est irréversible.
+          </p>
+        </div>
+        <DialogFooter className="gap-2 sm:gap-0">
+          <Button variant="outline" onClick={() => setApprenantToDelete(null)}>
+            Annuler
+          </Button>
+          <Button variant="destructive" onClick={removeApprenant}>
+            Supprimer
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
     </>
   );
 }
