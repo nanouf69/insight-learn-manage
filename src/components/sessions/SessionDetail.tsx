@@ -1806,6 +1806,65 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     }
   };
 
+  // Liste des autres sessions (cibles possibles pour un déplacement)
+  const { data: autresSessions = [] } = useQuery({
+    queryKey: ['sessions-cibles-deplacement', session?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('sessions')
+        .select('id, nom, type_session, date_debut, date_fin, lieu')
+        .order('date_debut', { ascending: false });
+      if (error) throw error;
+      return (data || []).filter((s: any) => s.id !== session?.id);
+    },
+    enabled: !!session?.id,
+  });
+
+  const moveApprenant = async () => {
+    if (!apprenantToMove || !targetSessionId) return;
+    try {
+      setMovingApprenant(true);
+      // Évite les doublons dans la session cible
+      const { data: existing } = await supabase
+        .from('session_apprenants')
+        .select('id')
+        .eq('session_id', targetSessionId)
+        .eq('apprenant_id', apprenantToMove.apprenant_id)
+        .maybeSingle();
+
+      if (existing?.id) {
+        // Déjà inscrit dans la session cible : on retire simplement de la session courante
+        const { error } = await supabase.from('session_apprenants').delete().eq('id', apprenantToMove.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('session_apprenants')
+          .update({ session_id: targetSessionId })
+          .eq('id', apprenantToMove.id);
+        if (error) throw error;
+      }
+
+      setApprenantToMove(null);
+      setTargetSessionId("");
+      await refetchApprenants();
+      queryClient.invalidateQueries({ queryKey: ['session-apprenants'] });
+      toast({
+        title: "Apprenant déplacé",
+        description: `${apprenantToMove.prenom} ${apprenantToMove.nom} a été déplacé vers l'autre session.`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Erreur",
+        description: error?.message || "Impossible de déplacer l'apprenant.",
+        variant: "destructive",
+      });
+    } finally {
+      setMovingApprenant(false);
+    }
+  };
+
+
+
   const addFormateur = async (formateurId: string) => {
     try {
       const { error } = await supabase
