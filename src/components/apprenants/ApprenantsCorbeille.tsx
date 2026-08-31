@@ -605,6 +605,28 @@ export function ApprenantsCorbeille() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Restore retrait session dialog */}
+      <AlertDialog open={restoreRetraitDialog.open} onOpenChange={(open) => setRestoreRetraitDialog(prev => ({ ...prev, open }))}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Réinscrire cet apprenant ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              <strong>{restoreRetraitDialog.log?.apprenant_nom || "Cet apprenant"}</strong> sera réinscrit dans la session <strong>{restoreRetraitDialog.log?.details?.session_nom || ""}</strong>.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => restoreRetraitDialog.log && restoreRetraitMutation.mutate(restoreRetraitDialog.log)}
+              disabled={restoreRetraitMutation.isPending}
+            >
+              {restoreRetraitMutation.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+              Restaurer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
