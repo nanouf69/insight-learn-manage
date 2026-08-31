@@ -1776,15 +1776,17 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     }
   };
 
-  const removeApprenant = async (sessionApprenantId: string) => {
+  const removeApprenant = async () => {
+    if (!apprenantToDelete) return;
     try {
       const { error } = await supabase
         .from('session_apprenants')
         .delete()
-        .eq('id', sessionApprenantId);
+        .eq('id', apprenantToDelete.id);
       
       if (error) throw error;
       
+      setApprenantToDelete(null);
       refetchApprenants();
       toast({
         title: "Apprenant retiré",
