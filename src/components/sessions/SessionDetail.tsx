@@ -5957,6 +5957,28 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
         </DialogContent>
       </Dialog>
     )}
+
+    {/* Dialogue de confirmation de suppression d'un apprenant */}
+    <Dialog open={!!apprenantToDelete} onOpenChange={(open) => { if (!open) setApprenantToDelete(null); }}>
+      <DialogContent className="sm:max-w-[450px]">
+        <DialogHeader>
+          <DialogTitle>Êtes-vous sûr de vouloir supprimer ?</DialogTitle>
+        </DialogHeader>
+        <div className="py-4">
+          <p className="text-sm text-muted-foreground">
+            L'apprenant <span className="font-semibold text-foreground">{apprenantToDelete?.prenom} {apprenantToDelete?.nom}</span> sera retiré de cette session. Cette action est irréversible.
+          </p>
+        </div>
+        <DialogFooter className="gap-2 sm:gap-0">
+          <Button variant="outline" onClick={() => setApprenantToDelete(null)}>
+            Annuler
+          </Button>
+          <Button variant="destructive" onClick={removeApprenant}>
+            Supprimer
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
     </>
   );
 }
