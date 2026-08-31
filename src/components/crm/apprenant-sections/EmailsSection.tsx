@@ -924,7 +924,46 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
           ) : (
             <p className="text-sm text-destructive">Aucune adresse email renseignée</p>
           )}
+          {apprenant.mot_de_passe_plateforme ? (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
+              <span>Mot de passe :</span>
+              <code className="px-2 py-0.5 rounded bg-muted text-foreground font-mono">
+                {apprenant.mot_de_passe_plateforme}
+              </code>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                onClick={() => {
+                  navigator.clipboard.writeText(apprenant.mot_de_passe_plateforme);
+                  toast({ title: "Mot de passe copié" });
+                }}
+                title="Copier le mot de passe"
+              >
+                <Copy className="w-3.5 h-3.5" />
+              </Button>
+              {apprenant.email && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-6 text-xs"
+                  onClick={() => {
+                    navigator.clipboard.writeText(
+                      `Email : ${apprenant.email}\nMot de passe : ${apprenant.mot_de_passe_plateforme}`
+                    );
+                    toast({ title: "Identifiants copiés" });
+                  }}
+                >
+                  <Copy className="w-3 h-3 mr-1" />
+                  Copier les identifiants
+                </Button>
+              )}
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground">Mot de passe plateforme non enregistré</p>
+          )}
         </div>
+
         <div className="flex gap-2">
           <Button
             variant="outline"
