@@ -96,6 +96,8 @@ export function ApprenantsCorbeille() {
       }
       return items;
     },
+  });
+
 
   // ---- Apprenants retirés de sessions ----
   const { data: retraitsSession = [], isLoading: isLoadingRetraits } = useQuery({
