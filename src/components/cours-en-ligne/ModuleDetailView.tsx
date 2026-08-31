@@ -5985,18 +5985,24 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           const answeredCount = Object.keys(answers).length;
           const totalQ = activeExercices.reduce((s, e) => s + (e.questions?.length || 0), 0);
           const correctC = questionDetails.filter(d => d.correct).length;
-          const { error: upsertError } = await supabase.from("apprenant_module_completion").upsert({
-            apprenant_id: apprenantId,
-            module_id: module.id,
-            score_obtenu: correctC,
-            score_max: totalQ,
+          // Progress-only autosave: goes through the atomic RPC, which can
+          // NEVER downgrade an already-completed module nor lower progress.
+          const savedOk = await saveModuleCompletion({
+            apprenantId,
+            moduleId: module.id,
+            completed: false,
+            progress: totalQ > 0 ? Math.round((answeredCount / totalQ) * 100) : 0,
+            scoreObtenu: correctC,
+            scoreMax: totalQ,
             details: questionDetails,
-          } as any, { onConflict: "apprenant_id,module_id" });
-          if (upsertError) {
-            console.error("[AutoSave] Erreur upsert:", upsertError);
+            retries: 2,
+          });
+          if (!savedOk) {
+            console.error("[AutoSave] Progression non enregistrée (module", module.id, ")");
             return;
           }
           console.log(`[AutoSave] ${answeredCount}/${totalQ} réponses sauvegardées pour module ${module.id}`);
+
         } catch (e) {
           console.error("Auto-save erreur:", e);
         }
