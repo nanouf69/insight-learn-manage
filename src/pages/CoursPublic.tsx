@@ -427,6 +427,15 @@ const hasModuleCompletionProgress = (completion: any) => {
 
 const isModuleCompletionFullyDone = (completion: any) => {
   if (!completion) return false;
+  // SOURCE OF TRUTH: server-side terminal state.
+  if (isCompletionDone(completion)) return true;
+  // Legacy heuristic (rows written before the `status` column existed).
+  return isLegacyCompletionDone(completion);
+};
+
+/** Legacy heuristic kept ONLY to detect rows that must be auto-repaired. */
+const isLegacyCompletionDone = (completion: any) => {
+  if (!completion) return false;
   // A module is fully done if it has a recorded score (validation was clicked)
   // OR if all question details have been answered
   if (completion.score_max != null && completion.score_max > 0 && completion.score_obtenu != null) {
@@ -436,6 +445,7 @@ const isModuleCompletionFullyDone = (completion: any) => {
   if (!details || details.length === 0) return true;
   return getCompletionAnsweredCount(completion) === details.length;
 };
+
 
 const normalizeLabelText = (value: string) =>
   value
