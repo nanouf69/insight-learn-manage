@@ -310,9 +310,11 @@ export function ApprenantsCorbeille() {
                     {group.entries.map((e, i) => (
                       <div key={`${group.jour}-${i}`} className="flex items-center justify-between gap-4 px-4 py-3 hover:bg-muted/40">
                         <div className="flex items-center gap-3 min-w-0">
-                          <Badge variant={e.kind === "apprenant" ? "secondary" : "outline"} className="text-xs shrink-0">
+                          <Badge variant={e.kind === "item" ? "outline" : "secondary"} className="text-xs shrink-0">
                             {e.kind === "apprenant" ? (
                               <><User className="w-3 h-3 mr-1" /> Apprenant</>
+                            ) : e.kind === "retrait" ? (
+                              <><User className="w-3 h-3 mr-1" /> Retrait session</>
                             ) : (
                               <><BookOpen className="w-3 h-3 mr-1" /> {(e.data as DeletedItem).type === "cours" ? "Cours" : "Exercice"}</>
                             )}
@@ -332,11 +334,14 @@ export function ApprenantsCorbeille() {
                             onClick={() => {
                               if (e.kind === "apprenant") {
                                 setRestoreDialog({ open: true, id: e.data.id, name: e.label });
+                              } else if (e.kind === "retrait") {
+                                setRestoreRetraitDialog({ open: true, log: e.data });
                               } else {
                                 setRestoreItemDialog({ open: true, item: e.data as DeletedItem });
                               }
                             }}
                           >
+
                             <RotateCcw className="w-4 h-4 mr-1" />
                             Restaurer
                           </Button>
