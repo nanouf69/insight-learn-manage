@@ -255,9 +255,10 @@ export function generateEmargementPratiquePDF(
     },
   });
 
+  let afterEmargement = (doc as any).lastAutoTable.finalY + 6;
+
   const signedCount = candidats.filter((c) => c.signatureMatin || c.signatureApresMidi).length;
   if (signedCount > 0) {
-    const afterEmargement = (doc as any).lastAutoTable.finalY + 6;
     doc.setFontSize(8);
     doc.setFont("helvetica", "italic");
     doc.setTextColor(80, 80, 80);
@@ -268,7 +269,50 @@ export function generateEmargementPratiquePDF(
     );
     doc.setTextColor(0, 0, 0);
     doc.setFont("helvetica", "normal");
+    afterEmargement += 8;
   }
+
+  // ===== ZONE FORMATEUR / CACHET DU CENTRE (identique à la feuille individuelle) =====
+  const pageH = doc.internal.pageSize.getHeight();
+  const sigBoxH = 28;
+  const sigY = Math.min(afterEmargement + 4, pageH - 60);
+  const colWidth = (pageWidth - margin * 2 - 10) / 2;
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9);
+  doc.setTextColor(0, 0, 0);
+  doc.text("Formateur", margin, sigY);
+  doc.text("Cachet et signature du centre", margin + colWidth + 10, sigY);
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.text(formateurLabel, margin + 2, sigY + 6);
+  doc.text(`Fait à Lyon, le ${format(date, "dd/MM/yyyy")}`, margin + colWidth + 12, sigY + 6);
+
+  doc.setDrawColor(180, 180, 180);
+  doc.setLineWidth(0.3);
+  doc.roundedRect(margin, sigY + 2, colWidth, sigBoxH, 2, 2);
+  doc.roundedRect(margin + colWidth + 10, sigY + 2, colWidth, sigBoxH, 2, 2);
+
+  // Signature du formateur — uniquement si elle est disponible
+  const formateurSig = getFormateurSignature(formateurLabel);
+  if (formateurSig) {
+    try {
+      const sigW = Math.min(55, colWidth - 8);
+      const sigH = 20;
+      doc.addImage(
+        formateurSig,
+        "PNG",
+        margin + (colWidth - sigW) / 2,
+        sigY + 8 + (sigBoxH - 8 - sigH) / 2,
+        sigW,
+        sigH,
+      );
+    } catch (e) {
+      console.error("Erreur chargement signature formateur:", e);
+    }
+  }
+
 
   // ===== PIED DE PAGE =====
   const footerY = doc.internal.pageSize.getHeight() - 18;
