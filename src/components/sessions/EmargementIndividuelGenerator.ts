@@ -3,7 +3,7 @@ import autoTable from "jspdf-autotable";
 import { format, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
 import logoImage from "@/assets/logo-ftransport.png";
-import { SIGNATURE_NAOUFAL_DATA_URL } from "@/lib/signatureNaoufal";
+import { resolveFormateurSignature } from "@/lib/formateurSignature";
 
 interface Apprenant {
   nom: string;
@@ -279,6 +279,8 @@ function generateIndividualPage(
   const lastDay = days[days.length - 1]?.date || parseISO(session.dateFin);
   const dateSignature = format(lastDay, "dd/MM/yyyy");
 
+  const { nom: formateurNom, signature: formateurSig } = resolveFormateurSignature(session.formateurs);
+
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9);
   doc.setTextColor(0, 0, 0);
@@ -286,7 +288,7 @@ function generateIndividualPage(
   doc.text("Cachet et signature du centre", margin + colWidth + 10, sigY);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
-  doc.text("Naoufal GUENICHI", margin + 2, sigY + 6);
+  doc.text(formateurNom || "", margin + 2, sigY + 6);
   doc.text(`Fait a Lyon, le ${dateSignature}`, margin + colWidth + 12, sigY + 6);
 
   doc.setDrawColor(180, 180, 180);
@@ -294,16 +296,19 @@ function generateIndividualPage(
   doc.roundedRect(margin, sigY + 2, colWidth, sigBoxH, 2, 2);
   doc.roundedRect(margin + colWidth + 10, sigY + 2, colWidth, sigBoxH, 2, 2);
 
-  // Signature de Naoufal (image large et bien visible, centrée dans le cadre)
-  try {
-    const sigW = 60;
-    const sigH = 22;
-    const sigX = margin + (colWidth - sigW) / 2;
-    const sigImgY = sigY + 8 + (sigBoxH - 8 - sigH) / 2;
-    doc.addImage(SIGNATURE_NAOUFAL_DATA_URL, "PNG", sigX, sigImgY, sigW, sigH);
-  } catch (e) {
-    console.error("Erreur chargement signature Naoufal:", e);
+  // Signature du formateur — uniquement si elle est disponible
+  if (formateurSig) {
+    try {
+      const sigW = 60;
+      const sigH = 22;
+      const sigX = margin + (colWidth - sigW) / 2;
+      const sigImgY = sigY + 8 + (sigBoxH - 8 - sigH) / 2;
+      doc.addImage(formateurSig, "PNG", sigX, sigImgY, sigW, sigH);
+    } catch (e) {
+      console.error("Erreur chargement signature formateur:", e);
+    }
   }
+
 
   // ===== PIED DE PAGE =====
   const footerY = pgH - 8;
