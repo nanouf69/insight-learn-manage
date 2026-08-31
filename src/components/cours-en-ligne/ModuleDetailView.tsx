@@ -7810,13 +7810,16 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             </Button>
             );
           })() : (
-            <Button variant="secondary" className="gap-2" onClick={async () => {
+            <Button variant="secondary" className="gap-2" disabled={savingCompletion} onClick={async () => {
               const ok = await persistModuleCompletion();
+              if (!ok) return; // on reste sur la page tant que le serveur n'a pas confirmé
               onBack();
-              if (ok) toast.success("🎉 Module terminé !");
+              toast.success("🎉 Module terminé !");
             }}>
-              <CheckCircle2 className="w-4 h-4" /> Terminé
+              <CheckCircle2 className="w-4 h-4" />
+              {savingCompletion ? "Enregistrement…" : "Terminé"}
             </Button>
+
           )}
         </div>
         </div>
