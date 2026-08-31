@@ -1979,7 +1979,10 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     return today.getTime() === lastFriday.getTime();
   })();
 
-  const isModuleLocked = (modId: number) => computeIsModuleLocked(modId, unlockState);
+  // Never decide locks before the server progression has been retrieved.
+  const isModuleLocked = (modId: number) =>
+    !completionsLoaded || computeIsModuleLocked(modId, unlockState);
+
 
   // Introduction modules: once completed, they cannot be re-opened (E-LEARNING ONLY)
   const isIntroLocked = (modId: number) => isElearning && INTRO_MODULE_IDS.has(modId) && effectivelyCompletedIds.has(modId);
