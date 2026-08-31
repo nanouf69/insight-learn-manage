@@ -47,6 +47,7 @@ import {
   Maximize2,
   Minimize2,
   ChevronLeft,
+  ArrowRightLeft,
 } from "lucide-react";
 import { MODULES_DATA } from "@/components/cours-en-ligne/formations-data";
 import { ALL_MODULES, FORMATION_MODULES, MANAGED_MODULE_IDS, DEFAULT_MODULES_BY_TYPE } from "@/components/cours-en-ligne/modules-config";
@@ -769,6 +770,10 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   const [resendingCredentials, setResendingCredentials] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [apprenantToDelete, setApprenantToDelete] = useState<{ id: string; nom: string; prenom: string } | null>(null);
+  // --- Déplacement d'un apprenant vers une autre session ---
+  const [apprenantToMove, setApprenantToMove] = useState<{ id: string; apprenant_id: string; nom: string; prenom: string } | null>(null);
+  const [targetSessionId, setTargetSessionId] = useState("");
+  const [movingApprenant, setMovingApprenant] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -1800,6 +1805,65 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       });
     }
   };
+
+  // Liste des autres sessions (cibles possibles pour un déplacement)
+  const { data: autresSessions = [] } = useQuery({
+    queryKey: ['sessions-cibles-deplacement', session?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('sessions')
+        .select('id, nom, type_session, date_debut, date_fin, lieu')
+        .order('date_debut', { ascending: false });
+      if (error) throw error;
+      return (data || []).filter((s: any) => s.id !== session?.id);
+    },
+    enabled: !!session?.id,
+  });
+
+  const moveApprenant = async () => {
+    if (!apprenantToMove || !targetSessionId) return;
+    try {
+      setMovingApprenant(true);
+      // Évite les doublons dans la session cible
+      const { data: existing } = await supabase
+        .from('session_apprenants')
+        .select('id')
+        .eq('session_id', targetSessionId)
+        .eq('apprenant_id', apprenantToMove.apprenant_id)
+        .maybeSingle();
+
+      if (existing?.id) {
+        // Déjà inscrit dans la session cible : on retire simplement de la session courante
+        const { error } = await supabase.from('session_apprenants').delete().eq('id', apprenantToMove.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('session_apprenants')
+          .update({ session_id: targetSessionId })
+          .eq('id', apprenantToMove.id);
+        if (error) throw error;
+      }
+
+      setApprenantToMove(null);
+      setTargetSessionId("");
+      await refetchApprenants();
+      queryClient.invalidateQueries({ queryKey: ['session-apprenants'] });
+      toast({
+        title: "Apprenant déplacé",
+        description: `${apprenantToMove.prenom} ${apprenantToMove.nom} a été déplacé vers l'autre session.`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Erreur",
+        description: error?.message || "Impossible de déplacer l'apprenant.",
+        variant: "destructive",
+      });
+    } finally {
+      setMovingApprenant(false);
+    }
+  };
+
+
 
   const addFormateur = async (formateurId: string) => {
     try {
@@ -3713,10 +3777,25 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                             {apprenant.documents_complets ? <CheckCircle2 className="w-3 h-3" /> : <FileCheck className="w-3 h-3" />}
                             Possession des documents
                           </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-6 text-[11px] px-2 gap-1 ml-auto border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100 hover:text-blue-800"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setTargetSessionId("");
+                              setApprenantToMove({ id: sessionApprenant.id, apprenant_id: apprenant.id, nom: apprenant.nom || '', prenom: apprenant.prenom || '' });
+                            }}
+                            title="Déplacer vers une autre session"
+                          >
+                            <ArrowRightLeft className="w-3 h-3" />
+                            Déplacer
+                          </Button>
                           <Button 
+
                             size="sm" 
                             variant="ghost" 
-                            className="text-destructive hover:text-destructive hover:bg-destructive/10 h-6 w-6 p-0 ml-auto"
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10 h-6 w-6 p-0"
                             onClick={() => setApprenantToDelete({ id: sessionApprenant.id, nom: apprenant.nom || '', prenom: apprenant.prenom || '' })}
                             title="Retirer l'apprenant de la session"
                           >
@@ -5958,7 +6037,45 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       </Dialog>
     )}
 
+    {/* Dialogue de déplacement vers une autre session */}
+    <Dialog open={!!apprenantToMove} onOpenChange={(open) => { if (!open) { setApprenantToMove(null); setTargetSessionId(""); } }}>
+      <DialogContent className="sm:max-w-[520px]">
+        <DialogHeader>
+          <DialogTitle>Déplacer vers une autre session</DialogTitle>
+        </DialogHeader>
+        <div className="py-2 space-y-3">
+          <p className="text-sm text-muted-foreground">
+            Déplacer <span className="font-semibold text-foreground">{apprenantToMove?.prenom} {apprenantToMove?.nom}</span> vers :
+          </p>
+          <Select value={targetSessionId} onValueChange={setTargetSessionId}>
+            <SelectTrigger>
+              <SelectValue placeholder="Choisir une session de formation" />
+            </SelectTrigger>
+            <SelectContent className="max-h-[300px]">
+              {(autresSessions as any[]).map((s: any) => (
+                <SelectItem key={s.id} value={s.id}>
+                  {s.nom || s.type_session || 'Session'}
+                  {s.date_debut ? ` — ${formatDateShortFR(s.date_debut)}` : ''}
+                  {s.lieu ? ` (${s.lieu})` : ''}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <DialogFooter className="gap-2 sm:gap-0">
+          <Button variant="outline" onClick={() => { setApprenantToMove(null); setTargetSessionId(""); }}>
+            Annuler
+          </Button>
+          <Button disabled={!targetSessionId || movingApprenant} onClick={moveApprenant}>
+            {movingApprenant ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <ArrowRightLeft className="w-4 h-4 mr-2" />}
+            Déplacer
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
     {/* Dialogue de confirmation de suppression d'un apprenant */}
+
     <Dialog open={!!apprenantToDelete} onOpenChange={(open) => { if (!open) setApprenantToDelete(null); }}>
       <DialogContent className="sm:max-w-[450px]">
         <DialogHeader>
