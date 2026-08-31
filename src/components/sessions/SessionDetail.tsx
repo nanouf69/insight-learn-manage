@@ -47,6 +47,7 @@ import {
   Maximize2,
   Minimize2,
   ChevronLeft,
+  ArrowRightLeft,
 } from "lucide-react";
 import { MODULES_DATA } from "@/components/cours-en-ligne/formations-data";
 import { ALL_MODULES, FORMATION_MODULES, MANAGED_MODULE_IDS, DEFAULT_MODULES_BY_TYPE } from "@/components/cours-en-ligne/modules-config";
