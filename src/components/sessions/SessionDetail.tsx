@@ -3777,7 +3777,22 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                             {apprenant.documents_complets ? <CheckCircle2 className="w-3 h-3" /> : <FileCheck className="w-3 h-3" />}
                             Possession des documents
                           </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-6 text-[11px] px-2 gap-1 ml-auto border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100 hover:text-blue-800"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setTargetSessionId("");
+                              setApprenantToMove({ id: sessionApprenant.id, apprenant_id: apprenant.id, nom: apprenant.nom || '', prenom: apprenant.prenom || '' });
+                            }}
+                            title="Déplacer vers une autre session"
+                          >
+                            <ArrowRightLeft className="w-3 h-3" />
+                            Déplacer
+                          </Button>
                           <Button 
+
                             size="sm" 
                             variant="ghost" 
                             className="text-destructive hover:text-destructive hover:bg-destructive/10 h-6 w-6 p-0 ml-auto"
