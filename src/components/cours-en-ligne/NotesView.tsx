@@ -112,12 +112,12 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
             .from("apprenant_quiz_results")
             .select("*")
             .eq("apprenant_id", apprenantId)
-            .eq("status", "completed")
             .order("completed_at", { ascending: true }),
           supabase
             .from("apprenant_module_completion")
             .select("*")
             .eq("apprenant_id", apprenantId)
+            .eq("status", "completed")
             .order("completed_at", { ascending: true }),
         ]);
 
