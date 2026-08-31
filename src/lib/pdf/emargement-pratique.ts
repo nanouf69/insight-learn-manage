@@ -3,6 +3,8 @@ import autoTable from "jspdf-autotable";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import logoImage from "@/assets/logo-ftransport.png";
+import { getFormateurSignature } from "@/lib/formateurSignature";
+
 
 interface CandidatPratique {
   nom: string;
