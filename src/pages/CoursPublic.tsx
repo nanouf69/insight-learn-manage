@@ -1947,7 +1947,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const hasAnyIntroCompletionRow = moduleCompletionsForNotes.some((row) => {
     const mid = Number(row?.module_id);
     return (
-      row?.completed_at &&
+      row?.status === "completed" &&
       (mid === firstModuleId || INTRO_MODULE_IDS.has(mid))
     );
   });

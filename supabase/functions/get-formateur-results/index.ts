@@ -78,6 +78,7 @@ Deno.serve(async (req) => {
     let completionsQuery = supabase
       .from("apprenant_module_completion")
       .select("apprenant_id, module_id, score_obtenu, score_max, completed_at, details")
+      .eq("status", "completed")
       .order("completed_at", { ascending: false })
       .limit(5000);
 

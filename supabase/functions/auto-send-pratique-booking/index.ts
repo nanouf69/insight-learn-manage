@@ -104,6 +104,7 @@ serve(async (req) => {
         const { data, error } = await supabase
           .from("apprenant_module_completion")
           .select("apprenant_id, module_id")
+          .eq("status", "completed")
           .in("module_id", [6, 8])
           .range(from, from + pageSize - 1);
         if (error) throw error;

@@ -72,7 +72,8 @@ serve(async (req) => {
       const { data: rows } = await supabaseAdmin
         .from("apprenant_module_completion")
         .select("module_id")
-        .eq("apprenant_id", id);
+        .eq("apprenant_id", id)
+        .eq("status", "completed");
       if (rows && rows.length > 0) {
         completionMap.set(id, new Set(rows.map((r: any) => r.module_id)));
       }

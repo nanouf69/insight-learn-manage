@@ -327,7 +327,8 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
         supabase
           .from("apprenant_module_completion")
           .select("module_id")
-          .eq("apprenant_id", selectedId),
+          .eq("apprenant_id", selectedId)
+          .eq("status", "completed"),
         withUntil(
           supabase
             .from("reponses_apprenants")
