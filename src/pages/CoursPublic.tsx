@@ -433,8 +433,12 @@ const hasModuleCompletionProgress = (completion: any) => {
 
 const isModuleCompletionFullyDone = (completion: any) => {
   if (!completion) return false;
-  // SOURCE OF TRUTH: server-side terminal state.
+  // SOURCE OF TRUTH: server-side terminal state (status = 'completed').
   if (isCompletionDone(completion)) return true;
+  // Any row that carries an explicit status is governed ONLY by that status:
+  // `completed_at` alone (now written on intermediate autosaves too) never
+  // means "module terminé".
+  if (completion.status != null) return false;
   // Legacy heuristic (rows written before the `status` column existed).
   return isLegacyCompletionDone(completion);
 };
@@ -774,7 +778,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const [activeTab, setActiveTab] = useState<"accueil" | "examens" | "notes">("accueil");
   const [completedModuleIds, setCompletedModuleIds] = useState<Set<number>>(new Set());
   const [moduleScores, setModuleScores] = useState<Record<number, { score_obtenu: number | null; score_max: number | null }>>({});
-  const [moduleCompletionsForNotes, setModuleCompletionsForNotes] = useState<Array<{ id: string; module_id: number; score_obtenu: number | null; score_max: number | null; completed_at: string; details: any }>>([]);
+  const [moduleCompletionsForNotes, setModuleCompletionsForNotes] = useState<Array<{ id: string; module_id: number; score_obtenu: number | null; score_max: number | null; completed_at: string; details: any; status?: string | null; progress?: number | null }>>([]);
   const [examBlancCompletedIds, setExamBlancCompletedIds] = useState<Set<string>>(new Set());
   const [lastModuleName, setLastModuleName] = useState<string | null>(null);
   const [isInExam, setIsInExam] = useState(false);
@@ -1947,7 +1951,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const hasAnyIntroCompletionRow = moduleCompletionsForNotes.some((row) => {
     const mid = Number(row?.module_id);
     return (
-      row?.completed_at &&
+      row?.status === "completed" &&
       (mid === firstModuleId || INTRO_MODULE_IDS.has(mid))
     );
   });
@@ -2034,7 +2038,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
       <div className="max-w-6xl mx-auto px-4 py-8">
         {/* Notes tab */}
         {activeTab === "notes" && apprenant?.id && (
-          <NotesView apprenantId={apprenant.id} studentName={studentName} moduleCompletionsSeed={moduleCompletionsForNotes} />
+          <NotesView apprenantId={apprenant.id} studentName={studentName} moduleCompletionsSeed={moduleCompletionsForNotes.filter((r) => r.status === "completed") as any} />
         )}
 
         {/* Examens tab - Examens Blancs */}

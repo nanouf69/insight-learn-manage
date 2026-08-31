@@ -266,7 +266,8 @@ export function ControleQualiteTab({ apprenant }: Props) {
       const { data, error } = await supabase
         .from("apprenant_module_completion")
         .select("*")
-        .eq("apprenant_id", apprenant.id);
+        .eq("apprenant_id", apprenant.id)
+        .eq("status", "completed");
       if (error) throw error;
       return data || [];
     },
@@ -472,6 +473,7 @@ export function ControleQualiteTab({ apprenant }: Props) {
               .from("apprenant_module_completion")
               .select("module_id")
               .eq("apprenant_id", apprenant.id)
+              .eq("status", "completed")
               .range(from, to)),
             fetchAllRows<any>((from, to) => supabase
               .from("apprenant_quiz_results")
@@ -518,6 +520,7 @@ export function ControleQualiteTab({ apprenant }: Props) {
               .from("apprenant_module_completion")
               .select("module_id, completed_at")
               .eq("apprenant_id", apprenant.id)
+              .eq("status", "completed")
               .range(from, to)),
             fetchAllRows<any>((from, to) => supabase
               .from("apprenant_quiz_results")

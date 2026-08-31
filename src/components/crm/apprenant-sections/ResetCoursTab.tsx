@@ -324,6 +324,8 @@ export function ResetCoursTab({ apprenant, queryClient }: ResetCoursTabProps) {
             module_id: moduleId,
             score_obtenu: 0,
             score_max: 0,
+            status: "completed",
+            progress: 100,
             completed_at: new Date().toISOString(),
           },
           { onConflict: "apprenant_id,module_id" }

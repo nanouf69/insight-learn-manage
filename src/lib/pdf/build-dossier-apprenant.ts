@@ -172,7 +172,7 @@ export async function buildDossierApprenantIntoZip(
         .eq("apprenant_id", apprenant.id)
         .order("occurred_at", { ascending: false })
         .range(from, to)),
-      fetchAllRows<any>((from, to) => supabase.from("apprenant_module_completion").select("module_id").eq("apprenant_id", apprenant.id).range(from, to)),
+      fetchAllRows<any>((from, to) => supabase.from("apprenant_module_completion").select("module_id").eq("apprenant_id", apprenant.id).eq("status", "completed").range(from, to)),
       fetchAllRows<any>((from, to) => supabase.from("apprenant_quiz_results")
         .select("id, quiz_titre, matiere_nom, completed_at")
         .eq("apprenant_id", apprenant.id)
@@ -194,7 +194,7 @@ export async function buildDossierApprenantIntoZip(
   try {
     const [acts, compls, quizzes, emargAll, sessInscrits, exos] = await Promise.all([
       fetchAllRows<any>((from, to) => supabase.from("apprenant_module_activites").select("module_id, module_nom, action_type, occurred_at").eq("apprenant_id", apprenant.id).order("occurred_at", { ascending: true }).range(from, to)),
-      fetchAllRows<any>((from, to) => supabase.from("apprenant_module_completion").select("module_id, completed_at").eq("apprenant_id", apprenant.id).range(from, to)),
+      fetchAllRows<any>((from, to) => supabase.from("apprenant_module_completion").select("module_id, completed_at").eq("apprenant_id", apprenant.id).eq("status", "completed").range(from, to)),
       fetchAllRows<any>((from, to) => supabase.from("apprenant_quiz_results").select("quiz_titre, matiere_nom, score_obtenu, score_max, note_sur_20, reussi, duree_secondes, completed_at").eq("apprenant_id", apprenant.id).order("completed_at", { ascending: true }).range(from, to)),
       fetchAllRows<any>((from, to) => supabase.from("emargements_fc" as any).select("date_emargement, demi_journee, absent").eq("apprenant_id", apprenant.id).range(from, to)),
       fetchAllRows<any>((from, to) => supabase.from("session_apprenants").select("session_id, heure_debut_personnalisee, heure_fin_personnalisee, sessions:session_id(type_session, heure_debut, heure_fin, date_debut, date_fin)").eq("apprenant_id", apprenant.id).range(from, to)),

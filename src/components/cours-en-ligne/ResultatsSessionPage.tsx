@@ -165,6 +165,7 @@ const ResultatsSessionPage = () => {
           supabase
             .from("apprenant_module_completion")
             .select("apprenant_id, module_id, score_obtenu, score_max, details")
+            .eq("status", "completed")
             .in("apprenant_id", apprenantIds),
           supabase
             .from("apprenant_quiz_results")
