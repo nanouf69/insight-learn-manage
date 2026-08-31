@@ -557,6 +557,7 @@ export type Database = {
           montant_paye: number | null
           montant_ttc: number | null
           mot_de_passe_cma: string | null
+          mot_de_passe_plateforme: string | null
           moyen_paiement: string | null
           nom: string
           notes: string | null
@@ -618,6 +619,7 @@ export type Database = {
           montant_paye?: number | null
           montant_ttc?: number | null
           mot_de_passe_cma?: string | null
+          mot_de_passe_plateforme?: string | null
           moyen_paiement?: string | null
           nom: string
           notes?: string | null
@@ -679,6 +681,7 @@ export type Database = {
           montant_paye?: number | null
           montant_ttc?: number | null
           mot_de_passe_cma?: string | null
+          mot_de_passe_plateforme?: string | null
           moyen_paiement?: string | null
           nom?: string
           notes?: string | null
