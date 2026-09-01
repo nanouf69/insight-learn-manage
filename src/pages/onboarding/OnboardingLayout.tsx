@@ -75,7 +75,7 @@ export function OnboardingLayout({ children, currentStep, totalSteps, title }: O
       clearInterval(id);
     };
   }, []);
-  useOnboardingPersistence(apprenantId);
+  const { isModification } = useOnboardingPersistence(apprenantId);
 
   // Formation continue : bloque tout accès aux étapes > 1
   if (isFC && currentStep > 1) {
@@ -117,7 +117,19 @@ export function OnboardingLayout({ children, currentStep, totalSteps, title }: O
         </div>
       </header>
 
-      <div className="flex pt-[62px] sm:pt-[70px]">
+      {isModification && (
+        <div className="fixed top-[62px] sm:top-[70px] left-0 right-0 z-30 bg-amber-50 border-b border-amber-300">
+          <div className="max-w-7xl mx-auto px-4 py-2 text-sm text-amber-800 flex items-center gap-2">
+            <span>✏️</span>
+            <span>
+              <strong>Mode modification :</strong> vous modifiez un dossier déjà rempli.
+              Vos changements sont enregistrés automatiquement et le centre de formation en est averti.
+            </span>
+          </div>
+        </div>
+      )}
+
+      <div className={isModification ? "flex pt-[104px] sm:pt-[112px]" : "flex pt-[62px] sm:pt-[70px]"}>
         {/* Sidebar with steps - desktop only */}
         <aside className="hidden lg:block w-80 fixed left-0 top-[70px] bottom-0 bg-gray-50 border-r border-gray-200 overflow-y-auto">
           <nav className="p-6">

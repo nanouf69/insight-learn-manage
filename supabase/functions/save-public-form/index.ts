@@ -49,7 +49,7 @@ Deno.serve(async (req) => {
     // POST: save form document
     if (req.method === "POST") {
       const body = await req.json();
-      const { apprenantId, typeDocument, titre, donnees, financeur } = body;
+      const { apprenantId, typeDocument, titre, donnees, financeur, mode } = body;
 
       if (!apprenantId || !typeDocument || !titre || !donnees) {
         return new Response(JSON.stringify({ error: "Missing fields" }), {
@@ -109,10 +109,12 @@ Deno.serve(async (req) => {
       // Check if document already exists (upsert logic)
       const { data: existing } = await supabase
         .from("apprenant_documents_completes")
-        .select("id")
+        .select("id, donnees")
         .eq("apprenant_id", apprenantId)
         .eq("type_document", typeDocument)
         .maybeSingle();
+
+      const ancienEtat = (existing as any)?.donnees ?? null;
 
       if (existing) {
         const { error } = await supabase
@@ -152,13 +154,51 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Also create an alerte for the admin
-      await supabase.from("alertes_systeme").insert({
-        type: "document_upload",
-        titre: `📋 Pré-information complétée`,
-        message: `${titre} rempli par l'apprenant`,
-        details: `Apprenant ID: ${apprenantId}, Document: ${typeDocument}`,
-      });
+      // Alerte admin : création vs modification, avec anti-spam (30 min)
+      try {
+        const isModification = mode === "modification" || Boolean(existing);
+
+        // Anti-spam : une seule alerte par apprenant/document toutes les 30 minutes
+        const since = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+        const { data: recentes } = await supabase
+          .from("alertes_systeme")
+          .select("id")
+          .ilike("details", `%${apprenantId}%${typeDocument}%`)
+          .gte("created_at", since)
+          .limit(1);
+
+        if (!recentes || recentes.length === 0) {
+          const { data: infos } = await supabase
+            .from("apprenants")
+            .select("nom, prenom")
+            .eq("id", apprenantId)
+            .maybeSingle();
+          const nomComplet = infos ? `${infos.prenom ?? ""} ${infos.nom ?? ""}`.trim() : "Apprenant";
+
+          // Champs réellement modifiés
+          let champsModifies: string[] = [];
+          if (isModification && ancienEtat) {
+            champsModifies = Object.keys(donnees).filter(
+              (k) => JSON.stringify(donnees[k]) !== JSON.stringify((ancienEtat as any)[k]),
+            );
+          }
+
+          await supabase.from("alertes_systeme").insert({
+            type: "document_upload",
+            titre: isModification
+              ? `✏️ Dossier modifié — ${nomComplet}`
+              : `📋 Dossier complété — ${nomComplet}`,
+            message: isModification
+              ? `${nomComplet} a modifié son dossier : ${titre}`
+              : `${titre} rempli par ${nomComplet}`,
+            details: `Apprenant ID: ${apprenantId}, Document: ${typeDocument}${
+              champsModifies.length ? ` | Champs modifiés: ${champsModifies.join(", ")}` : ""
+            }`,
+          });
+        }
+      } catch (e) {
+        console.warn("Alerte non créée:", e);
+      }
 
       return new Response(JSON.stringify({ success: true }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
