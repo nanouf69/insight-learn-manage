@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { sendBrandedEmail } from "../_shared/send-branded-email.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -152,33 +153,8 @@ serve(async (req) => {
       }
     }
 
-    // Send email via Outlook
-    const tenantId = Deno.env.get("MS_GRAPH_TENANT_ID");
-    const clientId = Deno.env.get("MS_GRAPH_CLIENT_ID");
-    const clientSecret = Deno.env.get("MS_GRAPH_CLIENT_SECRET");
-
     let emailSent = false;
-
-    console.log("[resend-credentials] graph env", { hasTenantId: !!tenantId, hasClientId: !!clientId, hasClientSecret: !!clientSecret });
-    if (tenantId && clientId && clientSecret) {
-      try {
-        const tokenUrl = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`;
-        const params = new URLSearchParams({
-          client_id: clientId,
-          client_secret: clientSecret,
-          scope: "https://graph.microsoft.com/.default",
-          grant_type: "client_credentials",
-        });
-        const tokenRes = await fetch(tokenUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: params.toString(),
-        });
-        const tokenData = await tokenRes.json();
-        const accessToken = tokenData.access_token;
-        console.log("[resend-credentials] graph token", { ok: tokenRes.ok, hasToken: !!accessToken });
-
-        if (accessToken) {
+    try {
           const formationLabels: Record<string, string> = {
             "vtc": "Formation VTC Présentiel",
             "vtc-exam": "Formation VTC Présentiel (avec examen)",
@@ -265,46 +241,29 @@ serve(async (req) => {
           `;
 
           const senderEmail = "contact@ftransport.fr";
-          const sendUrl = `https://graph.microsoft.com/v1.0/users/${senderEmail}/sendMail`;
-          const sendRes = await fetch(sendUrl, {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              message: {
-                subject: `Votre accès à la plateforme FTRANSPORT`,
-                body: { contentType: "HTML", content: emailBody },
-                from: { emailAddress: { address: senderEmail, name: "FTRANSPORT" } },
-                toRecipients: [{ emailAddress: { address: apprenant.email } }],
-              },
-              saveToSentItems: true,
-            }),
+          const emailSubject = "Votre accès à la plateforme FTRANSPORT";
+          await sendBrandedEmail({
+            to: apprenant.email,
+            subject: emailSubject,
+            html: emailBody,
+            replyTo: senderEmail,
           });
-
-          console.log("[resend-credentials] sendMail status", sendRes.status);
-          if (sendRes.ok) {
-            emailSent = true;
-            await supabaseAdmin.from("emails").insert({
+          emailSent = true;
+          await supabaseAdmin.from("emails").insert({
               apprenant_id: apprenant_id,
-              subject: `Votre accès à la plateforme FTRANSPORT`,
+              subject: emailSubject,
               body_preview: `Bonjour ${prenom}, voici vos identifiants de connexion mis à jour.`,
               body_html: emailBody,
               sender_email: senderEmail,
+              sender_name: "FTRANSPORT",
               recipients: [apprenant.email],
               type: "sent",
               is_read: true,
               has_attachments: false,
               sent_at: new Date().toISOString(),
-            });
-          } else {
-            console.error("Failed to send email:", await sendRes.text());
-          }
-        }
-      } catch (emailErr) {
-        console.error("Email error:", emailErr);
-      }
+          });
+    } catch (emailErr) {
+      console.error("Email error:", emailErr);
     }
 
     return new Response(

@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { sendBrandedEmail } from "../_shared/send-branded-email.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -185,25 +186,6 @@ serve(async (req) => {
         { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // MS Graph
-    const tenantId = Deno.env.get("MS_GRAPH_TENANT_ID");
-    const clientId = Deno.env.get("MS_GRAPH_CLIENT_ID");
-    const clientSecret = Deno.env.get("MS_GRAPH_CLIENT_SECRET");
-    if (!tenantId || !clientId || !clientSecret) {
-      return new Response(JSON.stringify({ error: "MS Graph non configuré" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
-    const tokenRes = await fetch(`https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        client_id: clientId, client_secret: clientSecret,
-        scope: "https://graph.microsoft.com/.default", grant_type: "client_credentials",
-      }).toString(),
-    });
-    const accessToken = (await tokenRes.json()).access_token;
-    if (!accessToken) throw new Error("MS Graph token failed");
-
     const FROM = "contact@ftransport.fr";
     let sent = 0;
     const errors: string[] = [];
@@ -228,23 +210,7 @@ serve(async (req) => {
 </div>`;
 
       try {
-        const r = await fetch(`https://graph.microsoft.com/v1.0/users/${FROM}/sendMail`, {
-          method: "POST",
-          headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
-          body: JSON.stringify({
-            message: {
-              subject,
-              body: { contentType: "HTML", content: html },
-              toRecipients: [{ emailAddress: { address: a.email } }],
-              from: { emailAddress: { address: FROM, name: "FTRANSPORT" } },
-            },
-            saveToSentItems: true,
-          }),
-        });
-        if (!r.ok) {
-          errors.push(`${a.email}: ${r.status} ${(await r.text()).slice(0, 200)}`);
-          continue;
-        }
+        await sendBrandedEmail({ to: a.email, subject, html, replyTo: FROM });
         await supabase.from("emails").insert({
           apprenant_id: a.id,
           subject,

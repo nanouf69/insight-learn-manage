@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { sendBrandedEmail } from "../_shared/send-branded-email.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -412,40 +413,7 @@ serve(async (req) => {
 
     console.log(`${LOG_PREFIX}[${requestId}] Step 14 - Send welcome email flow (start)`);
     try {
-      const tenantId = Deno.env.get("MS_GRAPH_TENANT_ID");
-      const clientId = Deno.env.get("MS_GRAPH_CLIENT_ID");
-      const clientSecret = Deno.env.get("MS_GRAPH_CLIENT_SECRET");
-
-      console.log(`${LOG_PREFIX}[${requestId}] Step 14 - Email env check`, {
-        hasTenantId: !!tenantId,
-        hasClientId: !!clientId,
-        hasClientSecret: !!clientSecret,
-      });
-
-      if (tenantId && clientId && clientSecret) {
-        console.log(`${LOG_PREFIX}[${requestId}] Step 14.1 - Get MS Graph token (start)`);
-        const tokenUrl = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`;
-        const params = new URLSearchParams({
-          client_id: clientId,
-          client_secret: clientSecret,
-          scope: "https://graph.microsoft.com/.default",
-          grant_type: "client_credentials",
-        });
-
-        const tokenRes = await fetch(tokenUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: params.toString(),
-        });
-
-        const tokenData = await tokenRes.json();
-        const accessToken = tokenData.access_token;
-        console.log(`${LOG_PREFIX}[${requestId}] Step 14.1 - Get MS Graph token (done)`, {
-          ok: tokenRes.ok,
-          hasAccessToken: !!accessToken,
-        });
-
-        if (accessToken && fullApprenant) {
+      if (fullApprenant) {
           const formationLabels: Record<string, string> = {
             "vtc": "Formation VTC Présentiel",
             "vtc-exam": "Formation VTC Présentiel (avec examen)",
@@ -529,54 +497,34 @@ serve(async (req) => {
             </div>
           `;
 
-          const senderEmail = "contact@ftransport.fr";
-          const sendUrl = `https://graph.microsoft.com/v1.0/users/${senderEmail}/sendMail`;
-
           console.log(`${LOG_PREFIX}[${requestId}] Step 14.2 - Send welcome email (start)`);
-          const sendRes = await fetch(sendUrl, {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              message: {
-                subject: `🎓 Vos identifiants de cours en ligne – ${formation}`,
-                body: { contentType: "HTML", content: emailBody },
-                from: { emailAddress: { address: senderEmail, name: "FTRANSPORT" } },
-                toRecipients: [{ emailAddress: { address: email } }],
-              },
-              saveToSentItems: true,
-            }),
+          const emailSubject = `🎓 Vos identifiants de cours en ligne – ${formation}`;
+          await sendBrandedEmail({
+            to: email,
+            subject: emailSubject,
+            html: emailBody,
+            replyTo: "contact@ftransport.fr",
           });
-
-          if (!sendRes.ok) {
-            const sendErrText = await sendRes.text();
-            console.error(`${LOG_PREFIX}[${requestId}] Step 14.2 - Send welcome email failed`, sendErrText);
-          } else {
-            console.log(`${LOG_PREFIX}[${requestId}] Step 14.2 - Send welcome email (done)`);
-
-            console.log(`${LOG_PREFIX}[${requestId}] Step 14.3 - Insert email log in DB (start)`);
-            const { error: emailInsertErr } = await supabaseAdmin.from("emails").insert({
+          console.log(`${LOG_PREFIX}[${requestId}] Step 14.2 - Send welcome email (done)`);
+          console.log(`${LOG_PREFIX}[${requestId}] Step 14.3 - Insert email log in DB (start)`);
+          const { error: emailInsertErr } = await supabaseAdmin.from("emails").insert({
               apprenant_id: apprenant_id,
-              subject: `🎓 Vos identifiants de cours en ligne – ${formation}`,
+              subject: emailSubject,
               body_preview: `Bonjour ${prenom}, votre compte de cours en ligne a été créé.`,
               body_html: emailBody,
-              sender_email: senderEmail,
+              sender_email: "contact@ftransport.fr",
+              sender_name: "FTRANSPORT",
               recipients: [email],
               type: "sent",
               is_read: true,
               has_attachments: false,
               sent_at: new Date().toISOString(),
-            });
-
-            if (emailInsertErr) {
-              console.error(`${LOG_PREFIX}[${requestId}] Step 14.3 - Insert email log in DB failed`, emailInsertErr.message);
-            } else {
-              console.log(`${LOG_PREFIX}[${requestId}] Step 14.3 - Insert email log in DB (done)`);
-            }
+          });
+          if (emailInsertErr) {
+            console.error(`${LOG_PREFIX}[${requestId}] Step 14.3 - Insert email log in DB failed`, emailInsertErr.message);
+          } else {
+            console.log(`${LOG_PREFIX}[${requestId}] Step 14.3 - Insert email log in DB (done)`);
           }
-        }
       }
     } catch (emailErr) {
       const details = formatError(emailErr);

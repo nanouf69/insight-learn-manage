@@ -1,4 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { sendBrandedEmail } from "../_shared/send-branded-email.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -96,99 +97,6 @@ interface EmailAttachment {
   name: string;
   contentType: string;
   contentBytes: string; // base64
-}
-
-async function waitForDeliveryFailure(
-  accessToken: string,
-  userEmail: string,
-  to: string,
-  subject: string
-): Promise<string | null> {
-  await new Promise((resolve) => setTimeout(resolve, 3500));
-
-  const recentInbox = await fetchEmails(accessToken, userEmail, "inbox");
-  const normalizedTo = to.toLowerCase();
-  const normalizedSubject = subject.toLowerCase();
-
-  const bounce = recentInbox.find((email) => {
-    const bounceSubject = (email.subject || "").toLowerCase();
-    const body = `${email.bodyPreview || ""} ${email.body?.content || ""}`.toLowerCase();
-    return (
-      (bounceSubject.startsWith("non remis") || bounceSubject.includes("undeliver") || bounceSubject.includes("delivery failure")) &&
-      body.includes(normalizedTo) &&
-      (bounceSubject.includes(normalizedSubject.slice(0, 60)) || body.includes(normalizedSubject.slice(0, 60)))
-    );
-  });
-
-  if (!bounce) return null;
-
-  const bounceText = `${bounce.bodyPreview || ""} ${bounce.body?.content || ""}`;
-  const rateLimitMatch = bounceText.match(/550\s+5\.7\.233[^'<\n\r]*/i);
-  if (rateLimitMatch) {
-    return "Limite quotidienne Microsoft atteinte pour les destinataires externes. Réessayez demain ou augmentez la limite/licence Microsoft.";
-  }
-
-  const remoteServerMatch = bounceText.match(/Remote server returned ['"]?([^'<\n\r]+)/i);
-  return remoteServerMatch?.[1]?.trim() || "Microsoft a retourné un avis de non-remise pour ce destinataire.";
-}
-
-async function sendEmail(
-  accessToken: string,
-  userEmail: string,
-  to: string,
-  subject: string,
-  body: string,
-  requestReadReceipt: boolean = false,
-  attachments: EmailAttachment[] = []
-): Promise<boolean> {
-  const url = `https://graph.microsoft.com/v1.0/users/${userEmail}/sendMail`;
-
-  const graphAttachments = attachments.map(att => ({
-    "@odata.type": "#microsoft.graph.fileAttachment",
-    name: att.name,
-    contentType: att.contentType,
-    contentBytes: att.contentBytes,
-  }));
-
-  const emailData: any = {
-    message: {
-      subject,
-      body: {
-        contentType: "HTML",
-        content: body,
-      },
-      toRecipients: [
-        {
-          emailAddress: {
-            address: to,
-          },
-        },
-      ],
-      isDeliveryReceiptRequested: requestReadReceipt,
-      isReadReceiptRequested: requestReadReceipt,
-    },
-    saveToSentItems: true,
-  };
-
-  if (graphAttachments.length > 0) {
-    emailData.message.attachments = graphAttachments;
-  }
-
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(emailData),
-  });
-
-  if (!response.ok) {
-    console.error("Error sending email:", await response.text());
-    return false;
-  }
-
-  return true;
 }
 
 Deno.serve(async (req) => {
@@ -304,7 +212,7 @@ Deno.serve(async (req) => {
             body_preview: email.bodyPreview,
             body_html: email.body?.content,
             sender_email: syncUserEmail,
-            sender_name: null,
+            sender_name: "FTRANSPORT",
             recipients: email.toRecipients?.map((r) => r.emailAddress?.address) || [],
             type: "sent" as const,
             is_read: true,
@@ -389,7 +297,7 @@ Deno.serve(async (req) => {
           body_preview: email.bodyPreview,
           body_html: email.body?.content,
           sender_email: userEmail,
-          sender_name: null,
+          sender_name: "FTRANSPORT",
           recipients: email.toRecipients?.map((r) => r.emailAddress?.address) || [],
           type: "sent" as const,
           is_read: true,
@@ -465,57 +373,20 @@ Deno.serve(async (req) => {
 
       const attachments: EmailAttachment[] = reqBody.attachments || [];
 
-      // Send via Resend (migrated from Microsoft Graph)
-      const resendApiKey = Deno.env.get("RESEND_API_KEY");
       let success = false;
       let deliveryError: string | null = null;
-
-      if (!resendApiKey) {
-        deliveryError = "RESEND_API_KEY non configurée";
-      } else {
-        const fromAddress = "FTRANSPORT <contact@ftransport.fr>";
-        const resendPayload: any = {
-          from: fromAddress,
-          to: [to],
+      try {
+        await sendBrandedEmail({
+          to,
           subject,
           html: bodyWithSignature,
-          reply_to: userEmail && userEmail !== "contact@ftransport.fr" ? userEmail : undefined,
-        };
-
-        if (attachments.length > 0) {
-          resendPayload.attachments = attachments.map((att) => ({
-            filename: att.name,
-            content: att.contentBytes, // base64
-            content_type: att.contentType,
-          }));
-        }
-
-        try {
-          const resendRes = await fetch("https://api.resend.com/emails", {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${resendApiKey}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(resendPayload),
-          });
-
-          if (resendRes.ok) {
-            success = true;
-          } else {
-            const errText = await resendRes.text();
-            console.error("Resend error:", resendRes.status, errText);
-            try {
-              const errJson = JSON.parse(errText);
-              deliveryError = errJson.message || errJson.error || `Resend ${resendRes.status}`;
-            } catch {
-              deliveryError = `Resend ${resendRes.status}: ${errText.slice(0, 200)}`;
-            }
-          }
-        } catch (e: any) {
-          console.error("Resend network error:", e);
-          deliveryError = e?.message || "Erreur réseau Resend";
-        }
+          replyTo: userEmail !== "contact@ftransport.fr" ? userEmail : undefined,
+          attachments,
+        });
+        success = true;
+      } catch (error) {
+        deliveryError = error instanceof Error ? error.message : String(error);
+        console.error("Branded email error:", deliveryError);
       }
 
       if (success && !deliveryError) {
@@ -525,6 +396,7 @@ Deno.serve(async (req) => {
           body_preview: body.substring(0, 200),
           body_html: body,
           sender_email: "contact@ftransport.fr",
+          sender_name: "FTRANSPORT",
           recipients: [to],
           type: "sent",
           is_read: true,

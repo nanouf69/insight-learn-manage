@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { sendBrandedEmail } from "../_shared/send-branded-email.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -108,40 +109,6 @@ serve(async (req) => {
       );
     }
 
-    // MS Graph token
-    const tenantId = Deno.env.get("MS_GRAPH_TENANT_ID");
-    const clientId = Deno.env.get("MS_GRAPH_CLIENT_ID");
-    const clientSecret = Deno.env.get("MS_GRAPH_CLIENT_SECRET");
-
-    if (!tenantId || !clientId || !clientSecret) {
-      return new Response(
-        JSON.stringify({ error: "MS Graph credentials not configured" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    const tokenUrl = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`;
-    const params = new URLSearchParams({
-      client_id: clientId,
-      client_secret: clientSecret,
-      scope: "https://graph.microsoft.com/.default",
-      grant_type: "client_credentials",
-    });
-    const tokenRes = await fetch(tokenUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: params.toString(),
-    });
-    const tokenData = await tokenRes.json();
-    const accessToken = tokenData.access_token;
-
-    if (!accessToken) {
-      return new Response(
-        JSON.stringify({ error: "Failed to get MS Graph token" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
     const senderEmail = "contact@ftransport.fr";
     const coursUrl = "https://insight-learn-manage.lovable.app/cours-public";
     const results: { id: string; email: string; success: boolean; error?: string }[] = [];
@@ -220,32 +187,15 @@ serve(async (req) => {
 
         const subject = `🚨 ${prenom}, risque de suspension de votre compte – Connectez-vous à votre formation !`;
 
-        const sendUrl = `https://graph.microsoft.com/v1.0/users/${senderEmail}/sendMail`;
-        const sendRes = await fetch(sendUrl, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            message: {
-              subject,
-              body: { contentType: "HTML", content: emailBody },
-              from: { emailAddress: { address: senderEmail, name: "FTRANSPORT" } },
-              toRecipients: [{ emailAddress: { address: apprenant.email } }],
-              importance: "high",
-            },
-            saveToSentItems: true,
-          }),
-        });
-
-        if (sendRes.ok) {
+        try {
+          await sendBrandedEmail({ to: apprenant.email, subject, html: emailBody, replyTo: senderEmail });
           await supabaseAdmin.from("emails").insert({
             apprenant_id: apprenant.id,
             subject,
             body_preview: `Vous ne vous êtes pas connecté(e) après réception de vos identifiants. Risque de suspension de votre compte CPF.`,
             body_html: emailBody,
             sender_email: senderEmail,
+            sender_name: "FTRANSPORT",
             recipients: [apprenant.email],
             type: "sent",
             is_read: true,
@@ -254,10 +204,10 @@ serve(async (req) => {
           });
           results.push({ id: apprenant.id, email: apprenant.email, success: true });
           console.log(`[relance-non-connectes-post-credentials] ✅ Sent to ${apprenant.email}`);
-        } else {
-          const errText = await sendRes.text();
-          console.error(`[relance-non-connectes-post-credentials] ❌ Failed for ${apprenant.email}:`, errText);
-          results.push({ id: apprenant.id, email: apprenant.email, success: false, error: errText });
+        } catch (sendError) {
+          const message = sendError instanceof Error ? sendError.message : String(sendError);
+          console.error(`[relance-non-connectes-post-credentials] ❌ Failed for ${apprenant.email}:`, message);
+          results.push({ id: apprenant.id, email: apprenant.email, success: false, error: message });
         }
       } catch (err: unknown) {
         console.error(`[relance-non-connectes-post-credentials] Error for ${apprenant.email}:`, err);

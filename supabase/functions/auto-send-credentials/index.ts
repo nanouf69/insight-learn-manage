@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { sendBrandedEmail } from "../_shared/send-branded-email.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -136,42 +137,6 @@ serve(async (req) => {
     const toProcess = eligibleApprenants.filter((a: any) => !alreadySent.has(a.id));
 
     console.log(`[auto-send-credentials] ${toProcess.length} apprenants to process (${alreadySent.size} already sent)`);
-
-    // Get MS Graph token
-    const tenantId = Deno.env.get("MS_GRAPH_TENANT_ID");
-    const clientId = Deno.env.get("MS_GRAPH_CLIENT_ID");
-    const clientSecret = Deno.env.get("MS_GRAPH_CLIENT_SECRET");
-
-    if (!tenantId || !clientId || !clientSecret) {
-      console.error("[auto-send-credentials] MS Graph credentials missing");
-      return new Response(
-        JSON.stringify({ error: "MS Graph credentials not configured" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    const tokenUrl = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`;
-    const params = new URLSearchParams({
-      client_id: clientId,
-      client_secret: clientSecret,
-      scope: "https://graph.microsoft.com/.default",
-      grant_type: "client_credentials",
-    });
-    const tokenRes = await fetch(tokenUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: params.toString(),
-    });
-    const tokenData = await tokenRes.json();
-    const accessToken = tokenData.access_token;
-
-    if (!accessToken) {
-      console.error("[auto-send-credentials] Failed to get MS Graph token");
-      return new Response(
-        JSON.stringify({ error: "Failed to get MS Graph token" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
 
     const formationLabels: Record<string, string> = {
       "vtc": "Formation VTC Présentiel",
@@ -377,25 +342,12 @@ serve(async (req) => {
           </div>
         `;
 
-        const sendUrl = `https://graph.microsoft.com/v1.0/users/${senderEmail}/sendMail`;
-        const sendRes = await fetch(sendUrl, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            message: {
-              subject: subjectLine,
-              body: { contentType: "HTML", content: emailBody },
-              from: { emailAddress: { address: senderEmail, name: "FTRANSPORT" } },
-              toRecipients: [{ emailAddress: { address: apprenant.email } }],
-            },
-            saveToSentItems: true,
-          }),
+        await sendBrandedEmail({
+          to: apprenant.email,
+          subject: subjectLine,
+          html: emailBody,
+          replyTo: senderEmail,
         });
-
-        if (sendRes.ok) {
           // Log email
           await supabaseAdmin.from("emails").insert({
             apprenant_id: apprenant.id,
@@ -403,6 +355,7 @@ serve(async (req) => {
             body_preview: `Bonjour ${prenom}, ${startPhrase.toLowerCase()} ! Voici vos identifiants.`,
             body_html: emailBody,
             sender_email: senderEmail,
+            sender_name: "FTRANSPORT",
             recipients: [apprenant.email],
             type: "sent",
             is_read: true,
@@ -411,11 +364,6 @@ serve(async (req) => {
           });
           results.push({ id: apprenant.id, email: apprenant.email, success: true, accountCreated: !apprenant.auth_user_id });
           console.log(`[auto-send-credentials] ✅ Sent to ${apprenant.email} (account created: ${!apprenant.auth_user_id})`);
-        } else {
-          const errText = await sendRes.text();
-          console.error(`[auto-send-credentials] ❌ Failed for ${apprenant.email}:`, errText);
-          results.push({ id: apprenant.id, email: apprenant.email, success: false, error: errText });
-        }
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
         console.error(`[auto-send-credentials] Error for ${apprenant.email}:`, err);
