@@ -6801,6 +6801,27 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                       });
                       markPageCompleted(pageIdx);
 
+                      // VALIDATION DÉFINITIVE CÔTÉ SERVEUR (status = submitted)
+                      if (apprenantId) {
+                        const inlineAnswers: Record<string, any> = {};
+                        cours.quiz!.forEach((qq) => {
+                          const k = `inline-${cours.id}-${qq.id}`;
+                          if (inlineQuizAnswers[k]) inlineAnswers[k] = inlineQuizAnswers[k];
+                        });
+                        const submitted = await submitQuizAttempt({
+                          apprenantId,
+                          exerciceId: buildInlineQuizId(module.id, cours.id),
+                          exerciceType: "quiz",
+                          reponses: inlineAnswers,
+                          bonnesReponses: correctInline,
+                          totalQuestions: cours.quiz!.length,
+                        });
+                        if (!submitted) {
+                          toast.error("⚠️ Validation non enregistrée sur le serveur — vérifiez votre connexion et revalidez.");
+                          return;
+                        }
+                      }
+
                       if (correctInline === cours.quiz!.length) {
                         toast.success("🎉 Parfait ! Toutes les réponses sont correctes !");
                       } else {
@@ -7285,6 +7306,26 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
                           } catch (e) {
                             console.error("Erreur sauvegarde quiz:", e);
+                          }
+                        }
+
+                        // VALIDATION DÉFINITIVE CÔTÉ SERVEUR (status = submitted)
+                        if (apprenantId) {
+                          const exoAnswers: Record<string, any> = {};
+                          Object.entries(selectedAnswers).forEach(([k, v]) => {
+                            if (k.startsWith(`${exo.id}-`)) exoAnswers[k] = v;
+                          });
+                          const submitted = await submitQuizAttempt({
+                            apprenantId,
+                            exerciceId: buildExerciceId(module.id, exo.id),
+                            exerciceType: "quiz",
+                            reponses: exoAnswers,
+                            bonnesReponses: exoCorrect,
+                            totalQuestions: exoTotalQ,
+                          });
+                          if (!submitted) {
+                            toast.error("⚠️ Validation non enregistrée sur le serveur — vérifiez votre connexion et revalidez.");
+                            return;
                           }
                         }
 
