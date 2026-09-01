@@ -549,6 +549,7 @@ export type Database = {
           deleted_at: string | null
           documents_complets: boolean | null
           email: string | null
+          emails_bloques: boolean
           facture_contact_email: string | null
           facture_contact_nom: string | null
           facture_contact_telephone: string | null
@@ -611,6 +612,7 @@ export type Database = {
           deleted_at?: string | null
           documents_complets?: boolean | null
           email?: string | null
+          emails_bloques?: boolean
           facture_contact_email?: string | null
           facture_contact_nom?: string | null
           facture_contact_telephone?: string | null
@@ -673,6 +675,7 @@ export type Database = {
           deleted_at?: string | null
           documents_complets?: boolean | null
           email?: string | null
+          emails_bloques?: boolean
           facture_contact_email?: string | null
           facture_contact_nom?: string | null
           facture_contact_telephone?: string | null
