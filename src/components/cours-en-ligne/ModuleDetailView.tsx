@@ -19,6 +19,13 @@ import { diffModuleData, publishModuleChangeNotification } from "@/lib/moduleCha
 import { logModuleAudit, logAdminEditsDiff } from "@/lib/moduleAuditLog";
 import { RichText } from "@/lib/richText";
 import { saveModuleCompletion, isCompletionDone } from "@/lib/moduleCompletion";
+import {
+  buildExerciceId,
+  buildInlineQuizId,
+  fetchQuizAttempts,
+  isAttemptSubmitted,
+  submitQuizAttempt,
+} from "@/lib/quizAttempts";
 
 import { ColoredTextField } from "./ColoredTextField";
 
