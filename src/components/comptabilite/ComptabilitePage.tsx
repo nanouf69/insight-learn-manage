@@ -2172,7 +2172,13 @@ export function ComptabilitePage() {
         <TabsContent value="rapprochement" className="space-y-6">
           <RapprochementBancaire />
         </TabsContent>
+
+        {/* === FACTURATION ÉLECTRONIQUE === */}
+        <TabsContent value="e-facture" className="space-y-6">
+          <FacturationElectroniqueTab />
+        </TabsContent>
       </Tabs>
+
 
       {/* Aperçu et validation d'un brouillon de facture */}
       <Dialog open={!!draftPreview} onOpenChange={(open) => { if (!open) setDraftPreview(null); }}>
