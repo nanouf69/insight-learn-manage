@@ -16,12 +16,24 @@ export default function Step6() {
     <OnboardingLayout currentStep={6} totalSteps={11} title="Remplissez le formulaire">
       <div className="space-y-8">
         <div className="bg-white border border-gray-200 rounded-2xl p-6 lg:p-8">
+          <div className="bg-red-50 border-2 border-red-500 rounded-xl p-4 mb-6">
+            <p className="text-red-700 font-bold mb-2">⚠️ OBLIGATOIRE : créez un NOUVEAU compte CMA</p>
+            <p className="text-sm text-red-700">
+              Si vous avez choisi l'épreuve de <strong>Mobilité professionnelle (TAXI ou VTC)</strong>,
+              ou si vous possédez <strong>déjà un compte CMA</strong> (examen déjà passé ou réussi),
+              vous devez impérativement créer un <strong>nouveau compte</strong> avec une
+              <strong> nouvelle adresse email</strong>. N'utilisez pas votre ancien compte : votre
+              inscription serait bloquée par la CMA.
+            </p>
+          </div>
+
           <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6 flex items-start gap-3">
             <Info className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
             <p className="text-blue-700">
               Cliquez sur <strong className="text-gray-900">"Créer un compte"</strong>. Si vous avez déjà réussi un examen, choisissez une autre adresse email.
             </p>
           </div>
+
 
           <div className="mb-6">
             <img 
