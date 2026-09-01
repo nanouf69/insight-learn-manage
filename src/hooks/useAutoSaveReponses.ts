@@ -192,12 +192,27 @@ export function useAutoSaveReponses<T = Record<string, any>>({
     [apprenantId, exerciceId, exerciceType]
   );
 
-  // Mark as completed
+  // Mark as completed — VALIDATION DÉFINITIVE côté serveur.
+  // On passe par la RPC submit_quiz_attempt (status='submitted' + submitted_at),
+  // avec repli sur l'ancienne voie si la RPC échoue.
   const markCompleted = useCallback(
-    (reponses: any, score?: number | null) => {
-      saveReponses(reponses, score, true);
+    async (reponses: any, score?: number | null) => {
+      if (!apprenantId) return false;
+      const submitted = await submitQuizAttempt({
+        apprenantId,
+        exerciceId,
+        exerciceType,
+        reponses: reponses ?? {},
+        score: score ?? null,
+      });
+      if (!submitted) {
+        saveReponses(reponses, score, true);
+        return false;
+      }
+      hasSavedOnceRef.current = true;
+      return true;
     },
-    [saveReponses]
+    [apprenantId, exerciceId, exerciceType, saveReponses]
   );
 
   // beforeunload: flush pending save synchronously
