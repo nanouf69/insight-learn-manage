@@ -214,6 +214,8 @@ export function useOnboardingPersistence(apprenantId: string | null | undefined)
               typeDocument: TYPE_DOCUMENT,
               titre: TITRE,
               donnees: snapshot,
+              mode: isModificationRef.current ? "modification" : "creation",
+
             }),
           });
         }
