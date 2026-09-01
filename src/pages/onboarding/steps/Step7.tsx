@@ -63,12 +63,23 @@ export default function Step7() {
     <OnboardingLayout currentStep={7} totalSteps={11} title="Créez votre mot de passe">
       <div className="space-y-8">
         <div className="bg-white border border-gray-200 rounded-2xl p-6 lg:p-8">
+          <div className="bg-red-50 border-2 border-red-500 rounded-xl p-4 mb-6">
+            <p className="text-red-700 font-bold mb-2">⚠️ Rappel : nouveau compte CMA obligatoire</p>
+            <p className="text-sm text-red-700">
+              Épreuve de <strong>Mobilité professionnelle (TAXI ou VTC)</strong> ou{" "}
+              <strong>compte CMA déjà existant</strong> : le mot de passe doit correspondre à un
+              <strong> nouveau compte CMA</strong> créé avec une <strong>nouvelle adresse email</strong>,
+              jamais à votre ancien compte.
+            </p>
+          </div>
+
           <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 flex items-start gap-3">
             <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
             <p className="text-amber-700">
               <strong>Important :</strong> Communiquez-nous le mot de passe que vous avez choisi.
             </p>
           </div>
+
 
           <div>
             <label className="block text-sm font-medium text-gray-900 mb-1">
