@@ -2,6 +2,8 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from "react"
 import { JustificatifsTab } from "./JustificatifsTab";
 import { NotesFraisTab } from "./NotesFraisTab";
 import { RapprochementBancaire } from "./RapprochementBancaire";
+import { FacturationElectroniqueTab } from "./FacturationElectroniqueTab";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -1026,7 +1028,11 @@ export function ComptabilitePage() {
           <TabsTrigger value="rapprochement" className="gap-2 relative">
             <Link2 className="h-4 w-4" /> Rapprochement bancaire
           </TabsTrigger>
+          <TabsTrigger value="e-facture" className="gap-2">
+            <FileText className="h-4 w-4" /> Facturation électronique
+          </TabsTrigger>
         </TabsList>
+
 
         {/* === VUE D'ENSEMBLE === */}
         <TabsContent value="overview" className="space-y-6">
@@ -2168,7 +2174,13 @@ export function ComptabilitePage() {
         <TabsContent value="rapprochement" className="space-y-6">
           <RapprochementBancaire />
         </TabsContent>
+
+        {/* === FACTURATION ÉLECTRONIQUE === */}
+        <TabsContent value="e-facture" className="space-y-6">
+          <FacturationElectroniqueTab />
+        </TabsContent>
       </Tabs>
+
 
       {/* Aperçu et validation d'un brouillon de facture */}
       <Dialog open={!!draftPreview} onOpenChange={(open) => { if (!open) setDraftPreview(null); }}>

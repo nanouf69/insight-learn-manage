@@ -1486,6 +1486,44 @@ export type Database = {
         }
         Relationships: []
       }
+      facture_electronique_evenements: {
+        Row: {
+          created_at: string
+          date_evenement: string
+          facture_electronique_id: string
+          id: string
+          libelle: string | null
+          raw: Json | null
+          statut: string
+        }
+        Insert: {
+          created_at?: string
+          date_evenement?: string
+          facture_electronique_id: string
+          id?: string
+          libelle?: string | null
+          raw?: Json | null
+          statut: string
+        }
+        Update: {
+          created_at?: string
+          date_evenement?: string
+          facture_electronique_id?: string
+          id?: string
+          libelle?: string | null
+          raw?: Json | null
+          statut?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "facture_electronique_evenements_facture_electronique_id_fkey"
+            columns: ["facture_electronique_id"]
+            isOneToOne: false
+            referencedRelation: "factures_electroniques"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       facture_paiements: {
         Row: {
           created_at: string
@@ -1610,6 +1648,96 @@ export type Database = {
             columns: ["session_id"]
             isOneToOne: false
             referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      factures_electroniques: {
+        Row: {
+          created_at: string
+          date_echeance: string | null
+          date_emission: string | null
+          derniere_erreur: string | null
+          devise: string
+          environnement: string
+          facture_id: string | null
+          fichier_url: string | null
+          format: string
+          fournisseur_facture_id: string | null
+          id: string
+          montant_ht: number | null
+          montant_ttc: number | null
+          montant_tva: number | null
+          numero: string | null
+          partenaire_nom: string | null
+          partenaire_siren: string | null
+          pdp_document_id: string | null
+          raw: Json | null
+          sens: string
+          statut: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date_echeance?: string | null
+          date_emission?: string | null
+          derniere_erreur?: string | null
+          devise?: string
+          environnement?: string
+          facture_id?: string | null
+          fichier_url?: string | null
+          format?: string
+          fournisseur_facture_id?: string | null
+          id?: string
+          montant_ht?: number | null
+          montant_ttc?: number | null
+          montant_tva?: number | null
+          numero?: string | null
+          partenaire_nom?: string | null
+          partenaire_siren?: string | null
+          pdp_document_id?: string | null
+          raw?: Json | null
+          sens?: string
+          statut?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date_echeance?: string | null
+          date_emission?: string | null
+          derniere_erreur?: string | null
+          devise?: string
+          environnement?: string
+          facture_id?: string | null
+          fichier_url?: string | null
+          format?: string
+          fournisseur_facture_id?: string | null
+          id?: string
+          montant_ht?: number | null
+          montant_ttc?: number | null
+          montant_tva?: number | null
+          numero?: string | null
+          partenaire_nom?: string | null
+          partenaire_siren?: string | null
+          pdp_document_id?: string | null
+          raw?: Json | null
+          sens?: string
+          statut?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "factures_electroniques_facture_id_fkey"
+            columns: ["facture_id"]
+            isOneToOne: false
+            referencedRelation: "factures"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "factures_electroniques_fournisseur_facture_id_fkey"
+            columns: ["fournisseur_facture_id"]
+            isOneToOne: false
+            referencedRelation: "fournisseur_factures"
             referencedColumns: ["id"]
           },
         ]
