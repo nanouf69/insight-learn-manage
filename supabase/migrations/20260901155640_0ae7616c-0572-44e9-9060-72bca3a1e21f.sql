@@ -1,0 +1,2 @@
+ALTER TABLE public.apprenants ADD COLUMN IF NOT EXISTS emails_bloques boolean NOT NULL DEFAULT false;
+UPDATE public.apprenants SET emails_bloques = true WHERE id = '639cea0b-124a-4d68-803a-0e44760a6127';
