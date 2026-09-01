@@ -3,7 +3,9 @@ import autoTable from "jspdf-autotable";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import logoImage from "@/assets/logo-ftransport.png";
-import { getFormateurSignature } from "@/lib/formateurSignature";
+import tamponImage from "@/assets/tampon-entreprise.png";
+import { resolveFormateurSignature } from "@/lib/formateurSignature";
+
 
 
 interface CandidatPratique {
@@ -277,13 +279,18 @@ export function generateEmargementPratiquePDF(
   // ===== ZONE FORMATEUR / CACHET DU CENTRE (identique à la feuille individuelle) =====
   const pageH = doc.internal.pageSize.getHeight();
   const sigBoxH = 28;
-  const sigY = Math.min(afterEmargement + 4, pageH - 60);
+  // Si la place manque en bas de page, on bascule le bloc sur une nouvelle page
+  if (afterEmargement + sigBoxH + 12 > pageH - 30) {
+    doc.addPage();
+    afterEmargement = 24;
+  }
+  const sigY = afterEmargement + 4;
   const colWidth = (pageWidth - margin * 2 - 10) / 2;
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9);
   doc.setTextColor(0, 0, 0);
-  doc.text("Formateur", margin, sigY);
+  doc.text("Signature du formateur", margin, sigY);
   doc.text("Cachet et signature du centre", margin + colWidth + 10, sigY);
 
   doc.setFont("helvetica", "normal");
@@ -296,12 +303,15 @@ export function generateEmargementPratiquePDF(
   doc.roundedRect(margin, sigY + 2, colWidth, sigBoxH, 2, 2);
   doc.roundedRect(margin + colWidth + 10, sigY + 2, colWidth, sigBoxH, 2, 2);
 
-  // Signature du formateur — uniquement si elle est disponible
-  const formateurSig = getFormateurSignature(formateurLabel);
+  // Signature du formateur (gère les noms multiples "A / B", "A et B")
+  const formateurCandidates = formateurLabel
+    .split(/\s*(?:\/|,| et )\s*/i)
+    .filter((n) => n.trim().length > 0);
+  const { signature: formateurSig } = resolveFormateurSignature(formateurCandidates);
   if (formateurSig) {
     try {
       const sigW = Math.min(55, colWidth - 8);
-      const sigH = 20;
+      const sigH = 18;
       doc.addImage(
         formateurSig,
         "PNG",
@@ -314,6 +324,23 @@ export function generateEmargementPratiquePDF(
       console.error("Erreur chargement signature formateur:", e);
     }
   }
+
+  // Cachet de l'organisme
+  try {
+    const tW = Math.min(48, colWidth - 10);
+    const tH = 22;
+    doc.addImage(
+      tamponImage,
+      "PNG",
+      margin + colWidth + 10 + (colWidth - tW) / 2,
+      sigY + 9 + (sigBoxH - 9 - tH) / 2,
+      tW,
+      tH,
+    );
+  } catch (e) {
+    console.log("Tampon non chargé");
+  }
+
 
 
   // ===== PIED DE PAGE =====
