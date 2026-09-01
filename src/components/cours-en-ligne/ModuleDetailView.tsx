@@ -5907,7 +5907,13 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             console.log(`[ModuleDetailView] Module ${module.id} déjà validé pour apprenant ${apprenantId} — apprenant_module_completion figé, reponses_apprenants autorisées pour rejouer les questions fausses.`);
 
             // Merge any redo answers saved in reponses_apprenants over the frozen snapshot.
-            const exerciceIds = activeExercices.map(e => buildExerciceId(module.id, e.id));
+            const inlineQuizIds = (pages as any[])
+              .filter((p) => p?.cours?.quiz?.length)
+              .map((p) => buildInlineQuizId(module.id, p.cours.id));
+            const exerciceIds = [
+              ...activeExercices.map(e => buildExerciceId(module.id, e.id)),
+              ...inlineQuizIds,
+            ];
             if (exerciceIds.length > 0) {
               const attempts = await fetchQuizAttempts(apprenantId, exerciceIds);
               if (attempts.length > 0) {
@@ -5926,7 +5932,13 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
           } else {
             // 2) Module not yet validated → restore from reponses_apprenants (progressive save).
-            const exerciceIds = activeExercices.map(e => buildExerciceId(module.id, e.id));
+            const inlineQuizIds = (pages as any[])
+              .filter((p) => p?.cours?.quiz?.length)
+              .map((p) => buildInlineQuizId(module.id, p.cours.id));
+            const exerciceIds = [
+              ...activeExercices.map(e => buildExerciceId(module.id, e.id)),
+              ...inlineQuizIds,
+            ];
             if (exerciceIds.length > 0) {
               const attempts = await fetchQuizAttempts(apprenantId, exerciceIds);
 
