@@ -32,7 +32,7 @@ export async function sendBrandedEmail({
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     if (supabaseUrl && serviceKey && to) {
       const res = await fetch(
-        `${supabaseUrl}/rest/v1/apprenants?select=id&emails_bloques=eq.true&email=eq.${encodeURIComponent(to.trim().toLowerCase())}&limit=1`,
+        `${supabaseUrl}/rest/v1/apprenants?select=id&emails_bloques=eq.true&email=ilike.${encodeURIComponent(to.trim())}&limit=1`,
         { headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` } },
       );
       if (res.ok) {
