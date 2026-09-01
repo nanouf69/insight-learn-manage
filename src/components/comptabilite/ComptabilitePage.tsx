@@ -1026,7 +1026,11 @@ export function ComptabilitePage() {
           <TabsTrigger value="rapprochement" className="gap-2 relative">
             <Link2 className="h-4 w-4" /> Rapprochement bancaire
           </TabsTrigger>
+          <TabsTrigger value="e-facture" className="gap-2">
+            <FileText className="h-4 w-4" /> Facturation électronique
+          </TabsTrigger>
         </TabsList>
+
 
         {/* === VUE D'ENSEMBLE === */}
         <TabsContent value="overview" className="space-y-6">
