@@ -2,6 +2,8 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from "react"
 import { JustificatifsTab } from "./JustificatifsTab";
 import { NotesFraisTab } from "./NotesFraisTab";
 import { RapprochementBancaire } from "./RapprochementBancaire";
+import { FacturationElectroniqueTab } from "./FacturationElectroniqueTab";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
