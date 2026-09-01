@@ -166,15 +166,16 @@ export function CodesAccesEnvoyes({ onNavigateToApprenant }: Props) {
           )}
         </CardTitle>
         <p className="text-xs text-muted-foreground">
-          Apprenants ayant reçu leurs identifiants de connexion à partir d&apos;aujourd&apos;hui,
+          Apprenants ayant reçu leurs identifiants de connexion au cours des 7 derniers jours,
           regroupés par jour.
         </p>
       </CardHeader>
       <CardContent className="space-y-4">
         {(!data || data.length === 0) ? (
           <p className="text-sm text-muted-foreground text-center py-2">
-            Aucun code d&apos;accès envoyé aujourd&apos;hui.
+            Aucun code d&apos;accès envoyé sur les 7 derniers jours.
           </p>
+
         ) : (
           data.map(({ day, label, rows }) => (
             <div key={day} className="space-y-2">
