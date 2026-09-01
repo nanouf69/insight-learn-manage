@@ -19,6 +19,13 @@ import { diffModuleData, publishModuleChangeNotification } from "@/lib/moduleCha
 import { logModuleAudit, logAdminEditsDiff } from "@/lib/moduleAuditLog";
 import { RichText } from "@/lib/richText";
 import { saveModuleCompletion, isCompletionDone } from "@/lib/moduleCompletion";
+import {
+  buildExerciceId,
+  buildInlineQuizId,
+  fetchQuizAttempts,
+  isAttemptSubmitted,
+  submitQuizAttempt,
+} from "@/lib/quizAttempts";
 
 import { ColoredTextField } from "./ColoredTextField";
 
@@ -5780,6 +5787,49 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       return () => subscription.unsubscribe();
     }, []);
 
+    // --- Restaure l'état "validé" à partir du STATUT SERVEUR uniquement ---
+    // Un quiz est validé si, et seulement si, sa ligne reponses_apprenants
+    // a status = 'submitted'. La présence de réponses ne suffit jamais.
+    const applySubmittedAttempts = (attempts: { exercice_id: string; status?: string }[]) => {
+      const submittedExoIds: number[] = [];
+      const submittedInlineIds: number[] = [];
+      attempts.forEach((row) => {
+        if (!isAttemptSubmitted(row as any)) return;
+        const exoMatch = /_exo_(\d+)$/.exec(row.exercice_id);
+        if (exoMatch) {
+          submittedExoIds.push(Number(exoMatch[1]));
+          return;
+        }
+        const inlineMatch = /_inline_(\d+)$/.exec(row.exercice_id);
+        if (inlineMatch) submittedInlineIds.push(Number(inlineMatch[1]));
+      });
+
+      if (submittedExoIds.length > 0) {
+        setShowResultsFor((prev) => {
+          const next = new Set(prev);
+          submittedExoIds.forEach((id) => next.add(id));
+          return next;
+        });
+      }
+      if (submittedInlineIds.length > 0) {
+        setInlineQuizValidated((prev) => {
+          const next = new Set(prev);
+          submittedInlineIds.forEach((id) => next.add(id));
+          return next;
+        });
+      }
+      if (submittedExoIds.length > 0 || submittedInlineIds.length > 0) {
+        setCompletedPages((prev) => {
+          const next = new Set(prev);
+          pages.forEach((p: any, idx: number) => {
+            if (p?.type === "exercice-single" && submittedExoIds.includes(Number(p.exercice?.id))) next.add(idx);
+            if (p?.cours?.id != null && submittedInlineIds.includes(Number(p.cours.id))) next.add(idx);
+          });
+          return next;
+        });
+      }
+    };
+
     // --- Load saved partial answers from DB on mount ---
     useEffect(() => {
       if (!apprenantId || savedAnswersLoaded) return;
@@ -5857,16 +5907,18 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             console.log(`[ModuleDetailView] Module ${module.id} déjà validé pour apprenant ${apprenantId} — apprenant_module_completion figé, reponses_apprenants autorisées pour rejouer les questions fausses.`);
 
             // Merge any redo answers saved in reponses_apprenants over the frozen snapshot.
-            const exerciceIds = activeExercices.map(e => `module_${module.id}_exo_${e.id}`);
+            const inlineQuizIds = (pages as any[])
+              .filter((p) => p?.cours?.quiz?.length)
+              .map((p) => buildInlineQuizId(module.id, p.cours.id));
+            const exerciceIds = [
+              ...activeExercices.map(e => buildExerciceId(module.id, e.id)),
+              ...inlineQuizIds,
+            ];
             if (exerciceIds.length > 0) {
-              const { data: repData } = await supabase
-                .from("reponses_apprenants" as any)
-                .select("exercice_id, reponses, completed")
-                .eq("apprenant_id", apprenantId)
-                .in("exercice_id", exerciceIds);
-              if (repData && (repData as any[]).length > 0) {
+              const attempts = await fetchQuizAttempts(apprenantId, exerciceIds);
+              if (attempts.length > 0) {
                 const redo: Record<string, string | string[]> = {};
-                (repData as any[]).forEach((row: any) => {
+                attempts.forEach((row) => {
                   if (row.reponses && typeof row.reponses === "object") {
                     Object.assign(redo, row.reponses);
                   }
@@ -5874,29 +5926,36 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 if (Object.keys(redo).length > 0) {
                   setSelectedAnswers((prev) => ({ ...prev, ...redo }));
                 }
+                applySubmittedAttempts(attempts);
               }
             }
 
           } else {
             // 2) Module not yet validated → restore from reponses_apprenants (progressive save).
-            const exerciceIds = activeExercices.map(e => `module_${module.id}_exo_${e.id}`);
+            const inlineQuizIds = (pages as any[])
+              .filter((p) => p?.cours?.quiz?.length)
+              .map((p) => buildInlineQuizId(module.id, p.cours.id));
+            const exerciceIds = [
+              ...activeExercices.map(e => buildExerciceId(module.id, e.id)),
+              ...inlineQuizIds,
+            ];
             if (exerciceIds.length > 0) {
-              const { data: repData } = await supabase
-                .from("reponses_apprenants" as any)
-                .select("exercice_id, reponses, completed")
-                .eq("apprenant_id", apprenantId)
-                .in("exercice_id", exerciceIds);
+              const attempts = await fetchQuizAttempts(apprenantId, exerciceIds);
 
-              if (repData && (repData as any[]).length > 0) {
+              if (attempts.length > 0) {
                 const restored: Record<string, string | string[]> = {};
-                (repData as any[]).forEach((row: any) => {
-                  if (!row.completed && row.reponses && typeof row.reponses === "object") {
+                attempts.forEach((row) => {
+                  // Réponses restaurées quel que soit le statut : une tentative
+                  // soumise doit réafficher ses réponses ET ses corrections.
+                  if (row.reponses && typeof row.reponses === "object") {
                     Object.assign(restored, row.reponses);
                   }
                 });
                 if (Object.keys(restored).length > 0) {
                   setSelectedAnswers((prev) => (Object.keys(prev).length > 0 ? prev : restored));
                 }
+                // RÈGLE : seul status='submitted' vaut « quiz validé ».
+                applySubmittedAttempts(attempts);
               }
             }
           }
@@ -6742,6 +6801,27 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                       });
                       markPageCompleted(pageIdx);
 
+                      // VALIDATION DÉFINITIVE CÔTÉ SERVEUR (status = submitted)
+                      if (apprenantId) {
+                        const inlineAnswers: Record<string, any> = {};
+                        cours.quiz!.forEach((qq) => {
+                          const k = `inline-${cours.id}-${qq.id}`;
+                          if (inlineQuizAnswers[k]) inlineAnswers[k] = inlineQuizAnswers[k];
+                        });
+                        const submitted = await submitQuizAttempt({
+                          apprenantId,
+                          exerciceId: buildInlineQuizId(module.id, cours.id),
+                          exerciceType: "quiz",
+                          reponses: inlineAnswers,
+                          bonnesReponses: correctInline,
+                          totalQuestions: cours.quiz!.length,
+                        });
+                        if (!submitted) {
+                          toast.error("⚠️ Validation non enregistrée sur le serveur — vérifiez votre connexion et revalidez.");
+                          return;
+                        }
+                      }
+
                       if (correctInline === cours.quiz!.length) {
                         toast.success("🎉 Parfait ! Toutes les réponses sont correctes !");
                       } else {
@@ -7226,6 +7306,26 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
                           } catch (e) {
                             console.error("Erreur sauvegarde quiz:", e);
+                          }
+                        }
+
+                        // VALIDATION DÉFINITIVE CÔTÉ SERVEUR (status = submitted)
+                        if (apprenantId) {
+                          const exoAnswers: Record<string, any> = {};
+                          Object.entries(selectedAnswers).forEach(([k, v]) => {
+                            if (k.startsWith(`${exo.id}-`)) exoAnswers[k] = v;
+                          });
+                          const submitted = await submitQuizAttempt({
+                            apprenantId,
+                            exerciceId: buildExerciceId(module.id, exo.id),
+                            exerciceType: "quiz",
+                            reponses: exoAnswers,
+                            bonnesReponses: exoCorrect,
+                            totalQuestions: exoTotalQ,
+                          });
+                          if (!submitted) {
+                            toast.error("⚠️ Validation non enregistrée sur le serveur — vérifiez votre connexion et revalidez.");
+                            return;
                           }
                         }
 

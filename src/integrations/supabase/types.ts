@@ -2878,6 +2878,7 @@ export type Database = {
       reponses_apprenants: {
         Row: {
           apprenant_id: string
+          bonnes_reponses: number | null
           completed: boolean
           created_at: string
           exercice_id: string
@@ -2885,11 +2886,16 @@ export type Database = {
           id: string
           reponses: Json
           score: number | null
+          status: string
+          submitted_at: string | null
+          tentative: number
+          total_questions: number | null
           updated_at: string
           user_id: string
         }
         Insert: {
           apprenant_id: string
+          bonnes_reponses?: number | null
           completed?: boolean
           created_at?: string
           exercice_id: string
@@ -2897,11 +2903,16 @@ export type Database = {
           id?: string
           reponses?: Json
           score?: number | null
+          status?: string
+          submitted_at?: string | null
+          tentative?: number
+          total_questions?: number | null
           updated_at?: string
           user_id: string
         }
         Update: {
           apprenant_id?: string
+          bonnes_reponses?: number | null
           completed?: boolean
           created_at?: string
           exercice_id?: string
@@ -2909,6 +2920,10 @@ export type Database = {
           id?: string
           reponses?: Json
           score?: number | null
+          status?: string
+          submitted_at?: string | null
+          tentative?: number
+          total_questions?: number | null
           updated_at?: string
           user_id?: string
         }
@@ -2921,6 +2936,57 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      reponses_apprenants_historique: {
+        Row: {
+          apprenant_id: string
+          archived_at: string
+          bonnes_reponses: number | null
+          created_at: string
+          exercice_id: string
+          exercice_type: string
+          id: string
+          reponses: Json
+          score: number | null
+          status: string
+          submitted_at: string | null
+          tentative: number
+          total_questions: number | null
+          user_id: string | null
+        }
+        Insert: {
+          apprenant_id: string
+          archived_at?: string
+          bonnes_reponses?: number | null
+          created_at?: string
+          exercice_id: string
+          exercice_type: string
+          id?: string
+          reponses?: Json
+          score?: number | null
+          status?: string
+          submitted_at?: string | null
+          tentative?: number
+          total_questions?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          apprenant_id?: string
+          archived_at?: string
+          bonnes_reponses?: number | null
+          created_at?: string
+          exercice_id?: string
+          exercice_type?: string
+          id?: string
+          reponses?: Json
+          score?: number | null
+          status?: string
+          submitted_at?: string | null
+          tentative?: number
+          total_questions?: number | null
+          user_id?: string | null
+        }
+        Relationships: []
       }
       reservations_pratique: {
         Row: {
@@ -3343,6 +3409,32 @@ export type Database = {
         }
         Returns: string
       }
+      reset_quiz_attempt: {
+        Args: { _apprenant_id: string; _exercice_id: string }
+        Returns: {
+          apprenant_id: string
+          bonnes_reponses: number | null
+          completed: boolean
+          created_at: string
+          exercice_id: string
+          exercice_type: string
+          id: string
+          reponses: Json
+          score: number | null
+          status: string
+          submitted_at: string | null
+          tentative: number
+          total_questions: number | null
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "reponses_apprenants"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       save_module_completion: {
         Args: {
           _apprenant_id: string
@@ -3419,6 +3511,40 @@ export type Database = {
               started_at: string
             }[]
           }
+      submit_quiz_attempt: {
+        Args: {
+          _apprenant_id: string
+          _bonnes_reponses?: number
+          _exercice_id: string
+          _exercice_type: string
+          _reponses: Json
+          _score?: number
+          _total_questions?: number
+        }
+        Returns: {
+          apprenant_id: string
+          bonnes_reponses: number | null
+          completed: boolean
+          created_at: string
+          exercice_id: string
+          exercice_type: string
+          id: string
+          reponses: Json
+          score: number | null
+          status: string
+          submitted_at: string | null
+          tentative: number
+          total_questions: number | null
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "reponses_apprenants"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       text_soundex: { Args: { "": string }; Returns: string }
       unaccent: { Args: { "": string }; Returns: string }
     }
