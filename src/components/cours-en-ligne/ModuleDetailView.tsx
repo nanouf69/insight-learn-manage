@@ -5864,16 +5864,12 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             console.log(`[ModuleDetailView] Module ${module.id} déjà validé pour apprenant ${apprenantId} — apprenant_module_completion figé, reponses_apprenants autorisées pour rejouer les questions fausses.`);
 
             // Merge any redo answers saved in reponses_apprenants over the frozen snapshot.
-            const exerciceIds = activeExercices.map(e => `module_${module.id}_exo_${e.id}`);
+            const exerciceIds = activeExercices.map(e => buildExerciceId(module.id, e.id));
             if (exerciceIds.length > 0) {
-              const { data: repData } = await supabase
-                .from("reponses_apprenants" as any)
-                .select("exercice_id, reponses, completed")
-                .eq("apprenant_id", apprenantId)
-                .in("exercice_id", exerciceIds);
-              if (repData && (repData as any[]).length > 0) {
+              const attempts = await fetchQuizAttempts(apprenantId, exerciceIds);
+              if (attempts.length > 0) {
                 const redo: Record<string, string | string[]> = {};
-                (repData as any[]).forEach((row: any) => {
+                attempts.forEach((row) => {
                   if (row.reponses && typeof row.reponses === "object") {
                     Object.assign(redo, row.reponses);
                   }
@@ -5881,29 +5877,30 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 if (Object.keys(redo).length > 0) {
                   setSelectedAnswers((prev) => ({ ...prev, ...redo }));
                 }
+                applySubmittedAttempts(attempts);
               }
             }
 
           } else {
             // 2) Module not yet validated → restore from reponses_apprenants (progressive save).
-            const exerciceIds = activeExercices.map(e => `module_${module.id}_exo_${e.id}`);
+            const exerciceIds = activeExercices.map(e => buildExerciceId(module.id, e.id));
             if (exerciceIds.length > 0) {
-              const { data: repData } = await supabase
-                .from("reponses_apprenants" as any)
-                .select("exercice_id, reponses, completed")
-                .eq("apprenant_id", apprenantId)
-                .in("exercice_id", exerciceIds);
+              const attempts = await fetchQuizAttempts(apprenantId, exerciceIds);
 
-              if (repData && (repData as any[]).length > 0) {
+              if (attempts.length > 0) {
                 const restored: Record<string, string | string[]> = {};
-                (repData as any[]).forEach((row: any) => {
-                  if (!row.completed && row.reponses && typeof row.reponses === "object") {
+                attempts.forEach((row) => {
+                  // Réponses restaurées quel que soit le statut : une tentative
+                  // soumise doit réafficher ses réponses ET ses corrections.
+                  if (row.reponses && typeof row.reponses === "object") {
                     Object.assign(restored, row.reponses);
                   }
                 });
                 if (Object.keys(restored).length > 0) {
                   setSelectedAnswers((prev) => (Object.keys(prev).length > 0 ? prev : restored));
                 }
+                // RÈGLE : seul status='submitted' vaut « quiz validé ».
+                applySubmittedAttempts(attempts);
               }
             }
           }
