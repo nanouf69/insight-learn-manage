@@ -1,5 +1,6 @@
 import { useEffect, useRef, useCallback, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { submitQuizAttempt } from "@/lib/quizAttempts";
 
 interface UseAutoSaveReponsesOptions {
   apprenantId: string | null | undefined;
@@ -37,6 +38,7 @@ export function useAutoSaveReponses<T = Record<string, any>>({
 }: UseAutoSaveReponsesOptions) {
   const [loadedReponses, setLoadedReponses] = useState<T | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
   const userIdRef = useRef<string | null>(null);
   const jwtTokenRef = useRef<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -72,11 +74,14 @@ export function useAutoSaveReponses<T = Record<string, any>>({
       try {
         const { data, error } = await supabase
           .from("reponses_apprenants" as any)
-          .select("reponses, completed")
+          .select("reponses, completed, status, submitted_at")
           .eq("apprenant_id", apprenantId)
           .eq("exercice_id", exerciceId)
           .maybeSingle();
 
+        if (!error && data) {
+          setIsSubmitted(((data as any).status ?? ((data as any).completed ? "submitted" : "in_progress")) === "submitted");
+        }
         if (!error && data && !(data as any).completed) {
           setLoadedReponses((data as any).reponses as T);
           // Existing data in DB → don't force the immediate flush again
@@ -262,5 +267,5 @@ export function useAutoSaveReponses<T = Record<string, any>>({
     };
   }, [apprenantId, exerciceId, exerciceType]);
 
-  return { loadedReponses, isLoaded, saveReponses, markCompleted };
+  return { loadedReponses, isLoaded, isSubmitted, saveReponses, markCompleted };
 }
