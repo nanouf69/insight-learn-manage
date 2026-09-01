@@ -82,7 +82,9 @@ function restoreToLocalStorage(snapshot: Record<string, string>) {
  */
 export function useOnboardingPersistence(apprenantId: string | null | undefined) {
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isModification, setIsModification] = useState(false);
   const lastSavedHashRef = useRef<string>("");
+  const isModificationRef = useRef(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // 1️⃣ Restauration au chargement
@@ -116,6 +118,18 @@ export function useOnboardingPersistence(apprenantId: string | null | undefined)
             window.dispatchEvent(new Event("onboarding:restored"));
           }
           lastSavedHashRef.current = JSON.stringify(donnees);
+
+          // Dossier déjà rempli (au moins partiellement) → l'apprenant est en train de le MODIFIER
+          const dejaRempli = Boolean(
+            donnees["onboarding_signature"] ||
+            donnees["onboarding_step10_confirmed"] === "true" ||
+            donnees["onboarding_numero_dossier"]
+          );
+          if (dejaRempli) {
+            isModificationRef.current = true;
+            setIsModification(true);
+            localStorage.setItem("onboarding_mode", "modification");
+          }
         }
       } catch (err) {
         console.warn("[OnboardingPersistence] Échec restauration:", err);
@@ -145,6 +159,7 @@ export function useOnboardingPersistence(apprenantId: string | null | undefined)
           typeDocument: TYPE_DOCUMENT,
           titre: TITRE,
           donnees: snapshot,
+          mode: isModificationRef.current ? "modification" : "creation",
         });
 
         if (ok) {
@@ -153,6 +168,7 @@ export function useOnboardingPersistence(apprenantId: string | null | undefined)
         }
       }, DEBOUNCE_MS);
     };
+
 
     // Surveille les modifications du localStorage (autres onglets)
     const onStorage = (e: StorageEvent) => {
@@ -198,6 +214,8 @@ export function useOnboardingPersistence(apprenantId: string | null | undefined)
               typeDocument: TYPE_DOCUMENT,
               titre: TITRE,
               donnees: snapshot,
+              mode: isModificationRef.current ? "modification" : "creation",
+
             }),
           });
         }
@@ -217,5 +235,5 @@ export function useOnboardingPersistence(apprenantId: string | null | undefined)
     };
   }, [apprenantId, isLoaded]);
 
-  return { isLoaded };
+  return { isLoaded, isModification };
 }

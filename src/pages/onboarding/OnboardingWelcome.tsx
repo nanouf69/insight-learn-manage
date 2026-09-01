@@ -179,7 +179,7 @@ export default function OnboardingWelcome() {
               </div>
               <div>
                 <h2 className="text-xl font-semibold">Identification</h2>
-                <p className="text-white/60 text-sm">Entrez votre nom et prénom pour commencer</p>
+                <p className="text-white/60 text-sm">Entrez votre nom et prénom pour commencer <span className="text-amber-300">— ou pour modifier un dossier déjà rempli</span></p>
               </div>
             </div>
             
