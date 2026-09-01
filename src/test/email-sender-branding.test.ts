@@ -34,4 +34,11 @@ describe("Identité d'expéditeur FTRANSPORT", () => {
     const helper = readFileSync(resolve(FUNCTIONS_ROOT, "_shared/send-branded-email.ts"), "utf8");
     expect(helper).toContain('const FROM_ADDRESS = "FTRANSPORT <contact@ftransport.fr>"');
   });
+
+  it("affiche toujours le mot de passe dans le renvoi des identifiants", () => {
+    const source = readFileSync(resolve(FUNCTIONS_ROOT, "resend-credentials/index.ts"), "utf8");
+    expect(source).toContain("${credentialPassword}");
+    expect(source).not.toContain("<strong>Mot de passe :</strong> inchangé");
+    expect(source).not.toContain("Utilisez votre mot de passe habituel");
+  });
 });

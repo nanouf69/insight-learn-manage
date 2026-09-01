@@ -105,9 +105,14 @@ serve(async (req) => {
       Object.assign(apprenant, accessUpdates);
     }
 
-    let newPassword: string | null = null;
-    if (reset_password) {
-      // Generate new password only when explicitly requested
+    const storedPassword = typeof apprenant.mot_de_passe_plateforme === "string"
+      ? apprenant.mot_de_passe_plateforme.trim()
+      : "";
+    let credentialPassword = storedPassword;
+    const mustGeneratePassword = reset_password || !credentialPassword;
+    if (mustGeneratePassword) {
+      // Un mot de passe doit obligatoirement figurer dans l'email. Pour les anciens
+      // comptes sans mot de passe mémorisé, on en crée un, on l'applique puis on le stocke.
       const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
       let generated = "";
       const randomBytes = new Uint8Array(8);
@@ -115,7 +120,7 @@ serve(async (req) => {
       for (let i = 0; i < 8; i++) {
         generated += chars[randomBytes[i] % chars.length];
       }
-      newPassword = generated;
+      credentialPassword = generated;
     }
 
     // Sync auth email with apprenant email and update password only if requested
@@ -124,8 +129,8 @@ serve(async (req) => {
     const currentAuthEmail = authUserData?.user?.email?.toLowerCase().trim();
     const targetEmail = apprenant.email.toLowerCase().trim();
     const updatePayload: { password?: string; email?: string; email_confirm?: boolean } = {};
-    if (newPassword) {
-      updatePayload.password = newPassword;
+    if (mustGeneratePassword) {
+      updatePayload.password = credentialPassword;
     }
     if (currentAuthEmail && currentAuthEmail !== targetEmail) {
       updatePayload.email = targetEmail;
@@ -144,12 +149,12 @@ serve(async (req) => {
         );
       }
       // Mémoriser le nouveau mot de passe pour les futurs renvois
-      if (newPassword) {
+      if (mustGeneratePassword) {
         await supabaseAdmin
           .from("apprenants")
-          .update({ mot_de_passe_plateforme: newPassword })
+          .update({ mot_de_passe_plateforme: credentialPassword })
           .eq("id", apprenant_id);
-        apprenant.mot_de_passe_plateforme = newPassword;
+        apprenant.mot_de_passe_plateforme = credentialPassword;
       }
     }
 
@@ -206,13 +211,7 @@ serve(async (req) => {
                 <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0; border-radius: 4px;">
                   <h3 style="color: #92400e; margin-top: 0;">🔐 Vos identifiants de connexion</h3>
                   <p><strong>Email :</strong> ${apprenant.email}</p>
-                  ${reset_password && newPassword
-                    ? `<p><strong>Nouveau mot de passe :</strong> <code style="background: #e5e7eb; padding: 2px 8px; border-radius: 4px; font-size: 16px; letter-spacing: 1px;">${newPassword}</code></p>`
-                    : apprenant.mot_de_passe_plateforme
-                      ? `<p><strong>Mot de passe :</strong> <code style="background: #e5e7eb; padding: 2px 8px; border-radius: 4px; font-size: 16px; letter-spacing: 1px;">${apprenant.mot_de_passe_plateforme}</code></p>`
-                      : `<p><strong>Mot de passe :</strong> inchangé</p>
-                     <p style="margin-top: 10px; color: #92400e;">Utilisez votre mot de passe habituel pour vous connecter. Si vous l'avez oublié, utilisez la fonction <strong>« Mot de passe oublié »</strong> sur la page de connexion ou contactez votre formateur.</p>`
-                  }
+                  <p><strong>${reset_password ? "Nouveau mot de passe" : "Mot de passe"} :</strong> <code style="background: #e5e7eb; padding: 2px 8px; border-radius: 4px; font-size: 16px; letter-spacing: 1px;">${credentialPassword}</code></p>
                 </div>
 
                 <p style="color: #6b7280; font-size: 14px;">🔑 Vous pouvez modifier votre mot de passe à tout moment depuis votre espace apprenant.</p>
@@ -269,15 +268,15 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        password: reset_password ? newPassword : undefined,
+        password: mustGeneratePassword ? credentialPassword : undefined,
         reset_password,
         email: apprenant.email,
         emailSent,
         message: emailSent
-          ? reset_password
-            ? `Identifiants renvoyés à ${apprenant.email} avec un nouveau mot de passe`
-            : `Rappel de connexion envoyé à ${apprenant.email} (mot de passe inchangé)`
-          : reset_password
+          ? mustGeneratePassword
+            ? `Identifiants renvoyés à ${apprenant.email} avec le mot de passe affiché`
+            : `Identifiants renvoyés à ${apprenant.email} avec le mot de passe affiché`
+          : mustGeneratePassword
             ? `Mot de passe réinitialisé mais l'email n'a pas pu être envoyé`
             : `Rappel non envoyé`,
       }),
