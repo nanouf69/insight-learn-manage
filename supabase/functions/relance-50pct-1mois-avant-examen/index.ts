@@ -5,6 +5,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { sendBrandedEmail } from "../_shared/send-branded-email.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -99,31 +100,6 @@ serve(async (req) => {
       .like("subject", "%50%- 1 mois%")
       .gte("sent_at", fourteenDaysAgo.toISOString());
     const alreadySent = new Set((recent || []).map((e: any) => e.apprenant_id));
-
-    // MS Graph token
-    const tenantId = Deno.env.get("MS_GRAPH_TENANT_ID");
-    const clientId = Deno.env.get("MS_GRAPH_CLIENT_ID");
-    const clientSecret = Deno.env.get("MS_GRAPH_CLIENT_SECRET");
-    if (!tenantId || !clientId || !clientSecret) {
-      return new Response(JSON.stringify({ error: "MS Graph credentials missing" }), {
-        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-    const tokenRes = await fetch(`https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        client_id: clientId, client_secret: clientSecret,
-        scope: "https://graph.microsoft.com/.default", grant_type: "client_credentials",
-      }).toString(),
-    });
-    const tokenData = await tokenRes.json();
-    const accessToken = tokenData.access_token;
-    if (!accessToken) {
-      return new Response(JSON.stringify({ error: "MS Graph token failed", details: tokenData }), {
-        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
 
     const senderEmail = "contact@ftransport.fr";
     const results: any[] = [];
@@ -232,27 +208,15 @@ serve(async (req) => {
   </div>
 </div>`;
 
-        const sendRes = await fetch(`https://graph.microsoft.com/v1.0/users/${senderEmail}/sendMail`, {
-          method: "POST",
-          headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
-          body: JSON.stringify({
-            message: {
-              subject,
-              body: { contentType: "HTML", content: html },
-              from: { emailAddress: { address: senderEmail, name: "FTRANSPORT" } },
-              toRecipients: [{ emailAddress: { address: a.email } }],
-            },
-            saveToSentItems: true,
-          }),
-        });
-
-        if (sendRes.ok) {
+        try {
+          await sendBrandedEmail({ to: a.email, subject, html, replyTo: senderEmail });
           await supabaseAdmin.from("emails").insert({
             apprenant_id: a.id,
             subject,
             body_preview: `Progression ${Math.round(pct)}% - ${hFaites}h${String(mFaites).padStart(2,"0")}/${requis}h - examen dans ${daysUntil}j`,
             body_html: html,
             sender_email: senderEmail,
+            sender_name: "FTRANSPORT",
             recipients: [a.email],
             type: "sent",
             is_read: true,
@@ -261,10 +225,10 @@ serve(async (req) => {
           });
           results.push({ id: a.id, email: a.email, success: true, pct: Math.round(pct), heures: `${hFaites}h${String(mFaites).padStart(2,"0")}` });
           console.log(`[relance-50pct] ✅ ${a.email} pct=${Math.round(pct)}% (${hFaites}h${mFaites}/${requis}h)`);
-        } else {
-          const errText = await sendRes.text();
-          results.push({ id: a.id, email: a.email, success: false, error: errText });
-          console.error(`[relance-50pct] ❌ ${a.email}:`, errText);
+        } catch (sendError) {
+          const message = sendError instanceof Error ? sendError.message : String(sendError);
+          results.push({ id: a.id, email: a.email, success: false, error: message });
+          console.error(`[relance-50pct] ❌ ${a.email}:`, message);
         }
       } catch (err) {
         results.push({ id: a.id, email: a.email, success: false, error: String(err) });

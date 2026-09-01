@@ -4,6 +4,7 @@
 // Deduplique via la table emails (type = 'auto_pratique_booking').
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { sendBrandedEmail } from "../_shared/send-branded-email.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -53,25 +54,6 @@ function buildEmail(prenom: string, nom: string, type: 'vtc' | 'taxi', bookingUr
 function buildSms(prenom: string, type: 'vtc' | 'taxi', bookingUrl: string) {
   const label = type === 'vtc' ? 'VTC' : 'TAXI';
   return `Bonjour ${prenom}, felicitations vous avez termine le module Pratique ${label}. Reservez votre date d'entrainement ici: ${bookingUrl} FTRANSPORT 04.28.29.60.91`;
-}
-
-async function getGraphToken() {
-  const tenantId = Deno.env.get("MS_GRAPH_TENANT_ID");
-  const clientId = Deno.env.get("MS_GRAPH_CLIENT_ID");
-  const clientSecret = Deno.env.get("MS_GRAPH_CLIENT_SECRET");
-  if (!tenantId || !clientId || !clientSecret) return null;
-  const res = await fetch(`https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      client_id: clientId,
-      client_secret: clientSecret,
-      scope: "https://graph.microsoft.com/.default",
-      grant_type: "client_credentials",
-    }).toString(),
-  });
-  const j = await res.json();
-  return j.access_token ?? null;
 }
 
 serve(async (req) => {
@@ -214,7 +196,6 @@ serve(async (req) => {
       return val;
     }
 
-    const graphToken = await getGraphToken();
     const senderEmail = "contact@ftransport.fr";
     let sent = 0;
     let smsSent = 0;
@@ -253,29 +234,11 @@ serve(async (req) => {
         let okSend = false;
         let errText = '';
 
-        if (graphToken) {
-          const res = await fetch(`https://graph.microsoft.com/v1.0/users/${senderEmail}/sendMail`, {
-            method: "POST",
-            headers: { Authorization: `Bearer ${graphToken}`, "Content-Type": "application/json" },
-            body: JSON.stringify({
-              message: {
-                subject,
-                body: { contentType: "HTML", content: html },
-                from: { emailAddress: { address: senderEmail, name: "FTRANSPORT" } },
-                toRecipients: [{ emailAddress: { address: a.email } }],
-              },
-              saveToSentItems: true,
-            }),
-          });
-          okSend = res.ok;
-          if (!okSend) errText = await res.text();
-        } else {
-          // Repli : passer par la fonction sync-outlook-emails
-          const { data: sendData, error: sendErr } = await supabase.functions.invoke('sync-outlook-emails', {
-            body: { action: 'send', userEmail: senderEmail, to: a.email, subject, body: html },
-          });
-          okSend = !sendErr && !!(sendData as any)?.success;
-          if (!okSend) errText = sendErr ? String(sendErr.message || sendErr) : 'Echec envoi via sync-outlook-emails';
+        try {
+          await sendBrandedEmail({ to: a.email, subject, html, replyTo: senderEmail });
+          okSend = true;
+        } catch (sendError) {
+          errText = sendError instanceof Error ? sendError.message : String(sendError);
         }
 
 

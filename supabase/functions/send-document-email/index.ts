@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { sendBrandedEmail } from "../_shared/send-branded-email.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -73,49 +74,7 @@ serve(async (req) => {
       }
     }
 
-    const tenantId = Deno.env.get("MS_GRAPH_TENANT_ID");
-    const clientId = Deno.env.get("MS_GRAPH_CLIENT_ID");
-    const clientSecret = Deno.env.get("MS_GRAPH_CLIENT_SECRET");
-
-    if (!tenantId || !clientId || !clientSecret) {
-      return new Response(
-        JSON.stringify({ error: "MS Graph credentials not configured" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Token MS Graph
-    const tokenUrl = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`;
-    const params = new URLSearchParams({
-      client_id: clientId,
-      client_secret: clientSecret,
-      scope: "https://graph.microsoft.com/.default",
-      grant_type: "client_credentials",
-    });
-    const tokenRes = await fetch(tokenUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: params.toString(),
-    });
-    const tokenData = await tokenRes.json();
-    const accessToken = tokenData.access_token;
-    if (!accessToken) {
-      return new Response(
-        JSON.stringify({ error: "Failed to get MS Graph token", details: tokenData }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    const ALLOWED_SENDERS = [
-      "contact@ftransport.fr",
-      "formation@ftransport.fr",
-      "notifications@ftransport.fr",
-      "noreply@ftransport.fr",
-    ];
-    const senderEmail =
-      typeof senderEmailInput === "string" && ALLOWED_SENDERS.includes(senderEmailInput.trim().toLowerCase())
-        ? senderEmailInput.trim().toLowerCase()
-        : "contact@ftransport.fr";
+    const senderEmail = "contact@ftransport.fr";
 
     const finalHtml = htmlBody || `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -140,43 +99,12 @@ serve(async (req) => {
       : "";
     const attachments = attachmentName && cleanedAttachmentBase64
       ? [
-          {
-            "@odata.type": "#microsoft.graph.fileAttachment",
-            name: attachmentName,
-            contentType: resolvedContentType || "application/pdf",
-            contentBytes: cleanedAttachmentBase64,
-          },
+          { name: attachmentName, contentType: resolvedContentType || "application/pdf", contentBytes: cleanedAttachmentBase64 },
         ]
       : undefined;
     console.log(`[send-document-email] attachment included: ${!!attachments}, size base64: ${cleanedAttachmentBase64.length}`);
 
-    const sendUrl = `https://graph.microsoft.com/v1.0/users/${senderEmail}/sendMail`;
-    const sendRes = await fetch(sendUrl, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        message: {
-          subject,
-          body: { contentType: "HTML", content: finalHtml },
-          from: { emailAddress: { address: senderEmail, name: "FTRANSPORT" } },
-          toRecipients: [{ emailAddress: { address: recipientEmail } }],
-          ...(attachments ? { attachments } : {}),
-        },
-        saveToSentItems: true,
-      }),
-    });
-
-    if (!sendRes.ok) {
-      const errText = await sendRes.text();
-      console.error("[send-document-email] MS Graph error:", errText);
-      return new Response(
-        JSON.stringify({ error: "Échec envoi email", details: errText }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    await sendBrandedEmail({ to: recipientEmail, subject, html: finalHtml, replyTo: senderEmail, attachments });
 
     // Log email
     if (apprenantId) {
@@ -190,6 +118,7 @@ serve(async (req) => {
         body_preview: attachments ? `Document envoyé : ${attachmentName}` : "Email envoyé sans pièce jointe",
         body_html: finalHtml,
         sender_email: senderEmail,
+        sender_name: "FTRANSPORT",
         recipients: [recipientEmail],
         type: "sent",
         is_read: true,
