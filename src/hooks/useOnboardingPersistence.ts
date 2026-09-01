@@ -235,5 +235,5 @@ export function useOnboardingPersistence(apprenantId: string | null | undefined)
     };
   }, [apprenantId, isLoaded]);
 
-  return { isLoaded };
+  return { isLoaded, isModification };
 }
