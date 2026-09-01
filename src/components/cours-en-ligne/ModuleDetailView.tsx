@@ -5787,6 +5787,49 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       return () => subscription.unsubscribe();
     }, []);
 
+    // --- Restaure l'état "validé" à partir du STATUT SERVEUR uniquement ---
+    // Un quiz est validé si, et seulement si, sa ligne reponses_apprenants
+    // a status = 'submitted'. La présence de réponses ne suffit jamais.
+    const applySubmittedAttempts = (attempts: { exercice_id: string; status?: string }[]) => {
+      const submittedExoIds: number[] = [];
+      const submittedInlineIds: number[] = [];
+      attempts.forEach((row) => {
+        if (!isAttemptSubmitted(row as any)) return;
+        const exoMatch = /_exo_(\d+)$/.exec(row.exercice_id);
+        if (exoMatch) {
+          submittedExoIds.push(Number(exoMatch[1]));
+          return;
+        }
+        const inlineMatch = /_inline_(\d+)$/.exec(row.exercice_id);
+        if (inlineMatch) submittedInlineIds.push(Number(inlineMatch[1]));
+      });
+
+      if (submittedExoIds.length > 0) {
+        setShowResultsFor((prev) => {
+          const next = new Set(prev);
+          submittedExoIds.forEach((id) => next.add(id));
+          return next;
+        });
+      }
+      if (submittedInlineIds.length > 0) {
+        setInlineQuizValidated((prev) => {
+          const next = new Set(prev);
+          submittedInlineIds.forEach((id) => next.add(id));
+          return next;
+        });
+      }
+      if (submittedExoIds.length > 0 || submittedInlineIds.length > 0) {
+        setCompletedPages((prev) => {
+          const next = new Set(prev);
+          pages.forEach((p: any, idx: number) => {
+            if (p?.type === "exercice-single" && submittedExoIds.includes(Number(p.exercice?.id))) next.add(idx);
+            if (p?.cours?.id != null && submittedInlineIds.includes(Number(p.cours.id))) next.add(idx);
+          });
+          return next;
+        });
+      }
+    };
+
     // --- Load saved partial answers from DB on mount ---
     useEffect(() => {
       if (!apprenantId || savedAnswersLoaded) return;
