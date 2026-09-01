@@ -26,8 +26,30 @@ export async function sendBrandedEmail({
   replyTo,
   attachments = [],
 }: BrandedEmailParams): Promise<void> {
+  // Blocage global : apprenants marqués "ne plus recevoir d'emails"
+  try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (supabaseUrl && serviceKey && to) {
+      const res = await fetch(
+        `${supabaseUrl}/rest/v1/apprenants?select=id&emails_bloques=eq.true&email=eq.${encodeURIComponent(to.trim().toLowerCase())}&limit=1`,
+        { headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` } },
+      );
+      if (res.ok) {
+        const rows = await res.json();
+        if (Array.isArray(rows) && rows.length > 0) {
+          console.log(`[email-bloque] Envoi annulé vers ${to}`);
+          return;
+        }
+      }
+    }
+  } catch (blockErr) {
+    console.warn("[email-bloque] vérification impossible (non bloquant):", blockErr);
+  }
+
   const apiKey = Deno.env.get("RESEND_API_KEY");
   if (!apiKey) throw new Error("Service d'envoi email non configuré");
+
 
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
