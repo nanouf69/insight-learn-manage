@@ -6,6 +6,7 @@ interface SavePublicFormParams {
   titre: string;
   donnees: Record<string, any>;
   financeur?: Record<string, any>;
+  mode?: "creation" | "modification";
 }
 
 export async function savePublicFormDocument({
@@ -14,6 +15,7 @@ export async function savePublicFormDocument({
   titre,
   donnees,
   financeur,
+  mode,
 }: SavePublicFormParams): Promise<boolean> {
   const baseUrl = import.meta.env.VITE_SUPABASE_URL;
   const apikey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -45,6 +47,7 @@ export async function savePublicFormDocument({
         titre,
         donnees,
         financeur,
+        mode,
       }),
     });
 
