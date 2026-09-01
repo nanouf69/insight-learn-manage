@@ -53,24 +53,27 @@ const typeColors: Record<string, string> = {
 };
 
 export function CodesAccesEnvoyes({ onNavigateToApprenant }: Props) {
-  const today = useMemo(() => {
+  // Fenêtre glissante de 7 jours (aujourd'hui inclus)
+  const since = useMemo(() => {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() - 6);
     return d.toISOString();
   }, []);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["codes-acces-envoyes", today],
+    queryKey: ["codes-acces-envoyes", since],
     refetchOnWindowFocus: false,
     queryFn: async () => {
-      // 1) Emails d'identifiants envoyés à partir d'aujourd'hui
+      // 1) Emails d'identifiants envoyés sur les 7 derniers jours
       const { data: emails, error: emailsError } = await supabase
         .from("emails")
         .select("id, apprenant_id, subject, sent_at")
         .eq("type", "sent")
         .ilike("subject", "%identifiant%")
-        .gte("sent_at", today)
+        .gte("sent_at", since)
         .order("sent_at", { ascending: false });
+
 
       if (emailsError) throw emailsError;
       if (!emails || emails.length === 0) return [];
