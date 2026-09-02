@@ -3434,6 +3434,23 @@ const ContentCard = ({
             <div className="text-xs text-muted-foreground mt-2 whitespace-pre-wrap max-h-32 overflow-y-auto" dangerouslySetInnerHTML={{ __html: item.description }} />
           )}
         </div>
+        {/* Photos du cours */}
+        {(() => {
+          const photos = Array.isArray(item.images) && item.images.length > 0
+            ? item.images
+            : (item.image ? [item.image] : []);
+          if (photos.length === 0) return null;
+          return (
+            <div className="flex flex-wrap gap-2">
+              {photos.map((url, i) => (
+                <div key={`${url}-${i}`} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary/10 text-primary text-sm font-medium">
+                  <span className="truncate max-w-[160px]">Photo {i + 1}</span>
+                  <FilePreviewDialog url={url} nom={`${item.titre} — photo ${i + 1}`} />
+                </div>
+              ))}
+            </div>
+          );
+        })()}
         {/* Fichiers PowerPoint */}
         {item.fichiers && item.fichiers.length > 0 && (
           <div className="flex flex-wrap gap-2">
