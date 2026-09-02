@@ -87,6 +87,7 @@ export default function FilePreviewDialog({ url, nom }: Props) {
     return storageObject ? null : resolveAppFileUrl(url);
   });
   const isPdf = /\.pdf(\?|$)/i.test(url);
+  const isImage = /\.(png|jpe?g|gif|webp|bmp|svg|avif)(\?|$)/i.test(url);
 
   useEffect(() => {
     let cancelled = false;
