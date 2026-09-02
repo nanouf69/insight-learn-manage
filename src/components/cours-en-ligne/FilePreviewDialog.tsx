@@ -145,6 +145,15 @@ export default function FilePreviewDialog({ url, nom }: Props) {
               </div>
             ) : isPdf ? (
               <PdfSlideViewer url={displayUrl} nom={nom || "Aperçu"} />
+            ) : isImage ? (
+              <div className="h-full flex items-center justify-center p-3">
+                <img
+                  src={displayUrl}
+                  alt={nom || "Aperçu de la photo"}
+                  className="max-h-full max-w-full object-contain rounded"
+                  loading="eager"
+                />
+              </div>
             ) : (
               <div className="h-full flex flex-col items-center justify-center gap-3 p-6 text-center text-sm text-muted-foreground">
                 <p>Ce format ne peut pas être affiché directement dans le navigateur.</p>
