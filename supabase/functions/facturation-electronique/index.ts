@@ -11,11 +11,12 @@ const json = (body: unknown, status = 200) =>
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 
-const PDP_BASE_URL = (Deno.env.get("PDP_BASE_URL") || "").replace(/\/+$/, "");
-const PDP_TOKEN_URL = Deno.env.get("PDP_TOKEN_URL") || "";
+const PDP_BASE_URL = (Deno.env.get("PDP_BASE_URL") || "https://api.superpdp.tech").replace(/\/+$/, "");
+const PDP_TOKEN_URL = Deno.env.get("PDP_TOKEN_URL") || `${PDP_BASE_URL}/oauth2/token`;
 const PDP_CLIENT_ID = Deno.env.get("PDP_CLIENT_ID") || "";
 const PDP_CLIENT_SECRET = Deno.env.get("PDP_CLIENT_SECRET") || "";
 const ENVIRONNEMENT = Deno.env.get("PDP_ENVIRONNEMENT") || "sandbox";
+const API = "/v1.beta";
 
 const configured = () => Boolean(PDP_BASE_URL && PDP_TOKEN_URL && PDP_CLIENT_ID && PDP_CLIENT_SECRET);
 
@@ -38,7 +39,7 @@ async function getAccessToken(): Promise<string> {
   const data = JSON.parse(text);
   cachedToken = {
     value: data.access_token,
-    expiresAt: Date.now() + (Number(data.expires_in || 3600) * 1000),
+    expiresAt: Date.now() + (Number(data.expires_in || 1800) * 1000),
   };
   return cachedToken.value;
 }
@@ -67,13 +68,17 @@ const esc = (v: unknown) =>
 
 const dt = (d?: string | null) => (d ? String(d).slice(0, 10).replace(/-/g, "") : "");
 const num = (n: unknown) => Number(n || 0).toFixed(2);
+const digits = (v: unknown) => String(v ?? "").replace(/\D/g, "");
 
 /** Facture-X / EN16931 CII (UN/CEFACT CrossIndustryInvoice) minimal profile. */
-function buildFacturXXml(f: Record<string, any>): string {
+function buildFacturXXml(f: Record<string, any>, vendeur: Record<string, any>): string {
   const ht = Number(f.montant_ht || 0);
   const tva = Number(f.montant_tva || 0);
   const ttc = Number(f.montant_ttc || ht + tva);
   const taux = Number(f.tva_taux ?? (ht > 0 ? (tva / ht) * 100 : 0));
+  const emission = dt(f.date_emission) || dt(new Date().toISOString());
+  const vendeurSiren = digits(vendeur?.number || f.vendeur_siren || "");
+  const clientSiren = digits(f.client_siren || "");
   return `<?xml version="1.0" encoding="UTF-8"?>
 <rsm:CrossIndustryInvoice xmlns:rsm="urn:un:unece:uncefact:data:standard:CrossIndustryInvoice:100" xmlns:ram="urn:un:unece:uncefact:data:standard:ReusableAggregateBusinessInformationEntity:100" xmlns:udt="urn:un:unece:uncefact:data:standard:UnqualifiedDataType:100">
   <rsm:ExchangedDocumentContext>
@@ -84,17 +89,39 @@ function buildFacturXXml(f: Record<string, any>): string {
   <rsm:ExchangedDocument>
     <ram:ID>${esc(f.numero)}</ram:ID>
     <ram:TypeCode>380</ram:TypeCode>
-    <ram:IssueDateTime><udt:DateTimeString format="102">${dt(f.date_emission)}</udt:DateTimeString></ram:IssueDateTime>
+    <ram:IssueDateTime><udt:DateTimeString format="102">${emission}</udt:DateTimeString></ram:IssueDateTime>
   </rsm:ExchangedDocument>
   <rsm:SupplyChainTradeTransaction>
+    <ram:IncludedSupplyChainTradeLineItem>
+      <ram:AssociatedDocumentLineDocument><ram:LineID>1</ram:LineID></ram:AssociatedDocumentLineDocument>
+      <ram:SpecifiedTradeProduct><ram:Name>${esc(f.objet || f.description || "Prestation de formation")}</ram:Name></ram:SpecifiedTradeProduct>
+      <ram:SpecifiedLineTradeAgreement>
+        <ram:NetPriceProductTradePrice><ram:ChargeAmount>${num(ht)}</ram:ChargeAmount></ram:NetPriceProductTradePrice>
+      </ram:SpecifiedLineTradeAgreement>
+      <ram:SpecifiedLineTradeDelivery><ram:BilledQuantity unitCode="C62">1</ram:BilledQuantity></ram:SpecifiedLineTradeDelivery>
+      <ram:SpecifiedLineTradeSettlement>
+        <ram:ApplicableTradeTax>
+          <ram:TypeCode>VAT</ram:TypeCode>
+          <ram:CategoryCode>${tva > 0 ? "S" : "E"}</ram:CategoryCode>
+          <ram:RateApplicablePercent>${num(taux)}</ram:RateApplicablePercent>
+        </ram:ApplicableTradeTax>
+        <ram:SpecifiedTradeSettlementLineMonetarySummation><ram:LineTotalAmount>${num(ht)}</ram:LineTotalAmount></ram:SpecifiedTradeSettlementLineMonetarySummation>
+      </ram:SpecifiedLineTradeSettlement>
+    </ram:IncludedSupplyChainTradeLineItem>
     <ram:ApplicableHeaderTradeAgreement>
       <ram:SellerTradeParty>
-        <ram:Name>${esc(f.vendeur_nom || "FTRANSPORT")}</ram:Name>
-        <ram:SpecifiedLegalOrganization><ram:ID schemeID="0002">${esc(f.vendeur_siren || "")}</ram:ID></ram:SpecifiedLegalOrganization>
+        <ram:Name>${esc(vendeur?.formal_name || f.vendeur_nom || "FTRANSPORT")}</ram:Name>
+        <ram:PostalTradeAddress>
+          <ram:PostcodeCode>${esc(vendeur?.postcode || "")}</ram:PostcodeCode>
+          <ram:LineOne>${esc(vendeur?.address || "")}</ram:LineOne>
+          <ram:CityName>${esc(vendeur?.city || "")}</ram:CityName>
+          <ram:CountryID>${esc(vendeur?.country || "FR")}</ram:CountryID>
+        </ram:PostalTradeAddress>
+        ${vendeurSiren ? `<ram:SpecifiedLegalOrganization><ram:ID schemeID="0002">${esc(vendeurSiren)}</ram:ID></ram:SpecifiedLegalOrganization>` : ""}
       </ram:SellerTradeParty>
       <ram:BuyerTradeParty>
         <ram:Name>${esc(f.client_nom)}</ram:Name>
-        ${f.client_siren ? `<ram:SpecifiedLegalOrganization><ram:ID schemeID="0002">${esc(f.client_siren)}</ram:ID></ram:SpecifiedLegalOrganization>` : ""}
+        ${clientSiren ? `<ram:SpecifiedLegalOrganization><ram:ID schemeID="0002">${esc(clientSiren)}</ram:ID></ram:SpecifiedLegalOrganization>` : ""}
       </ram:BuyerTradeParty>
     </ram:ApplicableHeaderTradeAgreement>
     <ram:ApplicableHeaderTradeDelivery/>
@@ -120,6 +147,12 @@ function buildFacturXXml(f: Record<string, any>): string {
 </rsm:CrossIndustryInvoice>`;
 }
 
+const lastEvent = (inv: any) => {
+  const events: any[] = Array.isArray(inv?.events) ? inv.events : [];
+  if (!events.length) return null;
+  return events.reduce((a, b) => (new Date(b.created_at) >= new Date(a.created_at) ? b : a));
+};
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -139,7 +172,25 @@ Deno.serve(async (req) => {
     if (!userData?.user) return json({ error: "Non autorisé" }, 401);
 
     if (action === "status") {
-      return json({ configured: configured(), environnement: ENVIRONNEMENT });
+      if (!configured()) return json({ configured: false, environnement: ENVIRONNEMENT });
+      try {
+        const me = await pdpFetch(`${API}/companies/me`);
+        return json({
+          configured: true,
+          environnement: me?.env || ENVIRONNEMENT,
+          entreprise: {
+            nom: me?.formal_name || me?.trade_name || null,
+            siren: me?.number || null,
+            ville: me?.city || null,
+          },
+        });
+      } catch (e) {
+        return json({
+          configured: true,
+          environnement: ENVIRONNEMENT,
+          erreur: e instanceof Error ? e.message : String(e),
+        });
+      }
     }
 
     if (!configured()) {
@@ -149,7 +200,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    // --- Émettre une facture de vente au format Factur-X ---
+    // --- Émettre une facture de vente au format Factur-X (CII) ---
     if (action === "emettre") {
       const factureId = String(body?.facture_id || "");
       if (!factureId) return json({ error: "facture_id requis" }, 400);
@@ -161,43 +212,44 @@ Deno.serve(async (req) => {
         .maybeSingle();
       if (fErr || !facture) return json({ error: "Facture introuvable" }, 404);
 
-      const xml = buildFacturXXml(facture);
+      let vendeur: Record<string, any> = {};
+      try {
+        vendeur = await pdpFetch(`${API}/companies/me`);
+      } catch (_) {
+        vendeur = {};
+      }
+
+      const xml = buildFacturXXml(facture, vendeur);
+      const externalId = String(facture.numero || factureId).slice(0, 36);
 
       let sent: any;
       try {
-        sent = await pdpFetch("/invoices", {
+        sent = await pdpFetch(`${API}/invoices?external_id=${encodeURIComponent(externalId)}`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            format: "Factur-X",
-            docType: "Converted",
-            fileName: `${facture.numero || factureId}.xml`,
-            content: btoa(unescape(encodeURIComponent(xml))),
-          }),
+          headers: { "Content-Type": "application/xml" },
+          body: xml,
         });
       } catch (e) {
         const message = e instanceof Error ? e.message : String(e);
-        await supabase.from("factures_electroniques").upsert(
-          {
-            sens: "emise",
-            facture_id: factureId,
-            numero: facture.numero,
-            partenaire_nom: facture.client_nom,
-            montant_ht: facture.montant_ht,
-            montant_tva: facture.montant_tva,
-            montant_ttc: facture.montant_ttc,
-            date_emission: facture.date_emission,
-            date_echeance: facture.date_echeance,
-            statut: "erreur",
-            derniere_erreur: message,
-            environnement: ENVIRONNEMENT,
-          },
-          { onConflict: "id" },
-        );
+        await supabase.from("factures_electroniques").insert({
+          sens: "emise",
+          facture_id: factureId,
+          numero: facture.numero,
+          partenaire_nom: facture.client_nom,
+          montant_ht: facture.montant_ht,
+          montant_tva: facture.montant_tva,
+          montant_ttc: facture.montant_ttc,
+          date_emission: facture.date_emission,
+          date_echeance: facture.date_echeance,
+          statut: "erreur",
+          derniere_erreur: message,
+          environnement: ENVIRONNEMENT,
+        });
         return json({ error: "Dépôt refusé par la plateforme", details: message }, 502);
       }
 
-      const documentId = sent?.id || sent?.documentId || sent?.invoiceId || null;
+      const documentId = sent?.id != null ? String(sent.id) : null;
+      const evenement = lastEvent(sent);
       const { data: row, error: insErr } = await supabase
         .from("factures_electroniques")
         .insert({
@@ -211,7 +263,7 @@ Deno.serve(async (req) => {
           montant_ttc: facture.montant_ttc,
           date_emission: facture.date_emission,
           date_echeance: facture.date_echeance,
-          statut: sent?.status || "deposee",
+          statut: evenement?.status_code || "deposee",
           environnement: ENVIRONNEMENT,
           raw: sent,
         })
@@ -222,7 +274,7 @@ Deno.serve(async (req) => {
       await supabase.from("facture_electronique_evenements").insert({
         facture_electronique_id: row.id,
         statut: row.statut,
-        libelle: "Facture déposée sur la plateforme",
+        libelle: evenement?.status_text || "Facture déposée sur la plateforme",
         raw: sent,
       });
 
@@ -239,24 +291,25 @@ Deno.serve(async (req) => {
         .from("factures_electroniques")
         .select("id, pdp_document_id, statut")
         .eq("sens", "emise")
-        .eq("environnement", ENVIRONNEMENT)
-        .not("pdp_document_id", "is", null)
-        .not("statut", "in", "(payee,rejetee)");
+        .not("pdp_document_id", "is", null);
 
       for (const e of emises || []) {
         try {
-          const res = await pdpFetch(`/invoices/${encodeURIComponent(e.pdp_document_id!)}/status`);
-          const statut = res?.status || res?.statut;
+          const inv = await pdpFetch(
+            `${API}/invoices/${encodeURIComponent(e.pdp_document_id!)}?expand[]=events`,
+          );
+          const evenement = lastEvent(inv);
+          const statut = evenement?.status_code;
           if (statut && statut !== e.statut) {
             await supabase
               .from("factures_electroniques")
-              .update({ statut, raw: res, derniere_erreur: null })
+              .update({ statut, raw: inv, derniere_erreur: null })
               .eq("id", e.id);
             await supabase.from("facture_electronique_evenements").insert({
               facture_electronique_id: e.id,
               statut,
-              libelle: res?.label || res?.message || null,
-              raw: res,
+              libelle: evenement?.status_text || null,
+              raw: evenement,
             });
             statuts++;
           }
@@ -266,30 +319,33 @@ Deno.serve(async (req) => {
       }
 
       try {
-        const inbox = await pdpFetch("/invoices?direction=inbound");
-        const items: any[] = inbox?.items || inbox?.data || inbox?.invoices || [];
+        const inbox = await pdpFetch(
+          `${API}/invoices?direction=in&order=desc&limit=100&expand[]=en_invoice&expand[]=en_invoice.seller&expand[]=events`,
+        );
+        const items: any[] = inbox?.data || [];
         for (const it of items) {
-          const documentId = it?.id || it?.documentId;
+          const documentId = it?.id != null ? String(it.id) : null;
           if (!documentId) continue;
           const { data: existing } = await supabase
             .from("factures_electroniques")
             .select("id")
-            .eq("environnement", ENVIRONNEMENT)
             .eq("pdp_document_id", documentId)
             .maybeSingle();
           if (existing) continue;
+          const en = it?.en_invoice || {};
+          const totals = en?.totals || {};
           await supabase.from("factures_electroniques").insert({
             sens: "recue",
             pdp_document_id: documentId,
-            numero: it?.number || it?.numero || null,
-            partenaire_nom: it?.supplierName || it?.sellerName || null,
-            partenaire_siren: it?.supplierSiren || it?.sellerSiren || null,
-            montant_ht: it?.totalExcludingTax ?? null,
-            montant_tva: it?.taxAmount ?? null,
-            montant_ttc: it?.totalIncludingTax ?? it?.amount ?? null,
-            date_emission: it?.issueDate ?? null,
-            date_echeance: it?.dueDate ?? null,
-            statut: it?.status || "recue",
+            numero: en?.number || null,
+            partenaire_nom: en?.seller?.name || en?.seller?.trading_name || null,
+            partenaire_siren: en?.seller?.legal_registration_identifier?.value || null,
+            montant_ht: totals?.total_without_vat ?? totals?.sum_invoice_lines_amount ?? null,
+            montant_tva: totals?.total_vat_amount ?? null,
+            montant_ttc: totals?.total_with_vat ?? totals?.amount_due_for_payment ?? null,
+            date_emission: en?.issue_date ?? null,
+            date_echeance: en?.payment_due_date ?? null,
+            statut: lastEvent(it)?.status_code || "recue",
             environnement: ENVIRONNEMENT,
             raw: it,
           });
