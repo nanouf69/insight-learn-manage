@@ -2,7 +2,9 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchAllRows } from "@/lib/supabase/fetch-all-rows";
 import { getSessionEndMs, clampConnexionsToAccessEnd } from "@/lib/reports/session-duration";
-import { fetchPratiqueSlotDetails, pratiqueSlotDetailsToMinutes } from "@/lib/pratiqueSlots";
+import { fetchPratiqueSlotDetails } from "@/lib/pratiqueSlots";
+import { computePresentielHours } from "@/lib/presentielHours";
+
 
 export interface TauxRealisation {
   doneElearning: number;
@@ -111,31 +113,9 @@ export function useApprenantTauxRealisation(apprenantId?: string, apprenantProp?
         onlineMin += Math.floor(ms / 60000);
       }
 
-      // ---- Presentiel theorie (emargements FC)
-      const byDate = new Map<string, Set<string>>();
-      for (const r of emargAll as any[]) {
-        if (r.absent) continue;
-        const date = String(r.date_emargement || "").slice(0, 10);
-        const slot = String(r.demi_journee || "").trim().toLowerCase();
-        if (!date || !slot) continue;
-        if (!byDate.has(date)) byDate.set(date, new Set());
-        byDate.get(date)!.add(slot);
-      }
-      let theorieHours = 0;
-      for (const slots of byDate.values()) {
-        const evening = slots.has("soir") || slots.has("soir_1") || slots.has("soir_2");
-        if (evening) {
-          theorieHours += Math.min(
-            (slots.has("soir") ? 4 : 0) + (slots.has("soir_1") ? 1.5 : 0) + (slots.has("soir_2") ? 2.5 : 0),
-            4,
-          );
-        } else {
-          theorieHours += Math.min((slots.has("matin") ? 3 : 0) + (slots.has("apres_midi") ? 3 : 0), 6);
-        }
-      }
+      // ---- Presentiel : les feuilles d'emargement font foi (theorie ET pratique)
+      const { theorieHours, pratiqueMinutes } = computePresentielHours(emargAll as any[], pratiqueDetails as any[]);
 
-      // ---- Pratique (présentiel) : le planning et son créneau réel font foi.
-      const pratiqueMinutes = pratiqueSlotDetailsToMinutes(pratiqueDetails);
 
       const reqElearning =
         Number(apprenant?.heures_elearning) ||
