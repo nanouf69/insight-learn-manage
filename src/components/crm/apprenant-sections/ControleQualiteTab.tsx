@@ -23,7 +23,8 @@ import { saveAs } from "file-saver";
 import { useToast } from "@/hooks/use-toast";
 import { DossierDocumentsLibres } from "./DossierDocumentsLibres";
 import { getSessionEndMs, getSessionDurationMinutes, clampConnexionsToAccessEnd } from "@/lib/reports/session-duration";
-import { fetchPratiqueSlotDetails, pratiqueSlotDetailsToMinutes } from "@/lib/pratiqueSlots";
+import { fetchPratiqueSlotDetails } from "@/lib/pratiqueSlots";
+import { computePresentielHours } from "@/lib/presentielHours";
 
 
 /** Renders donnees content with real question texts instead of raw JSON */
@@ -670,36 +671,12 @@ export function ControleQualiteTab({ apprenant }: Props) {
           const onlineSec = onlineMin * 60;
 
           // ---- Présentiel théorie : émargements FC
-          const byDate = new Map<string, Set<string>>();
-          for (const r of emargAll) {
-            if (r.absent) continue;
-            const date = String(r.date_emargement || "").slice(0, 10);
-            const slot = String(r.demi_journee || "").trim().toLowerCase();
-            if (!date || !slot) continue;
-            if (!byDate.has(date)) byDate.set(date, new Set());
-            byDate.get(date)!.add(slot);
-          }
-          let theorieHours = 0;
-          for (const slots of byDate.values()) {
-            const eveningSlot = slots.has("soir") || slots.has("soir_1") || slots.has("soir_2");
-            if (eveningSlot) {
-              theorieHours += Math.min(
-                (slots.has("soir") ? 4 : 0) +
-                  (slots.has("soir_1") ? 1.5 : 0) +
-                  (slots.has("soir_2") ? 2.5 : 0),
-                4,
-              );
-            } else {
-              theorieHours += Math.min((slots.has("matin") ? 3 : 0) + (slots.has("apres_midi") ? 3 : 0), 6);
-            }
-          }
-          const theorieSec = Math.round(theorieHours * 3600);
-
-          // ---- Pratique (présentiel) : durée exacte issue du planning et de la réservation
           const journeesPresentiel = buildJourneesPresentiel(emargAll, sessInscrits);
           fallbackJourneesPresentiel = journeesPresentiel;
           const pratiqueDetails = await fetchPratiqueSlotDetails(apprenant.id).catch(() => []);
-          const pratiqueMinutes = pratiqueSlotDetailsToMinutes(pratiqueDetails);
+          // Presentiel : les feuilles d'emargement font foi (theorie ET pratique)
+          const { theorieHours, pratiqueMinutes } = computePresentielHours(emargAll as any[], pratiqueDetails as any[]);
+          const theorieSec = Math.round(theorieHours * 3600);
           const pratiqueSec = pratiqueMinutes * 60;
 
           const presentielTotalSec = theorieSec + pratiqueSec;
