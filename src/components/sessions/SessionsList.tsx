@@ -177,7 +177,7 @@ export function SessionsList({ onNavigateToApprenant }: { onNavigateToApprenant?
         ? true
         : filterType === "elearning"
         ? isElearningSession
-        ? true
+
         : filterType.startsWith("nom:")
           ? normalize(filterType.slice(4)) === "session examen"
             ? s.type_session === "examen" || normalize(nom).includes("session examen")
