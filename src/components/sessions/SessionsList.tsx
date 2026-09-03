@@ -352,6 +352,7 @@ export function SessionsList({ onNavigateToApprenant }: { onNavigateToApprenant?
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="tous">Toutes les formations</SelectItem>
+            <SelectItem value="elearning">💻 Sessions e-learning</SelectItem>
             {SESSION_TYPE_OPTIONS.map((t) => (
               <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
             ))}
