@@ -27,6 +27,17 @@ const isElearning = (type?: string | null) => {
 
 const hasPassedExam = (r?: string | null) => (r || "").toLowerCase().trim() === "oui";
 
+const formatExamDate = (value?: string | null): string | null => {
+  if (!value) return null;
+  const d = new Date(value);
+  if (isNaN(d.getTime())) return null;
+  try {
+    return format(d, "dd MMMM yyyy", { locale: fr });
+  } catch {
+    return null;
+  }
+};
+
 export default function SessionElearningPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
