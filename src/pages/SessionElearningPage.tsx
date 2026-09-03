@@ -176,9 +176,9 @@ export default function SessionElearningPage() {
 
                 <div>
                   <span className="text-muted-foreground">Examen théorique : </span>
-                  {a.date_examen_theorique ? (
+                  {formatExamDate(a.date_examen_theorique) ? (
                     <span className="font-medium">
-                      {format(new Date(a.date_examen_theorique), "dd MMMM yyyy", { locale: fr })}
+                      {formatExamDate(a.date_examen_theorique)}
                       {a.lieu_examen ? ` — ${a.lieu_examen}` : ""}
                     </span>
                   ) : (
