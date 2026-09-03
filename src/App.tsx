@@ -130,6 +130,14 @@ function App() {
                   </ProtectedRoute>
                 } />
 
+                <Route path="/session-elearning" element={
+                  <ProtectedRoute>
+                    <ErrorBoundary><SessionElearningPage /></ErrorBoundary>
+                  </ProtectedRoute>
+                } />
+
+
+
                 <Route path="/diagnostic-examens-blancs" element={
                   <ErrorBoundary><DiagnosticExamensBlancs /></ErrorBoundary>
                 } />
