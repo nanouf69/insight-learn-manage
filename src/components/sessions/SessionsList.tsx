@@ -172,8 +172,12 @@ export function SessionsList({ onNavigateToApprenant }: { onNavigateToApprenant?
         const words = normalize(filterNom).split(/[^a-z0-9]+/).filter(w => w && !STOP.has(w));
         return words.length > 0 && words.every(w => target.includes(w));
       };
+      const isElearningSession = /e-?learning/i.test(nom) || (s.types_apprenant || []).some((t: string) => /e-?learning|-e$/i.test(t));
       const matchType = filterType === "tous"
         ? true
+        : filterType === "elearning"
+        ? isElearningSession
+
         : filterType.startsWith("nom:")
           ? normalize(filterType.slice(4)) === "session examen"
             ? s.type_session === "examen" || normalize(nom).includes("session examen")
@@ -348,6 +352,7 @@ export function SessionsList({ onNavigateToApprenant }: { onNavigateToApprenant?
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="tous">Toutes les formations</SelectItem>
+            <SelectItem value="elearning">💻 Sessions e-learning</SelectItem>
             {SESSION_TYPE_OPTIONS.map((t) => (
               <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
             ))}
