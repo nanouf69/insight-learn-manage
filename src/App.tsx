@@ -25,6 +25,7 @@ import DevisPersonnel from "./pages/DevisPersonnel";
 import ReservationCarteVtc from "./pages/ReservationCarteVtc";
 import Booking from "./pages/Booking";
 import SessionDetailPage from "./pages/SessionDetailPage";
+import SessionElearningPage from "./pages/SessionElearningPage";
 import DiagnosticExamensBlancs from "./pages/DiagnosticExamensBlancs";
 import AdminErrorLogs from "./pages/AdminErrorLogs";
 import AdminAuditT3P from "./pages/AdminAuditT3P";
@@ -128,6 +129,14 @@ function App() {
                     <ErrorBoundary><SessionDetailPage /></ErrorBoundary>
                   </ProtectedRoute>
                 } />
+
+                <Route path="/session-elearning" element={
+                  <ProtectedRoute>
+                    <ErrorBoundary><SessionElearningPage /></ErrorBoundary>
+                  </ProtectedRoute>
+                } />
+
+
 
                 <Route path="/diagnostic-examens-blancs" element={
                   <ErrorBoundary><DiagnosticExamensBlancs /></ErrorBoundary>

@@ -327,6 +327,10 @@ export function SessionsList({ onNavigateToApprenant }: { onNavigateToApprenant?
           <p className="text-muted-foreground">Gérez vos sessions de formation</p>
         </div>
         <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => navigate("/session-elearning")}>
+            <GraduationCap className="h-4 w-4 mr-2" />
+            Session e-learning
+          </Button>
           <Button variant="outline" onClick={handleSyncExamens} disabled={syncingExamens}>
             {syncingExamens ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <GraduationCap className="h-4 w-4 mr-2" />}
             Sessions examen (e-learning)
