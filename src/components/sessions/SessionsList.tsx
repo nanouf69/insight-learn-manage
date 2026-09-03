@@ -172,7 +172,11 @@ export function SessionsList({ onNavigateToApprenant }: { onNavigateToApprenant?
         const words = normalize(filterNom).split(/[^a-z0-9]+/).filter(w => w && !STOP.has(w));
         return words.length > 0 && words.every(w => target.includes(w));
       };
+      const isElearningSession = /e-?learning/i.test(nom) || (s.types_apprenant || []).some((t: string) => /e-?learning|-e$/i.test(t));
       const matchType = filterType === "tous"
+        ? true
+        : filterType === "elearning"
+        ? isElearningSession
         ? true
         : filterType.startsWith("nom:")
           ? normalize(filterType.slice(4)) === "session examen"
