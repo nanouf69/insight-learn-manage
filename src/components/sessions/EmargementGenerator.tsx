@@ -129,7 +129,11 @@ function generatePage(
   doc.setFontSize(14);
   doc.setFont("helvetica", "bold");
   const emargementTitle = `FEUILLE D'EMARGEMENT - ${session.formation.toUpperCase()}`;
-  doc.text(emargementTitle, pageWidth - margin, 14, { align: "right" });
+  doc.text(emargementTitle, pageWidth - margin, isFC ? 11 : 14, { align: "right" });
+  if (isFC) {
+    doc.setFontSize(11);
+    doc.text("DUREE TOTALE : 14H", pageWidth - margin, 18, { align: "right" });
+  }
 
   doc.setTextColor(0, 0, 0);
 
