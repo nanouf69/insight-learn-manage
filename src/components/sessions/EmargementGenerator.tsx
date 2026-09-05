@@ -179,6 +179,11 @@ function generatePage(
   const titleLower = (session.title || "").toLowerCase();
   const formationLower = (session.formation || "").toLowerCase();
   const isSoir = titleLower.includes("soir") || formationLower.includes("soir");
+  const combined = `${titleLower} ${formationLower}`.replace(/[_\s]+/g, " ");
+  const isFC =
+    (/continue|mobilit/.test(combined) || /(^|\s)fc(\s|$)/.test(combined)) &&
+    /vtc|taxi/.test(combined);
+  const apremLabel = isFC ? "Apres-midi 13h-17h" : "Apres-midi 13h-16h";
 
   days.forEach((day) => {
     const dateStr = format(day, "EEE dd/MM", { locale: fr });
@@ -189,7 +194,7 @@ function generatePage(
       styles: { halign: "center", fontSize: 7 },
     });
     headRow2.push({ content: isSoir ? "17h-18h30" : "Matin 9h-12h", styles: { halign: "center", fontSize: 6 } });
-    headRow2.push({ content: isSoir ? "18h30-21h" : "Apres-midi 13h-16h", styles: { halign: "center", fontSize: 6 } });
+    headRow2.push({ content: isSoir ? "18h30-21h" : apremLabel, styles: { halign: "center", fontSize: 6 } });
   });
 
   // Construire les lignes avec tous les apprenants
