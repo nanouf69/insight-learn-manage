@@ -275,7 +275,9 @@ function generatePage(
   doc.setFontSize(8);
   const horairesLine = isSoir
     ? "Horaires : 1ere partie 17h00 - 18h30 / 2eme partie 18h30 - 21h00"
-    : "Horaires : Matin 09h00 - 12h00 / Apres-midi 13h00 - 16h00";
+    : isFC
+      ? "Horaires : Matin 09h00 - 12h00 / Apres-midi 13h00 - 17h00 - Duree totale : 14H"
+      : "Horaires : Matin 09h00 - 12h00 / Apres-midi 13h00 - 16h00";
   doc.text(horairesLine, margin, yPos);
 
   // ===== ZONE DE SIGNATURE =====
