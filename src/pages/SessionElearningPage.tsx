@@ -226,6 +226,20 @@ export default function SessionElearningPage() {
                 </div>
 
                 <div className="flex items-center justify-between gap-2">
+                  <span className="text-muted-foreground">Modules : </span>
+                  <Badge
+                    variant={a.tousModulesTermines ? "default" : "outline"}
+                    className={a.tousModulesTermines ? "bg-green-600 hover:bg-green-600 text-white" : ""}
+                  >
+                    {a.tousModulesTermines
+                      ? `✅ Tous les modules terminés (${a.modulesTermines}/${a.modulesTotal})`
+                      : a.modulesTotal > 0
+                        ? `${a.modulesTermines}/${a.modulesTotal} modules terminés`
+                        : `${a.modulesTermines} module(s) terminé(s)`}
+                  </Badge>
+                </div>
+
+                <div className="flex items-center justify-between gap-2">
                   <Badge variant={a.hasDossier ? "default" : "destructive"}>
                     {a.hasDossier ? "Dossier de bienvenue complété" : "Dossier de bienvenue manquant"}
                   </Badge>
