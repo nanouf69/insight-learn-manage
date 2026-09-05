@@ -31,7 +31,7 @@ export default function SessionDetailPage() {
       setSession({
         id: data.id,
         title: data.nom || `Session du ${format(new Date(data.date_debut), "dd MMM yyyy", { locale: fr })}`,
-        formation: "Formation TAXI VTC",
+        formation: data.nom || `Session du ${format(new Date(data.date_debut), "dd MMM yyyy", { locale: fr })}`,
         dateDebut: data.date_debut,
         dateFin: data.date_fin,
         lieu: data.lieu || "Présentiel",
