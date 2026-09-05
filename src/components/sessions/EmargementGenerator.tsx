@@ -98,6 +98,14 @@ function generatePage(
   const margin = 10;
   let yPos = 10;
 
+  const titleLower = (session.title || "").toLowerCase();
+  const formationLower = (session.formation || "").toLowerCase();
+  const isSoir = titleLower.includes("soir") || formationLower.includes("soir");
+  const combined = `${titleLower} ${formationLower}`.replace(/[_\s]+/g, " ");
+  const isFC =
+    (/continue|mobilit/.test(combined) || /(^|\s)fc(\s|$)/.test(combined)) &&
+    /vtc|taxi/.test(combined);
+
   // ===== EN-TÊTE AVEC BANDEAU =====
   doc.setFillColor(41, 128, 185);
   doc.rect(0, 0, pageWidth, 22, "F");
