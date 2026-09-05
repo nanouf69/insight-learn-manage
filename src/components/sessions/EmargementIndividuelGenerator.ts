@@ -168,6 +168,15 @@ function generateIndividualPage(
 
   const typeLabel = (apprenant.type_apprenant || '').toUpperCase().replace(/-E$/i, '');
   const formationWithType = typeLabel ? `${session.formation} (${typeLabel})` : session.formation;
+  const isFC = isFormationContinue(apprenant.type_apprenant, session.formation);
+
+  if (isFC) {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.setTextColor(255, 255, 255);
+    doc.text("DUREE TOTALE : 14H", pageWidth - margin, 20, { align: "right" });
+    doc.setTextColor(0, 0, 0);
+  }
 
   let lineY = yPos + 7;
   drawField("Stagiaire :", `${apprenant.nom.toUpperCase()} ${apprenant.prenom}`, colLeftX, lineY, 11);
