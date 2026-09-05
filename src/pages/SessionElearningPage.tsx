@@ -49,7 +49,7 @@ export default function SessionElearningPage() {
       const { data: apprenants, error } = await supabase
         .from("apprenants")
         .select(
-          "id, civilite, nom, prenom, email, telephone, type_apprenant, statut, resultat_examen, date_examen_theorique, lieu_examen, mot_de_passe_plateforme, mot_de_passe_cma, documents_complets, deleted_at"
+          "id, civilite, nom, prenom, email, telephone, type_apprenant, statut, resultat_examen, date_examen_theorique, lieu_examen, mot_de_passe_plateforme, mot_de_passe_cma, documents_complets, modules_autorises, deleted_at"
         )
         .is("deleted_at", null);
       if (error) throw error;
