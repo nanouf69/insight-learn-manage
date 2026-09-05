@@ -63,6 +63,7 @@ export default function SessionElearningPage() {
 
       const ids = eligibles.map((a: any) => a.id);
       let dossierIds = new Set<string>();
+      const completedByLearner = new Map<string, Set<number>>();
       if (ids.length > 0) {
         const { data: docs } = await supabase
           .from("apprenant_documents_completes")
@@ -70,10 +71,37 @@ export default function SessionElearningPage() {
           .in("apprenant_id", ids)
           .eq("type_document", "dossier-bienvenue");
         dossierIds = new Set((docs || []).map((d: any) => d.apprenant_id));
+
+        // Modules terminés (status terminal = source de vérité)
+        const { data: completions } = await supabase
+          .from("apprenant_module_completion")
+          .select("apprenant_id, module_id")
+          .in("apprenant_id", ids)
+          .eq("status", "completed");
+        for (const c of completions || []) {
+          const set = completedByLearner.get(c.apprenant_id) || new Set<number>();
+          set.add(Number(c.module_id));
+          completedByLearner.set(c.apprenant_id, set);
+        }
       }
 
       return eligibles
-        .map((a: any) => ({ ...a, hasDossier: dossierIds.has(a.id) }))
+        .map((a: any) => {
+          const autorises: number[] = Array.isArray(a.modules_autorises)
+            ? a.modules_autorises.map((m: any) => Number(m)).filter((m: number) => Number.isFinite(m))
+            : [];
+          const doneSet = completedByLearner.get(a.id) || new Set<number>();
+          const modulesTermines = autorises.length > 0
+            ? autorises.filter((m) => doneSet.has(m)).length
+            : doneSet.size;
+          return {
+            ...a,
+            hasDossier: dossierIds.has(a.id),
+            modulesTotal: autorises.length,
+            modulesTermines,
+            tousModulesTermines: autorises.length > 0 && modulesTermines >= autorises.length,
+          };
+        })
         .sort((a: any, b: any) => `${a.nom} ${a.prenom}`.localeCompare(`${b.nom} ${b.prenom}`, "fr"));
     },
   });
