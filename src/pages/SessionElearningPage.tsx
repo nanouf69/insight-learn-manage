@@ -49,7 +49,7 @@ export default function SessionElearningPage() {
       const { data: apprenants, error } = await supabase
         .from("apprenants")
         .select(
-          "id, civilite, nom, prenom, email, telephone, type_apprenant, statut, resultat_examen, date_examen_theorique, lieu_examen, mot_de_passe_plateforme, mot_de_passe_cma, documents_complets, deleted_at"
+          "id, civilite, nom, prenom, email, telephone, type_apprenant, statut, resultat_examen, date_examen_theorique, lieu_examen, mot_de_passe_plateforme, mot_de_passe_cma, documents_complets, modules_autorises, deleted_at"
         )
         .is("deleted_at", null);
       if (error) throw error;
@@ -63,6 +63,7 @@ export default function SessionElearningPage() {
 
       const ids = eligibles.map((a: any) => a.id);
       let dossierIds = new Set<string>();
+      const completedByLearner = new Map<string, Set<number>>();
       if (ids.length > 0) {
         const { data: docs } = await supabase
           .from("apprenant_documents_completes")
@@ -70,10 +71,37 @@ export default function SessionElearningPage() {
           .in("apprenant_id", ids)
           .eq("type_document", "dossier-bienvenue");
         dossierIds = new Set((docs || []).map((d: any) => d.apprenant_id));
+
+        // Modules terminés (status terminal = source de vérité)
+        const { data: completions } = await supabase
+          .from("apprenant_module_completion")
+          .select("apprenant_id, module_id")
+          .in("apprenant_id", ids)
+          .eq("status", "completed");
+        for (const c of completions || []) {
+          const set = completedByLearner.get(c.apprenant_id) || new Set<number>();
+          set.add(Number(c.module_id));
+          completedByLearner.set(c.apprenant_id, set);
+        }
       }
 
       return eligibles
-        .map((a: any) => ({ ...a, hasDossier: dossierIds.has(a.id) }))
+        .map((a: any) => {
+          const autorises: number[] = Array.isArray(a.modules_autorises)
+            ? a.modules_autorises.map((m: any) => Number(m)).filter((m: number) => Number.isFinite(m))
+            : [];
+          const doneSet = completedByLearner.get(a.id) || new Set<number>();
+          const modulesTermines = autorises.length > 0
+            ? autorises.filter((m) => doneSet.has(m)).length
+            : doneSet.size;
+          return {
+            ...a,
+            hasDossier: dossierIds.has(a.id),
+            modulesTotal: autorises.length,
+            modulesTermines,
+            tousModulesTermines: autorises.length > 0 && modulesTermines >= autorises.length,
+          };
+        })
         .sort((a: any, b: any) => `${a.nom} ${a.prenom}`.localeCompare(`${b.nom} ${b.prenom}`, "fr"));
     },
   });
@@ -195,6 +223,20 @@ export default function SessionElearningPage() {
                   ) : (
                     <span className="italic text-muted-foreground">non planifié</span>
                   )}
+                </div>
+
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-muted-foreground">Modules : </span>
+                  <Badge
+                    variant={a.tousModulesTermines ? "default" : "outline"}
+                    className={a.tousModulesTermines ? "bg-green-600 hover:bg-green-600 text-white" : ""}
+                  >
+                    {a.tousModulesTermines
+                      ? `✅ Tous les modules terminés (${a.modulesTermines}/${a.modulesTotal})`
+                      : a.modulesTotal > 0
+                        ? `${a.modulesTermines}/${a.modulesTotal} modules terminés`
+                        : `${a.modulesTermines} module(s) terminé(s)`}
+                  </Badge>
                 </div>
 
                 <div className="flex items-center justify-between gap-2">
