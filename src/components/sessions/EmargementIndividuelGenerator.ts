@@ -229,8 +229,12 @@ function generateIndividualPage(
   const tableData = days.map((day) => {
     const dateStr = format(day.date, "EEEE dd MMMM yyyy", { locale: fr });
     const dateCapitalized = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
-    const matinLabel = day.matinDebut && day.matinFin ? `${day.matinDebut} - ${day.matinFin}` : "";
-    const apremLabel = day.apremDebut && day.apremFin ? `${day.apremDebut} - ${day.apremFin}` : "";
+    const matinLabel = isFC
+      ? "09:00 - 12:00"
+      : day.matinDebut && day.matinFin ? `${day.matinDebut} - ${day.matinFin}` : "";
+    const apremLabel = isFC
+      ? "13:00 - 17:00"
+      : day.apremDebut && day.apremFin ? `${day.apremDebut} - ${day.apremFin}` : "";
     return [dateCapitalized, matinLabel, "", apremLabel, ""];
   });
 
