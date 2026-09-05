@@ -176,13 +176,6 @@ function generatePage(
   ];
 
   const headRow2: any[] = [];
-  const titleLower = (session.title || "").toLowerCase();
-  const formationLower = (session.formation || "").toLowerCase();
-  const isSoir = titleLower.includes("soir") || formationLower.includes("soir");
-  const combined = `${titleLower} ${formationLower}`.replace(/[_\s]+/g, " ");
-  const isFC =
-    (/continue|mobilit/.test(combined) || /(^|\s)fc(\s|$)/.test(combined)) &&
-    /vtc|taxi/.test(combined);
   const apremLabel = isFC ? "Apres-midi 13h-17h" : "Apres-midi 13h-16h";
 
   days.forEach((day) => {
