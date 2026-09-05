@@ -3366,6 +3366,48 @@ export type Database = {
           },
         ]
       }
+      taches: {
+        Row: {
+          created_at: string
+          cree_par: string | null
+          description: string | null
+          echeance: string | null
+          id: string
+          priorite: string
+          terminee: boolean
+          terminee_at: string | null
+          terminee_par: string | null
+          titre: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          cree_par?: string | null
+          description?: string | null
+          echeance?: string | null
+          id?: string
+          priorite?: string
+          terminee?: boolean
+          terminee_at?: string | null
+          terminee_par?: string | null
+          titre: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          cree_par?: string | null
+          description?: string | null
+          echeance?: string | null
+          id?: string
+          priorite?: string
+          terminee?: boolean
+          terminee_at?: string | null
+          terminee_par?: string | null
+          titre?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       transactions_bancaires: {
         Row: {
           banque: string

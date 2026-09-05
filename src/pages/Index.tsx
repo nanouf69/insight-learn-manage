@@ -35,6 +35,7 @@ import { ApprenantQuestionsPanel } from "@/components/dashboard/ApprenantQuestio
 import { EmargementsManquants } from "@/components/dashboard/EmargementsManquants";
 import { EmargementsFinFormation } from "@/components/dashboard/EmargementsFinFormation";
 import { CodesAccesEnvoyes } from "@/components/dashboard/CodesAccesEnvoyes";
+import { DashboardTasks } from "@/components/dashboard/DashboardTasks";
 import { FormationsBientotTerminees } from "@/components/dashboard/FormationsBientotTerminees";
 import { CreneauxRdvAdmin } from "@/components/dashboard/CreneauxRdvAdmin";
 import { GraduationCap, Users, ArrowDownCircle, ArrowUpCircle, Menu, X, Send, Loader2 } from "lucide-react";
@@ -327,6 +328,9 @@ const Index = () => {
                 {sendingRelance ? "Envoi en cours..." : "📋 Relancer dossiers bienvenue incomplets"}
               </Button>
             </div>
+
+            {/* Tâches à faire */}
+            <DashboardTasks />
 
             {/* Codes d'accès envoyés aujourd'hui */}
             <CodesAccesEnvoyes onNavigateToApprenant={handleNavigateToApprenant} />
