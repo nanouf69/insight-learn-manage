@@ -41,6 +41,14 @@ const organisme = {
 
 const LIEU_FORMATION = "86 route de genas 69003 Lyon";
 
+// Formation continue VTC / TAXI : 14h de formation, 9h-12h / 13h-17h
+const isFormationContinue = (...values: Array<string | undefined>): boolean => {
+  const t = values.filter(Boolean).join(" ").toLowerCase().replace(/[_\s]+/g, " ");
+  const hasKind = /vtc|taxi/.test(t);
+  const hasFC = /continue|mobilit/.test(t) || /(^| )fc( |$)/.test(t);
+  return hasKind && hasFC;
+};
+
 export function generateEmargementIndividuelPDF(
   session: SessionData,
   apprenant: Apprenant,
