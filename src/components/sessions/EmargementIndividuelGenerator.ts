@@ -41,6 +41,14 @@ const organisme = {
 
 const LIEU_FORMATION = "86 route de genas 69003 Lyon";
 
+// Formation continue VTC / TAXI : 14h de formation, 9h-12h / 13h-17h
+const isFormationContinue = (...values: Array<string | undefined>): boolean => {
+  const t = values.filter(Boolean).join(" ").toLowerCase().replace(/[_\s]+/g, " ");
+  const hasKind = /vtc|taxi/.test(t);
+  const hasFC = /continue|mobilit/.test(t) || /(^| )fc( |$)/.test(t);
+  return hasKind && hasFC;
+};
+
 export function generateEmargementIndividuelPDF(
   session: SessionData,
   apprenant: Apprenant,
@@ -160,6 +168,15 @@ function generateIndividualPage(
 
   const typeLabel = (apprenant.type_apprenant || '').toUpperCase().replace(/-E$/i, '');
   const formationWithType = typeLabel ? `${session.formation} (${typeLabel})` : session.formation;
+  const isFC = isFormationContinue(apprenant.type_apprenant, session.formation);
+
+  if (isFC) {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.setTextColor(255, 255, 255);
+    doc.text("DUREE TOTALE : 14H", pageWidth - margin, 20, { align: "right" });
+    doc.setTextColor(0, 0, 0);
+  }
 
   let lineY = yPos + 7;
   drawField("Stagiaire :", `${apprenant.nom.toUpperCase()} ${apprenant.prenom}`, colLeftX, lineY, 11);
@@ -212,8 +229,12 @@ function generateIndividualPage(
   const tableData = days.map((day) => {
     const dateStr = format(day.date, "EEEE dd MMMM yyyy", { locale: fr });
     const dateCapitalized = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
-    const matinLabel = day.matinDebut && day.matinFin ? `${day.matinDebut} - ${day.matinFin}` : "";
-    const apremLabel = day.apremDebut && day.apremFin ? `${day.apremDebut} - ${day.apremFin}` : "";
+    const matinLabel = isFC
+      ? "09:00 - 12:00"
+      : day.matinDebut && day.matinFin ? `${day.matinDebut} - ${day.matinFin}` : "";
+    const apremLabel = isFC
+      ? "13:00 - 17:00"
+      : day.apremDebut && day.apremFin ? `${day.apremDebut} - ${day.apremFin}` : "";
     return [dateCapitalized, matinLabel, "", apremLabel, ""];
   });
 

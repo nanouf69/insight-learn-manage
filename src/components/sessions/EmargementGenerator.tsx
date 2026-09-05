@@ -98,6 +98,14 @@ function generatePage(
   const margin = 10;
   let yPos = 10;
 
+  const titleLower = (session.title || "").toLowerCase();
+  const formationLower = (session.formation || "").toLowerCase();
+  const isSoir = titleLower.includes("soir") || formationLower.includes("soir");
+  const combined = `${titleLower} ${formationLower}`.replace(/[_\s]+/g, " ");
+  const isFC =
+    (/continue|mobilit/.test(combined) || /(^|\s)fc(\s|$)/.test(combined)) &&
+    /vtc|taxi/.test(combined);
+
   // ===== EN-TÊTE AVEC BANDEAU =====
   doc.setFillColor(41, 128, 185);
   doc.rect(0, 0, pageWidth, 22, "F");
@@ -121,7 +129,11 @@ function generatePage(
   doc.setFontSize(14);
   doc.setFont("helvetica", "bold");
   const emargementTitle = `FEUILLE D'EMARGEMENT - ${session.formation.toUpperCase()}`;
-  doc.text(emargementTitle, pageWidth - margin, 14, { align: "right" });
+  doc.text(emargementTitle, pageWidth - margin, isFC ? 11 : 14, { align: "right" });
+  if (isFC) {
+    doc.setFontSize(11);
+    doc.text("DUREE TOTALE : 14H", pageWidth - margin, 18, { align: "right" });
+  }
 
   doc.setTextColor(0, 0, 0);
 
@@ -176,9 +188,7 @@ function generatePage(
   ];
 
   const headRow2: any[] = [];
-  const titleLower = (session.title || "").toLowerCase();
-  const formationLower = (session.formation || "").toLowerCase();
-  const isSoir = titleLower.includes("soir") || formationLower.includes("soir");
+  const apremLabel = isFC ? "Apres-midi 13h-17h" : "Apres-midi 13h-16h";
 
   days.forEach((day) => {
     const dateStr = format(day, "EEE dd/MM", { locale: fr });
@@ -189,7 +199,7 @@ function generatePage(
       styles: { halign: "center", fontSize: 7 },
     });
     headRow2.push({ content: isSoir ? "17h-18h30" : "Matin 9h-12h", styles: { halign: "center", fontSize: 6 } });
-    headRow2.push({ content: isSoir ? "18h30-21h" : "Apres-midi 13h-16h", styles: { halign: "center", fontSize: 6 } });
+    headRow2.push({ content: isSoir ? "18h30-21h" : apremLabel, styles: { halign: "center", fontSize: 6 } });
   });
 
   // Construire les lignes avec tous les apprenants
@@ -265,7 +275,9 @@ function generatePage(
   doc.setFontSize(8);
   const horairesLine = isSoir
     ? "Horaires : 1ere partie 17h00 - 18h30 / 2eme partie 18h30 - 21h00"
-    : "Horaires : Matin 09h00 - 12h00 / Apres-midi 13h00 - 16h00";
+    : isFC
+      ? "Horaires : Matin 09h00 - 12h00 / Apres-midi 13h00 - 17h00 - Duree totale : 14H"
+      : "Horaires : Matin 09h00 - 12h00 / Apres-midi 13h00 - 16h00";
   doc.text(horairesLine, margin, yPos);
 
   // ===== ZONE DE SIGNATURE =====

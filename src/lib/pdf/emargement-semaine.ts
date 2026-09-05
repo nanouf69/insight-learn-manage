@@ -69,7 +69,12 @@ export function generateEmargementSemainePdf(
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(13);
   doc.setFont('helvetica', 'bold');
-  doc.text(`FEUILLE D'ÉMARGEMENT HEBDOMADAIRE`, pw / 2, 39, { align: 'center' });
+  const isFCHeader = isFormationContinue(apprenant.type_apprenant);
+  doc.text(`FEUILLE D'ÉMARGEMENT HEBDOMADAIRE`, pw / 2, isFCHeader ? 36 : 39, { align: 'center' });
+  if (isFCHeader) {
+    doc.setFontSize(10);
+    doc.text('DURÉE TOTALE : 14H — 09h00-12h00 / 13h00-17h00', pw / 2, 43, { align: 'center' });
+  }
 
   // Apprenant box
   let y = 56;
