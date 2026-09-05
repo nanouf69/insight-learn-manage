@@ -126,9 +126,16 @@ function generatePage(
   doc.setFont("helvetica", "normal");
   doc.text("Specialiste Formations Transport", margin, 18);
 
-  doc.setFontSize(14);
   doc.setFont("helvetica", "bold");
   const emargementTitle = `FEUILLE D'EMARGEMENT - ${session.formation.toUpperCase()}`;
+  // Ajuste la taille pour que le nom de formation complet ne soit jamais tronqué
+  const maxTitleWidth = pageWidth - margin - (margin + 55);
+  let titleSize = 14;
+  doc.setFontSize(titleSize);
+  while (titleSize > 7 && doc.getTextWidth(emargementTitle) > maxTitleWidth) {
+    titleSize -= 0.5;
+    doc.setFontSize(titleSize);
+  }
   doc.text(emargementTitle, pageWidth - margin, isFC ? 11 : 14, { align: "right" });
   if (isFC) {
     doc.setFontSize(11);
