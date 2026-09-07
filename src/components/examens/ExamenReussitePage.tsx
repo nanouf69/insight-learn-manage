@@ -590,7 +590,7 @@ function AddCandidateToDayPicker({
   );
 }
 
-export function ExamenReussitePage() {
+export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToApprenant?: (id: string) => void } = {}) {
   const [search, setSearch] = useState("");
   const [fullscreen, setFullscreen] = useState(false);
   const [pratiqueFullscreen, setPratiqueFullscreen] = useState(false);
@@ -1837,8 +1837,30 @@ export function ExamenReussitePage() {
 
                     return (
                       <TableRow key={apprenant.id}>
-                        <TableCell className="font-medium">{apprenant.nom}</TableCell>
-                        <TableCell>{apprenant.prenom}</TableCell>
+                        <TableCell className="font-medium">
+                          {onNavigateToApprenant ? (
+                            <button
+                              type="button"
+                              title="Ouvrir la fiche CRM"
+                              onClick={() => onNavigateToApprenant(apprenant.id)}
+                              className="text-primary hover:underline text-left"
+                            >
+                              {apprenant.nom}
+                            </button>
+                          ) : apprenant.nom}
+                        </TableCell>
+                        <TableCell>
+                          {onNavigateToApprenant ? (
+                            <button
+                              type="button"
+                              title="Ouvrir la fiche CRM"
+                              onClick={() => onNavigateToApprenant(apprenant.id)}
+                              className="text-primary hover:underline text-left"
+                            >
+                              {apprenant.prenom}
+                            </button>
+                          ) : apprenant.prenom}
+                        </TableCell>
                         <TableCell><Badge className={tColor}>{tLabel}</Badge></TableCell>
                         <TableCell className="text-center">
                           <Select
@@ -2056,8 +2078,30 @@ export function ExamenReussitePage() {
                     <TableBody>
                       {list.map(a => (
                         <TableRow key={a.id}>
-                          <TableCell className="font-medium">{a.nom}</TableCell>
-                          <TableCell>{a.prenom}</TableCell>
+                          <TableCell className="font-medium">
+                            {onNavigateToApprenant ? (
+                              <button
+                                type="button"
+                                title="Ouvrir la fiche CRM"
+                                onClick={() => onNavigateToApprenant(a.id)}
+                                className="text-primary hover:underline text-left"
+                              >
+                                {a.nom}
+                              </button>
+                            ) : a.nom}
+                          </TableCell>
+                          <TableCell>
+                            {onNavigateToApprenant ? (
+                              <button
+                                type="button"
+                                title="Ouvrir la fiche CRM"
+                                onClick={() => onNavigateToApprenant(a.id)}
+                                className="text-primary hover:underline text-left"
+                              >
+                                {a.prenom}
+                              </button>
+                            ) : a.prenom}
+                          </TableCell>
                           <TableCell>
                             <Badge className={typeColor[a.type_apprenant || ''] || 'bg-gray-100 text-gray-800'}>
                               {typeLabel[a.type_apprenant || ''] || a.type_apprenant || '-'}
