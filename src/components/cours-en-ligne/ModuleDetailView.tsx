@@ -482,10 +482,20 @@ const getTrainerQuizIdsForModule = (moduleId: number | string) =>
   TRAINER_QUIZ_IDS_BY_MODULE_ID[Number(moduleId)] || [];
 
 const CANONICAL_QUIZ_IDS_BY_MODULE_ID: Record<number, string[]> = {
-  10: ["reglementation-nationale"],
-  24: ["reglementation-nationale"],
-  40: ["reglementation-nationale"],
+  7: ["connaissance-ville"],
+  9: ["bilan-exercices-taxi"],
+  10: ["reglementation-nationale", "reglementation-locale"],
+  11: ["bilan-examen-taxi"],
+  12: ["cas-pratique-taxi"],
+  13: ["controle-connaissances-taxi"],
+  24: ["reglementation-nationale", "reglementation-locale"],
+  27: ["bilan-exercices-ta"],
+  28: ["bilan-examen-ta"],
+  40: ["reglementation-nationale", "reglementation-locale"],
+  42: ["reglementation-nationale", "reglementation-locale"],
+  64: ["equipements-taxi"],
 };
+
 
 interface CanonicalQuestionRow {
   question_id: string;
