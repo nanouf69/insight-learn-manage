@@ -185,14 +185,24 @@ function toRichSlide(pageNumber: number, pageLines: string[]): Slide {
       .filter((h) => h !== firstHeading)
       .filter((h) => !/^—\s*PARTIE/i.test(h));
 
-    const items = headingCandidates.map((h, i) => {
-      const matchNum = h.match(/^(\d+[a-z]?)\.\s*/i);
-      return {
-        n: matchNum ? matchNum[1] : String(i + 1),
+    // Dans les PPTX, le numéro et le libellé sont deux zones de texte distinctes :
+    // on fusionne "1" + "Définition légale..." au lieu de créer deux entrées.
+    const items: { n: string; label: string; page: number }[] = [];
+    let pendingNumber: string | null = null;
+
+    for (const h of headingCandidates) {
+      if (/^\d+[a-z]?$/i.test(h)) {
+        pendingNumber = h;
+        continue;
+      }
+      const matchNum = h.match(/^(\d+[a-z]?)[.)]\s*/i);
+      items.push({
+        n: matchNum ? matchNum[1] : pendingNumber ?? String(items.length + 1),
         label: matchNum ? h.replace(matchNum[0], "").trim() : h,
         page: 0,
-      };
-    });
+      });
+      pendingNumber = null;
+    }
 
     if (items.length > 0) {
       return { type: "sommaire", title: firstHeading, items };
