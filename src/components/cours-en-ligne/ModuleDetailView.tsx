@@ -6246,12 +6246,35 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
 
     const markPageCompleted = (pageIndex: number) => {
+      let snapshot: number[] = [];
       setCompletedPages(prev => {
         const next = new Set(prev);
         next.add(pageIndex);
+        snapshot = Array.from(next);
         return next;
       });
+
+      // Persistance serveur immédiate : la progression étape par étape ne doit
+      // jamais dépendre du sessionStorage (perdue à la reconnexion / autre appareil).
+      if (apprenantId && totalPages > 0) {
+        const progress = Math.min(100, Math.round((snapshot.length / totalPages) * 100));
+        (async () => {
+          for (let attempt = 1; attempt <= 3; attempt++) {
+            const { error } = await (supabase as any).rpc("save_module_pages_progress", {
+              _apprenant_id: apprenantId,
+              _module_id: module.id,
+              _pages: snapshot,
+              _progress: progress,
+            });
+            if (!error) return;
+            console.error(`[module ${module.id}] progression étape non enregistrée (essai ${attempt}/3)`, error);
+            await new Promise(r => setTimeout(r, 700 * attempt));
+          }
+          toast.error("Votre progression n'a pas pu être enregistrée. Vérifiez votre connexion.");
+        })();
+      }
     };
+
 
     const persistModuleCompletion = async () => {
       if (completionPersistedRef.current) return true;
