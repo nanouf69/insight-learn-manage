@@ -5718,6 +5718,37 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         });
     }, [uiStateHydrated, apprenantId, pages.length]);
 
+    // --- Restore completedPages persisted server-side (survives reconnexion / autre appareil) ---
+    useEffect(() => {
+      if (!uiStateHydrated || !apprenantId || pages.length === 0) return;
+      let cancelled = false;
+      (async () => {
+        const { data, error } = await (supabase as any)
+          .from("apprenant_module_completion")
+          .select("pages_completees, status")
+          .eq("apprenant_id", apprenantId)
+          .eq("module_id", module.id)
+          .maybeSingle();
+        if (cancelled || error || !data) return;
+        const saved: number[] = Array.isArray(data.pages_completees) ? data.pages_completees : [];
+        if (saved.length === 0) return;
+        setCompletedPages(prev => {
+          const next = new Set(prev);
+          let changed = false;
+          saved.forEach((idx: any) => {
+            const n = Number(idx);
+            if (Number.isFinite(n) && n >= 0 && n < pages.length && !next.has(n)) {
+              next.add(n);
+              changed = true;
+            }
+          });
+          return changed ? next : prev;
+        });
+      })();
+      return () => { cancelled = true; };
+    }, [uiStateHydrated, apprenantId, pages.length, module.id]);
+
+
     // --- Persist learner UI state while progressing in module ---
     useEffect(() => {
       if (!uiStateHydrated) return;
