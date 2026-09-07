@@ -516,6 +516,25 @@ type ModuleEditorSavePayload = {
 
 const cloneJson = <T,>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 
+// Les cours enregistrés en base ont été sauvegardés avant l'ajout de certaines
+// métadonnées techniques de la source (diapositives interactives, fichiers PDF).
+// Sans cette réinjection, la page du cours s'affiche vide côté apprenant.
+const reinjectSourceCoursMeta = (dbCours: any[], sourceCours: any[] | undefined): any[] => {
+  if (!Array.isArray(dbCours) || !Array.isArray(sourceCours) || sourceCours.length === 0) return dbCours;
+  const sourceById = new Map<number, any>();
+  sourceCours.forEach((c) => sourceById.set(Number(c?.id), c));
+  return dbCours.map((c) => {
+    const src = sourceById.get(Number(c?.id));
+    if (!src) return c;
+    const next = { ...c };
+    if (!next.slidesKey && src.slidesKey) next.slidesKey = src.slidesKey;
+    if ((!Array.isArray(next.fichiers) || next.fichiers.length === 0) && Array.isArray(src.fichiers) && src.fichiers.length > 0) {
+      next.fichiers = src.fichiers;
+    }
+    return next;
+  });
+};
+
 const getQuestionEditTs = (question: unknown): number => {
   if (!question || typeof question !== "object") return 0;
   const editedAt = (question as any)._editedAt;
