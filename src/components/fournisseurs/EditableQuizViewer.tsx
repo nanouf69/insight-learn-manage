@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,7 +6,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { ChevronDown, ChevronUp, CheckCircle2, Edit2, Save, X, Plus, Trash2, RotateCcw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { toggleCorrect as toggleCorrectUtil, validateQuestionEdit, type QuizChoice as UtilQuizChoice } from "./quiz-editor-utils";
+import { toggleCorrect as toggleCorrectUtil, validateQuestionEdit, resolveOverrideConflict, type QuizChoice as UtilQuizChoice } from "./quiz-editor-utils";
+import { QUIZ_ID_TO_MODULE_IDS, buildModuleQuestionMap, applyModuleQuestionsToSections, type SyncQuestion } from "./quiz-module-sync";
 
 interface QuizChoice {
   lettre: string;
@@ -18,6 +19,8 @@ interface QuizQuestion {
   id: number;
   enonce: string;
   choix: QuizChoice[];
+  _editedAt?: string;
+  manually_edited?: boolean;
 }
 
 interface QuizSection {
@@ -33,6 +36,7 @@ interface Override {
   question_id: number;
   enonce: string;
   choix: QuizChoice[];
+  updated_at?: string;
 }
 
 interface Props {
@@ -145,7 +149,12 @@ export function EditableQuizViewer({ sections: sourceSections, title, icon = "ðŸ
     const key = `${sectionId}-${q.id}`;
     const override = overrides.get(key);
     if (override && override.enonce !== "__DELETED__") {
-      return { id: q.id, enonce: override.enonce, choix: override.choix };
+      // Le module de cours (admin) fait rÃ©fÃ©rence si sa version est plus rÃ©cente
+      const adminEditedAt = q._editedAt || (q.manually_edited ? new Date(0).toISOString() : undefined);
+      const winner = resolveOverrideConflict(adminEditedAt, override.updated_at ?? "");
+      if (winner === "fournisseur") {
+        return { ...q, enonce: override.enonce, choix: override.choix };
+      }
     }
     return q;
   };
@@ -169,7 +178,7 @@ export function EditableQuizViewer({ sections: sourceSections, title, icon = "ðŸ
       const key = `${sectionId}-${questionId}`;
       setOverrides(prev => {
         const next = new Map(prev);
-        next.set(key, { quiz_id: quizId, section_id: sectionId, question_id: questionId, enonce: "__DELETED__", choix: [] });
+        next.set(key, { quiz_id: quizId, section_id: sectionId, question_id: questionId, enonce: "__DELETED__", choix: [], updated_at: new Date().toISOString() });
         return next;
       });
       toast.success("Question supprimÃ©e");
@@ -220,7 +229,7 @@ export function EditableQuizViewer({ sections: sourceSections, title, icon = "ðŸ
       const key = `${sectionId}-${questionId}`;
       setOverrides(prev => {
         const next = new Map(prev);
-        next.set(key, { quiz_id: quizId, section_id: sectionId, question_id: questionId, enonce: editEnonce, choix: editChoix });
+        next.set(key, { quiz_id: quizId, section_id: sectionId, question_id: questionId, enonce: editEnonce, choix: editChoix, updated_at: new Date().toISOString() });
         return next;
       });
       setEditingKey(null);
