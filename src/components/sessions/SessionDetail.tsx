@@ -3851,9 +3851,33 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
 
                         {/* Ligne 2: Coordonnées compactes sur une seule ligne */}
                         <div className="flex items-center gap-x-3 gap-y-1 mb-2 pl-[36px] text-xs text-muted-foreground flex-wrap">
-                          <span className="flex items-center gap-1">
+                          <span className="flex items-center gap-1 group/copy">
                             <FileText className="w-3 h-3 shrink-0" />
                             {apprenant.numero_dossier_cma || "CMA n/d"}
+                            {apprenant.numero_dossier_cma && (
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); copyToClipboard(apprenant.numero_dossier_cma!, 'N° dossier CMA'); }}
+                                className="p-0.5 rounded opacity-0 group-hover/copy:opacity-100 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-opacity"
+                                title="Copier le n° de dossier CMA"
+                              >
+                                <Copy className="w-3 h-3" />
+                              </button>
+                            )}
+                          </span>
+                          <span className="flex items-center gap-1 group/copy" title="Mot de passe CMA">
+                            <KeyRound className="w-3 h-3 shrink-0" />
+                            <span className="font-mono">{apprenant.mot_de_passe_cma || "MDP CMA n/d"}</span>
+                            {apprenant.mot_de_passe_cma && (
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); copyToClipboard(apprenant.mot_de_passe_cma!, 'Mot de passe CMA'); }}
+                                className="p-0.5 rounded opacity-0 group-hover/copy:opacity-100 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-opacity"
+                                title="Copier le mot de passe CMA"
+                              >
+                                <Copy className="w-3 h-3" />
+                              </button>
+                            )}
                           </span>
                           <span className="flex items-center gap-1 group/copy">
                             <Mail className="w-3 h-3 shrink-0" />
