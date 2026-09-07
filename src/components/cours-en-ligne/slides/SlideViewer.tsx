@@ -559,10 +559,13 @@ export default function SlideViewer({ slides, titre, brand, onBack, editable, on
   }, []);
 
   return (
-    <div className="flex flex-col h-full" style={{ minHeight: 320 }}>
+    <div
+      ref={rootRef}
+      className={`flex flex-col w-full ${isFullscreen ? "fixed inset-0 z-[9999] bg-[#0a1628]" : ""}`}
+    >
       {/* Header */}
       <div className="bg-[#081224] text-white px-4 py-2 flex items-center justify-between rounded-t-xl border-b border-white/10 flex-shrink-0">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 min-w-0">
           <Button variant="ghost" size="icon" className="h-8 w-8 text-white hover:bg-white/10" onClick={onBack}>
             <ArrowLeft className="w-4 h-4" />
           </Button>
@@ -579,14 +582,28 @@ export default function SlideViewer({ slides, titre, brand, onBack, editable, on
               {editing ? <><Eye className="w-3.5 h-3.5" /> Aperçu</> : <><Pencil className="w-3.5 h-3.5" /> Modifier</>}
             </Button>
           )}
-          <span className="text-blue-400/60 text-xs hidden sm:block">{brandText}</span>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-white hover:bg-white/10"
+            onClick={toggleFullscreen}
+            title={isFullscreen ? "Quitter le plein écran" : "Plein écran"}
+          >
+            {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
+          </Button>
+          <span className="text-blue-400/60 text-xs hidden lg:block">{brandText}</span>
         </div>
       </div>
 
-      {/* Slide content — scaled 16:9 */}
+      {/* Slide content — scaled 16:9, s'adapte à la largeur (tablette/mobile) */}
       <div
         ref={containerRef}
-        className="flex-1 bg-[#0a1628] overflow-hidden relative"
+        className="bg-[#0a1628] overflow-hidden relative w-full"
+        style={
+          isFullscreen
+            ? { flex: 1 }
+            : { aspectRatio: "16 / 9", maxHeight: "min(70vh, 620px)" }
+        }
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
@@ -608,6 +625,7 @@ export default function SlideViewer({ slides, titre, brand, onBack, editable, on
           </div>
         </div>
       </div>
+
 
       {/* Navigation — always visible */}
       <div className="bg-[#060e1c] px-4 py-2.5 flex items-center justify-between rounded-b-xl border-t border-white/10 flex-shrink-0">
