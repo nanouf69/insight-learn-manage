@@ -6741,10 +6741,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                   )}
 
                   {hasInteractiveSlides && cours.slidesKey && !SLIDE_IMAGE_SETS[cours.slidesKey] && (
-                    <div
-                      className="mt-4 w-full"
-                      style={{ aspectRatio: "16 / 9", maxHeight: "min(75vh, 620px)" }}
-                    >
+                    <div className="mt-4 w-full">
+
                       <SlideViewer
                         slides={slidesByKey[cours.slidesKey] ?? []}
                         titre={cours.titre}

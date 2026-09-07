@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, ChevronLeft, ChevronRight, Pencil, Eye, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Pencil, Eye, Plus, Trash2, Maximize, Minimize } from "lucide-react";
 import type { Slide, SlideBlock } from "./t3p-partie1-data";
 
 const SLIDE_BG = "bg-gradient-to-br from-[#0a1628] via-[#0f1d36] to-[#081224]";
@@ -491,7 +491,30 @@ export default function SlideViewer({ slides, titre, brand, onBack, editable, on
   const [idx, setIdx] = useState(0);
   const [editing, setEditing] = useState(false);
   const [containerSize, setContainerSize] = useState({ w: 960, h: 540 });
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  const toggleFullscreen = () => {
+    const el = rootRef.current;
+    if (!el) return;
+    if (isFullscreen || document.fullscreenElement) {
+      if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+      setIsFullscreen(false);
+      return;
+    }
+    setIsFullscreen(true);
+    el.requestFullscreen?.().catch(() => {});
+  };
+
+  useEffect(() => {
+    const onFsChange = () => {
+      if (!document.fullscreenElement) setIsFullscreen(false);
+    };
+    document.addEventListener("fullscreenchange", onFsChange);
+    return () => document.removeEventListener("fullscreenchange", onFsChange);
+  }, []);
+
   const total = slides.length;
   const prev = () => setIdx(i => Math.max(0, i - 1));
   const next = () => setIdx(i => Math.min(total - 1, i + 1));
@@ -559,10 +582,13 @@ export default function SlideViewer({ slides, titre, brand, onBack, editable, on
   }, []);
 
   return (
-    <div className="flex flex-col h-full" style={{ minHeight: 320 }}>
+    <div
+      ref={rootRef}
+      className={`flex flex-col w-full ${isFullscreen ? "fixed inset-0 z-[9999] bg-[#0a1628]" : ""}`}
+    >
       {/* Header */}
       <div className="bg-[#081224] text-white px-4 py-2 flex items-center justify-between rounded-t-xl border-b border-white/10 flex-shrink-0">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 min-w-0">
           <Button variant="ghost" size="icon" className="h-8 w-8 text-white hover:bg-white/10" onClick={onBack}>
             <ArrowLeft className="w-4 h-4" />
           </Button>
@@ -579,14 +605,28 @@ export default function SlideViewer({ slides, titre, brand, onBack, editable, on
               {editing ? <><Eye className="w-3.5 h-3.5" /> Aperçu</> : <><Pencil className="w-3.5 h-3.5" /> Modifier</>}
             </Button>
           )}
-          <span className="text-blue-400/60 text-xs hidden sm:block">{brandText}</span>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-white hover:bg-white/10"
+            onClick={toggleFullscreen}
+            title={isFullscreen ? "Quitter le plein écran" : "Plein écran"}
+          >
+            {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
+          </Button>
+          <span className="text-blue-400/60 text-xs hidden lg:block">{brandText}</span>
         </div>
       </div>
 
-      {/* Slide content — scaled 16:9 */}
+      {/* Slide content — scaled 16:9, s'adapte à la largeur (tablette/mobile) */}
       <div
         ref={containerRef}
-        className="flex-1 bg-[#0a1628] overflow-hidden relative"
+        className="bg-[#0a1628] overflow-hidden relative w-full"
+        style={
+          isFullscreen
+            ? { flex: 1 }
+            : { aspectRatio: "16 / 9", maxHeight: "min(70vh, 620px)" }
+        }
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
@@ -608,6 +648,7 @@ export default function SlideViewer({ slides, titre, brand, onBack, editable, on
           </div>
         </div>
       </div>
+
 
       {/* Navigation — always visible */}
       <div className="bg-[#060e1c] px-4 py-2.5 flex items-center justify-between rounded-b-xl border-t border-white/10 flex-shrink-0">
