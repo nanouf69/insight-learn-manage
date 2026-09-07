@@ -299,6 +299,48 @@ export const REGLEMENTATION_NATIONALE_EXERCICES: {
       { id: 43, enonce: "Montant d'une contravention de 4ème classe :", choix: [
         { lettre: "A", texte: "68 €" },{ lettre: "B", texte: "135 €", correct: true },{ lettre: "C", texte: "375 €" },
       ]},
+      { id: 44, enonce: "Le préfet dispose du pouvoir de délivrer les autorisations de stationnement taxi (ADS) dans toutes les communes du département qui relève de sa compétence :", choix: [
+        { lettre: "A", texte: "Vrai" }, { lettre: "B", texte: "Faux", correct: true },
+      ]},
+      { id: 45, enonce: "L’autorisation de stationnement délivrée après le 1er octobre 2014 est :", choix: [
+        { lettre: "A", texte: "Cessible" }, { lettre: "B", texte: "Incessible", correct: true },
+      ]},
+      { id: 46, enonce: "La délivrance d’une autorisation de stationnement sur un aéroport est de la compétence :", choix: [
+        { lettre: "A", texte: "Du préfet du département où se situe l’aéroport", correct: true }, { lettre: "B", texte: "Du président de la chambre de commerce où se situe l’aéroport" }, { lettre: "C", texte: "Du directeur de l’aéroport" }, { lettre: "D", texte: "Du ministre des transports" },
+      ]},
+      { id: 47, enonce: "Les nouvelles autorisations de stationnement sont attribuées par le maire :", choix: [
+        { lettre: "A", texte: "Selon l’ancienneté de la carte professionnelle du demandeur" }, { lettre: "B", texte: "À la discrétion du maire" }, { lettre: "C", texte: "Dans l’ordre chronologique d’inscription sur la liste d’attente", correct: true }, { lettre: "D", texte: "Par tirage au sort sous contrôle d’huissier" },
+      ]},
+      { id: 48, enonce: "La liste d’attente établie par l’autorité compétente pour délivrer les autorisations de stationnement est-elle communicable ?", choix: [
+        { lettre: "A", texte: "Non" }, { lettre: "B", texte: "Aux professionnels" }, { lettre: "C", texte: "Oui", correct: true },
+      ]},
+      { id: 49, enonce: "En cas de décès du titulaire d’une autorisation de stationnement :", choix: [
+        { lettre: "A", texte: "Ses ayants-droit peuvent présenter un successeur pendant un délai d’un an à compter du décès", correct: true }, { lettre: "B", texte: "Ses ayants-droit ont 6 mois pour présenter un successeur" }, { lettre: "C", texte: "Ses ayants-droit ne peuvent présenter un successeur pendant un délai d’un an à compter du décès" },
+      ]},
+      { id: 50, enonce: "Aux termes de l’article L 3121-5 de la loi n° 2014-1104 du 01/10/2014, un candidat pour une autorisation de stationnement peut être inscrit sur :", choix: [
+        { lettre: "A", texte: "1 liste d’attente", correct: true }, { lettre: "B", texte: "2 listes d’attente" }, { lettre: "C", texte: "3 listes d’attente" }, { lettre: "D", texte: "Autant qu’il veut" },
+      ]},
+      { id: 51, enonce: "Quelles sont les principales différences entre un artisan taxi et un conducteur locataire-gérant ?", choix: [
+        { lettre: "A", texte: "Le conducteur locataire est titulaire de l’ADS et propriétaire du véhicule" }, { lettre: "B", texte: "Le conducteur locataire loue un véhicule-taxi muni d’une ADS", correct: true },
+      ]},
+      { id: 52, enonce: "Quel est le nombre maximal de personnes admises dans un véhicule taxi, conducteur compris ?", choix: [
+        { lettre: "A", texte: "4" }, { lettre: "B", texte: "5" }, { lettre: "C", texte: "8" }, { lettre: "D", texte: "9", correct: true },
+      ]},
+      { id: 53, enonce: "Vous êtes artisan taxi, une personne à mobilité réduite propose de vous régler sa course au moyen d’un chèque emploi service universel (CESU). Pouvez-vous accepter ce mode de paiement ?", choix: [
+        { lettre: "A", texte: "Oui", correct: true }, { lettre: "B", texte: "Non" },
+      ]},
+      { id: 54, enonce: "Que doit faire un chauffeur de taxi qui cesse son activité professionnelle ?", choix: [
+        { lettre: "A", texte: "Détruire sa carte professionnelle" }, { lettre: "B", texte: "Restituer sa carte aux services de la préfecture", correct: true }, { lettre: "C", texte: "Restituer sa carte aux services de police" },
+      ]},
+      { id: 55, enonce: "Quelle autorité délivre l’autorisation de stationnement de taxi ?", choix: [
+        { lettre: "A", texte: "La chambre des métiers et de l’artisanat" }, { lettre: "B", texte: "Le ministère des transports" }, { lettre: "C", texte: "La mairie", correct: true }, { lettre: "D", texte: "La préfecture" },
+      ]},
+      { id: 56, enonce: "Quelle autorité délivre la licence de transport routier public collectif de personnes ?", choix: [
+        { lettre: "A", texte: "Le ministère des transports" }, { lettre: "B", texte: "La région" }, { lettre: "C", texte: "La DREAL", correct: true }, { lettre: "D", texte: "La mairie" },
+      ]},
+      { id: 57, enonce: "La nouvelle carte professionnelle sécurisée de conducteur de taxi mise en place depuis 2018 doit être renouvelée :", choix: [
+        { lettre: "A", texte: "Tous les ans" }, { lettre: "B", texte: "Tous les 2 ans" }, { lettre: "C", texte: "Tous les 5 ans", correct: true }, { lettre: "D", texte: "Ne se renouvelle plus" },
+      ]},
     ],
   },
 ];
