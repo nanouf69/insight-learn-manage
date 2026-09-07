@@ -3895,7 +3895,6 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           const updatedExercices = prev.exercices
             .map((exo) => {
               if (!exo.questions || exo.questions.length === 0) return exo;
-              if (isBilanExamGestionExercise(module.id, exo.id)) return exo;
 
               const updatedQuestions = exo.questions
                 .map((q) => {
@@ -3966,7 +3965,6 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       let changed = false;
       const exercices = prev.exercices.map((exo) => {
         if (!exo.questions || exo.questions.length === 0) return exo;
-        if (isBilanExamGestionExercise(module.id, exo.id)) return exo;
         const questions = exo.questions.map((q) => {
           const override = trainerOverrideWarnings.get(`${exo.id}-${q.id}`);
           if (!override || override.enonce === "__DELETED__") return q;
@@ -4530,7 +4528,6 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         const updatedExercices = prev.exercices
           .map((exo) => {
             if (!exo.questions || exo.questions.length === 0) return exo;
-            if (isBilanExamGestionExercise(module.id, exo.id)) return exo;
             const updatedQuestions = exo.questions
               .map((q) => {
                 const override = overrideMap.get(`${exo.id}-${q.id}`);
@@ -5308,7 +5305,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     if (!studentOnly) {
         const sourceData = getInitialModuleDataRaw(module, apprenantType, studentOnly);
         const sourceExo = sourceData.exercices.find(e => e.id === exerciceId);
-        if (sourceExo?.questions && !isBilanExamGestionExercise(module.id, exerciceId)) {
+        if (sourceExo?.questions) {
         detectAndSaveOverrides(
           sourceExo.questions as { enonce: string; choix: { lettre: string; texte: string; correct?: boolean }[] }[],
           questions,
