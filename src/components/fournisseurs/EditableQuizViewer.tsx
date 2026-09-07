@@ -29,15 +29,6 @@ interface QuizSection {
   questions?: QuizQuestion[];
 }
 
-interface Override {
-  quiz_id: string;
-  section_id: number;
-  question_id: number;
-  enonce: string;
-  choix: QuizChoice[];
-  updated_at?: string;
-}
-
 interface Props {
   sections: QuizSection[];
   title: string;
@@ -50,7 +41,6 @@ interface Props {
 
 export function EditableQuizViewer({ sections: sourceSections, title, icon = "📝", quizId, fournisseurId, fournisseurToken, editable = true }: Props) {
   const [openSections, setOpenSections] = useState<Set<number>>(new Set());
-  const [overrides, setOverrides] = useState<Map<string, Override>>(new Map());
   const [editingKey, setEditingKey] = useState<string | null>(null);
   const [editEnonce, setEditEnonce] = useState("");
   const [editChoix, setEditChoix] = useState<QuizChoice[]>([]);
