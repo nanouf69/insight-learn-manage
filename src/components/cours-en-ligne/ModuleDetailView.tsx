@@ -5045,6 +5045,14 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         "ModuleDetailView.performDbSave",
       );
 
+      // Source unique des questions partagées : la sauvegarde admin devient
+      // immédiatement la version officielle lue par tous les écrans.
+      const { error: canonicalSyncError } = await supabase.rpc("sync_admin_canonical_quiz_questions", {
+        p_module_id: dataToSave.module_id,
+        p_exercises: (normalizedModuleData.exercices ?? []) as any,
+      });
+      if (canonicalSyncError) throw canonicalSyncError;
+
       // Sync shared exercises to ALL sibling modules (handles edits, adds, deletes).
       // On transmet l'état précédent : seuls les exercices RÉELLEMENT modifiés
       // par cette sauvegarde sont propagés, jamais l'intégralité du module.
