@@ -3973,6 +3973,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           : [];
         const mergedModuleData: ModuleData = {
           ...parsed.moduleData,
+          cours: reinjectSourceCoursMeta(parsed.moduleData.cours, initialData.cours),
           exercices: mergeSourceExercices(parsed.moduleData.exercices, initialData.exercices, deletedExerciceIdsLocal),
         };
 
@@ -4169,6 +4170,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               : []);
             const mergedModuleData: ModuleData = {
               ...md,
+              cours: reinjectSourceCoursMeta(md.cours, initialData.cours),
               exercices: mergeSourceExercices(md.exercices, initialData.exercices, deletedExerciceIdsFromDb),
             };
             let resolvedModuleData = usesDatabaseOnlyEditorState(module.id)
@@ -4339,6 +4341,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             : [];
           const mergedRealtimeModuleData: ModuleData = {
             ...md,
+            cours: reinjectSourceCoursMeta(md.cours, sourceModuleData.cours),
             exercices: mergeSourceExercices(md.exercices, sourceModuleData.exercices, deletedExoIdsRt),
           };
           let resolvedRealtimeModuleData = usesDatabaseOnlyEditorState(module.id)
@@ -4614,6 +4617,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           : [];
         const merged: ModuleData = {
           ...md,
+          cours: reinjectSourceCoursMeta(md.cours, sourceModuleData.cours),
           exercices: mergeSourceExercices(md.exercices, sourceModuleData.exercices, deletedExoIdsPoll),
         };
         let resolved = usesDatabaseOnlyEditorState(module.id)
