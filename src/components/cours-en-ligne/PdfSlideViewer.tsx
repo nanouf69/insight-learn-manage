@@ -41,9 +41,12 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
   const [renderMode, setRenderMode] = useState<"react-pdf" | "native">("react-pdf");
   const containerRef = useRef<HTMLDivElement>(null);
   const nativeScrollRef = useRef<HTMLDivElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
   const loadingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const touchStartXRef = useRef<number | null>(null);
   const [containerWidth, setContainerWidth] = useState(960);
+  const [viewportHeight, setViewportHeight] = useState(0);
+
   const [nativeScrolledToBottom, setNativeScrolledToBottom] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [pageAspectRatio, setPageAspectRatio] = useState(16 / 9);
