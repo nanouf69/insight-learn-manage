@@ -6,8 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ChevronDown, ChevronUp, CheckCircle2, Edit2, Save, X, Plus, Trash2, RotateCcw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { toggleCorrect as toggleCorrectUtil, validateQuestionEdit, resolveOverrideConflict, type QuizChoice as UtilQuizChoice } from "./quiz-editor-utils";
-import { QUIZ_ID_TO_MODULE_IDS, buildModuleQuestionMap, applyModuleQuestionsToSections, type SyncQuestion } from "./quiz-module-sync";
+import { toggleCorrect as toggleCorrectUtil, validateQuestionEdit, type QuizChoice as UtilQuizChoice } from "./quiz-editor-utils";
 
 interface QuizChoice {
   lettre: string;
@@ -45,10 +44,11 @@ interface Props {
   icon?: string;
   quizId: string;
   fournisseurId: string;
+  fournisseurToken: string;
   editable?: boolean;
 }
 
-export function EditableQuizViewer({ sections: sourceSections, title, icon = "📝", quizId, fournisseurId, editable = true }: Props) {
+export function EditableQuizViewer({ sections: sourceSections, title, icon = "📝", quizId, fournisseurId, fournisseurToken, editable = true }: Props) {
   const [openSections, setOpenSections] = useState<Set<number>>(new Set());
   const [overrides, setOverrides] = useState<Map<string, Override>>(new Map());
   const [editingKey, setEditingKey] = useState<string | null>(null);
@@ -56,103 +56,46 @@ export function EditableQuizViewer({ sections: sourceSections, title, icon = "�
   const [editChoix, setEditChoix] = useState<QuizChoice[]>([]);
   const [saving, setSaving] = useState(false);
   const [confirmDeleteKey, setConfirmDeleteKey] = useState<string | null>(null);
-  const [moduleQuestions, setModuleQuestions] = useState<Map<number, SyncQuestion[]>>(new Map());
+  const [canonicalQuestions, setCanonicalQuestions] = useState<any[]>([]);
 
   // Guard: ne pas charger ni permettre d'écrire si fournisseurId est vide
   const canOperate = !!fournisseurId;
 
-  // Recharge toutes les occurrences admin et fusionne chaque question selon sa
-  // propre date de modification, jamais selon la seule date globale du module.
+  // Une seule lecture : toutes les vues consomment exactement les mêmes lignes
+  // canoniques, identifiées par question_id UUID et alias numérique historique.
   useEffect(() => {
+    if (!fournisseurToken) return;
     let cancelled = false;
-    const moduleIds = QUIZ_ID_TO_MODULE_IDS[quizId] || [];
-    if (moduleIds.length === 0) return;
-
-    async function loadModules() {
-      const { data } = await supabase
-        .from("module_editor_state")
-        .select("module_data, updated_at")
-        .in("module_id", moduleIds);
-      if (cancelled) return;
-      setModuleQuestions(buildModuleQuestionMap(data as any));
+    async function loadCanonical() {
+      const { data, error } = await supabase.rpc("get_canonical_quiz_questions", {
+        p_quiz_id: quizId,
+        p_fournisseur_token: fournisseurToken,
+      });
+      if (!cancelled && !error) setCanonicalQuestions((data ?? []) as any[]);
     }
-    loadModules();
-
-    const channel = supabase
-      .channel(`fournisseur-quiz-${quizId}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "module_editor_state" }, (payload: any) => {
-        if (moduleIds.includes(Number((payload.new ?? payload.old)?.module_id))) loadModules();
-      })
+    void loadCanonical();
+    const channel = supabase.channel(`canonical-quiz-${quizId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "quiz_questions", filter: `quiz_id=eq.${quizId}` }, () => void loadCanonical())
       .subscribe();
-
-    const onFocus = () => loadModules();
+    const onFocus = () => void loadCanonical();
     window.addEventListener("focus", onFocus);
-    const interval = window.setInterval(loadModules, 15000);
+    const interval = window.setInterval(loadCanonical, 15000);
+    return () => { cancelled = true; window.removeEventListener("focus", onFocus); window.clearInterval(interval); supabase.removeChannel(channel); };
+  }, [quizId, fournisseurToken]);
 
-    return () => {
-      cancelled = true;
-      window.removeEventListener("focus", onFocus);
-      window.clearInterval(interval);
-      supabase.removeChannel(channel);
-    };
-  }, [quizId]);
-
-  const sections = useMemo(
-    () => applyModuleQuestionsToSections(sourceSections as any, moduleQuestions) as QuizSection[],
-    [sourceSections, moduleQuestions],
-  );
-
-  // Recharge les modifications fournisseur immédiatement et relit toujours la
-  // ligne complète : un événement Realtime peut ne contenir qu'un payload partiel.
-  useEffect(() => {
-    if (!canOperate) return;
-    let cancelled = false;
-    async function load() {
-      const { data } = await supabase
-        .from("quiz_questions_overrides")
-        .select("*")
-        .eq("fournisseur_id", fournisseurId)
-        .eq("quiz_id", quizId);
-      if (!cancelled && data) {
-        const map = new Map<string, Override>();
-        data.forEach((row: any) => {
-          const key = `${row.section_id}-${row.question_id}`;
-          map.set(key, {
-            quiz_id: row.quiz_id,
-            section_id: row.section_id,
-            question_id: row.question_id,
-            enonce: row.enonce,
-            choix: row.choix as QuizChoice[],
-            updated_at: row.updated_at,
-          });
-        });
-        setOverrides(map);
-      }
-    }
-    void load();
-
-    const channel = supabase
-      .channel(`fournisseur-overrides-${fournisseurId}-${quizId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "quiz_questions_overrides",
-          filter: `fournisseur_id=eq.${fournisseurId}`,
-        },
-        (payload: any) => {
-          const changed = payload.new ?? payload.old;
-          if (!changed?.quiz_id || changed.quiz_id === quizId) void load();
-        },
-      )
-      .subscribe();
-
-    return () => {
-      cancelled = true;
-      supabase.removeChannel(channel);
-    };
-  }, [canOperate, fournisseurId, quizId]);
+  const sections = useMemo(() => sourceSections.map(section => {
+    const rows = canonicalQuestions
+      .filter(row => Number(row.section_id) === Number(section.id) && row.active)
+      .sort((a, b) => Number(a.position) - Number(b.position));
+    return rows.length ? { ...section, questions: rows.map(row => ({
+      id: Number(row.legacy_question_id),
+      question_id: row.question_id,
+      enonce: row.enonce,
+      choix: row.choix as QuizChoice[],
+      _editedAt: row.updated_at,
+      manually_edited: true,
+    })) } : section;
+  }), [sourceSections, canonicalQuestions]);
 
 
   const toggle = (id: number) => {
@@ -163,48 +106,21 @@ export function EditableQuizViewer({ sections: sourceSections, title, icon = "�
     });
   };
 
-  const isDeleted = (sectionId: number, questionId: number): boolean => {
-    const key = `${sectionId}-${questionId}`;
-    const override = overrides.get(key);
-    return override?.enonce === "__DELETED__";
-  };
+  const isDeleted = (_sectionId: number, _questionId: number): boolean => false;
 
-  const getQuestion = (sectionId: number, q: QuizQuestion): QuizQuestion => {
-    const key = `${sectionId}-${q.id}`;
-    const override = overrides.get(key);
-    if (override && override.enonce !== "__DELETED__") {
-      // Le module de cours (admin) fait référence si sa version est plus récente
-      const adminEditedAt = q._editedAt || (q.manually_edited ? new Date(0).toISOString() : undefined);
-      const winner = resolveOverrideConflict(adminEditedAt, override.updated_at ?? "");
-      if (winner === "fournisseur") {
-        return { ...q, enonce: override.enonce, choix: override.choix };
-      }
-    }
-    return q;
-  };
+  const getQuestion = (_sectionId: number, q: QuizQuestion): QuizQuestion => q;
 
   const deleteQuestion = async (sectionId: number, questionId: number) => {
     if (!canOperate) return;
     setSaving(true);
     try {
-      const { error } = await supabase
-        .from("quiz_questions_overrides")
-        .upsert({
-          fournisseur_id: fournisseurId,
-          quiz_id: quizId,
-          section_id: sectionId,
-          question_id: questionId,
-          enonce: "__DELETED__",
-          choix: [] as any,
-          updated_at: new Date().toISOString(),
-        }, { onConflict: "fournisseur_id,quiz_id,section_id,question_id" });
-      if (error) throw error;
-      const key = `${sectionId}-${questionId}`;
-      setOverrides(prev => {
-        const next = new Map(prev);
-        next.set(key, { quiz_id: quizId, section_id: sectionId, question_id: questionId, enonce: "__DELETED__", choix: [], updated_at: new Date().toISOString() });
-        return next;
+      const current = sections.find(s => s.id === sectionId)?.questions?.find(q => q.id === questionId);
+      const { error } = await supabase.rpc("save_canonical_quiz_question", {
+        p_fournisseur_token: fournisseurToken, p_quiz_id: quizId, p_section_id: sectionId,
+        p_legacy_question_id: questionId, p_position: questionId, p_enonce: current?.enonce ?? "",
+        p_choix: (current?.choix ?? []) as any, p_active: false,
       });
+      if (error) throw error;
       toast.success("Question supprimée");
     } catch {
       toast.error("Erreur lors de la suppression");
@@ -236,26 +152,15 @@ export function EditableQuizViewer({ sections: sourceSections, title, icon = "�
     }
     setSaving(true);
     try {
-      const { error } = await supabase
-        .from("quiz_questions_overrides")
-        .upsert({
-          fournisseur_id: fournisseurId,
-          quiz_id: quizId,
-          section_id: sectionId,
-          question_id: questionId,
-          enonce: editEnonce,
-          choix: editChoix as any,
-          updated_at: new Date().toISOString(),
-        }, { onConflict: "fournisseur_id,quiz_id,section_id,question_id" });
+      const currentIndex = sections.find(s => s.id === sectionId)?.questions?.findIndex(q => q.id === questionId) ?? -1;
+      const { error } = await supabase.rpc("save_canonical_quiz_question", {
+        p_fournisseur_token: fournisseurToken, p_quiz_id: quizId, p_section_id: sectionId,
+        p_legacy_question_id: questionId, p_position: currentIndex + 1, p_enonce: editEnonce,
+        p_choix: editChoix as any, p_active: true,
+      });
 
       if (error) throw error;
 
-      const key = `${sectionId}-${questionId}`;
-      setOverrides(prev => {
-        const next = new Map(prev);
-        next.set(key, { quiz_id: quizId, section_id: sectionId, question_id: questionId, enonce: editEnonce, choix: editChoix, updated_at: new Date().toISOString() });
-        return next;
-      });
       setEditingKey(null);
       toast.success("Question modifiée avec succès");
     } catch (err) {
@@ -286,27 +191,18 @@ export function EditableQuizViewer({ sections: sourceSections, title, icon = "�
   };
 
   const resetToOriginal = async (sectionId: number, questionId: number) => {
-    const key = `${sectionId}-${questionId}`;
-    const { error } = await supabase
-      .from("quiz_questions_overrides")
-      .delete()
-      .eq("fournisseur_id", fournisseurId)
-      .eq("quiz_id", quizId)
-      .eq("section_id", sectionId)
-      .eq("question_id", questionId);
-
-    if (!error) {
-      setOverrides(prev => {
-        const next = new Map(prev);
-        next.delete(key);
-        return next;
-      });
-      toast.success("Question restaurée à l'original");
-    }
+    const question = sourceSections.find(s => s.id === sectionId)?.questions?.find(q => q.id === questionId);
+    if (!question) return;
+    const { error } = await supabase.rpc("save_canonical_quiz_question", {
+      p_fournisseur_token: fournisseurToken, p_quiz_id: quizId, p_section_id: sectionId,
+      p_legacy_question_id: questionId, p_position: questionId, p_enonce: question.enonce,
+      p_choix: question.choix as any, p_active: true,
+    });
+    if (!error) toast.success("Question restaurée");
   };
 
   const totalQ = sections.reduce((acc, s) => acc + (s.questions?.length || 0), 0);
-  const overrideCount = overrides.size;
+  const overrideCount = canonicalQuestions.filter(q => q.source === "fournisseur").length;
 
   return (
     <Card>
@@ -363,7 +259,7 @@ export function EditableQuizViewer({ sections: sourceSections, title, icon = "�
 
                     const isEditing = editingKey === key;
                     const actual = getQuestion(section.id, q);
-                    const isOverridden = overrides.has(key);
+                    const isOverridden = canonicalQuestions.some(row => Number(row.section_id) === section.id && Number(row.legacy_question_id) === q.id && row.source === "fournisseur");
 
                     if (isEditing) {
                       return (
