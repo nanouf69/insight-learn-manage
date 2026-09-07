@@ -482,10 +482,20 @@ const getTrainerQuizIdsForModule = (moduleId: number | string) =>
   TRAINER_QUIZ_IDS_BY_MODULE_ID[Number(moduleId)] || [];
 
 const CANONICAL_QUIZ_IDS_BY_MODULE_ID: Record<number, string[]> = {
-  10: ["reglementation-nationale"],
-  24: ["reglementation-nationale"],
-  40: ["reglementation-nationale"],
+  7: ["connaissance-ville"],
+  9: ["bilan-exercices-taxi"],
+  10: ["reglementation-nationale", "reglementation-locale"],
+  11: ["bilan-examen-taxi"],
+  12: ["cas-pratique-taxi"],
+  13: ["controle-connaissances-taxi"],
+  24: ["reglementation-nationale", "reglementation-locale"],
+  27: ["bilan-exercices-ta"],
+  28: ["bilan-examen-ta"],
+  40: ["reglementation-nationale", "reglementation-locale"],
+  42: ["reglementation-nationale", "reglementation-locale"],
+  64: ["equipements-taxi"],
 };
+
 
 interface CanonicalQuestionRow {
   question_id: string;
@@ -514,28 +524,65 @@ const applyCanonicalQuestionsToModule = (
     bySection.set(Number(row.section_id), sectionRows);
   }
 
+  const toQuestion = (row: CanonicalQuestionRow) => ({
+    id: Number(row.legacy_question_id),
+    question_id: row.question_id,
+    enonce: row.enonce,
+    choix: Array.isArray(row.choix) ? row.choix : [],
+    ...(row.image ? { image: row.image } : {}),
+    ...(row.image_size ? { imageSize: row.image_size as ImageSize } : {}),
+    ...(row.explication ? { explication: row.explication } : {}),
+    _editedAt: row.updated_at,
+  });
+
   let changed = false;
   const exercices = data.exercices.map((exercise) => {
     const sectionRows = bySection.get(Number(exercise.id));
     if (!sectionRows) return exercise;
-    const questions = sectionRows
+
+    const byLegacyId = new Map<number, CanonicalQuestionRow>();
+    for (const row of sectionRows) byLegacyId.set(Number(row.legacy_question_id), row);
+    const moduleQuestions = exercise.questions ?? [];
+    const canonicalCoversSection =
+      moduleQuestions.length > 0 &&
+      moduleQuestions.every((q) => byLegacyId.has(Number(q.id)));
+
+    const sortedActive = sectionRows
       .filter((row) => row.active)
-      .sort((a, b) => Number(a.position) - Number(b.position) || Number(a.legacy_question_id) - Number(b.legacy_question_id))
-      .map((row) => ({
-        id: Number(row.legacy_question_id),
-        question_id: row.question_id,
-        enonce: row.enonce,
-        choix: Array.isArray(row.choix) ? row.choix : [],
-        ...(row.image ? { image: row.image } : {}),
-        ...(row.image_size ? { imageSize: row.image_size as ImageSize } : {}),
-        ...(row.explication ? { explication: row.explication } : {}),
-        _editedAt: row.updated_at,
-      }));
+      .sort(
+        (a, b) =>
+          Number(a.position) - Number(b.position) ||
+          Number(a.legacy_question_id) - Number(b.legacy_question_id),
+      );
+
+    let questions;
+    if (canonicalCoversSection || moduleQuestions.length === 0) {
+      // Couverture complète : la source unique fait autorité (ordre, ajouts, suppressions).
+      questions = sortedActive.map(toQuestion);
+    } else {
+      // Couverture partielle : on remplace uniquement les questions connues de la
+      // source unique, sans jamais supprimer une question absente de celle-ci.
+      const kept = moduleQuestions
+        .map((question) => {
+          const row = byLegacyId.get(Number(question.id));
+          if (!row) return question;
+          if (!row.active) return null;
+          return toQuestion(row);
+        })
+        .filter(Boolean) as typeof moduleQuestions;
+      const knownIds = new Set(moduleQuestions.map((q) => Number(q.id)));
+      const added = sortedActive
+        .filter((row) => !knownIds.has(Number(row.legacy_question_id)))
+        .map(toQuestion);
+      questions = [...kept, ...added];
+    }
+
     if (JSON.stringify(exercise.questions ?? []) !== JSON.stringify(questions)) changed = true;
     return { ...exercise, questions };
   });
   return changed ? { ...data, exercices } : data;
 };
+
 
 const buildTrainerOverrideMap = (rows: any[] | null | undefined) => {
   const overrideMap = new Map<string, TrainerOverrideInfo>();
