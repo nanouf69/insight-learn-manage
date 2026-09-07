@@ -33,6 +33,13 @@ import SlideViewer from "./slides/SlideViewer";
 import PdfSlideViewer from "./PdfSlideViewer";
 import ImageCarouselViewer from "./ImageCarouselViewer";
 import { FICHE_IMAGE_SLIDES } from "./fiches-revision-slides";
+import { NATIONALE_PARTIE1_IMAGES, NATIONALE_PARTIE2_IMAGES } from "./slides/nationale-slide-images";
+
+/** Cours dont les diapositives sont rendues à l'identique du PowerPoint (images) */
+const SLIDE_IMAGE_SETS: Record<string, string[]> = {
+  "nationale-partie1": NATIONALE_PARTIE1_IMAGES,
+  "nationale-partie2": NATIONALE_PARTIE2_IMAGES,
+};
 import PptxViewerComparison from "./PptxViewerComparison";
 import { T3P_PARTIE1_SLIDES, type Slide } from "./slides/t3p-partie1-data";
 import { T3P_PARTIE2_SLIDES } from "./slides/t3p-partie2-data";
@@ -6723,8 +6730,21 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                     );
                   })()}
 
-                  {hasInteractiveSlides && cours.slidesKey && (
-                    <div className="mt-4" style={{ height: "min(70vh, 600px)" }}>
+                  {hasInteractiveSlides && cours.slidesKey && SLIDE_IMAGE_SETS[cours.slidesKey] && (
+                    <div className="mt-4">
+                      <ImageCarouselViewer
+                        images={SLIDE_IMAGE_SETS[cours.slidesKey]}
+                        nom={cours.titre}
+                        onLastPageReached={() => markPageCompleted(currentPage)}
+                      />
+                    </div>
+                  )}
+
+                  {hasInteractiveSlides && cours.slidesKey && !SLIDE_IMAGE_SETS[cours.slidesKey] && (
+                    <div
+                      className="mt-4 w-full"
+                      style={{ aspectRatio: "16 / 9", maxHeight: "min(75vh, 620px)" }}
+                    >
                       <SlideViewer
                         slides={slidesByKey[cours.slidesKey] ?? []}
                         titre={cours.titre}
@@ -6736,6 +6756,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                       />
                     </div>
                   )}
+
                 </>
               );
             })()}
