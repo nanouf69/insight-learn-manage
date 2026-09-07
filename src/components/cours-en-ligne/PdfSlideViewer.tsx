@@ -370,6 +370,18 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
 
   const rotateLandscape = isPseudoFullscreen && isPortraitMobile;
 
+  // Largeur de page ajustée pour qu'une diapositive entière tienne à l'écran
+  // (tablette/mobile) comme dans la visionneuse "Réglementation nationale".
+  const availableHeight = viewportHeight > 0
+    ? viewportHeight - 24
+    : (typeof window !== "undefined" ? window.innerHeight * 0.7 : 0);
+  const heightConstrainedWidth = availableHeight > 0 ? availableHeight * pageAspectRatio : Infinity;
+  const fitPageWidth = Math.max(
+    280,
+    Math.min(containerWidth, heightConstrainedWidth) * zoom
+  );
+
+
   const viewerContent = (
     <div
       ref={containerRef}
