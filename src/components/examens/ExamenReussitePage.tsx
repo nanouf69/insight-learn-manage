@@ -67,6 +67,120 @@ function InlineDossierCma({ apprenantId, value, onSaved }: { apprenantId: string
   );
 }
 
+function InlineMotDePasseCma({ apprenantId, value, onSaved }: { apprenantId: string; value: string | null; onSaved?: () => void }) {
+  const [editing, setEditing] = useState(false);
+  const [val, setVal] = useState(value || "");
+  const [saving, setSaving] = useState(false);
+  useEffect(() => { setVal(value || ""); }, [value]);
+
+  const save = async () => {
+    const trimmed = val.trim();
+    if ((trimmed || null) === (value || null)) { setEditing(false); return; }
+    setSaving(true);
+    const { error } = await supabase.from('apprenants').update({ mot_de_passe_cma: trimmed || null }).eq('id', apprenantId);
+    setSaving(false);
+    if (error) { toast.error("Erreur : " + error.message); return; }
+    toast.success("Mot de passe CMA enregistré");
+    setEditing(false);
+    onSaved?.();
+  };
+
+  if (editing) {
+    return (
+      <Input
+        autoFocus
+        value={val}
+        disabled={saving}
+        onChange={(e) => setVal(e.target.value)}
+        onBlur={save}
+        onKeyDown={(e) => { if (e.key === 'Enter') save(); if (e.key === 'Escape') { setVal(value || ""); setEditing(false); } }}
+        placeholder="Mot de passe CMA"
+        className="h-8 w-32 text-xs font-mono"
+      />
+    );
+  }
+  return (
+    <div className="flex items-center gap-1">
+      <button type="button" onClick={() => setEditing(true)} className="inline-block" title="Cliquer pour modifier">
+        <Badge variant="outline" className={`cursor-pointer hover:bg-muted font-mono ${!value ? "border-destructive text-destructive" : ""}`}>
+          {value || "-"}
+        </Badge>
+      </button>
+      {value && (
+        <button
+          type="button"
+          title="Copier"
+          onClick={() => { navigator.clipboard.writeText(value); toast.success("Mot de passe CMA copié"); }}
+          className="text-muted-foreground hover:text-primary"
+        >
+          <Copy className="h-3 w-3" />
+        </button>
+      )}
+    </div>
+  );
+}
+
+const STATUT_SUIVI_OPTIONS: { value: string; label: string }[] = [
+  { value: "manque_document", label: "📄 Manque un document" },
+  { value: "manque_piece_identite", label: "📋 Manque pièce d'identité" },
+  { value: "manque_justificatif_domicile", label: "🏠 Manque justificatif domicile" },
+  { value: "manque_permis", label: "🚗 Manque permis" },
+  { value: "manque_signature", label: "✍️ Manque signature" },
+  { value: "manque_photo", label: "📸 Manque photo" },
+  { value: "document_complet", label: "✅ Dossier complet" },
+  { value: "mdp_change", label: "🔑 MDP changé" },
+  { value: "email_non_valide", label: "📧 Email non validé" },
+  { value: "injoignable", label: "📵 Injoignable" },
+  { value: "a_payer", label: "💰 À payer" },
+  { value: "inscription_validee", label: "✅ Inscription validée" },
+];
+
+/** Statut de suivi partagé avec la fiche session de l'apprenant (session_apprenants.statut_suivi) */
+function InlineStatutSuivi({
+  sessionApprenantId,
+  value,
+  onSaved,
+}: { sessionApprenantId: string | null; value: string | null; onSaved?: () => void }) {
+  const [saving, setSaving] = useState(false);
+
+  if (!sessionApprenantId) {
+    return <span className="text-xs text-muted-foreground" title="Apprenant non inscrit à une session">Aucune session</span>;
+  }
+
+  return (
+    <Select
+      value={value || "non_renseigne"}
+      disabled={saving}
+      onValueChange={async (val) => {
+        setSaving(true);
+        const { error } = await supabase
+          .from('session_apprenants')
+          .update({ statut_suivi: val === "non_renseigne" ? null : val })
+          .eq('id', sessionApprenantId);
+        setSaving(false);
+        if (error) { toast.error("Erreur : " + error.message); return; }
+        toast.success("Statut mis à jour (synchronisé avec la session)");
+        onSaved?.();
+      }}
+    >
+      <SelectTrigger className={`w-44 text-xs h-8 ${
+        value === 'inscription_validee' || value === 'document_complet' ? 'border-green-300 text-green-700' :
+        value ? 'border-orange-300 text-orange-700' : ''
+      }`}>
+        <SelectValue placeholder="⚙️ Statut" />
+      </SelectTrigger>
+      <SelectContent className="z-[9999] max-h-[320px] overflow-y-auto">
+        <SelectItem value="non_renseigne">-</SelectItem>
+        {STATUT_SUIVI_OPTIONS.map(o => (
+          <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
+
+
 
 // Trouve la date d'examen la plus récente passée (ou la première à venir)
 function getDefaultExamDate(): string {
