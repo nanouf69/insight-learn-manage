@@ -6,7 +6,7 @@ import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { LogOut, Target, RotateCcw, ChevronRight, KeyRound, Loader2, AlertTriangle, BookOpen, GraduationCap, TrendingUp, Clock, ArrowRight, Sparkles, CheckCircle2, Lock, Chrome, Smartphone, Tablet, Monitor } from "lucide-react";
+import { LogOut, Target, RotateCcw, ChevronRight, KeyRound, Loader2, AlertTriangle, BookOpen, GraduationCap, TrendingUp, Clock, ArrowRight, Sparkles, CheckCircle2, Lock, Chrome, Smartphone, Tablet, Monitor, UserRound } from "lucide-react";
 import { WelcomeBanner } from "@/components/cours-en-ligne/motivation/WelcomeBanner";
 import { XPBar } from "@/components/cours-en-ligne/motivation/XPBar";
 import { BadgeGrid } from "@/components/cours-en-ligne/motivation/BadgeGrid";
@@ -23,6 +23,7 @@ import { FORMATIONS, MODULES_DATA, expandModulesAutorises, type FormationId } fr
 import { EXAMENS_BLANCS_VTC, EXAMENS_BLANCS_TAXI, EXAMENS_BLANCS_TA, EXAMENS_BLANCS_VA } from "@/components/cours-en-ligne/examens-blancs-data";
 import { supabase } from "@/integrations/supabase/client";
 import { safeDateParse } from "@/lib/safeDateParse";
+import { sendAdminNotification } from "@/lib/sendAdminNotification";
 import { useConnexionTracking } from "@/hooks/useConnexionTracking";
 import { usePresenceCheck } from "@/hooks/usePresenceCheck";
 import { useInactivityAlert } from "@/hooks/useInactivityAlert";
@@ -692,6 +693,138 @@ interface CoursPublicProps {
   embedded?: boolean;
   apprenantOverride?: ApprenantInfo | null;
 }
+
+/**
+ * Coordonnées modifiables par l'élève à tout moment,
+ * y compris lorsque son dossier est déjà validé.
+ */
+const MesCoordonneesDialog = ({
+  apprenant,
+  onUpdated,
+}: {
+  apprenant: ApprenantInfo;
+  onUpdated: (values: {
+    email: string;
+    telephone: string;
+    adresse: string;
+    code_postal: string;
+    ville: string;
+  }) => void;
+}) => {
+  const [open, setOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [email, setEmail] = useState("");
+  const [telephone, setTelephone] = useState("");
+  const [adresse, setAdresse] = useState("");
+  const [codePostal, setCodePostal] = useState("");
+  const [ville, setVille] = useState("");
+
+  useEffect(() => {
+    if (!open) return;
+    setEmail((apprenant as any)?.email || "");
+    setTelephone((apprenant as any)?.telephone || "");
+    setAdresse((apprenant as any)?.adresse || "");
+    setCodePostal((apprenant as any)?.code_postal || "");
+    setVille((apprenant as any)?.ville || "");
+  }, [open, apprenant]);
+
+  const handleSave = async () => {
+    if (!email.trim() && !telephone.trim()) {
+      toast.error("Indiquez au moins un email ou un téléphone");
+      return;
+    }
+    if (email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      toast.error("Adresse email invalide");
+      return;
+    }
+    setSaving(true);
+    try {
+      const { error } = await (supabase as any).rpc("update_own_apprenant_coordonnees", {
+        _apprenant_id: apprenant.id,
+        _email: email,
+        _telephone: telephone,
+        _adresse: adresse,
+        _code_postal: codePostal,
+        _ville: ville,
+      });
+      if (error) {
+        console.error("[MesCoordonnees] update error", error);
+        toast.error("Vos coordonnées n'ont pas pu être enregistrées");
+        return;
+      }
+      onUpdated({
+        email: email.trim(),
+        telephone: telephone.trim(),
+        adresse: adresse.trim(),
+        code_postal: codePostal.trim(),
+        ville: ville.trim(),
+      });
+      toast.success("✅ Coordonnées mises à jour");
+      setOpen(false);
+      sendAdminNotification({
+        type_document: "modification-coordonnees",
+        nom: apprenant.nom,
+        prenom: apprenant.prenom,
+        email: email.trim(),
+        telephone: telephone.trim(),
+        donnees: {
+          adresse: adresse.trim(),
+          code_postal: codePostal.trim(),
+          ville: ville.trim(),
+        },
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="secondary" size="sm" className="text-xs">
+          <UserRound className="w-3.5 h-3.5 mr-1" />
+          Mes coordonnées
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Modifier mes coordonnées</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3 pt-2">
+          <p className="text-xs text-muted-foreground">
+            Vous pouvez corriger vos coordonnées à tout moment, même si votre dossier est déjà validé.
+            Le centre est prévenu automatiquement.
+          </p>
+          <div>
+            <label className="text-sm font-medium mb-1 block">Email</label>
+            <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="votre@email.fr" />
+          </div>
+          <div>
+            <label className="text-sm font-medium mb-1 block">Téléphone</label>
+            <Input value={telephone} onChange={(e) => setTelephone(e.target.value)} placeholder="06 12 34 56 78" />
+          </div>
+          <div>
+            <label className="text-sm font-medium mb-1 block">Adresse</label>
+            <Input value={adresse} onChange={(e) => setAdresse(e.target.value)} placeholder="12 rue des Lilas" />
+          </div>
+          <div>
+            <label className="text-sm font-medium mb-1 block">Code postal</label>
+            <Input value={codePostal} onChange={(e) => setCodePostal(e.target.value)} placeholder="69000" />
+          </div>
+          <div>
+            <label className="text-sm font-medium mb-1 block">Ville</label>
+            <Input value={ville} onChange={(e) => setVille(e.target.value)} placeholder="Lyon" />
+          </div>
+          <Button className="w-full" onClick={handleSave} disabled={saving}>
+            {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
+            Enregistrer
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 
 const ChangePasswordDialog = () => {
   const [open, setOpen] = useState(false);
@@ -2016,6 +2149,12 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
            </div>
           {!embedded && (
             <div className="flex items-center gap-2">
+              {apprenant && (
+                <MesCoordonneesDialog
+                  apprenant={apprenant}
+                  onUpdated={(values) => setApprenant((prev) => (prev ? { ...prev, ...values } as any : prev))}
+                />
+              )}
               <ChangePasswordDialog />
               <Button variant="destructive" size="sm" className="text-xs" onClick={handleLogout}>
                 <LogOut className="w-3.5 h-3.5 mr-1" />
