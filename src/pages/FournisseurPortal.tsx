@@ -1502,6 +1502,7 @@ export default function FournisseurPortal() {
                       icon="📝"
                       quizId="reglementation-nationale"
                       fournisseurId={fournisseur?.id || ""}
+                      fournisseurToken={token || ""}
                     />
                   </CardContent>
                 </Card>
@@ -1532,6 +1533,7 @@ export default function FournisseurPortal() {
                       icon="📝"
                       quizId="reglementation-locale"
                       fournisseurId={fournisseur?.id || ""}
+                      fournisseurToken={token || ""}
                     />
                   </CardContent>
                 </Card>
@@ -1585,6 +1587,7 @@ export default function FournisseurPortal() {
                       icon="🏙️"
                       quizId="connaissance-ville"
                       fournisseurId={fournisseur?.id || ""}
+                      fournisseurToken={token || ""}
                     />
                   </CardContent>
                 </Card>
@@ -1615,6 +1618,7 @@ export default function FournisseurPortal() {
                       icon="🚕"
                       quizId="equipements-taxi"
                       fournisseurId={fournisseur?.id || ""}
+                      fournisseurToken={token || ""}
                     />
                   </CardContent>
                 </Card>
@@ -1645,6 +1649,7 @@ export default function FournisseurPortal() {
                       icon="📋"
                       quizId="cas-pratique-taxi"
                       fournisseurId={fournisseur?.id || ""}
+                      fournisseurToken={token || ""}
                     />
                   </CardContent>
                 </Card>
@@ -1676,6 +1681,7 @@ export default function FournisseurPortal() {
                       icon="✅"
                       quizId="controle-connaissances-taxi"
                       fournisseurId={fournisseur?.id || ""}
+                      fournisseurToken={token || ""}
                     />
                   </CardContent>
                 </Card>
@@ -1715,6 +1721,7 @@ export default function FournisseurPortal() {
                       icon="📊"
                       quizId="bilan-exercices-ta"
                       fournisseurId={fournisseur?.id || ""}
+                      fournisseurToken={token || ""}
                     />
                   </CardContent>
                 </Card>
@@ -1734,6 +1741,7 @@ export default function FournisseurPortal() {
                       icon="🎯"
                       quizId="bilan-examen-ta"
                       fournisseurId={fournisseur?.id || ""}
+                      fournisseurToken={token || ""}
                     />
                   </CardContent>
                 </Card>
