@@ -108,6 +108,7 @@ function cleanPageLines(rawPage: string): string[] {
     if (/^###?\s*Images from page/i.test(line)) continue;
     if (line.includes("parsed-documents://")) continue;
     if (FOOTER_PATTERN.test(line)) continue;
+    if (BANNER_PATTERN.test(line)) continue;
     if (PAGE_COUNTER_PATTERN.test(line)) continue;
     cleaned.push(line);
   }
