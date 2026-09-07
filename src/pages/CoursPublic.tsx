@@ -6,7 +6,7 @@ import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { LogOut, Target, RotateCcw, ChevronRight, KeyRound, Loader2, AlertTriangle, BookOpen, GraduationCap, TrendingUp, Clock, ArrowRight, Sparkles, CheckCircle2, Lock, Chrome, Smartphone, Tablet, Monitor } from "lucide-react";
+import { LogOut, Target, RotateCcw, ChevronRight, KeyRound, Loader2, AlertTriangle, BookOpen, GraduationCap, TrendingUp, Clock, ArrowRight, Sparkles, CheckCircle2, Lock, Chrome, Smartphone, Tablet, Monitor, UserRound } from "lucide-react";
 import { WelcomeBanner } from "@/components/cours-en-ligne/motivation/WelcomeBanner";
 import { XPBar } from "@/components/cours-en-ligne/motivation/XPBar";
 import { BadgeGrid } from "@/components/cours-en-ligne/motivation/BadgeGrid";
@@ -23,6 +23,7 @@ import { FORMATIONS, MODULES_DATA, expandModulesAutorises, type FormationId } fr
 import { EXAMENS_BLANCS_VTC, EXAMENS_BLANCS_TAXI, EXAMENS_BLANCS_TA, EXAMENS_BLANCS_VA } from "@/components/cours-en-ligne/examens-blancs-data";
 import { supabase } from "@/integrations/supabase/client";
 import { safeDateParse } from "@/lib/safeDateParse";
+import { sendAdminNotification } from "@/lib/sendAdminNotification";
 import { useConnexionTracking } from "@/hooks/useConnexionTracking";
 import { usePresenceCheck } from "@/hooks/usePresenceCheck";
 import { useInactivityAlert } from "@/hooks/useInactivityAlert";
@@ -2148,6 +2149,12 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
            </div>
           {!embedded && (
             <div className="flex items-center gap-2">
+              {apprenant && (
+                <MesCoordonneesDialog
+                  apprenant={apprenant}
+                  onUpdated={(values) => setApprenant((prev) => (prev ? { ...prev, ...values } as any : prev))}
+                />
+              )}
               <ChangePasswordDialog />
               <Button variant="destructive" size="sm" className="text-xs" onClick={handleLogout}>
                 <LogOut className="w-3.5 h-3.5 mr-1" />
