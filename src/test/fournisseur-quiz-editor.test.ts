@@ -187,25 +187,25 @@ describe("Override application logic", () => {
   });
 });
 
-// ─── Résolution conflit admin vs fournisseur ─────────────────────
-describe("resolveOverrideConflict: l'admin gagne toujours si _editedAt existe", () => {
+// ─── Résolution conflit admin vs fournisseur (dernière version = référence) ───
+describe("resolveOverrideConflict: la dernière version enregistrée gagne", () => {
   it("fournisseur gagne si admin n'a pas de _editedAt", () => {
     const result = resolveOverrideConflict(undefined, "2026-04-06T15:00:00Z");
     expect(result).toBe("fournisseur");
   });
 
-  it("admin gagne même si la modif fournisseur est plus récente", () => {
+  it("fournisseur gagne si sa modif est plus récente", () => {
     const result = resolveOverrideConflict(
-      "2026-04-06T10:00:00Z", // admin a modifié à 10h
-      "2026-04-06T15:00:00Z", // fournisseur a modifié à 15h
+      "2026-04-06T10:00:00Z",
+      "2026-04-06T15:00:00Z",
     );
-    expect(result).toBe("admin");
+    expect(result).toBe("fournisseur");
   });
 
   it("admin gagne si sa modif est plus récente", () => {
     const result = resolveOverrideConflict(
-      "2026-04-06T16:00:00Z", // admin a modifié à 16h
-      "2026-04-06T15:00:00Z", // fournisseur a modifié à 15h
+      "2026-04-06T16:00:00Z",
+      "2026-04-06T15:00:00Z",
     );
     expect(result).toBe("admin");
   });
@@ -218,19 +218,20 @@ describe("resolveOverrideConflict: l'admin gagne toujours si _editedAt existe", 
     expect(result).toBe("admin");
   });
 
-  it("scénario réel: admin modifie Q1 lundi, fournisseur modifie Q1 mardi → admin gagne", () => {
+  it("scénario réel: admin modifie Q1 lundi, fournisseur modifie Q1 mardi → fournisseur gagne", () => {
     const result = resolveOverrideConflict(
-      "2026-04-01T09:00:00Z", // lundi
-      "2026-04-02T14:30:00Z", // mardi
+      "2026-04-01T09:00:00Z",
+      "2026-04-02T14:30:00Z",
     );
-    expect(result).toBe("admin");
+    expect(result).toBe("fournisseur");
   });
 
   it("scénario réel: fournisseur modifie Q1 lundi, admin corrige Q1 mardi → admin gagne", () => {
     const result = resolveOverrideConflict(
-      "2026-04-02T14:30:00Z", // mardi
-      "2026-04-01T09:00:00Z", // lundi
+      "2026-04-02T14:30:00Z",
+      "2026-04-01T09:00:00Z",
     );
     expect(result).toBe("admin");
   });
 });
+

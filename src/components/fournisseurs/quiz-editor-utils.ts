@@ -34,15 +34,21 @@ export function validateQuestionEdit(enonce: string, choix: QuizChoice[]): strin
 
 /**
  * Résout le conflit entre une modification admin et un override fournisseur.
- * Règle dure: dès qu'une question a un _editedAt admin, l'admin gagne toujours.
+ * Règle : la DERNIÈRE version enregistrée fait référence (last write wins).
+ * En cas d'égalité stricte de timestamp, l'admin garde la main.
  *
  * @param adminEditedAt - timestamp ISO de la dernière modif admin sur cette question (ou undefined)
  * @param fournisseurUpdatedAt - timestamp ISO de l'override fournisseur
- * @returns "admin" si une modification admin existe, "fournisseur" sinon
  */
 export function resolveOverrideConflict(
   adminEditedAt: string | undefined,
-  _fournisseurUpdatedAt: string,
+  fournisseurUpdatedAt: string,
 ): "admin" | "fournisseur" {
-  return adminEditedAt ? "admin" : "fournisseur";
+  if (!adminEditedAt) return "fournisseur";
+  const adminTs = Date.parse(adminEditedAt);
+  const fournisseurTs = Date.parse(fournisseurUpdatedAt);
+  if (!Number.isFinite(fournisseurTs)) return "admin";
+  if (!Number.isFinite(adminTs)) return "fournisseur";
+  return fournisseurTs > adminTs ? "fournisseur" : "admin";
 }
+
