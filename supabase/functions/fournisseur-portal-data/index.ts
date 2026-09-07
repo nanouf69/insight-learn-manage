@@ -68,23 +68,20 @@ Deno.serve(async (req) => {
       if (!quizId || !Number.isFinite(sectionId) || !Number.isFinite(legacyQuestionId)) {
         return json({ error: "Question invalide" }, 400);
       }
-      const row = {
-        quiz_id: quizId,
-        section_id: sectionId,
-        legacy_question_id: legacyQuestionId,
-        position: Number.isFinite(Number(body?.position)) ? Number(body.position) : legacyQuestionId,
-        enonce: typeof body?.enonce === "string" ? body.enonce : "",
-        choix: Array.isArray(body?.choix) ? body.choix : [],
-        active: body?.active !== false,
-        source: "fournisseur",
-        updated_by_fournisseur_id: fid,
-        updated_at: new Date().toISOString(),
-      };
       const { data, error } = await supabase
-        .from("quiz_questions")
-        .upsert(row, { onConflict: "quiz_id,section_id,legacy_question_id" })
-        .select("*")
-        .single();
+        .rpc("save_canonical_quiz_question", {
+          p_fournisseur_token: token,
+          p_quiz_id: quizId,
+          p_section_id: sectionId,
+          p_legacy_question_id: legacyQuestionId,
+          p_position: Number.isFinite(Number(body?.position)) ? Number(body.position) : legacyQuestionId,
+          p_enonce: typeof body?.enonce === "string" ? body.enonce : "",
+          p_choix: Array.isArray(body?.choix) ? body.choix : [],
+          p_image: typeof body?.image === "string" ? body.image : null,
+          p_image_size: typeof body?.image_size === "string" ? body.image_size : null,
+          p_explication: typeof body?.explication === "string" ? body.explication : null,
+          p_active: body?.active !== false,
+        });
       if (error) return json({ error: error.message }, 500);
       return json({ data });
     }

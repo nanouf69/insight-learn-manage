@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { ChevronDown, ChevronUp, CheckCircle2, Edit2, Save, X, Plus, Trash2, RotateCcw } from "lucide-react";
+import { ChevronDown, ChevronUp, CheckCircle2, Edit2, Save, X, Plus, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { toggleCorrect as toggleCorrectUtil, validateQuestionEdit, type QuizChoice as UtilQuizChoice } from "./quiz-editor-utils";
@@ -16,6 +16,7 @@ interface QuizChoice {
 
 interface QuizQuestion {
   id: number;
+  question_id?: string;
   enonce: string;
   choix: QuizChoice[];
   _editedAt?: string;
@@ -183,18 +184,6 @@ export function EditableQuizViewer({ sections: sourceSections, title, icon = "ðŸ
     setEditChoix(prev => prev.filter((_, i) => i !== index));
   };
 
-  const resetToOriginal = async (sectionId: number, questionId: number) => {
-    const question = sourceSections.find(s => s.id === sectionId)?.questions?.find(q => q.id === questionId);
-    if (!question) return;
-    const { data, error } = await supabase.functions.invoke("fournisseur-portal-data", {
-      body: { action: "save_quiz_question", token: fournisseurToken, quiz_id: quizId, section_id: sectionId,
-        legacy_question_id: questionId, position: questionId, enonce: question.enonce,
-        choix: question.choix, active: true },
-    });
-    if (data?.error) return toast.error(data.error);
-    if (!error) toast.success("Question restaurÃ©e");
-  };
-
   const totalQ = sections.reduce((acc, s) => acc + (s.questions?.length || 0), 0);
   const overrideCount = canonicalQuestions.filter(q => q.source === "fournisseur").length;
 
@@ -242,11 +231,6 @@ export function EditableQuizViewer({ sections: sourceSections, title, icon = "ðŸ
                           <p className="text-sm text-muted-foreground line-through">
                             <span className="mr-1">Q{q.id}.</span>{q.enonce}
                           </p>
-                          {editable && (
-                            <Button size="sm" variant="ghost" className="text-xs shrink-0 ml-2" onClick={() => resetToOriginal(section.id, q.id)}>
-                              <RotateCcw className="w-3 h-3 mr-1" /> Restaurer
-                            </Button>
-                          )}
                         </div>
                       );
                     }
@@ -341,11 +325,6 @@ export function EditableQuizViewer({ sections: sourceSections, title, icon = "ðŸ
                               ) : (
                                 <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => setConfirmDeleteKey(deleteKey)} title="Supprimer la question">
                                   <Trash2 className="w-3.5 h-3.5" />
-                                </Button>
-                              )}
-                              {isOverridden && (
-                                <Button size="icon" variant="ghost" className="h-7 w-7 text-amber-600" onClick={() => resetToOriginal(section.id, q.id)} title="Restaurer l'original">
-                                  <X className="w-3.5 h-3.5" />
                                 </Button>
                               )}
                             </div>
