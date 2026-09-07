@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, ChevronLeft, ChevronRight, Pencil, Eye, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Pencil, Eye, Plus, Trash2, Maximize, Minimize } from "lucide-react";
 import type { Slide, SlideBlock } from "./t3p-partie1-data";
 
 const SLIDE_BG = "bg-gradient-to-br from-[#0a1628] via-[#0f1d36] to-[#081224]";
