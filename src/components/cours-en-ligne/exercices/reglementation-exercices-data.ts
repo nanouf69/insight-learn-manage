@@ -105,6 +105,117 @@ export const REGLEMENTATION_NATIONALE_EXERCICES: {
       { id: 61, enonce: "La durée de validité de l'attestation de formation continue est de :", choix: [
         { lettre: "A", texte: "1 an" },{ lettre: "B", texte: "2 ans" },{ lettre: "C", texte: "5 ans", correct: true },
       ]},
+      { id: 62, enonce: "À compter du 3 octobre 2014, pour vous inscrire sur une liste d’attente communale, vous devez :", choix: [
+        { lettre: "A", texte: "Être titulaire d’une carte professionnelle de conducteur de taxi en cours de validité du département concerné", correct: true }, { lettre: "B", texte: "Être déjà titulaire d’une ADS dans le département concerné" }, { lettre: "C", texte: "Ne pas être inscrit sur la liste d’attente d’une autre commune", correct: true }, { lettre: "D", texte: "Être inscrit à une prochaine session de l’examen de chauffeur Taxi" },
+      ]},
+      { id: 63, enonce: "La délivrance, le renouvellement et le retrait de chaque autorisation de stationnement font l’objet :", choix: [
+        { lettre: "A", texte: "D’un décret" }, { lettre: "B", texte: "D’un arrêté", correct: true }, { lettre: "C", texte: "D’une circulaire" },
+      ]},
+      { id: 64, enonce: "La condition de l’exploitation effective et continue de l’autorisation de stationnement est justifiée par :", choix: [
+        { lettre: "A", texte: "La copie des déclarations de revenus pour la période concernée", correct: true }, { lettre: "B", texte: "La copie des avis d’imposition pour la période concernée", correct: true }, { lettre: "C", texte: "Tout autre moyen défini par un arrêté de l’autorité administrative compétente pour délivrer l’autorisation de stationnement", correct: true },
+      ]},
+      { id: 65, enonce: "Je suis titulaire d’une autorisation de stationnement délivrée par un maire le 27 août 2015. À compter du 1er janvier 2017,", choix: [
+        { lettre: "A", texte: "Je devrais l’exploiter personnellement", correct: true }, { lettre: "B", texte: "Je pourrais l’exploiter personnellement" }, { lettre: "C", texte: "Je pourrais assumer l’exploitation par l’intermédiaire d’un salarié" }, { lettre: "D", texte: "Je pourrais louer le véhicule taxi à un conducteur de taxi" }, { lettre: "E", texte: "Je pourrais avoir recours à un locataire-gérant" },
+      ]},
+      { id: 66, enonce: "La mairie m’a attribué une autorisation de stationnement le 15 janvier 2015. Pour combien de temps est-elle accordée ?", choix: [
+        { lettre: "A", texte: "Pour une durée de cinq ans renouvelables", correct: true }, { lettre: "B", texte: "Pour une durée de cinq ans non renouvelables" }, { lettre: "C", texte: "Pour une durée de quinze ans renouvelable" }, { lettre: "D", texte: "Pour une durée de quinze ans non renouvelable" },
+      ]},
+      { id: 67, enonce: "Quand renouveler une autorisation de stationnement délivrée après 2015 ?", choix: [
+        { lettre: "A", texte: "Au moins 3 mois avant la fin de validité de l’ADS", correct: true }, { lettre: "B", texte: "Au moins 2 mois avant la fin de validité de l’ADS" }, { lettre: "C", texte: "Au moins 1 mois avant la fin de validité de l’ADS" },
+      ]},
+      { id: 68, enonce: "Je souhaite m’inscrire sur une liste d’attente dans une commune. Quelles sont les conditions ?", choix: [
+        { lettre: "A", texte: "Être titulaire de la carte professionnelle de conducteur taxi", correct: true }, { lettre: "B", texte: "Être déjà titulaire d’une autorisation de stationnement" }, { lettre: "C", texte: "Ne pas déjà être inscrit sur la liste d’attente", correct: true }, { lettre: "D", texte: "Ne pas déjà être titulaire d’une autorisation de stationnement", correct: true },
+      ]},
+      { id: 69, enonce: "La mairie m’a attribué une autorisation de stationnement le 03 janvier 2011. Le 22 mars 2016, je souhaite présenter un successeur à titre onéreux.", choix: [
+        { lettre: "A", texte: "Je peux si j’ai une exploitation effective et continue pendant 5 ans" }, { lettre: "B", texte: "Je ne peux pas", correct: true },
+      ]},
+      { id: 70, enonce: "Les conditions que doit remplir le demandeur d’une nouvelle autorisation de stationnement (postérieurement au 1er octobre 2014) sont :", choix: [
+        { lettre: "A", texte: "Le demandeur doit habiter la commune dans laquelle il sollicite l’ADS" }, { lettre: "B", texte: "Le demandeur doit disposer d’une carte professionnelle dans le département où l’ADS est sollicitée", correct: true }, { lettre: "C", texte: "Le demandeur ne doit pas déjà être détenteur d’une ADS", correct: true }, { lettre: "D", texte: "Le demandeur doit avoir exercé une activité de conducteur de taxi durant les 2 années précédentes" }, { lettre: "E", texte: "Le demandeur doit être propriétaire d’un véhicule" },
+      ]},
+      { id: 71, enonce: "Un artisan taxi qui est titulaire de quatre autorisations de stationnement de taxi doit utiliser combien de véhicules équipés en taxi ?", choix: [
+        { lettre: "A", texte: "1" }, { lettre: "B", texte: "2" }, { lettre: "C", texte: "3" }, { lettre: "D", texte: "4", correct: true }, { lettre: "E", texte: "5" },
+      ]},
+      { id: 72, enonce: "Les autorisations de stationnement délivrées avant le 1er octobre 2014 peuvent être exploitées :", choix: [
+        { lettre: "A", texte: "Par le titulaire de l’autorisation de stationnement et son conjoint" }, { lettre: "B", texte: "Par des salariés du titulaire", correct: true }, { lettre: "C", texte: "Par un locataire gérant", correct: true }, { lettre: "D", texte: "Par une société coopérative de production", correct: true },
+      ]},
+      { id: 73, enonce: "En cas d’immobilisation d’origine mécanique du véhicule, le taxi peut être remplacé temporairement par un véhicule disposant des équipements. L’autorisation de stationnement et la plaque portant le numéro de l’autorisation seront :", choix: [
+        { lettre: "A", texte: "Ceux du taxi dont le véhicule de remplacement prend le relais", correct: true }, { lettre: "B", texte: "Ceux du taxi ayant fait l’objet de la panne" }, { lettre: "C", texte: "Ceux d’un taxi ayant une nouvelle autorisation et une nouvelle plaque" },
+      ]},
+      { id: 74, enonce: "Les transactions prévues par l’article L. 3121.2 du Code des Transports sont répertoriées dans un registre tenu par l’autorité administrative compétente pour délivrer l’autorisation de stationnement. Doit figurer sur ce registre :", choix: [
+        { lettre: "A", texte: "Le numéro de la carte professionnelle du successeur présenté" }, { lettre: "B", texte: "Le montant de la transaction", correct: true }, { lettre: "C", texte: "L’immatriculation du véhicule" }, { lettre: "D", texte: "Le numéro SIREN du successeur présenté", correct: true }, { lettre: "E", texte: "Les noms et raisons sociales du titulaire de l’autorisation et de son successeur", correct: true },
+      ]},
+      { id: 75, enonce: "Dans quelle circonstance pouvez-vous céder à titre onéreux une autorisation de stationnement délivrée avant le 1er septembre 2014 sans attendre les délais réglementaires ?", choix: [
+        { lettre: "A", texte: "Au départ à la retraite du titulaire", correct: true }, { lettre: "B", texte: "En cas de liquidation judiciaire", correct: true }, { lettre: "C", texte: "En cas de congé maladie de longue durée du titulaire" }, { lettre: "D", texte: "Au décès du titulaire par un ayant-droit dans le délai d’un an", correct: true },
+      ]},
+      { id: 76, enonce: "Une autorisation de stationnement m’a été délivrée le 30 décembre 2014. Le maire peut m’imposer une ou plusieurs conditions d’exploitation. Lesquelles ?", choix: [
+        { lettre: "A", texte: "Le covering de la voiture pour faire de la publicité pour la ville" }, { lettre: "B", texte: "L’utilisation d’équipement permettant l’accès au taxi aux personnes à mobilités réduites", correct: true }, { lettre: "C", texte: "L’exploitation de l’autorisation de stationnement à certaines dates ou dans certains lieux", correct: true },
+      ]},
+      { id: 77, enonce: "Vous êtes titulaire de plusieurs autorisations de stationnement. Sachant qu’elles doivent être exploitées de façon effective et continue, quelles sont les possibilités prévues par la réglementation des taxis vous permettant de respecter cette obligation ?", choix: [
+        { lettre: "A", texte: "Les vendre sur internet à d’autres chauffeurs de taxi" }, { lettre: "B", texte: "Les prêter à des personnes de mon entourage" }, { lettre: "C", texte: "Avoir recours à des salariés ou à la location avec contrat de louage pour l’exploitation", correct: true },
+      ]},
+      { id: 78, enonce: "Dans le cas d’une location de l’autorisation de stationnement, celle-ci est répertoriée dans un registre contenant les informations relatives à l’état-civil du locataire et son n° de carte professionnelle. Qui tient ce registre ?", choix: [
+        { lettre: "A", texte: "Le titulaire de l’autorisation de stationnement", correct: true }, { lettre: "B", texte: "Le gérant de la société" },
+      ]},
+      { id: 79, enonce: "Dans quel cas les demandes de délivrance d’autorisation cessent de figurer sur la liste d’attente d’une zone géographique ?", choix: [
+        { lettre: "A", texte: "Les demandes non renouvelées à la date de l’inscription initiale", correct: true }, { lettre: "B", texte: "La quantité de travail du taxi ne justifie pas d’une demande" }, { lettre: "C", texte: "Les candidats qui ne disposent pas de carte professionnelle valide", correct: true }, { lettre: "D", texte: "Les candidats n’ayant pas la carte grise du véhicule à leur propre nom" },
+      ]},
+      { id: 80, enonce: "Quels sont les documents à fournir pour justifier de l’exploitation effective et continue de l’autorisation de stationnement ?", choix: [
+        { lettre: "A", texte: "Un justificatif de domicile" }, { lettre: "B", texte: "La copie des déclarations de revenus", correct: true }, { lettre: "C", texte: "Le livret de famille" },
+      ]},
+      { id: 81, enonce: "Lorsqu’un titulaire ne peut exploiter lui-même son autorisation de stationnement, quelles sont les deux possibilités qui s’offrent à lui pour que son entreprise reste active ?", choix: [
+        { lettre: "A", texte: "L’emploi d’un salarié", correct: true }, { lettre: "B", texte: "La location du véhicule taxi à un conducteur de taxi", correct: true }, { lettre: "C", texte: "Faire une demande pour l’exploitation de l’autorisation de stationnement" }, { lettre: "D", texte: "Utiliser quand même l’autorisation de stationnement" },
+      ]},
+      { id: 82, enonce: "En cas de vol des équipements spéciaux du véhicule taxi, peuvent-ils être remplacés ?", choix: [
+        { lettre: "A", texte: "Non, l’activité est suspendue" }, { lettre: "B", texte: "Oui mais l’autorisation de stationnement et la plaque portant le numéro de l’autorisation sont ceux du taxi dont le véhicule de remplacement prend le relais", correct: true }, { lettre: "C", texte: "Oui, mais l’autorisation de stationnement reste la même et la plaque portant le numéro de l’autorisation peut être prêtée par un confrère en congé" },
+      ]},
+      { id: 83, enonce: "Le nombre maximum de taxis autorisés sur une commune est fixé par :", choix: [
+        { lettre: "A", texte: "Arrêté préfectoral" }, { lettre: "B", texte: "Arrêté municipal", correct: true }, { lettre: "C", texte: "Arrêté départemental" },
+      ]},
+      { id: 84, enonce: "L’inscription au registre des transports de personnes dans le cadre d’une activité accessoire de transport de personnes permet d’exploiter :", choix: [
+        { lettre: "A", texte: "Un véhicule sans restriction de capacité" }, { lettre: "B", texte: "Un véhicule de moins de 9 places", correct: true }, { lettre: "C", texte: "Plusieurs véhicules" },
+      ]},
+      { id: 85, enonce: "Le préfet du département est l’autorité compétente pour :", choix: [
+        { lettre: "A", texte: "Délivrer le certificat de capacité professionnelle de conducteur de taxi" }, { lettre: "B", texte: "Constater l’aptitude médicale" }, { lettre: "C", texte: "Délivrer la carte professionnelle", correct: true }, { lettre: "D", texte: "Délivrer l’agrément des centres de formation des conducteurs de taxi", correct: true }, { lettre: "E", texte: "En commentaire certificat capacité pro = diplôme taxi délivré par la CMA" },
+      ]},
+      { id: 86, enonce: "Quels animaux les conducteurs de taxi sont-ils tenus d’autoriser à monter dans leur véhicule ?", choix: [
+        { lettre: "A", texte: "Les petits chiens" }, { lettre: "B", texte: "Les chiens d’aveugle", correct: true }, { lettre: "C", texte: "Les chats" }, { lettre: "D", texte: "Tous les animaux de petite taille" },
+      ]},
+      { id: 87, enonce: "Dans quels cas est admis un refus de prise en charge pour les taxis ?", choix: [
+        { lettre: "A", texte: "Un mal voyant avec son chien guide" }, { lettre: "B", texte: "Une personne très sale", correct: true }, { lettre: "C", texte: "Une personne en état d’ivresse", correct: true },
+      ]},
+      { id: 88, enonce: "Le préfet dans le département peut définir des modalités particulières de mise en œuvre ?", choix: [
+        { lettre: "A", texte: "Du contrôle technique des véhicules affectés à l’activité de taxi", correct: true }, { lettre: "B", texte: "Des caractéristiques des véhicules affectés à l’activité de taxi notamment en matière d’ancienneté maximale ou de dimension minimale", correct: true }, { lettre: "C", texte: "De l’obligation, dans les véhicules affectés à l’activité de taxi, d’un terminal de paiement électronique" },
+      ]},
+      { id: 89, enonce: "Quelles sont les conditions à satisfaire pour s’inscrire au registre des transports routier de personnes en activité ?", choix: [
+        { lettre: "A", texte: "Honorabilité", correct: true }, { lettre: "B", texte: "Capacité financière" }, { lettre: "C", texte: "Capacité professionnelle" },
+      ]},
+      { id: 90, enonce: "Nul ne peut exercer la profession de conducteur de taxi si figure sur le bulletin n°2 de son casier judiciaire :", choix: [
+        { lettre: "A", texte: "Une condamnation temporaire pour un délit sanctionné, en vertu du code de la route, par une réduction de la moitié du nombre maximal de points" }, { lettre: "B", texte: "Une condamnation définitive pour un délit sanctionné, en vertu du code de la route, par une réduction de la moitié du nombre maximal de points", correct: true }, { lettre: "C", texte: "Ni l’un, ni l’autre" },
+      ]},
+      { id: 91, enonce: "Quelles sont les conditions pour un chauffeur de taxi, lors d’un changement de département pour poursuivre son activité ?", choix: [
+        { lettre: "A", texte: "Faire une demande auprès de la préfecture dans le département duquel il souhaite exercer son activité et s’acquitter d’un montant de 80 € pour la carte" }, { lettre: "B", texte: "Passage d’un examen pratique avec la chambre des métiers et de l’artisanat dans le département duquel il souhaite exercer son activité" }, { lettre: "C", texte: "Stage de formation à la mobilité de 14H dans le département duquel il souhaite exercer son activité en présentiel", correct: true },
+      ]},
+      { id: 92, enonce: "Auprès de quel organisme demander sa carte professionnelle TAXI ?", choix: [
+        { lettre: "A", texte: "La chambre de métiers et de l’artisanat" }, { lettre: "B", texte: "La mairie" }, { lettre: "C", texte: "La préfecture du département où l’examen TAXI a été réussi", correct: true }, { lettre: "D", texte: "La préfecture du département où le conducteur réside" },
+      ]},
+      { id: 93, enonce: "Quelles sont les obligations du titulaire de la carte professionnelle de conducteur de taxi ?", choix: [
+        { lettre: "A", texte: "La faire valider périodiquement par la préfecture qui l’a délivrée" }, { lettre: "B", texte: "La présenter lors d’un contrôle de police", correct: true }, { lettre: "C", texte: "La donner à son successeur" }, { lettre: "D", texte: "La restituer au préfet en cas de cessation d’activité", correct: true }, { lettre: "E", texte: "La restituer au préfet en cas de suspension ou d’annulation de son permis de conduire", correct: true },
+      ]},
+      { id: 94, enonce: "Le délai de remise de la carte professionnelle par l’autorité administrative compétente est de :", choix: [
+        { lettre: "A", texte: "Un délai 2 mois maximum" }, { lettre: "B", texte: "Un délai de 3 mois maximum", correct: true },
+      ]},
+      { id: 95, enonce: "Quel élément de la carte professionnelle TAXI ne figure pas au verso ?", choix: [
+        { lettre: "A", texte: "Le nom du conducteur" }, { lettre: "B", texte: "Le prénom du conducteur" }, { lettre: "C", texte: "Le code à barres bidimensionnel et la mention « 2D-DOC »", correct: true }, { lettre: "D", texte: "La signature du conducteur" },
+      ]},
+      { id: 96, enonce: "Quelle est la durée de validité d’un agrément d’exploitation d’un centre de formation en vue de la formation, initiale ou continue, des chauffeurs de taxi ?", choix: [
+        { lettre: "A", texte: "5 ans", correct: true }, { lettre: "B", texte: "3 ans" }, { lettre: "C", texte: "Indéfiniment" },
+      ]},
+      { id: 97, enonce: "L’attestation de formation continue est délivrée par :", choix: [
+        { lettre: "A", texte: "La chambre des métiers et de l’artisanat" }, { lettre: "B", texte: "La préfecture" }, { lettre: "C", texte: "Un centre de formation agréé par la préfecture", correct: true }, { lettre: "D", texte: "Le ministère des transports" },
+      ]},
+      { id: 98, enonce: "Qu’est-ce qui empêcherait un candidat à s’inscrire à l’examen en vue de la délivrance de la carte professionnelle de conducteur de taxi ?", choix: [
+        { lettre: "A", texte: "Permis B non probatoire" }, { lettre: "B", texte: "S’il ne suit pas de formation de chauffeur TAXI" }, { lettre: "C", texte: "S’il a fait l’objet dans les 10 ans précédant sa demande d’un retrait définitif de la carte pro", correct: true }, { lettre: "D", texte: "S’il n’a aucune expérience dans le transport" },
+      ]},
     ],
   },
   {
