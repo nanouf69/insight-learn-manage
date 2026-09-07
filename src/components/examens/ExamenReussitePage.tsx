@@ -1875,6 +1875,23 @@ export function ExamenReussitePage() {
                             onSaved={() => queryClient.invalidateQueries({ queryKey: ['apprenants-examen', selectedExamDate] })}
                           />
                         </TableCell>
+                        <TableCell>
+                          <InlineMotDePasseCma
+                            apprenantId={apprenant.id}
+                            value={(apprenant as any).mot_de_passe_cma ?? null}
+                            onSaved={() => queryClient.invalidateQueries({ queryKey: ['apprenants-examen', selectedExamDate] })}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <InlineStatutSuivi
+                            sessionApprenantId={statutsSession?.[apprenant.id]?.sessionApprenantId ?? null}
+                            value={statutsSession?.[apprenant.id]?.statut ?? null}
+                            onSaved={() => {
+                              queryClient.invalidateQueries({ queryKey: ['statuts-session-examen'] });
+                              queryClient.invalidateQueries({ queryKey: ['session-apprenants'] });
+                            }}
+                          />
+                        </TableCell>
                         <TableCell className={!apprenant.telephone ? "text-destructive font-medium" : ""}>
                           {apprenant.telephone || "-"}
                         </TableCell>
