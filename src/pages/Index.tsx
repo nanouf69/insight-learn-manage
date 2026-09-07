@@ -374,7 +374,7 @@ const Index = () => {
       case "apprenants":
         return <ApprenantsList />;
       case "examens":
-        return <ExamenReussitePage />;
+        return <ExamenReussitePage onNavigateToApprenant={handleNavigateToApprenant} />;
       case "rdv-carte-vtc":
         return <PlanningRdvCarteVtc />;
       case "crm":
