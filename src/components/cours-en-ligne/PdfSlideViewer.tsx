@@ -123,10 +123,14 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
     ? url
     : `${window.location.origin}${url.startsWith("/") ? url : `/${url}`}`;
 
-  // Recalculate width on resize / fullscreen changes
+  // Recalculate width/height on resize / fullscreen changes
   const updateWidth = useCallback(() => {
     if (containerRef.current) {
       setContainerWidth(Math.max(320, containerRef.current.clientWidth - 16));
+    }
+    if (scrollAreaRef.current) {
+      const h = scrollAreaRef.current.clientHeight;
+      if (h > 0) setViewportHeight(h);
     }
   }, []);
 
@@ -135,13 +139,19 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
 
     if (typeof ResizeObserver === "undefined") {
       window.addEventListener("resize", updateWidth);
-      return () => window.removeEventListener("resize", updateWidth);
+      window.addEventListener("orientationchange", updateWidth);
+      return () => {
+        window.removeEventListener("resize", updateWidth);
+        window.removeEventListener("orientationchange", updateWidth);
+      };
     }
 
     const observer = new ResizeObserver(updateWidth);
     if (containerRef.current) observer.observe(containerRef.current);
+    if (scrollAreaRef.current) observer.observe(scrollAreaRef.current);
     return () => observer.disconnect();
-  }, [updateWidth, isPseudoFullscreen]);
+  }, [updateWidth, isPseudoFullscreen, renderMode, numPages]);
+
 
   // Listen for native fullscreen changes
   useEffect(() => {
