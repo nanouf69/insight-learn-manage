@@ -48,6 +48,47 @@ Deno.serve(async (req) => {
 
     const fid = f.id;
 
+    if (action === "quiz_questions") {
+      const quizId = typeof body?.quiz_id === "string" ? body.quiz_id : "";
+      if (!quizId) return json({ error: "quiz_id requis" }, 400);
+      const { data, error } = await supabase
+        .from("quiz_questions")
+        .select("*")
+        .eq("quiz_id", quizId)
+        .order("section_id")
+        .order("position");
+      if (error) return json({ error: error.message }, 500);
+      return json({ data: data || [] });
+    }
+
+    if (action === "save_quiz_question") {
+      const quizId = typeof body?.quiz_id === "string" ? body.quiz_id : "";
+      const sectionId = Number(body?.section_id);
+      const legacyQuestionId = Number(body?.legacy_question_id);
+      if (!quizId || !Number.isFinite(sectionId) || !Number.isFinite(legacyQuestionId)) {
+        return json({ error: "Question invalide" }, 400);
+      }
+      const row = {
+        quiz_id: quizId,
+        section_id: sectionId,
+        legacy_question_id: legacyQuestionId,
+        position: Number.isFinite(Number(body?.position)) ? Number(body.position) : legacyQuestionId,
+        enonce: typeof body?.enonce === "string" ? body.enonce : "",
+        choix: Array.isArray(body?.choix) ? body.choix : [],
+        active: body?.active !== false,
+        source: "fournisseur",
+        updated_by_fournisseur_id: fid,
+        updated_at: new Date().toISOString(),
+      };
+      const { data, error } = await supabase
+        .from("quiz_questions")
+        .upsert(row, { onConflict: "quiz_id,section_id,legacy_question_id" })
+        .select("*")
+        .single();
+      if (error) return json({ error: error.message }, 500);
+      return json({ data });
+    }
+
     // 'fournisseur-documents' is a PRIVATE bucket: rewrite stored URLs into
     // short-lived signed URLs so files stay unreachable without a valid token.
     const signRows = async <T extends { url?: string | null }>(rows: T[]): Promise<T[]> => {

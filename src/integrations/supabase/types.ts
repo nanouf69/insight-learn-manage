@@ -2821,6 +2821,181 @@ export type Database = {
         }
         Relationships: []
       }
+      quiz_question_bindings: {
+        Row: {
+          created_at: string
+          exercise_id: number
+          id: string
+          module_id: number
+          quiz_id: string
+          section_id: number
+        }
+        Insert: {
+          created_at?: string
+          exercise_id: number
+          id?: string
+          module_id: number
+          quiz_id: string
+          section_id: number
+        }
+        Update: {
+          created_at?: string
+          exercise_id?: number
+          id?: string
+          module_id?: number
+          quiz_id?: string
+          section_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_question_bindings_quiz_id_fkey"
+            columns: ["quiz_id"]
+            isOneToOne: false
+            referencedRelation: "quiz_question_sets"
+            referencedColumns: ["quiz_id"]
+          },
+        ]
+      }
+      quiz_question_migration_audit: {
+        Row: {
+          canonical_question_id: string | null
+          content_fingerprint: string
+          created_at: string
+          id: string
+          legacy_question_id: number
+          quiz_id: string
+          section_id: number
+          source_kind: string
+          source_reference: Json
+          source_updated_at: string
+          was_selected: boolean
+        }
+        Insert: {
+          canonical_question_id?: string | null
+          content_fingerprint: string
+          created_at?: string
+          id?: string
+          legacy_question_id: number
+          quiz_id: string
+          section_id: number
+          source_kind: string
+          source_reference?: Json
+          source_updated_at: string
+          was_selected?: boolean
+        }
+        Update: {
+          canonical_question_id?: string | null
+          content_fingerprint?: string
+          created_at?: string
+          id?: string
+          legacy_question_id?: number
+          quiz_id?: string
+          section_id?: number
+          source_kind?: string
+          source_reference?: Json
+          source_updated_at?: string
+          was_selected?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_question_migration_audit_canonical_question_id_fkey"
+            columns: ["canonical_question_id"]
+            isOneToOne: false
+            referencedRelation: "quiz_questions"
+            referencedColumns: ["question_id"]
+          },
+        ]
+      }
+      quiz_question_sets: {
+        Row: {
+          created_at: string
+          label: string
+          quiz_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          label: string
+          quiz_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          label?: string
+          quiz_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      quiz_questions: {
+        Row: {
+          active: boolean
+          choix: Json
+          created_at: string
+          enonce: string
+          explication: string | null
+          image: string | null
+          image_size: string | null
+          legacy_question_id: number
+          position: number
+          question_id: string
+          quiz_id: string
+          section_id: number
+          source: string
+          updated_at: string
+          updated_by_fournisseur_id: string | null
+        }
+        Insert: {
+          active?: boolean
+          choix?: Json
+          created_at?: string
+          enonce: string
+          explication?: string | null
+          image?: string | null
+          image_size?: string | null
+          legacy_question_id: number
+          position?: number
+          question_id?: string
+          quiz_id: string
+          section_id: number
+          source?: string
+          updated_at?: string
+          updated_by_fournisseur_id?: string | null
+        }
+        Update: {
+          active?: boolean
+          choix?: Json
+          created_at?: string
+          enonce?: string
+          explication?: string | null
+          image?: string | null
+          image_size?: string | null
+          legacy_question_id?: number
+          position?: number
+          question_id?: string
+          quiz_id?: string
+          section_id?: number
+          source?: string
+          updated_at?: string
+          updated_by_fournisseur_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_questions_quiz_id_fkey"
+            columns: ["quiz_id"]
+            isOneToOne: false
+            referencedRelation: "quiz_question_sets"
+            referencedColumns: ["quiz_id"]
+          },
+          {
+            foreignKeyName: "quiz_questions_updated_by_fournisseur_id_fkey"
+            columns: ["updated_by_fournisseur_id"]
+            isOneToOne: false
+            referencedRelation: "fournisseurs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quiz_questions_overrides: {
         Row: {
           choix: Json
@@ -3557,6 +3732,32 @@ export type Database = {
           user_agent: string
         }[]
       }
+      get_canonical_quiz_questions: {
+        Args: { p_fournisseur_token: string; p_quiz_id: string }
+        Returns: {
+          active: boolean
+          choix: Json
+          created_at: string
+          enonce: string
+          explication: string | null
+          image: string | null
+          image_size: string | null
+          legacy_question_id: number
+          position: number
+          question_id: string
+          quiz_id: string
+          section_id: number
+          source: string
+          updated_at: string
+          updated_by_fournisseur_id: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "quiz_questions"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -3607,6 +3808,44 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "reponses_apprenants"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      save_canonical_quiz_question: {
+        Args: {
+          p_active?: boolean
+          p_choix: Json
+          p_enonce: string
+          p_explication?: string
+          p_fournisseur_token: string
+          p_image?: string
+          p_image_size?: string
+          p_legacy_question_id: number
+          p_position: number
+          p_quiz_id: string
+          p_section_id: number
+        }
+        Returns: {
+          active: boolean
+          choix: Json
+          created_at: string
+          enonce: string
+          explication: string | null
+          image: string | null
+          image_size: string | null
+          legacy_question_id: number
+          position: number
+          question_id: string
+          quiz_id: string
+          section_id: number
+          source: string
+          updated_at: string
+          updated_by_fournisseur_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "quiz_questions"
           isOneToOne: true
           isSetofReturn: false
         }
@@ -3749,6 +3988,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      sync_admin_canonical_quiz_questions: {
+        Args: { p_exercises: Json; p_module_id: number }
+        Returns: undefined
       }
       text_soundex: { Args: { "": string }; Returns: string }
       unaccent: { Args: { "": string }; Returns: string }
