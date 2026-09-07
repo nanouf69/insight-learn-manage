@@ -4554,10 +4554,16 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     const pollIntervalMs = studentOnly ? 5_000 : 15_000;
     const pollTimer = setInterval(() => {
       void refetchModuleFromDb();
+      // Filet de sécurité identique pour les modifications formateur/fournisseur
+      // (quiz_questions_overrides) : on redemande l'application des overrides.
+      setTrainerOverridesReapplyKey((k) => k + 1);
     }, pollIntervalMs);
 
     // Refetch immédiat quand l'onglet reprend le focus (l'apprenant revient sur la page)
-    const handleFocusRefresh = () => { void refetchModuleFromDb(); };
+    const handleFocusRefresh = () => {
+      void refetchModuleFromDb();
+      setTrainerOverridesReapplyKey((k) => k + 1);
+    };
     window.addEventListener('focus', handleFocusRefresh);
 
     return () => {
@@ -4565,6 +4571,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       window.removeEventListener('focus', handleFocusRefresh);
       supabase.removeChannel(channel);
     };
+
   }, [module.id, studentOnly, realtimeReconnectKey]);
 
 
