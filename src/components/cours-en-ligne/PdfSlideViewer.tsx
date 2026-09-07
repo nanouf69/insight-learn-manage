@@ -96,11 +96,12 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
     }
   }, [isMobile, numPages, onLastPageReached]);
 
-  // Detect mobile to apply mobile-friendly defaults
+  // Detect mobile AND tablet (tactile) to apply one-slide-per-screen mode
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const mql = window.matchMedia("(max-width: 768px)");
+    const mql = window.matchMedia("(max-width: 1024px), (pointer: coarse)");
     const handler = (e: MediaQueryListEvent | MediaQueryList) => setIsMobile(e.matches);
+
     handler(mql);
     if (typeof mql.addEventListener === "function") {
       mql.addEventListener("change", handler as (e: MediaQueryListEvent) => void);
