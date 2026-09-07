@@ -39,7 +39,7 @@ export interface MatiereSection {
 // =============================================
 const MATIERE_NATIONALE: ContentItem[] = [
   {
-    id: 40001, actif: true,
+    id: 40001, actif: true, slidesKey: "nationale-partie1",
     titre: "F. RÉGLEMENTATION NATIONALE — Partie 1",
     sousTitre: "Réglementation nationale",
     fichiers: [
@@ -47,7 +47,7 @@ const MATIERE_NATIONALE: ContentItem[] = [
     ],
   },
   {
-    id: 40002, actif: true,
+    id: 40002, actif: true, slidesKey: "nationale-partie2",
     titre: "F. RÉGLEMENTATION NATIONALE — Partie 2",
     sousTitre: "Réglementation nationale (suite)",
     fichiers: [

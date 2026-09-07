@@ -174,7 +174,7 @@ const MATIERE_E: ContentItem[] = [
 // =============================================
 const MATIERE_F: ContentItem[] = [
   {
-    id: 10014, actif: true,
+    id: 10014, actif: true, slidesKey: "nationale-partie1",
     titre: "F. RÉGLEMENTATION NATIONALE — Partie 1",
     sousTitre: "Réglementation nationale",
     fichiers: [
@@ -182,7 +182,7 @@ const MATIERE_F: ContentItem[] = [
     ],
   },
   {
-    id: 10015, actif: true,
+    id: 10015, actif: true, slidesKey: "nationale-partie2",
     titre: "F. RÉGLEMENTATION NATIONALE — Partie 2",
     sousTitre: "Réglementation nationale (suite)",
     fichiers: [

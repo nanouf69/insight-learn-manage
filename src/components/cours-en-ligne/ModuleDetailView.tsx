@@ -39,6 +39,8 @@ import { T3P_PARTIE2_SLIDES } from "./slides/t3p-partie2-data";
 import { GESTION_PARTIE1_SLIDES } from "./slides/gestion-partie1-data";
 import { GESTION_PARTIE2_SLIDES } from "./slides/gestion-partie2-data";
 import { GESTION_PARTIE3_SLIDES } from "./slides/gestion-partie3-data";
+import { NATIONALE_PARTIE1_SLIDES } from "./slides/nationale-partie1-data";
+import { NATIONALE_PARTIE2_SLIDES } from "./slides/nationale-partie2-data";
 import { VILLE_CHATEAUX_SLIDES } from "./slides/ville-chateaux-data";
 import { VILLE_GARES_SLIDES } from "./slides/ville-gares-data";
 import { VILLE_HOPITAUX_SLIDES } from "./slides/ville-hopitaux-data";
@@ -3534,6 +3536,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     "gestion-partie1": [...GESTION_PARTIE1_SLIDES],
     "gestion-partie2": [...GESTION_PARTIE2_SLIDES],
     "gestion-partie3": [...GESTION_PARTIE3_SLIDES],
+    "nationale-partie1": [...NATIONALE_PARTIE1_SLIDES],
+    "nationale-partie2": [...NATIONALE_PARTIE2_SLIDES],
     "ville-chateaux": [...VILLE_CHATEAUX_SLIDES],
     "ville-gares": [...VILLE_GARES_SLIDES],
     "ville-hopitaux": [...VILLE_HOPITAUX_SLIDES],
