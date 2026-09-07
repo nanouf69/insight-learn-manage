@@ -3012,6 +3012,8 @@ function ExerciceCard({
               </Button>
             </div>
           </div>
+        )}
+
 
       </CardContent>
 
