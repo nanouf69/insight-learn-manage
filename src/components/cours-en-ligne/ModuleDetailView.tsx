@@ -2954,7 +2954,7 @@ function ExerciceCard({
         {expanded && hasQuestions && (
           <div className="space-y-2 pt-2 border-t">
             {safeQuestions.map((q, qi) => (
-              <div key={`${q.id}-${qi}`}>
+              <div key={`${q.id}-${qi}`} id={`question-anchor-${item.id}-${q.id}`}>
 
                 {editingQId === q.id ? (
                   <QuestionEditor
@@ -3057,7 +3057,7 @@ function ExerciceCard({
             {hasQuestions ? (
               <div className="space-y-3">
                 {safeQuestions.map((q, qi) => (
-                  <div key={`${q.id}-${qi}`}>
+                  <div key={`${q.id}-${qi}`} id={`question-anchor-${item.id}-${q.id}`}>
 
                     {editingQId === q.id ? (
                       <QuestionEditor
