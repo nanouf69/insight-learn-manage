@@ -2652,6 +2652,7 @@ function QuestionEditor({
   const [choix, setChoix] = useState<ExerciceChoix[]>([...question.choix]);
   const [image, setImage] = useState<string | null>(question.image ?? null);
   const [imageSize, setImageSize] = useState<ImageSize>((question.imageSize as ImageSize) ?? "sm");
+  const [explication, setExplication] = useState<string>(question.explication ?? "");
 
   // Auto-save live: propage chaque modification (énoncé, choix, bonne réponse)
   // vers le parent qui déclenche la persistance DB debouncée.
@@ -2672,12 +2673,13 @@ function QuestionEditor({
         // supprimé par JSON.stringify → le merge retomberait sur l'image source.
         image: image as any,
         imageSize,
+        explication: explication || undefined,
         _editedAt: new Date().toISOString(),
       } as ExerciceQuestion);
     }, 400);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enonce, choix, image, imageSize]);
+  }, [enonce, choix, image, imageSize, explication]);
 
 
   const handleChoixTexte = (i: number, val: string) => {
@@ -2705,7 +2707,7 @@ function QuestionEditor({
         <div className="flex gap-2">
           <Button size="sm" variant="ghost" onClick={onCancel}><X className="w-4 h-4" /></Button>
           <Button size="sm" variant="destructive" onClick={onDelete}><Trash2 className="w-3 h-3" /></Button>
-          <Button size="sm" onClick={() => onSave({ ...question, enonce, choix, image: image as any, imageSize, _editedAt: new Date().toISOString() } as ExerciceQuestion)} className="gap-1">
+          <Button size="sm" onClick={() => onSave({ ...question, enonce, choix, image: image as any, imageSize, explication: explication || undefined, _editedAt: new Date().toISOString() } as ExerciceQuestion)} className="gap-1">
             <Save className="w-3 h-3" /> Enregistrer
           </Button>
         </div>
@@ -2720,7 +2722,7 @@ function QuestionEditor({
         imageSize={imageSize}
         onImageSizeChange={(sz) => {
           setImageSize(sz);
-          onDraftSave({ ...question, enonce, choix, image: image as any, imageSize: sz, _editedAt: new Date().toISOString() } as ExerciceQuestion);
+          onDraftSave({ ...question, enonce, choix, image: image as any, imageSize: sz, explication: explication || undefined, _editedAt: new Date().toISOString() } as ExerciceQuestion);
         }}
         context="module"
         contextId={moduleId}
@@ -2728,7 +2730,7 @@ function QuestionEditor({
         onImageChange={(newImage) => {
           setImage(newImage);
           // newImage === null ⇒ suppression explicite (doit être persistée telle quelle).
-          onDraftSave({ ...question, enonce, choix, image: newImage as any, imageSize, _editedAt: new Date().toISOString() } as ExerciceQuestion);
+          onDraftSave({ ...question, enonce, choix, image: newImage as any, imageSize, explication: explication || undefined, _editedAt: new Date().toISOString() } as ExerciceQuestion);
         }}
 
       />
@@ -2760,6 +2762,16 @@ function QuestionEditor({
         <Button size="sm" variant="outline" onClick={addChoix} className="gap-1">
           <Plus className="w-3 h-3" /> Ajouter un choix
         </Button>
+      </div>
+      <div className="space-y-1">
+        <label className="text-xs font-semibold">💡 Information / explication de la question (affichée à l'apprenant après validation)</label>
+        <Textarea
+          value={explication}
+          onChange={(e) => setExplication(e.target.value)}
+          placeholder="Saisir une information complémentaire, un rappel de cours, une source légale… (optionnel)"
+          rows={3}
+          className="text-sm"
+        />
       </div>
     </div>
   );
