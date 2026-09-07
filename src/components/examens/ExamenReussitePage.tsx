@@ -20,7 +20,7 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Eye, Edit, IdCard, Car } from "lucide-react";
+import { Eye, Edit, IdCard, Car, Copy, KeyRound } from "lucide-react";
 import { generateEmargementPratiquePDF } from "@/lib/pdf/emargement-pratique";
 import { fetchPratiqueSignatures } from "@/lib/pratiqueEmargements";
 import { PRATIQUE_TYPES, THEORIQUE_TYPES } from "@/lib/sessionTypes";
