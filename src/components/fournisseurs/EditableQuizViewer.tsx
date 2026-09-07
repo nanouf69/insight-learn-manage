@@ -44,7 +44,7 @@ interface Props {
   editable?: boolean;
 }
 
-export function EditableQuizViewer({ sections, title, icon = "📝", quizId, fournisseurId, editable = true }: Props) {
+export function EditableQuizViewer({ sections: sourceSections, title, icon = "📝", quizId, fournisseurId, editable = true }: Props) {
   const [openSections, setOpenSections] = useState<Set<number>>(new Set());
   const [overrides, setOverrides] = useState<Map<string, Override>>(new Map());
   const [editingKey, setEditingKey] = useState<string | null>(null);
@@ -52,9 +52,51 @@ export function EditableQuizViewer({ sections, title, icon = "📝", quizId, fou
   const [editChoix, setEditChoix] = useState<QuizChoice[]>([]);
   const [saving, setSaving] = useState(false);
   const [confirmDeleteKey, setConfirmDeleteKey] = useState<string | null>(null);
+  const [moduleQuestions, setModuleQuestions] = useState<Map<number, SyncQuestion[]>>(new Map());
 
   // Guard: ne pas charger ni permettre d'écrire si fournisseurId est vide
   const canOperate = !!fournisseurId;
+
+  // Les MODULES DE COURS sont la source de vérité : on recharge les questions
+  // enregistrées par l'admin et on les applique sur les sections statiques.
+  useEffect(() => {
+    let cancelled = false;
+    const moduleIds = QUIZ_ID_TO_MODULE_IDS[quizId] || [];
+    if (moduleIds.length === 0) return;
+
+    async function loadModules() {
+      const { data } = await supabase
+        .from("module_editor_state")
+        .select("module_data, updated_at")
+        .in("module_id", moduleIds);
+      if (cancelled) return;
+      setModuleQuestions(buildModuleQuestionMap(data as any));
+    }
+    loadModules();
+
+    const channel = supabase
+      .channel(`fournisseur-quiz-${quizId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "module_editor_state" }, (payload: any) => {
+        if (moduleIds.includes(Number((payload.new ?? payload.old)?.module_id))) loadModules();
+      })
+      .subscribe();
+
+    const onFocus = () => loadModules();
+    window.addEventListener("focus", onFocus);
+    const interval = window.setInterval(loadModules, 15000);
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener("focus", onFocus);
+      window.clearInterval(interval);
+      supabase.removeChannel(channel);
+    };
+  }, [quizId]);
+
+  const sections = useMemo(
+    () => applyModuleQuestionsToSections(sourceSections as any, moduleQuestions) as QuizSection[],
+    [sourceSections, moduleQuestions],
+  );
 
   // Load overrides from DB
   useEffect(() => {
@@ -75,6 +117,7 @@ export function EditableQuizViewer({ sections, title, icon = "📝", quizId, fou
             question_id: row.question_id,
             enonce: row.enonce,
             choix: row.choix as QuizChoice[],
+            updated_at: row.updated_at,
           });
         });
         setOverrides(map);
@@ -82,6 +125,7 @@ export function EditableQuizViewer({ sections, title, icon = "📝", quizId, fou
     }
     load();
   }, [fournisseurId, quizId]);
+
 
   const toggle = (id: number) => {
     setOpenSections(prev => {
