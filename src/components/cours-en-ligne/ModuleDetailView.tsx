@@ -3955,6 +3955,39 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     loadTrainerOverrideWarnings();
   }, [studentOnly, module.id, editorStateHydrated, trainerOverridesReapplyKey]);
 
+  // Côté admin : si la version fournisseur est PLUS RÉCENTE que la version admin,
+  // elle devient la version de référence affichée (règle unique last-write-wins).
+  // On ne touche jamais aux scores, tentatives, progression ni statuts.
+  useEffect(() => {
+    if (studentOnly || !editorStateHydrated) return;
+    if (trainerOverrideWarnings.size === 0) return;
+
+    setModuleData((prev) => {
+      let changed = false;
+      const exercices = prev.exercices.map((exo) => {
+        if (!exo.questions || exo.questions.length === 0) return exo;
+        if (isBilanExamGestionExercise(module.id, exo.id)) return exo;
+        const questions = exo.questions.map((q) => {
+          const override = trainerOverrideWarnings.get(`${exo.id}-${q.id}`);
+          if (!override || override.enonce === "__DELETED__") return q;
+          const winner = resolveOverrideConflict((q as any)._editedAt ?? undefined, override.updated_at);
+          if (winner === "admin") return q;
+          if (sameJson({ e: q.enonce, c: q.choix }, { e: override.enonce, c: override.choix })) return q;
+          changed = true;
+          return {
+            ...q,
+            enonce: override.enonce,
+            choix: override.choix,
+            _editedAt: override.updated_at,
+            manually_edited: true,
+          } as ExerciceQuestion;
+        });
+        return changed ? { ...exo, questions } : exo;
+      });
+      return changed ? { ...prev, exercices } : prev;
+    });
+  }, [studentOnly, editorStateHydrated, module.id, trainerOverrideWarnings]);
+
   useEffect(() => {
     const initialData = getInitialModuleData(module, apprenantType, studentOnly);
     const sourceFingerprint = buildSourceFingerprint(initialData);
