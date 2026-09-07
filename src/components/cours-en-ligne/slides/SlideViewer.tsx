@@ -491,7 +491,30 @@ export default function SlideViewer({ slides, titre, brand, onBack, editable, on
   const [idx, setIdx] = useState(0);
   const [editing, setEditing] = useState(false);
   const [containerSize, setContainerSize] = useState({ w: 960, h: 540 });
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  const toggleFullscreen = () => {
+    const el = rootRef.current;
+    if (!el) return;
+    if (isFullscreen || document.fullscreenElement) {
+      if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+      setIsFullscreen(false);
+      return;
+    }
+    setIsFullscreen(true);
+    el.requestFullscreen?.().catch(() => {});
+  };
+
+  useEffect(() => {
+    const onFsChange = () => {
+      if (!document.fullscreenElement) setIsFullscreen(false);
+    };
+    document.addEventListener("fullscreenchange", onFsChange);
+    return () => document.removeEventListener("fullscreenchange", onFsChange);
+  }, []);
+
   const total = slides.length;
   const prev = () => setIdx(i => Math.max(0, i - 1));
   const next = () => setIdx(i => Math.min(total - 1, i + 1));
