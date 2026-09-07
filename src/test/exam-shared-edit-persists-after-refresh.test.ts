@@ -11,11 +11,10 @@ import {
  *  3. On laisse passer 10-15 minutes simulées. Un rafraîchissement (changement
  *     d'onglet, navigation) intervient, et le code recharge les overrides
  *     fournisseur historiques.
- *  4. L'édition admin doit tenir même quand la question ne porte AUCUN
- *     `_editedAt` / `manually_edited` (cas majoritaire en base).
+ *  4. L'édition admin datée doit tenir face à un override fournisseur plus ancien.
  *
  * Ce test simule exactement ces 4 étapes sur les deux systèmes:
- *  - Bilans (module_editor_state) — via l'invariant "admin authoritative"
+ *  - Bilans (module_editor_state) — via l'invariant "dernière date gagne"
  *    au niveau du merger d'overrides.
  *  - Exam blancs partagés — via l'appel réel à applyFournisseurOverridesToExamens.
  */
@@ -47,16 +46,17 @@ describe("Persistance d'une édition admin — scénario 10-15 minutes après sa
     async (examId) => {
       vi.useFakeTimers();
       try {
-        // Étape 1 — admin édite (aucun _editedAt: cas 'historique' où la
-        //  métadonnée n'est pas encore posée par le trigger DB).
-        const adminSaved = [makeBilan(examId, [makeQ(1, "Réponse correcte = C (édition admin)", "C")])] as any;
+        // Étape 1 — admin édite et la date de la question est persistée.
+        const adminSaved = [makeBilan(examId, [{
+          ...makeQ(1, "Réponse correcte = C (édition admin)", "C"),
+          manually_edited: true,
+          _editedAt: "2026-09-07T14:00:00Z",
+        }])] as any;
 
         // Étape 2 — 12 minutes passent, un onglet ré-hydrate depuis la base.
         vi.advanceTimersByTime(12 * 60 * 1000);
 
-        // Étape 3 — un vieil override fournisseur (postérieur au save) est
-        //  ramené par le loader. Sans le fix, il écrasait silencieusement la
-        //  bonne réponse en 'A'.
+        // Étape 3 — un vieil override fournisseur est ramené par le loader.
         const legacyFournisseurOverrides = [
           {
             quiz_id: `bilan-examen-${examId.replace("bilan-", "")}`,
@@ -68,7 +68,7 @@ describe("Persistance d'une édition admin — scénario 10-15 minutes après sa
               { lettre: "B", texte: "B", correct: false },
               { lettre: "C", texte: "C", correct: false },
             ],
-            updated_at: new Date().toISOString(),
+            updated_at: "2026-09-07T13:00:00Z",
           },
         ];
 

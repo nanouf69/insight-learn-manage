@@ -1,10 +1,8 @@
 /**
  * Synchronisation des quiz du portail fournisseur avec les MODULES DE COURS.
  *
- * Règle métier : les modules de cours (table `module_editor_state`, éditée par
- * l'admin) sont la SOURCE DE VÉRITÉ. Le portail fournisseur affichait jusqu'ici
- * les données statiques du code, donc des questions/réponses périmées dès que
- * l'admin modifiait le module.
+ * Règle métier : la dernière question enregistrée, qu'elle vienne d'une
+ * occurrence admin ou du fournisseur, est la version de référence.
  *
  * Ici on remplace, pour chaque section (= exercice), les questions statiques par
  * celles enregistrées dans le module correspondant. Si un exercice n'existe pas
@@ -48,13 +46,15 @@ export interface SyncSection {
 
 /**
  * Construit une map exerciceId → questions à partir des `module_data` des modules.
- * Le module dont l'`updated_at` est le plus récent gagne en cas de doublon.
+ * La structure de l'occurrence la plus récente fait référence (ordre,
+ * ajouts/suppressions), puis chaque question est remplacée par sa version dont
+ * `_editedAt` est le plus récent. `updated_at` ne sert que de repli historique.
  */
 export function buildModuleQuestionMap(
   rows: { module_data: any; updated_at?: string | null }[] | null | undefined,
 ): Map<number, SyncQuestion[]> {
-  const map = new Map<number, SyncQuestion[]>();
-  const stamps = new Map<number, number>();
+  type ExerciseCandidate = { questions: SyncQuestion[]; rowTimestamp: number };
+  const candidates = new Map<number, ExerciseCandidate[]>();
 
   for (const row of rows ?? []) {
     const ts = row.updated_at ? Date.parse(row.updated_at) : 0;
@@ -63,13 +63,46 @@ export function buildModuleQuestionMap(
       if (!exo || !Array.isArray(exo.questions)) continue;
       const id = Number(exo.id);
       if (!Number.isFinite(id)) continue;
-      const prev = stamps.get(id);
-      if (prev !== undefined && prev >= (Number.isFinite(ts) ? ts : 0)) continue;
-      stamps.set(id, Number.isFinite(ts) ? ts : 0);
-      map.set(id, exo.questions as SyncQuestion[]);
+      const existing = candidates.get(id) ?? [];
+      existing.push({
+        questions: exo.questions as SyncQuestion[],
+        rowTimestamp: Number.isFinite(ts) ? ts : 0,
+      });
+      candidates.set(id, existing);
     }
   }
+
+  const map = new Map<number, SyncQuestion[]>();
+  for (const [exerciseId, exerciseCandidates] of candidates) {
+    const structuralSource = [...exerciseCandidates].sort((a, b) => b.rowTimestamp - a.rowTimestamp)[0];
+    if (!structuralSource) continue;
+
+    const merged = structuralSource.questions.map((baselineQuestion) => {
+      let winner = baselineQuestion;
+      let winnerTimestamp = questionTimestamp(baselineQuestion, structuralSource.rowTimestamp);
+
+      for (const candidate of exerciseCandidates) {
+        const sameQuestion = candidate.questions.find(
+          (question) => Number(question.id) === Number(baselineQuestion.id),
+        );
+        if (!sameQuestion) continue;
+        const candidateTimestamp = questionTimestamp(sameQuestion, candidate.rowTimestamp);
+        if (candidateTimestamp > winnerTimestamp) {
+          winner = sameQuestion;
+          winnerTimestamp = candidateTimestamp;
+        }
+      }
+      return winner;
+    });
+    map.set(exerciseId, merged);
+  }
   return map;
+}
+
+function questionTimestamp(question: SyncQuestion, fallback: number): number {
+  if (!question._editedAt) return fallback;
+  const timestamp = Date.parse(question._editedAt);
+  return Number.isFinite(timestamp) ? timestamp : fallback;
 }
 
 /**

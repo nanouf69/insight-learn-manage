@@ -4,14 +4,7 @@ import {
   FOURNISSEUR_QUIZ_TO_EXAM,
 } from "@/components/cours-en-ligne/fournisseur-exam-overrides";
 
-/**
- * Régression: les Bilan exam blancs (bilan-vtc/taxi/ta/va) sont désormais
- * ADMIN AUTHORITATIVE. Aucun override fournisseur (quiz_questions_overrides)
- * ne peut plus les écraser — même quand la question admin n'a pas de
- * `_editedAt` ni de `manually_edited` (métadonnées historiquement absentes
- * sur la majorité des lignes). C'est le correctif final pour arrêter le
- * scénario "je corrige côté admin, l'étudiant voit encore l'ancienne réponse".
- */
+/** Régression : dernière modification enregistrée = version officielle. */
 
 const makeQ = (id: number, enonce: string, correctLetter: string = "A") => ({
   id,
@@ -44,13 +37,13 @@ const oneMatiere = (questions: any[]) => [
   },
 ];
 
-describe("applyFournisseurOverridesToExamens — hard-block sur les Bilan exam blancs", () => {
+describe("applyFournisseurOverridesToExamens — dernière version enregistrée", () => {
   it.each([
     ["bilan-examen-ta",  "bilan-ta",   700],
     ["bilan-examen-vtc", "bilan-vtc",  500],
     ["bilan-examen-taxi","bilan-taxi", 600],
     ["bilan-examen-va",  "bilan-va",   600],
-  ])("n'écrase jamais l'admin sur %s (métadonnées absentes)", (quizId, examId, base) => {
+  ])("applique le fournisseur sur %s quand l'admin n'a pas de date", (quizId, examId, base) => {
     const examens = [makeExam(examId, oneMatiere([makeQ(1, "Version admin", "C")]))] as any;
 
     const overrides = [
@@ -70,11 +63,11 @@ describe("applyFournisseurOverridesToExamens — hard-block sur les Bilan exam b
 
     const result = applyFournisseurOverridesToExamens(examens, overrides);
     const q1 = result[0].matieres[0].questions[0];
-    expect(q1.enonce).toBe("Version admin");
-    expect(q1.choix.find((c: any) => c.correct)?.lettre).toBe("C");
+    expect(q1.enonce).toBe("Ancienne réponse fournisseur");
+    expect(q1.choix.find((c: any) => c.correct)?.lettre).toBe("A");
   });
 
-  it("n'écrase pas non plus quand la question admin porte _editedAt", () => {
+  it("applique le fournisseur quand son updated_at est plus récent", () => {
     const examens = [
       makeExam(
         "bilan-ta",
@@ -97,11 +90,11 @@ describe("applyFournisseurOverridesToExamens — hard-block sur les Bilan exam b
 
     const result = applyFournisseurOverridesToExamens(examens, overrides);
     const q1 = result[0].matieres[0].questions[0];
-    expect(q1.enonce).toBe("Version admin");
-    expect(q1.choix.find((c: any) => c.correct)?.lettre).toBe("C");
+    expect(q1.enonce).toBe("Version fournisseur postérieure");
+    expect(q1.choix.find((c: any) => c.correct)?.lettre).toBe("A");
   });
 
-  it("ne supprime jamais une question de Bilan via un override __DELETED__", () => {
+  it("applique une suppression fournisseur plus récente", () => {
     const examens = [
       makeExam("bilan-taxi", oneMatiere([makeQ(1, "Q1"), makeQ(2, "Q2"), makeQ(3, "Q3")])),
     ] as any;
@@ -119,7 +112,7 @@ describe("applyFournisseurOverridesToExamens — hard-block sur les Bilan exam b
 
     const result = applyFournisseurOverridesToExamens(examens, overrides);
     const ids = result[0].matieres[0].questions.map((q: any) => q.id);
-    expect(ids).toEqual([1, 2, 3]);
+    expect(ids).toEqual([1, 3]);
   });
 
   it("ignore les overrides sans mapping (quiz_id inconnu)", () => {

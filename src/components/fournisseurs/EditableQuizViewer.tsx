@@ -61,8 +61,8 @@ export function EditableQuizViewer({ sections: sourceSections, title, icon = "�
   // Guard: ne pas charger ni permettre d'écrire si fournisseurId est vide
   const canOperate = !!fournisseurId;
 
-  // Les MODULES DE COURS sont la source de vérité : on recharge les questions
-  // enregistrées par l'admin et on les applique sur les sections statiques.
+  // Recharge toutes les occurrences admin et fusionne chaque question selon sa
+  // propre date de modification, jamais selon la seule date globale du module.
   useEffect(() => {
     let cancelled = false;
     const moduleIds = QUIZ_ID_TO_MODULE_IDS[quizId] || [];
@@ -102,16 +102,18 @@ export function EditableQuizViewer({ sections: sourceSections, title, icon = "�
     [sourceSections, moduleQuestions],
   );
 
-  // Load overrides from DB
+  // Recharge les modifications fournisseur immédiatement et relit toujours la
+  // ligne complète : un événement Realtime peut ne contenir qu'un payload partiel.
   useEffect(() => {
     if (!canOperate) return;
+    let cancelled = false;
     async function load() {
       const { data } = await supabase
         .from("quiz_questions_overrides")
         .select("*")
         .eq("fournisseur_id", fournisseurId)
         .eq("quiz_id", quizId);
-      if (data) {
+      if (!cancelled && data) {
         const map = new Map<string, Override>();
         data.forEach((row: any) => {
           const key = `${row.section_id}-${row.question_id}`;
@@ -127,8 +129,30 @@ export function EditableQuizViewer({ sections: sourceSections, title, icon = "�
         setOverrides(map);
       }
     }
-    load();
-  }, [fournisseurId, quizId]);
+    void load();
+
+    const channel = supabase
+      .channel(`fournisseur-overrides-${fournisseurId}-${quizId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "quiz_questions_overrides",
+          filter: `fournisseur_id=eq.${fournisseurId}`,
+        },
+        (payload: any) => {
+          const changed = payload.new ?? payload.old;
+          if (!changed?.quiz_id || changed.quiz_id === quizId) void load();
+        },
+      )
+      .subscribe();
+
+    return () => {
+      cancelled = true;
+      supabase.removeChannel(channel);
+    };
+  }, [canOperate, fournisseurId, quizId]);
 
 
   const toggle = (id: number) => {
