@@ -3752,6 +3752,85 @@ export type Database = {
       }
       text_soundex: { Args: { "": string }; Returns: string }
       unaccent: { Args: { "": string }; Returns: string }
+      update_own_apprenant_coordonnees: {
+        Args: {
+          _adresse: string
+          _apprenant_id: string
+          _code_postal: string
+          _email: string
+          _telephone: string
+          _ville: string
+        }
+        Returns: {
+          adresse: string | null
+          auth_user_id: string | null
+          b2_vierge: boolean | null
+          civilite: string | null
+          code_postal: string | null
+          created_at: string
+          creneau_horaire: string | null
+          date_debut_cours_en_ligne: string | null
+          date_debut_formation: string | null
+          date_examen_pratique: string | null
+          date_examen_theorique: string | null
+          date_fin_cours_en_ligne: string | null
+          date_fin_formation: string | null
+          date_formation_catalogue: string | null
+          date_naissance: string | null
+          date_paiement: string | null
+          deleted_at: string | null
+          documents_complets: boolean | null
+          email: string | null
+          emails_bloques: boolean
+          facture_contact_email: string | null
+          facture_contact_nom: string | null
+          facture_contact_telephone: string | null
+          formation_choisie: string | null
+          heure_examen_pratique: string | null
+          heures_elearning: number | null
+          heures_pratique: number | null
+          heures_presentiel: number | null
+          heures_totales: number | null
+          id: string
+          inscrit_france_travail: boolean | null
+          lieu_examen: string | null
+          mode_financement: string | null
+          modules_autorises: number[] | null
+          montant_paye: number | null
+          montant_ttc: number | null
+          mot_de_passe_cma: string | null
+          mot_de_passe_plateforme: string | null
+          moyen_paiement: string | null
+          nom: string
+          notes: string | null
+          numero_dossier_cma: string | null
+          organisme_financeur: string | null
+          prenom: string
+          relance_dossier_bienvenue_exclu: boolean
+          responsable_contact_centre: boolean
+          resultat_examen: string | null
+          resultat_examen_pratique: string | null
+          societe_adresse: string | null
+          societe_code_postal: string | null
+          societe_nom: string | null
+          societe_siret: string | null
+          societe_tva_intra: string | null
+          societe_ville: string | null
+          source_inscription: string
+          statut: string | null
+          telephone: string | null
+          type_apprenant: string | null
+          type_examen: string | null
+          updated_at: string
+          ville: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "apprenants"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
