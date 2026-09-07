@@ -5047,7 +5047,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
       // Source unique des questions partagées : la sauvegarde admin devient
       // immédiatement la version officielle lue par tous les écrans.
-      const { error: canonicalSyncError } = await supabase.rpc("sync_admin_canonical_quiz_questions", {
+      const { error: canonicalSyncError } = await (supabase as any).rpc("sync_admin_canonical_quiz_questions", {
         p_module_id: dataToSave.module_id,
         p_exercises: (normalizedModuleData.exercices ?? []) as any,
       });

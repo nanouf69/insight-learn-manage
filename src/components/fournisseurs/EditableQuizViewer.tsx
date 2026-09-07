@@ -57,11 +57,10 @@ export function EditableQuizViewer({ sections: sourceSections, title, icon = "ü
     if (!fournisseurToken) return;
     let cancelled = false;
     async function loadCanonical() {
-      const { data, error } = await supabase.rpc("get_canonical_quiz_questions", {
-        p_quiz_id: quizId,
-        p_fournisseur_token: fournisseurToken,
+      const { data, error } = await supabase.functions.invoke("fournisseur-portal-data", {
+        body: { action: "quiz_questions", token: fournisseurToken, quiz_id: quizId },
       });
-      if (!cancelled && !error) setCanonicalQuestions((data ?? []) as any[]);
+      if (!cancelled && !error) setCanonicalQuestions((data?.data ?? []) as any[]);
     }
     void loadCanonical();
     const channel = supabase.channel(`canonical-quiz-${quizId}`)
@@ -69,7 +68,7 @@ export function EditableQuizViewer({ sections: sourceSections, title, icon = "ü
       .subscribe();
     const onFocus = () => void loadCanonical();
     window.addEventListener("focus", onFocus);
-    const interval = window.setInterval(loadCanonical, 15000);
+    const interval = window.setInterval(loadCanonical, 2000);
     return () => { cancelled = true; window.removeEventListener("focus", onFocus); window.clearInterval(interval); supabase.removeChannel(channel); };
   }, [quizId, fournisseurToken]);
 
@@ -105,12 +104,14 @@ export function EditableQuizViewer({ sections: sourceSections, title, icon = "ü
     setSaving(true);
     try {
       const current = sections.find(s => s.id === sectionId)?.questions?.find(q => q.id === questionId);
-      const { error } = await supabase.rpc("save_canonical_quiz_question", {
-        p_fournisseur_token: fournisseurToken, p_quiz_id: quizId, p_section_id: sectionId,
-        p_legacy_question_id: questionId, p_position: questionId, p_enonce: current?.enonce ?? "",
-        p_choix: (current?.choix ?? []) as any, p_active: false,
+      const { data, error } = await supabase.functions.invoke("fournisseur-portal-data", {
+        body: { action: "save_quiz_question", token: fournisseurToken, quiz_id: quizId, section_id: sectionId,
+          legacy_question_id: questionId, position: questionId, enonce: current?.enonce ?? "",
+          choix: current?.choix ?? [], active: false },
       });
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      if (data?.data) setCanonicalQuestions(prev => prev.map(row => row.question_id === data.data.question_id ? data.data : row));
       toast.success("Question supprim√©e");
     } catch {
       toast.error("Erreur lors de la suppression");
@@ -143,13 +144,15 @@ export function EditableQuizViewer({ sections: sourceSections, title, icon = "ü
     setSaving(true);
     try {
       const currentIndex = sections.find(s => s.id === sectionId)?.questions?.findIndex(q => q.id === questionId) ?? -1;
-      const { error } = await supabase.rpc("save_canonical_quiz_question", {
-        p_fournisseur_token: fournisseurToken, p_quiz_id: quizId, p_section_id: sectionId,
-        p_legacy_question_id: questionId, p_position: currentIndex + 1, p_enonce: editEnonce,
-        p_choix: editChoix as any, p_active: true,
+      const { data, error } = await supabase.functions.invoke("fournisseur-portal-data", {
+        body: { action: "save_quiz_question", token: fournisseurToken, quiz_id: quizId, section_id: sectionId,
+          legacy_question_id: questionId, position: currentIndex + 1, enonce: editEnonce,
+          choix: editChoix, active: true },
       });
 
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      if (data?.data) setCanonicalQuestions(prev => prev.map(row => row.question_id === data.data.question_id ? data.data : row));
 
       setEditingKey(null);
       toast.success("Question modifi√©e avec succ√®s");
@@ -183,11 +186,12 @@ export function EditableQuizViewer({ sections: sourceSections, title, icon = "ü
   const resetToOriginal = async (sectionId: number, questionId: number) => {
     const question = sourceSections.find(s => s.id === sectionId)?.questions?.find(q => q.id === questionId);
     if (!question) return;
-    const { error } = await supabase.rpc("save_canonical_quiz_question", {
-      p_fournisseur_token: fournisseurToken, p_quiz_id: quizId, p_section_id: sectionId,
-      p_legacy_question_id: questionId, p_position: questionId, p_enonce: question.enonce,
-      p_choix: question.choix as any, p_active: true,
+    const { data, error } = await supabase.functions.invoke("fournisseur-portal-data", {
+      body: { action: "save_quiz_question", token: fournisseurToken, quiz_id: quizId, section_id: sectionId,
+        legacy_question_id: questionId, position: questionId, enonce: question.enonce,
+        choix: question.choix, active: true },
     });
+    if (data?.error) return toast.error(data.error);
     if (!error) toast.success("Question restaur√©e");
   };
 
