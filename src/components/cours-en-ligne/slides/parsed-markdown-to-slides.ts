@@ -17,6 +17,9 @@ interface PageSection {
 
 const FOOTER_PATTERN = /FTRANSPORT\s*[-–—]\s*SERVICES\s*PRO/i;
 const PAGE_COUNTER_PATTERN = /^\d+\s*\/\s*\d+$/;
+// Bandeau répété en haut de chaque diapositive ("PARTIE 1 — COURS") : il masquait
+// le vrai titre de la diapositive et rendait toutes les pages identiques/vides.
+const BANNER_PATTERN = /^#{0,6}\s*PARTIE\s+\d+\s*[—–-]\s*COURS\s*$/i;
 
 const BLOCK_COLORS = [
   "#3498db",
