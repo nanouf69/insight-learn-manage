@@ -441,6 +441,7 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
 
       {/* PDF Page — scrollable when zoomed, touch-action for mobile */}
       <div
+        ref={scrollAreaRef}
         className={`flex justify-center overflow-x-auto overflow-y-auto ${isExpanded ? "flex-1" : ""}`}
         style={{
           maxHeight: isExpanded ? "none" : "80vh",
