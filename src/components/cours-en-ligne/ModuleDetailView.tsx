@@ -2889,6 +2889,10 @@ function ExerciceCard({
     onUpdateQuestions(item.id, [...existing, newQ]);
     setEditingQId(newId);
     setExpanded(true);
+    setTimeout(() => {
+      document.getElementById(`question-anchor-${item.id}-${newId}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 150);
+
   };
 
   return (
