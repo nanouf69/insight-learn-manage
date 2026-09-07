@@ -1822,6 +1822,8 @@ export function ExamenReussitePage() {
                     <TableHead>Type</TableHead>
                     <TableHead className="text-center">Admissibilité (Théorie)</TableHead>
                     <TableHead>N° Dossier CMA</TableHead>
+                    <TableHead>Mot de passe CMA</TableHead>
+                    <TableHead>Statut</TableHead>
                     <TableHead>Téléphone</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Date d'examen</TableHead>
