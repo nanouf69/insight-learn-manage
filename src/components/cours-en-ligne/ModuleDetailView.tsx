@@ -3006,8 +3006,13 @@ function ExerciceCard({
                 )}
               </div>
             ))}
+            <div className="pt-2 flex justify-center">
+              <Button size="sm" className="gap-1" onClick={addQuestion}>
+                <Plus className="w-4 h-4" /> Ajouter une question à la suite
+              </Button>
+            </div>
           </div>
-        )}
+
       </CardContent>
 
       {/* Confirmation de suppression de question */}
