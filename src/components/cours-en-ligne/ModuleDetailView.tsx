@@ -2889,6 +2889,10 @@ function ExerciceCard({
     onUpdateQuestions(item.id, [...existing, newQ]);
     setEditingQId(newId);
     setExpanded(true);
+    setTimeout(() => {
+      document.getElementById(`question-anchor-${item.id}-${newId}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 150);
+
   };
 
   return (
@@ -2950,7 +2954,7 @@ function ExerciceCard({
         {expanded && hasQuestions && (
           <div className="space-y-2 pt-2 border-t">
             {safeQuestions.map((q, qi) => (
-              <div key={`${q.id}-${qi}`}>
+              <div key={`${q.id}-${qi}`} id={`question-anchor-${item.id}-${q.id}`}>
 
                 {editingQId === q.id ? (
                   <QuestionEditor
@@ -3006,8 +3010,15 @@ function ExerciceCard({
                 )}
               </div>
             ))}
+            <div className="pt-2 flex justify-center">
+              <Button size="sm" className="gap-1" onClick={addQuestion}>
+                <Plus className="w-4 h-4" /> Ajouter une question à la suite
+              </Button>
+            </div>
           </div>
         )}
+
+
       </CardContent>
 
       {/* Confirmation de suppression de question */}
@@ -3046,7 +3057,7 @@ function ExerciceCard({
             {hasQuestions ? (
               <div className="space-y-3">
                 {safeQuestions.map((q, qi) => (
-                  <div key={`${q.id}-${qi}`}>
+                  <div key={`${q.id}-${qi}`} id={`question-anchor-${item.id}-${q.id}`}>
 
                     {editingQId === q.id ? (
                       <QuestionEditor
@@ -3102,7 +3113,13 @@ function ExerciceCard({
                     )}
                   </div>
                 ))}
+                <div className="pt-2 flex justify-center">
+                  <Button size="sm" className="gap-1" onClick={addQuestion}>
+                    <Plus className="w-4 h-4" /> Ajouter une question à la suite
+                  </Button>
+                </div>
               </div>
+
             ) : (
               <p className="text-center text-muted-foreground py-8">Aucune question. Cliquez sur « Ajouter une question » pour commencer.</p>
             )}
