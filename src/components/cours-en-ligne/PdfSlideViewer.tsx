@@ -41,9 +41,12 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
   const [renderMode, setRenderMode] = useState<"react-pdf" | "native">("react-pdf");
   const containerRef = useRef<HTMLDivElement>(null);
   const nativeScrollRef = useRef<HTMLDivElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
   const loadingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const touchStartXRef = useRef<number | null>(null);
   const [containerWidth, setContainerWidth] = useState(960);
+  const [viewportHeight, setViewportHeight] = useState(0);
+
   const [nativeScrolledToBottom, setNativeScrolledToBottom] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [pageAspectRatio, setPageAspectRatio] = useState(16 / 9);
@@ -96,11 +99,12 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
     }
   }, [isMobile, numPages, onLastPageReached]);
 
-  // Detect mobile to apply mobile-friendly defaults
+  // Detect mobile AND tablet (tactile) to apply one-slide-per-screen mode
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const mql = window.matchMedia("(max-width: 768px)");
+    const mql = window.matchMedia("(max-width: 1024px), (pointer: coarse)");
     const handler = (e: MediaQueryListEvent | MediaQueryList) => setIsMobile(e.matches);
+
     handler(mql);
     if (typeof mql.addEventListener === "function") {
       mql.addEventListener("change", handler as (e: MediaQueryListEvent) => void);
@@ -122,10 +126,14 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
     ? url
     : `${window.location.origin}${url.startsWith("/") ? url : `/${url}`}`;
 
-  // Recalculate width on resize / fullscreen changes
+  // Recalculate width/height on resize / fullscreen changes
   const updateWidth = useCallback(() => {
     if (containerRef.current) {
       setContainerWidth(Math.max(320, containerRef.current.clientWidth - 16));
+    }
+    if (scrollAreaRef.current) {
+      const h = scrollAreaRef.current.clientHeight;
+      if (h > 0) setViewportHeight(h);
     }
   }, []);
 
@@ -134,13 +142,19 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
 
     if (typeof ResizeObserver === "undefined") {
       window.addEventListener("resize", updateWidth);
-      return () => window.removeEventListener("resize", updateWidth);
+      window.addEventListener("orientationchange", updateWidth);
+      return () => {
+        window.removeEventListener("resize", updateWidth);
+        window.removeEventListener("orientationchange", updateWidth);
+      };
     }
 
     const observer = new ResizeObserver(updateWidth);
     if (containerRef.current) observer.observe(containerRef.current);
+    if (scrollAreaRef.current) observer.observe(scrollAreaRef.current);
     return () => observer.disconnect();
-  }, [updateWidth, isPseudoFullscreen]);
+  }, [updateWidth, isPseudoFullscreen, renderMode, numPages]);
+
 
   // Listen for native fullscreen changes
   useEffect(() => {
@@ -356,6 +370,18 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
 
   const rotateLandscape = isPseudoFullscreen && isPortraitMobile;
 
+  // Largeur de page ajustée pour qu'une diapositive entière tienne à l'écran
+  // (tablette/mobile) comme dans la visionneuse "Réglementation nationale".
+  const availableHeight = viewportHeight > 0
+    ? viewportHeight - 24
+    : (typeof window !== "undefined" ? window.innerHeight * 0.7 : 0);
+  const heightConstrainedWidth = availableHeight > 0 ? availableHeight * pageAspectRatio : Infinity;
+  const fitPageWidth = Math.max(
+    280,
+    Math.min(containerWidth, heightConstrainedWidth) * zoom
+  );
+
+
   const viewerContent = (
     <div
       ref={containerRef}
@@ -427,6 +453,7 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
 
       {/* PDF Page — scrollable when zoomed, touch-action for mobile */}
       <div
+        ref={scrollAreaRef}
         className={`flex justify-center overflow-x-auto overflow-y-auto ${isExpanded ? "flex-1" : ""}`}
         style={{
           maxHeight: isExpanded ? "none" : "80vh",
@@ -507,27 +534,28 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
                   id={`pdf-page-${page}`}
                   data-pdf-page={page}
                   className="flex justify-center"
-                  style={{ width: Math.max(280, containerWidth * zoom) }}
+                  style={{ width: fitPageWidth }}
                 >
                   <div
                     className="overflow-hidden rounded-md bg-background/40"
                     style={{
-                      width: Math.max(280, containerWidth * zoom),
-                      minHeight: Math.max(220, Math.max(280, containerWidth * zoom) / pageAspectRatio),
+                      width: fitPageWidth,
+                      minHeight: Math.max(220, fitPageWidth / pageAspectRatio),
                       aspectRatio: pageAspectRatio,
                     }}
                   >
                     <Page
                       pageNumber={page}
-                      width={Math.max(280, containerWidth * zoom)}
+                      width={fitPageWidth}
                       renderTextLayer={false}
                       renderAnnotationLayer={false}
                       loading={<div className="flex min-h-[220px] items-center justify-center text-sm text-muted-foreground">Chargement de la slide {page}…</div>}
-                      devicePixelRatio={typeof window !== "undefined" ? 1.25 : 1.5}
+                      devicePixelRatio={typeof window !== "undefined" ? Math.min(window.devicePixelRatio || 1, 2) : 1.5}
                     />
                   </div>
                 </div>
               ) : (
+
                 Array.from({ length: numPages }, (_, index) => {
                   const pageNumber = index + 1;
                   const shouldRenderPage = Math.abs(pageNumber - page) <= 1;
