@@ -474,8 +474,11 @@ const TRAINER_QUIZ_IDS_BY_MODULE_ID: Record<number, string[]> = {
 const isAdminAuthoritativeQuizModule = (moduleId: number | string) =>
   ADMIN_AUTHORITATIVE_QUIZ_MODULE_IDS.has(Number(moduleId));
 
+// Règle unique : la dernière version enregistrée (admin OU fournisseur) fait référence.
+// On ne bloque donc plus les overrides fournisseur par module ; la comparaison de
+// timestamps (resolveOverrideConflict) décide seule du gagnant.
 const getTrainerQuizIdsForModule = (moduleId: number | string) =>
-  isAdminAuthoritativeQuizModule(moduleId) ? [] : (TRAINER_QUIZ_IDS_BY_MODULE_ID[Number(moduleId)] || []);
+  TRAINER_QUIZ_IDS_BY_MODULE_ID[Number(moduleId)] || [];
 
 const buildTrainerOverrideMap = (rows: any[] | null | undefined) => {
   const overrideMap = new Map<string, TrainerOverrideInfo>();
@@ -508,7 +511,9 @@ const normalizeManualQuestionFlags = (data: ModuleData): ModuleData => ({
           return {
             ...q,
             manually_edited: true,
-            _editedAt: q._editedAt ?? new Date().toISOString(),
+            // Marqueur historique sans date : on ne fabrique JAMAIS un timestamp "maintenant",
+            // sinon l'admin gagnerait artificiellement contre une modification fournisseur récente.
+            _editedAt: q._editedAt ?? new Date(0).toISOString(),
           } as ExerciceQuestion;
         })
       : exercise.questions,
@@ -2983,7 +2988,7 @@ function ExerciceCard({
                         <div className="mt-2 flex items-start gap-2 rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning">
                           <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                           <span>
-                            Override formateur détecté ({getOverrideWarning(q.id)?.quiz_id}) — les réponses admin restent prioritaires.
+                            Version fournisseur/formateur détectée ({getOverrideWarning(q.id)?.quiz_id}) — la dernière modification enregistrée fait référence.
                           </span>
                         </div>
                       )}
@@ -3078,7 +3083,7 @@ function ExerciceCard({
                             <div className="mb-3 flex items-start gap-2 rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-sm text-warning">
                               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                               <span>
-                                Override formateur détecté ({getOverrideWarning(q.id)?.quiz_id}) — les réponses admin restent prioritaires.
+                                Version fournisseur/formateur détectée ({getOverrideWarning(q.id)?.quiz_id}) — la dernière modification enregistrée fait référence.
                               </span>
                             </div>
                           )}
@@ -3896,8 +3901,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 .map((q) => {
                   const override = overrideMap.get(`${exo.id}-${q.id}`);
                   if (!override) return q;
-                  // Règle dure: si la question a été modifiée par l'admin (_editedAt),
-                  // les réponses correctes admin gagnent toujours, sans comparer les timestamps.
+                  // Règle unique : la dernière modification enregistrée gagne (admin ou fournisseur).
                   const adminTs = (q as any)._editedAt ?? undefined;
                   const winner = resolveOverrideConflict(adminTs, override.updated_at);
                   if (winner === "admin") return q;
@@ -4498,8 +4502,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               .map((q) => {
                 const override = overrideMap.get(`${exo.id}-${q.id}`);
                 if (!override) return q;
-                // Règle dure: si la question a été modifiée par l'admin (_editedAt),
-                // les réponses correctes admin gagnent toujours, sans comparer les timestamps.
+                // Règle unique : la dernière modification enregistrée gagne (admin ou fournisseur).
                 const adminTs = (q as any)._editedAt ?? undefined;
                 const winner = resolveOverrideConflict(adminTs, override.updated_at);
                 if (winner === "admin") return q;
