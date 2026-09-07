@@ -6723,8 +6723,21 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                     );
                   })()}
 
-                  {hasInteractiveSlides && cours.slidesKey && (
-                    <div className="mt-4" style={{ height: "min(70vh, 600px)" }}>
+                  {hasInteractiveSlides && cours.slidesKey && SLIDE_IMAGE_SETS[cours.slidesKey] && (
+                    <div className="mt-4">
+                      <ImageCarouselViewer
+                        images={SLIDE_IMAGE_SETS[cours.slidesKey]}
+                        nom={cours.titre}
+                        onLastPageReached={() => markPageCompleted(currentPage)}
+                      />
+                    </div>
+                  )}
+
+                  {hasInteractiveSlides && cours.slidesKey && !SLIDE_IMAGE_SETS[cours.slidesKey] && (
+                    <div
+                      className="mt-4 w-full"
+                      style={{ aspectRatio: "16 / 9", maxHeight: "min(75vh, 620px)" }}
+                    >
                       <SlideViewer
                         slides={slidesByKey[cours.slidesKey] ?? []}
                         titre={cours.titre}
@@ -6736,6 +6749,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                       />
                     </div>
                   )}
+
                 </>
               );
             })()}
