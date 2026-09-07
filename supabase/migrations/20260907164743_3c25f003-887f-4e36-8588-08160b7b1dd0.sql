@@ -1,0 +1,1 @@
+GRANT SELECT, UPDATE ON public.quiz_question_sets TO sandbox_exec;
