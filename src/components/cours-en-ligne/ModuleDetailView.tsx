@@ -382,6 +382,8 @@ interface ExerciceQuestion {
   image?: string;
   imageSize?: ImageSize;
   _editedAt?: string;
+  // Information libre saisie par l'admin, affichée à l'apprenant après validation.
+  explication?: string;
   choix: ExerciceChoix[];
 }
 
