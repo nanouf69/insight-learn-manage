@@ -385,6 +385,7 @@ type ImageSize = "sm" | "md" | "lg" | "xl" | "2xl";
 
 interface ExerciceQuestion {
   id: number;
+  question_id?: string;
   enonce: string;
   image?: string;
   imageSize?: ImageSize;
@@ -479,6 +480,62 @@ const isAdminAuthoritativeQuizModule = (moduleId: number | string) =>
 // timestamps (resolveOverrideConflict) décide seule du gagnant.
 const getTrainerQuizIdsForModule = (moduleId: number | string) =>
   TRAINER_QUIZ_IDS_BY_MODULE_ID[Number(moduleId)] || [];
+
+const CANONICAL_QUIZ_IDS_BY_MODULE_ID: Record<number, string[]> = {
+  10: ["reglementation-nationale"],
+  24: ["reglementation-nationale"],
+  40: ["reglementation-nationale"],
+};
+
+interface CanonicalQuestionRow {
+  question_id: string;
+  quiz_id: string;
+  section_id: number;
+  legacy_question_id: number;
+  position: number;
+  enonce: string;
+  choix: ExerciceChoix[];
+  image: string | null;
+  image_size: string | null;
+  explication: string | null;
+  active: boolean;
+  updated_at: string;
+}
+
+const applyCanonicalQuestionsToModule = (
+  data: ModuleData,
+  rows: CanonicalQuestionRow[],
+): ModuleData => {
+  if (rows.length === 0) return data;
+  const bySection = new Map<number, CanonicalQuestionRow[]>();
+  for (const row of rows) {
+    const sectionRows = bySection.get(Number(row.section_id)) ?? [];
+    sectionRows.push(row);
+    bySection.set(Number(row.section_id), sectionRows);
+  }
+
+  let changed = false;
+  const exercices = data.exercices.map((exercise) => {
+    const sectionRows = bySection.get(Number(exercise.id));
+    if (!sectionRows) return exercise;
+    const questions = sectionRows
+      .filter((row) => row.active)
+      .sort((a, b) => Number(a.position) - Number(b.position) || Number(a.legacy_question_id) - Number(b.legacy_question_id))
+      .map((row) => ({
+        id: Number(row.legacy_question_id),
+        question_id: row.question_id,
+        enonce: row.enonce,
+        choix: Array.isArray(row.choix) ? row.choix : [],
+        ...(row.image ? { image: row.image } : {}),
+        ...(row.image_size ? { imageSize: row.image_size as ImageSize } : {}),
+        ...(row.explication ? { explication: row.explication } : {}),
+        _editedAt: row.updated_at,
+      }));
+    if (JSON.stringify(exercise.questions ?? []) !== JSON.stringify(questions)) changed = true;
+    return { ...exercise, questions };
+  });
+  return changed ? { ...data, exercices } : data;
+};
 
 const buildTrainerOverrideMap = (rows: any[] | null | undefined) => {
   const overrideMap = new Map<string, TrainerOverrideInfo>();
@@ -3639,6 +3696,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   // Trigger pour forcer la réapplication des overrides fournisseur après chaque
   // reload de moduleData depuis la DB (realtime, visibility, polling).
   const [trainerOverridesReapplyKey, setTrainerOverridesReapplyKey] = useState(0);
+  const [canonicalRefreshKey, setCanonicalRefreshKey] = useState(0);
   // Statut de la connexion Realtime (visible uniquement côté apprenant)
   const [realtimeStatus, setRealtimeStatus] = useState<string>("CONNECTING");
   const [realtimeReconnectKey, setRealtimeReconnectKey] = useState(0);
@@ -3868,7 +3926,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   useEffect(() => {
     // BUG #9 FIX: apply trainer overrides even when module_editor_state exists
     // Previously skipped when loadedModuleEditorState was truthy, making the two systems mutually exclusive
-    if (!studentOnly || !editorStateHydrated) return;
+    if (!studentOnly || !editorStateHydrated || CANONICAL_QUIZ_IDS_BY_MODULE_ID[Number(module.id)]) return;
 
     async function loadTrainerOverrides() {
       try {
@@ -3928,7 +3986,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   }, [studentOnly, module.id, apprenantType, editorStateHydrated, loadedModuleEditorState, trainerOverridesReapplyKey, lastDbUpdatedAt]);
 
   useEffect(() => {
-    if (studentOnly || !editorStateHydrated) return;
+    if (studentOnly || !editorStateHydrated || CANONICAL_QUIZ_IDS_BY_MODULE_ID[Number(module.id)]) return;
 
     async function loadTrainerOverrideWarnings() {
       const targetQuizIds = getTrainerQuizIdsForModule(module.id);
@@ -3989,6 +4047,47 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       return changed ? { ...prev, exercices } : prev;
     });
   }, [studentOnly, editorStateHydrated, module.id, trainerOverrideWarnings]);
+
+  // Réglementation Nationale : Admin et Apprenant lisent exactement les mêmes
+  // lignes canoniques que le Fournisseur. Les copies JSON du module ne servent
+  // plus qu'à conserver la structure du cours et les anciens identifiants.
+  useEffect(() => {
+    const quizIds = CANONICAL_QUIZ_IDS_BY_MODULE_ID[Number(module.id)];
+    if (!editorStateHydrated || !quizIds?.length) return;
+    let cancelled = false;
+
+    const loadCanonicalQuestions = async () => {
+      const { data, error } = await supabase
+        .from("quiz_questions")
+        .select("question_id,quiz_id,section_id,legacy_question_id,position,enonce,choix,image,image_size,explication,active,updated_at")
+        .in("quiz_id", quizIds)
+        .order("section_id")
+        .order("position");
+      if (cancelled) return;
+      if (error) {
+        console.error("[CanonicalQuiz] Lecture impossible", error);
+        return;
+      }
+      setModuleData((previous) => applyCanonicalQuestionsToModule(previous, (data ?? []) as unknown as CanonicalQuestionRow[]));
+      setLastSyncAt(new Date());
+    };
+
+    void loadCanonicalQuestions();
+    const channel = supabase
+      .channel(`canonical-module-${module.id}-${canonicalRefreshKey}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "quiz_questions" }, (payload) => {
+        const row = (payload.new ?? payload.old) as { quiz_id?: string } | null;
+        if (!row?.quiz_id || quizIds.includes(row.quiz_id)) void loadCanonicalQuestions();
+      })
+      .subscribe();
+    const onFocus = () => void loadCanonicalQuestions();
+    window.addEventListener("focus", onFocus);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("focus", onFocus);
+      void supabase.removeChannel(channel);
+    };
+  }, [editorStateHydrated, module.id, canonicalRefreshKey]);
 
   useEffect(() => {
     const initialData = getInitialModuleData(module, apprenantType, studentOnly);
@@ -4502,10 +4601,12 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       }
     };
 
-    // Handle trainer quiz_questions_overrides changes in realtime
+      // Handle legacy trainer overrides for quizzes not yet canonicalized.
     const handleTrainerOverrideChange = async (payload: any) => {
       const fetchStartedAt = Date.now();
-      const targetQuizIds = getTrainerQuizIdsForModule(module.id);
+      const targetQuizIds = CANONICAL_QUIZ_IDS_BY_MODULE_ID[Number(module.id)]
+        ? []
+        : getTrainerQuizIdsForModule(module.id);
 
       if (targetQuizIds.length === 0) return;
 
@@ -5052,6 +5153,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         p_exercises: (normalizedModuleData.exercices ?? []) as any,
       });
       if (canonicalSyncError) throw canonicalSyncError;
+      if (CANONICAL_QUIZ_IDS_BY_MODULE_ID[Number(dataToSave.module_id)]) {
+        setCanonicalRefreshKey((key) => key + 1);
+      }
 
       // Sync shared exercises to ALL sibling modules (handles edits, adds, deletes).
       // On transmet l'état précédent : seuls les exercices RÉELLEMENT modifiés
@@ -5334,10 +5438,13 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         // Stamp _editedAt on questions that actually changed (for admin vs fournisseur conflict resolution)
           const stampedQuestions = questions.map(q => {
           const prevQ = e.questions?.find(pq => pq.id === q.id);
+          const previousPosition = e.questions?.findIndex((pq) => pq.id === q.id) ?? -1;
+          const nextPosition = questions.findIndex((candidate) => candidate.id === q.id);
           const changed = !prevQ ||
             prevQ.enonce !== q.enonce ||
             JSON.stringify(prevQ.choix) !== JSON.stringify(q.choix) ||
-            (prevQ as any).image !== (q as any).image;
+            (prevQ as any).image !== (q as any).image ||
+            previousPosition !== nextPosition;
           // Mark as manually_edited when admin changes the question, so the cross-module
           // propagation system never overwrites it. Once true, the flag is preserved.
             if (changed) return { ...q, _editedAt: now, manually_edited: true } as any;
