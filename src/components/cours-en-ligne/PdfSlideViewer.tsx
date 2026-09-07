@@ -521,27 +521,28 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
                   id={`pdf-page-${page}`}
                   data-pdf-page={page}
                   className="flex justify-center"
-                  style={{ width: Math.max(280, containerWidth * zoom) }}
+                  style={{ width: fitPageWidth }}
                 >
                   <div
                     className="overflow-hidden rounded-md bg-background/40"
                     style={{
-                      width: Math.max(280, containerWidth * zoom),
-                      minHeight: Math.max(220, Math.max(280, containerWidth * zoom) / pageAspectRatio),
+                      width: fitPageWidth,
+                      minHeight: Math.max(220, fitPageWidth / pageAspectRatio),
                       aspectRatio: pageAspectRatio,
                     }}
                   >
                     <Page
                       pageNumber={page}
-                      width={Math.max(280, containerWidth * zoom)}
+                      width={fitPageWidth}
                       renderTextLayer={false}
                       renderAnnotationLayer={false}
                       loading={<div className="flex min-h-[220px] items-center justify-center text-sm text-muted-foreground">Chargement de la slide {page}…</div>}
-                      devicePixelRatio={typeof window !== "undefined" ? 1.25 : 1.5}
+                      devicePixelRatio={typeof window !== "undefined" ? Math.min(window.devicePixelRatio || 1, 2) : 1.5}
                     />
                   </div>
                 </div>
               ) : (
+
                 Array.from({ length: numPages }, (_, index) => {
                   const pageNumber = index + 1;
                   const shouldRenderPage = Math.abs(pageNumber - page) <= 1;
