@@ -4984,11 +4984,14 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         "ModuleDetailView.performDbSave",
       );
 
-      // Sync shared exercises to ALL sibling modules (handles edits, adds, deletes)
+      // Sync shared exercises to ALL sibling modules (handles edits, adds, deletes).
+      // On transmet l'état précédent : seuls les exercices RÉELLEMENT modifiés
+      // par cette sauvegarde sont propagés, jamais l'intégralité du module.
       await syncSharedExercisesToSiblingModules(
         dataToSave.module_id,
-        normalizedModuleData.exercices ?? [],
+        (normalizedModuleData.exercices ?? []) as any,
         (dataToSave.deleted_exercices ?? []).map((e: any) => e.id),
+        (previousModuleData?.exercices ?? null) as any,
       );
 
       // Aucun miroir VTC↔TAXI automatique ici : chaque écriture implicite sur un
