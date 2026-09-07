@@ -1195,6 +1195,32 @@ export function ExamenReussitePage() {
     },
   });
 
+  // Statut de suivi provenant des sessions (source unique : session_apprenants)
+  const apprenantIdsExamen = (apprenants || []).map((a: any) => a.id);
+  const { data: statutsSession } = useQuery({
+    queryKey: ['statuts-session-examen', selectedExamDate, apprenantIdsExamen.length],
+    enabled: apprenantIdsExamen.length > 0,
+    queryFn: async () => {
+      const map: Record<string, { sessionApprenantId: string; statut: string | null }> = {};
+      const chunkSize = 100;
+      for (let i = 0; i < apprenantIdsExamen.length; i += chunkSize) {
+        const chunk = apprenantIdsExamen.slice(i, i + chunkSize);
+        const { data, error } = await supabase
+          .from('session_apprenants')
+          .select('id, apprenant_id, statut_suivi, created_at')
+          .in('apprenant_id', chunk)
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        for (const row of data || []) {
+          const key = (row as any).apprenant_id as string;
+          if (!key) continue;
+          if (!map[key]) map[key] = { sessionApprenantId: (row as any).id, statut: (row as any).statut_suivi ?? null };
+        }
+      }
+      return map;
+    },
+  });
+
   const { data: allApprenants } = useQuery({
     queryKey: ['all-apprenants'],
     queryFn: async () => {
