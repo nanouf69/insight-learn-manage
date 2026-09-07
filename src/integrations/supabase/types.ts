@@ -336,6 +336,7 @@ export type Database = {
           details: Json | null
           id: string
           module_id: number
+          pages_completees: Json
           progress: number
           score_max: number | null
           score_obtenu: number | null
@@ -349,6 +350,7 @@ export type Database = {
           details?: Json | null
           id?: string
           module_id: number
+          pages_completees?: Json
           progress?: number
           score_max?: number | null
           score_obtenu?: number | null
@@ -362,6 +364,7 @@ export type Database = {
           details?: Json | null
           id?: string
           module_id?: number
+          pages_completees?: Json
           progress?: number
           score_max?: number | null
           score_obtenu?: number | null
@@ -3625,6 +3628,7 @@ export type Database = {
           details: Json | null
           id: string
           module_id: number
+          pages_completees: Json
           progress: number
           score_max: number | null
           score_obtenu: number | null
@@ -3650,6 +3654,34 @@ export type Database = {
         Returns: {
           updated_at: string
         }[]
+      }
+      save_module_pages_progress: {
+        Args: {
+          _apprenant_id: string
+          _module_id: number
+          _pages: Json
+          _progress?: number
+        }
+        Returns: {
+          apprenant_id: string
+          completed_at: string
+          created_at: string
+          details: Json | null
+          id: string
+          module_id: number
+          pages_completees: Json
+          progress: number
+          score_max: number | null
+          score_obtenu: number | null
+          status: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "apprenant_module_completion"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       search_apprenant_onboarding: {
         Args: { p_nom: string; p_prenom: string }
