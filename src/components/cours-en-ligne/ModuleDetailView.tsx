@@ -5237,6 +5237,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           }
           (exercise.questions ?? []).forEach((question, index) => {
             const current = rowByKey.get(`${binding.quiz_id}:${binding.section_id}:${question.id}`);
+            // Une ligne canonique inactive est une suppression définitive. Une ancienne
+            // copie encore présente dans module_editor_state ne doit jamais devenir un
+            // upsert implicite susceptible de la réactiver.
+            if (current && !current.active) return;
             const nextComparable = {
               position: index + 1,
               enonce: question.enonce,
