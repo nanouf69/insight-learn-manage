@@ -1,0 +1,1 @@
+REVOKE INSERT, UPDATE ON public.quiz_questions FROM authenticated;

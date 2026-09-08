@@ -1,0 +1,1 @@
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM public.quiz_questions WHERE active = false) THEN RAISE EXCEPTION 'expected_deleted_questions_missing'; END IF; END $$;

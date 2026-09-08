@@ -1,0 +1,1 @@
+DO $$ BEGIN IF EXISTS (SELECT 1 FROM public.quiz_questions WHERE active = false AND source IS NULL) THEN NULL; END IF; END $$;

@@ -1,0 +1,1 @@
+COMMENT ON FUNCTION public.sync_admin_canonical_quiz_questions(integer, jsonb) IS 'Synchronise les éditions Admin vers la source canonique sans jamais réactiver une question inactive. Une réactivation exige une action explicite via save_canonical_quiz_question.';

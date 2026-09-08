@@ -1,0 +1,2 @@
+REVOKE EXECUTE ON FUNCTION public.sync_admin_canonical_quiz_questions(integer, jsonb) FROM authenticated;
+GRANT EXECUTE ON FUNCTION public.sync_admin_canonical_quiz_questions(integer, jsonb) TO service_role;
