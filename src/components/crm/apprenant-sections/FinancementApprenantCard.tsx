@@ -75,6 +75,68 @@ export function FinancementApprenantCard({ apprenant }: Props) {
   const [paiements, setPaiements] = useState<any[]>([]);
   const [virements, setVirements] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({
+    date_paiement: new Date().toISOString().slice(0, 10),
+    montant: "",
+    moyen_paiement: "Virement bancaire",
+    notes: "",
+  });
+
+  const refreshPaiements = async () => {
+    const { data } = await supabase
+      .from("apprenant_paiements")
+      .select("id, montant, moyen_paiement, date_paiement, notes")
+      .eq("apprenant_id", apprenant.id)
+      .order("date_paiement", { ascending: false });
+    setPaiements(data ?? []);
+  };
+
+  const handleAddPaiement = async () => {
+    const montant = Number(String(form.montant).replace(",", "."));
+    if (!form.date_paiement) {
+      toast.error("Indiquez la date du paiement.");
+      return;
+    }
+    if (!Number.isFinite(montant) || montant <= 0) {
+      toast.error("Indiquez un montant supérieur à 0.");
+      return;
+    }
+    setSaving(true);
+    const { error } = await supabase.from("apprenant_paiements").insert({
+      apprenant_id: apprenant.id,
+      date_paiement: form.date_paiement,
+      montant,
+      moyen_paiement: form.moyen_paiement,
+      notes: form.notes.trim() || null,
+    });
+    setSaving(false);
+    if (error) {
+      toast.error(`Enregistrement impossible : ${error.message}`);
+      return;
+    }
+    toast.success("Paiement enregistré.");
+    setShowForm(false);
+    setForm({
+      date_paiement: new Date().toISOString().slice(0, 10),
+      montant: "",
+      moyen_paiement: "Virement bancaire",
+      notes: "",
+    });
+    await refreshPaiements();
+  };
+
+  const handleDeletePaiement = async (id: string) => {
+    const { error } = await supabase.from("apprenant_paiements").delete().eq("id", id);
+    if (error) {
+      toast.error(`Suppression impossible : ${error.message}`);
+      return;
+    }
+    toast.success("Paiement supprimé.");
+    await refreshPaiements();
+  };
+
 
   const organismeCode = String(apprenant?.organisme_financeur || "").toLowerCase().trim();
   const rawModeCode = String(apprenant?.mode_financement || "").toLowerCase().trim();
