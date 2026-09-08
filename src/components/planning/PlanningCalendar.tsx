@@ -402,6 +402,64 @@ export function PlanningCalendar() {
     return () => { cancelled = true; };
   }, [viewYear, viewMonth, refreshKey]);
 
+  // Impression d'une semaine entière (7 jours) en une seule page
+  const handlePrintWeek = (week: WeekInfo) => {
+    const esc = (s: string) => (s || '').replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c] as string));
+    const dayHtml = (day: DayInfo) => {
+      let rows = '';
+      if (day.expectedType === 'examen') {
+        const sorted = [...day.examCandidates].sort((a, b) => a.heure.localeCompare(b.heure));
+        rows = sorted.length
+          ? sorted
+              .map(
+                (c) =>
+                  `<tr><td class="h">${esc(c.heure)}</td><td>${esc(c.name)} <span class="t">(${esc(c.type)})</span></td><td class="tel">${esc(c.telephone || '')}</td></tr>`
+              )
+              .join('')
+          : '<tr><td colspan="3" class="empty">Aucun candidat programmé</td></tr>';
+      } else {
+        const sorted = [...day.reservedCandidates].sort((a, b) => (a.heure || '').localeCompare(b.heure || ''));
+        rows = sorted.length
+          ? sorted
+              .map(
+                (c) =>
+                  `<tr><td class="h">${esc((c.heure || '').slice(0, 5))}</td><td>${esc(c.name)}</td><td class="tel">${esc(c.telephone || '')}</td></tr>`
+              )
+              .join('')
+          : '<tr><td colspan="3" class="empty">Aucune réservation</td></tr>';
+      }
+      const titre =
+        day.expectedType === 'examen'
+          ? 'Examens pratiques'
+          : `Formation pratique ${day.expectedType === 'vtc' ? 'VTC' : 'TAXI'}`;
+      return `<div class="day"><div class="dh">${esc(day.label)}</div><div class="dt">${titre}</div><table>${rows}</table></div>`;
+    };
+    const html = `<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Planning ${esc(week.label)}</title>
+<style>
+@page { size: A4 landscape; margin: 10mm; }
+body { font-family: Arial, Helvetica, sans-serif; color:#111; }
+h1 { font-size: 16px; margin: 0 0 8px; }
+.grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+.day { border: 1px solid #999; border-radius: 4px; padding: 5px; page-break-inside: avoid; }
+.dh { font-weight: bold; font-size: 11px; text-align:center; border-bottom:1px solid #ccc; padding-bottom:3px; margin-bottom:3px; }
+.dt { font-size: 9px; font-weight: bold; color:#b91c1c; margin-bottom:3px; }
+table { width:100%; border-collapse: collapse; }
+td { font-size: 9px; padding: 1px 2px; vertical-align: top; border-bottom: 1px dotted #ddd; }
+td.h { width: 30px; font-weight: bold; color:#444; }
+td.tel { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.t { color:#666; }
+.empty { font-style: italic; color:#888; }
+</style></head><body><h1>${esc(currentMonth)} — ${esc(week.label)}</h1><div class="grid">${week.days.map(dayHtml).join('')}</div>
+<script>window.onload=function(){window.print();}<\/script></body></html>`;
+    const win = window.open('', '_blank', 'width=1200,height=800');
+    if (!win) {
+      toast.error("Autorisez les fenêtres pop-up pour imprimer le planning");
+      return;
+    }
+    win.document.write(html);
+    win.document.close();
+  };
+
   if (loading) {
     return <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>;
   }
