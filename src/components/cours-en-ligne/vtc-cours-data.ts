@@ -58,6 +58,7 @@ const MATIERE_A: ContentItem[] = [
     sousTitre: "Transport public, loi LOTI, taxis, VTC, VMDTR, assurances, formation continue",
     fichiers: [
       { nom: "PDF HD Partie 1", url: "/cours/vtc/A_T3P_1.pdf?v=20260819-1732" },
+      { nom: "PowerPoint Partie 1", url: "/cours/vtc/A_T3P_partie_1.pptx?v=20260908-1500" },
     ],
   },
   {
@@ -66,6 +67,7 @@ const MATIERE_A: ContentItem[] = [
     sousTitre: "Suite de la réglementation T3P",
     fichiers: [
       { nom: "PDF HD Partie 2", url: "/cours/vtc/A_T3P_2.pdf?v=20260819-1732" },
+      { nom: "PowerPoint Partie 2", url: "/cours/vtc/A_T3P_partie_2.pptx?v=20260908-1500" },
     ],
   },
 ];
@@ -81,6 +83,7 @@ const MATIERE_B: ContentItem[] = [
     sousTitre: "Entrepreneurs et Formes Juridiques",
     fichiers: [
       { nom: "PDF HD Partie 1", url: "/cours/vtc/B_Gestion_1.pdf?v=20260819-1732" },
+      { nom: "PowerPoint Partie 1", url: "/cours/vtc/B_Gestion_partie_1.pptx?v=20260908-1500" },
     ],
   },
   {
@@ -89,6 +92,7 @@ const MATIERE_B: ContentItem[] = [
     sousTitre: "Comptabilité et Fiscalité",
     fichiers: [
       { nom: "PDF HD Partie 2", url: "/cours/vtc/B_Gestion_2.pdf?v=20260819-1732" },
+      { nom: "PowerPoint Partie 2", url: "/cours/vtc/B_Gestion_partie_2.pptx?v=20260908-1500" },
     ],
   },
   {
@@ -97,6 +101,7 @@ const MATIERE_B: ContentItem[] = [
     sousTitre: "Gestion financière et Administrative",
     fichiers: [
       { nom: "PDF HD Partie 3", url: "/cours/vtc/B_Gestion_3.pdf?v=20260819-1732" },
+      { nom: "PowerPoint Partie 3", url: "/cours/vtc/B_Gestion_partie_3.pptx?v=20260908-1500" },
     ],
   },
 ];
@@ -112,6 +117,7 @@ const MATIERE_C: ContentItem[] = [
     sousTitre: "Sécurité routière et prévention des risques",
     fichiers: [
       { nom: "PDF HD Partie 1", url: "/cours/vtc/C_Securite_Routiere_1.pdf?v=20260819-1732" },
+      { nom: "PowerPoint Partie 1", url: "/cours/vtc/C_Securite_Routiere_FINAL_1.pptx?v=20260908-1500" },
     ],
   },
   {
@@ -120,6 +126,7 @@ const MATIERE_C: ContentItem[] = [
     sousTitre: "Sécurité routière (suite)",
     fichiers: [
       { nom: "PDF HD Partie 2", url: "/cours/vtc/C_Securite_Routiere_2.pdf?v=20260819-1732" },
+      { nom: "PowerPoint Partie 2", url: "/cours/vtc/C_Securite_Routiere_FINAL_2.pptx?v=20260908-1500" },
     ],
   },
   {
@@ -128,6 +135,7 @@ const MATIERE_C: ContentItem[] = [
     sousTitre: "Sécurité routière (fin)",
     fichiers: [
       { nom: "PDF HD Partie 3", url: "/cours/vtc/C_Securite_Routiere_3.pdf?v=20260819-1732" },
+      { nom: "PowerPoint Partie 3", url: "/cours/vtc/C_Securite_Routiere_FINAL_3.pptx?v=20260908-1500" },
     ],
   },
 ];
@@ -143,6 +151,7 @@ const MATIERE_D: ContentItem[] = [
     sousTitre: "Expression et compréhension écrite",
     fichiers: [
       { nom: "PDF HD Français", url: "/cours/vtc/D_Francais_1.pdf" },
+      { nom: "PowerPoint Français", url: "/cours/vtc/D_Francais_VTC.pptx?v=20260908-1500" },
     ],
   },
 ];
@@ -158,6 +167,7 @@ const MATIERE_E: ContentItem[] = [
     sousTitre: "Expression et compréhension en anglais",
     fichiers: [
       { nom: "PDF HD Partie 1", url: "/cours/vtc/E_Anglais_1.pdf" },
+      { nom: "PowerPoint Anglais", url: "/cours/vtc/E_Anglais_VTC.pptx?v=20260908-1500" },
     ],
   },
   {
@@ -197,6 +207,7 @@ const MATIERE_F: ContentItem[] = [
     sousTitre: "Marketing et développement commercial VTC",
     fichiers: [
       { nom: "PDF HD Développement Commercial", url: "/cours/vtc/G_Marketing_1.pdf?v=20260820-1736" },
+      { nom: "PowerPoint Développement Commercial", url: "/cours/vtc/G_Marketing_Dev_Commercial.pptx?v=20260908-1500" },
     ],
   },
 ];
