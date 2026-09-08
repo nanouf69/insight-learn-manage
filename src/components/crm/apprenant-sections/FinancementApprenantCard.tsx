@@ -253,21 +253,106 @@ export function FinancementApprenantCard({ apprenant }: Props) {
           </div>
         </div>
 
-        {paiements.length > 0 && (
-          <div className="pt-2 border-t">
-            <p className="text-sm text-muted-foreground mb-2">Paiements enregistrés ({paiements.length})</p>
+        <div className="pt-2 border-t space-y-3">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm text-muted-foreground">
+              Paiements enregistrés ({paiements.length})
+            </p>
+            <Button size="sm" variant="outline" className="gap-1" onClick={() => setShowForm((v) => !v)}>
+              <Plus className="w-4 h-4" />
+              {showForm ? "Annuler" : "Ajouter un paiement"}
+            </Button>
+          </div>
+
+          {showForm && (
+            <div className="rounded-lg border p-3 space-y-3">
+              <div className="space-y-1">
+                <Label htmlFor="paiement-date">Date du paiement</Label>
+                <Input
+                  id="paiement-date"
+                  type="date"
+                  className="w-full"
+                  value={form.date_paiement}
+                  onChange={(e) => setForm((f) => ({ ...f, date_paiement: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="paiement-montant">Montant (€)</Label>
+                <Input
+                  id="paiement-montant"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  inputMode="decimal"
+                  placeholder="Ex : 300"
+                  className="w-full"
+                  value={form.montant}
+                  onChange={(e) => setForm((f) => ({ ...f, montant: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label>Moyen de paiement</Label>
+                <Select
+                  value={form.moyen_paiement}
+                  onValueChange={(value) => setForm((f) => ({ ...f, moyen_paiement: value }))}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Choisir" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background z-50">
+                    {MOYENS_PAIEMENT.map((m) => (
+                      <SelectItem key={m} value={m}>
+                        {m}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="paiement-notes">Note (facultatif)</Label>
+                <Input
+                  id="paiement-notes"
+                  className="w-full"
+                  placeholder="Ex : acompte, référence virement…"
+                  value={form.notes}
+                  onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
+                />
+              </div>
+              <Button className="w-full" disabled={saving} onClick={handleAddPaiement}>
+                {saving ? "Enregistrement…" : "Enregistrer le paiement"}
+              </Button>
+            </div>
+          )}
+
+          {paiements.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Aucun paiement enregistré pour le moment.</p>
+          ) : (
             <div className="space-y-1">
               {paiements.map((p) => (
-                <div key={p.id} className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">
+                <div key={p.id} className="flex items-center justify-between gap-2 text-sm">
+                  <span className="text-muted-foreground truncate">
                     {p.date_paiement ? format(parseISO(p.date_paiement), "dd MMM yyyy", { locale: fr }) : "-"}
                     {p.moyen_paiement ? ` · ${p.moyen_paiement}` : ""}
+                    {p.notes ? ` · ${p.notes}` : ""}
                   </span>
-                  <span className="font-medium">{fmt(Number(p.montant || 0))}</span>
+                  <span className="flex items-center gap-1 whitespace-nowrap">
+                    <span className="font-medium">{fmt(Number(p.montant || 0))}</span>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                      title="Supprimer ce paiement"
+                      onClick={() => handleDeletePaiement(p.id)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </span>
                 </div>
               ))}
             </div>
-          </div>
+          )}
+        </div>
+
         )}
 
         {isPersonnel && (
