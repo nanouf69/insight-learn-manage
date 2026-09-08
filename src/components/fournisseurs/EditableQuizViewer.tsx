@@ -7,6 +7,7 @@ import { ChevronDown, ChevronUp, CheckCircle2, Edit2, Save, X, Plus, Trash2 } fr
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { toggleCorrect as toggleCorrectUtil, validateQuestionEdit, type QuizChoice as UtilQuizChoice } from "./quiz-editor-utils";
+import { applyCanonicalRowsToSections } from "./canonical-quiz-sections";
 
 interface QuizChoice {
   lettre: string;
@@ -73,19 +74,10 @@ export function EditableQuizViewer({ sections: sourceSections, title, icon = "ðŸ
     return () => { cancelled = true; window.removeEventListener("focus", onFocus); window.clearInterval(interval); supabase.removeChannel(channel); };
   }, [quizId, fournisseurToken]);
 
-  const sections = useMemo(() => sourceSections.map(section => {
-    const rows = canonicalQuestions
-      .filter(row => Number(row.section_id) === Number(section.id) && row.active)
-      .sort((a, b) => Number(a.position) - Number(b.position));
-    return rows.length ? { ...section, questions: rows.map(row => ({
-      id: Number(row.legacy_question_id),
-      question_id: row.question_id,
-      enonce: row.enonce,
-      choix: row.choix as QuizChoice[],
-      _editedAt: row.updated_at,
-      manually_edited: true,
-    })) } : section;
-  }), [sourceSections, canonicalQuestions]);
+  const sections = useMemo(
+    () => applyCanonicalRowsToSections(sourceSections, canonicalQuestions),
+    [sourceSections, canonicalQuestions],
+  );
 
 
   const toggle = (id: number) => {
