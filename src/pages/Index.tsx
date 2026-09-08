@@ -33,6 +33,7 @@ import { SmallTransfersTable } from "@/components/dashboard/SmallTransfersTable"
 import { PersonalFinancingTransfersTable } from "@/components/dashboard/PersonalFinancingTransfersTable";
 import { ApprenantQuestionsPanel } from "@/components/dashboard/ApprenantQuestionsPanel";
 import { EmargementsManquants } from "@/components/dashboard/EmargementsManquants";
+import { ElearningSansPratique } from "@/components/dashboard/ElearningSansPratique";
 import { EmargementsFinFormation } from "@/components/dashboard/EmargementsFinFormation";
 import { CodesAccesEnvoyes } from "@/components/dashboard/CodesAccesEnvoyes";
 import { DashboardTasks } from "@/components/dashboard/DashboardTasks";
