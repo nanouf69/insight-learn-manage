@@ -171,6 +171,12 @@ export default function FilePreviewDialog({ url, nom }: Props) {
                   loading="eager"
                 />
               </div>
+            ) : isOffice && officeEmbedUrl ? (
+              <iframe
+                src={officeEmbedUrl}
+                title={nom || "Aperçu du document"}
+                className="w-full h-full min-h-[70vh] border-0 bg-white"
+              />
             ) : (
               <div className="h-full flex flex-col items-center justify-center gap-3 p-6 text-center text-sm text-muted-foreground">
                 <p>Ce format ne peut pas être affiché directement dans le navigateur.</p>
