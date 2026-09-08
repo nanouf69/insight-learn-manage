@@ -205,11 +205,23 @@ export function FinancementApprenantCard({ apprenant, onNavigateToComptabilite }
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-start justify-between gap-2">
         <CardTitle className="flex items-center gap-2">
           <Banknote className="w-5 h-5" />
           Financement & paiements
         </CardTitle>
+        {onNavigateToComptabilite && (
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-1 shrink-0"
+            onClick={onNavigateToComptabilite}
+            title="Voir la facturation"
+          >
+            <FileText className="w-4 h-4" />
+            Facturation
+          </Button>
+        )}
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
