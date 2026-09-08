@@ -6574,6 +6574,14 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         });
       });
       scheduleAnswerScrollRestore();
+      trackQuestion({
+        moduleId: module.id,
+        moduleNom: module.nom,
+        exerciceId: String(exoId),
+        questionKey: ansKey,
+        questionNum: qId,
+        answered: true,
+      });
     };
 
     const handleQrcAnswerChange = (key: string, value: string) => {
