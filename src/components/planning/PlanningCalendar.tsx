@@ -618,6 +618,9 @@ td.tel { white-space: nowrap; font-variant-numeric: tabular-nums; }
                               {candidates.map((c, i) => (
                                 <span key={i} className={`text-xs leading-tight block ${c.type === 'TAXI' ? 'text-amber-600' : 'text-primary'}`}>
                                   {c.name} <span className="text-[10px] font-medium">({c.type})</span>
+                                  {c.telephone && (
+                                    <span className="block text-[10px] text-muted-foreground font-medium">☎ {c.telephone}</span>
+                                  )}
                                 </span>
                               ))}
                             </div>
