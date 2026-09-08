@@ -565,6 +565,13 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
                     ? `${t.done} / ${t.req} modules réalisés`
                     : `${t.done.toFixed(1)}h / ${t.req}h`}
                 </div>
+                {t.strong && (
+                  <div className={`mt-0.5 text-xs font-medium ${taux.premiereActiviteAt ? "text-primary" : "text-muted-foreground"}`}>
+                    {taux.premiereActiviteAt
+                      ? `Début des cours le ${new Date(taux.premiereActiviteAt).toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" })}`
+                      : "Aucune activité commencée"}
+                  </div>
+                )}
               </div>
             ))}
           </div>

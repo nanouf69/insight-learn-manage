@@ -93,8 +93,46 @@ export function CodesAccesEnvoyes({ onNavigateToApprenant }: Props) {
 
       const apprenantById = new Map((apprenants || []).map((a) => [a.id, a]));
 
+      // 2b) Première activité pédagogique réelle par apprenant
+      // (ouverture de module/section/cours, exercice terminé ou quiz terminé —
+      // JAMAIS une simple connexion à la page d'accueil)
+      const firstActByApprenant = new Map<string, number>();
+      const keepMin = (id: string, ts: number) => {
+        if (Number.isNaN(ts)) return;
+        const cur = firstActByApprenant.get(id);
+        if (cur === undefined || ts < cur) firstActByApprenant.set(id, ts);
+      };
+      const [actRows, exoRows, quizRows] = await Promise.all([
+        supabase
+          .from("apprenant_module_activites")
+          .select("apprenant_id, module_nom, action_type, occurred_at")
+          .in("apprenant_id", apprenantIds)
+          .in("action_type", ["open_module", "open_section", "open_cours"])
+          .order("occurred_at", { ascending: true })
+          .limit(5000),
+        supabase
+          .from("reponses_apprenants")
+          .select("apprenant_id, updated_at")
+          .in("apprenant_id", apprenantIds)
+          .eq("completed", true)
+          .order("updated_at", { ascending: true })
+          .limit(5000),
+        supabase
+          .from("apprenant_quiz_results")
+          .select("apprenant_id, completed_at")
+          .in("apprenant_id", apprenantIds)
+          .order("completed_at", { ascending: true })
+          .limit(5000),
+      ]);
+      for (const a of actRows.data || []) {
+        if (a.module_nom && /accueil|liste\s+des\s+modules/i.test(a.module_nom)) continue;
+        keepMin(a.apprenant_id, Date.parse(a.occurred_at));
+      }
+      for (const e of exoRows.data || []) keepMin(e.apprenant_id, Date.parse(e.updated_at));
+      for (const q of quizRows.data || []) keepMin(q.apprenant_id, Date.parse(q.completed_at));
+
       // 3) Fusion : un seul enregistrement par apprenant/jour (le plus récent)
-      const byDay = new Map<string, Map<string, { sentAt: string; apprenant: any }>>();
+      const byDay = new Map<string, Map<string, { sentAt: string; apprenant: any; firstActAt: string | null }>>();
 
       for (const email of emails) {
         const apprenant = apprenantById.get(email.apprenant_id);
@@ -106,7 +144,14 @@ export function CodesAccesEnvoyes({ onNavigateToApprenant }: Props) {
 
         const existing = dayMap.get(apprenant.id);
         if (!existing || new Date(email.sent_at) > new Date(existing.sentAt)) {
-          dayMap.set(apprenant.id, { sentAt: email.sent_at, apprenant });
+          dayMap.set(apprenant.id, {
+            sentAt: email.sent_at,
+            apprenant,
+            firstActAt: (() => {
+              const ts = firstActByApprenant.get(apprenant.id);
+              return ts !== undefined ? new Date(ts).toISOString() : null;
+            })(),
+          });
         }
       }
 
@@ -188,7 +233,7 @@ export function CodesAccesEnvoyes({ onNavigateToApprenant }: Props) {
                 </Badge>
               </div>
               <div className="space-y-2">
-                {rows.map(({ apprenant: a, sentAt }) => {
+                {rows.map(({ apprenant: a, sentAt, firstActAt }) => {
                   const typeLabel =
                     typeLabels[a.type_apprenant || ""] || a.type_apprenant || "-";
                   const typeColor =
@@ -225,6 +270,11 @@ export function CodesAccesEnvoyes({ onNavigateToApprenant }: Props) {
                       <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
                         <span className="font-medium text-emerald-700">
                           Envoyé à {time}
+                        </span>
+                        <span className={firstActAt ? "font-medium text-foreground" : ""}>
+                          {firstActAt
+                            ? `Commencé le ${new Date(firstActAt).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" })}`
+                            : "Pas encore commencé"}
                         </span>
                         {a.email && (
                           <a

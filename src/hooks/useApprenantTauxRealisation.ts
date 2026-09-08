@@ -18,6 +18,8 @@ export interface TauxRealisation {
   pctElearning: number;
   pctPresentiel: number;
   pctTotal: number;
+  /** Date/heure de la PREMIÈRE activité pédagogique réelle (jamais une simple connexion) */
+  premiereActiviteAt: string | null;
 }
 
 const pct = (d: number, r: number) => (r > 0 ? Math.min(100, Math.round((d / r) * 100)) : 0);
@@ -169,6 +171,7 @@ export function useApprenantTauxRealisation(apprenantId?: string, apprenantProp?
         pctElearning: pct(doneElearning, reqElearning),
         pctPresentiel: pct(donePresentiel, reqPresentiel),
         pctTotal: pct(doneElearning + donePresentiel, reqTotal),
+        premiereActiviteAt: pedagogicalActTs.length > 0 ? new Date(pedagogicalActTs[0]).toISOString() : null,
       };
     },
   });
