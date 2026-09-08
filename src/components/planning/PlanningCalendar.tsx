@@ -579,7 +579,19 @@ td.tel { white-space: nowrap; font-variant-numeric: tabular-nums; }
 
       {weeks.map((week) => (
         <div key={week.label} className="space-y-3">
-          <h3 className="text-base font-semibold text-foreground italic">{week.label}</h3>
+          <div className="flex items-center justify-between gap-3">
+            <h3 className="text-base font-semibold text-foreground italic">{week.label}</h3>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 text-xs"
+              onClick={() => handlePrintWeek(week)}
+              title="Imprimer les 7 jours de la semaine en une seule fois"
+            >
+              <Printer className="h-3.5 w-3.5" />
+              Imprimer la semaine
+            </Button>
+          </div>
           <div className="grid grid-cols-7 gap-3">
             {week.days.map((day) => (
               <div
