@@ -537,8 +537,9 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
       {/* Taux de réalisation (mêmes valeurs que le relevé de connexions) */}
       {taux && (
         <div className="w-full rounded-lg border bg-card shadow-sm px-4 py-3">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {[
+              { label: "Modules (jalons)", pct: taux.modulesTotal > 0 ? Math.round((taux.modulesCompleted / taux.modulesTotal) * 100) : 0, done: taux.modulesCompleted, req: taux.modulesTotal, strong: false, unit: "modules" },
               { label: "Taux e-learning", pct: taux.pctElearning, done: taux.doneElearning, req: taux.reqElearning, strong: false },
               { label: "Taux présentiel", pct: taux.pctPresentiel, done: taux.donePresentiel, req: taux.reqPresentiel, strong: false },
               { label: "TAUX TOTAL", pct: taux.pctTotal, done: taux.doneElearning + taux.donePresentiel, req: taux.reqTotal, strong: true },
@@ -560,7 +561,9 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
                   />
                 </div>
                 <div className="mt-1 text-xs text-muted-foreground">
-                  {t.done.toFixed(1)}h / {t.req}h
+                  {(t as any).unit === "modules"
+                    ? `${t.done} / ${t.req} modules réalisés`
+                    : `${t.done.toFixed(1)}h / ${t.req}h`}
                 </div>
               </div>
             ))}
