@@ -81,7 +81,7 @@ const MATIERE_LOCALE: ContentItem[] = [
     titre: "F. RÉGLEMENTATION LOCALE — Partie 3",
     sousTitre: "Réglementation locale (fin)",
     fichiers: [
-      { nom: "PDF HD Partie 3", url: "/cours/vtc/F_Locale_3.pdf?v=20260908-1230" },
+      { nom: "PDF HD Partie 3", url: "/cours/vtc/F_Locale_3.pdf?v=20260908-1400" },
     ],
   },
 ];
