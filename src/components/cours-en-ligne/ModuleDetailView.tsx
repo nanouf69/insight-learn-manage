@@ -26,6 +26,7 @@ import {
   isAttemptSubmitted,
   submitQuizAttempt,
 } from "@/lib/quizAttempts";
+import { useQuestionTimeTracking } from "@/hooks/useQuestionTimeTracking";
 
 import { ColoredTextField } from "./ColoredTextField";
 
@@ -6544,6 +6545,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       // no-op
     }, []);
 
+    // Suivi (additif) du temps passé par question — n'affecte aucune donnée pédagogique.
+    const { trackQuestion } = useQuestionTimeTracking(apprenantId);
+
     const handleAnswer = (exoId: number, qId: number, lettre: string, multi?: boolean, target?: HTMLElement | null) => {
       if (showResultsFor.has(exoId)) return;
       onLearnerActivity?.();
@@ -6571,6 +6575,14 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         });
       });
       scheduleAnswerScrollRestore();
+      trackQuestion({
+        moduleId: module.id,
+        moduleNom: module.nom,
+        exerciceId: String(exoId),
+        questionKey: ansKey,
+        questionNum: qId,
+        answered: true,
+      });
     };
 
     const handleQrcAnswerChange = (key: string, value: string) => {
@@ -6591,6 +6603,12 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         });
       });
       scheduleAnswerScrollRestore();
+      trackQuestion({
+        moduleId: module.id,
+        moduleNom: module.nom,
+        questionKey: key,
+        answered: value.trim().length > 0,
+      });
     };
 
     const totalQuestions = activeExercices.reduce((sum, e) => sum + (e.questions?.length || 0), 0);

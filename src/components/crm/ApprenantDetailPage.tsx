@@ -30,6 +30,7 @@ import { ControleQualiteTab } from "./apprenant-sections/ControleQualiteTab";
 import ExamensBlancsResetTab from "./apprenant-sections/ExamensBlancsResetTab";
 import { ResultatsApprenantTab } from "./apprenant-sections/ResultatsApprenantTab";
 import { AccessDiagnosticTab } from "./apprenant-sections/AccessDiagnosticTab";
+import { SuiviEcranTab } from "./apprenant-sections/SuiviEcranTab";
 import ApprenantActivityReport from "@/components/cours-en-ligne/ApprenantActivityReport";
 import CoursPublic from "@/pages/CoursPublic";
 import { ReleveHeuresHorsFormationTab } from "./apprenant-sections/ReleveHeuresHorsFormationTab";
@@ -826,6 +827,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
           <TabsTrigger value="devis" className="text-sm">Devis</TabsTrigger>
           <TabsTrigger value="examens-blancs-reset" className="text-sm">Examens blancs</TabsTrigger>
           <TabsTrigger value="rapport-activite" className="text-sm">Rapport activité</TabsTrigger>
+          <TabsTrigger value="suivi-ecran" className="text-sm">Suivi écran</TabsTrigger>
           {(() => {
             const t = String(apprenant?.type_apprenant || "").toLowerCase();
             const f = String(apprenant?.formation_choisie || "").toLowerCase();
@@ -957,6 +959,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
           {activeTab === "devis" && <DevisSection apprenant={apprenant} />}
           {activeTab === "examens-blancs-reset" && <ExamensBlancsResetTab apprenant={apprenant} />}
           {activeTab === "rapport-activite" && <ApprenantActivityReport lockedApprenantId={apprenant.id} />}
+          {activeTab === "suivi-ecran" && <SuiviEcranTab apprenantId={apprenant.id} />}
           {activeTab === "releve-heures-hors" && <ReleveHeuresHorsFormationTab apprenant={apprenant} />}
           {activeTab === "diagnostic-acces" && <AccessDiagnosticTab apprenant={apprenant} />}
           {activeTab === "sessions" && <SessionsTab apprenant={apprenant} />}

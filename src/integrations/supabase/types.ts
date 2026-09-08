@@ -419,6 +419,54 @@ export type Database = {
           },
         ]
       }
+      apprenant_question_temps: {
+        Row: {
+          answered: boolean
+          apprenant_id: string
+          correct: boolean | null
+          created_at: string
+          exercice_id: string | null
+          id: string
+          module_id: number | null
+          module_nom: string | null
+          occurred_at: string
+          question_key: string
+          question_num: number | null
+          seconds: number
+          user_id: string | null
+        }
+        Insert: {
+          answered?: boolean
+          apprenant_id: string
+          correct?: boolean | null
+          created_at?: string
+          exercice_id?: string | null
+          id?: string
+          module_id?: number | null
+          module_nom?: string | null
+          occurred_at?: string
+          question_key: string
+          question_num?: number | null
+          seconds?: number
+          user_id?: string | null
+        }
+        Update: {
+          answered?: boolean
+          apprenant_id?: string
+          correct?: boolean | null
+          created_at?: string
+          exercice_id?: string | null
+          id?: string
+          module_id?: number | null
+          module_nom?: string | null
+          occurred_at?: string
+          question_key?: string
+          question_num?: number | null
+          seconds?: number
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       apprenant_questions: {
         Row: {
           answered_at: string | null
