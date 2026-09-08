@@ -233,7 +233,7 @@ export function CodesAccesEnvoyes({ onNavigateToApprenant }: Props) {
                 </Badge>
               </div>
               <div className="space-y-2">
-                {rows.map(({ apprenant: a, sentAt }) => {
+                {rows.map(({ apprenant: a, sentAt, firstActAt }) => {
                   const typeLabel =
                     typeLabels[a.type_apprenant || ""] || a.type_apprenant || "-";
                   const typeColor =
@@ -270,6 +270,11 @@ export function CodesAccesEnvoyes({ onNavigateToApprenant }: Props) {
                       <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
                         <span className="font-medium text-emerald-700">
                           Envoyé à {time}
+                        </span>
+                        <span className={firstActAt ? "font-medium text-foreground" : ""}>
+                          {firstActAt
+                            ? `Commencé le ${new Date(firstActAt).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" })}`
+                            : "Pas encore commencé"}
                         </span>
                         {a.email && (
                           <a
