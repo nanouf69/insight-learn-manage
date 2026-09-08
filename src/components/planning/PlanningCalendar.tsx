@@ -679,6 +679,7 @@ td.tel { white-space: nowrap; font-variant-numeric: tabular-nums; }
                                   <span key={`nt-${i}`} className={`text-xs leading-tight block ${c.pasInscritExamen ? 'text-destructive font-bold' : 'text-foreground'}`}>
                                     {c.pasInscritExamen && '⚠️ '}{c.name}
                                     {hoursLabel && <span className="text-[10px] text-muted-foreground font-medium"> ({hoursLabel})</span>}
+                                    {c.telephone && <span className="block text-[10px] text-muted-foreground font-medium">☎ {c.telephone}</span>}
                                     {c.pasInscritExamen && <span className="block text-[10px] text-destructive font-normal">Non inscrit à l'examen</span>}
                                   </span>
                                 );
