@@ -29,11 +29,11 @@ function resolveAppFileUrl(fileUrl: string): string {
   const normalizedPath = fileUrl.startsWith("/") ? fileUrl : `/${fileUrl}`;
   if (typeof window === "undefined") return normalizedPath;
 
-  const fallbackPublicOrigin = "https://insight-learn-manage.lovable.app";
-  const isPreviewHost = window.location.hostname.endsWith("lovableproject.com");
-  const baseOrigin = isPreviewHost ? fallbackPublicOrigin : window.location.origin;
-  return `${baseOrigin}${normalizedPath}`;
+  // Toujours servir le fichier depuis la même origine : une origine publique
+  // différente renvoie une redirection cross-origin qui empêche l'affichage.
+  return `${window.location.origin}${normalizedPath}`;
 }
+
 
 function extractCourseStorageObject(input: string): { bucket: string; path: string } | null {
   if (/^(question-images|cours-images|cours-pdfs|vtc)\//i.test(input)) {
