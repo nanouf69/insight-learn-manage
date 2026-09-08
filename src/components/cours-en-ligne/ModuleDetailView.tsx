@@ -6602,6 +6602,12 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         });
       });
       scheduleAnswerScrollRestore();
+      trackQuestion({
+        moduleId: module.id,
+        moduleNom: module.nom,
+        questionKey: key,
+        answered: value.trim().length > 0,
+      });
     };
 
     const totalQuestions = activeExercices.reduce((sum, e) => sum + (e.questions?.length || 0), 0);
