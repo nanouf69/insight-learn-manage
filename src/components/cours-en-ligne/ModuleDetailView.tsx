@@ -182,7 +182,7 @@ function normalizeSignedStorageUrl(signedUrl: string): string {
   return signedUrl;
 }
 
-function resolveAppFileUrl(fileUrl: string): string {
+function resolveAppFileUrl(fileUrl: string, options?: { forExternalViewer?: boolean }): string {
   if (!fileUrl) return "";
   if (/^https?:\/\//i.test(fileUrl)) return fileUrl;
   if (fileUrl.startsWith("/storage/v1/")) return SUPABASE_URL ? `${SUPABASE_URL}${fileUrl}` : fileUrl;
@@ -190,11 +190,20 @@ function resolveAppFileUrl(fileUrl: string): string {
   const normalizedPath = fileUrl.startsWith("/") ? fileUrl : `/${fileUrl}`;
   if (typeof window === "undefined") return normalizedPath;
 
-  const fallbackPublicOrigin = "https://insight-learn-manage.lovable.app";
-  const isPreviewHost = window.location.hostname.endsWith("lovableproject.com");
-  const baseOrigin = isPreviewHost ? fallbackPublicOrigin : window.location.origin;
-  return `${baseOrigin}${normalizedPath}`;
+  // Les visionneuses externes (Google/Office) ont besoin d'une URL publique.
+  // Pour l'affichage interne (PDF, images), on reste sur la même origine :
+  // l'origine publique renvoie une redirection cross-origin qui bloque le rendu.
+  if (options?.forExternalViewer) {
+    const fallbackPublicOrigin = "https://gestion.ftransport.fr";
+    const isPreviewHost = window.location.hostname.endsWith("lovableproject.com")
+      || window.location.hostname.endsWith("lovable.app");
+    const baseOrigin = isPreviewHost ? fallbackPublicOrigin : window.location.origin;
+    return `${baseOrigin}${normalizedPath}`;
+  }
+
+  return `${window.location.origin}${normalizedPath}`;
 }
+
 
 function extractCourseStorageObject(input: string): { bucket: string; path: string } | null {
   if (/^(question-images|cours-images|cours-pdfs|vtc)\//i.test(input)) {
