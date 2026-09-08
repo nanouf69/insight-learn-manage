@@ -74,6 +74,7 @@ const MATIERE_LOCALE: ContentItem[] = [
     sousTitre: "Réglementation locale (suite)",
     fichiers: [
       { nom: "PDF HD Partie 2", url: "/cours/vtc/F_Locale_2.pdf?v=20260908-1230" },
+      { nom: "PowerPoint Locale Partie 2", url: "/cours/vtc/F_Locale_2.pptx?v=20260908-1500" },
     ],
   },
   {
@@ -82,6 +83,7 @@ const MATIERE_LOCALE: ContentItem[] = [
     sousTitre: "Réglementation locale (fin)",
     fichiers: [
       { nom: "PDF HD Partie 3", url: "/cours/vtc/F_Locale_3.pdf?v=20260908-1400" },
+      { nom: "PowerPoint Locale Partie 3", url: "/cours/vtc/F_Locale_3.pptx?v=20260908-1500" },
     ],
   },
 ];
