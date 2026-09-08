@@ -957,6 +957,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
           {activeTab === "devis" && <DevisSection apprenant={apprenant} />}
           {activeTab === "examens-blancs-reset" && <ExamensBlancsResetTab apprenant={apprenant} />}
           {activeTab === "rapport-activite" && <ApprenantActivityReport lockedApprenantId={apprenant.id} />}
+          {activeTab === "suivi-ecran" && <SuiviEcranTab apprenantId={apprenant.id} />}
           {activeTab === "releve-heures-hors" && <ReleveHeuresHorsFormationTab apprenant={apprenant} />}
           {activeTab === "diagnostic-acces" && <AccessDiagnosticTab apprenant={apprenant} />}
           {activeTab === "sessions" && <SessionsTab apprenant={apprenant} />}
