@@ -30,6 +30,7 @@ import { ControleQualiteTab } from "./apprenant-sections/ControleQualiteTab";
 import ExamensBlancsResetTab from "./apprenant-sections/ExamensBlancsResetTab";
 import { ResultatsApprenantTab } from "./apprenant-sections/ResultatsApprenantTab";
 import { AccessDiagnosticTab } from "./apprenant-sections/AccessDiagnosticTab";
+import { SuiviEcranTab } from "./apprenant-sections/SuiviEcranTab";
 import ApprenantActivityReport from "@/components/cours-en-ligne/ApprenantActivityReport";
 import CoursPublic from "@/pages/CoursPublic";
 import { ReleveHeuresHorsFormationTab } from "./apprenant-sections/ReleveHeuresHorsFormationTab";
