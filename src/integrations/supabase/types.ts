@@ -3693,6 +3693,32 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      apply_admin_canonical_quiz_actions: {
+        Args: { p_actions: Json; p_module_id: number }
+        Returns: {
+          active: boolean
+          choix: Json
+          created_at: string
+          enonce: string
+          explication: string | null
+          image: string | null
+          image_size: string | null
+          legacy_question_id: number
+          position: number
+          question_id: string
+          quiz_id: string
+          section_id: number
+          source: string
+          updated_at: string
+          updated_by_fournisseur_id: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "quiz_questions"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       check_apprenant_session: {
         Args: { _apprenant_id: string; _connexion_id: string; _event?: string }
         Returns: {
