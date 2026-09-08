@@ -332,6 +332,7 @@ export function PlanningCalendar() {
             name: `${a.prenom} ${a.nom}`,
             type,
             heure: a.heure_examen_pratique || 'À définir',
+            telephone: a.telephone || '',
           });
         }
       });
