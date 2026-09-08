@@ -72,7 +72,7 @@ const modeLabels: Record<string, string> = {
 const prettify = (code: string) =>
   financeurLabels[code.toLowerCase()] || (code.length > 3 ? code : code.toUpperCase());
 
-export function FinancementApprenantCard({ apprenant }: Props) {
+export function FinancementApprenantCard({ apprenant, onNavigateToComptabilite }: Props) {
   const [paiements, setPaiements] = useState<any[]>([]);
   const [virements, setVirements] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
