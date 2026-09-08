@@ -8798,7 +8798,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 onMove={(i, d) => moveItem("exercices", i, d)}
                 onDelete={(id) => deleteItem("exercices", id)}
                 onToggle={(id) => toggleItem("exercices", id)}
-                onUpdateQuestions={(id, questions) => updateExerciceQuestions(id, questions)}
+                onUpdateQuestions={(id, questions, deletedQuestionId) =>
+                  updateExerciceQuestions(id, questions, deletedQuestionId)
+                }
                 moduleId={moduleData.id}
                 overrideWarnings={trainerOverrideWarnings}
               />
