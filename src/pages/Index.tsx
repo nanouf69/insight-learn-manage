@@ -47,6 +47,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import SuiviEmailsPage from "@/components/emails/SuiviEmailsPage";
 
 const pageConfig = {
   dashboard: { title: "Tableau de bord", subtitle: "Bienvenue, Marie !" },
@@ -405,6 +406,8 @@ const Index = () => {
         return <DiagnosticAccesGlobal onOpenApprenant={handleNavigateToApprenant} />;
       case "creneaux-25-mai":
         return <CreneauxRdvAdmin />;
+      case "suivi-emails":
+        return <SuiviEmailsPage />;
       case "renouvellements":
         return <RenouvellementsPage />;
       case "settings":
