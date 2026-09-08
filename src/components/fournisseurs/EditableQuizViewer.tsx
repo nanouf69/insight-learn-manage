@@ -106,17 +106,21 @@ export function EditableQuizViewer({ sections: sourceSections, title, icon = "�
     setSaving(true);
     try {
       const current = sections.find(s => s.id === sectionId)?.questions?.find(q => q.id === questionId);
+      const canonicalCurrent = canonicalQuestions.find(
+        row => Number(row.section_id) === sectionId && Number(row.legacy_question_id) === questionId,
+      );
       const { data, error } = await supabase.functions.invoke("fournisseur-portal-data", {
         body: { action: "save_quiz_question", token: fournisseurToken, quiz_id: quizId, section_id: sectionId,
           legacy_question_id: questionId, position: questionId, enonce: current?.enonce ?? "",
-          choix: current?.choix ?? [], active: false },
+          choix: current?.choix ?? [], active: false, expected_updated_at: canonicalCurrent?.updated_at ?? null },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       if (data?.data) setCanonicalQuestions(prev => prev.map(row => row.question_id === data.data.question_id ? data.data : row));
       toast.success("Question supprimée");
-    } catch {
-      toast.error("Erreur lors de la suppression");
+    } catch (error) {
+      void error;
+      toast.error("La question a changé depuis son ouverture. La dernière version a été rechargée.");
     } finally {
       setSaving(false);
     }
@@ -146,10 +150,13 @@ export function EditableQuizViewer({ sections: sourceSections, title, icon = "�
     setSaving(true);
     try {
       const currentIndex = sections.find(s => s.id === sectionId)?.questions?.findIndex(q => q.id === questionId) ?? -1;
+      const canonicalCurrent = canonicalQuestions.find(
+        row => Number(row.section_id) === sectionId && Number(row.legacy_question_id) === questionId,
+      );
       const { data, error } = await supabase.functions.invoke("fournisseur-portal-data", {
         body: { action: "save_quiz_question", token: fournisseurToken, quiz_id: quizId, section_id: sectionId,
           legacy_question_id: questionId, position: currentIndex + 1, enonce: editEnonce,
-          choix: editChoix, active: true },
+          choix: editChoix, active: true, expected_updated_at: canonicalCurrent?.updated_at ?? null },
       });
 
       if (error) throw error;
@@ -160,7 +167,7 @@ export function EditableQuizViewer({ sections: sourceSections, title, icon = "�
       toast.success("Question modifiée avec succès");
     } catch (err) {
       console.error(err);
-      toast.error("Erreur lors de la sauvegarde");
+      toast.error("La question a changé depuis son ouverture. La dernière version a été rechargée.");
     } finally {
       setSaving(false);
     }

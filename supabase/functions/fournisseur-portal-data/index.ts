@@ -69,7 +69,7 @@ Deno.serve(async (req) => {
         return json({ error: "Question invalide" }, 400);
       }
       const { data, error } = await supabase
-        .rpc("save_canonical_quiz_question", {
+        .rpc("save_canonical_quiz_question_v2", {
           p_fournisseur_token: token,
           p_quiz_id: quizId,
           p_section_id: sectionId,
@@ -81,6 +81,7 @@ Deno.serve(async (req) => {
           p_image_size: typeof body?.image_size === "string" ? body.image_size : null,
           p_explication: typeof body?.explication === "string" ? body.explication : null,
           p_active: body?.active !== false,
+          p_expected_updated_at: typeof body?.expected_updated_at === "string" ? body.expected_updated_at : null,
         });
       if (error) return json({ error: error.message }, 500);
       return json({ data });

@@ -72,4 +72,10 @@ describe("persistance des suppressions dans la source canonique", () => {
 
     expect(result[0].questions).toEqual(sourceSections[0].questions);
   });
+
+  it("conserve une section canonique explicitement vide sans fallback statique", () => {
+    const result = applyCanonicalRowsToSections(sourceSections, [], new Set([70]));
+
+    expect(result[0].questions).toEqual([]);
+  });
 });

@@ -4861,13 +4861,18 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         // Only update if data actually changed
         let didUpdate = false;
         setModuleData((prev) => {
-          if (JSON.stringify(prev.exercices) === JSON.stringify(resolved.exercices) &&
-              JSON.stringify(prev.cours) === JSON.stringify(resolved.cours)) {
+          const authoritativeResolved = applyCanonicalQuestionsToModule(
+            preserveNewerLocalQuestionEdits(resolved, prev, "visibility module_editor_state refresh"),
+            canonicalRowsRef.current,
+            canonicalSectionIdsRef.current,
+          );
+          if (JSON.stringify(prev.exercices) === JSON.stringify(authoritativeResolved.exercices) &&
+              JSON.stringify(prev.cours) === JSON.stringify(authoritativeResolved.cours)) {
             return prev;
           }
           console.log("[Visibility] Refreshed module data from DB for module", module.id);
           didUpdate = true;
-          return preserveNewerLocalQuestionEdits(resolved, prev, "visibility module_editor_state refresh");
+          return authoritativeResolved;
         });
         markDbSnapshotApplied(latest.updated_at);
         // Re-apply fournisseur overrides après reload DB
