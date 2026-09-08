@@ -5,6 +5,7 @@ import autoTable from "jspdf-autotable";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { AccuseReceptionBadge, findAccuse, type AccuseReception } from "@/components/emails/AccuseReceptionBadge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -338,6 +339,22 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
       return (data || []) as EmailRecord[];
     },
     enabled: !!apprenant.id,
+  });
+
+  // Accusés de réception (bien remis / ouvert / échec)
+  const { data: accuses = [] } = useQuery({
+    queryKey: ['email-accuses', apprenant.id, apprenant.email],
+    queryFn: async () => {
+      let query = supabase.from('email_accuses').select('*').order('sent_at', { ascending: false });
+      query = apprenant.email
+        ? query.or(`apprenant_id.eq.${apprenant.id},destinataire.ilike.${apprenant.email}`)
+        : query.eq('apprenant_id', apprenant.id);
+      const { data, error } = await query;
+      if (error) throw error;
+      return (data || []) as AccuseReception[];
+    },
+    enabled: !!apprenant.id,
+    refetchInterval: 60000,
   });
 
   interface AppelRecord {
@@ -1311,6 +1328,11 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
                         <Badge variant="outline" className="text-xs shrink-0">
                           {email.type === 'sent' ? 'Envoyé' : 'Reçu'}
                         </Badge>
+                        {email.type === 'sent' && (
+                          <AccuseReceptionBadge
+                            accuse={findAccuse(accuses, email.subject, email.sent_at || email.created_at)}
+                          />
+                        )}
                         {email.has_attachments && (
                           <Badge variant="secondary" className="text-xs shrink-0">
                             📎

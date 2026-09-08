@@ -1280,6 +1280,60 @@ export type Database = {
           },
         ]
       }
+      email_accuses: {
+        Row: {
+          apprenant_id: string | null
+          created_at: string
+          delivered_at: string | null
+          destinataire: string
+          erreur: string | null
+          failed_at: string | null
+          id: string
+          last_opened_at: string | null
+          open_count: number
+          opened_at: string | null
+          provider_message_id: string | null
+          sent_at: string
+          statut: string
+          sujet: string | null
+          updated_at: string
+        }
+        Insert: {
+          apprenant_id?: string | null
+          created_at?: string
+          delivered_at?: string | null
+          destinataire: string
+          erreur?: string | null
+          failed_at?: string | null
+          id?: string
+          last_opened_at?: string | null
+          open_count?: number
+          opened_at?: string | null
+          provider_message_id?: string | null
+          sent_at?: string
+          statut?: string
+          sujet?: string | null
+          updated_at?: string
+        }
+        Update: {
+          apprenant_id?: string | null
+          created_at?: string
+          delivered_at?: string | null
+          destinataire?: string
+          erreur?: string | null
+          failed_at?: string | null
+          id?: string
+          last_opened_at?: string | null
+          open_count?: number
+          opened_at?: string | null
+          provider_message_id?: string | null
+          sent_at?: string
+          statut?: string
+          sujet?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       email_templates: {
         Row: {
           body_template: string
