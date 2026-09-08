@@ -515,8 +515,10 @@ interface CanonicalQuestionRow {
 const applyCanonicalQuestionsToModule = (
   data: ModuleData,
   rows: CanonicalQuestionRow[],
+  authoritativeSectionIds: ReadonlySet<number> = new Set(
+    rows.map((row) => Number(row.section_id)),
+  ),
 ): ModuleData => {
-  if (rows.length === 0) return data;
   const bySection = new Map<number, CanonicalQuestionRow[]>();
   for (const row of rows) {
     const sectionRows = bySection.get(Number(row.section_id)) ?? [];
@@ -537,17 +539,11 @@ const applyCanonicalQuestionsToModule = (
 
   let changed = false;
   const exercices = data.exercices.map((exercise) => {
+    if (!authoritativeSectionIds.has(Number(exercise.id))) return exercise;
     const sectionRows = bySection.get(Number(exercise.id));
-    if (!sectionRows) return exercise;
+    const authoritativeRows = sectionRows ?? [];
 
-    const byLegacyId = new Map<number, CanonicalQuestionRow>();
-    for (const row of sectionRows) byLegacyId.set(Number(row.legacy_question_id), row);
-    const moduleQuestions = exercise.questions ?? [];
-    const canonicalCoversSection =
-      moduleQuestions.length > 0 &&
-      moduleQuestions.every((q) => byLegacyId.has(Number(q.id)));
-
-    const sortedActive = sectionRows
+    const sortedActive = authoritativeRows
       .filter((row) => row.active)
       .sort(
         (a, b) =>
@@ -555,27 +551,9 @@ const applyCanonicalQuestionsToModule = (
           Number(a.legacy_question_id) - Number(b.legacy_question_id),
       );
 
-    let questions;
-    if (canonicalCoversSection || moduleQuestions.length === 0) {
-      // Couverture complète : la source unique fait autorité (ordre, ajouts, suppressions).
-      questions = sortedActive.map(toQuestion);
-    } else {
-      // Couverture partielle : on remplace uniquement les questions connues de la
-      // source unique, sans jamais supprimer une question absente de celle-ci.
-      const kept = moduleQuestions
-        .map((question) => {
-          const row = byLegacyId.get(Number(question.id));
-          if (!row) return question;
-          if (!row.active) return null;
-          return toQuestion(row);
-        })
-        .filter(Boolean) as typeof moduleQuestions;
-      const knownIds = new Set(moduleQuestions.map((q) => Number(q.id)));
-      const added = sortedActive
-        .filter((row) => !knownIds.has(Number(row.legacy_question_id)))
-        .map(toQuestion);
-      questions = [...kept, ...added];
-    }
+    // Pour une section rattachée, la base remplace toujours la copie JSON entière.
+    // Une liste vide est une valeur valide et ne déclenche aucun fallback statique.
+    const questions = sortedActive.map(toQuestion);
 
     if (JSON.stringify(exercise.questions ?? []) !== JSON.stringify(questions)) changed = true;
     return { ...exercise, questions };
@@ -3744,6 +3722,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   // reload de moduleData depuis la DB (realtime, visibility, polling).
   const [trainerOverridesReapplyKey, setTrainerOverridesReapplyKey] = useState(0);
   const [canonicalRefreshKey, setCanonicalRefreshKey] = useState(0);
+  const canonicalRowsRef = useRef<CanonicalQuestionRow[]>([]);
+  const canonicalSectionIdsRef = useRef<Set<number>>(new Set());
   // Statut de la connexion Realtime (visible uniquement côté apprenant)
   const [realtimeStatus, setRealtimeStatus] = useState<string>("CONNECTING");
   const [realtimeReconnectKey, setRealtimeReconnectKey] = useState(0);
@@ -4104,18 +4084,28 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     let cancelled = false;
 
     const loadCanonicalQuestions = async () => {
-      const { data, error } = await supabase
-        .from("quiz_questions")
-        .select("question_id,quiz_id,section_id,legacy_question_id,position,enonce,choix,image,image_size,explication,active,updated_at")
-        .in("quiz_id", quizIds)
-        .order("section_id")
-        .order("position");
+      const [{ data, error }, { data: bindings, error: bindingsError }] = await Promise.all([
+        supabase
+          .from("quiz_questions")
+          .select("question_id,quiz_id,section_id,legacy_question_id,position,enonce,choix,image,image_size,explication,active,updated_at")
+          .in("quiz_id", quizIds)
+          .order("section_id")
+          .order("position"),
+        supabase
+          .from("quiz_question_bindings")
+          .select("section_id")
+          .eq("module_id", Number(module.id)),
+      ]);
       if (cancelled) return;
-      if (error) {
-        console.error("[CanonicalQuiz] Lecture impossible", error);
+      if (error || bindingsError) {
+        console.error("[CanonicalQuiz] Lecture impossible", error ?? bindingsError);
         return;
       }
-      setModuleData((previous) => applyCanonicalQuestionsToModule(previous, (data ?? []) as unknown as CanonicalQuestionRow[]));
+      const rows = (data ?? []) as unknown as CanonicalQuestionRow[];
+      const sectionIds = new Set((bindings ?? []).map((binding) => Number(binding.section_id)));
+      canonicalRowsRef.current = rows;
+      canonicalSectionIdsRef.current = sectionIds;
+      setModuleData((previous) => applyCanonicalQuestionsToModule(previous, rows, sectionIds));
       setLastSyncAt(new Date());
     };
 
@@ -4412,7 +4402,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 resolvedModuleData = applyManualExerciseEditsFromSource(resolvedModuleData, syncedVtcBilan);
               }
             }
-            setModuleData((prev) => preserveNewerLocalQuestionEdits(resolvedModuleData, prev, "initial module_editor_state load"));
+            setModuleData((prev) => applyCanonicalQuestionsToModule(
+              preserveNewerLocalQuestionEdits(resolvedModuleData, prev, "initial module_editor_state load"),
+              canonicalRowsRef.current,
+              canonicalSectionIdsRef.current,
+            ));
             setDeletedCours(Array.isArray(latestState.deleted_cours) ? (latestState.deleted_cours as unknown as ContentItem[]) : []);
             setDeletedExercices(Array.isArray(latestState.deleted_exercices) ? (latestState.deleted_exercices as unknown as ExerciceItem[]) : []);
             setLoadedModuleEditorState(true);
@@ -4576,7 +4570,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               resolvedRealtimeModuleData = applyManualExerciseEditsFromSource(resolvedRealtimeModuleData, syncedVtcBilan);
             }
           }
-          setModuleData((prev) => preserveNewerLocalQuestionEdits(resolvedRealtimeModuleData, prev, "realtime module_editor_state refetch"));
+          setModuleData((prev) => applyCanonicalQuestionsToModule(
+            preserveNewerLocalQuestionEdits(resolvedRealtimeModuleData, prev, "realtime module_editor_state refetch"),
+            canonicalRowsRef.current,
+            canonicalSectionIdsRef.current,
+          ));
           setDeletedCours(Array.isArray(latest.deleted_cours) ? (latest.deleted_cours as unknown as ContentItem[]) : []);
           setDeletedExercices(Array.isArray(latest.deleted_exercices) ? (latest.deleted_exercices as unknown as ExerciceItem[]) : []);
           setLoadedModuleEditorState(true);
@@ -5193,26 +5191,100 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         "ModuleDetailView.performDbSave",
       );
 
-      // Source unique des questions partagées : la sauvegarde admin devient
-      // immédiatement la version officielle lue par tous les écrans.
-      const { error: canonicalSyncError } = await (supabase as any).rpc("sync_admin_canonical_quiz_questions", {
-        p_module_id: dataToSave.module_id,
-        p_exercises: (normalizedModuleData.exercices ?? []) as any,
-      });
-      if (canonicalSyncError) throw canonicalSyncError;
-      if (CANONICAL_QUIZ_IDS_BY_MODULE_ID[Number(dataToSave.module_id)]) {
+      // Écriture canonique explicite : seules les différences réelles deviennent
+      // des commandes. Un snapshot JSON complet ne peut plus réécrire la base.
+      const canonicalQuizIds = CANONICAL_QUIZ_IDS_BY_MODULE_ID[Number(dataToSave.module_id)];
+      if (canonicalQuizIds?.length) {
+        const [{ data: bindings, error: bindingsError }, { data: currentRows, error: rowsError }] = await Promise.all([
+          supabase
+            .from("quiz_question_bindings")
+            .select("quiz_id,exercise_id,section_id")
+            .eq("module_id", Number(dataToSave.module_id)),
+          supabase
+            .from("quiz_questions")
+            .select("question_id,quiz_id,section_id,legacy_question_id,position,enonce,choix,image,image_size,explication,active,updated_at")
+            .in("quiz_id", canonicalQuizIds),
+        ]);
+        if (bindingsError) throw bindingsError;
+        if (rowsError) throw rowsError;
+
+        const rows = (currentRows ?? []) as unknown as CanonicalQuestionRow[];
+        const rowByKey = new Map(rows.map((row) => [`${row.quiz_id}:${row.section_id}:${row.legacy_question_id}`, row]));
+        const exerciseById = new Map((normalizedModuleData.exercices ?? []).map((exercise) => [Number(exercise.id), exercise]));
+        const actions: Record<string, unknown>[] = [];
+
+        for (const binding of bindings ?? []) {
+          const exercise = exerciseById.get(Number(binding.exercise_id));
+          if (!exercise) continue;
+          const deletedIds = new Set((exercise.deletedQuestionIds ?? []).map(Number));
+          for (const deletedId of deletedIds) {
+            const current = rowByKey.get(`${binding.quiz_id}:${binding.section_id}:${deletedId}`);
+            if (current?.active) {
+              actions.push({
+                action: "deactivate",
+                quiz_id: binding.quiz_id,
+                exercise_id: binding.exercise_id,
+                section_id: binding.section_id,
+                legacy_question_id: deletedId,
+                expected_updated_at: current.updated_at,
+              });
+            }
+          }
+          (exercise.questions ?? []).forEach((question, index) => {
+            const current = rowByKey.get(`${binding.quiz_id}:${binding.section_id}:${question.id}`);
+            const nextComparable = {
+              position: index + 1,
+              enonce: question.enonce,
+              choix: question.choix ?? [],
+              image: question.image ?? null,
+              image_size: question.imageSize ?? null,
+              explication: question.explication ?? null,
+              active: true,
+            };
+            const currentComparable = current ? {
+              position: Number(current.position),
+              enonce: current.enonce,
+              choix: current.choix ?? [],
+              image: current.image ?? null,
+              image_size: current.image_size ?? null,
+              explication: current.explication ?? null,
+              active: current.active,
+            } : null;
+            if (!currentComparable || JSON.stringify(nextComparable) !== JSON.stringify(currentComparable)) {
+              actions.push({
+                action: "upsert",
+                quiz_id: binding.quiz_id,
+                exercise_id: binding.exercise_id,
+                section_id: binding.section_id,
+                legacy_question_id: question.id,
+                expected_updated_at: current?.updated_at ?? null,
+                ...nextComparable,
+              });
+            }
+          });
+        }
+
+        if (actions.length > 0) {
+          const { error: canonicalActionError } = await (supabase as any).rpc("apply_admin_canonical_quiz_actions", {
+            p_module_id: dataToSave.module_id,
+            p_actions: actions as any,
+          });
+          if (canonicalActionError) throw canonicalActionError;
+        }
         setCanonicalRefreshKey((key) => key + 1);
       }
 
       // Sync shared exercises to ALL sibling modules (handles edits, adds, deletes).
       // On transmet l'état précédent : seuls les exercices RÉELLEMENT modifiés
       // par cette sauvegarde sont propagés, jamais l'intégralité du module.
-      await syncSharedExercisesToSiblingModules(
-        dataToSave.module_id,
-        (normalizedModuleData.exercices ?? []) as any,
-        (dataToSave.deleted_exercices ?? []).map((e: any) => e.id),
-        (previousModuleData?.exercices ?? null) as any,
-      );
+      if (!canonicalQuizIds?.length) {
+        await syncSharedExercisesToSiblingModules(
+          dataToSave.module_id,
+          (normalizedModuleData.exercices ?? []) as any,
+          (dataToSave.deleted_exercices ?? []).map((e: any) => e.id),
+          (previousModuleData?.exercices ?? null) as any,
+        );
+      }
 
       // Aucun miroir VTC↔TAXI automatique ici : chaque écriture implicite sur un
       // autre module crée un updated_at concurrent et peut réintroduire d'anciens

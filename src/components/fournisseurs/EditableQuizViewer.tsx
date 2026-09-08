@@ -49,6 +49,7 @@ export function EditableQuizViewer({ sections: sourceSections, title, icon = "ðŸ
   const [saving, setSaving] = useState(false);
   const [confirmDeleteKey, setConfirmDeleteKey] = useState<string | null>(null);
   const [canonicalQuestions, setCanonicalQuestions] = useState<any[]>([]);
+  const [canonicalLoaded, setCanonicalLoaded] = useState(false);
 
   // Guard: ne pas charger ni permettre d'Ã©crire si fournisseurId est vide
   const canOperate = !!fournisseurId;
@@ -62,7 +63,10 @@ export function EditableQuizViewer({ sections: sourceSections, title, icon = "ðŸ
       const { data, error } = await supabase.functions.invoke("fournisseur-portal-data", {
         body: { action: "quiz_questions", token: fournisseurToken, quiz_id: quizId },
       });
-      if (!cancelled && !error) setCanonicalQuestions((data?.data ?? []) as any[]);
+       if (!cancelled && !error) {
+         setCanonicalQuestions((data?.data ?? []) as any[]);
+         setCanonicalLoaded(true);
+       }
     }
     void loadCanonical();
     const channel = supabase.channel(`canonical-quiz-${quizId}`)
@@ -70,13 +74,18 @@ export function EditableQuizViewer({ sections: sourceSections, title, icon = "ðŸ
       .subscribe();
     const onFocus = () => void loadCanonical();
     window.addEventListener("focus", onFocus);
-    const interval = window.setInterval(loadCanonical, 2000);
-    return () => { cancelled = true; window.removeEventListener("focus", onFocus); window.clearInterval(interval); supabase.removeChannel(channel); };
+    return () => { cancelled = true; window.removeEventListener("focus", onFocus); supabase.removeChannel(channel); };
   }, [quizId, fournisseurToken]);
 
   const sections = useMemo(
-    () => applyCanonicalRowsToSections(sourceSections, canonicalQuestions),
-    [sourceSections, canonicalQuestions],
+    () => applyCanonicalRowsToSections(
+      sourceSections,
+      canonicalQuestions,
+      canonicalLoaded
+        ? new Set(sourceSections.map((section) => Number(section.id)))
+        : new Set<number>(),
+    ),
+    [sourceSections, canonicalQuestions, canonicalLoaded],
   );
 
 

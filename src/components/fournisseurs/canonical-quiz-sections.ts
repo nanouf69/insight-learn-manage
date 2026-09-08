@@ -39,13 +39,16 @@ export interface CanonicalQuizRow {
 export function applyCanonicalRowsToSections<T extends CanonicalQuizSection>(
   sourceSections: T[],
   canonicalRows: CanonicalQuizRow[],
+  authoritativeSectionIds: ReadonlySet<number> = new Set(
+    canonicalRows.map((row) => Number(row.section_id)),
+  ),
 ): T[] {
   return sourceSections.map((section) => {
     const sectionRows = canonicalRows.filter(
       (row) => Number(row.section_id) === Number(section.id),
     );
 
-    if (sectionRows.length === 0) return section;
+    if (!authoritativeSectionIds.has(Number(section.id))) return section;
 
     const questions = sectionRows
       .filter((row) => row.active)
