@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
 import { applyCanonicalRowsToSections } from "@/components/fournisseurs/canonical-quiz-sections";
 
 const sourceSections = [{
@@ -27,6 +28,17 @@ const row = (overrides: Record<string, unknown> = {}) => ({
 });
 
 describe("persistance des suppressions dans la source canonique", () => {
+  it("transmet l'identifiant supprimé du bouton Admin jusqu'à la sauvegarde canonique", () => {
+    const moduleView = readFileSync(
+      new URL("../components/cours-en-ligne/ModuleDetailView.tsx", import.meta.url),
+      "utf8",
+    );
+
+    expect(moduleView).toContain(
+      "onUpdateQuestions={(id, questions, deletedQuestionId) =>\n                  updateExerciceQuestions(id, questions, deletedQuestionId)",
+    );
+  });
+
   it("ne réinjecte pas la dernière question supprimée depuis la liste statique", () => {
     const result = applyCanonicalRowsToSections(sourceSections, [row({ active: false })]);
 
