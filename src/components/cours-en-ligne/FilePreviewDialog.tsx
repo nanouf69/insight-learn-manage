@@ -88,6 +88,23 @@ export default function FilePreviewDialog({ url, nom }: Props) {
   });
   const isPdf = /\.pdf(\?|$)/i.test(url);
   const isImage = /\.(png|jpe?g|gif|webp|bmp|svg|avif)(\?|$)/i.test(url);
+  const isOffice = /\.(pptx?|docx?|xlsx?)(\?|$)/i.test(url);
+
+  // Les visionneuses externes (Office) ont besoin d'une URL publique :
+  // localhost et les hôtes de prévisualisation ne sont pas accessibles de l'extérieur.
+  const externalViewerUrl = (() => {
+    if (!isOffice || !displayUrl) return null;
+    const resolved = resolveAppFileUrl(url);
+    if (/^https?:\/\//i.test(url)) return url;
+    const host = typeof window !== "undefined" ? window.location.hostname : "";
+    const needsPublicOrigin = host === "localhost" || host.endsWith("lovableproject.com") || host.endsWith("lovable.app");
+    const base = needsPublicOrigin ? "https://gestion.ftransport.fr" : (typeof window !== "undefined" ? window.location.origin : "");
+    const path = url.startsWith("/") ? url : `/${url}`;
+    return `${base}${path}` || resolved;
+  })();
+  const officeEmbedUrl = externalViewerUrl
+    ? `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(externalViewerUrl)}`
+    : null;
 
   useEffect(() => {
     let cancelled = false;
