@@ -93,6 +93,44 @@ export function CodesAccesEnvoyes({ onNavigateToApprenant }: Props) {
 
       const apprenantById = new Map((apprenants || []).map((a) => [a.id, a]));
 
+      // 2b) Première activité pédagogique réelle par apprenant
+      // (ouverture de module/section/cours, exercice terminé ou quiz terminé —
+      // JAMAIS une simple connexion à la page d'accueil)
+      const firstActByApprenant = new Map<string, number>();
+      const keepMin = (id: string, ts: number) => {
+        if (Number.isNaN(ts)) return;
+        const cur = firstActByApprenant.get(id);
+        if (cur === undefined || ts < cur) firstActByApprenant.set(id, ts);
+      };
+      const [actRows, exoRows, quizRows] = await Promise.all([
+        supabase
+          .from("apprenant_module_activites")
+          .select("apprenant_id, module_nom, action_type, occurred_at")
+          .in("apprenant_id", apprenantIds)
+          .in("action_type", ["open_module", "open_section", "open_cours"])
+          .order("occurred_at", { ascending: true })
+          .limit(5000),
+        supabase
+          .from("reponses_apprenants")
+          .select("apprenant_id, updated_at")
+          .in("apprenant_id", apprenantIds)
+          .eq("completed", true)
+          .order("updated_at", { ascending: true })
+          .limit(5000),
+        supabase
+          .from("apprenant_quiz_results")
+          .select("apprenant_id, completed_at")
+          .in("apprenant_id", apprenantIds)
+          .order("completed_at", { ascending: true })
+          .limit(5000),
+      ]);
+      for (const a of actRows.data || []) {
+        if (a.module_nom && /accueil|liste\s+des\s+modules/i.test(a.module_nom)) continue;
+        keepMin(a.apprenant_id, Date.parse(a.occurred_at));
+      }
+      for (const e of exoRows.data || []) keepMin(e.apprenant_id, Date.parse(e.updated_at));
+      for (const q of quizRows.data || []) keepMin(q.apprenant_id, Date.parse(q.completed_at));
+
       // 3) Fusion : un seul enregistrement par apprenant/jour (le plus récent)
       const byDay = new Map<string, Map<string, { sentAt: string; apprenant: any }>>();
 
