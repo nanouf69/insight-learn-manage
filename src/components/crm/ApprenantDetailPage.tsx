@@ -826,6 +826,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
           <TabsTrigger value="devis" className="text-sm">Devis</TabsTrigger>
           <TabsTrigger value="examens-blancs-reset" className="text-sm">Examens blancs</TabsTrigger>
           <TabsTrigger value="rapport-activite" className="text-sm">Rapport activité</TabsTrigger>
+          <TabsTrigger value="suivi-ecran" className="text-sm">Suivi écran</TabsTrigger>
           {(() => {
             const t = String(apprenant?.type_apprenant || "").toLowerCase();
             const f = String(apprenant?.formation_choisie || "").toLowerCase();
