@@ -344,6 +344,7 @@ const Index = () => {
                 <FormationsBientotTerminees onNavigateToApprenant={handleNavigateToApprenant} />
               </div>
               <div className="space-y-4">
+                <ElearningSansPratique onNavigateToApprenant={handleNavigateToApprenant} />
                 <EmargementsManquants onNavigateToApprenant={handleNavigateToApprenant} />
                 <EmargementsFinFormation onNavigateToApprenant={handleNavigateToApprenant} />
                 <PaymentReminders />
