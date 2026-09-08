@@ -26,7 +26,7 @@ Deno.serve(async (req) => {
 
     const { data: row } = await supabase
       .from("email_accuses")
-      .select("id, statut")
+      .select("id, statut, opened_at")
       .eq("provider_message_id", messageId)
       .maybeSingle();
 
@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
     } else if (type === "email.opened") {
       update.statut = "ouvert";
       update.last_opened_at = now;
-      update.opened_at = now;
+      update.opened_at = row.opened_at ?? now;
     }
 
     if (Object.keys(update).length > 0) {

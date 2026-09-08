@@ -48,7 +48,6 @@ Deno.serve(async (req) => {
           opened_at: row.opened_at ?? now,
           last_opened_at: now,
           open_count: (row.open_count ?? 0) + 1,
-          delivered_at: undefined,
         })
         .eq("id", id);
     }
