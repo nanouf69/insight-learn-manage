@@ -306,12 +306,14 @@ function CourseFileViewer({
     return <div className="h-20 rounded-lg border bg-muted animate-pulse" />;
   }
 
+  const externalViewerUrl = resolveAppFileUrl(fichier.url, { forExternalViewer: true });
   const googleViewerUrl = shouldShowViewers
-    ? `https://docs.google.com/viewer?url=${encodeURIComponent(displayUrl)}&embedded=true`
+    ? `https://docs.google.com/viewer?url=${encodeURIComponent(externalViewerUrl)}&embedded=true`
     : null;
   const msViewerUrl = shouldShowViewers
-    ? `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(displayUrl)}`
+    ? `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(externalViewerUrl)}`
     : null;
+
 
   return (
     <div className="space-y-3">
