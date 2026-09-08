@@ -2,13 +2,29 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Banknote } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Banknote, Plus, Trash2 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
+import { toast } from "sonner";
 
 interface Props {
   apprenant: any;
 }
+
+const MOYENS_PAIEMENT = [
+  "Virement bancaire",
+  "Carte bancaire",
+  "Espèces",
+  "Chèque",
+  "CPF",
+  "Financeur (OPCO / France Travail)",
+  "Autre",
+];
+
 
 const fmt = (n: number) =>
   new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 2 }).format(n || 0);
@@ -59,6 +75,68 @@ export function FinancementApprenantCard({ apprenant }: Props) {
   const [paiements, setPaiements] = useState<any[]>([]);
   const [virements, setVirements] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({
+    date_paiement: new Date().toISOString().slice(0, 10),
+    montant: "",
+    moyen_paiement: "Virement bancaire",
+    notes: "",
+  });
+
+  const refreshPaiements = async () => {
+    const { data } = await supabase
+      .from("apprenant_paiements")
+      .select("id, montant, moyen_paiement, date_paiement, notes")
+      .eq("apprenant_id", apprenant.id)
+      .order("date_paiement", { ascending: false });
+    setPaiements(data ?? []);
+  };
+
+  const handleAddPaiement = async () => {
+    const montant = Number(String(form.montant).replace(",", "."));
+    if (!form.date_paiement) {
+      toast.error("Indiquez la date du paiement.");
+      return;
+    }
+    if (!Number.isFinite(montant) || montant <= 0) {
+      toast.error("Indiquez un montant supérieur à 0.");
+      return;
+    }
+    setSaving(true);
+    const { error } = await supabase.from("apprenant_paiements").insert({
+      apprenant_id: apprenant.id,
+      date_paiement: form.date_paiement,
+      montant,
+      moyen_paiement: form.moyen_paiement,
+      notes: form.notes.trim() || null,
+    });
+    setSaving(false);
+    if (error) {
+      toast.error(`Enregistrement impossible : ${error.message}`);
+      return;
+    }
+    toast.success("Paiement enregistré.");
+    setShowForm(false);
+    setForm({
+      date_paiement: new Date().toISOString().slice(0, 10),
+      montant: "",
+      moyen_paiement: "Virement bancaire",
+      notes: "",
+    });
+    await refreshPaiements();
+  };
+
+  const handleDeletePaiement = async (id: string) => {
+    const { error } = await supabase.from("apprenant_paiements").delete().eq("id", id);
+    if (error) {
+      toast.error(`Suppression impossible : ${error.message}`);
+      return;
+    }
+    toast.success("Paiement supprimé.");
+    await refreshPaiements();
+  };
+
 
   const organismeCode = String(apprenant?.organisme_financeur || "").toLowerCase().trim();
   const rawModeCode = String(apprenant?.mode_financement || "").toLowerCase().trim();
@@ -175,22 +253,107 @@ export function FinancementApprenantCard({ apprenant }: Props) {
           </div>
         </div>
 
-        {paiements.length > 0 && (
-          <div className="pt-2 border-t">
-            <p className="text-sm text-muted-foreground mb-2">Paiements enregistrés ({paiements.length})</p>
+        <div className="pt-2 border-t space-y-3">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm text-muted-foreground">
+              Paiements enregistrés ({paiements.length})
+            </p>
+            <Button size="sm" variant="outline" className="gap-1" onClick={() => setShowForm((v) => !v)}>
+              <Plus className="w-4 h-4" />
+              {showForm ? "Annuler" : "Ajouter un paiement"}
+            </Button>
+          </div>
+
+          {showForm && (
+            <div className="rounded-lg border p-3 space-y-3">
+              <div className="space-y-1">
+                <Label htmlFor="paiement-date">Date du paiement</Label>
+                <Input
+                  id="paiement-date"
+                  type="date"
+                  className="w-full"
+                  value={form.date_paiement}
+                  onChange={(e) => setForm((f) => ({ ...f, date_paiement: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="paiement-montant">Montant (€)</Label>
+                <Input
+                  id="paiement-montant"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  inputMode="decimal"
+                  placeholder="Ex : 300"
+                  className="w-full"
+                  value={form.montant}
+                  onChange={(e) => setForm((f) => ({ ...f, montant: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label>Moyen de paiement</Label>
+                <Select
+                  value={form.moyen_paiement}
+                  onValueChange={(value) => setForm((f) => ({ ...f, moyen_paiement: value }))}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Choisir" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background z-50">
+                    {MOYENS_PAIEMENT.map((m) => (
+                      <SelectItem key={m} value={m}>
+                        {m}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="paiement-notes">Note (facultatif)</Label>
+                <Input
+                  id="paiement-notes"
+                  className="w-full"
+                  placeholder="Ex : acompte, référence virement…"
+                  value={form.notes}
+                  onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
+                />
+              </div>
+              <Button className="w-full" disabled={saving} onClick={handleAddPaiement}>
+                {saving ? "Enregistrement…" : "Enregistrer le paiement"}
+              </Button>
+            </div>
+          )}
+
+          {paiements.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Aucun paiement enregistré pour le moment.</p>
+          ) : (
             <div className="space-y-1">
               {paiements.map((p) => (
-                <div key={p.id} className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">
+                <div key={p.id} className="flex items-center justify-between gap-2 text-sm">
+                  <span className="text-muted-foreground truncate">
                     {p.date_paiement ? format(parseISO(p.date_paiement), "dd MMM yyyy", { locale: fr }) : "-"}
                     {p.moyen_paiement ? ` · ${p.moyen_paiement}` : ""}
+                    {p.notes ? ` · ${p.notes}` : ""}
                   </span>
-                  <span className="font-medium">{fmt(Number(p.montant || 0))}</span>
+                  <span className="flex items-center gap-1 whitespace-nowrap">
+                    <span className="font-medium">{fmt(Number(p.montant || 0))}</span>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                      title="Supprimer ce paiement"
+                      onClick={() => handleDeletePaiement(p.id)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </span>
                 </div>
               ))}
             </div>
-          </div>
-        )}
+          )}
+        </div>
+
+
 
         {isPersonnel && (
           <div className="pt-2 border-t">
