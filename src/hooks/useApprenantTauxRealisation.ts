@@ -4,9 +4,12 @@ import { fetchAllRows } from "@/lib/supabase/fetch-all-rows";
 import { getSessionEndMs, clampConnexionsToAccessEnd } from "@/lib/reports/session-duration";
 import { fetchPratiqueSlotDetails } from "@/lib/pratiqueSlots";
 import { computePresentielHours } from "@/lib/presentielHours";
+import { FORMATION_MODULES } from "@/components/cours-en-ligne/modules-config";
 
 
 export interface TauxRealisation {
+  modulesCompleted: number;
+  modulesTotal: number;
   doneElearning: number;
   donePresentiel: number;
   reqElearning: number;
@@ -40,7 +43,7 @@ export function useApprenantTauxRealisation(apprenantId?: string, apprenantProp?
         .maybeSingle();
       const apprenant = { ...(apprenantProp || {}), ...(apprenantRow || {}) } as any;
 
-      const [acts, quizzes, exos, cnxAll, emargAll, pratiqueDetails] = await Promise.all([
+      const [acts, quizzes, exos, cnxAll, emargAll, pratiqueDetails, completions, apprenantTypeRow] = await Promise.all([
         fetchAllRows<any>((from, to) => supabase
           .from("apprenant_module_activites")
           .select("module_nom, action_type, occurred_at")
@@ -68,6 +71,18 @@ export function useApprenantTauxRealisation(apprenantId?: string, apprenantProp?
           .eq("apprenant_id", apprenantId)
           .range(from, to)).catch(() => [] as any[]),
         fetchPratiqueSlotDetails(apprenantId).catch(() => []),
+        fetchAllRows<any>((from, to) => supabase
+          .from("apprenant_module_completion")
+          .select("module_id")
+          .eq("apprenant_id", apprenantId)
+          .eq("status", "completed")
+          .range(from, to)).catch(() => [] as any[]),
+        supabase
+          .from("apprenants")
+          .select("type_apprenant, formation_choisie")
+          .eq("id", apprenantId)
+          .maybeSingle()
+          .then((r) => r.data, () => null),
       ]);
 
       const cnxRows = clampConnexionsToAccessEnd(
@@ -132,7 +147,20 @@ export function useApprenantTauxRealisation(apprenantId?: string, apprenantProp?
         reqPresentiel > 0 ? reqPresentiel : 0,
       );
 
+      // ---- Jalons (modules terminés) : status='completed' fait foi, jamais completed_at seul
+      const ta = String((apprenantTypeRow as any)?.type_apprenant || (apprenantProp as any)?.type_apprenant || "").toLowerCase().trim();
+      const fc = String((apprenantTypeRow as any)?.formation_choisie || (apprenantProp as any)?.formation_choisie || "").toLowerCase().trim();
+      const pathModules = (FORMATION_MODULES[ta] || FORMATION_MODULES[fc])?.modules || [];
+      const pathIds = new Set(pathModules.map((m) => m.id));
+      const completedIds = new Set((completions as any[]).map((r: any) => Number(r.module_id)));
+      const modulesCompleted = pathIds.size > 0
+        ? [...completedIds].filter((id) => pathIds.has(id)).length
+        : completedIds.size;
+      const modulesTotal = pathIds.size > 0 ? pathIds.size : completedIds.size;
+
       return {
+        modulesCompleted,
+        modulesTotal,
         doneElearning,
         donePresentiel,
         reqElearning,
