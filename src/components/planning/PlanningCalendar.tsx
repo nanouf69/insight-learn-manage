@@ -47,6 +47,7 @@ type ExamCandidate = {
   name: string;
   type: string;
   heure: string;
+  telephone?: string;
 };
 
 type DayInfo = {
