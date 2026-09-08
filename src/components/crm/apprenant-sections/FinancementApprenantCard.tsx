@@ -353,7 +353,7 @@ export function FinancementApprenantCard({ apprenant }: Props) {
           )}
         </div>
 
-        )}
+
 
         {isPersonnel && (
           <div className="pt-2 border-t">
