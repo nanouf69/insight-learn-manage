@@ -6544,6 +6544,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       // no-op
     }, []);
 
+    // Suivi (additif) du temps passé par question — n'affecte aucune donnée pédagogique.
+    const { trackQuestion } = useQuestionTimeTracking(apprenantId);
+
     const handleAnswer = (exoId: number, qId: number, lettre: string, multi?: boolean, target?: HTMLElement | null) => {
       if (showResultsFor.has(exoId)) return;
       onLearnerActivity?.();
