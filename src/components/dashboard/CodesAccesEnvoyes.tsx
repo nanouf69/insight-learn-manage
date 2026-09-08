@@ -132,7 +132,7 @@ export function CodesAccesEnvoyes({ onNavigateToApprenant }: Props) {
       for (const q of quizRows.data || []) keepMin(q.apprenant_id, Date.parse(q.completed_at));
 
       // 3) Fusion : un seul enregistrement par apprenant/jour (le plus récent)
-      const byDay = new Map<string, Map<string, { sentAt: string; apprenant: any }>>();
+      const byDay = new Map<string, Map<string, { sentAt: string; apprenant: any; firstActAt: string | null }>>();
 
       for (const email of emails) {
         const apprenant = apprenantById.get(email.apprenant_id);
@@ -144,7 +144,14 @@ export function CodesAccesEnvoyes({ onNavigateToApprenant }: Props) {
 
         const existing = dayMap.get(apprenant.id);
         if (!existing || new Date(email.sent_at) > new Date(existing.sentAt)) {
-          dayMap.set(apprenant.id, { sentAt: email.sent_at, apprenant });
+          dayMap.set(apprenant.id, {
+            sentAt: email.sent_at,
+            apprenant,
+            firstActAt: (() => {
+              const ts = firstActByApprenant.get(apprenant.id);
+              return ts !== undefined ? new Date(ts).toISOString() : null;
+            })(),
+          });
         }
       }
 
