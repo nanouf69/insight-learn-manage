@@ -3876,6 +3876,45 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      save_canonical_quiz_question_v2: {
+        Args: {
+          p_active?: boolean
+          p_choix: Json
+          p_enonce: string
+          p_expected_updated_at?: string
+          p_explication?: string
+          p_fournisseur_token: string
+          p_image?: string
+          p_image_size?: string
+          p_legacy_question_id: number
+          p_position: number
+          p_quiz_id: string
+          p_section_id: number
+        }
+        Returns: {
+          active: boolean
+          choix: Json
+          created_at: string
+          enonce: string
+          explication: string | null
+          image: string | null
+          image_size: string | null
+          legacy_question_id: number
+          position: number
+          question_id: string
+          quiz_id: string
+          section_id: number
+          source: string
+          updated_at: string
+          updated_by_fournisseur_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "quiz_questions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       save_module_completion: {
         Args: {
           _apprenant_id: string
