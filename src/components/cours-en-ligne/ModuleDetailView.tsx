@@ -26,6 +26,7 @@ import {
   isAttemptSubmitted,
   submitQuizAttempt,
 } from "@/lib/quizAttempts";
+import { useQuestionTimeTracking } from "@/hooks/useQuestionTimeTracking";
 
 import { ColoredTextField } from "./ColoredTextField";
 
