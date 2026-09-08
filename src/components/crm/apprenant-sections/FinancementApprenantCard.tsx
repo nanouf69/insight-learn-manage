@@ -6,13 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Banknote, Plus, Trash2 } from "lucide-react";
+import { Banknote, Plus, Trash2, FileText } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
 import { toast } from "sonner";
 
 interface Props {
   apprenant: any;
+  onNavigateToComptabilite?: () => void;
 }
 
 const MOYENS_PAIEMENT = [
@@ -71,7 +72,7 @@ const modeLabels: Record<string, string> = {
 const prettify = (code: string) =>
   financeurLabels[code.toLowerCase()] || (code.length > 3 ? code : code.toUpperCase());
 
-export function FinancementApprenantCard({ apprenant }: Props) {
+export function FinancementApprenantCard({ apprenant, onNavigateToComptabilite }: Props) {
   const [paiements, setPaiements] = useState<any[]>([]);
   const [virements, setVirements] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -204,11 +205,23 @@ export function FinancementApprenantCard({ apprenant }: Props) {
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-start justify-between gap-2">
         <CardTitle className="flex items-center gap-2">
           <Banknote className="w-5 h-5" />
           Financement & paiements
         </CardTitle>
+        {onNavigateToComptabilite && (
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-1 shrink-0"
+            onClick={onNavigateToComptabilite}
+            title="Voir la facturation"
+          >
+            <FileText className="w-4 h-4" />
+            Facturation
+          </Button>
+        )}
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

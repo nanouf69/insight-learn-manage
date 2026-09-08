@@ -922,7 +922,10 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
                   </CardContent>
                 </Card>
 
-                <FinancementApprenantCard apprenant={apprenant} />
+                <FinancementApprenantCard
+                  apprenant={apprenant}
+                  onNavigateToComptabilite={() => navigate("/?section=comptabilite")}
+                />
 
 
 
