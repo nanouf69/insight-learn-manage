@@ -1,0 +1,1 @@
+DO $$ BEGIN IF pg_get_functiondef('public.sync_admin_canonical_quiz_questions(integer,jsonb)'::regprocedure) LIKE '%active=true%' OR pg_get_functiondef('public.sync_admin_canonical_quiz_questions(integer,jsonb)'::regprocedure) LIKE '%active = true,%' THEN RAISE EXCEPTION 'canonical_sync_still_reactivates_questions'; END IF; END $$;
