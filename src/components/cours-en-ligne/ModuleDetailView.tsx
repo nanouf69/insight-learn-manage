@@ -2896,6 +2896,7 @@ function ExerciceCard({
   onUpdateQuestions,
   moduleId,
   overrideWarnings,
+  partNumber,
 }: {
   item: ExerciceItem;
   index: number;
@@ -2906,6 +2907,7 @@ function ExerciceCard({
   onUpdateQuestions: (id: number, questions: ExerciceQuestion[], deletedQuestionId?: number) => void;
   moduleId: number;
   overrideWarnings?: Map<string, TrainerOverrideInfo>;
+  partNumber?: string | null;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [fullscreenOpen, setFullscreenOpen] = useState(false);
