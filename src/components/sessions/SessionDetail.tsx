@@ -4408,7 +4408,14 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
 
                           <Select
                             value={sessionApprenant.statut_suivi || ''}
+                            disabled={mdpMailDialog.loading}
                             onValueChange={async (val) => {
+                              if (val === 'mdp_change') {
+                                // Aperçu du mail URGENT avant envoi — statut enregistré après l'envoi
+                                mdpTargetRef.current = sessionApprenant.id;
+                                await mdpMailDialog.prepare(apprenant.id);
+                                return;
+                              }
                               await updateSessionApprenant(sessionApprenant.id, { statut_suivi: val || null });
                             }}
                           >
