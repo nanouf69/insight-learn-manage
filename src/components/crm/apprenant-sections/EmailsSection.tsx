@@ -49,6 +49,7 @@ interface AttachmentFile {
 // Email de l'organisme pour la synchronisation Outlook
 const ORGANISME_EMAIL = "contact@ftransport.fr";
 const ONBOARDING_URL = "https://insight-learn-manage.lovable.app/bienvenue";
+const PUBLIC_APP_URL = "https://gestion.ftransport.fr";
 
 function getFormationType(typeApprenant: string | null | undefined): string {
   const type = (typeApprenant || '').toLowerCase();
@@ -301,6 +302,40 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
       return data || [];
     },
   });
+
+  // Lien sécurisé (jeton unique) pour que l'apprenant transmette ses nouveaux identifiants T3P
+  const { data: identifiantsT3P } = useQuery({
+    queryKey: ['identifiants-t3p', apprenant.id],
+    enabled: !!apprenant.id,
+    queryFn: async () => {
+      const { data: existing } = await supabase
+        .from('apprenant_identifiants_t3p')
+        .select('*')
+        .eq('apprenant_id', apprenant.id)
+        .maybeSingle();
+      if (existing) return existing;
+      const { data: created, error } = await supabase
+        .from('apprenant_identifiants_t3p')
+        .insert({ apprenant_id: apprenant.id })
+        .select('*')
+        .single();
+      if (error) throw error;
+      return created;
+    },
+  });
+
+  const identifiantsT3PUrl = identifiantsT3P?.token
+    ? `${PUBLIC_APP_URL}/identifiants-t3p?token=${identifiantsT3P.token}`
+    : '';
+
+  const boutonIdentifiantsT3P = identifiantsT3PUrl
+    ? `<div style="margin:18px 0"><a href="${identifiantsT3PUrl}" style="display:inline-block;background:#dc2626;color:#ffffff;font-weight:bold;font-size:16px;padding:14px 22px;border-radius:8px;text-decoration:none">🔐 Transmettre mes nouveaux identifiants</a><br><span style="font-size:12px;color:#555">Lien personnel et sécurisé : ne le transmettez à personne.</span></div>`
+    : '';
+
+  const injectT3PLink = (html: string) =>
+    (html || '')
+      .replace(/\{\{lien_identifiants_t3p\}\}/g, identifiantsT3PUrl)
+      .replace(/\{\{bouton_identifiants_t3p\}\}/g, boutonIdentifiantsT3P);
 
   // Merge hardcoded + DB templates
   const allTemplates = [
@@ -765,7 +800,7 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
     const template = allTemplates.find(t => t.id === templateId);
     if (template) {
       setNewEmailSubject(template.getSubject(apprenant));
-      setNewEmailBody(template.getBody(apprenant));
+      setNewEmailBody(injectT3PLink(template.getBody(apprenant)));
     }
 
     // Auto-attache les PDFs pour le template "Modèles devis & facture - Examen VTC"
@@ -979,6 +1014,55 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
           ) : (
             <p className="text-xs text-muted-foreground">Mot de passe plateforme non enregistré</p>
           )}
+
+          {/* Nouveaux identifiants Examen T3P transmis par l'apprenant */}
+          <div className="rounded-md border bg-muted/30 p-2 space-y-1 mt-2">
+            {identifiantsT3P?.recu_at ? (
+              <>
+                <p className="text-sm font-medium text-green-700">
+                  ✅ Nouveaux identifiants reçus le {format(new Date(identifiantsT3P.recu_at), "dd/MM/yyyy 'à' HH:mm", { locale: fr })}
+                </p>
+                <p className="text-sm">
+                  Nouvelle adresse mail : <code className="px-1 rounded bg-muted font-mono">{identifiantsT3P.nouvel_email}</code>
+                </p>
+                <p className="text-sm">
+                  Nouveau mot de passe : <code className="px-1 rounded bg-muted font-mono">{identifiantsT3P.nouveau_mot_de_passe}</code>
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-6 text-xs"
+                  onClick={() => {
+                    navigator.clipboard.writeText(
+                      `Nouvelle adresse mail : ${identifiantsT3P.nouvel_email}\nNouveau mot de passe : ${identifiantsT3P.nouveau_mot_de_passe}`
+                    );
+                    toast({ title: "Nouveaux identifiants copiés" });
+                  }}
+                >
+                  <Copy className="w-3 h-3 mr-1" />
+                  Copier les nouveaux identifiants
+                </Button>
+              </>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                ⏳ Nouveaux identifiants Examen T3P : en attente de l'apprenant
+              </p>
+            )}
+            {identifiantsT3PUrl && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 text-xs"
+                onClick={() => {
+                  navigator.clipboard.writeText(identifiantsT3PUrl);
+                  toast({ title: "Lien sécurisé copié" });
+                }}
+              >
+                <Copy className="w-3 h-3 mr-1" />
+                Copier le lien du formulaire
+              </Button>
+            )}
+          </div>
         </div>
 
         <div className="flex gap-2">

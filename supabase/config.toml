@@ -100,3 +100,6 @@ verify_jwt = false
 
 [functions.email-webhook]
 verify_jwt = false
+
+[functions.identifiants-t3p-public]
+verify_jwt = false
