@@ -8965,6 +8965,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 onUpdateQuestions={(id, questions, deletedQuestionId) =>
                   updateExerciceQuestions(id, questions, deletedQuestionId)
                 }
+                onUpdateMeta={(id, meta) => updateExerciceMeta(id, meta)}
                 moduleId={moduleData.id}
                 overrideWarnings={trainerOverrideWarnings}
                 partNumber={exercicePartNumberById.get(Number(exo.id)) ?? null}
