@@ -3997,7 +3997,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                           </span>
                           {sessionApprenant.statut_suivi && (
                             <span className={`inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-full ${
-                              sessionApprenant.statut_suivi === 'inscription_validee' || sessionApprenant.statut_suivi === 'document_complet'
+                              sessionApprenant.statut_suivi === 'inscription_validee' || sessionApprenant.statut_suivi === 'document_complet' || sessionApprenant.statut_suivi === 'paye'
                                 ? 'bg-green-100 text-green-700'
                                 : 'bg-orange-100 text-orange-700'
                             }`}>
@@ -4005,6 +4005,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                sessionApprenant.statut_suivi === 'document_complet' ? '✅ Dossier complet' :
                                sessionApprenant.statut_suivi === 'manque_document' ? '📄 Manque doc' :
                                sessionApprenant.statut_suivi === 'a_payer' ? '💰 À payer' :
+                               sessionApprenant.statut_suivi === 'paye' ? '💸 Payé' :
                                sessionApprenant.statut_suivi === 'mdp_change' ? '🔑 MDP changé' :
                                '⚠️ ' + sessionApprenant.statut_suivi}
                             </span>
@@ -4405,6 +4406,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                             <SelectTrigger className={`h-8 w-auto gap-1 text-xs border ${
                               sessionApprenant.statut_suivi === 'inscription_validee' ? 'border-green-300 text-green-700' :
                               sessionApprenant.statut_suivi === 'document_complet' ? 'border-green-300 text-green-700' :
+                              sessionApprenant.statut_suivi === 'paye' ? 'border-green-300 text-green-700' :
                               sessionApprenant.statut_suivi ? 'border-orange-300 text-orange-700' : ''
                             }`}>
                               <SelectValue placeholder="⚙️ Statut" />
@@ -4421,6 +4423,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                               <SelectItem value="email_non_valide">📧 Email non validé</SelectItem>
                               <SelectItem value="injoignable">📵 Injoignable</SelectItem>
                               <SelectItem value="a_payer">💰 À payer</SelectItem>
+                              <SelectItem value="paye">💸 Payé</SelectItem>
                               <SelectItem value="inscription_validee">✅ Inscription validée</SelectItem>
                             </SelectContent>
                           </Select>
