@@ -473,7 +473,8 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
     return getSessionDurationMinutes(connexion as any, accessCutoffMs);
   };
 
-  // Présentiel : les journées pratiques utilisent la durée exacte du planning.
+  // Présentiel : une ligne n'est qualifiée de pratique que si l'apprenant est
+  // inscrit/réservé ET a signé le créneau pratique correspondant.
   const pratiqueRows = useMemo(() => {
     const byDate = new Map<string, { date: string; slots: Set<string>; hours: number }>();
     for (const row of emargements) {
@@ -482,16 +483,27 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
       const slot = String(row.demi_journee || "").trim().toLowerCase();
       if (!date || !slot) continue;
       if (!byDate.has(date)) byDate.set(date, { date, slots: new Set(), hours: 0 });
-      byDate.get(date)!.slots.add(slot);
+      byDate.get(date)?.slots.add(slot);
     }
     const rows: { date: string; label: string; hours: number }[] = [];
     const pratiqueByDate = new Map(pratiqueDetails.map((detail) => [detail.date, detail]));
     for (const { date, slots } of byDate.values()) {
       const pratique = pratiqueByDate.get(date);
       if (pratique) {
-        rows.push({ date, label: `Pratique · ${pratique.label}`, hours: pratique.minutes / 60 });
+        const signedParts = pratique.parts.filter((part) =>
+          part.creneau === "matin" ? slots.has("matin") : slots.has("apres_midi"),
+        );
+        const signedMinutes = signedParts.reduce((sum, part) => sum + Math.max(0, part.minutes || 0), 0);
+        if (signedMinutes > 0) {
+          rows.push({
+            date,
+            label: `Pratique · ${signedParts.map((part) => part.label).join(" + ")}`,
+            hours: signedMinutes / 60,
+          });
+          pratiqueByDate.delete(date);
+          continue;
+        }
         pratiqueByDate.delete(date);
-        continue;
       }
       let hours = 0;
       const hasSoir = slots.has("soir") || slots.has("soir_1") || slots.has("soir_2");
@@ -511,9 +523,8 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
       if (slots.has("soir") || slots.has("soir_1") || slots.has("soir_2")) labels.push("Soir");
       rows.push({ date, label: labels.join(" + ") || "Présentiel", hours });
     }
-    for (const pratique of pratiqueByDate.values()) {
-      rows.push({ date: pratique.date, label: `Pratique · ${pratique.label}`, hours: pratique.minutes / 60 });
-    }
+    // Une réservation/session pratique sans émargement signé ne produit
+    // aucune ligne et ne compte aucune heure dans le rapport.
     return rows.sort((a, b) => b.date.localeCompare(a.date));
   }, [emargements, pratiqueDetails]);
 

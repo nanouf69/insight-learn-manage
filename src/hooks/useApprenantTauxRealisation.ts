@@ -64,7 +64,7 @@ export function useApprenantTauxRealisation(apprenantId?: string, apprenantProp?
           .range(from, to)).catch(() => [] as any[]),
         fetchAllRows<any>((from, to) => supabase
           .from("apprenant_connexions")
-          .select("started_at, ended_at, last_seen_at, last_action_at")
+          .select("started_at, ended_at, last_seen_at, last_action_at, current_module")
           .eq("apprenant_id", apprenantId)
           .range(from, to)).catch(() => [] as any[]),
         fetchAllRows<any>((from, to) => supabase
@@ -115,6 +115,30 @@ export function useApprenantTauxRealisation(apprenantId?: string, apprenantProp?
         }
         return false;
       };
+
+      // La date de début affichée doit correspondre au début de la première
+      // connexion pédagogique. Une activité enregistrée après minuit ne doit
+      // jamais décaler artificiellement le début au lendemain.
+      const isPedagogicalModule = (nom?: string | null) =>
+        !!nom && !isAccueil(nom) && !/^syst[eè]me$/i.test(nom.trim());
+      const firstPedagogicalConnectionStart = (cnxRows as any[])
+        .map((c: any) => {
+          const start = Date.parse(c.started_at);
+          if (Number.isNaN(start)) return null;
+          const end = getSessionEndMs(c as any);
+          const qualifies = isPedagogicalModule(c.current_module) || hasActivityInWindow(start, end);
+          return qualifies ? start : null;
+        })
+        .filter((value: number | null): value is number => value !== null)
+        .sort((a: number, b: number) => a - b)[0];
+      const firstSignedAttendanceStart = (emargAll as any[])
+        .filter((row: any) => !row.absent && row.date_emargement)
+        .map((row: any) => Date.parse(`${String(row.date_emargement).slice(0, 10)}T00:00:00`))
+        .filter((value: number) => !Number.isNaN(value))
+        .sort((a: number, b: number) => a - b)[0];
+      const firstActualActivityStart = [firstPedagogicalConnectionStart, firstSignedAttendanceStart]
+        .filter((value: number | undefined): value is number => value !== undefined)
+        .sort((a: number, b: number) => a - b)[0];
 
       let onlineMin = 0;
       for (const c of cnxRows as any[]) {
@@ -171,7 +195,11 @@ export function useApprenantTauxRealisation(apprenantId?: string, apprenantProp?
         pctElearning: pct(doneElearning, reqElearning),
         pctPresentiel: pct(donePresentiel, reqPresentiel),
         pctTotal: pct(doneElearning + donePresentiel, reqTotal),
-        premiereActiviteAt: pedagogicalActTs.length > 0 ? new Date(pedagogicalActTs[0]).toISOString() : null,
+        premiereActiviteAt: firstActualActivityStart !== undefined
+          ? new Date(firstActualActivityStart).toISOString()
+          : pedagogicalActTs.length > 0
+            ? new Date(pedagogicalActTs[0]).toISOString()
+            : null,
       };
     },
   });
