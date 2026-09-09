@@ -9,7 +9,7 @@ import { ExerciceItem } from "./types";
 export const QUIZ_ADMINISTRATIONS: ExerciceItem = {
   id: 7001, actif: true,
   titre: "Quiz Adresses Administrations",
-  sousTitre: "16 questions sur les adresses des administrations lyonnaises",
+  sousTitre: "26 questions sur les adresses des administrations lyonnaises",
   questions: [
     {
       id: 1, enonce: "Où se trouve l'adresse des Anciens Combattants ?",
