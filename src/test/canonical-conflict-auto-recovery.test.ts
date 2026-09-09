@@ -128,6 +128,5 @@ describe("branchement dans les éditeurs", () => {
     expect(source).toContain("await fetchCanonicalRows()");
     expect(source).toContain("return await send(freshRow.updated_at)");
     expect(source).toContain("removedChoiceKeys");
-    expect(source).not.toContain("if (editChoix.length <= 2) return");
   });
 });

@@ -267,6 +267,7 @@ export function EditableQuizViewer({ sections: sourceSections, title, icon = "ðŸ
   };
 
   const removeChoix = (index: number) => {
+    if (editChoix.length <= 2) return;
     setEditChoix(prev => prev.filter((_, i) => i !== index));
   };
 
@@ -366,7 +367,7 @@ export function EditableQuizViewer({ sections: sourceSections, title, icon = "ðŸ
                                   placeholder={`Choix ${c.lettre}`}
                                   className="text-sm flex-1"
                                 />
-                                {(
+                                {editChoix.length > 2 && (
                                   <Button size="icon" variant="ghost" className="shrink-0 h-8 w-8" onClick={() => removeChoix(ci)}>
                                     <Trash2 className="w-3 h-3" />
                                   </Button>

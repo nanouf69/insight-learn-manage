@@ -24,8 +24,9 @@ export function toggleCorrect(choix: QuizChoice[], index: number): QuizChoice[] 
  */
 export function validateQuestionEdit(enonce: string, choix: QuizChoice[]): string | null {
   if (!enonce.trim()) return "L'énoncé ne peut pas être vide";
+  if (choix.length < 2) return "Il faut au moins 2 choix";
   const hasCorrect = choix.some(c => c.correct);
-  if (choix.length > 0 && !hasCorrect) return "Il faut au moins une bonne réponse";
+  if (!hasCorrect) return "Il faut au moins une bonne réponse";
   const hasEmptyChoix = choix.some(c => !c.texte.trim());
   if (hasEmptyChoix) return "Tous les choix doivent avoir un texte";
   return null;
