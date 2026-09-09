@@ -3897,6 +3897,7 @@ export type Database = {
         Args: { _apprenant_id: string }
         Returns: boolean
       }
+      jsonb_as_array: { Args: { p: Json }; Returns: Json }
       log_error: {
         Args: {
           _component_stack?: string
