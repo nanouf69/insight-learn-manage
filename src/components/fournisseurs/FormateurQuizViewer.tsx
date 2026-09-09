@@ -55,7 +55,7 @@ export function FormateurQuizViewer({ sections, title, icon = "📝" }: Props) {
               >
                 <div>
                   <p className="font-medium text-sm">{section.titre}</p>
-                  {section.sousTitre && <p className="text-xs text-muted-foreground mt-0.5">{section.sousTitre}</p>}
+                  {section.sousTitre && <p className="text-xs text-muted-foreground mt-0.5">{section.sousTitre.replace(/^\s*\d+\s+questions/i, `${qCount} questions`)}</p>}
                 </div>
                 <div className="flex items-center gap-2 shrink-0 ml-2">
                   <span className="text-xs text-muted-foreground">{qCount} Q</span>
