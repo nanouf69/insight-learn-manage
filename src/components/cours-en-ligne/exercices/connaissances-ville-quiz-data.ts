@@ -77,8 +77,8 @@ export const QUIZ_ADMINISTRATIONS: ExerciceItem = {
     {
       id: 8, enonce: "Où se trouve le Commissariat du 1er arrondissement ?",
       choix: [
-        { lettre: "A", texte: "5 Rue de la Martinière, Lyon", correct: true },
-        { lettre: "B", texte: "19 Place Louis Pradel, Lyon" },
+        { lettre: "A", texte: "5 Rue de la Martinière, Lyon" },
+        { lettre: "B", texte: "19 Place Louis Pradel, 69001 Lyon", correct: true },
         { lettre: "C", texte: "20 Boulevard des États-Unis, Lyon" },
         { lettre: "D", texte: "15 Place George Sand, Lyon" },
       ],
