@@ -274,6 +274,47 @@ export type Database = {
           },
         ]
       }
+      apprenant_identifiants_t3p: {
+        Row: {
+          apprenant_id: string
+          created_at: string
+          id: string
+          nouveau_mot_de_passe: string | null
+          nouvel_email: string | null
+          recu_at: string | null
+          token: string
+          updated_at: string
+        }
+        Insert: {
+          apprenant_id: string
+          created_at?: string
+          id?: string
+          nouveau_mot_de_passe?: string | null
+          nouvel_email?: string | null
+          recu_at?: string | null
+          token?: string
+          updated_at?: string
+        }
+        Update: {
+          apprenant_id?: string
+          created_at?: string
+          id?: string
+          nouveau_mot_de_passe?: string | null
+          nouvel_email?: string | null
+          recu_at?: string | null
+          token?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "apprenant_identifiants_t3p_apprenant_id_fkey"
+            columns: ["apprenant_id"]
+            isOneToOne: true
+            referencedRelation: "apprenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       apprenant_module_activites: {
         Row: {
           action_type: string
