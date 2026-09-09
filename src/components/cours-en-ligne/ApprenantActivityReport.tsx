@@ -1114,7 +1114,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
                             {formatPresenceHours(p.hours)}
                           </TableCell>
                           <TableCell colSpan={3} className="text-muted-foreground italic">
-                            Journée de pratique
+                            {p.label.startsWith("Pratique") ? "Journée de pratique" : "Présentiel — émargement signé"}
                           </TableCell>
                           <TableCell className="print:hidden" />
                         </TableRow>
