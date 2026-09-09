@@ -4420,12 +4420,22 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                               await updateSessionApprenant(sessionApprenant.id, { statut_suivi: val || null });
                             }}
                           >
-                            <SelectTrigger className={`h-8 w-auto gap-1 text-xs border ${
+                            <SelectTrigger
+                              onPointerDown={(event) => {
+                                if (sessionApprenant.statut_suivi === 'mdp_change') {
+                                  event.preventDefault();
+                                  event.stopPropagation();
+                                  mdpTargetRef.current = sessionApprenant.id;
+                                  void mdpMailDialog.prepare(apprenant.id);
+                                }
+                              }}
+                              className={`h-8 w-auto gap-1 text-xs border ${
                               sessionApprenant.statut_suivi === 'inscription_validee' ? 'border-green-300 text-green-700' :
                               sessionApprenant.statut_suivi === 'document_complet' ? 'border-green-300 text-green-700' :
                               sessionApprenant.statut_suivi === 'paye' ? 'border-green-300 text-green-700' :
                               sessionApprenant.statut_suivi ? 'border-orange-300 text-orange-700' : ''
-                            }`}>
+                            }`}
+                            >
                               <SelectValue placeholder="⚙️ Statut" />
                             </SelectTrigger>
                             <SelectContent>
