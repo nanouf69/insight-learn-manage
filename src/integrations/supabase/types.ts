@@ -637,6 +637,7 @@ export type Database = {
           societe_ville: string | null
           source_inscription: string
           statut: string | null
+          statut_suivi: string | null
           telephone: string | null
           type_apprenant: string | null
           type_examen: string | null
@@ -700,6 +701,7 @@ export type Database = {
           societe_ville?: string | null
           source_inscription?: string
           statut?: string | null
+          statut_suivi?: string | null
           telephone?: string | null
           type_apprenant?: string | null
           type_examen?: string | null
@@ -763,6 +765,7 @@ export type Database = {
           societe_ville?: string | null
           source_inscription?: string
           statut?: string | null
+          statut_suivi?: string | null
           telephone?: string | null
           type_apprenant?: string | null
           type_examen?: string | null
@@ -4229,6 +4232,7 @@ export type Database = {
           societe_ville: string | null
           source_inscription: string
           statut: string | null
+          statut_suivi: string | null
           telephone: string | null
           type_apprenant: string | null
           type_examen: string | null

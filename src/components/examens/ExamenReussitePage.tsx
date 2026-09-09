@@ -136,17 +136,15 @@ const STATUT_SUIVI_OPTIONS: { value: string; label: string }[] = [
   { value: "inscription_validee", label: "✅ Inscription validée" },
 ];
 
-/** Statut de suivi partagé avec la fiche session de l'apprenant (session_apprenants.statut_suivi) */
+/** Statut de suivi partagé avec la fiche session de l'apprenant (session_apprenants.statut_suivi).
+ *  Si l'apprenant n'est inscrit à aucune session, le statut est stocké sur sa fiche (apprenants.statut_suivi). */
 function InlineStatutSuivi({
   sessionApprenantId,
+  apprenantId,
   value,
   onSaved,
-}: { sessionApprenantId: string | null; value: string | null; onSaved?: () => void }) {
+}: { sessionApprenantId: string | null; apprenantId?: string; value: string | null; onSaved?: () => void }) {
   const [saving, setSaving] = useState(false);
-
-  if (!sessionApprenantId) {
-    return <span className="text-xs text-muted-foreground" title="Apprenant non inscrit à une session">Aucune session</span>;
-  }
 
   return (
     <Select
@@ -154,13 +152,24 @@ function InlineStatutSuivi({
       disabled={saving}
       onValueChange={async (val) => {
         setSaving(true);
-        const { error } = await supabase
-          .from('session_apprenants')
-          .update({ statut_suivi: val === "non_renseigne" ? null : val })
-          .eq('id', sessionApprenantId);
+        const newValue = val === "non_renseigne" ? null : val;
+        let error: any = null;
+        if (sessionApprenantId) {
+          ({ error } = await supabase
+            .from('session_apprenants')
+            .update({ statut_suivi: newValue })
+            .eq('id', sessionApprenantId));
+        } else if (apprenantId) {
+          ({ error } = await supabase
+            .from('apprenants')
+            .update({ statut_suivi: newValue } as any)
+            .eq('id', apprenantId));
+        } else {
+          error = { message: "Apprenant introuvable" };
+        }
         setSaving(false);
         if (error) { toast.error("Erreur : " + error.message); return; }
-        toast.success("Statut mis à jour (synchronisé avec la session)");
+        toast.success(sessionApprenantId ? "Statut mis à jour (synchronisé avec la session)" : "Statut mis à jour");
         onSaved?.();
       }}
     >
@@ -179,6 +188,7 @@ function InlineStatutSuivi({
     </Select>
   );
 }
+
 
 
 
@@ -1952,12 +1962,15 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                         <TableCell>
                           <InlineStatutSuivi
                             sessionApprenantId={statutsSession?.[apprenant.id]?.sessionApprenantId ?? null}
-                            value={statutsSession?.[apprenant.id]?.statut ?? null}
+                            apprenantId={apprenant.id}
+                            value={statutsSession?.[apprenant.id]?.statut ?? (apprenant as any).statut_suivi ?? null}
                             onSaved={() => {
                               queryClient.invalidateQueries({ queryKey: ['statuts-session-examen'] });
                               queryClient.invalidateQueries({ queryKey: ['session-apprenants'] });
+                              queryClient.invalidateQueries({ queryKey: ['apprenants-examen', selectedExamDate] });
                             }}
                           />
+
                         </TableCell>
                         <TableCell className={!apprenant.telephone ? "text-destructive font-medium" : ""}>
                           {apprenant.telephone || "-"}
