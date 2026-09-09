@@ -2900,7 +2900,19 @@ function QuestionEditor({
 
 // ===== Carte exercice avec questions =====
 // Calcule le numéro de « Partie » de chaque exercice, identique à la liste affichée côté apprenant.
+/**
+ * Le sous-titre historique embarque un nombre de questions figé (issu des données
+ * statiques). On le réaligne toujours sur le nombre réellement chargé depuis la base
+ * pour éviter d'afficher deux totaux différents. Aucune question n'est modifiée.
+ */
+function syncSousTitreQuestionCount(sousTitre?: string, actualCount?: number): string | undefined {
+  if (!sousTitre) return sousTitre;
+  if (typeof actualCount !== "number" || !Number.isFinite(actualCount)) return sousTitre;
+  return sousTitre.replace(/^\s*\d+\s+questions/i, `${actualCount} questions`);
+}
+
 function computeExercicePartNumbers(moduleId: number, cours: ContentItem[], exercices: ExerciceItem[]): Map<number, string> {
+
   const INTERLEAVED = new Set([2, 10, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 39, 40, 41, 42, 43]);
   const BILAN = new Set([4, 5, 9, 11, 27, 28, 29, 30, 81, 82]);
   type P = { type: "cours"; titre: string } | { type: "exercice"; exo: ExerciceItem };
@@ -3140,7 +3152,7 @@ function ExerciceCard({
                   </span>
                 )}
               </div>
-              {item.sousTitre && <p className="text-sm text-muted-foreground">{item.sousTitre}</p>}
+              {item.sousTitre && <p className="text-sm text-muted-foreground">{syncSousTitreQuestionCount(item.sousTitre, item.questions?.length)}</p>}
             </>
           )}
           {item.fichiers && item.fichiers.length > 0 && (
@@ -3720,7 +3732,9 @@ const ContentCard = ({
           <h4 className="font-bold text-base">{item.titre}</h4>
           {item.sousTitre && (
             <p className="text-sm text-muted-foreground">{item.sousTitre}</p>
+
           )}
+
           {item.description && (
             <div className="text-xs text-muted-foreground mt-2 whitespace-pre-wrap max-h-32 overflow-y-auto" dangerouslySetInnerHTML={{ __html: item.description }} />
           )}
@@ -7711,7 +7725,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                   </Button>
                 </div>
               </div>
-              {exo.sousTitre && <p className="text-sm text-muted-foreground">{exo.sousTitre}</p>}
+              {exo.sousTitre && <p className="text-sm text-muted-foreground">{syncSousTitreQuestionCount(exo.sousTitre, exoTotalQ)}</p>}
               {pendingWrongQuestionRevision?.exoId === exo.id && (
                 <div className="rounded-lg border-2 border-amber-300 bg-amber-50 dark:bg-amber-950/20 p-4 space-y-3 text-sm text-amber-900 dark:text-amber-200">
                   <div className="font-bold text-base">📖 Que souhaitez-vous faire ?</div>
