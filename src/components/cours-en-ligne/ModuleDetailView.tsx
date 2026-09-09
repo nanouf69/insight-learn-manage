@@ -3731,7 +3731,8 @@ const ContentCard = ({
         <div>
           <h4 className="font-bold text-base">{item.titre}</h4>
           {item.sousTitre && (
-            <p className="text-sm text-muted-foreground">{syncSousTitreQuestionCount(item.sousTitre, item.questions?.length)}</p>
+            <p className="text-sm text-muted-foreground">{item.sousTitre}</p>
+
           )}
 
           {item.description && (
