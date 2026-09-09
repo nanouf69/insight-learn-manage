@@ -3001,7 +3001,12 @@ function ExerciceCard({
       <CardContent className="p-4 space-y-3">
         <div>
           <div className="flex items-center justify-between">
-            <h4 className="font-bold text-base">{item.titre}</h4>
+            <h4 className="font-bold text-base">
+              {partNumber && (
+                <span className="inline-flex items-center justify-center min-w-6 px-1.5 py-0.5 mr-2 rounded bg-primary/10 text-primary text-sm font-bold align-middle">{partNumber}</span>
+              )}
+              {item.titre}
+            </h4>
             {hasQuestions && (
               <Badge variant="secondary" className="text-xs">{item.questions!.length} questions</Badge>
             )}
