@@ -179,7 +179,10 @@ export const CONNAISSANCES_VILLE_TAXI_DATA: ModuleData = {
     QUIZ_RUES,
     ...CONNAISSANCES_VILLE_QUIZZES.filter(q => q.id === 7008),
     ...CONNAISSANCES_VILLE_QUIZZES.filter(q => q.id === 7007),
+    QUIZ_COMMUNES_METROPOLE,
+    QUIZ_COMMUNES_ZUPC,
     {
+
       id: 17, actif: true,
       titre: "🎮 Jeu de la Légende de Lyon",
       sousTitre: "Jeu interactif sur les lieux emblématiques de Lyon",
