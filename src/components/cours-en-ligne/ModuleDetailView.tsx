@@ -5935,6 +5935,19 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       return labels;
     }, [pages, isBilanModule]);
 
+    // Numéro de « Partie » affiché côté apprenant pour chaque exercice (aligne la vue admin sur la liste élève)
+    const exercicePartNumberById = useMemo<Map<number, string>>(() => {
+      const map = new Map<number, string>();
+      pages.forEach((page, index) => {
+        if (page?.type !== "exercice-single") return;
+        const label = hierarchicalLabelsByPage[index] || "";
+        const m = label.match(/^(\d+)\.(\d+)\s/) || label.match(/^(\d+)\s/);
+        const num = m ? (m[2] || m[1]) : null;
+        if (num) map.set(Number(page.exercice.id), num);
+      });
+      return map;
+    }, [pages, hierarchicalLabelsByPage]);
+
     const totalPages = pages.length;
     const currentPageData = pages[currentPage];
     const progressPercent = totalPages > 0 ? Math.round((completedPages.size / totalPages) * 100) : 0;
