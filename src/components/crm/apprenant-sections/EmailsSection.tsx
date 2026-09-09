@@ -302,6 +302,40 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
     },
   });
 
+  // Lien sécurisé (jeton unique) pour que l'apprenant transmette ses nouveaux identifiants T3P
+  const { data: identifiantsT3P } = useQuery({
+    queryKey: ['identifiants-t3p', apprenant.id],
+    enabled: !!apprenant.id,
+    queryFn: async () => {
+      const { data: existing } = await supabase
+        .from('apprenant_identifiants_t3p')
+        .select('*')
+        .eq('apprenant_id', apprenant.id)
+        .maybeSingle();
+      if (existing) return existing;
+      const { data: created, error } = await supabase
+        .from('apprenant_identifiants_t3p')
+        .insert({ apprenant_id: apprenant.id })
+        .select('*')
+        .single();
+      if (error) throw error;
+      return created;
+    },
+  });
+
+  const identifiantsT3PUrl = identifiantsT3P?.token
+    ? `${PUBLIC_APP_URL}/identifiants-t3p?token=${identifiantsT3P.token}`
+    : '';
+
+  const boutonIdentifiantsT3P = identifiantsT3PUrl
+    ? `<div style="margin:18px 0"><a href="${identifiantsT3PUrl}" style="display:inline-block;background:#dc2626;color:#ffffff;font-weight:bold;font-size:16px;padding:14px 22px;border-radius:8px;text-decoration:none">🔐 Transmettre mes nouveaux identifiants</a><br><span style="font-size:12px;color:#555">Lien personnel et sécurisé : ne le transmettez à personne.</span></div>`
+    : '';
+
+  const injectT3PLink = (html: string) =>
+    (html || '')
+      .replace(/\{\{lien_identifiants_t3p\}\}/g, identifiantsT3PUrl)
+      .replace(/\{\{bouton_identifiants_t3p\}\}/g, boutonIdentifiantsT3P);
+
   // Merge hardcoded + DB templates
   const allTemplates = [
     ...EMAIL_TEMPLATES,
