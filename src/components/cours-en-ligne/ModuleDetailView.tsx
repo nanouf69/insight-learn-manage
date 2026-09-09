@@ -2951,6 +2951,7 @@ function ExerciceCard({
   onDelete,
   onToggle,
   onUpdateQuestions,
+  onUpdateMeta,
   moduleId,
   overrideWarnings,
   partNumber,
@@ -2962,6 +2963,7 @@ function ExerciceCard({
   onDelete: (id: number) => void;
   onToggle: (id: number) => void;
   onUpdateQuestions: (id: number, questions: ExerciceQuestion[], deletedQuestionId?: number) => void;
+  onUpdateMeta?: (id: number, meta: { titre: string; sousTitre?: string }) => void;
   moduleId: number;
   overrideWarnings?: Map<string, TrainerOverrideInfo>;
   partNumber?: string | null;
