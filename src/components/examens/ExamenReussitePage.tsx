@@ -165,7 +165,7 @@ function InlineStatutSuivi({
       }}
     >
       <SelectTrigger className={`w-44 text-xs h-8 ${
-        value === 'inscription_validee' || value === 'document_complet' ? 'border-green-300 text-green-700' :
+        value === 'inscription_validee' || value === 'document_complet' || value === 'paye' ? 'border-green-300 text-green-700' :
         value ? 'border-orange-300 text-orange-700' : ''
       }`}>
         <SelectValue placeholder="⚙️ Statut" />
