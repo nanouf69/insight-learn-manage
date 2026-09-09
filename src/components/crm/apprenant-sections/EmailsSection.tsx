@@ -1014,6 +1014,55 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
           ) : (
             <p className="text-xs text-muted-foreground">Mot de passe plateforme non enregistré</p>
           )}
+
+          {/* Nouveaux identifiants Examen T3P transmis par l'apprenant */}
+          <div className="rounded-md border bg-muted/30 p-2 space-y-1 mt-2">
+            {identifiantsT3P?.recu_at ? (
+              <>
+                <p className="text-sm font-medium text-green-700">
+                  ✅ Nouveaux identifiants reçus le {format(new Date(identifiantsT3P.recu_at), "dd/MM/yyyy 'à' HH:mm", { locale: fr })}
+                </p>
+                <p className="text-sm">
+                  Nouvelle adresse mail : <code className="px-1 rounded bg-muted font-mono">{identifiantsT3P.nouvel_email}</code>
+                </p>
+                <p className="text-sm">
+                  Nouveau mot de passe : <code className="px-1 rounded bg-muted font-mono">{identifiantsT3P.nouveau_mot_de_passe}</code>
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-6 text-xs"
+                  onClick={() => {
+                    navigator.clipboard.writeText(
+                      `Nouvelle adresse mail : ${identifiantsT3P.nouvel_email}\nNouveau mot de passe : ${identifiantsT3P.nouveau_mot_de_passe}`
+                    );
+                    toast({ title: "Nouveaux identifiants copiés" });
+                  }}
+                >
+                  <Copy className="w-3 h-3 mr-1" />
+                  Copier les nouveaux identifiants
+                </Button>
+              </>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                ⏳ Nouveaux identifiants Examen T3P : en attente de l'apprenant
+              </p>
+            )}
+            {identifiantsT3PUrl && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 text-xs"
+                onClick={() => {
+                  navigator.clipboard.writeText(identifiantsT3PUrl);
+                  toast({ title: "Lien sécurisé copié" });
+                }}
+              >
+                <Copy className="w-3 h-3 mr-1" />
+                Copier le lien du formulaire
+              </Button>
+            )}
+          </div>
         </div>
 
         <div className="flex gap-2">
