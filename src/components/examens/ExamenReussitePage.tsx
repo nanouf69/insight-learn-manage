@@ -132,6 +132,7 @@ const STATUT_SUIVI_OPTIONS: { value: string; label: string }[] = [
   { value: "email_non_valide", label: "📧 Email non validé" },
   { value: "injoignable", label: "📵 Injoignable" },
   { value: "a_payer", label: "💰 À payer" },
+  { value: "paye", label: "💸 Payé" },
   { value: "inscription_validee", label: "✅ Inscription validée" },
 ];
 
