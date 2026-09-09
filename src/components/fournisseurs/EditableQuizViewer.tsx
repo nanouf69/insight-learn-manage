@@ -8,6 +8,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { toggleCorrect as toggleCorrectUtil, validateQuestionEdit, type QuizChoice as UtilQuizChoice } from "./quiz-editor-utils";
 import { applyCanonicalRowsToSections } from "./canonical-quiz-sections";
+import { isStaleCanonicalQuestionError } from "@/components/cours-en-ligne/canonical-conflict-rebase";
+
 
 interface QuizChoice {
   lettre: string;
