@@ -8700,6 +8700,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     );
   };
 
+  const exercicePartNumberById = computeExercicePartNumbers(Number(moduleData.id), moduleData.cours, moduleData.exercices);
+
   return (
     <div className="space-y-6 animate-fade-in">
       {studentOnly && maintenanceActive && (
