@@ -774,7 +774,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
                   <td><strong>${format(parseISO(p.date), "dd/MM/yyyy", { locale: fr })}</strong></td>
                   <td colspan="2"><span class="badge" style="background:#fef3c7;color:#92400e;">🚗 Présentiel — ${p.label}</span></td>
                   <td><strong>${formatPresenceHours(p.hours)}</strong></td>
-                  <td colspan="3" style="color:#6b7280;font-style:italic;">Journée de pratique</td>
+                  <td colspan="3" style="color:#6b7280;font-style:italic;">${p.label.startsWith("Pratique") ? "Journée de pratique" : "Présentiel — émargement signé"}</td>
                 </tr>`;
               }
               const c = row.data;
