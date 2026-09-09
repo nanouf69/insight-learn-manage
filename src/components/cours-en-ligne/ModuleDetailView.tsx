@@ -5176,11 +5176,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             source_fingerprint: confirmedRow.source_fingerprint ?? dataToSave.source_fingerprint ?? null,
           });
           lastSavedPayloadSignatureRef.current = confirmedSignature;
-          setModuleData(applyCanonicalQuestionsToModule(
-            normalizedModuleData,
-            canonicalRowsRef.current,
-            canonicalSectionIdsRef.current,
-          ));
+          // Ne jamais réinjecter ici le snapshot canonique antérieur à cette
+          // sauvegarde. La relecture fraîche, plus bas, mettra l'éditeur à jour.
+          setModuleData(normalizedModuleData);
           setDeletedCours(Array.isArray(confirmedRow.deleted_cours) ? (confirmedRow.deleted_cours as ContentItem[]) : []);
           setDeletedExercices(Array.isArray(confirmedRow.deleted_exercices) ? (confirmedRow.deleted_exercices as ExerciceItem[]) : []);
         }
@@ -5470,14 +5468,16 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             }
           }
 
-          const confirmedRows = await readCanonicalRows();
-          canonicalRowsRef.current = confirmedRows;
-          setModuleData((previous) => applyCanonicalQuestionsToModule(
-            previous,
-            confirmedRows,
-            canonicalSectionIdsRef.current,
-          ));
         }
+        // Toujours terminer sur une lecture fraîche, y compris si le rebase
+        // P0409 conclut que la suppression est déjà acquise ou n'a rien à rejouer.
+        const confirmedRows = await readCanonicalRows();
+        canonicalRowsRef.current = confirmedRows;
+        setModuleData((previous) => applyCanonicalQuestionsToModule(
+          previous,
+          confirmedRows,
+          canonicalSectionIdsRef.current,
+        ));
         setCanonicalRefreshKey((key) => key + 1);
       }
 
