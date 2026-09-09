@@ -2069,6 +2069,15 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     }
   };
 
+  // Aperçu du mail URGENT avant enregistrement du statut « MDP changé »
+  const mdpTargetRef = useRef<string | null>(null);
+  const mdpMailDialog = useMdpChangeMail(async (_apprenantId, to) => {
+    const saId = mdpTargetRef.current;
+    mdpTargetRef.current = null;
+    if (saId) await updateSessionApprenant(saId, { statut_suivi: 'mdp_change' });
+    toast.success(`✅ Mail URGENT envoyé à ${to} — statut « 🔑 MDP changé »`);
+  });
+
   const updateSessionApprenant = async (
     sessionApprenantId: string, 
     updates: { notes?: string; presence_pratique?: string | null; statut_suivi?: string | null; date_fin_personnalisee?: string | null; heure_debut_personnalisee?: string | null; heure_fin_personnalisee?: string | null }
