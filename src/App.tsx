@@ -33,6 +33,7 @@ import AdminAuditModules from "./pages/AdminAuditModules";
 import AdminAuditDBvsLearner from "./pages/AdminAuditDBvsLearner";
 
 import DocumentASignerPublic from "./pages/DocumentASignerPublic";
+import IdentifiantsT3PPublic from "./pages/IdentifiantsT3PPublic";
 
 // Onboarding pages
 
