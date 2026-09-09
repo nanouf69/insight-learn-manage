@@ -56,17 +56,27 @@ export function EditableQuizViewer({ sections: sourceSections, title, icon = "�
 
   // Une seule lecture : toutes les vues consomment exactement les mêmes lignes
   // canoniques, identifiées par question_id UUID et alias numérique historique.
+  const fetchCanonicalRows = useCallback(async (): Promise<any[]> => {
+    const { data, error } = await supabase.functions.invoke("fournisseur-portal-data", {
+      body: { action: "quiz_questions", token: fournisseurToken, quiz_id: quizId },
+    });
+    if (error) throw error;
+    return (data?.data ?? []) as any[];
+  }, [fournisseurToken, quizId]);
+
   useEffect(() => {
     if (!fournisseurToken) return;
     let cancelled = false;
     async function loadCanonical() {
-      const { data, error } = await supabase.functions.invoke("fournisseur-portal-data", {
-        body: { action: "quiz_questions", token: fournisseurToken, quiz_id: quizId },
-      });
-       if (!cancelled && !error) {
-         setCanonicalQuestions((data?.data ?? []) as any[]);
-         setCanonicalLoaded(true);
-       }
+      try {
+        const rows = await fetchCanonicalRows();
+        if (!cancelled) {
+          setCanonicalQuestions(rows);
+          setCanonicalLoaded(true);
+        }
+      } catch {
+        /* lecture réessayée au prochain événement */
+      }
     }
     void loadCanonical();
     const channel = supabase.channel(`canonical-quiz-${quizId}`)
@@ -75,7 +85,8 @@ export function EditableQuizViewer({ sections: sourceSections, title, icon = "�
     const onFocus = () => void loadCanonical();
     window.addEventListener("focus", onFocus);
     return () => { cancelled = true; window.removeEventListener("focus", onFocus); supabase.removeChannel(channel); };
-  }, [quizId, fournisseurToken]);
+  }, [quizId, fournisseurToken, fetchCanonicalRows]);
+
 
   const sections = useMemo(
     () => applyCanonicalRowsToSections(
