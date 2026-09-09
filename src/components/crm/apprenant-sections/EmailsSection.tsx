@@ -49,6 +49,7 @@ interface AttachmentFile {
 // Email de l'organisme pour la synchronisation Outlook
 const ORGANISME_EMAIL = "contact@ftransport.fr";
 const ONBOARDING_URL = "https://insight-learn-manage.lovable.app/bienvenue";
+const PUBLIC_APP_URL = "https://gestion.ftransport.fr";
 
 function getFormationType(typeApprenant: string | null | undefined): string {
   const type = (typeApprenant || '').toLowerCase();
