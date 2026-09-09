@@ -5407,7 +5407,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 legacy_question_id: question.id,
                 // Verrouiller sur la version réellement chargée par l'éditeur,
                 // jamais sur la date fraîche relue juste avant cette écriture.
-                expected_updated_at: question._canonicalUpdatedAt ?? current?.updated_at ?? null,
+                expected_updated_at: question._canonicalUpdatedAt ?? null,
                 ...nextComparable,
               });
             }

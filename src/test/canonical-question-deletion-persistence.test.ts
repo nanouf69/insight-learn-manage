@@ -39,6 +39,27 @@ describe("persistance des suppressions dans la source canonique", () => {
     );
   });
 
+  it("verrouille une suppression de réponse sur la version réellement chargée", () => {
+    const moduleView = readFileSync(
+      new URL("../components/cours-en-ligne/ModuleDetailView.tsx", import.meta.url),
+      "utf8",
+    );
+
+    expect(moduleView).toContain("_canonicalUpdatedAt: row.updated_at");
+    expect(moduleView).toContain("expected_updated_at: question._canonicalUpdatedAt ?? null");
+    expect(moduleView).not.toContain("expected_updated_at: question._canonicalUpdatedAt ?? current?.updated_at");
+  });
+
+  it("relit la source canonique après chaque sauvegarde de réponses", () => {
+    const moduleView = readFileSync(
+      new URL("../components/cours-en-ligne/ModuleDetailView.tsx", import.meta.url),
+      "utf8",
+    );
+
+    expect(moduleView).toContain("const { data: confirmedCanonicalRows, error: canonicalReadbackError }");
+    expect(moduleView).toContain("canonicalRowsRef.current = confirmedRows");
+  });
+
   it("ne réinjecte pas la dernière question supprimée depuis la liste statique", () => {
     const result = applyCanonicalRowsToSections(sourceSections, [row({ active: false })]);
 
