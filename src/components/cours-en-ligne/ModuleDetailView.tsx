@@ -5617,6 +5617,18 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     });
   };
 
+  const updateExerciceMeta = (exerciceId: number, meta: { titre: string; sousTitre?: string }) => {
+    markAdminLocalEdit();
+    setModuleData((prev) => ({
+      ...prev,
+      exercices: prev.exercices.map((e) =>
+        e.id === exerciceId
+          ? { ...e, titre: meta.titre, sousTitre: meta.sousTitre?.trim() ? meta.sousTitre : undefined }
+          : e,
+      ),
+    }));
+  };
+
   const updateExerciceQuestions = (exerciceId: number, questions: ExerciceQuestion[], deletedQuestionId?: number) => {
     markAdminLocalEdit();
     // Save enonce-based overrides to localStorage for same-session cross-module cache invalidation.
