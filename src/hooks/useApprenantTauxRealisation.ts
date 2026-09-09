@@ -116,9 +116,8 @@ export function useApprenantTauxRealisation(apprenantId?: string, apprenantProp?
         return false;
       };
 
-      // La date de début affichée doit correspondre au début de la première
-      // connexion pédagogique. Une activité enregistrée après minuit ne doit
-      // jamais décaler artificiellement le début au lendemain.
+      // Début = uniquement l'ouverture d'un module ou la réalisation d'un
+      // exercice/quiz. Une simple connexion ou un émargement ne compte pas.
       const isPedagogicalModule = (nom?: string | null) =>
         !!nom && !isAccueil(nom) && !/^syst[eè]me$/i.test(nom.trim());
       const firstPedagogicalConnectionStart = (cnxRows as any[])
@@ -131,14 +130,10 @@ export function useApprenantTauxRealisation(apprenantId?: string, apprenantProp?
         })
         .filter((value: number | null): value is number => value !== null)
         .sort((a: number, b: number) => a - b)[0];
-      const firstSignedAttendanceStart = (emargAll as any[])
-        .filter((row: any) => !row.absent && row.date_emargement)
-        .map((row: any) => Date.parse(`${String(row.date_emargement).slice(0, 10)}T00:00:00`))
-        .filter((value: number) => !Number.isNaN(value))
-        .sort((a: number, b: number) => a - b)[0];
-      const firstActualActivityStart = [firstPedagogicalConnectionStart, firstSignedAttendanceStart]
-        .filter((value: number | undefined): value is number => value !== undefined)
-        .sort((a: number, b: number) => a - b)[0];
+      const firstActualActivityStart = firstPedagogicalConnectionStart !== undefined
+        ? firstPedagogicalConnectionStart
+        : pedagogicalActTs[0];
+
 
       let onlineMin = 0;
       for (const c of cnxRows as any[]) {
