@@ -145,6 +145,13 @@ import {
 } from "./shared-exercise-overrides";
 import { resolveOverrideConflict } from "@/components/fournisseurs/quiz-editor-utils";
 import {
+  rebaseCanonicalActions,
+  toRpcCanonicalActions,
+  isStaleCanonicalQuestionError,
+  type CanonicalActionLike,
+} from "./canonical-conflict-rebase";
+
+import {
   GENERATED_BILAN_MODULE_IDS as GENERATED_BILAN_IDS_UTIL,
   hasDuplicateGeneratedBilanQuestions as hasDuplicateBilanUtil,
   shouldForceBilanReset,
