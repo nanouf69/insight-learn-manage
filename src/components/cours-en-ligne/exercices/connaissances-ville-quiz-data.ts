@@ -164,7 +164,7 @@ export const QUIZ_ADMINISTRATIONS: ExerciceItem = {
 export const QUIZ_CONSULATS: ExerciceItem = {
   id: 7002, actif: true,
   titre: "Quiz Adresses Consulats",
-  sousTitre: "20 questions sur les consulats de Lyon",
+  sousTitre: "30 questions sur les consulats de Lyon",
   questions: [
     {
       id: 1, enonce: "Où se trouve le Consulat de Belgique ?",
@@ -346,6 +346,96 @@ export const QUIZ_CONSULATS: ExerciceItem = {
         { lettre: "D", texte: "32 Rue Trillon, Lyon" },
       ],
     },
+    {
+      id: 21, enonce: "Où se trouve le Consulat de Pologne ?",
+      choix: [
+        { lettre: "A", texte: "79 Rue Crillon, 69006 Lyon", correct: true },
+        { lettre: "B", texte: "12 Rue Vauban, 69006 Lyon" },
+        { lettre: "C", texte: "3 Rue Dumont, 69004 Lyon" },
+        { lettre: "D", texte: "6 Rue Grolée, 69002 Lyon" },
+      ],
+    },
+    {
+      id: 22, enonce: "Où se trouve le Consulat du Sénégal ?",
+      choix: [
+        { lettre: "A", texte: "2 Passage Feuillat, 69003 Lyon" },
+        { lettre: "B", texte: "97 Rue Garibaldi, 69006 Lyon", correct: true },
+        { lettre: "C", texte: "71 Rue Crillon, 69006 Lyon" },
+        { lettre: "D", texte: "33 Boulevard des Belges, 69006 Lyon" },
+      ],
+    },
+    {
+      id: 23, enonce: "Où se trouve le Consulat d'Espagne ?",
+      choix: [
+        { lettre: "A", texte: "1 Rue Louis Guérin, 69100 Villeurbanne", correct: true },
+        { lettre: "B", texte: "1 Quai Jules Courmont, 69002 Lyon" },
+        { lettre: "C", texte: "126 Rue Vauban, 69006 Lyon" },
+        { lettre: "D", texte: "15 Place Jules Ferry, 69006 Lyon" },
+      ],
+    },
+    {
+      id: 24, enonce: "Où se trouve le Consulat de Tunisie ?",
+      choix: [
+        { lettre: "A", texte: "58 Avenue Maréchal Foch, 69006 Lyon" },
+        { lettre: "B", texte: "29 Rue de Bonnel, 69003 Lyon" },
+        { lettre: "C", texte: "14 Avenue Maréchal Foch, 69006 Lyon", correct: true },
+        { lettre: "D", texte: "107 Rue Servient, 69003 Lyon" },
+      ],
+    },
+    {
+      id: 25, enonce: "Où se trouve le Consulat d'Arménie ?",
+      choix: [
+        { lettre: "A", texte: "2 Passage Feuillat, 69003 Lyon", correct: true },
+        { lettre: "B", texte: "121 Cours du Docteur Long, 69003 Lyon" },
+        { lettre: "C", texte: "136 Cours Lafayette, 69003 Lyon" },
+        { lettre: "D", texte: "2/4 Rue Carry, 69003 Lyon" },
+      ],
+    },
+    {
+      id: 26, enonce: "Où se trouve le Consulat de Suisse ?",
+      choix: [
+        { lettre: "A", texte: "8 Rue de la République, 69002 Lyon" },
+        { lettre: "B", texte: "4 Place Charles Hernu, 69100 Villeurbanne", correct: true },
+        { lettre: "C", texte: "3 Place de la Bourse, 69002 Lyon" },
+        { lettre: "D", texte: "6 Place Bellecour, 69002 Lyon" },
+      ],
+    },
+    {
+      id: 27, enonce: "Où se trouve le Consulat du Canada ?",
+      choix: [
+        { lettre: "A", texte: "3 Place de la Bourse, 69002 Lyon", correct: true },
+        { lettre: "B", texte: "3 Rue de la Barre, 69002 Lyon" },
+        { lettre: "C", texte: "6 Rue Grolée, 69002 Lyon" },
+        { lettre: "D", texte: "1 Quai Jules Courmont, 69002 Lyon" },
+      ],
+    },
+    {
+      id: 28, enonce: "Où se trouve le Consulat d'Italie ?",
+      choix: [
+        { lettre: "A", texte: "69 Rue Duquesne, 69006 Lyon" },
+        { lettre: "B", texte: "5 Rue du Commandant Faurax, 69006 Lyon", correct: true },
+        { lettre: "C", texte: "33 Boulevard des Belges, 69006 Lyon" },
+        { lettre: "D", texte: "15 Place Jules Ferry, 69006 Lyon" },
+      ],
+    },
+    {
+      id: 29, enonce: "Où se trouve le Consulat d'Irlande ?",
+      choix: [
+        { lettre: "A", texte: "131 Boulevard de Stalingrad, 69100 Villeurbanne" },
+        { lettre: "B", texte: "4 Place Charles Hernu, 69100 Villeurbanne" },
+        { lettre: "C", texte: "158 Avenue Roger Salengro, 69100 Villeurbanne", correct: true },
+        { lettre: "D", texte: "1 Rue Louis Guérin, 69100 Villeurbanne" },
+      ],
+    },
+    {
+      id: 30, enonce: "Où se trouve le Consulat du Japon ?",
+      choix: [
+        { lettre: "A", texte: "131 Boulevard de Stalingrad, 69100 Villeurbanne", correct: true },
+        { lettre: "B", texte: "107 Rue Servient, 69003 Lyon" },
+        { lettre: "C", texte: "2 Passage Feuillat, 69003 Lyon" },
+        { lettre: "D", texte: "71 Rue Crillon, 69006 Lyon" },
+      ],
+    },
   ],
 };
 
@@ -355,7 +445,7 @@ export const QUIZ_CONSULATS: ExerciceItem = {
 export const QUIZ_HOPITAUX: ExerciceItem = {
   id: 7003, actif: true,
   titre: "Quiz Adresses Hôpitaux et Cliniques",
-  sousTitre: "20 questions sur les hôpitaux et cliniques de Lyon",
+  sousTitre: "30 questions sur les hôpitaux et cliniques de Lyon",
   questions: [
     {
       id: 1, enonce: "Où se trouve la Clinique Saint-Charles ?",
@@ -537,6 +627,96 @@ export const QUIZ_HOPITAUX: ExerciceItem = {
         { lettre: "D", texte: "158 Rue Léon Blum, Bron" },
       ],
     },
+    {
+      id: 21, enonce: "Quel établissement se trouve 103 Grande Rue de la Croix-Rousse, 69004 Lyon ?",
+      choix: [
+        { lettre: "A", texte: "Hôpital Édouard Herriot" },
+        { lettre: "B", texte: "Hôpital de la Croix-Rousse", correct: true },
+        { lettre: "C", texte: "Clinique Saint-Charles" },
+        { lettre: "D", texte: "Hôpital Jean Mermoz" },
+      ],
+    },
+    {
+      id: 22, enonce: "Quel hôpital se trouve 5 Place d'Arsonval, 69003 Lyon ?",
+      choix: [
+        { lettre: "A", texte: "Hôpital Édouard Herriot", correct: true },
+        { lettre: "B", texte: "Hôpital Pierre Wertheimer" },
+        { lettre: "C", texte: "Centre Hospitalier Lyon Sud" },
+        { lettre: "D", texte: "Médipôle" },
+      ],
+    },
+    {
+      id: 23, enonce: "Dans quelle commune se trouve le Centre Hospitalier Le Vinatier ?",
+      choix: [
+        { lettre: "A", texte: "Villeurbanne" },
+        { lettre: "B", texte: "Bron", correct: true },
+        { lettre: "C", texte: "Vénissieux" },
+        { lettre: "D", texte: "Écully" },
+      ],
+    },
+    {
+      id: 24, enonce: "Dans quelle commune se trouve le Centre Hospitalier Lyon Sud ?",
+      choix: [
+        { lettre: "A", texte: "Pierre-Bénite", correct: true },
+        { lettre: "B", texte: "Sainte-Foy-lès-Lyon" },
+        { lettre: "C", texte: "Vénissieux" },
+        { lettre: "D", texte: "Caluire-et-Cuire" },
+      ],
+    },
+    {
+      id: 25, enonce: "Où se trouve le Médipôle ?",
+      choix: [
+        { lettre: "A", texte: "108 Boulevard Pinel, 69003 Lyon" },
+        { lettre: "B", texte: "158 Rue Léon Blum, 69100 Villeurbanne", correct: true },
+        { lettre: "C", texte: "290 Route de Vienne, 69008 Lyon" },
+        { lettre: "D", texte: "39 Chemin de la Vernique, 69130 Écully" },
+      ],
+    },
+    {
+      id: 26, enonce: "Quel établissement se trouve 22 Avenue Rockefeller, 69008 Lyon ?",
+      choix: [
+        { lettre: "A", texte: "Clinique Natecia" },
+        { lettre: "B", texte: "Clinique Charcot" },
+        { lettre: "C", texte: "Hôpital des Armées Desgenettes", correct: true },
+        { lettre: "D", texte: "Clinique du Val d'Ouest" },
+      ],
+    },
+    {
+      id: 27, enonce: "Dans quelle commune se trouve la Clinique Charcot ?",
+      choix: [
+        { lettre: "A", texte: "Sainte-Foy-lès-Lyon", correct: true },
+        { lettre: "B", texte: "Écully" },
+        { lettre: "C", texte: "Bron" },
+        { lettre: "D", texte: "Pierre-Bénite" },
+      ],
+    },
+    {
+      id: 28, enonce: "Où se trouve le Centre Hospitalier Saint-Jean-de-Dieu ?",
+      choix: [
+        { lettre: "A", texte: "95 Boulevard Pinel, 69500 Bron" },
+        { lettre: "B", texte: "290 Route de Vienne, 69008 Lyon", correct: true },
+        { lettre: "C", texte: "480 Avenue Ben Gourion, 69009 Lyon" },
+        { lettre: "D", texte: "25 Rue de Flesselles, 69001 Lyon" },
+      ],
+    },
+    {
+      id: 29, enonce: "Quel établissement se trouve 480 Avenue Ben Gourion, 69009 Lyon ?",
+      choix: [
+        { lettre: "A", texte: "Clinique de la Sauvegarde", correct: true },
+        { lettre: "B", texte: "Clinique du Val d'Ouest" },
+        { lettre: "C", texte: "Clinique Saint-Charles" },
+        { lettre: "D", texte: "Clinique Émilie de Vialar" },
+      ],
+    },
+    {
+      id: 30, enonce: "Dans quelle commune se trouve le GHM Les Portes du Sud ?",
+      choix: [
+        { lettre: "A", texte: "Vénissieux", correct: true },
+        { lettre: "B", texte: "Bron" },
+        { lettre: "C", texte: "Pierre-Bénite" },
+        { lettre: "D", texte: "Villeurbanne" },
+      ],
+    },
   ],
 };
 
@@ -546,7 +726,7 @@ export const QUIZ_HOPITAUX: ExerciceItem = {
 export const QUIZ_MUSEES: ExerciceItem = {
   id: 7004, actif: true,
   titre: "Quiz Adresses Musées",
-  sousTitre: "11 questions sur les musées de Lyon",
+  sousTitre: "21 questions sur les musées de Lyon",
   questions: [
     {
       id: 1, enonce: "Où se trouve le Musée Lugdunum ?",
@@ -647,6 +827,96 @@ export const QUIZ_MUSEES: ExerciceItem = {
         { lettre: "D", texte: "3 Rue de Brest, Lyon" },
       ],
     },
+    {
+      id: 12, enonce: "Quel musée se trouve 17 Rue Cléberg, 69005 Lyon ?",
+      choix: [
+        { lettre: "A", texte: "Musée des Confluences" },
+        { lettre: "B", texte: "Lugdunum – Musée et Théâtres Romains", correct: true },
+        { lettre: "C", texte: "Musée Gadagne" },
+        { lettre: "D", texte: "Musée des Beaux-Arts" },
+      ],
+    },
+    {
+      id: 13, enonce: "Quel musée se trouve 86 Quai Perrache, 69002 Lyon ?",
+      choix: [
+        { lettre: "A", texte: "Musée des Confluences", correct: true },
+        { lettre: "B", texte: "Musée d'Art Contemporain" },
+        { lettre: "C", texte: "Institut Lumière" },
+        { lettre: "D", texte: "Musée de l'Imprimerie" },
+      ],
+    },
+    {
+      id: 14, enonce: "Quel musée se trouve 20 Place des Terreaux, 69001 Lyon ?",
+      choix: [
+        { lettre: "A", texte: "Musée Gadagne" },
+        { lettre: "B", texte: "Maison des Canuts" },
+        { lettre: "C", texte: "Musée des Beaux-Arts de Lyon", correct: true },
+        { lettre: "D", texte: "Musée Urbain Tony Garnier" },
+      ],
+    },
+    {
+      id: 15, enonce: "Quel musée se trouve 81 Quai Charles de Gaulle, 69006 Lyon ?",
+      choix: [
+        { lettre: "A", texte: "Musée d'Art Contemporain", correct: true },
+        { lettre: "B", texte: "Musée des Confluences" },
+        { lettre: "C", texte: "Lugdunum" },
+        { lettre: "D", texte: "Musée des Sapeurs-Pompiers" },
+      ],
+    },
+    {
+      id: 16, enonce: "Quel musée se trouve 1 Place du Petit Collège, 69005 Lyon ?",
+      choix: [
+        { lettre: "A", texte: "Musée des Beaux-Arts" },
+        { lettre: "B", texte: "Musée Gadagne (Musée d'Histoire de Lyon)", correct: true },
+        { lettre: "C", texte: "Institut Lumière" },
+        { lettre: "D", texte: "Musée de la Résistance" },
+      ],
+    },
+    {
+      id: 17, enonce: "Où se trouve la Maison des Canuts ?",
+      choix: [
+        { lettre: "A", texte: "10 Rue d'Ivry, 69004 Lyon", correct: true },
+        { lettre: "B", texte: "25 Rue du Premier Film, 69008 Lyon" },
+        { lettre: "C", texte: "17 Rue Cléberg, 69005 Lyon" },
+        { lettre: "D", texte: "86 Quai Perrache, 69002 Lyon" },
+      ],
+    },
+    {
+      id: 18, enonce: "Dans quel arrondissement se trouve le Musée des Confluences ?",
+      choix: [
+        { lettre: "A", texte: "Lyon 2ème", correct: true },
+        { lettre: "B", texte: "Lyon 5ème" },
+        { lettre: "C", texte: "Lyon 7ème" },
+        { lettre: "D", texte: "Lyon 8ème" },
+      ],
+    },
+    {
+      id: 19, enonce: "Dans quel arrondissement se trouve Lugdunum – Musée et Théâtres Romains ?",
+      choix: [
+        { lettre: "A", texte: "Lyon 1er" },
+        { lettre: "B", texte: "Lyon 4ème" },
+        { lettre: "C", texte: "Lyon 5ème", correct: true },
+        { lettre: "D", texte: "Lyon 6ème" },
+      ],
+    },
+    {
+      id: 20, enonce: "Dans quel arrondissement se trouve la Maison des Canuts ?",
+      choix: [
+        { lettre: "A", texte: "Lyon 1er" },
+        { lettre: "B", texte: "Lyon 4ème", correct: true },
+        { lettre: "C", texte: "Lyon 3ème" },
+        { lettre: "D", texte: "Lyon 9ème" },
+      ],
+    },
+    {
+      id: 21, enonce: "Dans quel arrondissement se trouve l'Institut Lumière ?",
+      choix: [
+        { lettre: "A", texte: "Lyon 8ème", correct: true },
+        { lettre: "B", texte: "Lyon 7ème" },
+        { lettre: "C", texte: "Lyon 6ème" },
+        { lettre: "D", texte: "Lyon 3ème" },
+      ],
+    },
   ],
 };
 
@@ -656,7 +926,7 @@ export const QUIZ_MUSEES: ExerciceItem = {
 export const QUIZ_DIVERS: ExerciceItem = {
   id: 7005, actif: true,
   titre: "Quiz Adresses Divers",
-  sousTitre: "15 questions sur des adresses diverses de Lyon",
+  sousTitre: "25 questions sur des adresses diverses de Lyon",
   questions: [
     {
       id: 1, enonce: "Où se trouve la Direction Départementale des Anciens Combattants ?",
@@ -793,6 +1063,96 @@ export const QUIZ_DIVERS: ExerciceItem = {
         { lettre: "D", texte: "85 Place George Sand, Lyon" },
       ],
     },
+    {
+      id: 16, enonce: "Où se trouve la Chambre Régionale d'Agriculture ?",
+      choix: [
+        { lettre: "A", texte: "23 Rue Jean Baldassini, 69007 Lyon", correct: true },
+        { lettre: "B", texte: "13 Rue Crépet, 69007 Lyon" },
+        { lettre: "C", texte: "46 Allée d'Italie, 69007 Lyon" },
+        { lettre: "D", texte: "38 Rue Pierre Sémard, 69007 Lyon" },
+      ],
+    },
+    {
+      id: 17, enonce: "Où se trouve le Conseil Régional Auvergne-Rhône-Alpes ?",
+      choix: [
+        { lettre: "A", texte: "4bis Cours Bayard, 69002 Lyon" },
+        { lettre: "B", texte: "1 Esplanade François Mitterrand, 69002 Lyon", correct: true },
+        { lettre: "C", texte: "Place des Célestins, 69002 Lyon" },
+        { lettre: "D", texte: "2 Rue Bichat, 69002 Lyon" },
+      ],
+    },
+    {
+      id: 18, enonce: "Où se trouve la Villa Maia Hospitality ?",
+      choix: [
+        { lettre: "A", texte: "8 Rue du Professeur Pierre Marion, 69005 Lyon", correct: true },
+        { lettre: "B", texte: "43 Rue du Cardinal Gerlier, 69005 Lyon" },
+        { lettre: "C", texte: "17 Rue Cléberg, 69005 Lyon" },
+        { lettre: "D", texte: "9 Place Colbert, 69001 Lyon" },
+      ],
+    },
+    {
+      id: 19, enonce: "Quel lieu se trouve 4bis Cours Bayard, 69002 Lyon ?",
+      choix: [
+        { lettre: "A", texte: "Banque de France", correct: true },
+        { lettre: "B", texte: "Théâtre des Célestins" },
+        { lettre: "C", texte: "Gendarmerie Départementale du Rhône" },
+        { lettre: "D", texte: "Conseil Régional" },
+      ],
+    },
+    {
+      id: 20, enonce: "Quel lieu se trouve 9 Place Colbert, 69001 Lyon ?",
+      choix: [
+        { lettre: "A", texte: "Cimetière de la Croix-Rousse" },
+        { lettre: "B", texte: "La Cour des Voraces", correct: true },
+        { lettre: "C", texte: "Maison des Canuts" },
+        { lettre: "D", texte: "Fourrière Municipale" },
+      ],
+    },
+    {
+      id: 21, enonce: "Quel lieu se trouve 38 Rue Pierre Sémard, 69007 Lyon ?",
+      choix: [
+        { lettre: "A", texte: "Direction Régionale de Pôle Emploi" },
+        { lettre: "B", texte: "ENS – Site Monod" },
+        { lettre: "C", texte: "Fourrière Municipale", correct: true },
+        { lettre: "D", texte: "Chambre Régionale d'Agriculture" },
+      ],
+    },
+    {
+      id: 22, enonce: "Où se trouve le Groupement de Gendarmerie Départementale du Rhône ?",
+      choix: [
+        { lettre: "A", texte: "2 Rue Bichat, 69002 Lyon", correct: true },
+        { lettre: "B", texte: "4bis Cours Bayard, 69002 Lyon" },
+        { lettre: "C", texte: "3 Rue Louis Vitet, 69001 Lyon" },
+        { lettre: "D", texte: "13 Rue Crépet, 69007 Lyon" },
+      ],
+    },
+    {
+      id: 23, enonce: "Dans quel arrondissement se trouve le Cimetière de Loyasse ?",
+      choix: [
+        { lettre: "A", texte: "Lyon 4ème" },
+        { lettre: "B", texte: "Lyon 5ème", correct: true },
+        { lettre: "C", texte: "Lyon 1er" },
+        { lettre: "D", texte: "Lyon 7ème" },
+      ],
+    },
+    {
+      id: 24, enonce: "Dans quel arrondissement se trouve le Cimetière de la Croix-Rousse ?",
+      choix: [
+        { lettre: "A", texte: "Lyon 1er" },
+        { lettre: "B", texte: "Lyon 4ème", correct: true },
+        { lettre: "C", texte: "Lyon 9ème" },
+        { lettre: "D", texte: "Lyon 6ème" },
+      ],
+    },
+    {
+      id: 25, enonce: "Où se trouve l'ENS de Lyon – Site Monod ?",
+      choix: [
+        { lettre: "A", texte: "46 Allée d'Italie, 69007 Lyon", correct: true },
+        { lettre: "B", texte: "15 Parvis René Descartes, 69007 Lyon" },
+        { lettre: "C", texte: "23 Rue Jean Baldassini, 69007 Lyon" },
+        { lettre: "D", texte: "13 Rue Crépet, 69007 Lyon" },
+      ],
+    },
   ],
 };
 
@@ -802,7 +1162,7 @@ export const QUIZ_DIVERS: ExerciceItem = {
 export const QUIZ_PONTS: ExerciceItem = {
   id: 7006, actif: true,
   titre: "Quiz Ponts de Lyon",
-  sousTitre: "10 questions sur les ponts du Rhône et de la Saône",
+  sousTitre: "20 questions sur les ponts du Rhône et de la Saône",
   questions: [
     {
       id: 1, enonce: "Lequel de ces ponts est un pont sur le Rhône ?",
@@ -892,6 +1252,96 @@ export const QUIZ_PONTS: ExerciceItem = {
         { lettre: "B", texte: "10" },
         { lettre: "C", texte: "13", correct: true },
         { lettre: "D", texte: "20" },
+      ],
+    },
+    {
+      id: 11, enonce: "Le Pont Gallieni est un pont sur :",
+      choix: [
+        { lettre: "A", texte: "Le Rhône", correct: true },
+        { lettre: "B", texte: "La Saône" },
+        { lettre: "C", texte: "Le canal de Jonage" },
+        { lettre: "D", texte: "L'Yzeron" },
+      ],
+    },
+    {
+      id: 12, enonce: "Le Pont de l'Université traverse :",
+      choix: [
+        { lettre: "A", texte: "La Saône" },
+        { lettre: "B", texte: "Le Rhône", correct: true },
+        { lettre: "C", texte: "Le canal de Miribel" },
+        { lettre: "D", texte: "La Loire" },
+      ],
+    },
+    {
+      id: 13, enonce: "Le Pont Wilson est un pont sur :",
+      choix: [
+        { lettre: "A", texte: "Le Rhône", correct: true },
+        { lettre: "B", texte: "La Saône" },
+        { lettre: "C", texte: "Le Beaujolais" },
+        { lettre: "D", texte: "L'Azergues" },
+      ],
+    },
+    {
+      id: 14, enonce: "Le Pont Lafayette traverse :",
+      choix: [
+        { lettre: "A", texte: "La Saône" },
+        { lettre: "B", texte: "Le canal de Jonage" },
+        { lettre: "C", texte: "Le Rhône", correct: true },
+        { lettre: "D", texte: "L'Yzeron" },
+      ],
+    },
+    {
+      id: 15, enonce: "Le Pont de Lattre-de-Tassigny est un pont sur :",
+      choix: [
+        { lettre: "A", texte: "Le Rhône", correct: true },
+        { lettre: "B", texte: "La Saône" },
+        { lettre: "C", texte: "La Loire" },
+        { lettre: "D", texte: "Le canal de Miribel" },
+      ],
+    },
+    {
+      id: 16, enonce: "Le Pont Robert Schuman traverse :",
+      choix: [
+        { lettre: "A", texte: "Le Rhône" },
+        { lettre: "B", texte: "La Saône", correct: true },
+        { lettre: "C", texte: "Le canal de Jonage" },
+        { lettre: "D", texte: "L'Azergues" },
+      ],
+    },
+    {
+      id: 17, enonce: "La Passerelle Saint-Vincent est une passerelle sur :",
+      choix: [
+        { lettre: "A", texte: "Le Rhône" },
+        { lettre: "B", texte: "La Saône", correct: true },
+        { lettre: "C", texte: "Le canal de Jonage" },
+        { lettre: "D", texte: "L'Yzeron" },
+      ],
+    },
+    {
+      id: 18, enonce: "Le Viaduc de Perrache franchit :",
+      choix: [
+        { lettre: "A", texte: "La Saône" },
+        { lettre: "B", texte: "Le Rhône", correct: true },
+        { lettre: "C", texte: "Le canal de Jonage" },
+        { lettre: "D", texte: "La Loire" },
+      ],
+    },
+    {
+      id: 19, enonce: "Lequel de ces ponts est un pont sur la Saône ?",
+      choix: [
+        { lettre: "A", texte: "Pont Wilson" },
+        { lettre: "B", texte: "Pont Gallieni" },
+        { lettre: "C", texte: "Pont Alphonse Juin", correct: true },
+        { lettre: "D", texte: "Pont Pasteur" },
+      ],
+    },
+    {
+      id: 20, enonce: "Lequel de ces ouvrages traverse le Rhône ?",
+      choix: [
+        { lettre: "A", texte: "Pont Bonaparte" },
+        { lettre: "B", texte: "Pont la Feuillée" },
+        { lettre: "C", texte: "Passerelle Saint-Vincent" },
+        { lettre: "D", texte: "Pont Raymond Barre", correct: true },
       ],
     },
   ],
