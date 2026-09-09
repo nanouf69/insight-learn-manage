@@ -3075,23 +3075,61 @@ function ExerciceCard({
     <Card className="border-2 border-slate-300 transition-all hover:shadow-md">
       <CardContent className="p-4 space-y-3">
         <div>
-          <div className="flex items-center justify-between">
-            <h4 className="font-bold text-base">
-              {partNumber && (
-                <span className="inline-flex items-center justify-center min-w-6 px-1.5 py-0.5 mr-2 rounded bg-primary/10 text-primary text-sm font-bold align-middle">{partNumber}</span>
-              )}
-              {item.titre}
-            </h4>
-            {hasQuestions && (
-              <Badge variant="secondary" className="text-xs">{item.questions!.length} questions</Badge>
-            )}
-            {overrideWarningCount > 0 && (
-              <span className="badge-warning ml-2 inline-flex items-center gap-1">
-                <AlertTriangle className="w-3 h-3" /> {overrideWarningCount} override formateur
-              </span>
-            )}
-          </div>
-          {item.sousTitre && <p className="text-sm text-muted-foreground">{item.sousTitre}</p>}
+          {editingMeta ? (
+            <div className="space-y-2">
+              <Input
+                value={draftTitre}
+                onChange={(e) => setDraftTitre(e.target.value)}
+                placeholder="Nom du quiz"
+                className="font-bold"
+                autoFocus
+                onKeyDown={(e) => { if (e.key === "Enter") saveMeta(); if (e.key === "Escape") setEditingMeta(false); }}
+              />
+              <Input
+                value={draftSousTitre}
+                onChange={(e) => setDraftSousTitre(e.target.value)}
+                placeholder="Sous-titre (facultatif)"
+                onKeyDown={(e) => { if (e.key === "Enter") saveMeta(); if (e.key === "Escape") setEditingMeta(false); }}
+              />
+              <div className="flex items-center gap-2">
+                <Button size="sm" className="gap-1" onClick={saveMeta} disabled={!draftTitre.trim()}>
+                  <Save className="w-3 h-3" /> Enregistrer le nom
+                </Button>
+                <Button size="sm" variant="outline" className="gap-1" onClick={() => setEditingMeta(false)}>
+                  <X className="w-3 h-3" /> Annuler
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="flex items-center justify-between">
+                <h4 className="font-bold text-base flex items-center gap-2">
+                  {partNumber && (
+                    <span className="inline-flex items-center justify-center min-w-6 px-1.5 py-0.5 rounded bg-primary/10 text-primary text-sm font-bold align-middle">{partNumber}</span>
+                  )}
+                  {item.titre}
+                  {onUpdateMeta && (
+                    <button
+                      onClick={startEditMeta}
+                      title="Renommer le quiz"
+                      className="text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </h4>
+                {hasQuestions && (
+                  <Badge variant="secondary" className="text-xs">{item.questions!.length} questions</Badge>
+                )}
+                {overrideWarningCount > 0 && (
+                  <span className="badge-warning ml-2 inline-flex items-center gap-1">
+                    <AlertTriangle className="w-3 h-3" /> {overrideWarningCount} override formateur
+                  </span>
+                )}
+              </div>
+              {item.sousTitre && <p className="text-sm text-muted-foreground">{item.sousTitre}</p>}
+            </>
+          )}
           {item.fichiers && item.fichiers.length > 0 && (
             <div className="flex flex-wrap gap-2 mt-1">
               {item.fichiers.map((f, i) => (
