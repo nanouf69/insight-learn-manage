@@ -56,7 +56,7 @@ describe("persistance des suppressions dans la source canonique", () => {
       "utf8",
     );
 
-    expect(moduleView).toContain("const { data: confirmedCanonicalRows, error: canonicalReadbackError }");
+    expect(moduleView).toContain("const confirmedRows = await readCanonicalRows()");
     expect(moduleView).toContain("canonicalRowsRef.current = confirmedRows");
   });
 

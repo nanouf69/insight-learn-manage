@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { toggleCorrect as toggleCorrectUtil, validateQuestionEdit, type QuizChoice as UtilQuizChoice } from "./quiz-editor-utils";
 import { applyCanonicalRowsToSections } from "./canonical-quiz-sections";
+import { isStaleCanonicalQuestionError } from "@/components/cours-en-ligne/canonical-conflict-rebase";
+
 
 interface QuizChoice {
   lettre: string;
@@ -56,17 +58,27 @@ export function EditableQuizViewer({ sections: sourceSections, title, icon = "�
 
   // Une seule lecture : toutes les vues consomment exactement les mêmes lignes
   // canoniques, identifiées par question_id UUID et alias numérique historique.
+  const fetchCanonicalRows = useCallback(async (): Promise<any[]> => {
+    const { data, error } = await supabase.functions.invoke("fournisseur-portal-data", {
+      body: { action: "quiz_questions", token: fournisseurToken, quiz_id: quizId },
+    });
+    if (error) throw error;
+    return (data?.data ?? []) as any[];
+  }, [fournisseurToken, quizId]);
+
   useEffect(() => {
     if (!fournisseurToken) return;
     let cancelled = false;
     async function loadCanonical() {
-      const { data, error } = await supabase.functions.invoke("fournisseur-portal-data", {
-        body: { action: "quiz_questions", token: fournisseurToken, quiz_id: quizId },
-      });
-       if (!cancelled && !error) {
-         setCanonicalQuestions((data?.data ?? []) as any[]);
-         setCanonicalLoaded(true);
-       }
+      try {
+        const rows = await fetchCanonicalRows();
+        if (!cancelled) {
+          setCanonicalQuestions(rows);
+          setCanonicalLoaded(true);
+        }
+      } catch {
+        /* lecture réessayée au prochain événement */
+      }
     }
     void loadCanonical();
     const channel = supabase.channel(`canonical-quiz-${quizId}`)
@@ -75,7 +87,8 @@ export function EditableQuizViewer({ sections: sourceSections, title, icon = "�
     const onFocus = () => void loadCanonical();
     window.addEventListener("focus", onFocus);
     return () => { cancelled = true; window.removeEventListener("focus", onFocus); supabase.removeChannel(channel); };
-  }, [quizId, fournisseurToken]);
+  }, [quizId, fournisseurToken, fetchCanonicalRows]);
+
 
   const sections = useMemo(
     () => applyCanonicalRowsToSections(
@@ -101,30 +114,74 @@ export function EditableQuizViewer({ sections: sourceSections, title, icon = "�
 
   const getQuestion = (_sectionId: number, q: QuizQuestion): QuizQuestion => q;
 
+  const applyCanonicalRow = (row: any) => {
+    if (!row?.question_id) return;
+    setCanonicalQuestions(prev => (
+      prev.some(r => r.question_id === row.question_id)
+        ? prev.map(r => (r.question_id === row.question_id ? row : r))
+        : [...prev, row]
+    ));
+  };
+
+  /**
+   * Écrit la version canonique. En cas de conflit P0409, on ne contourne pas la
+   * protection : on relit la dernière version en base, on met l'éditeur à jour,
+   * puis on rejoue uniquement l'action que l'utilisateur vient d'effectuer.
+   * Une question désactivée en base n'est jamais réactivée automatiquement.
+   */
+  const saveCanonicalQuestion = async (payload: {
+    section_id: number; legacy_question_id: number; position: number;
+    enonce: string; choix: any[]; active: boolean;
+  }): Promise<any> => {
+    const send = async (expected: string | null) => {
+      const { data, error } = await supabase.functions.invoke("fournisseur-portal-data", {
+        body: { action: "save_quiz_question", token: fournisseurToken, quiz_id: quizId, ...payload, expected_updated_at: expected },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data?.data;
+    };
+    const matches = (row: any) =>
+      Number(row.section_id) === payload.section_id && Number(row.legacy_question_id) === payload.legacy_question_id;
+
+    try {
+      return await send(canonicalQuestions.find(matches)?.updated_at ?? null);
+    } catch (conflictError) {
+      if (!isStaleCanonicalQuestionError(conflictError)) throw conflictError;
+
+      const fresh = await fetchCanonicalRows();
+      setCanonicalQuestions(fresh);
+      setCanonicalLoaded(true);
+      const freshRow = fresh.find(matches);
+
+      if (!freshRow) return await send(null);
+      if (!freshRow.active) {
+        if (!payload.active) return freshRow; // suppression déjà acquise en base
+        throw new Error("canonical_question_deleted");
+      }
+      return await send(freshRow.updated_at);
+    }
+  };
+
   const deleteQuestion = async (sectionId: number, questionId: number) => {
     if (!canOperate) return;
     setSaving(true);
     try {
       const current = sections.find(s => s.id === sectionId)?.questions?.find(q => q.id === questionId);
-      const canonicalCurrent = canonicalQuestions.find(
-        row => Number(row.section_id) === sectionId && Number(row.legacy_question_id) === questionId,
-      );
-      const { data, error } = await supabase.functions.invoke("fournisseur-portal-data", {
-        body: { action: "save_quiz_question", token: fournisseurToken, quiz_id: quizId, section_id: sectionId,
-          legacy_question_id: questionId, position: questionId, enonce: current?.enonce ?? "",
-          choix: current?.choix ?? [], active: false, expected_updated_at: canonicalCurrent?.updated_at ?? null },
+      const saved = await saveCanonicalQuestion({
+        section_id: sectionId, legacy_question_id: questionId, position: questionId,
+        enonce: current?.enonce ?? "", choix: current?.choix ?? [], active: false,
       });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      if (data?.data) setCanonicalQuestions(prev => prev.map(row => row.question_id === data.data.question_id ? data.data : row));
+      applyCanonicalRow(saved);
       toast.success("Question supprimée");
     } catch (error) {
-      void error;
-      toast.error("La question a changé depuis son ouverture. La dernière version a été rechargée.");
+      console.error(error);
+      toast.error("Suppression impossible : la question a été modifiée en base. Dernière version affichée.");
     } finally {
       setSaving(false);
     }
   };
+
 
   const startEdit = (sectionId: number, q: QuizQuestion) => {
     const actual = getQuestion(sectionId, q);
@@ -150,27 +207,26 @@ export function EditableQuizViewer({ sections: sourceSections, title, icon = "�
     setSaving(true);
     try {
       const currentIndex = sections.find(s => s.id === sectionId)?.questions?.findIndex(q => q.id === questionId) ?? -1;
-      const canonicalCurrent = canonicalQuestions.find(
-        row => Number(row.section_id) === sectionId && Number(row.legacy_question_id) === questionId,
-      );
-      const { data, error } = await supabase.functions.invoke("fournisseur-portal-data", {
-        body: { action: "save_quiz_question", token: fournisseurToken, quiz_id: quizId, section_id: sectionId,
-          legacy_question_id: questionId, position: currentIndex + 1, enonce: editEnonce,
-          choix: editChoix, active: true, expected_updated_at: canonicalCurrent?.updated_at ?? null },
+      const saved = await saveCanonicalQuestion({
+        section_id: sectionId, legacy_question_id: questionId, position: currentIndex + 1,
+        enonce: editEnonce, choix: editChoix, active: true,
       });
-
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      if (data?.data) setCanonicalQuestions(prev => prev.map(row => row.question_id === data.data.question_id ? data.data : row));
+      applyCanonicalRow(saved);
 
       setEditingKey(null);
       toast.success("Question modifiée avec succès");
     } catch (err) {
       console.error(err);
-      toast.error("La question a changé depuis son ouverture. La dernière version a été rechargée.");
+      const message = String((err as Error)?.message ?? "");
+      toast.error(
+        message.includes("canonical_question_deleted")
+          ? "Cette question a été supprimée en base : elle ne peut plus être modifiée."
+          : "Modification impossible. La dernière version enregistrée est affichée.",
+      );
     } finally {
       setSaving(false);
     }
+
   };
 
   const toggleCorrect = (index: number) => {
