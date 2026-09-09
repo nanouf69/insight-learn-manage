@@ -3881,18 +3881,19 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                           </span>
                           <span className="flex items-center gap-1 group/copy">
                             <Mail className="w-3 h-3 shrink-0" />
-                            {apprenant.email || "—"}
+                            <span className="select-all">{apprenant.email || "—"}</span>
                             {apprenant.email && (
                               <button
                                 type="button"
                                 onClick={(e) => { e.stopPropagation(); copyToClipboard(apprenant.email, 'Email'); }}
-                                className="p-0.5 rounded opacity-0 group-hover/copy:opacity-100 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-opacity"
+                                className="p-0.5 rounded text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
                                 title="Copier l'email"
                               >
                                 <Copy className="w-3 h-3" />
                               </button>
                             )}
                           </span>
+
                           <span className="flex items-center gap-1 group/copy">
                             <Phone className="w-3 h-3 shrink-0" />
                             {apprenant.telephone || "—"}
