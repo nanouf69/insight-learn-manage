@@ -2886,6 +2886,63 @@ function QuestionEditor({
 }
 
 // ===== Carte exercice avec questions =====
+// Calcule le numéro de « Partie » de chaque exercice, identique à la liste affichée côté apprenant.
+function computeExercicePartNumbers(moduleId: number, cours: ContentItem[], exercices: ExerciceItem[]): Map<number, string> {
+  const INTERLEAVED = new Set([2, 10, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 39, 40, 41, 42, 43]);
+  const BILAN = new Set([4, 5, 9, 11, 27, 28, 29, 30, 81, 82]);
+  type P = { type: "cours"; titre: string } | { type: "exercice"; exo: ExerciceItem };
+  const ac = (cours || []).filter((c) => c.actif);
+  const ae = (exercices || []).filter((e) => e.actif);
+  const seq: P[] = [];
+  if (INTERLEAVED.has(Number(moduleId))) {
+    const maxLen = Math.max(ac.length, ae.length);
+    for (let i = 0; i < maxLen; i++) {
+      if (i < ac.length) seq.push({ type: "cours", titre: ac[i].titre });
+      if (i < ae.length) seq.push({ type: "exercice", exo: ae[i] });
+    }
+  } else {
+    ac.forEach((c) => seq.push({ type: "cours", titre: c.titre }));
+    ae.forEach((e) => seq.push({ type: "exercice", exo: e }));
+  }
+  const result = new Map<number, string>();
+  if (BILAN.has(Number(moduleId))) {
+    let n = 0;
+    seq.forEach((p) => { if (p.type === "exercice") { n++; result.set(Number(p.exo.id), String(n)); } });
+    return result;
+  }
+  const hasSubjectLetters = seq.some((p) => p.type === "cours" && /^\s*[A-G]\./i.test(p.titre));
+  if (hasSubjectLetters) {
+    const subjectNums: Record<string, number> = { A: 1, B: 2, C: 3, D: 4, E: 5, F: 6, G: 7 };
+    const partBySubject: Record<number, number> = {};
+    let cur: { s: number; p: number } | null = null;
+    seq.forEach((p) => {
+      if (p.type === "cours") {
+        const letter = p.titre.match(/^\s*([A-G])\./i)?.[1]?.toUpperCase() || "A";
+        const s = subjectNums[letter] || 1;
+        const np = (partBySubject[s] || 0) + 1;
+        partBySubject[s] = np;
+        cur = { s, p: np };
+      } else if (cur) {
+        result.set(Number(p.exo.id), String(cur.p));
+      }
+    });
+    return result;
+  }
+  let pairNum = 0;
+  let lastCoursIdx = -1;
+  seq.forEach((p, i) => {
+    if (p.type === "cours") {
+      pairNum++;
+      lastCoursIdx = i;
+    } else {
+      const isQuiz = (p.exo.questions?.length || 0) > 0;
+      const n = isQuiz ? (lastCoursIdx === i - 1 ? pairNum : ++pairNum) : ++pairNum;
+      result.set(Number(p.exo.id), String(n));
+    }
+  });
+  return result;
+}
+
 function ExerciceCard({
   item,
   index,
@@ -2896,6 +2953,7 @@ function ExerciceCard({
   onUpdateQuestions,
   moduleId,
   overrideWarnings,
+  partNumber,
 }: {
   item: ExerciceItem;
   index: number;
@@ -2906,6 +2964,7 @@ function ExerciceCard({
   onUpdateQuestions: (id: number, questions: ExerciceQuestion[], deletedQuestionId?: number) => void;
   moduleId: number;
   overrideWarnings?: Map<string, TrainerOverrideInfo>;
+  partNumber?: string | null;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [fullscreenOpen, setFullscreenOpen] = useState(false);
@@ -2999,7 +3058,12 @@ function ExerciceCard({
       <CardContent className="p-4 space-y-3">
         <div>
           <div className="flex items-center justify-between">
-            <h4 className="font-bold text-base">{item.titre}</h4>
+            <h4 className="font-bold text-base">
+              {partNumber && (
+                <span className="inline-flex items-center justify-center min-w-6 px-1.5 py-0.5 mr-2 rounded bg-primary/10 text-primary text-sm font-bold align-middle">{partNumber}</span>
+              )}
+              {item.titre}
+            </h4>
             {hasQuestions && (
               <Badge variant="secondary" className="text-xs">{item.questions!.length} questions</Badge>
             )}
@@ -5935,6 +5999,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       return labels;
     }, [pages, isBilanModule]);
 
+
     const totalPages = pages.length;
     const currentPageData = pages[currentPage];
     const progressPercent = totalPages > 0 ? Math.round((completedPages.size / totalPages) * 100) : 0;
@@ -8635,6 +8700,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     );
   };
 
+  const exercicePartNumberById = computeExercicePartNumbers(Number(moduleData.id), moduleData.cours, moduleData.exercices);
+
   return (
     <div className="space-y-6 animate-fade-in">
       {studentOnly && maintenanceActive && (
@@ -8832,6 +8899,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 }
                 moduleId={moduleData.id}
                 overrideWarnings={trainerOverrideWarnings}
+                partNumber={exercicePartNumberById.get(Number(exo.id)) ?? null}
               />
             ))}
           </div>
