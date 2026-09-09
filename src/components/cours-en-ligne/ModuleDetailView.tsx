@@ -7724,7 +7724,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                   </Button>
                 </div>
               </div>
-              {exo.sousTitre && <p className="text-sm text-muted-foreground">{exo.sousTitre}</p>}
+              {exo.sousTitre && <p className="text-sm text-muted-foreground">{syncSousTitreQuestionCount(exo.sousTitre, exoTotalQ)}</p>}
               {pendingWrongQuestionRevision?.exoId === exo.id && (
                 <div className="rounded-lg border-2 border-amber-300 bg-amber-50 dark:bg-amber-950/20 p-4 space-y-3 text-sm text-amber-900 dark:text-amber-200">
                   <div className="font-bold text-base">📖 Que souhaitez-vous faire ?</div>
