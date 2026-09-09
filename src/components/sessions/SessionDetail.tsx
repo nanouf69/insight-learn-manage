@@ -4407,35 +4407,40 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                             onSave={(notes) => updateSessionApprenant(sessionApprenant.id, { notes })}
                           />
 
-                          <Select
-                            value={sessionApprenant.statut_suivi || ''}
-                            disabled={mdpMailDialog.loading}
-                            onValueChange={async (val) => {
-                              if (val === 'mdp_change') {
-                                // Aperçu du mail URGENT avant envoi — statut enregistré après l'envoi
+                          {sessionApprenant.statut_suivi === 'mdp_change' ? (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              disabled={mdpMailDialog.loading}
+                              className="h-8 gap-1 border-orange-300 text-orange-700"
+                              onClick={() => {
                                 mdpTargetRef.current = sessionApprenant.id;
-                                await mdpMailDialog.prepare(apprenant.id);
-                                return;
-                              }
-                              await updateSessionApprenant(sessionApprenant.id, { statut_suivi: val || null });
-                            }}
-                          >
-                            <SelectTrigger
-                              onPointerDown={(event) => {
-                                if (sessionApprenant.statut_suivi === 'mdp_change') {
-                                  event.preventDefault();
-                                  event.stopPropagation();
-                                  mdpTargetRef.current = sessionApprenant.id;
-                                  void mdpMailDialog.prepare(apprenant.id);
-                                }
+                                void mdpMailDialog.prepare(apprenant.id);
                               }}
-                              className={`h-8 w-auto gap-1 text-xs border ${
+                            >
+                              {mdpMailDialog.loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <KeyRound className="h-3.5 w-3.5" />}
+                              MDP changé
+                            </Button>
+                          ) : (
+                            <Select
+                              value={sessionApprenant.statut_suivi || ''}
+                              disabled={mdpMailDialog.loading}
+                              onValueChange={async (val) => {
+                                if (val === 'mdp_change') {
+                                  mdpTargetRef.current = sessionApprenant.id;
+                                  await mdpMailDialog.prepare(apprenant.id);
+                                  return;
+                                }
+                                await updateSessionApprenant(sessionApprenant.id, { statut_suivi: val || null });
+                              }}
+                            >
+                            <SelectTrigger className={`h-8 w-auto gap-1 text-xs border ${
                               sessionApprenant.statut_suivi === 'inscription_validee' ? 'border-green-300 text-green-700' :
                               sessionApprenant.statut_suivi === 'document_complet' ? 'border-green-300 text-green-700' :
                               sessionApprenant.statut_suivi === 'paye' ? 'border-green-300 text-green-700' :
                               sessionApprenant.statut_suivi ? 'border-orange-300 text-orange-700' : ''
-                            }`}
-                            >
+                            }`}>
                               <SelectValue placeholder="⚙️ Statut" />
                             </SelectTrigger>
                             <SelectContent>
@@ -4453,7 +4458,8 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                               <SelectItem value="paye">💸 Payé</SelectItem>
                               <SelectItem value="inscription_validee">✅ Inscription validée</SelectItem>
                             </SelectContent>
-                          </Select>
+                            </Select>
+                          )}
 
                           <Select
                             value={sessionApprenant.presence_pratique || 'present'}
