@@ -5355,7 +5355,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         const rows = (currentRows ?? []) as unknown as CanonicalQuestionRow[];
         const rowByKey = new Map(rows.map((row) => [`${row.quiz_id}:${row.section_id}:${row.legacy_question_id}`, row]));
         const exerciseById = new Map((normalizedModuleData.exercices ?? []).map((exercise) => [Number(exercise.id), exercise]));
-        const actions: Record<string, unknown>[] = [];
+        const actions: CanonicalActionLike[] = [];
 
         for (const binding of bindings ?? []) {
           const exercise = exerciseById.get(Number(binding.exercise_id));
@@ -5371,6 +5371,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 section_id: binding.section_id,
                 legacy_question_id: deletedId,
                 expected_updated_at: current.updated_at,
+                local_edited_at: new Date().toISOString(),
               });
             }
           }
@@ -5408,27 +5409,57 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 // Verrouiller sur la version réellement chargée par l'éditeur,
                 // jamais sur la date fraîche relue juste avant cette écriture.
                 expected_updated_at: question._canonicalUpdatedAt ?? null,
+                local_edited_at: question._editedAt ?? null,
                 ...nextComparable,
               });
             }
           });
         }
 
-        if (actions.length > 0) {
-          const { error: canonicalActionError } = await (supabase as any).rpc("apply_admin_canonical_quiz_actions", {
-            p_module_id: dataToSave.module_id,
-            p_actions: actions as any,
-          });
-          if (canonicalActionError) throw canonicalActionError;
-
-          const { data: confirmedCanonicalRows, error: canonicalReadbackError } = await supabase
+        const readCanonicalRows = async (): Promise<CanonicalQuestionRow[]> => {
+          const { data: freshRows, error: freshError } = await supabase
             .from("quiz_questions")
             .select("question_id,quiz_id,section_id,legacy_question_id,position,enonce,choix,image,image_size,explication,active,updated_at")
             .in("quiz_id", canonicalQuizIds)
             .order("section_id")
             .order("position");
-          if (canonicalReadbackError) throw canonicalReadbackError;
-          const confirmedRows = (confirmedCanonicalRows ?? []) as unknown as CanonicalQuestionRow[];
+          if (freshError) throw freshError;
+          return (freshRows ?? []) as unknown as CanonicalQuestionRow[];
+        };
+
+        if (actions.length > 0) {
+          let appliedActions = actions;
+          try {
+            const { error: canonicalActionError } = await (supabase as any).rpc("apply_admin_canonical_quiz_actions", {
+              p_module_id: dataToSave.module_id,
+              p_actions: toRpcCanonicalActions(appliedActions) as any,
+            });
+            if (canonicalActionError) throw canonicalActionError;
+          } catch (conflictError) {
+            if (!isStaleCanonicalQuestionError(conflictError)) throw conflictError;
+
+            // P0409 : on ne contourne pas la protection. On abandonne la version
+            // locale obsolète, on relit la dernière version canonique et on ne
+            // rejoue que la modification réellement effectuée à l'instant.
+            const freshRows = await readCanonicalRows();
+            canonicalRowsRef.current = freshRows;
+            appliedActions = rebaseCanonicalActions(appliedActions, freshRows);
+            console.warn("[ModuleEditor] P0409 canonique : rebase automatique sur la version base", {
+              moduleId: dataToSave.module_id,
+              actionsBefore: actions.length,
+              actionsAfter: appliedActions.length,
+            });
+
+            if (appliedActions.length > 0) {
+              const { error: retryError } = await (supabase as any).rpc("apply_admin_canonical_quiz_actions", {
+                p_module_id: dataToSave.module_id,
+                p_actions: toRpcCanonicalActions(appliedActions) as any,
+              });
+              if (retryError) throw retryError;
+            }
+          }
+
+          const confirmedRows = await readCanonicalRows();
           canonicalRowsRef.current = confirmedRows;
           setModuleData((previous) => applyCanonicalQuestionsToModule(
             previous,
@@ -5438,6 +5469,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         }
         setCanonicalRefreshKey((key) => key + 1);
       }
+
 
       // Sync shared exercises to ALL sibling modules (handles edits, adds, deletes).
       // On transmet l'état précédent : seuls les exercices RÉELLEMENT modifiés
