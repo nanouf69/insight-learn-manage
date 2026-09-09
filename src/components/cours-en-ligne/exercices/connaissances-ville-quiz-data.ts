@@ -155,6 +155,97 @@ export const QUIZ_ADMINISTRATIONS: ExerciceItem = {
         { lettre: "D", texte: "10 Rue de la République, Lyon" },
       ],
     },
+    // ===== Commissariats de Lyon =====
+    {
+      id: 17, enonce: "Où se trouve le Commissariat du 2ème arrondissement ?",
+      choix: [
+        { lettre: "A", texte: "47 Rue de la Charité, 69002 Lyon", correct: true },
+        { lettre: "B", texte: "19 Place Louis Pradel, Lyon" },
+        { lettre: "C", texte: "11 Rue Denfert-Rochereau, Lyon" },
+        { lettre: "D", texte: "15 Rue des Anges, Lyon" },
+      ],
+    },
+    {
+      id: 18, enonce: "Où se trouve le Commissariat du 3ème et du 6ème arrondissement ?",
+      choix: [
+        { lettre: "A", texte: "11 Rue Denfert-Rochereau, 69003 Lyon", correct: true },
+        { lettre: "B", texte: "47 Rue de la Charité, Lyon" },
+        { lettre: "C", texte: "40 Rue Marius Berliet, Lyon" },
+        { lettre: "D", texte: "3 Rue de la Terrasse, Lyon" },
+      ],
+    },
+    {
+      id: 19, enonce: "Où se trouve le Commissariat du 4ème arrondissement ?",
+      choix: [
+        { lettre: "A", texte: "3 Rue de la Terrasse, 69004 Lyon", correct: true },
+        { lettre: "B", texte: "29-31 Rue Berjon, Lyon" },
+        { lettre: "C", texte: "15 Rue des Anges, Lyon" },
+        { lettre: "D", texte: "47 Rue de la Charité, Lyon" },
+      ],
+    },
+    {
+      id: 20, enonce: "Où se trouve le Commissariat du 5ème arrondissement ?",
+      choix: [
+        { lettre: "A", texte: "15 Rue des Anges, 69005 Lyon", correct: true },
+        { lettre: "B", texte: "11 Rue Denfert-Rochereau, Lyon" },
+        { lettre: "C", texte: "3 Rue de la Terrasse, Lyon" },
+        { lettre: "D", texte: "19 Place Louis Pradel, Lyon" },
+      ],
+    },
+    {
+      id: 21, enonce: "Où se trouve le Commissariat du 7ème et du 8ème arrondissement ?",
+      choix: [
+        { lettre: "A", texte: "40 Rue Marius Berliet, 69008 Lyon", correct: true },
+        { lettre: "B", texte: "47 Rue de la Charité, Lyon" },
+        { lettre: "C", texte: "29-31 Rue Berjon, Lyon" },
+        { lettre: "D", texte: "15 Rue des Anges, Lyon" },
+      ],
+    },
+    {
+      id: 22, enonce: "Où se trouve le Commissariat du 9ème arrondissement ?",
+      choix: [
+        { lettre: "A", texte: "29-31 Rue Berjon, 69009 Lyon", correct: true },
+        { lettre: "B", texte: "40 Rue Marius Berliet, Lyon" },
+        { lettre: "C", texte: "11 Rue Denfert-Rochereau, Lyon" },
+        { lettre: "D", texte: "3 Rue de la Terrasse, Lyon" },
+      ],
+    },
+    {
+      id: 23, enonce: "Le 19 Place Louis Pradel correspond au commissariat de quel arrondissement ?",
+      choix: [
+        { lettre: "A", texte: "1er arrondissement", correct: true },
+        { lettre: "B", texte: "2ème arrondissement" },
+        { lettre: "C", texte: "3ème arrondissement" },
+        { lettre: "D", texte: "5ème arrondissement" },
+      ],
+    },
+    {
+      id: 24, enonce: "Le 11 Rue Denfert-Rochereau (69003) correspond aux commissariats de quels arrondissements ?",
+      choix: [
+        { lettre: "A", texte: "3ème et 6ème arrondissements", correct: true },
+        { lettre: "B", texte: "7ème et 8ème arrondissements" },
+        { lettre: "C", texte: "1er et 4ème arrondissements" },
+        { lettre: "D", texte: "2ème et 9ème arrondissements" },
+      ],
+    },
+    {
+      id: 25, enonce: "Quel commissariat se situe devant l'Opéra et l'Hôtel de Ville ?",
+      choix: [
+        { lettre: "A", texte: "Le Commissariat du 1er arrondissement", correct: true },
+        { lettre: "B", texte: "Le Commissariat du 4ème arrondissement" },
+        { lettre: "C", texte: "Le Commissariat du 5ème arrondissement" },
+        { lettre: "D", texte: "Le Commissariat du 9ème arrondissement" },
+      ],
+    },
+    {
+      id: 26, enonce: "Où se trouve le Commissariat de Saint-Priest ?",
+      choix: [
+        { lettre: "A", texte: "13 Rue Docteur Gallavardin, Saint-Priest", correct: true },
+        { lettre: "B", texte: "19 Place Louis Pradel, Lyon" },
+        { lettre: "C", texte: "40 Rue Marius Berliet, Lyon" },
+        { lettre: "D", texte: "2 Place Sathonay, Lyon" },
+      ],
+    },
   ],
 };
 
