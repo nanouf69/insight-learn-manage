@@ -3152,7 +3152,7 @@ function ExerciceCard({
                   </span>
                 )}
               </div>
-              {item.sousTitre && <p className="text-sm text-muted-foreground">{item.sousTitre}</p>}
+              {item.sousTitre && <p className="text-sm text-muted-foreground">{syncSousTitreQuestionCount(item.sousTitre, item.questions?.length)}</p>}
             </>
           )}
           {item.fichiers && item.fichiers.length > 0 && (
