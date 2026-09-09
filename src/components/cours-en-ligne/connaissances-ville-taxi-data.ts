@@ -7,6 +7,8 @@ import { QUIZ_COURS } from "./exercices/adresses-cours-quiz-data";
 import { QUIZ_PLACES } from "./exercices/adresses-places-quiz-data";
 import { QUIZ_QUAIS } from "./exercices/adresses-quais-quiz-data";
 import { QUIZ_RUES } from "./exercices/adresses-rues-quiz-data";
+import { QUIZ_COMMUNES_METROPOLE, QUIZ_COMMUNES_ZUPC } from "./exercices/communes-metropole-zupc-quiz-data";
+
 
 interface ContentItem {
   id: number;
