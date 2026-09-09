@@ -1,4 +1,5 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
+import { useMdpChangeMail } from "@/components/examens/MdpChangeMailDialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -2068,6 +2069,15 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       console.error('Erreur envoi satisfaction (pratique):', e);
     }
   };
+
+  // Aperçu du mail URGENT avant enregistrement du statut « MDP changé »
+  const mdpTargetRef = useRef<string | null>(null);
+  const mdpMailDialog = useMdpChangeMail(async (_apprenantId, to) => {
+    const saId = mdpTargetRef.current;
+    mdpTargetRef.current = null;
+    if (saId) await updateSessionApprenant(saId, { statut_suivi: 'mdp_change' });
+    toast({ title: `✅ Mail URGENT envoyé à ${to}`, description: "Statut « 🔑 MDP changé » enregistré" });
+  });
 
   const updateSessionApprenant = async (
     sessionApprenantId: string, 
@@ -4399,7 +4409,14 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
 
                           <Select
                             value={sessionApprenant.statut_suivi || ''}
+                            disabled={mdpMailDialog.loading}
                             onValueChange={async (val) => {
+                              if (val === 'mdp_change') {
+                                // Aperçu du mail URGENT avant envoi — statut enregistré après l'envoi
+                                mdpTargetRef.current = sessionApprenant.id;
+                                await mdpMailDialog.prepare(apprenant.id);
+                                return;
+                              }
                               await updateSessionApprenant(sessionApprenant.id, { statut_suivi: val || null });
                             }}
                           >
@@ -6221,6 +6238,8 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    {mdpMailDialog.dialog}
     </>
   );
 }
