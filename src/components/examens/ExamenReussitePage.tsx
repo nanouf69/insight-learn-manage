@@ -1222,6 +1222,50 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
     },
   });
 
+  // Deuxième email : celui saisi dans le dossier de bienvenue (si différent du CRM)
+  const { data: dossierEmails } = useQuery({
+    queryKey: ['dossier-bienvenue-emails-examen', selectedExamDate, apprenantIdsExamen.length],
+    enabled: apprenantIdsExamen.length > 0,
+    queryFn: async () => {
+      const map: Record<string, string> = {};
+      const extract = (donnees: any): string | null => {
+        const walk = (obj: any): string | null => {
+          if (!obj || typeof obj !== 'object') return null;
+          for (const [k, v] of Object.entries(obj)) {
+            if (typeof v === 'string' && /mail/i.test(k) && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim())) return v.trim();
+          }
+          for (const v of Object.values(obj)) {
+            if (v && typeof v === 'object') {
+              const found = walk(v);
+              if (found) return found;
+            }
+          }
+          return null;
+        };
+        return walk(donnees);
+      };
+      const chunkSize = 100;
+      for (let i = 0; i < apprenantIdsExamen.length; i += chunkSize) {
+        const chunk = apprenantIdsExamen.slice(i, i + chunkSize);
+        const { data, error } = await supabase
+          .from('apprenant_documents_completes')
+          .select('apprenant_id, donnees, completed_at')
+          .in('apprenant_id', chunk)
+          .eq('type_document', 'dossier-bienvenue')
+          .order('completed_at', { ascending: false });
+        if (error) throw error;
+        for (const row of (data || []) as any[]) {
+          if (map[row.apprenant_id]) continue;
+          const email = extract(row.donnees);
+          if (email) map[row.apprenant_id] = email;
+        }
+      }
+      return map;
+    },
+  });
+
+
+
   const { data: allApprenants } = useQuery({
     queryKey: ['all-apprenants'],
     queryFn: async () => {
