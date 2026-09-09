@@ -48,6 +48,7 @@ export function EditableQuizViewer({ sections: sourceSections, title, icon = "ðŸ
   const [editingKey, setEditingKey] = useState<string | null>(null);
   const [editEnonce, setEditEnonce] = useState("");
   const [editChoix, setEditChoix] = useState<QuizChoice[]>([]);
+  const [editBaseChoix, setEditBaseChoix] = useState<QuizChoice[]>([]);
   const [saving, setSaving] = useState(false);
   const [confirmDeleteKey, setConfirmDeleteKey] = useState<string | null>(null);
   const [canonicalQuestions, setCanonicalQuestions] = useState<any[]>([]);
@@ -132,10 +133,12 @@ export function EditableQuizViewer({ sections: sourceSections, title, icon = "ðŸ
   const saveCanonicalQuestion = async (payload: {
     section_id: number; legacy_question_id: number; position: number;
     enonce: string; choix: any[]; active: boolean;
+    base_choix?: any[];
   }): Promise<any> => {
-    const send = async (expected: string | null) => {
+    const { base_choix: baseChoices, ...writePayload } = payload;
+    const send = async (expected: string | null, nextPayload = writePayload) => {
       const { data, error } = await supabase.functions.invoke("fournisseur-portal-data", {
-        body: { action: "save_quiz_question", token: fournisseurToken, quiz_id: quizId, ...payload, expected_updated_at: expected },
+        body: { action: "save_quiz_question", token: fournisseurToken, quiz_id: quizId, ...nextPayload, expected_updated_at: expected },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
@@ -158,6 +161,24 @@ export function EditableQuizViewer({ sections: sourceSections, title, icon = "ðŸ
       if (!freshRow.active) {
         if (!payload.active) return freshRow; // suppression dÃ©jÃ  acquise en base
         throw new Error("canonical_question_deleted");
+      }
+
+      const localChoiceKeys = new Set(writePayload.choix.map((choice: any) => String(choice?.lettre ?? JSON.stringify(choice))));
+      const removedChoiceKeys = new Set(
+        (baseChoices ?? [])
+          .map((choice: any) => String(choice?.lettre ?? JSON.stringify(choice)))
+          .filter((key: string) => !localChoiceKeys.has(key)),
+      );
+      if (removedChoiceKeys.size > 0) {
+        const freshChoices = Array.isArray(freshRow.choix) ? freshRow.choix : [];
+        return await send(freshRow.updated_at, {
+          section_id: Number(freshRow.section_id),
+          legacy_question_id: Number(freshRow.legacy_question_id),
+          position: Number(freshRow.position),
+          enonce: freshRow.enonce,
+          choix: freshChoices.filter((choice: any) => !removedChoiceKeys.has(String(choice?.lettre ?? JSON.stringify(choice)))),
+          active: true,
+        });
       }
       return await send(freshRow.updated_at);
     }
@@ -189,12 +210,14 @@ export function EditableQuizViewer({ sections: sourceSections, title, icon = "ðŸ
     setEditingKey(key);
     setEditEnonce(actual.enonce);
     setEditChoix(actual.choix.map(c => ({ ...c })));
+    setEditBaseChoix(actual.choix.map(c => ({ ...c })));
   };
 
   const cancelEdit = () => {
     setEditingKey(null);
     setEditEnonce("");
     setEditChoix([]);
+    setEditBaseChoix([]);
   };
 
   const saveEdit = async (sectionId: number, questionId: number) => {
@@ -209,7 +232,7 @@ export function EditableQuizViewer({ sections: sourceSections, title, icon = "ðŸ
       const currentIndex = sections.find(s => s.id === sectionId)?.questions?.findIndex(q => q.id === questionId) ?? -1;
       const saved = await saveCanonicalQuestion({
         section_id: sectionId, legacy_question_id: questionId, position: currentIndex + 1,
-        enonce: editEnonce, choix: editChoix, active: true,
+        enonce: editEnonce, choix: editChoix, active: true, base_choix: editBaseChoix,
       });
       applyCanonicalRow(saved);
 

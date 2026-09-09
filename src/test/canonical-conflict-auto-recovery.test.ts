@@ -14,6 +14,7 @@ const row = (over: Partial<CanonicalRowLike> = {}): CanonicalRowLike => ({
   legacy_question_id: 15,
   active: true,
   updated_at: "2026-09-09T10:00:00.000Z",
+  choix: [{ lettre: "A" }, { lettre: "B" }, { lettre: "C" }, { lettre: "D" }],
   ...over,
 });
 
@@ -26,6 +27,7 @@ const upsert = (over: Partial<CanonicalActionLike> = {}): CanonicalActionLike =>
   local_edited_at: "2026-09-09T10:05:00.000Z",
   enonce: "Q15 modifiée",
   choix: [{ lettre: "A" }, { lettre: "B" }, { lettre: "C" }],
+  base_choix: [{ lettre: "A" }, { lettre: "B" }, { lettre: "C" }, { lettre: "D" }],
   ...over,
 });
 
@@ -47,7 +49,7 @@ describe("rebase automatique après P0409", () => {
   });
 
   it("abandonne une copie locale obsolète au lieu de réécrire la base", () => {
-    const stale = upsert({ local_edited_at: "2026-09-09T08:00:00.000Z", enonce: "vieille version" });
+    const stale = upsert({ local_edited_at: "2026-09-09T08:00:00.000Z", enonce: "vieille version", base_choix: null });
     const out = rebaseCanonicalActions([stale], [row({ updated_at: "2026-09-09T10:00:00.000Z" })]);
     expect(out).toHaveLength(0);
   });
@@ -61,9 +63,27 @@ describe("rebase automatique après P0409", () => {
     const withD = upsert({
       local_edited_at: null,
       choix: [{ lettre: "A" }, { lettre: "B" }, { lettre: "C" }, { lettre: "D" }],
+      base_choix: null,
     });
     const out = rebaseCanonicalActions([withD], [row()]);
     expect(out).toHaveLength(0);
+  });
+
+  it("rejoue deux suppressions rapides même si le premier updated_at serveur est plus récent", () => {
+    const secondClick = upsert({
+      local_edited_at: "2026-09-09T10:00:01.000Z",
+      choix: [{ lettre: "A" }, { lettre: "B" }],
+    });
+    const afterFirstSave = row({
+      updated_at: "2026-09-09T10:00:02.000Z",
+      choix: [{ lettre: "A" }, { lettre: "B" }, { lettre: "C" }],
+    });
+
+    const out = rebaseCanonicalActions([secondClick], [afterFirstSave]);
+
+    expect(out).toHaveLength(1);
+    expect(out[0].expected_updated_at).toBe("2026-09-09T10:00:02.000Z");
+    expect(out[0].choix).toEqual([{ lettre: "A" }, { lettre: "B" }]);
   });
 
   it("abandonne une suppression déjà appliquée et rejoue celle qui reste à faire", () => {
@@ -89,6 +109,7 @@ describe("rebase automatique après P0409", () => {
   it("n'envoie pas le champ interne local_edited_at au serveur", () => {
     const [payload] = toRpcCanonicalActions([upsert()]);
     expect(payload).not.toHaveProperty("local_edited_at");
+    expect(payload).not.toHaveProperty("base_choix");
     expect(payload).toHaveProperty("expected_updated_at");
   });
 });
@@ -106,5 +127,6 @@ describe("branchement dans les éditeurs", () => {
     expect(source).toContain("isStaleCanonicalQuestionError");
     expect(source).toContain("await fetchCanonicalRows()");
     expect(source).toContain("return await send(freshRow.updated_at)");
+    expect(source).toContain("removedChoiceKeys");
   });
 });

@@ -407,6 +407,8 @@ interface ExerciceQuestion {
   question_id?: string;
   /** Version canonique réellement chargée par cet éditeur. */
   _canonicalUpdatedAt?: string;
+  /** Choix de base servant à rejouer exactement les suppressions après P0409. */
+  _canonicalChoix?: ExerciceChoix[];
   enonce: string;
   image?: string;
   imageSize?: ImageSize;
@@ -557,6 +559,7 @@ const applyCanonicalQuestionsToModule = (
     ...(row.explication ? { explication: row.explication } : {}),
     _editedAt: row.updated_at,
     _canonicalUpdatedAt: row.updated_at,
+    _canonicalChoix: Array.isArray(row.choix) ? cloneJson(row.choix) : [],
   });
 
   let changed = false;
@@ -5173,11 +5176,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             source_fingerprint: confirmedRow.source_fingerprint ?? dataToSave.source_fingerprint ?? null,
           });
           lastSavedPayloadSignatureRef.current = confirmedSignature;
-          setModuleData(applyCanonicalQuestionsToModule(
-            normalizedModuleData,
-            canonicalRowsRef.current,
-            canonicalSectionIdsRef.current,
-          ));
+          // Ne jamais réinjecter ici le snapshot canonique antérieur à cette
+          // sauvegarde. La relecture fraîche, plus bas, mettra l'éditeur à jour.
+          setModuleData(normalizedModuleData);
           setDeletedCours(Array.isArray(confirmedRow.deleted_cours) ? (confirmedRow.deleted_cours as ContentItem[]) : []);
           setDeletedExercices(Array.isArray(confirmedRow.deleted_exercices) ? (confirmedRow.deleted_exercices as ExerciceItem[]) : []);
         }
@@ -5417,6 +5418,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 // jamais sur la date fraîche relue juste avant cette écriture.
                 expected_updated_at: question._canonicalUpdatedAt ?? null,
                 local_edited_at: question._editedAt ?? null,
+                base_choix: question._canonicalChoix ?? null,
                 ...nextComparable,
               });
             }
@@ -5466,14 +5468,16 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             }
           }
 
-          const confirmedRows = await readCanonicalRows();
-          canonicalRowsRef.current = confirmedRows;
-          setModuleData((previous) => applyCanonicalQuestionsToModule(
-            previous,
-            confirmedRows,
-            canonicalSectionIdsRef.current,
-          ));
         }
+        // Toujours terminer sur une lecture fraîche, y compris si le rebase
+        // P0409 conclut que la suppression est déjà acquise ou n'a rien à rejouer.
+        const confirmedRows = await readCanonicalRows();
+        canonicalRowsRef.current = confirmedRows;
+        setModuleData((previous) => applyCanonicalQuestionsToModule(
+          previous,
+          confirmedRows,
+          canonicalSectionIdsRef.current,
+        ));
         setCanonicalRefreshKey((key) => key + 1);
       }
 
