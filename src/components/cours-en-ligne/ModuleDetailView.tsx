@@ -398,6 +398,8 @@ type ImageSize = "sm" | "md" | "lg" | "xl" | "2xl";
 interface ExerciceQuestion {
   id: number;
   question_id?: string;
+  /** Version canonique réellement chargée par cet éditeur. */
+  _canonicalUpdatedAt?: string;
   enonce: string;
   image?: string;
   imageSize?: ImageSize;
@@ -547,6 +549,7 @@ const applyCanonicalQuestionsToModule = (
     ...(row.image_size ? { imageSize: row.image_size as ImageSize } : {}),
     ...(row.explication ? { explication: row.explication } : {}),
     _editedAt: row.updated_at,
+    _canonicalUpdatedAt: row.updated_at,
   });
 
   let changed = false;
@@ -5163,7 +5166,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             source_fingerprint: confirmedRow.source_fingerprint ?? dataToSave.source_fingerprint ?? null,
           });
           lastSavedPayloadSignatureRef.current = confirmedSignature;
-          setModuleData(normalizedModuleData);
+          setModuleData(applyCanonicalQuestionsToModule(
+            normalizedModuleData,
+            canonicalRowsRef.current,
+            canonicalSectionIdsRef.current,
+          ));
           setDeletedCours(Array.isArray(confirmedRow.deleted_cours) ? (confirmedRow.deleted_cours as ContentItem[]) : []);
           setDeletedExercices(Array.isArray(confirmedRow.deleted_exercices) ? (confirmedRow.deleted_exercices as ExerciceItem[]) : []);
         }
@@ -5398,7 +5405,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 exercise_id: binding.exercise_id,
                 section_id: binding.section_id,
                 legacy_question_id: question.id,
-                expected_updated_at: current?.updated_at ?? null,
+                // Verrouiller sur la version réellement chargée par l'éditeur,
+                // jamais sur la date fraîche relue juste avant cette écriture.
+                expected_updated_at: question._canonicalUpdatedAt ?? current?.updated_at ?? null,
                 ...nextComparable,
               });
             }
@@ -5411,6 +5420,21 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             p_actions: actions as any,
           });
           if (canonicalActionError) throw canonicalActionError;
+
+          const { data: confirmedCanonicalRows, error: canonicalReadbackError } = await supabase
+            .from("quiz_questions")
+            .select("question_id,quiz_id,section_id,legacy_question_id,position,enonce,choix,image,image_size,explication,active,updated_at")
+            .in("quiz_id", canonicalQuizIds)
+            .order("section_id")
+            .order("position");
+          if (canonicalReadbackError) throw canonicalReadbackError;
+          const confirmedRows = (confirmedCanonicalRows ?? []) as unknown as CanonicalQuestionRow[];
+          canonicalRowsRef.current = confirmedRows;
+          setModuleData((previous) => applyCanonicalQuestionsToModule(
+            previous,
+            confirmedRows,
+            canonicalSectionIdsRef.current,
+          ));
         }
         setCanonicalRefreshKey((key) => key + 1);
       }
