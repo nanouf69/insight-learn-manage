@@ -132,6 +132,7 @@ const STATUT_SUIVI_OPTIONS: { value: string; label: string }[] = [
   { value: "email_non_valide", label: "📧 Email non validé" },
   { value: "injoignable", label: "📵 Injoignable" },
   { value: "a_payer", label: "💰 À payer" },
+  { value: "paye", label: "💸 Payé" },
   { value: "inscription_validee", label: "✅ Inscription validée" },
 ];
 
@@ -164,7 +165,7 @@ function InlineStatutSuivi({
       }}
     >
       <SelectTrigger className={`w-44 text-xs h-8 ${
-        value === 'inscription_validee' || value === 'document_complet' ? 'border-green-300 text-green-700' :
+        value === 'inscription_validee' || value === 'document_complet' || value === 'paye' ? 'border-green-300 text-green-700' :
         value ? 'border-orange-300 text-orange-700' : ''
       }`}>
         <SelectValue placeholder="⚙️ Statut" />
