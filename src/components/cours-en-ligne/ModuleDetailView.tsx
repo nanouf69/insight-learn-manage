@@ -8852,6 +8852,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 }
                 moduleId={moduleData.id}
                 overrideWarnings={trainerOverrideWarnings}
+                partNumber={exercicePartNumberById.get(Number(exo.id)) ?? null}
               />
             ))}
           </div>
