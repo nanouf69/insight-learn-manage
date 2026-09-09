@@ -2971,6 +2971,22 @@ function ExerciceCard({
   const [expanded, setExpanded] = useState(false);
   const [fullscreenOpen, setFullscreenOpen] = useState(false);
   const [editingQId, setEditingQId] = useState<number | null>(null);
+  const [editingMeta, setEditingMeta] = useState(false);
+  const [draftTitre, setDraftTitre] = useState(item.titre);
+  const [draftSousTitre, setDraftSousTitre] = useState(item.sousTitre ?? "");
+
+  const startEditMeta = () => {
+    setDraftTitre(item.titre);
+    setDraftSousTitre(item.sousTitre ?? "");
+    setEditingMeta(true);
+  };
+
+  const saveMeta = () => {
+    const titre = draftTitre.trim();
+    if (!titre) return;
+    onUpdateMeta?.(item.id, { titre, sousTitre: draftSousTitre.trim() });
+    setEditingMeta(false);
+  };
 
   // Dé-doublonnage défensif par id (évite tout mélange d'affichage entre questions
   // partageant accidentellement le même id — la 1re occurrence gagne).
