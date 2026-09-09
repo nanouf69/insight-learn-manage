@@ -800,7 +800,7 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
     const template = allTemplates.find(t => t.id === templateId);
     if (template) {
       setNewEmailSubject(template.getSubject(apprenant));
-      setNewEmailBody(template.getBody(apprenant));
+      setNewEmailBody(injectT3PLink(template.getBody(apprenant)));
     }
 
     // Auto-attache les PDFs pour le template "Modèles devis & facture - Examen VTC"
