@@ -2900,7 +2900,19 @@ function QuestionEditor({
 
 // ===== Carte exercice avec questions =====
 // Calcule le numéro de « Partie » de chaque exercice, identique à la liste affichée côté apprenant.
+/**
+ * Le sous-titre historique embarque un nombre de questions figé (issu des données
+ * statiques). On le réaligne toujours sur le nombre réellement chargé depuis la base
+ * pour éviter d'afficher deux totaux différents. Aucune question n'est modifiée.
+ */
+function syncSousTitreQuestionCount(sousTitre?: string, actualCount?: number): string | undefined {
+  if (!sousTitre) return sousTitre;
+  if (typeof actualCount !== "number" || !Number.isFinite(actualCount)) return sousTitre;
+  return sousTitre.replace(/^\s*\d+\s+questions/i, `${actualCount} questions`);
+}
+
 function computeExercicePartNumbers(moduleId: number, cours: ContentItem[], exercices: ExerciceItem[]): Map<number, string> {
+
   const INTERLEAVED = new Set([2, 10, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 39, 40, 41, 42, 43]);
   const BILAN = new Set([4, 5, 9, 11, 27, 28, 29, 30, 81, 82]);
   type P = { type: "cours"; titre: string } | { type: "exercice"; exo: ExerciceItem };
