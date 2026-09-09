@@ -1962,9 +1962,19 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                         <TableCell className={!apprenant.telephone ? "text-destructive font-medium" : ""}>
                           {apprenant.telephone || "-"}
                         </TableCell>
-                        <TableCell className={`max-w-[200px] truncate ${!apprenant.email ? "text-destructive font-medium" : ""}`}>
-                          {apprenant.email || "-"}
+                        <TableCell className={`max-w-[200px] ${!apprenant.email ? "text-destructive font-medium" : ""}`}>
+                          <div className="truncate">{apprenant.email || "-"}</div>
+                          {(() => {
+                            const dossierEmail = dossierEmails?.[apprenant.id];
+                            if (!dossierEmail || dossierEmail.toLowerCase() === (apprenant.email || '').toLowerCase()) return null;
+                            return (
+                              <div className="truncate text-xs text-muted-foreground" title={dossierEmail}>
+                                {dossierEmail} <span className="italic">(dossier)</span>
+                              </div>
+                            );
+                          })()}
                         </TableCell>
+
                         <TableCell>
                           <Badge className="bg-primary/10 text-primary">{apprenant.date_examen_theorique}</Badge>
                         </TableCell>
