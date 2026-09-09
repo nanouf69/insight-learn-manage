@@ -109,6 +109,7 @@ function App() {
                 <Route path="/cours" element={<ErrorBoundary><CoursPublic /></ErrorBoundary>} />
                 <Route path="/cours-public" element={<ErrorBoundary><CoursPublic /></ErrorBoundary>} />
                 <Route path="/document-a-signer/:token" element={<ErrorBoundary><DocumentASignerPublic /></ErrorBoundary>} />
+                <Route path="/identifiants-t3p" element={<ErrorBoundary><IdentifiantsT3PPublic /></ErrorBoundary>} />
 
                 <Route path="/reset-password" element={<ErrorBoundary><ResetPassword /></ErrorBoundary>} />
                 <Route path="/auth/callback" element={<ErrorBoundary><AuthCallback /></ErrorBoundary>} />
