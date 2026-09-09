@@ -3926,6 +3926,24 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                             )}
                           </span>
 
+                          {getDossierEmail(apprenant.id) && getDossierEmail(apprenant.id)!.toLowerCase() !== (apprenant.email || '').toLowerCase() && (
+                            <span className="flex items-center gap-1 group/copy text-primary" title="Email indiqué dans le dossier de bienvenue">
+                              <Mail className="w-3 h-3 shrink-0" />
+                              <span className="select-all">{getDossierEmail(apprenant.id)}</span>
+                              <span className="text-[10px] uppercase opacity-70">dossier</span>
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); copyToClipboard(getDossierEmail(apprenant.id)!, 'Email du dossier de bienvenue'); }}
+                                className="p-0.5 rounded text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                                title="Copier l'email du dossier de bienvenue"
+                              >
+                                <Copy className="w-3 h-3" />
+                              </button>
+                            </span>
+                          )}
+
+
+
                           <span className="flex items-center gap-1 group/copy">
                             <Phone className="w-3 h-3 shrink-0" />
                             {apprenant.telephone || "—"}
