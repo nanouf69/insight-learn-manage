@@ -6230,6 +6230,8 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    {mdpMailDialog.dialog}
     </>
   );
 }
