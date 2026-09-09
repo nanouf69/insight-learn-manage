@@ -2076,7 +2076,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     const saId = mdpTargetRef.current;
     mdpTargetRef.current = null;
     if (saId) await updateSessionApprenant(saId, { statut_suivi: 'mdp_change' });
-    toast.success(`✅ Mail URGENT envoyé à ${to} — statut « 🔑 MDP changé »`);
+    toast({ title: `✅ Mail URGENT envoyé à ${to}`, description: "Statut « 🔑 MDP changé » enregistré" });
   });
 
   const updateSessionApprenant = async (
