@@ -1962,12 +1962,15 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                         <TableCell>
                           <InlineStatutSuivi
                             sessionApprenantId={statutsSession?.[apprenant.id]?.sessionApprenantId ?? null}
-                            value={statutsSession?.[apprenant.id]?.statut ?? null}
+                            apprenantId={apprenant.id}
+                            value={statutsSession?.[apprenant.id]?.statut ?? (apprenant as any).statut_suivi ?? null}
                             onSaved={() => {
                               queryClient.invalidateQueries({ queryKey: ['statuts-session-examen'] });
                               queryClient.invalidateQueries({ queryKey: ['session-apprenants'] });
+                              queryClient.invalidateQueries({ queryKey: ['apprenants-examen', selectedExamDate] });
                             }}
                           />
+
                         </TableCell>
                         <TableCell className={!apprenant.telephone ? "text-destructive font-medium" : ""}>
                           {apprenant.telephone || "-"}
