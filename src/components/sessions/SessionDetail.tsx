@@ -4421,8 +4421,10 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                             }}
                           >
                             <SelectTrigger
-                              onClick={() => {
+                              onPointerDown={(event) => {
                                 if (sessionApprenant.statut_suivi === 'mdp_change') {
+                                  event.preventDefault();
+                                  event.stopPropagation();
                                   mdpTargetRef.current = sessionApprenant.id;
                                   void mdpMailDialog.prepare(apprenant.id);
                                 }
