@@ -145,47 +145,160 @@ function InlineStatutSuivi({
   onSaved,
 }: { sessionApprenantId: string | null; apprenantId?: string; value: string | null; onSaved?: () => void }) {
   const [saving, setSaving] = useState(false);
+  const [mdpDialogOpen, setMdpDialogOpen] = useState(false);
+  const [mdpMail, setMdpMail] = useState<{ to: string; subject: string; body: string } | null>(null);
+  const [mdpLoading, setMdpLoading] = useState(false);
+  const [mdpSending, setMdpSending] = useState(false);
+
+  const saveStatut = async (newValue: string | null, silent = false) => {
+    setSaving(true);
+    let error: any = null;
+    if (sessionApprenantId) {
+      ({ error } = await supabase
+        .from('session_apprenants')
+        .update({ statut_suivi: newValue })
+        .eq('id', sessionApprenantId));
+    } else if (apprenantId) {
+      ({ error } = await supabase
+        .from('apprenants')
+        .update({ statut_suivi: newValue } as any)
+        .eq('id', apprenantId));
+    } else {
+      error = { message: "Apprenant introuvable" };
+    }
+    setSaving(false);
+    if (error) { toast.error("Erreur : " + error.message); return false; }
+    if (!silent) toast.success(sessionApprenantId ? "Statut mis à jour (synchronisé avec la session)" : "Statut mis à jour");
+    onSaved?.();
+    return true;
+  };
+
+  // Prépare l'aperçu du mail URGENT avec le lien sécurisé (token) avant envoi
+  const prepareMdpMail = async () => {
+    if (!apprenantId) { toast.error("Apprenant introuvable"); return; }
+    setMdpLoading(true);
+    try {
+      const [{ data: a, error: aErr }, { data: tpl, error: tErr }] = await Promise.all([
+        supabase.from('apprenants').select('id, prenom, nom, email, type_apprenant, date_debut_formation').eq('id', apprenantId).single(),
+        supabase.from('email_templates').select('*').eq('id', 'urgent_inscription_exament3p').single(),
+      ]);
+      if (aErr) throw aErr;
+      if (tErr) throw tErr;
+      if (!a?.email) { toast.error("L'apprenant n'a pas d'adresse email — renseignez-la d'abord"); return; }
+
+      // Jeton unique : réutilise l'existant ou en crée un
+      let { data: ident } = await supabase
+        .from('apprenant_identifiants_t3p')
+        .select('token')
+        .eq('apprenant_id', apprenantId)
+        .maybeSingle();
+      if (!ident) {
+        const { data: created, error: cErr } = await supabase
+          .from('apprenant_identifiants_t3p')
+          .insert({ apprenant_id: apprenantId })
+          .select('token')
+          .single();
+        if (cErr) throw cErr;
+        ident = created;
+      }
+
+      const url = `https://gestion.ftransport.fr/identifiants-t3p?token=${ident!.token}`;
+      const bouton = `<div style="margin:18px 0"><a href="${url}" style="display:inline-block;background:#dc2626;color:#ffffff;font-weight:bold;font-size:16px;padding:14px 22px;border-radius:8px;text-decoration:none">🔐 Transmettre mes nouveaux identifiants</a><br><span style="font-size:12px;color:#555">Lien personnel et sécurisé : ne le transmettez à personne.</span></div>`;
+      const fill = (s: string) => (s || '')
+        .replace(/\{\{prenom\}\}/g, a.prenom || '')
+        .replace(/\{\{nom\}\}/g, a.nom || '')
+        .replace(/\{\{email\}\}/g, a.email || '')
+        .replace(/\{\{apprenant_id\}\}/g, a.id || '')
+        .replace(/\{\{formation\}\}/g, (a as any).type_apprenant || '')
+        .replace(/\{\{date_debut\}\}/g, (a as any).date_debut_formation || '[à compléter]')
+        .replace(/\{\{lien_identifiants_t3p\}\}/g, url)
+        .replace(/\{\{bouton_identifiants_t3p\}\}/g, bouton);
+
+      setMdpMail({ to: a.email, subject: fill(tpl.subject_template || ''), body: fill(tpl.body_template || '') });
+      setMdpDialogOpen(true);
+    } catch (e: any) {
+      toast.error("Erreur préparation du mail : " + (e?.message || e));
+    } finally {
+      setMdpLoading(false);
+    }
+  };
+
+  const sendMdpMail = async () => {
+    if (!mdpMail || !apprenantId) return;
+    setMdpSending(true);
+    const { error } = await supabase.functions.invoke('sync-outlook-emails', {
+      body: {
+        action: 'send',
+        apprenantId,
+        userEmail: 'contact@ftransport.fr',
+        to: mdpMail.to,
+        subject: mdpMail.subject,
+        body: mdpMail.body,
+        attachments: [],
+      },
+    });
+    setMdpSending(false);
+    if (error) { toast.error("Erreur d'envoi : " + error.message); return; }
+    setMdpDialogOpen(false);
+    setMdpMail(null);
+    const ok = await saveStatut('mdp_change', true);
+    if (ok) toast.success(`✅ Mail URGENT envoyé à ${mdpMail.to} — statut « 🔑 MDP changé »`);
+  };
 
   return (
-    <Select
-      value={value || "non_renseigne"}
-      disabled={saving}
-      onValueChange={async (val) => {
-        setSaving(true);
-        const newValue = val === "non_renseigne" ? null : val;
-        let error: any = null;
-        if (sessionApprenantId) {
-          ({ error } = await supabase
-            .from('session_apprenants')
-            .update({ statut_suivi: newValue })
-            .eq('id', sessionApprenantId));
-        } else if (apprenantId) {
-          ({ error } = await supabase
-            .from('apprenants')
-            .update({ statut_suivi: newValue } as any)
-            .eq('id', apprenantId));
-        } else {
-          error = { message: "Apprenant introuvable" };
-        }
-        setSaving(false);
-        if (error) { toast.error("Erreur : " + error.message); return; }
-        toast.success(sessionApprenantId ? "Statut mis à jour (synchronisé avec la session)" : "Statut mis à jour");
-        onSaved?.();
-      }}
-    >
-      <SelectTrigger className={`w-44 text-xs h-8 ${
-        value === 'inscription_validee' || value === 'document_complet' || value === 'paye' ? 'border-green-300 text-green-700' :
-        value ? 'border-orange-300 text-orange-700' : ''
-      }`}>
-        <SelectValue placeholder="⚙️ Statut" />
-      </SelectTrigger>
-      <SelectContent className="z-[9999] max-h-[320px] overflow-y-auto">
-        <SelectItem value="non_renseigne">-</SelectItem>
-        {STATUT_SUIVI_OPTIONS.map(o => (
-          <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+    <>
+      <Select
+        value={value || "non_renseigne"}
+        disabled={saving || mdpLoading}
+        onValueChange={async (val) => {
+          if (val === 'mdp_change') {
+            // Aperçu du mail URGENT avant envoi — le statut n'est enregistré qu'après l'envoi
+            prepareMdpMail();
+            return;
+          }
+          await saveStatut(val === "non_renseigne" ? null : val);
+        }}
+      >
+        <SelectTrigger className={`w-44 text-xs h-8 ${
+          value === 'inscription_validee' || value === 'document_complet' || value === 'paye' ? 'border-green-300 text-green-700' :
+          value ? 'border-orange-300 text-orange-700' : ''
+        }`}>
+          <SelectValue placeholder="⚙️ Statut" />
+        </SelectTrigger>
+        <SelectContent className="z-[9999] max-h-[320px] overflow-y-auto">
+          <SelectItem value="non_renseigne">-</SelectItem>
+          {STATUT_SUIVI_OPTIONS.map(o => (
+            <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      <Dialog open={mdpDialogOpen} onOpenChange={(open) => { if (!mdpSending) { setMdpDialogOpen(open); if (!open) setMdpMail(null); } }}>
+        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>📧 Aperçu du mail URGENT avant envoi</DialogTitle>
+          </DialogHeader>
+          {mdpMail && (
+            <div className="flex-1 overflow-y-auto space-y-3 pr-1">
+              <div className="text-sm"><span className="font-semibold">À :</span> {mdpMail.to}</div>
+              <div className="text-sm"><span className="font-semibold">Objet :</span> {mdpMail.subject}</div>
+              <div
+                className="border rounded-md p-4 bg-white text-sm [&_a]:text-blue-600"
+                dangerouslySetInnerHTML={{ __html: mdpMail.body }}
+              />
+            </div>
+          )}
+          <DialogFooter className="gap-2">
+            <Button variant="outline" disabled={mdpSending} onClick={() => { setMdpDialogOpen(false); setMdpMail(null); }}>
+              Annuler
+            </Button>
+            <Button disabled={mdpSending || !mdpMail} onClick={sendMdpMail}>
+              {mdpSending ? "Envoi en cours…" : "📨 Envoyer le mail"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
