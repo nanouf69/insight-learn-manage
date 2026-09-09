@@ -407,6 +407,8 @@ interface ExerciceQuestion {
   question_id?: string;
   /** Version canonique réellement chargée par cet éditeur. */
   _canonicalUpdatedAt?: string;
+  /** Choix de base servant à rejouer exactement les suppressions après P0409. */
+  _canonicalChoix?: ExerciceChoix[];
   enonce: string;
   image?: string;
   imageSize?: ImageSize;
@@ -557,6 +559,7 @@ const applyCanonicalQuestionsToModule = (
     ...(row.explication ? { explication: row.explication } : {}),
     _editedAt: row.updated_at,
     _canonicalUpdatedAt: row.updated_at,
+    _canonicalChoix: Array.isArray(row.choix) ? cloneJson(row.choix) : [],
   });
 
   let changed = false;
@@ -5417,6 +5420,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 // jamais sur la date fraîche relue juste avant cette écriture.
                 expected_updated_at: question._canonicalUpdatedAt ?? null,
                 local_edited_at: question._editedAt ?? null,
+                base_choix: question._canonicalChoix ?? null,
                 ...nextComparable,
               });
             }
