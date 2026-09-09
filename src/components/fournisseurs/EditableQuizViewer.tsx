@@ -205,27 +205,26 @@ export function EditableQuizViewer({ sections: sourceSections, title, icon = "�
     setSaving(true);
     try {
       const currentIndex = sections.find(s => s.id === sectionId)?.questions?.findIndex(q => q.id === questionId) ?? -1;
-      const canonicalCurrent = canonicalQuestions.find(
-        row => Number(row.section_id) === sectionId && Number(row.legacy_question_id) === questionId,
-      );
-      const { data, error } = await supabase.functions.invoke("fournisseur-portal-data", {
-        body: { action: "save_quiz_question", token: fournisseurToken, quiz_id: quizId, section_id: sectionId,
-          legacy_question_id: questionId, position: currentIndex + 1, enonce: editEnonce,
-          choix: editChoix, active: true, expected_updated_at: canonicalCurrent?.updated_at ?? null },
+      const saved = await saveCanonicalQuestion({
+        section_id: sectionId, legacy_question_id: questionId, position: currentIndex + 1,
+        enonce: editEnonce, choix: editChoix, active: true,
       });
-
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      if (data?.data) setCanonicalQuestions(prev => prev.map(row => row.question_id === data.data.question_id ? data.data : row));
+      applyCanonicalRow(saved);
 
       setEditingKey(null);
       toast.success("Question modifiée avec succès");
     } catch (err) {
       console.error(err);
-      toast.error("La question a changé depuis son ouverture. La dernière version a été rechargée.");
+      const message = String((err as Error)?.message ?? "");
+      toast.error(
+        message.includes("canonical_question_deleted")
+          ? "Cette question a été supprimée en base : elle ne peut plus être modifiée."
+          : "Modification impossible. La dernière version enregistrée est affichée.",
+      );
     } finally {
       setSaving(false);
     }
+
   };
 
   const toggleCorrect = (index: number) => {
