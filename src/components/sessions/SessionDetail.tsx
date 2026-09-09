@@ -1345,9 +1345,10 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
         if (apprenantIds.length === 0) return [];
         const { data, error } = await supabase
           .from('apprenant_documents_completes')
-          .select('apprenant_id')
+          .select('apprenant_id, donnees, completed_at')
           .in('apprenant_id', apprenantIds)
-          .eq('type_document', 'dossier-bienvenue');
+          .eq('type_document', 'dossier-bienvenue')
+          .order('completed_at', { ascending: false });
         if (error) throw error;
         return data || [];
       },
@@ -1356,6 +1357,37 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
 
     const dossierBienvenueIds = useMemo(() => new Set(dossiersBienvenue.map((d: any) => d.apprenant_id)), [dossiersBienvenue]);
     const hasDossierBienvenue = (apprenantId: string) => dossierBienvenueIds.has(apprenantId);
+
+    // Extrait l'adresse email saisie dans le dossier de bienvenue (donnees JSON)
+    const dossierEmailByApprenant = useMemo(() => {
+      const map = new Map<string, string>();
+      const extract = (donnees: any): string | null => {
+        if (!donnees || typeof donnees !== 'object') return null;
+        const walk = (obj: any): string | null => {
+          if (!obj || typeof obj !== 'object') return null;
+          for (const [k, v] of Object.entries(obj)) {
+            if (typeof v === 'string' && /mail/i.test(k) && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim())) return v.trim();
+            if (typeof v === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim()) && /^(email|e-mail|mail)$/i.test(k.replace(/[_\s-]/g, ''))) return v.trim();
+          }
+          for (const v of Object.values(obj)) {
+            if (v && typeof v === 'object') {
+              const found = walk(v);
+              if (found) return found;
+            }
+          }
+          return null;
+        };
+        return walk(donnees);
+      };
+      for (const d of dossiersBienvenue as any[]) {
+        if (!map.has(d.apprenant_id)) {
+          const email = extract(d.donnees);
+          if (email) map.set(d.apprenant_id, email);
+        }
+      }
+      return map;
+    }, [dossiersBienvenue]);
+    const getDossierEmail = (apprenantId: string) => dossierEmailByApprenant.get(apprenantId) || null;
 
     // Télécharge le dossier de bienvenue (PDF) d'un apprenant
     const downloadDossierBienvenue = async (apprenant: any) => {
