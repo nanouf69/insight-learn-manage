@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * TDD RED phase — tests for admin edit propagation bugs
  *
