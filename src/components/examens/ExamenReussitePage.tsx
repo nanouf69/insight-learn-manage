@@ -1346,6 +1346,36 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
     },
   });
 
+  // Nouveaux identifiants Examen T3P transmis par l'apprenant
+  const { data: nouveauxIdentifiantsT3P = {} } = useQuery({
+    queryKey: ['nouveaux-identifiants-t3p-examen', selectedExamDate, apprenantIdsExamen.join(',')],
+    enabled: apprenantIdsExamen.length > 0,
+    queryFn: async () => {
+      const map: Record<string, { nouvel_email: string; nouveau_mot_de_passe: string }> = {};
+      const chunkSize = 100;
+      for (let i = 0; i < apprenantIdsExamen.length; i += chunkSize) {
+        const chunk = apprenantIdsExamen.slice(i, i + chunkSize);
+        const { data, error } = await supabase
+          .from('apprenant_identifiants_t3p')
+          .select('apprenant_id, nouvel_email, nouveau_mot_de_passe, recu_at')
+          .in('apprenant_id', chunk)
+          .not('recu_at', 'is', null);
+        if (error) throw error;
+        for (const row of data || []) {
+          if (!row.apprenant_id || !row.nouvel_email || !row.nouveau_mot_de_passe) continue;
+          map[row.apprenant_id] = {
+            nouvel_email: row.nouvel_email,
+            nouveau_mot_de_passe: row.nouveau_mot_de_passe,
+          };
+        }
+      }
+      return map;
+    },
+    staleTime: 30_000,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
+  });
+
   // Deuxième email : celui saisi dans le dossier de bienvenue (si différent du CRM)
   const { data: dossierEmails } = useQuery({
     queryKey: ['dossier-bienvenue-emails-examen', selectedExamDate, apprenantIdsExamen.length],
@@ -1992,6 +2022,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                     <TableHead className="text-center">Admissibilité (Théorie)</TableHead>
                     <TableHead>N° Dossier CMA</TableHead>
                     <TableHead>Mot de passe CMA</TableHead>
+                    <TableHead>Nouveaux identifiants</TableHead>
                     <TableHead>Statut</TableHead>
                     <TableHead>Téléphone</TableHead>
                     <TableHead>Email</TableHead>
@@ -2072,6 +2103,41 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                             value={(apprenant as any).mot_de_passe_cma ?? null}
                             onSaved={() => queryClient.invalidateQueries({ queryKey: ['apprenants-examen', selectedExamDate] })}
                           />
+                        </TableCell>
+                        <TableCell className="min-w-[250px]">
+                          {nouveauxIdentifiantsT3P[apprenant.id] ? (() => {
+                            const identifiants = nouveauxIdentifiantsT3P[apprenant.id];
+                            return (
+                              <div className="flex items-center gap-1 rounded-md border border-orange-200 bg-orange-50 px-2 py-1 text-xs text-orange-900">
+                                <div className="min-w-0">
+                                  <div className="truncate" title={identifiants.nouvel_email}>
+                                    <span className="font-semibold">Email : </span>
+                                    <span className="font-mono">{identifiants.nouvel_email}</span>
+                                  </div>
+                                  <div className="truncate" title={identifiants.nouveau_mot_de_passe}>
+                                    <span className="font-semibold">Mot de passe : </span>
+                                    <span className="font-mono">{identifiants.nouveau_mot_de_passe}</span>
+                                  </div>
+                                </div>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6 shrink-0 text-orange-800 hover:bg-orange-100 hover:text-orange-900"
+                                  title="Copier les nouveaux identifiants et le mot de passe"
+                                  aria-label="Copier les nouveaux identifiants et le mot de passe"
+                                  onClick={() => {
+                                    void navigator.clipboard.writeText(
+                                      `Nouvelle adresse e-mail : ${identifiants.nouvel_email}\nNouveau mot de passe : ${identifiants.nouveau_mot_de_passe}`
+                                    );
+                                    toast.success("Nouveaux identifiants et mot de passe copiés");
+                                  }}
+                                >
+                                  <Copy className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
+                            );
+                          })() : <span className="text-muted-foreground">-</span>}
                         </TableCell>
                         <TableCell>
                           <InlineStatutSuivi
