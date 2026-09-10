@@ -512,7 +512,10 @@ const CANONICAL_QUIZ_IDS_BY_MODULE_ID: Record<number, string[]> = {
   12: ["cas-pratique-taxi"],
   13: ["controle-connaissances-taxi"],
   24: ["reglementation-nationale", "reglementation-locale"],
-  27: ["bilan-exercices-ta"],
+  // Le Bilan TA partage exactement la source canonique TAXI. Les exercices TA
+  // gardent leurs IDs 250/251 via quiz_question_bindings pour préserver tous
+  // les résultats et jalons historiques.
+  27: ["bilan-exercices-taxi"],
   28: ["bilan-examen-ta"],
   40: ["reglementation-nationale", "reglementation-locale"],
   42: ["reglementation-nationale", "reglementation-locale"],
@@ -534,6 +537,21 @@ interface CanonicalQuestionRow {
   active: boolean;
   updated_at: string;
 }
+
+interface CanonicalQuestionBinding {
+  quiz_id: string;
+  exercise_id: number;
+  section_id: number;
+}
+
+const mapCanonicalRowsToModuleExercises = (
+  rows: CanonicalQuestionRow[],
+  bindings: CanonicalQuestionBinding[],
+): CanonicalQuestionRow[] => bindings.flatMap((binding) =>
+  rows
+    .filter((row) => row.quiz_id === binding.quiz_id && Number(row.section_id) === Number(binding.section_id))
+    .map((row) => ({ ...row, section_id: Number(binding.exercise_id) })),
+);
 
 const applyCanonicalQuestionsToModule = (
   data: ModuleData,
@@ -4252,7 +4270,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           .order("position"),
         supabase
           .from("quiz_question_bindings")
-          .select("section_id")
+          .select("quiz_id,exercise_id,section_id")
           .eq("module_id", Number(module.id)),
       ]);
       if (cancelled) return;
@@ -4260,8 +4278,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         console.error("[CanonicalQuiz] Lecture impossible", error ?? bindingsError);
         return;
       }
-      const rows = (data ?? []) as unknown as CanonicalQuestionRow[];
-      const sectionIds = new Set((bindings ?? []).map((binding) => Number(binding.section_id)));
+      const sourceRows = (data ?? []) as unknown as CanonicalQuestionRow[];
+      const moduleBindings = (bindings ?? []) as unknown as CanonicalQuestionBinding[];
+      const rows = mapCanonicalRowsToModuleExercises(sourceRows, moduleBindings);
+      const sectionIds = new Set(moduleBindings.map((binding) => Number(binding.exercise_id)));
       canonicalRowsRef.current = rows;
       canonicalSectionIdsRef.current = sectionIds;
       setModuleData((previous) => applyCanonicalQuestionsToModule(previous, rows, sectionIds));
@@ -5494,10 +5514,14 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         // Toujours terminer sur une lecture fraîche, y compris si le rebase
         // P0409 conclut que la suppression est déjà acquise ou n'a rien à rejouer.
         const confirmedRows = await readCanonicalRows();
-        canonicalRowsRef.current = confirmedRows;
+        const mappedConfirmedRows = mapCanonicalRowsToModuleExercises(
+          confirmedRows,
+          (bindings ?? []) as unknown as CanonicalQuestionBinding[],
+        );
+        canonicalRowsRef.current = mappedConfirmedRows;
         setModuleData((previous) => applyCanonicalQuestionsToModule(
           previous,
-          confirmedRows,
+          mappedConfirmedRows,
           canonicalSectionIdsRef.current,
         ));
         setCanonicalRefreshKey((key) => key + 1);

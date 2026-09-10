@@ -1716,10 +1716,10 @@ export default function FournisseurPortal() {
                       </a>
                     </div>
                     <EditableQuizViewer
-                      sections={BILAN_EXERCICES_TA}
+                      sections={BILAN_EXERCICES_TAXI.filter((section) => section.id === 203 || section.id === 204)}
                       title="Quiz — Bilan Exercices TA"
                       icon="📊"
-                      quizId="bilan-exercices-ta"
+                      quizId="bilan-exercices-taxi"
                       fournisseurId={fournisseur?.id || ""}
                       fournisseurToken={token || ""}
                     />
