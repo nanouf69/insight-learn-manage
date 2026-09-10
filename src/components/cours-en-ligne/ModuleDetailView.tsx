@@ -28,6 +28,8 @@ import {
 } from "@/lib/quizAttempts";
 import { useQuestionTimeTracking } from "@/hooks/useQuestionTimeTracking";
 import { reconcileHistoricalAnswers } from "@/lib/historicalAnswerReconciliation";
+import { enqueueAnswerSave, flushAnswerSavesOnUnload } from "@/lib/answerPersistence";
+import { AnswerSaveIndicator } from "./AnswerSaveIndicator";
 
 import { ColoredTextField } from "./ColoredTextField";
 
@@ -6444,6 +6446,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     const userIdForSaveRef = useRef<string | null>(null);
     const jwtTokenRef = useRef<string | null>(null);
     const reponsesSaveDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    // Dernier état effectivement mis en file (pour ne journaliser que les changements).
+    const lastPersistedAnswersRef = useRef<Record<string, string | string[]>>({});
     useEffect(() => {
       const updateRefs = (session: any) => {
         if (session?.user?.id) userIdForSaveRef.current = session.user.id;
@@ -6662,6 +6666,16 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       // "Refaire les fausses" / retry attempts persist the new answers.
       if (reponsesSaveDebounceRef.current) clearTimeout(reponsesSaveDebounceRef.current);
       reponsesSaveDebounceRef.current = setTimeout(async () => {
+        if (!userIdForSaveRef.current) {
+          // Attendre la session plutôt que perdre la réponse silencieusement.
+          try {
+            const { data } = await supabase.auth.getSession();
+            if (data.session?.user?.id) {
+              userIdForSaveRef.current = data.session.user.id;
+              jwtTokenRef.current = data.session.access_token;
+            }
+          } catch { /* la file réessaiera */ }
+        }
         if (!userIdForSaveRef.current) return;
         try {
           // Group answers by exercice
@@ -6681,21 +6695,33 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             }
           });
           
-          const rows = Array.from(byExo.entries()).map(([exoId, exoAnswers]) => ({
-            apprenant_id: apprenantId,
-            user_id: userIdForSaveRef.current,
-            exercice_id: `module_${module.id}_exo_${exoId}`,
-            exercice_type: "quiz",
-            reponses: exoAnswers,
-            completed: false,
-            updated_at: new Date().toISOString(),
-          }));
+          // Journal question par question : on n'envoie que ce qui a changé
+          // depuis la dernière sauvegarde confirmée.
+          const previous = lastPersistedAnswersRef.current;
+          const nowIso = new Date().toISOString();
 
-          if (rows.length > 0) {
-            console.log("[ModuleDetailView] UPSERT reponses_apprenants — user_id envoyé:", userIdForSaveRef.current, "| nb rows:", rows.length, "| apprenant_id:", apprenantId);
-            await supabase.from("reponses_apprenants" as any)
-              .upsert(rows as any, { onConflict: "apprenant_id,exercice_id" });
-          }
+          Array.from(byExo.entries()).forEach(([exoId, exoAnswers]) => {
+            const events = Object.entries(exoAnswers)
+              .filter(([key, val]) => JSON.stringify(previous[key]) !== JSON.stringify(val))
+              .map(([key, val]) => ({
+                question_id: key,
+                valeur: val as unknown,
+                client_saved_at: nowIso,
+              }));
+
+            enqueueAnswerSave({
+              apprenant_id: apprenantId,
+              user_id: userIdForSaveRef.current as string,
+              module_id: module.id,
+              exercice_id: `module_${module.id}_exo_${exoId}`,
+              exercice_type: "quiz",
+              reponses: exoAnswers,
+              completed: false,
+              updated_at: nowIso,
+              events,
+            });
+          });
+          lastPersistedAnswersRef.current = { ...answers };
         } catch (e) {
           console.error("[AutoSave reponses_apprenants] error:", e);
         }
@@ -6773,33 +6799,31 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           if (!byExo.has(exoId)) byExo.set(exoId, {});
           byExo.get(exoId)![key] = val;
         }
-        const rows = Array.from(byExo.entries()).map(([exoId, exoAnswers]) => ({
-          apprenant_id: apprenantId,
-          user_id: userIdForSaveRef.current,
-          exercice_id: `module_${module.id}_exo_${exoId}`,
-          exercice_type: "quiz",
-          reponses: exoAnswers,
-          completed: false,
-          updated_at: new Date().toISOString(),
-        }));
-        if (rows.length > 0) {
-          console.log("[ModuleDetailView] FLUSH XHR reponses_apprenants — user_id envoyé:", userIdForSaveRef.current, "| nb rows:", rows.length, "| apprenant_id:", apprenantId);
-          const url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/reponses_apprenants?on_conflict=apprenant_id,exercice_id`;
-          const token = jwtTokenRef.current || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-          try {
-            const xhr = new XMLHttpRequest();
-            xhr.open("POST", url, false); // synchronous
-            xhr.setRequestHeader("Content-Type", "application/json");
-            xhr.setRequestHeader("apikey", import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY);
-            xhr.setRequestHeader("Authorization", `Bearer ${token}`);
-            xhr.setRequestHeader("Prefer", "resolution=merge-duplicates");
-            xhr.send(JSON.stringify(rows));
-          } catch (_) {}
-        }
+        const nowIso = new Date().toISOString();
+        Array.from(byExo.entries()).forEach(([exoId, exoAnswers]) => {
+          enqueueAnswerSave({
+            apprenant_id: apprenantId,
+            user_id: userIdForSaveRef.current as string,
+            module_id: module.id,
+            exercice_id: `module_${module.id}_exo_${exoId}`,
+            exercice_type: "quiz",
+            reponses: exoAnswers,
+            completed: false,
+            updated_at: nowIso,
+          });
+        });
+        // Dernier envoi non bloquant ; ce qui n'est pas confirmé reste en file
+        // et repart automatiquement au prochain chargement.
+        flushAnswerSavesOnUnload();
       };
       window.addEventListener("beforeunload", flushSave);
+      window.addEventListener("pagehide", flushSave);
+      const onVisibility = () => { if (document.visibilityState === "hidden") flushSave(); };
+      document.addEventListener("visibilitychange", onVisibility);
       return () => {
         window.removeEventListener("beforeunload", flushSave);
+        window.removeEventListener("pagehide", flushSave);
+        document.removeEventListener("visibilitychange", onVisibility);
         if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
         if (reponsesSaveDebounceRef.current) clearTimeout(reponsesSaveDebounceRef.current);
       };

@@ -27,12 +27,14 @@ Deno.serve(async (req) => {
     const {
       apprenant_id,
       user_id,
+      module_id,
       exercice_id,
       exercice_type,
       reponses,
       score,
       completed,
       updated_at,
+      events,
     } = body ?? {};
 
     if (!apprenant_id || !user_id || !exercice_id || !exercice_type) {
@@ -41,6 +43,14 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    // Tentative en cours (pour l'horodatage du journal).
+    const { data: current } = await supabase
+      .from("reponses_apprenants")
+      .select("completed, tentative")
+      .eq("apprenant_id", apprenant_id)
+      .eq("exercice_id", exercice_id)
+      .maybeSingle();
 
     // Build the row — only include score if explicitly provided
     // to avoid overwriting an existing score with null.
@@ -60,17 +70,8 @@ Deno.serve(async (req) => {
       row.score = score;
     }
 
-    if (!row.completed) {
-      const { data: existing } = await supabase
-        .from("reponses_apprenants")
-        .select("completed")
-        .eq("apprenant_id", apprenant_id)
-        .eq("exercice_id", exercice_id)
-        .maybeSingle();
-
-      if (existing?.completed === true) {
-        row.completed = true;
-      }
+    if (!row.completed && current?.completed === true) {
+      row.completed = true;
     }
 
     const { error } = await supabase
@@ -91,10 +92,43 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Journal append-only : une ligne immuable par réponse cochée.
+    // Ce journal n'est jamais modifié ni supprimé par les évolutions de contenu.
+    if (Array.isArray(events) && events.length > 0) {
+      const tentative = current?.tentative ?? 1;
+      const rows = events
+        .filter((e: any) => e && e.question_id)
+        .slice(0, 500)
+        .map((e: any) => ({
+          apprenant_id,
+          user_id,
+          module_id: typeof module_id === "number" ? module_id : null,
+          exercice_id,
+          exercice_type,
+          question_id: String(e.question_id),
+          valeur: e.valeur ?? null,
+          tentative: typeof e.tentative === "number" ? e.tentative : tentative,
+          client_saved_at: e.client_saved_at ?? null,
+        }));
+      if (rows.length > 0) {
+        const { error: journalError } = await supabase
+          .from("reponses_apprenants_journal")
+          .insert(rows);
+        if (journalError) {
+          console.error("[upsert-reponse-apprenant] journal error:", journalError.message);
+          return new Response(
+            JSON.stringify({ error: journalError.message, stage: "journal" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+      }
+    }
+
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
+    console.error("[upsert-reponse-apprenant] error:", err);
     return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
