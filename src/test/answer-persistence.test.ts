@@ -72,8 +72,10 @@ describe("Persistance des réponses apprenants", () => {
     enqueueAnswerSave(payload());
     await flush();
 
-    expect(states).toContain("error");
-    expect(states).not.toContain("saved");
+    // states[0] = état courant au moment de l'abonnement (test précédent).
+    const afterSubscribe = states.slice(1);
+    expect(afterSubscribe).toContain("error");
+    expect(afterSubscribe).not.toContain("saved");
     // La réponse reste en file, donc renvoyable après rechargement.
     expect(getPendingAnswerSaves()).toBe(1);
     expect(localStorage.getItem("answer_save_queue_v1")).toContain("module_7_exo_1");
