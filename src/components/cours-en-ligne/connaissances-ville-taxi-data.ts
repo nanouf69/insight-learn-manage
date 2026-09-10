@@ -8,6 +8,15 @@ import { QUIZ_PLACES } from "./exercices/adresses-places-quiz-data";
 import { QUIZ_QUAIS } from "./exercices/adresses-quais-quiz-data";
 import { QUIZ_RUES } from "./exercices/adresses-rues-quiz-data";
 import { QUIZ_COMMUNES_METROPOLE, QUIZ_COMMUNES_ZUPC } from "./exercices/communes-metropole-zupc-quiz-data";
+import chateauxPdf from "@/assets/cours-ville/01_Les_Chateaux.pdf.asset.json";
+import commissariatsPdf from "@/assets/cours-ville/02_Les_Commissariats.pdf.asset.json";
+import consulatsPdf from "@/assets/cours-ville/03_Les_Consulats.pdf.asset.json";
+import eglisesPdf from "@/assets/cours-ville/05_Les_Eglises.pdf.asset.json";
+import fresquesPdf from "@/assets/cours-ville/06_Les_Fresques.pdf.asset.json";
+import garesPdf from "@/assets/cours-ville/07_Les_Gares.pdf.asset.json";
+import hopitauxPdf from "@/assets/cours-ville/08_Les_Hopitaux.pdf.asset.json";
+import hotelsPdf from "@/assets/cours-ville/09_Les_Hotels.pdf.asset.json";
+import mairiesPdf from "@/assets/cours-ville/10_Les_Mairies.pdf.asset.json";
 
 
 interface ContentItem {
@@ -48,63 +57,63 @@ export const CONNAISSANCES_VILLE_TAXI_DATA: ModuleData = {
       titre: "Les Châteaux",
       sousTitre: "Château de la Motte, Fort Saint Jean, Domaine de la Bachasse, Château Lacroix Laval...",
       description: "Découvrez les châteaux et forts historiques de Lyon et sa région.",
-      fichiers: [{ nom: "Les Châteaux", url: "/cours/ville/01_Les_Chateaux.pdf" }],
+      fichiers: [{ nom: "Les Châteaux", url: chateauxPdf.url }],
     },
     {
       id: 2, actif: true,
       titre: "Les Gares",
       sousTitre: "Perrache, Saint-Paul, Vaise, Part-Dieu, Jean Macé...",
       description: "Les principales gares SNCF de Lyon et leur localisation.",
-      fichiers: [{ nom: "Les Gares", url: "/cours/ville/07_Les_Gares.pdf" }],
+      fichiers: [{ nom: "Les Gares", url: garesPdf.url }],
     },
     {
       id: 3, actif: true,
       titre: "Les Hôpitaux",
       sousTitre: "Hôpitaux et cliniques de Lyon et sa métropole",
       description: "Localisation des principaux établissements de santé lyonnais.",
-      fichiers: [{ nom: "Les Hôpitaux", url: "/cours/ville/08_Les_Hopitaux.pdf" }],
+      fichiers: [{ nom: "Les Hôpitaux", url: hopitauxPdf.url }],
     },
     {
       id: 4, actif: true,
       titre: "Les Mairies",
       sousTitre: "Mairies d'arrondissement et mairies de communes",
       description: "Adresses des mairies de Lyon et des communes environnantes.",
-      fichiers: [{ nom: "Les Mairies", url: "/cours/ville/10_Les_Mairies.pdf" }],
+      fichiers: [{ nom: "Les Mairies", url: mairiesPdf.url }],
     },
     {
       id: 5, actif: true,
       titre: "Les Églises",
       sousTitre: "Cathédrales, basiliques et églises remarquables",
       description: "Les lieux de culte historiques et remarquables de Lyon.",
-      fichiers: [{ nom: "Les Églises", url: "/cours/ville/05_Les_Eglises.pdf" }],
+      fichiers: [{ nom: "Les Églises", url: eglisesPdf.url }],
     },
     {
       id: 6, actif: true,
       titre: "Les Fresques",
       sousTitre: "Fresques murales et art urbain lyonnais",
       description: "Les fresques monumentales de Lyon : Fresque des Lyonnais, Mur des Canuts...",
-      fichiers: [{ nom: "Les Fresques", url: "/cours/ville/06_Les_Fresques.pdf" }],
+      fichiers: [{ nom: "Les Fresques", url: fresquesPdf.url }],
     },
     {
       id: 7, actif: true,
       titre: "Les Consulats",
       sousTitre: "Consulats et représentations diplomatiques à Lyon",
       description: "Liste des consulats et représentations étrangères présents à Lyon.",
-      fichiers: [{ nom: "Les Consulats", url: "/cours/ville/03_Les_Consulats.pdf" }],
+      fichiers: [{ nom: "Les Consulats", url: consulatsPdf.url }],
     },
     {
       id: 8, actif: true,
       titre: "Les Commissariats",
       sousTitre: "Commissariats de police de Lyon et environs",
       description: "Localisation des commissariats de police dans la métropole lyonnaise.",
-      fichiers: [{ nom: "Les Commissariats", url: "/cours/ville/02_Les_Commissariats.pdf" }],
+      fichiers: [{ nom: "Les Commissariats", url: commissariatsPdf.url }],
     },
     {
       id: 9, actif: true,
       titre: "Les Hôtels",
       sousTitre: "Hôtels et hébergements de Lyon",
       description: "Les principaux hôtels de Lyon à connaître pour le transport de passagers.",
-      fichiers: [{ nom: "Les Hôtels", url: "/cours/ville/09_Les_Hotels.pdf?v=20260910" }],
+      fichiers: [{ nom: "Les Hôtels", url: hotelsPdf.url }],
     },
     {
       id: 10, actif: true,
