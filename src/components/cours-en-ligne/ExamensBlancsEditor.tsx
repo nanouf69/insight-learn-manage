@@ -407,6 +407,11 @@ export async function loadSavedExamens(notifyRepairs: boolean = false): Promise<
           examens[idx] = { ...examens[idx], matieres: mergedMatieres };
         }
       }
+
+      // Une matière identique = une seule source de questions/réponses :
+      // la dernière version enregistrée est répliquée partout où la même
+      // matière est utilisée (TAXI ↔ TA, VTC ↔ VA, examens blancs ↔ bilans).
+      reconcileSharedMatieres(examens, savedAtByExamIdx);
     }
   } catch (err) {
     console.error("[ExamensEditor] Error loading saved exams:", err);
