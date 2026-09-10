@@ -8469,6 +8469,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
     return (
       <>
+      <div className="max-w-6xl mx-auto">
+        <AnswerSaveIndicator className="mb-2" />
+      </div>
       <div className="flex gap-4 lg:gap-6 max-w-6xl mx-auto">
         {/* Vertical progress sidebar — desktop */}
         <div className="hidden md:block shrink-0 w-56 lg:w-72 sticky top-4 self-start max-h-[calc(100vh-2rem)] overflow-y-auto">
