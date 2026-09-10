@@ -121,7 +121,7 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
               // questions — strictement le même mécanisme que l'écran apprenant
               // (computeMoyenneExamen / computeMatiereScore), pour ne jamais afficher une
               // note différente de celle que voit l'apprenant.
-              const examenDef = ALL_EXAMENS_BLANCS.find((e) => e.id === quizId);
+              const examenDef = liveExamens.find((e: any) => e.id === quizId);
               const scoresWithLookup = exam.matieres.map((m: any) => ({
                 ...m,
                 lookupKeys: buildMatiereLookupKeys(m.matiere_id, m.matiere_nom),
