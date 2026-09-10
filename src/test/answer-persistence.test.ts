@@ -1,4 +1,17 @@
+// @vitest-environment node
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
+
+// Stub minimal de localStorage (l'environnement DOM complet n'est pas requis).
+if (typeof globalThis.localStorage === "undefined") {
+  const store = new Map<string, string>();
+  (globalThis as any).localStorage = {
+    getItem: (k: string) => (store.has(k) ? store.get(k)! : null),
+    setItem: (k: string, v: string) => void store.set(k, v),
+    removeItem: (k: string) => void store.delete(k),
+    clear: () => store.clear(),
+  };
+}
+
 import {
   enqueueAnswerSave,
   getPendingAnswerSaves,
