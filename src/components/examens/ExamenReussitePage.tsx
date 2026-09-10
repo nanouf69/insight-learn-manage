@@ -2235,7 +2235,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
         </CardHeader>
         <CardContent>
           {filtered && filtered.length > 0 ? (
-            <div className="rounded-md border">
+            <TopScrollContainer>
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -2398,7 +2398,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                   })}
                 </TableBody>
               </Table>
-            </div>
+            </TopScrollContainer>
           ) : (
             <div className="text-center py-12 text-muted-foreground">
               Aucun apprenant trouvé
