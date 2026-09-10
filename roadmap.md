@@ -10,6 +10,6 @@
 - [ ] Auditer le rattachement des réponses historiques aux questions actuellement affichées sur plusieurs apprenants et anciens quiz.
 - [ ] Corriger uniquement l’affichage des réponses historiques sans modifier réponses, scores, tentatives, progressions, jalons ni historiques.
 - [ ] Vérifier réellement plusieurs tentatives terminées dans l’espace apprenant sur ordinateur et mobile.
-- [ ] Comparer réellement un même quiz de Komi HOMAWOO entre Admin, base et espace apprenant, question par question.
-- [ ] Corriger la source générale qui fournit une ancienne version lors d’une nouvelle tentative, sans modifier l’historique apprenant.
+- [x] Comparer réellement un même quiz de Komi HOMAWOO entre Admin, base et espace apprenant, question par question.
+- [x] Corriger la source générale qui fournit une ancienne version lors d’une nouvelle tentative, sans modifier l’historique apprenant.
 - [ ] Vérifier nouvelle tentative, actualisation, reconnexion et plusieurs autres apprenants.

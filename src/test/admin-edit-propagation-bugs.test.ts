@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * TDD RED phase — tests for admin edit propagation bugs
  *
@@ -9,6 +10,8 @@
  * Bug C: refreshLiveExamens in-flight guard silently drops realtime reloads
  */
 import { describe, it, expect } from "vitest";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import type { Matiere, Question } from "../components/cours-en-ligne/examens-blancs-data";
 import {
   shouldRepairCorrectFlags,
@@ -124,5 +127,24 @@ describe("Bug B — mergeTexteSupport", () => {
     // This is the critical test — the OLD code did `source || saved` which always used source
     const result = mergeTexteSupport("Source original", "Admin changed this");
     expect(result).toBe("Admin changed this");
+  });
+});
+
+describe("Bug D — aperçu apprenant synchronisé avec la version Admin courante", () => {
+  it("actualise moduleDataRef avant que LearnerPreview lise le contenu", () => {
+    const sourcePath = fileURLToPath(
+      new URL("../components/cours-en-ligne/ModuleDetailView.tsx", import.meta.url),
+    );
+    const source = readFileSync(sourcePath, "utf8");
+    const refDeclaration = source.indexOf("const moduleDataRef = useRef(moduleData);");
+    const synchronousUpdate = source.indexOf("moduleDataRef.current = moduleData;", refDeclaration);
+    const learnerPreview = source.indexOf("const LearnerPreview = useMemo", refDeclaration);
+
+    expect(refDeclaration).toBeGreaterThan(-1);
+    expect(synchronousUpdate).toBeGreaterThan(refDeclaration);
+    expect(synchronousUpdate).toBeLessThan(learnerPreview);
+    expect(source).not.toContain(
+      "useEffect(() => { moduleDataRef.current = moduleData; }, [moduleData])",
+    );
   });
 });
