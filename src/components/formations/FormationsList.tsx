@@ -985,7 +985,7 @@ export function FormationsList() {
                       }
                       if (key) {
                         try {
-                          generateFicheContenuFormation(key);
+                          void generateFicheContenuFormation(key);
                           toast.success('Fiche contenu PDF generee');
                         } catch (e) {
                           toast.error('Erreur lors de la generation du PDF');

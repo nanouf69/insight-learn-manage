@@ -27,6 +27,10 @@ import {
   bilanExamenVTC, bilanExamenTaxi, bilanExamenTA, bilanExamenVA,
   tousLesExamens,
 } from '@/components/cours-en-ligne/examens-blancs-data';
+import { fetchLiveExamens } from '@/components/cours-en-ligne/useLiveExamens';
+
+// Version ACTUELLE enregistrée des examens blancs (repli: liste du code).
+let examensBlancsCourants: typeof tousLesExamens = tousLesExamens;
 
 const COMPANY = {
   name: 'Ftransport',
@@ -159,7 +163,7 @@ function buildModuleRows(moduleId: number, moduleLabel: string): string[][] {
   // Examens Blancs — list matières from first exam + count
   const ebConfig = EXAMENS_BLANCS_BY_MODULE[moduleId];
   if (ebConfig) {
-    const examens = tousLesExamens.filter(
+    const examens = examensBlancsCourants.filter(
       e => e.type === ebConfig.type && !e.id.startsWith('bilan')
     );
     const nbExamens = examens.length;
@@ -184,7 +188,8 @@ function buildModuleRows(moduleId: number, moduleLabel: string): string[][] {
   return rows;
 }
 
-export function generateFicheContenuFormation(formationKey: string) {
+export async function generateFicheContenuFormation(formationKey: string) {
+  examensBlancsCourants = await fetchLiveExamens();
   const formation = FORMATION_MODULES[formationKey];
   if (!formation) {
     throw new Error(`Formation "${formationKey}" introuvable`);
