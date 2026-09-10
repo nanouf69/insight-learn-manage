@@ -76,7 +76,7 @@ export default function IdentifiantsT3PPublic() {
           <div className="mx-auto p-3 rounded-full bg-primary/10 w-fit">
             <KeyRound className="w-7 h-7 text-primary" />
           </div>
-          <CardTitle className="text-xl">Mes identifiants Examen T3P</CardTitle>
+          <CardTitle className="text-xl">Mes nouveaux identifiants et mot de passe Examen T3P</CardTitle>
           <p className="text-sm text-muted-foreground">
             Transmettez à FTRANSPORT l'adresse e-mail et le mot de passe que vous utilisez sur
             examenT3P.fr
@@ -99,7 +99,7 @@ export default function IdentifiantsT3PPublic() {
               <CheckCircle2 className="w-10 h-10 text-green-600 mx-auto" />
               <p className="font-medium">Merci{prenom ? ` ${prenom}` : ""} !</p>
               <p className="text-sm text-muted-foreground">
-                Vos nouveaux identifiants ont bien été transmis à notre équipe.
+                Vos nouveaux identifiants et votre mot de passe ont bien été transmis à notre équipe.
               </p>
             </div>
           ) : (
@@ -111,7 +111,7 @@ export default function IdentifiantsT3PPublic() {
               )}
               {dejaRecu && (
                 <p className="text-xs text-muted-foreground">
-                  Des identifiants ont déjà été transmis. Vous pouvez les corriger ci-dessous.
+                  Des identifiants et un mot de passe ont déjà été transmis. Vous pouvez les corriger ci-dessous.
                 </p>
               )}
               <div className="space-y-2">
@@ -139,7 +139,7 @@ export default function IdentifiantsT3PPublic() {
               {error && <p className="text-sm text-destructive">{error}</p>}
               <Button type="submit" className="w-full" disabled={submitting}>
                 {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                Transmettre mes identifiants
+                Transmettre mes nouveaux identifiants et mon mot de passe
               </Button>
             </form>
           )}
