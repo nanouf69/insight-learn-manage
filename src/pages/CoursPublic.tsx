@@ -20,7 +20,7 @@ import NotesView from "@/components/cours-en-ligne/NotesView";
 import StudentHoursTracker from "@/components/cours-en-ligne/StudentHoursTracker";
 import StudentLogin from "@/components/cours-en-ligne/StudentLogin";
 import { FORMATIONS, MODULES_DATA, expandModulesAutorises, type FormationId } from "@/components/cours-en-ligne/formations-data";
-import { EXAMENS_BLANCS_VTC, EXAMENS_BLANCS_TAXI, EXAMENS_BLANCS_TA, EXAMENS_BLANCS_VA } from "@/components/cours-en-ligne/examens-blancs-data";
+import { useLiveExamens } from "@/components/cours-en-ligne/useLiveExamens";
 import { supabase } from "@/integrations/supabase/client";
 import { safeDateParse } from "@/lib/safeDateParse";
 import { sendAdminNotification } from "@/lib/sendAdminNotification";
@@ -913,6 +913,8 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const [moduleScores, setModuleScores] = useState<Record<number, { score_obtenu: number | null; score_max: number | null }>>({});
   const [moduleCompletionsForNotes, setModuleCompletionsForNotes] = useState<Array<{ id: string; module_id: number; score_obtenu: number | null; score_max: number | null; completed_at: string; details: any; status?: string | null; progress?: number | null }>>([]);
   const [examBlancCompletedIds, setExamBlancCompletedIds] = useState<Set<string>>(new Set());
+  // Liste ACTUELLE des examens blancs enregistrés (jamais une liste figée du code).
+  const { examens: examensActuels } = useLiveExamens();
   const [lastModuleName, setLastModuleName] = useState<string | null>(null);
   const [isInExam, setIsInExam] = useState(false);
   const [emargementFCStatus, setEmargementFCStatus] = useState<"checking" | "needed" | "signed" | "skipped" | "n/a">("checking");
@@ -1986,11 +1988,13 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   }, {});
 
   // Compute examen blanc stats per module (35=VTC, 36=TAXI, 37=TA, 38=VA)
+  const examIdsForType = (type: "VTC" | "TAXI" | "TA" | "VA") =>
+    examensActuels.filter(e => e.type === type && !e.id.startsWith("bilan-")).map(e => e.id);
   const EXAMEN_BLANC_EXAM_IDS: Record<number, string[]> = {
-    35: EXAMENS_BLANCS_VTC.filter(e => !e.id.startsWith("bilan-")).map(e => e.id),
-    36: EXAMENS_BLANCS_TAXI.filter(e => !e.id.startsWith("bilan-")).map(e => e.id),
-    37: EXAMENS_BLANCS_TA.filter(e => !e.id.startsWith("bilan-")).map(e => e.id),
-    38: EXAMENS_BLANCS_VA.filter(e => !e.id.startsWith("bilan-")).map(e => e.id),
+    35: examIdsForType("VTC"),
+    36: examIdsForType("TAXI"),
+    37: examIdsForType("TA"),
+    38: examIdsForType("VA"),
   };
 
   const examBlancStatsById = modules.reduce<Record<number, { completed: number; total: number }>>((acc, module) => {
