@@ -4015,6 +4015,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                sessionApprenant.statut_suivi === 'document_complet' ? '✅ Dossier complet' :
                                sessionApprenant.statut_suivi === 'manque_document' ? '📄 Manque doc' :
                                sessionApprenant.statut_suivi === 'a_payer' ? '💰 À payer' :
+                               sessionApprenant.statut_suivi === 'a_rappeler' ? '🔔 À rappeler' :
                                sessionApprenant.statut_suivi === 'paye' ? '💸 Payé' :
                                sessionApprenant.statut_suivi === 'mdp_change' ? '🔑 MDP changé' :
                                '⚠️ ' + sessionApprenant.statut_suivi}
@@ -4455,6 +4456,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                               <SelectItem value="mdp_change">🔑 MDP changé</SelectItem>
                               <SelectItem value="email_non_valide">📧 Email non validé</SelectItem>
                               <SelectItem value="injoignable">📵 Injoignable</SelectItem>
+                              <SelectItem value="a_rappeler">🔔 À rappeler</SelectItem>
                               <SelectItem value="a_payer">💰 À payer</SelectItem>
                               <SelectItem value="paye">💸 Payé</SelectItem>
                               <SelectItem value="inscription_validee">✅ Inscription validée</SelectItem>

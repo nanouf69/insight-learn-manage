@@ -131,6 +131,7 @@ const STATUT_SUIVI_OPTIONS: { value: string; label: string }[] = [
   { value: "mdp_change", label: "🔑 MDP changé" },
   { value: "email_non_valide", label: "📧 Email non validé" },
   { value: "injoignable", label: "📵 Injoignable" },
+  { value: "a_rappeler", label: "🔔 À rappeler" },
   { value: "a_payer", label: "💰 À payer" },
   { value: "paye", label: "💸 Payé" },
   { value: "inscription_validee", label: "✅ Inscription validée" },
