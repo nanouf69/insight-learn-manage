@@ -166,7 +166,7 @@ describe_skipped("Faille: realtime handler utilise un mapping hardcodé", () => 
       13: ["controle-connaissances-taxi"],
       40: ["reglementation-nationale", "reglementation-locale"],
       10: ["reglementation-nationale", "reglementation-locale"],
-      27: ["bilan-exercices-ta"],
+      27: ["bilan-exercices-taxi"],
       28: ["bilan-examen-ta"],
       9: ["bilan-exercices-taxi"],
       11: ["bilan-examen-taxi"],
@@ -180,7 +180,7 @@ describe_skipped("Faille: realtime handler utilise un mapping hardcodé", () => 
       "equipements-taxi",
       "cas-pratique-taxi",
       "controle-connaissances-taxi",
-      "bilan-exercices-ta",
+      "bilan-exercices-taxi",
       "bilan-examen-ta",
     ];
 

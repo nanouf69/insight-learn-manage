@@ -488,7 +488,7 @@ const TRAINER_QUIZ_IDS_BY_MODULE_ID: Record<number, string[]> = {
   12: ["cas-pratique-taxi"],
   13: ["controle-connaissances-taxi"],
   24: ["reglementation-nationale", "reglementation-locale"],
-  27: ["bilan-exercices-ta"],
+  27: ["bilan-exercices-taxi"],
   28: ["bilan-examen-ta"],
   40: ["reglementation-nationale", "reglementation-locale"],
   42: ["reglementation-locale"],
