@@ -3,7 +3,7 @@
 import { ExerciceItem } from "./types";
 
 export const QUIZ_COMMUNES_METROPOLE: ExerciceItem = {
-  id: 7010, actif: true,
+  id: 7020, actif: true,
   titre: "Quiz — Les 58 communes de la Métropole de Lyon",
   sousTitre: "10 questions : cochez les communes appartenant à la Métropole de Lyon",
   questions: [
@@ -159,7 +159,7 @@ export const QUIZ_COMMUNES_METROPOLE: ExerciceItem = {
 };
 
 export const QUIZ_COMMUNES_ZUPC: ExerciceItem = {
-  id: 7011, actif: true,
+  id: 7021, actif: true,
   titre: "Quiz — Les 24 communes de la ZUPC",
   sousTitre: "6 questions : cochez les communes appartenant à la ZUPC de Lyon",
   questions: [
