@@ -26,6 +26,44 @@ import { fetchPratiqueSignatures } from "@/lib/pratiqueEmargements";
 import { PRATIQUE_TYPES, THEORIQUE_TYPES } from "@/lib/sessionTypes";
 import listeMedecinsAgrees from "@/assets/medecins/liste-medecins-agrees.pdf.asset.json";
 
+// Conteneur de tableau avec barre de défilement horizontale en haut ET en bas, synchronisées
+function TopScrollContainer({ children }: { children: React.ReactNode }) {
+  const topRef = useRef<HTMLDivElement>(null);
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const [contentWidth, setContentWidth] = useState(0);
+
+  useEffect(() => {
+    const body = bodyRef.current;
+    if (!body) return;
+    const update = () => setContentWidth(body.scrollWidth);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(body);
+    Array.from(body.children).forEach(c => ro.observe(c));
+    return () => ro.disconnect();
+  }, []);
+
+  return (
+    <div>
+      <div
+        ref={topRef}
+        onScroll={() => { if (topRef.current && bodyRef.current) bodyRef.current.scrollLeft = topRef.current.scrollLeft; }}
+        className="overflow-x-auto overflow-y-hidden mb-1"
+        aria-hidden="true"
+      >
+        <div style={{ width: contentWidth, height: 1 }} />
+      </div>
+      <div
+        ref={bodyRef}
+        onScroll={() => { if (topRef.current && bodyRef.current) topRef.current.scrollLeft = bodyRef.current.scrollLeft; }}
+        className="overflow-x-auto rounded-md border"
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
 function InlineDossierCma({ apprenantId, value, onSaved }: { apprenantId: string; value: string | null; onSaved?: () => void }) {
   const [editing, setEditing] = useState(false);
   const [val, setVal] = useState(value || "");
