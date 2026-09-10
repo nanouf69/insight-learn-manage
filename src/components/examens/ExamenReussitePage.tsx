@@ -2220,7 +2220,11 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                         </TableCell>
                         <TableCell className={`min-w-[280px] max-w-[360px] ${!apprenant.email ? "text-destructive font-medium" : ""}`}>
                           <div className="flex items-center gap-1.5">
-                            <div className="truncate" title={apprenant.email || undefined}>{apprenant.email || "-"}</div>
+                            <InlineEmailApprenant
+                              apprenantId={apprenant.id}
+                              value={apprenant.email ?? null}
+                              onSaved={() => queryClient.invalidateQueries({ queryKey: ['apprenants-examen', selectedExamDate] })}
+                            />
                             {apprenant.email && (
                               <button
                                 type="button"
