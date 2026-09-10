@@ -85,34 +85,41 @@ export function applyFournisseurOverridesToExamens(
     const mapping = FOURNISSEUR_QUIZ_TO_EXAM[ov.quiz_id];
     if (!mapping) continue;
 
-    const exam = examById.get(mapping.examId);
-    if (!exam || !Array.isArray(exam.matieres)) continue;
+    const targets = [
+      { examId: mapping.examId, matiereIndex: ov.section_id - mapping.baseSectionId },
+      ...(SHARED_MATIERE_TARGETS[`${ov.quiz_id}::${ov.section_id}`] ?? []),
+    ];
 
-    const matiereIndex = ov.section_id - mapping.baseSectionId;
-    if (matiereIndex < 0 || matiereIndex >= exam.matieres.length) continue;
+    for (const target of targets) {
+      const exam = examById.get(target.examId);
+      if (!exam || !Array.isArray(exam.matieres)) continue;
 
-    const matiere = exam.matieres[matiereIndex];
-    if (!matiere || !Array.isArray(matiere.questions)) continue;
+      const matiereIndex = target.matiereIndex;
+      if (matiereIndex < 0 || matiereIndex >= exam.matieres.length) continue;
 
-    const qIndex = matiere.questions.findIndex((q: Question) => Number(q.id) === Number(ov.question_id));
-    if (qIndex < 0) continue;
+      const matiere = exam.matieres[matiereIndex];
+      if (!matiere || !Array.isArray(matiere.questions)) continue;
 
-    const original = matiere.questions[qIndex] as AdminEditableQuestion;
-    const adminEditedAt = original._editedAt || (original.manually_edited ? new Date(0).toISOString() : undefined);
-    const winner = resolveOverrideConflict(adminEditedAt, ov.updated_at ?? "");
+      const qIndex = matiere.questions.findIndex((q: Question) => Number(q.id) === Number(ov.question_id));
+      if (qIndex < 0) continue;
 
-    if (winner === "admin") continue;
+      const original = matiere.questions[qIndex] as AdminEditableQuestion;
+      const adminEditedAt = original._editedAt || (original.manually_edited ? new Date(0).toISOString() : undefined);
+      const winner = resolveOverrideConflict(adminEditedAt, ov.updated_at ?? "");
 
-    if (ov.enonce === "__DELETED__") {
-      matiere.questions = matiere.questions.filter((q: Question) => Number(q.id) !== Number(ov.question_id));
-      continue;
+      if (winner === "admin") continue;
+
+      if (ov.enonce === "__DELETED__") {
+        matiere.questions = matiere.questions.filter((q: Question) => Number(q.id) !== Number(ov.question_id));
+        continue;
+      }
+
+      matiere.questions[qIndex] = {
+        ...original,
+        enonce: ov.enonce,
+        choix: ov.choix as any,
+      };
     }
-
-    matiere.questions[qIndex] = {
-      ...original,
-      enonce: ov.enonce,
-      choix: ov.choix as any,
-    };
   }
 
   return examens;
