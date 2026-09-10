@@ -2169,7 +2169,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                         <TableCell className={!apprenant.telephone ? "text-destructive font-medium" : ""}>
                           {apprenant.telephone || "-"}
                         </TableCell>
-                        <TableCell className={`max-w-[220px] ${!apprenant.email ? "text-destructive font-medium" : ""}`}>
+                        <TableCell className={`min-w-[280px] max-w-[360px] ${!apprenant.email ? "text-destructive font-medium" : ""}`}>
                           <div className="flex items-center gap-1.5">
                             <div className="truncate" title={apprenant.email || undefined}>{apprenant.email || "-"}</div>
                             {apprenant.email && (
