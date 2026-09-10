@@ -32,7 +32,7 @@ import { CONNAISSANCES_VILLE_QUIZZES } from "@/components/cours-en-ligne/exercic
 import { EQUIPEMENTS_TAXI_DATA } from "@/components/cours-en-ligne/equipements-taxi-data";
 import { CONTROLE_CONNAISSANCES_TAXI_DATA } from "@/components/cours-en-ligne/controle-connaissances-taxi-data";
 import { BILAN_EXAMEN_TA } from "@/components/cours-en-ligne/bilan-examen-ta-data";
-import { BILAN_EXERCICES_TA } from "@/components/cours-en-ligne/bilan-exercices-ta-data";
+import { BILAN_EXERCICES_TAXI } from "@/components/cours-en-ligne/bilan-exercices-taxi-data";
 import { CAS_PRATIQUE_TAXI_EXERCICES } from "@/components/cours-en-ligne/cas-pratique-taxi-exercices-data";
 import { NotesFraisTab } from "@/components/comptabilite/NotesFraisTab";
 import { Badge } from "@/components/ui/badge";
