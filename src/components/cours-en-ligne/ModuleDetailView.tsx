@@ -5913,7 +5913,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   // On lit désormais `moduleData` via un ref lu à chaque render → toujours
   // frais, mais sans invalider l'identité du composant.
   const moduleDataRef = useRef(moduleData);
-  useEffect(() => { moduleDataRef.current = moduleData; }, [moduleData]);
+  // La ref doit être synchronisée AVANT le rendu de LearnerPreview. Un useEffect
+  // arrive après ce rendu et laissait donc systématiquement l'apprenant sur la
+  // version précédente des questions jusqu'à une seconde mise à jour.
+  moduleDataRef.current = moduleData;
 
   const LearnerPreview = useMemo(() => {
     const LearnerPreviewComponent = ({ secureMode = true }: { secureMode?: boolean }) => {
