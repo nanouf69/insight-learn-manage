@@ -4458,8 +4458,19 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                             const identifiants = nouveauxIdentifiantsT3PByApprenant.get(apprenant.id);
                             return (
                               <div className="flex flex-wrap items-center gap-1 rounded-md border border-orange-200 bg-orange-50 px-2 py-1 text-xs text-orange-900">
-                                <span className="font-semibold">Nouveaux identifiants :</span>
+                                <span className="font-semibold">Email :</span>
                                 <span className="font-mono">{identifiants.nouvel_email}</span>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6 text-orange-800 hover:bg-orange-100 hover:text-orange-900"
+                                  title="Copier uniquement l'adresse e-mail"
+                                  aria-label="Copier uniquement l'adresse e-mail"
+                                  onClick={() => void copyToClipboard(identifiants.nouvel_email, 'Adresse e-mail')}
+                                >
+                                  <Copy className="h-3.5 w-3.5" />
+                                </Button>
                                 <span aria-hidden="true">•</span>
                                 <span className="font-semibold">Mot de passe :</span>
                                 <span className="font-mono">{identifiants.nouveau_mot_de_passe}</span>
@@ -4468,14 +4479,25 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                   variant="ghost"
                                   size="icon"
                                   className="h-6 w-6 text-orange-800 hover:bg-orange-100 hover:text-orange-900"
-                                  title="Copier les nouveaux identifiants et le mot de passe"
-                                  aria-label="Copier les nouveaux identifiants et le mot de passe"
+                                  title="Copier uniquement le mot de passe"
+                                  aria-label="Copier uniquement le mot de passe"
+                                  onClick={() => void copyToClipboard(identifiants.nouveau_mot_de_passe, 'Mot de passe')}
+                                >
+                                  <Copy className="h-3.5 w-3.5" />
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 px-2 text-[11px] text-orange-800 hover:bg-orange-100 hover:text-orange-900"
+                                  title="Copier l'e-mail et le mot de passe"
+                                  aria-label="Copier l'e-mail et le mot de passe"
                                   onClick={() => void copyToClipboard(
                                     `Nouvelle adresse e-mail : ${identifiants.nouvel_email}\nNouveau mot de passe : ${identifiants.nouveau_mot_de_passe}`,
                                     'Nouveaux identifiants et mot de passe'
                                   )}
                                 >
-                                  <Copy className="h-3.5 w-3.5" />
+                                  Tout copier
                                 </Button>
                               </div>
                             );
