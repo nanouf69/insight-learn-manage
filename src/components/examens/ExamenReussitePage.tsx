@@ -32,32 +32,37 @@ function TopScrollContainer({ children }: { children: React.ReactNode }) {
   const bodyRef = useRef<HTMLDivElement>(null);
   const [contentWidth, setContentWidth] = useState(0);
 
-  useEffect(() => {
+  // Le composant Table imbriqué possède son propre wrapper défilant : on le cible
+  const getScroller = useCallback((): HTMLElement | null => {
     const body = bodyRef.current;
-    if (!body) return;
-    const update = () => setContentWidth(body.scrollWidth);
+    if (!body) return null;
+    return (body.querySelector(':scope > div') as HTMLElement) || body;
+  }, []);
+
+  useEffect(() => {
+    const scroller = getScroller();
+    if (!scroller) return;
+    const update = () => setContentWidth(scroller.scrollWidth);
     update();
     const ro = new ResizeObserver(update);
-    ro.observe(body);
-    Array.from(body.children).forEach(c => ro.observe(c));
-    return () => ro.disconnect();
-  }, []);
+    ro.observe(scroller);
+    Array.from(scroller.children).forEach(c => ro.observe(c));
+    const onScroll = () => { if (topRef.current) topRef.current.scrollLeft = scroller.scrollLeft; };
+    scroller.addEventListener('scroll', onScroll, { passive: true });
+    return () => { ro.disconnect(); scroller.removeEventListener('scroll', onScroll); };
+  }, [getScroller]);
 
   return (
     <div>
       <div
         ref={topRef}
-        onScroll={() => { if (topRef.current && bodyRef.current) bodyRef.current.scrollLeft = topRef.current.scrollLeft; }}
+        onScroll={() => { const s = getScroller(); if (topRef.current && s) s.scrollLeft = topRef.current.scrollLeft; }}
         className="overflow-x-auto overflow-y-hidden mb-1"
         aria-hidden="true"
       >
         <div style={{ width: contentWidth, height: 1 }} />
       </div>
-      <div
-        ref={bodyRef}
-        onScroll={() => { if (topRef.current && bodyRef.current) topRef.current.scrollLeft = bodyRef.current.scrollLeft; }}
-        className="overflow-x-auto rounded-md border"
-      >
+      <div ref={bodyRef} className="rounded-md border [&>div]:overflow-x-auto">
         {children}
       </div>
     </div>
