@@ -1536,21 +1536,21 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
     queryKey: ['nouveaux-identifiants-t3p-examen', selectedExamDate, apprenantIdsExamen.join(',')],
     enabled: apprenantIdsExamen.length > 0,
     queryFn: async () => {
-      const map: Record<string, { nouvel_email: string; nouveau_mot_de_passe: string }> = {};
+      const map: Record<string, { nouvel_email: string | null; nouveau_mot_de_passe: string | null }> = {};
       const chunkSize = 100;
       for (let i = 0; i < apprenantIdsExamen.length; i += chunkSize) {
         const chunk = apprenantIdsExamen.slice(i, i + chunkSize);
         const { data, error } = await supabase
           .from('apprenant_identifiants_t3p')
           .select('apprenant_id, nouvel_email, nouveau_mot_de_passe, recu_at')
-          .in('apprenant_id', chunk)
-          .not('recu_at', 'is', null);
+          .in('apprenant_id', chunk);
         if (error) throw error;
         for (const row of data || []) {
-          if (!row.apprenant_id || !row.nouvel_email || !row.nouveau_mot_de_passe) continue;
+          if (!row.apprenant_id) continue;
+          if (!row.nouvel_email && !row.nouveau_mot_de_passe) continue;
           map[row.apprenant_id] = {
-            nouvel_email: row.nouvel_email,
-            nouveau_mot_de_passe: row.nouveau_mot_de_passe,
+            nouvel_email: row.nouvel_email ?? null,
+            nouveau_mot_de_passe: row.nouveau_mot_de_passe ?? null,
           };
         }
       }
