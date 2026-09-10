@@ -31,7 +31,7 @@ import { REGLEMENTATION_NATIONALE_EXERCICES, REGLEMENTATION_LOCALE_EXERCICES } f
 import { CONNAISSANCES_VILLE_QUIZZES } from "@/components/cours-en-ligne/exercices/connaissances-ville-quiz-data";
 import { EQUIPEMENTS_TAXI_DATA } from "@/components/cours-en-ligne/equipements-taxi-data";
 import { CONTROLE_CONNAISSANCES_TAXI_DATA } from "@/components/cours-en-ligne/controle-connaissances-taxi-data";
-import { BILAN_EXAMEN_TA } from "@/components/cours-en-ligne/bilan-examen-ta-data";
+import { BILAN_EXAMEN_TAXI } from "@/components/cours-en-ligne/bilan-examen-taxi-data";
 import { BILAN_EXERCICES_TAXI } from "@/components/cours-en-ligne/bilan-exercices-taxi-data";
 import { CAS_PRATIQUE_TAXI_EXERCICES } from "@/components/cours-en-ligne/cas-pratique-taxi-exercices-data";
 import { NotesFraisTab } from "@/components/comptabilite/NotesFraisTab";
@@ -1736,10 +1736,10 @@ export default function FournisseurPortal() {
                   </CardHeader>
                   <CardContent>
                     <EditableQuizViewer
-                      sections={BILAN_EXAMEN_TA}
+                      sections={BILAN_EXAMEN_TAXI.filter((section) => section.id === 605 || section.id === 606)}
                       title="Quiz — Bilan Examen TA"
                       icon="🎯"
-                      quizId="bilan-examen-ta"
+                      quizId="bilan-examen-taxi"
                       fournisseurId={fournisseur?.id || ""}
                       fournisseurToken={token || ""}
                     />
