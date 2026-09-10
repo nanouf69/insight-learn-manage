@@ -26,6 +26,49 @@ import { fetchPratiqueSignatures } from "@/lib/pratiqueEmargements";
 import { PRATIQUE_TYPES, THEORIQUE_TYPES } from "@/lib/sessionTypes";
 import listeMedecinsAgrees from "@/assets/medecins/liste-medecins-agrees.pdf.asset.json";
 
+// Conteneur de tableau avec barre de défilement horizontale en haut ET en bas, synchronisées
+function TopScrollContainer({ children }: { children: React.ReactNode }) {
+  const topRef = useRef<HTMLDivElement>(null);
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const [contentWidth, setContentWidth] = useState(0);
+
+  // Le composant Table imbriqué possède son propre wrapper défilant : on le cible
+  const getScroller = useCallback((): HTMLElement | null => {
+    const body = bodyRef.current;
+    if (!body) return null;
+    return (body.querySelector(':scope > div') as HTMLElement) || body;
+  }, []);
+
+  useEffect(() => {
+    const scroller = getScroller();
+    if (!scroller) return;
+    const update = () => setContentWidth(scroller.scrollWidth);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(scroller);
+    Array.from(scroller.children).forEach(c => ro.observe(c));
+    const onScroll = () => { if (topRef.current) topRef.current.scrollLeft = scroller.scrollLeft; };
+    scroller.addEventListener('scroll', onScroll, { passive: true });
+    return () => { ro.disconnect(); scroller.removeEventListener('scroll', onScroll); };
+  }, [getScroller]);
+
+  return (
+    <div>
+      <div
+        ref={topRef}
+        onScroll={() => { const s = getScroller(); if (topRef.current && s) s.scrollLeft = topRef.current.scrollLeft; }}
+        className="overflow-x-auto overflow-y-hidden mb-1"
+        aria-hidden="true"
+      >
+        <div style={{ width: contentWidth, height: 1 }} />
+      </div>
+      <div ref={bodyRef} className="rounded-md border [&>div]:overflow-x-auto">
+        {children}
+      </div>
+    </div>
+  );
+}
+
 function InlineDossierCma({ apprenantId, value, onSaved }: { apprenantId: string; value: string | null; onSaved?: () => void }) {
   const [editing, setEditing] = useState(false);
   const [val, setVal] = useState(value || "");
@@ -2197,7 +2240,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
         </CardHeader>
         <CardContent>
           {filtered && filtered.length > 0 ? (
-            <div className="rounded-md border">
+            <TopScrollContainer>
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -2360,7 +2403,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                   })}
                 </TableBody>
               </Table>
-            </div>
+            </TopScrollContainer>
           ) : (
             <div className="text-center py-12 text-muted-foreground">
               Aucun apprenant trouvé
