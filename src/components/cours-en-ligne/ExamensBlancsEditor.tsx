@@ -1080,6 +1080,42 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
       // admin action, never a side-effect of Save.
       const synced = JSON.parse(JSON.stringify(snapshot)) as ExamenBlanc[];
 
+      // RÈGLE MATIÈRE PARTAGÉE : une matière modifiée (ajout, suppression ou
+      // correction d'une question/réponse) est répercutée sur TOUS les examens
+      // et bilans qui utilisent exactement la même matière (même `id`).
+      // Les matières différentes ne sont jamais touchées.
+      const changedMatieresById = new Map<string, Matiere>();
+      synced.forEach((ex) => {
+        const moduleId = getModuleIdForExamId(ex.id);
+        const previousFingerprint = lastSavedModuleFingerprintsRef.current[moduleId];
+        if (previousFingerprint === undefined) return;
+        const currentFingerprint = JSON.stringify(ex.matieres ?? []);
+        if (previousFingerprint === currentFingerprint) return;
+        let previousMatieres: Matiere[] = [];
+        try {
+          previousMatieres = JSON.parse(previousFingerprint) as Matiere[];
+        } catch {
+          return;
+        }
+        (ex.matieres ?? []).forEach((m) => {
+          if (!m?.id) return;
+          const before = previousMatieres.find((pm) => pm?.id === m.id);
+          if (!before || JSON.stringify(before) !== JSON.stringify(m)) {
+            changedMatieresById.set(m.id, m);
+          }
+        });
+      });
+
+      if (changedMatieresById.size > 0) {
+        synced.forEach((ex) => {
+          ex.matieres = (ex.matieres ?? []).map((m) => {
+            if (!m?.id) return m;
+            const updated = changedMatieresById.get(m.id);
+            if (!updated || updated === m) return m;
+            return JSON.parse(JSON.stringify(updated)) as Matiere;
+          });
+        });
+      }
 
       const now = new Date().toISOString();
       const changedModuleFingerprints: Record<number, string> = {};
