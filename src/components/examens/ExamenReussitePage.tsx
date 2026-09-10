@@ -2088,14 +2088,36 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                         <TableCell className={!apprenant.telephone ? "text-destructive font-medium" : ""}>
                           {apprenant.telephone || "-"}
                         </TableCell>
-                        <TableCell className={`max-w-[200px] ${!apprenant.email ? "text-destructive font-medium" : ""}`}>
-                          <div className="truncate">{apprenant.email || "-"}</div>
+                        <TableCell className={`max-w-[220px] ${!apprenant.email ? "text-destructive font-medium" : ""}`}>
+                          <div className="flex items-center gap-1.5">
+                            <div className="truncate" title={apprenant.email || undefined}>{apprenant.email || "-"}</div>
+                            {apprenant.email && (
+                              <button
+                                type="button"
+                                title="Copier l'adresse email"
+                                onClick={() => { navigator.clipboard.writeText(apprenant.email!); toast.success("Email copié"); }}
+                                className="shrink-0 text-muted-foreground hover:text-primary transition-colors"
+                              >
+                                <Copy className="h-3.5 w-3.5" />
+                              </button>
+                            )}
+                          </div>
                           {(() => {
                             const dossierEmail = dossierEmails?.[apprenant.id];
                             if (!dossierEmail || dossierEmail.toLowerCase() === (apprenant.email || '').toLowerCase()) return null;
                             return (
-                              <div className="truncate text-xs text-muted-foreground" title={dossierEmail}>
-                                {dossierEmail} <span className="italic">(dossier)</span>
+                              <div className="flex items-center gap-1.5">
+                                <div className="truncate text-xs text-muted-foreground" title={dossierEmail}>
+                                  {dossierEmail} <span className="italic">(dossier)</span>
+                                </div>
+                                <button
+                                  type="button"
+                                  title="Copier l'adresse email du dossier"
+                                  onClick={() => { navigator.clipboard.writeText(dossierEmail); toast.success("Email dossier copié"); }}
+                                  className="shrink-0 text-muted-foreground hover:text-primary transition-colors"
+                                >
+                                  <Copy className="h-3 w-3" />
+                                </button>
                               </div>
                             );
                           })()}
