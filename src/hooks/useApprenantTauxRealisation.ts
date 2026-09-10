@@ -32,7 +32,10 @@ export function useApprenantTauxRealisation(apprenantId?: string, apprenantProp?
   return useQuery<TauxRealisation | null>({
     queryKey: ["apprenant-taux-realisation", apprenantId],
     enabled: !!apprenantId,
-    staleTime: 5 * 60 * 1000,
+    // La fiche Admin doit refléter l'état réel courant, pas un cache de 5 minutes
+    staleTime: 30 * 1000,
+    refetchOnWindowFocus: true,
+    refetchOnMount: "always",
     queryFn: async () => {
       if (!apprenantId) return null;
 

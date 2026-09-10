@@ -5,11 +5,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { BarChart3, Bot, CheckCircle2, XCircle, Trophy, BookOpen } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { EXAMENS_BLANCS_VTC, EXAMENS_BLANCS_TAXI, EXAMENS_BLANCS_TA, EXAMENS_BLANCS_VA } from "@/components/cours-en-ligne/examens-blancs-data";
+import { loadSavedExamens } from "@/components/cours-en-ligne/ExamensBlancsEditor";
 import { computeMoyenneExamen, computeMatiereScore } from "@/components/cours-en-ligne/examens-blancs-scoring";
 import { findScoreForMatiere, buildMatiereLookupKeys } from "@/components/cours-en-ligne/examens-blancs-utils";
 
-// Toutes les définitions d'examens blancs, pour retrouver le coefficient et les questions actuelles de chaque matière
-const ALL_EXAMENS_BLANCS = [
+// Repli statique uniquement : la source de vérité affichée est la définition
+// enregistrée en base (identique à l'écran apprenant), chargée via loadSavedExamens().
+const STATIC_EXAMENS_BLANCS = [
   ...EXAMENS_BLANCS_VTC,
   ...EXAMENS_BLANCS_TAXI,
   ...EXAMENS_BLANCS_TA,
@@ -25,6 +27,16 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
   const [bilans, setBilans] = useState<Record<string, string>>({});
   const [quizResults, setQuizResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  // Définitions d'examens réellement en vigueur (base), identiques à l'espace apprenant
+  const [liveExamens, setLiveExamens] = useState<any[]>(STATIC_EXAMENS_BLANCS);
+
+  useEffect(() => {
+    let cancelled = false;
+    loadSavedExamens()
+      .then((rows) => { if (!cancelled && Array.isArray(rows) && rows.length) setLiveExamens(rows as any[]); })
+      .catch(() => { /* repli sur la définition statique */ });
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     if (!apprenantId) return;
@@ -109,7 +121,7 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
               // questions — strictement le même mécanisme que l'écran apprenant
               // (computeMoyenneExamen / computeMatiereScore), pour ne jamais afficher une
               // note différente de celle que voit l'apprenant.
-              const examenDef = ALL_EXAMENS_BLANCS.find((e) => e.id === quizId);
+              const examenDef = liveExamens.find((e: any) => e.id === quizId);
               const scoresWithLookup = exam.matieres.map((m: any) => ({
                 ...m,
                 lookupKeys: buildMatiereLookupKeys(m.matiere_id, m.matiere_nom),
