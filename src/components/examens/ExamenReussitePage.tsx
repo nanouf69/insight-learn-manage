@@ -204,7 +204,7 @@ function InlineStatutSuivi({
       }
 
       const url = `https://gestion.ftransport.fr/identifiants-t3p?token=${ident!.token}`;
-      const bouton = `<div style="margin:18px 0"><a href="${url}" style="display:inline-block;background:#dc2626;color:#ffffff;font-weight:bold;font-size:16px;padding:14px 22px;border-radius:8px;text-decoration:none">🔐 Transmettre mes nouveaux identifiants et mon mot de passe</a><br><span style="font-size:12px;color:#555">Lien personnel et sécurisé : ne le transmettez à personne.</span></div>`;
+      const bouton = `<div style="margin:18px 0"><a href="${url}" style="display:inline-block;background:#dc2626;color:#ffffff;font-weight:bold;font-size:16px;padding:14px 22px;border-radius:8px;text-decoration:none">🔐 Transmettre mes nouveaux identifiants</a><br><span style="font-size:12px;color:#555">Lien personnel et sécurisé : ne le transmettez à personne.</span></div>`;
       const fill = (s: string) => (s || '')
         .replace(/\{\{prenom\}\}/g, a.prenom || '')
         .replace(/\{\{nom\}\}/g, a.nom || '')

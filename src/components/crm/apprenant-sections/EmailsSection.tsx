@@ -303,7 +303,7 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
     },
   });
 
-  // Lien sécurisé (jeton unique) pour que l'apprenant transmette ses nouveaux identifiants et son mot de passe T3P
+  // Lien sécurisé (jeton unique) pour que l'apprenant transmette ses nouveaux identifiants T3P
   const { data: identifiantsT3P } = useQuery({
     queryKey: ['identifiants-t3p', apprenant.id],
     enabled: !!apprenant.id,
@@ -329,7 +329,7 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
     : '';
 
   const boutonIdentifiantsT3P = identifiantsT3PUrl
-    ? `<div style="margin:18px 0"><a href="${identifiantsT3PUrl}" style="display:inline-block;background:#dc2626;color:#ffffff;font-weight:bold;font-size:16px;padding:14px 22px;border-radius:8px;text-decoration:none">🔐 Transmettre mes nouveaux identifiants et mon mot de passe</a><br><span style="font-size:12px;color:#555">Lien personnel et sécurisé : ne le transmettez à personne.</span></div>`
+    ? `<div style="margin:18px 0"><a href="${identifiantsT3PUrl}" style="display:inline-block;background:#dc2626;color:#ffffff;font-weight:bold;font-size:16px;padding:14px 22px;border-radius:8px;text-decoration:none">🔐 Transmettre mes nouveaux identifiants</a><br><span style="font-size:12px;color:#555">Lien personnel et sécurisé : ne le transmettez à personne.</span></div>`
     : '';
 
   const injectT3PLink = (html: string) =>

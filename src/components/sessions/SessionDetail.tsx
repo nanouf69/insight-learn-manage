@@ -1322,6 +1322,35 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       return mails.length > 0 ? mails[0].sent_at : null;
     };
 
+    // Nouveaux identifiants Examen T3P transmis par l'apprenant
+    const { data: nouveauxIdentifiantsT3P = [] } = useQuery({
+      queryKey: ['nouveaux-identifiants-t3p', session?.id, apprenantsInSession.map((sa: any) => sa.apprenant?.id).join(',')],
+      queryFn: async () => {
+        const apprenantIds = apprenantsInSession
+          .map((sa: any) => sa.apprenant?.id)
+          .filter(Boolean);
+        if (apprenantIds.length === 0) return [];
+
+        const { data, error } = await supabase
+          .from('apprenant_identifiants_t3p')
+          .select('apprenant_id, nouvel_email, nouveau_mot_de_passe, recu_at')
+          .in('apprenant_id', apprenantIds)
+          .not('recu_at', 'is', null);
+
+        if (error) throw error;
+        return data || [];
+      },
+      enabled: !!session?.id && open && apprenantsInSession.length > 0,
+      staleTime: 30_000,
+      refetchOnMount: 'always',
+      refetchOnWindowFocus: true,
+    });
+
+    const nouveauxIdentifiantsT3PByApprenant = useMemo(
+      () => new Map(nouveauxIdentifiantsT3P.map((row: any) => [row.apprenant_id, row])),
+      [nouveauxIdentifiantsT3P]
+    );
+
     // Liste récapitulative : apprenants ayant reçu leurs codes d'accès (plus récent en premier)
     const identifiantsRecap = useMemo(() => {
       const rows = apprenantsInSession
@@ -4424,6 +4453,33 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                               MDP changé
                             </Button>
                           )}
+
+                          {nouveauxIdentifiantsT3PByApprenant.get(apprenant.id) && (() => {
+                            const identifiants = nouveauxIdentifiantsT3PByApprenant.get(apprenant.id);
+                            return (
+                              <div className="flex flex-wrap items-center gap-1 rounded-md border border-orange-200 bg-orange-50 px-2 py-1 text-xs text-orange-900">
+                                <span className="font-semibold">Nouveaux identifiants :</span>
+                                <span className="font-mono">{identifiants.nouvel_email}</span>
+                                <span aria-hidden="true">•</span>
+                                <span className="font-semibold">Mot de passe :</span>
+                                <span className="font-mono">{identifiants.nouveau_mot_de_passe}</span>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6 text-orange-800 hover:bg-orange-100 hover:text-orange-900"
+                                  title="Copier les nouveaux identifiants et le mot de passe"
+                                  aria-label="Copier les nouveaux identifiants et le mot de passe"
+                                  onClick={() => void copyToClipboard(
+                                    `Nouvelle adresse e-mail : ${identifiants.nouvel_email}\nNouveau mot de passe : ${identifiants.nouveau_mot_de_passe}`,
+                                    'Nouveaux identifiants et mot de passe'
+                                  )}
+                                >
+                                  <Copy className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
+                            );
+                          })()}
 
                           {(
 
