@@ -240,6 +240,13 @@ function PassageMatiere({
     }, 0);
   };
 
+  // L'état affiché reflète l'état réel côté serveur (jamais « enregistré »
+  // tant que la sauvegarde n'est pas confirmée).
+  useEffect(() => subscribeAnswerSaveState((s, pending) => {
+    if (s === "error" || pending > 0) setSaveStatus(s === "error" ? "error" : "saving");
+    else setSaveStatus(s === "saving" ? "saving" : s === "saved" ? "saved" : "idle");
+  }), []);
+
   // Mark first save as done if we successfully loaded existing answers from DB
   useEffect(() => {
     if (initialLoaded && Object.keys(reponses).length > 0) {
