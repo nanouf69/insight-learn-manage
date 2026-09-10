@@ -4408,20 +4408,22 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                             onSave={(notes) => updateSessionApprenant(sessionApprenant.id, { notes })}
                           />
 
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            disabled={mdpMailDialog.loading}
-                            className={`h-8 gap-1 ${sessionApprenant.statut_suivi === 'mdp_change' ? 'border-orange-400 bg-orange-50 text-orange-700' : 'border-orange-300 text-orange-700'}`}
-                            onClick={() => {
-                              mdpTargetRef.current = sessionApprenant.id;
-                              void mdpMailDialog.prepare(apprenant.id);
-                            }}
-                          >
-                            {mdpMailDialog.loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <KeyRound className="h-3.5 w-3.5" />}
-                            MDP changé
-                          </Button>
+                          {sessionApprenant.statut_suivi !== 'paye' && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              disabled={mdpMailDialog.loading}
+                              className={`h-8 gap-1 ${sessionApprenant.statut_suivi === 'mdp_change' ? 'border-orange-400 bg-orange-50 text-orange-700' : 'border-orange-300 text-orange-700'}`}
+                              onClick={() => {
+                                mdpTargetRef.current = sessionApprenant.id;
+                                void mdpMailDialog.prepare(apprenant.id);
+                              }}
+                            >
+                              {mdpMailDialog.loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <KeyRound className="h-3.5 w-3.5" />}
+                              MDP changé
+                            </Button>
+                          )}
 
                           {(
 
