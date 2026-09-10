@@ -169,6 +169,142 @@ function InlineEmailApprenant({ apprenantId, value, onSaved }: { apprenantId: st
   );
 }
 
+function InlineIdentifiantsT3P({
+  apprenantId,
+  email,
+  motDePasse,
+  onSaved,
+}: {
+  apprenantId: string;
+  email: string | null;
+  motDePasse: string | null;
+  onSaved?: () => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [mail, setMail] = useState(email || "");
+  const [mdp, setMdp] = useState(motDePasse || "");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => { setMail(email || ""); setMdp(motDePasse || ""); }, [email, motDePasse]);
+
+  const save = async () => {
+    const m = mail.trim();
+    const p = mdp.trim();
+    if (m && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(m)) { toast.error("Adresse e-mail invalide"); return; }
+    setSaving(true);
+    const { error } = await supabase
+      .from('apprenant_identifiants_t3p')
+      .upsert(
+        {
+          apprenant_id: apprenantId,
+          nouvel_email: m || null,
+          nouveau_mot_de_passe: p || null,
+          recu_at: m || p ? new Date().toISOString() : null,
+        },
+        { onConflict: 'apprenant_id' }
+      );
+    setSaving(false);
+    if (error) { toast.error("Erreur : " + error.message); return; }
+    toast.success("Identifiants enregistrés");
+    setEditing(false);
+    onSaved?.();
+  };
+
+  if (editing) {
+    return (
+      <div className="space-y-1">
+        <Input
+          autoFocus
+          type="email"
+          value={mail}
+          disabled={saving}
+          onChange={(e) => setMail(e.target.value)}
+          placeholder="nouvelle adresse e-mail"
+          className="h-7 text-xs"
+        />
+        <Input
+          value={mdp}
+          disabled={saving}
+          onChange={(e) => setMdp(e.target.value)}
+          placeholder="nouveau mot de passe"
+          className="h-7 text-xs"
+        />
+        <div className="flex gap-1">
+          <Button type="button" size="sm" className="h-6 px-2 text-xs" disabled={saving} onClick={save}>
+            Enregistrer
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            className="h-6 px-2 text-xs"
+            disabled={saving}
+            onClick={() => { setMail(email || ""); setMdp(motDePasse || ""); setEditing(false); }}
+          >
+            Annuler
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!email && !motDePasse) {
+    return (
+      <button
+        type="button"
+        onClick={() => setEditing(true)}
+        className="text-xs text-primary hover:underline"
+      >
+        + Ajouter une adresse / un mot de passe
+      </button>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-2 rounded-md border border-orange-200 bg-orange-50 px-2 py-1 text-xs text-orange-900">
+      <button
+        type="button"
+        onClick={() => setEditing(true)}
+        title="Cliquer pour modifier"
+        className="min-w-0 flex-1 text-left"
+      >
+        <div className="truncate" title={email || ''}>
+          <span className="font-semibold">Email : </span>
+          <span className="font-mono">{email || '-'}</span>
+        </div>
+        <div className="truncate" title={motDePasse || ''}>
+          <span className="font-semibold">Mot de passe : </span>
+          <span className="font-mono">{motDePasse || '-'}</span>
+        </div>
+      </button>
+      <div className="flex shrink-0 flex-col gap-1">
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-6 w-6 text-orange-800 hover:bg-orange-100 hover:text-orange-900"
+          title="Copier l'adresse e-mail"
+          aria-label="Copier l'adresse e-mail"
+          onClick={() => { void navigator.clipboard.writeText(email || ''); toast.success("Adresse e-mail copiée"); }}
+        >
+          <Copy className="h-3.5 w-3.5" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-6 w-6 text-orange-800 hover:bg-orange-100 hover:text-orange-900"
+          title="Copier le mot de passe"
+          aria-label="Copier le mot de passe"
+          onClick={() => { void navigator.clipboard.writeText(motDePasse || ''); toast.success("Mot de passe copié"); }}
+        >
+          <Copy className="h-3.5 w-3.5" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 const STATUT_SUIVI_OPTIONS: { value: string; label: string }[] = [
   { value: "manque_document", label: "📄 Manque un document" },
   { value: "manque_piece_identite", label: "📋 Manque pièce d'identité" },
@@ -1400,21 +1536,21 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
     queryKey: ['nouveaux-identifiants-t3p-examen', selectedExamDate, apprenantIdsExamen.join(',')],
     enabled: apprenantIdsExamen.length > 0,
     queryFn: async () => {
-      const map: Record<string, { nouvel_email: string; nouveau_mot_de_passe: string }> = {};
+      const map: Record<string, { nouvel_email: string | null; nouveau_mot_de_passe: string | null }> = {};
       const chunkSize = 100;
       for (let i = 0; i < apprenantIdsExamen.length; i += chunkSize) {
         const chunk = apprenantIdsExamen.slice(i, i + chunkSize);
         const { data, error } = await supabase
           .from('apprenant_identifiants_t3p')
           .select('apprenant_id, nouvel_email, nouveau_mot_de_passe, recu_at')
-          .in('apprenant_id', chunk)
-          .not('recu_at', 'is', null);
+          .in('apprenant_id', chunk);
         if (error) throw error;
         for (const row of data || []) {
-          if (!row.apprenant_id || !row.nouvel_email || !row.nouveau_mot_de_passe) continue;
+          if (!row.apprenant_id) continue;
+          if (!row.nouvel_email && !row.nouveau_mot_de_passe) continue;
           map[row.apprenant_id] = {
-            nouvel_email: row.nouvel_email,
-            nouveau_mot_de_passe: row.nouveau_mot_de_passe,
+            nouvel_email: row.nouvel_email ?? null,
+            nouveau_mot_de_passe: row.nouveau_mot_de_passe ?? null,
           };
         }
       }
@@ -2154,53 +2290,12 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                           />
                         </TableCell>
                         <TableCell className="min-w-[260px]">
-                          {nouveauxIdentifiantsT3P[apprenant.id] ? (() => {
-                            const identifiants = nouveauxIdentifiantsT3P[apprenant.id];
-                            return (
-                              <div className="flex items-center gap-2 rounded-md border border-orange-200 bg-orange-50 px-2 py-1 text-xs text-orange-900">
-                                <div className="min-w-0 flex-1">
-                                  <div className="truncate" title={identifiants.nouvel_email}>
-                                    <span className="font-semibold">Email : </span>
-                                    <span className="font-mono">{identifiants.nouvel_email}</span>
-                                  </div>
-                                  <div className="truncate" title={identifiants.nouveau_mot_de_passe}>
-                                    <span className="font-semibold">Mot de passe : </span>
-                                    <span className="font-mono">{identifiants.nouveau_mot_de_passe}</span>
-                                  </div>
-                                </div>
-                                <div className="flex shrink-0 flex-col gap-1">
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-6 w-6 text-orange-800 hover:bg-orange-100 hover:text-orange-900"
-                                    title="Copier l'adresse e-mail"
-                                    aria-label="Copier l'adresse e-mail"
-                                    onClick={() => {
-                                      void navigator.clipboard.writeText(identifiants.nouvel_email || '');
-                                      toast.success("Adresse e-mail copiée");
-                                    }}
-                                  >
-                                    <Copy className="h-3.5 w-3.5" />
-                                  </Button>
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-6 w-6 text-orange-800 hover:bg-orange-100 hover:text-orange-900"
-                                    title="Copier le mot de passe"
-                                    aria-label="Copier le mot de passe"
-                                    onClick={() => {
-                                      void navigator.clipboard.writeText(identifiants.nouveau_mot_de_passe || '');
-                                      toast.success("Mot de passe copié");
-                                    }}
-                                  >
-                                    <Copy className="h-3.5 w-3.5" />
-                                  </Button>
-                                </div>
-                              </div>
-                            );
-                          })() : <span className="text-muted-foreground">-</span>}
+                          <InlineIdentifiantsT3P
+                            apprenantId={apprenant.id}
+                            email={nouveauxIdentifiantsT3P[apprenant.id]?.nouvel_email ?? null}
+                            motDePasse={nouveauxIdentifiantsT3P[apprenant.id]?.nouveau_mot_de_passe ?? null}
+                            onSaved={() => queryClient.invalidateQueries({ queryKey: ['nouveaux-identifiants-t3p-examen'] })}
+                          />
                         </TableCell>
                         <TableCell>
                           <InlineStatutSuivi
