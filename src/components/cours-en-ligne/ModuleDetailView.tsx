@@ -489,7 +489,8 @@ const TRAINER_QUIZ_IDS_BY_MODULE_ID: Record<number, string[]> = {
   13: ["controle-connaissances-taxi"],
   24: ["reglementation-nationale", "reglementation-locale"],
   27: ["bilan-exercices-taxi"],
-  28: ["bilan-examen-ta"],
+  // Bilan Examen TA = mêmes matières F(T)/G(T) que le Bilan Examen TAXI.
+  28: ["bilan-examen-taxi"],
   40: ["reglementation-nationale", "reglementation-locale"],
   42: ["reglementation-locale"],
   64: ["equipements-taxi"],
@@ -516,7 +517,9 @@ const CANONICAL_QUIZ_IDS_BY_MODULE_ID: Record<number, string[]> = {
   // gardent leurs IDs 250/251 via quiz_question_bindings pour préserver tous
   // les résultats et jalons historiques.
   27: ["bilan-exercices-taxi"],
-  28: ["bilan-examen-ta"],
+  // Bilan Examen TA : mêmes matières F(T)/G(T) que le Bilan Examen TAXI.
+  // Les exercices TA gardent leurs IDs 700/701 via quiz_question_bindings.
+  28: ["bilan-examen-taxi"],
   40: ["reglementation-nationale", "reglementation-locale"],
   42: ["reglementation-nationale", "reglementation-locale"],
   64: ["equipements-taxi"],

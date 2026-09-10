@@ -18,8 +18,9 @@ export const QUIZ_ID_TO_MODULE_IDS: Record<string, number[]> = {
   "cas-pratique-taxi": [12],
   "controle-connaissances-taxi": [13],
   "bilan-exercices-taxi": [9, 27],
-  "bilan-examen-taxi": [11],
-  "bilan-examen-ta": [28],
+  // Le Bilan Examen TA (module 28) utilise exactement les mêmes matières
+  // F(T) et G(T) que le Bilan Examen TAXI (module 11) → source unique.
+  "bilan-examen-taxi": [11, 28],
 };
 
 export interface SyncChoice {
