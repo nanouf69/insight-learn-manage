@@ -281,10 +281,12 @@ export async function loadSavedExamens(notifyRepairs: boolean = false): Promise<
       // Build moduleId → exam index lookup
       const moduleIdToIdx: Record<number, number> = {};
       examens.forEach((ex, i) => { moduleIdToIdx[getModuleIdForExamId(ex.id)] = i; });
+      const savedAtByExamIdx: Record<number, number> = {};
 
       for (const row of data) {
         const idx = moduleIdToIdx[row.module_id];
         if (idx === undefined || idx < 0 || idx >= examens.length || !row.module_data) continue;
+        savedAtByExamIdx[idx] = row.updated_at ? new Date(row.updated_at).getTime() : 0;
         const saved = row.module_data as unknown as ExamenBlanc;
         if (saved.matieres && Array.isArray(saved.matieres)) {
           const normalizeQuestionType = (value: unknown) => String(value ?? "").trim().toUpperCase();
