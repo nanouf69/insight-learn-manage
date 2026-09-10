@@ -222,6 +222,39 @@ function syncTaxiTaMatieres(examens: ExamenBlanc[]): void {
   }
 }
 
+/**
+ * RÈGLE MATIÈRE PARTAGÉE : une matière identique (même `id`) présente dans
+ * plusieurs examens/bilans doit contenir exactement les mêmes questions et les
+ * mêmes réponses partout. On applique le principe "dernière version enregistrée
+ * gagne" : pour chaque id de matière, la copie provenant du module sauvegardé le
+ * plus récemment est répliquée sur tous les autres examens qui utilisent cette
+ * même matière. Les matières différentes ne sont jamais mélangées.
+ */
+export function reconcileSharedMatieres(
+  examens: ExamenBlanc[],
+  savedAtByExamIdx: Record<number, number>,
+): void {
+  const best = new Map<string, { ts: number; matiere: Matiere }>();
+  examens.forEach((ex, idx) => {
+    const ts = savedAtByExamIdx[idx] ?? 0;
+    (ex.matieres ?? []).forEach((m) => {
+      if (!m?.id) return;
+      const current = best.get(m.id);
+      if (!current || ts > current.ts) best.set(m.id, { ts, matiere: m });
+    });
+  });
+
+  examens.forEach((ex, idx) => {
+    const ts = savedAtByExamIdx[idx] ?? 0;
+    ex.matieres = (ex.matieres ?? []).map((m) => {
+      if (!m?.id) return m;
+      const winner = best.get(m.id);
+      if (!winner || winner.matiere === m || winner.ts <= ts) return m;
+      return JSON.parse(JSON.stringify(winner.matiere)) as Matiere;
+    });
+  });
+}
+
 // Load saved exam overrides from DB — NO CACHE, always fresh from DB
 export async function loadSavedExamens(notifyRepairs: boolean = false): Promise<ExamenBlanc[]> {
   const examens = cloneExamens(tousLesExamens);
