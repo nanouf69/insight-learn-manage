@@ -3443,6 +3443,48 @@ export type Database = {
         }
         Relationships: []
       }
+      reponses_apprenants_journal: {
+        Row: {
+          apprenant_id: string
+          client_saved_at: string | null
+          created_at: string
+          exercice_id: string
+          exercice_type: string
+          id: string
+          module_id: number | null
+          question_id: string
+          tentative: number
+          user_id: string | null
+          valeur: Json
+        }
+        Insert: {
+          apprenant_id: string
+          client_saved_at?: string | null
+          created_at?: string
+          exercice_id: string
+          exercice_type?: string
+          id?: string
+          module_id?: number | null
+          question_id: string
+          tentative?: number
+          user_id?: string | null
+          valeur?: Json
+        }
+        Update: {
+          apprenant_id?: string
+          client_saved_at?: string | null
+          created_at?: string
+          exercice_id?: string
+          exercice_type?: string
+          id?: string
+          module_id?: number | null
+          question_id?: string
+          tentative?: number
+          user_id?: string | null
+          valeur?: Json
+        }
+        Relationships: []
+      }
       reservations_pratique: {
         Row: {
           apprenant_id: string

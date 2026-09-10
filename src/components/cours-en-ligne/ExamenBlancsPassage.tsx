@@ -18,6 +18,7 @@ import { ExamQuestionImage } from "./ExamQuestionImage";
 import type { Reponses, ReponseQCM, ReponseQRC } from "./examens-blancs-types";
 import { safeStr, safeArray, getQuestionImageValue, normalizeReponses as normalizeReponsesUtil, computeIsMultiple, applyQCMChange, isMistypedAsQRC } from "./examens-blancs-utils";
 import Calculatrice from "./Calculatrice";
+import { enqueueAnswerSave, subscribeAnswerSaveState } from "@/lib/answerPersistence";
 
 // ===== PASSAGE D'UNE MATIÈRE =====
 function PassageMatiere({
@@ -193,22 +194,15 @@ function PassageMatiere({
     if (!response.ok) throw new Error(await response.text());
   };
 
+  // Dernier état mis en file (pour ne journaliser que les réponses modifiées).
+  const lastPersistedRef = useRef<Reponses>({});
+
   const persistReponses = (updated: Reponses) => {
-    // BUG #7 FIX: don't silently return when userId is null — wait for session inside debounce
     if (!apprenantId) return;
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    // BUG #7 FIX: increment generation to cancel any in-flight retry loop
     saveGenerationRef.current++;
-    const myGeneration = saveGenerationRef.current;
-    // INSTANT SAVE: no debounce — persist every change immediately so a tablet crash never loses answers
-    const flushImmediately = true;
+    // Enregistrement immédiat : aucune réponse ne doit dépendre de l'état local.
     debounceRef.current = setTimeout(async () => {
-      setSaveStatus("saving");
-      const MAX_RETRIES = 3;
-      const RETRY_DELAY_MS = 2000;
-      let lastError: any = null;
-
-      // BUG #7 FIX: wait for session if not yet available instead of silent return
       if (!userIdRef.current) {
         const sessionRes = await supabase.auth.getSession();
         if (sessionRes.data?.session?.user?.id) {
@@ -222,47 +216,36 @@ function PassageMatiere({
         return;
       }
 
-      for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-        // BUG #7 FIX: abort if a newer save superseded this one
-        if (saveGenerationRef.current !== myGeneration) return;
+      const nowIso = new Date().toISOString();
+      const previous = lastPersistedRef.current;
+      const events = Object.entries(updated)
+        .filter(([key, val]) => JSON.stringify((previous as any)[key]) !== JSON.stringify(val))
+        .map(([key, val]) => ({
+          question_id: key,
+          valeur: val as unknown,
+          tentative,
+          client_saved_at: nowIso,
+        }));
 
-        try {
-          // Refresh token ref in case it was renewed by keep-alive.
-          // Force an actual refresh (not just re-reading the cached session) so a
-          // genuinely expired token (tablet idle) gets renewed before retrying —
-          // this is the same tablet/JWT-expiry class of bug as "C and E don't save".
-          if (attempt > 1) {
-            try { await supabase.auth.refreshSession(); } catch { /* best effort */ }
-          }
-          const sessionRes = await supabase.auth.getSession();
-          if (sessionRes.data?.session?.access_token) {
-            jwtTokenRef.current = sessionRes.data.session.access_token;
-          }
-
-          const payload = buildAutosavePayload(updated, false);
-          await saveViaEdgeFunction(payload);
-
-          hasSavedOnceRef.current = true;
-          setSaveStatus("saved");
-          if (saveStatusTimerRef.current) clearTimeout(saveStatusTimerRef.current);
-          saveStatusTimerRef.current = setTimeout(() => setSaveStatus("idle"), 2000);
-          return; // success
-        } catch (e) {
-          lastError = e;
-          console.warn(`[AutoSave] Attempt ${attempt}/${MAX_RETRIES} exception:`, e);
-          if (attempt < MAX_RETRIES) {
-            await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
-            continue;
-          }
-        }
-      }
-
-      // All retries exhausted — silent fallback (no toast to avoid disturbing students)
-      console.error("[AutoSave] All retries failed:", lastError);
-      setSaveStatus("error");
-      // Intentionally no toast: errors are handled silently during exams.
-    }, flushImmediately ? 0 : 300);
+      // File durable : retries, reprise après coupure réseau, après rechargement
+      // et après fermeture du navigateur.
+      enqueueAnswerSave({
+        ...buildAutosavePayload(updated, false),
+        user_id: (userIdRef.current || userId) as string,
+        updated_at: nowIso,
+        events,
+      });
+      lastPersistedRef.current = { ...updated };
+      hasSavedOnceRef.current = true;
+    }, 0);
   };
+
+  // L'état affiché reflète l'état réel côté serveur (jamais « enregistré »
+  // tant que la sauvegarde n'est pas confirmée).
+  useEffect(() => subscribeAnswerSaveState((s, pending) => {
+    if (s === "error" || pending > 0) setSaveStatus(s === "error" ? "error" : "saving");
+    else setSaveStatus(s === "saving" ? "saving" : s === "saved" ? "saved" : "idle");
+  }), []);
 
   // Mark first save as done if we successfully loaded existing answers from DB
   useEffect(() => {

@@ -1,0 +1,1 @@
+REVOKE ALL ON FUNCTION public.protect_reponses_apprenants_journal() FROM PUBLIC, anon, authenticated;
