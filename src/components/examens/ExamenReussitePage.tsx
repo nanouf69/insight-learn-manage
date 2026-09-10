@@ -2104,12 +2104,12 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                             onSaved={() => queryClient.invalidateQueries({ queryKey: ['apprenants-examen', selectedExamDate] })}
                           />
                         </TableCell>
-                        <TableCell className="min-w-[250px]">
+                        <TableCell className="min-w-[260px]">
                           {nouveauxIdentifiantsT3P[apprenant.id] ? (() => {
                             const identifiants = nouveauxIdentifiantsT3P[apprenant.id];
                             return (
-                              <div className="flex items-center gap-1 rounded-md border border-orange-200 bg-orange-50 px-2 py-1 text-xs text-orange-900">
-                                <div className="min-w-0">
+                              <div className="flex items-center gap-2 rounded-md border border-orange-200 bg-orange-50 px-2 py-1 text-xs text-orange-900">
+                                <div className="min-w-0 flex-1">
                                   <div className="truncate" title={identifiants.nouvel_email}>
                                     <span className="font-semibold">Email : </span>
                                     <span className="font-mono">{identifiants.nouvel_email}</span>
@@ -2119,22 +2119,36 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                                     <span className="font-mono">{identifiants.nouveau_mot_de_passe}</span>
                                   </div>
                                 </div>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-6 w-6 shrink-0 text-orange-800 hover:bg-orange-100 hover:text-orange-900"
-                                  title="Copier les nouveaux identifiants et le mot de passe"
-                                  aria-label="Copier les nouveaux identifiants et le mot de passe"
-                                  onClick={() => {
-                                    void navigator.clipboard.writeText(
-                                      `Nouvelle adresse e-mail : ${identifiants.nouvel_email}\nNouveau mot de passe : ${identifiants.nouveau_mot_de_passe}`
-                                    );
-                                    toast.success("Nouveaux identifiants et mot de passe copiés");
-                                  }}
-                                >
-                                  <Copy className="h-3.5 w-3.5" />
-                                </Button>
+                                <div className="flex shrink-0 flex-col gap-1">
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-6 w-6 text-orange-800 hover:bg-orange-100 hover:text-orange-900"
+                                    title="Copier l'adresse e-mail"
+                                    aria-label="Copier l'adresse e-mail"
+                                    onClick={() => {
+                                      void navigator.clipboard.writeText(identifiants.nouvel_email || '');
+                                      toast.success("Adresse e-mail copiée");
+                                    }}
+                                  >
+                                    <Copy className="h-3.5 w-3.5" />
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-6 w-6 text-orange-800 hover:bg-orange-100 hover:text-orange-900"
+                                    title="Copier le mot de passe"
+                                    aria-label="Copier le mot de passe"
+                                    onClick={() => {
+                                      void navigator.clipboard.writeText(identifiants.nouveau_mot_de_passe || '');
+                                      toast.success("Mot de passe copié");
+                                    }}
+                                  >
+                                    <Copy className="h-3.5 w-3.5" />
+                                  </Button>
+                                </div>
                               </div>
                             );
                           })() : <span className="text-muted-foreground">-</span>}
@@ -2155,7 +2169,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                         <TableCell className={!apprenant.telephone ? "text-destructive font-medium" : ""}>
                           {apprenant.telephone || "-"}
                         </TableCell>
-                        <TableCell className={`max-w-[220px] ${!apprenant.email ? "text-destructive font-medium" : ""}`}>
+                        <TableCell className={`min-w-[280px] max-w-[360px] ${!apprenant.email ? "text-destructive font-medium" : ""}`}>
                           <div className="flex items-center gap-1.5">
                             <div className="truncate" title={apprenant.email || undefined}>{apprenant.email || "-"}</div>
                             {apprenant.email && (
