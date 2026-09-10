@@ -14,6 +14,9 @@ export const QUIZ_ID_TO_MODULE_IDS: Record<string, number[]> = {
   "reglementation-nationale": [10, 24, 40],
   "reglementation-locale": [10, 24, 40, 42],
   "connaissance-ville": [7],
+  // Matières communes Cours VTC (module 2) et Cours VA (module 41) → source unique.
+  "dev-commercial": [2, 41],
+  "reglementation-specifique-vtc": [2, 41],
   "equipements-taxi": [64],
   "cas-pratique-taxi": [12],
   "controle-connaissances-taxi": [13],

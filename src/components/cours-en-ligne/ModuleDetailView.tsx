@@ -481,6 +481,9 @@ const BILAN_EXAMEN_FORCE_FROM_SOURCE_IDS: Record<number, number[]> = {
 };
 
 const TRAINER_QUIZ_IDS_BY_MODULE_ID: Record<number, string[]> = {
+  // Cours VTC et Cours VA partagent Développement commercial et Réglementation spécifique VTC.
+  2: ["dev-commercial", "reglementation-specifique-vtc"],
+  41: ["dev-commercial", "reglementation-specifique-vtc"],
   7: ["connaissance-ville"],
   9: ["bilan-exercices-taxi"],
   10: ["reglementation-nationale", "reglementation-locale"],
