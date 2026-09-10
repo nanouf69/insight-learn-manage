@@ -27,6 +27,7 @@ import {
   submitQuizAttempt,
 } from "@/lib/quizAttempts";
 import { useQuestionTimeTracking } from "@/hooks/useQuestionTimeTracking";
+import { reconcileHistoricalAnswers } from "@/lib/historicalAnswerReconciliation";
 
 import { ColoredTextField } from "./ColoredTextField";
 
@@ -6538,9 +6539,15 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 }
               });
 
-              if (Object.keys(restored).length > 0) {
+              const reconciledCompletionAnswers = reconcileHistoricalAnswers(
+                restored,
+                completionData.details as any[],
+                activeExercices,
+              );
+
+              if (Object.keys(reconciledCompletionAnswers).length > 0) {
                 // Force-overwrite local state with the frozen snapshot.
-                setSelectedAnswers(restored);
+                setSelectedAnswers(reconciledCompletionAnswers);
               }
 
               if (completionData.score_obtenu !== null) {
@@ -6594,7 +6601,12 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                   }
                 });
                 if (Object.keys(redo).length > 0) {
-                  setSelectedAnswers((prev) => ({ ...prev, ...redo }));
+                  const reconciledRedo = reconcileHistoricalAnswers(
+                    redo,
+                    Array.isArray(completionData?.details) ? completionData.details as any[] : [],
+                    activeExercices,
+                  );
+                  setSelectedAnswers((prev) => ({ ...prev, ...reconciledRedo }));
                 }
                 applySubmittedAttempts(attempts);
               }
@@ -6622,7 +6634,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                   }
                 });
                 if (Object.keys(restored).length > 0) {
-                  setSelectedAnswers((prev) => (Object.keys(prev).length > 0 ? prev : restored));
+                  // La base est prioritaire sur un ancien état de navigation
+                  // partiel : celui-ci ne doit jamais masquer des cases cochées.
+                  setSelectedAnswers((prev) => ({ ...prev, ...restored }));
                 }
                 // RÈGLE : seul status='submitted' vaut « quiz validé ».
                 applySubmittedAttempts(attempts);
