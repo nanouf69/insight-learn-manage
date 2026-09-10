@@ -8,7 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Loader2, AlertTriangle, CheckCircle2, XCircle, Info, ArrowLeft } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { tousLesExamens, type ExamenBlanc, type Matiere } from "@/components/cours-en-ligne/examens-blancs-data";
+import { type ExamenBlanc, type Matiere } from "@/components/cours-en-ligne/examens-blancs-data";
+import { useLiveExamens } from "@/components/cours-en-ligne/useLiveExamens";
 import { buildMatiereLookupKeys, getMatiereCanonicalKey, toFiniteNumber, normalizeNoteSur20 } from "@/components/cours-en-ligne/examens-blancs-utils";
 import { computeMatiereScore, computeMatiereScoreFromReponses } from "@/components/cours-en-ligne/examens-blancs-scoring";
 import { runExamensBlancsConsistencyCheck, type ExamConsistencyReport, type ConsistencyIssue } from "@/components/cours-en-ligne/examens-blancs-consistency";
@@ -120,16 +121,19 @@ export default function DiagnosticExamensBlancs() {
     })();
   }, [user?.id]);
 
+  // Définitions ACTUELLES enregistrées (identiques à l'espace apprenant).
+  const { examens: examensActuels } = useLiveExamens();
+
   const exam: ExamenBlanc | undefined = useMemo(
-    () => tousLesExamens.find((e) => e.id === selectedExamId),
-    [selectedExamId],
+    () => examensActuels.find((e) => e.id === selectedExamId),
+    [selectedExamId, examensActuels],
   );
 
   const filteredExams = useMemo(() => {
-    if (!selectedApprenant?.type_apprenant) return tousLesExamens;
+    if (!selectedApprenant?.type_apprenant) return examensActuels;
     const t = selectedApprenant.type_apprenant.replace(/-e$/i, "").toUpperCase();
-    return tousLesExamens.filter((e) => !e.id.startsWith("bilan-") && (t ? e.type === t : true));
-  }, [selectedApprenant]);
+    return examensActuels.filter((e) => !e.id.startsWith("bilan-") && (t ? e.type === t : true));
+  }, [selectedApprenant, examensActuels]);
 
   const handleSearchApprenants = async () => {
     const q = search.trim();
@@ -406,7 +410,7 @@ export default function DiagnosticExamensBlancs() {
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex flex-wrap gap-2">
-            {tousLesExamens.map((e) => (
+            {examensActuels.map((e) => (
               <Button
                 key={e.id}
                 size="sm"

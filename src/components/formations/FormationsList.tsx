@@ -984,12 +984,14 @@ export function FormationsList() {
                         key = isElearning ? 'vtc-e' : 'vtc';
                       }
                       if (key) {
-                        try {
-                          generateFicheContenuFormation(key);
-                          toast.success('Fiche contenu PDF generee');
-                        } catch (e) {
-                          toast.error('Erreur lors de la generation du PDF');
-                        }
+                        void (async () => {
+                          try {
+                            await generateFicheContenuFormation(key);
+                            toast.success('Fiche contenu PDF generee');
+                          } catch (e) {
+                            toast.error('Erreur lors de la generation du PDF');
+                          }
+                        })();
                       }
                     }}>
                       <FileText className="w-4 h-4 mr-2" />

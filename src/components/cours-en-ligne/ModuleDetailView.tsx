@@ -4310,6 +4310,14 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         window.localStorage.removeItem(moduleEditorStorageKey);
         return false;
       }
+      // Côté apprenant : jamais de copie navigateur comme source d'affichage.
+      // Le contenu vient toujours de la version enregistrée (DB + realtime +
+      // rafraîchissement au focus), pour qu'un onglet ouvert longtemps ne
+      // montre jamais une ancienne version.
+      if (studentOnly) {
+        window.localStorage.removeItem(moduleEditorStorageKey);
+        return false;
+      }
 
       try {
         const raw = window.localStorage.getItem(moduleEditorStorageKey);

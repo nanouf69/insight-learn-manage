@@ -35,8 +35,10 @@ import {
   normalizeNoteSur20,
   toFiniteNumber,
 } from "@/components/cours-en-ligne/examens-blancs-utils";
+import { useLiveExamens, fetchLiveExamens } from "@/components/cours-en-ligne/useLiveExamens";
 
-const ALL_EXAMENS_BLANCS = [
+// Repli statique uniquement (si le chargement de la version enregistrée échoue).
+const STATIC_EXAMENS_BLANCS = [
   ...EXAMENS_BLANCS_VTC,
   ...EXAMENS_BLANCS_TAXI,
   ...EXAMENS_BLANCS_TA,
@@ -100,9 +102,13 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
   const [resetting, setResetting] = useState(false);
   const [expandedExams, setExpandedExams] = useState<Set<string>>(new Set());
 
+  // Définitions ACTUELLES enregistrées (identiques à l'espace apprenant).
+  const { examens: examensActuels } = useLiveExamens();
+
   const { data: examGroups = [], isLoading } = useQuery({
     queryKey: ["examen-blanc-results-admin", apprenant.id],
     queryFn: async () => {
+      const examensDefs = await fetchLiveExamens().catch(() => STATIC_EXAMENS_BLANCS);
       // 1. Load completed quiz results
       const { data, error } = await supabase
         .from("apprenant_quiz_results")
@@ -128,7 +134,7 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
         const key = `${num}-${type}`;
         for (const row of latestRows) {
           // Auto-recover corrupted score rows using details.reponses (same as student side)
-          const recovered = recoverCorruptedScoreRow(row, ALL_EXAMENS_BLANCS);
+          const recovered = recoverCorruptedScoreRow(row, examensDefs as any);
           const scoreSource = recovered && recovered.score_obtenu > toFiniteNumber(row.score_obtenu, 0)
             ? { ...row, ...recovered }
             : row;
@@ -402,7 +408,7 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
               // Recalcul EN DIRECT à partir de details.reponses + définition actuelle
               // des questions — même mécanisme que ExamenBlancsListe.tsx. Ne jamais
               // se fier à note_sur_20 / (score_obtenu / score_max) figés en base.
-              const examenDef = ALL_EXAMENS_BLANCS.find((e) => e.id === group.quizId);
+              const examenDef = examensActuels.find((e) => e.id === group.quizId);
               const scoresWithLookup = group.results.map((r) => ({
                 matiere_id: r.matiere_id,
                 matiere_nom: r.matiere_nom,
