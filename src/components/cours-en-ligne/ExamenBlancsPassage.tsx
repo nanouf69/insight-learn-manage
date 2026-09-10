@@ -18,6 +18,7 @@ import { ExamQuestionImage } from "./ExamQuestionImage";
 import type { Reponses, ReponseQCM, ReponseQRC } from "./examens-blancs-types";
 import { safeStr, safeArray, getQuestionImageValue, normalizeReponses as normalizeReponsesUtil, computeIsMultiple, applyQCMChange, isMistypedAsQRC } from "./examens-blancs-utils";
 import Calculatrice from "./Calculatrice";
+import { enqueueAnswerSave, subscribeAnswerSaveState } from "@/lib/answerPersistence";
 
 // ===== PASSAGE D'UNE MATIÈRE =====
 function PassageMatiere({
