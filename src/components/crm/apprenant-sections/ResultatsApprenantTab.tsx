@@ -5,11 +5,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { BarChart3, Bot, CheckCircle2, XCircle, Trophy, BookOpen } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { EXAMENS_BLANCS_VTC, EXAMENS_BLANCS_TAXI, EXAMENS_BLANCS_TA, EXAMENS_BLANCS_VA } from "@/components/cours-en-ligne/examens-blancs-data";
+import { loadSavedExamens } from "@/components/cours-en-ligne/ExamensBlancsEditor";
 import { computeMoyenneExamen, computeMatiereScore } from "@/components/cours-en-ligne/examens-blancs-scoring";
 import { findScoreForMatiere, buildMatiereLookupKeys } from "@/components/cours-en-ligne/examens-blancs-utils";
 
-// Toutes les définitions d'examens blancs, pour retrouver le coefficient et les questions actuelles de chaque matière
-const ALL_EXAMENS_BLANCS = [
+// Repli statique uniquement : la source de vérité affichée est la définition
+// enregistrée en base (identique à l'écran apprenant), chargée via loadSavedExamens().
+const STATIC_EXAMENS_BLANCS = [
   ...EXAMENS_BLANCS_VTC,
   ...EXAMENS_BLANCS_TAXI,
   ...EXAMENS_BLANCS_TA,
