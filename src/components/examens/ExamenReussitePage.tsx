@@ -120,6 +120,55 @@ function InlineMotDePasseCma({ apprenantId, value, onSaved }: { apprenantId: str
   );
 }
 
+function InlineEmailApprenant({ apprenantId, value, onSaved }: { apprenantId: string; value: string | null; onSaved?: () => void }) {
+  const [editing, setEditing] = useState(false);
+  const [val, setVal] = useState(value || "");
+  const [saving, setSaving] = useState(false);
+  useEffect(() => { setVal(value || ""); }, [value]);
+
+  const save = async () => {
+    const trimmed = val.trim();
+    if ((trimmed || null) === (value || null)) { setEditing(false); return; }
+    if (trimmed && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+      toast.error("Adresse e-mail invalide");
+      return;
+    }
+    setSaving(true);
+    const { error } = await supabase.from('apprenants').update({ email: trimmed || null }).eq('id', apprenantId);
+    setSaving(false);
+    if (error) { toast.error("Erreur : " + error.message); return; }
+    toast.success("Adresse e-mail enregistrée");
+    setEditing(false);
+    onSaved?.();
+  };
+
+  if (editing) {
+    return (
+      <Input
+        autoFocus
+        type="email"
+        value={val}
+        disabled={saving}
+        onChange={(e) => setVal(e.target.value)}
+        onBlur={save}
+        onKeyDown={(e) => { if (e.key === 'Enter') save(); if (e.key === 'Escape') { setVal(value || ""); setEditing(false); } }}
+        placeholder="adresse@email.fr"
+        className="h-8 w-full text-xs"
+      />
+    );
+  }
+  return (
+    <button
+      type="button"
+      onClick={() => setEditing(true)}
+      title="Cliquer pour modifier l'adresse e-mail"
+      className="min-w-0 flex-1 truncate text-left hover:underline"
+    >
+      {value || "-"}
+    </button>
+  );
+}
+
 const STATUT_SUIVI_OPTIONS: { value: string; label: string }[] = [
   { value: "manque_document", label: "📄 Manque un document" },
   { value: "manque_piece_identite", label: "📋 Manque pièce d'identité" },
@@ -2171,7 +2220,11 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                         </TableCell>
                         <TableCell className={`min-w-[280px] max-w-[360px] ${!apprenant.email ? "text-destructive font-medium" : ""}`}>
                           <div className="flex items-center gap-1.5">
-                            <div className="truncate" title={apprenant.email || undefined}>{apprenant.email || "-"}</div>
+                            <InlineEmailApprenant
+                              apprenantId={apprenant.id}
+                              value={apprenant.email ?? null}
+                              onSaved={() => queryClient.invalidateQueries({ queryKey: ['apprenants-examen', selectedExamDate] })}
+                            />
                             {apprenant.email && (
                               <button
                                 type="button"
