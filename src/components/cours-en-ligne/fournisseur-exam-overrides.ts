@@ -47,6 +47,16 @@ export const FOURNISSEUR_QUIZ_TO_EXAM: Record<string, { examId: string; baseSect
 };
 
 /**
+ * Matières strictement identiques partagées entre deux bilans : une correction
+ * faite sur la matière commune doit apparaître dans les deux bilans.
+ * Bilan Examen TAXI matières F(T)=605 et G(T)=606 = Bilan Examen TA (index 0 et 1).
+ */
+const SHARED_MATIERE_TARGETS: Record<string, { examId: string; matiereIndex: number }[]> = {
+  "bilan-examen-taxi::605": [{ examId: "bilan-ta", matiereIndex: 0 }],
+  "bilan-examen-taxi::606": [{ examId: "bilan-ta", matiereIndex: 1 }],
+};
+
+/**
  * Apply fournisseur overrides on the matiere questions of the matching exam blancs.
  * Mutates the input examens array in place. Returns the same array for chaining.
  *
