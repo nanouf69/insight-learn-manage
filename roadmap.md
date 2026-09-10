@@ -7,3 +7,6 @@
 - [x] Remplacer les neuf autres supports Connaissances de la ville TAXI fournis.
 - [x] Contrôler visuellement toutes les pages des neuf nouveaux PDF.
 - [x] Actualiser les liens du module 7 sans toucher aux données apprenants.
+- [ ] Auditer le rattachement des réponses historiques aux questions actuellement affichées sur plusieurs apprenants et anciens quiz.
+- [ ] Corriger uniquement l’affichage des réponses historiques sans modifier réponses, scores, tentatives, progressions, jalons ni historiques.
+- [ ] Vérifier réellement plusieurs tentatives terminées dans l’espace apprenant sur ordinateur et mobile.
