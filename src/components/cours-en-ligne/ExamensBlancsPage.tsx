@@ -436,8 +436,10 @@ export default function ExamensBlancsPage({
     if (defaultBilanId) { setBilanPrefiltre(defaultBilanId); onBilanConsumed?.(); }
   }, [defaultBilanId]);
 
-  const handleStart = async (examen: ExamenBlanc, forceRetake = false) => {
-    const latestExamen = liveExamens.find((live) => live.id === examen.id) ?? examen;
+  const handleStart = async (examen: ExamenBlanc, forceRetake = false, matiereIds?: string[] | null) => {
+    // matiereIds === undefined → on conserve le filtre courant ; null → mode complet
+    if (matiereIds !== undefined) setMatiereFilter(matiereIds);
+    const latestExamen = applyMatiereFilter(liveExamens.find((live) => live.id === examen.id) ?? examen, matiereFilterRef.current)!;
     const quizType = latestExamen.id.startsWith("bilan-") ? "bilan" : "examen_blanc";
 
     // Compute current tentative: max existing + 1 on retake, else max existing (or 1)
