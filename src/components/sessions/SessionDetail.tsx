@@ -4994,6 +4994,36 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                       String(b.created_at || '').localeCompare(String(a.created_at || ''));
                     const rows = [...(apprenantsInSession as any[])]
                       .filter((sa) => !isListeAttente(sa))
+                      .filter((sa) => {
+                        const a = resolveA(sa);
+                        const term = learnerSearch.trim().toLowerCase();
+                        if (term) {
+                          const hay = `${a?.nom || ''} ${a?.prenom || ''} ${a?.email || ''} ${a?.telephone || ''}`.toLowerCase();
+                          if (!hay.includes(term)) return false;
+                        }
+                        if (learnerStatutFilter !== 'all') {
+                          const st = sa.statut_suivi ?? null;
+                          if (learnerStatutFilter === 'none' ? st !== null : st !== learnerStatutFilter) return false;
+                        }
+                        if (learnerIdentFilter !== 'all') {
+                          const appId = sa.apprenant_id ?? a?.id;
+                          const hasMdpCma = !!a?.mot_de_passe_cma;
+                          const t3p = appId ? nouveauxIdentifiantsT3PByApprenant.get(appId) : undefined;
+                          const hasT3p = !!(t3p && (t3p.nouvel_email || t3p.nouveau_mot_de_passe));
+                          const codesEnvoyes = appId ? hasIdentifiants(appId) : false;
+                          if (learnerIdentFilter === 'avec_mdp' && !hasMdpCma) return false;
+                          if (learnerIdentFilter === 'sans_mdp' && hasMdpCma) return false;
+                          if (learnerIdentFilter === 'avec_identifiants' && !hasT3p) return false;
+                          if (learnerIdentFilter === 'sans_identifiants' && hasT3p) return false;
+                          if (learnerIdentFilter === 'codes_envoyes' && !codesEnvoyes) return false;
+                          if (learnerIdentFilter === 'codes_non_envoyes' && codesEnvoyes) return false;
+                        }
+                        if (learnerDateFilter !== 'all') {
+                          const d = a?.date_examen_theorique || '';
+                          if (learnerDateFilter === 'none' ? d !== '' : d !== learnerDateFilter) return false;
+                        }
+                        return true;
+                      })
                       .sort(byRecent);
                     const pres = rows.filter((sa) => !isEl(resolveA(sa)));
                     const elearn = rows.filter((sa) => isEl(resolveA(sa)));
