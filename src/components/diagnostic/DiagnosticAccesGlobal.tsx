@@ -18,6 +18,8 @@ import {
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { findMissingModules, mergeMissingModules } from "@/lib/modulesIntegrity";
+import { MODULE_NAME_BY_ID } from "@/components/cours-en-ligne/modules-config";
 
 interface Apprenant {
   id: string;
@@ -29,6 +31,7 @@ interface Apprenant {
   date_debut_cours_en_ligne: string | null;
   date_fin_cours_en_ligne: string | null;
   formation_choisie: string | null;
+  type_apprenant: string | null;
 }
 
 interface ConnexionAgg {
@@ -39,17 +42,27 @@ interface ConnexionAgg {
   last_reason: string | null;
 }
 
-type Statut = "ok" | "connecte" | "ghost" | "expire" | "attente" | "no_account" | "no_modules";
+type Statut =
+  | "ok"
+  | "connecte"
+  | "ghost"
+  | "expire"
+  | "attente"
+  | "no_account"
+  | "no_modules"
+  | "modules_incomplets";
 
 const STATUT_INFO: Record<Statut, { label: string; color: string; priority: number }> = {
   ghost: { label: "Sessions multiples", color: "bg-orange-500 text-white", priority: 1 },
   no_account: { label: "Pas de compte", color: "bg-destructive text-destructive-foreground", priority: 2 },
   no_modules: { label: "Aucun module", color: "bg-destructive text-destructive-foreground", priority: 3 },
-  expire: { label: "Expiré", color: "bg-destructive text-destructive-foreground", priority: 4 },
-  attente: { label: "En attente", color: "bg-yellow-500 text-white", priority: 5 },
-  connecte: { label: "Connecté", color: "bg-green-600 text-white", priority: 6 },
-  ok: { label: "Accès OK", color: "bg-green-600 text-white", priority: 7 },
+  modules_incomplets: { label: "Modules manquants", color: "bg-orange-600 text-white", priority: 4 },
+  expire: { label: "Expiré", color: "bg-destructive text-destructive-foreground", priority: 5 },
+  attente: { label: "En attente", color: "bg-yellow-500 text-white", priority: 6 },
+  connecte: { label: "Connecté", color: "bg-green-600 text-white", priority: 7 },
+  ok: { label: "Accès OK", color: "bg-green-600 text-white", priority: 8 },
 };
+
 
 interface Props {
   onOpenApprenant: (id: string) => void;
