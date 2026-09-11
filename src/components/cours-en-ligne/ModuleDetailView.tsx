@@ -312,7 +312,9 @@ function CourseFileViewer({
   const isPdf = lowerName.endsWith(".pdf") || hasExtension("pdf");
   const isDocx = lowerName.endsWith(".docx") || lowerName.endsWith(".doc") || hasExtension("docx?");
   const isImage = /\.(png|jpe?g|webp|gif|bmp|svg)(?:[?#].*)?$/i.test(fichier.nom) || /\.(png|jpe?g|webp|gif|bmp|svg)(?:[?#].*)?$/i.test(fichier.url);
-  const shouldShowViewers = Boolean((isPptx || isDocx) && !hasInteractiveSlides);
+  // Un support PowerPoint/Word doit toujours rester visible, même lorsqu'une
+  // version interactive du cours existe aussi.
+  const shouldShowViewers = Boolean(isPptx || isDocx);
 
   if (!displayUrl) {
     return <div className="h-20 rounded-lg border bg-muted animate-pulse" />;
