@@ -713,6 +713,10 @@ function PaiementPopover({
 
 export function SessionDetail({ session, open, onOpenChange, onNavigateToApprenant, asPage, onBack }: SessionDetailProps) {
   const [searchApprenant, setSearchApprenant] = useState("");
+  const [learnerSearch, setLearnerSearch] = useState("");
+  const [learnerStatutFilter, setLearnerStatutFilter] = useState<string>("all");
+  const [learnerIdentFilter, setLearnerIdentFilter] = useState<string>("all");
+  const [learnerDateFilter, setLearnerDateFilter] = useState<string>("all");
   const [showAddApprenant, setShowAddApprenant] = useState(false);
   const [showAddFormateur, setShowAddFormateur] = useState(false);
   const [searchFormateur, setSearchFormateur] = useState("");

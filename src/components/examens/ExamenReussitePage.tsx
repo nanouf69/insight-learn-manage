@@ -945,6 +945,9 @@ function AddCandidateToDayPicker({
 
 export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToApprenant?: (id: string) => void } = {}) {
   const [search, setSearch] = useState("");
+  const [filterStatut, setFilterStatut] = useState<string>("all");
+  const [filterIdentifiants, setFilterIdentifiants] = useState<string>("all");
+  const [filterDateExamen, setFilterDateExamen] = useState<string>("all");
   const [fullscreen, setFullscreen] = useState(false);
   const [pratiqueFullscreen, setPratiqueFullscreen] = useState(false);
   const [activeFs, setActiveFs] = useState<string | null>(null);
