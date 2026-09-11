@@ -6598,6 +6598,16 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     </Dialog>
 
     {mdpMailDialog.dialog}
+
+    <TeamsLinkSender
+      open={teamsLinkOpen}
+      onOpenChange={setTeamsLinkOpen}
+      sessionId={session?.id}
+      recipients={apprenantsInSession
+        .map((sa: any) => sa.apprenant)
+        .filter((a: any) => a && a.email)
+        .map((a: any) => ({ id: a.id, nom: a.nom || "", prenom: a.prenom || "", email: a.email }))}
+    />
     </>
   );
 }
