@@ -151,6 +151,14 @@ serve(async (req) => {
                 <p style="font-size: 15px; color: #1f2937; line-height: 1.6;">
                   En cas de suspension, vous pourriez <strong>perdre le financement de votre formation</strong> et ne plus pouvoir utiliser votre CPF pendant une durée déterminée par la CDC. De plus, les sommes déjà engagées pourraient être réclamées.
                 </p>
+                <p style="font-size: 15px; color: #1f2937; line-height: 1.6; margin-top: 12px;">
+                  <strong>Pour les stagiaires rémunérés ou indemnisés par France Travail,</strong> l'abandon de formation — même sans fraude, un simple arrêt en cours de route — peut déclencher trois conséquences importantes :
+                </p>
+                <ul style="font-size: 15px; color: #1f2937; line-height: 1.8; margin-top: 8px;">
+                  <li><strong>Arrêt immédiat de la rémunération et des cotisations</strong> (article L.6342-1 du Code du travail et instruction DGEFP 2024-6) ;</li>
+                  <li><strong>Remboursement du trop-perçu</strong> ;</li>
+                  <li><strong>Suspension de l'allocation d'aide au retour à l'emploi (ARE)</strong> pendant une durée de 1 à 4 mois (article R.5412-4 du Code du travail).</li>
+                </ul>
               </div>
 
               <div style="background-color: #eff6ff; border-left: 4px solid #3b82f6; padding: 20px; margin: 20px 0; border-radius: 4px;">
