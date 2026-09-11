@@ -449,6 +449,20 @@ export function DiagnosticAccesGlobal({ onOpenApprenant }: Props) {
                       </td>
                       <td className="py-2 pr-2 text-right">
                         <div className="flex justify-end gap-1">
+                          {missing.length > 0 && (
+                            <Button
+                              size="sm"
+                              className="bg-orange-600 hover:bg-orange-700 text-white"
+                              onClick={() => repairModules(a, missing)}
+                              disabled={repairingId === a.id}
+                            >
+                              {repairingId === a.id ? (
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                              ) : (
+                                `Ajouter ${missing.length} module(s)`
+                              )}
+                            </Button>
+                          )}
                           {statut === "ghost" && (
                             <Button
                               variant="destructive"
