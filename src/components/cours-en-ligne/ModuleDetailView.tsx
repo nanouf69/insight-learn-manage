@@ -28,7 +28,7 @@ import {
 } from "@/lib/quizAttempts";
 import { useQuestionTimeTracking } from "@/hooks/useQuestionTimeTracking";
 import { reconcileHistoricalAnswers } from "@/lib/historicalAnswerReconciliation";
-import { enqueueAnswerSave, flushAnswerSavesOnUnload } from "@/lib/answerPersistence";
+import { answersAreEqual, enqueueAnswerSave, flushAnswerSavesAndWait, flushAnswerSavesOnUnload, getPendingAnswers } from "@/lib/answerPersistence";
 import { AnswerSaveIndicator } from "./AnswerSaveIndicator";
 
 import { ColoredTextField } from "./ColoredTextField";
@@ -6610,6 +6610,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                     Object.assign(redo, row.reponses);
                   }
                 });
+                exerciceIds.forEach((exerciceId) => {
+                  const pending = getPendingAnswers(apprenantId, exerciceId);
+                  if (pending) Object.assign(redo, pending);
+                });
                 if (Object.keys(redo).length > 0) {
                   const reconciledRedo = reconcileHistoricalAnswers(
                     redo,
@@ -6634,7 +6638,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             if (exerciceIds.length > 0) {
               const attempts = await fetchQuizAttempts(apprenantId, exerciceIds);
 
-              if (attempts.length > 0) {
+              {
                 const restored: Record<string, string | string[]> = {};
                 attempts.forEach((row) => {
                   // Réponses restaurées quel que soit le statut : une tentative
@@ -6643,9 +6647,13 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                     Object.assign(restored, row.reponses);
                   }
                 });
+                exerciceIds.forEach((exerciceId) => {
+                  const pending = getPendingAnswers(apprenantId, exerciceId);
+                  if (pending) Object.assign(restored, pending);
+                });
                 if (Object.keys(restored).length > 0) {
-                  // La base est prioritaire sur un ancien état de navigation
-                  // partiel : celui-ci ne doit jamais masquer des cases cochées.
+                  // Une réponse locale non confirmée est plus récente que la base
+                  // et doit rester cochée après actualisation ou réouverture.
                   setSelectedAnswers((prev) => ({ ...prev, ...restored }));
                 }
                 // RÈGLE : seul status='submitted' vaut « quiz validé ».
@@ -6667,23 +6675,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     ) => {
       if (!apprenantId) return;
 
-      // Save to reponses_apprenants per exercice (500ms debounce)
+      // Mise en file immédiate : aucun clic ne doit attendre un debounce.
       // NOTE: we allow this even if the module is already validated so that
       // "Refaire les fausses" / retry attempts persist the new answers.
-      if (reponsesSaveDebounceRef.current) clearTimeout(reponsesSaveDebounceRef.current);
-      reponsesSaveDebounceRef.current = setTimeout(async () => {
-        if (!userIdForSaveRef.current) {
-          // Attendre la session plutôt que perdre la réponse silencieusement.
-          try {
-            const { data } = await supabase.auth.getSession();
-            if (data.session?.user?.id) {
-              userIdForSaveRef.current = data.session.user.id;
-              jwtTokenRef.current = data.session.access_token;
-            }
-          } catch { /* la file réessaiera */ }
-        }
-        if (!userIdForSaveRef.current) return;
-        try {
+      try {
           // Group answers by exercice
           const byExo = new Map<number, Record<string, string | string[]>>();
           for (const [key, val] of Object.entries(answers)) {
@@ -6717,7 +6712,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
             enqueueAnswerSave({
               apprenant_id: apprenantId,
-              user_id: userIdForSaveRef.current as string,
+              user_id: userIdForSaveRef.current || undefined,
               module_id: module.id,
               exercice_id: `module_${module.id}_exo_${exoId}`,
               exercice_type: "quiz",
@@ -6727,11 +6722,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               events,
             });
           });
-          lastPersistedAnswersRef.current = { ...answers };
-        } catch (e) {
-          console.error("[AutoSave reponses_apprenants] error:", e);
-        }
-      }, 300);
+        lastPersistedAnswersRef.current = { ...answers };
+      } catch (e) {
+        console.error("[AutoSave reponses_apprenants] error:", e);
+      }
 
       // apprenant_module_completion: frozen snapshot — do NOT overwrite once validated.
       if (completionPersistedRef.current || moduleAlreadyValidatedRef.current) return;
@@ -8083,6 +8077,32 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                           Object.entries(selectedAnswers).forEach(([k, v]) => {
                             if (k.startsWith(`${exo.id}-`)) exoAnswers[k] = v;
                           });
+                          const exerciceId = buildExerciceId(module.id, exo.id);
+                          enqueueAnswerSave({
+                            apprenant_id: apprenantId,
+                            user_id: userIdForSaveRef.current || undefined,
+                            module_id: module.id,
+                            exercice_id: exerciceId,
+                            exercice_type: "quiz",
+                            reponses: exoAnswers,
+                            completed: false,
+                            updated_at: new Date().toISOString(),
+                          });
+                          const flushed = await flushAnswerSavesAndWait(apprenantId, exerciceId);
+                          if (!flushed) {
+                            toast.error("Réponses en attente de connexion — validation bloquée sans perte de données.");
+                            return;
+                          }
+                          const { data: confirmedRow, error: confirmedError } = await supabase
+                            .from("reponses_apprenants" as any)
+                            .select("reponses")
+                            .eq("apprenant_id", apprenantId)
+                            .eq("exercice_id", exerciceId)
+                            .maybeSingle();
+                          if (confirmedError || !answersAreEqual((confirmedRow as any)?.reponses, exoAnswers)) {
+                            toast.error("La base n'a pas confirmé toutes les réponses — validation bloquée.");
+                            return;
+                          }
                           const submitted = await submitQuizAttempt({
                             apprenantId,
                             exerciceId: buildExerciceId(module.id, exo.id),

@@ -28,6 +28,7 @@ const MAX_QUEUE_ITEMS = 500;
 export type AnswerSaveState = "idle" | "saving" | "saved" | "error";
 
 export interface AnswerJournalEvent {
+  event_id?: string;
   question_id: string;
   valeur: unknown;
   tentative?: number;
@@ -36,7 +37,7 @@ export interface AnswerJournalEvent {
 
 export interface AnswerSavePayload {
   apprenant_id: string;
-  user_id: string;
+  user_id?: string;
   module_id?: number | null;
   exercice_id: string;
   exercice_type: string;
@@ -60,6 +61,13 @@ const listeners = new Set<Listener>();
 let state: AnswerSaveState = "idle";
 let processing = false;
 let authToken: string | null = null;
+
+const makeEventId = (): string => {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return `${Date.now().toString(16)}-${Math.random().toString(16).slice(2)}-4${Math.random().toString(16).slice(2, 5)}-8${Math.random().toString(16).slice(2, 5)}-${Math.random().toString(16).slice(2, 14)}`;
+};
 
 const readQueue = (): QueueItem[] => {
   try {
@@ -107,6 +115,56 @@ export function getPendingAnswerSaves(): number {
   return readQueue().length;
 }
 
+export function getPendingAnswers(
+  apprenantId: string,
+  exerciceId: string
+): Record<string, unknown> | null {
+  const matches = readQueue().filter(
+    (item) => item.payload.apprenant_id === apprenantId && item.payload.exercice_id === exerciceId
+  );
+  return matches.length > 0
+    ? matches.reduce<Record<string, unknown>>(
+        (merged, item) => ({ ...merged, ...(item.payload.reponses ?? {}) }),
+        {}
+      )
+    : null;
+}
+
+const sortValue = (value: unknown): unknown => {
+  if (Array.isArray(value)) return value.map(sortValue);
+  if (value && typeof value === "object") {
+    return Object.keys(value as Record<string, unknown>)
+      .sort()
+      .reduce<Record<string, unknown>>((result, key) => {
+        result[key] = sortValue((value as Record<string, unknown>)[key]);
+        return result;
+      }, {});
+  }
+  return value;
+};
+
+export function answersAreEqual(left: unknown, right: unknown): boolean {
+  return JSON.stringify(sortValue(left ?? {})) === JSON.stringify(sortValue(right ?? {}));
+}
+
+export async function flushAnswerSavesAndWait(
+  apprenantId: string,
+  exerciceId: string,
+  timeoutMs = 20000
+): Promise<boolean> {
+  void processQueue();
+  const startedAt = Date.now();
+  while (Date.now() - startedAt < timeoutMs) {
+    const pending = readQueue().some(
+      (item) => item.payload.apprenant_id === apprenantId && item.payload.exercice_id === exerciceId
+    );
+    if (!pending) return true;
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    if (!processing) void processQueue();
+  }
+  return false;
+}
+
 /** Le token JWT courant, mis à jour par l'application. */
 export function setAnswerSaveAuthToken(token: string | null) {
   authToken = token;
@@ -139,7 +197,10 @@ async function sendItem(item: QueueItem): Promise<boolean> {
       headers,
       body: JSON.stringify(item.payload),
     });
-    if (res.ok) return true;
+    if (res.ok) {
+      const confirmation = await res.json().catch(() => null);
+      return confirmation?.success === true && confirmation?.confirmed === true;
+    }
     // 4xx hors auth : inutile de boucler indéfiniment, mais on garde la trace.
     console.error("[answerPersistence] Échec sauvegarde", res.status, await res.text());
     return false;
@@ -154,7 +215,10 @@ async function processQueue(): Promise<void> {
   processing = true;
   try {
     let queue = readQueue();
-    while (queue.length > 0) {
+    const itemsToTry = queue.length;
+    let tried = 0;
+    let hadFailure = false;
+    while (queue.length > 0 && tried < itemsToTry) {
       if (typeof navigator !== "undefined" && navigator.onLine === false) {
         setState("error");
         return;
@@ -162,6 +226,7 @@ async function processQueue(): Promise<void> {
       setState("saving");
       const item = queue[0];
       const ok = await sendItem(item);
+      tried += 1;
       queue = readQueue();
       if (ok) {
         // Retirer l'élément traité (identifié par son id).
@@ -170,17 +235,22 @@ async function processQueue(): Promise<void> {
       } else {
         const idx = queue.findIndex((q) => q.id === item.id);
         if (idx >= 0) {
-          queue[idx] = { ...queue[idx], attempts: (queue[idx].attempts ?? 0) + 1 };
+          const failed = { ...queue[idx], attempts: (queue[idx].attempts ?? 0) + 1 };
+          queue.splice(idx, 1);
+          queue.push(failed);
           writeQueue(queue);
         }
-        setState("error");
-        const attempts = queue[idx]?.attempts ?? 1;
-        const delay = Math.min(30000, 1000 * 2 ** Math.min(attempts, 5));
-        setTimeout(() => void processQueue(), delay);
-        return;
+        hadFailure = true;
       }
     }
-    setState("saved");
+    if (queue.length === 0) {
+      setState("saved");
+    } else {
+      setState("error");
+      const attempts = Math.max(...queue.map((item) => item.attempts ?? 1), 1);
+      const delay = Math.min(30000, 1000 * 2 ** Math.min(attempts, 5));
+      if (hadFailure) setTimeout(() => void processQueue(), delay);
+    }
   } finally {
     processing = false;
   }
@@ -194,7 +264,15 @@ export function enqueueAnswerSave(payload: AnswerSavePayload): void {
   if (!payload?.apprenant_id || !payload?.exercice_id) return;
   const item: QueueItem = {
     id: `${payload.exercice_id}__${Date.now()}__${Math.random().toString(36).slice(2, 8)}`,
-    payload: { ...payload, updated_at: payload.updated_at ?? new Date().toISOString() },
+    payload: {
+      ...payload,
+      updated_at: payload.updated_at ?? new Date().toISOString(),
+      events: (payload.events ?? []).map((event) => ({
+        ...event,
+        event_id: event.event_id ?? makeEventId(),
+        client_saved_at: event.client_saved_at ?? new Date().toISOString(),
+      })),
+    },
     queued_at: new Date().toISOString(),
     attempts: 0,
   };

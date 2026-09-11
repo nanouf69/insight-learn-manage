@@ -23,6 +23,23 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
+    const authorization = req.headers.get("Authorization") ?? "";
+    const tokenFromQuery = new URL(req.url).searchParams.get("access_token") ?? "";
+    const token = authorization.replace(/^Bearer\s+/i, "") || tokenFromQuery;
+    if (!token) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const { data: authData, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !authData.user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const body = await req.json();
     const {
       apprenant_id,
@@ -37,53 +54,47 @@ Deno.serve(async (req) => {
       events,
     } = body ?? {};
 
-    if (!apprenant_id || !user_id || !exercice_id || !exercice_type) {
+    if (!apprenant_id || !exercice_id || !exercice_type || typeof reponses !== "object" || Array.isArray(reponses)) {
       return new Response(JSON.stringify({ error: "Missing required fields" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Tentative en cours (pour l'horodatage du journal).
-    const { data: current } = await supabase
-      .from("reponses_apprenants")
-      .select("completed, tentative")
-      .eq("apprenant_id", apprenant_id)
-      .eq("exercice_id", exercice_id)
+    const effectiveUserId = authData.user.id;
+    const { data: learner, error: learnerError } = await supabase
+      .from("apprenants")
+      .select("id")
+      .eq("id", apprenant_id)
+      .eq("auth_user_id", effectiveUserId)
       .maybeSingle();
-
-    // Build the row — only include score if explicitly provided
-    // to avoid overwriting an existing score with null.
-    // IMPORTANT: once an exercise is completed, stale autosave requests from the
-    // browser must never downgrade it back to completed=false.
-    const row: Record<string, any> = {
-      apprenant_id,
-      user_id,
-      exercice_id,
-      exercice_type,
-      reponses: reponses ?? {},
-      completed: Boolean(completed),
-      updated_at: updated_at ?? new Date().toISOString(),
-    };
-
-    if (score !== undefined && score !== null) {
-      row.score = score;
+    if (learnerError || !learner) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    if (!row.completed && current?.completed === true) {
-      row.completed = true;
-    }
+    const safeEvents = Array.isArray(events) ? events.slice(0, 500) : [];
+    const { data, error } = await supabase.rpc("persist_answer_batch", {
+      p_apprenant_id: apprenant_id,
+      p_user_id: effectiveUserId,
+      p_module_id: typeof module_id === "number" ? module_id : null,
+      p_exercice_id: exercice_id,
+      p_exercice_type: exercice_type,
+      p_reponses: reponses ?? {},
+      p_completed: Boolean(completed),
+      p_score: score ?? null,
+      p_updated_at: updated_at ?? new Date().toISOString(),
+      p_events: safeEvents,
+    });
 
-    const { error } = await supabase
-      .from("reponses_apprenants")
-      .upsert(row, { onConflict: "apprenant_id,exercice_id" });
-
-    if (error) {
+    if (error || !data?.[0]?.saved) {
       return new Response(
         JSON.stringify({
-          error: error.message,
-          code: error.code,
-          details: error.details,
+          error: error?.message ?? "Save was not confirmed",
+          code: error?.code,
+          details: error?.details,
         }),
         {
           status: 400,
@@ -92,39 +103,15 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Journal append-only : une ligne immuable par réponse cochée.
-    // Ce journal n'est jamais modifié ni supprimé par les évolutions de contenu.
-    if (Array.isArray(events) && events.length > 0) {
-      const tentative = current?.tentative ?? 1;
-      const rows = events
-        .filter((e: any) => e && e.question_id)
-        .slice(0, 500)
-        .map((e: any) => ({
-          apprenant_id,
-          user_id,
-          module_id: typeof module_id === "number" ? module_id : null,
-          exercice_id,
-          exercice_type,
-          question_id: String(e.question_id),
-          valeur: e.valeur ?? null,
-          tentative: typeof e.tentative === "number" ? e.tentative : tentative,
-          client_saved_at: e.client_saved_at ?? null,
-        }));
-      if (rows.length > 0) {
-        const { error: journalError } = await supabase
-          .from("reponses_apprenants_journal")
-          .insert(rows);
-        if (journalError) {
-          console.error("[upsert-reponse-apprenant] journal error:", journalError.message);
-          return new Response(
-            JSON.stringify({ error: journalError.message, stage: "journal" }),
-            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
-        }
-      }
-    }
-
-    return new Response(JSON.stringify({ success: true }), {
+    const confirmation = data[0];
+    return new Response(JSON.stringify({
+      success: true,
+      confirmed: true,
+      exercice_id,
+      tentative: confirmation.stored_tentative,
+      updated_at: confirmation.stored_updated_at,
+      accepted_event_ids: confirmation.accepted_event_ids ?? [],
+    }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {

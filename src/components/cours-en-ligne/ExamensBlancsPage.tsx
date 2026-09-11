@@ -8,6 +8,7 @@ import { tousLesExamens, getPointsParQuestion, type ExamenBlanc, type Matiere, t
 import { loadSavedExamens, EXAMEN_BLANC_MODULE_BASE, getModuleIdForExamId } from "./ExamensBlancsEditor";
 import ExamensBlancsEditor from "./ExamensBlancsEditor";
 import { supabase } from "@/integrations/supabase/client";
+import { answersAreEqual } from "@/lib/answerPersistence";
 import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
@@ -1024,46 +1025,29 @@ export default function ExamensBlancsPage({
       const matiere = examenChoisi.matieres[matiereIndex];
       if (!matiere) { toast.error("Matière introuvable. Veuillez relancer l'examen."); return; }
 
-      // BUG #7 FIX: flush responses to DB BEFORE calculating score
+      // La matière a déjà été mise en file et confirmée par PassageMatiere.
+      // On relit la base avant tout calcul de résultat : aucune progression si
+      // les réponses confirmées ne correspondent pas exactement à l'écran.
       if (apprenantId && userId) {
         const tSuffix = (currentTentative && currentTentative > 1) ? `__t${currentTentative}` : "";
         const exerciceKey = `${examenChoisi.id}__${matiere.id}${tSuffix}`;
         const quizType = examenChoisi.id.startsWith("bilan-") ? "bilan" : "examen_blanc";
-        let flushed = false;
-        for (let attempt = 0; attempt < 3 && !flushed; attempt++) {
-          if (attempt > 0) {
-            await new Promise(r => setTimeout(r, 1000 * attempt));
-            try { await supabase.auth.refreshSession(); } catch { /* best effort */ }
-          }
-          try {
-            const { error: flushError } = await supabase.from("reponses_apprenants" as any).upsert({
-              apprenant_id: apprenantId,
-              user_id: userId,
-              exercice_id: exerciceKey,
-              exercice_type: quizType,
-              reponses,
-              completed: true,
-              updated_at: new Date().toISOString(),
-            } as any, { onConflict: "apprenant_id,exercice_id" });
-            if (!flushError) {
-              flushed = true;
-            } else {
-              console.warn(`[ExamenBlanc] Flush attempt ${attempt + 1} failed:`, flushError);
-            }
-          } catch (flushErr) {
-            console.warn(`[ExamenBlanc] Flush attempt ${attempt + 1} threw:`, flushErr);
-          }
-        }
-        if (!flushed) {
-          // BUG #7 FIX: save to localStorage as last resort
-          try {
-            localStorage.setItem(`exam_backup_${exerciceKey}_${apprenantId}`, JSON.stringify(reponses));
-          } catch (_) {}
+        const { data: confirmedRow, error: confirmationError } = await supabase
+          .from("reponses_apprenants" as any)
+          .select("reponses, completed")
+          .eq("apprenant_id", apprenantId)
+          .eq("exercice_id", exerciceKey)
+          .maybeSingle();
+        const confirmedAnswers = (confirmedRow as any)?.reponses ?? {};
+        const confirmed = !confirmationError
+          && Boolean((confirmedRow as any)?.completed)
+          && answersAreEqual(confirmedAnswers, reponses);
+        if (!confirmed) {
           toast.error(
-            "⚠️ Vos réponses n'ont pas pu être enregistrées en ligne (connexion instable). " +
-            "Elles sont sauvegardées sur cet appareil en attendant — reconnectez-vous dès que possible.",
+            "Vos réponses sont encore en attente de confirmation. Elles restent conservées sur cet appareil.",
             { duration: 15000 },
           );
+          return;
         }
       }
 

@@ -14,6 +14,9 @@ if (typeof globalThis.localStorage === "undefined") {
 
 import {
   enqueueAnswerSave,
+  answersAreEqual,
+  flushAnswerSavesAndWait,
+  getPendingAnswers,
   getPendingAnswerSaves,
   subscribeAnswerSaveState,
   setAnswerSaveAuthToken,
@@ -47,7 +50,11 @@ describe("Persistance des réponses apprenants", () => {
   });
 
   it("envoie la réponse au serveur et vide la file après confirmation", async () => {
-    const fetchMock = vi.fn().mockResolvedValue({ ok: true, text: async () => "" });
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ success: true, confirmed: true }),
+      text: async () => "",
+    });
     vi.stubGlobal("fetch", fetchMock);
 
     enqueueAnswerSave(payload());
@@ -86,7 +93,11 @@ describe("Persistance des réponses apprenants", () => {
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce({ ok: false, status: 500, text: async () => "boom" })
-      .mockResolvedValue({ ok: true, text: async () => "" });
+      .mockResolvedValue({
+        ok: true,
+        json: async () => ({ success: true, confirmed: true }),
+        text: async () => "",
+      });
     vi.stubGlobal("fetch", fetchMock);
 
     enqueueAnswerSave(payload());
@@ -111,5 +122,36 @@ describe("Persistance des réponses apprenants", () => {
     expect(last.payload.reponses["1-1"]).toEqual(["B"]);
     // Les deux clics restent tracés dans le journal envoyé au serveur.
     expect(last.payload.events.length).toBe(2);
+  });
+
+  it("restaure la dernière réponse locale après un rechargement simulé", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("offline")));
+    enqueueAnswerSave(payload({ reponses: { "1-1": ["C"] } }));
+    await flush();
+    expect(getPendingAnswers(payload().apprenant_id, payload().exercice_id)).toEqual({ "1-1": ["C"] });
+  });
+
+  it("attend la confirmation serveur avant d'autoriser la finalisation", async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: false, status: 503, text: async () => "offline" })
+      .mockResolvedValue({ ok: true, json: async () => ({ success: true, confirmed: true }) });
+    vi.stubGlobal("fetch", fetchMock);
+    enqueueAnswerSave(payload());
+    await flush();
+    const confirmation = flushAnswerSavesAndWait(payload().apprenant_id, payload().exercice_id, 6000);
+    await flush(5000);
+    await expect(confirmation).resolves.toBe(true);
+    expect(getPendingAnswerSaves()).toBe(0);
+  });
+
+  it("ne vide pas la file sur une réponse HTTP sans accusé explicite", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({ success: true }) }));
+    enqueueAnswerSave(payload());
+    await flush();
+    expect(getPendingAnswerSaves()).toBe(1);
+  });
+
+  it("confirme des réponses identiques même si la base réordonne les clés", () => {
+    expect(answersAreEqual({ "2": ["B"], "1": ["A"] }, { "1": ["A"], "2": ["B"] })).toBe(true);
   });
 });
