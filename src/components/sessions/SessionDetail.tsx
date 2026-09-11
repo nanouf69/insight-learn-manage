@@ -783,6 +783,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   const [apprenantToMove, setApprenantToMove] = useState<{ id: string; apprenant_id: string; nom: string; prenom: string } | null>(null);
   const [targetSessionId, setTargetSessionId] = useState("");
   const [movingApprenant, setMovingApprenant] = useState(false);
+  const [teamsLinkOpen, setTeamsLinkOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
