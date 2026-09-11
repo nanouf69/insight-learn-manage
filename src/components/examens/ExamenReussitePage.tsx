@@ -365,6 +365,41 @@ const STATUT_SUIVI_OPTIONS: { value: string; label: string }[] = [
   { value: "inscription_validee", label: "✅ Inscription validée" },
 ];
 
+/** Modalité de formation choisie manuellement (apprenants.modalite_formation). */
+function InlineModaliteFormation({
+  apprenantId,
+  value,
+  onSaved,
+}: { apprenantId: string; value: string | null; onSaved?: () => void }) {
+  const [saving, setSaving] = useState(false);
+  return (
+    <Select
+      value={value || ''}
+      disabled={saving}
+      onValueChange={async (val) => {
+        setSaving(true);
+        const { error } = await supabase
+          .from('apprenants')
+          .update({ modalite_formation: val || null } as any)
+          .eq('id', apprenantId);
+        setSaving(false);
+        if (error) { toast.error("Erreur : " + error.message); return; }
+        toast.success("Modalité de formation mise à jour");
+        onSaved?.();
+      }}
+    >
+      <SelectTrigger className={`h-8 w-auto gap-1 text-xs border ${value ? 'border-blue-300 text-blue-700' : ''}`}>
+        <SelectValue placeholder="🎓 Formation" />
+      </SelectTrigger>
+      <SelectContent className="z-[9999]">
+        <SelectItem value="presentielle">🏫 Présentielle</SelectItem>
+        <SelectItem value="elearning_synchrone">🖥️ E-learning synchrone</SelectItem>
+        <SelectItem value="elearning_asynchrone">🌐 E-learning asynchrone</SelectItem>
+      </SelectContent>
+    </Select>
+  );
+}
+
 /** Statut de suivi partagé avec la fiche session de l'apprenant (session_apprenants.statut_suivi).
  *  Si l'apprenant n'est inscrit à aucune session, le statut est stocké sur sa fiche (apprenants.statut_suivi). */
 function InlineStatutSuivi({
