@@ -170,6 +170,18 @@ serve(async (req) => {
                 <p>📞 <strong>04.28.29.60.91</strong> | 📧 <strong>contact@ftransport.fr</strong></p>
               </div>
 
+              <div style="background-color: #fef2f2; border-left: 4px solid #dc2626; padding: 20px; margin: 20px 0; border-radius: 4px;">
+                <h3 style="color: #dc2626; margin-top: 0;">⚠️ Rappel important – sanctions en cas d'abandon ou de manquement à vos engagements</h3>
+                <p style="font-size: 14px; line-height: 1.6; color: #991b1b; font-weight: bold;">
+                  En cas d'abandon de la formation ou de manquement à vos engagements, les sanctions suivantes peuvent s'appliquer :
+                </p>
+                <ul style="font-size: 14px; line-height: 1.8; color: #991b1b; font-weight: bold;">
+                  <li>Abandonne la formation / manque à ses engagements : <strong>remboursement des frais engagés</strong> – R.6333-7 du code du travail</li>
+                  <li>Absent sans motif légitime à l'examen final : <strong>CPF bloqué temporairement pour toute nouvelle formation</strong> – Art. 59, loi du 25/06/2026</li>
+                  <li>Pour <strong>France Travail</strong>, l'abandon (même sans fraude, un simple arrêt en cours de route) déclenche potentiellement : <strong>arrêt immédiat de la rémunération/cotisations</strong> (L.6342-1 + instruction DG 2024-6), <strong>remboursement du trop-perçu</strong>, et <strong>suspension de l'ARE de 1 à 4 mois</strong> (R.5412-4).</li>
+                </ul>
+              </div>
+
               <p style="color: #6b7280; font-size: 13px; margin-top: 20px;">
                 Ce message de soutien est envoyé automatiquement pour vous encourager dans votre parcours de formation.
               </p>
