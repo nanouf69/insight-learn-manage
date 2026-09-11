@@ -1,28 +1,13 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Document, Page, pdfjs } from "react-pdf";
+import { Document, Page } from "react-pdf";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCcw, Maximize, Minimize } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ensurePdfWorker } from "@/lib/pdfWorker";
 
-// Promise.withResolvers polyfill for Safari < 17 / Samsung Internet
-if (typeof (Promise as any).withResolvers === 'undefined') {
-  (Promise as any).withResolvers = function <T>() {
-    let resolve!: (value: T | PromiseLike<T>) => void;
-    let reject!: (reason?: any) => void;
-    const promise = new Promise<T>((res, rej) => { resolve = res; reject = rej; });
-    return { promise, resolve, reject };
-  };
-}
-
-// Set up pdf.js worker with maximum mobile compatibility
-// Prefer the bundled worker first; fall back to CDN only if needed.
-try {
-  pdfjs.GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/build/pdf.worker.min.mjs", import.meta.url).toString();
-} catch {
-  pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
-}
+ensurePdfWorker();
 
 interface PdfSlideViewerProps {
   url: string;
