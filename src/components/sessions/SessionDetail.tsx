@@ -713,6 +713,10 @@ function PaiementPopover({
 
 export function SessionDetail({ session, open, onOpenChange, onNavigateToApprenant, asPage, onBack }: SessionDetailProps) {
   const [searchApprenant, setSearchApprenant] = useState("");
+  const [learnerSearch, setLearnerSearch] = useState("");
+  const [learnerStatutFilter, setLearnerStatutFilter] = useState<string>("all");
+  const [learnerIdentFilter, setLearnerIdentFilter] = useState<string>("all");
+  const [learnerDateFilter, setLearnerDateFilter] = useState<string>("all");
   const [showAddApprenant, setShowAddApprenant] = useState(false);
   const [showAddFormateur, setShowAddFormateur] = useState(false);
   const [searchFormateur, setSearchFormateur] = useState("");
@@ -4855,6 +4859,79 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
               </Button>
             </div>
 
+            {/* Barre de filtres de la liste */}
+            <div className="shrink-0 flex flex-wrap items-center gap-2 mb-3 p-3 rounded-lg border bg-muted/30">
+              <div className="relative w-56">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                <Input
+                  placeholder="Nom, email, téléphone..."
+                  value={learnerSearch}
+                  onChange={(e) => setLearnerSearch(e.target.value)}
+                  className="h-8 pl-8 text-xs"
+                />
+              </div>
+              <Select value={learnerStatutFilter} onValueChange={setLearnerStatutFilter}>
+                <SelectTrigger className="h-8 w-52 text-xs">
+                  <SelectValue placeholder="Statut" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous les statuts</SelectItem>
+                  <SelectItem value="none">Sans statut</SelectItem>
+                  <SelectItem value="manque_document">📄 Manque un document</SelectItem>
+                  <SelectItem value="manque_piece_identite">📋 Manque pièce d'identité</SelectItem>
+                  <SelectItem value="manque_justificatif_domicile">🏠 Manque justificatif domicile</SelectItem>
+                  <SelectItem value="manque_permis">🚗 Manque permis</SelectItem>
+                  <SelectItem value="manque_signature">✍️ Manque signature</SelectItem>
+                  <SelectItem value="manque_photo">📸 Manque photo</SelectItem>
+                  <SelectItem value="document_complet">✅ Dossier complet</SelectItem>
+                  <SelectItem value="mdp_change">🔑 MDP changé</SelectItem>
+                  <SelectItem value="email_non_valide">📧 Email non validé</SelectItem>
+                  <SelectItem value="injoignable">📵 Injoignable</SelectItem>
+                  <SelectItem value="a_rappeler">🔔 À rappeler</SelectItem>
+                  <SelectItem value="a_payer">💰 À payer</SelectItem>
+                  <SelectItem value="paye">💸 Payé</SelectItem>
+                  <SelectItem value="inscription_validee">✅ Inscription validée</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={learnerIdentFilter} onValueChange={setLearnerIdentFilter}>
+                <SelectTrigger className="h-8 w-60 text-xs">
+                  <SelectValue placeholder="Mot de passe / identifiants" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous (mot de passe / identifiants)</SelectItem>
+                  <SelectItem value="avec_mdp">🔑 Avec mot de passe CMA</SelectItem>
+                  <SelectItem value="sans_mdp">⚠️ Sans mot de passe CMA</SelectItem>
+                  <SelectItem value="avec_identifiants">🆔 Nouveaux identifiants reçus</SelectItem>
+                  <SelectItem value="sans_identifiants">⚠️ Sans nouveaux identifiants</SelectItem>
+                  <SelectItem value="codes_envoyes">✉️ Codes d'accès envoyés</SelectItem>
+                  <SelectItem value="codes_non_envoyes">⚠️ Codes d'accès non envoyés</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={learnerDateFilter} onValueChange={setLearnerDateFilter}>
+                <SelectTrigger className="h-8 w-52 text-xs">
+                  <SelectValue placeholder="Date d'examen" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Toutes les dates d'examen</SelectItem>
+                  <SelectItem value="none">Sans date d'examen</SelectItem>
+                  {[...new Set((apprenantsInSession as any[])
+                    .map((sa: any) => sa.apprenant?.date_examen_theorique)
+                    .filter(Boolean))].sort().map((d: string) => (
+                    <SelectItem key={d} value={d}>{d}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {(learnerSearch.trim() !== '' || learnerStatutFilter !== 'all' || learnerIdentFilter !== 'all' || learnerDateFilter !== 'all') && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 gap-1 text-xs"
+                  onClick={() => { setLearnerSearch(''); setLearnerStatutFilter('all'); setLearnerIdentFilter('all'); setLearnerDateFilter('all'); }}
+                >
+                  <X className="w-3.5 h-3.5" /> Réinitialiser
+                </Button>
+              )}
+            </div>
 
             <div className="learners-list flex-1 min-h-0 overflow-y-auto px-2 pb-6">
               {showAddApprenant && (
@@ -4917,6 +4994,36 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                       String(b.created_at || '').localeCompare(String(a.created_at || ''));
                     const rows = [...(apprenantsInSession as any[])]
                       .filter((sa) => !isListeAttente(sa))
+                      .filter((sa) => {
+                        const a = resolveA(sa);
+                        const term = learnerSearch.trim().toLowerCase();
+                        if (term) {
+                          const hay = `${a?.nom || ''} ${a?.prenom || ''} ${a?.email || ''} ${a?.telephone || ''}`.toLowerCase();
+                          if (!hay.includes(term)) return false;
+                        }
+                        if (learnerStatutFilter !== 'all') {
+                          const st = sa.statut_suivi ?? null;
+                          if (learnerStatutFilter === 'none' ? st !== null : st !== learnerStatutFilter) return false;
+                        }
+                        if (learnerIdentFilter !== 'all') {
+                          const appId = sa.apprenant_id ?? a?.id;
+                          const hasMdpCma = !!a?.mot_de_passe_cma;
+                          const t3p = appId ? nouveauxIdentifiantsT3PByApprenant.get(appId) : undefined;
+                          const hasT3p = !!(t3p && (t3p.nouvel_email || t3p.nouveau_mot_de_passe));
+                          const codesEnvoyes = appId ? hasIdentifiants(appId) : false;
+                          if (learnerIdentFilter === 'avec_mdp' && !hasMdpCma) return false;
+                          if (learnerIdentFilter === 'sans_mdp' && hasMdpCma) return false;
+                          if (learnerIdentFilter === 'avec_identifiants' && !hasT3p) return false;
+                          if (learnerIdentFilter === 'sans_identifiants' && hasT3p) return false;
+                          if (learnerIdentFilter === 'codes_envoyes' && !codesEnvoyes) return false;
+                          if (learnerIdentFilter === 'codes_non_envoyes' && codesEnvoyes) return false;
+                        }
+                        if (learnerDateFilter !== 'all') {
+                          const d = a?.date_examen_theorique || '';
+                          if (learnerDateFilter === 'none' ? d !== '' : d !== learnerDateFilter) return false;
+                        }
+                        return true;
+                      })
                       .sort(byRecent);
                     const pres = rows.filter((sa) => !isEl(resolveA(sa)));
                     const elearn = rows.filter((sa) => isEl(resolveA(sa)));

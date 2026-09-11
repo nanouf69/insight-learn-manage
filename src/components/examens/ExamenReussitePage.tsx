@@ -945,6 +945,9 @@ function AddCandidateToDayPicker({
 
 export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToApprenant?: (id: string) => void } = {}) {
   const [search, setSearch] = useState("");
+  const [filterStatut, setFilterStatut] = useState<string>("all");
+  const [filterIdentifiants, setFilterIdentifiants] = useState<string>("all");
+  const [filterDateExamen, setFilterDateExamen] = useState<string>("all");
   const [fullscreen, setFullscreen] = useState(false);
   const [pratiqueFullscreen, setPratiqueFullscreen] = useState(false);
   const [activeFs, setActiveFs] = useState<string | null>(null);
@@ -2039,9 +2042,32 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
     },
   });
 
-  const filtered = apprenants?.filter(a =>
-    `${a.nom} ${a.prenom}`.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = apprenants?.filter(a => {
+    const term = search.toLowerCase().trim();
+    if (term) {
+      const hay = `${a.nom || ''} ${a.prenom || ''} ${a.email || ''} ${a.telephone || ''}`.toLowerCase();
+      if (!hay.includes(term)) return false;
+    }
+    if (filterStatut !== 'all') {
+      const st = statutsSession?.[a.id]?.statut ?? (a as any).statut_suivi ?? null;
+      if (filterStatut === 'none' ? st !== null : st !== filterStatut) return false;
+    }
+    if (filterIdentifiants !== 'all') {
+      const hasMdpCma = !!(a as any).mot_de_passe_cma;
+      const t3p = nouveauxIdentifiantsT3P[a.id];
+      const hasT3p = !!(t3p && (t3p.nouvel_email || t3p.nouveau_mot_de_passe));
+      if (filterIdentifiants === 'avec_mdp' && !hasMdpCma) return false;
+      if (filterIdentifiants === 'sans_mdp' && hasMdpCma) return false;
+      if (filterIdentifiants === 'avec_identifiants' && !hasT3p) return false;
+      if (filterIdentifiants === 'sans_identifiants' && hasT3p) return false;
+    }
+    if (filterDateExamen !== 'all' && (a.date_examen_theorique || '') !== filterDateExamen) return false;
+    return true;
+  });
+
+  const datesExamenDisponibles = [...new Set((apprenants || []).map(a => a.date_examen_theorique).filter(Boolean))] as string[];
+  const hasActiveFilters = filterStatut !== 'all' || filterIdentifiants !== 'all' || filterDateExamen !== 'all' || search.trim() !== '';
+  const resetFilters = () => { setSearch(""); setFilterStatut("all"); setFilterIdentifiants("all"); setFilterDateExamen("all"); };
 
   const reussis = apprenants?.filter(a => (a as any).resultat_examen === 'oui') || [];
   const nonReussis = apprenants?.filter(a => (a as any).resultat_examen === 'non') || [];
@@ -2239,6 +2265,52 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
           </CardTitle>
         </CardHeader>
         <CardContent>
+          {/* Barre de filtres */}
+          <div className="flex flex-wrap items-center gap-2 mb-4 p-3 rounded-lg border bg-muted/30">
+            <Select value={filterStatut} onValueChange={setFilterStatut}>
+              <SelectTrigger className="h-8 w-56 text-xs">
+                <SelectValue placeholder="Statut" />
+              </SelectTrigger>
+              <SelectContent className="z-[9999]">
+                <SelectItem value="all">Tous les statuts</SelectItem>
+                <SelectItem value="none">Sans statut</SelectItem>
+                {STATUT_SUIVI_OPTIONS.map(o => (
+                  <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={filterIdentifiants} onValueChange={setFilterIdentifiants}>
+              <SelectTrigger className="h-8 w-64 text-xs">
+                <SelectValue placeholder="Mot de passe / identifiants" />
+              </SelectTrigger>
+              <SelectContent className="z-[9999]">
+                <SelectItem value="all">Tous (mot de passe / identifiants)</SelectItem>
+                <SelectItem value="avec_mdp">🔑 Avec mot de passe CMA</SelectItem>
+                <SelectItem value="sans_mdp">⚠️ Sans mot de passe CMA</SelectItem>
+                <SelectItem value="avec_identifiants">🆔 Avec nouveaux identifiants</SelectItem>
+                <SelectItem value="sans_identifiants">⚠️ Sans nouveaux identifiants</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={filterDateExamen} onValueChange={setFilterDateExamen}>
+              <SelectTrigger className="h-8 w-52 text-xs">
+                <SelectValue placeholder="Date d'examen" />
+              </SelectTrigger>
+              <SelectContent className="z-[9999]">
+                <SelectItem value="all">Toutes les dates</SelectItem>
+                {datesExamenDisponibles.map(d => (
+                  <SelectItem key={d} value={d}>{d}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {hasActiveFilters && (
+              <Button variant="ghost" size="sm" className="h-8 gap-1 text-xs" onClick={resetFilters}>
+                <RotateCcw className="h-3.5 w-3.5" /> Réinitialiser
+              </Button>
+            )}
+            <span className="ml-auto text-xs text-muted-foreground">
+              {filtered?.length ?? 0} / {apprenants?.length ?? 0} apprenant(s)
+            </span>
+          </div>
           {filtered && filtered.length > 0 ? (
             <TopScrollContainer>
               <Table>
@@ -2457,7 +2529,9 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
           )}
           {apprenants && apprenants.length > 0 && (
             <div className="mt-4 text-sm text-muted-foreground">
-              Total : {apprenants.length} apprenant(s) inscrit(s)
+              {hasActiveFilters
+                ? `${filtered?.length ?? 0} apprenant(s) affiché(s) sur ${apprenants.length} inscrit(s)`
+                : `Total : ${apprenants.length} apprenant(s) inscrit(s)`}
             </div>
           )}
         </CardContent>
