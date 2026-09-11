@@ -3753,6 +3753,31 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
 
   const isListeAttente = (sa: any) => sa.liste_attente === true;
 
+  const toggleListeAttente = async (sessionApprenant: any, apprenant: any) => {
+    const nextValue = !isListeAttente(sessionApprenant);
+    const { error } = await supabase
+      .from('session_apprenants')
+      .update({ liste_attente: nextValue })
+      .eq('id', sessionApprenant.id);
+
+    if (error) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de déplacer l'apprenant.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    queryClient.invalidateQueries({ queryKey: ['session-apprenants'] });
+    toast({
+      title: nextValue ? "Placé en liste d'attente" : "Déplacé en liste normale",
+      description: `${apprenant?.prenom || ''} ${apprenant?.nom || ''}`.trim(),
+    });
+  };
+
+
+
   const countByType = (type: string) => {
     return apprenantsInSession.filter((sa: any) => {
       if (isListeAttente(sa)) return false;
