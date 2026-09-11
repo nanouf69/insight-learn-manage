@@ -3448,6 +3448,7 @@ export type Database = {
           apprenant_id: string
           client_saved_at: string | null
           created_at: string
+          event_id: string
           exercice_id: string
           exercice_type: string
           id: string
@@ -3461,6 +3462,7 @@ export type Database = {
           apprenant_id: string
           client_saved_at?: string | null
           created_at?: string
+          event_id?: string
           exercice_id: string
           exercice_type?: string
           id?: string
@@ -3474,6 +3476,7 @@ export type Database = {
           apprenant_id?: string
           client_saved_at?: string | null
           created_at?: string
+          event_id?: string
           exercice_id?: string
           exercice_type?: string
           id?: string
@@ -4000,6 +4003,27 @@ export type Database = {
           _user_id?: string
         }
         Returns: string
+      }
+      persist_answer_batch: {
+        Args: {
+          p_apprenant_id: string
+          p_completed: boolean
+          p_events: Json
+          p_exercice_id: string
+          p_exercice_type: string
+          p_module_id: number
+          p_reponses: Json
+          p_score: number
+          p_updated_at: string
+          p_user_id: string
+        }
+        Returns: {
+          accepted_event_ids: string[]
+          saved: boolean
+          stored_reponses: Json
+          stored_tentative: number
+          stored_updated_at: string
+        }[]
       }
       reset_quiz_attempt: {
         Args: { _apprenant_id: string; _exercice_id: string }

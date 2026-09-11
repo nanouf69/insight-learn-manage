@@ -1,6 +1,7 @@
 import { useEffect, useRef, useCallback, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { submitQuizAttempt } from "@/lib/quizAttempts";
+import { enqueueAnswerSave, flushAnswerSavesAndWait, getPendingAnswers, type AnswerSavePayload } from "@/lib/answerPersistence";
 
 interface UseAutoSaveReponsesOptions {
   apprenantId: string | null | undefined;
@@ -83,7 +84,8 @@ export function useAutoSaveReponses<T = Record<string, any>>({
           setIsSubmitted(((data as any).status ?? ((data as any).completed ? "submitted" : "in_progress")) === "submitted");
         }
         if (!error && data && !(data as any).completed) {
-          setLoadedReponses((data as any).reponses as T);
+          const pending = getPendingAnswers(apprenantId, exerciceId);
+          setLoadedReponses({ ...((data as any).reponses ?? {}), ...(pending ?? {}) } as T);
           // Existing data in DB → don't force the immediate flush again
           hasSavedOnceRef.current = true;
         } else if (!error && data && (data as any).completed) {
@@ -104,23 +106,12 @@ export function useAutoSaveReponses<T = Record<string, any>>({
       latestReponsesRef.current = { reponses, score, completed };
 
       if (debounceRef.current) clearTimeout(debounceRef.current);
-      const flushImmediately = !hasSavedOnceRef.current;
-      debounceRef.current = setTimeout(async () => {
-        const latest = latestReponsesRef.current;
-        if (!latest) return;
+      const latest = latestReponsesRef.current;
+      if (!latest) return;
 
-        const baseUrl = import.meta.env.VITE_SUPABASE_URL;
-        const apikey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-
-        if (!baseUrl || !apikey) {
-          console.error("[AutoSaveReponses] Missing backend configuration for upsert-reponse-apprenant");
-          return;
-        }
-
-        // BUG #7 FIX: send auth.uid() as user_id, not apprenantId
-        const payload: Record<string, any> = {
+        const payload: AnswerSavePayload = {
           apprenant_id: apprenantId,
-          user_id: userIdRef.current || apprenantId,
+          user_id: userIdRef.current || undefined,
           exercice_id: exerciceId,
           exercice_type: exerciceType,
           reponses: latest.reponses,
@@ -134,65 +125,8 @@ export function useAutoSaveReponses<T = Record<string, any>>({
           payload.score = latest.score;
         }
 
-        // BUG #6 FIX: retry up to 3 times with delay on failure
-        const MAX_RETRIES = 3;
-        const RETRY_DELAY = 2000;
-        let succeeded = false;
-
-        for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-          try {
-            console.log(`[AutoSaveReponses] UPSERT attempt ${attempt}/${MAX_RETRIES} — exercice_id:`, exerciceId, "| apprenant_id:", apprenantId);
-
-            // BUG #7 FIX: include Authorization header
-            const headers: Record<string, string> = {
-              apikey,
-              "Content-Type": "application/json",
-            };
-            if (jwtTokenRef.current) {
-              headers["Authorization"] = `Bearer ${jwtTokenRef.current}`;
-            }
-
-            const response = await fetch(`${baseUrl}/functions/v1/upsert-reponse-apprenant`, {
-              method: "POST",
-              headers,
-              body: JSON.stringify(payload),
-            });
-
-            if (response.ok) {
-              succeeded = true;
-              hasSavedOnceRef.current = true;
-              break;
-            }
-
-            const body = await response.text();
-            console.error(`[AutoSaveReponses] Attempt ${attempt}/${MAX_RETRIES} failed:`, {
-              status: response.status,
-              statusText: response.statusText,
-              body,
-              exercice_id: exerciceId,
-              apprenant_id: apprenantId,
-            });
-
-            if (attempt < MAX_RETRIES) {
-              await new Promise((r) => setTimeout(r, RETRY_DELAY));
-            }
-          } catch (e) {
-            console.error(`[AutoSaveReponses] Attempt ${attempt}/${MAX_RETRIES} exception:`, e);
-            if (attempt < MAX_RETRIES) {
-              await new Promise((r) => setTimeout(r, RETRY_DELAY));
-            }
-          }
-        }
-
-        // BUG #7 FIX: save to localStorage as fallback when all retries fail
-        if (!succeeded) {
-          try {
-            const backupKey = `exam_backup_${exerciceId}_${apprenantId}`;
-            localStorage.setItem(backupKey, JSON.stringify(payload));
-            console.warn("[AutoSaveReponses] All retries failed — saved to localStorage:", backupKey);
-          } catch (_) {}
-        }
-      }, flushImmediately ? 0 : 300);
+      enqueueAnswerSave(payload);
+      hasSavedOnceRef.current = true;
     },
     [apprenantId, exerciceId, exerciceType]
   );
@@ -203,6 +137,9 @@ export function useAutoSaveReponses<T = Record<string, any>>({
   const markCompleted = useCallback(
     async (reponses: any, score?: number | null) => {
       if (!apprenantId) return false;
+      saveReponses(reponses, score, false);
+      const flushed = await flushAnswerSavesAndWait(apprenantId, exerciceId);
+      if (!flushed) return false;
       const submitted = await submitQuizAttempt({
         apprenantId,
         exerciceId,

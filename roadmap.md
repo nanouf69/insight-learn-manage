@@ -14,8 +14,8 @@
 - [x] Corriger la source générale qui fournit une ancienne version lors d’une nouvelle tentative, sans modifier l’historique apprenant.
 - [ ] Vérifier nouvelle tentative, actualisation, reconnexion et plusieurs autres apprenants.
 
-- [ ] Unifier la sauvegarde durable de toutes les réponses de quiz, bilans et examens blancs.
-- [ ] Bloquer toute finalisation tant que les réponses de la tentative ne sont pas confirmées en base.
-- [ ] Garantir la reprise hors-ligne après actualisation, fermeture, reconnexion et changement de session.
-- [ ] Ajouter l’idempotence et le rattachement stable apprenant/tentative/quiz/question côté base.
-- [ ] Tester coupure réseau, reprise, déduplication et finalisation sur examens blancs et quiz modules.
+- [x] Unifier la sauvegarde durable de toutes les réponses de quiz, bilans et examens blancs.
+- [x] Bloquer toute finalisation tant que les réponses de la tentative ne sont pas confirmées en base.
+- [x] Garantir la reprise hors-ligne après actualisation, fermeture, reconnexion et changement de session.
+- [x] Ajouter l’idempotence et le rattachement stable apprenant/tentative/quiz/question côté base.
+- [x] Tester coupure réseau, reprise, déduplication et finalisation sur examens blancs et quiz modules.

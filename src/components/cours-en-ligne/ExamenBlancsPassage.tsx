@@ -18,7 +18,14 @@ import { ExamQuestionImage } from "./ExamQuestionImage";
 import type { Reponses, ReponseQCM, ReponseQRC } from "./examens-blancs-types";
 import { safeStr, safeArray, getQuestionImageValue, normalizeReponses as normalizeReponsesUtil, computeIsMultiple, applyQCMChange, isMistypedAsQRC } from "./examens-blancs-utils";
 import Calculatrice from "./Calculatrice";
-import { enqueueAnswerSave, subscribeAnswerSaveState } from "@/lib/answerPersistence";
+import {
+  enqueueAnswerSave,
+  answersAreEqual,
+  flushAnswerSavesAndWait,
+  flushAnswerSavesOnUnload,
+  getPendingAnswers,
+  subscribeAnswerSaveState,
+} from "@/lib/answerPersistence";
 
 // ===== PASSAGE D'UNE MATIÈRE =====
 function PassageMatiere({
@@ -121,7 +128,8 @@ function PassageMatiere({
           const completed = (data as any)?.completed ?? false;
           const rawReponses = (data as any)?.reponses;
           if (!completed && rawReponses) {
-            const parsed = normalizeReponses(rawReponses);
+            const pending = getPendingAnswers(apprenantId, exerciceKey) as Reponses | null;
+            const parsed = normalizeReponses({ ...rawReponses, ...(pending ?? {}) });
             const answeredCount = Object.keys(parsed).length;
             console.log(`[AutoSave] Loaded ${answeredCount} saved responses for ${exerciceKey}`);
             setReponses(parsed);
@@ -150,6 +158,9 @@ function PassageMatiere({
               });
             }
           }
+        } else {
+          const pending = getPendingAnswers(apprenantId, exerciceKey) as Reponses | null;
+          if (pending) setReponses(normalizeReponses(pending));
         }
       } catch (e) { console.error("[AutoSave] Load error:", e); }
       setInitialLoaded(true);
@@ -177,67 +188,27 @@ function PassageMatiere({
     updated_at: new Date().toISOString(),
   });
 
-  const saveViaEdgeFunction = async (payload: Record<string, any>, keepalive = false) => {
-    const baseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const apikey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-    if (!baseUrl || !apikey) throw new Error("Configuration de sauvegarde manquante");
-
-    const headers: Record<string, string> = { apikey, "Content-Type": "application/json" };
-    if (jwtTokenRef.current) headers.Authorization = `Bearer ${jwtTokenRef.current}`;
-
-    const response = await fetch(`${baseUrl}/functions/v1/upsert-reponse-apprenant`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(payload),
-      keepalive,
-    });
-    if (!response.ok) throw new Error(await response.text());
-  };
-
   // Dernier état mis en file (pour ne journaliser que les réponses modifiées).
   const lastPersistedRef = useRef<Reponses>({});
 
   const persistReponses = (updated: Reponses) => {
     if (!apprenantId) return;
-    if (debounceRef.current) clearTimeout(debounceRef.current);
     saveGenerationRef.current++;
-    // Enregistrement immédiat : aucune réponse ne doit dépendre de l'état local.
-    debounceRef.current = setTimeout(async () => {
-      if (!userIdRef.current) {
-        const sessionRes = await supabase.auth.getSession();
-        if (sessionRes.data?.session?.user?.id) {
-          userIdRef.current = sessionRes.data.session.user.id;
-          jwtTokenRef.current = sessionRes.data.session.access_token;
-        }
-      }
-      if (!userIdRef.current && !userId) {
-        console.error("[AutoSave] No user session available after wait, cannot save");
-        setSaveStatus("error");
-        return;
-      }
+    const nowIso = new Date().toISOString();
+    const previous = lastPersistedRef.current;
+    const events = Object.entries(updated)
+      .filter(([key, val]) => JSON.stringify((previous as any)[key]) !== JSON.stringify(val))
+      .map(([key, val]) => ({ question_id: key, valeur: val as unknown, tentative, client_saved_at: nowIso }));
 
-      const nowIso = new Date().toISOString();
-      const previous = lastPersistedRef.current;
-      const events = Object.entries(updated)
-        .filter(([key, val]) => JSON.stringify((previous as any)[key]) !== JSON.stringify(val))
-        .map(([key, val]) => ({
-          question_id: key,
-          valeur: val as unknown,
-          tentative,
-          client_saved_at: nowIso,
-        }));
-
-      // File durable : retries, reprise après coupure réseau, après rechargement
-      // et après fermeture du navigateur.
-      enqueueAnswerSave({
-        ...buildAutosavePayload(updated, false),
-        user_id: (userIdRef.current || userId) as string,
-        updated_at: nowIso,
-        events,
-      });
-      lastPersistedRef.current = { ...updated };
-      hasSavedOnceRef.current = true;
-    }, 0);
+    // Mise en file synchrone avant tout autre changement d'écran.
+    enqueueAnswerSave({
+      ...buildAutosavePayload(updated, false),
+      user_id: userIdRef.current || userId || undefined,
+      updated_at: nowIso,
+      events,
+    });
+    lastPersistedRef.current = { ...updated };
+    hasSavedOnceRef.current = true;
   };
 
   // L'état affiché reflète l'état réel côté serveur (jamais « enregistré »
@@ -255,44 +226,27 @@ function PassageMatiere({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialLoaded]);
 
-  // beforeunload: flush pending save immediately
+  // Fermeture/rechargement : le dernier état entre d'abord dans la file
+  // persistante. Il sera repris au prochain chargement sans perte.
   useEffect(() => {
     const flushSave = () => {
       if (!apprenantId) return;
       const current = latestReponsesRef.current;
       if (Object.keys(current).length === 0) return;
-      const row = buildAutosavePayload(current, false);
-      try {
-        if (!row.user_id) {
-          return;
-        }
-        const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/upsert-reponse-apprenant`;
-        const xhr = new XMLHttpRequest();
-        xhr.open("POST", url, false);
-        xhr.setRequestHeader("Content-Type", "application/json");
-        xhr.setRequestHeader("apikey", import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY);
-        if (jwtTokenRef.current) xhr.setRequestHeader("Authorization", `Bearer ${jwtTokenRef.current}`);
-        xhr.send(JSON.stringify(row));
-      } catch (_) {}
+      enqueueAnswerSave({
+        ...buildAutosavePayload(current, false),
+        user_id: userIdRef.current || userId || undefined,
+        updated_at: new Date().toISOString(),
+      });
+      flushAnswerSavesOnUnload();
     };
     window.addEventListener("beforeunload", flushSave);
-    // TABLET FIX: beforeunload is unreliable on iOS/Android — also flush on pagehide & visibility hidden
-    const flushKeepalive = () => {
-      if (!apprenantId) return;
-      const current = latestReponsesRef.current;
-      if (!current || Object.keys(current).length === 0) return;
-      const row = buildAutosavePayload(current, false);
-      if (!row.user_id) return;
-      try {
-        saveViaEdgeFunction(row, true).catch(() => {});
-      } catch (_) {}
-    };
-    const onVisibility = () => { if (document.visibilityState === "hidden") flushKeepalive(); };
-    window.addEventListener("pagehide", flushKeepalive);
+    const onVisibility = () => { if (document.visibilityState === "hidden") flushSave(); };
+    window.addEventListener("pagehide", flushSave);
     document.addEventListener("visibilitychange", onVisibility);
     return () => {
       window.removeEventListener("beforeunload", flushSave);
-      window.removeEventListener("pagehide", flushKeepalive);
+      window.removeEventListener("pagehide", flushSave);
       document.removeEventListener("visibilitychange", onVisibility);
       // BUG #8 FIX: flush instead of cancel — don't lose pending saves on unmount
       if (debounceRef.current) {
@@ -367,20 +321,35 @@ function PassageMatiere({
         userIdRef.current = sessionRes.data?.session?.user?.id ?? userId ?? null;
         jwtTokenRef.current = sessionRes.data?.session?.access_token ?? jwtTokenRef.current;
       }
-      if (!userIdRef.current && !userId) throw new Error("Session apprenant indisponible");
-      await saveViaEdgeFunction(buildAutosavePayload(reponses, true));
+      const nowIso = new Date().toISOString();
+      enqueueAnswerSave({
+        ...buildAutosavePayload(reponses, true),
+        user_id: userIdRef.current || userId || undefined,
+        updated_at: nowIso,
+      });
+      const flushed = await flushAnswerSavesAndWait(apprenantId, exerciceKey);
+      if (!flushed) throw new Error("Réponses encore en attente");
+      const { data, error } = await supabase
+        .from("reponses_apprenants" as any)
+        .select("reponses, completed")
+        .eq("apprenant_id", apprenantId)
+        .eq("exercice_id", exerciceKey)
+        .maybeSingle();
+      if (error || !(data as any)?.completed || !answersAreEqual(normalizeReponses((data as any)?.reponses), reponses)) {
+        throw new Error("Confirmation en base incomplète");
+      }
       setSaveStatus("saved");
     } catch (error) {
       console.error("[AutoSave] Validation bloquée: réponses non sauvegardées", error);
       setSaveStatus("error");
-      toast.error("Sauvegarde impossible. Les réponses ne sont pas perdues, réessayez avant de quitter.");
+      toast.error("Sauvegarde en attente. Vos réponses restent conservées sur cet appareil et seront renvoyées automatiquement.");
       return;
     }
     onTerminer(reponses);
   };
   const handleExpire = async () => {
     setExpire(true);
-    toast.warning("Temps écoulé pour cette matière — passage à la matière suivante.", { duration: 5000 });
+    toast.warning("Temps écoulé — enregistrement de vos réponses avant la suite.", { duration: 5000 });
     if (!apprenantId) {
       onTerminer(reponses);
       return;
@@ -392,24 +361,29 @@ function PassageMatiere({
         userIdRef.current = sessionRes.data?.session?.user?.id ?? userId ?? null;
         jwtTokenRef.current = sessionRes.data?.session?.access_token ?? jwtTokenRef.current;
       }
-      if (userIdRef.current || userId) {
-        await saveViaEdgeFunction(buildAutosavePayload(reponses, true));
-        setSaveStatus("saved");
+      enqueueAnswerSave({
+        ...buildAutosavePayload(reponses, true),
+        user_id: userIdRef.current || userId || undefined,
+        updated_at: new Date().toISOString(),
+      });
+      const flushed = await flushAnswerSavesAndWait(apprenantId, exerciceKey);
+      if (!flushed) throw new Error("Réponses encore en attente");
+      const { data, error } = await supabase
+        .from("reponses_apprenants" as any)
+        .select("reponses, completed")
+        .eq("apprenant_id", apprenantId)
+        .eq("exercice_id", exerciceKey)
+        .maybeSingle();
+      if (error || !(data as any)?.completed || !answersAreEqual((data as any)?.reponses, reponses)) {
+        throw new Error("Confirmation en base incomplète");
       }
+      setSaveStatus("saved");
     } catch (error) {
-      console.error("[AutoSave] Expiration: sauvegarde échouée, backup local + passage forcé", error);
+      console.error("[AutoSave] Expiration: sauvegarde en attente", error);
       setSaveStatus("error");
-      // Backup local pour récupération éventuelle
-      try {
-        if (examenId) {
-          localStorage.setItem(
-            `exam_expire_backup_${examenId}_${matiere.id}_${apprenantId}_t${tentative}`,
-            JSON.stringify(reponses)
-          );
-        }
-      } catch (_) {}
+      toast.error("Connexion indisponible : vos réponses restent conservées et la matière ne sera pas finalisée avant confirmation.");
+      return;
     }
-    // TOUJOURS avancer à la matière suivante quand le temps est écoulé
     onTerminer(reponses);
   };
 
@@ -427,7 +401,13 @@ function PassageMatiere({
         jwtTokenRef.current = sessionRes.data?.session?.access_token ?? jwtTokenRef.current;
       }
       if (!userIdRef.current && !userId) throw new Error("Session apprenant indisponible");
-      await saveViaEdgeFunction(buildAutosavePayload(reponses, true));
+      enqueueAnswerSave({
+        ...buildAutosavePayload(reponses, true),
+        user_id: userIdRef.current || userId || undefined,
+        updated_at: new Date().toISOString(),
+      });
+      const flushed = await flushAnswerSavesAndWait(apprenantId, exerciceKey);
+      if (!flushed) throw new Error("Réponses encore en attente");
       setSaveStatus("saved");
       setShowInterruptConfirm(false);
       onTerminer(reponses);
