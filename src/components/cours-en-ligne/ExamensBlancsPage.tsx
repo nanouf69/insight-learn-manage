@@ -140,7 +140,8 @@ export default function ExamensBlancsPage({
           if (!prev) return prev;
           const currentPhase = phaseRef.current;
           if (currentPhase === "examen" || currentPhase === "transition" || currentPhase === "resultats") return prev;
-          return saved.find((exam) => exam.id === prev.id) ?? prev;
+          const next = saved.find((exam) => exam.id === prev.id) ?? prev;
+          return applyMatiereFilter(next, matiereFilterRef.current);
         });
         return saved;
       } finally {
