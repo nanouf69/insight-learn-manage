@@ -99,9 +99,29 @@ export default function ExamensBlancsPage({
 
   const savedSession = restoreSession();
 
+  // Mode « matières au choix » : mémorisation du sous-ensemble sélectionné
+  const MATIERE_FILTER_KEY = `${EXAM_SESSION_KEY}_matieres`;
+  const readSavedMatiereFilter = (): string[] | null => {
+    try {
+      const raw = sessionStorage.getItem(MATIERE_FILTER_KEY);
+      const parsed = raw ? JSON.parse(raw) : null;
+      return Array.isArray(parsed) && parsed.length ? parsed.map(String) : null;
+    } catch { return null; }
+  };
+  const matiereFilterRef = useRef<string[] | null>(readSavedMatiereFilter());
+  const setMatiereFilter = (ids: string[] | null) => {
+    matiereFilterRef.current = ids && ids.length ? ids : null;
+    try {
+      if (matiereFilterRef.current) sessionStorage.setItem(MATIERE_FILTER_KEY, JSON.stringify(matiereFilterRef.current));
+      else sessionStorage.removeItem(MATIERE_FILTER_KEY);
+    } catch {}
+  };
+  const [examenChoixMatieres, setExamenChoixMatieres] = useState<ExamenBlanc | null>(null);
+  const [matieresSelectionnees, setMatieresSelectionnees] = useState<string[]>([]);
+
   // BUG #2 FIX: never trust sessionStorage for initial phase — always start with "selection"
   // and let the async DB verification (useEffect below) set the correct phase after confirmation
-  const [phase, setPhase] = useState<"selection" | "intro" | "examen" | "transition" | "resultats" | "edition" | "revision">("selection");
+  const [phase, setPhase] = useState<"selection" | "intro" | "examen" | "transition" | "resultats" | "edition" | "revision" | "choix-matieres">("selection");
   const [examenChoisi, setExamenChoisi] = useState<ExamenBlanc | null>(null);
   // BUG #2 FIX: always start at 0, DB verification will set the correct index
   const [matiereIndex, setMatiereIndex] = useState(0);
