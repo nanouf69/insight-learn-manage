@@ -307,11 +307,14 @@ function CourseFileViewer({
   const pdfDisplayUrl = useDisplayableCourseUrl(pdfFallbackUrl);
   const lowerName = fichier.nom.toLowerCase();
   const lowerUrl = fichier.url.toLowerCase();
-  const isPptx = lowerName.endsWith(".pptx") || lowerName.endsWith(".ppt") || lowerUrl.endsWith(".pptx") || lowerUrl.endsWith(".ppt");
-  const isPdf = lowerName.endsWith(".pdf") || lowerUrl.endsWith(".pdf");
-  const isDocx = lowerName.endsWith(".docx") || lowerName.endsWith(".doc") || lowerUrl.endsWith(".docx") || lowerUrl.endsWith(".doc");
+  const hasExtension = (extension: string) => new RegExp(`\\.${extension}(?:[?#].*)?$`, "i").test(lowerUrl);
+  const isPptx = lowerName.endsWith(".pptx") || lowerName.endsWith(".ppt") || hasExtension("pptx?");
+  const isPdf = lowerName.endsWith(".pdf") || hasExtension("pdf");
+  const isDocx = lowerName.endsWith(".docx") || lowerName.endsWith(".doc") || hasExtension("docx?");
   const isImage = /\.(png|jpe?g|webp|gif|bmp|svg)(?:[?#].*)?$/i.test(fichier.nom) || /\.(png|jpe?g|webp|gif|bmp|svg)(?:[?#].*)?$/i.test(fichier.url);
-  const shouldShowViewers = Boolean((isPptx || isDocx) && !hasInteractiveSlides);
+  // Un support PowerPoint/Word doit toujours rester visible, même lorsqu'une
+  // version interactive du cours existe aussi.
+  const shouldShowViewers = Boolean(isPptx || isDocx);
 
   if (!displayUrl) {
     return <div className="h-20 rounded-lg border bg-muted animate-pulse" />;
@@ -7343,7 +7346,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               return (
                 <>
                   {cours.fichiers && cours.fichiers.length > 0 && (() => {
-                    const pdfFile = cours.fichiers!.find(f => f.nom.endsWith(".pdf") || f.url.endsWith(".pdf"));
+                    const pdfFile = cours.fichiers!.find(
+                      (f) => /\.pdf(?:[?#].*)?$/i.test(f.nom) || /\.pdf(?:[?#].*)?$/i.test(f.url),
+                    );
                     const pdfLocalUrl = pdfFile?.url;
 
                     return (
