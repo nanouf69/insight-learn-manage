@@ -75,6 +75,7 @@ export function DiagnosticAccesGlobal({ onOpenApprenant }: Props) {
   const [search, setSearch] = useState("");
   const [filterStatut, setFilterStatut] = useState<string>("all");
   const [cleaningId, setCleaningId] = useState<string | null>(null);
+  const [repairingId, setRepairingId] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
