@@ -392,6 +392,31 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
     >
       {/* Toolbar */}
       <div className="flex items-center gap-1 p-2 bg-muted/50 border-b flex-wrap">
+        <div className="flex items-center rounded-md border bg-background p-0.5">
+          <Button
+            type="button"
+            variant={renderMode === "react-pdf" ? "secondary" : "ghost"}
+            size="sm"
+            className="h-8"
+            onClick={() => {
+              setLoadError(false);
+              setRenderMode("react-pdf");
+              setRetryCount((r) => r + 1);
+            }}
+          >
+            Visionneuse HD
+          </Button>
+          <Button
+            type="button"
+            variant={renderMode === "native" ? "secondary" : "ghost"}
+            size="sm"
+            className="h-8"
+            onClick={() => setRenderMode("native")}
+          >
+            Visionneuse navigateur
+          </Button>
+        </div>
+        <div className="w-px h-5 bg-border mx-1" />
         {renderMode === "react-pdf" && (
           <>
             <Button variant="ghost" size="sm" onClick={prev} disabled={page <= 1}>
@@ -600,17 +625,9 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
             </Button>
           )}
           <div className="flex-1" />
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              setLoadError(false);
-              setRenderMode("react-pdf");
-              setRetryCount((r) => r + 1);
-            }}
-          >
-            Revenir au mode HD
-          </Button>
+          <span className="text-xs text-muted-foreground">
+            Visionneuse navigateur active
+          </span>
         </div>
       )}
 
