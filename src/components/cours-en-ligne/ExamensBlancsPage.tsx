@@ -47,6 +47,23 @@ function findStaticFallbackMatiere(examId: string, matiereId: string, matiereNom
   );
 }
 
+/**
+ * MODE « MATIÈRES AU CHOIX » (nouveau mode, additionnel).
+ * Restreint la liste des matières d'un examen à celles sélectionnées par
+ * l'apprenant, sans modifier les questions, réponses, barèmes ni le mode
+ * d'évaluation. Le mode complet (toutes les matières, dans l'ordre) reste
+ * inchangé lorsqu'aucun filtre n'est fourni.
+ */
+function applyMatiereFilter(examen: ExamenBlanc | null, matiereIds?: string[] | null): ExamenBlanc | null {
+  if (!examen) return examen;
+  if (!matiereIds || matiereIds.length === 0) return examen;
+  const wanted = new Set(matiereIds);
+  const matieres = (examen.matieres || []).filter((m) => m && wanted.has(m.id));
+  if (matieres.length === 0) return examen;
+  return { ...examen, matieres };
+}
+
+
 export default function ExamensBlancsPage({
   defaultBilanId,
   onBilanConsumed,
@@ -82,9 +99,29 @@ export default function ExamensBlancsPage({
 
   const savedSession = restoreSession();
 
+  // Mode « matières au choix » : mémorisation du sous-ensemble sélectionné
+  const MATIERE_FILTER_KEY = `${EXAM_SESSION_KEY}_matieres`;
+  const readSavedMatiereFilter = (): string[] | null => {
+    try {
+      const raw = sessionStorage.getItem(MATIERE_FILTER_KEY);
+      const parsed = raw ? JSON.parse(raw) : null;
+      return Array.isArray(parsed) && parsed.length ? parsed.map(String) : null;
+    } catch { return null; }
+  };
+  const matiereFilterRef = useRef<string[] | null>(readSavedMatiereFilter());
+  const setMatiereFilter = (ids: string[] | null) => {
+    matiereFilterRef.current = ids && ids.length ? ids : null;
+    try {
+      if (matiereFilterRef.current) sessionStorage.setItem(MATIERE_FILTER_KEY, JSON.stringify(matiereFilterRef.current));
+      else sessionStorage.removeItem(MATIERE_FILTER_KEY);
+    } catch {}
+  };
+  const [examenChoixMatieres, setExamenChoixMatieres] = useState<ExamenBlanc | null>(null);
+  const [matieresSelectionnees, setMatieresSelectionnees] = useState<string[]>([]);
+
   // BUG #2 FIX: never trust sessionStorage for initial phase — always start with "selection"
   // and let the async DB verification (useEffect below) set the correct phase after confirmation
-  const [phase, setPhase] = useState<"selection" | "intro" | "examen" | "transition" | "resultats" | "edition" | "revision">("selection");
+  const [phase, setPhase] = useState<"selection" | "intro" | "examen" | "transition" | "resultats" | "edition" | "revision" | "choix-matieres">("selection");
   const [examenChoisi, setExamenChoisi] = useState<ExamenBlanc | null>(null);
   // BUG #2 FIX: always start at 0, DB verification will set the correct index
   const [matiereIndex, setMatiereIndex] = useState(0);
@@ -140,7 +177,8 @@ export default function ExamensBlancsPage({
           if (!prev) return prev;
           const currentPhase = phaseRef.current;
           if (currentPhase === "examen" || currentPhase === "transition" || currentPhase === "resultats") return prev;
-          return saved.find((exam) => exam.id === prev.id) ?? prev;
+          const next = saved.find((exam) => exam.id === prev.id) ?? prev;
+          return applyMatiereFilter(next, matiereFilterRef.current);
         });
         return saved;
       } finally {
@@ -191,7 +229,7 @@ export default function ExamensBlancsPage({
         return;
       }
 
-      const found = liveExamens.find(e => e.id === savedSession.examenId);
+      const found = applyMatiereFilter(liveExamens.find(e => e.id === savedSession.examenId) ?? null, matiereFilterRef.current);
       if (!found) {
         if (!cancelled) setSessionRestored(true);
         return;
@@ -398,8 +436,10 @@ export default function ExamensBlancsPage({
     if (defaultBilanId) { setBilanPrefiltre(defaultBilanId); onBilanConsumed?.(); }
   }, [defaultBilanId]);
 
-  const handleStart = async (examen: ExamenBlanc, forceRetake = false) => {
-    const latestExamen = liveExamens.find((live) => live.id === examen.id) ?? examen;
+  const handleStart = async (examen: ExamenBlanc, forceRetake = false, matiereIds?: string[] | null) => {
+    // matiereIds === undefined → on conserve le filtre courant ; null → mode complet
+    if (matiereIds !== undefined) setMatiereFilter(matiereIds);
+    const latestExamen = applyMatiereFilter(liveExamens.find((live) => live.id === examen.id) ?? examen, matiereFilterRef.current)!;
     const quizType = latestExamen.id.startsWith("bilan-") ? "bilan" : "examen_blanc";
 
     // Compute current tentative: max existing + 1 on retake, else max existing (or 1)
@@ -1106,7 +1146,13 @@ export default function ExamensBlancsPage({
           </div>
         )}
         <EcranSelection
-          onStart={handleStart}
+          onStart={(examen, forceRetake) => handleStart(examen, forceRetake, null)}
+          onStartPartial={(examen) => {
+            const source = liveExamens.find((live) => live.id === examen.id) ?? examen;
+            setExamenChoixMatieres(source);
+            setMatieresSelectionnees([]);
+            setPhase("choix-matieres");
+          }}
           onEdit={() => { if (!isAdmin) { toast.error("Accès réservé à l'administration."); return; } setPhase("edition"); }}
           onViewResults={handleViewResults}
           defaultBilanId={bilanPrefiltre}
@@ -1121,6 +1167,80 @@ export default function ExamensBlancsPage({
       </>
     );
   }
+
+  // ===== NOUVEAU MODE : choix des matières =====
+  if (phase === "choix-matieres" && examenChoixMatieres) {
+    const matieres = (examenChoixMatieres.matieres || []).filter(Boolean);
+    const toggle = (id: string) =>
+      setMatieresSelectionnees((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+    const dureeSelection = matieres
+      .filter((m) => matieresSelectionnees.includes(m.id))
+      .reduce((acc, m) => acc + (m.duree || 0), 0);
+
+    return (
+      <div className="max-w-2xl mx-auto space-y-6">
+        <Button variant="ghost" size="sm" onClick={() => { setExamenChoixMatieres(null); setPhase("selection"); }} className="gap-2">
+          <ArrowLeft className="w-4 h-4" /> Retour
+        </Button>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Choisir les matières à passer</CardTitle>
+            <p className="text-sm text-muted-foreground">{examenChoixMatieres.titre}</p>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Sélectionnez uniquement les matières que vous souhaitez passer. Les questions, les réponses
+              et la notation sont identiques au mode complet.
+            </p>
+            <div className="space-y-2">
+              {matieres.map((m) => {
+                const checked = matieresSelectionnees.includes(m.id);
+                return (
+                  <label
+                    key={m.id}
+                    className={`flex items-center gap-3 w-full p-3 rounded-lg border cursor-pointer transition-colors ${checked ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50"}`}
+                  >
+                    <input
+                      type="checkbox"
+                      className="w-4 h-4 accent-primary"
+                      checked={checked}
+                      onChange={() => toggle(m.id)}
+                    />
+                    <span className="flex-1 text-sm font-medium">{m.nom}</span>
+                    <Badge variant="secondary" className="shrink-0">{m.duree} min</Badge>
+                  </label>
+                );
+              })}
+            </div>
+            <div className="flex items-center justify-between text-sm text-muted-foreground pt-2">
+              <span>{matieresSelectionnees.length} matière{matieresSelectionnees.length > 1 ? "s" : ""} sélectionnée{matieresSelectionnees.length > 1 ? "s" : ""}</span>
+              <span className="flex items-center gap-1"><Timer className="w-4 h-4" /> {dureeSelection} min</span>
+            </div>
+            <div className="flex flex-col gap-2 pt-2">
+              <Button
+                className="w-full gap-2"
+                disabled={matieresSelectionnees.length === 0}
+                onClick={() => {
+                  const ordered = matieres.filter((m) => matieresSelectionnees.includes(m.id)).map((m) => m.id);
+                  void handleStart(examenChoixMatieres, false, ordered);
+                }}
+              >
+                Commencer les matières choisies <ChevronRight className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => setMatieresSelectionnees(matieres.map((m) => m.id))}
+              >
+                Tout sélectionner
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
 
   if (phase === "intro" && examenChoisi) {
     const dureeTotal = examenChoisi.matieres.reduce((acc, m) => acc + m.duree, 0);
