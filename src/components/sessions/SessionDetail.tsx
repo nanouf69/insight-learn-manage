@@ -4969,6 +4969,17 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                 Renvoyer identifiants (tous)
               </Button>
 
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-2 text-blue-700 border-blue-300 hover:bg-blue-50"
+                onClick={() => setTeamsLinkOpen(true)}
+                title="Envoyer le lien Microsoft Teams de la session aux stagiaires"
+              >
+                <Video className="w-4 h-4" />
+                Envoyer le lien de connexion
+              </Button>
+
               <Button 
                 size="sm" 
                 variant={showAddApprenant ? "secondary" : "outline"}
