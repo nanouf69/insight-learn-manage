@@ -14,26 +14,7 @@ import { ChampDocument } from "@/lib/documentsASigner";
 import { genererPdfRempli, telechargerPdf } from "@/lib/documentSigneDownload";
 
 
-if (typeof (Promise as any).withResolvers === "undefined") {
-  (Promise as any).withResolvers = function <T>() {
-    let resolve!: (value: T | PromiseLike<T>) => void;
-    let reject!: (reason?: any) => void;
-    const promise = new Promise<T>((res, rej) => {
-      resolve = res;
-      reject = rej;
-    });
-    return { promise, resolve, reject };
-  };
-}
-
-try {
-  pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-    "pdfjs-dist/build/pdf.worker.min.mjs",
-    import.meta.url,
-  ).toString();
-} catch {
-  pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
-}
+ensurePdfWorker();
 
 const FN_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/document-signature-public`;
 const API_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
