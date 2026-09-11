@@ -1146,7 +1146,13 @@ export default function ExamensBlancsPage({
           </div>
         )}
         <EcranSelection
-          onStart={handleStart}
+          onStart={(examen, forceRetake) => handleStart(examen, forceRetake, null)}
+          onStartPartial={(examen) => {
+            const source = liveExamens.find((live) => live.id === examen.id) ?? examen;
+            setExamenChoixMatieres(source);
+            setMatieresSelectionnees([]);
+            setPhase("choix-matieres");
+          }}
           onEdit={() => { if (!isAdmin) { toast.error("Accès réservé à l'administration."); return; } setPhase("edition"); }}
           onViewResults={handleViewResults}
           defaultBilanId={bilanPrefiltre}
@@ -1161,6 +1167,80 @@ export default function ExamensBlancsPage({
       </>
     );
   }
+
+  // ===== NOUVEAU MODE : choix des matières =====
+  if (phase === "choix-matieres" && examenChoixMatieres) {
+    const matieres = (examenChoixMatieres.matieres || []).filter(Boolean);
+    const toggle = (id: string) =>
+      setMatieresSelectionnees((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+    const dureeSelection = matieres
+      .filter((m) => matieresSelectionnees.includes(m.id))
+      .reduce((acc, m) => acc + (m.duree || 0), 0);
+
+    return (
+      <div className="max-w-2xl mx-auto space-y-6">
+        <Button variant="ghost" size="sm" onClick={() => { setExamenChoixMatieres(null); setPhase("selection"); }} className="gap-2">
+          <ArrowLeft className="w-4 h-4" /> Retour
+        </Button>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Choisir les matières à passer</CardTitle>
+            <p className="text-sm text-muted-foreground">{examenChoixMatieres.titre}</p>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Sélectionnez uniquement les matières que vous souhaitez passer. Les questions, les réponses
+              et la notation sont identiques au mode complet.
+            </p>
+            <div className="space-y-2">
+              {matieres.map((m) => {
+                const checked = matieresSelectionnees.includes(m.id);
+                return (
+                  <label
+                    key={m.id}
+                    className={`flex items-center gap-3 w-full p-3 rounded-lg border cursor-pointer transition-colors ${checked ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50"}`}
+                  >
+                    <input
+                      type="checkbox"
+                      className="w-4 h-4 accent-primary"
+                      checked={checked}
+                      onChange={() => toggle(m.id)}
+                    />
+                    <span className="flex-1 text-sm font-medium">{m.nom}</span>
+                    <Badge variant="secondary" className="shrink-0">{m.duree} min</Badge>
+                  </label>
+                );
+              })}
+            </div>
+            <div className="flex items-center justify-between text-sm text-muted-foreground pt-2">
+              <span>{matieresSelectionnees.length} matière{matieresSelectionnees.length > 1 ? "s" : ""} sélectionnée{matieresSelectionnees.length > 1 ? "s" : ""}</span>
+              <span className="flex items-center gap-1"><Timer className="w-4 h-4" /> {dureeSelection} min</span>
+            </div>
+            <div className="flex flex-col gap-2 pt-2">
+              <Button
+                className="w-full gap-2"
+                disabled={matieresSelectionnees.length === 0}
+                onClick={() => {
+                  const ordered = matieres.filter((m) => matieresSelectionnees.includes(m.id)).map((m) => m.id);
+                  void handleStart(examenChoixMatieres, false, ordered);
+                }}
+              >
+                Commencer les matières choisies <ChevronRight className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => setMatieresSelectionnees(matieres.map((m) => m.id))}
+              >
+                Tout sélectionner
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
 
   if (phase === "intro" && examenChoisi) {
     const dureeTotal = examenChoisi.matieres.reduce((acc, m) => acc + m.duree, 0);
