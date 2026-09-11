@@ -229,7 +229,7 @@ export default function ExamensBlancsPage({
         return;
       }
 
-      const found = liveExamens.find(e => e.id === savedSession.examenId);
+      const found = applyMatiereFilter(liveExamens.find(e => e.id === savedSession.examenId) ?? null, matiereFilterRef.current);
       if (!found) {
         if (!cancelled) setSessionRestored(true);
         return;
