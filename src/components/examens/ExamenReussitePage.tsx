@@ -983,6 +983,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
   const [filterStatut, setFilterStatut] = useState<string>("all");
   const [filterIdentifiants, setFilterIdentifiants] = useState<string>("all");
   const [filterDateExamen, setFilterDateExamen] = useState<string>("all");
+  const [filterModalite, setFilterModalite] = useState<string>("all");
   const [fullscreen, setFullscreen] = useState(false);
   const [pratiqueFullscreen, setPratiqueFullscreen] = useState(false);
   const [activeFs, setActiveFs] = useState<string | null>(null);
@@ -2097,12 +2098,16 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
       if (filterIdentifiants === 'sans_identifiants' && hasT3p) return false;
     }
     if (filterDateExamen !== 'all' && (a.date_examen_theorique || '') !== filterDateExamen) return false;
+    if (filterModalite !== 'all') {
+      const m = (a as any).modalite_formation ?? null;
+      if (filterModalite === 'none' ? m !== null : m !== filterModalite) return false;
+    }
     return true;
   });
 
   const datesExamenDisponibles = [...new Set((apprenants || []).map(a => a.date_examen_theorique).filter(Boolean))] as string[];
-  const hasActiveFilters = filterStatut !== 'all' || filterIdentifiants !== 'all' || filterDateExamen !== 'all' || search.trim() !== '';
-  const resetFilters = () => { setSearch(""); setFilterStatut("all"); setFilterIdentifiants("all"); setFilterDateExamen("all"); };
+  const hasActiveFilters = filterStatut !== 'all' || filterIdentifiants !== 'all' || filterDateExamen !== 'all' || filterModalite !== 'all' || search.trim() !== '';
+  const resetFilters = () => { setSearch(""); setFilterStatut("all"); setFilterIdentifiants("all"); setFilterDateExamen("all"); setFilterModalite("all"); };
 
   const reussis = apprenants?.filter(a => (a as any).resultat_examen === 'oui') || [];
   const nonReussis = apprenants?.filter(a => (a as any).resultat_examen === 'non') || [];
