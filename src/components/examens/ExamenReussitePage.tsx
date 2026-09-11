@@ -2042,9 +2042,32 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
     },
   });
 
-  const filtered = apprenants?.filter(a =>
-    `${a.nom} ${a.prenom}`.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = apprenants?.filter(a => {
+    const term = search.toLowerCase().trim();
+    if (term) {
+      const hay = `${a.nom || ''} ${a.prenom || ''} ${a.email || ''} ${a.telephone || ''}`.toLowerCase();
+      if (!hay.includes(term)) return false;
+    }
+    if (filterStatut !== 'all') {
+      const st = statutsSession?.[a.id]?.statut ?? (a as any).statut_suivi ?? null;
+      if (filterStatut === 'none' ? st !== null : st !== filterStatut) return false;
+    }
+    if (filterIdentifiants !== 'all') {
+      const hasMdpCma = !!(a as any).mot_de_passe_cma;
+      const t3p = nouveauxIdentifiantsT3P[a.id];
+      const hasT3p = !!(t3p && (t3p.nouvel_email || t3p.nouveau_mot_de_passe));
+      if (filterIdentifiants === 'avec_mdp' && !hasMdpCma) return false;
+      if (filterIdentifiants === 'sans_mdp' && hasMdpCma) return false;
+      if (filterIdentifiants === 'avec_identifiants' && !hasT3p) return false;
+      if (filterIdentifiants === 'sans_identifiants' && hasT3p) return false;
+    }
+    if (filterDateExamen !== 'all' && (a.date_examen_theorique || '') !== filterDateExamen) return false;
+    return true;
+  });
+
+  const datesExamenDisponibles = [...new Set((apprenants || []).map(a => a.date_examen_theorique).filter(Boolean))] as string[];
+  const hasActiveFilters = filterStatut !== 'all' || filterIdentifiants !== 'all' || filterDateExamen !== 'all' || search.trim() !== '';
+  const resetFilters = () => { setSearch(""); setFilterStatut("all"); setFilterIdentifiants("all"); setFilterDateExamen("all"); };
 
   const reussis = apprenants?.filter(a => (a as any).resultat_examen === 'oui') || [];
   const nonReussis = apprenants?.filter(a => (a as any).resultat_examen === 'non') || [];
