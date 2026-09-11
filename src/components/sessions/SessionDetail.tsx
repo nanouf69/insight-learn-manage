@@ -4420,6 +4420,20 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                           <Button
                             variant="ghost"
                             size="sm"
+                            className="h-8 gap-1.5 text-muted-foreground hover:text-primary"
+                            title="Mail e-learning synchrone (obligation d'assiduité) — aperçu avant envoi"
+                            disabled={sendingEmailForApprenant === apprenant.id}
+                            onClick={() => handlePreviewTemplateEmail('elearning-synchrone-assiduite', apprenant)}
+                          >
+                            <Send className="w-4 h-4" />
+                            <span className="text-xs">💻 Mail e-learning synchrone</span>
+                          </Button>
+
+
+
+                          <Button
+                            variant="ghost"
+                            size="sm"
                             className={`h-8 gap-1.5 ${hasIdentifiants(apprenant.id) ? 'text-green-700 bg-green-100 hover:bg-green-200 hover:text-green-800' : 'text-muted-foreground hover:text-primary'}`}
                             title={hasIdentifiants(apprenant.id) ? `Codes d'accès envoyés le ${format(new Date(getIdentifiantsLastDate(apprenant.id)!), "dd/MM/yyyy 'à' HH:mm", { locale: fr })} — cliquer pour renvoyer` : "Envoyer les identifiants de connexion"}
                             disabled={sendingCredentialsFor === apprenant.id}
