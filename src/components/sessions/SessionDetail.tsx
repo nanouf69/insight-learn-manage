@@ -4499,7 +4499,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                             onSave={(notes) => updateSessionApprenant(sessionApprenant.id, { notes })}
                           />
 
-                          {sessionApprenant.statut_suivi !== 'paye' && (
+                          {sessionApprenant.statut_suivi !== 'paye' && sessionApprenant.statut_suivi !== 'inscription_validee' && (
                             <Button
                               type="button"
                               variant="outline"
