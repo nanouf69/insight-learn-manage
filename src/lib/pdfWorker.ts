@@ -26,4 +26,9 @@ export function ensurePdfWorker() {
   }
 }
 
+/** URL réellement utilisée par pdf.js (utile pour diagnostiquer un aperçu vide). */
+export function getPdfWorkerSrc(): string {
+  return pdfjs.GlobalWorkerOptions.workerSrc;
+}
+
 ensurePdfWorker();
