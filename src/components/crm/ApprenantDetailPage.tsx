@@ -386,10 +386,16 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
   const fallbackSignature = fallbackDefaultModules.join(",");
 
   const inferredAccountFormationId = useMemo(() => {
-    if (resolvedTypeFromApprenant.startsWith("taxi")) return "taxi";
-    if (resolvedTypeFromApprenant.startsWith("ta")) return "ta";
-    if (resolvedTypeFromApprenant.startsWith("va")) return "va";
-    return "vtc";
+    const t = (resolvedTypeFromApprenant || "").toLowerCase().trim();
+    const exact = COMPTE_FORMATIONS.find((f) => f.id === t);
+    if (exact) return exact.id as string;
+    if (t.includes("pa taxi") || t.includes("continue-taxi")) return "continue-taxi";
+    if (t.includes("pa vtc") || t.includes("continue-vtc")) return "continue-vtc";
+    const elearning = t.endsWith("-e") || t.includes("e-learning") || t.includes("elearning");
+    if (t.startsWith("taxi")) return elearning ? "taxi-e" : "taxi";
+    if (t.startsWith("ta")) return elearning ? "ta-e" : "ta";
+    if (t.startsWith("va")) return elearning ? "va-e" : "va";
+    return elearning ? "vtc-e" : "vtc";
   }, [resolvedTypeFromApprenant]);
 
   const accountBaseModules = useMemo(() => {
