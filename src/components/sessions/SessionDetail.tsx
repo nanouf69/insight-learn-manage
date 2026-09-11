@@ -853,7 +853,8 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
             societe_nom,
             societe_siret,
             organisme_financeur,
-            documents_complets
+            documents_complets,
+            modalite_formation
           )
         `)
         .eq('session_id', session.id);
@@ -4547,6 +4548,34 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                             </SelectContent>
                             </Select>
                           )}
+
+                          <Select
+                            value={(apprenant as any)?.modalite_formation || ''}
+                            onValueChange={async (val) => {
+                              const { error } = await supabase
+                                .from('apprenants')
+                                .update({ modalite_formation: val || null } as any)
+                                .eq('id', apprenant.id);
+                              if (error) {
+                                toast.error("Erreur lors de l'enregistrement de la modalité");
+                                return;
+                              }
+                              toast.success("Modalité de formation mise à jour");
+                              queryClient.invalidateQueries({ queryKey: ['session-apprenants'] });
+                              queryClient.invalidateQueries({ queryKey: ['apprenants-examen'] });
+                            }}
+                          >
+                            <SelectTrigger className={`h-8 w-auto gap-1 text-xs border ${
+                              (apprenant as any)?.modalite_formation ? 'border-blue-300 text-blue-700' : ''
+                            }`}>
+                              <SelectValue placeholder="🎓 Formation" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="presentielle">🏫 Présentielle</SelectItem>
+                              <SelectItem value="elearning_synchrone">🖥️ E-learning synchrone</SelectItem>
+                              <SelectItem value="elearning_asynchrone">🌐 E-learning asynchrone</SelectItem>
+                            </SelectContent>
+                          </Select>
 
                           <Select
                             value={sessionApprenant.presence_pratique || 'present'}
