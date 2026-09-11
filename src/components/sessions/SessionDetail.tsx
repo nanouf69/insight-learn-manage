@@ -4972,17 +4972,6 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                 Renvoyer identifiants (tous)
               </Button>
 
-              <Button
-                size="sm"
-                variant="outline"
-                className="gap-2 text-blue-700 border-blue-300 hover:bg-blue-50"
-                onClick={() => setTeamsLinkOpen(true)}
-                title="Envoyer le lien Microsoft Teams de la session aux stagiaires"
-              >
-                <Video className="w-4 h-4" />
-                Envoyer le lien de connexion
-              </Button>
-
               <Button 
                 size="sm" 
                 variant={showAddApprenant ? "secondary" : "outline"}
@@ -4995,7 +4984,22 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
               </Button>
             </div>
 
+            {/* Lien de connexion Teams */}
+            <div className="shrink-0 flex items-center justify-end gap-3 mb-3 p-3 rounded-lg border border-blue-200 bg-blue-50/50">
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-2 text-blue-700 border-blue-300 hover:bg-blue-50"
+                onClick={() => setTeamsLinkOpen(true)}
+                title="Envoyer le lien Microsoft Teams de la session aux stagiaires"
+              >
+                <Video className="w-4 h-4" />
+                Envoyer le lien de connexion
+              </Button>
+            </div>
+
             {/* Barre de filtres de la liste */}
+
             <div className="shrink-0 flex flex-wrap items-center gap-2 mb-3 p-3 rounded-lg border bg-muted/30">
               <div className="relative w-56">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
