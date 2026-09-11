@@ -15,6 +15,13 @@
       "when": 1789130872096,
       "tag": "0001_make_answer_saves_atomic_and_idempotent",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789139267254,
+      "tag": "0002_add_modalite_formation_apprenants",
+      "breakpoints": true
     }
   ]
 }

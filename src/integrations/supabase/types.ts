@@ -654,6 +654,7 @@ export type Database = {
           id: string
           inscrit_france_travail: boolean | null
           lieu_examen: string | null
+          modalite_formation: string | null
           mode_financement: string | null
           modules_autorises: number[] | null
           montant_paye: number | null
@@ -718,6 +719,7 @@ export type Database = {
           id?: string
           inscrit_france_travail?: boolean | null
           lieu_examen?: string | null
+          modalite_formation?: string | null
           mode_financement?: string | null
           modules_autorises?: number[] | null
           montant_paye?: number | null
@@ -782,6 +784,7 @@ export type Database = {
           id?: string
           inscrit_france_travail?: boolean | null
           lieu_examen?: string | null
+          modalite_formation?: string | null
           mode_financement?: string | null
           modules_autorises?: number[] | null
           montant_paye?: number | null
@@ -4315,6 +4318,7 @@ export type Database = {
           id: string
           inscrit_france_travail: boolean | null
           lieu_examen: string | null
+          modalite_formation: string | null
           mode_financement: string | null
           modules_autorises: number[] | null
           montant_paye: number | null
