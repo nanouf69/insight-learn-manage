@@ -2265,6 +2265,52 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
           </CardTitle>
         </CardHeader>
         <CardContent>
+          {/* Barre de filtres */}
+          <div className="flex flex-wrap items-center gap-2 mb-4 p-3 rounded-lg border bg-muted/30">
+            <Select value={filterStatut} onValueChange={setFilterStatut}>
+              <SelectTrigger className="h-8 w-56 text-xs">
+                <SelectValue placeholder="Statut" />
+              </SelectTrigger>
+              <SelectContent className="z-[9999]">
+                <SelectItem value="all">Tous les statuts</SelectItem>
+                <SelectItem value="none">Sans statut</SelectItem>
+                {STATUT_SUIVI_OPTIONS.map(o => (
+                  <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={filterIdentifiants} onValueChange={setFilterIdentifiants}>
+              <SelectTrigger className="h-8 w-64 text-xs">
+                <SelectValue placeholder="Mot de passe / identifiants" />
+              </SelectTrigger>
+              <SelectContent className="z-[9999]">
+                <SelectItem value="all">Tous (mot de passe / identifiants)</SelectItem>
+                <SelectItem value="avec_mdp">🔑 Avec mot de passe CMA</SelectItem>
+                <SelectItem value="sans_mdp">⚠️ Sans mot de passe CMA</SelectItem>
+                <SelectItem value="avec_identifiants">🆔 Avec nouveaux identifiants</SelectItem>
+                <SelectItem value="sans_identifiants">⚠️ Sans nouveaux identifiants</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={filterDateExamen} onValueChange={setFilterDateExamen}>
+              <SelectTrigger className="h-8 w-52 text-xs">
+                <SelectValue placeholder="Date d'examen" />
+              </SelectTrigger>
+              <SelectContent className="z-[9999]">
+                <SelectItem value="all">Toutes les dates</SelectItem>
+                {datesExamenDisponibles.map(d => (
+                  <SelectItem key={d} value={d}>{d}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {hasActiveFilters && (
+              <Button variant="ghost" size="sm" className="h-8 gap-1 text-xs" onClick={resetFilters}>
+                <RotateCcw className="h-3.5 w-3.5" /> Réinitialiser
+              </Button>
+            )}
+            <span className="ml-auto text-xs text-muted-foreground">
+              {filtered?.length ?? 0} / {apprenants?.length ?? 0} apprenant(s)
+            </span>
+          </div>
           {filtered && filtered.length > 0 ? (
             <TopScrollContainer>
               <Table>
@@ -2483,7 +2529,9 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
           )}
           {apprenants && apprenants.length > 0 && (
             <div className="mt-4 text-sm text-muted-foreground">
-              Total : {apprenants.length} apprenant(s) inscrit(s)
+              {hasActiveFilters
+                ? `${filtered?.length ?? 0} apprenant(s) affiché(s) sur ${apprenants.length} inscrit(s)`
+                : `Total : ${apprenants.length} apprenant(s) inscrit(s)`}
             </div>
           )}
         </CardContent>
