@@ -1648,7 +1648,19 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
                   step="0.5"
                   placeholder="Ex: 125"
                   value={formData.heures_totales}
-                  onChange={(e) => setFormData({ ...formData, heures_totales: e.target.value })}
+                  onChange={(e) => {
+                    const total = e.target.value;
+                    // Répartition automatique pour les parcours e-learning standards
+                    if (total === "66") {
+                      setFormData({ ...formData, heures_totales: total, heures_elearning: "60", heures_pratique: "6" });
+                      return;
+                    }
+                    if (total === "96") {
+                      setFormData({ ...formData, heures_totales: total, heures_elearning: "90", heures_pratique: "6" });
+                      return;
+                    }
+                    setFormData({ ...formData, heures_totales: total });
+                  }}
                 />
               </div>
             </div>
