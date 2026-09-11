@@ -132,10 +132,20 @@ export function DiagnosticAccesGlobal({ onOpenApprenant }: Props) {
     load();
   }, []);
 
-  const computeStatut = (a: Apprenant, agg?: ConnexionAgg): Statut => {
+  const missingByApprenant = useMemo(() => {
+    const m = new Map<string, number[]>();
+    apprenants.forEach((a) => {
+      const { missing } = findMissingModules(a as any);
+      if (missing.length > 0) m.set(a.id, missing);
+    });
+    return m;
+  }, [apprenants]);
+
+  const computeStatut = (a: Apprenant, agg?: ConnexionAgg, missing?: number[]): Statut => {
     const today = new Date();
     if (!a.auth_user_id) return "no_account";
     if (!a.modules_autorises || a.modules_autorises.length === 0) return "no_modules";
+    if (missing && missing.length > 0) return "modules_incomplets";
     const fin = a.date_fin_cours_en_ligne ? new Date(a.date_fin_cours_en_ligne) : null;
     const debut = a.date_debut_cours_en_ligne ? new Date(a.date_debut_cours_en_ligne) : null;
     if (fin && today > fin) return "expire";
@@ -150,8 +160,9 @@ export function DiagnosticAccesGlobal({ onOpenApprenant }: Props) {
     return apprenants
       .map((a) => {
         const agg = aggMap.get(a.id);
-        const statut = computeStatut(a, agg);
-        return { a, agg, statut };
+        const missing = missingByApprenant.get(a.id) ?? [];
+        const statut = computeStatut(a, agg, missing);
+        return { a, agg, statut, missing };
       })
       .filter(({ a, statut }) => {
         if (filterStatut !== "all" && statut !== filterStatut) return false;
@@ -164,23 +175,64 @@ export function DiagnosticAccesGlobal({ onOpenApprenant }: Props) {
         if (dp !== 0) return dp;
         return `${x.a.nom} ${x.a.prenom}`.localeCompare(`${y.a.nom} ${y.a.prenom}`);
       });
-  }, [apprenants, aggMap, search, filterStatut]);
+  }, [apprenants, aggMap, search, filterStatut, missingByApprenant]);
 
   const counts = useMemo(() => {
     const c: Record<Statut, number> = {
       ghost: 0,
       no_account: 0,
       no_modules: 0,
+      modules_incomplets: 0,
       expire: 0,
       attente: 0,
       connecte: 0,
       ok: 0,
     };
     apprenants.forEach((a) => {
-      c[computeStatut(a, aggMap.get(a.id))] += 1;
+      c[computeStatut(a, aggMap.get(a.id), missingByApprenant.get(a.id) ?? [])] += 1;
     });
     return c;
-  }, [apprenants, aggMap]);
+  }, [apprenants, aggMap, missingByApprenant]);
+
+  const repairModules = async (a: Apprenant, missing: number[]) => {
+    if (missing.length === 0) return;
+    setRepairingId(a.id);
+    const merged = mergeMissingModules(a.modules_autorises, missing);
+    const { error } = await supabase
+      .from("apprenants")
+      .update({ modules_autorises: merged } as any)
+      .eq("id", a.id);
+    setRepairingId(null);
+    if (error) {
+      toast.error("Erreur : " + error.message);
+    } else {
+      toast.success(`${missing.length} module(s) ajouté(s) à ${a.nom} ${a.prenom}`);
+      load();
+    }
+  };
+
+  const repairAllModules = async () => {
+    const targets = rows.filter((r) => r.statut === "modules_incomplets");
+    if (targets.length === 0) return;
+    if (
+      !confirm(
+        `Ajouter les modules manquants pour ${targets.length} apprenant(s) ? Aucun module existant ne sera retiré et aucune note/progression ne sera modifiée.`,
+      )
+    )
+      return;
+    let ok = 0;
+    for (const t of targets) {
+      const merged = mergeMissingModules(t.a.modules_autorises, t.missing);
+      const { error } = await supabase
+        .from("apprenants")
+        .update({ modules_autorises: merged } as any)
+        .eq("id", t.a.id);
+      if (!error) ok += 1;
+    }
+    toast.success(`${ok}/${targets.length} apprenant(s) corrigé(s)`);
+    load();
+  };
+
 
   const cleanupGhost = async (apprenantId: string) => {
     setCleaningId(apprenantId);
