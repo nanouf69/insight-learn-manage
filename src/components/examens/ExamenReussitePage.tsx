@@ -2342,6 +2342,18 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                 ))}
               </SelectContent>
             </Select>
+            <Select value={filterModalite} onValueChange={setFilterModalite}>
+              <SelectTrigger className="h-8 w-56 text-xs">
+                <SelectValue placeholder="Formation" />
+              </SelectTrigger>
+              <SelectContent className="z-[9999]">
+                <SelectItem value="all">Toutes les formations</SelectItem>
+                <SelectItem value="presentielle">🏫 Présentielle</SelectItem>
+                <SelectItem value="elearning_synchrone">🖥️ E-learning synchrone</SelectItem>
+                <SelectItem value="elearning_asynchrone">🌐 E-learning asynchrone</SelectItem>
+                <SelectItem value="none">⚠️ Non renseignée</SelectItem>
+              </SelectContent>
+            </Select>
             {hasActiveFilters && (
               <Button variant="ghost" size="sm" className="h-8 gap-1 text-xs" onClick={resetFilters}>
                 <RotateCcw className="h-3.5 w-3.5" /> Réinitialiser
@@ -2464,6 +2476,13 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                               queryClient.invalidateQueries({ queryKey: ['apprenants-examen', selectedExamDate] });
                             }}
                           />
+                          <div className="mt-1">
+                            <InlineModaliteFormation
+                              apprenantId={apprenant.id}
+                              value={(apprenant as any).modalite_formation ?? null}
+                              onSaved={() => queryClient.invalidateQueries({ queryKey: ['apprenants-examen', selectedExamDate] })}
+                            />
+                          </div>
 
                         </TableCell>
                         <TableCell className={!apprenant.telephone ? "text-destructive font-medium" : ""}>
