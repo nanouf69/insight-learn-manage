@@ -393,7 +393,7 @@ export function DiagnosticAccesGlobal({ onOpenApprenant }: Props) {
                 </tr>
               </thead>
               <tbody className="divide-y">
-                {rows.map(({ a, agg, statut }) => {
+                {rows.map(({ a, agg, statut, missing }) => {
                   const info = STATUT_INFO[statut];
                   const fin = a.date_fin_cours_en_ligne;
                   const debut = a.date_debut_cours_en_ligne;
