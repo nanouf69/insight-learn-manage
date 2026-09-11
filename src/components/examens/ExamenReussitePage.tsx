@@ -2255,6 +2255,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                     <TableHead>Téléphone</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Date d'examen</TableHead>
+                    <TableHead className="text-center">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
