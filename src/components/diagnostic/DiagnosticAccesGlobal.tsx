@@ -363,7 +363,18 @@ export function DiagnosticAccesGlobal({ onOpenApprenant }: Props) {
                 Nettoyer toutes les sessions multiples ({counts.ghost})
               </Button>
             )}
+            {counts.modules_incomplets > 0 && (
+              <Button
+                size="sm"
+                className="bg-orange-600 hover:bg-orange-700 text-white"
+                onClick={repairAllModules}
+              >
+                <AlertTriangle className="w-4 h-4 mr-2" />
+                Ajouter les modules manquants ({counts.modules_incomplets})
+              </Button>
+            )}
           </div>
+
           <p className="text-xs text-muted-foreground">
             {rows.length} apprenant(s) affiché(s) sur {apprenants.length}
           </p>
