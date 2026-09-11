@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -386,10 +386,16 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
   const fallbackSignature = fallbackDefaultModules.join(",");
 
   const inferredAccountFormationId = useMemo(() => {
-    if (resolvedTypeFromApprenant.startsWith("taxi")) return "taxi";
-    if (resolvedTypeFromApprenant.startsWith("ta")) return "ta";
-    if (resolvedTypeFromApprenant.startsWith("va")) return "va";
-    return "vtc";
+    const t = (resolvedTypeFromApprenant || "").toLowerCase().trim();
+    const exact = COMPTE_FORMATIONS.find((f) => f.id === t);
+    if (exact) return exact.id as string;
+    if (t.includes("pa taxi") || t.includes("continue-taxi")) return "continue-taxi";
+    if (t.includes("pa vtc") || t.includes("continue-vtc")) return "continue-vtc";
+    const elearning = t.endsWith("-e") || t.includes("e-learning") || t.includes("elearning");
+    if (t.startsWith("taxi")) return elearning ? "taxi-e" : "taxi";
+    if (t.startsWith("ta")) return elearning ? "ta-e" : "ta";
+    if (t.startsWith("va")) return elearning ? "va-e" : "va";
+    return elearning ? "vtc-e" : "vtc";
   }, [resolvedTypeFromApprenant]);
 
   const accountBaseModules = useMemo(() => {
@@ -418,8 +424,15 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
     }
   }, [resolvedTypeFromApprenant, selectedFormationForModules]);
 
+  const createDialogInitialized = useRef(false);
   useEffect(() => {
-    if (!showCreateDialog) return;
+    if (!showCreateDialog) {
+      createDialogInitialized.current = false;
+      return;
+    }
+    if (createDialogInitialized.current) return;
+    if (!apprenant) return;
+    createDialogInitialized.current = true;
     setSelectedFormationForAccount(inferredAccountFormationId);
     setAccountStartDate(((apprenant as any)?.date_debut_cours_en_ligne as string) || ((apprenant as any)?.date_debut_formation as string) || "");
     setAccountEndDate(((apprenant as any)?.date_fin_cours_en_ligne as string) || ((apprenant as any)?.date_fin_formation as string) || "");
