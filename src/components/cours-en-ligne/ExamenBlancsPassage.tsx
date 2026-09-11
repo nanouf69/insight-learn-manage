@@ -22,6 +22,7 @@ import {
   enqueueAnswerSave,
   answersAreEqual,
   flushAnswerSavesAndWait,
+  flushAnswerSavesOnUnload,
   getPendingAnswers,
   subscribeAnswerSaveState,
 } from "@/lib/answerPersistence";
@@ -187,23 +188,6 @@ function PassageMatiere({
     updated_at: new Date().toISOString(),
   });
 
-  const saveViaEdgeFunction = async (payload: Record<string, any>, keepalive = false) => {
-    const baseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const apikey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-    if (!baseUrl || !apikey) throw new Error("Configuration de sauvegarde manquante");
-
-    const headers: Record<string, string> = { apikey, "Content-Type": "application/json" };
-    if (jwtTokenRef.current) headers.Authorization = `Bearer ${jwtTokenRef.current}`;
-
-    const response = await fetch(`${baseUrl}/functions/v1/upsert-reponse-apprenant`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(payload),
-      keepalive,
-    });
-    if (!response.ok) throw new Error(await response.text());
-  };
-
   // Dernier état mis en file (pour ne journaliser que les réponses modifiées).
   const lastPersistedRef = useRef<Reponses>({});
 
@@ -242,44 +226,27 @@ function PassageMatiere({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialLoaded]);
 
-  // beforeunload: flush pending save immediately
+  // Fermeture/rechargement : le dernier état entre d'abord dans la file
+  // persistante. Il sera repris au prochain chargement sans perte.
   useEffect(() => {
     const flushSave = () => {
       if (!apprenantId) return;
       const current = latestReponsesRef.current;
       if (Object.keys(current).length === 0) return;
-      const row = buildAutosavePayload(current, false);
-      try {
-        if (!row.user_id) {
-          return;
-        }
-        const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/upsert-reponse-apprenant`;
-        const xhr = new XMLHttpRequest();
-        xhr.open("POST", url, false);
-        xhr.setRequestHeader("Content-Type", "application/json");
-        xhr.setRequestHeader("apikey", import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY);
-        if (jwtTokenRef.current) xhr.setRequestHeader("Authorization", `Bearer ${jwtTokenRef.current}`);
-        xhr.send(JSON.stringify(row));
-      } catch (_) {}
+      enqueueAnswerSave({
+        ...buildAutosavePayload(current, false),
+        user_id: userIdRef.current || userId || undefined,
+        updated_at: new Date().toISOString(),
+      });
+      flushAnswerSavesOnUnload();
     };
     window.addEventListener("beforeunload", flushSave);
-    // TABLET FIX: beforeunload is unreliable on iOS/Android — also flush on pagehide & visibility hidden
-    const flushKeepalive = () => {
-      if (!apprenantId) return;
-      const current = latestReponsesRef.current;
-      if (!current || Object.keys(current).length === 0) return;
-      const row = buildAutosavePayload(current, false);
-      if (!row.user_id) return;
-      try {
-        saveViaEdgeFunction(row, true).catch(() => {});
-      } catch (_) {}
-    };
-    const onVisibility = () => { if (document.visibilityState === "hidden") flushKeepalive(); };
-    window.addEventListener("pagehide", flushKeepalive);
+    const onVisibility = () => { if (document.visibilityState === "hidden") flushSave(); };
+    window.addEventListener("pagehide", flushSave);
     document.addEventListener("visibilitychange", onVisibility);
     return () => {
       window.removeEventListener("beforeunload", flushSave);
-      window.removeEventListener("pagehide", flushKeepalive);
+      window.removeEventListener("pagehide", flushSave);
       document.removeEventListener("visibilitychange", onVisibility);
       // BUG #8 FIX: flush instead of cancel — don't lose pending saves on unmount
       if (debounceRef.current) {
