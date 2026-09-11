@@ -18,6 +18,8 @@ import {
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { findMissingModules, mergeMissingModules } from "@/lib/modulesIntegrity";
+import { MODULE_NAME_BY_ID } from "@/components/cours-en-ligne/modules-config";
 
 interface Apprenant {
   id: string;
@@ -29,6 +31,7 @@ interface Apprenant {
   date_debut_cours_en_ligne: string | null;
   date_fin_cours_en_ligne: string | null;
   formation_choisie: string | null;
+  type_apprenant: string | null;
 }
 
 interface ConnexionAgg {
@@ -39,17 +42,27 @@ interface ConnexionAgg {
   last_reason: string | null;
 }
 
-type Statut = "ok" | "connecte" | "ghost" | "expire" | "attente" | "no_account" | "no_modules";
+type Statut =
+  | "ok"
+  | "connecte"
+  | "ghost"
+  | "expire"
+  | "attente"
+  | "no_account"
+  | "no_modules"
+  | "modules_incomplets";
 
 const STATUT_INFO: Record<Statut, { label: string; color: string; priority: number }> = {
   ghost: { label: "Sessions multiples", color: "bg-orange-500 text-white", priority: 1 },
   no_account: { label: "Pas de compte", color: "bg-destructive text-destructive-foreground", priority: 2 },
   no_modules: { label: "Aucun module", color: "bg-destructive text-destructive-foreground", priority: 3 },
-  expire: { label: "Expiré", color: "bg-destructive text-destructive-foreground", priority: 4 },
-  attente: { label: "En attente", color: "bg-yellow-500 text-white", priority: 5 },
-  connecte: { label: "Connecté", color: "bg-green-600 text-white", priority: 6 },
-  ok: { label: "Accès OK", color: "bg-green-600 text-white", priority: 7 },
+  modules_incomplets: { label: "Modules manquants", color: "bg-orange-600 text-white", priority: 4 },
+  expire: { label: "Expiré", color: "bg-destructive text-destructive-foreground", priority: 5 },
+  attente: { label: "En attente", color: "bg-yellow-500 text-white", priority: 6 },
+  connecte: { label: "Connecté", color: "bg-green-600 text-white", priority: 7 },
+  ok: { label: "Accès OK", color: "bg-green-600 text-white", priority: 8 },
 };
+
 
 interface Props {
   onOpenApprenant: (id: string) => void;
@@ -62,6 +75,7 @@ export function DiagnosticAccesGlobal({ onOpenApprenant }: Props) {
   const [search, setSearch] = useState("");
   const [filterStatut, setFilterStatut] = useState<string>("all");
   const [cleaningId, setCleaningId] = useState<string | null>(null);
+  const [repairingId, setRepairingId] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -69,7 +83,7 @@ export function DiagnosticAccesGlobal({ onOpenApprenant }: Props) {
     const { data: apps, error: e1 } = await supabase
       .from("apprenants")
       .select(
-        "id, nom, prenom, email, auth_user_id, modules_autorises, date_debut_cours_en_ligne, date_fin_cours_en_ligne, formation_choisie",
+        "id, nom, prenom, email, auth_user_id, modules_autorises, date_debut_cours_en_ligne, date_fin_cours_en_ligne, formation_choisie, type_apprenant",
       )
       .is("deleted_at", null)
       .order("nom");
@@ -119,10 +133,20 @@ export function DiagnosticAccesGlobal({ onOpenApprenant }: Props) {
     load();
   }, []);
 
-  const computeStatut = (a: Apprenant, agg?: ConnexionAgg): Statut => {
+  const missingByApprenant = useMemo(() => {
+    const m = new Map<string, number[]>();
+    apprenants.forEach((a) => {
+      const { missing } = findMissingModules(a as any);
+      if (missing.length > 0) m.set(a.id, missing);
+    });
+    return m;
+  }, [apprenants]);
+
+  const computeStatut = (a: Apprenant, agg?: ConnexionAgg, missing?: number[]): Statut => {
     const today = new Date();
     if (!a.auth_user_id) return "no_account";
     if (!a.modules_autorises || a.modules_autorises.length === 0) return "no_modules";
+    if (missing && missing.length > 0) return "modules_incomplets";
     const fin = a.date_fin_cours_en_ligne ? new Date(a.date_fin_cours_en_ligne) : null;
     const debut = a.date_debut_cours_en_ligne ? new Date(a.date_debut_cours_en_ligne) : null;
     if (fin && today > fin) return "expire";
@@ -137,8 +161,9 @@ export function DiagnosticAccesGlobal({ onOpenApprenant }: Props) {
     return apprenants
       .map((a) => {
         const agg = aggMap.get(a.id);
-        const statut = computeStatut(a, agg);
-        return { a, agg, statut };
+        const missing = missingByApprenant.get(a.id) ?? [];
+        const statut = computeStatut(a, agg, missing);
+        return { a, agg, statut, missing };
       })
       .filter(({ a, statut }) => {
         if (filterStatut !== "all" && statut !== filterStatut) return false;
@@ -151,23 +176,64 @@ export function DiagnosticAccesGlobal({ onOpenApprenant }: Props) {
         if (dp !== 0) return dp;
         return `${x.a.nom} ${x.a.prenom}`.localeCompare(`${y.a.nom} ${y.a.prenom}`);
       });
-  }, [apprenants, aggMap, search, filterStatut]);
+  }, [apprenants, aggMap, search, filterStatut, missingByApprenant]);
 
   const counts = useMemo(() => {
     const c: Record<Statut, number> = {
       ghost: 0,
       no_account: 0,
       no_modules: 0,
+      modules_incomplets: 0,
       expire: 0,
       attente: 0,
       connecte: 0,
       ok: 0,
     };
     apprenants.forEach((a) => {
-      c[computeStatut(a, aggMap.get(a.id))] += 1;
+      c[computeStatut(a, aggMap.get(a.id), missingByApprenant.get(a.id) ?? [])] += 1;
     });
     return c;
-  }, [apprenants, aggMap]);
+  }, [apprenants, aggMap, missingByApprenant]);
+
+  const repairModules = async (a: Apprenant, missing: number[]) => {
+    if (missing.length === 0) return;
+    setRepairingId(a.id);
+    const merged = mergeMissingModules(a.modules_autorises, missing);
+    const { error } = await supabase
+      .from("apprenants")
+      .update({ modules_autorises: merged } as any)
+      .eq("id", a.id);
+    setRepairingId(null);
+    if (error) {
+      toast.error("Erreur : " + error.message);
+    } else {
+      toast.success(`${missing.length} module(s) ajouté(s) à ${a.nom} ${a.prenom}`);
+      load();
+    }
+  };
+
+  const repairAllModules = async () => {
+    const targets = rows.filter((r) => r.statut === "modules_incomplets");
+    if (targets.length === 0) return;
+    if (
+      !confirm(
+        `Ajouter les modules manquants pour ${targets.length} apprenant(s) ? Aucun module existant ne sera retiré et aucune note/progression ne sera modifiée.`,
+      )
+    )
+      return;
+    let ok = 0;
+    for (const t of targets) {
+      const merged = mergeMissingModules(t.a.modules_autorises, t.missing);
+      const { error } = await supabase
+        .from("apprenants")
+        .update({ modules_autorises: merged } as any)
+        .eq("id", t.a.id);
+      if (!error) ok += 1;
+    }
+    toast.success(`${ok}/${targets.length} apprenant(s) corrigé(s)`);
+    load();
+  };
+
 
   const cleanupGhost = async (apprenantId: string) => {
     setCleaningId(apprenantId);
@@ -244,7 +310,7 @@ export function DiagnosticAccesGlobal({ onOpenApprenant }: Props) {
         ))}
       </div>
       {/* Compteurs */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2">
         {(Object.keys(STATUT_INFO) as Statut[])
           .sort((a, b) => STATUT_INFO[a].priority - STATUT_INFO[b].priority)
           .map((s) => (
@@ -297,7 +363,18 @@ export function DiagnosticAccesGlobal({ onOpenApprenant }: Props) {
                 Nettoyer toutes les sessions multiples ({counts.ghost})
               </Button>
             )}
+            {counts.modules_incomplets > 0 && (
+              <Button
+                size="sm"
+                className="bg-orange-600 hover:bg-orange-700 text-white"
+                onClick={repairAllModules}
+              >
+                <AlertTriangle className="w-4 h-4 mr-2" />
+                Ajouter les modules manquants ({counts.modules_incomplets})
+              </Button>
+            )}
           </div>
+
           <p className="text-xs text-muted-foreground">
             {rows.length} apprenant(s) affiché(s) sur {apprenants.length}
           </p>
@@ -328,7 +405,7 @@ export function DiagnosticAccesGlobal({ onOpenApprenant }: Props) {
                 </tr>
               </thead>
               <tbody className="divide-y">
-                {rows.map(({ a, agg, statut }) => {
+                {rows.map(({ a, agg, statut, missing }) => {
                   const info = STATUT_INFO[statut];
                   const fin = a.date_fin_cours_en_ligne;
                   const debut = a.date_debut_cours_en_ligne;
@@ -354,6 +431,15 @@ export function DiagnosticAccesGlobal({ onOpenApprenant }: Props) {
                       </td>
                       <td className="py-2 pr-2 text-xs">
                         {a.modules_autorises?.length ?? 0}
+                        {missing.length > 0 && (
+                          <p
+                            className="text-orange-600 font-medium max-w-[220px]"
+                            title={missing.map((id) => MODULE_NAME_BY_ID[id] ?? id).join(", ")}
+                          >
+                            {missing.length} manquant(s) :{" "}
+                            {missing.map((id) => MODULE_NAME_BY_ID[id] ?? id).join(", ")}
+                          </p>
+                        )}
                       </td>
                       <td className="py-2 pr-2 text-xs">
                         {debut && fin ? (
@@ -384,6 +470,20 @@ export function DiagnosticAccesGlobal({ onOpenApprenant }: Props) {
                       </td>
                       <td className="py-2 pr-2 text-right">
                         <div className="flex justify-end gap-1">
+                          {missing.length > 0 && (
+                            <Button
+                              size="sm"
+                              className="bg-orange-600 hover:bg-orange-700 text-white"
+                              onClick={() => repairModules(a, missing)}
+                              disabled={repairingId === a.id}
+                            >
+                              {repairingId === a.id ? (
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                              ) : (
+                                `Ajouter ${missing.length} module(s)`
+                              )}
+                            </Button>
+                          )}
                           {statut === "ghost" && (
                             <Button
                               variant="destructive"
