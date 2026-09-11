@@ -82,7 +82,7 @@ export function DiagnosticAccesGlobal({ onOpenApprenant }: Props) {
     const { data: apps, error: e1 } = await supabase
       .from("apprenants")
       .select(
-        "id, nom, prenom, email, auth_user_id, modules_autorises, date_debut_cours_en_ligne, date_fin_cours_en_ligne, formation_choisie",
+        "id, nom, prenom, email, auth_user_id, modules_autorises, date_debut_cours_en_ligne, date_fin_cours_en_ligne, formation_choisie, type_apprenant",
       )
       .is("deleted_at", null)
       .order("nom");
