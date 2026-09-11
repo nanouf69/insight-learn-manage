@@ -2399,6 +2399,51 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                         <TableCell>
                           <Badge className="bg-primary/10 text-primary">{apprenant.date_examen_theorique}</Badge>
                         </TableCell>
+                        <TableCell className="text-center">
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                title="Retirer de cette liste d'examen"
+                                className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Retirer {apprenant.prenom} {apprenant.nom} de cette liste ?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  L'apprenant ne sera plus inscrit à l'examen théorique du {selectedExamDate}.
+                                  Sa fiche, ses résultats et sa progression sont conservés.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                <AlertDialogAction
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  onClick={async () => {
+                                    try {
+                                      const { error } = await supabase
+                                        .from('apprenants')
+                                        .update({ date_examen_theorique: null } as any)
+                                        .eq('id', apprenant.id);
+                                      if (error) throw error;
+                                      toast.success(`${apprenant.prenom} ${apprenant.nom} retiré(e) de l'examen du ${selectedExamDate}`);
+                                      queryClient.invalidateQueries({ queryKey: ['apprenants-examen', selectedExamDate] });
+                                      queryClient.invalidateQueries({ queryKey: ['all-apprenants'] });
+                                    } catch (err: any) {
+                                      toast.error(err.message || "Erreur lors du retrait");
+                                    }
+                                  }}
+                                >
+                                  Retirer
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </TableCell>
                       </TableRow>
                     );
                   })}
