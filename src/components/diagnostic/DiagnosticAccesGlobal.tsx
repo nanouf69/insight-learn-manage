@@ -310,7 +310,7 @@ export function DiagnosticAccesGlobal({ onOpenApprenant }: Props) {
         ))}
       </div>
       {/* Compteurs */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2">
         {(Object.keys(STATUT_INFO) as Statut[])
           .sort((a, b) => STATUT_INFO[a].priority - STATUT_INFO[b].priority)
           .map((s) => (
