@@ -4558,10 +4558,10 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                 .update({ modalite_formation: val || null } as any)
                                 .eq('id', apprenant.id);
                               if (error) {
-                                toast.error("Erreur lors de l'enregistrement de la modalité");
+                                toast({ title: "Erreur lors de l'enregistrement de la modalité", variant: "destructive" });
                                 return;
                               }
-                              toast.success("Modalité de formation mise à jour");
+                              toast({ title: "Modalité de formation mise à jour" });
                               queryClient.invalidateQueries({ queryKey: ['session-apprenants'] });
                               queryClient.invalidateQueries({ queryKey: ['apprenants-examen'] });
                             }}
