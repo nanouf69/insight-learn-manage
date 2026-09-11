@@ -33,7 +33,7 @@ function findStaticFallbackMatiere(examId: string, matiereId: string, matiereNom
   );
 }
 
-function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, apprenantType, examensData, apprenantId, isAdmin, refreshKey, pausedExamIds, onPauseToggle }: { onStart: (examen: ExamenBlanc, forceRetake?: boolean) => void; onEdit: () => void; onViewResults: (examen: ExamenBlanc) => void; defaultBilanId?: string | null; apprenantType?: string | null; examensData: ExamenBlanc[]; apprenantId?: string | null; isAdmin?: boolean; refreshKey?: number; pausedExamIds?: Set<string>; onPauseToggle?: (examId: string) => void }) {
+function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaultBilanId, apprenantType, examensData, apprenantId, isAdmin, refreshKey, pausedExamIds, onPauseToggle }: { onStart: (examen: ExamenBlanc, forceRetake?: boolean) => void; onStartPartial?: (examen: ExamenBlanc) => void; onEdit: () => void; onViewResults: (examen: ExamenBlanc) => void; defaultBilanId?: string | null; apprenantType?: string | null; examensData: ExamenBlanc[]; apprenantId?: string | null; isAdmin?: boolean; refreshKey?: number; pausedExamIds?: Set<string>; onPauseToggle?: (examId: string) => void }) {
   // Determine the forced exam type from the student's formation type
   const forcedType = (() => {
     if (!apprenantType) return null;
@@ -646,6 +646,17 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
                       {pausedExamIds?.has(examen.id) ? "⏸ Examen en pause" : isCompleted ? "🔄 Refaire l'examen" : isStartedNotFinished ? "Reprendre l'examen" : "Commencer l'examen"}
                       <ChevronRight className="w-4 h-4" />
                     </Button>
+                    {onStartPartial && (
+                      <Button
+                        className="w-full mt-2 gap-2"
+                        variant="outline"
+                        disabled={pausedExamIds?.has(examen.id)}
+                        onClick={(e) => { e.stopPropagation(); onStartPartial(examen); }}
+                      >
+                        🎯 Choisir les matières à passer
+                        <ChevronRight className="w-4 h-4" />
+                      </Button>
+                    )}
                     {isAdmin && onPauseToggle && (
                       <Button
                         className="w-full mt-1 gap-2"
