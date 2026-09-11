@@ -4933,6 +4933,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
               )}
             </div>
 
+            <div className="learners-list flex-1 min-h-0 overflow-y-auto px-2 pb-6">
               {showAddApprenant && (
                 <div className="mb-4 p-3 border rounded-lg bg-muted/30">
                   <div className="flex items-center gap-2 mb-3">
