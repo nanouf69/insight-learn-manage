@@ -4634,6 +4634,42 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                           </Select>
 
                           <Select
+                            value={(apprenant as any)?.date_examen_theorique || ''}
+                            onValueChange={async (val) => {
+                              const next = val === '__none__' ? null : val;
+                              const { error } = await supabase
+                                .from('apprenants')
+                                .update({ date_examen_theorique: next } as any)
+                                .eq('id', apprenant.id);
+                              if (error) {
+                                toast({ title: "Erreur lors de l'enregistrement de la date d'examen", variant: "destructive" });
+                                return;
+                              }
+                              toast({ title: "Date d'examen mise à jour", description: next || "Date retirée" });
+                              queryClient.invalidateQueries({ queryKey: ['session-apprenants'] });
+                              queryClient.invalidateQueries({ queryKey: ['apprenants-examen'] });
+                              refetchApprenants();
+                            }}
+                          >
+                            <SelectTrigger className={`h-8 w-auto gap-1 text-xs border ${
+                              (apprenant as any)?.date_examen_theorique ? 'border-purple-300 text-purple-700' : 'border-orange-300 text-orange-700'
+                            }`}>
+                              <SelectValue placeholder="📅 Date d'examen" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="__none__">— Aucune date</SelectItem>
+                              {[...new Set([
+                                ...ALL_DATES_EXAMEN_THEORIQUE.map((d) => d.date),
+                                ...((apprenant as any)?.date_examen_theorique ? [(apprenant as any).date_examen_theorique] : []),
+                              ])].map((d: string) => (
+                                <SelectItem key={d} value={d}>📅 {d}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+
+
+
+                          <Select
                             value={sessionApprenant.presence_pratique || 'present'}
                             onValueChange={async (val) => {
                               await updateSessionApprenant(sessionApprenant.id, { presence_pratique: val });
