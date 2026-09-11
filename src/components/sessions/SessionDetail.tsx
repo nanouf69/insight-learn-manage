@@ -4951,12 +4951,24 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                   ))}
                 </SelectContent>
               </Select>
-              {(learnerSearch.trim() !== '' || learnerStatutFilter !== 'all' || learnerIdentFilter !== 'all' || learnerDateFilter !== 'all') && (
+              <Select value={learnerModaliteFilter} onValueChange={setLearnerModaliteFilter}>
+                <SelectTrigger className="h-8 w-56 text-xs">
+                  <SelectValue placeholder="Formation" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Toutes les formations</SelectItem>
+                  <SelectItem value="presentielle">🏫 Présentielle</SelectItem>
+                  <SelectItem value="elearning_synchrone">🖥️ E-learning synchrone</SelectItem>
+                  <SelectItem value="elearning_asynchrone">🌐 E-learning asynchrone</SelectItem>
+                  <SelectItem value="none">⚠️ Non renseignée</SelectItem>
+                </SelectContent>
+              </Select>
+              {(learnerSearch.trim() !== '' || learnerStatutFilter !== 'all' || learnerIdentFilter !== 'all' || learnerDateFilter !== 'all' || learnerModaliteFilter !== 'all') && (
                 <Button
                   variant="ghost"
                   size="sm"
                   className="h-8 gap-1 text-xs"
-                  onClick={() => { setLearnerSearch(''); setLearnerStatutFilter('all'); setLearnerIdentFilter('all'); setLearnerDateFilter('all'); }}
+                  onClick={() => { setLearnerSearch(''); setLearnerStatutFilter('all'); setLearnerIdentFilter('all'); setLearnerDateFilter('all'); setLearnerModaliteFilter('all'); }}
                 >
                   <X className="w-3.5 h-3.5" /> Réinitialiser
                 </Button>
