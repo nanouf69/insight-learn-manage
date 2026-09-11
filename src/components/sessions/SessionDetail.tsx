@@ -4579,11 +4579,11 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                 await updateSessionApprenant(sessionApprenant.id, { statut_suivi: val || null });
                               }}
                             >
-                            <SelectTrigger className={`h-8 w-auto gap-1 text-xs border ${
-                              sessionApprenant.statut_suivi === 'inscription_validee' ? 'border-green-300 text-green-700' :
-                              sessionApprenant.statut_suivi === 'document_complet' ? 'border-green-300 text-green-700' :
-                              sessionApprenant.statut_suivi === 'paye' ? 'border-green-300 text-green-700' :
-                              sessionApprenant.statut_suivi ? 'border-orange-300 text-orange-700' : ''
+                            <SelectTrigger className={`w-auto gap-1 border ${
+                              sessionApprenant.statut_suivi === 'inscription_validee' ? 'h-10 px-3 text-sm font-semibold bg-green-100 border-green-400 text-green-800 shadow-sm' :
+                              sessionApprenant.statut_suivi === 'document_complet' ? 'h-8 text-xs border-green-300 text-green-700' :
+                              sessionApprenant.statut_suivi === 'paye' ? 'h-8 text-xs border-green-300 text-green-700' :
+                              sessionApprenant.statut_suivi ? 'h-8 text-xs border-orange-300 text-orange-700' : 'h-8 text-xs'
                             }`}>
                               <SelectValue placeholder="⚙️ Statut" />
                             </SelectTrigger>
