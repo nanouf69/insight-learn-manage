@@ -365,6 +365,41 @@ const STATUT_SUIVI_OPTIONS: { value: string; label: string }[] = [
   { value: "inscription_validee", label: "✅ Inscription validée" },
 ];
 
+/** Modalité de formation choisie manuellement (apprenants.modalite_formation). */
+function InlineModaliteFormation({
+  apprenantId,
+  value,
+  onSaved,
+}: { apprenantId: string; value: string | null; onSaved?: () => void }) {
+  const [saving, setSaving] = useState(false);
+  return (
+    <Select
+      value={value || ''}
+      disabled={saving}
+      onValueChange={async (val) => {
+        setSaving(true);
+        const { error } = await supabase
+          .from('apprenants')
+          .update({ modalite_formation: val || null } as any)
+          .eq('id', apprenantId);
+        setSaving(false);
+        if (error) { toast.error("Erreur : " + error.message); return; }
+        toast.success("Modalité de formation mise à jour");
+        onSaved?.();
+      }}
+    >
+      <SelectTrigger className={`h-8 w-auto gap-1 text-xs border ${value ? 'border-blue-300 text-blue-700' : ''}`}>
+        <SelectValue placeholder="🎓 Formation" />
+      </SelectTrigger>
+      <SelectContent className="z-[9999]">
+        <SelectItem value="presentielle">🏫 Présentielle</SelectItem>
+        <SelectItem value="elearning_synchrone">🖥️ E-learning synchrone</SelectItem>
+        <SelectItem value="elearning_asynchrone">🌐 E-learning asynchrone</SelectItem>
+      </SelectContent>
+    </Select>
+  );
+}
+
 /** Statut de suivi partagé avec la fiche session de l'apprenant (session_apprenants.statut_suivi).
  *  Si l'apprenant n'est inscrit à aucune session, le statut est stocké sur sa fiche (apprenants.statut_suivi). */
 function InlineStatutSuivi({
@@ -948,6 +983,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
   const [filterStatut, setFilterStatut] = useState<string>("all");
   const [filterIdentifiants, setFilterIdentifiants] = useState<string>("all");
   const [filterDateExamen, setFilterDateExamen] = useState<string>("all");
+  const [filterModalite, setFilterModalite] = useState<string>("all");
   const [fullscreen, setFullscreen] = useState(false);
   const [pratiqueFullscreen, setPratiqueFullscreen] = useState(false);
   const [activeFs, setActiveFs] = useState<string | null>(null);
@@ -2062,12 +2098,16 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
       if (filterIdentifiants === 'sans_identifiants' && hasT3p) return false;
     }
     if (filterDateExamen !== 'all' && (a.date_examen_theorique || '') !== filterDateExamen) return false;
+    if (filterModalite !== 'all') {
+      const m = (a as any).modalite_formation ?? null;
+      if (filterModalite === 'none' ? m !== null : m !== filterModalite) return false;
+    }
     return true;
   });
 
   const datesExamenDisponibles = [...new Set((apprenants || []).map(a => a.date_examen_theorique).filter(Boolean))] as string[];
-  const hasActiveFilters = filterStatut !== 'all' || filterIdentifiants !== 'all' || filterDateExamen !== 'all' || search.trim() !== '';
-  const resetFilters = () => { setSearch(""); setFilterStatut("all"); setFilterIdentifiants("all"); setFilterDateExamen("all"); };
+  const hasActiveFilters = filterStatut !== 'all' || filterIdentifiants !== 'all' || filterDateExamen !== 'all' || filterModalite !== 'all' || search.trim() !== '';
+  const resetFilters = () => { setSearch(""); setFilterStatut("all"); setFilterIdentifiants("all"); setFilterDateExamen("all"); setFilterModalite("all"); };
 
   const reussis = apprenants?.filter(a => (a as any).resultat_examen === 'oui') || [];
   const nonReussis = apprenants?.filter(a => (a as any).resultat_examen === 'non') || [];
@@ -2302,6 +2342,18 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                 ))}
               </SelectContent>
             </Select>
+            <Select value={filterModalite} onValueChange={setFilterModalite}>
+              <SelectTrigger className="h-8 w-56 text-xs">
+                <SelectValue placeholder="Formation" />
+              </SelectTrigger>
+              <SelectContent className="z-[9999]">
+                <SelectItem value="all">Toutes les formations</SelectItem>
+                <SelectItem value="presentielle">🏫 Présentielle</SelectItem>
+                <SelectItem value="elearning_synchrone">🖥️ E-learning synchrone</SelectItem>
+                <SelectItem value="elearning_asynchrone">🌐 E-learning asynchrone</SelectItem>
+                <SelectItem value="none">⚠️ Non renseignée</SelectItem>
+              </SelectContent>
+            </Select>
             {hasActiveFilters && (
               <Button variant="ghost" size="sm" className="h-8 gap-1 text-xs" onClick={resetFilters}>
                 <RotateCcw className="h-3.5 w-3.5" /> Réinitialiser
@@ -2424,6 +2476,13 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                               queryClient.invalidateQueries({ queryKey: ['apprenants-examen', selectedExamDate] });
                             }}
                           />
+                          <div className="mt-1">
+                            <InlineModaliteFormation
+                              apprenantId={apprenant.id}
+                              value={(apprenant as any).modalite_formation ?? null}
+                              onSaved={() => queryClient.invalidateQueries({ queryKey: ['apprenants-examen', selectedExamDate] })}
+                            />
+                          </div>
 
                         </TableCell>
                         <TableCell className={!apprenant.telephone ? "text-destructive font-medium" : ""}>

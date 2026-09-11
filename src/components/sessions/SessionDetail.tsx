@@ -717,6 +717,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   const [learnerStatutFilter, setLearnerStatutFilter] = useState<string>("all");
   const [learnerIdentFilter, setLearnerIdentFilter] = useState<string>("all");
   const [learnerDateFilter, setLearnerDateFilter] = useState<string>("all");
+  const [learnerModaliteFilter, setLearnerModaliteFilter] = useState<string>("all");
   const [showAddApprenant, setShowAddApprenant] = useState(false);
   const [showAddFormateur, setShowAddFormateur] = useState(false);
   const [searchFormateur, setSearchFormateur] = useState("");
@@ -853,7 +854,8 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
             societe_nom,
             societe_siret,
             organisme_financeur,
-            documents_complets
+            documents_complets,
+            modalite_formation
           )
         `)
         .eq('session_id', session.id);
@@ -4549,6 +4551,34 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                           )}
 
                           <Select
+                            value={(apprenant as any)?.modalite_formation || ''}
+                            onValueChange={async (val) => {
+                              const { error } = await supabase
+                                .from('apprenants')
+                                .update({ modalite_formation: val || null } as any)
+                                .eq('id', apprenant.id);
+                              if (error) {
+                                toast({ title: "Erreur lors de l'enregistrement de la modalité", variant: "destructive" });
+                                return;
+                              }
+                              toast({ title: "Modalité de formation mise à jour" });
+                              queryClient.invalidateQueries({ queryKey: ['session-apprenants'] });
+                              queryClient.invalidateQueries({ queryKey: ['apprenants-examen'] });
+                            }}
+                          >
+                            <SelectTrigger className={`h-8 w-auto gap-1 text-xs border ${
+                              (apprenant as any)?.modalite_formation ? 'border-blue-300 text-blue-700' : ''
+                            }`}>
+                              <SelectValue placeholder="🎓 Formation" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="presentielle">🏫 Présentielle</SelectItem>
+                              <SelectItem value="elearning_synchrone">🖥️ E-learning synchrone</SelectItem>
+                              <SelectItem value="elearning_asynchrone">🌐 E-learning asynchrone</SelectItem>
+                            </SelectContent>
+                          </Select>
+
+                          <Select
                             value={sessionApprenant.presence_pratique || 'present'}
                             onValueChange={async (val) => {
                               await updateSessionApprenant(sessionApprenant.id, { presence_pratique: val });
@@ -4921,12 +4951,24 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                   ))}
                 </SelectContent>
               </Select>
-              {(learnerSearch.trim() !== '' || learnerStatutFilter !== 'all' || learnerIdentFilter !== 'all' || learnerDateFilter !== 'all') && (
+              <Select value={learnerModaliteFilter} onValueChange={setLearnerModaliteFilter}>
+                <SelectTrigger className="h-8 w-56 text-xs">
+                  <SelectValue placeholder="Formation" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Toutes les formations</SelectItem>
+                  <SelectItem value="presentielle">🏫 Présentielle</SelectItem>
+                  <SelectItem value="elearning_synchrone">🖥️ E-learning synchrone</SelectItem>
+                  <SelectItem value="elearning_asynchrone">🌐 E-learning asynchrone</SelectItem>
+                  <SelectItem value="none">⚠️ Non renseignée</SelectItem>
+                </SelectContent>
+              </Select>
+              {(learnerSearch.trim() !== '' || learnerStatutFilter !== 'all' || learnerIdentFilter !== 'all' || learnerDateFilter !== 'all' || learnerModaliteFilter !== 'all') && (
                 <Button
                   variant="ghost"
                   size="sm"
                   className="h-8 gap-1 text-xs"
-                  onClick={() => { setLearnerSearch(''); setLearnerStatutFilter('all'); setLearnerIdentFilter('all'); setLearnerDateFilter('all'); }}
+                  onClick={() => { setLearnerSearch(''); setLearnerStatutFilter('all'); setLearnerIdentFilter('all'); setLearnerDateFilter('all'); setLearnerModaliteFilter('all'); }}
                 >
                   <X className="w-3.5 h-3.5" /> Réinitialiser
                 </Button>
@@ -5021,6 +5063,10 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                         if (learnerDateFilter !== 'all') {
                           const d = a?.date_examen_theorique || '';
                           if (learnerDateFilter === 'none' ? d !== '' : d !== learnerDateFilter) return false;
+                        }
+                        if (learnerModaliteFilter !== 'all') {
+                          const m = a?.modalite_formation ?? null;
+                          if (learnerModaliteFilter === 'none' ? m !== null : m !== learnerModaliteFilter) return false;
                         }
                         return true;
                       })
