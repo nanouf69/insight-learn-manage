@@ -2476,13 +2476,6 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                               queryClient.invalidateQueries({ queryKey: ['apprenants-examen', selectedExamDate] });
                             }}
                           />
-                          <div className="mt-1">
-                            <InlineModaliteFormation
-                              apprenantId={apprenant.id}
-                              value={(apprenant as any).modalite_formation ?? null}
-                              onSaved={() => queryClient.invalidateQueries({ queryKey: ['apprenants-examen', selectedExamDate] })}
-                            />
-                          </div>
 
                         </TableCell>
                         <TableCell className={!apprenant.telephone ? "text-destructive font-medium" : ""}>
