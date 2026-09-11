@@ -47,6 +47,23 @@ function findStaticFallbackMatiere(examId: string, matiereId: string, matiereNom
   );
 }
 
+/**
+ * MODE « MATIÈRES AU CHOIX » (nouveau mode, additionnel).
+ * Restreint la liste des matières d'un examen à celles sélectionnées par
+ * l'apprenant, sans modifier les questions, réponses, barèmes ni le mode
+ * d'évaluation. Le mode complet (toutes les matières, dans l'ordre) reste
+ * inchangé lorsqu'aucun filtre n'est fourni.
+ */
+function applyMatiereFilter(examen: ExamenBlanc | null, matiereIds?: string[] | null): ExamenBlanc | null {
+  if (!examen) return examen;
+  if (!matiereIds || matiereIds.length === 0) return examen;
+  const wanted = new Set(matiereIds);
+  const matieres = (examen.matieres || []).filter((m) => m && wanted.has(m.id));
+  if (matieres.length === 0) return examen;
+  return { ...examen, matieres };
+}
+
+
 export default function ExamensBlancsPage({
   defaultBilanId,
   onBilanConsumed,
