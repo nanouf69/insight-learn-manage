@@ -50,7 +50,9 @@ import {
   Minimize2,
   ChevronLeft,
   ArrowRightLeft,
+  Video,
 } from "lucide-react";
+import { TeamsLinkSender } from "@/components/sessions/TeamsLinkSender";
 import { MODULES_DATA } from "@/components/cours-en-ligne/formations-data";
 import { ALL_MODULES, FORMATION_MODULES, MANAGED_MODULE_IDS, DEFAULT_MODULES_BY_TYPE } from "@/components/cours-en-ligne/modules-config";
 import { cn } from "@/lib/utils";
@@ -781,6 +783,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   const [apprenantToMove, setApprenantToMove] = useState<{ id: string; apprenant_id: string; nom: string; prenom: string } | null>(null);
   const [targetSessionId, setTargetSessionId] = useState("");
   const [movingApprenant, setMovingApprenant] = useState(false);
+  const [teamsLinkOpen, setTeamsLinkOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -4969,6 +4972,17 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                 Renvoyer identifiants (tous)
               </Button>
 
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-2 text-blue-700 border-blue-300 hover:bg-blue-50"
+                onClick={() => setTeamsLinkOpen(true)}
+                title="Envoyer le lien Microsoft Teams de la session aux stagiaires"
+              >
+                <Video className="w-4 h-4" />
+                Envoyer le lien de connexion
+              </Button>
+
               <Button 
                 size="sm" 
                 variant={showAddApprenant ? "secondary" : "outline"}
@@ -6584,6 +6598,16 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     </Dialog>
 
     {mdpMailDialog.dialog}
+
+    <TeamsLinkSender
+      open={teamsLinkOpen}
+      onOpenChange={setTeamsLinkOpen}
+      sessionId={session?.id}
+      recipients={apprenantsInSession
+        .map((sa: any) => sa.apprenant)
+        .filter((a: any) => a && a.email)
+        .map((a: any) => ({ id: a.id, nom: a.nom || "", prenom: a.prenom || "", email: a.email }))}
+    />
     </>
   );
 }

@@ -1575,6 +1575,39 @@ export type Database = {
         }
         Relationships: []
       }
+      envois_lien_teams: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          destinataires: Json
+          id: string
+          lien: string
+          nb_echecs: number
+          nb_succes: number
+          session_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          destinataires?: Json
+          id?: string
+          lien: string
+          nb_echecs?: number
+          nb_succes?: number
+          session_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          destinataires?: Json
+          id?: string
+          lien?: string
+          nb_echecs?: number
+          nb_succes?: number
+          session_id?: string | null
+        }
+        Relationships: []
+      }
       error_logs: {
         Row: {
           component_stack: string | null
