@@ -424,8 +424,15 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
     }
   }, [resolvedTypeFromApprenant, selectedFormationForModules]);
 
+  const createDialogInitialized = useRef(false);
   useEffect(() => {
-    if (!showCreateDialog) return;
+    if (!showCreateDialog) {
+      createDialogInitialized.current = false;
+      return;
+    }
+    if (createDialogInitialized.current) return;
+    if (!apprenant) return;
+    createDialogInitialized.current = true;
     setSelectedFormationForAccount(inferredAccountFormationId);
     setAccountStartDate(((apprenant as any)?.date_debut_cours_en_ligne as string) || ((apprenant as any)?.date_debut_formation as string) || "");
     setAccountEndDate(((apprenant as any)?.date_fin_cours_en_ligne as string) || ((apprenant as any)?.date_fin_formation as string) || "");
