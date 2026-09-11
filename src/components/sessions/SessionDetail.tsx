@@ -717,6 +717,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   const [learnerStatutFilter, setLearnerStatutFilter] = useState<string>("all");
   const [learnerIdentFilter, setLearnerIdentFilter] = useState<string>("all");
   const [learnerDateFilter, setLearnerDateFilter] = useState<string>("all");
+  const [learnerModaliteFilter, setLearnerModaliteFilter] = useState<string>("all");
   const [showAddApprenant, setShowAddApprenant] = useState(false);
   const [showAddFormateur, setShowAddFormateur] = useState(false);
   const [searchFormateur, setSearchFormateur] = useState("");
@@ -5050,6 +5051,10 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                         if (learnerDateFilter !== 'all') {
                           const d = a?.date_examen_theorique || '';
                           if (learnerDateFilter === 'none' ? d !== '' : d !== learnerDateFilter) return false;
+                        }
+                        if (learnerModaliteFilter !== 'all') {
+                          const m = a?.modalite_formation ?? null;
+                          if (learnerModaliteFilter === 'none' ? m !== null : m !== learnerModaliteFilter) return false;
                         }
                         return true;
                       })
