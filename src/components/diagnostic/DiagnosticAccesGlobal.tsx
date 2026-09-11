@@ -419,6 +419,15 @@ export function DiagnosticAccesGlobal({ onOpenApprenant }: Props) {
                       </td>
                       <td className="py-2 pr-2 text-xs">
                         {a.modules_autorises?.length ?? 0}
+                        {missing.length > 0 && (
+                          <p
+                            className="text-orange-600 font-medium max-w-[220px]"
+                            title={missing.map((id) => MODULE_NAME_BY_ID[id] ?? id).join(", ")}
+                          >
+                            {missing.length} manquant(s) :{" "}
+                            {missing.map((id) => MODULE_NAME_BY_ID[id] ?? id).join(", ")}
+                          </p>
+                        )}
                       </td>
                       <td className="py-2 pr-2 text-xs">
                         {debut && fin ? (
