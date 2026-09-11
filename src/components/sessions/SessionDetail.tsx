@@ -3903,7 +3903,22 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                           <Button
                             size="sm"
                             variant="outline"
-                            className="h-6 text-[11px] px-2 gap-1 ml-auto border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100 hover:text-blue-800"
+                            className={cn(
+                              "h-6 text-[11px] px-2 gap-1 ml-auto",
+                              waitlist
+                                ? "border-green-200 text-green-700 bg-green-50 hover:bg-green-100 hover:text-green-800"
+                                : "border-orange-200 text-orange-700 bg-orange-50 hover:bg-orange-100 hover:text-orange-800"
+                            )}
+                            onClick={(e) => { e.stopPropagation(); toggleListeAttente(sessionApprenant, apprenant); }}
+                            title={waitlist ? "Déplacer vers la liste normale" : "Déplacer en liste d'attente"}
+                          >
+                            <ArrowRightLeft className="w-3 h-3" />
+                            {waitlist ? "Liste normale" : "Liste d'attente"}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-6 text-[11px] px-2 gap-1 border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100 hover:text-blue-800"
                             onClick={(e) => {
                               e.stopPropagation();
                               setTargetSessionId("");
@@ -3914,6 +3929,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                             <ArrowRightLeft className="w-3 h-3" />
                             Déplacer
                           </Button>
+
                           <Button 
 
                             size="sm" 
