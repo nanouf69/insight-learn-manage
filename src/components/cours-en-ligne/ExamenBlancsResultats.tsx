@@ -1,11 +1,11 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
-import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   ArrowLeft, ArrowRight, CheckCircle2, XCircle, AlertTriangle,
   Trophy, RotateCcw, ChevronRight, BookOpen, Loader2, Bot, Clock, Pencil
@@ -74,7 +74,7 @@ function EcranResultats({
   const [editingPoints, setEditingPoints] = useState<number>(0);
   const [revisionDejaFaite, setRevisionDejaFaite] = useState(false);
   const [isRetake, setIsRetake] = useState(false);
-  const [pendingWrongRevisionCount, setPendingWrongRevisionCount] = useState<number | null>(null);
+  const [activeTab, setActiveTab] = useState<"resultats" | "revision">("resultats");
 
   // Detect if this is a retake (multiple results exist for same apprenant + quiz)
   useEffect(() => {
@@ -545,9 +545,53 @@ function EcranResultats({
     return false;
   })();
 
+  // Questions fausses à réviser (même logique que RevisionPhaseView)
+  const wrongQuestions = useMemo(() => {
+    const out: { matiere: Matiere; question: Question; matiereNom: string }[] = [];
+    examen.matieres.forEach((matiere, mi) => {
+      if (!matiere || matiere.id === "francais" || matiere.id === "bilan_francais") return;
+      const r = resultats[mi];
+      if (!r) return;
+      const qSafe = (matiere.questions || []).filter((q): q is Question => !!q && q?.type !== undefined);
+      const savedCorrectionsIA = r.correctionsIA || (r as any).details?.correctionsIA || {};
+      qSafe.forEach((q) => {
+        const rep = r.reponses?.[q.id] ?? r.reponses?.[String(q.id)];
+        if (rep === undefined || rep === null || (Array.isArray(rep) && rep.length === 0) || (typeof rep === "string" && rep.trim() === "")) return;
+        let isCorrect = false;
+        if (q?.type === "QCM" && q.choix) {
+          const correctes = safeArray<string>(q.choix?.filter((c) => c.correct).map((c) => c.lettre)).sort();
+          const donnees = safeArray<string>(rep).sort();
+          isCorrect = JSON.stringify(correctes) === JSON.stringify(donnees);
+        } else if (q?.type === "QRC") {
+          const corrIA = savedCorrectionsIA[q.id] || savedCorrectionsIA[String(q.id)];
+          if (corrIA && typeof corrIA === "object" && ("estCorrect" in corrIA || "pointsObtenus" in corrIA)) {
+            isCorrect = "estCorrect" in corrIA ? !!(corrIA as any).estCorrect : (corrIA as any).pointsObtenus > 0;
+          } else {
+            const repStr = safeStr(rep).toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
+            const motsCles = q.reponses_possibles || [];
+            let nbTrouvees = 0;
+            motsCles.forEach((mc) => {
+              const mcN = mc.toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
+              if (repStr.includes(mcN)) nbTrouvees++;
+            });
+            isCorrect = nbTrouvees >= motsCles.length;
+          }
+        }
+        if (!isCorrect) out.push({ matiere, question: q, matiereNom: matiere.nom });
+      });
+    });
+    return out;
+  }, [examen, resultats]);
+
   return (
-    <div className="space-y-6">
-      {/* Bandeau correction IA en cours */}
+    <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "resultats" | "revision")} className="space-y-6">
+      <TabsList className="w-full grid grid-cols-2">
+        <TabsTrigger value="resultats">📊 Résultats</TabsTrigger>
+        <TabsTrigger value="revision" disabled={wrongQuestions.length === 0}>📖 Relire les questions fausses</TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="resultats" className="space-y-6">
+        {/* Bandeau correction IA en cours */}
       {correctionEnCours && (
         <div className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg text-blue-700 text-sm">
           <Bot className="w-4 h-4 shrink-0" />
@@ -963,7 +1007,8 @@ function EcranResultats({
         return (
           <Button
             onClick={() => {
-              setPendingWrongRevisionCount(nbFaussesTop);
+              setActiveTab("revision");
+              window.scrollTo({ top: 0, behavior: "smooth" });
             }}
             className="w-full gap-2 text-lg py-6 font-bold shadow-lg"
             style={{ backgroundColor: '#F4A227', borderColor: '#F4A227', color: 'white', fontSize: '18px' }}
@@ -972,30 +1017,6 @@ function EcranResultats({
           </Button>
         );
       })()}
-
-      <AlertDialog open={pendingWrongRevisionCount !== null}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>📖 Relisez vos erreurs avant</AlertDialogTitle>
-            <AlertDialogDescription className="text-base leading-relaxed">
-              Relisez vos erreurs avant de recommencer les questions fausses. Après validation, seules les questions fausses apparaîtront et la page remontera en haut.
-              {pendingWrongRevisionCount ? ` ${pendingWrongRevisionCount} question${pendingWrongRevisionCount > 1 ? "s" : ""} fausse${pendingWrongRevisionCount > 1 ? "s" : ""} à refaire.` : ""}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogAction
-              onClick={() => {
-                setPendingWrongRevisionCount(null);
-                onRefaireFausses();
-                window.scrollTo({ top: 0, behavior: "smooth" });
-              }}
-              className="w-full sm:w-auto"
-            >
-              J’ai compris, commencer
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       {revisionDejaFaite && (
         <div className="w-full text-center py-3 px-4 rounded-lg bg-green-50 border border-green-200">
@@ -1041,7 +1062,33 @@ function EcranResultats({
           </Button>
         )}
       </div>
-    </div>
+      </TabsContent>
+
+      <TabsContent value="revision">
+        <div className="max-w-3xl mx-auto space-y-6">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="sm" onClick={() => setActiveTab("resultats")} className="gap-2">
+              <ArrowLeft className="w-4 h-4" /> Retour aux résultats
+            </Button>
+            <h2 className="text-xl font-bold" style={{ color: "#0D2540" }}>
+              🎯 Révision des questions fausses
+            </h2>
+          </div>
+          <div className="rounded-lg px-4 py-3" style={{ backgroundColor: "#FFF3E0", border: "2px solid #F4A227" }}>
+            <p className="text-sm font-semibold" style={{ color: "#D84315" }}>
+              {wrongQuestions.length} question{wrongQuestions.length > 1 ? "s" : ""} à réviser (hors épreuve de Français)
+            </p>
+          </div>
+          <RevisionFausses
+            wrongQuestions={wrongQuestions}
+            onTerminer={() => setActiveTab("resultats")}
+            apprenantId={apprenantId}
+            userId={userId}
+            examenId={examen.id}
+          />
+        </div>
+      </TabsContent>
+    </Tabs>
   );
 }
 
