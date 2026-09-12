@@ -646,6 +646,7 @@ export type Database = {
           facture_contact_nom: string | null
           facture_contact_telephone: string | null
           formation_choisie: string | null
+          frais_examen: string | null
           heure_examen_pratique: string | null
           heures_elearning: number | null
           heures_pratique: number | null
@@ -711,6 +712,7 @@ export type Database = {
           facture_contact_nom?: string | null
           facture_contact_telephone?: string | null
           formation_choisie?: string | null
+          frais_examen?: string | null
           heure_examen_pratique?: string | null
           heures_elearning?: number | null
           heures_pratique?: number | null
@@ -776,6 +778,7 @@ export type Database = {
           facture_contact_nom?: string | null
           facture_contact_telephone?: string | null
           formation_choisie?: string | null
+          frais_examen?: string | null
           heure_examen_pratique?: string | null
           heures_elearning?: number | null
           heures_pratique?: number | null
@@ -4343,6 +4346,7 @@ export type Database = {
           facture_contact_nom: string | null
           facture_contact_telephone: string | null
           formation_choisie: string | null
+          frais_examen: string | null
           heure_examen_pratique: string | null
           heures_elearning: number | null
           heures_pratique: number | null
