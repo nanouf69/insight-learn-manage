@@ -4074,6 +4074,15 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                           }`}>
                             {hasIdentifiants(apprenant.id) ? '🔑 Identifiants' : '🔑 Non envoyés'}
                           </span>
+                          {(apprenant as any)?.frais_examen && (
+                            <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full ${
+                              (apprenant as any).frais_examen === 'avec_frais'
+                                ? 'bg-emerald-100 text-emerald-700'
+                                : 'bg-rose-100 text-rose-700'
+                            }`}>
+                              {(apprenant as any).frais_examen === 'avec_frais' ? "💶 Avec frais d'examen" : "🚫 Sans frais d'examen"}
+                            </span>
+                          )}
                           <Badge className={`text-[10px] px-2 py-0 ${getFinancementBadge(sessionApprenant.mode_financement || apprenant.mode_financement).color}`}>
                             {getFinancementBadge(sessionApprenant.mode_financement || apprenant.mode_financement).label}
                           </Badge>
