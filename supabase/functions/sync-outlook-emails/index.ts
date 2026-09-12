@@ -276,21 +276,21 @@ Deno.serve(async (req) => {
 
       // Fetch only emails related to the apprenant directly from Outlook
       const normalizedApprenantEmail = apprenantEmail.trim().toLowerCase();
-      const escapedEmail = normalizedApprenantEmail.replace(/'/g, "''");
 
       const relevantInbox = await fetchEmails(
         accessToken,
         userEmail,
         "inbox",
-        `from/emailAddress/address eq '${escapedEmail}'`
+        normalizedApprenantEmail
       );
 
       const relevantSent = await fetchEmails(
         accessToken,
         userEmail,
         "sentItems",
-        `toRecipients/any(r:r/emailAddress/address eq '${escapedEmail}')`
+        normalizedApprenantEmail
       );
+
 
       // Prepare emails for insertion
       const emailsToInsert = [
