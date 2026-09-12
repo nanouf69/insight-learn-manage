@@ -63,35 +63,53 @@ async function fetchEmails(
   accessToken: string,
   userEmail: string,
   folder: "inbox" | "sentItems",
-  filter?: string
+  matchEmail?: string
 ): Promise<EmailMessage[]> {
   const orderBy = folder === "sentItems" ? "sentDateTime desc" : "receivedDateTime desc";
+  const select =
+    "id,subject,bodyPreview,body,from,toRecipients,hasAttachments,isRead,receivedDateTime,sentDateTime";
 
-  const params = new URLSearchParams({
-    "$top": "200",
-    "$orderby": orderBy,
-    "$select": "id,subject,bodyPreview,body,from,toRecipients,hasAttachments,isRead,receivedDateTime,sentDateTime",
-  });
+  // Microsoft Graph rejects $filter on toRecipients and complains about
+  // $filter + $orderby combinations, so we page through recent messages
+  // and match the address locally instead.
+  const pageSize = matchEmail ? 250 : 200;
+  const maxPages = matchEmail ? 6 : 1;
 
-  if (filter) params.set("$filter", filter);
+  const collected: EmailMessage[] = [];
+  let url =
+    `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(userEmail)}/mailFolders/${folder}/messages` +
+    `?$top=${pageSize}&$orderby=${encodeURIComponent(orderBy)}&$select=${encodeURIComponent(select)}`;
 
-  const url = `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(userEmail)}/mailFolders/${folder}/messages?${params.toString()}`;
+  for (let page = 0; page < maxPages && url; page++) {
+    const response = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+    });
 
-  const response = await fetch(url, {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
-    },
-  });
+    if (!response.ok) {
+      console.error(`Error fetching ${folder}:`, await response.text());
+      break;
+    }
 
-  if (!response.ok) {
-    console.error(`Error fetching ${folder}:`, await response.text());
-    return [];
+    const data = await response.json();
+    collected.push(...(data.value || []));
+    url = data["@odata.nextLink"] || "";
   }
 
-  const data = await response.json();
-  return data.value || [];
+  if (!matchEmail) return collected;
+
+  const needle = matchEmail.trim().toLowerCase();
+  return collected.filter((email) => {
+    const from = email.from?.emailAddress?.address?.toLowerCase();
+    if (from === needle) return true;
+    return (email.toRecipients || []).some(
+      (r) => r?.emailAddress?.address?.toLowerCase() === needle
+    );
+  });
 }
+
 
 interface EmailAttachment {
   name: string;
@@ -258,21 +276,21 @@ Deno.serve(async (req) => {
 
       // Fetch only emails related to the apprenant directly from Outlook
       const normalizedApprenantEmail = apprenantEmail.trim().toLowerCase();
-      const escapedEmail = normalizedApprenantEmail.replace(/'/g, "''");
 
       const relevantInbox = await fetchEmails(
         accessToken,
         userEmail,
         "inbox",
-        `from/emailAddress/address eq '${escapedEmail}'`
+        normalizedApprenantEmail
       );
 
       const relevantSent = await fetchEmails(
         accessToken,
         userEmail,
         "sentItems",
-        `toRecipients/any(r:r/emailAddress/address eq '${escapedEmail}')`
+        normalizedApprenantEmail
       );
+
 
       // Prepare emails for insertion
       const emailsToInsert = [
