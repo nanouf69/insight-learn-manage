@@ -859,7 +859,8 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
             societe_siret,
             organisme_financeur,
             documents_complets,
-            modalite_formation
+            modalite_formation,
+            frais_examen
           )
         `)
         .eq('session_id', session.id);
@@ -4073,6 +4074,15 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                           }`}>
                             {hasIdentifiants(apprenant.id) ? '🔑 Identifiants' : '🔑 Non envoyés'}
                           </span>
+                          {(apprenant as any)?.frais_examen && (
+                            <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full ${
+                              (apprenant as any).frais_examen === 'avec_frais'
+                                ? 'bg-emerald-100 text-emerald-700'
+                                : 'bg-rose-100 text-rose-700'
+                            }`}>
+                              {(apprenant as any).frais_examen === 'avec_frais' ? "💶 Avec frais d'examen" : "🚫 Sans frais d'examen"}
+                            </span>
+                          )}
                           <Badge className={`text-[10px] px-2 py-0 ${getFinancementBadge(sessionApprenant.mode_financement || apprenant.mode_financement).color}`}>
                             {getFinancementBadge(sessionApprenant.mode_financement || apprenant.mode_financement).label}
                           </Badge>
@@ -4634,6 +4644,40 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                               <SelectItem value="presentielle">🏫 Présentielle</SelectItem>
                               <SelectItem value="elearning_synchrone">🖥️ E-learning synchrone</SelectItem>
                               <SelectItem value="elearning_asynchrone">🌐 E-learning asynchrone</SelectItem>
+                            </SelectContent>
+                          </Select>
+
+                          <Select
+                            value={(apprenant as any)?.frais_examen || ''}
+                            onValueChange={async (val) => {
+                              const next = val === '__none__' ? null : val;
+                              const { error } = await supabase
+                                .from('apprenants')
+                                .update({ frais_examen: next } as any)
+                                .eq('id', apprenant.id);
+                              if (error) {
+                                toast({ title: "Erreur lors de l'enregistrement des frais d'examen", variant: "destructive" });
+                                return;
+                              }
+                              toast({ title: "Frais d'examen mis à jour" });
+                              queryClient.invalidateQueries({ queryKey: ['session-apprenants'] });
+                              queryClient.invalidateQueries({ queryKey: ['apprenants-examen'] });
+                              refetchApprenants();
+                            }}
+                          >
+                            <SelectTrigger className={`h-8 w-auto gap-1 text-xs border ${
+                              (apprenant as any)?.frais_examen === 'avec_frais'
+                                ? 'border-emerald-300 text-emerald-700 bg-emerald-50'
+                                : (apprenant as any)?.frais_examen === 'sans_frais'
+                                  ? 'border-rose-300 text-rose-700 bg-rose-50'
+                                  : ''
+                            }`}>
+                              <SelectValue placeholder="🎫 Examen" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="avec_frais">💶 Avec frais d'examen</SelectItem>
+                              <SelectItem value="sans_frais">🚫 Sans frais d'examen</SelectItem>
+                              <SelectItem value="__none__">— Non renseigné</SelectItem>
                             </SelectContent>
                           </Select>
 
