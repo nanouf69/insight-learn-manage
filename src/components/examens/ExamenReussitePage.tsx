@@ -2365,7 +2365,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
           </div>
           {filtered && filtered.length > 0 ? (
             <TopScrollContainer>
-              <Table className="table-fixed text-[11px]">
+              <Table className="table-fixed text-[11px] [&_select]:min-w-0">
                 <colgroup>
                   <col className="w-[7%]" />
                   <col className="w-[7%]" />
