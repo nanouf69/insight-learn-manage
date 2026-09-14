@@ -285,7 +285,7 @@ export default function CGVReglementForm({
     }
     setSaving(true);
     if (apprenantId) {
-      const ok = await saveFormDocument({
+      const payload = {
         apprenantId,
         typeDocument: "cgv-ri-acceptation",
         titre: "CGV et Reglement Interieur - Signature",
@@ -298,11 +298,20 @@ export default function CGVReglementForm({
           date_signature: dateSignature,
           signed_at: new Date().toISOString(),
         },
-      });
+      };
+      let ok = await saveFormDocument(payload);
       if (!ok) {
-        toast.error("Erreur lors de l'enregistrement.");
-        setSaving(false);
-        return;
+        // Deuxième tentative après une courte pause (réseau instable, token expiré, etc.)
+        await new Promise((r) => setTimeout(r, 1200));
+        ok = await saveFormDocument(payload);
+      }
+      if (!ok) {
+        // Ne jamais bloquer la progression de l'apprenant : comme les autres
+        // formulaires du module Introduction, on laisse continuer même si
+        // l'enregistrement du document a échoué (il pourra être refait).
+        toast.error(
+          "La signature n'a pas pu être enregistrée pour le moment. Vous pouvez continuer, elle sera à refaire plus tard.",
+        );
       }
     }
     setSaving(false);
