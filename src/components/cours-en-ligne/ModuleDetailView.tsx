@@ -8492,15 +8492,18 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                                 toast.success("🎉 Aucune question fausse à refaire !");
                                 return;
                               }
-                              startWrongQuestionRevision({
+                              // Étape obligatoire : relire ses erreurs avant de refaire les fausses
+                              setWrongReviewFor({
                                 exoId: exo.id,
-                                total: questionsSafe.length,
-                                snapCorrect,
-                                snapshot,
-                                wrongKeys,
-                                wrongIds,
+                                pending: {
+                                  exoId: exo.id,
+                                  total: questionsSafe.length,
+                                  snapCorrect,
+                                  snapshot,
+                                  wrongKeys,
+                                  wrongIds,
+                                },
                               });
-                              window.scrollTo({ top: 0, behavior: "smooth" });
                             }}>
                               🎯 Refaire les fausses ({(() => {
                                 let count = 0;
