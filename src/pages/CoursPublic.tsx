@@ -2338,8 +2338,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
             <div className="grid md:grid-cols-2 gap-6">
               {/* À faire */}
               <div className="space-y-3">
-                <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
-                  <BookOpen className="w-5 h-5 text-primary" />
+                <h2 className="text-lg font-bold text-foreground">
                   À faire ({remainingModules.length})
                 </h2>
                 <div className="grid gap-3">
