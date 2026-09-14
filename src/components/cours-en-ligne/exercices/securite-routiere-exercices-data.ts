@@ -138,8 +138,8 @@ export const SECURITE_ROUTIERE_EXERCICES: {
         { lettre: "C", texte: "Fin de route à accès réglementé" },
       ]},
       { id: 25, enonce: "Ce panneau signifie :", image: "/cours/exercices/securite/image25.png", choix: [
-        { lettre: "A", texte: "Terrain de camping pour caravane", correct: true },
-        { lettre: "B", texte: "Passage d'animaux sauvages" },
+        { lettre: "A", texte: "Terrain de camping pour caravane" },
+        { lettre: "B", texte: "Passage d'animaux sauvages", correct: true },
         { lettre: "C", texte: "Passage d'animaux domestiques" },
       ]},
       { id: 26, enonce: "Ce panneau signifie :", image: "/cours/exercices/securite/image26.png", choix: [
