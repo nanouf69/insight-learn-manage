@@ -3614,6 +3614,9 @@ function ExerciceCard({
                         <Button size="sm" variant="outline" className="gap-1" onClick={() => setEditingQId(q.id)}>
                           <Pencil className="w-3 h-3" /> Modifier
                         </Button>
+                        <Button size="sm" variant="outline" className="gap-1" title="Déplacer vers un autre module" onClick={() => setMovingQuestion(q)}>
+                          <ArrowRightLeft className="w-3 h-3" /> Déplacer
+                        </Button>
                       </div>
                     )}
                   </div>
