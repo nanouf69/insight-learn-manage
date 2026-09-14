@@ -2317,12 +2317,28 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
               </Card>
             )}
 
+            {/* Header modules/quiz + déconnexion */}
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
+                <BookOpen className="w-5 h-5 text-primary" />
+                Mes modules et quiz
+              </h2>
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-xs gap-1.5 border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                onClick={handleLogout}
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                Se déconnecter
+              </Button>
+            </div>
+
             {/* Modules grid: À faire + Réalisés */}
             <div className="grid md:grid-cols-2 gap-6">
               {/* À faire */}
               <div className="space-y-3">
-                <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
-                  <BookOpen className="w-5 h-5 text-primary" />
+                <h2 className="text-lg font-bold text-foreground">
                   À faire ({remainingModules.length})
                 </h2>
                 <div className="grid gap-3">
