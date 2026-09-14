@@ -36,6 +36,13 @@
       "when": 1789219466574,
       "tag": "0004_add_frais_examen_apprenants",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1789388240198,
+      "tag": "0005_shared_exercices_single_source",
+      "breakpoints": true
     }
   ]
 }
