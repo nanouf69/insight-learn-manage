@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, ArrowUp, ArrowDown, Pencil, Trash2, Plus, ToggleLeft, ToggleRight, Save, X, CheckCircle2, Eye, Settings, Download, FileText, Upload, Loader2, ZoomIn, ZoomOut, RotateCcw, Maximize, Users, ChevronDown, ChevronUp, Lock, Printer, RefreshCw, AlertTriangle, Calculator } from "lucide-react";
+import { ArrowLeft, ArrowUp, ArrowDown, ArrowRightLeft, Pencil, Trash2, Plus, ToggleLeft, ToggleRight, Save, X, CheckCircle2, Eye, Settings, Download, FileText, Upload, Loader2, ZoomIn, ZoomOut, RotateCcw, Maximize, Users, ChevronDown, ChevronUp, Lock, Printer, RefreshCw, AlertTriangle, Calculator } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
@@ -3001,6 +3001,223 @@ function computeExercicePartNumbers(moduleId: number, cours: ContentItem[], exer
   return result;
 }
 
+// ===== Déplacement d'une question vers un autre module / quiz =====
+type MoveTargetModule = {
+  moduleId: number;
+  nom: string;
+  exercices: Array<{ id: number; titre: string; count: number }>;
+};
+
+function MoveQuestionDialog({
+  open,
+  onOpenChange,
+  question,
+  sourceModuleId,
+  sourceExerciceId,
+  onMoved,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  question: ExerciceQuestion | null;
+  sourceModuleId: number;
+  sourceExerciceId: number;
+  onMoved: () => void;
+}) {
+  const [targets, setTargets] = useState<MoveTargetModule[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [moving, setMoving] = useState(false);
+  const [targetModuleId, setTargetModuleId] = useState<number | null>(null);
+  const [targetExerciceId, setTargetExerciceId] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    setLoading(true);
+    setTargetModuleId(null);
+    setTargetExerciceId(null);
+    (async () => {
+      const dbRows: Record<number, any> = {};
+      try {
+        const { data } = await supabase
+          .from("module_editor_state")
+          .select("module_id, module_data");
+        for (const row of ((data as any[]) || [])) {
+          dbRows[Number(row.module_id)] = row.module_data;
+        }
+      } catch (e) {
+        console.warn("[MoveQuestion] Lecture module_editor_state impossible:", e);
+      }
+
+      const ids = Array.from(
+        new Set([...ALL_EXERCISE_MODULE_IDS, ...Object.keys(dbRows).map(Number)]),
+      ).sort((a, b) => a - b);
+
+      const list: MoveTargetModule[] = [];
+      for (const id of ids) {
+        let md: any = dbRows[id] ?? null;
+        if (!md) {
+          try {
+            md = getInitialModuleData({ id, nom: `Module ${id}` });
+          } catch {
+            continue;
+          }
+        }
+        const exercices = (Array.isArray(md?.exercices) ? md.exercices : [])
+          .filter((exo: any) => Array.isArray(exo?.questions))
+          .map((exo: any) => ({
+            id: Number(exo.id),
+            titre: String(exo.titre || `Exercice ${exo.id}`),
+            count: (exo.questions || []).length,
+          }));
+        if (exercices.length === 0) continue;
+        list.push({ moduleId: id, nom: String(md?.nom || `Module ${id}`), exercices });
+      }
+
+      if (!cancelled) {
+        setTargets(list);
+        setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [open]);
+
+  const selectedModule = targets.find((t) => t.moduleId === targetModuleId) || null;
+  const availableExercices = (selectedModule?.exercices || []).filter(
+    (exo) => !(targetModuleId === sourceModuleId && exo.id === sourceExerciceId),
+  );
+
+  const handleMove = async () => {
+    if (!question || targetModuleId == null || targetExerciceId == null) return;
+    setMoving(true);
+    try {
+      const { data: row, error: readError } = await supabase
+        .from("module_editor_state")
+        .select("module_data, deleted_cours, deleted_exercices, source_fingerprint, updated_at")
+        .eq("module_id", targetModuleId)
+        .maybeSingle();
+      if (readError) throw readError;
+
+      const targetName = targets.find((t) => t.moduleId === targetModuleId)?.nom || `Module ${targetModuleId}`;
+      const baseModuleData: any =
+        (row as any)?.module_data ??
+        getInitialModuleData({ id: targetModuleId, nom: targetName });
+
+      const exercices = Array.isArray(baseModuleData?.exercices) ? baseModuleData.exercices : [];
+      const targetIdx = exercices.findIndex((exo: any) => Number(exo?.id) === targetExerciceId);
+      if (targetIdx < 0) throw new Error("Quiz de destination introuvable");
+
+      const existing: ExerciceQuestion[] = Array.isArray(exercices[targetIdx].questions)
+        ? exercices[targetIdx].questions
+        : [];
+      const newId = Math.max(0, ...existing.map((q: any) => Number(q.id) || 0)) + 1;
+
+      const moved: any = {
+        ...JSON.parse(JSON.stringify(question)),
+        id: newId,
+      };
+      delete moved.question_id;
+      delete moved._canonicalUpdatedAt;
+      delete moved._baseChoix;
+
+      const nextModuleData = {
+        ...baseModuleData,
+        exercices: exercices.map((exo: any, i: number) =>
+          i === targetIdx ? { ...exo, questions: [...existing, moved] } : exo,
+        ),
+      };
+
+      const { error: saveError } = await supabase.rpc("save_module_editor_state", {
+        p_module_id: targetModuleId,
+        p_module_data: nextModuleData as any,
+        p_deleted_cours: ((row as any)?.deleted_cours ?? []) as any,
+        p_deleted_exercices: ((row as any)?.deleted_exercices ?? []) as any,
+        p_source_fingerprint: (row as any)?.source_fingerprint ?? null,
+        p_expected_updated_at: (row as any)?.updated_at ?? null,
+      });
+      if (saveError) throw saveError;
+
+      toast.success(`Question déplacée vers « ${targetName} » — ${exercices[targetIdx].titre}`);
+      onMoved();
+      onOpenChange(false);
+    } catch (e: any) {
+      console.error("[MoveQuestion] Échec du déplacement:", e);
+      toast.error(`Déplacement impossible : ${e?.message || "erreur inconnue"}`);
+    } finally {
+      setMoving(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Déplacer la question vers un autre module</DialogTitle>
+        </DialogHeader>
+        {loading ? (
+          <div className="py-8 flex items-center justify-center text-muted-foreground gap-2">
+            <Loader2 className="w-4 h-4 animate-spin" /> Chargement des modules…
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground line-clamp-3">
+              <RichText value={question?.enonce || ""} />
+            </p>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Module de destination</label>
+              <select
+                className="w-full h-10 rounded-md border bg-background px-3 text-sm"
+                value={targetModuleId ?? ""}
+                onChange={(e) => {
+                  setTargetModuleId(e.target.value ? Number(e.target.value) : null);
+                  setTargetExerciceId(null);
+                }}
+              >
+                <option value="">— Choisir un module —</option>
+                {targets.map((t) => (
+                  <option key={t.moduleId} value={t.moduleId}>
+                    {t.moduleId}. {t.nom}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Quiz / exercice de destination</label>
+              <select
+                className="w-full h-10 rounded-md border bg-background px-3 text-sm"
+                value={targetExerciceId ?? ""}
+                disabled={!selectedModule}
+                onChange={(e) => setTargetExerciceId(e.target.value ? Number(e.target.value) : null)}
+              >
+                <option value="">— Choisir un quiz —</option>
+                {availableExercices.map((exo) => (
+                  <option key={exo.id} value={exo.id}>
+                    {exo.titre} ({exo.count} questions)
+                  </option>
+                ))}
+              </select>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              La question sera ajoutée à la fin du quiz choisi, puis retirée de ce quiz. Les réponses déjà
+              enregistrées par les apprenants ne sont pas modifiées.
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => onOpenChange(false)} disabled={moving}>
+                Annuler
+              </Button>
+              <Button onClick={handleMove} disabled={moving || targetModuleId == null || targetExerciceId == null}>
+                {moving ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
+                Déplacer
+              </Button>
+            </div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function ExerciceCard({
   item,
   index,
@@ -3082,6 +3299,14 @@ function ExerciceCard({
 
 
   const [confirmDeleteQId, setConfirmDeleteQId] = useState<number | null>(null);
+  const [movingQuestion, setMovingQuestion] = useState<ExerciceQuestion | null>(null);
+
+  const handleQuestionMoved = () => {
+    const qId = movingQuestion?.id;
+    if (qId == null || !item.questions) return;
+    onUpdateQuestions(item.id, item.questions.filter(q => q.id !== qId), qId);
+    setMovingQuestion(null);
+  };
 
   const deleteQuestion = (qId: number) => {
     setConfirmDeleteQId(qId);
@@ -3283,6 +3508,9 @@ function ExerciceCard({
                     <Button size="sm" variant="ghost" className="opacity-0 group-hover:opacity-100 h-7 px-2" onClick={() => setEditingQId(q.id)}>
                       <Pencil className="w-3 h-3" />
                     </Button>
+                    <Button size="sm" variant="ghost" className="opacity-0 group-hover:opacity-100 h-7 px-2" title="Déplacer vers un autre module" onClick={() => setMovingQuestion(q)}>
+                      <ArrowRightLeft className="w-3 h-3" />
+                    </Button>
                   </div>
                 )}
               </div>
@@ -3315,6 +3543,16 @@ function ExerciceCard({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Déplacement d'une question vers un autre module */}
+      <MoveQuestionDialog
+        open={movingQuestion !== null}
+        onOpenChange={(open) => { if (!open) setMovingQuestion(null); }}
+        question={movingQuestion}
+        sourceModuleId={moduleId}
+        sourceExerciceId={item.id}
+        onMoved={handleQuestionMoved}
+      />
 
       {/* Vue plein écran des questions */}
       <Dialog open={fullscreenOpen} onOpenChange={setFullscreenOpen}>
@@ -3385,6 +3623,9 @@ function ExerciceCard({
                         </div>
                         <Button size="sm" variant="outline" className="gap-1" onClick={() => setEditingQId(q.id)}>
                           <Pencil className="w-3 h-3" /> Modifier
+                        </Button>
+                        <Button size="sm" variant="outline" className="gap-1" title="Déplacer vers un autre module" onClick={() => setMovingQuestion(q)}>
+                          <ArrowRightLeft className="w-3 h-3" /> Déplacer
                         </Button>
                       </div>
                     )}
