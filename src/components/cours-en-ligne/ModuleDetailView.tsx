@@ -6198,6 +6198,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       wrongIds: (number | string)[];
     };
     const [pendingWrongQuestionRevision, setPendingWrongQuestionRevision] = useState<PendingWrongQuestionRevision | null>(null);
+    // Étape de relecture obligatoire des erreurs avant de refaire les fausses
+    const [wrongReviewFor, setWrongReviewFor] = useState<{ exoId: number; pending: PendingWrongQuestionRevision } | null>(null);
     // History of past attempts per exo (snapshot of selectedAnswers + score)
     type AttemptRecord = { at: number; total: number; correct: number; mode: "complet" | "revision"; answers: Record<string, string | string[]> };
     const [attemptHistoryFor, setAttemptHistoryFor] = useState<Record<number, AttemptRecord[]>>({});
@@ -8490,15 +8492,18 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                                 toast.success("🎉 Aucune question fausse à refaire !");
                                 return;
                               }
-                              startWrongQuestionRevision({
+                              // Étape obligatoire : relire ses erreurs avant de refaire les fausses
+                              setWrongReviewFor({
                                 exoId: exo.id,
-                                total: questionsSafe.length,
-                                snapCorrect,
-                                snapshot,
-                                wrongKeys,
-                                wrongIds,
+                                pending: {
+                                  exoId: exo.id,
+                                  total: questionsSafe.length,
+                                  snapCorrect,
+                                  snapshot,
+                                  wrongKeys,
+                                  wrongIds,
+                                },
                               });
-                              window.scrollTo({ top: 0, behavior: "smooth" });
                             }}>
                               🎯 Refaire les fausses ({(() => {
                                 let count = 0;
@@ -8534,6 +8539,72 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                           </div>
                         </div>
                       </div>
+                      {/* Relecture obligatoire des erreurs avant de refaire les fausses */}
+                      <Dialog open={wrongReviewFor?.exoId === exo.id} onOpenChange={(open) => { if (!open) setWrongReviewFor(null); }}>
+                        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+                          <DialogHeader>
+                            <DialogTitle>📖 Relisez vos erreurs avant de recommencer</DialogTitle>
+                          </DialogHeader>
+                          <p className="text-sm text-muted-foreground">
+                            Prenez le temps de relire chaque question, votre réponse et la bonne réponse. Vous pourrez ensuite refaire uniquement les questions fausses.
+                          </p>
+                          <div className="space-y-4 mt-2">
+                            {wrongReviewFor?.exoId === exo.id && questionsSafe
+                              .filter((q: any) => wrongReviewFor.pending.wrongIds.includes(q.id))
+                              .map((q: any, idx: number) => {
+                                const key = `${exo.id}-${q.id}`;
+                                const learner = selectedAnswers[key];
+                                const learnerLetters = Array.isArray(learner) ? learner : learner ? [learner] : [];
+                                const choix = getQuestionChoices(q);
+                                const isQrc = q?.type === "qrc" || (choix.length === 0 && q.reponsesAttendues);
+                                return (
+                                  <div key={q.id} className="rounded-lg border border-red-200 bg-red-50/50 p-3 space-y-2">
+                                    <div className="font-semibold text-sm">Question {idx + 1} — {q.enonce}</div>
+                                    {isQrc ? (
+                                      <div className="space-y-1 text-sm">
+                                        <div className="text-red-700"><span className="font-medium">Votre réponse :</span> {typeof learner === "string" && learner.trim() ? learner : "(sans réponse)"}</div>
+                                        {Array.isArray(q.reponsesAttendues) && q.reponsesAttendues.length > 0 && (
+                                          <div className="text-emerald-700"><span className="font-medium">Réponse attendue :</span> {q.reponsesAttendues[0]}</div>
+                                        )}
+                                      </div>
+                                    ) : (
+                                      <div className="space-y-1 text-sm">
+                                        <div className="text-red-700">
+                                          <span className="font-medium">Votre réponse :</span>{" "}
+                                          {learnerLetters.length > 0
+                                            ? learnerLetters.map((l) => {
+                                                const c = choix.find((ch) => ch.lettre === l);
+                                                return `${l}. ${c?.texte ?? ""}`;
+                                              }).join(" | ")
+                                            : "(sans réponse)"}
+                                        </div>
+                                        <div className="text-emerald-700">
+                                          <span className="font-medium">Bonne réponse :</span>{" "}
+                                          {choix.filter((ch) => ch.correct).map((ch) => `${ch.lettre}. ${ch.texte ?? ""}`).join(" | ")}
+                                        </div>
+                                      </div>
+                                    )}
+                                    {q.explication && (
+                                      <div className="text-xs text-muted-foreground border-t pt-1">💡 {q.explication}</div>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                          </div>
+                          <Button
+                            className="mt-4 w-full gap-2"
+                            onClick={() => {
+                              const pending = wrongReviewFor?.pending;
+                              if (!pending) return;
+                              setWrongReviewFor(null);
+                              startWrongQuestionRevision(pending);
+                              window.scrollTo({ top: 0, behavior: "smooth" });
+                            }}
+                          >
+                            ✅ J'ai relu mes erreurs — Refaire les fausses
+                          </Button>
+                        </DialogContent>
+                      </Dialog>
                       {(attemptHistoryFor[exo.id]?.length ?? 0) > 0 && (
                         <div className="mt-4 rounded-lg border bg-muted/30 p-4">
                           <h4 className="font-semibold text-sm mb-2">📜 Historique des tentatives</h4>
