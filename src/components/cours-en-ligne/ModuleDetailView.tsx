@@ -3544,6 +3544,16 @@ function ExerciceCard({
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Déplacement d'une question vers un autre module */}
+      <MoveQuestionDialog
+        open={movingQuestion !== null}
+        onOpenChange={(open) => { if (!open) setMovingQuestion(null); }}
+        question={movingQuestion}
+        sourceModuleId={moduleId}
+        sourceExerciceId={item.id}
+        onMoved={handleQuestionMoved}
+      />
+
       {/* Vue plein écran des questions */}
       <Dialog open={fullscreenOpen} onOpenChange={setFullscreenOpen}>
         <DialogContent className="max-w-[98vw] w-[98vw] h-[95vh] p-0 flex flex-col">
