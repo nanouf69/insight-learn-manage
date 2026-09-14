@@ -97,7 +97,7 @@ function InlineDossierCma({ apprenantId, value, onSaved }: { apprenantId: string
         onBlur={save}
         onKeyDown={(e) => { if (e.key === 'Enter') save(); if (e.key === 'Escape') { setVal(value || ""); setEditing(false); } }}
         placeholder="N° dossier CMA"
-        className="h-8 w-32 text-xs font-mono"
+        className="h-8 w-full min-w-0 text-xs font-mono"
       />
     );
   }
@@ -143,9 +143,9 @@ function InlineMotDePasseCma({ apprenantId, value, onSaved }: { apprenantId: str
     );
   }
   return (
-    <div className="flex items-center gap-1">
-      <button type="button" onClick={() => setEditing(true)} className="inline-block" title="Cliquer pour modifier">
-        <Badge variant="outline" className={`cursor-pointer hover:bg-muted font-mono ${!value ? "border-destructive text-destructive" : ""}`}>
+    <div className="flex min-w-0 items-center gap-1">
+      <button type="button" onClick={() => setEditing(true)} className="min-w-0" title="Cliquer pour modifier">
+        <Badge variant="outline" className={`block max-w-full cursor-pointer truncate hover:bg-muted font-mono ${!value ? "border-destructive text-destructive" : ""}`}>
           {value || "-"}
         </Badge>
       </button>
@@ -296,7 +296,7 @@ function InlineIdentifiantsT3P({
       <button
         type="button"
         onClick={() => setEditing(true)}
-        className="text-xs text-primary hover:underline"
+        className="line-clamp-2 text-left text-[10px] leading-tight text-primary hover:underline"
       >
         + Ajouter une adresse / un mot de passe
       </button>
@@ -523,7 +523,7 @@ function InlineStatutSuivi({
           await saveStatut(val === "non_renseigne" ? null : val);
         }}
       >
-        <SelectTrigger className={`w-44 text-xs h-8 ${
+        <SelectTrigger className={`h-8 w-full min-w-0 text-[10px] ${
           value === 'inscription_validee' || value === 'document_complet' || value === 'paye' ? 'border-green-300 text-green-700' :
           value ? 'border-orange-300 text-orange-700' : ''
         }`}>
@@ -2365,21 +2365,35 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
           </div>
           {filtered && filtered.length > 0 ? (
             <TopScrollContainer>
-              <Table>
+              <Table className="table-fixed text-[11px]">
+                <colgroup>
+                  <col className="w-[7%]" />
+                  <col className="w-[7%]" />
+                  <col className="w-[5%]" />
+                  <col className="w-[9%]" />
+                  <col className="w-[8%]" />
+                  <col className="w-[9%]" />
+                  <col className="w-[14%]" />
+                  <col className="w-[11%]" />
+                  <col className="w-[8%]" />
+                  <col className="w-[13%]" />
+                  <col className="w-[6%]" />
+                  <col className="w-[3%]" />
+                </colgroup>
                 <TableHeader>
-                  <TableRow>
+                  <TableRow className="[&>th]:h-10 [&>th]:px-1.5 [&>th]:text-[10px] [&>th]:leading-tight">
                     <TableHead>Nom</TableHead>
                     <TableHead>Prénom</TableHead>
                     <TableHead>Type</TableHead>
-                    <TableHead className="text-center">Admissibilité (Théorie)</TableHead>
-                    <TableHead>N° Dossier CMA</TableHead>
-                    <TableHead>Mot de passe CMA</TableHead>
+                    <TableHead className="text-center">Admissibilité</TableHead>
+                    <TableHead>N° dossier</TableHead>
+                    <TableHead>Mot de passe</TableHead>
                     <TableHead>Nouveaux identifiants</TableHead>
                     <TableHead>Statut</TableHead>
-                    <TableHead>Téléphone</TableHead>
+                    <TableHead>Tél.</TableHead>
                     <TableHead>Email</TableHead>
-                    <TableHead>Date d'examen</TableHead>
-                    <TableHead className="text-center">Actions</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead className="text-center"><span className="sr-only">Actions</span></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -2389,32 +2403,32 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                     const resultat = (apprenant as any).resultat_examen || '';
 
                     return (
-                      <TableRow key={apprenant.id}>
-                        <TableCell className="font-medium">
+                      <TableRow key={apprenant.id} className="[&>td]:px-1.5 [&>td]:py-2">
+                        <TableCell className="truncate font-medium" title={apprenant.nom || undefined}>
                           {onNavigateToApprenant ? (
                             <button
                               type="button"
                               title="Ouvrir la fiche CRM"
                               onClick={() => onNavigateToApprenant(apprenant.id)}
-                              className="text-primary hover:underline text-left"
+                              className="block max-w-full truncate text-left text-primary hover:underline"
                             >
                               {apprenant.nom}
                             </button>
                           ) : apprenant.nom}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="truncate" title={apprenant.prenom || undefined}>
                           {onNavigateToApprenant ? (
                             <button
                               type="button"
                               title="Ouvrir la fiche CRM"
                               onClick={() => onNavigateToApprenant(apprenant.id)}
-                              className="text-primary hover:underline text-left"
+                              className="block max-w-full truncate text-left text-primary hover:underline"
                             >
                               {apprenant.prenom}
                             </button>
                           ) : apprenant.prenom}
                         </TableCell>
-                        <TableCell><Badge className={tColor}>{tLabel}</Badge></TableCell>
+                        <TableCell><Badge className={`${tColor} max-w-full truncate px-1.5 text-[10px]`}>{tLabel}</Badge></TableCell>
                         <TableCell className="text-center">
                           <Select
                             value={resultat || "non_renseigne"}
@@ -2425,7 +2439,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                               })
                             }
                           >
-                            <SelectTrigger className={`w-32 mx-auto text-xs ${
+                            <SelectTrigger className={`mx-auto h-8 w-full min-w-0 px-2 text-[10px] ${
                               resultat === 'oui' ? 'border-emerald-500 text-emerald-700 bg-emerald-50' :
                               resultat === 'non' || resultat === 'annule' ? 'border-red-500 text-red-700 bg-red-50' :
                               resultat === 'absent' || resultat === 'reporte' ? 'border-orange-500 text-orange-700 bg-orange-50' :
@@ -2457,7 +2471,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                             onSaved={() => queryClient.invalidateQueries({ queryKey: ['apprenants-examen', selectedExamDate] })}
                           />
                         </TableCell>
-                        <TableCell className="min-w-[260px]">
+                        <TableCell className="min-w-0">
                           <InlineIdentifiantsT3P
                             apprenantId={apprenant.id}
                             email={nouveauxIdentifiantsT3P[apprenant.id]?.nouvel_email ?? null}
@@ -2478,10 +2492,10 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                           />
 
                         </TableCell>
-                        <TableCell className={!apprenant.telephone ? "text-destructive font-medium" : ""}>
+                        <TableCell className={`break-all ${!apprenant.telephone ? "text-destructive font-medium" : ""}`}>
                           {apprenant.telephone || "-"}
                         </TableCell>
-                        <TableCell className={`min-w-[280px] max-w-[360px] ${!apprenant.email ? "text-destructive font-medium" : ""}`}>
+                        <TableCell className={`min-w-0 ${!apprenant.email ? "text-destructive font-medium" : ""}`}>
                           <div className="flex items-center gap-1.5">
                             <InlineEmailApprenant
                               apprenantId={apprenant.id}
@@ -2521,7 +2535,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                         </TableCell>
 
                         <TableCell>
-                          <Badge className="bg-primary/10 text-primary">{apprenant.date_examen_theorique}</Badge>
+                          <Badge className="whitespace-normal break-words bg-primary/10 px-1.5 text-[10px] leading-tight text-primary">{apprenant.date_examen_theorique}</Badge>
                         </TableCell>
                         <TableCell className="text-center">
                           <AlertDialog>
