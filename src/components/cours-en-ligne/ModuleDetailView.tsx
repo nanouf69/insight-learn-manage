@@ -3508,6 +3508,9 @@ function ExerciceCard({
                     <Button size="sm" variant="ghost" className="opacity-0 group-hover:opacity-100 h-7 px-2" onClick={() => setEditingQId(q.id)}>
                       <Pencil className="w-3 h-3" />
                     </Button>
+                    <Button size="sm" variant="ghost" className="opacity-0 group-hover:opacity-100 h-7 px-2" title="Déplacer vers un autre module" onClick={() => setMovingQuestion(q)}>
+                      <ArrowRightLeft className="w-3 h-3" />
+                    </Button>
                   </div>
                 )}
               </div>
