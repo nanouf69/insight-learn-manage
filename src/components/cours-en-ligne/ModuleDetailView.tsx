@@ -6198,6 +6198,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       wrongIds: (number | string)[];
     };
     const [pendingWrongQuestionRevision, setPendingWrongQuestionRevision] = useState<PendingWrongQuestionRevision | null>(null);
+    // Étape de relecture obligatoire des erreurs avant de refaire les fausses
+    const [wrongReviewFor, setWrongReviewFor] = useState<{ exoId: number; pending: PendingWrongQuestionRevision } | null>(null);
     // History of past attempts per exo (snapshot of selectedAnswers + score)
     type AttemptRecord = { at: number; total: number; correct: number; mode: "complet" | "revision"; answers: Record<string, string | string[]> };
     const [attemptHistoryFor, setAttemptHistoryFor] = useState<Record<number, AttemptRecord[]>>({});
