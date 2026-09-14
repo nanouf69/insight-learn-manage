@@ -8567,17 +8567,35 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             <div className="grid grid-cols-2 gap-1.5">
               {questionsSafe.map((q: any, qi: number) => {
                 const isAnswered = isQuestionAnsweredForSidebar(q);
+                // Après validation (ou mode révision), les erreurs s'affichent en rouge
+                const sidebarKey = `${exo.id}-${q.id}`;
+                const isQrcQ = q?.type === "qrc" || (q.choix?.length === 0 && q.reponsesAttendues);
+                const sidebarShowResults = showResultsFor.has(exo.id);
+                const sidebarRevisionSet = revisionQuestionsFor[exo.id];
+                const sidebarInRevision = sidebarRevisionSet && sidebarRevisionSet.size > 0;
+                let isWrong = false;
+                if (isQrcQ) {
+                  const qr = qrcResults[sidebarKey];
+                  isWrong = !!sidebarInRevision || (!!qr && qr !== "loading" && !qr.estCorrect);
+                } else {
+                  const sel = selectedAnswers[sidebarKey];
+                  const selArr = Array.isArray(sel) ? sel : sel ? [sel] : [];
+                  const ok = isAnswerCorrect(sel, q);
+                  isWrong = (!!sidebarInRevision && selArr.length > 0 && !ok) || (sidebarShowResults && !ok);
+                }
                 return (
                   <button
                     key={q.id ?? qi}
                     type="button"
                     onClick={() => scrollToExerciseQuestion(qi)}
                     className={`w-full aspect-square rounded-md text-xs font-bold transition-colors flex items-center justify-center ${
-                      isAnswered
-                        ? "bg-green-500 text-white border border-green-600 hover:bg-green-600"
-                        : "bg-red-500 text-white border border-red-600 hover:bg-red-600"
+                      isWrong
+                        ? "bg-red-600 text-white border-2 border-red-800 hover:bg-red-700"
+                        : isAnswered
+                          ? "bg-green-500 text-white border border-green-600 hover:bg-green-600"
+                          : "bg-red-500 text-white border border-red-600 hover:bg-red-600"
                     }`}
-                    title={isAnswered ? `Q${qi + 1} — répondue ✓` : `Q${qi + 1} — non répondue ✗`}
+                    title={isWrong ? `Q${qi + 1} — erreur ❌` : isAnswered ? `Q${qi + 1} — répondue ✓` : `Q${qi + 1} — non répondue ✗`}
                   >
                     {qi + 1}
                   </button>
@@ -8592,6 +8610,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               <div className="flex items-center gap-1.5">
                 <span className="w-3 h-3 rounded bg-red-500 border border-red-600" />
                 <span>À faire</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded bg-red-600 border-2 border-red-800" />
+                <span>Erreur</span>
               </div>
             </div>
           </div>
