@@ -3299,6 +3299,14 @@ function ExerciceCard({
 
 
   const [confirmDeleteQId, setConfirmDeleteQId] = useState<number | null>(null);
+  const [movingQuestion, setMovingQuestion] = useState<ExerciceQuestion | null>(null);
+
+  const handleQuestionMoved = () => {
+    const qId = movingQuestion?.id;
+    if (qId == null || !item.questions) return;
+    onUpdateQuestions(item.id, item.questions.filter(q => q.id !== qId), qId);
+    setMovingQuestion(null);
+  };
 
   const deleteQuestion = (qId: number) => {
     setConfirmDeleteQId(qId);
