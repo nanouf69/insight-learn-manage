@@ -163,6 +163,19 @@ export async function syncSharedExercisesToSiblingModules(
   deletedExerciceIds: number[],
   previousExercices?: SharedExercice[] | null,
 ): Promise<void> {
+  // ────────────────────────────────────────────────────────────────────
+  // NEUTRALISÉ : la propagation est désormais assurée par la BASE
+  // (trigger `trg_propagate_shared_exercices` sur `module_editor_state`,
+  //  + `trg_adopt_shared_exercices` à l'initialisation d'un module).
+  // La propagation depuis le navigateur était « meilleur effort » : elle
+  // pouvait échouer silencieusement (réseau, onglet fermé, module pas
+  // encore initialisé en base) et laisser des copies divergentes.
+  // On conserve la signature pour ne rien casser côté appelants.
+  // ────────────────────────────────────────────────────────────────────
+  void savedModuleId; void savedExercices; void deletedExerciceIds; void previousExercices;
+  return;
+
+  // eslint-disable-next-line no-unreachable
   try {
     const saved = Array.isArray(savedExercices) ? savedExercices : [];
     const previous = Array.isArray(previousExercices) ? previousExercices : null;
