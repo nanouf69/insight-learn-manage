@@ -140,16 +140,24 @@ export default function CGVAcceptanceForm({ apprenantId, completed, onComplete }
     }
     setSaving(true);
     if (apprenantId) {
-      const ok = await saveFormDocument({
+      const payload = {
         apprenantId,
         typeDocument: "cgv-acceptation",
         titre: "Conditions Générales de Vente — Acceptation",
         donnees: { accepted: true, accepted_at: new Date().toISOString() },
-      });
+      };
+      let ok = await saveFormDocument(payload);
       if (!ok) {
-        toast.error("Erreur lors de l'enregistrement.");
-        setSaving(false);
-        return;
+        // Deuxième tentative après une courte pause (réseau instable, token expiré, etc.)
+        await new Promise((r) => setTimeout(r, 1200));
+        ok = await saveFormDocument(payload);
+      }
+      if (!ok) {
+        // Ne jamais bloquer la progression de l'apprenant : on laisse continuer
+        // même si l'enregistrement du document a échoué (il pourra être refait).
+        toast.error(
+          "L'acceptation n'a pas pu être enregistrée pour le moment. Vous pouvez continuer, elle sera à refaire plus tard.",
+        );
       }
     }
     setSaving(false);
