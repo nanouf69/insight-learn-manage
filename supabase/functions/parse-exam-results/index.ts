@@ -265,14 +265,19 @@ Ne mets aucune explication, juste le tableau JSON.`;
         return supabase.from("apprenants").update(updateField).eq("id", u.id);
       }));
       results.forEach((res, idx) => {
+        const u = batch[idx];
         if (!res.error) {
-          const u = batch[idx];
           matched.push({
             id: u.id,
             nom: u.apprenant.nom,
             prenom: u.apprenant.prenom,
             resultat: u.entry.mappedResultat,
             dossier: u.entry.dossier,
+          });
+        } else {
+          ignored.push({
+            ligne: { nom: u.apprenant.nom, prenom: u.apprenant.prenom, dossier: u.entry.dossier },
+            raison: "Enregistrement refusé : " + res.error.message,
           });
         }
       });
@@ -284,8 +289,10 @@ Ne mets aucune explication, juste le tableau JSON.`;
       totalExtracted: results.length,
       totalMatched: matched.length,
       totalNotFound: notFound.length,
+      totalIgnored: ignored.length,
       matched,
       notFound,
+      ignored,
       extractedFromPdf: results,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
