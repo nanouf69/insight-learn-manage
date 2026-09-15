@@ -38,6 +38,7 @@ import IdentifiantsT3PPublic from "./pages/IdentifiantsT3PPublic";
 // Onboarding pages
 
 import OnboardingWelcome from "./pages/onboarding/OnboardingWelcome";
+import OnboardingInvitation from "./pages/onboarding/OnboardingInvitation";
 import OnboardingFCFinish from "./pages/onboarding/OnboardingFCFinish";
 import Step1 from "./pages/onboarding/steps/Step1";
 import Step2 from "./pages/onboarding/steps/Step2";
