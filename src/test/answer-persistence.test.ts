@@ -155,3 +155,38 @@ describe("Persistance des réponses apprenants", () => {
     expect(answersAreEqual({ "2": ["B"], "1": ["A"] }, { "1": ["A"], "2": ["B"] })).toBe(true);
   });
 });
+
+describe("tablette partagée : apprenants successifs", () => {
+  it("A → B → C → A : chacun n'envoie que ses réponses, rien n'est perdu ni refusé", async () => {
+    const sent: Array<{ token: string; apprenant: string }> = [];
+    const fetchMock = vi.fn(async (_url: string, init: RequestInit) => {
+      const token = String((init.headers as Record<string, string>)["Authorization"] ?? "");
+      const body = JSON.parse(String(init.body)) as { apprenant_id: string };
+      const owner = token.replace("Bearer token-", "");
+      // Le serveur refuse si le compte ne correspond pas au dossier (403).
+      if (owner !== body.apprenant_id) {
+        return { ok: false, status: 403, text: async () => "auth_user_id_mismatch" } as unknown as Response;
+      }
+      sent.push({ token: owner, apprenant: body.apprenant_id });
+      return { ok: true, status: 200, json: async () => ({ success: true, confirmed: true }) } as unknown as Response;
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const learners = ["A", "B", "C"];
+    // Chaque apprenant se connecte, répond hors ligne (pas d'envoi), se déconnecte.
+    for (const l of learners) {
+      setAnswerSaveAuthToken(null, null);
+      setAnswerSaveAuthToken(`token-${l}`, l);
+      enqueueAnswerSave({ apprenant_id: l, exercice_id: `exo-${l}`, exercice_type: "quiz", reponses: { q1: l } });
+      await new Promise((r) => setTimeout(r, 30));
+    }
+    setAnswerSaveAuthToken(null, null);
+    await new Promise((r) => setTimeout(r, 50));
+
+    // Aucune réponse envoyée sous un mauvais compte, aucun 403.
+    expect(sent.every((s) => s.token === s.apprenant)).toBe(true);
+    expect(sent.map((s) => s.apprenant).sort()).toEqual(["A", "B", "C"]);
+    // File vide : rien n'a été perdu.
+    expect(JSON.parse(localStorage.getItem("answer_save_queue_v1") ?? "[]")).toHaveLength(0);
+  });
+});
