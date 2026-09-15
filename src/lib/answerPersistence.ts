@@ -70,6 +70,15 @@ const listeners = new Set<Listener>();
 let state: AnswerSaveState = "idle";
 let processing = false;
 let authToken: string | null = null;
+let authUserId: string | null = null;
+
+/**
+ * Un élément appartient au compte actuellement connecté (ou provient d'une
+ * version antérieure sans propriétaire enregistré : on le renvoie alors comme
+ * avant). Les éléments d'un AUTRE compte sont conservés, jamais envoyés.
+ */
+const isOwnedByCurrentUser = (item: QueueItem): boolean =>
+  !item.owner_user_id || !authUserId || item.owner_user_id === authUserId;
 
 const makeEventId = (): string => {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
@@ -98,7 +107,7 @@ const writeQueue = (items: QueueItem[]) => {
 };
 
 const emit = () => {
-  const pending = readQueue().length;
+  const pending = readQueue().filter(isOwnedByCurrentUser).length;
   listeners.forEach((l) => {
     try {
       l(state, pending);
@@ -116,12 +125,12 @@ const setState = (next: AnswerSaveState) => {
 /** Permet à l'UI de suivre l'état réel de l'enregistrement. */
 export function subscribeAnswerSaveState(listener: Listener): () => void {
   listeners.add(listener);
-  listener(state, readQueue().length);
+  listener(state, readQueue().filter(isOwnedByCurrentUser).length);
   return () => listeners.delete(listener);
 }
 
 export function getPendingAnswerSaves(): number {
-  return readQueue().length;
+  return readQueue().filter(isOwnedByCurrentUser).length;
 }
 
 export function getPendingAnswers(
