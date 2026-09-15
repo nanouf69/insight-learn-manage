@@ -78,6 +78,13 @@
       "when": 1789464564448,
       "tag": "0010_revoke_execute_trigger_functions",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1789465851542,
+      "tag": "0011_restrict_internal_rpc_execute",
+      "breakpoints": true
     }
   ]
 }
