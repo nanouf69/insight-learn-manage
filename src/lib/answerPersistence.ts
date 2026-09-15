@@ -64,6 +64,13 @@ interface QueueItem {
   owner_user_id?: string | null;
   /** Refusé par le serveur (403) : conservé, mais plus renvoyé en boucle. */
   blocked?: boolean;
+  /**
+   * Comptes auxquels le serveur a déjà refusé cet élément (403). Utile pour les
+   * éléments anciens, mis en file avant l'enregistrement du propriétaire : sur
+   * une tablette partagée, ils ne sont plus retentés en boucle par chaque
+   * apprenant successif (ils restent en file pour leur propriétaire).
+   */
+  refused_user_ids?: string[];
 }
 
 type Listener = (state: AnswerSaveState, pending: number) => void;
@@ -79,8 +86,12 @@ let authUserId: string | null = null;
  * version antérieure sans propriétaire enregistré : on le renvoie alors comme
  * avant). Les éléments d'un AUTRE compte sont conservés, jamais envoyés.
  */
-const isOwnedByCurrentUser = (item: QueueItem): boolean =>
-  !item.owner_user_id || !authUserId || item.owner_user_id === authUserId;
+const isOwnedByCurrentUser = (item: QueueItem): boolean => {
+  if (item.owner_user_id) return !authUserId || item.owner_user_id === authUserId;
+  // Élément sans propriétaire connu (ancienne version) : envoyable, sauf par un
+  // compte auquel le serveur l'a déjà refusé.
+  return !authUserId || !(item.refused_user_ids ?? []).includes(authUserId);
+};
 
 const makeEventId = (): string => {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
@@ -165,6 +176,24 @@ const sortValue = (value: unknown): unknown => {
 
 export function answersAreEqual(left: unknown, right: unknown): boolean {
   return JSON.stringify(sortValue(left ?? {})) === JSON.stringify(sortValue(right ?? {}));
+}
+
+/**
+ * Vide la file du compte connecté avant une déconnexion (tablette partagée :
+ * l'apprenant suivant ne pourra pas envoyer ces réponses, elles doivent partir
+ * tant que la session de leur propriétaire est encore valide).
+ */
+export async function flushOwnAnswerSavesBeforeLogout(timeoutMs = 8000): Promise<boolean> {
+  const hasOwn = () => readQueue().some((item) => isOwnedByCurrentUser(item) && !item.blocked);
+  if (!hasOwn()) return true;
+  void processQueue();
+  const startedAt = Date.now();
+  while (Date.now() - startedAt < timeoutMs) {
+    if (!hasOwn()) return true;
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    if (!processing) void processQueue();
+  }
+  return !hasOwn();
 }
 
 export async function flushAnswerSavesAndWait(
@@ -294,10 +323,13 @@ async function processQueue(): Promise<void> {
       } else {
         const idx = queue.findIndex((q) => q.id === item.id);
         if (idx >= 0) {
+          const refused = new Set(queue[idx].refused_user_ids ?? []);
+          if (result === "blocked" && authUserId) refused.add(authUserId);
           const failed: QueueItem = {
             ...queue[idx],
             attempts: (queue[idx].attempts ?? 0) + 1,
             blocked: result === "blocked" ? true : queue[idx].blocked,
+            refused_user_ids: refused.size > 0 ? [...refused] : undefined,
           };
           queue.splice(idx, 1);
           queue.push(failed);
