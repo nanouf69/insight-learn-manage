@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { formatDateShortFR, formatDateFR } from "@/lib/safeDateParse";
+import { callOnboardingInvitation } from "@/lib/onboardingInvitation";
 import { 
   Calendar, 
   MapPin, 
@@ -2112,6 +2113,28 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
 
   // Aperçu du mail URGENT avant enregistrement du statut « MDP changé »
   const mdpTargetRef = useRef<string | null>(null);
+
+  // Envoi du lien personnel d'inscription (jeton unique, invalide les liens précédents)
+  const [inviteSending, setInviteSending] = useState<string | null>(null);
+  const sendInvitationLink = async (apprenantId: string) => {
+    setInviteSending(apprenantId);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const res = await callOnboardingInvitation(
+        { action: 'create', apprenant_id: apprenantId, send: true },
+        sessionData?.session?.access_token,
+      );
+      if (res?.sent) {
+        toast({ title: "✅ Lien personnel envoyé", description: "Le lien précédent n'est plus valide." });
+      } else {
+        toast({ title: "Lien créé, e-mail non envoyé", description: res?.error || "Vérifiez l'adresse e-mail du dossier.", variant: "destructive" });
+      }
+    } catch (err) {
+      toast({ title: "Échec de l'envoi", description: err instanceof Error ? err.message : "Erreur inconnue", variant: "destructive" });
+    } finally {
+      setInviteSending(null);
+    }
+  };
   const mdpMailDialog = useMdpChangeMail(async (_apprenantId, to) => {
     const saId = mdpTargetRef.current;
     mdpTargetRef.current = null;
@@ -4505,6 +4528,19 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                             </span>
                           </Button>
 
+
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-8 gap-1 border-blue-300 text-blue-700"
+                            disabled={inviteSending === apprenant.id}
+                            onClick={() => void sendInvitationLink(apprenant.id)}
+                            title="Envoyer à l'apprenant son lien personnel d'inscription"
+                          >
+                            {inviteSending === apprenant.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+                            <span className="text-xs">🔗 Lien d'inscription</span>
+                          </Button>
 
                           <NotesPopover 
                             sessionApprenantId={sessionApprenant.id}
