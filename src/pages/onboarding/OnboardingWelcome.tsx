@@ -263,6 +263,20 @@ export default function OnboardingWelcome() {
                 )}
               </Button>
 
+              <div className="pt-2 text-center">
+                <button
+                  type="button"
+                  onClick={handleResendLink}
+                  disabled={isResending}
+                  className="text-sm text-blue-300 hover:text-blue-200 underline disabled:opacity-50"
+                >
+                  {isResending ? "Envoi en cours…" : "Je n'ai pas reçu mon lien personnel"}
+                </button>
+                <p className="text-white/40 text-xs mt-1">
+                  Le lien est renvoyé uniquement à l'adresse e-mail déjà enregistrée dans votre dossier.
+                </p>
+              </div>
+
               {candidates.length > 1 && (
                 <div className="mt-4 space-y-2">
                   <p className="text-sm text-white/70">
