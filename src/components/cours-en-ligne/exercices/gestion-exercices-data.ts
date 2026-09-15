@@ -159,11 +159,11 @@ export const GESTION_EXERCICES: {
         { lettre: "C", texte: "1 000 €" },
         { lettre: "D", texte: "Pas de montant maximum", correct: true },
       ]},
-      { id: 33, enonce: "Quelle forme juridique choisir ? Quel est le classement des 3 formes juridiques les plus choisies par les chauffeurs VTC / TAXI ?", choix: [
-        { lettre: "A", texte: "1. Micro-entreprise — 2. SASU — 3. EURL", correct: true, explication: "La micro-entreprise arrive en tête pour sa simplicité de création et de gestion, suivie de la SASU (souplesse, président assimilé salarié possible) puis de l'EURL (SARL à associé unique, régime TNS)." },
-        { lettre: "B", texte: "1. SARL — 2. SA — 3. SNC" },
-        { lettre: "C", texte: "1. EURL — 2. Micro-entreprise — 3. SASU" },
-        { lettre: "D", texte: "1. SASU — 2. SARL — 3. Micro-entreprise" },
+      { id: 33, enonce: "Quelle forme juridique choisir ? Quel est le classement des 3 premières formes juridiques selon le simulateur ?", choix: [
+        { lettre: "A", texte: "1. Entreprise Individuelle (EI) — 2. EURL à l'IS — 3. SASU à l'IS", correct: true, explication: "Selon le classement du simulateur : 1. Entreprise Individuelle (EI / micro-entreprise) pour sa simplicité et ses cotisations TNS (~44,3 % déductibles) ; 2. EURL à l'IS (IS à 15 %, SARL à associé unique) ; 3. SASU à l'IS en salaire uniquement (protection sociale maximale mais charges patronales ~82 % et salariales ~22 %)." },
+        { lettre: "B", texte: "1. SASU à l'IS — 2. EURL à l'IS — 3. Entreprise Individuelle (EI)" },
+        { lettre: "C", texte: "1. EURL à l'IS — 2. Entreprise Individuelle (EI) — 3. SASU à l'IS" },
+        { lettre: "D", texte: "1. SARL — 2. SA — 3. SNC" },
       ]},
     ],
   },
