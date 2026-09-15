@@ -159,13 +159,42 @@ Ne mets aucune explication, juste le tableau JSON.`;
       from += pageSize;
     }
 
-    // Build normalized lookup from PDF results
-    const pdfResults = results.map(r => ({
-      ...r,
-      normNom: normalize(r.nom),
-      normPrenom: normalize(r.prenom),
-      mappedResultat: r.resultat.toLowerCase().includes("ajourne") || r.resultat.toLowerCase().includes("non") ? "non" : "oui",
-    }));
+    // Build normalized lookup from PDF results (tolerant: any field may be missing)
+    const ignored: Array<{ ligne: unknown; raison: string }> = [];
+    const pdfResults = results
+      .map((r) => {
+        const normResultat = normalize(r.resultat);
+        const normNom = normalize(r.nom);
+        const normPrenom = normalize(r.prenom);
+        const normDossier = normalizeDossier(r.dossier);
+        return {
+          nom: typeof r.nom === "string" ? r.nom : "",
+          prenom: typeof r.prenom === "string" ? r.prenom : "",
+          resultat: typeof r.resultat === "string" ? r.resultat : "",
+          dossier: typeof r.dossier === "string" || typeof r.dossier === "number" ? String(r.dossier) : undefined,
+          normNom,
+          normPrenom,
+          normDossier,
+          mappedResultat:
+            normResultat.includes("ajourn") || normResultat.includes("non") || normResultat.includes("echec")
+              ? "non"
+              : "oui",
+          hasResultat: normResultat.length > 0,
+          hasIdentity: normNom.length > 0 || normDossier.length > 0,
+        };
+      })
+      .filter((r) => {
+        if (!r.hasResultat) {
+          ignored.push({ ligne: { nom: r.nom, prenom: r.prenom, dossier: r.dossier }, raison: "Résultat illisible" });
+          return false;
+        }
+        if (!r.hasIdentity) {
+          ignored.push({ ligne: { resultat: r.resultat }, raison: "Ni nom ni numéro de dossier lisible" });
+          return false;
+        }
+        return true;
+      });
+
 
     // Build apprenant indexes for O(1) lookup
     const byNamePrenom = new Map<string, typeof apprenants[number]>();
