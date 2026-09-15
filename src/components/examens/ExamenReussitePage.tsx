@@ -5917,7 +5917,7 @@ De 9h à 17h sur rendez-vous`;
                       </div>
                     );
                   })}
-                </ScrollArea>
+                </div>
               </>
             );
           })()}
