@@ -53,6 +53,17 @@ interface QueueItem {
   payload: AnswerSavePayload;
   queued_at: string;
   attempts: number;
+  /**
+   * Compte authentifié propriétaire de la sauvegarde au moment de la mise en
+   * file. La file vit dans le localStorage du NAVIGATEUR : sur un poste
+   * partagé, un élément laissé par l'apprenant A ne doit jamais être renvoyé
+   * avec le jeton de l'apprenant B (ni d'un admin) — le serveur répondrait
+   * 403 auth_user_id_mismatch en boucle. L'élément est simplement mis de côté
+   * jusqu'au retour de son propriétaire : rien n'est supprimé.
+   */
+  owner_user_id?: string | null;
+  /** Refusé par le serveur (403) : conservé, mais plus renvoyé en boucle. */
+  blocked?: boolean;
 }
 
 type Listener = (state: AnswerSaveState, pending: number) => void;
@@ -61,6 +72,15 @@ const listeners = new Set<Listener>();
 let state: AnswerSaveState = "idle";
 let processing = false;
 let authToken: string | null = null;
+let authUserId: string | null = null;
+
+/**
+ * Un élément appartient au compte actuellement connecté (ou provient d'une
+ * version antérieure sans propriétaire enregistré : on le renvoie alors comme
+ * avant). Les éléments d'un AUTRE compte sont conservés, jamais envoyés.
+ */
+const isOwnedByCurrentUser = (item: QueueItem): boolean =>
+  !item.owner_user_id || !authUserId || item.owner_user_id === authUserId;
 
 const makeEventId = (): string => {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
@@ -89,7 +109,7 @@ const writeQueue = (items: QueueItem[]) => {
 };
 
 const emit = () => {
-  const pending = readQueue().length;
+  const pending = readQueue().filter(isOwnedByCurrentUser).length;
   listeners.forEach((l) => {
     try {
       l(state, pending);
@@ -107,12 +127,12 @@ const setState = (next: AnswerSaveState) => {
 /** Permet à l'UI de suivre l'état réel de l'enregistrement. */
 export function subscribeAnswerSaveState(listener: Listener): () => void {
   listeners.add(listener);
-  listener(state, readQueue().length);
+  listener(state, readQueue().filter(isOwnedByCurrentUser).length);
   return () => listeners.delete(listener);
 }
 
 export function getPendingAnswerSaves(): number {
-  return readQueue().length;
+  return readQueue().filter(isOwnedByCurrentUser).length;
 }
 
 export function getPendingAnswers(
@@ -156,7 +176,10 @@ export async function flushAnswerSavesAndWait(
   const startedAt = Date.now();
   while (Date.now() - startedAt < timeoutMs) {
     const pending = readQueue().some(
-      (item) => item.payload.apprenant_id === apprenantId && item.payload.exercice_id === exerciceId
+      (item) =>
+        item.payload.apprenant_id === apprenantId &&
+        item.payload.exercice_id === exerciceId &&
+        isOwnedByCurrentUser(item)
     );
     if (!pending) return true;
     await new Promise((resolve) => setTimeout(resolve, 100));
@@ -165,9 +188,30 @@ export async function flushAnswerSavesAndWait(
   return false;
 }
 
-/** Le token JWT courant, mis à jour par l'application. */
-export function setAnswerSaveAuthToken(token: string | null) {
+/**
+ * Le token JWT courant + l'identifiant du compte connecté, mis à jour par
+ * l'application à chaque changement de session.
+ */
+export function setAnswerSaveAuthToken(token: string | null, userId: string | null = null) {
+  const userChanged = userId !== authUserId;
   authToken = token;
+  authUserId = userId;
+  if (userChanged) {
+    // Nouveau compte connecté : ses éventuels éléments bloqués sont réessayés
+    // une fois (rien n'est supprimé).
+    const queue = readQueue();
+    if (queue.some((item) => item.blocked && isOwnedByCurrentUser(item))) {
+      writeQueue(
+        queue.map((item) =>
+          item.blocked && isOwnedByCurrentUser(item) ? { ...item, blocked: false } : item
+        )
+      );
+    }
+  }
+  emit();
+  if (token && readQueue().some((item) => isOwnedByCurrentUser(item) && !item.blocked)) {
+    void processQueue();
+  }
 }
 
 const endpoint = () => {
@@ -187,10 +231,12 @@ const buildHeaders = (): Record<string, string> | null => {
   return headers;
 };
 
-async function sendItem(item: QueueItem): Promise<boolean> {
+type SendResult = "ok" | "retry" | "blocked";
+
+async function sendItem(item: QueueItem): Promise<SendResult> {
   const url = endpoint();
   const headers = buildHeaders();
-  if (!url || !headers) return false;
+  if (!url || !headers) return "retry";
   try {
     const res = await fetch(url, {
       method: "POST",
@@ -199,55 +245,73 @@ async function sendItem(item: QueueItem): Promise<boolean> {
     });
     if (res.ok) {
       const confirmation = await res.json().catch(() => null);
-      return confirmation?.success === true && confirmation?.confirmed === true;
+      return confirmation?.success === true && confirmation?.confirmed === true ? "ok" : "retry";
     }
-    // 4xx hors auth : inutile de boucler indéfiniment, mais on garde la trace.
-    console.error("[answerPersistence] Échec sauvegarde", res.status, await res.text());
-    return false;
+    const text = await res.text();
+    console.error("[answerPersistence] Échec sauvegarde", res.status, text);
+    // 403 : le serveur refuse le lien compte ↔ dossier. Réessayer en boucle ne
+    // sert à rien et masque les vraies erreurs ; l'élément est conservé
+    // (aucune réponse n'est supprimée) et sera retenté au prochain changement
+    // de session.
+    if (res.status === 403) return "blocked";
+    return "retry";
   } catch (e) {
     console.error("[answerPersistence] Erreur réseau sauvegarde", e);
-    return false;
+    return "retry";
   }
 }
 
 async function processQueue(): Promise<void> {
   if (processing) return;
+  // Sans session valide, on n'envoie rien : la file attend la reconnexion.
+  if (!authToken) {
+    if (readQueue().some(isOwnedByCurrentUser)) setState("error");
+    return;
+  }
   processing = true;
   try {
     let queue = readQueue();
-    const itemsToTry = queue.length;
+    const sendable = (items: QueueItem[]) =>
+      items.filter((q) => isOwnedByCurrentUser(q) && !q.blocked);
+    const itemsToTry = sendable(queue).length;
     let tried = 0;
     let hadFailure = false;
-    while (queue.length > 0 && tried < itemsToTry) {
+    while (tried < itemsToTry) {
+      const item = sendable(queue)[0];
+      if (!item) break;
       if (typeof navigator !== "undefined" && navigator.onLine === false) {
         setState("error");
         return;
       }
       setState("saving");
-      const item = queue[0];
-      const ok = await sendItem(item);
+      const result = await sendItem(item);
       tried += 1;
       queue = readQueue();
-      if (ok) {
+      if (result === "ok") {
         // Retirer l'élément traité (identifié par son id).
         queue = queue.filter((q) => q.id !== item.id);
         writeQueue(queue);
       } else {
         const idx = queue.findIndex((q) => q.id === item.id);
         if (idx >= 0) {
-          const failed = { ...queue[idx], attempts: (queue[idx].attempts ?? 0) + 1 };
+          const failed: QueueItem = {
+            ...queue[idx],
+            attempts: (queue[idx].attempts ?? 0) + 1,
+            blocked: result === "blocked" ? true : queue[idx].blocked,
+          };
           queue.splice(idx, 1);
           queue.push(failed);
           writeQueue(queue);
         }
-        hadFailure = true;
+        if (result === "retry") hadFailure = true;
       }
     }
-    if (queue.length === 0) {
+    const remaining = queue.filter(isOwnedByCurrentUser);
+    if (remaining.length === 0) {
       setState("saved");
     } else {
       setState("error");
-      const attempts = Math.max(...queue.map((item) => item.attempts ?? 1), 1);
+      const attempts = Math.max(...remaining.map((item) => item.attempts ?? 1), 1);
       const delay = Math.min(30000, 1000 * 2 ** Math.min(attempts, 5));
       if (hadFailure) setTimeout(() => void processQueue(), delay);
     }
@@ -275,6 +339,7 @@ export function enqueueAnswerSave(payload: AnswerSavePayload): void {
     },
     queued_at: new Date().toISOString(),
     attempts: 0,
+    owner_user_id: authUserId,
   };
   const queue = readQueue();
   // Compactage : une sauvegarde non envoyée du même exercice non terminée est
@@ -284,6 +349,7 @@ export function enqueueAnswerSave(payload: AnswerSavePayload): void {
     (q) =>
       q.payload.exercice_id === payload.exercice_id &&
       q.payload.apprenant_id === payload.apprenant_id &&
+      isOwnedByCurrentUser(q) &&
       !q.payload.completed &&
       !payload.completed
   );
@@ -304,8 +370,10 @@ export function enqueueAnswerSave(payload: AnswerSavePayload): void {
  * l'élément reste dans la file et repartira au prochain chargement.
  */
 export function flushAnswerSavesOnUnload(): void {
-  const queue = readQueue();
-  if (queue.length === 0) return;
+  // Uniquement les sauvegardes du compte connecté : celles d'un autre compte
+  // seraient refusées (403) et restent en attente de leur propriétaire.
+  const queue = readQueue().filter((item) => isOwnedByCurrentUser(item) && !item.blocked);
+  if (queue.length === 0 || !authToken) return;
   const url = endpoint();
   const apikey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
   if (!url || !apikey) return;
