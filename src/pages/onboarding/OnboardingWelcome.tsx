@@ -48,12 +48,29 @@ type Candidate = {
   id: string;
   nom: string;
   prenom: string;
-  email: string | null;
-  telephone: string | null;
-  adresse: string | null;
-  code_postal: string | null;
+  email_masque: string | null;
+  telephone_masque: string | null;
   ville: string | null;
+  token: string;
 };
+
+const ONBOARDING_SEARCH_URL = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/onboarding-search`;
+
+async function callOnboardingSearch(payload: Record<string, unknown>) {
+  const res = await fetch(ONBOARDING_SEARCH_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+      Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+    },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data?.error || "Une erreur est survenue. Veuillez réessayer.");
+  return data;
+}
+
 
 export default function OnboardingWelcome() {
   const navigate = useNavigate();
