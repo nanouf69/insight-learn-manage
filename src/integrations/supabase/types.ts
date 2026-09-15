@@ -2877,6 +2877,30 @@ export type Database = {
         }
         Relationships: []
       }
+      onboarding_search_rate_limit: {
+        Row: {
+          attempts: number
+          created_at: string
+          id: string
+          ip_hash: string
+          window_start: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          id?: string
+          ip_hash: string
+          window_start?: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          id?: string
+          ip_hash?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
       organismes: {
         Row: {
           adresse: string | null
