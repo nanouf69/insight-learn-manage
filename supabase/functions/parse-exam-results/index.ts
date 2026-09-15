@@ -123,11 +123,12 @@ Ne mets aucune explication, juste le tableau JSON.`;
     console.log("AI raw response:", content);
 
     // Parse the JSON from AI response
-    let results: Array<{ nom: string; prenom: string; resultat: string; dossier?: string }>;
+    let results: Array<{ nom?: string; prenom?: string; resultat?: string; dossier?: string }>;
     try {
       const jsonMatch = content.match(/\[[\s\S]*\]/);
       if (!jsonMatch) throw new Error("No JSON array found");
-      results = JSON.parse(jsonMatch[0]);
+      const parsed = JSON.parse(jsonMatch[0]);
+      results = Array.isArray(parsed) ? parsed.filter((r) => r && typeof r === "object") : [];
     } catch (parseErr) {
       console.error("Parse error:", parseErr, "Content:", content);
       return new Response(JSON.stringify({ error: "Impossible de parser les résultats de l'IA", raw: content }), {
