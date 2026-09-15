@@ -83,7 +83,7 @@ const MATIERE_B: ContentItem[] = [
     sousTitre: "Entrepreneurs et Formes Juridiques",
     fichiers: [
       { nom: "PDF HD Partie 1", url: "/cours/vtc/B_Gestion_1.pdf?v=20260819-1732" },
-      { nom: "PowerPoint Partie 1", url: "/cours/vtc/B_Gestion_partie_1.pptx?v=20260915-0909" },
+      { nom: "PowerPoint Partie 1", url: "/cours/vtc/B_Gestion_partie_1.pptx?v=20260915-1135" },
     ],
   },
   {
