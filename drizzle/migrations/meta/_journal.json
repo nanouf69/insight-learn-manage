@@ -64,6 +64,13 @@
       "when": 1789463865292,
       "tag": "0008_restrict_documents_a_signer_to_admin",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1789464529434,
+      "tag": "0009_restrict_internal_tables_to_admin",
+      "breakpoints": true
     }
   ]
 }
