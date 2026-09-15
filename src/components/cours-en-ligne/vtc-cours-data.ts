@@ -9,7 +9,7 @@ import { REGLEMENTATION_SPECIFIQUE_VTC_EXERCICES } from "./exercices/reglementat
 import { SECURITE_ROUTIERE_EXERCICES } from "./exercices/securite-routiere-exercices-data";
 import SECURITE_ROUTIERE_2_ASSET from "@/assets/cours-vtc/C_Securite_Routiere_FINAL_2.pptx.asset.json";
 
-const SECURITE_ROUTIERE_2_PPTX = `${SECURITE_ROUTIERE_2_ASSET.url}?v=20260915-1635`;
+const SECURITE_ROUTIERE_2_PPTX = `${SECURITE_ROUTIERE_2_ASSET.url}?v=20260915-2100`;
 interface ContentItem {
   id: number;
   titre: string;
