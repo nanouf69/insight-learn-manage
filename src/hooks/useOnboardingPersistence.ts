@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { savePublicFormDocument } from "@/lib/savePublicFormDocument";
 import { supabase } from "@/integrations/supabase/client";
+import { callOnboardingInvitation } from "@/lib/onboardingInvitation";
 
 /**
  * Liste de toutes les clés localStorage utilisées par les 12 étapes du parcours d'inscription.
