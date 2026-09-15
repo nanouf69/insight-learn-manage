@@ -236,23 +236,34 @@ Deno.serve(async (req) => {
         message: "Si un dossier correspond, un lien personnel vient d'être envoyé à l'adresse e-mail enregistrée.",
       });
 
-      const { data: matches } = await supabase
-        .from("apprenants")
-        .select("id, nom, prenom, email")
-        .ilike("nom", `%${String(body.nom).trim()}%`)
-        .limit(20);
+      // Traitement en arrière-plan : le temps de réponse est identique qu'un dossier existe ou non
+      // (pas d'énumération possible par mesure de durée).
+      const work = (async () => {
+        const { data: matches } = await supabase
+          .from("apprenants")
+          .select("id, nom, prenom, email")
+          .ilike("nom", `%${String(body.nom).trim()}%`)
+          .limit(20);
 
-      const exact = (matches || []).filter(
-        (a: any) => normalize(a.nom || "") === nom && normalize(a.prenom || "") === prenom && a.email,
-      );
+        const exact = (matches || []).filter(
+          (a: any) => normalize(a.nom || "") === nom && normalize(a.prenom || "") === prenom && a.email,
+        );
 
-      for (const apprenant of exact.slice(0, 3)) {
-        try {
-          const token = await createInvitation(supabase, apprenant.id, null);
-          await sendInvitationEmail(supabase, apprenant, `${baseUrl}/bienvenue/invitation?token=${token}`);
-        } catch (err) {
-          console.error("resend failed", err);
+        for (const apprenant of exact.slice(0, 3)) {
+          try {
+            const token = await createInvitation(supabase, apprenant.id, null);
+            await sendInvitationEmail(supabase, apprenant, `${baseUrl}/bienvenue/invitation?token=${token}`);
+          } catch (err) {
+            console.error("resend failed", err);
+          }
         }
+      })();
+
+      try {
+        // @ts-ignore EdgeRuntime est fourni par le runtime Supabase
+        EdgeRuntime.waitUntil(work);
+      } catch {
+        await work;
       }
 
       return genericOk;
