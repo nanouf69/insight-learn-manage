@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { formatDateShortFR, formatDateFR } from "@/lib/safeDateParse";
+import { callOnboardingInvitation } from "@/lib/onboardingInvitation";
 import { 
   Calendar, 
   MapPin, 
