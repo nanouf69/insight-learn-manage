@@ -2112,6 +2112,28 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
 
   // Aperçu du mail URGENT avant enregistrement du statut « MDP changé »
   const mdpTargetRef = useRef<string | null>(null);
+
+  // Envoi du lien personnel d'inscription (jeton unique, invalide les liens précédents)
+  const [inviteSending, setInviteSending] = useState<string | null>(null);
+  const sendInvitationLink = async (apprenantId: string) => {
+    setInviteSending(apprenantId);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const res = await callOnboardingInvitation(
+        { action: 'create', apprenant_id: apprenantId, send: true },
+        sessionData?.session?.access_token,
+      );
+      if (res?.sent) {
+        toast({ title: "✅ Lien personnel envoyé", description: "Le lien précédent n'est plus valide." });
+      } else {
+        toast({ title: "Lien créé, e-mail non envoyé", description: res?.error || "Vérifiez l'adresse e-mail du dossier.", variant: "destructive" });
+      }
+    } catch (err) {
+      toast({ title: "Échec de l'envoi", description: err instanceof Error ? err.message : "Erreur inconnue", variant: "destructive" });
+    } finally {
+      setInviteSending(null);
+    }
+  };
   const mdpMailDialog = useMdpChangeMail(async (_apprenantId, to) => {
     const saId = mdpTargetRef.current;
     mdpTargetRef.current = null;
