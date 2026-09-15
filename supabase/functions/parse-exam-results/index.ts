@@ -13,11 +13,15 @@ function normalize(s: unknown): string {
   return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 }
 
-/** Normalize a CMA dossier number: keep digits only, strip leading zeros */
+/**
+ * Normalize a CMA dossier number: keep the FIRST block of digits only
+ * (suffixes like "00064345PE2PF1" -> "64345"), then strip leading zeros.
+ */
 function normalizeDossier(s: unknown): string {
   if (s === null || s === undefined) return "";
-  const digits = String(s).replace(/\D/g, "").replace(/^0+/, "");
-  return digits;
+  const m = String(s).match(/\d+/);
+  if (!m) return "";
+  return m[0].replace(/^0+/, "");
 }
 
 Deno.serve(async (req) => {
