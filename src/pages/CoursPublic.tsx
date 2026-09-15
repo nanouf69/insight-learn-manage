@@ -1470,6 +1470,13 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   }, [apprenant?.id]);
 
   const handleLogout = useCallback(async () => {
+    // Tablette partagée : les réponses encore en attente doivent partir AVANT
+    // la déconnexion, tant que la session de cet apprenant est valide.
+    try {
+      await flushOwnAnswerSavesBeforeLogout();
+    } catch {
+      /* la file reste intacte : renvoi à la prochaine connexion du même compte */
+    }
     await endConnexion();
     await signOut();
     setApprenant(null);

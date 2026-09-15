@@ -44,8 +44,10 @@ export class ErrorBoundary extends Component<Props, State> {
     // Vide le cache local puis recharge proprement
     try {
       // Conserve uniquement la session Supabase pour éviter d'être déconnecté
+      // Conserve aussi la file des réponses apprenants non encore enregistrées
+      // (answer_save_queue_v1) : elle ne doit JAMAIS être vidée.
       const keysToKeep = Object.keys(localStorage).filter((k) =>
-        k.startsWith('sb-') || k.includes('supabase'),
+        k.startsWith('sb-') || k.includes('supabase') || k === 'answer_save_queue_v1',
       );
       const saved: Record<string, string> = {};
       keysToKeep.forEach((k) => {
