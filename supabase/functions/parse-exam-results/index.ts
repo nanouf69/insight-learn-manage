@@ -234,12 +234,11 @@ Ne mets aucune explication, juste le tableau JSON.`;
           if (!pdfEntry.normPrenom && candidates.length === 1) {
             found = candidates[0];
           } else if (pdfEntry.normPrenom) {
-          found = candidates.find(
-            a => {
+            found = candidates.find((a) => {
               const np = normalize(a.prenom);
-              return np.startsWith(pdfEntry.normPrenom) || pdfEntry.normPrenom.startsWith(np);
-            }
-          );
+              return np && (np.startsWith(pdfEntry.normPrenom) || pdfEntry.normPrenom.startsWith(np));
+            });
+          }
         }
       }
 
@@ -250,6 +249,7 @@ Ne mets aucune explication, juste le tableau JSON.`;
           nom: pdfEntry.nom,
           prenom: pdfEntry.prenom,
           resultat: pdfEntry.mappedResultat,
+          dossier: pdfEntry.dossier,
         });
       }
     }
