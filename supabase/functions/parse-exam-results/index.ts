@@ -6,9 +6,18 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-/** Remove accents and lowercase */
-function normalize(s: string): string {
-  return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+/** Remove accents and lowercase. Tolerates null/undefined/non-string values. */
+function normalize(s: unknown): string {
+  if (s === null || s === undefined) return "";
+  const str = typeof s === "string" ? s : String(s);
+  return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+}
+
+/** Normalize a CMA dossier number: keep digits only, strip leading zeros */
+function normalizeDossier(s: unknown): string {
+  if (s === null || s === undefined) return "";
+  const digits = String(s).replace(/\D/g, "").replace(/^0+/, "");
+  return digits;
 }
 
 Deno.serve(async (req) => {
