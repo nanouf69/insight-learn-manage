@@ -207,25 +207,33 @@ Ne mets aucune explication, juste le tableau JSON.`;
       const list = byNameOnly.get(nn) || [];
       list.push(a);
       byNameOnly.set(nn, list);
-      if (a.numero_dossier_cma) {
-        byDossier.set(a.numero_dossier_cma.replace(/^0+/, ""), a);
-      }
+      const nd = normalizeDossier(a.numero_dossier_cma);
+      if (nd) byDossier.set(nd, a);
     }
 
     const matched: Array<{ id: string; nom: string; prenom: string; resultat: string; dossier?: string }> = [];
-    const notFound: Array<{ nom: string; prenom: string; resultat: string }> = [];
+    const notFound: Array<{ nom: string; prenom: string; resultat: string; dossier?: string }> = [];
     const updates: Array<{ id: string; entry: typeof pdfResults[number]; apprenant: typeof apprenants[number] }> = [];
 
     for (const pdfEntry of pdfResults) {
-      let found = byNamePrenom.get(`${pdfEntry.normNom}|${pdfEntry.normPrenom}`);
+      let found: typeof apprenants[number] | undefined;
 
-      if (!found && pdfEntry.dossier) {
-        found = byDossier.get(pdfEntry.dossier.replace(/^0+/, ""));
+      // 1) Numéro de dossier (fiable, et seul identifiant de certains PDF)
+      if (pdfEntry.normDossier) {
+        found = byDossier.get(pdfEntry.normDossier);
       }
 
-      if (!found) {
+      // 2) Nom + prénom exacts
+      if (!found && pdfEntry.normNom && pdfEntry.normPrenom) {
+        found = byNamePrenom.get(`${pdfEntry.normNom}|${pdfEntry.normPrenom}`);
+      }
+
+      if (!found && pdfEntry.normNom) {
         const candidates = byNameOnly.get(pdfEntry.normNom);
-        if (candidates) {
+        if (candidates && candidates.length > 0) {
+          if (!pdfEntry.normPrenom && candidates.length === 1) {
+            found = candidates[0];
+          } else if (pdfEntry.normPrenom) {
           found = candidates.find(
             a => {
               const np = normalize(a.prenom);
