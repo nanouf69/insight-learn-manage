@@ -5896,7 +5896,7 @@ De 9h à 17h sur rendez-vous`;
                   )}
                 </div>
 
-                <ScrollArea className={`${isCartePro ? 'max-h-48' : 'max-h-24'} border rounded-md p-2 text-xs space-y-0.5`}>
+                <div className={`${isCartePro ? 'max-h-64' : 'max-h-24'} overflow-y-auto border rounded-md p-2 text-xs space-y-0.5`}>
                   {previewRecipients.map(a => {
                     const checked = selectedRecipientIds.has(a.id);
                     return (
