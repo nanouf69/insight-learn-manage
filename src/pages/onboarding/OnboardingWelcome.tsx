@@ -5,7 +5,7 @@ import logoFtransport from "@/assets/logo-ftransport.png";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import { toast } from "sonner";
 
 // Fonction pour normaliser le texte (supprimer accents, tirets, espaces multiples et mettre en minuscules)
@@ -276,7 +276,7 @@ export default function OnboardingWelcome() {
                     >
                       <div className="font-semibold">{c.prenom} {c.nom}</div>
                       <div className="text-xs text-white/60">
-                        {[c.email, c.telephone, c.ville].filter(Boolean).join(' • ')}
+                        {[c.email_masque, c.telephone_masque, c.ville].filter(Boolean).join(' • ')}
                       </div>
                     </button>
                   ))}
