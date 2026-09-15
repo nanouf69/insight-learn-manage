@@ -114,6 +114,26 @@ export default function OnboardingWelcome() {
   };
 
 
+  const handleResendLink = async () => {
+    if (!nom.trim() || !prenom.trim()) {
+      toast.error("Saisissez votre nom et prénom pour recevoir votre lien personnel");
+      return;
+    }
+    setIsResending(true);
+    try {
+      const res = await callOnboardingInvitation({
+        action: 'resend',
+        nom: nom.trim(),
+        prenom: prenom.trim(),
+      });
+      toast.success(res?.message || "Si un dossier correspond, un lien vient d'être envoyé.", { duration: 9000 });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Une erreur est survenue. Veuillez réessayer.");
+    } finally {
+      setIsResending(false);
+    }
+  };
+
   const handleSearch = async () => {
     setAttempted(true);
     setCandidates([]);
