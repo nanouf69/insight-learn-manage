@@ -81,7 +81,9 @@ Réponds UNIQUEMENT avec un JSON valide, sans aucun texte avant ou après. Le fo
 - "prenom" = le prénom avec majuscule initiale
 - "resultat" = "admis" si le candidat a réussi, "ajourne" sinon
 
-Si tu trouves aussi un numéro de dossier, ajoute-le: {"nom": "DUPONT", "prenom": "Jean", "resultat": "admis", "dossier": "00017322"}
+Ajoute TOUJOURS le numéro de dossier quand il figure dans le document: {"nom": "DUPONT", "prenom": "Jean", "resultat": "admis", "dossier": "00017322"}
+
+IMPORTANT : certains documents ne contiennent QUE le numéro de dossier et le résultat, sans nom ni prénom. Dans ce cas renvoie quand même la ligne avec le numéro de dossier et le résultat, en omettant "nom" et "prenom" : {"dossier": "00017322", "resultat": "admis"}. N'invente jamais un nom ou un prénom.
 
 Ne mets aucune explication, juste le tableau JSON.`;
 
