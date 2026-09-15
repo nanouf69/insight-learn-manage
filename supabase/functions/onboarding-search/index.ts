@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 const WINDOW_MINUTES = 15;
-const MAX_ATTEMPTS_PER_WINDOW = 12;
+const MAX_ATTEMPTS_PER_WINDOW = 30;
 const TOKEN_TTL_SECONDS = 20 * 60;
 
 const json = (body: unknown, status = 200) =>
