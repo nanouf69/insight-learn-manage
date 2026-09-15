@@ -4506,6 +4506,19 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                           </Button>
 
 
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-8 gap-1 border-blue-300 text-blue-700"
+                            disabled={inviteSending === apprenant.id}
+                            onClick={() => void sendInvitationLink(apprenant.id)}
+                            title="Envoyer à l'apprenant son lien personnel d'inscription"
+                          >
+                            {inviteSending === apprenant.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+                            <span className="text-xs">🔗 Lien d'inscription</span>
+                          </Button>
+
                           <NotesPopover 
                             sessionApprenantId={sessionApprenant.id}
                             notes={sessionApprenant.notes || apprenant.notes || ""}
