@@ -83,7 +83,7 @@ export default function OnboardingWelcome() {
   const selectCandidate = async (found: Candidate) => {
     setIsSearching(true);
     try {
-      const { dossier, is_fc } = await callOnboardingSearch({
+      const { dossier, is_fc, session_token } = await callOnboardingSearch({
         action: 'select',
         nom: nom.trim(),
         prenom: prenom.trim(),
@@ -92,6 +92,7 @@ export default function OnboardingWelcome() {
       });
 
       localStorage.setItem('onboarding_apprenant_id', dossier.id);
+      if (session_token) localStorage.setItem('onboarding_session_token', session_token);
       localStorage.setItem('onboarding_email', dossier.email || '');
       localStorage.setItem('onboarding_telephone', dossier.telephone || '');
       localStorage.setItem('onboarding_adresse', dossier.adresse || '');
