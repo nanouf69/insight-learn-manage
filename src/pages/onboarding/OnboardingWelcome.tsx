@@ -81,32 +81,35 @@ export default function OnboardingWelcome() {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
 
   const selectCandidate = async (found: Candidate) => {
-    localStorage.setItem('onboarding_apprenant_id', found.id);
-    localStorage.setItem('onboarding_email', found.email || '');
-    localStorage.setItem('onboarding_telephone', found.telephone || '');
-    localStorage.setItem('onboarding_adresse', found.adresse || '');
-    localStorage.setItem('onboarding_code_postal', found.code_postal || '');
-    localStorage.setItem('onboarding_ville', found.ville || '');
-    localStorage.setItem('onboarding_found', 'true');
-    localStorage.setItem('onboarding_nom', found.nom);
-    localStorage.setItem('onboarding_prenom', found.prenom);
-
-    // Détecter formation continue (VTC/TAXI) → parcours simplifié : uniquement étape 1
+    setIsSearching(true);
     try {
-      const { data: ap } = await supabase
-        .from('apprenants')
-        .select('type_apprenant, formation_choisie')
-        .eq('id', found.id)
-        .maybeSingle();
-      const blob = `${ap?.type_apprenant || ''} ${ap?.formation_choisie || ''}`.toLowerCase();
-      const isFC = /continu|\bfc\b|formation\s*continue/.test(blob);
-      localStorage.setItem('onboarding_is_fc', isFC ? 'true' : 'false');
-    } catch {
-      localStorage.setItem('onboarding_is_fc', 'false');
-    }
+      const { dossier, is_fc } = await callOnboardingSearch({
+        action: 'select',
+        nom: nom.trim(),
+        prenom: prenom.trim(),
+        apprenant_id: found.id,
+        token: found.token,
+      });
 
-    toast.success(`Bienvenue ${found.prenom} !`);
-    navigate('/bienvenue/etape-1');
+      localStorage.setItem('onboarding_apprenant_id', dossier.id);
+      localStorage.setItem('onboarding_email', dossier.email || '');
+      localStorage.setItem('onboarding_telephone', dossier.telephone || '');
+      localStorage.setItem('onboarding_adresse', dossier.adresse || '');
+      localStorage.setItem('onboarding_code_postal', dossier.code_postal || '');
+      localStorage.setItem('onboarding_ville', dossier.ville || '');
+      localStorage.setItem('onboarding_found', 'true');
+      localStorage.setItem('onboarding_nom', dossier.nom);
+      localStorage.setItem('onboarding_prenom', dossier.prenom);
+      localStorage.setItem('onboarding_is_fc', is_fc ? 'true' : 'false');
+
+      toast.success(`Bienvenue ${dossier.prenom} !`);
+      navigate('/bienvenue/etape-1');
+    } catch (error) {
+      console.error('Erreur lors de la sélection du dossier:', error);
+      toast.error(error instanceof Error ? error.message : "Une erreur est survenue. Veuillez réessayer.");
+    } finally {
+      setIsSearching(false);
+    }
   };
 
 
@@ -122,18 +125,16 @@ export default function OnboardingWelcome() {
     setIsSearching(true);
 
     try {
-      const { data: results, error } = await supabase
-        .rpc('search_apprenant_onboarding', {
-          p_nom: nom.trim(),
-          p_prenom: prenom.trim(),
-        });
-
-      if (error) throw error;
+      const data = await callOnboardingSearch({
+        action: 'search',
+        nom: nom.trim(),
+        prenom: prenom.trim(),
+      });
 
       localStorage.setItem('onboarding_nom', nom.trim());
       localStorage.setItem('onboarding_prenom', prenom.trim());
 
-      const list = (results || []) as Candidate[];
+      const list = (data?.candidates || []) as Candidate[];
 
       if (list.length === 0) {
         toast.error(
@@ -146,7 +147,7 @@ export default function OnboardingWelcome() {
 
       // Un seul candidat clair → on continue directement
       if (list.length === 1) {
-        selectCandidate(list[0]);
+        await selectCandidate(list[0]);
         return;
       }
 
@@ -155,11 +156,12 @@ export default function OnboardingWelcome() {
       toast.info("Plusieurs dossiers correspondent. Sélectionnez le vôtre ci-dessous.");
     } catch (error) {
       console.error('Erreur lors de la recherche:', error);
-      toast.error("Une erreur est survenue. Veuillez réessayer.");
+      toast.error(error instanceof Error ? error.message : "Une erreur est survenue. Veuillez réessayer.");
     } finally {
       setIsSearching(false);
     }
   };
+
 
   return (
     <div className="min-h-screen bg-black text-white">
