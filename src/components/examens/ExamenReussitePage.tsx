@@ -2004,9 +2004,22 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
         );
 
         if (result.notFound?.length > 0) {
-          const names = result.notFound.map((n: any) => `${n.nom} ${n.prenom}`).join(', ');
-          toast.warning(`⚠️ Candidats non trouvés (saisie manuelle requise) : ${names}`, { duration: 15000 });
+          const labels = result.notFound.map((n: any) => {
+            const nom = `${n.nom || ''} ${n.prenom || ''}`.trim();
+            return nom || (n.dossier ? `dossier ${n.dossier}` : 'ligne illisible');
+          });
+          const preview = labels.slice(0, 15).join(', ');
+          const reste = labels.length > 15 ? ` … (+${labels.length - 15})` : '';
+          toast.warning(`⚠️ ${labels.length} non rattaché(s) à un apprenant : ${preview}${reste}`, { duration: 15000 });
           console.log("Candidats non trouvés:", result.notFound);
+        }
+
+        if (result.ignored?.length > 0) {
+          toast.warning(
+            `⚠️ ${result.ignored.length} ligne(s) illisible(s) dans le PDF ont été ignorées, les autres ont bien été traitées.`,
+            { duration: 12000 }
+          );
+          console.log("Lignes ignorées:", result.ignored);
         }
 
         queryClient.invalidateQueries({ queryKey: ['apprenants-examen', selectedExamDate] });
