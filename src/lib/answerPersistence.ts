@@ -64,6 +64,13 @@ interface QueueItem {
   owner_user_id?: string | null;
   /** Refusé par le serveur (403) : conservé, mais plus renvoyé en boucle. */
   blocked?: boolean;
+  /**
+   * Comptes auxquels le serveur a déjà refusé cet élément (403). Utile pour les
+   * éléments anciens, mis en file avant l'enregistrement du propriétaire : sur
+   * une tablette partagée, ils ne sont plus retentés en boucle par chaque
+   * apprenant successif (ils restent en file pour leur propriétaire).
+   */
+  refused_user_ids?: string[];
 }
 
 type Listener = (state: AnswerSaveState, pending: number) => void;
@@ -79,8 +86,12 @@ let authUserId: string | null = null;
  * version antérieure sans propriétaire enregistré : on le renvoie alors comme
  * avant). Les éléments d'un AUTRE compte sont conservés, jamais envoyés.
  */
-const isOwnedByCurrentUser = (item: QueueItem): boolean =>
-  !item.owner_user_id || !authUserId || item.owner_user_id === authUserId;
+const isOwnedByCurrentUser = (item: QueueItem): boolean => {
+  if (item.owner_user_id) return !authUserId || item.owner_user_id === authUserId;
+  // Élément sans propriétaire connu (ancienne version) : envoyable, sauf par un
+  // compte auquel le serveur l'a déjà refusé.
+  return !authUserId || !(item.refused_user_ids ?? []).includes(authUserId);
+};
 
 const makeEventId = (): string => {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
