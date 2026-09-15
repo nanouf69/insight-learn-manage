@@ -53,6 +53,15 @@ interface QueueItem {
   payload: AnswerSavePayload;
   queued_at: string;
   attempts: number;
+  /**
+   * Compte authentifié propriétaire de la sauvegarde au moment de la mise en
+   * file. La file vit dans le localStorage du NAVIGATEUR : sur un poste
+   * partagé, un élément laissé par l'apprenant A ne doit jamais être renvoyé
+   * avec le jeton de l'apprenant B (ni d'un admin) — le serveur répondrait
+   * 403 auth_user_id_mismatch en boucle. L'élément est simplement mis de côté
+   * jusqu'au retour de son propriétaire : rien n'est supprimé.
+   */
+  owner_user_id?: string | null;
 }
 
 type Listener = (state: AnswerSaveState, pending: number) => void;
