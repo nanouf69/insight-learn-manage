@@ -58,7 +58,7 @@ const MATIERE_A: ContentItem[] = [
     sousTitre: "Transport public, loi LOTI, taxis, VTC, VMDTR, assurances, formation continue",
     fichiers: [
       { nom: "PDF HD Partie 1", url: "/cours/vtc/A_T3P_1.pdf?v=20260819-1732" },
-      { nom: "PowerPoint Partie 1", url: "/cours/vtc/A_T3P_partie_1.pptx?v=20260908-1500" },
+      { nom: "PowerPoint Partie 1", url: "/cours/vtc/A_T3P_partie_1.pptx?v=20260915-0900" },
     ],
   },
   {
