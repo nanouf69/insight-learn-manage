@@ -64,12 +64,24 @@ Deno.serve(async (req) => {
     const effectiveUserId = authData.user.id;
     const { data: learner, error: learnerError } = await supabase
       .from("apprenants")
-      .select("id")
+      .select("id, auth_user_id")
       .eq("id", apprenant_id)
-      .eq("auth_user_id", effectiveUserId)
       .maybeSingle();
-    if (learnerError || !learner) {
-      return new Response(JSON.stringify({ error: "Forbidden" }), {
+    if (learnerError) {
+      console.error("[upsert-reponse-apprenant] learner lookup error:", learnerError);
+      return new Response(JSON.stringify({ error: "Learner lookup failed", code: learnerError.code }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    if (!learner) {
+      return new Response(JSON.stringify({ error: "Forbidden", reason: "apprenant_not_found" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    if (learner.auth_user_id !== effectiveUserId) {
+      return new Response(JSON.stringify({ error: "Forbidden", reason: "auth_user_id_mismatch" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
