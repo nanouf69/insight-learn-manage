@@ -86,6 +86,7 @@ function App() {
                 
                 {/* Onboarding routes - public */}
                 <Route path="/bienvenue" element={<ErrorBoundary><OnboardingWelcome /></ErrorBoundary>} />
+                <Route path="/bienvenue/invitation" element={<ErrorBoundary><OnboardingInvitation /></ErrorBoundary>} />
                 <Route path="/bienvenue/etape-1" element={<ErrorBoundary><Step1 /></ErrorBoundary>} />
                 <Route path="/bienvenue/etape-2" element={<ErrorBoundary><Step2 /></ErrorBoundary>} />
                 <Route path="/bienvenue/etape-3" element={<ErrorBoundary><Step3 /></ErrorBoundary>} />
