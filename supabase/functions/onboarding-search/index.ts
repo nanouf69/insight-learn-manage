@@ -138,7 +138,12 @@ Deno.serve(async (req) => {
       const blob = `${extra?.type_apprenant || ""} ${extra?.formation_choisie || ""}`.toLowerCase();
       const isFC = /continu|\bfc\b|formation\s*continue/.test(blob);
 
+      // Jeton de session du parcours (12 h) : permet la reprise du dossier déjà enregistré.
+      const sessionExp = Math.floor(Date.now() / 1000) + 12 * 60 * 60;
+      const sessionToken = `${sessionExp}.${await hmac(`onboarding:${apprenantId}:${sessionExp}`)}`;
+
       return json({
+        session_token: sessionToken,
         dossier: {
           id: match.id,
           nom: match.nom,
