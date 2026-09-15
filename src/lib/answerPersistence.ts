@@ -193,10 +193,25 @@ export async function flushAnswerSavesAndWait(
  * l'application à chaque changement de session.
  */
 export function setAnswerSaveAuthToken(token: string | null, userId: string | null = null) {
+  const userChanged = userId !== authUserId;
   authToken = token;
   authUserId = userId;
+  if (userChanged) {
+    // Nouveau compte connecté : ses éventuels éléments bloqués sont réessayés
+    // une fois (rien n'est supprimé).
+    const queue = readQueue();
+    if (queue.some((item) => item.blocked && isOwnedByCurrentUser(item))) {
+      writeQueue(
+        queue.map((item) =>
+          item.blocked && isOwnedByCurrentUser(item) ? { ...item, blocked: false } : item
+        )
+      );
+    }
+  }
   emit();
-  if (token && readQueue().some(isOwnedByCurrentUser)) void processQueue();
+  if (token && readQueue().some((item) => isOwnedByCurrentUser(item) && !item.blocked)) {
+    void processQueue();
+  }
 }
 
 const endpoint = () => {
@@ -355,8 +370,10 @@ export function enqueueAnswerSave(payload: AnswerSavePayload): void {
  * l'élément reste dans la file et repartira au prochain chargement.
  */
 export function flushAnswerSavesOnUnload(): void {
-  const queue = readQueue();
-  if (queue.length === 0) return;
+  // Uniquement les sauvegardes du compte connecté : celles d'un autre compte
+  // seraient refusées (403) et restent en attente de leur propriétaire.
+  const queue = readQueue().filter((item) => isOwnedByCurrentUser(item) && !item.blocked);
+  if (queue.length === 0 || !authToken) return;
   const url = endpoint();
   const apikey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
   if (!url || !apikey) return;
