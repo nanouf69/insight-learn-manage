@@ -322,6 +322,7 @@ export function enqueueAnswerSave(payload: AnswerSavePayload): void {
     },
     queued_at: new Date().toISOString(),
     attempts: 0,
+    owner_user_id: authUserId,
   };
   const queue = readQueue();
   // Compactage : une sauvegarde non envoyée du même exercice non terminée est
@@ -331,6 +332,7 @@ export function enqueueAnswerSave(payload: AnswerSavePayload): void {
     (q) =>
       q.payload.exercice_id === payload.exercice_id &&
       q.payload.apprenant_id === payload.apprenant_id &&
+      isOwnedByCurrentUser(q) &&
       !q.payload.completed &&
       !payload.completed
   );
