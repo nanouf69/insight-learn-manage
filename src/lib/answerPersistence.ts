@@ -214,10 +214,12 @@ const buildHeaders = (): Record<string, string> | null => {
   return headers;
 };
 
-async function sendItem(item: QueueItem): Promise<boolean> {
+type SendResult = "ok" | "retry" | "blocked";
+
+async function sendItem(item: QueueItem): Promise<SendResult> {
   const url = endpoint();
   const headers = buildHeaders();
-  if (!url || !headers) return false;
+  if (!url || !headers) return "retry";
   try {
     const res = await fetch(url, {
       method: "POST",
@@ -226,55 +228,73 @@ async function sendItem(item: QueueItem): Promise<boolean> {
     });
     if (res.ok) {
       const confirmation = await res.json().catch(() => null);
-      return confirmation?.success === true && confirmation?.confirmed === true;
+      return confirmation?.success === true && confirmation?.confirmed === true ? "ok" : "retry";
     }
-    // 4xx hors auth : inutile de boucler indéfiniment, mais on garde la trace.
-    console.error("[answerPersistence] Échec sauvegarde", res.status, await res.text());
-    return false;
+    const text = await res.text();
+    console.error("[answerPersistence] Échec sauvegarde", res.status, text);
+    // 403 : le serveur refuse le lien compte ↔ dossier. Réessayer en boucle ne
+    // sert à rien et masque les vraies erreurs ; l'élément est conservé
+    // (aucune réponse n'est supprimée) et sera retenté au prochain changement
+    // de session.
+    if (res.status === 403) return "blocked";
+    return "retry";
   } catch (e) {
     console.error("[answerPersistence] Erreur réseau sauvegarde", e);
-    return false;
+    return "retry";
   }
 }
 
 async function processQueue(): Promise<void> {
   if (processing) return;
+  // Sans session valide, on n'envoie rien : la file attend la reconnexion.
+  if (!authToken) {
+    if (readQueue().some(isOwnedByCurrentUser)) setState("error");
+    return;
+  }
   processing = true;
   try {
     let queue = readQueue();
-    const itemsToTry = queue.length;
+    const sendable = (items: QueueItem[]) =>
+      items.filter((q) => isOwnedByCurrentUser(q) && !q.blocked);
+    const itemsToTry = sendable(queue).length;
     let tried = 0;
     let hadFailure = false;
-    while (queue.length > 0 && tried < itemsToTry) {
+    while (tried < itemsToTry) {
+      const item = sendable(queue)[0];
+      if (!item) break;
       if (typeof navigator !== "undefined" && navigator.onLine === false) {
         setState("error");
         return;
       }
       setState("saving");
-      const item = queue[0];
-      const ok = await sendItem(item);
+      const result = await sendItem(item);
       tried += 1;
       queue = readQueue();
-      if (ok) {
+      if (result === "ok") {
         // Retirer l'élément traité (identifié par son id).
         queue = queue.filter((q) => q.id !== item.id);
         writeQueue(queue);
       } else {
         const idx = queue.findIndex((q) => q.id === item.id);
         if (idx >= 0) {
-          const failed = { ...queue[idx], attempts: (queue[idx].attempts ?? 0) + 1 };
+          const failed: QueueItem = {
+            ...queue[idx],
+            attempts: (queue[idx].attempts ?? 0) + 1,
+            blocked: result === "blocked" ? true : queue[idx].blocked,
+          };
           queue.splice(idx, 1);
           queue.push(failed);
           writeQueue(queue);
         }
-        hadFailure = true;
+        if (result === "retry") hadFailure = true;
       }
     }
-    if (queue.length === 0) {
+    const remaining = queue.filter(isOwnedByCurrentUser);
+    if (remaining.length === 0) {
       setState("saved");
     } else {
       setState("error");
-      const attempts = Math.max(...queue.map((item) => item.attempts ?? 1), 1);
+      const attempts = Math.max(...remaining.map((item) => item.attempts ?? 1), 1);
       const delay = Math.min(30000, 1000 * 2 ** Math.min(attempts, 5));
       if (hadFailure) setTimeout(() => void processQueue(), delay);
     }
