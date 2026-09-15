@@ -57,6 +57,13 @@
       "when": 1789463853343,
       "tag": "0007_restrict_einvoices_to_admin",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1789463865292,
+      "tag": "0008_restrict_documents_a_signer_to_admin",
+      "breakpoints": true
     }
   ]
 }
