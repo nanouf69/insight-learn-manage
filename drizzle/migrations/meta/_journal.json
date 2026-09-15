@@ -99,6 +99,13 @@
       "when": 1789466718878,
       "tag": "0013_restrict_search_apprenant_onboarding",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1789467580667,
+      "tag": "0014_create_onboarding_invitations",
+      "breakpoints": true
     }
   ]
 }

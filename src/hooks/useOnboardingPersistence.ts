@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { savePublicFormDocument } from "@/lib/savePublicFormDocument";
 import { supabase } from "@/integrations/supabase/client";
+import { callOnboardingInvitation } from "@/lib/onboardingInvitation";
 
 /**
  * Liste de toutes les clés localStorage utilisées par les 12 étapes du parcours d'inscription.
@@ -109,8 +110,31 @@ export function useOnboardingPersistence(apprenantId: string | null | undefined)
 
         if (cancelled) return;
 
-        if (!error && data && (data as any).donnees) {
-          const donnees = (data as any).donnees as Record<string, string>;
+        // Lecture de secours via le serveur (parcours public non connecté) :
+        // la lecture directe est refusée par les règles d'accès, on relit avec le jeton du parcours.
+        let donneesDb: Record<string, string> | null =
+          !error && data && (data as any).donnees ? ((data as any).donnees as Record<string, string>) : null;
+
+        if (!donneesDb) {
+          const sessionToken = localStorage.getItem("onboarding_session_token");
+          if (sessionToken) {
+            try {
+              const res = await callOnboardingInvitation({
+                action: "load_state",
+                apprenant_id: apprenantId,
+                session_token: sessionToken,
+              });
+              if (res?.donnees) donneesDb = res.donnees as Record<string, string>;
+            } catch (e) {
+              console.warn("[OnboardingPersistence] Reprise serveur indisponible:", e);
+            }
+          }
+        }
+
+        if (cancelled) return;
+
+        if (donneesDb) {
+          const donnees = donneesDb;
           const restored = restoreToLocalStorage(donnees);
           if (restored > 0) {
             console.log(`[OnboardingPersistence] ✅ Restauré ${restored} valeur(s) depuis la BDD`);

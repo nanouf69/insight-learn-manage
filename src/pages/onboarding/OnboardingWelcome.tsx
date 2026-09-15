@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { callOnboardingInvitation } from "@/lib/onboardingInvitation";
 
 
 // Fonction pour normaliser le texte (supprimer accents, tirets, espaces multiples et mettre en minuscules)
@@ -79,11 +80,12 @@ export default function OnboardingWelcome() {
   const [isSearching, setIsSearching] = useState(false);
   const [attempted, setAttempted] = useState(false);
   const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [isResending, setIsResending] = useState(false);
 
   const selectCandidate = async (found: Candidate) => {
     setIsSearching(true);
     try {
-      const { dossier, is_fc } = await callOnboardingSearch({
+      const { dossier, is_fc, session_token } = await callOnboardingSearch({
         action: 'select',
         nom: nom.trim(),
         prenom: prenom.trim(),
@@ -92,6 +94,7 @@ export default function OnboardingWelcome() {
       });
 
       localStorage.setItem('onboarding_apprenant_id', dossier.id);
+      if (session_token) localStorage.setItem('onboarding_session_token', session_token);
       localStorage.setItem('onboarding_email', dossier.email || '');
       localStorage.setItem('onboarding_telephone', dossier.telephone || '');
       localStorage.setItem('onboarding_adresse', dossier.adresse || '');
@@ -112,6 +115,26 @@ export default function OnboardingWelcome() {
     }
   };
 
+
+  const handleResendLink = async () => {
+    if (!nom.trim() || !prenom.trim()) {
+      toast.error("Saisissez votre nom et prénom pour recevoir votre lien personnel");
+      return;
+    }
+    setIsResending(true);
+    try {
+      const res = await callOnboardingInvitation({
+        action: 'resend',
+        nom: nom.trim(),
+        prenom: prenom.trim(),
+      });
+      toast.success(res?.message || "Si un dossier correspond, un lien vient d'être envoyé.", { duration: 9000 });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Une erreur est survenue. Veuillez réessayer.");
+    } finally {
+      setIsResending(false);
+    }
+  };
 
   const handleSearch = async () => {
     setAttempted(true);
@@ -261,6 +284,20 @@ export default function OnboardingWelcome() {
                   </>
                 )}
               </Button>
+
+              <div className="pt-2 text-center">
+                <button
+                  type="button"
+                  onClick={handleResendLink}
+                  disabled={isResending}
+                  className="text-sm text-blue-300 hover:text-blue-200 underline disabled:opacity-50"
+                >
+                  {isResending ? "Envoi en cours…" : "Je n'ai pas reçu mon lien personnel"}
+                </button>
+                <p className="text-white/40 text-xs mt-1">
+                  Le lien est renvoyé uniquement à l'adresse e-mail déjà enregistrée dans votre dossier.
+                </p>
+              </div>
 
               {candidates.length > 1 && (
                 <div className="mt-4 space-y-2">
