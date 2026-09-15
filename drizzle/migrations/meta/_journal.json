@@ -43,6 +43,27 @@
       "when": 1789388240198,
       "tag": "0005_shared_exercices_single_source",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1789463843636,
+      "tag": "0006_restrict_t3p_credentials_to_admin",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1789463853343,
+      "tag": "0007_restrict_einvoices_to_admin",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1789463865292,
+      "tag": "0008_restrict_documents_a_signer_to_admin",
+      "breakpoints": true
     }
   ]
 }
