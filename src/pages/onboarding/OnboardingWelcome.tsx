@@ -79,6 +79,7 @@ export default function OnboardingWelcome() {
   const [isSearching, setIsSearching] = useState(false);
   const [attempted, setAttempted] = useState(false);
   const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [isResending, setIsResending] = useState(false);
 
   const selectCandidate = async (found: Candidate) => {
     setIsSearching(true);
