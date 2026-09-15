@@ -6,9 +6,22 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-/** Remove accents and lowercase */
-function normalize(s: string): string {
-  return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+/** Remove accents and lowercase. Tolerates null/undefined/non-string values. */
+function normalize(s: unknown): string {
+  if (s === null || s === undefined) return "";
+  const str = typeof s === "string" ? s : String(s);
+  return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+}
+
+/**
+ * Normalize a CMA dossier number: keep the FIRST block of digits only
+ * (suffixes like "00064345PE2PF1" -> "64345"), then strip leading zeros.
+ */
+function normalizeDossier(s: unknown): string {
+  if (s === null || s === undefined) return "";
+  const m = String(s).match(/\d+/);
+  if (!m) return "";
+  return m[0].replace(/^0+/, "");
 }
 
 Deno.serve(async (req) => {
@@ -72,7 +85,9 @@ Réponds UNIQUEMENT avec un JSON valide, sans aucun texte avant ou après. Le fo
 - "prenom" = le prénom avec majuscule initiale
 - "resultat" = "admis" si le candidat a réussi, "ajourne" sinon
 
-Si tu trouves aussi un numéro de dossier, ajoute-le: {"nom": "DUPONT", "prenom": "Jean", "resultat": "admis", "dossier": "00017322"}
+Ajoute TOUJOURS le numéro de dossier quand il figure dans le document: {"nom": "DUPONT", "prenom": "Jean", "resultat": "admis", "dossier": "00017322"}
+
+IMPORTANT : certains documents ne contiennent QUE le numéro de dossier et le résultat, sans nom ni prénom. Dans ce cas renvoie quand même la ligne avec le numéro de dossier et le résultat, en omettant "nom" et "prenom" : {"dossier": "00017322", "resultat": "admis"}. N'invente jamais un nom ou un prénom.
 
 Ne mets aucune explication, juste le tableau JSON.`;
 
@@ -114,11 +129,12 @@ Ne mets aucune explication, juste le tableau JSON.`;
     console.log("AI raw response:", content);
 
     // Parse the JSON from AI response
-    let results: Array<{ nom: string; prenom: string; resultat: string; dossier?: string }>;
+    let results: Array<{ nom?: string; prenom?: string; resultat?: string; dossier?: string }>;
     try {
       const jsonMatch = content.match(/\[[\s\S]*\]/);
       if (!jsonMatch) throw new Error("No JSON array found");
-      results = JSON.parse(jsonMatch[0]);
+      const parsed = JSON.parse(jsonMatch[0]);
+      results = Array.isArray(parsed) ? parsed.filter((r) => r && typeof r === "object") : [];
     } catch (parseErr) {
       console.error("Parse error:", parseErr, "Content:", content);
       return new Response(JSON.stringify({ error: "Impossible de parser les résultats de l'IA", raw: content }), {
@@ -149,13 +165,42 @@ Ne mets aucune explication, juste le tableau JSON.`;
       from += pageSize;
     }
 
-    // Build normalized lookup from PDF results
-    const pdfResults = results.map(r => ({
-      ...r,
-      normNom: normalize(r.nom),
-      normPrenom: normalize(r.prenom),
-      mappedResultat: r.resultat.toLowerCase().includes("ajourne") || r.resultat.toLowerCase().includes("non") ? "non" : "oui",
-    }));
+    // Build normalized lookup from PDF results (tolerant: any field may be missing)
+    const ignored: Array<{ ligne: unknown; raison: string }> = [];
+    const pdfResults = results
+      .map((r) => {
+        const normResultat = normalize(r.resultat);
+        const normNom = normalize(r.nom);
+        const normPrenom = normalize(r.prenom);
+        const normDossier = normalizeDossier(r.dossier);
+        return {
+          nom: typeof r.nom === "string" ? r.nom : "",
+          prenom: typeof r.prenom === "string" ? r.prenom : "",
+          resultat: typeof r.resultat === "string" ? r.resultat : "",
+          dossier: typeof r.dossier === "string" || typeof r.dossier === "number" ? String(r.dossier) : undefined,
+          normNom,
+          normPrenom,
+          normDossier,
+          mappedResultat:
+            normResultat.includes("ajourn") || normResultat.includes("non") || normResultat.includes("echec")
+              ? "non"
+              : "oui",
+          hasResultat: normResultat.length > 0,
+          hasIdentity: normNom.length > 0 || normDossier.length > 0,
+        };
+      })
+      .filter((r) => {
+        if (!r.hasResultat) {
+          ignored.push({ ligne: { nom: r.nom, prenom: r.prenom, dossier: r.dossier }, raison: "Résultat illisible" });
+          return false;
+        }
+        if (!r.hasIdentity) {
+          ignored.push({ ligne: { resultat: r.resultat }, raison: "Ni nom ni numéro de dossier lisible" });
+          return false;
+        }
+        return true;
+      });
+
 
     // Build apprenant indexes for O(1) lookup
     const byNamePrenom = new Map<string, typeof apprenants[number]>();
@@ -168,31 +213,38 @@ Ne mets aucune explication, juste le tableau JSON.`;
       const list = byNameOnly.get(nn) || [];
       list.push(a);
       byNameOnly.set(nn, list);
-      if (a.numero_dossier_cma) {
-        byDossier.set(a.numero_dossier_cma.replace(/^0+/, ""), a);
-      }
+      const nd = normalizeDossier(a.numero_dossier_cma);
+      if (nd) byDossier.set(nd, a);
     }
 
     const matched: Array<{ id: string; nom: string; prenom: string; resultat: string; dossier?: string }> = [];
-    const notFound: Array<{ nom: string; prenom: string; resultat: string }> = [];
+    const notFound: Array<{ nom: string; prenom: string; resultat: string; dossier?: string }> = [];
     const updates: Array<{ id: string; entry: typeof pdfResults[number]; apprenant: typeof apprenants[number] }> = [];
 
     for (const pdfEntry of pdfResults) {
-      let found = byNamePrenom.get(`${pdfEntry.normNom}|${pdfEntry.normPrenom}`);
+      let found: typeof apprenants[number] | undefined;
 
-      if (!found && pdfEntry.dossier) {
-        found = byDossier.get(pdfEntry.dossier.replace(/^0+/, ""));
+      // 1) Numéro de dossier (fiable, et seul identifiant de certains PDF)
+      if (pdfEntry.normDossier) {
+        found = byDossier.get(pdfEntry.normDossier);
       }
 
-      if (!found) {
+      // 2) Nom + prénom exacts
+      if (!found && pdfEntry.normNom && pdfEntry.normPrenom) {
+        found = byNamePrenom.get(`${pdfEntry.normNom}|${pdfEntry.normPrenom}`);
+      }
+
+      if (!found && pdfEntry.normNom) {
         const candidates = byNameOnly.get(pdfEntry.normNom);
-        if (candidates) {
-          found = candidates.find(
-            a => {
+        if (candidates && candidates.length > 0) {
+          if (!pdfEntry.normPrenom && candidates.length === 1) {
+            found = candidates[0];
+          } else if (pdfEntry.normPrenom) {
+            found = candidates.find((a) => {
               const np = normalize(a.prenom);
-              return np.startsWith(pdfEntry.normPrenom) || pdfEntry.normPrenom.startsWith(np);
-            }
-          );
+              return np && (np.startsWith(pdfEntry.normPrenom) || pdfEntry.normPrenom.startsWith(np));
+            });
+          }
         }
       }
 
@@ -203,6 +255,7 @@ Ne mets aucune explication, juste le tableau JSON.`;
           nom: pdfEntry.nom,
           prenom: pdfEntry.prenom,
           resultat: pdfEntry.mappedResultat,
+          dossier: pdfEntry.dossier,
         });
       }
     }
@@ -218,14 +271,19 @@ Ne mets aucune explication, juste le tableau JSON.`;
         return supabase.from("apprenants").update(updateField).eq("id", u.id);
       }));
       results.forEach((res, idx) => {
+        const u = batch[idx];
         if (!res.error) {
-          const u = batch[idx];
           matched.push({
             id: u.id,
             nom: u.apprenant.nom,
             prenom: u.apprenant.prenom,
             resultat: u.entry.mappedResultat,
             dossier: u.entry.dossier,
+          });
+        } else {
+          ignored.push({
+            ligne: { nom: u.apprenant.nom, prenom: u.apprenant.prenom, dossier: u.entry.dossier },
+            raison: "Enregistrement refusé : " + res.error.message,
           });
         }
       });
@@ -237,8 +295,10 @@ Ne mets aucune explication, juste le tableau JSON.`;
       totalExtracted: results.length,
       totalMatched: matched.length,
       totalNotFound: notFound.length,
+      totalIgnored: ignored.length,
       matched,
       notFound,
+      ignored,
       extractedFromPdf: results,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
