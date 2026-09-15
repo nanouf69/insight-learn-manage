@@ -194,14 +194,29 @@ export function TeamsLinkSender({ open, onOpenChange, sessionId, recipients }: T
           </div>
 
           <div className="space-y-2">
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
               <Label>Destinataires ({selected.length}/{withEmail.length})</Label>
-              <Input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Filtrer par nom ou email"
-                className="h-8 max-w-[240px]"
-              />
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-8"
+                  onClick={() =>
+                    setExcluded(
+                      selected.length > 0 ? new Set(withEmail.map((r) => r.id)) : new Set()
+                    )
+                  }
+                >
+                  {selected.length > 0 ? "Tout décocher" : "Tout cocher"}
+                </Button>
+                <Input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Filtrer par nom ou email"
+                  className="h-8 max-w-[240px]"
+                />
+              </div>
             </div>
             <div className="max-h-52 overflow-y-auto rounded-md border divide-y">
               {filtered.map((r) => {
