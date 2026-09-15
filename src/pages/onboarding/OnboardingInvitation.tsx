@@ -19,6 +19,13 @@ export default function OnboardingInvitation() {
         setError("Lien incomplet. Utilisez le lien reçu par e-mail.");
         return;
       }
+      // Le jeton est retiré de l'adresse affichée : il ne reste ni dans l'historique du
+      // navigateur, ni dans les journaux techniques, ni dans les référents envoyés.
+      try {
+        window.history.replaceState({}, "", "/bienvenue/invitation");
+      } catch {
+        /* ignore */
+      }
       try {
         const { dossier, is_fc, session_token } = await callOnboardingInvitation({
           action: "verify",
