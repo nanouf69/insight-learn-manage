@@ -174,7 +174,10 @@ export async function flushAnswerSavesAndWait(
   const startedAt = Date.now();
   while (Date.now() - startedAt < timeoutMs) {
     const pending = readQueue().some(
-      (item) => item.payload.apprenant_id === apprenantId && item.payload.exercice_id === exerciceId
+      (item) =>
+        item.payload.apprenant_id === apprenantId &&
+        item.payload.exercice_id === exerciceId &&
+        isOwnedByCurrentUser(item)
     );
     if (!pending) return true;
     await new Promise((resolve) => setTimeout(resolve, 100));
@@ -183,9 +186,15 @@ export async function flushAnswerSavesAndWait(
   return false;
 }
 
-/** Le token JWT courant, mis à jour par l'application. */
-export function setAnswerSaveAuthToken(token: string | null) {
+/**
+ * Le token JWT courant + l'identifiant du compte connecté, mis à jour par
+ * l'application à chaque changement de session.
+ */
+export function setAnswerSaveAuthToken(token: string | null, userId: string | null = null) {
   authToken = token;
+  authUserId = userId;
+  emit();
+  if (token && readQueue().some(isOwnedByCurrentUser)) void processQueue();
 }
 
 const endpoint = () => {
