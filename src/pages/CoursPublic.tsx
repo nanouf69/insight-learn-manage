@@ -36,6 +36,7 @@ import { isPresentielType, getExpectedEmargements, type CreneauKey } from "@/lib
 import { getExpectedPratiqueEmargements } from "@/lib/pratiqueEmargements";
 import { useAuth } from "@/contexts/AuthContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { flushOwnAnswerSavesBeforeLogout } from "@/lib/answerPersistence";
 import { computeUnlockState, isModuleLocked as computeIsModuleLocked } from "@/lib/moduleUnlockLogic";
 import {
   fetchModuleCompletions,
