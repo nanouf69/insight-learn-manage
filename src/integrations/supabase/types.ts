@@ -2877,6 +2877,74 @@ export type Database = {
         }
         Relationships: []
       }
+      onboarding_invitations: {
+        Row: {
+          apprenant_id: string
+          created_at: string
+          created_by: string | null
+          expires_at: string
+          id: string
+          last_sent_at: string | null
+          last_used_at: string | null
+          revoked_at: string | null
+          sent_count: number
+          token_hash: string
+        }
+        Insert: {
+          apprenant_id: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string
+          id?: string
+          last_sent_at?: string | null
+          last_used_at?: string | null
+          revoked_at?: string | null
+          sent_count?: number
+          token_hash: string
+        }
+        Update: {
+          apprenant_id?: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string
+          id?: string
+          last_sent_at?: string | null
+          last_used_at?: string | null
+          revoked_at?: string | null
+          sent_count?: number
+          token_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_invitations_apprenant_id_fkey"
+            columns: ["apprenant_id"]
+            isOneToOne: false
+            referencedRelation: "apprenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_invite_rate_limit: {
+        Row: {
+          created_at: string
+          id: string
+          ip_hash: string
+          kind: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ip_hash: string
+          kind?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ip_hash?: string
+          kind?: string
+        }
+        Relationships: []
+      }
       onboarding_search_rate_limit: {
         Row: {
           attempts: number
