@@ -62,6 +62,8 @@ interface QueueItem {
    * jusqu'au retour de son propriétaire : rien n'est supprimé.
    */
   owner_user_id?: string | null;
+  /** Refusé par le serveur (403) : conservé, mais plus renvoyé en boucle. */
+  blocked?: boolean;
 }
 
 type Listener = (state: AnswerSaveState, pending: number) => void;
