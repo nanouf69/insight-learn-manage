@@ -6,6 +6,9 @@ import { FRANCAIS_EXERCICES } from "./exercices/francais-exercices-data";
 import { GESTION_EXERCICES } from "./exercices/gestion-exercices-data";
 import { REGLEMENTATION_NATIONALE_EXERCICES, REGLEMENTATION_LOCALE_EXERCICES } from "./exercices/reglementation-exercices-data";
 import { SECURITE_ROUTIERE_EXERCICES } from "./exercices/securite-routiere-exercices-data";
+import SECURITE_ROUTIERE_2_ASSET from "@/assets/cours-vtc/C_Securite_Routiere_FINAL_2.pptx.asset.json";
+
+const SECURITE_ROUTIERE_2_PPTX = `${SECURITE_ROUTIERE_2_ASSET.url}?v=20260915-1635`;
 
 interface ContentItem {
   id: number;
@@ -110,7 +113,7 @@ const MATIERE_C: ContentItem[] = [
     sousTitre: "Sécurité routière (suite)",
     fichiers: [
       { nom: "PDF HD Partie 2", url: "/cours/vtc/C_Securite_Routiere_2.pdf?v=20260819-1732" },
-      { nom: "PowerPoint Partie 2", url: "/cours/vtc/C_Securite_Routiere_FINAL_2.pptx?v=20260908-1500" },
+      { nom: "PowerPoint Partie 2", url: SECURITE_ROUTIERE_2_PPTX },
     ],
   },
   {
