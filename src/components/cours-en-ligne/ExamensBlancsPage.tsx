@@ -1017,11 +1017,13 @@ export default function ExamensBlancsPage({
       }
     }
     if (!saved) {
-      // Make a definitive failure loud instead of silent — this is exactly the
-      // class of bug ("C and E don't save") that went undetected for a long time.
+      // La note n'est PAS abandonnée après 3 essais : elle entre dans une file
+      // durable (localStorage, liée au compte propriétaire) et sera renvoyée
+      // automatiquement jusqu'à confirmation par la base.
+      enqueueQuizResultSave(payload as any);
       toast.error(
-        `⚠️ La sauvegarde de "${resultat.nomMatiere}" a échoué après plusieurs tentatives (connexion instable ou session expirée). ` +
-        `Vos réponses restent enregistrées localement, mais reconnectez-vous dès que possible pour ne pas perdre ce résultat.`,
+        `⚠️ La note de "${resultat.nomMatiere}" n'a pas encore pu être enregistrée (connexion instable ou session expirée). ` +
+        `Elle est conservée sur cet appareil et sera renvoyée automatiquement dès le rétablissement de la connexion.`,
         { duration: 15000 },
       );
     }
