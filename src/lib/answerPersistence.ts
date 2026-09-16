@@ -23,7 +23,11 @@
  */
 
 const QUEUE_KEY = "answer_save_queue_v1";
-const MAX_QUEUE_ITEMS = 500;
+// POINT 7 — AUCUNE suppression silencieuse : il n'existe plus de plafond du
+// nombre de réponses en attente. Si le stockage du navigateur sature, la file
+// bascule en mémoire et une alerte est remontée : rien n'est jamais effacé
+// pour faire de la place. Une réponse ne quitte la file qu'après confirmation
+// d'enregistrement par le serveur.
 
 export type AnswerSaveState = "idle" | "saving" | "saved" | "error";
 
