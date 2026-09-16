@@ -146,7 +146,7 @@ import {
   syncSharedExercisesToSiblingModules,
   type ModuleInitialData,
 } from "./shared-exercise-overrides";
-import { resolveOverrideConflict } from "@/components/fournisseurs/quiz-editor-utils";
+import { resolveOverrideConflict, buildAdminEditJournalMap } from "@/components/fournisseurs/quiz-editor-utils";
 import {
   rebaseCanonicalActions,
   toRpcCanonicalActions,
