@@ -168,3 +168,24 @@ export function getQuestionKey(value: any): string {
   if (enonce) return `${id}::${type}::${enonce}`;
   return `${id}::${type}`;
 }
+
+// ─── QRC : attente de correction manuelle ────────────────────────────────
+
+/**
+ * Une matière contenant des QRC reste « En attente de correction » tant que
+ * l'administrateur n'a pas validé chaque QRC.
+ *
+ * IMPORTANT : le drapeau `qrc_pending_correction` n'est posé QUE sur les
+ * nouveaux résultats. Les anciens résultats (sans ce drapeau) gardent
+ * exactement leur affichage actuel : aucune donnée existante n'est modifiée.
+ */
+export function isQrcPendingCorrection(details: any): boolean {
+  if (!details || details.qrc_pending_correction !== true) return false;
+  const questions = Array.isArray(details.questions) ? details.questions : [];
+  const qrcIds = questions
+    .filter((q: any) => normalizeQuestionType(q?.type) === "QRC")
+    .map((q: any) => String(q?.questionId ?? q?.id));
+  if (qrcIds.length === 0) return false;
+  const corrections = details.correctionsIA || {};
+  return qrcIds.some((id: string) => corrections?.[id]?.validatedByAdmin !== true);
+}
