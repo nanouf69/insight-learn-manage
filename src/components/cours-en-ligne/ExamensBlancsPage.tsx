@@ -909,7 +909,13 @@ export default function ExamensBlancsPage({
       }
     }
 
-    setExamenChoisi(examReference);
+    // Affichage des résultats : on montre la version exacte passée par l'apprenant
+    // (snapshot) quand elle existe, sinon la version actuelle (comportement historique).
+    setExamenChoisi(
+      frozenMatieres.length === examReference.matieres.length
+        ? { ...examReference, matieres: frozenMatieres }
+        : examReference,
+    );
     setTousResultats(results);
     setIsViewingSavedResults(true);
     setPhase("resultats");
