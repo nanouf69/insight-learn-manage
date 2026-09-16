@@ -509,7 +509,7 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
                           );
                           const recomputed = matiereDef
                             ? computeMatiereScore(
-                                matiereDef,
+                                resolveMatiereForScoring(matiereDef, (r as any).details),
                                 r.reponses ?? null,
                                 r.score_obtenu,
                                 r.score_max,
