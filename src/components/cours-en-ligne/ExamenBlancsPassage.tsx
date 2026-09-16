@@ -16,7 +16,7 @@ import { toast } from "sonner";
 import { TimerBadge } from "./ExamenBlancsTimer";
 import { ExamQuestionImage } from "./ExamQuestionImage";
 import type { Reponses, ReponseQCM, ReponseQRC } from "./examens-blancs-types";
-import { safeStr, safeArray, getQuestionImageValue, normalizeReponses as normalizeReponsesUtil, computeIsMultiple, applyQCMChange, isMistypedAsQRC } from "./examens-blancs-utils";
+import { safeStr, safeArray, getQuestionImageValue, normalizeReponses as normalizeReponsesUtil, computeIsMultiple, applyQCMChange, isMistypedAsQRC, isReponseFournie } from "./examens-blancs-utils";
 import Calculatrice from "./Calculatrice";
 import {
   enqueueAnswerSave,
@@ -59,6 +59,8 @@ function PassageMatiere({
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [showCalculator, setShowCalculator] = useState(false);
   const [showInterruptConfirm, setShowInterruptConfirm] = useState(false);
+  const [showUnansweredAlert, setShowUnansweredAlert] = useState(false);
+
   const isGestion = matiere.id === "gestion" || matiere.id === "bilan_gestion";
   const saveStatusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -280,23 +282,31 @@ function PassageMatiere({
   const isQuestionAnswered = (q: Question | null | undefined): boolean => {
     if (!q || !q.id) return false;
     const rep = reponses[q.id] ?? reponses[String(q.id)];
-    if (q?.type === "QCM") return Array.isArray(rep) && rep.length > 0;
-    if (q?.type === "QRC") return typeof rep === "string" && rep.trim().length > 0;
-    // Default: check if any value exists
-    return rep !== undefined && rep !== null && rep !== "";
+    return isReponseFournie(q?.type, rep);
   };
 
+
   const allAnswered = questionsSafe.every(q => isQuestionAnswered(q));
+  const unansweredIndexes = questionsSafe
+    .map((q, i) => (isQuestionAnswered(q) ? -1 : i))
+    .filter(i => i >= 0);
+
+  // Signalement visuel activé après une tentative de validation incomplète.
+  useEffect(() => {
+    if (allAnswered) setShowUnansweredAlert(false);
+  }, [allAnswered]);
 
   const handleTerminer = async () => {
     if (!allAnswered) {
+      // Aucune réponse n'est modifiée ni perdue : on se contente de déplacer
+      // l'affichage vers la première question encore sans réponse.
       const firstUnansweredIdx = questionsSafe.findIndex(q => !isQuestionAnswered(q));
+      setShowUnansweredAlert(true);
+      toast.error("Veuillez répondre à toutes les questions avant de terminer la matière.", {
+        description: `Question(s) sans réponse : ${unansweredIndexes.map(i => `Q${i + 1}`).join(", ")}`,
+      });
       if (firstUnansweredIdx >= 0) {
         setQuestionIndex(firstUnansweredIdx);
-        const remaining = questionsSafe.filter(q => !isQuestionAnswered(q)).length;
-        toast.error("Merci de répondre à toutes les questions", {
-          description: `Il reste ${remaining} question(s) sans réponse.`,
-        });
         // Scroll to top of question after state update
         setTimeout(() => {
           try {
@@ -305,11 +315,10 @@ function PassageMatiere({
             else window.scrollTo({ top: 0, behavior: "smooth" });
           } catch {}
         }, 50);
-      } else {
-        toast.error("Merci de répondre à toutes les questions");
       }
       return;
     }
+
     if (!apprenantId) {
       onTerminer(reponses);
       return;
@@ -588,8 +597,22 @@ function PassageMatiere({
         );
       })()}
 
+      {/* Alerte questions sans réponse */}
+      {showUnansweredAlert && unansweredIndexes.length > 0 && (
+        <div className="rounded-lg border-2 border-red-300 bg-red-50 px-4 py-3 flex items-start gap-2">
+          <AlertTriangle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+          <div className="text-sm text-red-700">
+            <p className="font-bold">Veuillez répondre à toutes les questions avant de terminer la matière.</p>
+            <p className="mt-1 text-xs">
+              Questions sans réponse : {unansweredIndexes.map(i => `Q${i + 1}`).join(", ")}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Question */}
       <Card className="border-2 border-primary/10">
+
         <CardContent className="pt-5 space-y-4">
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-start gap-3 flex-1">
@@ -786,7 +809,8 @@ function PassageMatiere({
                       : isAnswered
                         ? "bg-green-500 text-white border border-green-600 hover:bg-green-600"
                         : "bg-red-500 text-white border border-red-600 hover:bg-red-600"
-                  }`}
+                  } ${!isAnswered && showUnansweredAlert ? "ring-2 ring-red-600 ring-offset-1 animate-pulse" : ""}`}
+
                   title={isAnswered ? `Q${i + 1} — répondue ✓` : `Q${i + 1} — non répondue ✗`}
                 >
                   {i + 1}

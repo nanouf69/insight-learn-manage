@@ -1084,3 +1084,26 @@ export function shouldTriggerPollingRefresh(params: {
   const elapsed = params.now - params.lastRealtimeRefreshAt;
   return elapsed > params.pollingIntervalMs;
 }
+
+/**
+ * Une question est considérée répondue lorsqu'une réponse réelle existe.
+ * QRC : une réponse vide (ou uniquement des espaces) compte comme NON répondue.
+ */
+export function isReponseFournie(type: unknown, rep: unknown): boolean {
+  const t = String(type ?? "").toUpperCase();
+  if (t === "QCM") return Array.isArray(rep) && rep.length > 0;
+  if (t === "QRC") return typeof rep === "string" && rep.trim().length > 0;
+  return rep !== undefined && rep !== null && String(rep).trim() !== "";
+}
+
+/** Index de la première question sans réponse (-1 si toutes répondues). */
+export function firstUnansweredIndex(
+  questions: Array<{ id?: number | string; type?: unknown } | null | undefined>,
+  reponses: Record<string | number, unknown>,
+): number {
+  return questions.findIndex((q) => {
+    if (!q || q.id == null) return true;
+    const rep = (reponses as any)?.[q.id as any] ?? (reponses as any)?.[String(q.id)];
+    return !isReponseFournie(q.type, rep);
+  });
+}
