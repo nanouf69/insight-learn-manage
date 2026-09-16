@@ -211,7 +211,7 @@ serve(async (req) => {
           </div>
         `;
 
-        const subject = `⚠️ URGENT : Vous ne vous êtes pas connecté(e) à vos cours en ligne – Risque CPF`;
+        const subject = `⚠️ URGENT : Vous ne vous êtes pas connecté(e) à vos cours en ligne – Risque CPF / France Travail`;
 
         try {
           await sendBrandedEmail({ to: apprenant.email, subject, html: emailBody, replyTo: senderEmail });
