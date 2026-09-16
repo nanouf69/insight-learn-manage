@@ -4441,7 +4441,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                   if (!override) return q;
                   // Règle unique : la dernière modification enregistrée gagne (admin ou fournisseur).
                   const adminTs = (q as any)._editedAt ?? undefined;
-                  const winner = resolveOverrideConflict(adminTs, override.updated_at);
+                  const winner = resolveOverrideConflict(adminTs, override.updated_at, getAdminFallbackAt(exo.id, q.id));
+                  if (winner === "conflit") {
+                    console.warn("[Conflit Admin/Fournisseur] version la plus récente indéterminée — aucune version écrasée", { exo: exo.id, question: q.id });
+                    return q;
+                  }
                   if (winner === "admin") return q;
                   return { ...q, enonce: override.enonce, choix: override.choix };
                 })
@@ -4507,7 +4511,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         const questions = exo.questions.flatMap((q) => {
           const override = trainerOverrideWarnings.get(`${exo.id}-${q.id}`);
           if (!override) return [q];
-          const winner = resolveOverrideConflict((q as any)._editedAt ?? undefined, override.updated_at);
+          const winner = resolveOverrideConflict((q as any)._editedAt ?? undefined, override.updated_at, getAdminFallbackAt(exo.id, q.id));
+          if (winner === "conflit") {
+            console.warn("[Conflit Admin/Fournisseur] version la plus récente indéterminée — aucune version écrasée", { exo: exo.id, question: q.id });
+            return [q];
+          }
           if (winner === "admin") return [q];
           if (override.enonce === "__DELETED__") {
             changed = true;
@@ -5148,7 +5156,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 if (!override) return q;
                 // Règle unique : la dernière modification enregistrée gagne (admin ou fournisseur).
                 const adminTs = (q as any)._editedAt ?? undefined;
-                const winner = resolveOverrideConflict(adminTs, override.updated_at);
+                const winner = resolveOverrideConflict(adminTs, override.updated_at, getAdminFallbackAt(exo.id, q.id));
+                if (winner === "conflit") {
+                  console.warn("[Conflit Admin/Fournisseur] version la plus récente indéterminée — aucune version écrasée", { exo: exo.id, question: q.id });
+                  return q;
+                }
                 if (winner === "admin") return q;
                 return { ...q, enonce: override.enonce, choix: override.choix };
               })
