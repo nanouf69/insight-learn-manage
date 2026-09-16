@@ -507,20 +507,21 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
                 onClick={async () => {
                   setResendingCredentials(true);
                   try {
-                    const { error } = await supabase.functions.invoke("resend-credentials", {
-                      body: { apprenant_id: apprenantId, reset_password: false },
+                    const { data, error } = await supabase.functions.invoke("resend-credentials", {
+                      body: { apprenant_id: apprenantId, mode: "reset_link" },
                     });
                     if (error) throw error;
-                    toast.success("Identifiants renvoyés par email");
-                  } catch {
-                    toast.error("Erreur lors de l'envoi");
+                    if (!(data as any)?.emailSent) throw new Error((data as any)?.message || "Envoi email impossible");
+                    toast.success("Lien sécurisé envoyé par email à l'apprenant");
+                  } catch (err: any) {
+                    toast.error(err?.message || "Erreur lors de l'envoi");
                   } finally {
                     setResendingCredentials(false);
                   }
                 }}
               >
                 {resendingCredentials ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
-                Renvoyer identifiants
+                Envoyer le lien d'accès
               </Button>
               <Button
                 variant="secondary"
