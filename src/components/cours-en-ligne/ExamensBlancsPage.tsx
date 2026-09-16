@@ -977,6 +977,33 @@ export default function ExamensBlancsPage({
     // « En attente de correction » (pas de statut Réussi/Échoué définitif).
     const hasQrc = questionsSafe.some((q: any) => String(q?.type || "").toUpperCase() === "QRC");
 
+    // POINT 6 — SNAPSHOT : on fige la version exacte utilisée par l'apprenant
+    // (questions, choix proposés, bonnes réponses, barème, ordre). Une
+    // modification Admin ultérieure ne pourra plus transformer cette tentative.
+    const snapshot = {
+      version: MATIERE_SNAPSHOT_VERSION,
+      matiereId: matiere.id,
+      nom: matiere.nom,
+      noteSur: matiere.noteSur,
+      coefficient: matiere.coefficient,
+      noteEliminatoire: matiere.noteEliminatoire,
+      ptsQCM: matiere.ptsQCM ?? getPointsParQuestion(matiere.id, "QCM", matiere),
+      ptsQRC: matiere.ptsQRC ?? getPointsParQuestion(matiere.id, "QRC", matiere),
+      createdAt: new Date().toISOString(),
+      questions: questionsSafe.map((q: any, idx: number) => ({
+        id: q.id,
+        type: q?.type || "QCM",
+        enonce: q.enonce || "",
+        choix: Array.isArray(q.choix)
+          ? q.choix.map((c: any) => ({ lettre: c?.lettre, texte: c?.texte, correct: Boolean(c?.correct) }))
+          : undefined,
+        reponseQRC: q.reponseQRC,
+        reponses_possibles: q.reponses_possibles,
+        points: getPointsParQuestion(matiere.id, q?.type || "QCM", matiere),
+        ordre: idx,
+      })),
+    };
+
     const payload = {
       apprenant_id: apprenantId, user_id: userId, quiz_type: quizType, quiz_id: examen.id, quiz_titre: examen.titre,
       matiere_id: resultat.matiereId, matiere_nom: resultat.nomMatiere, score_obtenu: safeScoreObtenu, score_max: safeScoreMax,
@@ -986,6 +1013,7 @@ export default function ExamensBlancsPage({
         questions: questionDetails,
         reponses: resultat.reponses,
         correctionsIA: Object.keys(frozenCorrections).length > 0 ? frozenCorrections : undefined,
+        snapshot,
         ...(hasQrc ? { qrc_pending_correction: true } : {}),
       },
       tentative: Math.max(currentTentativeRef.current || currentTentative || 1, 1),
