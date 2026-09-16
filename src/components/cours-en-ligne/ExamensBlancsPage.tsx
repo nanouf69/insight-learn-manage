@@ -9,6 +9,7 @@ import { loadSavedExamens, EXAMEN_BLANC_MODULE_BASE, getModuleIdForExamId } from
 import ExamensBlancsEditor from "./ExamensBlancsEditor";
 import { supabase } from "@/integrations/supabase/client";
 import { answersAreEqual } from "@/lib/answerPersistence";
+import { enqueueQuizResultSave } from "@/lib/quizResultPersistence";
 import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
