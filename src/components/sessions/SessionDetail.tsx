@@ -1695,7 +1695,8 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       queryClient.invalidateQueries({ queryKey: ['identifiants-sent'] });
       refetchApprenants();
     } catch (err: any) {
-      toast({ title: "Erreur", description: err?.message || "Erreur lors de l'opération", variant: "destructive" });
+      toast({ title: "Erreur", description: await readEdgeFunctionError(err), variant: "destructive" });
+
     } finally {
       setCreatingAccount(false);
     }
