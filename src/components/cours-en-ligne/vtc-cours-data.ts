@@ -100,7 +100,7 @@ const MATIERE_B: ContentItem[] = [
     sousTitre: "Comptabilité et Fiscalité",
     fichiers: [
       { nom: "PDF HD Partie 2", url: "/cours/vtc/B_Gestion_2.pdf?v=20260819-1732" },
-      { nom: "PowerPoint Partie 2", url: "/cours/vtc/B_Gestion_partie_2.pptx?v=20260908-1500" },
+      { nom: "PowerPoint Partie 2", url: GESTION_2_PPTX },
     ],
   },
   {
