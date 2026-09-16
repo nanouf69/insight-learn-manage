@@ -163,6 +163,21 @@ serve(async (req) => {
                 </ul>
               </div>
 
+              <div style="background-color: #fff7ed; border: 2px solid #f97316; padding: 20px; margin: 25px 0; border-radius: 8px;">
+                <h3 style="color: #9a3412; margin-top: 0;">🚨 ATTENTION – Sanctions France Travail (ex-Pôle emploi)</h3>
+                <p style="font-size: 15px; color: #1f2937; line-height: 1.6;">
+                  Si votre formation est financée ou prescrite par France Travail, l'absence d'assiduité est signalée et vous expose à :
+                </p>
+                <ul style="color: #1f2937; font-size: 15px; line-height: 2;">
+                  <li>Un <strong>signalement d'absence ou d'abandon</strong> de formation à votre conseiller</li>
+                  <li>La <strong>suspension ou la suppression de vos allocations</strong> (ARE / AREF / RFF)</li>
+                  <li>Une <strong>radiation de la liste des demandeurs d'emploi</strong> pouvant aller de 1 à 4 mois, voire plus en cas de récidive</li>
+                  <li>L'<strong>obligation de rembourser</strong> les aides et frais de formation déjà versés</li>
+                  <li>Un <strong>refus de financement</strong> pour vos prochaines demandes de formation</li>
+                </ul>
+              </div>
+
+
               <div style="background-color: #f0f9ff; border-left: 4px solid #3b82f6; padding: 15px; margin: 20px 0; border-radius: 4px;">
                 <h3 style="color: #1e40af; margin-top: 0;">📋 Vos dates de formation</h3>
                 <p><strong>Début des cours :</strong> ${startDate}</p>
@@ -196,7 +211,7 @@ serve(async (req) => {
           </div>
         `;
 
-        const subject = `⚠️ URGENT : Vous ne vous êtes pas connecté(e) à vos cours en ligne – Risque CPF`;
+        const subject = `⚠️ URGENT : Vous ne vous êtes pas connecté(e) à vos cours en ligne – Risque CPF / France Travail`;
 
         try {
           await sendBrandedEmail({ to: apprenant.email, subject, html: emailBody, replyTo: senderEmail });
