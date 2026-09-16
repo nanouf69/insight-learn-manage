@@ -937,6 +937,13 @@ const CorrectionQRCTab = () => {
   const pendingCount = pendingItems.length;
   const doneCount = items.filter(i => i.corrigeManuel).length;
 
+  // Matières dont au moins une QRC reste à corriger : aucune note définitive
+  // ne doit y être affichée (Admin comme apprenant).
+  const pendingMatiereKeys = new Set(
+    pendingItems.map(i => `${i.apprenantId}__${i.quizId}__${i.matiereId || ""}`),
+  );
+
+
   const getExamNum = (titre: string) => (titre.match(/N°\s*(\d+)/)?.[1]) || "";
 
   // Categorise by examen variant + mode (VTC/TAXI splittés en présentiel vs e-learning)
