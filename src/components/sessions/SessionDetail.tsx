@@ -854,6 +854,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
             code_postal,
             ville,
             auth_user_id,
+             mot_de_passe_plateforme,
             date_debut_cours_en_ligne,
             date_fin_cours_en_ligne,
             societe_nom,
@@ -4514,12 +4515,9 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                             size="sm"
                             className={`h-8 gap-1.5 ${hasIdentifiants(apprenant.id) ? 'text-green-700 bg-green-100 hover:bg-green-200 hover:text-green-800' : 'text-muted-foreground hover:text-primary'}`}
                             title={hasIdentifiants(apprenant.id) ? `Codes d'accès envoyés le ${format(new Date(getIdentifiantsLastDate(apprenant.id)!), "dd/MM/yyyy 'à' HH:mm", { locale: fr })} — cliquer pour renvoyer` : "Envoyer les identifiants de connexion"}
-                            disabled={sendingCredentialsFor === apprenant.id}
-                            onClick={() => handleSendCredentials(apprenant)}
+                            onClick={() => openAccountDialog(apprenant)}
                           >
-                            {sendingCredentialsFor === apprenant.id
-                              ? <Loader2 className="w-4 h-4 animate-spin" />
-                              : hasIdentifiants(apprenant.id) ? <CheckCircle2 className="w-4 h-4" /> : <KeyRound className="w-4 h-4" />}
+                            {hasIdentifiants(apprenant.id) ? <CheckCircle2 className="w-4 h-4" /> : <KeyRound className="w-4 h-4" />}
                             <span className="text-xs">
                               🔑 Identifiants
                               {hasIdentifiants(apprenant.id) && (
@@ -6571,7 +6569,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
 
             {generatedPassword && (
               <div className="bg-muted p-3 rounded-md space-y-2">
-                <p className="text-sm font-medium">✅ Compte créé — Mot de passe généré :</p>
+                <p className="text-sm font-medium">✅ Nouveau mot de passe appliqué :</p>
                 <div className="flex items-center gap-2">
                   <code className="text-sm bg-background px-2 py-1 rounded border">{generatedPassword}</code>
                   <Button variant="ghost" size="sm" onClick={() => { navigator.clipboard.writeText(generatedPassword); toast({ title: "Copié !" }); }}>
@@ -6616,6 +6614,10 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                       });
                       if (error) throw error;
                       if (!(data as any)?.emailSent) throw new Error((data as any)?.message || "Envoi email impossible");
+                       const newPassword = String((data as any)?.password || "");
+                       if (!newPassword) throw new Error("Le nouveau mot de passe n'a pas été retourné");
+                       setGeneratedPassword(newPassword);
+                       setAccountDialogApprenant((current: any) => current ? { ...current, mot_de_passe_plateforme: newPassword } : current);
                       queryClient.invalidateQueries({ queryKey: ['identifiants-sent'] });
                       toast({ title: "Nouveau mot de passe généré et envoyé" });
                     } catch (e: any) {
@@ -6658,10 +6660,13 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                       });
                       if (error) throw error;
                       if (!(data as any)?.emailSent) throw new Error((data as any)?.message || "Envoi email impossible");
+                       const newPassword = String((data as any)?.password || "");
+                       if (!newPassword) throw new Error("Le nouveau mot de passe n'a pas été retourné");
+                       setGeneratedPassword(newPassword);
+                       setAccountDialogApprenant((current: any) => current ? { ...current, mot_de_passe_plateforme: newPassword } : current);
                       queryClient.invalidateQueries({ queryKey: ['identifiants-sent'] });
                       queryClient.invalidateQueries({ queryKey: ['session-apprenants'] });
                       toast({ title: "Nouveau mot de passe généré et envoyé" });
-                      setAccountDialogApprenant(null);
                     } catch (e: any) {
                       toast({ title: "Erreur", description: e?.message || "Erreur lors de l'envoi", variant: "destructive" });
                     } finally {
