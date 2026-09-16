@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
 import { AlertTriangle, Check, Loader2 } from "lucide-react";
-import { subscribeAnswerSaveState, type AnswerSaveState } from "@/lib/answerPersistence";
+import {
+  subscribeAnswerSaveState,
+  onAnswerStorageSaturation,
+  type AnswerSaveState,
+} from "@/lib/answerPersistence";
 
 /**
  * Indicateur honnête de l'état d'enregistrement des réponses.
@@ -9,11 +13,31 @@ import { subscribeAnswerSaveState, type AnswerSaveState } from "@/lib/answerPers
 export function AnswerSaveIndicator({ className = "" }: { className?: string }) {
   const [state, setState] = useState<AnswerSaveState>("idle");
   const [pending, setPending] = useState(0);
+  const [saturated, setSaturated] = useState(false);
 
   useEffect(() => subscribeAnswerSaveState((s, p) => {
     setState(s);
     setPending(p);
   }), []);
+
+  useEffect(() => onAnswerStorageSaturation((s) => setSaturated(s)), []);
+
+  // Stockage de la tablette saturé : alerte claire, aucune réponse supprimée.
+  if (saturated) {
+    return (
+      <div
+        role="alert"
+        className={`flex items-center gap-2 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-1.5 text-sm text-destructive ${className}`}
+      >
+        <AlertTriangle className="h-4 w-4 shrink-0" />
+        <span>
+          La mémoire de cet appareil est saturée. Aucune réponse n'a été supprimée
+          {pending > 0 ? ` (${pending} en attente)` : ""} : restez connecté(e) le temps que
+          l'enregistrement se termine, et prévenez le centre si le message persiste.
+        </span>
+      </div>
+    );
+  }
 
   if (state === "idle") return null;
 

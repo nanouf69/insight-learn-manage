@@ -15,7 +15,7 @@ import {
   computeAdmisForMatiere,
   selectLatestAttemptRows,
 } from "./examens-blancs-utils";
-import { computeMoyenneExamen, computeMatiereScore } from "./examens-blancs-scoring";
+import { computeMoyenneExamen, computeMatiereScore, resolveMatiereForScoring } from "./examens-blancs-scoring";
 import { toast } from "sonner";
 
 /**
@@ -185,6 +185,7 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
               lookupKeys: buildMatiereLookupKeys(scoreSource.matiere_id, scoreSource.matiere_nom),
               reponses: r?.details?.reponses ?? null,
               correctionsIA: r?.details?.correctionsIA ?? null,
+              details: r?.details ?? null,
             });
 
             if (recovered && recovered.score_obtenu > toFiniteNumber(r.score_obtenu, 0)) {
@@ -501,8 +502,9 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
                       const bilan = computeMoyenneExamen(examen, (m) => {
                         const scoreData = findScoreForMatiere(scores, m);
                         if (!scoreData) return null;
+                        // Tentative figée (snapshot) → on note avec la version d'origine.
                         return computeMatiereScore(
-                          m,
+                          resolveMatiereForScoring(m, (scoreData as any).details),
                           (scoreData as any).reponses,
                           scoreData.score_obtenu,
                           scoreData.score_max,
@@ -580,7 +582,7 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
                           <div key={m.id} className="flex justify-between text-xs text-muted-foreground">
                             <span className="truncate pr-2">{m.nom.split(" - ")[0]}</span>
                             {isCompleted && scoreData ? (() => {
-                              const score = computeMatiereScore(m, scoreData.reponses, scoreData.score_obtenu, scoreData.score_max, scoreData.correctionsIA, findStaticFallbackMatiere(examen.id, m.id, m.nom));
+                              const score = computeMatiereScore(resolveMatiereForScoring(m, (scoreData as any).details), scoreData.reponses, scoreData.score_obtenu, scoreData.score_max, scoreData.correctionsIA, findStaticFallbackMatiere(examen.id, m.id, m.nom));
                               const noteSur20 = score?.noteSur20 ?? normalizeNoteSur20(scoreData.score_obtenu, scoreData.score_max, scoreData.note_sur_20);
                               if (m.id === "reglementation_vtc2") {
                                 const ts = new Date().toISOString();

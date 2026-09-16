@@ -44,10 +44,12 @@ export function resolveOverrideConflict(
   adminEditedAt: string | undefined,
   fournisseurUpdatedAt: string,
 ): "admin" | "fournisseur" {
+  const fournisseurTs = Date.parse(fournisseurUpdatedAt);
+  // POINT 8 — une version fournisseur SANS horodatage exploitable est considérée
+  // comme la plus ancienne : elle ne peut jamais écraser la version Admin.
+  if (!Number.isFinite(fournisseurTs)) return "admin";
   if (!adminEditedAt) return "fournisseur";
   const adminTs = Date.parse(adminEditedAt);
-  const fournisseurTs = Date.parse(fournisseurUpdatedAt);
-  if (!Number.isFinite(fournisseurTs)) return "admin";
   if (!Number.isFinite(adminTs)) return "fournisseur";
   return fournisseurTs > adminTs ? "fournisseur" : "admin";
 }

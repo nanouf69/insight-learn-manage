@@ -29,7 +29,7 @@ import { recoverCorruptedScoreRow, isCorruptedZeroRow, persistExamSession as per
 import { EcranSelection } from "./ExamenBlancsListe";
 import { PassageMatiere, TransitionMatiere } from "./ExamenBlancsPassage";
 import { EcranResultats, RevisionFausses } from "./ExamenBlancsResultats";
-import { computeMatiereScore } from "./examens-blancs-scoring";
+import { computeMatiereScore, resolveMatiereForScoring, MATIERE_SNAPSHOT_VERSION } from "./examens-blancs-scoring";
 
 /**
  * Retrouve la version ORIGINALE (source statique, jamais éditée) d'une matière
@@ -745,9 +745,15 @@ export default function ExamensBlancsPage({
       return questionsSafe.reduce((acc, q) => acc + getPointsParQuestion(matiere.id, q?.type || "QCM", matiere), 0);
     };
 
-    const results = examReference.matieres.map((matiere): ResultatMatiere => {
-      const expectedKeys = buildMatiereLookupKeys(matiere.id, matiere.nom);
+    // POINT 6 — version FIGÉE utilisée pour l'affichage des tentatives déjà passées.
+    const frozenMatieres: Matiere[] = [];
+
+    const results = examReference.matieres.map((matiereCourante): ResultatMatiere => {
+      const expectedKeys = buildMatiereLookupKeys(matiereCourante.id, matiereCourante.nom);
       const row = rowsWithLookup.find((entry) => shareLookupKey(entry.lookupKeys, expectedKeys))?.row;
+      // Tentative figée : on relit questions/choix/bonnes réponses/barème d'origine.
+      const matiere = resolveMatiereForScoring(matiereCourante, row?.details);
+      frozenMatieres.push(matiere);
       const safeNoteSur = matiere.noteSur || 20;
       const computedMax = calculerMaxPoints(matiere);
 
@@ -903,7 +909,13 @@ export default function ExamensBlancsPage({
       }
     }
 
-    setExamenChoisi(examReference);
+    // Affichage des résultats : on montre la version exacte passée par l'apprenant
+    // (snapshot) quand elle existe, sinon la version actuelle (comportement historique).
+    setExamenChoisi(
+      frozenMatieres.length === examReference.matieres.length
+        ? { ...examReference, matieres: frozenMatieres }
+        : examReference,
+    );
     setTousResultats(results);
     setIsViewingSavedResults(true);
     setPhase("resultats");
@@ -977,6 +989,33 @@ export default function ExamensBlancsPage({
     // « En attente de correction » (pas de statut Réussi/Échoué définitif).
     const hasQrc = questionsSafe.some((q: any) => String(q?.type || "").toUpperCase() === "QRC");
 
+    // POINT 6 — SNAPSHOT : on fige la version exacte utilisée par l'apprenant
+    // (questions, choix proposés, bonnes réponses, barème, ordre). Une
+    // modification Admin ultérieure ne pourra plus transformer cette tentative.
+    const snapshot = {
+      version: MATIERE_SNAPSHOT_VERSION,
+      matiereId: matiere.id,
+      nom: matiere.nom,
+      noteSur: matiere.noteSur,
+      coefficient: matiere.coefficient,
+      noteEliminatoire: matiere.noteEliminatoire,
+      ptsQCM: matiere.ptsQCM ?? getPointsParQuestion(matiere.id, "QCM", matiere),
+      ptsQRC: matiere.ptsQRC ?? getPointsParQuestion(matiere.id, "QRC", matiere),
+      createdAt: new Date().toISOString(),
+      questions: questionsSafe.map((q: any, idx: number) => ({
+        id: q.id,
+        type: q?.type || "QCM",
+        enonce: q.enonce || "",
+        choix: Array.isArray(q.choix)
+          ? q.choix.map((c: any) => ({ lettre: c?.lettre, texte: c?.texte, correct: Boolean(c?.correct) }))
+          : undefined,
+        reponseQRC: q.reponseQRC,
+        reponses_possibles: q.reponses_possibles,
+        points: getPointsParQuestion(matiere.id, q?.type || "QCM", matiere),
+        ordre: idx,
+      })),
+    };
+
     const payload = {
       apprenant_id: apprenantId, user_id: userId, quiz_type: quizType, quiz_id: examen.id, quiz_titre: examen.titre,
       matiere_id: resultat.matiereId, matiere_nom: resultat.nomMatiere, score_obtenu: safeScoreObtenu, score_max: safeScoreMax,
@@ -986,6 +1025,7 @@ export default function ExamensBlancsPage({
         questions: questionDetails,
         reponses: resultat.reponses,
         correctionsIA: Object.keys(frozenCorrections).length > 0 ? frozenCorrections : undefined,
+        snapshot,
         ...(hasQrc ? { qrc_pending_correction: true } : {}),
       },
       tentative: Math.max(currentTentativeRef.current || currentTentative || 1, 1),

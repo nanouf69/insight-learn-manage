@@ -6,7 +6,7 @@ import { BarChart3, Bot, CheckCircle2, XCircle, Trophy, BookOpen } from "lucide-
 import { supabase } from "@/integrations/supabase/client";
 import { EXAMENS_BLANCS_VTC, EXAMENS_BLANCS_TAXI, EXAMENS_BLANCS_TA, EXAMENS_BLANCS_VA } from "@/components/cours-en-ligne/examens-blancs-data";
 import { loadSavedExamens } from "@/components/cours-en-ligne/ExamensBlancsEditor";
-import { computeMoyenneExamen, computeMatiereScore } from "@/components/cours-en-ligne/examens-blancs-scoring";
+import { computeMoyenneExamen, computeMatiereScore, resolveMatiereForScoring } from "@/components/cours-en-ligne/examens-blancs-scoring";
 import { findScoreForMatiere, buildMatiereLookupKeys } from "@/components/cours-en-ligne/examens-blancs-utils";
 import { isQrcPendingCorrection } from "@/components/cours-en-ligne/exam-helpers";
 
@@ -132,7 +132,7 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
                     const row = findScoreForMatiere(scoresWithLookup as any, m);
                     if (!row) return null;
                     return computeMatiereScore(
-                      m,
+                      resolveMatiereForScoring(m, (row as any).details),
                       (row as any).details?.reponses || null,
                       (row as any).score_obtenu,
                       (row as any).score_max,
@@ -173,7 +173,7 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
                         (md) => md.id === m.matiere_id || md.nom === m.matiere_nom,
                       );
                       const recomputed = matiereDef
-                        ? computeMatiereScore(matiereDef, m.details?.reponses || null, m.score_obtenu, m.score_max, m.details?.correctionsIA || null)
+                        ? computeMatiereScore(resolveMatiereForScoring(matiereDef, m.details), m.details?.reponses || null, m.score_obtenu, m.score_max, m.details?.correctionsIA || null)
                         : null;
                       const note = recomputed?.noteSur20 ?? (Number(m.note_sur_20) || 0);
                       return (

@@ -8,7 +8,7 @@
 //
 // Cela évite toute divergence entre les 3 écrans quand le barème change.
 
-import { getPointsParQuestion, type Matiere, type Question } from "./examens-blancs-data";
+import { getPointsParQuestion, type Matiere, type Question, type QuestionType } from "./examens-blancs-data";
 import type { CorrectionCache, ExamenBlanc, ResultatMatiere } from "./examens-blancs-types";
 import {
   safeArray,
@@ -28,6 +28,98 @@ export interface MatiereScore {
   admis: boolean;
   passee: boolean;
 }
+
+// ===== SNAPSHOT D'UNE TENTATIVE (point 6) =====
+// À la validation d'une matière, on fige la version EXACTE utilisée par
+// l'apprenant (questions, choix proposés, bonnes réponses, barème, ordre).
+// Toute relecture/recalcul ultérieur repart de ce snapshot : une correction
+// faite plus tard dans l'Admin ne transforme JAMAIS une tentative passée.
+// Les anciennes tentatives SANS snapshot conservent exactement le
+// comportement existant — rien n'est reconstruit ni inventé.
+
+export const MATIERE_SNAPSHOT_VERSION = 1;
+
+export interface MatiereSnapshot {
+  version: number;
+  matiereId: string;
+  nom?: string;
+  noteSur?: number;
+  coefficient?: number;
+  noteEliminatoire?: number;
+  ptsQCM?: number;
+  ptsQRC?: number;
+  createdAt?: string;
+  questions?: Array<{
+    id: number | string;
+    type: QuestionType;
+    enonce?: string;
+    choix?: Array<{ lettre: string; texte?: string; correct?: boolean }>;
+    reponseQRC?: string;
+    reponses_possibles?: string[];
+    points?: number;
+    ordre?: number;
+  }>;
+}
+
+/** Vrai si les `details` stockés contiennent un snapshot exploitable. */
+export function hasMatiereSnapshot(details: any): boolean {
+  const s = details?.snapshot;
+  return Boolean(
+    s &&
+      typeof s === "object" &&
+      Number(s.version) >= 1 &&
+      Array.isArray(s.questions) &&
+      s.questions.length > 0,
+  );
+}
+
+/**
+ * Reconstruit la matière TELLE QU'ELLE ÉTAIT au moment du passage, à partir du
+ * snapshot figé. Retourne null si aucun snapshot n'est disponible.
+ */
+export function buildMatiereFromSnapshot(
+  details: any,
+  current?: Matiere | null,
+): Matiere | null {
+  if (!hasMatiereSnapshot(details)) return null;
+  const s = details.snapshot as MatiereSnapshot;
+  const questions = (s.questions ?? [])
+    .filter((q) => q != null && q.type != null)
+    .map((q, idx) => ({
+      id: (typeof q.id === "number" ? q.id : Number(q.id)) as number,
+      type: q.type,
+      enonce: q.enonce ?? "",
+      choix: Array.isArray(q.choix) ? (q.choix as any) : undefined,
+      reponseQRC: q.reponseQRC,
+      reponses_possibles: q.reponses_possibles,
+      _ordre: q.ordre ?? idx,
+    })) as unknown as Question[];
+
+  return {
+    id: s.matiereId ?? current?.id ?? "",
+    nom: s.nom ?? current?.nom ?? "",
+    duree: current?.duree ?? 0,
+    coefficient: s.coefficient ?? current?.coefficient ?? 1,
+    noteEliminatoire: s.noteEliminatoire ?? current?.noteEliminatoire ?? 0,
+    noteSur: s.noteSur ?? current?.noteSur ?? 20,
+    ptsQCM: s.ptsQCM ?? current?.ptsQCM,
+    ptsQRC: s.ptsQRC ?? current?.ptsQRC,
+    questions,
+  };
+}
+
+/**
+ * Résout la matière à utiliser pour NOTER une tentative :
+ * - snapshot figé s'il existe (tentative déjà passée → passé intangible) ;
+ * - sinon la matière courante (comportement historique inchangé).
+ */
+export function resolveMatiereForScoring(
+  current: Matiere,
+  details?: any,
+): Matiere {
+  return buildMatiereFromSnapshot(details, current) ?? current;
+}
+
 
 /** Calcule le score d'une matière à partir des réponses brutes (nouveau barème). */
 export function computeMatiereScoreFromReponses(

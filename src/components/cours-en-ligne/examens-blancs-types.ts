@@ -43,6 +43,8 @@ export interface ExamScoreItem {
   reponses?: Record<string, any> | null;
   /** Corrections QRC stockées, utilisées dans le même calcul que l'écran résultats */
   correctionsIA?: CorrectionCache | null;
+  /** Contenu brut `details` (contient le snapshot figé de la tentative). */
+  details?: any;
 }
 
 export type { ExamenBlanc, Matiere, Question };

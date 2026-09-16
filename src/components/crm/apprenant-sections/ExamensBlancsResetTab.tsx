@@ -26,6 +26,7 @@ import {
 import {
   computeMoyenneExamen,
   computeMatiereScore,
+  resolveMatiereForScoring,
 } from "@/components/cours-en-ligne/examens-blancs-scoring";
 import {
   buildMatiereLookupKeys,
@@ -62,6 +63,8 @@ interface ExamenResult {
   completed_at: string;
   reponses?: Record<string, any> | null;
   correctionsIA?: any;
+  /** Contenu brut `details` (contient le snapshot figé de la tentative). */
+  details?: any;
 }
 
 interface ExamenGroup {
@@ -148,6 +151,7 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
             completed_at: scoreSource.completed_at,
             reponses: (row as any).details?.reponses ?? null,
             correctionsIA: (row as any).details?.correctionsIA ?? null,
+            details: (row as any).details ?? null,
           };
 
           const existing = grouped.get(key);
@@ -419,13 +423,14 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
                 lookupKeys: buildMatiereLookupKeys(r.matiere_id, r.matiere_nom),
                 reponses: r.reponses ?? null,
                 correctionsIA: r.correctionsIA ?? null,
+                details: (r as any).details ?? null,
               }));
               const bilanExamen = examenDef
                 ? computeMoyenneExamen(examenDef, (m) => {
                     const row = findScoreForMatiere(scoresWithLookup as any, m);
                     if (!row) return null;
                     return computeMatiereScore(
-                      m,
+                      resolveMatiereForScoring(m, (row as any).details),
                       (row as any).reponses,
                       row.score_obtenu,
                       row.score_max,
@@ -506,7 +511,7 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
                           );
                           const recomputed = matiereDef
                             ? computeMatiereScore(
-                                matiereDef,
+                                resolveMatiereForScoring(matiereDef, (r as any).details),
                                 r.reponses ?? null,
                                 r.score_obtenu,
                                 r.score_max,
