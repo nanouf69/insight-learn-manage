@@ -619,6 +619,10 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
                           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600">
                             Révision
                           </span>
+                        ) : isQrcPendingCorrection((r as any).details) ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
+                            ⏳ En attente de correction
+                          </span>
                         ) : (
                           <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${r.reussi ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"}`}>
                             {r.reussi ? "✅ Réussi" : "❌ Échoué"}
