@@ -6603,6 +6603,31 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                   {resendingCredentials ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
                   Renvoyer identifiants par email
                 </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="w-full mt-1"
+                  disabled={resendingCredentials}
+                  onClick={async () => {
+                    setResendingCredentials(true);
+                    try {
+                      const { data, error } = await supabase.functions.invoke("resend-credentials", {
+                        body: { apprenant_id: accountDialogApprenant.id, reset_password: true },
+                      });
+                      if (error) throw error;
+                      if (!(data as any)?.emailSent) throw new Error((data as any)?.message || "Envoi email impossible");
+                      queryClient.invalidateQueries({ queryKey: ['identifiants-sent'] });
+                      toast({ title: "Nouveau mot de passe généré et envoyé" });
+                    } catch (e: any) {
+                      toast({ title: "Erreur", description: e?.message || "Erreur lors de l'envoi", variant: "destructive" });
+                    } finally {
+                      setResendingCredentials(false);
+                    }
+                  }}
+                >
+                  {resendingCredentials ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <KeyRound className="w-4 h-4 mr-2" />}
+                  Réinitialiser le mot de passe et renvoyer
+                </Button>
               </div>
             )}
           </div>
