@@ -354,53 +354,40 @@ serve(async (req) => {
 
     console.log(`${LOG_PREFIX}[${requestId}] Step 12 - Link auth user to apprenant (start)`);
 
-    // Détacher TOUS les autres apprenants déjà liés à ce auth_user_id (contrainte UNIQUE)
-    // On liste d'abord pour logger et garantir la suppression du lien.
+    // SÉCURITÉ : aucun détachement / transfert automatique. Si le compte est déjà
+    // rattaché à une autre fiche, on bloque sans rien modifier.
     const { data: linkedRows, error: listLinkedErr } = await supabaseAdmin
       .from("apprenants")
       .select("id, nom, prenom, email")
       .eq("auth_user_id", authUser.user.id);
 
     if (listLinkedErr) {
-      console.log(`${LOG_PREFIX}[${requestId}] Step 12 - List linked apprenants failed`, { message: listLinkedErr.message });
-    } else {
-      console.log(`${LOG_PREFIX}[${requestId}] Step 12 - Currently linked apprenants`, {
-        count: linkedRows?.length ?? 0,
-        ids: (linkedRows ?? []).map((r: any) => r.id),
+      return jsonResponse(500, {
+        error: "Impossible de vérifier le rattachement du compte. Aucun changement n'a été effectué.",
+        details: listLinkedErr.message,
+        requestId,
       });
     }
 
-    const otherIds = (linkedRows ?? [])
-      .map((r: any) => r.id)
-      .filter((id: string) => id !== apprenant_id);
+    const otherOwnersAtLink = (linkedRows ?? []).filter((r: any) => r.id !== apprenant_id);
 
-    if (otherIds.length > 0) {
-      // Détacher un par un pour éviter qu'une RLS/contrainte stoppe le batch silencieusement
-      for (const otherId of otherIds) {
-        const { error: detachOneErr } = await supabaseAdmin
-          .from("apprenants")
-          .update({ auth_user_id: null })
-          .eq("id", otherId);
-        if (detachOneErr) {
-          console.log(`${LOG_PREFIX}[${requestId}] Step 12 - Detach ${otherId} failed`, { message: detachOneErr.message });
-        }
-      }
-
-      // Vérification : s'assurer qu'il ne reste plus aucune autre ligne liée
-      const { data: stillLinked } = await supabaseAdmin
-        .from("apprenants")
-        .select("id")
-        .eq("auth_user_id", authUser.user.id)
-        .neq("id", apprenant_id);
-
-      if ((stillLinked?.length ?? 0) > 0) {
-        return jsonResponse(500, {
-          error: "Impossible de libérer le compte auth",
-          details: `Apprenants encore liés: ${(stillLinked ?? []).map((r: any) => r.id).join(", ")}`,
-          requestId,
-        });
-      }
+    if (otherOwnersAtLink.length > 0) {
+      console.log(`${LOG_PREFIX}[${requestId}] Step 12 - Blocked: account linked elsewhere`, {
+        ids: otherOwnersAtLink.map((r: any) => r.id),
+      });
+      return jsonResponse(409, {
+        error:
+          "Un compte de connexion existe déjà avec cette adresse e-mail et est rattaché à une autre fiche apprenant. Aucun changement n'a été effectué. Utilisez une autre adresse e-mail ou choisissez explicitement une opération de transfert.",
+        code: "email_already_linked",
+        linked_to: {
+          apprenant_id: otherOwnersAtLink[0].id,
+          nom: otherOwnersAtLink[0].nom,
+          prenom: otherOwnersAtLink[0].prenom,
+        },
+        requestId,
+      });
     }
+
 
     // Tentative de liaison, avec retry si la contrainte unique frappe encore (race)
     let linkErr: any = null;
