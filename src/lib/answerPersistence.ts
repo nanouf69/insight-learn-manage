@@ -104,7 +104,38 @@ const makeEventId = (): string => {
   return `${Date.now().toString(16)}-${Math.random().toString(16).slice(2)}-4${Math.random().toString(16).slice(2, 5)}-8${Math.random().toString(16).slice(2, 5)}-${Math.random().toString(16).slice(2, 14)}`;
 };
 
-const readQueue = (): QueueItem[] => {
+/**
+ * Miroir mémoire, utilisé UNIQUEMENT si le localStorage refuse d'écrire
+ * (stockage saturé). Il garantit qu'aucune réponse en attente n'est perdue
+ * pendant la session en cours, sans jamais supprimer d'élément.
+ */
+let memoryQueue: QueueItem[] | null = null;
+let storageSaturated = false;
+const saturationListeners = new Set<(saturated: boolean, pending: number) => void>();
+
+const emitSaturation = (pending: number) => {
+  saturationListeners.forEach((l) => {
+    try {
+      l(storageSaturated, pending);
+    } catch {
+      /* noop */
+    }
+  });
+};
+
+/** Alerte visible quand le stockage local sature (aucune réponse supprimée). */
+export const onAnswerStorageSaturation = (
+  listener: (saturated: boolean, pending: number) => void,
+): (() => void) => {
+  saturationListeners.add(listener);
+  listener(storageSaturated, readQueue().length);
+  return () => saturationListeners.delete(listener);
+};
+
+export const isAnswerStorageSaturated = (): boolean => storageSaturated;
+
+function readQueue(): QueueItem[] {
+  if (memoryQueue) return memoryQueue;
   try {
     const raw = localStorage.getItem(QUEUE_KEY);
     if (!raw) return [];
@@ -113,13 +144,25 @@ const readQueue = (): QueueItem[] => {
   } catch {
     return [];
   }
-};
+}
 
 const writeQueue = (items: QueueItem[]) => {
   try {
-    localStorage.setItem(QUEUE_KEY, JSON.stringify(items.slice(-MAX_QUEUE_ITEMS)));
+    localStorage.setItem(QUEUE_KEY, JSON.stringify(items));
+    // Écriture réussie : le miroir mémoire n'est plus nécessaire.
+    memoryQueue = null;
+    if (storageSaturated) {
+      storageSaturated = false;
+      emitSaturation(items.length);
+    }
   } catch {
-    /* quota : la file en mémoire continue de fonctionner */
+    // Stockage saturé : on CONSERVE tout en mémoire et on alerte.
+    // Aucune réponse n'est supprimée pour libérer de la place.
+    memoryQueue = items;
+    if (!storageSaturated) {
+      storageSaturated = true;
+      emitSaturation(items.length);
+    }
   }
 };
 
