@@ -389,44 +389,27 @@ serve(async (req) => {
     }
 
 
-    // Tentative de liaison, avec retry si la contrainte unique frappe encore (race)
-    let linkErr: any = null;
-    for (let attempt = 1; attempt <= 3; attempt++) {
-      const { error } = await supabaseAdmin
-        .from("apprenants")
-        .update({ auth_user_id: authUser.user.id })
-        .eq("id", apprenant_id);
-
-      if (!error) {
-        linkErr = null;
-        break;
-      }
-      linkErr = error;
-
-      const isDup = (error.message || "").includes("apprenants_auth_user_id_key");
-      console.log(`${LOG_PREFIX}[${requestId}] Step 12 - Link attempt ${attempt} failed`, {
-        message: error.message,
-        isDup,
-      });
-      if (!isDup) break;
-
-      // Nettoyage forcé puis nouvelle tentative
-      await supabaseAdmin
-        .from("apprenants")
-        .update({ auth_user_id: null })
-        .eq("auth_user_id", authUser.user.id)
-        .neq("id", apprenant_id);
-
-      await new Promise((r) => setTimeout(r, 150));
-    }
+    // Liaison simple : aucun nettoyage forcé, aucun détachement d'une autre fiche.
+    const { error: linkErr } = await supabaseAdmin
+      .from("apprenants")
+      .update({ auth_user_id: authUser.user.id })
+      .eq("id", apprenant_id);
 
     if (linkErr) {
-      return jsonResponse(500, {
-        error: "Échec de liaison du compte à l'apprenant",
+      const isDup = (linkErr.message || "").includes("apprenants_auth_user_id_key");
+      console.log(`${LOG_PREFIX}[${requestId}] Step 12 - Link failed`, {
+        message: linkErr.message,
+        isDup,
+      });
+      return jsonResponse(isDup ? 409 : 500, {
+        error: isDup
+          ? "Ce compte de connexion est déjà rattaché à une autre fiche apprenant. Aucun changement n'a été effectué."
+          : "Échec de liaison du compte à l'apprenant. Aucun changement n'a été effectué.",
         details: linkErr.message,
         requestId,
       });
     }
+
     console.log(`${LOG_PREFIX}[${requestId}] Step 12 - Link auth user to apprenant (done)`);
 
     console.log(`${LOG_PREFIX}[${requestId}] Step 13 - Fetch full apprenant for email (start)`);
