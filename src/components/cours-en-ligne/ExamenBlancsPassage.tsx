@@ -287,16 +287,26 @@ function PassageMatiere({
   };
 
   const allAnswered = questionsSafe.every(q => isQuestionAnswered(q));
+  const unansweredIndexes = questionsSafe
+    .map((q, i) => (isQuestionAnswered(q) ? -1 : i))
+    .filter(i => i >= 0);
+
+  // Signalement visuel activé après une tentative de validation incomplète.
+  useEffect(() => {
+    if (allAnswered) setShowUnansweredAlert(false);
+  }, [allAnswered]);
 
   const handleTerminer = async () => {
     if (!allAnswered) {
+      // Aucune réponse n'est modifiée ni perdue : on se contente de déplacer
+      // l'affichage vers la première question encore sans réponse.
       const firstUnansweredIdx = questionsSafe.findIndex(q => !isQuestionAnswered(q));
+      setShowUnansweredAlert(true);
+      toast.error("Veuillez répondre à toutes les questions avant de terminer la matière.", {
+        description: `Question(s) sans réponse : ${unansweredIndexes.map(i => `Q${i + 1}`).join(", ")}`,
+      });
       if (firstUnansweredIdx >= 0) {
         setQuestionIndex(firstUnansweredIdx);
-        const remaining = questionsSafe.filter(q => !isQuestionAnswered(q)).length;
-        toast.error("Merci de répondre à toutes les questions", {
-          description: `Il reste ${remaining} question(s) sans réponse.`,
-        });
         // Scroll to top of question after state update
         setTimeout(() => {
           try {
@@ -305,11 +315,10 @@ function PassageMatiere({
             else window.scrollTo({ top: 0, behavior: "smooth" });
           } catch {}
         }, 50);
-      } else {
-        toast.error("Merci de répondre à toutes les questions");
       }
       return;
     }
+
     if (!apprenantId) {
       onTerminer(reponses);
       return;
