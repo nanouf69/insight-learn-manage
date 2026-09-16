@@ -972,12 +972,21 @@ export default function ExamensBlancsPage({
     const quizType = examen.id.startsWith("bilan-") ? "bilan" : "examen_blanc";
     const noteSur20 = normalizeNoteSur20(safeScoreObtenu, safeScoreMax);
 
+    // QRC : tant que l'administrateur n'a pas validé les QRC, la matière reste
+    // « En attente de correction » (pas de statut Réussi/Échoué définitif).
+    const hasQrc = questionsSafe.some((q: any) => String(q?.type || "").toUpperCase() === "QRC");
+
     const payload = {
       apprenant_id: apprenantId, user_id: userId, quiz_type: quizType, quiz_id: examen.id, quiz_titre: examen.titre,
       matiere_id: resultat.matiereId, matiere_nom: resultat.nomMatiere, score_obtenu: safeScoreObtenu, score_max: safeScoreMax,
       note_sur_20: noteSur20, reussi: computeAdmisForMatiere(safeScoreObtenu, safeScoreMax, resultat.noteEliminatoire, resultat.noteSur, Boolean(resultat.admis)),
       duree_secondes: Math.max(Math.round(dureeSecondes), 0),
-      details: { questions: questionDetails, reponses: resultat.reponses, correctionsIA: Object.keys(frozenCorrections).length > 0 ? frozenCorrections : undefined },
+      details: {
+        questions: questionDetails,
+        reponses: resultat.reponses,
+        correctionsIA: Object.keys(frozenCorrections).length > 0 ? frozenCorrections : undefined,
+        ...(hasQrc ? { qrc_pending_correction: true } : {}),
+      },
       tentative: Math.max(currentTentativeRef.current || currentTentative || 1, 1),
     };
 
