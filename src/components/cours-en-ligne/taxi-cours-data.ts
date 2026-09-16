@@ -127,7 +127,7 @@ const MATIERE_C: ContentItem[] = [
     sousTitre: "Sécurité routière (fin)",
     fichiers: [
       { nom: "PDF HD Partie 3", url: "/cours/vtc/C_Securite_Routiere_3.pdf?v=20260819-1732" },
-      { nom: "PowerPoint Partie 3", url: "/cours/vtc/C_Securite_Routiere_FINAL_3.pptx?v=20260908-1500" },
+      { nom: "PowerPoint Partie 3", url: SECURITE_ROUTIERE_3_PPTX },
     ],
   },
 ];
