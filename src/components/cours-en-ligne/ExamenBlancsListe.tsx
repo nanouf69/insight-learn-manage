@@ -582,7 +582,7 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
                           <div key={m.id} className="flex justify-between text-xs text-muted-foreground">
                             <span className="truncate pr-2">{m.nom.split(" - ")[0]}</span>
                             {isCompleted && scoreData ? (() => {
-                              const score = computeMatiereScore(m, scoreData.reponses, scoreData.score_obtenu, scoreData.score_max, scoreData.correctionsIA, findStaticFallbackMatiere(examen.id, m.id, m.nom));
+                              const score = computeMatiereScore(resolveMatiereForScoring(m, (scoreData as any).details), scoreData.reponses, scoreData.score_obtenu, scoreData.score_max, scoreData.correctionsIA, findStaticFallbackMatiere(examen.id, m.id, m.nom));
                               const noteSur20 = score?.noteSur20 ?? normalizeNoteSur20(scoreData.score_obtenu, scoreData.score_max, scoreData.note_sur_20);
                               if (m.id === "reglementation_vtc2") {
                                 const ts = new Date().toISOString();
