@@ -34,23 +34,62 @@ export function validateQuestionEdit(enonce: string, choix: QuizChoice[]): strin
 
 /**
  * Résout le conflit entre une modification admin et un override fournisseur.
- * Règle : la DERNIÈRE version enregistrée fait référence (last write wins).
- * En cas d'égalité stricte de timestamp, l'admin garde la main.
  *
- * @param adminEditedAt - timestamp ISO de la dernière modif admin sur cette question (ou undefined)
- * @param fournisseurUpdatedAt - timestamp ISO de l'override fournisseur
+ * Règle validée : la modification RÉELLEMENT la plus récente gagne, qu'elle
+ * vienne de l'Admin ou du fournisseur/formateur. Jamais de « l'Admin gagne
+ * toujours ».
+ *
+ * Référence de date côté Admin, par ordre de fiabilité :
+ *   1. `adminEditedAt` (marqueur `_editedAt` posé sur la question)
+ *   2. `adminFallbackAt` : date réelle de dernière écriture enregistrée
+ *      automatiquement par la base (module_editor_state.updated_at) ou date
+ *      issue du journal des modifications (module_admin_audit_log).
+ *
+ * Cas particuliers :
+ *   - version fournisseur sans horodatage exploitable → considérée comme
+ *     ancienne, elle n'écrase rien ("admin") ;
+ *   - aucune date exploitable des deux côtés → "conflit" : aucune des deux
+ *     versions n'est écrasée automatiquement, le conflit est signalé ;
+ *   - égalité stricte → l'Admin garde la main.
  */
 export function resolveOverrideConflict(
   adminEditedAt: string | undefined,
   fournisseurUpdatedAt: string,
-): "admin" | "fournisseur" {
+  adminFallbackAt?: string | null,
+): "admin" | "fournisseur" | "conflit" {
   const fournisseurTs = Date.parse(fournisseurUpdatedAt);
-  // POINT 8 — une version fournisseur SANS horodatage exploitable est considérée
-  // comme la plus ancienne : elle ne peut jamais écraser la version Admin.
+  // Une version fournisseur SANS horodatage exploitable est considérée comme la
+  // plus ancienne : elle ne peut jamais écraser la version Admin.
   if (!Number.isFinite(fournisseurTs)) return "admin";
-  if (!adminEditedAt) return "fournisseur";
-  const adminTs = Date.parse(adminEditedAt);
-  if (!Number.isFinite(adminTs)) return "fournisseur";
+
+  const parsed = [adminEditedAt, adminFallbackAt]
+    .map((v) => (v ? Date.parse(v) : NaN))
+    .filter((n) => Number.isFinite(n)) as number[];
+
+  // Aucune date fiable côté Admin : on n'écrase rien automatiquement.
+  if (parsed.length === 0) return "conflit";
+
+  const adminTs = Math.max(...parsed);
   return fournisseurTs > adminTs ? "fournisseur" : "admin";
+}
+
+/**
+ * Journal des modifications Admin : dernière date connue par question.
+ * Clé : `${exercice_id}-${question_id}`.
+ */
+export function buildAdminEditJournalMap(
+  rows: Array<{ exercice_id?: string | null; question_id?: string | null; created_at?: string | null }> | null | undefined,
+): Map<string, string> {
+  const map = new Map<string, string>();
+  for (const row of rows ?? []) {
+    const exo = row?.exercice_id;
+    const qid = row?.question_id;
+    const at = row?.created_at;
+    if (!exo || !qid || !at) continue;
+    const key = `${exo}-${qid}`;
+    const previous = map.get(key);
+    if (!previous || Date.parse(at) > Date.parse(previous)) map.set(key, at);
+  }
+  return map;
 }
 
