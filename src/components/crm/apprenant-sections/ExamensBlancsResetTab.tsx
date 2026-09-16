@@ -148,6 +148,7 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
             completed_at: scoreSource.completed_at,
             reponses: (row as any).details?.reponses ?? null,
             correctionsIA: (row as any).details?.correctionsIA ?? null,
+            details: (row as any).details ?? null,
           };
 
           const existing = grouped.get(key);
