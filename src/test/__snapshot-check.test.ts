@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect } from "vitest";
 import { resolveMatiereForScoring, computeMatiereScore } from "@/components/cours-en-ligne/examens-blancs-scoring";
 
