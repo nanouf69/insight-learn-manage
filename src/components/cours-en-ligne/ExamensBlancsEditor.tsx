@@ -258,6 +258,10 @@ export function reconcileSharedMatieres(
 // Load saved exam overrides from DB — NO CACHE, always fresh from DB
 export async function loadSavedExamens(notifyRepairs: boolean = false): Promise<ExamenBlanc[]> {
   const examens = cloneExamens(tousLesExamens);
+  // Date réelle de dernière écriture Admin enregistrée par la base : sert de
+  // référence de comparaison quand une question ne porte pas de marqueur de date.
+  let adminLastWriteAt: string | null = null;
+  
   
   try {
     const moduleIds = examens.map((ex) => getModuleIdForExamId(ex.id));
