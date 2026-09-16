@@ -937,6 +937,13 @@ const CorrectionQRCTab = () => {
   const pendingCount = pendingItems.length;
   const doneCount = items.filter(i => i.corrigeManuel).length;
 
+  // Matières dont au moins une QRC reste à corriger : aucune note définitive
+  // ne doit y être affichée (Admin comme apprenant).
+  const pendingMatiereKeys = new Set(
+    pendingItems.map(i => `${i.apprenantId}__${i.quizId}__${i.matiereId || ""}`),
+  );
+
+
   const getExamNum = (titre: string) => (titre.match(/N°\s*(\d+)/)?.[1]) || "";
 
   // Categorise by examen variant + mode (VTC/TAXI splittés en présentiel vs e-learning)
@@ -1214,6 +1221,11 @@ const CorrectionQRCTab = () => {
             const uniqueKey = `${item.resultId}-${item.questionId}`;
             const isEditing = editingId === uniqueKey;
             const isSaving = savingId === uniqueKey;
+            // La note d'une matière n'est publiée qu'une fois TOUTES ses QRC corrigées.
+            const matierePending = pendingMatiereKeys.has(
+              `${item.apprenantId}__${item.quizId}__${item.matiereId || ""}`,
+            );
+
 
             return (
               <Card key={uniqueKey} className={`transition-colors ${item.corrigeManuel ? "border-green-200 bg-green-50/30" : "border-amber-200 bg-amber-50/20"}`}>
@@ -1243,15 +1255,16 @@ const CorrectionQRCTab = () => {
                           ⏳ En attente (auto: {item.autoScore}/{item.pointsMax})
                         </Badge>
                       )}
-                      {item.corrigeManuel ? (
+                      {matierePending ? (
+                        <Badge variant="outline" className="font-bold text-sm text-amber-700 border-amber-300" title="La note ne sera publiée qu'une fois toutes les QRC de cette matière corrigées">
+                          ⏳ En attente de correction
+                        </Badge>
+                      ) : (
                         <Badge variant="outline" className="font-bold text-sm">
                           📊 {item.noteSur20 != null ? `${item.noteSur20}/20` : `${item.scoreMatiereObtenu}/${item.scoreMatiereMax}`}
                         </Badge>
-                      ) : (
-                        <Badge variant="outline" className="font-bold text-sm text-amber-700 border-amber-300" title="Note provisoire : la QRC n'a pas encore été corrigée manuellement">
-                          📊 {item.noteSur20 != null ? `${item.noteSur20}/20` : `${item.scoreMatiereObtenu}/${item.scoreMatiereMax}`} (provisoire)
-                        </Badge>
                       )}
+
                     </div>
                   </div>
 

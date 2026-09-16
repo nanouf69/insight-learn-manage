@@ -22,6 +22,8 @@ import {
   getQuestionImageValue,
 } from "./examens-blancs-utils";
 import { computeMoyenneExamen, computeResultatMatiereScore } from "./examens-blancs-scoring";
+import { isQrcCorrectionValidated } from "./exam-helpers";
+
 
 function EcranResultats({
   examen,
@@ -518,32 +520,28 @@ function EcranResultats({
     .filter(r => !r.admis)
     .map(r => r.nomMatiere.split(" - ")[0]);
 
-  // Detect if QRC corrections are pending (for présentiel: formateur must validate).
-  // Retakes are auto-graded by mots-clés and don't require manual validation, so we skip the gate.
-  const hasQrcPendingValidation = isPresentiel && !isAdmin && !isRetake && (() => {
+  // QRC : aucune note définitive tant que TOUTES les QRC d'une matière n'ont pas
+  // été corrigées et validées manuellement (présentiel, e-learning et repasses).
+  const matieresEnAttenteQrc = (() => {
+    const pending = new Set<string>();
     for (let mi = 0; mi < examen.matieres.length; mi++) {
       const matiere = examen.matieres[mi];
       if (!matiere) continue;
       const resultatMatiere = resultatsAvecIA[mi];
+      if (!resultatMatiere || (resultatMatiere as any).nonPassee) continue;
       const questionsSafe = (matiere.questions || []).filter((q): q is Question => q != null && q?.type !== undefined);
       const qrcQuestions = questionsSafe.filter(q => q?.type === "QRC");
       if (qrcQuestions.length === 0) continue;
-      const cacheMatiere = correctionsIA[mi] || {};
+      const cacheMatiere = correctionsIA[mi] || resultatMatiere.correctionsIA || {};
       for (const q of qrcQuestions) {
-        // Skip QRC where student didn't provide any answer — auto-0, no validation needed
-        const reponseEleve = resultatMatiere?.reponses?.[q.id] ?? resultatMatiere?.reponses?.[String(q.id)];
-        const reponseStr = typeof reponseEleve === "string" ? reponseEleve.trim() : "";
-        if (!reponseStr) continue; // No answer = auto 0 pts, no need for formateur validation
-
-        const corr = cacheMatiere[q.id] ?? cacheMatiere[String(q.id)];
-        // A QRC is considered validated by formateur if it has a manual correction
-        if (!corr || corr === "loading" || corr === "error") return true;
-        const corrObj = corr as CorrectionQRC;
-        if (!corrObj.explication?.includes("Correction manuelle") && !corrObj.explication?.includes("manuelle")) return true;
+        const corr = (cacheMatiere as any)[q.id] ?? (cacheMatiere as any)[String(q.id)];
+        if (!isQrcCorrectionValidated(corr)) { pending.add(matiere.id); break; }
       }
     }
-    return false;
+    return pending;
   })();
+  const hasQrcPendingValidation = !isAdmin && matieresEnAttenteQrc.size > 0;
+
 
   // Questions fausses à réviser (même logique que RevisionPhaseView)
   const wrongQuestions = useMemo(() => {
@@ -729,18 +727,28 @@ function EcranResultats({
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <div className="text-right">
-                        <span className="text-2xl font-bold" style={{ color: r.admis ? '#00B4D8' : '#ef4444' }}>
-                          {noteSur20.toFixed(1)} / 20
-                        </span>
-                        <p className="text-xs text-muted-foreground">{noteObtenueSafe} / {safeMaxPoints} pts</p>
-                      </div>
-                      {r.admis ? (
-                        <CheckCircle2 className="w-5 h-5" style={{ color: '#00B4D8' }} />
+                      {matieresEnAttenteQrc.has(r.matiereId) && !isAdmin ? (
+                        <div className="text-right">
+                          <span className="text-base font-bold text-amber-600">⏳ En attente de correction</span>
+                          <p className="text-xs text-muted-foreground">Note publiée après correction des QRC</p>
+                        </div>
                       ) : (
-                        <XCircle className="w-5 h-5 text-red-500" />
+                        <>
+                          <div className="text-right">
+                            <span className="text-2xl font-bold" style={{ color: r.admis ? '#00B4D8' : '#ef4444' }}>
+                              {noteSur20.toFixed(1)} / 20
+                            </span>
+                            <p className="text-xs text-muted-foreground">{noteObtenueSafe} / {safeMaxPoints} pts</p>
+                          </div>
+                          {r.admis ? (
+                            <CheckCircle2 className="w-5 h-5" style={{ color: '#00B4D8' }} />
+                          ) : (
+                            <XCircle className="w-5 h-5 text-red-500" />
+                          )}
+                        </>
                       )}
                       <ChevronRight className={`w-4 h-4 text-muted-foreground transition-transform ${isExpanded ? "rotate-90" : ""}`} />
+
                     </div>
                   </div>
                   <Progress

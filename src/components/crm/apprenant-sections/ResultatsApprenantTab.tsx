@@ -161,9 +161,14 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
                         </Badge>
                       )}
                     </div>
-                    <span className={`text-lg font-bold ${isReussi ? "text-green-600" : "text-red-500"}`}>
-                      {moyenne.toFixed(1)}/20
-                    </span>
+                    {enAttenteCorrection ? (
+                      <span className="text-sm font-semibold text-amber-600">Note en attente</span>
+                    ) : (
+                      <span className={`text-lg font-bold ${isReussi ? "text-green-600" : "text-red-500"}`}>
+                        {moyenne.toFixed(1)}/20
+                      </span>
+                    )}
+
                   </div>
 
                   {/* Notes par matière */}
@@ -176,14 +181,20 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
                         ? computeMatiereScore(resolveMatiereForScoring(matiereDef, m.details), m.details?.reponses || null, m.score_obtenu, m.score_max, m.details?.correctionsIA || null)
                         : null;
                       const note = recomputed?.noteSur20 ?? (Number(m.note_sur_20) || 0);
+                      const matiereEnAttente = isQrcPendingCorrection(m?.details);
                       return (
                         <div key={i} className="flex justify-between text-xs border rounded px-2 py-1">
                           <span className="truncate pr-1">{(m.matiere_nom || m.matiere_id || "?").split(" - ")[0]}</span>
-                          <span className={`font-bold shrink-0 ${note >= 10 ? "text-green-600" : "text-red-500"}`}>
-                            {note.toFixed(1)}
-                          </span>
+                          {matiereEnAttente ? (
+                            <span className="font-semibold shrink-0 text-amber-600">⏳</span>
+                          ) : (
+                            <span className={`font-bold shrink-0 ${note >= 10 ? "text-green-600" : "text-red-500"}`}>
+                              {note.toFixed(1)}
+                            </span>
+                          )}
                         </div>
                       );
+
                     })}
                   </div>
 
