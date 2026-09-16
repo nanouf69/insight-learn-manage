@@ -173,7 +173,7 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
                         (md) => md.id === m.matiere_id || md.nom === m.matiere_nom,
                       );
                       const recomputed = matiereDef
-                        ? computeMatiereScore(matiereDef, m.details?.reponses || null, m.score_obtenu, m.score_max, m.details?.correctionsIA || null)
+                        ? computeMatiereScore(resolveMatiereForScoring(matiereDef, m.details), m.details?.reponses || null, m.score_obtenu, m.score_max, m.details?.correctionsIA || null)
                         : null;
                       const note = recomputed?.noteSur20 ?? (Number(m.note_sur_20) || 0);
                       return (
