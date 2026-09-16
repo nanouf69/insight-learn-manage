@@ -6569,15 +6569,18 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
 
             {generatedPassword && (
               <div className="bg-muted p-3 rounded-md space-y-2">
-                <p className="text-sm font-medium">✅ Nouveau mot de passe appliqué :</p>
+                <p className="text-sm font-medium">✅ Mot de passe temporaire appliqué (affiché une seule fois, non mémorisé) :</p>
                 <div className="flex items-center gap-2">
                   <code className="text-sm bg-background px-2 py-1 rounded border">{generatedPassword}</code>
                   <Button variant="ghost" size="sm" onClick={() => { navigator.clipboard.writeText(generatedPassword); toast({ title: "Copié !" }); }}>
                     <Copy className="w-4 h-4" />
                   </Button>
                 </div>
+                <p className="text-xs text-muted-foreground">
+                  Ce mot de passe temporaire n'est pas enregistré dans le CRM. L'apprenant est invité à le changer à sa première connexion.
+                </p>
                 <Button
-                  variant="outline"
+                  variant="default"
                   size="sm"
                   className="w-full mt-1"
                   disabled={resendingCredentials}
@@ -6585,12 +6588,12 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                     setResendingCredentials(true);
                     try {
                       const { data, error } = await supabase.functions.invoke("resend-credentials", {
-                        body: { apprenant_id: accountDialogApprenant.id, reset_password: false },
+                        body: { apprenant_id: accountDialogApprenant.id, mode: "reset_link" },
                       });
                       if (error) throw error;
                       if (!(data as any)?.emailSent) throw new Error((data as any)?.message || "Envoi email impossible");
                       queryClient.invalidateQueries({ queryKey: ['identifiants-sent'] });
-                      toast({ title: "Identifiants renvoyés par email" });
+                      toast({ title: "Lien sécurisé envoyé par email à l'apprenant" });
                     } catch (e: any) {
                       toast({ title: "Erreur", description: e?.message || "Erreur lors de l'envoi", variant: "destructive" });
                     } finally {
@@ -6599,7 +6602,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                   }}
                 >
                   {resendingCredentials ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
-                  Renvoyer identifiants par email
+                  Envoyer un lien de définition du mot de passe (recommandé)
                 </Button>
                 <Button
                   variant="secondary"
@@ -6607,10 +6610,11 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                   className="w-full mt-1"
                   disabled={resendingCredentials}
                   onClick={async () => {
+                    if (!window.confirm("Cette action remplacera immédiatement le mot de passe actuel de cet apprenant. Continuer ?")) return;
                     setResendingCredentials(true);
                     try {
                       const { data, error } = await supabase.functions.invoke("resend-credentials", {
-                        body: { apprenant_id: accountDialogApprenant.id, reset_password: true },
+                        body: { apprenant_id: accountDialogApprenant.id, mode: "temp_password" },
                       });
                       if (error) throw error;
                       if (!(data as any)?.emailSent) throw new Error((data as any)?.message || "Envoi email impossible");
@@ -6619,7 +6623,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                        setGeneratedPassword(newPassword);
                        setAccountDialogApprenant((current: any) => current ? { ...current, mot_de_passe_plateforme: newPassword } : current);
                       queryClient.invalidateQueries({ queryKey: ['identifiants-sent'] });
-                      toast({ title: "Nouveau mot de passe généré et envoyé" });
+                      toast({ title: "Mot de passe temporaire généré et envoyé" });
                     } catch (e: any) {
                       toast({ title: "Erreur", description: e?.message || "Erreur lors de l'envoi", variant: "destructive" });
                     } finally {
@@ -6628,7 +6632,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                   }}
                 >
                   {resendingCredentials ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <KeyRound className="w-4 h-4 mr-2" />}
-                  Réinitialiser le mot de passe et renvoyer
+                  Générer un mot de passe temporaire
                 </Button>
               </div>
             )}
@@ -6645,10 +6649,10 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                   </div>
                 )}
                 <p className="text-xs text-muted-foreground">
-                  Si l'apprenant n'arrive plus à se connecter, générez un nouveau mot de passe : il est appliqué au compte, enregistré ici et envoyé par email.
+                  Le mot de passe réel n'est plus mémorisé dans le CRM. Envoyez à l'apprenant un lien sécurisé (recommandé) pour qu'il définisse lui-même son mot de passe, ou générez un mot de passe temporaire.
                 </p>
                 <Button
-                  variant="secondary"
+                  variant="default"
                   size="sm"
                   className="w-full"
                   disabled={resendingCredentials}
@@ -6656,7 +6660,33 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                     setResendingCredentials(true);
                     try {
                       const { data, error } = await supabase.functions.invoke("resend-credentials", {
-                        body: { apprenant_id: accountDialogApprenant.id, reset_password: true },
+                        body: { apprenant_id: accountDialogApprenant.id, mode: "reset_link" },
+                      });
+                      if (error) throw error;
+                      if (!(data as any)?.emailSent) throw new Error((data as any)?.message || "Envoi email impossible");
+                      queryClient.invalidateQueries({ queryKey: ['identifiants-sent'] });
+                      toast({ title: "Lien sécurisé envoyé par email à l'apprenant" });
+                    } catch (e: any) {
+                      toast({ title: "Erreur", description: e?.message || "Erreur lors de l'envoi", variant: "destructive" });
+                    } finally {
+                      setResendingCredentials(false);
+                    }
+                  }}
+                >
+                  {resendingCredentials ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
+                  Envoyer un lien de définition du mot de passe (recommandé)
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="w-full"
+                  disabled={resendingCredentials}
+                  onClick={async () => {
+                    if (!window.confirm("Cette action remplacera immédiatement le mot de passe actuel de cet apprenant. Continuer ?")) return;
+                    setResendingCredentials(true);
+                    try {
+                      const { data, error } = await supabase.functions.invoke("resend-credentials", {
+                        body: { apprenant_id: accountDialogApprenant.id, mode: "temp_password" },
                       });
                       if (error) throw error;
                       if (!(data as any)?.emailSent) throw new Error((data as any)?.message || "Envoi email impossible");
@@ -6666,7 +6696,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                        setAccountDialogApprenant((current: any) => current ? { ...current, mot_de_passe_plateforme: newPassword } : current);
                       queryClient.invalidateQueries({ queryKey: ['identifiants-sent'] });
                       queryClient.invalidateQueries({ queryKey: ['session-apprenants'] });
-                      toast({ title: "Nouveau mot de passe généré et envoyé" });
+                      toast({ title: "Mot de passe temporaire généré et envoyé" });
                     } catch (e: any) {
                       toast({ title: "Erreur", description: e?.message || "Erreur lors de l'envoi", variant: "destructive" });
                     } finally {
@@ -6675,7 +6705,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                   }}
                 >
                   {resendingCredentials ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <KeyRound className="w-4 h-4 mr-2" />}
-                  Réinitialiser le mot de passe et renvoyer
+                  Générer un mot de passe temporaire
                 </Button>
               </div>
             )}

@@ -507,20 +507,21 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
                 onClick={async () => {
                   setResendingCredentials(true);
                   try {
-                    const { error } = await supabase.functions.invoke("resend-credentials", {
-                      body: { apprenant_id: apprenantId, reset_password: false },
+                    const { data, error } = await supabase.functions.invoke("resend-credentials", {
+                      body: { apprenant_id: apprenantId, mode: "reset_link" },
                     });
                     if (error) throw error;
-                    toast.success("Identifiants renvoyés par email");
-                  } catch {
-                    toast.error("Erreur lors de l'envoi");
+                    if (!(data as any)?.emailSent) throw new Error((data as any)?.message || "Envoi email impossible");
+                    toast.success("Lien sécurisé envoyé par email à l'apprenant");
+                  } catch (err: any) {
+                    toast.error(err?.message || "Erreur lors de l'envoi");
                   } finally {
                     setResendingCredentials(false);
                   }
                 }}
               >
                 {resendingCredentials ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
-                Renvoyer identifiants
+                Envoyer le lien d'accès
               </Button>
               <Button
                 variant="secondary"
@@ -752,8 +753,11 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
                       </Button>
                     </div>
                   )}
+                  <p className="text-xs text-muted-foreground">
+                    Le mot de passe réel n'est plus mémorisé dans le CRM. Envoyez à l'apprenant un lien sécurisé (recommandé) pour qu'il définisse lui-même son mot de passe, ou générez un mot de passe temporaire.
+                  </p>
                   <Button
-                    variant="secondary"
+                    variant="default"
                     size="sm"
                     className="w-full"
                     disabled={resendingCredentials}
@@ -761,7 +765,32 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
                       setResendingCredentials(true);
                       try {
                         const { data, error } = await supabase.functions.invoke("resend-credentials", {
-                          body: { apprenant_id: apprenantId, reset_password: true },
+                          body: { apprenant_id: apprenantId, mode: "reset_link" },
+                        });
+                        if (error) throw error;
+                        if (!(data as any)?.emailSent) throw new Error((data as any)?.message || "Envoi email impossible");
+                        toast.success("Lien sécurisé envoyé par email à l'apprenant");
+                      } catch (err: any) {
+                        toast.error(err?.message || "Erreur lors de l'envoi");
+                      } finally {
+                        setResendingCredentials(false);
+                      }
+                    }}
+                  >
+                    {resendingCredentials ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
+                    Envoyer un lien de définition du mot de passe (recommandé)
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="w-full"
+                    disabled={resendingCredentials}
+                    onClick={async () => {
+                      if (!window.confirm("Cette action remplacera immédiatement le mot de passe actuel de cet apprenant. Continuer ?")) return;
+                      setResendingCredentials(true);
+                      try {
+                        const { data, error } = await supabase.functions.invoke("resend-credentials", {
+                          body: { apprenant_id: apprenantId, mode: "temp_password" },
                         });
                         if (error) throw error;
                         if (!(data as any)?.emailSent) throw new Error((data as any)?.message || "Envoi email impossible");
@@ -769,7 +798,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
                         if (!newPassword) throw new Error("Le nouveau mot de passe n'a pas été retourné");
                         setGeneratedPassword(newPassword);
                         queryClient.invalidateQueries({ queryKey: ["apprenant-detail", apprenantId] });
-                        toast.success("Nouveau mot de passe généré et envoyé");
+                        toast.success("Mot de passe temporaire généré et envoyé");
                       } catch (err: any) {
                         toast.error(err?.message || "Erreur lors de l'envoi");
                       } finally {
@@ -778,45 +807,25 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
                     }}
                   >
                     {resendingCredentials ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <KeyRound className="w-4 h-4 mr-2" />}
-                    Réinitialiser le mot de passe et renvoyer
+                    Générer un mot de passe temporaire
                   </Button>
                 </div>
               )}
 
               {generatedPassword && (
                 <div className="bg-muted p-3 rounded-md space-y-2">
-                  <p className="text-sm font-medium">✅ Nouveau mot de passe appliqué :</p>
+                  <p className="text-sm font-medium">✅ Mot de passe temporaire appliqué (affiché une seule fois, non mémorisé) :</p>
                   <div className="flex items-center gap-2">
                     <code className="text-sm bg-background px-2 py-1 rounded border">{generatedPassword}</code>
                     <Button variant="ghost" size="sm" onClick={() => { navigator.clipboard.writeText(generatedPassword); toast.success("Copié !"); }}>
                       <Copy className="w-4 h-4" />
                     </Button>
                   </div>
+                  <p className="text-xs text-muted-foreground">
+                    Ce mot de passe temporaire n'est pas enregistré dans le CRM. L'apprenant est invité à le changer à sa première connexion.
+                  </p>
                   <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full mt-1"
-                    disabled={resendingCredentials}
-                    onClick={async () => {
-                      setResendingCredentials(true);
-                      try {
-                        const { error } = await supabase.functions.invoke("resend-credentials", {
-                          body: { apprenant_id: apprenantId, reset_password: false },
-                        });
-                        if (error) throw error;
-                        toast.success("Identifiants renvoyés par email");
-                      } catch {
-                        toast.error("Erreur lors de l'envoi");
-                      } finally {
-                        setResendingCredentials(false);
-                      }
-                    }}
-                  >
-                    {resendingCredentials ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
-                    Renvoyer identifiants par email
-                  </Button>
-                  <Button
-                    variant="secondary"
+                    variant="default"
                     size="sm"
                     className="w-full mt-1"
                     disabled={resendingCredentials}
@@ -824,7 +833,32 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
                       setResendingCredentials(true);
                       try {
                         const { data, error } = await supabase.functions.invoke("resend-credentials", {
-                          body: { apprenant_id: apprenantId, reset_password: true },
+                          body: { apprenant_id: apprenantId, mode: "reset_link" },
+                        });
+                        if (error) throw error;
+                        if (!(data as any)?.emailSent) throw new Error((data as any)?.message || "Envoi email impossible");
+                        toast.success("Lien sécurisé envoyé par email à l'apprenant");
+                      } catch (err: any) {
+                        toast.error(err?.message || "Erreur lors de l'envoi");
+                      } finally {
+                        setResendingCredentials(false);
+                      }
+                    }}
+                  >
+                    {resendingCredentials ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
+                    Envoyer un lien de définition du mot de passe (recommandé)
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="w-full mt-1"
+                    disabled={resendingCredentials}
+                    onClick={async () => {
+                      if (!window.confirm("Cette action remplacera immédiatement le mot de passe actuel de cet apprenant. Continuer ?")) return;
+                      setResendingCredentials(true);
+                      try {
+                        const { data, error } = await supabase.functions.invoke("resend-credentials", {
+                          body: { apprenant_id: apprenantId, mode: "temp_password" },
                         });
                         if (error) throw error;
                         if (!(data as any)?.emailSent) throw new Error((data as any)?.message || "Envoi email impossible");
@@ -832,7 +866,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
                         if (!newPassword) throw new Error("Le nouveau mot de passe n'a pas été retourné");
                         setGeneratedPassword(newPassword);
                         queryClient.invalidateQueries({ queryKey: ["apprenant-detail", apprenantId] });
-                        toast.success("Nouveau mot de passe généré et envoyé");
+                        toast.success("Mot de passe temporaire généré et envoyé");
                       } catch (err: any) {
                         toast.error(err?.message || "Erreur lors de l'envoi");
                       } finally {
@@ -841,7 +875,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
                     }}
                   >
                     {resendingCredentials ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <KeyRound className="w-4 h-4 mr-2" />}
-                    Réinitialiser le mot de passe et renvoyer
+                    Générer un mot de passe temporaire
                   </Button>
                 </div>
               )}
