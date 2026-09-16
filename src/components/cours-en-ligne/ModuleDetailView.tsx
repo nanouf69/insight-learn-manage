@@ -146,7 +146,7 @@ import {
   syncSharedExercisesToSiblingModules,
   type ModuleInitialData,
 } from "./shared-exercise-overrides";
-import { resolveOverrideConflict } from "@/components/fournisseurs/quiz-editor-utils";
+import { resolveOverrideConflict, buildAdminEditJournalMap } from "@/components/fournisseurs/quiz-editor-utils";
 import {
   rebaseCanonicalActions,
   toRpcCanonicalActions,
@@ -4188,6 +4188,27 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   const lastQueuedAdminLocalEditAtRef = useRef(0);
   const lastAppliedDbUpdatedAtRef = useRef(0);
   const lastDbUpdatedAtRef = useRef<string | null>(null);
+  // Journal des modifications Admin (module_admin_audit_log) : date réelle de la
+  // dernière modification par question, utilisée quand `_editedAt` est absent.
+  const adminEditJournalRef = useRef<Map<string, string>>(new Map());
+  const getAdminFallbackAt = useCallback(
+    (exoId: string | number, questionId: string | number): string | null =>
+      adminEditJournalRef.current.get(`${exoId}-${questionId}`) ?? lastDbUpdatedAtRef.current,
+    [],
+  );
+  const loadAdminEditJournal = useCallback(async (moduleId: number) => {
+    try {
+      const { data } = await supabase
+        .from("module_admin_audit_log")
+        .select("exercice_id, question_id, created_at")
+        .eq("module_id", Number(moduleId))
+        .order("created_at", { ascending: false })
+        .limit(2000);
+      adminEditJournalRef.current = buildAdminEditJournalMap(data as any);
+    } catch (err) {
+      console.warn("[ModuleDetailView] Journal des modifications indisponible:", err);
+    }
+  }, []);
   const lastMaintenanceBroadcastRef = useRef(0);
   const [maintenanceActive, setMaintenanceActive] = useState(false);
   const maintenanceHideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -4405,6 +4426,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
         if (!data || data.length === 0) return;
 
+        await loadAdminEditJournal(Number(module.id));
         const overrideMap = buildTrainerOverrideMap(data);
 
         setModuleData((prev) => {
@@ -4420,7 +4442,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                   if (!override) return q;
                   // Règle unique : la dernière modification enregistrée gagne (admin ou fournisseur).
                   const adminTs = (q as any)._editedAt ?? undefined;
-                  const winner = resolveOverrideConflict(adminTs, override.updated_at);
+                  const winner = resolveOverrideConflict(adminTs, override.updated_at, getAdminFallbackAt(exo.id, q.id));
+                  if (winner === "conflit") {
+                    console.warn("[Conflit Admin/Fournisseur] version la plus récente indéterminée — aucune version écrasée", { exo: exo.id, question: q.id });
+                    return q;
+                  }
                   if (winner === "admin") return q;
                   return { ...q, enonce: override.enonce, choix: override.choix };
                 })
@@ -4466,6 +4492,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         return;
       }
 
+      await loadAdminEditJournal(Number(module.id));
       setTrainerOverrideWarnings(buildTrainerOverrideMap(data));
     }
 
@@ -4486,7 +4513,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         const questions = exo.questions.flatMap((q) => {
           const override = trainerOverrideWarnings.get(`${exo.id}-${q.id}`);
           if (!override) return [q];
-          const winner = resolveOverrideConflict((q as any)._editedAt ?? undefined, override.updated_at);
+          const winner = resolveOverrideConflict((q as any)._editedAt ?? undefined, override.updated_at, getAdminFallbackAt(exo.id, q.id));
+          if (winner === "conflit") {
+            console.warn("[Conflit Admin/Fournisseur] version la plus récente indéterminée — aucune version écrasée", { exo: exo.id, question: q.id });
+            return [q];
+          }
           if (winner === "admin") return [q];
           if (override.enonce === "__DELETED__") {
             changed = true;
@@ -5113,6 +5144,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
       if (!data || data.length === 0) return;
 
+      await loadAdminEditJournal(Number(module.id));
       const overrideMap = buildTrainerOverrideMap(data);
 
       setModuleData((prev) => {
@@ -5127,7 +5159,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 if (!override) return q;
                 // Règle unique : la dernière modification enregistrée gagne (admin ou fournisseur).
                 const adminTs = (q as any)._editedAt ?? undefined;
-                const winner = resolveOverrideConflict(adminTs, override.updated_at);
+                const winner = resolveOverrideConflict(adminTs, override.updated_at, getAdminFallbackAt(exo.id, q.id));
+                if (winner === "conflit") {
+                  console.warn("[Conflit Admin/Fournisseur] version la plus récente indéterminée — aucune version écrasée", { exo: exo.id, question: q.id });
+                  return q;
+                }
                 if (winner === "admin") return q;
                 return { ...q, enonce: override.enonce, choix: override.choix };
               })

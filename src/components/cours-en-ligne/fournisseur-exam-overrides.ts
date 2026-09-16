@@ -65,6 +65,12 @@ const SHARED_MATIERE_TARGETS: Record<string, { examId: string; matiereIndex: num
 export function applyFournisseurOverridesToExamens(
   examens: ExamenBlanc[],
   overrides: QuizOverrideRow[],
+  /**
+   * Date réelle de dernière écriture Admin enregistrée par la base
+   * (module_editor_state.updated_at) ou issue du journal des modifications.
+   * Sert de référence quand la question ne porte pas de marqueur `_editedAt`.
+   */
+  adminFallbackAt?: string | null,
 ): ExamenBlanc[] {
   if (!overrides || overrides.length === 0) return examens;
 
@@ -105,8 +111,15 @@ export function applyFournisseurOverridesToExamens(
 
       const original = matiere.questions[qIndex] as AdminEditableQuestion;
       const adminEditedAt = original._editedAt || (original.manually_edited ? new Date(0).toISOString() : undefined);
-      const winner = resolveOverrideConflict(adminEditedAt, ov.updated_at ?? "");
+      const winner = resolveOverrideConflict(adminEditedAt, ov.updated_at ?? "", adminFallbackAt);
 
+      if (winner === "conflit") {
+        console.warn(
+          "[Conflit Admin/Fournisseur] Impossible de déterminer la version la plus récente — aucune version écrasée.",
+          { examId: target.examId, quizId: ov.quiz_id, questionId: ov.question_id },
+        );
+        continue;
+      }
       if (winner === "admin") continue;
 
       if (ov.enonce === "__DELETED__") {

@@ -258,6 +258,10 @@ export function reconcileSharedMatieres(
 // Load saved exam overrides from DB — NO CACHE, always fresh from DB
 export async function loadSavedExamens(notifyRepairs: boolean = false): Promise<ExamenBlanc[]> {
   const examens = cloneExamens(tousLesExamens);
+  // Date réelle de dernière écriture Admin enregistrée par la base : sert de
+  // référence de comparaison quand une question ne porte pas de marqueur de date.
+  let adminLastWriteAt: string | null = null;
+  
   
   try {
     const moduleIds = examens.map((ex) => getModuleIdForExamId(ex.id));
@@ -287,6 +291,9 @@ export async function loadSavedExamens(notifyRepairs: boolean = false): Promise<
         const idx = moduleIdToIdx[row.module_id];
         if (idx === undefined || idx < 0 || idx >= examens.length || !row.module_data) continue;
         savedAtByExamIdx[idx] = row.updated_at ? new Date(row.updated_at).getTime() : 0;
+        if (row.updated_at && (!adminLastWriteAt || Date.parse(row.updated_at) > Date.parse(adminLastWriteAt))) {
+          adminLastWriteAt = row.updated_at;
+        }
         const saved = row.module_data as unknown as ExamenBlanc;
         if (saved.matieres && Array.isArray(saved.matieres)) {
           const normalizeQuestionType = (value: unknown) => String(value ?? "").trim().toUpperCase();
@@ -436,7 +443,7 @@ export async function loadSavedExamens(notifyRepairs: boolean = false): Promise<
       .in("quiz_id", fournisseurQuizIds)
       .order("updated_at", { ascending: false });
     if (overridesData && overridesData.length > 0) {
-      applyFournisseurOverridesToExamens(examens, overridesData as any);
+      applyFournisseurOverridesToExamens(examens, overridesData as any, adminLastWriteAt);
     }
   } catch (err) {
     console.error("[ExamensEditor] Error applying fournisseur overrides:", err);
