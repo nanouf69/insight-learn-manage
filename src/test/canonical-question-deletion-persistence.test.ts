@@ -57,7 +57,9 @@ describe("persistance des suppressions dans la source canonique", () => {
     );
 
     expect(moduleView).toContain("const confirmedRows = await readCanonicalRows()");
-    expect(moduleView).toContain("canonicalRowsRef.current = confirmedRows");
+    // Le tampon canonique est réalimenté après la relecture (les lignes fraîches
+    // sont d'abord mappées vers les exercices du module).
+    expect(moduleView).toContain("canonicalRowsRef.current = mappedConfirmedRows");
   });
 
   it("ne réinjecte pas la dernière question supprimée depuis la liste statique", () => {
