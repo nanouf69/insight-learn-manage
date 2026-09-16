@@ -443,7 +443,7 @@ export async function loadSavedExamens(notifyRepairs: boolean = false): Promise<
       .in("quiz_id", fournisseurQuizIds)
       .order("updated_at", { ascending: false });
     if (overridesData && overridesData.length > 0) {
-      applyFournisseurOverridesToExamens(examens, overridesData as any);
+      applyFournisseurOverridesToExamens(examens, overridesData as any, adminLastWriteAt);
     }
   } catch (err) {
     console.error("[ExamensEditor] Error applying fournisseur overrides:", err);
