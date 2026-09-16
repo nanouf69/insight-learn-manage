@@ -8,7 +8,7 @@
 //
 // Cela évite toute divergence entre les 3 écrans quand le barème change.
 
-import { getPointsParQuestion, type Matiere, type Question } from "./examens-blancs-data";
+import { getPointsParQuestion, type Matiere, type Question, type QuestionType } from "./examens-blancs-data";
 import type { CorrectionCache, ExamenBlanc, ResultatMatiere } from "./examens-blancs-types";
 import {
   safeArray,
