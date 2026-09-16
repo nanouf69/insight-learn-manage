@@ -4,12 +4,15 @@ import App from "./App.tsx";
 import "./index.css";
 import { installErrorMonitoring } from "@/lib/monitoring/errorLogger";
 import { installAnswerPersistence, setAnswerSaveAuthToken } from "@/lib/answerPersistence";
+import { initQuizResultPersistence } from "@/lib/quizResultPersistence";
 import { supabase } from "@/integrations/supabase/client";
 
 installErrorMonitoring();
 
 // Persistance fiable des réponses apprenants (file durable + renvoi automatique).
 installAnswerPersistence();
+// Persistance fiable des notes de matière (renvoi automatique jusqu'à confirmation).
+initQuizResultPersistence();
 supabase.auth.getSession().then(({ data }) =>
   setAnswerSaveAuthToken(data.session?.access_token ?? null, data.session?.user?.id ?? null),
 );

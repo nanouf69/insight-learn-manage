@@ -421,6 +421,63 @@ function PassageMatiere({
   // Extracted to examens-blancs-utils.ts for testability (BUG #10 FIX)
   const isMultiple = computeIsMultiple;
 
+  // ===== CHRONOMÈTRE SERVEUR =====
+  // L'heure de début est enregistrée en base au premier affichage réel de la
+  // matière. Le temps restant est toujours recalculé à partir de cette heure
+  // serveur : F5, fermeture du navigateur, reconnexion ou changement de tablette
+  // ne redonnent jamais de temps. Les anciennes tentatives ne sont pas touchées.
+  const [serverRemaining, setServerRemaining] = useState<number | null>(null);
+  const expireFiredRef = useRef(false);
+  const handleExpireRef = useRef(handleExpire);
+  handleExpireRef.current = handleExpire;
+
+  useEffect(() => {
+    if (isBilan) return;
+    let cancelled = false;
+
+    const sync = async () => {
+      if (!apprenantId) {
+        if (!cancelled) setServerRemaining((prev) => prev ?? dureeSecondes);
+        return;
+      }
+      try {
+        const { data, error } = await supabase.rpc("start_or_get_exam_timer" as any, {
+          _apprenant_id: apprenantId,
+          _exercice_id: exerciceKey,
+          _duree_secondes: dureeSecondes,
+        } as any);
+        if (cancelled) return;
+        const row = Array.isArray(data) ? (data as any[])[0] : (data as any);
+        const remaining = Number(row?.remaining_seconds);
+        if (error || !Number.isFinite(remaining)) {
+          console.warn("[ExamTimer] Chrono serveur indisponible, repli local:", error?.message);
+          setServerRemaining((prev) => prev ?? dureeSecondes);
+          return;
+        }
+        setServerRemaining(Math.max(0, Math.round(remaining)));
+        if (remaining <= 0 && !expireFiredRef.current) {
+          expireFiredRef.current = true;
+          void handleExpireRef.current();
+        }
+      } catch (e) {
+        if (!cancelled) setServerRemaining((prev) => prev ?? dureeSecondes);
+      }
+    };
+
+    void sync();
+    const interval = setInterval(sync, 60_000);
+    const onVisible = () => { if (document.visibilityState === "visible") void sync(); };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("online", sync);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("online", sync);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [apprenantId, exerciceKey, dureeSecondes, isBilan]);
+
   const safeQuestionsCount = questionsSafe.length || 1;
   const safeQuestionIndex = Math.min(questionIndex, safeQuestionsCount - 1);
   const progress = ((safeQuestionIndex + 1) / safeQuestionsCount) * 100;
@@ -456,8 +513,13 @@ function PassageMatiere({
               <BookOpen className="w-4 h-4" />
               <span>Sans chronomètre</span>
             </div>
+          ) : serverRemaining === null ? (
+            <div className="flex items-center gap-2 px-4 py-2 rounded-lg border-2 border-primary/30 bg-primary/5 text-primary">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span className="font-mono font-bold text-lg">--:--</span>
+            </div>
           ) : (
-            <TimerBadge seconds={dureeSecondes} onExpire={handleExpire} />
+            <TimerBadge seconds={serverRemaining} onExpire={handleExpire} />
           )}
         </div>
       </div>

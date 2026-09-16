@@ -8,6 +8,7 @@ import { EXAMENS_BLANCS_VTC, EXAMENS_BLANCS_TAXI, EXAMENS_BLANCS_TA, EXAMENS_BLA
 import { loadSavedExamens } from "@/components/cours-en-ligne/ExamensBlancsEditor";
 import { computeMoyenneExamen, computeMatiereScore } from "@/components/cours-en-ligne/examens-blancs-scoring";
 import { findScoreForMatiere, buildMatiereLookupKeys } from "@/components/cours-en-ligne/examens-blancs-utils";
+import { isQrcPendingCorrection } from "@/components/cours-en-ligne/exam-helpers";
 
 // Repli statique uniquement : la source de vérité affichée est la définition
 // enregistrée en base (identique à l'écran apprenant), chargée via loadSavedExamens().
@@ -142,15 +143,23 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
               const moyenne = bilanExamen?.moyenne ?? 0;
               const isReussi = bilanExamen?.admisGlobal ?? moyenne >= 10;
               const bilan = bilans[quizId];
+              // QRC non encore corrigées manuellement : pas de statut définitif.
+              const enAttenteCorrection = exam.matieres.some((m: any) => isQrcPendingCorrection(m?.details));
 
               return (
                 <div key={quizId} className="border rounded-lg p-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <h4 className="font-semibold text-sm">{exam.titre}</h4>
-                      <Badge variant={isReussi ? "default" : "destructive"} className="text-xs">
-                        {isReussi ? "Réussi ✅" : "Échoué ❌"}
-                      </Badge>
+                      {enAttenteCorrection ? (
+                        <Badge variant="secondary" className="text-xs bg-amber-100 text-amber-700">
+                          ⏳ En attente de correction
+                        </Badge>
+                      ) : (
+                        <Badge variant={isReussi ? "default" : "destructive"} className="text-xs">
+                          {isReussi ? "Réussi ✅" : "Échoué ❌"}
+                        </Badge>
+                      )}
                     </div>
                     <span className={`text-lg font-bold ${isReussi ? "text-green-600" : "text-red-500"}`}>
                       {moyenne.toFixed(1)}/20

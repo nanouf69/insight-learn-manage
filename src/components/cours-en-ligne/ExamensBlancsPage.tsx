@@ -9,6 +9,7 @@ import { loadSavedExamens, EXAMEN_BLANC_MODULE_BASE, getModuleIdForExamId } from
 import ExamensBlancsEditor from "./ExamensBlancsEditor";
 import { supabase } from "@/integrations/supabase/client";
 import { answersAreEqual } from "@/lib/answerPersistence";
+import { enqueueQuizResultSave } from "@/lib/quizResultPersistence";
 import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
@@ -972,12 +973,21 @@ export default function ExamensBlancsPage({
     const quizType = examen.id.startsWith("bilan-") ? "bilan" : "examen_blanc";
     const noteSur20 = normalizeNoteSur20(safeScoreObtenu, safeScoreMax);
 
+    // QRC : tant que l'administrateur n'a pas validé les QRC, la matière reste
+    // « En attente de correction » (pas de statut Réussi/Échoué définitif).
+    const hasQrc = questionsSafe.some((q: any) => String(q?.type || "").toUpperCase() === "QRC");
+
     const payload = {
       apprenant_id: apprenantId, user_id: userId, quiz_type: quizType, quiz_id: examen.id, quiz_titre: examen.titre,
       matiere_id: resultat.matiereId, matiere_nom: resultat.nomMatiere, score_obtenu: safeScoreObtenu, score_max: safeScoreMax,
       note_sur_20: noteSur20, reussi: computeAdmisForMatiere(safeScoreObtenu, safeScoreMax, resultat.noteEliminatoire, resultat.noteSur, Boolean(resultat.admis)),
       duree_secondes: Math.max(Math.round(dureeSecondes), 0),
-      details: { questions: questionDetails, reponses: resultat.reponses, correctionsIA: Object.keys(frozenCorrections).length > 0 ? frozenCorrections : undefined },
+      details: {
+        questions: questionDetails,
+        reponses: resultat.reponses,
+        correctionsIA: Object.keys(frozenCorrections).length > 0 ? frozenCorrections : undefined,
+        ...(hasQrc ? { qrc_pending_correction: true } : {}),
+      },
       tentative: Math.max(currentTentativeRef.current || currentTentative || 1, 1),
     };
 
@@ -1008,11 +1018,13 @@ export default function ExamensBlancsPage({
       }
     }
     if (!saved) {
-      // Make a definitive failure loud instead of silent — this is exactly the
-      // class of bug ("C and E don't save") that went undetected for a long time.
+      // La note n'est PAS abandonnée après 3 essais : elle entre dans une file
+      // durable (localStorage, liée au compte propriétaire) et sera renvoyée
+      // automatiquement jusqu'à confirmation par la base.
+      enqueueQuizResultSave(payload as any);
       toast.error(
-        `⚠️ La sauvegarde de "${resultat.nomMatiere}" a échoué après plusieurs tentatives (connexion instable ou session expirée). ` +
-        `Vos réponses restent enregistrées localement, mais reconnectez-vous dès que possible pour ne pas perdre ce résultat.`,
+        `⚠️ La note de "${resultat.nomMatiere}" n'a pas encore pu être enregistrée (connexion instable ou session expirée). ` +
+        `Elle est conservée sur cet appareil et sera renvoyée automatiquement dès le rétablissement de la connexion.`,
         { duration: 15000 },
       );
     }
