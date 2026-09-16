@@ -65,6 +65,12 @@ const SHARED_MATIERE_TARGETS: Record<string, { examId: string; matiereIndex: num
 export function applyFournisseurOverridesToExamens(
   examens: ExamenBlanc[],
   overrides: QuizOverrideRow[],
+  /**
+   * Date réelle de dernière écriture Admin enregistrée par la base
+   * (module_editor_state.updated_at) ou issue du journal des modifications.
+   * Sert de référence quand la question ne porte pas de marqueur `_editedAt`.
+   */
+  adminFallbackAt?: string | null,
 ): ExamenBlanc[] {
   if (!overrides || overrides.length === 0) return examens;
 
