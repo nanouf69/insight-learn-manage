@@ -611,10 +611,15 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
                       <div className="md:col-span-3 font-medium text-slate-800">{r.quiz_titre}</div>
                       <div className="md:col-span-2 text-slate-500 text-xs">{r.matiere_nom || "—"}</div>
                       <div className="md:col-span-2 text-center">
-                        <span className={`font-bold ${(noteSur20 ?? 0) >= 10 ? "text-emerald-600" : "text-red-500"}`}>
-                          {noteSur20 != null ? `${noteSur20.toFixed(1)}/20` : "—"}
-                        </span>
+                        {isQrcPendingCorrection((r as any).details) ? (
+                          <span className="text-xs font-semibold text-amber-600">⏳ En attente</span>
+                        ) : (
+                          <span className={`font-bold ${(noteSur20 ?? 0) >= 10 ? "text-emerald-600" : "text-red-500"}`}>
+                            {noteSur20 != null ? `${noteSur20.toFixed(1)}/20` : "—"}
+                          </span>
+                        )}
                       </div>
+
                       <div className="md:col-span-2 text-center">
                         {r.quiz_type === "revision_fausses" ? (
                           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600">
