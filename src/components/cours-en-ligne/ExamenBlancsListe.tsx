@@ -15,7 +15,7 @@ import {
   computeAdmisForMatiere,
   selectLatestAttemptRows,
 } from "./examens-blancs-utils";
-import { computeMoyenneExamen, computeMatiereScore } from "./examens-blancs-scoring";
+import { computeMoyenneExamen, computeMatiereScore, resolveMatiereForScoring } from "./examens-blancs-scoring";
 import { toast } from "sonner";
 
 /**
@@ -185,6 +185,7 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
               lookupKeys: buildMatiereLookupKeys(scoreSource.matiere_id, scoreSource.matiere_nom),
               reponses: r?.details?.reponses ?? null,
               correctionsIA: r?.details?.correctionsIA ?? null,
+              details: r?.details ?? null,
             });
 
             if (recovered && recovered.score_obtenu > toFiniteNumber(r.score_obtenu, 0)) {
