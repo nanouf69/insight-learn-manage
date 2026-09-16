@@ -189,8 +189,18 @@ describe("Override application logic", () => {
 
 // ─── Résolution conflit admin vs fournisseur (dernière version = référence) ───
 describe("resolveOverrideConflict: la dernière version enregistrée gagne", () => {
-  it("fournisseur gagne si admin n'a pas de _editedAt", () => {
+  it("aucune date fiable côté admin → conflit signalé, aucun écrasement", () => {
     const result = resolveOverrideConflict(undefined, "2026-04-06T15:00:00Z");
+    expect(result).toBe("conflit");
+  });
+
+  it("admin sans _editedAt mais écriture DB plus récente → admin gagne", () => {
+    const result = resolveOverrideConflict(undefined, "2026-04-06T15:00:00Z", "2026-04-06T18:00:00Z");
+    expect(result).toBe("admin");
+  });
+
+  it("admin sans _editedAt et écriture DB plus ancienne → fournisseur gagne", () => {
+    const result = resolveOverrideConflict(undefined, "2026-04-06T15:00:00Z", "2026-04-01T08:00:00Z");
     expect(result).toBe("fournisseur");
   });
 
