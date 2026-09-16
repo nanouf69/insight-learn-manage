@@ -764,6 +764,29 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
                     {resendingCredentials ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
                     Renvoyer identifiants par email
                   </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="w-full mt-1"
+                    disabled={resendingCredentials}
+                    onClick={async () => {
+                      setResendingCredentials(true);
+                      try {
+                        const { error } = await supabase.functions.invoke("resend-credentials", {
+                          body: { apprenant_id: apprenantId, reset_password: true },
+                        });
+                        if (error) throw error;
+                        toast.success("Nouveau mot de passe généré et envoyé");
+                      } catch {
+                        toast.error("Erreur lors de l'envoi");
+                      } finally {
+                        setResendingCredentials(false);
+                      }
+                    }}
+                  >
+                    {resendingCredentials ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <KeyRound className="w-4 h-4 mr-2" />}
+                    Réinitialiser le mot de passe et renvoyer
+                  </Button>
                 </div>
               )}
             </div>
