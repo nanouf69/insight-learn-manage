@@ -5,6 +5,7 @@ import { Trophy, TrendingUp, Clock, Target, BookOpen, ChevronDown, ChevronUp, Gr
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { MODULES_DATA } from "./formations-data";
+import { isQrcPendingCorrection } from "./exam-helpers";
 
 interface QuizResult {
   id: string;
