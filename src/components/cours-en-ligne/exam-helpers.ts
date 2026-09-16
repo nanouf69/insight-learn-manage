@@ -179,6 +179,16 @@ export function getQuestionKey(value: any): string {
  * nouveaux résultats. Les anciens résultats (sans ce drapeau) gardent
  * exactement leur affichage actuel : aucune donnée existante n'est modifiée.
  */
+export function isQrcCorrectionValidated(correction: any): boolean {
+  if (!correction || typeof correction !== "object") return false;
+  if (correction.validatedByAdmin === true) return true;
+  const explication = String(correction.explication ?? "").toLowerCase();
+  const legacyAdminMarker =
+    explication.includes("correction manuelle par l'administrateur") ||
+    explication.includes("validation manuelle (masqué par admin)");
+  return correction.manuel === true && !!correction.correctedAt && legacyAdminMarker;
+}
+
 export function isQrcPendingCorrection(details: any): boolean {
   if (!details || details.qrc_pending_correction !== true) return false;
   const questions = Array.isArray(details.questions) ? details.questions : [];
@@ -187,5 +197,6 @@ export function isQrcPendingCorrection(details: any): boolean {
     .map((q: any) => String(q?.questionId ?? q?.id));
   if (qrcIds.length === 0) return false;
   const corrections = details.correctionsIA || {};
-  return qrcIds.some((id: string) => corrections?.[id]?.validatedByAdmin !== true);
+  return qrcIds.some((id: string) => !isQrcCorrectionValidated(corrections?.[id] ?? corrections?.[`Q${id}`]));
 }
+
