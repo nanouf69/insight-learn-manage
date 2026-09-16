@@ -216,48 +216,104 @@ serve(async (req) => {
 
       if (authError.message.includes("already been registered")) {
         console.log(`${LOG_PREFIX}[${requestId}] Step 11 - Existing user flow (start)`);
-        // List users filtered by email - le filtre serveur n'est pas fiable, on filtre nous-mêmes
-        const { data: listData, error: getUserErr } = await supabaseAdmin.auth.admin.listUsers({ filter: `email.eq.${email}` } as any);
 
-        if (getUserErr) {
-          console.log(`${LOG_PREFIX}[${requestId}] Step 11 - listUsers failed`, { message: getUserErr.message });
-          return jsonResponse(400, {
-            error: "Utilisateur existant introuvable",
-            details: getUserErr.message,
-            requestId,
+        // Recherche paginée : le filtre serveur n'est pas fiable et la première page
+        // ne contient que 50 comptes. On parcourt TOUTES les pages.
+        const normalizedEmail = email.trim().toLowerCase();
+        const matchingUsers: any[] = [];
+        let page = 1;
+        const perPage = 1000;
+        let scanned = 0;
+
+        while (page <= 100) {
+          const { data: listData, error: getUserErr } = await supabaseAdmin.auth.admin.listUsers({
+            page,
+            perPage,
           });
+
+          if (getUserErr) {
+            console.log(`${LOG_PREFIX}[${requestId}] Step 11 - listUsers failed`, {
+              page,
+              message: getUserErr.message,
+            });
+            return jsonResponse(500, {
+              error: "Impossible de vérifier les comptes existants. Réessayez dans un instant.",
+              details: getUserErr.message,
+              requestId,
+            });
+          }
+
+          const users = listData?.users || [];
+          scanned += users.length;
+          for (const u of users) {
+            if ((u.email || "").trim().toLowerCase() === normalizedEmail) matchingUsers.push(u);
+          }
+
+          if (users.length < perPage) break;
+          page += 1;
         }
 
-        // Filtrage strict côté code : exact match sur l'email (insensible à la casse)
-        const normalizedEmail = email.trim().toLowerCase();
-        const matchingUsers = (listData?.users || []).filter(
-          (u: any) => (u.email || "").trim().toLowerCase() === normalizedEmail
-        );
+        console.log(`${LOG_PREFIX}[${requestId}] Step 11 - Lookup done`, {
+          scanned,
+          matches: matchingUsers.length,
+        });
 
         if (matchingUsers.length === 0) {
-          console.log(`${LOG_PREFIX}[${requestId}] Step 11 - No exact email match found`, {
-            searchedEmail: normalizedEmail,
-            returnedCount: listData?.users?.length || 0,
-          });
-          return jsonResponse(400, {
-            error: "Utilisateur existant introuvable (email exact)",
+          return jsonResponse(500, {
+            error:
+              "Un compte existe déjà avec cette adresse e-mail mais il est introuvable. Aucun changement n'a été effectué.",
             requestId,
           });
         }
 
         if (matchingUsers.length > 1) {
-          console.log(`${LOG_PREFIX}[${requestId}] Step 11 - Multiple users with same email (ambigu)`, {
-            count: matchingUsers.length,
-          });
           return jsonResponse(409, {
-            error: "Plusieurs comptes existent pour cet email, contactez l'administrateur",
+            error:
+              "Plusieurs comptes de connexion existent avec cette adresse e-mail. Aucun changement n'a été effectué. Contactez l'administrateur.",
             requestId,
           });
         }
 
         const existingUser = matchingUsers[0];
 
-        console.log(`${LOG_PREFIX}[${requestId}] Step 11 - Update existing user password (start)`, {
+        // RÈGLE IMPÉRATIVE : ne jamais détacher ni transférer un compte existant.
+        const { data: ownerRows, error: ownerErr } = await supabaseAdmin
+          .from("apprenants")
+          .select("id, nom, prenom, email")
+          .eq("auth_user_id", existingUser.id);
+
+        if (ownerErr) {
+          return jsonResponse(500, {
+            error: "Impossible de vérifier le rattachement du compte existant. Aucun changement n'a été effectué.",
+            details: ownerErr.message,
+            requestId,
+          });
+        }
+
+        const otherOwners = (ownerRows ?? []).filter((r: any) => r.id !== apprenant_id);
+
+        if (otherOwners.length > 0) {
+          const owner = otherOwners[0];
+          console.log(`${LOG_PREFIX}[${requestId}] Step 11 - Blocked: account linked to another apprenant`, {
+            existingUserId: existingUser.id,
+            ownerIds: otherOwners.map((r: any) => r.id),
+          });
+          return jsonResponse(409, {
+            error:
+              "Un compte de connexion existe déjà avec cette adresse e-mail et est rattaché à une autre fiche apprenant. Aucun changement n'a été effectué. Utilisez une autre adresse e-mail ou choisissez explicitement une opération de transfert.",
+            code: "email_already_linked",
+            linked_to: {
+              apprenant_id: owner.id,
+              nom: owner.nom,
+              prenom: owner.prenom,
+            },
+            requestId,
+          });
+        }
+
+        // Compte existant NON rattaché (ou déjà rattaché à cette même fiche) :
+        // on peut le réutiliser sans créer de doublon.
+        console.log(`${LOG_PREFIX}[${requestId}] Step 11 - Reuse unlinked existing account (start)`, {
           existingUserId: existingUser.id,
         });
 
@@ -274,7 +330,8 @@ serve(async (req) => {
         }
 
         authUser = { user: { id: existingUser.id } };
-        console.log(`${LOG_PREFIX}[${requestId}] Step 11 - Update existing user password (done)`);
+        console.log(`${LOG_PREFIX}[${requestId}] Step 11 - Reuse unlinked existing account (done)`);
+
       } else {
         return jsonResponse(400, {
           error: authError.message,
