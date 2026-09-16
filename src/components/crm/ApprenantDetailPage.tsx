@@ -934,8 +934,9 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
                     toast.success("Compte créé avec succès !");
                     queryClient.invalidateQueries({ queryKey: ["apprenant-detail", apprenantId] });
                   } catch (err: any) {
-                    toast.error(err?.message || "Erreur lors de l'opération");
+                    toast.error(await readEdgeFunctionError(err));
                   } finally {
+
                     setCreatingAccount(false);
                   }
                 }}
