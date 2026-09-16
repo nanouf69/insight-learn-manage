@@ -291,6 +291,9 @@ export async function loadSavedExamens(notifyRepairs: boolean = false): Promise<
         const idx = moduleIdToIdx[row.module_id];
         if (idx === undefined || idx < 0 || idx >= examens.length || !row.module_data) continue;
         savedAtByExamIdx[idx] = row.updated_at ? new Date(row.updated_at).getTime() : 0;
+        if (row.updated_at && (!adminLastWriteAt || Date.parse(row.updated_at) > Date.parse(adminLastWriteAt))) {
+          adminLastWriteAt = row.updated_at;
+        }
         const saved = row.module_data as unknown as ExamenBlanc;
         if (saved.matieres && Array.isArray(saved.matieres)) {
           const normalizeQuestionType = (value: unknown) => String(value ?? "").trim().toUpperCase();
