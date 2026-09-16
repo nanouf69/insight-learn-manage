@@ -43,6 +43,8 @@ import { FinancementApprenantCard } from "@/components/crm/apprenant-sections/Fi
 import { useApprenantTauxRealisation } from "@/hooks/useApprenantTauxRealisation";
 
 import { ALL_MODULES, FORMATION_MODULES, MANAGED_MODULE_IDS, DEFAULT_MODULES_BY_TYPE } from "@/components/cours-en-ligne/modules-config";
+import { readEdgeFunctionError } from "@/lib/edgeFunctionError";
+
 
 // Derive ordered formation modules from shared config
 const ORDERED_FORMATION_MODULES = Object.fromEntries(
