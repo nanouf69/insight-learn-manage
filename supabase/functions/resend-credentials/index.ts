@@ -8,6 +8,13 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+// Deux modes, jamais de relecture ni de stockage du mot de passe :
+// - "reset_link"     : l'élève reçoit un lien sécurisé et définit lui-même son mot de passe.
+// - "temp_password"  : un mot de passe temporaire est généré, appliqué au compte, envoyé par
+//                      email et affiché UNE SEULE FOIS à l'administrateur. Jamais mémorisé.
+// Compatibilité ascendante : reset_password=true => temp_password, sinon reset_link.
+type Mode = "reset_link" | "temp_password";
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -55,8 +62,15 @@ serve(async (req) => {
       });
     }
 
-    const { apprenant_id, reset_password = false } = await req.json();
-    console.log("[resend-credentials] request", { apprenant_id, reset_password });
+    const body = await req.json();
+    const { apprenant_id } = body;
+    const mode: Mode =
+      body.mode === "reset_link" || body.mode === "temp_password"
+        ? body.mode
+        : body.reset_password
+          ? "temp_password"
+          : "reset_link";
+    console.log("[resend-credentials] request", { apprenant_id, mode });
 
     if (!apprenant_id) {
       return new Response(
@@ -105,14 +119,29 @@ serve(async (req) => {
       Object.assign(apprenant, accessUpdates);
     }
 
-    const storedPassword = typeof apprenant.mot_de_passe_plateforme === "string"
-      ? apprenant.mot_de_passe_plateforme.trim()
-      : "";
-    let credentialPassword = storedPassword;
-    const mustGeneratePassword = reset_password || !credentialPassword;
-    if (mustGeneratePassword) {
-      // Un mot de passe doit obligatoirement figurer dans l'email. Pour les anciens
-      // comptes sans mot de passe mémorisé, on en crée un, on l'applique puis on le stocke.
+    // Sync auth email with apprenant email (évite que l'email reçu affiche un
+    // email différent de celui du compte de connexion)
+    const { data: authUserData } = await supabaseAdmin.auth.admin.getUserById(apprenant.auth_user_id);
+    const currentAuthEmail = authUserData?.user?.email?.toLowerCase().trim();
+    const targetEmail = apprenant.email.toLowerCase().trim();
+    if (currentAuthEmail && currentAuthEmail !== targetEmail) {
+      const { error: updateErr } = await supabaseAdmin.auth.admin.updateUserById(
+        apprenant.auth_user_id,
+        { email: targetEmail, email_confirm: true }
+      );
+      if (updateErr) {
+        return new Response(
+          JSON.stringify({ error: updateErr.message }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
+    let tempPassword: string | null = null;
+    let resetLink: string | null = null;
+
+    if (mode === "temp_password") {
+      // Génère un mot de passe temporaire, l'applique au compte, ne le stocke JAMAIS.
       const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
       let generated = "";
       const randomBytes = new Uint8Array(8);
@@ -120,147 +149,153 @@ serve(async (req) => {
       for (let i = 0; i < 8; i++) {
         generated += chars[randomBytes[i] % chars.length];
       }
-      credentialPassword = generated;
-    }
-
-    // Sync auth email with apprenant email and update password only if requested
-    // (évite que l'email reçu affiche un email différent de celui du compte de connexion)
-    const { data: authUserData } = await supabaseAdmin.auth.admin.getUserById(apprenant.auth_user_id);
-    const currentAuthEmail = authUserData?.user?.email?.toLowerCase().trim();
-    const targetEmail = apprenant.email.toLowerCase().trim();
-    const updatePayload: { password?: string; email?: string; email_confirm?: boolean } = {};
-    if (mustGeneratePassword) {
-      updatePayload.password = credentialPassword;
-    }
-    if (currentAuthEmail && currentAuthEmail !== targetEmail) {
-      updatePayload.email = targetEmail;
-      updatePayload.email_confirm = true;
-    }
-    if (Object.keys(updatePayload).length > 0) {
-      const { error: updateErr } = await supabaseAdmin.auth.admin.updateUserById(
+      const { error: pwdErr } = await supabaseAdmin.auth.admin.updateUserById(
         apprenant.auth_user_id,
-        updatePayload
+        { password: generated }
       );
-
-      if (updateErr) {
+      if (pwdErr) {
         return new Response(
-          JSON.stringify({ error: updateErr.message }),
+          JSON.stringify({ error: pwdErr.message }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      // Mémoriser le nouveau mot de passe pour les futurs renvois
-      if (mustGeneratePassword) {
-        await supabaseAdmin
-          .from("apprenants")
-          .update({ mot_de_passe_plateforme: credentialPassword })
-          .eq("id", apprenant_id);
-        apprenant.mot_de_passe_plateforme = credentialPassword;
+      tempPassword = generated;
+    } else {
+      // Lien sécurisé : l'élève définit lui-même son mot de passe.
+      const { data: linkData, error: linkErr } = await supabaseAdmin.auth.admin.generateLink({
+        type: "recovery",
+        email: targetEmail,
+        options: { redirectTo: "https://insight-learn-manage.lovable.app/reset-password" },
+      });
+      if (linkErr || !linkData?.properties?.action_link) {
+        return new Response(
+          JSON.stringify({ error: linkErr?.message || "Impossible de générer le lien sécurisé" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
       }
+      resetLink = linkData.properties.action_link;
     }
+
+    const formationLabels: Record<string, string> = {
+      "vtc": "Formation VTC Présentiel",
+      "vtc-exam": "Formation VTC Présentiel (avec examen)",
+      "taxi": "Formation TAXI Présentiel",
+      "taxi-exam": "Formation TAXI Présentiel (avec examen)",
+      "passerelle-taxi": "Passerelle TAXI → VTC (TA)",
+      "vtc-elearning-1099": "Formation VTC E-learning",
+      "vtc-elearning": "Formation VTC E-learning (avec examen)",
+      "taxi-elearning": "Formation TAXI E-learning",
+      "passerelle-taxi-elearning": "Passerelle TAXI → VTC E-learning (TA)",
+      "passerelle-vtc-elearning": "Passerelle VTC → TAXI E-learning (VA)",
+      "vtc-cours-du-soir": "Formation VTC Cours du soir",
+      "vtc-e-presentiel": "Formation VTC E (Présentiel)",
+      "taxi-e-presentiel": "Formation TAXI E (Présentiel)",
+      "ta-e-presentiel": "Formation TA E (Présentiel)",
+      "continue-vtc": "Formation Continue VTC",
+      "continue-taxi": "Formation Continue TAXI",
+      "repassage-theorique": "Repassage examen théorique",
+      "repassage-pratique": "Repassage examen pratique",
+      "passage-pratique": "Passage examen pratique",
+    };
+    const rawFormation = apprenant.formation_choisie || "";
+    const formationParts = rawFormation.split(" + ").map((p: string) => formationLabels[p.trim()] || p.trim()).filter(Boolean);
+    const formation = formationParts.length > 0 ? formationParts.join(" + ") : "Non spécifiée";
+    const dateDebut = apprenant.date_debut_formation || apprenant.date_debut_cours_en_ligne || "Non définie";
+    const dateFin = apprenant.date_fin_cours_en_ligne || apprenant.date_fin_formation || "Non définie";
+    const prenom = apprenant.prenom || "";
+    const nom = apprenant.nom || "";
+    const coursUrl = "https://insight-learn-manage.lovable.app/cours-public";
+
+    const accessBlock = mode === "temp_password"
+      ? `
+        <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0; border-radius: 4px;">
+          <h3 style="color: #92400e; margin-top: 0;">🔐 Vos identifiants de connexion</h3>
+          <p><strong>Email :</strong> ${apprenant.email}</p>
+          <p><strong>Mot de passe temporaire :</strong> <code style="background: #e5e7eb; padding: 2px 8px; border-radius: 4px; font-size: 16px; letter-spacing: 1px;">${tempPassword}</code></p>
+          <p style="color: #92400e; font-size: 14px;">🔑 Pour votre sécurité, changez ce mot de passe dès votre première connexion (bouton « Changer le mot de passe » dans votre espace).</p>
+        </div>`
+      : `
+        <div style="background-color: #ecfdf5; border-left: 4px solid #10b981; padding: 15px; margin: 20px 0; border-radius: 4px;">
+          <h3 style="color: #065f46; margin-top: 0;">🔐 Définissez votre mot de passe</h3>
+          <p><strong>Votre email de connexion :</strong> ${apprenant.email}</p>
+          <p>Cliquez sur le bouton ci-dessous pour choisir vous-même votre mot de passe. Ce lien personnel est à usage unique et à durée limitée.</p>
+          <div style="text-align: center; margin: 20px 0;">
+            <a href="${resetLink}" style="background-color: #10b981; color: #ffffff; text-decoration: none; padding: 14px 30px; border-radius: 8px; font-size: 16px; font-weight: bold; display: inline-block;">
+              🔑 Définir mon mot de passe
+            </a>
+          </div>
+          <p style="color: #6b7280; font-size: 13px;">Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :<br>${resetLink}</p>
+        </div>`;
+
+    const emailBody = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background-color: #1a1a2e; padding: 20px; text-align: center;">
+          <h1 style="color: #ffffff; margin: 0;">🎓 FTRANSPORT</h1>
+          <p style="color: #e0e0e0; margin: 5px 0 0;">Centre de formation VTC & TAXI</p>
+        </div>
+
+        <div style="padding: 30px; background-color: #ffffff;">
+          <h2 style="color: #1a1a2e;">Bonjour ${prenom} ${nom},</h2>
+
+          <p>Voici vos accès à la plateforme de cours en ligne. 📚</p>
+
+          <div style="background-color: #f0f9ff; border-left: 4px solid #3b82f6; padding: 15px; margin: 20px 0; border-radius: 4px;">
+            <h3 style="color: #1e40af; margin-top: 0;">📋 Informations de formation</h3>
+            <p><strong>Formation :</strong> ${formation}</p>
+            <p><strong>Période des cours :</strong> du <strong>${dateDebut}</strong> au <strong>${dateFin}</strong></p>
+          </div>
+
+          ${accessBlock}
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${coursUrl}" style="background-color: #3b82f6; color: #ffffff; text-decoration: none; padding: 14px 30px; border-radius: 8px; font-size: 16px; font-weight: bold; display: inline-block;">
+              🚀 Accéder aux cours en ligne
+            </a>
+          </div>
+
+          <div style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 15px; margin: 20px 0; border-radius: 4px;">
+            <h3 style="color: #991b1b; margin-top: 0;">💰 Frais d'examen en cas d'échec (à votre charge) :</h3>
+            <p style="margin: 5px 0;">• <strong>Examen théorique :</strong> environ 240 €</p>
+            <p style="margin: 5px 0;">• <strong>Examen pratique :</strong> environ 200 €</p>
+          </div>
+
+          <p style="color: #6b7280; font-size: 14px;">⚠️ Nous vous recommandons de ne pas partager vos identifiants.</p>
+        </div>
+
+        <div style="background-color: #f3f4f6; padding: 20px; text-align: center; font-size: 13px; color: #6b7280;">
+          <p><strong>FTRANSPORT</strong> – Centre de formation VTC & TAXI</p>
+          <p>86 Route de Genas, 69003 Lyon</p>
+          <p>📞 04.28.29.60.91 | 📧 contact@ftransport.fr</p>
+        </div>
+      </div>
+    `;
 
     let emailSent = false;
     try {
-          const formationLabels: Record<string, string> = {
-            "vtc": "Formation VTC Présentiel",
-            "vtc-exam": "Formation VTC Présentiel (avec examen)",
-            "taxi": "Formation TAXI Présentiel",
-            "taxi-exam": "Formation TAXI Présentiel (avec examen)",
-            "passerelle-taxi": "Passerelle TAXI → VTC (TA)",
-            "vtc-elearning-1099": "Formation VTC E-learning",
-            "vtc-elearning": "Formation VTC E-learning (avec examen)",
-            "taxi-elearning": "Formation TAXI E-learning",
-            "passerelle-taxi-elearning": "Passerelle TAXI → VTC E-learning (TA)",
-            "passerelle-vtc-elearning": "Passerelle VTC → TAXI E-learning (VA)",
-            "vtc-cours-du-soir": "Formation VTC Cours du soir",
-            "vtc-e-presentiel": "Formation VTC E (Présentiel)",
-            "taxi-e-presentiel": "Formation TAXI E (Présentiel)",
-            "ta-e-presentiel": "Formation TA E (Présentiel)",
-            "continue-vtc": "Formation Continue VTC",
-            "continue-taxi": "Formation Continue TAXI",
-            "repassage-theorique": "Repassage examen théorique",
-            "repassage-pratique": "Repassage examen pratique",
-            "passage-pratique": "Passage examen pratique",
-          };
-          const rawFormation = apprenant.formation_choisie || "";
-          const formationParts = rawFormation.split(" + ").map((p: string) => formationLabels[p.trim()] || p.trim()).filter(Boolean);
-          const formation = formationParts.length > 0 ? formationParts.join(" + ") : "Non spécifiée";
-          const dateDebut = apprenant.date_debut_formation || apprenant.date_debut_cours_en_ligne || "Non définie";
-          const dateFin = apprenant.date_fin_cours_en_ligne || apprenant.date_fin_formation || "Non définie";
-          const prenom = apprenant.prenom || "";
-          const nom = apprenant.nom || "";
-          const coursUrl = "https://insight-learn-manage.lovable.app/cours-public";
-
-          const emailBody = `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <div style="background-color: #1a1a2e; padding: 20px; text-align: center;">
-                <h1 style="color: #ffffff; margin: 0;">🎓 FTRANSPORT</h1>
-                <p style="color: #e0e0e0; margin: 5px 0 0;">Centre de formation VTC & TAXI</p>
-              </div>
-              
-              <div style="padding: 30px; background-color: #ffffff;">
-                <h2 style="color: #1a1a2e;">Bonjour ${prenom} ${nom},</h2>
-                
-                <p>Voici vos identifiants de connexion mis à jour pour accéder à vos cours en ligne. 📚</p>
-                
-                <div style="background-color: #f0f9ff; border-left: 4px solid #3b82f6; padding: 15px; margin: 20px 0; border-radius: 4px;">
-                  <h3 style="color: #1e40af; margin-top: 0;">📋 Informations de formation</h3>
-                  <p><strong>Formation :</strong> ${formation}</p>
-                  <p><strong>Période des cours :</strong> du <strong>${dateDebut}</strong> au <strong>${dateFin}</strong></p>
-                </div>
-                
-                <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0; border-radius: 4px;">
-                  <h3 style="color: #92400e; margin-top: 0;">🔐 Vos identifiants de connexion</h3>
-                  <p><strong>Email :</strong> ${apprenant.email}</p>
-                  <p><strong>${reset_password ? "Nouveau mot de passe" : "Mot de passe"} :</strong> <code style="background: #e5e7eb; padding: 2px 8px; border-radius: 4px; font-size: 16px; letter-spacing: 1px;">${credentialPassword}</code></p>
-                </div>
-
-                <p style="color: #6b7280; font-size: 14px;">🔑 Vous pouvez modifier votre mot de passe à tout moment depuis votre espace apprenant.</p>
-                
-                <div style="text-align: center; margin: 30px 0;">
-                  <a href="${coursUrl}" style="background-color: #3b82f6; color: #ffffff; text-decoration: none; padding: 14px 30px; border-radius: 8px; font-size: 16px; font-weight: bold; display: inline-block;">
-                    🚀 Accéder aux cours en ligne
-                  </a>
-                </div>
-                
-                <div style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 15px; margin: 20px 0; border-radius: 4px;">
-                  <h3 style="color: #991b1b; margin-top: 0;">💰 Frais d'examen en cas d'échec (à votre charge) :</h3>
-                  <p style="margin: 5px 0;">• <strong>Examen théorique :</strong> environ 240 €</p>
-                  <p style="margin: 5px 0;">• <strong>Examen pratique :</strong> environ 200 €</p>
-                </div>
-
-                <p style="color: #6b7280; font-size: 14px;">⚠️ Nous vous recommandons de ne pas partager vos identifiants.</p>
-              </div>
-              
-              <div style="background-color: #f3f4f6; padding: 20px; text-align: center; font-size: 13px; color: #6b7280;">
-                <p><strong>FTRANSPORT</strong> – Centre de formation VTC & TAXI</p>
-                <p>86 Route de Genas, 69003 Lyon</p>
-                <p>📞 04.28.29.60.91 | 📧 contact@ftransport.fr</p>
-              </div>
-            </div>
-          `;
-
-          const senderEmail = "contact@ftransport.fr";
-          const emailSubject = "Votre accès à la plateforme FTRANSPORT";
-          await sendBrandedEmail({
-            to: apprenant.email,
-            subject: emailSubject,
-            html: emailBody,
-            replyTo: senderEmail,
-          });
-          emailSent = true;
-          await supabaseAdmin.from("emails").insert({
-              apprenant_id: apprenant_id,
-              subject: emailSubject,
-              body_preview: `Bonjour ${prenom}, voici vos identifiants de connexion mis à jour.`,
-              body_html: emailBody,
-              sender_email: senderEmail,
-              sender_name: "FTRANSPORT",
-              recipients: [apprenant.email],
-              type: "sent",
-              is_read: true,
-              has_attachments: false,
-              sent_at: new Date().toISOString(),
-          });
+      const senderEmail = "contact@ftransport.fr";
+      const emailSubject = mode === "temp_password"
+        ? "Votre accès à la plateforme FTRANSPORT"
+        : "🔑 Définissez votre mot de passe FTRANSPORT";
+      await sendBrandedEmail({
+        to: apprenant.email,
+        subject: emailSubject,
+        html: emailBody,
+        replyTo: senderEmail,
+      });
+      emailSent = true;
+      await supabaseAdmin.from("emails").insert({
+        apprenant_id: apprenant_id,
+        subject: emailSubject,
+        body_preview: `Bonjour ${prenom}, voici vos accès à la plateforme de cours en ligne.`,
+        body_html: emailBody,
+        sender_email: senderEmail,
+        sender_name: "FTRANSPORT",
+        recipients: [apprenant.email],
+        type: "sent",
+        is_read: true,
+        has_attachments: false,
+        sent_at: new Date().toISOString(),
+      });
     } catch (emailErr) {
       console.error("Email error:", emailErr);
     }
@@ -268,17 +303,17 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        password: mustGeneratePassword ? credentialPassword : undefined,
-        reset_password,
+        mode,
+        password: tempPassword || undefined,
         email: apprenant.email,
         emailSent,
         message: emailSent
-          ? mustGeneratePassword
-            ? `Identifiants renvoyés à ${apprenant.email} avec le mot de passe affiché`
-            : `Identifiants renvoyés à ${apprenant.email} avec le mot de passe affiché`
-          : mustGeneratePassword
-            ? `Mot de passe réinitialisé mais l'email n'a pas pu être envoyé`
-            : `Rappel non envoyé`,
+          ? mode === "temp_password"
+            ? `Mot de passe temporaire envoyé à ${apprenant.email}`
+            : `Lien sécurisé envoyé à ${apprenant.email}`
+          : mode === "temp_password"
+            ? `Mot de passe temporaire appliqué mais l'email n'a pas pu être envoyé`
+            : `L'email n'a pas pu être envoyé`,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
