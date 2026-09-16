@@ -1,34 +1,42 @@
-# Fiabiliser le mot de passe affiché dans la fiche apprenant
+# Sécuriser les mots de passe apprenants et fiabiliser le renvoi d'identifiants
 
-## Ce que disent les journaux (vérifié, rien modifié)
+## 1. Résultat de la vérification demandée (aucune donnée modifiée)
 
-- Le compte de Yasin n'a **jamais** utilisé « Mot de passe oublié » : la date d'envoi d'un lien de récupération est vide sur son compte depuis sa création le 7 septembre.
-- Le compte n'a jamais été suspendu, ni désactivé, ni supprimé.
-- Le journal détaillé des connexions n'est conservé que quelques minutes côté hébergeur, et l'historique d'audit du service d'authentification est vide : il est donc **impossible de prouver dans les journaux** le clic exact sur « Changer le mot de passe ». Par élimination, le seul chemin restant est ce bouton, présent dans l'espace élève : il modifie le mot de passe du compte sans mettre à jour celui affiché dans la fiche.
+- La colonne `apprenants.mot_de_passe_plateforme` contient bien des mots de passe **lisibles en clair** : 65 fiches renseignées sur 3 275, toutes de 8 caractères, aucune sous forme chiffrée. Aucun mot de passe n'est affiché ici.
+- Le compte de Yasin n'a **jamais** reçu de lien « Mot de passe oublié » (date d'envoi de récupération vide depuis la création du compte le 7 septembre).
+- Les journaux d'authentification ne sont conservés que quelques minutes et l'historique d'audit est vide : **il est impossible de prouver quel geste a provoqué le changement**. La désynchronisation entre le mot de passe réel du compte et celui mémorisé dans la fiche est certaine ; le bouton « Changer le mot de passe » de l'espace élève en est la **cause probable**, pas une certitude.
 
-Conclusion : le défaut est structurel, il concerne tous les élèves, et il doit être corrigé quel que soit le chemin utilisé.
+Conclusion : défaut structurel confirmé, et stockage en clair à supprimer plutôt qu'à consolider.
 
-## Ce que je vais modifier
+## 2. Architecture proposée
 
-1. **Un seul circuit pour tout changement de mot de passe côté élève.**
-   Les trois endroits où un élève peut changer son mot de passe lui-même (bouton dans l'espace cours, bouton sur la page de connexion élève, page atteinte depuis « Mot de passe oublié ») passeront par un même traitement côté serveur qui met à jour **en même temps** le mot de passe du compte et celui mémorisé dans sa fiche. Les deux valeurs ne peuvent donc plus diverger.
+Principe : **le mot de passe réel n'existe plus que dans le service d'authentification**. Le CRM ne le connaît plus.
 
-2. **Un indicateur « mot de passe non vérifié » dans la fiche.**
-   Nouvelle information ajoutée à la fiche apprenant, vide pour tout le monde au départ. Elle passe à « non fiable » uniquement si un changement se produit hors de ce circuit (cas résiduel).
+1. **Arrêt de la mémorisation du mot de passe.**
+   Plus aucun mot de passe n'est écrit dans la fiche apprenant, ni à la création de compte, ni à l'envoi automatique, ni à la réinitialisation, ni quand l'élève le change lui-même. La colonne actuelle est vidée (contenu effacé, colonne conservée pour ne rien casser).
 
-3. **Le bouton « Renvoyer les identifiants » ne peut plus envoyer une valeur périmée.**
-   Si l'indicateur signale une valeur non fiable, le renvoi simple est bloqué et le bouton propose la réinitialisation (nouveau mot de passe généré, appliqué au compte, enregistré dans la fiche et envoyé). Dans tous les autres cas, le comportement actuel reste identique.
+2. **Deux façons d'envoyer les accès, au choix de l'administrateur :**
+   - **Lien sécurisé** (recommandé) : l'élève reçoit un lien personnel à durée limitée pour définir lui-même son mot de passe. Personne d'autre ne le connaît.
+   - **Mot de passe temporaire** : généré, affiché **une seule fois** à l'administrateur au moment de l'envoi, envoyé à l'élève, jamais stocké. L'élève est invité à le changer à sa première connexion.
 
-## Garanties pour les comptes existants
+3. **Le bouton « Renvoyer les identifiants » ne peut plus envoyer une valeur périmée**, puisqu'il n'a plus aucune ancienne valeur à envoyer : il propose soit le lien sécurisé, soit un nouveau mot de passe temporaire.
 
-- Aucun mot de passe existant n'est modifié : la correction ne touche que les futurs changements.
-- Aucune donnée pédagogique n'est concernée : réponses, notes, tentatives, résultats, progression, modules, examens et historiques restent intacts.
-- La nouvelle information de fiche est ajoutée avec une valeur neutre par défaut ; aucune ligne existante n'est réécrite.
-- L'opération n°5 n'est pas touchée.
+4. **Le changement de mot de passe côté élève** (espace cours, page de connexion élève, lien de réinitialisation) reste entièrement géré par le service d'authentification : plus rien à synchroniser, donc plus de désynchronisation possible.
 
-## Détail technique
+## 3. Garanties
 
-- Nouvelle fonction serveur `update-own-password` (JWT élève obligatoire) : `auth.updateUser` + mise à jour de `apprenants.mot_de_passe_plateforme` limitée à l'apprenant du jeton, via clé de service.
-- Appels remplacés dans `src/pages/CoursPublic.tsx` (ChangePasswordDialog), `src/components/cours-en-ligne/StudentLogin.tsx`, `src/pages/ResetPassword.tsx`.
-- Migration : `alter table public.apprenants add column mot_de_passe_plateforme_verifie boolean not null default true;` (valeur neutre, aucune réécriture des lignes existantes).
-- `supabase/functions/resend-credentials/index.ts` : si `mot_de_passe_plateforme_verifie = false` et `reset_password = false`, renvoi refusé avec un message clair côté CRM ; `ApprenantDetailPage.tsx` et `SessionDetail.tsx` proposent alors la réinitialisation.
+- **Aucun mot de passe existant n'est changé** : les élèves continuent de se connecter normalement avec leur mot de passe actuel. Seule la copie stockée dans le CRM est effacée.
+- Aucune donnée pédagogique touchée : réponses, notes, tentatives, résultats, progression, modules, examens, historiques.
+- Aucune fiche apprenant, aucun accès, aucune session modifiés.
+- L'opération n°5 reste intouchée.
+- Seule conséquence visible : l'administrateur ne verra plus le mot de passe d'un élève dans sa fiche ; il enverra à la place un lien ou un mot de passe temporaire.
+
+## 4. Détail technique
+
+- `supabase/functions/resend-credentials/index.ts` : deux modes (`mode: "reset_link"` via `auth.admin.generateLink({ type: "recovery" })`, `mode: "temp_password"` via `updateUserById` + envoi immédiat) ; suppression de toute écriture dans `mot_de_passe_plateforme` ; le mot de passe n'est plus jamais relu depuis la base.
+- `supabase/functions/auto-send-credentials/index.ts` : suppression de l'écriture `mot_de_passe_plateforme` (lignes 264-267).
+- `src/components/crm/ApprenantDetailPage.tsx` et `src/components/sessions/SessionDetail.tsx` : remplacement de la section « Voir / réinitialiser le mot de passe » par « Envoyer un lien de définition du mot de passe » et « Générer un mot de passe temporaire » (affiché une fois, non persisté).
+- `src/pages/CoursPublic.tsx`, `src/components/cours-en-ligne/StudentLogin.tsx`, `src/pages/ResetPassword.tsx` : inchangés (déjà corrects une fois la copie CRM supprimée).
+- Nettoyage des 65 valeurs en clair : exécuté seulement après votre validation, via une mise à jour ciblée de cette seule colonne (`update public.apprenants set mot_de_passe_plateforme = null where mot_de_passe_plateforme is not null`), aucun autre champ touché.
+
+Rien n'est codé ni exécuté avant votre validation.
