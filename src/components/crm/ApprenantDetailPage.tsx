@@ -289,6 +289,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
   const [accountEndDate, setAccountEndDate] = useState("");
   const [accountExtraModules, setAccountExtraModules] = useState<number[]>([]);
   const [generatedPassword, setGeneratedPassword] = useState("");
+  const [generatedPasswordEmailFailed, setGeneratedPasswordEmailFailed] = useState(false);
   const [creatingAccount, setCreatingAccount] = useState(false);
   const [resendingCredentials, setResendingCredentials] = useState(false);
 
@@ -438,6 +439,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
     setAccountEndDate(((apprenant as any)?.date_fin_cours_en_ligne as string) || ((apprenant as any)?.date_fin_formation as string) || "");
     setAccountExtraModules([]);
     setGeneratedPassword("");
+    setGeneratedPasswordEmailFailed(false);
   }, [apprenant, inferredAccountFormationId, showCreateDialog]);
 
   if (isLoading) {
@@ -793,12 +795,14 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
                           body: { apprenant_id: apprenantId, mode: "temp_password" },
                         });
                         if (error) throw error;
-                        if (!(data as any)?.emailSent) throw new Error((data as any)?.message || "Envoi email impossible");
                         const newPassword = String((data as any)?.password || "");
                         if (!newPassword) throw new Error("Le nouveau mot de passe n'a pas été retourné");
                         setGeneratedPassword(newPassword);
+                        const sent = Boolean((data as any)?.emailSent);
+                        setGeneratedPasswordEmailFailed(!sent);
                         queryClient.invalidateQueries({ queryKey: ["apprenant-detail", apprenantId] });
-                        toast.success("Mot de passe temporaire généré et envoyé");
+                        if (sent) toast.success("Mot de passe temporaire généré et envoyé");
+                        else toast.error("Email non envoyé — le mot de passe temporaire est affiché à l'écran");
                       } catch (err: any) {
                         toast.error(err?.message || "Erreur lors de l'envoi");
                       } finally {
@@ -815,6 +819,11 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
               {generatedPassword && (
                 <div className="bg-muted p-3 rounded-md space-y-2">
                   <p className="text-sm font-medium">✅ Mot de passe temporaire appliqué (affiché une seule fois, non mémorisé) :</p>
+                  {generatedPasswordEmailFailed && (
+                    <p className="text-xs font-medium text-destructive border border-destructive/40 bg-destructive/10 rounded p-2">
+                      L'email n'a pas pu être envoyé. Le mot de passe a néanmoins été modifié. Communiquez ce mot de passe temporaire à l'apprenant ou envoyez-lui un lien sécurisé. Ce mot de passe ne sera plus affiché après fermeture de cette fenêtre.
+                    </p>
+                  )}
                   <div className="flex items-center gap-2">
                     <code className="text-sm bg-background px-2 py-1 rounded border">{generatedPassword}</code>
                     <Button variant="ghost" size="sm" onClick={() => { navigator.clipboard.writeText(generatedPassword); toast.success("Copié !"); }}>
@@ -861,12 +870,14 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
                           body: { apprenant_id: apprenantId, mode: "temp_password" },
                         });
                         if (error) throw error;
-                        if (!(data as any)?.emailSent) throw new Error((data as any)?.message || "Envoi email impossible");
                         const newPassword = String((data as any)?.password || "");
                         if (!newPassword) throw new Error("Le nouveau mot de passe n'a pas été retourné");
                         setGeneratedPassword(newPassword);
+                        const sent = Boolean((data as any)?.emailSent);
+                        setGeneratedPasswordEmailFailed(!sent);
                         queryClient.invalidateQueries({ queryKey: ["apprenant-detail", apprenantId] });
-                        toast.success("Mot de passe temporaire généré et envoyé");
+                        if (sent) toast.success("Mot de passe temporaire généré et envoyé");
+                        else toast.error("Email non envoyé — le mot de passe temporaire est affiché à l'écran");
                       } catch (err: any) {
                         toast.error(err?.message || "Erreur lors de l'envoi");
                       } finally {
