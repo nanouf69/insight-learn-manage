@@ -294,6 +294,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
   const [generatedPasswordEmailFailed, setGeneratedPasswordEmailFailed] = useState(false);
   const [creatingAccount, setCreatingAccount] = useState(false);
   const [resendingCredentials, setResendingCredentials] = useState(false);
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
 
   const normalizeTypeApprenant = (val: string | undefined | null): string => {
     if (!val) return "";
@@ -531,7 +532,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
                 variant="secondary"
                 size="sm"
                 disabled={resendingCredentials}
-                onClick={() => setShowCreateDialog(true)}
+                onClick={() => { setGeneratedPassword(""); setGeneratedPasswordEmailFailed(false); setShowPasswordDialog(true); }}
               >
                 {resendingCredentials ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <KeyRound className="w-4 h-4 mr-2" />}
                   Voir / réinitialiser le mot de passe
@@ -672,6 +673,100 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Password Dialog */}
+      {showPasswordDialog && (
+        <Dialog open={showPasswordDialog} onOpenChange={(o) => { setShowPasswordDialog(o); if (!o) { setGeneratedPassword(""); setGeneratedPasswordEmailFailed(false); } }}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <KeyRound className="w-5 h-5" />
+                Mot de passe de {apprenant.prenom} {apprenant.nom}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3">
+              {!generatedPassword && (
+                <>
+                  <p className="text-xs text-muted-foreground">
+                    Le mot de passe réel n'est plus mémorisé dans le CRM. Envoyez à l'apprenant un lien sécurisé (recommandé) pour qu'il définisse lui-même son mot de passe, ou générez un mot de passe temporaire.
+                  </p>
+                  <Button
+                    className="w-full"
+                    disabled={resendingCredentials}
+                    onClick={async () => {
+                      setResendingCredentials(true);
+                      try {
+                        const { data, error } = await supabase.functions.invoke("resend-credentials", {
+                          body: { apprenant_id: apprenantId, mode: "reset_link" },
+                        });
+                        if (error) throw new Error(await readEdgeFunctionError(error));
+                        if (!(data as any)?.emailSent) throw new Error((data as any)?.message || "Envoi email impossible");
+                        toast.success("Lien sécurisé envoyé par email à l'apprenant");
+                      } catch (err: any) {
+                        toast.error(err?.message || "Erreur lors de l'envoi");
+                      } finally {
+                        setResendingCredentials(false);
+                      }
+                    }}
+                  >
+                    {resendingCredentials ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
+                    Envoyer un lien de définition du mot de passe (recommandé)
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    className="w-full"
+                    disabled={resendingCredentials}
+                    onClick={async () => {
+                      if (!window.confirm("Cette action remplacera immédiatement le mot de passe actuel de cet apprenant. Continuer ?")) return;
+                      setResendingCredentials(true);
+                      try {
+                        const { data, error } = await supabase.functions.invoke("resend-credentials", {
+                          body: { apprenant_id: apprenantId, mode: "temp_password" },
+                        });
+                        if (error) throw new Error(await readEdgeFunctionError(error));
+                        const newPassword = String((data as any)?.password || "");
+                        if (!newPassword) throw new Error("Le nouveau mot de passe n'a pas été retourné");
+                        setGeneratedPassword(newPassword);
+                        const sent = Boolean((data as any)?.emailSent);
+                        setGeneratedPasswordEmailFailed(!sent);
+                        if (sent) toast.success("Mot de passe temporaire généré et envoyé");
+                        else toast.error("Email non envoyé — le mot de passe temporaire est affiché à l'écran");
+                      } catch (err: any) {
+                        toast.error(err?.message || "Erreur lors de l'envoi");
+                      } finally {
+                        setResendingCredentials(false);
+                      }
+                    }}
+                  >
+                    {resendingCredentials ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <KeyRound className="w-4 h-4 mr-2" />}
+                    Générer un mot de passe temporaire
+                  </Button>
+                </>
+              )}
+              {generatedPassword && (
+                <div className="bg-muted p-3 rounded-md space-y-2">
+                  <p className="text-sm font-medium">✅ Mot de passe temporaire appliqué (affiché une seule fois, non mémorisé) :</p>
+                  {generatedPasswordEmailFailed && (
+                    <p className="text-xs font-medium text-destructive border border-destructive/40 bg-destructive/10 rounded p-2">
+                      L'email n'a pas pu être envoyé. Le mot de passe a néanmoins été modifié. Communiquez ce mot de passe temporaire à l'apprenant ou envoyez-lui un lien sécurisé. Ce mot de passe ne sera plus affiché après fermeture de cette fenêtre.
+                    </p>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <code className="text-sm bg-background px-2 py-1 rounded border">{generatedPassword}</code>
+                    <Button variant="ghost" size="sm" onClick={() => { navigator.clipboard.writeText(generatedPassword); toast.success("Copié !"); }}>
+                      <Copy className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowPasswordDialog(false)}>Fermer</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
 
       {/* Create Account Dialog */}
       {showCreateDialog && (
