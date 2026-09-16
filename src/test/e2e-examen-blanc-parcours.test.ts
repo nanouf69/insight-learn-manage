@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect } from "vitest";
 import { isQrcPendingCorrection } from "@/components/cours-en-ligne/exam-helpers";
 
