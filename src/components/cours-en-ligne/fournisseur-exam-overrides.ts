@@ -111,8 +111,15 @@ export function applyFournisseurOverridesToExamens(
 
       const original = matiere.questions[qIndex] as AdminEditableQuestion;
       const adminEditedAt = original._editedAt || (original.manually_edited ? new Date(0).toISOString() : undefined);
-      const winner = resolveOverrideConflict(adminEditedAt, ov.updated_at ?? "");
+      const winner = resolveOverrideConflict(adminEditedAt, ov.updated_at ?? "", adminFallbackAt);
 
+      if (winner === "conflit") {
+        console.warn(
+          "[Conflit Admin/Fournisseur] Impossible de déterminer la version la plus récente — aucune version écrasée.",
+          { examId: target.examId, quizId: ov.quiz_id, questionId: ov.question_id },
+        );
+        continue;
+      }
       if (winner === "admin") continue;
 
       if (ov.enonce === "__DELETED__") {
