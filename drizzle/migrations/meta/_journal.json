@@ -127,6 +127,13 @@
       "when": 1789566135710,
       "tag": "0017_exam_timer_owner_check",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1789566166328,
+      "tag": "0018_exam_timer_clock_timestamp",
+      "breakpoints": true
     }
   ]
 }
