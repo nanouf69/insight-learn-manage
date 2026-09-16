@@ -4426,6 +4426,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
         if (!data || data.length === 0) return;
 
+        await loadAdminEditJournal(Number(module.id));
         const overrideMap = buildTrainerOverrideMap(data);
 
         setModuleData((prev) => {
@@ -4491,6 +4492,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         return;
       }
 
+      await loadAdminEditJournal(Number(module.id));
       setTrainerOverrideWarnings(buildTrainerOverrideMap(data));
     }
 
@@ -5142,6 +5144,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
       if (!data || data.length === 0) return;
 
+      await loadAdminEditJournal(Number(module.id));
       const overrideMap = buildTrainerOverrideMap(data);
 
       setModuleData((prev) => {
