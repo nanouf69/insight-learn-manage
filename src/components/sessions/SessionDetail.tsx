@@ -1643,6 +1643,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     setAccountEndDate(apprenant.date_fin_cours_en_ligne || apprenant.date_fin_formation || "");
     setAccountExtraModules([]);
     setGeneratedPassword("");
+    setGeneratedPasswordEmailFailed(false);
   };
 
   const handleCreateAccount = async () => {

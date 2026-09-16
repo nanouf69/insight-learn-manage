@@ -439,6 +439,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
     setAccountEndDate(((apprenant as any)?.date_fin_cours_en_ligne as string) || ((apprenant as any)?.date_fin_formation as string) || "");
     setAccountExtraModules([]);
     setGeneratedPassword("");
+    setGeneratedPasswordEmailFailed(false);
   }, [apprenant, inferredAccountFormationId, showCreateDialog]);
 
   if (isLoading) {
