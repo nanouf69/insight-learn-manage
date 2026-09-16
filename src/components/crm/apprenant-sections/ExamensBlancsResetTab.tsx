@@ -63,6 +63,8 @@ interface ExamenResult {
   completed_at: string;
   reponses?: Record<string, any> | null;
   correctionsIA?: any;
+  /** Contenu brut `details` (contient le snapshot figé de la tentative). */
+  details?: any;
 }
 
 interface ExamenGroup {
