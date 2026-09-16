@@ -26,6 +26,7 @@ import {
 import {
   computeMoyenneExamen,
   computeMatiereScore,
+  resolveMatiereForScoring,
 } from "@/components/cours-en-ligne/examens-blancs-scoring";
 import {
   buildMatiereLookupKeys,
