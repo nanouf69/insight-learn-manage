@@ -22,6 +22,8 @@ import {
   getQuestionImageValue,
 } from "./examens-blancs-utils";
 import { computeMoyenneExamen, computeResultatMatiereScore } from "./examens-blancs-scoring";
+import { isQrcCorrectionValidated } from "./exam-helpers";
+
 
 function EcranResultats({
   examen,
@@ -725,18 +727,28 @@ function EcranResultats({
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <div className="text-right">
-                        <span className="text-2xl font-bold" style={{ color: r.admis ? '#00B4D8' : '#ef4444' }}>
-                          {noteSur20.toFixed(1)} / 20
-                        </span>
-                        <p className="text-xs text-muted-foreground">{noteObtenueSafe} / {safeMaxPoints} pts</p>
-                      </div>
-                      {r.admis ? (
-                        <CheckCircle2 className="w-5 h-5" style={{ color: '#00B4D8' }} />
+                      {matieresEnAttenteQrc.has(r.matiereId) && !isAdmin ? (
+                        <div className="text-right">
+                          <span className="text-base font-bold text-amber-600">⏳ En attente de correction</span>
+                          <p className="text-xs text-muted-foreground">Note publiée après correction des QRC</p>
+                        </div>
                       ) : (
-                        <XCircle className="w-5 h-5 text-red-500" />
+                        <>
+                          <div className="text-right">
+                            <span className="text-2xl font-bold" style={{ color: r.admis ? '#00B4D8' : '#ef4444' }}>
+                              {noteSur20.toFixed(1)} / 20
+                            </span>
+                            <p className="text-xs text-muted-foreground">{noteObtenueSafe} / {safeMaxPoints} pts</p>
+                          </div>
+                          {r.admis ? (
+                            <CheckCircle2 className="w-5 h-5" style={{ color: '#00B4D8' }} />
+                          ) : (
+                            <XCircle className="w-5 h-5 text-red-500" />
+                          )}
+                        </>
                       )}
                       <ChevronRight className={`w-4 h-4 text-muted-foreground transition-transform ${isExpanded ? "rotate-90" : ""}`} />
+
                     </div>
                   </div>
                   <Progress
