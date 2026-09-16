@@ -143,6 +143,8 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
               const moyenne = bilanExamen?.moyenne ?? 0;
               const isReussi = bilanExamen?.admisGlobal ?? moyenne >= 10;
               const bilan = bilans[quizId];
+              // QRC non encore corrigées manuellement : pas de statut définitif.
+              const enAttenteCorrection = exam.matieres.some((m: any) => isQrcPendingCorrection(m?.details));
 
               return (
                 <div key={quizId} className="border rounded-lg p-4 space-y-3">
