@@ -29,7 +29,7 @@ import { recoverCorruptedScoreRow, isCorruptedZeroRow, persistExamSession as per
 import { EcranSelection } from "./ExamenBlancsListe";
 import { PassageMatiere, TransitionMatiere } from "./ExamenBlancsPassage";
 import { EcranResultats, RevisionFausses } from "./ExamenBlancsResultats";
-import { computeMatiereScore } from "./examens-blancs-scoring";
+import { computeMatiereScore, resolveMatiereForScoring, MATIERE_SNAPSHOT_VERSION } from "./examens-blancs-scoring";
 
 /**
  * Retrouve la version ORIGINALE (source statique, jamais éditée) d'une matière
