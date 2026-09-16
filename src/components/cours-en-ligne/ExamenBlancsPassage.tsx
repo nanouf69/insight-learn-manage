@@ -797,7 +797,8 @@ function PassageMatiere({
                       : isAnswered
                         ? "bg-green-500 text-white border border-green-600 hover:bg-green-600"
                         : "bg-red-500 text-white border border-red-600 hover:bg-red-600"
-                  }`}
+                  } ${!isAnswered && showUnansweredAlert ? "ring-2 ring-red-600 ring-offset-1 animate-pulse" : ""}`}
+
                   title={isAnswered ? `Q${i + 1} — répondue ✓` : `Q${i + 1} — non répondue ✗`}
                 >
                   {i + 1}
