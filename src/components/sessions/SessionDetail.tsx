@@ -6630,6 +6630,50 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                 </Button>
               </div>
             )}
+
+            {accountDialogApprenant.auth_user_id && !generatedPassword && (
+              <div className="bg-muted p-3 rounded-md space-y-2">
+                <p className="text-sm font-medium">🔑 Mot de passe de connexion</p>
+                {accountDialogApprenant.mot_de_passe_plateforme && (
+                  <div className="flex items-center gap-2">
+                    <code className="text-sm bg-background px-2 py-1 rounded border">{accountDialogApprenant.mot_de_passe_plateforme}</code>
+                    <Button variant="ghost" size="sm" onClick={() => { navigator.clipboard.writeText(accountDialogApprenant.mot_de_passe_plateforme); toast({ title: "Copié !" }); }}>
+                      <Copy className="w-4 h-4" />
+                    </Button>
+                  </div>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  Si l'apprenant n'arrive plus à se connecter, générez un nouveau mot de passe : il est appliqué au compte, enregistré ici et envoyé par email.
+                </p>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="w-full"
+                  disabled={resendingCredentials}
+                  onClick={async () => {
+                    setResendingCredentials(true);
+                    try {
+                      const { data, error } = await supabase.functions.invoke("resend-credentials", {
+                        body: { apprenant_id: accountDialogApprenant.id, reset_password: true },
+                      });
+                      if (error) throw error;
+                      if (!(data as any)?.emailSent) throw new Error((data as any)?.message || "Envoi email impossible");
+                      queryClient.invalidateQueries({ queryKey: ['identifiants-sent'] });
+                      queryClient.invalidateQueries({ queryKey: ['session-apprenants'] });
+                      toast({ title: "Nouveau mot de passe généré et envoyé" });
+                      setAccountDialogApprenant(null);
+                    } catch (e: any) {
+                      toast({ title: "Erreur", description: e?.message || "Erreur lors de l'envoi", variant: "destructive" });
+                    } finally {
+                      setResendingCredentials(false);
+                    }
+                  }}
+                >
+                  {resendingCredentials ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <KeyRound className="w-4 h-4 mr-2" />}
+                  Réinitialiser le mot de passe et renvoyer
+                </Button>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAccountDialogApprenant(null)}>Annuler</Button>
