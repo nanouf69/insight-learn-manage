@@ -745,9 +745,15 @@ export default function ExamensBlancsPage({
       return questionsSafe.reduce((acc, q) => acc + getPointsParQuestion(matiere.id, q?.type || "QCM", matiere), 0);
     };
 
-    const results = examReference.matieres.map((matiere): ResultatMatiere => {
-      const expectedKeys = buildMatiereLookupKeys(matiere.id, matiere.nom);
+    // POINT 6 — version FIGÉE utilisée pour l'affichage des tentatives déjà passées.
+    const frozenMatieres: Matiere[] = [];
+
+    const results = examReference.matieres.map((matiereCourante): ResultatMatiere => {
+      const expectedKeys = buildMatiereLookupKeys(matiereCourante.id, matiereCourante.nom);
       const row = rowsWithLookup.find((entry) => shareLookupKey(entry.lookupKeys, expectedKeys))?.row;
+      // Tentative figée : on relit questions/choix/bonnes réponses/barème d'origine.
+      const matiere = resolveMatiereForScoring(matiereCourante, row?.details);
+      frozenMatieres.push(matiere);
       const safeNoteSur = matiere.noteSur || 20;
       const computedMax = calculerMaxPoints(matiere);
 
