@@ -420,13 +420,14 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
                 lookupKeys: buildMatiereLookupKeys(r.matiere_id, r.matiere_nom),
                 reponses: r.reponses ?? null,
                 correctionsIA: r.correctionsIA ?? null,
+                details: (r as any).details ?? null,
               }));
               const bilanExamen = examenDef
                 ? computeMoyenneExamen(examenDef, (m) => {
                     const row = findScoreForMatiere(scoresWithLookup as any, m);
                     if (!row) return null;
                     return computeMatiereScore(
-                      m,
+                      resolveMatiereForScoring(m, (row as any).details),
                       (row as any).reponses,
                       row.score_obtenu,
                       row.score_max,
