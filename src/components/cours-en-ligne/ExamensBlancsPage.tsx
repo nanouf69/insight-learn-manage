@@ -691,7 +691,14 @@ export default function ExamensBlancsPage({
             score_max: safeMaxPoints,
             note_sur_20: noteSur20,
             reussi: admis,
-            details: { reponses },
+            details: questionsSafe.some((q) => String(q?.type || "").toUpperCase() === "QRC")
+              ? {
+                  reponses,
+                  qrc_pending_correction: true,
+                  questions: questionsSafe.map((q) => ({ questionId: q.id, type: q?.type || "QCM", enonce: q.enonce || "" })),
+                }
+              : { reponses },
+
             tentative: 1,
           }] as any, { onConflict: "apprenant_id,quiz_id,matiere_id,tentative" } as any);
 
