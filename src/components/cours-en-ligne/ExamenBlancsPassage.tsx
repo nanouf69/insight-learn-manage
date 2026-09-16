@@ -599,8 +599,22 @@ function PassageMatiere({
         );
       })()}
 
+      {/* Alerte questions sans réponse */}
+      {showUnansweredAlert && unansweredIndexes.length > 0 && (
+        <div className="rounded-lg border-2 border-red-300 bg-red-50 px-4 py-3 flex items-start gap-2">
+          <AlertTriangle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+          <div className="text-sm text-red-700">
+            <p className="font-bold">Veuillez répondre à toutes les questions avant de terminer la matière.</p>
+            <p className="mt-1 text-xs">
+              Questions sans réponse : {unansweredIndexes.map(i => `Q${i + 1}`).join(", ")}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Question */}
       <Card className="border-2 border-primary/10">
+
         <CardContent className="pt-5 space-y-4">
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-start gap-3 flex-1">
