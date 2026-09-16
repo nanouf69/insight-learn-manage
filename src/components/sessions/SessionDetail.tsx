@@ -76,6 +76,8 @@ import { filterAndSortApprenants } from "@/lib/apprenantSearch";
 import { SmallTransfersTable } from "@/components/dashboard/SmallTransfersTable";
 import GrilleNotationConduite from "./GrilleNotationConduite";
 import { fetchPlanningDaySlotsForDates, normalizePratiqueCreneau, resolvePratiqueSlotParts } from "@/lib/pratiqueSlots";
+import { readEdgeFunctionError } from "@/lib/edgeFunctionError";
+
 
 interface Session {
   id: string;
