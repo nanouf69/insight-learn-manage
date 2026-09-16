@@ -282,11 +282,9 @@ function PassageMatiere({
   const isQuestionAnswered = (q: Question | null | undefined): boolean => {
     if (!q || !q.id) return false;
     const rep = reponses[q.id] ?? reponses[String(q.id)];
-    if (q?.type === "QCM") return Array.isArray(rep) && rep.length > 0;
-    if (q?.type === "QRC") return typeof rep === "string" && rep.trim().length > 0;
-    // Default: check if any value exists
-    return rep !== undefined && rep !== null && rep !== "";
+    return isReponseFournie(q?.type, rep);
   };
+
 
   const allAnswered = questionsSafe.every(q => isQuestionAnswered(q));
   const unansweredIndexes = questionsSafe
