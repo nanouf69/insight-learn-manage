@@ -294,6 +294,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
   const [generatedPasswordEmailFailed, setGeneratedPasswordEmailFailed] = useState(false);
   const [creatingAccount, setCreatingAccount] = useState(false);
   const [resendingCredentials, setResendingCredentials] = useState(false);
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
 
   const normalizeTypeApprenant = (val: string | undefined | null): string => {
     if (!val) return "";
@@ -531,7 +532,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
                 variant="secondary"
                 size="sm"
                 disabled={resendingCredentials}
-                onClick={() => setShowCreateDialog(true)}
+                onClick={() => { setGeneratedPassword(""); setGeneratedPasswordEmailFailed(false); setShowPasswordDialog(true); }}
               >
                 {resendingCredentials ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <KeyRound className="w-4 h-4 mr-2" />}
                   Voir / réinitialiser le mot de passe
