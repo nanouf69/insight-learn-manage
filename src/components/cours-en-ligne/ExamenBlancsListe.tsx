@@ -502,8 +502,9 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
                       const bilan = computeMoyenneExamen(examen, (m) => {
                         const scoreData = findScoreForMatiere(scores, m);
                         if (!scoreData) return null;
+                        // Tentative figée (snapshot) → on note avec la version d'origine.
                         return computeMatiereScore(
-                          m,
+                          resolveMatiereForScoring(m, (scoreData as any).details),
                           (scoreData as any).reponses,
                           scoreData.score_obtenu,
                           scoreData.score_max,
