@@ -8,8 +8,12 @@ import { GESTION_EXERCICES } from "./exercices/gestion-exercices-data";
 import { REGLEMENTATION_SPECIFIQUE_VTC_EXERCICES } from "./exercices/reglementation-exercices-data";
 import { SECURITE_ROUTIERE_EXERCICES } from "./exercices/securite-routiere-exercices-data";
 import SECURITE_ROUTIERE_2_ASSET from "@/assets/cours-vtc/C_Securite_Routiere_FINAL_2.pptx.asset.json";
+import SECURITE_ROUTIERE_3_ASSET from "@/assets/cours-vtc/SECURITE_ROUTIERE_3SUR3_v2.pptx.asset.json";
+import GESTION_2_ASSET from "@/assets/cours-vtc/GESTION_2SUR3_v8.pptx.asset.json";
 
 const SECURITE_ROUTIERE_2_PPTX = `${SECURITE_ROUTIERE_2_ASSET.url}?v=20260915-2100`;
+const SECURITE_ROUTIERE_3_PPTX = `${SECURITE_ROUTIERE_3_ASSET.url}?v=20260916-1300`;
+const GESTION_2_PPTX = `${GESTION_2_ASSET.url}?v=20260916-1300`;
 interface ContentItem {
   id: number;
   titre: string;
