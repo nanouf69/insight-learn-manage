@@ -274,6 +274,44 @@ export type Database = {
           },
         ]
       }
+      apprenant_examen_timers: {
+        Row: {
+          apprenant_id: string
+          created_at: string
+          duree_secondes: number
+          exercice_id: string
+          id: string
+          started_at: string
+          user_id: string | null
+        }
+        Insert: {
+          apprenant_id: string
+          created_at?: string
+          duree_secondes: number
+          exercice_id: string
+          id?: string
+          started_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          apprenant_id?: string
+          created_at?: string
+          duree_secondes?: number
+          exercice_id?: string
+          id?: string
+          started_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "apprenant_examen_timers_apprenant_id_fkey"
+            columns: ["apprenant_id"]
+            isOneToOne: false
+            referencedRelation: "apprenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       apprenant_identifiants_t3p: {
         Row: {
           apprenant_id: string
@@ -4364,6 +4402,19 @@ export type Database = {
               started_at: string
             }[]
           }
+      start_or_get_exam_timer: {
+        Args: {
+          _apprenant_id: string
+          _duree_secondes: number
+          _exercice_id: string
+        }
+        Returns: {
+          duree_secondes: number
+          remaining_seconds: number
+          server_now: string
+          started_at: string
+        }[]
+      }
       submit_quiz_attempt: {
         Args: {
           _apprenant_id: string
