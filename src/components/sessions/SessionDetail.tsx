@@ -76,6 +76,8 @@ import { filterAndSortApprenants } from "@/lib/apprenantSearch";
 import { SmallTransfersTable } from "@/components/dashboard/SmallTransfersTable";
 import GrilleNotationConduite from "./GrilleNotationConduite";
 import { fetchPlanningDaySlotsForDates, normalizePratiqueCreneau, resolvePratiqueSlotParts } from "@/lib/pratiqueSlots";
+import { readEdgeFunctionError } from "@/lib/edgeFunctionError";
+
 
 interface Session {
   id: string;
@@ -1695,7 +1697,8 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       queryClient.invalidateQueries({ queryKey: ['identifiants-sent'] });
       refetchApprenants();
     } catch (err: any) {
-      toast({ title: "Erreur", description: err?.message || "Erreur lors de l'opération", variant: "destructive" });
+      toast({ title: "Erreur", description: await readEdgeFunctionError(err), variant: "destructive" });
+
     } finally {
       setCreatingAccount(false);
     }

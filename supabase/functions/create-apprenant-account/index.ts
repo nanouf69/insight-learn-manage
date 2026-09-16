@@ -216,48 +216,104 @@ serve(async (req) => {
 
       if (authError.message.includes("already been registered")) {
         console.log(`${LOG_PREFIX}[${requestId}] Step 11 - Existing user flow (start)`);
-        // List users filtered by email - le filtre serveur n'est pas fiable, on filtre nous-mêmes
-        const { data: listData, error: getUserErr } = await supabaseAdmin.auth.admin.listUsers({ filter: `email.eq.${email}` } as any);
 
-        if (getUserErr) {
-          console.log(`${LOG_PREFIX}[${requestId}] Step 11 - listUsers failed`, { message: getUserErr.message });
-          return jsonResponse(400, {
-            error: "Utilisateur existant introuvable",
-            details: getUserErr.message,
-            requestId,
+        // Recherche paginée : le filtre serveur n'est pas fiable et la première page
+        // ne contient que 50 comptes. On parcourt TOUTES les pages.
+        const normalizedEmail = email.trim().toLowerCase();
+        const matchingUsers: any[] = [];
+        let page = 1;
+        const perPage = 1000;
+        let scanned = 0;
+
+        while (page <= 100) {
+          const { data: listData, error: getUserErr } = await supabaseAdmin.auth.admin.listUsers({
+            page,
+            perPage,
           });
+
+          if (getUserErr) {
+            console.log(`${LOG_PREFIX}[${requestId}] Step 11 - listUsers failed`, {
+              page,
+              message: getUserErr.message,
+            });
+            return jsonResponse(500, {
+              error: "Impossible de vérifier les comptes existants. Réessayez dans un instant.",
+              details: getUserErr.message,
+              requestId,
+            });
+          }
+
+          const users = listData?.users || [];
+          scanned += users.length;
+          for (const u of users) {
+            if ((u.email || "").trim().toLowerCase() === normalizedEmail) matchingUsers.push(u);
+          }
+
+          if (users.length < perPage) break;
+          page += 1;
         }
 
-        // Filtrage strict côté code : exact match sur l'email (insensible à la casse)
-        const normalizedEmail = email.trim().toLowerCase();
-        const matchingUsers = (listData?.users || []).filter(
-          (u: any) => (u.email || "").trim().toLowerCase() === normalizedEmail
-        );
+        console.log(`${LOG_PREFIX}[${requestId}] Step 11 - Lookup done`, {
+          scanned,
+          matches: matchingUsers.length,
+        });
 
         if (matchingUsers.length === 0) {
-          console.log(`${LOG_PREFIX}[${requestId}] Step 11 - No exact email match found`, {
-            searchedEmail: normalizedEmail,
-            returnedCount: listData?.users?.length || 0,
-          });
-          return jsonResponse(400, {
-            error: "Utilisateur existant introuvable (email exact)",
+          return jsonResponse(500, {
+            error:
+              "Un compte existe déjà avec cette adresse e-mail mais il est introuvable. Aucun changement n'a été effectué.",
             requestId,
           });
         }
 
         if (matchingUsers.length > 1) {
-          console.log(`${LOG_PREFIX}[${requestId}] Step 11 - Multiple users with same email (ambigu)`, {
-            count: matchingUsers.length,
-          });
           return jsonResponse(409, {
-            error: "Plusieurs comptes existent pour cet email, contactez l'administrateur",
+            error:
+              "Plusieurs comptes de connexion existent avec cette adresse e-mail. Aucun changement n'a été effectué. Contactez l'administrateur.",
             requestId,
           });
         }
 
         const existingUser = matchingUsers[0];
 
-        console.log(`${LOG_PREFIX}[${requestId}] Step 11 - Update existing user password (start)`, {
+        // RÈGLE IMPÉRATIVE : ne jamais détacher ni transférer un compte existant.
+        const { data: ownerRows, error: ownerErr } = await supabaseAdmin
+          .from("apprenants")
+          .select("id, nom, prenom, email")
+          .eq("auth_user_id", existingUser.id);
+
+        if (ownerErr) {
+          return jsonResponse(500, {
+            error: "Impossible de vérifier le rattachement du compte existant. Aucun changement n'a été effectué.",
+            details: ownerErr.message,
+            requestId,
+          });
+        }
+
+        const otherOwners = (ownerRows ?? []).filter((r: any) => r.id !== apprenant_id);
+
+        if (otherOwners.length > 0) {
+          const owner = otherOwners[0];
+          console.log(`${LOG_PREFIX}[${requestId}] Step 11 - Blocked: account linked to another apprenant`, {
+            existingUserId: existingUser.id,
+            ownerIds: otherOwners.map((r: any) => r.id),
+          });
+          return jsonResponse(409, {
+            error:
+              "Un compte de connexion existe déjà avec cette adresse e-mail et est rattaché à une autre fiche apprenant. Aucun changement n'a été effectué. Utilisez une autre adresse e-mail ou choisissez explicitement une opération de transfert.",
+            code: "email_already_linked",
+            linked_to: {
+              apprenant_id: owner.id,
+              nom: owner.nom,
+              prenom: owner.prenom,
+            },
+            requestId,
+          });
+        }
+
+        // Compte existant NON rattaché (ou déjà rattaché à cette même fiche) :
+        // on peut le réutiliser sans créer de doublon.
+        console.log(`${LOG_PREFIX}[${requestId}] Step 11 - Reuse unlinked existing account (start)`, {
           existingUserId: existingUser.id,
         });
 
@@ -274,7 +330,8 @@ serve(async (req) => {
         }
 
         authUser = { user: { id: existingUser.id } };
-        console.log(`${LOG_PREFIX}[${requestId}] Step 11 - Update existing user password (done)`);
+        console.log(`${LOG_PREFIX}[${requestId}] Step 11 - Reuse unlinked existing account (done)`);
+
       } else {
         return jsonResponse(400, {
           error: authError.message,
@@ -297,92 +354,62 @@ serve(async (req) => {
 
     console.log(`${LOG_PREFIX}[${requestId}] Step 12 - Link auth user to apprenant (start)`);
 
-    // Détacher TOUS les autres apprenants déjà liés à ce auth_user_id (contrainte UNIQUE)
-    // On liste d'abord pour logger et garantir la suppression du lien.
+    // SÉCURITÉ : aucun détachement / transfert automatique. Si le compte est déjà
+    // rattaché à une autre fiche, on bloque sans rien modifier.
     const { data: linkedRows, error: listLinkedErr } = await supabaseAdmin
       .from("apprenants")
       .select("id, nom, prenom, email")
       .eq("auth_user_id", authUser.user.id);
 
     if (listLinkedErr) {
-      console.log(`${LOG_PREFIX}[${requestId}] Step 12 - List linked apprenants failed`, { message: listLinkedErr.message });
-    } else {
-      console.log(`${LOG_PREFIX}[${requestId}] Step 12 - Currently linked apprenants`, {
-        count: linkedRows?.length ?? 0,
-        ids: (linkedRows ?? []).map((r: any) => r.id),
+      return jsonResponse(500, {
+        error: "Impossible de vérifier le rattachement du compte. Aucun changement n'a été effectué.",
+        details: listLinkedErr.message,
+        requestId,
       });
     }
 
-    const otherIds = (linkedRows ?? [])
-      .map((r: any) => r.id)
-      .filter((id: string) => id !== apprenant_id);
+    const otherOwnersAtLink = (linkedRows ?? []).filter((r: any) => r.id !== apprenant_id);
 
-    if (otherIds.length > 0) {
-      // Détacher un par un pour éviter qu'une RLS/contrainte stoppe le batch silencieusement
-      for (const otherId of otherIds) {
-        const { error: detachOneErr } = await supabaseAdmin
-          .from("apprenants")
-          .update({ auth_user_id: null })
-          .eq("id", otherId);
-        if (detachOneErr) {
-          console.log(`${LOG_PREFIX}[${requestId}] Step 12 - Detach ${otherId} failed`, { message: detachOneErr.message });
-        }
-      }
-
-      // Vérification : s'assurer qu'il ne reste plus aucune autre ligne liée
-      const { data: stillLinked } = await supabaseAdmin
-        .from("apprenants")
-        .select("id")
-        .eq("auth_user_id", authUser.user.id)
-        .neq("id", apprenant_id);
-
-      if ((stillLinked?.length ?? 0) > 0) {
-        return jsonResponse(500, {
-          error: "Impossible de libérer le compte auth",
-          details: `Apprenants encore liés: ${(stillLinked ?? []).map((r: any) => r.id).join(", ")}`,
-          requestId,
-        });
-      }
-    }
-
-    // Tentative de liaison, avec retry si la contrainte unique frappe encore (race)
-    let linkErr: any = null;
-    for (let attempt = 1; attempt <= 3; attempt++) {
-      const { error } = await supabaseAdmin
-        .from("apprenants")
-        .update({ auth_user_id: authUser.user.id })
-        .eq("id", apprenant_id);
-
-      if (!error) {
-        linkErr = null;
-        break;
-      }
-      linkErr = error;
-
-      const isDup = (error.message || "").includes("apprenants_auth_user_id_key");
-      console.log(`${LOG_PREFIX}[${requestId}] Step 12 - Link attempt ${attempt} failed`, {
-        message: error.message,
-        isDup,
+    if (otherOwnersAtLink.length > 0) {
+      console.log(`${LOG_PREFIX}[${requestId}] Step 12 - Blocked: account linked elsewhere`, {
+        ids: otherOwnersAtLink.map((r: any) => r.id),
       });
-      if (!isDup) break;
-
-      // Nettoyage forcé puis nouvelle tentative
-      await supabaseAdmin
-        .from("apprenants")
-        .update({ auth_user_id: null })
-        .eq("auth_user_id", authUser.user.id)
-        .neq("id", apprenant_id);
-
-      await new Promise((r) => setTimeout(r, 150));
+      return jsonResponse(409, {
+        error:
+          "Un compte de connexion existe déjà avec cette adresse e-mail et est rattaché à une autre fiche apprenant. Aucun changement n'a été effectué. Utilisez une autre adresse e-mail ou choisissez explicitement une opération de transfert.",
+        code: "email_already_linked",
+        linked_to: {
+          apprenant_id: otherOwnersAtLink[0].id,
+          nom: otherOwnersAtLink[0].nom,
+          prenom: otherOwnersAtLink[0].prenom,
+        },
+        requestId,
+      });
     }
+
+
+    // Liaison simple : aucun nettoyage forcé, aucun détachement d'une autre fiche.
+    const { error: linkErr } = await supabaseAdmin
+      .from("apprenants")
+      .update({ auth_user_id: authUser.user.id })
+      .eq("id", apprenant_id);
 
     if (linkErr) {
-      return jsonResponse(500, {
-        error: "Échec de liaison du compte à l'apprenant",
+      const isDup = (linkErr.message || "").includes("apprenants_auth_user_id_key");
+      console.log(`${LOG_PREFIX}[${requestId}] Step 12 - Link failed`, {
+        message: linkErr.message,
+        isDup,
+      });
+      return jsonResponse(isDup ? 409 : 500, {
+        error: isDup
+          ? "Ce compte de connexion est déjà rattaché à une autre fiche apprenant. Aucun changement n'a été effectué."
+          : "Échec de liaison du compte à l'apprenant. Aucun changement n'a été effectué.",
         details: linkErr.message,
         requestId,
       });
     }
+
     console.log(`${LOG_PREFIX}[${requestId}] Step 12 - Link auth user to apprenant (done)`);
 
     console.log(`${LOG_PREFIX}[${requestId}] Step 13 - Fetch full apprenant for email (start)`);
