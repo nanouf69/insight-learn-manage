@@ -1214,6 +1214,11 @@ const CorrectionQRCTab = () => {
             const uniqueKey = `${item.resultId}-${item.questionId}`;
             const isEditing = editingId === uniqueKey;
             const isSaving = savingId === uniqueKey;
+            // La note d'une matière n'est publiée qu'une fois TOUTES ses QRC corrigées.
+            const matierePending = pendingMatiereKeys.has(
+              `${item.apprenantId}__${item.quizId}__${item.matiereId || ""}`,
+            );
+
 
             return (
               <Card key={uniqueKey} className={`transition-colors ${item.corrigeManuel ? "border-green-200 bg-green-50/30" : "border-amber-200 bg-amber-50/20"}`}>
