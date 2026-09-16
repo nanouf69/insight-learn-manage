@@ -513,8 +513,13 @@ function PassageMatiere({
               <BookOpen className="w-4 h-4" />
               <span>Sans chronomètre</span>
             </div>
+          ) : serverRemaining === null ? (
+            <div className="flex items-center gap-2 px-4 py-2 rounded-lg border-2 border-primary/30 bg-primary/5 text-primary">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span className="font-mono font-bold text-lg">--:--</span>
+            </div>
           ) : (
-            <TimerBadge seconds={dureeSecondes} onExpire={handleExpire} />
+            <TimerBadge seconds={serverRemaining} onExpire={handleExpire} />
           )}
         </div>
       </div>
