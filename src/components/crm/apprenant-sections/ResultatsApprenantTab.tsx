@@ -161,9 +161,14 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
                         </Badge>
                       )}
                     </div>
-                    <span className={`text-lg font-bold ${isReussi ? "text-green-600" : "text-red-500"}`}>
-                      {moyenne.toFixed(1)}/20
-                    </span>
+                    {enAttenteCorrection ? (
+                      <span className="text-sm font-semibold text-amber-600">Note en attente</span>
+                    ) : (
+                      <span className={`text-lg font-bold ${isReussi ? "text-green-600" : "text-red-500"}`}>
+                        {moyenne.toFixed(1)}/20
+                      </span>
+                    )}
+
                   </div>
 
                   {/* Notes par matière */}
