@@ -11,11 +11,13 @@ import SECURITE_ROUTIERE_2_ASSET from "@/assets/cours-vtc/C_Securite_Routiere_FI
 import SECURITE_ROUTIERE_3_ASSET from "@/assets/cours-vtc/SECURITE_ROUTIERE_3SUR3_v2.pptx.asset.json";
 import GESTION_2_ASSET from "@/assets/cours-vtc/GESTION_2SUR3_v9.pptx.asset.json";
 import GESTION_3_ASSET from "@/assets/cours-vtc/GESTION_3SUR3_v10.pptx.asset.json";
+import DEVELOPPEMENT_COMMERCIAL_ASSET from "@/assets/cours-vtc/Developpement_commercial_1SUR1_v7.pptx.asset.json";
 
 const SECURITE_ROUTIERE_2_PPTX = `${SECURITE_ROUTIERE_2_ASSET.url}?v=20260915-2100`;
 const SECURITE_ROUTIERE_3_PPTX = `${SECURITE_ROUTIERE_3_ASSET.url}?v=20260916-1300`;
 const GESTION_2_PPTX = `${GESTION_2_ASSET.url}?v=20260917-1210`;
 const GESTION_3_PPTX = `${GESTION_3_ASSET.url}?v=20260917-1210`;
+const DEVELOPPEMENT_COMMERCIAL_PPTX = `${DEVELOPPEMENT_COMMERCIAL_ASSET.url}?v=20260917-1413`;
 interface ContentItem {
   id: number;
   titre: string;
@@ -217,7 +219,7 @@ const MATIERE_F: ContentItem[] = [
     sousTitre: "Marketing et développement commercial VTC",
     fichiers: [
       { nom: "PDF HD Développement Commercial", url: "/cours/vtc/G_Marketing_1.pdf?v=20260820-1736" },
-      { nom: "PowerPoint Développement Commercial", url: "/cours/vtc/G_Marketing_Dev_Commercial.pptx?v=20260908-1500" },
+      { nom: "PowerPoint Développement Commercial", url: DEVELOPPEMENT_COMMERCIAL_PPTX },
     ],
   },
 ];
