@@ -355,7 +355,7 @@ export function ApprenantForm() {
     setSelectedFormation("vtc-exam");
     setMontantTtc("1499");
     setTypeApprenantFormation("vtc");
-    setDateExamenTheorique("27 janvier 2026");
+    setDateExamenTheorique(getProchaineDateExamenTheorique()?.date || ALL_DATES_EXAMEN_THEORIQUE[ALL_DATES_EXAMEN_THEORIQUE.length - 1].date);
     setInscritFranceTravail(false);
     setDateExamenPratique("");
     setDocumentsComplets(false);
