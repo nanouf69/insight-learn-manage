@@ -107,6 +107,7 @@ import { VA_COURS_DATA, VA_SECTIONS } from "./va-cours-data";
 import { CONTROLE_CONNAISSANCES_TAXI_DATA } from "./controle-connaissances-taxi-data";
 import { CONNAISSANCES_VILLE_TAXI_DATA } from "./connaissances-ville-taxi-data";
 import { BILAN_EXERCICES_VTC, buildBilanExercicesVtcFromCours } from "./bilan-exercices-vtc-data";
+import { QRC_COURS_VTC, QRC_COURS_TAXI, QRC_COURS_TA, QRC_COURS_VA } from "./bilan-qrc-cours-data";
 import { BILAN_EXERCICES_TAXI } from "./bilan-exercices-taxi-data";
 import { BILAN_EXERCICES_TA } from "./bilan-exercices-ta-data";
 import { BILAN_EXERCICES_VA } from "./bilan-exercices-va-data";
@@ -2209,7 +2210,7 @@ function getInitialModuleDataRaw(
       id: 4,
       nom: "4.BILAN EXERCICES VTC",
       description: "Tous les exercices regroupés par matière. Refaites-les autant de fois que nécessaire pour maîtriser chaque sujet.",
-      cours: [],
+      cours: JSON.parse(JSON.stringify(QRC_COURS_VTC)),
       exercices: JSON.parse(JSON.stringify(BILAN_EXERCICES_VTC)),
     };
   }
@@ -2442,7 +2443,7 @@ function getInitialModuleDataRaw(
       id: 9,
       nom: "4.BILAN EXERCICES TAXI",
       description: "Tous les exercices regroupés par matière. Refaites-les autant de fois que nécessaire pour maîtriser chaque sujet.",
-      cours: [],
+      cours: JSON.parse(JSON.stringify(QRC_COURS_TAXI)),
       exercices: JSON.parse(JSON.stringify(BILAN_EXERCICES_TAXI)),
     };
   }
@@ -2453,7 +2454,7 @@ function getInitialModuleDataRaw(
       id: 27,
       nom: "4.BILAN EXERCICES TA",
       description: "Tous les exercices regroupés par matière. Refaites-les autant de fois que nécessaire pour maîtriser chaque sujet.",
-      cours: [],
+      cours: JSON.parse(JSON.stringify(QRC_COURS_TA)),
       exercices: JSON.parse(JSON.stringify(BILAN_EXERCICES_TA)),
     };
   }
@@ -2464,7 +2465,7 @@ function getInitialModuleDataRaw(
       id: 29,
       nom: "4.BILAN EXERCICES VA",
       description: "Tous les exercices regroupés par matière. Refaites-les autant de fois que nécessaire pour maîtriser chaque sujet.",
-      cours: [],
+      cours: JSON.parse(JSON.stringify(QRC_COURS_VA)),
       exercices: JSON.parse(JSON.stringify(BILAN_EXERCICES_VA)),
     };
   }
