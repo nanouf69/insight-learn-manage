@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { tousLesExamens, getPointsParQuestion, applyOfficialCoefficient, type ExamenBlanc, type Matiere, type Question, type Choix } from "./examens-blancs-data";
 import { mergeQuestionsForMatiere, moveQuestionToPosition } from "./examens-blancs-utils";
+import { getSeuilEliminatoireAffiche } from "./examens-blancs-scoring";
 import { QuestionImageUpload } from "./QuestionImageUpload";
 import { ExamQuestionImage } from "./ExamQuestionImage";
 import {
@@ -899,7 +900,7 @@ function MatiereEditor({
             {matiere.duree} min
           </span>
           <span>Coeff. {matiere.coefficient}</span>
-          <span className="text-destructive">Élim. {matiere.noteEliminatoire}/{matiere.noteSur}</span>
+          <span className="text-destructive">{"Élim. < "}{getSeuilEliminatoireAffiche(matiere.nom)}/20</span>
           <span>{questionsSafe.length} questions</span>
           <span
             className={

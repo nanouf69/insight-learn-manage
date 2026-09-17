@@ -29,6 +29,14 @@ export interface MatiereScore {
   passee: boolean;
 }
 
+// ===== SEUIL ÉLIMINATOIRE AFFICHÉ (texte uniquement) =====
+// Affichage officiel : « Élim. < 6/20 » pour toutes les matières,
+// « Élim. < 4/20 » pour l'Anglais. Le calcul utilise toujours la valeur
+// enregistrée (noteEliminatoire) — cette fonction ne sert qu'au texte affiché.
+export function getSeuilEliminatoireAffiche(nomMatiere?: string): number {
+  return nomMatiere && /anglais/i.test(nomMatiere) ? 4 : 6;
+}
+
 // ===== SNAPSHOT D'UNE TENTATIVE (point 6) =====
 // À la validation d'une matière, on fige la version EXACTE utilisée par
 // l'apprenant (questions, choix proposés, bonnes réponses, barème, ordre).
