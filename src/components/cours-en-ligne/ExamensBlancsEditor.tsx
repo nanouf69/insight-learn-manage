@@ -803,7 +803,14 @@ function MatiereEditor({
       _editedAt: updatedAt,
     } as Question & { manually_edited: boolean; _editedAt: string };
     const newQuestions = questionsSafe.map(q => q.id === updated.id ? manualUpdated : q);
-    onChange({ ...matiere, questions: newQuestions });
+    // Le total de la matière suit immédiatement le type réel de chaque question
+    // (ex : une QRC requalifiée en QCM passe au barème QCM). Les points des
+    // autres questions ne sont jamais redistribués.
+    const nouveauTotal = sumPoints(newQuestions);
+    if (closeEditor && nouveauTotal > BAREME_CIBLE) {
+      toast.warning(`Le barème de cette matière est à ${nouveauTotal}/${BAREME_CIBLE}`);
+    }
+    onChange({ ...matiere, questions: newQuestions, noteSur: nouveauTotal });
     if (closeEditor) setEditingQId(null);
   };
 
