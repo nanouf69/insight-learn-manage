@@ -100,15 +100,11 @@ export function TeamsLinkSender({ open, onOpenChange, sessionId, recipients }: T
     });
   };
 
-  const handleSend = async () => {
-    if (!canSend) return;
-    const cleanLink = lien.trim();
+  const performSend = async (cleanLink: string, list: Recipient[]) => {
     const body = buildBody(cleanLink);
-    setSending(true);
-    setResults([]);
     const acc: { recipient: Recipient; success: boolean; error?: string }[] = [];
 
-    for (const recipient of selected) {
+    for (const recipient of list) {
       try {
         const { data, error } = await supabase.functions.invoke("sync-outlook-emails", {
           body: {
@@ -156,13 +152,49 @@ export function TeamsLinkSender({ open, onOpenChange, sessionId, recipients }: T
       console.warn("Historique d'envoi non enregistré:", histErr);
     }
 
-    setSending(false);
     if (echecs === 0) {
       toast.success(`${succes} email(s) envoyé(s) avec succès`);
     } else {
       toast.warning(`${succes} envoyé(s), ${echecs} échec(s)`);
     }
   };
+
+  const handleSend = async () => {
+    if (!canSend) return;
+    setSending(true);
+    setResults([]);
+    await performSend(lien.trim(), selected);
+    setSending(false);
+  };
+
+  const handleResend = async (entry: any) => {
+    if (sending || resendingId) return;
+    const cleanLink = String(entry?.lien || "").trim();
+    if (!isValidUrl(cleanLink)) {
+      toast.error("Le lien de cet envoi n'est plus valide.");
+      return;
+    }
+    const anciens = Array.isArray(entry?.destinataires) ? entry.destinataires : [];
+    const list: Recipient[] = anciens
+      .map((d: any) => {
+        const known = withEmail.find((r) => r.id === d?.apprenant_id || r.email === d?.email);
+        if (known) return known;
+        if (!d?.email) return null;
+        return { id: d.apprenant_id || d.email, nom: d.nom || "", prenom: "", email: d.email } as Recipient;
+      })
+      .filter(Boolean) as Recipient[];
+
+    if (list.length === 0) {
+      toast.error("Aucun destinataire à renvoyer pour cet envoi.");
+      return;
+    }
+
+    setResendingId(entry.id);
+    setResults([]);
+    await performSend(cleanLink, list);
+    setResendingId(null);
+  };
+
 
   const handleClose = (nextOpen: boolean) => {
     if (sending) return;
