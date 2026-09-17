@@ -25,8 +25,7 @@ import {
 } from "@/components/cours-en-ligne/examens-blancs-data";
 import {
   computeMoyenneExamen,
-  computeMatiereScore,
-  resolveMatiereForScoring,
+  computeMatiereScoreForAttempt,
 } from "@/components/cours-en-ligne/examens-blancs-scoring";
 import {
   buildMatiereLookupKeys,
@@ -429,13 +428,12 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
                 ? computeMoyenneExamen(examenDef, (m) => {
                     const row = findScoreForMatiere(scoresWithLookup as any, m);
                     if (!row) return null;
-                    return computeMatiereScore(
-                      resolveMatiereForScoring(m, (row as any).details),
-                      (row as any).reponses,
-                      row.score_obtenu,
-                      row.score_max,
-                      (row as any).correctionsIA,
-                    );
+                    return computeMatiereScoreForAttempt(m, {
+                      details: (row as any).details ?? { reponses: (row as any).reponses, correctionsIA: (row as any).correctionsIA },
+                      score_obtenu: row.score_obtenu,
+                      score_max: row.score_max,
+                      note_sur_20: (row as any).note_sur_20,
+                    });
                   })
                 : null;
               const noteGlobale = bilanExamen?.hasScores
@@ -510,13 +508,12 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
                             (md) => md.id === r.matiere_id || md.nom === r.matiere_nom,
                           );
                           const recomputed = matiereDef
-                            ? computeMatiereScore(
-                                resolveMatiereForScoring(matiereDef, (r as any).details),
-                                r.reponses ?? null,
-                                r.score_obtenu,
-                                r.score_max,
-                                r.correctionsIA ?? null,
-                              )
+                            ? computeMatiereScoreForAttempt(matiereDef, {
+                                details: (r as any).details ?? { reponses: r.reponses ?? null, correctionsIA: r.correctionsIA ?? null },
+                                score_obtenu: r.score_obtenu,
+                                score_max: r.score_max,
+                                note_sur_20: (r as any).note_sur_20,
+                              })
                             : null;
                           const note = recomputed
                             ? recomputed.noteSur20.toFixed(1)

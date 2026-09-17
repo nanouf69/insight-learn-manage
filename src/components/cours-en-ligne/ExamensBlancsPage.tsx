@@ -29,7 +29,7 @@ import { recoverCorruptedScoreRow, isCorruptedZeroRow, persistExamSession as per
 import { EcranSelection } from "./ExamenBlancsListe";
 import { PassageMatiere, TransitionMatiere } from "./ExamenBlancsPassage";
 import { EcranResultats, RevisionFausses } from "./ExamenBlancsResultats";
-import { computeMatiereScore, resolveMatiereForScoring, MATIERE_SNAPSHOT_VERSION } from "./examens-blancs-scoring";
+import { computeMatiereScore, computeMatiereScoreForAttempt, resolveMatiereForScoring, MATIERE_SNAPSHOT_VERSION } from "./examens-blancs-scoring";
 
 /**
  * Retrouve la version ORIGINALE (source statique, jamais éditée) d'une matière
@@ -788,12 +788,16 @@ export default function ExamensBlancsPage({
       // Auto-heal corrupted zero-score rows
       let safeScoreObtenu = safeScoreMax > 0 ? clamp(toFiniteNumber(row.score_obtenu, 0), 0, safeScoreMax) : Math.max(toFiniteNumber(row.score_obtenu, 0), 0);
       let normalizedScoreMax = safeScoreMax;
-      const canonicalScore = computeMatiereScore(
-        matiere,
-        row.details?.reponses || null,
-        row.score_obtenu,
-        safeScoreMax,
-        savedCorrections,
+      // Tentative avec snapshot → recalcul sur la version figée.
+      // Tentative sans snapshot → note enregistrée, jamais recalculée sur les questions actuelles.
+      const canonicalScore = computeMatiereScoreForAttempt(
+        matiereCourante,
+        {
+          details: row.details,
+          score_obtenu: row.score_obtenu,
+          score_max: safeScoreMax,
+          note_sur_20: row.note_sur_20,
+        },
         findStaticFallbackMatiere(examReference.id, matiere.id, matiere.nom),
       );
       if (canonicalScore) {

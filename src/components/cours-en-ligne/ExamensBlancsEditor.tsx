@@ -594,8 +594,8 @@ function QuestionEditor({
       if (originalCorrect !== newCorrect) {
         const confirmed = window.confirm(
           "⚠️ Vous changez la bonne réponse d'une question à laquelle des élèves ont déjà répondu.\n\n" +
-          "Leur note sera automatiquement recalculée avec cette nouvelle bonne réponse dès leur prochaine consultation " +
-          "(y compris pour des examens déjà passés).\n\n" +
+          "Cette nouvelle bonne réponse s'appliquera aux prochaines tentatives. " +
+          "Les notes déjà enregistrées resteront inchangées.\n\n" +
           "Continuer ?",
         );
         if (!confirmed) return;
@@ -808,17 +808,9 @@ function MatiereEditor({
   };
 
   const deleteQuestion = (qId: number) => {
-    // La corbeille ne doit JAMAIS rester silencieuse : si la suppression est
-    // impossible, on explique clairement pourquoi.
-    if (locked) {
-      toast.error(
-        "Suppression impossible : des apprenants ont déjà passé cet examen. " +
-        "Le verrou protège les tentatives déjà réalisées. Vous pouvez corriger l'énoncé, " +
-        "les choix ou la bonne réponse de la question.",
-        { duration: 10000 },
-      );
-      return;
-    }
+    // La suppression ne concerne QUE les prochaines tentatives :
+    // - les tentatives avec snapshot gardent leur version figée ;
+    // - les tentatives sans snapshot affichent leur note enregistrée, jamais recalculée.
     setConfirmDeleteQId(qId);
   };
 
@@ -826,37 +818,6 @@ function MatiereEditor({
 
   const confirmDelete = async () => {
     if (confirmDeleteQId === null) return;
-    setCheckingBeforeDelete(true);
-    try {
-      // LIVE re-check: don't trust the `locked` prop alone — it was computed once
-      // when the editor loaded this exam, and a student may have submitted an
-      // answer since then. Deleting a question after a student has already
-      // answered it retroactively breaks their score (their answer no longer
-      // matches any current question). Always verify right before deleting.
-      const prefix = `${examId}_`;
-      const [repCount, resCount] = await Promise.all([
-        countRowsWithExactPrefix("reponses_apprenants", "exercice_id", prefix),
-        countRowsWithExactPrefix("apprenant_quiz_results", "quiz_id", prefix),
-      ]);
-      const totalResponses = repCount + resCount;
-      if (totalResponses > 0) {
-        toast.error(
-          `❌ Suppression annulée : ${totalResponses} réponse(s) d'apprenant(s) existent déjà pour cet examen. ` +
-          `Supprimer cette question fausserait rétroactivement leur note. ` +
-          `Si la question est incorrecte, corrigez plutôt son énoncé ou sa bonne réponse au lieu de la supprimer.`,
-          { duration: 12000 },
-        );
-        setConfirmDeleteQId(null);
-        return;
-      }
-    } catch (err) {
-      console.error("[ExamensEditor] Error checking responses before delete:", err);
-      toast.error("Impossible de vérifier s'il existe des réponses d'apprenants — suppression annulée par précaution.");
-      setConfirmDeleteQId(null);
-      return;
-    } finally {
-      setCheckingBeforeDelete(false);
-    }
     const newQuestions = questionsSafe.filter(q => q.id !== confirmDeleteQId);
     onChange({ ...matiere, questions: newQuestions });
     setEditingQId(null);
@@ -984,7 +945,7 @@ function MatiereEditor({
                   question={q}
                   onSave={saveQuestion}
                   onDraftChange={saveQuestionDraft}
-                    onDelete={() => { if (!locked) deleteQuestion(q.id); }}
+                    onDelete={() => deleteQuestion(q.id)}
                     onCancel={() => setEditingQId(null)}
                     examId={examId}
                     hasExistingResponses={locked}
@@ -1105,8 +1066,7 @@ function MatiereEditor({
         <AlertDialogHeader>
           <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
           <AlertDialogDescription>
-            Êtes-vous sûr de vouloir supprimer cette question ? Cette action est irréversible.
-            Une vérification sera faite pour s'assurer qu'aucun apprenant n'y a déjà répondu.
+            Cette question sera supprimée des prochaines tentatives. Les anciennes notes resteront inchangées. Confirmer ?
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
