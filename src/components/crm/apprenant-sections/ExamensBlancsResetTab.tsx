@@ -509,13 +509,12 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
                             (md) => md.id === r.matiere_id || md.nom === r.matiere_nom,
                           );
                           const recomputed = matiereDef
-                            ? computeMatiereScore(
-                                resolveMatiereForScoring(matiereDef, (r as any).details),
-                                r.reponses ?? null,
-                                r.score_obtenu,
-                                r.score_max,
-                                r.correctionsIA ?? null,
-                              )
+                            ? computeMatiereScoreForAttempt(matiereDef, {
+                                details: (r as any).details ?? { reponses: r.reponses ?? null, correctionsIA: r.correctionsIA ?? null },
+                                score_obtenu: r.score_obtenu,
+                                score_max: r.score_max,
+                                note_sur_20: (r as any).note_sur_20,
+                              })
                             : null;
                           const note = recomputed
                             ? recomputed.noteSur20.toFixed(1)
