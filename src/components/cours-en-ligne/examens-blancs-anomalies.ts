@@ -251,7 +251,14 @@ export interface ExamenAnomalies {
   parMatiere: Record<string, string[]>;
   matieresEnAnomalie: number;
   total: number;
+  /** Nombre réel de questions de l'examen (toutes matières confondues). */
+  totalQuestions: number;
+  /** Message d'anomalie sur le total (null si 107). */
+  totalAnomalie: string | null;
 }
+
+/** Nombre total de questions attendu pour un examen blanc complet (7 matières). */
+export const TOTAL_QUESTIONS_ATTENDU = 107;
 
 /**
  * Analyse un examen entier. `tousLesExamensCharges` sert uniquement à repérer
@@ -264,8 +271,12 @@ export function detectExamenAnomalies(
   const parMatiere: Record<string, string[]> = {};
   let total = 0;
   let matieresEnAnomalie = 0;
+  let totalQuestions = 0;
 
   for (const matiere of examen?.matieres ?? []) {
+    totalQuestions += (matiere?.questions ?? []).filter(
+      (q): q is Question => q != null && q?.type != null,
+    ).length;
     if (!matiere) continue;
     const autresCopies = tousLesExamensCharges
       .filter((ex) => ex && ex.id !== examen.id)
@@ -282,5 +293,16 @@ export function detectExamenAnomalies(
     }
   }
 
-  return { parMatiere, matieresEnAnomalie, total };
+  // Contrôle du nombre TOTAL de questions (lecture seule)
+  let totalAnomalie: string | null = null;
+  if (totalQuestions !== TOTAL_QUESTIONS_ATTENDU) {
+    const ecart = TOTAL_QUESTIONS_ATTENDU - totalQuestions;
+    totalAnomalie =
+      ecart > 0
+        ? `Nombre total incorrect : ${totalQuestions}/${TOTAL_QUESTIONS_ATTENDU} questions — il manque ${ecart} question${ecart > 1 ? "s" : ""}`
+        : `Nombre total incorrect : ${totalQuestions}/${TOTAL_QUESTIONS_ATTENDU} questions — ${-ecart} question${-ecart > 1 ? "s" : ""} en trop`;
+    total += 1;
+  }
+
+  return { parMatiere, matieresEnAnomalie, total, totalQuestions, totalAnomalie };
 }
