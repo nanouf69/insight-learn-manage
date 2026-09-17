@@ -834,17 +834,11 @@ function MatiereEditor({
       // answered it retroactively breaks their score (their answer no longer
       // matches any current question). Always verify right before deleting.
       const prefix = `${examId}_`;
-      const [{ count: repCount }, { count: resCount }] = await Promise.all([
-        supabase
-          .from("reponses_apprenants")
-          .select("*", { count: "exact", head: true })
-          .like("exercice_id", `${prefix}%`),
-        supabase
-          .from("apprenant_quiz_results")
-          .select("*", { count: "exact", head: true })
-          .like("quiz_id", `${prefix}%`),
+      const [repCount, resCount] = await Promise.all([
+        countRowsWithExactPrefix("reponses_apprenants", "exercice_id", prefix),
+        countRowsWithExactPrefix("apprenant_quiz_results", "quiz_id", prefix),
       ]);
-      const totalResponses = (repCount ?? 0) + (resCount ?? 0);
+      const totalResponses = repCount + resCount;
       if (totalResponses > 0) {
         toast.error(
           `❌ Suppression annulée : ${totalResponses} réponse(s) d'apprenant(s) existent déjà pour cet examen. ` +
