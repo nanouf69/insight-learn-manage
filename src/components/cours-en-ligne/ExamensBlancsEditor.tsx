@@ -900,7 +900,7 @@ function MatiereEditor({
             {matiere.duree} min
           </span>
           <span>Coeff. {matiere.coefficient}</span>
-          <span className="text-destructive">Élim. < {getSeuilEliminatoireAffiche(matiere.nom)}/20</span>
+          <span className="text-destructive">{"Élim. < "}{getSeuilEliminatoireAffiche(matiere.nom)}/20</span>
           <span>{questionsSafe.length} questions</span>
           <span
             className={
