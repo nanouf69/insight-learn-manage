@@ -14,7 +14,7 @@ import { tousLesExamens, getPointsParQuestion, applyOfficialCoefficient, type Ex
 import { mergeQuestionsForMatiere, moveQuestionToPosition } from "./examens-blancs-utils";
 import { getSeuilEliminatoireAffiche } from "./examens-blancs-scoring";
 // Contrôle visuel des anomalies — LECTURE SEULE, aucune correction automatique.
-import { detectExamenAnomalies } from "./examens-blancs-anomalies";
+import { detectExamenAnomalies, getCorrectionsMatiere } from "./examens-blancs-anomalies";
 import { QuestionImageUpload } from "./QuestionImageUpload";
 import { ExamQuestionImage } from "./ExamQuestionImage";
 import {
