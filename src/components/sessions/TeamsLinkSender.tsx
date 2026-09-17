@@ -110,7 +110,7 @@ export function TeamsLinkSender({ open, onOpenChange, sessionId, recipients }: T
 
     for (const recipient of selected) {
       try {
-        const { error } = await supabase.functions.invoke("sync-outlook-emails", {
+        const { data, error } = await supabase.functions.invoke("sync-outlook-emails", {
           body: {
             action: "send",
             apprenantId: recipient.id,
@@ -118,9 +118,14 @@ export function TeamsLinkSender({ open, onOpenChange, sessionId, recipients }: T
             to: recipient.email,
             subject: SUBJECT,
             body,
+            // Envoi manuel volontaire : le lien peut changer d'une session à l'autre,
+            // il ne doit jamais être bloqué par l'anti-doublon 24h.
+            forceSend: true,
           },
         });
         if (error) throw error;
+        if (data && data.success === false) throw new Error(data.error || "Échec d'envoi");
+
         acc.push({ recipient, success: true });
       } catch (err: any) {
         acc.push({ recipient, success: false, error: err?.message || "Échec d'envoi" });
