@@ -1,45 +1,64 @@
-# Plan final — réparer le fonctionnement futur, sans toucher à l'existant
+# Contrôle visuel des anomalies — Examens blancs
 
-## 0. Engagement explicite
+Ajout d'un « voyant de contrôle technique » dans Gestion → Examens blancs.
+**Strictement informatif : aucune question, aucun type, aucun point, aucun coefficient
+n'est ajouté, supprimé ou corrigé automatiquement. Aucune donnée apprenant n'est lue
+en écriture (réponses, notes, QRC corrigées, tentatives, progressions, snapshots,
+chronomètres, historiques restent intacts).**
 
-Ce plan comporte **0 suppression** et **0 modification** de données apprenants existantes :
+## Ce qui sera vérifié (par matière)
 
-- Aucune valeur existante effacée ni vidée, y compris les 65 mots de passe actuellement présents dans les fiches : ils restent **exactement tels quels**.
-- Aucune fiche apprenant supprimée, aucun compte, accès ou session modifié.
-- Aucun mot de passe actuel changé : tous les élèves continuent de se connecter comme aujourd'hui.
-- Aucune réponse, note, tentative, résultat, progression, module, examen ni historique touché.
-- Aucun nettoyage global de la base, aucune migration de schéma.
-- L'opération n°5 reste totalement intouchée.
+Référentiel officiel figé, déjà défini :
 
-Le nettoyage éventuel des 65 anciennes valeurs sera traité **séparément**, après sauvegarde et validation explicite de votre part.
+| Matière | Format attendu | Points | Coef | Élim. |
+|---|---|---|---|---|
+| A - T3P | 10 QCM + 5 QRC | 1 / 2 | 3 | < 6/20 |
+| B - Gestion | 16 QCM + 2 QRC | 1 / 2 | 2 | < 6/20 |
+| C - Sécurité routière | 20 QCM | 1 | 3 | < 6/20 |
+| D - Français | 7 QCM + 3 QRC | 2 / 2 | 2 | < 6/20 |
+| E - Anglais | 20 QCM | 1 | 1 | < 4/20 |
+| F(V) Dév. commercial / F(T) Régl. nationale | 12 QCM + 4 QRC | 1 / 2 | 3 | < 6/20 |
+| G(V) Régl. spécifique / G(T) Territoire | 6 QCM + 2 QRC | 2 / 4 | 3 | < 6/20 |
 
-## 1. Vérification déjà faite (lecture seule)
+Contrôles effectués :
 
-- La colonne du CRM contient des mots de passe lisibles en clair : 65 fiches renseignées sur 3 275. Aucun mot de passe affiché ici.
-- Le compte de Yasin n'a jamais reçu de lien « Mot de passe oublié ».
-- Les journaux ne sont conservés que quelques minutes : la désynchronisation est **certaine**, mais le clic sur « Changer le mot de passe » est la **cause probable**, pas un fait prouvé.
+1. Total de points différent de 20 (manque / excédent chiffré).
+2. Nombre de QCM ou de QRC différent du format attendu.
+3. Nombre total de questions différent du format attendu.
+4. QCM sans aucune bonne réponse cochée.
+5. QCM avec moins de 2 propositions, ou proposition au texte vide.
+6. QCM dont toutes les propositions sont cochées correctes.
+7. Lettres de propositions en double.
+8. QRC sans réponse attendue, ou dont la réponse attendue est en fait la question.
+9. Énoncé vide.
+10. Coefficient différent du coefficient officiel.
+11. Seuil éliminatoire différent du seuil officiel (6, ou 4 en Anglais).
+12. Matière partagée non synchronisée : même identifiant de matière présent dans un
+    autre examen chargé avec un contenu différent (questions, choix, bonnes réponses,
+    ordre) → signalée des deux côtés.
 
-## 2. Ce que la correction change (uniquement pour l'avenir)
+## Affichage
 
-1. **Plus aucun nouveau mot de passe n'est enregistré dans la fiche CRM.**
-   Création de compte, envoi automatique, réinitialisation : le mot de passe est envoyé à l'élève et n'est plus recopié dans la base. Le service d'authentification devient la seule référence.
+- Dans l'en-tête de chaque matière : badge rouge `⚠️ ANOMALIE — EXAMEN À VÉRIFIER`,
+  et juste en dessous la liste complète des raisons, une par ligne
+  (`🔴 Total incorrect : 19/20 — il manque 1 point`,
+  `🔴 Format incorrect : 15 QCM + 2 QRC, attendu 16 QCM + 2 QRC`,
+  `🔴 Q7 : QCM sans bonne réponse définie`,
+  `🔴 Q12 : aucune proposition de réponse`,
+  `🔴 Coefficient incorrect : 3, attendu 2`).
+  Tous les problèmes sont affichés, pas seulement le premier.
+- Dans la liste des examens : `⚠️ Examen incomplet / anomalie détectée` en rouge
+  dès qu'une matière est en anomalie, avec le nombre de matières concernées ;
+  sinon `✓ Examen conforme` en vert.
+- Le badge existant « Total X/20 » reste en place.
 
-2. **Le renvoi d'identifiants ne peut plus envoyer une valeur périmée.**
-   Le bouton propose désormais deux actions, au choix de l'administrateur :
-   - **Lien sécurisé** : l'élève définit lui-même son mot de passe, personne d'autre ne le connaît.
-   - **Mot de passe temporaire** : généré, affiché une seule fois à l'administrateur, envoyé à l'élève, jamais stocké.
-   Le simple renvoi d'une valeur mémorisée disparaît, donc plus aucun envoi de mot de passe invalide.
+## Mise en œuvre technique
 
-3. **Les fiches déjà renseignées continuent d'afficher leur valeur actuelle**, inchangée, tant que vous n'aurez pas validé l'étape 2 (nettoyage).
-
-## 3. Détail technique
-
-- `supabase/functions/resend-credentials/index.ts` : deux modes (`reset_link` via `auth.admin.generateLink({ type: "recovery" })`, `temp_password` via `updateUserById` + envoi immédiat) ; **suppression de l'écriture** dans `mot_de_passe_plateforme` (écriture future uniquement — aucune valeur existante n'est effacée) ; plus de relecture de cette colonne pour composer l'email.
-- `supabase/functions/auto-send-credentials/index.ts` : suppression de l'écriture `mot_de_passe_plateforme` (lignes 264-267), le reste inchangé.
-- `src/components/crm/ApprenantDetailPage.tsx` et `src/components/sessions/SessionDetail.tsx` : les boutons deviennent « Envoyer un lien de définition du mot de passe » et « Générer un mot de passe temporaire » (affiché une fois, non persisté).
-- `src/pages/CoursPublic.tsx`, `src/components/cours-en-ligne/StudentLogin.tsx`, `src/pages/ResetPassword.tsx` : inchangés.
-- Aucune migration, aucun `update`, aucun `delete` exécuté sur la base.
-
-## 4. Étape 2, plus tard et séparément
-
-Nettoyage des 65 valeurs en clair : uniquement après export de sauvegarde et votre autorisation écrite. Non inclus dans cette intervention.
+- Nouveau fichier `src/components/cours-en-ligne/examens-blancs-anomalies.ts` :
+  référentiel officiel (format attendu par matière) + fonctions pures
+  `detectMatiereAnomalies(matiere, contexte)` et `detectExamenAnomalies(examen, tousExamensCharges)`
+  retournant une liste de messages. Aucune écriture, aucun effet de bord.
+- `ExamensBlancsEditor.tsx` : appel de ces fonctions au rendu uniquement
+  (`useMemo`), affichage des badges. Aucune modification de `persistExamens`,
+  `reconcileSharedMatieres`, `addQuestion`, `confirmDelete`, ni du calcul des notes.
+- Aucune migration, aucun accès en écriture à la base.
