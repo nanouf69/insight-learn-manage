@@ -1688,6 +1688,35 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
                 </div>
               )}
 
+              {(() => {
+                const rapport = anomaliesParExamen[examenSel.id];
+                if (!rapport?.totalAnomalie) return null;
+                const manques = examenSel.matieres.flatMap((m) =>
+                  getCorrectionsMatiere(m).map((c) => ({ matiere: m.nom ?? m.id, correction: c })),
+                );
+                return (
+                  <div className="space-y-1">
+                    <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/30">
+                      <p className="text-sm font-semibold text-destructive">
+                        🔴 {rapport.totalAnomalie}
+                      </p>
+                    </div>
+                    {manques.length > 0 && (
+                      <div className="p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800">
+                        <p className="text-sm font-bold text-emerald-700 dark:text-emerald-400">✅ À CORRIGER</p>
+                        <ul className="mt-1 space-y-0.5">
+                          {manques.map((mq, i) => (
+                            <li key={i} className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+                              {mq.matiere} : {mq.correction.label}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
               {examenSel.matieres.map(m => (
                 <MatiereEditor
                   key={m.id}
