@@ -808,7 +808,17 @@ function MatiereEditor({
   };
 
   const deleteQuestion = (qId: number) => {
-    if (locked) return;
+    // La corbeille ne doit JAMAIS rester silencieuse : si la suppression est
+    // impossible, on explique clairement pourquoi.
+    if (locked) {
+      toast.error(
+        "Suppression impossible : des apprenants ont déjà passé cet examen. " +
+        "Le verrou protège les tentatives déjà réalisées. Vous pouvez corriger l'énoncé, " +
+        "les choix ou la bonne réponse de la question.",
+        { duration: 10000 },
+      );
+      return;
+    }
     setConfirmDeleteQId(qId);
   };
 
