@@ -225,35 +225,76 @@ function syncTaxiTaMatieres(examens: ExamenBlanc[]): void {
 /**
  * RÈGLE MATIÈRE PARTAGÉE : une matière identique (même `id`) présente dans
  * plusieurs examens/bilans doit contenir exactement les mêmes questions et les
- * mêmes réponses partout. On applique le principe "dernière version enregistrée
- * gagne" : pour chaque id de matière, la copie provenant du module sauvegardé le
- * plus récemment est répliquée sur tous les autres examens qui utilisent cette
- * même matière. Les matières différentes ne sont jamais mélangées.
+ * mêmes réponses partout.
+ *
+ * Version de référence = LA DERNIÈRE MODIFICATION RÉELLE de la matière,
+ * peu importe l'examen dans lequel elle a été faite. On compare donc en
+ * priorité `matiere._editedAt` (posé uniquement quand le contenu change :
+ * question, choix, bonne réponse, ajout, suppression, barème) et NON la date
+ * d'enregistrement du module entier. Enregistrer un examen sans modifier la
+ * matière ne change donc jamais sa version de référence.
+ *
+ * Repli historique : si aucune copie ne porte `_editedAt` (contenus anciens),
+ * on retombe sur la date d'écriture du module. Une copie horodatée gagne
+ * toujours face à une copie non horodatée : on ne remet jamais
+ * automatiquement une ancienne version par-dessus une version plus récente.
  */
+type MatiereRank = { stamped: boolean; ts: number };
+
+/**
+ * Compare le CONTENU d'une matière en ignorant l'horodatage `_editedAt`,
+ * pour qu'un simple ré-enregistrement ne soit jamais pris pour une modification.
+ */
+export function isSameMatiereContent(a: unknown, b: unknown): boolean {
+  const strip = (m: any) => {
+    if (!m || typeof m !== "object") return m;
+    const { _editedAt, ...rest } = m as Record<string, unknown>;
+    return rest;
+  };
+  return JSON.stringify(strip(a)) === JSON.stringify(strip(b));
+}
+
+
+function getMatiereRank(m: Matiere, moduleTs: number): MatiereRank {
+  const stampedAt = (m as any)?._editedAt ? Date.parse((m as any)._editedAt) : NaN;
+  if (Number.isFinite(stampedAt)) return { stamped: true, ts: stampedAt };
+  return { stamped: false, ts: moduleTs };
+}
+
+function isRankNewer(candidate: MatiereRank, current: MatiereRank): boolean {
+  // Une version horodatée (modification réelle connue) prime toujours sur une
+  // version sans horodatage, dont on ignore la vraie date de modification.
+  if (candidate.stamped !== current.stamped) return candidate.stamped;
+  return candidate.ts > current.ts;
+}
+
 export function reconcileSharedMatieres(
   examens: ExamenBlanc[],
   savedAtByExamIdx: Record<number, number>,
 ): void {
-  const best = new Map<string, { ts: number; matiere: Matiere }>();
+  const best = new Map<string, { rank: MatiereRank; matiere: Matiere }>();
   examens.forEach((ex, idx) => {
-    const ts = savedAtByExamIdx[idx] ?? 0;
+    const moduleTs = savedAtByExamIdx[idx] ?? 0;
     (ex.matieres ?? []).forEach((m) => {
       if (!m?.id) return;
+      const rank = getMatiereRank(m, moduleTs);
       const current = best.get(m.id);
-      if (!current || ts > current.ts) best.set(m.id, { ts, matiere: m });
+      if (!current || isRankNewer(rank, current.rank)) best.set(m.id, { rank, matiere: m });
     });
   });
 
   examens.forEach((ex, idx) => {
-    const ts = savedAtByExamIdx[idx] ?? 0;
+    const moduleTs = savedAtByExamIdx[idx] ?? 0;
     ex.matieres = (ex.matieres ?? []).map((m) => {
       if (!m?.id) return m;
       const winner = best.get(m.id);
-      if (!winner || winner.matiere === m || winner.ts <= ts) return m;
+      if (!winner || winner.matiere === m) return m;
+      if (!isRankNewer(winner.rank, getMatiereRank(m, moduleTs))) return m;
       return JSON.parse(JSON.stringify(winner.matiere)) as Matiere;
     });
   });
 }
+
 
 // Load saved exam overrides from DB — NO CACHE, always fresh from DB
 export async function loadSavedExamens(notifyRepairs: boolean = false): Promise<ExamenBlanc[]> {
@@ -1107,13 +1148,20 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
         (ex.matieres ?? []).forEach((m) => {
           if (!m?.id) return;
           const before = previousMatieres.find((pm) => pm?.id === m.id);
-          if (!before || JSON.stringify(before) !== JSON.stringify(m)) {
+          if (!before || !isSameMatiereContent(before, m)) {
             changedMatieresById.set(m.id, m);
           }
         });
       });
 
       if (changedMatieresById.size > 0) {
+        // Horodatage de la modification RÉELLE de la matière : c'est cette date
+        // (et non la date d'enregistrement de l'examen) qui détermine ensuite la
+        // version de référence partout où la matière est utilisée.
+        const editedAt = new Date().toISOString();
+        changedMatieresById.forEach((m) => {
+          (m as any)._editedAt = editedAt;
+        });
         synced.forEach((ex) => {
           ex.matieres = (ex.matieres ?? []).map((m) => {
             if (!m?.id) return m;
@@ -1123,6 +1171,7 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
           });
         });
       }
+
 
       const now = new Date().toISOString();
       const changedModuleFingerprints: Record<number, string> = {};
