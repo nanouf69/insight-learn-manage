@@ -945,7 +945,7 @@ function MatiereEditor({
                   question={q}
                   onSave={saveQuestion}
                   onDraftChange={saveQuestionDraft}
-                    onDelete={() => { if (!locked) deleteQuestion(q.id); }}
+                    onDelete={() => deleteQuestion(q.id)}
                     onCancel={() => setEditingQId(null)}
                     examId={examId}
                     hasExistingResponses={locked}
