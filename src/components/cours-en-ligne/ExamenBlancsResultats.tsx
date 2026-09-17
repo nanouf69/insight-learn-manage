@@ -21,7 +21,7 @@ import {
   evaluateQrcDeterministic, ENABLE_AI_QRC_CORRECTION, AI_ONLY_UPGRADES,
   getQuestionImageValue,
 } from "./examens-blancs-utils";
-import { computeMoyenneExamen, computeResultatMatiereScore } from "./examens-blancs-scoring";
+import { computeMoyenneExamen, computeResultatMatiereScore, getSeuilEliminatoireAffiche } from "./examens-blancs-scoring";
 import { isQrcCorrectionValidated } from "./exam-helpers";
 
 
@@ -723,7 +723,7 @@ function EcranResultats({
                       <p className="font-semibold text-sm" style={{ color: '#0D2540' }}>{r.nomMatiere}</p>
                       <div className="flex items-center gap-3 mt-1 flex-wrap">
                         <span className="text-xs text-muted-foreground">Barème : {r.maxPoints} pts</span>
-                        <span className="text-xs text-muted-foreground">Éliminatoire sous {r.noteEliminatoire}/{r.noteSur || 20}</span>
+                        <span className="text-xs text-muted-foreground">Éliminatoire < {getSeuilEliminatoireAffiche(r.nomMatiere)}/20</span>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
