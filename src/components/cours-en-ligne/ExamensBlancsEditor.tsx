@@ -768,12 +768,15 @@ function MatiereEditor({
   examTitre,
   examId,
   locked,
+  anomalies,
 }: {
   matiere: Matiere;
   onChange: (m: Matiere) => void;
   examTitre?: string;
   examId: string;
   locked?: boolean;
+  /** Anomalies détectées (affichage uniquement — aucune correction automatique). */
+  anomalies?: string[];
 }) {
   const [expanded, setExpanded] = useState(false);
   const [editingQId, setEditingQId] = useState<number | null>(null);
