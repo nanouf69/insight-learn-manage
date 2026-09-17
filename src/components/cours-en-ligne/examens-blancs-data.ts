@@ -69,7 +69,16 @@ export interface Matiere {
   texteSupport?: string;
   texteSource?: string;
   questions: Question[];
+  /**
+   * Date de la dernière modification RÉELLE du contenu de cette matière
+   * (question, choix, bonne réponse, ajout/suppression, barème).
+   * Posée uniquement quand le contenu change — jamais lors d'un simple
+   * ré-enregistrement d'un examen. Sert de référence unique pour déterminer
+   * la version de référence d'une matière partagée entre plusieurs examens.
+   */
+  _editedAt?: string;
 }
+
 
 export interface ExamenBlanc {
   id: string;
