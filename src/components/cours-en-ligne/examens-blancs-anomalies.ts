@@ -271,8 +271,12 @@ export function detectExamenAnomalies(
   const parMatiere: Record<string, string[]> = {};
   let total = 0;
   let matieresEnAnomalie = 0;
+  let totalQuestions = 0;
 
   for (const matiere of examen?.matieres ?? []) {
+    totalQuestions += (matiere?.questions ?? []).filter(
+      (q): q is Question => q != null && q?.type != null,
+    ).length;
     if (!matiere) continue;
     const autresCopies = tousLesExamensCharges
       .filter((ex) => ex && ex.id !== examen.id)
