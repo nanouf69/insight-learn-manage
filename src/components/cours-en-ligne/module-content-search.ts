@@ -16,6 +16,7 @@ import { BILAN_EXAMEN_VTC } from "./bilan-examen-vtc-data";
 import { BILAN_EXAMEN_TAXI } from "./bilan-examen-taxi-data";
 import { BILAN_EXAMEN_TA } from "./bilan-examen-ta-data";
 import { BILAN_EXAMEN_VA } from "./bilan-examen-va-data";
+import { QRC_COURS_VTC, QRC_COURS_TAXI, QRC_COURS_TA, QRC_COURS_VA } from "./bilan-qrc-cours-data";
 
 export interface SearchableModule {
   id: number;
@@ -49,10 +50,10 @@ export const SEARCHABLE_MODULES: SearchableModule[] = [
   asModule(10, "2.COURS ET EXERCICES TAXI", TAXI_COURS_DATA.cours, TAXI_COURS_DATA.exercices),
   asModule(40, "2.COURS ET EXERCICES TA", TA_COURS_DATA.cours, TA_COURS_DATA.exercices),
   asModule(41, "2.COURS ET EXERCICES VA", VA_COURS_DATA.cours, VA_COURS_DATA.exercices),
-  asModule(4, "4.BILAN EXERCICES VTC", [], BILAN_EXERCICES_VTC as any[]),
-  asModule(9, "4.BILAN EXERCICES TAXI", [], BILAN_EXERCICES_TAXI as any[]),
-  asModule(27, "4.BILAN EXERCICES TA", [], BILAN_EXERCICES_TA as any[]),
-  asModule(29, "4.BILAN EXERCICES VA", [], BILAN_EXERCICES_VA as any[]),
+  asModule(4, "4.BILAN EXERCICES VTC", QRC_COURS_VTC as any[], BILAN_EXERCICES_VTC as any[]),
+  asModule(9, "4.BILAN EXERCICES TAXI", QRC_COURS_TAXI as any[], BILAN_EXERCICES_TAXI as any[]),
+  asModule(27, "4.BILAN EXERCICES TA", QRC_COURS_TA as any[], BILAN_EXERCICES_TA as any[]),
+  asModule(29, "4.BILAN EXERCICES VA", QRC_COURS_VA as any[], BILAN_EXERCICES_VA as any[]),
   asModule(81, "1.BILAN EXERCICES FORMATION CONTINUE VTC", [], BILAN_EXERCICES_FC_VTC as any[]),
   asModule(82, "1.BILAN EXERCICES FORMATION CONTINUE TAXI", [], BILAN_EXERCICES_FC_TAXI as any[]),
   asModule(5, "6.BILAN EXAMEN VTC", [], BILAN_EXAMEN_VTC as any[]),
