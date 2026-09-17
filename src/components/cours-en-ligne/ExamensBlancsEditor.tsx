@@ -1570,6 +1570,17 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
                   <p className="text-xs text-muted-foreground mt-1">
                     {ex.matieres.reduce((acc, m) => acc + m.questions.length, 0)} questions · {isBilan ? "sans chrono" : `${ex.matieres.reduce((acc, m) => acc + m.duree, 0)}min`}
                   </p>
+                  {(() => {
+                    const rapport = anomaliesParExamen[ex.id];
+                    if (!rapport) return null;
+                    return rapport.matieresEnAnomalie > 0 ? (
+                      <p className="mt-1 text-[11px] font-semibold text-destructive">
+                        ⚠️ Examen incomplet / anomalie détectée ({rapport.matieresEnAnomalie} matière{rapport.matieresEnAnomalie > 1 ? "s" : ""})
+                      </p>
+                    ) : (
+                      <p className="mt-1 text-[11px] font-semibold text-emerald-600">✓ Examen conforme</p>
+                    );
+                  })()}
                   {onPauseToggle && (
                     <button
                       onClick={(e) => { e.stopPropagation(); onPauseToggle(ex.id); }}
