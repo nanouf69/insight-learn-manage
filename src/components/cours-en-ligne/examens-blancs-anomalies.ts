@@ -79,8 +79,12 @@ export function detectMatiereAnomalies(
     0,
   );
 
-  // 1. Total de points
-  if (total !== BAREME_CIBLE) {
+  // 1. Total de points (affiché seul si le format est correct, sinon inclus dans le bloc format)
+  const format = FORMATS_OFFICIELS[matiere.id];
+  const formatConforme =
+    !format || (nbQCM === format.qcm && nbQRC === format.qrc);
+
+  if (total !== BAREME_CIBLE && formatConforme) {
     const ecart = BAREME_CIBLE - total;
     anomalies.push(
       ecart > 0
@@ -89,22 +93,47 @@ export function detectMatiereAnomalies(
     );
   }
 
-  const format = FORMATS_OFFICIELS[matiere.id];
-  if (format) {
-    // 2 & 3. Format (nombre de QCM / QRC / questions)
-    if (nbQCM !== format.qcm || nbQRC !== format.qrc) {
-      anomalies.push(
-        `Format incorrect : ${nbQCM} QCM + ${nbQRC} QRC, attendu ${format.qcm} QCM + ${format.qrc} QRC`,
-      );
-    }
+  if (format && !formatConforme) {
+    // 2 & 3. Format : diagnostic précis par type (Actuel / Attendu / À corriger)
+    const ptsQCM = getPointsParQuestion(matiere.id, "QCM", matiere);
+    const ptsQRC = getPointsParQuestion(matiere.id, "QRC", matiere);
+    const ptLabel = (pts: number, signe = "") =>
+      ` (${signe}${String(pts).replace(".", ",")} pt${Math.abs(pts) > 1 ? "s" : ""})`;
     const attenduTotalQ = format.qcm + format.qrc;
-    if (questions.length !== attenduTotalQ) {
+
+    anomalies.push(
+      `Format incorrect — Actuel : ${nbQCM} QCM + ${nbQRC} QRC = ${total}/${BAREME_CIBLE} (${questions.length}/${attenduTotalQ} questions)`,
+    );
+    anomalies.push(
+      `Attendu : ${format.qcm} QCM + ${format.qrc} QRC = ${BAREME_CIBLE}/${BAREME_CIBLE} (${attenduTotalQ} questions)`,
+    );
+
+    const corrections: string[] = [];
+    const dQCM = format.qcm - nbQCM;
+    const dQRC = format.qrc - nbQRC;
+    if (dQCM > 0)
+      corrections.push(
+        `+${dQCM} QCM à ajouter${ptLabel(ptsQCM)}`,
+      );
+    else if (dQCM < 0)
+      corrections.push(`−${-dQCM} QCM à retirer${ptLabel(ptsQCM, "−")}`);
+    if (dQRC > 0)
+      corrections.push(`+${dQRC} QRC à ajouter${ptLabel(ptsQRC)}`);
+    else if (dQRC < 0)
+      corrections.push(`−${-dQRC} QRC à retirer${ptLabel(ptsQRC, "−")}`);
+
+    if (corrections.length > 0) {
+      anomalies.push(`À corriger : ${corrections.join(" / ")}`);
+    }
+    if (total !== BAREME_CIBLE) {
+      const ecart = BAREME_CIBLE - total;
       anomalies.push(
-        questions.length < attenduTotalQ
-          ? `Questions manquantes : ${questions.length} question(s), attendu ${attenduTotalQ}`
-          : `Trop de questions : ${questions.length} question(s), attendu ${attenduTotalQ}`,
+        ecart > 0
+          ? `Total : ${total}/${BAREME_CIBLE} — il manque ${ecart} point${ecart > 1 ? "s" : ""}`
+          : `Total : ${total}/${BAREME_CIBLE} — ${-ecart} point${-ecart > 1 ? "s" : ""} en trop`,
       );
     }
+  }
     // 10. Coefficient officiel
     if ((matiere.coefficient ?? 0) !== format.coefficient) {
       anomalies.push(`Coefficient incorrect : ${matiere.coefficient}, attendu ${format.coefficient}`);
