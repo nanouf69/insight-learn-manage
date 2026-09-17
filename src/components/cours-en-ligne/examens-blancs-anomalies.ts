@@ -251,7 +251,14 @@ export interface ExamenAnomalies {
   parMatiere: Record<string, string[]>;
   matieresEnAnomalie: number;
   total: number;
+  /** Nombre réel de questions de l'examen (toutes matières confondues). */
+  totalQuestions: number;
+  /** Message d'anomalie sur le total (null si 107). */
+  totalAnomalie: string | null;
 }
+
+/** Nombre total de questions attendu pour un examen blanc complet (7 matières). */
+export const TOTAL_QUESTIONS_ATTENDU = 107;
 
 /**
  * Analyse un examen entier. `tousLesExamensCharges` sert uniquement à repérer
