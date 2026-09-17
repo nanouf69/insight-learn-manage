@@ -102,7 +102,7 @@ const datesFormations = {
 };
 
 // Dates centralisées — on affiche TOUTES les dates (y compris passées) pour le dossier apprenant
-import { ALL_DATES_EXAMEN_THEORIQUE, ALL_DATES_EXAMEN_PRATIQUE } from '@/lib/examDatesConfig';
+import { ALL_DATES_EXAMEN_THEORIQUE, ALL_DATES_EXAMEN_PRATIQUE, getProchaineDateExamenTheorique } from '@/lib/examDatesConfig';
 const datesExamenTheorique = ALL_DATES_EXAMEN_THEORIQUE;
 const datesExamenPratique = ALL_DATES_EXAMEN_PRATIQUE;
 const datesFormationContinue = filterFutureDateStrings([
@@ -146,7 +146,10 @@ export function ApprenantForm() {
   const [selectedFormation, setSelectedFormation] = useState("vtc-exam");
   const [montantTtc, setMontantTtc] = useState("1499");
   const [typeApprenantFormation, setTypeApprenantFormation] = useState("vtc");
-  const [dateExamenTheorique, setDateExamenTheorique] = useState("27 janvier 2026");
+  // Nouvelle inscription : la date d'examen la plus proche est sélectionnée par défaut
+  const [dateExamenTheorique, setDateExamenTheorique] = useState(
+    () => getProchaineDateExamenTheorique()?.date || ALL_DATES_EXAMEN_THEORIQUE[ALL_DATES_EXAMEN_THEORIQUE.length - 1].date
+  );
   const [datePaiement, setDatePaiement] = useState<Date | undefined>();
   const [montantPayeRp, setMontantPayeRp] = useState("");
   const [inscritFranceTravail, setInscritFranceTravail] = useState(false);
