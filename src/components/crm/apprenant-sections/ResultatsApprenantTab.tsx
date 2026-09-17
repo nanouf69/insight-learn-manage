@@ -6,7 +6,7 @@ import { BarChart3, Bot, CheckCircle2, XCircle, Trophy, BookOpen } from "lucide-
 import { supabase } from "@/integrations/supabase/client";
 import { EXAMENS_BLANCS_VTC, EXAMENS_BLANCS_TAXI, EXAMENS_BLANCS_TA, EXAMENS_BLANCS_VA } from "@/components/cours-en-ligne/examens-blancs-data";
 import { loadSavedExamens } from "@/components/cours-en-ligne/ExamensBlancsEditor";
-import { computeMoyenneExamen, computeMatiereScore, resolveMatiereForScoring } from "@/components/cours-en-ligne/examens-blancs-scoring";
+import { computeMoyenneExamen, computeMatiereScoreForAttempt } from "@/components/cours-en-ligne/examens-blancs-scoring";
 import { findScoreForMatiere, buildMatiereLookupKeys } from "@/components/cours-en-ligne/examens-blancs-utils";
 import { isQrcPendingCorrection } from "@/components/cours-en-ligne/exam-helpers";
 
