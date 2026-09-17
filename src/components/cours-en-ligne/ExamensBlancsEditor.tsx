@@ -730,6 +730,27 @@ function QuestionEditor({
   );
 }
 
+/**
+ * Compte les lignes dont `column` commence EXACTEMENT par `prefix`.
+ *
+ * `like('EB1_%')` traite le « _ » comme un joker : « EB1-TAXI » était compté
+ * comme appartenant à « EB1 ». On filtre donc côté client sur un vrai
+ * `startsWith`. Lecture seule : aucune écriture, aucune donnée modifiée.
+ */
+async function countRowsWithExactPrefix(
+  table: "reponses_apprenants" | "apprenant_quiz_results",
+  column: "exercice_id" | "quiz_id",
+  prefix: string,
+): Promise<number> {
+  const { data, error } = await supabase
+    .from(table)
+    .select(column)
+    .like(column, `${prefix}%`)
+    .limit(5000);
+  if (error) throw error;
+  return (data ?? []).filter((row: any) => String(row?.[column] ?? "").startsWith(prefix)).length;
+}
+
 // ===== ÉDITEUR D'UNE MATIÈRE =====
 function MatiereEditor({
   matiere,
@@ -787,7 +808,17 @@ function MatiereEditor({
   };
 
   const deleteQuestion = (qId: number) => {
-    if (locked) return;
+    // La corbeille ne doit JAMAIS rester silencieuse : si la suppression est
+    // impossible, on explique clairement pourquoi.
+    if (locked) {
+      toast.error(
+        "Suppression impossible : des apprenants ont déjà passé cet examen. " +
+        "Le verrou protège les tentatives déjà réalisées. Vous pouvez corriger l'énoncé, " +
+        "les choix ou la bonne réponse de la question.",
+        { duration: 10000 },
+      );
+      return;
+    }
     setConfirmDeleteQId(qId);
   };
 
@@ -803,17 +834,11 @@ function MatiereEditor({
       // answered it retroactively breaks their score (their answer no longer
       // matches any current question). Always verify right before deleting.
       const prefix = `${examId}_`;
-      const [{ count: repCount }, { count: resCount }] = await Promise.all([
-        supabase
-          .from("reponses_apprenants")
-          .select("*", { count: "exact", head: true })
-          .like("exercice_id", `${prefix}%`),
-        supabase
-          .from("apprenant_quiz_results")
-          .select("*", { count: "exact", head: true })
-          .like("quiz_id", `${prefix}%`),
+      const [repCount, resCount] = await Promise.all([
+        countRowsWithExactPrefix("reponses_apprenants", "exercice_id", prefix),
+        countRowsWithExactPrefix("apprenant_quiz_results", "quiz_id", prefix),
       ]);
-      const totalResponses = (repCount ?? 0) + (resCount ?? 0);
+      const totalResponses = repCount + resCount;
       if (totalResponses > 0) {
         toast.error(
           `❌ Suppression annulée : ${totalResponses} réponse(s) d'apprenant(s) existent déjà pour cet examen. ` +
@@ -1295,18 +1320,11 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
       try {
         // Check reponses_apprenants for in-progress or completed responses
         const prefix = `${examenSelId}_`;
-        const { count: repCount } = await supabase
-          .from("reponses_apprenants")
-          .select("*", { count: "exact", head: true })
-          .like("exercice_id", `${prefix}%`);
-
-        // Check apprenant_quiz_results for completed results
-        const { count: resCount } = await supabase
-          .from("apprenant_quiz_results")
-          .select("*", { count: "exact", head: true })
-          .like("quiz_id", `${prefix}%`);
-
-        setActiveResponsesCount((repCount ?? 0) + (resCount ?? 0));
+        const [repCount, resCount] = await Promise.all([
+          countRowsWithExactPrefix("reponses_apprenants", "exercice_id", prefix),
+          countRowsWithExactPrefix("apprenant_quiz_results", "quiz_id", prefix),
+        ]);
+        setActiveResponsesCount(repCount + resCount);
       } catch (err) {
         console.error("[ExamEditor] Error checking active responses:", err);
         setActiveResponsesCount(0);
