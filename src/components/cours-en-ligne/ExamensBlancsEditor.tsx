@@ -841,15 +841,20 @@ function MatiereEditor({
 
   const addQuestion = (type: "QCM" | "QRC") => {
     const newId = Math.max(0, ...questionsSafe.map(q => q.id)) + 1;
-    const newQ: Question = type === "QCM"
+    const editedAt = new Date().toISOString();
+    const base: Question = type === "QCM"
       ? { id: newId, type: "QCM", enonce: "Nouvelle question", choix: [
           { lettre: "A", texte: "Choix A", correct: true },
           { lettre: "B", texte: "Choix B" },
         ]}
       : { id: newId, type: "QRC", enonce: "Nouvelle question QRC", reponseQRC: "", reponses_possibles: [] };
+    // Même structure que les questions existantes + marqueurs d'édition Admin
+    // (utilisés par la règle « dernière modification réelle = version commune »).
+    const newQ = { ...base, manually_edited: true, _editedAt: editedAt } as Question;
     onChange({ ...matiere, questions: [...questionsSafe, newQ] });
     setEditingQId(newId);
   };
+
 
   const moveQuestion = (qId: number, direction: "up" | "down") => {
     const idx = questionsSafe.findIndex(q => q.id === qId);
