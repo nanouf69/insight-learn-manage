@@ -4,7 +4,7 @@ import { detectMatiereAnomalies, FORMATS_OFFICIELS } from "../components/cours-e
 import type { Matiere, Question } from "../components/cours-en-ligne/examens-blancs-data";
 
 const qcm = (i: number): Question => ({
-  id: `qcm${i}`,
+  id: i + 1,
   type: "QCM",
   enonce: `Question QCM ${i} ?`,
   choix: [
@@ -13,7 +13,7 @@ const qcm = (i: number): Question => ({
   ],
 });
 const qrc = (i: number): Question => ({
-  id: `qrc${i}`,
+  id: i + 100,
   type: "QRC",
   enonce: `Question QRC ${i} ?`,
   reponseQRC: "Réponse attendue détaillée.",
