@@ -19,18 +19,28 @@ const qrc = (i: number): Question => ({
   reponseQRC: "Réponse attendue détaillée.",
 });
 
-const matiere = (id: string, nbQCM: number, nbQRC: number): Matiere =>
+const matiere = (
+  id: string,
+  nbQCM: number,
+  nbQRC: number,
+  extras: Partial<Matiere> = {},
+): Matiere =>
   ({
     id,
     nom: id,
     coefficient: FORMATS_OFFICIELS[id]?.coefficient ?? 1,
     noteEliminatoire: FORMATS_OFFICIELS[id]?.eliminatoire ?? 6,
     noteSur: 20,
+    ...extras,
     questions: [
       ...Array.from({ length: nbQCM }, (_, i) => qcm(i)),
       ...Array.from({ length: nbQRC }, (_, i) => qrc(i)),
     ],
   }) as unknown as Matiere;
+
+// G(V)/G(T) : QCM 2 pts, QRC 4 pts (comme dans les vraies matières)
+const matiereGV = (nbQCM: number, nbQRC: number) =>
+  matiere("reglementation_vtc", nbQCM, nbQRC, { ptsQCM: 2, ptsQRC: 4 });
 
 describe("Anomalies format — messages précis", () => {
   it("T3P 10 QCM + 4 QRC → il manque 1 QRC (2 pts)", () => {
