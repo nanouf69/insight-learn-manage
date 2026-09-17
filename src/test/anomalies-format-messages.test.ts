@@ -45,16 +45,18 @@ describe("Anomalies format — messages précis", () => {
     expect(a.some((m) => m.includes("À corriger : +1 QCM à ajouter (1 pt)"))).toBe(true);
   });
 
-  it("Français 11 QCM + 5 QRC → +1 QCM manquant et 1 QRC en trop", () => {
-    const a = detectMatiereAnomalies(matiere("francais", 11, 5));
+  it("Reglementation VTC 11 QCM + 5 QRC → +1 QCM manquant et 1 QRC en trop", () => {
+    const a = detectMatiereAnomalies(matiere("reglementation_vtc", 11, 5));
     const corr = a.find((m) => m.startsWith("À corriger"));
     expect(corr).toContain("+1 QCM à ajouter (2 pts)");
-    expect(corr).toContain("−1 QRC à retirer (−2 pts)");
+    expect(corr).toContain("−1 QRC à retirer (−4 pts)");
   });
 
-  it("Français 7 QCM + 1 QRC → 1 QRC manquante seulement", () => {
-    const a = detectMatiereAnomalies(matiere("francais", 7, 1));
-    expect(a.some((m) => m.includes("À corriger : +2 QRC à ajouter (2 pts)"))).toBe(true);
+  it("Reglementation VTC 7 QCM + 1 QRC → 1 QCM en trop et 1 QRC manquante", () => {
+    const a = detectMatiereAnomalies(matiere("reglementation_vtc", 7, 1));
+    const corr = a.find((m) => m.startsWith("À corriger"));
+    expect(corr).toContain("−5 QCM à retirer (−2 pts)");
+    expect(corr).toContain("+1 QRC à ajouter (4 pts)");
   });
 
   it("Format conforme : aucun message format ni total", () => {
