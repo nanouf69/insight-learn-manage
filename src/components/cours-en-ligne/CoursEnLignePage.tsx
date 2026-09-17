@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import ModuleDetailView from "./ModuleDetailView";
+import ModuleContentSearch from "./ModuleContentSearch";
 import BilanFinFormationFCVtc from "./BilanFinFormationFCVtc";
 import ExamensBlancsPage from "./ExamensBlancsPage";
 import ExamensBlancsEditor from "./ExamensBlancsEditor";
@@ -369,6 +370,8 @@ const ApprenantSearchPreview = () => {
               Nouveau module d'entraînement
             </Button>
           </div>
+
+          <ModuleContentSearch onOpenModule={handleEditerModule} />
 
           <Card>
             <CardContent className="p-0">
