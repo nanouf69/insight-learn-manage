@@ -10,7 +10,7 @@ import {
   ArrowLeft, ChevronDown, ChevronRight, Pencil, Trash2, Plus,
   Save, CheckCircle2, X, Clock, Layers, Loader2, ArrowUp, ArrowDown, ArrowLeftRight, Pause, Play, AlertTriangle
 } from "lucide-react";
-import { tousLesExamens, getPointsParQuestion, type ExamenBlanc, type Matiere, type Question, type Choix } from "./examens-blancs-data";
+import { tousLesExamens, getPointsParQuestion, applyOfficialCoefficient, type ExamenBlanc, type Matiere, type Question, type Choix } from "./examens-blancs-data";
 import { mergeQuestionsForMatiere, moveQuestionToPosition } from "./examens-blancs-utils";
 import { QuestionImageUpload } from "./QuestionImageUpload";
 import { ExamQuestionImage } from "./ExamQuestionImage";
@@ -470,6 +470,13 @@ export async function loadSavedExamens(notifyRepairs: boolean = false): Promise<
   // NOTE: sync functions are NOT run here after merge — the saved data in DB
   // was already synced during persistExamens. Running sync again would overwrite
   // correctly merged admin edits with stale source data.
+  // Coefficients officiels : appliqués APRÈS la fusion avec la base, afin qu'un
+  // ancien coefficient enregistré (Gestion 3, Sécurité 2) ne réapparaisse pas.
+  // Aucune question, réponse, note ou tentative n'est touchée.
+  for (const examen of examens) {
+    for (const matiere of examen.matieres ?? []) applyOfficialCoefficient(matiere);
+  }
+
   repairCorrectFlags(examens, notifyRepairs);
 
   // Apply fournisseur (formateur) overrides on top of admin's saved data.
