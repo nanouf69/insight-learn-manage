@@ -13,6 +13,8 @@ import {
 import { tousLesExamens, getPointsParQuestion, applyOfficialCoefficient, type ExamenBlanc, type Matiere, type Question, type Choix } from "./examens-blancs-data";
 import { mergeQuestionsForMatiere, moveQuestionToPosition } from "./examens-blancs-utils";
 import { getSeuilEliminatoireAffiche } from "./examens-blancs-scoring";
+// Contrôle visuel des anomalies — LECTURE SEULE, aucune correction automatique.
+import { detectExamenAnomalies } from "./examens-blancs-anomalies";
 import { QuestionImageUpload } from "./QuestionImageUpload";
 import { ExamQuestionImage } from "./ExamQuestionImage";
 import {
