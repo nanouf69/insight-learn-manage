@@ -134,16 +134,16 @@ export function detectMatiereAnomalies(
       );
     }
   }
-    // 10. Coefficient officiel
-    if ((matiere.coefficient ?? 0) !== format.coefficient) {
-      anomalies.push(`Coefficient incorrect : ${matiere.coefficient}, attendu ${format.coefficient}`);
-    }
-    // 11. Seuil éliminatoire officiel
-    if ((matiere.noteEliminatoire ?? 0) !== format.eliminatoire) {
-      anomalies.push(
-        `Seuil éliminatoire incorrect : ${matiere.noteEliminatoire}, attendu ${format.eliminatoire}/20`,
-      );
-    }
+
+  // 10. Coefficient officiel
+  if (format && (matiere.coefficient ?? 0) !== format.coefficient) {
+    anomalies.push(`Coefficient incorrect : ${matiere.coefficient}, attendu ${format.coefficient}`);
+  }
+  // 11. Seuil éliminatoire officiel
+  if (format && (matiere.noteEliminatoire ?? 0) !== format.eliminatoire) {
+    anomalies.push(
+      `Seuil éliminatoire incorrect : ${matiere.noteEliminatoire}, attendu ${format.eliminatoire}/20`,
+    );
   }
 
   // 4 à 9. Contrôles question par question
