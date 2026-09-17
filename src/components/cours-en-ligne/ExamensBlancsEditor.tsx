@@ -1134,13 +1134,20 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
         (ex.matieres ?? []).forEach((m) => {
           if (!m?.id) return;
           const before = previousMatieres.find((pm) => pm?.id === m.id);
-          if (!before || JSON.stringify(before) !== JSON.stringify(m)) {
+          if (!before || !isSameMatiereContent(before, m)) {
             changedMatieresById.set(m.id, m);
           }
         });
       });
 
       if (changedMatieresById.size > 0) {
+        // Horodatage de la modification RÉELLE de la matière : c'est cette date
+        // (et non la date d'enregistrement de l'examen) qui détermine ensuite la
+        // version de référence partout où la matière est utilisée.
+        const editedAt = new Date().toISOString();
+        changedMatieresById.forEach((m) => {
+          (m as any)._editedAt = editedAt;
+        });
         synced.forEach((ex) => {
           ex.matieres = (ex.matieres ?? []).map((m) => {
             if (!m?.id) return m;
@@ -1150,6 +1157,7 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
           });
         });
       }
+
 
       const now = new Date().toISOString();
       const changedModuleFingerprints: Record<number, string> = {};
