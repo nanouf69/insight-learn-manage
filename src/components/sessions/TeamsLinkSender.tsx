@@ -53,6 +53,8 @@ export function TeamsLinkSender({ open, onOpenChange, sessionId, recipients }: T
   const [search, setSearch] = useState("");
   const [excluded, setExcluded] = useState<Set<string>>(new Set());
   const [sending, setSending] = useState(false);
+  const [resendingId, setResendingId] = useState<string | null>(null);
+
   const [results, setResults] = useState<{ recipient: Recipient; success: boolean; error?: string }[]>([]);
 
   const withEmail = useMemo(
