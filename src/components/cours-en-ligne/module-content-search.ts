@@ -56,10 +56,10 @@ export const SEARCHABLE_MODULES: SearchableModule[] = [
   asModule(29, "4.BILAN EXERCICES VA", QRC_COURS_VA as any[], BILAN_EXERCICES_VA as any[]),
   asModule(81, "1.BILAN EXERCICES FORMATION CONTINUE VTC", [], BILAN_EXERCICES_FC_VTC as any[]),
   asModule(82, "1.BILAN EXERCICES FORMATION CONTINUE TAXI", [], BILAN_EXERCICES_FC_TAXI as any[]),
-  asModule(5, "6.BILAN EXAMEN VTC", [], BILAN_EXAMEN_VTC as any[]),
-  asModule(11, "6.BILAN EXAMEN TAXI", [], BILAN_EXAMEN_TAXI as any[]),
-  asModule(28, "6.BILAN EXAMEN TA", [], BILAN_EXAMEN_TA as any[]),
-  asModule(30, "6.BILAN EXAMEN VA", [], BILAN_EXAMEN_VA as any[]),
+  asModule(5, "6.BILAN EXAMEN VTC", QRC_COURS_VTC as any[], BILAN_EXAMEN_VTC as any[]),
+  asModule(11, "6.BILAN EXAMEN TAXI", QRC_COURS_TAXI as any[], BILAN_EXAMEN_TAXI as any[]),
+  asModule(28, "6.BILAN EXAMEN TA", QRC_COURS_TA as any[], BILAN_EXAMEN_TA as any[]),
+  asModule(30, "6.BILAN EXAMEN VA", QRC_COURS_VA as any[], BILAN_EXAMEN_VA as any[]),
 ];
 
 export const normalizeText = (value: unknown): string =>
