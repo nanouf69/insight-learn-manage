@@ -15,6 +15,29 @@ export const ALL_DATES_EXAMEN_THEORIQUE = [
   { date: "17 novembre 2026", lieu: "Rhône – Double Mixte, 10 Avenue Gaston Berger, 69100 Villeurbanne", horaire: "après-midi" },
 ];
 
+/**
+ * Prochaine date d'examen théorique (la plus proche encore à venir).
+ * Utilisée par défaut pour toute nouvelle inscription.
+ */
+export function getProchaineDateExamenTheorique(now: Date = new Date()) {
+  const MONTHS: Record<string, number> = {
+    janvier: 0, février: 1, fevrier: 1, mars: 2, avril: 3, mai: 4, juin: 5,
+    juillet: 6, août: 7, aout: 7, septembre: 8, octobre: 9, novembre: 10,
+    décembre: 11, decembre: 11,
+  };
+  const today = new Date(now);
+  today.setHours(0, 0, 0, 0);
+  const parsed = ALL_DATES_EXAMEN_THEORIQUE.map((d) => {
+    const m = d.date.match(/(\d{1,2})\s+(\S+)\s+(\d{4})/);
+    const dt = m && MONTHS[m[2].toLowerCase()] !== undefined
+      ? new Date(Number(m[3]), MONTHS[m[2].toLowerCase()], Number(m[1]))
+      : null;
+    return { ...d, parsedDate: dt };
+  }).filter((d) => d.parsedDate && d.parsedDate >= today)
+    .sort((a, b) => a.parsedDate!.getTime() - b.parsedDate!.getTime());
+  return parsed[0] ?? null;
+}
+
 // Version courte (sans adresse complète) pour les vues compactes
 export const ALL_DATES_EXAMEN_THEORIQUE_SHORT = ALL_DATES_EXAMEN_THEORIQUE.map(d => ({
   ...d,

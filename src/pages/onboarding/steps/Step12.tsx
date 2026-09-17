@@ -31,8 +31,11 @@ import parcoursChauffeurImg from "@/assets/parcours-chauffeur-vtc-taxi.png.asset
 import type { Database } from "@/integrations/supabase/types";
 
 // Dates centralisées
-import { ALL_DATES_EXAMEN_THEORIQUE_VALUES } from '@/lib/examDatesConfig';
+import { ALL_DATES_EXAMEN_THEORIQUE_VALUES, getProchaineDateExamenTheorique } from '@/lib/examDatesConfig';
 const datesExamenTheorique = filterFutureExamValues(ALL_DATES_EXAMEN_THEORIQUE_VALUES);
+// Nouvelle inscription : date d'examen la plus proche par défaut
+const getDateExamenParDefaut = () =>
+  getProchaineDateExamenTheorique()?.date || datesExamenTheorique[0]?.value || '';
 
 // Types d'examens disponibles
 const typesExamen = [
@@ -80,7 +83,7 @@ export default function Step12() {
   const [email, setEmail] = useState('');
   const [telephone, setTelephone] = useState('');
   const [numeroDossier, setNumeroDossier] = useState('');
-  const [dateExamen, setDateExamen] = useState('');
+  const [dateExamen, setDateExamen] = useState(getDateExamenParDefaut);
   const [typeExamen, setTypeExamen] = useState('');
   const [motDePasseCma, setMotDePasseCma] = useState('');
   const [b2Vierge, setB2Vierge] = useState(false);
@@ -138,7 +141,10 @@ export default function Step12() {
     const savedTypeExamen = localStorage.getItem('onboarding_type_examen');
     
     if (savedNumeroDossier) setNumeroDossier(savedNumeroDossier);
-    if (savedDateExamen) setDateExamen(savedDateExamen);
+    // On ne restaure la date enregistrée que si elle est encore proposée (sinon : la plus proche)
+    if (savedDateExamen && datesExamenTheorique.some(d => d.value === savedDateExamen)) {
+      setDateExamen(savedDateExamen);
+    }
     if (savedTypeExamen) setTypeExamen(savedTypeExamen);
 
     const savedMdpCma = localStorage.getItem('onboarding_mot_de_passe_cma');

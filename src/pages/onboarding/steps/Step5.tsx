@@ -15,6 +15,9 @@ export default function Step5() {
   const handleSelectExam = (id: string) => {
     setSelectedExamId(id);
     localStorage.setItem('onboarding_step5_examId', id);
+    // Enregistre aussi la date choisie pour qu'elle remonte dans la fiche CRM
+    const exam = EXAM_DATES.find(e => e.id === id);
+    if (exam) localStorage.setItem('onboarding_date_examen', exam.label.split(' (')[0]);
   };
 
   const handleConfirm = (val: boolean) => {
