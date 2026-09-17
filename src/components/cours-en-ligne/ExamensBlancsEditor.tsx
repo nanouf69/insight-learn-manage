@@ -1320,18 +1320,11 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
       try {
         // Check reponses_apprenants for in-progress or completed responses
         const prefix = `${examenSelId}_`;
-        const { count: repCount } = await supabase
-          .from("reponses_apprenants")
-          .select("*", { count: "exact", head: true })
-          .like("exercice_id", `${prefix}%`);
-
-        // Check apprenant_quiz_results for completed results
-        const { count: resCount } = await supabase
-          .from("apprenant_quiz_results")
-          .select("*", { count: "exact", head: true })
-          .like("quiz_id", `${prefix}%`);
-
-        setActiveResponsesCount((repCount ?? 0) + (resCount ?? 0));
+        const [repCount, resCount] = await Promise.all([
+          countRowsWithExactPrefix("reponses_apprenants", "exercice_id", prefix),
+          countRowsWithExactPrefix("apprenant_quiz_results", "quiz_id", prefix),
+        ]);
+        setActiveResponsesCount(repCount + resCount);
       } catch (err) {
         console.error("[ExamEditor] Error checking active responses:", err);
         setActiveResponsesCount(0);
