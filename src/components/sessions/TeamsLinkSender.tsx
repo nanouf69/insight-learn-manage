@@ -300,13 +300,31 @@ export function TeamsLinkSender({ open, onOpenChange, sessionId, recipients }: T
                       </span>
                     </div>
                     <p className="truncate text-muted-foreground">{h.lien}</p>
-                    <p className="text-muted-foreground">
-                      {(Array.isArray(h.destinataires) ? h.destinataires : [])
-                        .map((d: any) => d?.nom || d?.email)
-                        .filter(Boolean)
-                        .join(", ")}
-                    </p>
+                    <div className="flex items-end justify-between gap-2">
+                      <p className="text-muted-foreground">
+                        {(Array.isArray(h.destinataires) ? h.destinataires : [])
+                          .map((d: any) => d?.nom || d?.email)
+                          .filter(Boolean)
+                          .join(", ")}
+                      </p>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-7 shrink-0 gap-1 text-xs"
+                        disabled={sending || resendingId !== null}
+                        onClick={() => handleResend(h)}
+                      >
+                        {resendingId === h.id ? (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : (
+                          <Send className="w-3 h-3" />
+                        )}
+                        Renvoyer
+                      </Button>
+                    </div>
                   </div>
+
                 ))}
               </div>
             </div>
