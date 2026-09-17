@@ -976,21 +976,66 @@ function MatiereEditor({
 
       {/* Contrôle visuel des anomalies — informatif uniquement */}
       {anomalies && anomalies.length > 0 && (
-        <div className="mx-4 mb-4 mt-2 rounded-lg border border-destructive/40 bg-destructive/10 p-3">
+        <div className="mx-4 mb-2 mt-2 rounded-lg border border-destructive/40 bg-destructive/10 p-3">
           <p className="text-sm font-bold text-destructive flex items-center gap-2">
             <AlertTriangle className="w-4 h-4" />
             ANOMALIE — EXAMEN À VÉRIFIER
           </p>
           <ul className="mt-2 space-y-1">
-            {anomalies.map((a, i) => (
-              <li key={i} className="text-xs text-destructive">🔴 {a}</li>
-            ))}
+            {anomalies
+              .filter((a) => !a.startsWith("À corriger"))
+              .map((a, i) => (
+                <li key={i} className="text-xs text-destructive">🔴 {a}</li>
+              ))}
           </ul>
           <p className="mt-2 text-[11px] text-destructive/70">
             Signalement uniquement : aucune correction automatique n'est effectuée.
           </p>
         </div>
       )}
+
+      {/* Actions recommandées — vert : indique quoi faire, n'exécute rien tout seul */}
+      {corrections.length > 0 && (
+        <div className="mx-4 mb-4 mt-2 rounded-lg border border-emerald-500/50 bg-emerald-500/10 p-3">
+          <p className="text-sm font-bold text-emerald-700 dark:text-emerald-400">✅ À CORRIGER</p>
+          <div className="mt-2 space-y-2">
+            {corrections.map((c, i) => (
+              <div key={i} className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-medium text-emerald-700 dark:text-emerald-300">
+                  ✅ À corriger : {c.label}
+                </span>
+                {c.action === "add" && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 gap-1 border-emerald-500/60 text-emerald-700 dark:text-emerald-300"
+                    onClick={() => { setExpanded(true); addQuestion(c.type); }}
+                  >
+                    <Plus className="w-3 h-3" />
+                    Ajouter {c.type === "QCM" ? "un QCM" : "une QRC"}
+                  </Button>
+                )}
+              </div>
+            ))}
+          </div>
+          <p className="mt-2 text-[11px] text-emerald-700/70 dark:text-emerald-300/70">
+            Action recommandée uniquement — la matière n'est pas encore conforme.
+          </p>
+        </div>
+      )}
+
+      {/* Ajout de question toujours accessible */}
+      <div className="mx-4 mb-4 flex flex-wrap items-center gap-2">
+        <span className="text-xs font-semibold text-muted-foreground">Ajouter une question :</span>
+        <Button size="sm" variant="outline" className="gap-1" onClick={() => { setExpanded(true); addQuestion("QCM"); }}>
+          <Plus className="w-3 h-3" />
+          Ajouter un QCM
+        </Button>
+        <Button size="sm" variant="outline" className="gap-1" onClick={() => { setExpanded(true); addQuestion("QRC"); }}>
+          <Plus className="w-3 h-3" />
+          Ajouter une QRC
+        </Button>
+      </div>
 
       {/* Questions */}
       {expanded && (
