@@ -1617,10 +1617,18 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
                   {(() => {
                     const rapport = anomaliesParExamen[ex.id];
                     if (!rapport) return null;
-                    return rapport.matieresEnAnomalie > 0 ? (
-                      <p className="mt-1 text-[11px] font-semibold text-destructive">
-                        ⚠️ Examen incomplet / anomalie détectée ({rapport.matieresEnAnomalie} matière{rapport.matieresEnAnomalie > 1 ? "s" : ""})
-                      </p>
+                    const enAnomalie = rapport.matieresEnAnomalie > 0 || !!rapport.totalAnomalie;
+                    return enAnomalie ? (
+                      <>
+                        <p className="mt-1 text-[11px] font-semibold text-destructive">
+                          ⚠️ Examen incomplet / anomalie détectée ({rapport.matieresEnAnomalie} matière{rapport.matieresEnAnomalie > 1 ? "s" : ""})
+                        </p>
+                        {rapport.totalAnomalie && (
+                          <p className="mt-0.5 text-[11px] font-semibold text-destructive">
+                            🔴 {rapport.totalAnomalie}
+                          </p>
+                        )}
+                      </>
                     ) : (
                       <p className="mt-1 text-[11px] font-semibold text-emerald-600">✓ Examen conforme</p>
                     );
