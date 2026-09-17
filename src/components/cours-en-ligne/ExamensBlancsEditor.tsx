@@ -1239,6 +1239,17 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
         lastKnownServerUpdatedAtRef.current[moduleId] = persistedUpdatedAtByModule[moduleId] ?? now;
       }
 
+      // RAFRAÎCHISSEMENT D'AFFICHAGE UNIQUEMENT : `synced` contient déjà la
+      // version commune propagée sur toutes les matières partagées (celle qui
+      // vient d'être enregistrée en base). On le réinjecte dans l'état affiché
+      // pour que Gestion montre immédiatement la même version partout, sans
+      // fermer/rouvrir l'éditeur. Aucune écriture supplémentaire en base.
+      // On ne touche pas à l'état si une édition plus récente est en attente
+      // (elle sera enregistrée puis affichée par le prochain cycle).
+      if (!pendingExamSaveRef.current || JSON.stringify(pendingExamSaveRef.current) === JSON.stringify(sourceExamens)) {
+        setExamens(synced);
+      }
+
       if (showSuccessToast) {
         setSaved(true);
         toast.success("Examens blancs sauvegardés ! Les élèves verront les modifications.");
