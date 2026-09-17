@@ -141,7 +141,10 @@ export default function Step12() {
     const savedTypeExamen = localStorage.getItem('onboarding_type_examen');
     
     if (savedNumeroDossier) setNumeroDossier(savedNumeroDossier);
-    if (savedDateExamen) setDateExamen(savedDateExamen);
+    // On ne restaure la date enregistrée que si elle est encore proposée (sinon : la plus proche)
+    if (savedDateExamen && datesExamenTheorique.some(d => d.value === savedDateExamen)) {
+      setDateExamen(savedDateExamen);
+    }
     if (savedTypeExamen) setTypeExamen(savedTypeExamen);
 
     const savedMdpCma = localStorage.getItem('onboarding_mot_de_passe_cma');
