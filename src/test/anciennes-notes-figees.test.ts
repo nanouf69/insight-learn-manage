@@ -60,6 +60,7 @@ describe("Anciennes tentatives sans snapshot : note figée", () => {
     const score = computeMatiereScoreForAttempt(matiereTest, {
       details: {
         snapshot: {
+          version: 1,
           matiereId: "matiere_test_suppression",
           nom: "Matière de test",
           coefficient: 1,
