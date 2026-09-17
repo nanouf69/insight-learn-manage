@@ -823,10 +823,18 @@ function MatiereEditor({
 
   const [checkingBeforeDelete, setCheckingBeforeDelete] = useState(false);
 
+  // Total réel de la matière = somme des points de ses questions, au barème
+  // de la matière. Les points des questions existantes ne sont JAMAIS
+  // redistribués : chaque question garde la valeur prévue pour son type.
+  const sumPoints = (list: Question[]) =>
+    list.reduce((acc, q) => acc + getPointsParQuestion(matiere.id, q?.type || "QCM", matiere), 0);
+  const totalPoints = sumPoints(questionsSafe);
+  const BAREME_CIBLE = 20;
+
   const confirmDelete = async () => {
     if (confirmDeleteQId === null) return;
     const newQuestions = questionsSafe.filter(q => q.id !== confirmDeleteQId);
-    onChange({ ...matiere, questions: newQuestions });
+    onChange({ ...matiere, questions: newQuestions, noteSur: sumPoints(newQuestions) });
     setEditingQId(null);
     setConfirmDeleteQId(null);
     toast.success("Question supprimée avec succès");
@@ -844,7 +852,15 @@ function MatiereEditor({
     // Même structure que les questions existantes + marqueurs d'édition Admin
     // (utilisés par la règle « dernière modification réelle = version commune »).
     const newQ = { ...base, manually_edited: true, _editedAt: editedAt } as Question;
-    onChange({ ...matiere, questions: [...questionsSafe, newQ] });
+    const newQuestions = [...questionsSafe, newQ];
+    const nouveauTotal = sumPoints(newQuestions);
+    // Le total de la matière est recalculé immédiatement, sans toucher aux
+    // points des autres questions. Au-delà du barème prévu, on avertit
+    // avant l'enregistrement plutôt que d'ajuster automatiquement.
+    if (nouveauTotal > BAREME_CIBLE) {
+      toast.warning(`Cet ajout porterait le barème à ${nouveauTotal}/${BAREME_CIBLE}`);
+    }
+    onChange({ ...matiere, questions: newQuestions, noteSur: nouveauTotal });
     setEditingQId(newId);
   };
 
