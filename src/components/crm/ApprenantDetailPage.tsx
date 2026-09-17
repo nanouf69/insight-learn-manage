@@ -30,6 +30,7 @@ import { ControleQualiteTab } from "./apprenant-sections/ControleQualiteTab";
 import ExamensBlancsResetTab from "./apprenant-sections/ExamensBlancsResetTab";
 import { ResultatsApprenantTab } from "./apprenant-sections/ResultatsApprenantTab";
 import { AccessDiagnosticTab } from "./apprenant-sections/AccessDiagnosticTab";
+import { CompteStatutBadge } from "./apprenant-sections/CompteStatutBadge";
 import { SuiviEcranTab } from "./apprenant-sections/SuiviEcranTab";
 import ApprenantActivityReport from "@/components/cours-en-ligne/ApprenantActivityReport";
 import CoursPublic from "@/pages/CoursPublic";
@@ -499,12 +500,9 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <CompteStatutBadge apprenant={apprenant} />
           {hasExistingAccount && (
             <>
-              <Badge variant="secondary" className="gap-1">
-                <CheckCircle2 className="w-3 h-3" />
-                Compte actif
-              </Badge>
               <Button
                 variant="outline"
                 size="sm"
