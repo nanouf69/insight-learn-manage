@@ -1644,6 +1644,7 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
                   examId={examenSel.id}
                   onChange={updated => handleMatiereChange(m.id, updated)}
                   locked={isLocked}
+                  anomalies={anomaliesParExamen[examenSel.id]?.parMatiere?.[m.id]}
                 />
               ))}
             </div>
