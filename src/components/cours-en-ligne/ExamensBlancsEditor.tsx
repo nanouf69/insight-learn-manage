@@ -1171,6 +1171,17 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
 
   const examensFiltres = examens.filter(e => typeFiltre === "tous" || e?.type === typeFiltre);
   const examenSel = examens.find(e => e.id === examenSelId) || null;
+
+  // Contrôle visuel des anomalies — calcul en LECTURE SEULE au rendu.
+  // Aucune donnée n'est modifiée, aucune anomalie n'est corrigée automatiquement.
+  const anomaliesParExamen = useMemo(() => {
+    const map: Record<string, ReturnType<typeof detectExamenAnomalies>> = {};
+    for (const ex of examens) {
+      if (!ex?.id) continue;
+      map[ex.id] = detectExamenAnomalies(ex, examens);
+    }
+    return map;
+  }, [examens]);
   const isLocked = activeResponsesCount > 0;
 
   const persistExamens = async (sourceExamens: ExamenBlanc[], showSuccessToast = false): Promise<boolean> => {
