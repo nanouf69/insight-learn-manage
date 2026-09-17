@@ -2520,7 +2520,7 @@ function getInitialModuleDataRaw(
       id: 5,
       nom: "6.BILAN EXAMEN VTC",
       description: "Bilan examen VTC — 7 matières séparées. Questions type examen, sans chronomètre.",
-      cours: [],
+      cours: JSON.parse(JSON.stringify(QRC_COURS_VTC)),
       exercices: BILAN_EXAMEN_VTC,
     };
   }
@@ -2531,7 +2531,7 @@ function getInitialModuleDataRaw(
       id: 11,
       nom: "6.BILAN EXAMEN TAXI",
       description: "Bilan examen TAXI — 7 matières séparées. Questions type examen, sans chronomètre.",
-      cours: [],
+      cours: JSON.parse(JSON.stringify(QRC_COURS_TAXI)),
       exercices: BILAN_EXAMEN_TAXI,
     };
   }
@@ -2542,7 +2542,7 @@ function getInitialModuleDataRaw(
       id: 28,
       nom: "6.BILAN EXAMEN TA",
       description: "Bilan examen TA — Réglementation Nationale TAXI & Réglementation Locale. Questions type examen, sans chronomètre.",
-      cours: [],
+      cours: JSON.parse(JSON.stringify(QRC_COURS_TA)),
       exercices: BILAN_EXAMEN_TA,
     };
   }
@@ -2553,7 +2553,7 @@ function getInitialModuleDataRaw(
       id: 30,
       nom: "6.BILAN EXAMEN VA",
       description: "Bilan examen VA — Développement Commercial & Réglementation Spécifique VTC. Questions type examen, sans chronomètre.",
-      cours: [],
+      cours: JSON.parse(JSON.stringify(QRC_COURS_VA)),
       exercices: BILAN_EXAMEN_VA,
     };
   }
