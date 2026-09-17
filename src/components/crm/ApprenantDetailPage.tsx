@@ -499,12 +499,9 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <CompteStatutBadge apprenant={apprenant} />
           {hasExistingAccount && (
             <>
-              <Badge variant="secondary" className="gap-1">
-                <CheckCircle2 className="w-3 h-3" />
-                Compte actif
-              </Badge>
               <Button
                 variant="outline"
                 size="sm"
