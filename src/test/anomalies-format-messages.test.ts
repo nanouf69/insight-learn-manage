@@ -56,14 +56,14 @@ describe("Anomalies format — messages précis", () => {
   });
 
   it("Reglementation VTC 11 QCM + 5 QRC → +1 QCM manquant et 1 QRC en trop", () => {
-    const a = detectMatiereAnomalies(matiere("reglementation_vtc", 11, 5));
+    const a = detectMatiereAnomalies(matiereGV(11, 5));
     const corr = a.find((m) => m.startsWith("À corriger"));
     expect(corr).toContain("+1 QCM à ajouter (2 pts)");
     expect(corr).toContain("−1 QRC à retirer (−4 pts)");
   });
 
   it("Reglementation VTC 7 QCM + 1 QRC → 1 QCM en trop et 1 QRC manquante", () => {
-    const a = detectMatiereAnomalies(matiere("reglementation_vtc", 7, 1));
+    const a = detectMatiereAnomalies(matiereGV(7, 1));
     const corr = a.find((m) => m.startsWith("À corriger"));
     expect(corr).toContain("−5 QCM à retirer (−2 pts)");
     expect(corr).toContain("+1 QRC à ajouter (4 pts)");
