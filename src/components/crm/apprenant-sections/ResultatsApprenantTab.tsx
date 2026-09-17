@@ -131,13 +131,7 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
                 ? computeMoyenneExamen(examenDef, (m) => {
                     const row = findScoreForMatiere(scoresWithLookup as any, m);
                     if (!row) return null;
-                    return computeMatiereScore(
-                      resolveMatiereForScoring(m, (row as any).details),
-                      (row as any).details?.reponses || null,
-                      (row as any).score_obtenu,
-                      (row as any).score_max,
-                      (row as any).details?.correctionsIA || null,
-                    );
+                    return computeMatiereScoreForAttempt(m, row as any);
                   })
                 : null;
               const moyenne = bilanExamen?.moyenne ?? 0;
