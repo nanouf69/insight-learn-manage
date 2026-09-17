@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,6 +13,8 @@ import {
 import { tousLesExamens, getPointsParQuestion, applyOfficialCoefficient, type ExamenBlanc, type Matiere, type Question, type Choix } from "./examens-blancs-data";
 import { mergeQuestionsForMatiere, moveQuestionToPosition } from "./examens-blancs-utils";
 import { getSeuilEliminatoireAffiche } from "./examens-blancs-scoring";
+// Contrôle visuel des anomalies — LECTURE SEULE, aucune correction automatique.
+import { detectExamenAnomalies } from "./examens-blancs-anomalies";
 import { QuestionImageUpload } from "./QuestionImageUpload";
 import { ExamQuestionImage } from "./ExamQuestionImage";
 import {
@@ -766,12 +768,15 @@ function MatiereEditor({
   examTitre,
   examId,
   locked,
+  anomalies,
 }: {
   matiere: Matiere;
   onChange: (m: Matiere) => void;
   examTitre?: string;
   examId: string;
   locked?: boolean;
+  /** Anomalies détectées (affichage uniquement — aucune correction automatique). */
+  anomalies?: string[];
 }) {
   const [expanded, setExpanded] = useState(false);
   const [editingQId, setEditingQId] = useState<number | null>(null);
@@ -969,6 +974,24 @@ function MatiereEditor({
         </div>
       )}
 
+      {/* Contrôle visuel des anomalies — informatif uniquement */}
+      {anomalies && anomalies.length > 0 && (
+        <div className="mx-4 mb-4 mt-2 rounded-lg border border-destructive/40 bg-destructive/10 p-3">
+          <p className="text-sm font-bold text-destructive flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4" />
+            ANOMALIE — EXAMEN À VÉRIFIER
+          </p>
+          <ul className="mt-2 space-y-1">
+            {anomalies.map((a, i) => (
+              <li key={i} className="text-xs text-destructive">🔴 {a}</li>
+            ))}
+          </ul>
+          <p className="mt-2 text-[11px] text-destructive/70">
+            Signalement uniquement : aucune correction automatique n'est effectuée.
+          </p>
+        </div>
+      )}
+
       {/* Questions */}
       {expanded && (
         <div className="p-4 space-y-3">
@@ -1148,6 +1171,17 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
 
   const examensFiltres = examens.filter(e => typeFiltre === "tous" || e?.type === typeFiltre);
   const examenSel = examens.find(e => e.id === examenSelId) || null;
+
+  // Contrôle visuel des anomalies — calcul en LECTURE SEULE au rendu.
+  // Aucune donnée n'est modifiée, aucune anomalie n'est corrigée automatiquement.
+  const anomaliesParExamen = useMemo(() => {
+    const map: Record<string, ReturnType<typeof detectExamenAnomalies>> = {};
+    for (const ex of examens) {
+      if (!ex?.id) continue;
+      map[ex.id] = detectExamenAnomalies(ex, examens);
+    }
+    return map;
+  }, [examens]);
   const isLocked = activeResponsesCount > 0;
 
   const persistExamens = async (sourceExamens: ExamenBlanc[], showSuccessToast = false): Promise<boolean> => {
@@ -1536,6 +1570,17 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
                   <p className="text-xs text-muted-foreground mt-1">
                     {ex.matieres.reduce((acc, m) => acc + m.questions.length, 0)} questions · {isBilan ? "sans chrono" : `${ex.matieres.reduce((acc, m) => acc + m.duree, 0)}min`}
                   </p>
+                  {(() => {
+                    const rapport = anomaliesParExamen[ex.id];
+                    if (!rapport) return null;
+                    return rapport.matieresEnAnomalie > 0 ? (
+                      <p className="mt-1 text-[11px] font-semibold text-destructive">
+                        ⚠️ Examen incomplet / anomalie détectée ({rapport.matieresEnAnomalie} matière{rapport.matieresEnAnomalie > 1 ? "s" : ""})
+                      </p>
+                    ) : (
+                      <p className="mt-1 text-[11px] font-semibold text-emerald-600">✓ Examen conforme</p>
+                    );
+                  })()}
                   {onPauseToggle && (
                     <button
                       onClick={(e) => { e.stopPropagation(); onPauseToggle(ex.id); }}
@@ -1599,6 +1644,7 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
                   examId={examenSel.id}
                   onChange={updated => handleMatiereChange(m.id, updated)}
                   locked={isLocked}
+                  anomalies={anomaliesParExamen[examenSel.id]?.parMatiere?.[m.id]}
                 />
               ))}
             </div>
