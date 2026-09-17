@@ -1066,8 +1066,7 @@ function MatiereEditor({
         <AlertDialogHeader>
           <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
           <AlertDialogDescription>
-            Êtes-vous sûr de vouloir supprimer cette question ? Cette action est irréversible.
-            Une vérification sera faite pour s'assurer qu'aucun apprenant n'y a déjà répondu.
+            Cette question sera supprimée des prochaines tentatives. Les anciennes notes resteront inchangées. Confirmer ?
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
