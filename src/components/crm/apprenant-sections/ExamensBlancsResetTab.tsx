@@ -429,13 +429,12 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
                 ? computeMoyenneExamen(examenDef, (m) => {
                     const row = findScoreForMatiere(scoresWithLookup as any, m);
                     if (!row) return null;
-                    return computeMatiereScore(
-                      resolveMatiereForScoring(m, (row as any).details),
-                      (row as any).reponses,
-                      row.score_obtenu,
-                      row.score_max,
-                      (row as any).correctionsIA,
-                    );
+                    return computeMatiereScoreForAttempt(m, {
+                      details: (row as any).details ?? { reponses: (row as any).reponses, correctionsIA: (row as any).correctionsIA },
+                      score_obtenu: row.score_obtenu,
+                      score_max: row.score_max,
+                      note_sur_20: (row as any).note_sur_20,
+                    });
                   })
                 : null;
               const noteGlobale = bilanExamen?.hasScores
