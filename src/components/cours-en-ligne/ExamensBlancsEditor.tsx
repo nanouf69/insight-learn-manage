@@ -901,6 +901,18 @@ function MatiereEditor({
           <span>Coeff. {matiere.coefficient}</span>
           <span className="text-destructive">Élim. {matiere.noteEliminatoire}/{matiere.noteSur}</span>
           <span>{questionsSafe.length} questions</span>
+          <span
+            className={
+              totalPoints === BAREME_CIBLE
+                ? "font-semibold text-emerald-600"
+                : totalPoints > BAREME_CIBLE
+                  ? "font-semibold text-destructive"
+                  : "font-semibold text-amber-600"
+            }
+            title="Total des points des questions de cette matière"
+          >
+            Total {totalPoints}/{BAREME_CIBLE}
+          </span>
           <Button
             size="sm"
             variant="ghost"
