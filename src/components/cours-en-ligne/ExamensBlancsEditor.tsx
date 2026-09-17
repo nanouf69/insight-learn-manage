@@ -843,6 +843,8 @@ function MatiereEditor({
     list.reduce((acc, q) => acc + getPointsParQuestion(matiere.id, q?.type || "QCM", matiere), 0);
   const totalPoints = sumPoints(questionsSafe);
   const BAREME_CIBLE = 20;
+  // Actions recommandées (lecture seule) : rien n'est corrigé automatiquement.
+  const corrections = getCorrectionsMatiere(matiere);
 
   const confirmDelete = async () => {
     if (confirmDeleteQId === null) return;
