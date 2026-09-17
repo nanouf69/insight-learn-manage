@@ -594,8 +594,8 @@ function QuestionEditor({
       if (originalCorrect !== newCorrect) {
         const confirmed = window.confirm(
           "⚠️ Vous changez la bonne réponse d'une question à laquelle des élèves ont déjà répondu.\n\n" +
-          "Leur note sera automatiquement recalculée avec cette nouvelle bonne réponse dès leur prochaine consultation " +
-          "(y compris pour des examens déjà passés).\n\n" +
+          "Cette nouvelle bonne réponse s'appliquera aux prochaines tentatives. " +
+          "Les notes déjà enregistrées resteront inchangées.\n\n" +
           "Continuer ?",
         );
         if (!confirmed) return;
