@@ -271,6 +271,67 @@ export function computeMatiereScore(
   return { scoreObtenu: safeScore, scoreMax: storedMax, noteSur20, admis, passee: true };
 }
 
+/**
+ * NOTE D'UNE TENTATIVE DÉJÀ PASSÉE — RÈGLE DÉFINITIVE.
+ *
+ * - Tentative AVEC snapshot : on note à partir du snapshot figé (version exacte
+ *   vue par l'apprenant).
+ * - Tentative SANS snapshot (toutes les tentatives antérieures aux snapshots) :
+ *   la note ENREGISTRÉE en base est définitive. On ne recalcule JAMAIS à partir
+ *   des questions actuelles, donc modifier, ajouter ou supprimer une question
+ *   ne peut plus changer une ancienne note.
+ *
+ * Lecture seule : aucune donnée apprenant n'est modifiée.
+ */
+export function computeMatiereScoreForAttempt(
+  matiereCourante: Matiere,
+  row: { details?: any; score_obtenu?: unknown; score_max?: unknown; note_sur_20?: unknown } | null | undefined,
+  staticFallbackMatiere?: Matiere | null,
+): MatiereScore | null {
+  if (!row) return null;
+  const details = (row as any).details;
+
+  if (hasMatiereSnapshot(details)) {
+    return computeMatiereScore(
+      resolveMatiereForScoring(matiereCourante, details),
+      details?.reponses || null,
+      (row as any).score_obtenu,
+      (row as any).score_max,
+      details?.correctionsIA || null,
+      staticFallbackMatiere ?? null,
+    );
+  }
+
+  // Aucune snapshot → note figée telle qu'enregistrée.
+  const storedObtenu = toFiniteNumber((row as any).score_obtenu, NaN);
+  const storedMax = toFiniteNumber((row as any).score_max, NaN);
+  const storedNote20 = toFiniteNumber((row as any).note_sur_20, NaN);
+
+  if (!Number.isFinite(storedObtenu) || !Number.isFinite(storedMax) || storedMax <= 0) {
+    if (!Number.isFinite(storedNote20)) return null;
+    const note = clamp(storedNote20, 0, 20);
+    return {
+      scoreObtenu: note,
+      scoreMax: 20,
+      noteSur20: note,
+      admis: computeAdmisForMatiere(note, 20, matiereCourante.noteEliminatoire, matiereCourante.noteSur || 20, false),
+      passee: true,
+    };
+  }
+
+  const safeScore = clamp(storedObtenu, 0, storedMax);
+  const noteSur20 = Number.isFinite(storedNote20)
+    ? clamp(storedNote20, 0, 20)
+    : normalizeNoteSur20(safeScore, storedMax);
+  return {
+    scoreObtenu: safeScore,
+    scoreMax: storedMax,
+    noteSur20,
+    admis: computeAdmisForMatiere(safeScore, storedMax, matiereCourante.noteEliminatoire, matiereCourante.noteSur || 20, false),
+    passee: true,
+  };
+}
+
 export function computeResultatMatiereScore(
   matiere: Matiere,
   resultat: Pick<ResultatMatiere, "reponses" | "noteObtenue" | "maxPoints" | "correctionsIA"> | null | undefined,
