@@ -143,6 +143,24 @@ function normalizeMatiereNoteSur(matiere: Matiere): void {
   if (total > 0) matiere.noteSur = Math.round(total * 100) / 100;
 }
 
+/**
+ * Coefficients officiels par matière (barème fourni par le centre).
+ * Appliqués aussi bien aux données source qu'aux versions enregistrées en base,
+ * afin qu'un ancien coefficient sauvegardé ne réapparaisse pas.
+ * Aucun autre coefficient n'est modifié.
+ */
+const OFFICIAL_COEFFICIENTS: Record<string, number> = {
+  gestion: 2,
+  securite: 3,
+};
+
+/** Applique le coefficient officiel d'une matière, s'il en existe un. */
+export function applyOfficialCoefficient(matiere: Matiere): void {
+  if (!matiere?.id) return;
+  const coef = OFFICIAL_COEFFICIENTS[matiere.id];
+  if (coef != null) matiere.coefficient = coef;
+}
+
 
 // ===== MATIÈRES COMMUNES (T3P, GESTION, SÉCURITÉ ROUTIÈRE, FRANÇAIS, ANGLAIS) =====
 
@@ -10462,6 +10480,7 @@ export const tousLesExamens: ExamenBlanc[] = [
 for (const examen of tousLesExamens) {
   for (const matiere of examen.matieres ?? []) {
     normalizeMatiereNoteSur(matiere);
+    applyOfficialCoefficient(matiere);
   }
 }
 
