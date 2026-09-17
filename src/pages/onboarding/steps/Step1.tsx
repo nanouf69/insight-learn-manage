@@ -129,9 +129,16 @@ export default function Step1() {
         toast.success("Vos informations ont été mises à jour");
       } else {
         // Créer un nouvel apprenant
+        // Nouvelle inscription : on affecte d'office la date d'examen la plus proche
+        const prochainExamen = getProchaineDateExamenTheorique();
         const { data, error } = await supabase
           .from('apprenants')
-          .insert(updateData)
+          .insert({
+            ...updateData,
+            ...(prochainExamen
+              ? { date_examen_theorique: prochainExamen.date, lieu_examen: prochainExamen.lieu }
+              : {}),
+          })
           .select()
           .single();
           
