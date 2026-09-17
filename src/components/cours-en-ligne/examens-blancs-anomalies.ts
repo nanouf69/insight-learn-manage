@@ -55,6 +55,49 @@ export function empreinteMatiere(matiere: Matiere): string {
   );
 }
 
+/** Action recommandée pour ramener une matière au format officiel (informatif). */
+export interface CorrectionMatiere {
+  action: "add" | "remove";
+  type: "QCM" | "QRC";
+  count: number;
+  points: number;
+  label: string;
+}
+
+/**
+ * Actions recommandées (ajout / retrait) pour une matière — LECTURE SEULE.
+ * Ne modifie rien : sert uniquement à afficher « À corriger » et les boutons.
+ */
+export function getCorrectionsMatiere(matiere: Matiere): CorrectionMatiere[] {
+  if (!matiere) return [];
+  const format = FORMATS_OFFICIELS[matiere.id];
+  if (!format) return [];
+  const questions = (matiere.questions ?? []).filter((q): q is Question => q != null && q?.type != null);
+  const nbQCM = questions.filter((q) => q.type === "QCM").length;
+  const nbQRC = questions.filter((q) => q.type === "QRC").length;
+  const out: CorrectionMatiere[] = [];
+  const pousser = (type: "QCM" | "QRC", delta: number) => {
+    if (delta === 0) return;
+    const pts = getPointsParQuestion(matiere.id, type, matiere);
+    const count = Math.abs(delta);
+    const ptsTotal = pts * count;
+    const ptsLabel = `${String(ptsTotal).replace(".", ",")} pt${Math.abs(ptsTotal) > 1 ? "s" : ""}`;
+    out.push({
+      action: delta > 0 ? "add" : "remove",
+      type,
+      count,
+      points: pts,
+      label:
+        delta > 0
+          ? `ajouter ${count} ${type === "QCM" ? "QCM" : "QRC"} (${ptsLabel})`
+          : `retirer ${count} ${type === "QCM" ? "QCM" : "QRC"} (${ptsLabel})`,
+    });
+  };
+  pousser("QCM", format.qcm - nbQCM);
+  pousser("QRC", format.qrc - nbQRC);
+  return out;
+}
+
 export interface MatiereAnomaliesContext {
   /** Autres copies de la MÊME matière (même id) présentes dans les autres examens chargés. */
   autresCopies?: Array<{ examTitre: string; matiere: Matiere }>;
