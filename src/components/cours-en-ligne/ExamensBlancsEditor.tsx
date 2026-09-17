@@ -974,6 +974,24 @@ function MatiereEditor({
         </div>
       )}
 
+      {/* Contrôle visuel des anomalies — informatif uniquement */}
+      {anomalies && anomalies.length > 0 && (
+        <div className="mx-4 mb-4 mt-2 rounded-lg border border-destructive/40 bg-destructive/10 p-3">
+          <p className="text-sm font-bold text-destructive flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4" />
+            ANOMALIE — EXAMEN À VÉRIFIER
+          </p>
+          <ul className="mt-2 space-y-1">
+            {anomalies.map((a, i) => (
+              <li key={i} className="text-xs text-destructive">🔴 {a}</li>
+            ))}
+          </ul>
+          <p className="mt-2 text-[11px] text-destructive/70">
+            Signalement uniquement : aucune correction automatique n'est effectuée.
+          </p>
+        </div>
+      )}
+
       {/* Questions */}
       {expanded && (
         <div className="p-4 space-y-3">
