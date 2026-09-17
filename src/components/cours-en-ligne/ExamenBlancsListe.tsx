@@ -15,7 +15,7 @@ import {
   computeAdmisForMatiere,
   selectLatestAttemptRows,
 } from "./examens-blancs-utils";
-import { computeMoyenneExamen, computeMatiereScore, resolveMatiereForScoring } from "./examens-blancs-scoring";
+import { computeMoyenneExamen, computeMatiereScore, computeMatiereScoreForAttempt, resolveMatiereForScoring } from "./examens-blancs-scoring";
 import { toast } from "sonner";
 
 /**
