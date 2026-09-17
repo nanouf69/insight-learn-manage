@@ -730,6 +730,27 @@ function QuestionEditor({
   );
 }
 
+/**
+ * Compte les lignes dont `column` commence EXACTEMENT par `prefix`.
+ *
+ * `like('EB1_%')` traite le « _ » comme un joker : « EB1-TAXI » était compté
+ * comme appartenant à « EB1 ». On filtre donc côté client sur un vrai
+ * `startsWith`. Lecture seule : aucune écriture, aucune donnée modifiée.
+ */
+async function countRowsWithExactPrefix(
+  table: "reponses_apprenants" | "apprenant_quiz_results",
+  column: "exercice_id" | "quiz_id",
+  prefix: string,
+): Promise<number> {
+  const { data, error } = await supabase
+    .from(table)
+    .select(column)
+    .like(column, `${prefix}%`)
+    .limit(5000);
+  if (error) throw error;
+  return (data ?? []).filter((row: any) => String(row?.[column] ?? "").startsWith(prefix)).length;
+}
+
 // ===== ÉDITEUR D'UNE MATIÈRE =====
 function MatiereEditor({
   matiere,
