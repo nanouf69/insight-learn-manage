@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { getProchaineDateExamenTheorique } from "@/lib/examDatesConfig";
 
 export default function Step1() {
   // Nom et prénom de l'apprenant
