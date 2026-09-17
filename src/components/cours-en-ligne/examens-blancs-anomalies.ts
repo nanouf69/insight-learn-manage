@@ -293,5 +293,16 @@ export function detectExamenAnomalies(
     }
   }
 
-  return { parMatiere, matieresEnAnomalie, total };
+  // Contrôle du nombre TOTAL de questions (lecture seule)
+  let totalAnomalie: string | null = null;
+  if (totalQuestions !== TOTAL_QUESTIONS_ATTENDU) {
+    const ecart = TOTAL_QUESTIONS_ATTENDU - totalQuestions;
+    totalAnomalie =
+      ecart > 0
+        ? `Nombre total incorrect : ${totalQuestions}/${TOTAL_QUESTIONS_ATTENDU} questions — il manque ${ecart} question${ecart > 1 ? "s" : ""}`
+        : `Nombre total incorrect : ${totalQuestions}/${TOTAL_QUESTIONS_ATTENDU} questions — ${-ecart} question${-ecart > 1 ? "s" : ""} en trop`;
+    total += 1;
+  }
+
+  return { parMatiere, matieresEnAnomalie, total, totalQuestions, totalAnomalie };
 }
