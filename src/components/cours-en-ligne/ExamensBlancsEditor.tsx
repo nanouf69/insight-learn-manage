@@ -241,6 +241,20 @@ function syncTaxiTaMatieres(examens: ExamenBlanc[]): void {
  */
 type MatiereRank = { stamped: boolean; ts: number };
 
+/**
+ * Compare le CONTENU d'une matière en ignorant l'horodatage `_editedAt`,
+ * pour qu'un simple ré-enregistrement ne soit jamais pris pour une modification.
+ */
+export function isSameMatiereContent(a: unknown, b: unknown): boolean {
+  const strip = (m: any) => {
+    if (!m || typeof m !== "object") return m;
+    const { _editedAt, ...rest } = m as Record<string, unknown>;
+    return rest;
+  };
+  return JSON.stringify(strip(a)) === JSON.stringify(strip(b));
+}
+
+
 function getMatiereRank(m: Matiere, moduleTs: number): MatiereRank {
   const stampedAt = (m as any)?._editedAt ? Date.parse((m as any)._editedAt) : NaN;
   if (Number.isFinite(stampedAt)) return { stamped: true, ts: stampedAt };
