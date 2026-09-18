@@ -362,7 +362,7 @@ interface LigneDevis {
 }
 
 // ─── DEVIS TEMPLATES DOCX ───
-const DEVIS_TEMPLATES = [
+export const DEVIS_TEMPLATES = [
   { id: "vtc_complet", label: "Formation VTC complète (théorique + pratique)", file: "Devis_VTC_complet.docx", prix: 1499, emailId: "devis-vtc-complet" },
   { id: "vtc_elearning", label: "Formation VTC E-learning", file: "Devis_VTC_elearning.docx", prix: 1099, emailId: "devis-vtc-elearning" },
   { id: "taxi_elearning_examen", label: "Formation TAXI E-learning avec examen", file: "Devis_TAXI_elearning_avec_examen.docx", prix: 1299, emailId: "devis-taxi-elearning" },
