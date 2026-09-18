@@ -31,6 +31,8 @@ import { PassageMatiere, TransitionMatiere } from "./ExamenBlancsPassage";
 import { EcranResultats, RevisionFausses } from "./ExamenBlancsResultats";
 import { computeMatiereScore, computeMatiereScoreForAttempt, resolveMatiereForScoring, MATIERE_SNAPSHOT_VERSION } from "./examens-blancs-scoring";
 import { excludeResultPlaceholders, mergePassageSiblingRows } from "./exam-helpers";
+import { buildFinalizationKey, runFinalizationOnce, resolveIdempotentTentative } from "@/lib/examFinalizationGuard";
+import { auditQrcCoherence, reportQrcIncoherence } from "@/lib/examPassageIdentity";
 
 /**
  * Retrouve la version ORIGINALE (source statique, jamais éditée) d'une matière
