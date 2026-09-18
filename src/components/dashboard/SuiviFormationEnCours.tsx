@@ -29,7 +29,17 @@ interface Ligne {
   pole: "journee" | "soiree";
   signatures: number;
   manquantsDocs: string[];
+  dateDebut: string | null;
+  dateFin: string | null;
+  horaires: string | null;
 }
+
+const fmtDate = (d?: string | null) => {
+  if (!d) return "";
+  const [y, m, j] = d.split("-");
+  if (!y || !m || !j) return d;
+  return `${j}/${m}/${y}`;
+};
 
 export function SuiviFormationEnCours({ onNavigateToApprenant }: Props) {
   const today = isoDate(new Date());
@@ -62,6 +72,7 @@ export function SuiviFormationEnCours({ onNavigateToApprenant }: Props) {
       if (errSA) throw errSA;
 
       const poleByAppr = new Map<string, "journee" | "soiree">();
+      const datesByAppr = new Map<string, { debut: string; fin: string; horaires: string | null }>();
       for (const sa of (sessionAppr || []) as any[]) {
         const sess = sa.session;
         if (!sess) continue;
@@ -81,6 +92,11 @@ export function SuiviFormationEnCours({ onNavigateToApprenant }: Props) {
           /1[7-9]:|2[0-3]:/.test(creneauxStr) ||
           (heureDeb && parseInt(heureDeb.split(":")[0], 10) >= 17);
         poleByAppr.set(sa.apprenant_id, isEvening ? "soiree" : "journee");
+        datesByAppr.set(sa.apprenant_id, {
+          debut: start,
+          fin: end,
+          horaires: isEvening ? "17h–21h" : "9h–12h / 13h–16h",
+        });
       }
 
       const actifs = presentiels.filter((a) => poleByAppr.has(a.id));
@@ -119,6 +135,9 @@ export function SuiviFormationEnCours({ onNavigateToApprenant }: Props) {
           pole: poleByAppr.get(a.id)!,
           signatures: signCount.get(a.id) || 0,
           manquantsDocs: DOCS_REQUIS.filter((d) => !docSet.has(`${a.id}|${d.type}`)).map((d) => d.label),
+          dateDebut: datesByAppr.get(a.id)?.debut ?? null,
+          dateFin: datesByAppr.get(a.id)?.fin ?? null,
+          horaires: datesByAppr.get(a.id)?.horaires ?? null,
         }))
         .sort((x, y) => `${x.nom} ${x.prenom}`.localeCompare(`${y.nom} ${y.prenom}`));
     },
@@ -146,6 +165,12 @@ export function SuiviFormationEnCours({ onNavigateToApprenant }: Props) {
             <p className="text-xs text-muted-foreground truncate">
               {l.formation_choisie || l.type_apprenant || ""}
             </p>
+            {l.dateDebut && l.dateFin && (
+              <p className="text-xs font-medium text-foreground/80 mt-0.5">
+                Du {fmtDate(l.dateDebut)} au {fmtDate(l.dateFin)}
+                {l.horaires ? ` · ${l.horaires}` : ""}
+              </p>
+            )}
           </div>
           {complet ? (
             <Badge className="bg-success/10 text-success border-success/30 shrink-0">
