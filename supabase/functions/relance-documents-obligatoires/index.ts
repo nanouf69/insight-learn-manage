@@ -97,6 +97,8 @@ Deno.serve(async (req) => {
       const t = (a.type_apprenant || "").toLowerCase().trim();
       if (!t || /-e$/.test(t)) return false;
       if (isFormationContinue(a)) return false;
+      // Comptes de démonstration / test exclus
+      if (/^demo[-.]/i.test(a.email || "") || /demo/i.test(`${a.nom || ""}${a.prenom || ""}`)) return false;
       return true;
     });
     if (enFormation.length === 0) {
