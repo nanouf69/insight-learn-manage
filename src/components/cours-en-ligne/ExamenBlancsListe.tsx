@@ -16,6 +16,7 @@ import {
   selectLatestAttemptRows,
 } from "./examens-blancs-utils";
 import { computeMoyenneExamen, computeMatiereScore, computeMatiereScoreForAttempt, resolveMatiereForScoring } from "./examens-blancs-scoring";
+import { isMatiereQrcPending } from "./exam-helpers";
 import { toast } from "sonner";
 
 /**
@@ -498,6 +499,30 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
                     </div>
                     <CardTitle className="text-base mt-2">{examen.titre}</CardTitle>
                     {isCompleted && (() => {
+                      // RÈGLE : aucune note finale publiée tant qu'une QRC de cette
+                      // tentative n'a pas été validée manuellement par le formateur.
+                      const matieresEnAttenteQrc = new Set(
+                        examen.matieres
+                          .filter((m) => {
+                            const sd = findScoreForMatiere(scores, m);
+                            if (!sd) return false;
+                            const corr = (sd as any).correctionsIA || (sd as any).details?.correctionsIA || {};
+                            return isMatiereQrcPending(m, corr);
+                          })
+                          .map((m) => m.id),
+                      );
+                      if (matieresEnAttenteQrc.size > 0) {
+                        return (
+                          <div className="flex flex-col items-center gap-1 mt-2 rounded-lg px-3 py-2 border-2 bg-amber-50 border-amber-400">
+                            <span className="text-amber-700 font-bold text-base uppercase tracking-wide text-center">
+                              ⏳ En attente de correction des QRC
+                            </span>
+                            <span className="text-xs text-amber-700 text-center">
+                              La note finale sera publiée après validation de toutes les QRC par le formateur.
+                            </span>
+                          </div>
+                        );
+                      }
                       // Utilise le helper partagé pour être ALIGNÉ avec l'écran de résultats détaillés.
                       const bilan = computeMoyenneExamen(examen, (m) => {
                         const scoreData = findScoreForMatiere(scores, m);
@@ -581,10 +606,16 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
                     <div className="space-y-1">
                       {examen.matieres.map(m => {
                         const scoreData = findScoreForMatiere(scores, m);
+                        const qrcPendingMatiere = !!scoreData && isMatiereQrcPending(
+                          m,
+                          (scoreData as any).correctionsIA || (scoreData as any).details?.correctionsIA || {},
+                        );
                         return (
                           <div key={m.id} className="flex justify-between text-xs text-muted-foreground">
                             <span className="truncate pr-2">{m.nom.split(" - ")[0]}</span>
-                            {isCompleted && scoreData ? (() => {
+                            {isCompleted && scoreData && qrcPendingMatiere ? (
+                              <span className="shrink-0 font-semibold text-amber-600">⏳ En attente</span>
+                            ) : isCompleted && scoreData ? (() => {
                               const score = computeMatiereScoreForAttempt(
                                 m,
                                 {

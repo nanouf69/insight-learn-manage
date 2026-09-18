@@ -200,3 +200,21 @@ export function isQrcPendingCorrection(details: any): boolean {
   return qrcIds.some((id: string) => !isQrcCorrectionValidated(corrections?.[id] ?? corrections?.[`Q${id}`]));
 }
 
+/**
+ * RÈGLE GÉNÉRALE (toutes filières, tous examens blancs, toutes tentatives) :
+ * tant qu'une QRC d'une matière n'a pas été validée manuellement par le
+ * formateur, aucune note définitive de cette matière ne peut être publiée.
+ * Lecture seule : ne modifie aucune réponse, note ou correction.
+ */
+export function isMatiereQrcPending(matiere: any, corrections: any): boolean {
+  const questions = Array.isArray(matiere?.questions) ? matiere.questions : [];
+  const qrc = questions.filter((q: any) => q && normalizeQuestionType(q?.type) === "QRC");
+  if (qrc.length === 0) return false;
+  const corr = corrections || {};
+  return qrc.some((q: any) => {
+    const id = q?.id;
+    const c = corr?.[id] ?? corr?.[String(id)] ?? corr?.[`Q${id}`];
+    return !isQrcCorrectionValidated(c);
+  });
+}
+

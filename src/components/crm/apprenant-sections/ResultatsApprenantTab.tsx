@@ -8,7 +8,7 @@ import { EXAMENS_BLANCS_VTC, EXAMENS_BLANCS_TAXI, EXAMENS_BLANCS_TA, EXAMENS_BLA
 import { loadSavedExamens } from "@/components/cours-en-ligne/ExamensBlancsEditor";
 import { computeMoyenneExamen, computeMatiereScoreForAttempt } from "@/components/cours-en-ligne/examens-blancs-scoring";
 import { findScoreForMatiere, buildMatiereLookupKeys } from "@/components/cours-en-ligne/examens-blancs-utils";
-import { isQrcPendingCorrection } from "@/components/cours-en-ligne/exam-helpers";
+import { isQrcPendingCorrection, isMatiereQrcPending } from "@/components/cours-en-ligne/exam-helpers";
 
 // Repli statique uniquement : la source de vérité affichée est la définition
 // enregistrée en base (identique à l'écran apprenant), chargée via loadSavedExamens().
@@ -138,7 +138,18 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
               const isReussi = bilanExamen?.admisGlobal ?? moyenne >= 10;
               const bilan = bilans[quizId];
               // QRC non encore corrigées manuellement : pas de statut définitif.
-              const enAttenteCorrection = exam.matieres.some((m: any) => isQrcPendingCorrection(m?.details));
+              // Règle générale : le drapeau `qrc_pending_correction` n'existe que sur
+              // les nouveaux résultats → on vérifie AUSSI chaque QRC de la définition
+              // d'examen contre les corrections validées manuellement.
+              const matiereEnAttenteQrc = (m: any) => {
+                if (isQrcPendingCorrection(m?.details)) return true;
+                const def = examenDef?.matieres.find(
+                  (md: any) => md.id === m.matiere_id || md.nom === m.matiere_nom,
+                );
+                if (!def) return false;
+                return isMatiereQrcPending(def, m?.details?.correctionsIA || m?.correctionsIA || {});
+              };
+              const enAttenteCorrection = exam.matieres.some((m: any) => matiereEnAttenteQrc(m));
 
               return (
                 <div key={quizId} className="border rounded-lg p-4 space-y-3">
@@ -175,7 +186,7 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
                         ? computeMatiereScoreForAttempt(matiereDef, m as any)
                         : null;
                       const note = recomputed?.noteSur20 ?? (Number(m.note_sur_20) || 0);
-                      const matiereEnAttente = isQrcPendingCorrection(m?.details);
+                      const matiereEnAttente = matiereEnAttenteQrc(m);
                       return (
                         <div key={i} className="flex justify-between text-xs border rounded px-2 py-1">
                           <span className="truncate pr-1">{(m.matiere_nom || m.matiere_id || "?").split(" - ")[0]}</span>
