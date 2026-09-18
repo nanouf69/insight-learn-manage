@@ -26,6 +26,16 @@ const MOYENS_PAIEMENT = [
   "Autre",
 ];
 
+const FORMATIONS_PAIEMENT = [
+  "Formation VTC",
+  "Formation TAXI",
+  "Formation continue VTC",
+  "Formation continue TAXI",
+  "Repassage examen pratique VTC",
+  "Repassage examen pratique TAXI",
+];
+
+
 
 const fmt = (n: number) =>
   new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 2 }).format(n || 0);
