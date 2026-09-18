@@ -1413,7 +1413,7 @@ const CorrectionQRCTab = () => {
             const isSaving = savingId === uniqueKey;
             // La note d'une matière n'est publiée qu'une fois TOUTES ses QRC corrigées.
             const matierePending = pendingMatiereKeys.has(
-              `${item.apprenantId}__${item.quizId}__${item.matiereId || ""}`,
+              `${item.apprenantId}__${item.quizId}__${item.matiereId || ""}__T${item.tentative}`,
             );
 
 
