@@ -1118,3 +1118,48 @@ export function firstUnansweredIndex(
     return !isReponseFournie(q.type, rep);
   });
 }
+
+/**
+ * Réparation AUTOMATIQUE et STRICTEMENT TECHNIQUE des lettres de propositions.
+ *
+ * Quand les lettres d'un QCM sont en double, manquantes ou non alphabétiques,
+ * elles sont réattribuées selon la POSITION : 1re = A, 2e = B, 3e = C…
+ *
+ * Ne modifie JAMAIS : le texte d'une proposition, l'ordre des propositions,
+ * la bonne réponse (`correct` reste attaché à la même proposition), l'énoncé,
+ * le type QCM/QRC, les points, ni aucune donnée apprenant.
+ */
+export function normalizeQcmChoiceLetters(
+  examens: ExamenBlanc[],
+): { questionsRepaired: number; details: Array<{ examId: string; matiereId: string; questionId: number | string; avant: string[]; apres: string[] }> } {
+  const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const details: Array<{ examId: string; matiereId: string; questionId: number | string; avant: string[]; apres: string[] }> = [];
+
+  for (const ex of examens ?? []) {
+    for (const mat of ex?.matieres ?? []) {
+      for (const q of mat?.questions ?? []) {
+        if (!q || String(q.type ?? "").toUpperCase() !== "QCM") continue;
+        const choix = Array.isArray(q.choix) ? q.choix : null;
+        if (!choix || choix.length === 0) continue;
+
+        const avant = choix.map((c) => String(c?.lettre ?? ""));
+        const attendu = choix.map((_, i) => ALPHABET[i] ?? String(i + 1));
+        const conforme = avant.every((l, i) => l.trim().toUpperCase() === attendu[i]);
+        if (conforme) continue;
+
+        choix.forEach((c, i) => {
+          if (c) c.lettre = attendu[i];
+        });
+        details.push({
+          examId: ex.id,
+          matiereId: mat.id,
+          questionId: q.id,
+          avant,
+          apres: attendu,
+        });
+      }
+    }
+  }
+
+  return { questionsRepaired: details.length, details };
+}

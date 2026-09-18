@@ -11,7 +11,7 @@ import {
   Save, CheckCircle2, X, Clock, Layers, Loader2, ArrowUp, ArrowDown, ArrowLeftRight, Pause, Play, AlertTriangle
 } from "lucide-react";
 import { tousLesExamens, getPointsParQuestion, applyOfficialCoefficient, type ExamenBlanc, type Matiere, type Question, type Choix } from "./examens-blancs-data";
-import { mergeQuestionsForMatiere, moveQuestionToPosition } from "./examens-blancs-utils";
+import { mergeQuestionsForMatiere, moveQuestionToPosition, normalizeQcmChoiceLetters } from "./examens-blancs-utils";
 import { getSeuilEliminatoireAffiche } from "./examens-blancs-scoring";
 // Contrôle visuel des anomalies — LECTURE SEULE, aucune correction automatique.
 import { detectExamenAnomalies, getCorrectionsMatiere } from "./examens-blancs-anomalies";
@@ -481,6 +481,11 @@ export async function loadSavedExamens(notifyRepairs: boolean = false): Promise<
   }
 
   repairCorrectFlags(examens, notifyRepairs);
+
+  // Réparation technique des lettres de propositions (doublons / lettres
+  // manquantes / non alphabétiques) : uniquement A, B, C, D, E par position.
+  // Aucun texte, ordre, bonne réponse, type ou point n'est modifié.
+  normalizeQcmChoiceLetters(examens);
 
   // Apply fournisseur (formateur) overrides on top of admin's saved data.
   // The fournisseur portal saves modifications in `quiz_questions_overrides`
@@ -1304,6 +1309,10 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
       // persisted exactly as edited; propagation, if any, must be an explicit
       // admin action, never a side-effect of Save.
       const synced = JSON.parse(JSON.stringify(snapshot)) as ExamenBlanc[];
+
+      // Lettres de propositions : réparation technique par position (A, B, C…)
+      // avant écriture, pour que les doublons ne soient jamais réenregistrés.
+      normalizeQcmChoiceLetters(synced);
 
       // RÈGLE MATIÈRE PARTAGÉE : une matière modifiée (ajout, suppression ou
       // correction d'une question/réponse) est répercutée sur TOUS les examens
