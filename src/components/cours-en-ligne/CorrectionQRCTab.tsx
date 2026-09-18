@@ -412,7 +412,7 @@ const CorrectionQRCTab = () => {
       const correctionsIA = ((r.details as any)?.correctionsIA || {}) as Record<string | number, any>;
       Object.entries(correctionsIA).forEach(([rawQuestionId, correction]) => {
         const questionId = Number(String(rawQuestionId).replace(/^Q/i, ""));
-        if (!Number.isFinite(questionId) || !isAdminValidatedCorrection(correction)) return;
+        if (!Number.isFinite(questionId) || !isAdminValidatedCorrection(correction, r.completed_at)) return;
         const correctionKey = getCorrectionKey(r.apprenant_id, r.quiz_id, r.matiere_id || "", questionId);
         manualCorrectionKeys.add(correctionKey);
         manualCorrectionsByKey.set(correctionKey, correction);
@@ -481,7 +481,7 @@ const CorrectionQRCTab = () => {
         const correction = manualCorrectionsByKey.get(qrcKey) ?? getCorrectionForQuestion(correctionsIA, questionId);
         // STRICT : seules les validations admin comptent, y compris l'ancien format
         // écrit avant l'ajout de `validatedByAdmin`.
-        const hasManualCorrection = manualCorrectionKeys.has(qrcKey) || isAdminValidatedCorrection(correction);
+        const hasManualCorrection = manualCorrectionKeys.has(qrcKey) || isAdminValidatedCorrection(correction, r.completed_at);
 
         const app = apprenantMap[r.apprenant_id] || { nom: "Inconnu", prenom: "", mode: "presentiel" as const };
 
