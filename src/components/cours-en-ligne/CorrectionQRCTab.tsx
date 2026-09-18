@@ -404,13 +404,12 @@ const CorrectionQRCTab = () => {
       });
     }
 
-    // Count how many results exist per apprenant + quiz + matiere (to detect retakes)
-    // Must include matiere_id because each exam has ~7 matiere rows per attempt
-    const attemptCounts: Record<string, number> = {};
-    for (const r of results as any[]) {
-      const countKey = `${r.apprenant_id}__${r.quiz_id}__${r.matiere_id || ""}`;
-      attemptCounts[countKey] = (attemptCounts[countKey] || 0) + 1;
-    }
+    // RÈGLE : une tentative = le numéro réel de tentative enregistré, jamais le
+    // nombre de lignes de résultat en base. Deux lignes techniques écrites à
+    // quelques fractions de seconde pour le même passage restent UNE tentative.
+    // Aucune correction QRC n'est déduite du nombre de tentatives : seule la
+    // validation manuelle de l'administrateur fait sortir une QRC de la file.
+
 
     // Deduplicate: keep only the latest result per apprenant + quiz + matière
     const seenApprenantQuizMatiere = new Set<string>();
