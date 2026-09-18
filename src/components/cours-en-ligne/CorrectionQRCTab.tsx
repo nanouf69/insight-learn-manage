@@ -980,6 +980,11 @@ const CorrectionQRCTab = () => {
     return dt.getFullYear() === now.getFullYear() && dt.getMonth() === now.getMonth() && dt.getDate() === now.getDate();
   };
 
+  const isAnsweredToday = (item: QrcItem) =>
+    isToday(item.completedAt) && safeStr(item.reponseEleve).trim() !== "";
+
+
+
   // « QRC répondues aujourd'hui » : uniquement les QRC uniques (déjà dédoublonnées
   // par apprenant + examen + matière + question) dont la réponse élève est
   // réellement non vide. Une réponse vide ou composée d'espaces n'est jamais
