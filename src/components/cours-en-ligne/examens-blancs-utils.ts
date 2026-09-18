@@ -881,6 +881,9 @@ export function mergeQuestionsForMatiere(
         delete (merged as any).choix;
       }
       merged.type = "QRC" as any;
+      if (!adminEdited && isMistypedAsQRC(merged)) {
+        return { ...merged, type: "QCM" } as Question;
+      }
       // Mots-clés : repli sur l'origine seulement si l'origine est bien une QRC
       // et que l'Admin n'en a saisi aucun.
       const hasSavedKw = Array.isArray(savedQ?.reponses_possibles) && savedQ.reponses_possibles.length > 0;
