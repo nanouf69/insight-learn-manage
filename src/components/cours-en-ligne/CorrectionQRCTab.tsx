@@ -295,6 +295,10 @@ const CorrectionQRCTab = () => {
   const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
   const [examenFilter, setExamenFilter] = useState<string>("all");
   const [isRefreshing, setIsRefreshing] = useState(false);
+  // Erreur de chargement (session expirée, 401, permissions) : on n'affiche JAMAIS 0 silencieusement.
+  const [loadError, setLoadError] = useState<string | null>(null);
+  // Contrôle automatique : QRC répondues présentes en base mais absentes de la file.
+  const [integrityAlert, setIntegrityAlert] = useState<{ count: number; apprenants: number } | null>(null);
 
   // Mirrors the filter + sort applied to `sortedFiltered` in the render, so that
   // auto-advance after saving picks the correct next item.
