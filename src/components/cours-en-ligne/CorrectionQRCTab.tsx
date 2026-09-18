@@ -980,7 +980,11 @@ const CorrectionQRCTab = () => {
     return dt.getFullYear() === now.getFullYear() && dt.getMonth() === now.getMonth() && dt.getDate() === now.getDate();
   };
 
-  const todayItems = items.filter(i => isToday(i.completedAt));
+  // « QRC répondues aujourd'hui » : uniquement les QRC uniques (déjà dédoublonnées
+  // par apprenant + examen + matière + question) dont la réponse élève est
+  // réellement non vide. Une réponse vide ou composée d'espaces n'est jamais
+  // comptée comme répondue.
+  const todayItems = items.filter(i => isToday(i.completedAt) && safeStr(i.reponseEleve).trim() !== "");
   const todayCount = todayItems.length;
   const todayPendingItems = todayItems.filter(i => !i.corrigeManuel);
   const todayPendingCount = todayPendingItems.length;
