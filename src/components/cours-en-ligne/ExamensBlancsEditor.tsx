@@ -790,6 +790,24 @@ function MatiereEditor({
   const [ptsQRC, setPtsQRC] = useState(matiere.ptsQRC ?? defaultPtsQRC);
   const [editingMeta, setEditingMeta] = useState(false);
   const [confirmDeleteQId, setConfirmDeleteQId] = useState<number | null>(null);
+  const [editingTexte, setEditingTexte] = useState(false);
+  const [texteDraft, setTexteDraft] = useState(matiere.texteSupport ?? "");
+  const [texteSourceDraft, setTexteSourceDraft] = useState(matiere.texteSource ?? "");
+
+  // Le texte support ne concerne que la matière « Capacité d'expression et de
+  // compréhension en langue française ».
+  const isFrancais = /fran[çc]ais/i.test(matiere.nom ?? "");
+
+  const saveTexteSupport = () => {
+    onChange({
+      ...matiere,
+      texteSupport: texteDraft,
+      texteSource: texteSourceDraft || undefined,
+      _editedAt: new Date().toISOString(),
+    } as Matiere);
+    setEditingTexte(false);
+    toast.success("Texte support enregistré");
+  };
 
   const saveMeta = () => {
     onChange({ ...matiere, duree, coefficient, noteEliminatoire: noteElim, noteSur, ptsQCM, ptsQRC });
