@@ -23,6 +23,8 @@ interface QrcItem {
   quizTitre: string;
   quizId: string;
   quizType: string;
+  /** Numéro de tentative réel du passage : fait partie de l'identité d'une QRC. */
+  tentative: number;
   matiereId: string;
   matiereNom: string;
   questionId: number;
@@ -281,6 +283,38 @@ function chooseMatiereMatchingResponses(
   return bestScore >= Math.max(defaultScore + 2, 3) ? bestMatiere : defaultMatiere;
 }
 
+/**
+ * Classement de la file : apprenant → examen → tentative → matière → n° de
+ * question croissant, afin de corriger tout le passage d'un élève d'un bloc.
+ * Les apprenants sont ordonnés par date de passage (présentiel prioritaire).
+ */
+function sortQrcItems(list: QrcItem[], sortOrder: "desc" | "asc"): QrcItem[] {
+  const latestByApprenant = new Map<string, number>();
+  list.forEach((i) => {
+    const t = new Date(i.completedAt).getTime() || 0;
+    latestByApprenant.set(i.apprenantId, Math.max(latestByApprenant.get(i.apprenantId) ?? 0, t));
+  });
+  return [...list].sort((a, b) => {
+    const prioA = a.apprenantTypeMode === "presentiel" ? 0 : 1;
+    const prioB = b.apprenantTypeMode === "presentiel" ? 0 : 1;
+    if (prioA !== prioB) return prioA - prioB;
+    const dateA = latestByApprenant.get(a.apprenantId) ?? 0;
+    const dateB = latestByApprenant.get(b.apprenantId) ?? 0;
+    if (dateA !== dateB) return sortOrder === "desc" ? dateB - dateA : dateA - dateB;
+    const nomA = `${a.apprenantNom} ${a.apprenantPrenom}`.toLowerCase();
+    const nomB = `${b.apprenantNom} ${b.apprenantPrenom}`.toLowerCase();
+    if (nomA !== nomB) return nomA.localeCompare(nomB);
+    if (a.apprenantId !== b.apprenantId) return a.apprenantId.localeCompare(b.apprenantId);
+    const numA = parseInt((a.quizTitre?.match(/N°(\d+)/)?.[1]) || "0", 10);
+    const numB = parseInt((b.quizTitre?.match(/N°(\d+)/)?.[1]) || "0", 10);
+    if (numA !== numB) return numA - numB;
+    if (a.quizId !== b.quizId) return a.quizId.localeCompare(b.quizId);
+    if (a.tentative !== b.tentative) return a.tentative - b.tentative;
+    if (a.matiereId !== b.matiereId) return a.matiereId.localeCompare(b.matiereId);
+    return a.questionId - b.questionId;
+  });
+}
+
 const CorrectionQRCTab = () => {
   const [items, setItems] = useState<QrcItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -325,19 +359,7 @@ const CorrectionQRCTab = () => {
       }
       return true;
     });
-    return [...filteredList].sort((a, b) => {
-      const prioA = a.apprenantTypeMode === "presentiel" ? 0 : 1;
-      const prioB = b.apprenantTypeMode === "presentiel" ? 0 : 1;
-      if (prioA !== prioB) return prioA - prioB;
-      const dateA = new Date(a.completedAt).getTime() || 0;
-      const dateB = new Date(b.completedAt).getTime() || 0;
-      if (dateA !== dateB) return sortOrder === "desc" ? dateB - dateA : dateA - dateB;
-      const numA = parseInt((a.quizTitre.match(/N°(\d+)/)?.[1]) || "0", 10);
-      const numB = parseInt((b.quizTitre.match(/N°(\d+)/)?.[1]) || "0", 10);
-      if (numA !== numB) return numA - numB;
-      if (a.matiereId !== b.matiereId) return a.matiereId.localeCompare(b.matiereId);
-      return a.questionId - b.questionId;
-    });
+    return sortQrcItems(filteredList, sortOrder);
   };
 
   const QUICK_COMMENTS = [
@@ -381,7 +403,7 @@ const CorrectionQRCTab = () => {
     for (let from = 0, retried = false; ; from += pageSize) {
       const { data, error } = await supabase
         .from("apprenant_quiz_results")
-        .select("id, apprenant_id, quiz_id, quiz_type, quiz_titre, matiere_id, matiere_nom, details, completed_at, score_obtenu, score_max, note_sur_20")
+        .select("id, apprenant_id, user_id, quiz_id, quiz_type, quiz_titre, matiere_id, matiere_nom, details, completed_at, score_obtenu, score_max, note_sur_20, tentative")
         .in("quiz_type", ["examen_blanc", "bilan"])
         .order("completed_at", { ascending: false })
         .range(from, from + pageSize - 1);
