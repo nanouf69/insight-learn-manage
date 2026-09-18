@@ -43,6 +43,11 @@ export interface AnswerSavePayload {
   apprenant_id: string;
   user_id?: string;
   module_id?: number | null;
+  /**
+   * Nombre total de questions actives du module. Permet au serveur de forcer
+   * la validation du module dès que toutes les réponses sont enregistrées.
+   */
+  module_total_questions?: number | null;
   exercice_id: string;
   exercice_type: string;
   reponses: Record<string, unknown>;
