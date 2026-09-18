@@ -962,7 +962,11 @@ const ResultatsSessionPage = () => {
                       {/* Exam header */}
                       <div
                         className="px-5 py-4 flex items-center justify-between cursor-pointer hover:bg-muted/20 transition-colors"
-                        onClick={() => setExpandedExam(isExpanded ? null : qId)}
+                        onClick={() => setCollapsedExams(prev => {
+                          const next = new Set(prev);
+                          if (next.has(qId)) next.delete(qId); else next.add(qId);
+                          return next;
+                        })}
                       >
                         <div className="flex items-center gap-3">
                           {isExpanded ? <ChevronDown className="w-5 h-5 text-muted-foreground" /> : <ChevronRight className="w-5 h-5 text-muted-foreground" />}
