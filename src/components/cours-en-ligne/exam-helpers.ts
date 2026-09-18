@@ -211,10 +211,17 @@ export function isMatiereQrcPending(matiere: any, corrections: any): boolean {
   const qrc = questions.filter((q: any) => q && normalizeQuestionType(q?.type) === "QRC");
   if (qrc.length === 0) return false;
   const corr = corrections || {};
-  return qrc.some((q: any) => {
+  const pendingByIds = qrc.some((q: any) => {
     const id = q?.id;
     const c = corr?.[id] ?? corr?.[String(id)] ?? corr?.[`Q${id}`];
     return !isQrcCorrectionValidated(c);
   });
+  if (!pendingByIds) return false;
+  // Repli : la numérotation enregistrée lors de la tentative peut différer de la
+  // numérotation actuelle des questions. Si l'administrateur a validé au moins
+  // autant de QRC que la matière en contient, la correction est terminée.
+  const validatedCount = Object.values(corr).filter((c: any) => isQrcCorrectionValidated(c)).length;
+  return validatedCount < qrc.length;
 }
+
 
