@@ -248,7 +248,7 @@ export default function ExamensBlancsPage({
           .eq("quiz_type", quizType);
 
         if (!cancelled && !error) {
-          const rows = (data as any[]) || [];
+          const rows = excludeResultPlaceholders(data as any[]);
           const validMatieres = (found.matieres || []).filter((m): m is Matiere => Boolean(m));
           const required = Math.max(validMatieres.length || 1, 1);
 
@@ -471,7 +471,7 @@ export default function ExamensBlancsPage({
 
       if (error) { toast.error("Vérification de sécurité impossible. Réessayez."); return; }
 
-      const completedRows = (existingResults as any[]) || [];
+      const completedRows = excludeResultPlaceholders(existingResults as any[]);
       const validMatieres = (latestExamen.matieres || []).filter((m): m is Matiere => Boolean(m));
       const matieresTotal = Math.max(validMatieres.length || 1, 1);
 
@@ -725,7 +725,7 @@ export default function ExamensBlancsPage({
       .eq("quiz_id", examReference.id)
       .eq("quiz_type", quizType);
 
-    const rows = selectLatestAttemptRows((data as any[]) || []);
+    const rows = selectLatestAttemptRows(excludeResultPlaceholders(data as any[]));
     const hasOnlyZeroScores = rows.length > 0 && rows.every((row: any) => toFiniteNumber(row?.score_obtenu, 0) <= 0);
 
     // Rebuild from stored responses if quiz_results is empty or only zero-score rows

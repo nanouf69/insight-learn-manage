@@ -501,7 +501,7 @@ const CorrectionQRCTab = () => {
 
     // Les lignes arrivent de la plus récente à la plus ancienne : on les
     // traite de la plus ancienne à la plus récente pour numéroter les passages.
-    const resultsAsc = [...(results as any[])].sort(
+    const resultsAsc = (results as any[]).filter((r) => !isResultPlaceholder(r)).sort(
       (a, b) => (new Date(a.completed_at).getTime() || 0) - (new Date(b.completed_at).getTime() || 0),
     );
 

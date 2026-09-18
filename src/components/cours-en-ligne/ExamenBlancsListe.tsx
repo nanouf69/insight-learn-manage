@@ -92,7 +92,9 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
     fetchQuizResultsWithRetry()
       .then(async ({ data }) => {
         if (data) {
-          const allRows = data as any[];
+          // Les lignes techniques « en attente de finalisation » (score 0 créé
+          // par le filet de sécurité) ne sont jamais des notes.
+          const allRows = excludeResultPlaceholders(data as any[]);
           const allRowsByQuiz = new Map<string, any[]>();
           allRows.forEach((r: any) => {
             if (!r.quiz_id) return;
