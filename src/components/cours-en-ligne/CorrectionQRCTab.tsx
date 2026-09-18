@@ -881,7 +881,7 @@ const CorrectionQRCTab = () => {
         .eq("quiz_id", item.quizId)
         .eq("quiz_type", item.quizType)
         .eq("matiere_id", item.matiereId)
-        .eq("tentative", item.tentative || 1)
+        .eq("tentative", item.dbTentative ?? 1)
         .maybeSingle();
 
       // FIX: merge correctement — les corrections existantes en base d'abord,
@@ -921,7 +921,7 @@ const CorrectionQRCTab = () => {
         quiz_titre: examen?.titre || item.quizTitre,
         matiere_id: item.matiereId,
         matiere_nom: item.matiereNom,
-        tentative: item.tentative || 1,
+        tentative: item.dbTentative ?? 1,
         score_obtenu: Math.min(Math.max(newScore, 0), scoreMax),
         score_max: scoreMax,
         note_sur_20: noteSur20,
@@ -975,7 +975,7 @@ const CorrectionQRCTab = () => {
           .eq("quiz_id", item.quizId)
           .eq("quiz_type", item.quizType)
           .eq("matiere_id", item.matiereId)
-          .eq("tentative", item.tentative || 1)
+          .eq("tentative", item.dbTentative ?? 1)
           .maybeSingle();
         if ((latest as any)?.id) {
           savedResultId = (latest as any).id;
