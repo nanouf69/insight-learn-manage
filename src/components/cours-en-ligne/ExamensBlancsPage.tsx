@@ -1022,7 +1022,7 @@ export default function ExamensBlancsPage({
     // réellement présente, on n'écrit AUCUN résultat : les réponses déjà
     // sauvegardées restent intactes et la reprise pourra reconstruire la note.
     const recovery = recoverMatiereFromSavedAnswers({
-      matiere,
+      matiere: { ...matiere, questions: questionsSafe } as any,
       reponses: resultat.reponses as any,
       correctionsIA: frozenCorrections,
     });
