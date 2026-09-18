@@ -288,7 +288,19 @@ export default function DevisPublic() {
       }
       const data = payload.devis;
       setDevis(data);
-      setApprenant((data as any).apprenants);
+      setApprenant(
+        (data as any).apprenants || {
+          nom: data.client_nom || "",
+          prenom: "",
+          civilite: "",
+          email: data.client_email || "",
+          telephone: data.client_telephone || "",
+          adresse: data.client_adresse || "",
+          code_postal: data.client_code_postal || "",
+          ville: data.client_ville || "",
+          formation_choisie: data.formation || "",
+        },
+      );
       if (data.devis_signe_url) setUploaded(true);
     } catch {
       setError("Ce lien de devis est invalide ou a expiré.");
