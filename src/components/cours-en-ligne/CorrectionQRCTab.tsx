@@ -786,13 +786,14 @@ const CorrectionQRCTab = () => {
         if (!quizId || !matiereId) continue;
         const matiere = findMatiereWithFallback(examenMap, tousLesExamens, quizId, matiereId);
         if (!matiere) continue;
-        const tentative = derniereTentative.get(`${row.apprenant_id}__${quizId}__${matiereId}`) ?? 1;
+        const passage = dernierPassage.get(`${row.apprenant_id}__${quizId}__${matiereId}`);
+        const tentative = passage?.tentative ?? 1;
         for (const q of getSourceQuestions(matiere, tousLesExamens)) {
           if (!q || String(q.type).toUpperCase() !== "QRC") continue;
           const rep = safeStr((row.reponses || {})?.[q.id] ?? (row.reponses || {})?.[String(q.id)] ?? "");
           if (!rep.trim()) continue;
           if (seenQrcKeys.has(attemptKey(row.apprenant_id, quizId, matiereId, tentative, q.id))) continue;
-          if (findValidation(row.apprenant_id, quizId, matiereId, tentative, q.id)) continue;
+          if (passage && findValidationForGroup(passage, matiereId, q.id)) continue;
           missing++;
           missingApprenants.add(row.apprenant_id);
         }
