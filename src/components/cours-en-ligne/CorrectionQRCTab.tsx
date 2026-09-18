@@ -295,6 +295,10 @@ const CorrectionQRCTab = () => {
   const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
   const [examenFilter, setExamenFilter] = useState<string>("all");
   const [isRefreshing, setIsRefreshing] = useState(false);
+  // Erreur de chargement (session expirée, 401, permissions) : on n'affiche JAMAIS 0 silencieusement.
+  const [loadError, setLoadError] = useState<string | null>(null);
+  // Contrôle automatique : QRC répondues présentes en base mais absentes de la file.
+  const [integrityAlert, setIntegrityAlert] = useState<{ count: number; apprenants: number } | null>(null);
 
   // Mirrors the filter + sort applied to `sortedFiltered` in the render, so that
   // auto-advance after saving picks the correct next item.
@@ -359,10 +363,22 @@ const CorrectionQRCTab = () => {
     if (Object.keys(examenMap).length === 0) return;
     if (!opts?.silent) setLoading(true);
 
+    // Session admin : on s'assure d'avoir un jeton valide AVANT toute requête,
+    // sinon un 401 ferait croire à tort qu'il n'y a aucune QRC à corriger.
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData?.session) {
+      const { data: refreshed } = await supabase.auth.refreshSession();
+      if (!refreshed?.session) {
+        setLoadError("Session administrateur expirée : impossible de charger les QRC. Reconnectez-vous puis cliquez sur Réactualiser.");
+        if (!opts?.silent) setLoading(false);
+        return;
+      }
+    }
+
     // Fetch all exam_blanc results that have QRC questions (Supabase client is capped at 1000 rows per request)
     const pageSize = 1000;
     const results: any[] = [];
-    for (let from = 0; ; from += pageSize) {
+    for (let from = 0, retried = false; ; from += pageSize) {
       const { data, error } = await supabase
         .from("apprenant_quiz_results")
         .select("id, apprenant_id, quiz_id, quiz_type, quiz_titre, matiere_id, matiere_nom, details, completed_at, score_obtenu, score_max, note_sur_20")
@@ -371,13 +387,21 @@ const CorrectionQRCTab = () => {
         .range(from, from + pageSize - 1);
 
       if (error) {
+        // Une seule tentative de renouvellement de session, puis erreur explicite.
+        if (!retried) {
+          retried = true;
+          const { data: refreshed } = await supabase.auth.refreshSession();
+          if (refreshed?.session) { from -= pageSize; continue; }
+        }
         console.error("Erreur chargement résultats:", error);
+        setLoadError(`Chargement impossible : ${error.message}. Aucune QRC n'a pu être lue (ce n'est pas un écran vide).`);
         if (!opts?.silent) setLoading(false);
         return;
       }
       results.push(...(data || []));
       if (!data || data.length < pageSize) break;
     }
+    setLoadError(null);
 
     // Fetch apprenant names
     const apprenantIds = [...new Set(results.map((r: any) => r.apprenant_id))];
@@ -665,10 +689,65 @@ const CorrectionQRCTab = () => {
     }
 
     setItems(qrcItems);
+
+    // ---- Contrôle automatique (lecture seule, aucune donnée modifiée) ----
+    // Détecte les QRC réellement répondues en base qui ne remontent pas dans la file.
+    try {
+      const since = new Date();
+      since.setDate(since.getDate() - 30);
+      const { data: controlRows } = await supabase
+        .from("reponses_apprenants" as any)
+        .select("apprenant_id, exercice_id, reponses, updated_at")
+        .eq("exercice_type", "examen_blanc")
+        .gte("updated_at", since.toISOString());
+
+      let missing = 0;
+      const missingApprenants = new Set<string>();
+      for (const row of (controlRows || []) as any[]) {
+        const [quizId, matiereId] = safeStr(row.exercice_id).split("__");
+        if (!quizId || !matiereId) continue;
+        const matiere = findMatiereWithFallback(examenMap, tousLesExamens, quizId, matiereId);
+        if (!matiere) continue;
+        for (const q of getSourceQuestions(matiere, tousLesExamens)) {
+          if (!q || String(q.type).toUpperCase() !== "QRC") continue;
+          const rep = safeStr((row.reponses || {})?.[q.id] ?? (row.reponses || {})?.[String(q.id)] ?? "");
+          if (!rep.trim()) continue;
+          const key = getCorrectionKey(row.apprenant_id, quizId, matiereId, q.id);
+          if (manualCorrectionKeys.has(key) || seenQrcKeys.has(key)) continue;
+          missing++;
+          missingApprenants.add(row.apprenant_id);
+        }
+      }
+      setIntegrityAlert(missing > 0 ? { count: missing, apprenants: missingApprenants.size } : null);
+    } catch (e) {
+      console.error("Contrôle intégrité QRC:", e);
+    }
+
     if (!opts?.silent) setLoading(false);
   }, [examenMap]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  // Remontée immédiate : dès qu'un résultat ou une réponse d'examen blanc est
+  // écrit en base (n'importe quel apprenant, filière, matière, tentative),
+  // la file de correction se recharge silencieusement.
+  useEffect(() => {
+    if (Object.keys(examenMap).length === 0) return;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const schedule = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => { fetchData({ silent: true }); }, 1500);
+    };
+    const channel = supabase
+      .channel("correction-qrc-live")
+      .on("postgres_changes", { event: "*", schema: "public", table: "apprenant_quiz_results" }, schedule)
+      .on("postgres_changes", { event: "*", schema: "public", table: "reponses_apprenants" }, schedule)
+      .subscribe();
+    return () => {
+      if (timer) clearTimeout(timer);
+      supabase.removeChannel(channel);
+    };
+  }, [fetchData, examenMap]);
 
   const handleSaveCorrection = async (item: QrcItem, newPoints: number) => {
     const uniqueKey = `${item.resultId}-${item.questionId}`;
@@ -1093,6 +1172,25 @@ const CorrectionQRCTab = () => {
           </Badge>
         </div>
       </div>
+
+      {loadError && (
+        <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-4">
+          <p className="font-semibold text-destructive">Les QRC n'ont pas pu être chargées</p>
+          <p className="text-sm mt-1">{loadError}</p>
+          <p className="text-sm mt-1">Les compteurs affichés ci-dessus ne sont pas fiables tant que cette erreur persiste.</p>
+        </div>
+      )}
+
+      {integrityAlert && (
+        <div className="rounded-lg border border-amber-400 bg-amber-50 p-4">
+          <p className="font-semibold text-amber-900">
+            Contrôle automatique : {integrityAlert.count} QRC répondue(s) ({integrityAlert.apprenants} apprenant(s)) ne remontent pas dans la file de correction
+          </p>
+          <p className="text-sm text-amber-900 mt-1">
+            Alerte informative uniquement : aucune réponse, note ou correction n'a été modifiée.
+          </p>
+        </div>
+      )}
 
       {/* Sélecteur d'examen blanc (menu déroulant) */}
       <div className="flex items-center gap-3 flex-wrap">
