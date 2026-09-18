@@ -29,7 +29,17 @@ interface Ligne {
   pole: "journee" | "soiree";
   signatures: number;
   manquantsDocs: string[];
+  dateDebut: string | null;
+  dateFin: string | null;
+  horaires: string | null;
 }
+
+const fmtDate = (d?: string | null) => {
+  if (!d) return "";
+  const [y, m, j] = d.split("-");
+  if (!y || !m || !j) return d;
+  return `${j}/${m}/${y}`;
+};
 
 export function SuiviFormationEnCours({ onNavigateToApprenant }: Props) {
   const today = isoDate(new Date());
