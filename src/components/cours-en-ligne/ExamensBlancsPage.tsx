@@ -31,6 +31,8 @@ import { PassageMatiere, TransitionMatiere } from "./ExamenBlancsPassage";
 import { EcranResultats, RevisionFausses } from "./ExamenBlancsResultats";
 import { computeMatiereScore, computeMatiereScoreForAttempt, resolveMatiereForScoring, MATIERE_SNAPSHOT_VERSION } from "./examens-blancs-scoring";
 import { excludeResultPlaceholders, mergePassageSiblingRows } from "./exam-helpers";
+import { buildFinalizationKey, runFinalizationOnce, resolveIdempotentTentative } from "@/lib/examFinalizationGuard";
+import { auditQrcCoherence, reportQrcIncoherence } from "@/lib/examPassageIdentity";
 
 /**
  * Retrouve la version ORIGINALE (source statique, jamais éditée) d'une matière
@@ -732,6 +734,12 @@ export default function ExamensBlancsPage({
       .eq("quiz_type", quizType);
 
     const rows = selectLatestAttemptRows(mergePassageSiblingRows(excludeResultPlaceholders(data as any[])));
+    // Surveillance (lecture seule) : journalise toute divergence « élève en
+    // attente / aucune QRC réellement à corriger ». Ne modifie jamais rien.
+    try {
+      const coherence = auditQrcCoherence(data as any[]);
+      if (coherence.incoherences.length > 0) void reportQrcIncoherence(coherence, "examens-blancs/resultats");
+    } catch { /* la surveillance ne doit jamais bloquer l'affichage */ }
     const hasOnlyZeroScores = rows.length > 0 && rows.every((row: any) => toFiniteNumber(row?.score_obtenu, 0) <= 0);
 
     // Rebuild from stored responses if quiz_results is empty or only zero-score rows
@@ -979,7 +987,7 @@ export default function ExamensBlancsPage({
     return totalPoints;
   };
 
-  const saveMatiereResult = async ({ examen, matiere, resultat, dureeSecondes }: { examen: ExamenBlanc; matiere: Matiere; resultat: ResultatMatiere; dureeSecondes: number }) => {
+  const saveMatiereResultInner = async ({ examen, matiere, resultat, dureeSecondes }: { examen: ExamenBlanc; matiere: Matiere; resultat: ResultatMatiere; dureeSecondes: number }) => {
     if (!apprenantId || !userId) return;
     let rawQuestions = matiere?.questions || [];
     // FIX: fallback to source data when matiere.questions is empty (frozen examenChoisi)
@@ -1040,6 +1048,30 @@ export default function ExamensBlancsPage({
       })),
     };
 
+    // FINALISATION IDEMPOTENTE : si une écriture du MÊME passage réel existe
+    // déjà (double clic, réessai réseau, rechargement), on réutilise son numéro
+    // de tentative pour mettre à jour cette ligne au lieu d'en créer une sœur.
+    // Aucune donnée existante n'est supprimée ni réécrite hors de ce passage.
+    const desiredTentative = Math.max(currentTentativeRef.current || currentTentative || 1, 1);
+    let effectiveTentative = desiredTentative;
+    try {
+      const { data: existingRows } = await supabase
+        .from("apprenant_quiz_results" as any)
+        .select("id, quiz_id, quiz_type, matiere_id, tentative, completed_at, created_at, details")
+        .eq("apprenant_id", apprenantId)
+        .eq("quiz_id", examen.id)
+        .eq("quiz_type", quizType);
+      effectiveTentative = resolveIdempotentTentative({
+        rows: (existingRows as any[]) || [],
+        quizId: examen.id,
+        quizType,
+        matiereId: resultat.matiereId,
+        desiredTentative,
+      });
+    } catch (lookupError) {
+      console.warn("[ExamSubmission][EB] Lecture des passages existants impossible:", lookupError);
+    }
+
     const payload = {
       apprenant_id: apprenantId, user_id: userId, quiz_type: quizType, quiz_id: examen.id, quiz_titre: examen.titre,
       matiere_id: resultat.matiereId, matiere_nom: resultat.nomMatiere, score_obtenu: safeScoreObtenu, score_max: safeScoreMax,
@@ -1052,7 +1084,7 @@ export default function ExamensBlancsPage({
         snapshot,
         ...(hasQrc ? { qrc_pending_correction: true } : {}),
       },
-      tentative: Math.max(currentTentativeRef.current || currentTentative || 1, 1),
+      tentative: effectiveTentative,
     };
 
     // Save with retry logic to prevent silent data loss.
@@ -1094,6 +1126,24 @@ export default function ExamensBlancsPage({
     }
     return saved;
   };
+
+  /**
+   * Garde-fou anti double écriture : deux finalisations simultanées de la même
+   * matière (double clic, réessai, deux requêtes en parallèle) partagent la
+   * même promesse et ne produisent donc qu'un seul enregistrement.
+   */
+  const saveMatiereResult = async (args: { examen: ExamenBlanc; matiere: Matiere; resultat: ResultatMatiere; dureeSecondes: number }) => {
+    if (!apprenantId) return saveMatiereResultInner(args);
+    const key = buildFinalizationKey({
+      apprenantId,
+      quizType: args.examen.id.startsWith("bilan-") ? "bilan" : "examen_blanc",
+      quizId: args.examen.id,
+      matiereId: args.resultat.matiereId,
+      tentative: Math.max(currentTentativeRef.current || currentTentative || 1, 1),
+    });
+    return runFinalizationOnce(key, () => saveMatiereResultInner(args));
+  };
+
 
   const handleTerminerMatiere = async (reponses: Reponses) => {
     try {
