@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { FileText, Download, Send, Loader2 } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { FileText, Download, Send, Loader2, CheckCircle2, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
