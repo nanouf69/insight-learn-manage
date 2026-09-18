@@ -1091,6 +1091,26 @@ const ResultatsSessionPage = () => {
                                 </TableRow>
                               </TableHeader>
                               <TableBody>
+                                {/* Moyenne par matière */}
+                                <TableRow className="bg-primary/5 border-b-2 border-primary/20">
+                                  <TableCell className="font-bold text-sm">Moyenne par matière</TableCell>
+                                  <TableCell className="text-center">
+                                    <span className={`font-bold ${getNoteColor(s.moyenneNote)}`}>{s.moyenneNote}/20</span>
+                                  </TableCell>
+                                  <TableCell className="text-center">
+                                    <Badge variant="secondary" className="text-[10px]">
+                                      {s.nbCandidats > 0 ? Math.round((s.nbReussi / s.nbCandidats) * 100) : 0}% admis
+                                    </Badge>
+                                  </TableCell>
+                                  {matieresArr.map(m => {
+                                    const mAvgRow = m.count > 0 ? Math.round((m.totalNote / m.count) * 10) / 10 : 0;
+                                    return (
+                                      <TableCell key={m.nom} className="text-center">
+                                        <span className={`text-xs font-bold ${getNoteColor(mAvgRow)}`}>{mAvgRow}/20</span>
+                                      </TableCell>
+                                    );
+                                  })}
+                                </TableRow>
                                 {s.apprenantDetails.map(ad => (
                                   <TableRow key={ad.id} className="hover:bg-muted/20">
                                     <TableCell className="font-medium text-sm">{ad.prenom} {ad.nom}</TableCell>
