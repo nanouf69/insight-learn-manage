@@ -6,6 +6,7 @@
 // Elles renvoient uniquement une liste de messages à afficher.
 
 import { getPointsParQuestion, type ExamenBlanc, type Matiere, type Question } from "./examens-blancs-data";
+import { canSyncExams } from "./examens-blancs-sync-scope";
 
 export const BAREME_CIBLE = 20;
 
