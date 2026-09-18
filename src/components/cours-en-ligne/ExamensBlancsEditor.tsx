@@ -11,7 +11,7 @@ import {
   Save, CheckCircle2, X, Clock, Layers, Loader2, ArrowUp, ArrowDown, ArrowLeftRight, Pause, Play, AlertTriangle
 } from "lucide-react";
 import { tousLesExamens, getPointsParQuestion, applyOfficialCoefficient, type ExamenBlanc, type Matiere, type Question, type Choix } from "./examens-blancs-data";
-import { mergeQuestionsForMatiere, moveQuestionToPosition } from "./examens-blancs-utils";
+import { mergeQuestionsForMatiere, moveQuestionToPosition, normalizeQcmChoiceLetters } from "./examens-blancs-utils";
 import { getSeuilEliminatoireAffiche } from "./examens-blancs-scoring";
 // Contrôle visuel des anomalies — LECTURE SEULE, aucune correction automatique.
 import { detectExamenAnomalies, getCorrectionsMatiere } from "./examens-blancs-anomalies";
