@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
     // Validate token
     const { data: devis, error: devisError } = await supabase
       .from("devis_envois")
-      .select("id, apprenant_id, devis_signe_url, modele, formation, montant")
+      .select("id, apprenant_id, devis_signe_url, modele, formation, montant, client_nom, client_email")
       .eq("token", token)
       .single();
 
