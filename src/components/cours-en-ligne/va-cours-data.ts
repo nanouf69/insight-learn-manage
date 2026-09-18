@@ -2,9 +2,9 @@
 // Passerelle VTC : uniquement Développement Commercial + Réglementation Spécifique VTC
 import { DEV_COMMERCIAL_EXERCICES } from "./exercices/dev-commercial-exercices-data";
 import { REGLEMENTATION_SPECIFIQUE_VTC_EXERCICES } from "./exercices/reglementation-exercices-data";
-import DEVELOPPEMENT_COMMERCIAL_ASSET from "@/assets/cours-vtc/Developpement_commercial_1SUR1_v7.pptx.asset.json";
+import DEVELOPPEMENT_COMMERCIAL_ASSET from "@/assets/cours-vtc/Developpement_commercial_1SUR1_v11.pptx.asset.json";
 
-const DEVELOPPEMENT_COMMERCIAL_PPTX = `${DEVELOPPEMENT_COMMERCIAL_ASSET.url}?v=20260917-1413`;
+const DEVELOPPEMENT_COMMERCIAL_PPTX = `${DEVELOPPEMENT_COMMERCIAL_ASSET.url}?v=20260918-2109`;
 
 interface ContentItem {
   id: number;
