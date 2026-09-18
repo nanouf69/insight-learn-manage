@@ -207,6 +207,7 @@ ${signLink ? `<p>📝 <strong>Pour consulter et signer votre devis en ligne :</s
         sent_at: new Date().toISOString(),
       });
 
+      await chargerHistorique();
       toast.success(`Devis envoyé à ${organisation.email}`);
     } catch (e: any) {
       toast.error("Envoi impossible : " + (e?.message || e));
@@ -306,6 +307,58 @@ ${signLink ? `<p>📝 <strong>Pour consulter et signer votre devis en ligne :</s
           Envoyer le devis par email
         </Button>
       </div>
+
+      {historique.length > 0 && (
+        <div className="space-y-2 pt-2 border-t">
+          <h5 className="text-sm font-semibold">Devis envoyés</h5>
+          {historique.map((d) => (
+            <div
+              key={d.id}
+              className="rounded-md bg-background border p-3 text-sm flex flex-wrap items-center justify-between gap-2"
+            >
+              <div>
+                <p className="font-medium">{d.modele}</p>
+                <p className="text-muted-foreground text-xs">
+                  Envoyé le {formatDateFr(d.created_at)}
+                  {d.montant ? ` — ${d.montant}` : ""}
+                  {d.signed_at ? ` — signé le ${formatDateFr(d.signed_at)}` : ""}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                {d.statut === "signe" ? (
+                  <span className="inline-flex items-center gap-1 text-xs font-medium text-green-700">
+                    <CheckCircle2 className="h-4 w-4" /> Signé
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-600">
+                    <Clock className="h-4 w-4" /> En attente de signature
+                  </span>
+                )}
+                {d.devis_signe_url && (
+                  <a
+                    href={d.devis_signe_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-xs underline text-primary"
+                  >
+                    Voir la signature
+                  </a>
+                )}
+                {d.fichier_url && (
+                  <a
+                    href={d.fichier_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-xs underline text-muted-foreground"
+                  >
+                    Devis
+                  </a>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
