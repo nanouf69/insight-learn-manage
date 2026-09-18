@@ -201,7 +201,8 @@ Deno.serve(async (req) => {
           <p>Bonjour ${a.prenom || ""},</p>
           <p>Dans le cadre de votre formation, votre dossier doit être complet. À ce jour, il manque :</p>
           <ul>${liste}</ul>
-          <p>Merci de vous connecter à votre espace de formation et de <strong>remplir puis valider</strong> ces documents
+          <p>Ces documents se trouvent dans le <strong>module Introduction</strong> de votre espace de formation.
+          Vous devez <strong>terminer entièrement le module Introduction</strong> et <strong>valider chaque document</strong>
           (un document rempli mais non validé n'est pas pris en compte).</p>
           <p><a href="${COURS_URL}" style="background:#1d4ed8;color:#ffffff;text-decoration:none;padding:10px 18px;border-radius:6px;display:inline-block">Accéder à mon espace formation</a></p>
           <p>Cordialement,<br/>L'équipe FTRANSPORT</p>
