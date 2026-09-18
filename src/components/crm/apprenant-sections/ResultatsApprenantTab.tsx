@@ -147,7 +147,7 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
                   (md: any) => md.id === m.matiere_id || md.nom === m.matiere_nom,
                 );
                 if (!def) return false;
-                return isMatiereQrcPending(def, m?.details?.correctionsIA || m?.correctionsIA || {});
+                return isMatiereQrcPendingForAttempt(def, m?.details ?? { correctionsIA: m?.correctionsIA });
               };
               const enAttenteCorrection = exam.matieres.some((m: any) => matiereEnAttenteQrc(m));
 
