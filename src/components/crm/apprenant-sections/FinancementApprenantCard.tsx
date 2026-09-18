@@ -139,6 +139,7 @@ export function FinancementApprenantCard({ apprenant, onNavigateToComptabilite }
       date_paiement: new Date().toISOString().slice(0, 10),
       montant: "",
       moyen_paiement: "Virement bancaire",
+      formation: "",
       notes: "",
     });
     await refreshPaiements();
