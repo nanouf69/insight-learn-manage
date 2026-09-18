@@ -25,6 +25,8 @@ interface QrcItem {
   quizType: string;
   /** Numéro de tentative réel du passage : fait partie de l'identité d'une QRC. */
   tentative: number;
+  /** Numéro de tentative tel qu'enregistré en base (cible d'écriture). */
+  dbTentative?: number;
   matiereId: string;
   matiereNom: string;
   questionId: number;
@@ -489,7 +491,7 @@ const CorrectionQRCTab = () => {
     const MEME_PASSAGE_MS = 5 * 60 * 1000;
     type AttemptGroup = {
       primaryId: string; apprenantId: string; userId?: string; quizId: string; quizType: string;
-      quizTitre: string; matiereId: string; matiereNom: string; tentative: number; completedAt: string;
+      quizTitre: string; matiereId: string; matiereNom: string; tentative: number; dbTentative: number; completedAt: string;
       scoreObtenu: number; scoreMax: number; noteSur20: number | null;
       questions: any[] | null; reponses: Record<string, any>; corrections: Record<string, any>; rows: number;
       lastTime: number;
@@ -543,7 +545,9 @@ const CorrectionQRCTab = () => {
       list.push({
         primaryId: r.id, apprenantId: r.apprenant_id, userId: r.user_id, quizId: r.quiz_id,
         quizType: r.quiz_type, quizTitre: r.quiz_titre, matiereId: mid, matiereNom: r.matiere_nom || "",
-        tentative: list.length + 1, completedAt: r.completed_at,
+        tentative: list.length + 1,
+        dbTentative: Number.isFinite(Number(r.tentative)) && Number(r.tentative) > 0 ? Math.floor(Number(r.tentative)) : 1,
+        completedAt: r.completed_at,
         scoreObtenu: r.score_obtenu ?? 0, scoreMax: r.score_max ?? 20, noteSur20: r.note_sur_20 ?? null,
         questions,
         reponses: { ...(details.reponses || {}) },
@@ -662,6 +666,7 @@ const CorrectionQRCTab = () => {
           quizId: g.quizId,
           quizType: g.quizType,
           tentative: g.tentative,
+          dbTentative: g.dbTentative,
           matiereId: effectiveMatiereId,
           matiereNom: g.matiereNom || safeStr(q.matiereNom) || perQuestionMatiere?.nom || "",
           questionId,
