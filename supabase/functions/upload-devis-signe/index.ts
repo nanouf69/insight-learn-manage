@@ -180,8 +180,8 @@ Deno.serve(async (req) => {
           body: JSON.stringify({
             from: "FTRANSPORT <noreply@ftransport.fr>",
             to: "contact@ftransport.fr",
-            subject: `📝 Devis signé reçu — ${apprenant?.prenom} ${apprenant?.nom}`,
-            html: `<p>Bonjour,</p><p><strong>${apprenant?.prenom} ${apprenant?.nom}</strong> a renvoyé son devis signé pour <strong>${devis.modele}</strong>.</p><p><a href="${urlData.publicUrl}">📥 Télécharger le devis signé</a></p>`,
+            subject: `📝 Devis signé reçu — ${clientLabel}`,
+            html: `<p>Bonjour,</p><p><strong>${clientLabel}</strong> a renvoyé son devis signé pour <strong>${devis.modele}</strong>.</p><p><a href="${urlData.publicUrl}">📥 Télécharger le devis signé</a></p>`,
           }),
         });
       }
