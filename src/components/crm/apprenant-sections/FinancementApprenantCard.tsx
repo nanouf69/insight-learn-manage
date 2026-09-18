@@ -115,12 +115,17 @@ export function FinancementApprenantCard({ apprenant, onNavigateToComptabilite }
       toast.error("Indiquez un montant supérieur à 0.");
       return;
     }
+    if (!form.formation) {
+      toast.error("Choisissez la formation concernée par ce paiement.");
+      return;
+    }
     setSaving(true);
     const { error } = await supabase.from("apprenant_paiements").insert({
       apprenant_id: apprenant.id,
       date_paiement: form.date_paiement,
       montant,
       moyen_paiement: form.moyen_paiement,
+      formation: form.formation,
       notes: form.notes.trim() || null,
     });
     setSaving(false);
