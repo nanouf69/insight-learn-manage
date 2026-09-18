@@ -4155,6 +4155,18 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      autovalidate_module_if_complete: {
+        Args: {
+          _apprenant_id: string
+          _module_id: number
+          _total_questions: number
+        }
+        Returns: {
+          answered: number
+          total: number
+          validated: boolean
+        }[]
+      }
       check_apprenant_session: {
         Args: { _apprenant_id: string; _connexion_id: string; _event?: string }
         Returns: {
