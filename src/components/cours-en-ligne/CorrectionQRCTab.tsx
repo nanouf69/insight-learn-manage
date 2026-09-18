@@ -23,6 +23,10 @@ interface QrcItem {
   quizTitre: string;
   quizId: string;
   quizType: string;
+  /** Numéro de tentative réel du passage : fait partie de l'identité d'une QRC. */
+  tentative: number;
+  /** Numéro de tentative tel qu'enregistré en base (cible d'écriture). */
+  dbTentative?: number;
   matiereId: string;
   matiereNom: string;
   questionId: number;
@@ -281,6 +285,38 @@ function chooseMatiereMatchingResponses(
   return bestScore >= Math.max(defaultScore + 2, 3) ? bestMatiere : defaultMatiere;
 }
 
+/**
+ * Classement de la file : apprenant → examen → tentative → matière → n° de
+ * question croissant, afin de corriger tout le passage d'un élève d'un bloc.
+ * Les apprenants sont ordonnés par date de passage (présentiel prioritaire).
+ */
+function sortQrcItems(list: QrcItem[], sortOrder: "desc" | "asc"): QrcItem[] {
+  const latestByApprenant = new Map<string, number>();
+  list.forEach((i) => {
+    const t = new Date(i.completedAt).getTime() || 0;
+    latestByApprenant.set(i.apprenantId, Math.max(latestByApprenant.get(i.apprenantId) ?? 0, t));
+  });
+  return [...list].sort((a, b) => {
+    const prioA = a.apprenantTypeMode === "presentiel" ? 0 : 1;
+    const prioB = b.apprenantTypeMode === "presentiel" ? 0 : 1;
+    if (prioA !== prioB) return prioA - prioB;
+    const dateA = latestByApprenant.get(a.apprenantId) ?? 0;
+    const dateB = latestByApprenant.get(b.apprenantId) ?? 0;
+    if (dateA !== dateB) return sortOrder === "desc" ? dateB - dateA : dateA - dateB;
+    const nomA = `${a.apprenantNom} ${a.apprenantPrenom}`.toLowerCase();
+    const nomB = `${b.apprenantNom} ${b.apprenantPrenom}`.toLowerCase();
+    if (nomA !== nomB) return nomA.localeCompare(nomB);
+    if (a.apprenantId !== b.apprenantId) return a.apprenantId.localeCompare(b.apprenantId);
+    const numA = parseInt((a.quizTitre?.match(/N°(\d+)/)?.[1]) || "0", 10);
+    const numB = parseInt((b.quizTitre?.match(/N°(\d+)/)?.[1]) || "0", 10);
+    if (numA !== numB) return numA - numB;
+    if (a.quizId !== b.quizId) return a.quizId.localeCompare(b.quizId);
+    if (a.tentative !== b.tentative) return a.tentative - b.tentative;
+    if (a.matiereId !== b.matiereId) return a.matiereId.localeCompare(b.matiereId);
+    return a.questionId - b.questionId;
+  });
+}
+
 const CorrectionQRCTab = () => {
   const [items, setItems] = useState<QrcItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -325,19 +361,7 @@ const CorrectionQRCTab = () => {
       }
       return true;
     });
-    return [...filteredList].sort((a, b) => {
-      const prioA = a.apprenantTypeMode === "presentiel" ? 0 : 1;
-      const prioB = b.apprenantTypeMode === "presentiel" ? 0 : 1;
-      if (prioA !== prioB) return prioA - prioB;
-      const dateA = new Date(a.completedAt).getTime() || 0;
-      const dateB = new Date(b.completedAt).getTime() || 0;
-      if (dateA !== dateB) return sortOrder === "desc" ? dateB - dateA : dateA - dateB;
-      const numA = parseInt((a.quizTitre.match(/N°(\d+)/)?.[1]) || "0", 10);
-      const numB = parseInt((b.quizTitre.match(/N°(\d+)/)?.[1]) || "0", 10);
-      if (numA !== numB) return numA - numB;
-      if (a.matiereId !== b.matiereId) return a.matiereId.localeCompare(b.matiereId);
-      return a.questionId - b.questionId;
-    });
+    return sortQrcItems(filteredList, sortOrder);
   };
 
   const QUICK_COMMENTS = [
@@ -381,7 +405,7 @@ const CorrectionQRCTab = () => {
     for (let from = 0, retried = false; ; from += pageSize) {
       const { data, error } = await supabase
         .from("apprenant_quiz_results")
-        .select("id, apprenant_id, quiz_id, quiz_type, quiz_titre, matiere_id, matiere_nom, details, completed_at, score_obtenu, score_max, note_sur_20")
+        .select("id, apprenant_id, user_id, quiz_id, quiz_type, quiz_titre, matiere_id, matiere_nom, details, completed_at, score_obtenu, score_max, note_sur_20, tentative")
         .in("quiz_type", ["examen_blanc", "bilan"])
         .order("completed_at", { ascending: false })
         .range(from, from + pageSize - 1);
@@ -424,62 +448,157 @@ const CorrectionQRCTab = () => {
       apprenantMap[a.id] = { nom: a.nom, prenom: a.prenom, mode };
     });
 
+    // ────────────────────────────────────────────────────────────────────
+    // IDENTITÉ D'UNE QRC (règle définitive) :
+    //   apprenant + examen exact + matière + TENTATIVE + identité de question
+    // → deux écritures techniques du même passage = UNE seule QRC ;
+    // → une vraie nouvelle tentative = une NOUVELLE QRC à corriger ;
+    // → une validation admin reste définitive pour cette tentative.
+    // Aucune donnée n'est modifiée ici : lecture et classement uniquement.
+    // ────────────────────────────────────────────────────────────────────
     const qrcItems: QrcItem[] = [];
     const seenQrcKeys = new Set<string>();
 
-    // Sécurité anti-doublon : dès qu'une QRC a une vraie validation admin en base,
-    // elle ne doit plus revenir dans la file "à corriger", même si une ancienne
-    // autosauvegarde ou un ancien format de question réapparaît.
-    const manualCorrectionKeys = new Set<string>();
-    const manualCorrectionsByKey = new Map<string, any>();
+    const attemptKey = (a: string, q: string, m: string, t: number, qid: number) =>
+      `${a}__${q}__${m || ""}__T${t}__${qid}`;
+
+    // ── Index des validations admin déjà enregistrées ───────────────────
+    // Une validation est rattachée à SON passage (date de fin du passage),
+    // jamais à un simple numéro de question.
+    type ValidationRecord = { correction: any; matiereId: string; time: number };
+    const validationsByQuestion = new Map<string, ValidationRecord[]>();
+    let validationsRecuperees = 0;
+    let validationsAmbigues = 0;
+
     for (const r of results as any[]) {
       const correctionsIA = ((r.details as any)?.correctionsIA || {}) as Record<string | number, any>;
       Object.entries(correctionsIA).forEach(([rawQuestionId, correction]) => {
         const questionId = Number(String(rawQuestionId).replace(/^Q/i, ""));
         if (!Number.isFinite(questionId) || !isAdminValidatedCorrection(correction, r.completed_at)) return;
-        const correctionKey = getCorrectionKey(r.apprenant_id, r.quiz_id, r.matiere_id || "", questionId);
-        manualCorrectionKeys.add(correctionKey);
-        manualCorrectionsByKey.set(correctionKey, correction);
+        const lk = `${r.apprenant_id}__${r.quiz_id}__${questionId}`;
+        const list = validationsByQuestion.get(lk) || [];
+        list.push({ correction, matiereId: r.matiere_id || "", time: new Date(r.completed_at).getTime() || 0 });
+        validationsByQuestion.set(lk, list);
       });
     }
 
-    // RÈGLE : une tentative = le numéro réel de tentative enregistré, jamais le
-    // nombre de lignes de résultat en base. Deux lignes techniques écrites à
-    // quelques fractions de seconde pour le même passage restent UNE tentative.
-    // Aucune correction QRC n'est déduite du nombre de tentatives : seule la
-    // validation manuelle de l'administrateur fait sortir une QRC de la file.
+    // ── Regroupement par PASSAGE RÉEL (fusion des doubles écritures) ─────
+    // Un passage = apprenant + examen + matière + fenêtre de temps courte.
+    // Deux lignes écrites à quelques secondes d'intervalle sont la même
+    // tentative, même si elles portent un numéro de tentative différent.
+    // Deux passages réellement distincts (plusieurs minutes d'écart) restent
+    // deux tentatives séparées, donc deux QRC à corriger.
+    const MEME_PASSAGE_MS = 5 * 60 * 1000;
+    type AttemptGroup = {
+      primaryId: string; apprenantId: string; userId?: string; quizId: string; quizType: string;
+      quizTitre: string; matiereId: string; matiereNom: string; tentative: number; dbTentative: number; completedAt: string;
+      scoreObtenu: number; scoreMax: number; noteSur20: number | null;
+      questions: any[] | null; reponses: Record<string, any>; corrections: Record<string, any>; rows: number;
+      lastTime: number;
+    };
+    const groupsByMatiere = new Map<string, AttemptGroup[]>();
+    let doublonsTechniques = 0;
 
+    // Les lignes arrivent de la plus récente à la plus ancienne : on les
+    // traite de la plus ancienne à la plus récente pour numéroter les passages.
+    const resultsAsc = [...(results as any[])].sort(
+      (a, b) => (new Date(a.completed_at).getTime() || 0) - (new Date(b.completed_at).getTime() || 0),
+    );
 
-    // Deduplicate: keep only the latest result per apprenant + quiz + matière
-    const seenApprenantQuizMatiere = new Set<string>();
-    for (const r of results as any[]) {
-      const dedupeKey = `${r.apprenant_id}__${r.quiz_id}__${r.matiere_id || ""}`;
-      if (seenApprenantQuizMatiere.has(dedupeKey)) continue;
-      seenApprenantQuizMatiere.add(dedupeKey);
-      const details = r.details as any;
-      if (details == null) continue;
+    for (const r of resultsAsc) {
+      const details = (r.details as any) || {};
+      const mid = r.matiere_id || "";
+      const mKey = `${r.apprenant_id}__${r.quiz_id}__${mid}`;
+      const time = new Date(r.completed_at).getTime() || 0;
+      const questions = Array.isArray(details.questions) && details.questions.length > 0 ? details.questions : null;
+      const list = groupsByMatiere.get(mKey) || [];
+      const last = list[list.length - 1];
 
-      const correctionsIA = details.correctionsIA || {};
-      const reponses = details.reponses || {};
-      const defaultMatiere = findMatiereWithFallback(examenMap, tousLesExamens, r.quiz_id, r.matiere_id || "");
-      const matiere = chooseMatiereMatchingResponses(defaultMatiere, examenMap, r.matiere_id || "", reponses);
-
-
-      // Build question list: prefer details.questions, but fall back to examen definition + correctionsIA
-      let questionList = Array.isArray(details.questions) && details.questions.length > 0
-        ? details.questions
-        : null;
-
-      // If questions array is empty, reconstruct from examen definition + reponses/correctionsIA
-      if (!questionList && matiere && (Object.keys(correctionsIA).length > 0 || Object.keys(reponses).length > 0)) {
-        questionList = buildQuestionListFromMatiere(matiere, reponses);
+      if (last && time - last.lastTime <= MEME_PASSAGE_MS) {
+        // Même passage : on complète ce qui manque, sans jamais écraser.
+        doublonsTechniques++;
+        last.rows++;
+        last.lastTime = time;
+        if (r.completed_at) last.completedAt = r.completed_at;
+        if (questions && (!last.questions || questions.length > last.questions.length)) {
+          last.questions = questions;
+          last.primaryId = r.id;
+        }
+        Object.entries(details.reponses || {}).forEach(([k, v]) => {
+          const current = last.reponses[k];
+          if (current == null || (typeof current === "string" && current.trim() === "")) last.reponses[k] = v;
+        });
+        Object.entries(details.correctionsIA || {}).forEach(([k, v]) => {
+          const current = last.corrections[k];
+          if (current == null || (!isAdminValidatedCorrection(current, last.completedAt) && isAdminValidatedCorrection(v, r.completed_at))) {
+            last.corrections[k] = v;
+          }
+        });
+        if (!last.matiereNom && r.matiere_nom) last.matiereNom = r.matiere_nom;
+        if ((r.score_obtenu ?? 0) > last.scoreObtenu) {
+          last.scoreObtenu = r.score_obtenu ?? 0;
+          last.noteSur20 = r.note_sur_20 ?? last.noteSur20;
+        }
+        continue;
       }
 
+      list.push({
+        primaryId: r.id, apprenantId: r.apprenant_id, userId: r.user_id, quizId: r.quiz_id,
+        quizType: r.quiz_type, quizTitre: r.quiz_titre, matiereId: mid, matiereNom: r.matiere_nom || "",
+        tentative: list.length + 1,
+        dbTentative: Number.isFinite(Number(r.tentative)) && Number(r.tentative) > 0 ? Math.floor(Number(r.tentative)) : 1,
+        completedAt: r.completed_at,
+        scoreObtenu: r.score_obtenu ?? 0, scoreMax: r.score_max ?? 20, noteSur20: r.note_sur_20 ?? null,
+        questions,
+        reponses: { ...(details.reponses || {}) },
+        corrections: { ...(details.correctionsIA || {}) },
+        rows: 1,
+        lastTime: time,
+      });
+      groupsByMatiere.set(mKey, list);
+    }
+
+    const groups: AttemptGroup[] = [];
+    groupsByMatiere.forEach((list) => groups.push(...list));
+
+    // Rattachement d'une validation existante au passage concerné :
+    // 1) la validation enregistrée sur le passage lui-même ;
+    // 2) sinon, rattrapage UNIQUEMENT si la correspondance est certaine —
+    //    même apprenant, même examen, même question, même passage (date),
+    //    et une seule validation candidate écrite sans code matière
+    //    (lignes bilan regroupées). Tout cas ambigu est laissé intact.
+    const findValidationForGroup = (g: AttemptGroup, matiereId: string, questionId: number): any | null => {
+      const own = getCorrectionForQuestion(g.corrections, questionId);
+      if (isAdminValidatedCorrection(own, g.completedAt)) return own;
+      const candidates = (validationsByQuestion.get(`${g.apprenantId}__${g.quizId}__${questionId}`) || [])
+        .filter(v => Math.abs(v.time - g.lastTime) <= MEME_PASSAGE_MS && (v.matiereId || "") !== (matiereId || ""));
+      if (candidates.length === 0) return null;
+      const certains = candidates.filter(v => !v.matiereId || !matiereId);
+      if (certains.length === 1) { validationsRecuperees++; return certains[0].correction; }
+      validationsAmbigues++;
+      return null;
+    };
+
+    // Dernier passage connu par apprenant + examen + matière (sert à rattacher
+    // les réponses en cours de saisie au bon passage).
+    const dernierPassage = new Map<string, AttemptGroup>();
+    groups.forEach((g) => {
+      const k = `${g.apprenantId}__${g.quizId}__${g.matiereId}`;
+      const prev = dernierPassage.get(k);
+      if (!prev || g.lastTime > prev.lastTime) dernierPassage.set(k, g);
+    });
+
+    for (const g of groups.values()) {
+      const defaultMatiere = findMatiereWithFallback(examenMap, tousLesExamens, g.quizId, g.matiereId);
+      const matiere = chooseMatiereMatchingResponses(defaultMatiere, examenMap, g.matiereId, g.reponses);
+
+      let questionList = g.questions;
+      if (!questionList && matiere && (Object.keys(g.corrections).length > 0 || Object.keys(g.reponses).length > 0)) {
+        questionList = buildQuestionListFromMatiere(matiere, g.reponses);
+      }
       if (!questionList) continue;
 
       for (const q of questionList) {
-        // FIX 19/05 : tolère l'absence de champ `type` (nouvelles lignes bilan
-        // qui agrègent toutes les matières) en inférant le type depuis l'énoncé.
         const enonceStr = safeStr(q.enonce);
         const inferredType = q.type
           ? String(q.type).toUpperCase()
@@ -489,49 +608,39 @@ const CorrectionQRCTab = () => {
         const questionId = getQuestionId(q);
         if (questionId == null) continue;
 
-        // Pour les lignes bilan agrégées (matiere_id vide), on résout la matière
-        // au niveau de la question (chaque question porte son propre matiereId).
-        const effectiveMatiereId = (r.matiere_id || "") || safeStr(q.matiereId);
+        const effectiveMatiereId = g.matiereId || safeStr(q.matiereId);
         const perQuestionMatiere = matiere
-          || findMatiereWithFallback(examenMap, tousLesExamens, r.quiz_id, effectiveMatiereId);
+          || findMatiereWithFallback(examenMap, tousLesExamens, g.quizId, effectiveMatiereId);
 
-        // Deduplicate per apprenant + quiz + matière effective + question
-        const qrcKey = getCorrectionKey(r.apprenant_id, r.quiz_id, effectiveMatiereId, questionId);
+        const qrcKey = attemptKey(g.apprenantId, g.quizId, effectiveMatiereId, g.tentative, questionId);
         if (seenQrcKeys.has(qrcKey)) continue;
         seenQrcKeys.add(qrcKey);
 
         const pts = getPointsParQuestion(effectiveMatiereId, "QRC", perQuestionMatiere || undefined);
 
-        const correction = manualCorrectionsByKey.get(qrcKey) ?? getCorrectionForQuestion(correctionsIA, questionId);
-        // STRICT : seules les validations admin comptent, y compris l'ancien format
-        // écrit avant l'ajout de `validatedByAdmin`.
-        const hasManualCorrection = manualCorrectionKeys.has(qrcKey) || isAdminValidatedCorrection(correction, r.completed_at);
+        const validation = findValidationForGroup(g, effectiveMatiereId, questionId);
+        const correction = validation ?? getCorrectionForQuestion(g.corrections, questionId);
+        const hasManualCorrection = !!validation || isAdminValidatedCorrection(correction, g.completedAt);
 
-        const app = apprenantMap[r.apprenant_id] || { nom: "Inconnu", prenom: "", mode: "presentiel" as const };
+        const app = apprenantMap[g.apprenantId] || { nom: "Inconnu", prenom: "", mode: "presentiel" as const };
 
         const questionDef = perQuestionMatiere?.questions?.find((mq: any) => mq && mq.id === questionId);
-        // Compare against the CURRENT canonical matiere (from examenMap) to detect
-        // questions removed/replaced in the live exam — not the legacy matched variant.
-        const currentExamen = examenMap[r.quiz_id];
+        const currentExamen = examenMap[g.quizId];
         const currentMatiere = currentExamen?.matieres?.find((m: any) => m.id === effectiveMatiereId);
         const currentQuestionDef = currentMatiere?.questions?.find((mq: any) => mq && mq.id === questionId);
         const savedQuestionText = normalizeText(enonceStr);
         const currentQuestionText = normalizeText(safeStr(currentQuestionDef?.enonce));
         const questionSupprimee = !currentQuestionDef || (!!savedQuestionText && !!currentQuestionText && savedQuestionText !== currentQuestionText);
 
-        // Réponse élève : si absente du champ q.reponseEleve (cas des lignes bilan),
-        // on la récupère depuis details.reponses[questionId].
         const reponseEleveRaw = q.reponseEleve != null && q.reponseEleve !== ""
           ? q.reponseEleve
-          : (reponses?.[questionId] ?? reponses?.[String(questionId)] ?? "");
+          : (g.reponses?.[questionId] ?? g.reponses?.[String(questionId)] ?? "");
         const reponseEleveStr = safeStr(reponseEleveRaw);
 
-        // Réponse correcte : si absente, on la reconstruit depuis la définition.
         const reponseCorrecteStr = q.reponseCorrecte
           ? safeStr(q.reponseCorrecte)
           : safeStr(questionDef?.reponseQRC || (questionDef?.reponses_possibles || []).join(" / "));
 
-        // Auto score: if manual correction exists, use it; otherwise recompute deterministically
         let autoScore = 0;
         let autoExplication: string | null = null;
         if (correction && typeof correction === "object" && hasManualCorrection) {
@@ -546,73 +655,74 @@ const CorrectionQRCTab = () => {
           autoExplication = correction.explication || null;
         }
 
-        // Une QRC ne sort de la file QUE sur validation manuelle de l'administrateur,
-        // quelle que soit la tentative (1re, 2e, 3e...). Aucune notation automatique.
         qrcItems.push({
-          resultId: r.id,
+          resultId: g.primaryId,
           source: "result",
-          apprenantId: r.apprenant_id,
+          userId: g.userId,
+          apprenantId: g.apprenantId,
           apprenantNom: app.nom,
           apprenantPrenom: app.prenom,
-          quizTitre: r.quiz_titre,
-          quizId: r.quiz_id,
-          quizType: r.quiz_type,
+          quizTitre: g.quizTitre,
+          quizId: g.quizId,
+          quizType: g.quizType,
+          tentative: g.tentative,
+          dbTentative: g.dbTentative,
           matiereId: effectiveMatiereId,
-          matiereNom: r.matiere_nom || safeStr(q.matiereNom) || perQuestionMatiere?.nom || "",
+          matiereNom: g.matiereNom || safeStr(q.matiereNom) || perQuestionMatiere?.nom || "",
           questionId,
           enonce: enonceStr,
           reponseEleve: reponseEleveStr,
           reponseCorrecte: reponseCorrecteStr,
           pointsMax: pts,
-          pointsObtenus: hasManualCorrection
-            ? clampToHalfStep(correction.pointsObtenus ?? 0, pts)
-            : null,
+          pointsObtenus: hasManualCorrection ? clampToHalfStep(correction?.pointsObtenus ?? 0, pts) : null,
           corrigeManuel: hasManualCorrection,
-          completedAt: r.completed_at,
+          completedAt: g.completedAt,
           autoScore,
           autoExplication,
-          noteSur20: r.note_sur_20 ?? null,
-          scoreMatiereObtenu: r.score_obtenu ?? 0,
-          scoreMatiereMax: r.score_max ?? 20,
+          noteSur20: g.noteSur20,
+          scoreMatiereObtenu: g.scoreObtenu,
+          scoreMatiereMax: g.scoreMax,
           commentaire: correction && typeof correction === "object" ? (correction.commentaire || "") : "",
-          correctedAt: hasManualCorrection ? (correction?.correctedAt || r.completed_at || null) : null,
-
+          correctedAt: hasManualCorrection ? (correction?.correctedAt || g.completedAt || null) : null,
           apprenantTypeMode: app.mode,
           questionSupprimee,
         });
       }
     }
 
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
-    const todayEnd = new Date(todayStart);
-    todayEnd.setDate(todayEnd.getDate() + 1);
-    const { data: autosaves } = await supabase
-      .from("reponses_apprenants" as any)
-      .select("id, apprenant_id, user_id, exercice_id, exercice_type, reponses, completed, updated_at")
-      .eq("exercice_type", "examen_blanc")
-      .like("exercice_id", "%__%")
-      .gte("updated_at", todayStart.toISOString())
-      .lt("updated_at", todayEnd.toISOString())
-      .order("updated_at", { ascending: false });
-
-    const missingAutosaveApprenantIds = [...new Set(((autosaves || []) as any[]).map(row => row.apprenant_id))]
-      .filter((id) => id && !apprenantMap[id]);
-    if (missingAutosaveApprenantIds.length > 0) {
-      for (let i = 0; i < missingAutosaveApprenantIds.length; i += 500) {
-        const { data } = await supabase
-          .from("apprenants")
-          .select("id, nom, prenom, type_apprenant")
-          .in("id", missingAutosaveApprenantIds.slice(i, i + 500));
-        (data || []).forEach((a: any) => {
-          const t = String(a.type_apprenant || "").toLowerCase();
-          const mode: "presentiel" | "elearning" = t.endsWith("-e") || t.includes("-e-") ? "elearning" : "presentiel";
-          apprenantMap[a.id] = { nom: a.nom, prenom: a.prenom, mode };
-        });
-      }
+    // ── Réponses réellement sauvegardées (toutes dates, plus seulement le jour) ──
+    // Une QRC répondue rejoint la file quelle que soit sa date, dès lors
+    // qu'elle n'a jamais été validée et qu'aucun enregistrement de fin ne la
+    // porte déjà. Aucune réponse n'est créée : on lit ce qui existe.
+    const autosaves: any[] = [];
+    for (let from = 0; ; from += 1000) {
+      const { data, error } = await supabase
+        .from("reponses_apprenants" as any)
+        .select("id, apprenant_id, user_id, exercice_id, exercice_type, reponses, completed, updated_at")
+        .eq("exercice_type", "examen_blanc")
+        .like("exercice_id", "%__%")
+        .order("updated_at", { ascending: false })
+        .range(from, from + 999);
+      if (error) break;
+      autosaves.push(...(data || []));
+      if (!data || data.length < 1000) break;
     }
 
-    for (const row of (autosaves || []) as any[]) {
+    const missingAutosaveApprenantIds = [...new Set(autosaves.map(row => row.apprenant_id))]
+      .filter((id) => id && !apprenantMap[id]);
+    for (let i = 0; i < missingAutosaveApprenantIds.length; i += 500) {
+      const { data } = await supabase
+        .from("apprenants")
+        .select("id, nom, prenom, type_apprenant")
+        .in("id", missingAutosaveApprenantIds.slice(i, i + 500));
+      (data || []).forEach((a: any) => {
+        const t = String(a.type_apprenant || "").toLowerCase();
+        const mode: "presentiel" | "elearning" = t.endsWith("-e") || t.includes("-e-") ? "elearning" : "presentiel";
+        apprenantMap[a.id] = { nom: a.nom, prenom: a.prenom, mode };
+      });
+    }
+
+    for (const row of autosaves) {
       const [quizId, matiereId] = safeStr(row.exercice_id).split("__");
       if (!quizId || !matiereId) continue;
       const matiere = findMatiereWithFallback(examenMap, tousLesExamens, quizId, matiereId);
@@ -621,41 +731,22 @@ const CorrectionQRCTab = () => {
       const reponses = row.reponses || {};
       const app = apprenantMap[row.apprenant_id] || { nom: "Inconnu", prenom: "", mode: "presentiel" as const };
       const examen = examenMap[quizId];
+      const passage = dernierPassage.get(`${row.apprenant_id}__${quizId}__${matiereId}`);
+      const tentative = passage?.tentative ?? 1;
 
       for (const q of questions) {
         if (!q || String(q.type).toUpperCase() !== "QRC") continue;
         const reponseEleveStr = safeStr(reponses?.[q.id] ?? reponses?.[String(q.id)] ?? "");
         if (!reponseEleveStr.trim()) continue;
-        const qrcKey = `${row.apprenant_id}__${quizId}__${matiereId}__${q.id}`;
-        if (manualCorrectionKeys.has(qrcKey)) continue;
-        const alreadyHasTodayResult = qrcItems.some(i =>
-          i.apprenantId === row.apprenant_id &&
-          i.quizId === quizId &&
-          i.matiereId === matiereId &&
-          i.questionId === q.id &&
-          isToday(i.completedAt)
-        );
-        if (alreadyHasTodayResult) continue;
-        if (seenQrcKeys.has(qrcKey)) {
-          const oldIndex = qrcItems.findIndex(i =>
-            i.apprenantId === row.apprenant_id &&
-            i.quizId === quizId &&
-            i.matiereId === matiereId &&
-            i.questionId === q.id
-          );
-          if (oldIndex >= 0 && !isToday(qrcItems[oldIndex].completedAt)) {
-            qrcItems.splice(oldIndex, 1);
-            seenQrcKeys.delete(qrcKey);
-          } else {
-            continue;
-          }
-        }
+        const qrcKey = attemptKey(row.apprenant_id, quizId, matiereId, tentative, q.id);
+        if (seenQrcKeys.has(qrcKey)) continue;
+        if (passage && findValidationForGroup(passage, matiereId, q.id)) continue;
         seenQrcKeys.add(qrcKey);
 
         const pts = getPointsParQuestion(matiereId, "QRC", matiere);
         const recomputed = recomputeQrcAutoScore(q, reponseEleveStr, pts);
         qrcItems.push({
-          resultId: `autosave:${row.id}:${quizId}:${matiereId}`,
+          resultId: `autosave:${row.id}:${quizId}:${matiereId}:T${tentative}`,
           source: "autosave",
           autosaveId: row.id,
           userId: row.user_id,
@@ -665,6 +756,8 @@ const CorrectionQRCTab = () => {
           quizTitre: examen?.titre || quizId,
           quizId,
           quizType: "examen_blanc",
+          dbTentative: passage?.dbTentative ?? 1,
+          tentative,
           matiereId,
           matiereNom: matiere.nom,
           questionId: q.id,
@@ -691,34 +784,33 @@ const CorrectionQRCTab = () => {
     setItems(qrcItems);
 
     // ---- Contrôle automatique (lecture seule, aucune donnée modifiée) ----
-    // Détecte les QRC réellement répondues en base qui ne remontent pas dans la file.
     try {
-      const since = new Date();
-      since.setDate(since.getDate() - 30);
-      const { data: controlRows } = await supabase
-        .from("reponses_apprenants" as any)
-        .select("apprenant_id, exercice_id, reponses, updated_at")
-        .eq("exercice_type", "examen_blanc")
-        .gte("updated_at", since.toISOString());
-
       let missing = 0;
       const missingApprenants = new Set<string>();
-      for (const row of (controlRows || []) as any[]) {
+      for (const row of autosaves) {
         const [quizId, matiereId] = safeStr(row.exercice_id).split("__");
         if (!quizId || !matiereId) continue;
         const matiere = findMatiereWithFallback(examenMap, tousLesExamens, quizId, matiereId);
         if (!matiere) continue;
+        const passage = dernierPassage.get(`${row.apprenant_id}__${quizId}__${matiereId}`);
+        const tentative = passage?.tentative ?? 1;
         for (const q of getSourceQuestions(matiere, tousLesExamens)) {
           if (!q || String(q.type).toUpperCase() !== "QRC") continue;
           const rep = safeStr((row.reponses || {})?.[q.id] ?? (row.reponses || {})?.[String(q.id)] ?? "");
           if (!rep.trim()) continue;
-          const key = getCorrectionKey(row.apprenant_id, quizId, matiereId, q.id);
-          if (manualCorrectionKeys.has(key) || seenQrcKeys.has(key)) continue;
+          if (seenQrcKeys.has(attemptKey(row.apprenant_id, quizId, matiereId, tentative, q.id))) continue;
+          if (passage && findValidationForGroup(passage, matiereId, q.id)) continue;
           missing++;
           missingApprenants.add(row.apprenant_id);
         }
       }
       setIntegrityAlert(missing > 0 ? { count: missing, apprenants: missingApprenants.size } : null);
+      console.info("[Correction QRC] file construite :", {
+        qrc: qrcItems.length,
+        doublonsTechniquesFusionnes: doublonsTechniques,
+        validationsRecuperees,
+        casAmbigusLaissesIntacts: validationsAmbigues,
+      });
     } catch (e) {
       console.error("Contrôle intégrité QRC:", e);
     }
@@ -789,7 +881,7 @@ const CorrectionQRCTab = () => {
         .eq("quiz_id", item.quizId)
         .eq("quiz_type", item.quizType)
         .eq("matiere_id", item.matiereId)
-        .eq("tentative", 1)
+        .eq("tentative", item.dbTentative ?? 1)
         .maybeSingle();
 
       // FIX: merge correctement — les corrections existantes en base d'abord,
@@ -829,7 +921,7 @@ const CorrectionQRCTab = () => {
         quiz_titre: examen?.titre || item.quizTitre,
         matiere_id: item.matiereId,
         matiere_nom: item.matiereNom,
-        tentative: 1,
+        tentative: item.dbTentative ?? 1,
         score_obtenu: Math.min(Math.max(newScore, 0), scoreMax),
         score_max: scoreMax,
         note_sur_20: noteSur20,
@@ -883,7 +975,7 @@ const CorrectionQRCTab = () => {
           .eq("quiz_id", item.quizId)
           .eq("quiz_type", item.quizType)
           .eq("matiere_id", item.matiereId)
-          .eq("tentative", 1)
+          .eq("tentative", item.dbTentative ?? 1)
           .maybeSingle();
         if ((latest as any)?.id) {
           savedResultId = (latest as any).id;
@@ -1055,7 +1147,7 @@ const CorrectionQRCTab = () => {
   // Matières dont au moins une QRC reste à corriger : aucune note définitive
   // ne doit y être affichée (Admin comme apprenant).
   const pendingMatiereKeys = new Set(
-    pendingItems.map(i => `${i.apprenantId}__${i.quizId}__${i.matiereId || ""}`),
+    pendingItems.map(i => `${i.apprenantId}__${i.quizId}__${i.matiereId || ""}__T${i.tentative}`),
   );
 
 
@@ -1149,20 +1241,8 @@ const CorrectionQRCTab = () => {
         .map(([n, total]) => ({ value: `${k}:${n}`, label: `Examen Blanc N°${n} — ${examOptionsByCat[k].label}`, total })),
     }));
 
-  const sortedFiltered = [...filtered].sort((a, b) => {
-    // PRIORITÉ : présentiel d'abord (toujours, indépendamment du tri date)
-    const prioA = a.apprenantTypeMode === "presentiel" ? 0 : 1;
-    const prioB = b.apprenantTypeMode === "presentiel" ? 0 : 1;
-    if (prioA !== prioB) return prioA - prioB;
-    const dateA = new Date(a.completedAt).getTime() || 0;
-    const dateB = new Date(b.completedAt).getTime() || 0;
-    if (dateA !== dateB) return sortOrder === "desc" ? dateB - dateA : dateA - dateB;
-    const numA = parseInt((a.quizTitre.match(/N°(\d+)/)?.[1]) || "0", 10);
-    const numB = parseInt((b.quizTitre.match(/N°(\d+)/)?.[1]) || "0", 10);
-    if (numA !== numB) return numA - numB;
-    if (a.matiereId !== b.matiereId) return a.matiereId.localeCompare(b.matiereId);
-    return a.questionId - b.questionId;
-  });
+  // apprenant → examen → tentative → matière → n° de question croissant
+  const sortedFiltered = sortQrcItems(filtered, sortOrder);
 
   // Reset index when filter/search/sort changes
   useEffect(() => {
@@ -1366,7 +1446,7 @@ const CorrectionQRCTab = () => {
             const isSaving = savingId === uniqueKey;
             // La note d'une matière n'est publiée qu'une fois TOUTES ses QRC corrigées.
             const matierePending = pendingMatiereKeys.has(
-              `${item.apprenantId}__${item.quizId}__${item.matiereId || ""}`,
+              `${item.apprenantId}__${item.quizId}__${item.matiereId || ""}__T${item.tentative}`,
             );
 
 
