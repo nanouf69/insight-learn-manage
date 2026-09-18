@@ -984,7 +984,7 @@ const CorrectionQRCTab = () => {
   // par apprenant + examen + matière + question) dont la réponse élève est
   // réellement non vide. Une réponse vide ou composée d'espaces n'est jamais
   // comptée comme répondue.
-  const todayItems = items.filter(i => isToday(i.completedAt) && safeStr(i.reponseEleve).trim() !== "");
+  const todayItems = items.filter(i => isAnsweredToday(i));
   const todayCount = todayItems.length;
   const todayPendingItems = todayItems.filter(i => !i.corrigeManuel);
   const todayPendingCount = todayPendingItems.length;
