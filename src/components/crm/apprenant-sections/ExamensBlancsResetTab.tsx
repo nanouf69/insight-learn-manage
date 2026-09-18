@@ -35,6 +35,7 @@ import {
   normalizeNoteSur20,
   toFiniteNumber,
 } from "@/components/cours-en-ligne/examens-blancs-utils";
+import { mergePassageSiblingRows } from "@/components/cours-en-ligne/exam-helpers";
 import { useLiveExamens, fetchLiveExamens } from "@/components/cours-en-ligne/useLiveExamens";
 
 // Repli statique uniquement (si le chargement de la version enregistrée échoue).
@@ -131,7 +132,7 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
 
       const grouped = new Map<string, ExamenGroup>();
       for (const [quizId, quizRows] of rowsByQuiz) {
-        const latestRows = selectLatestAttemptRows(quizRows);
+        const latestRows = selectLatestAttemptRows(mergePassageSiblingRows(quizRows));
         const { num, type } = parseExamenInfo(quizId);
         const key = `${num}-${type}`;
         for (const row of latestRows) {
