@@ -1008,15 +1008,16 @@ const ResultatsSessionPage = () => {
                                         className="p-3 space-y-2 cursor-pointer hover:bg-muted/30 transition-colors"
                                         onClick={() => setExpandedMatiere(isMatiereExpanded ? null : mKey)}
                                       >
-                                        <div className="flex items-center justify-between">
-                                          <div className="flex items-center gap-1.5">
-                                            {isMatiereExpanded ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" /> : <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />}
-                                            <span className="text-sm font-medium truncate">{m.nom}</span>
-                                          </div>
-                                          <span className={`text-sm font-bold ${getNoteColor(mAvg)}`}>Moy. {mAvg}/20</span>
+                                        <div className="flex items-start gap-1.5">
+                                          {isMatiereExpanded ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground mt-0.5 shrink-0" /> : <ChevronRight className="w-3.5 h-3.5 text-muted-foreground mt-0.5 shrink-0" />}
+                                          <span className="text-sm font-medium leading-snug line-clamp-2 flex-1 min-w-0">{m.nom}</span>
                                         </div>
-                                        <Progress value={mTaux} className="h-2" />
-                                        <div className="flex items-center justify-between text-xs text-muted-foreground">
+                                        <div className="flex items-center justify-between gap-2 pl-5">
+                                          <span className={`text-base font-bold ${getNoteColor(mAvg)}`}>Moy. {mAvg}/20</span>
+                                          <span className="text-xs text-muted-foreground font-medium">{mTaux}% réussite</span>
+                                        </div>
+                                        <div className="pl-5"><Progress value={mTaux} className="h-2" /></div>
+                                        <div className="flex items-center justify-between text-xs text-muted-foreground pl-5">
                                           <span>{m.count} élèves</span>
                                           <span>
                                             <span className="text-emerald-600">{m.pass} ✓</span> / <span className="text-destructive">{m.fail} ✗</span>
