@@ -5,7 +5,7 @@ import { Trophy, TrendingUp, Clock, Target, BookOpen, ChevronDown, ChevronUp, Gr
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { MODULES_DATA } from "./formations-data";
-import { isQrcPendingCorrection, computeReussiForResult, excludeResultPlaceholders } from "./exam-helpers";
+import { isQrcPendingCorrection, computeReussiForResult, excludeResultPlaceholders, mergePassageSiblingRows } from "./exam-helpers";
 
 interface QuizResult {
   id: string;
@@ -125,7 +125,7 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
         if (quizRes.error) {
           console.error("NotesView: erreur chargement quiz", quizRes.error);
         } else {
-          setQuizResults(excludeResultPlaceholders(quizRes.data || []) as any);
+          setQuizResults(mergePassageSiblingRows(excludeResultPlaceholders(quizRes.data || [])) as any);
         }
 
         if (moduleRes.error) {
