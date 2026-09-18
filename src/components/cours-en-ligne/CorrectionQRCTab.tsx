@@ -425,9 +425,6 @@ const CorrectionQRCTab = () => {
       const defaultMatiere = findMatiereWithFallback(examenMap, tousLesExamens, r.quiz_id, r.matiere_id || "");
       const matiere = chooseMatiereMatchingResponses(defaultMatiere, examenMap, r.matiere_id || "", reponses);
 
-      // Detect if this is a retake (more than one result for same apprenant + quiz + matiere)
-      const countKey = `${r.apprenant_id}__${r.quiz_id}__${r.matiere_id || ""}`;
-      const isRetake = (attemptCounts[countKey] || 1) > 1;
 
       // Build question list: prefer details.questions, but fall back to examen definition + correctionsIA
       let questionList = Array.isArray(details.questions) && details.questions.length > 0
