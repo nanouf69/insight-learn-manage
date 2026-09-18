@@ -903,6 +903,72 @@ export type Database = {
           },
         ]
       }
+      backup_resultats_0_technique: {
+        Row: {
+          apprenant_id: string | null
+          backup_at: string
+          backup_id: string
+          completed_at: string | null
+          created_at: string | null
+          details: Json | null
+          duree_secondes: number | null
+          id: string
+          matiere_id: string | null
+          matiere_nom: string | null
+          note_sur_20: number | null
+          quiz_id: string | null
+          quiz_titre: string | null
+          quiz_type: string | null
+          reussi: boolean | null
+          score_max: number | null
+          score_obtenu: number | null
+          tentative: number | null
+          user_id: string | null
+        }
+        Insert: {
+          apprenant_id?: string | null
+          backup_at?: string
+          backup_id?: string
+          completed_at?: string | null
+          created_at?: string | null
+          details?: Json | null
+          duree_secondes?: number | null
+          id: string
+          matiere_id?: string | null
+          matiere_nom?: string | null
+          note_sur_20?: number | null
+          quiz_id?: string | null
+          quiz_titre?: string | null
+          quiz_type?: string | null
+          reussi?: boolean | null
+          score_max?: number | null
+          score_obtenu?: number | null
+          tentative?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          apprenant_id?: string | null
+          backup_at?: string
+          backup_id?: string
+          completed_at?: string | null
+          created_at?: string | null
+          details?: Json | null
+          duree_secondes?: number | null
+          id?: string
+          matiere_id?: string | null
+          matiere_nom?: string | null
+          note_sur_20?: number | null
+          quiz_id?: string | null
+          quiz_titre?: string | null
+          quiz_type?: string | null
+          reussi?: boolean | null
+          score_max?: number | null
+          score_obtenu?: number | null
+          tentative?: number | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       bilan_sync_backups: {
         Row: {
           created_at: string
