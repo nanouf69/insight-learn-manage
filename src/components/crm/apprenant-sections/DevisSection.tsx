@@ -855,8 +855,43 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
   const [showEmailPreview, setShowEmailPreview] = useState(false);
   const [sendingEmail, setSendingEmail] = useState(false);
   const [sendingDevisEmail, setSendingDevisEmail] = useState(false);
+  const [financeurMode, setFinanceurMode] = useState<'apprenant' | 'organisation'>('apprenant');
+  const [organismes, setOrganismes] = useState<any[]>([]);
+  const [organismeId, setOrganismeId] = useState<string>("");
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const lastPos = useRef<{ x: number; y: number } | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from('organismes')
+        .select('id, nom, siret, siret_complet, numero_tva, adresse, code_postal, ville, telephone, email')
+        .order('nom');
+      setOrganismes(data ?? []);
+    })();
+  }, []);
+
+  const organismeSelectionne = organismes.find(o => o.id === organismeId) || null;
+  const isOrgFinanceur = financeurMode === 'organisation' && !!organismeSelectionne;
+
+  // Coordonnées « client » utilisées dans le devis selon le financeur choisi
+  const devisClient = isOrgFinanceur
+    ? {
+        nomComplet: organismeSelectionne.nom || '',
+        adresse: organismeSelectionne.adresse || '',
+        codePostal: organismeSelectionne.code_postal || '',
+        ville: organismeSelectionne.ville || '',
+        telephone: organismeSelectionne.telephone || '',
+        email: organismeSelectionne.email || '',
+      }
+    : {
+        nomComplet: `${apprenant.civilite || ''} ${apprenant.prenom || ''} ${apprenant.nom || ''}`.trim(),
+        adresse: apprenant.adresse || '',
+        codePostal: apprenant.code_postal || '',
+        ville: apprenant.ville || '',
+        telephone: apprenant.telephone || '',
+        email: apprenant.email || '',
+      };
 
   useEffect(() => {
     if (!selectedTemplateConfig) return;
