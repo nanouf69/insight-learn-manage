@@ -21,6 +21,8 @@ import {
   applyFournisseurOverridesToExamens,
   FOURNISSEUR_QUIZ_TO_EXAM,
 } from "./fournisseur-exam-overrides";
+import { getMatiereSyncKey, getExamIdentity } from "./examens-blancs-sync-scope";
+import { diffMatiereForAudit, recordExamAuditEntries, type ExamAuditEntry } from "./examens-blancs-audit";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { RichText } from "@/lib/richText";
