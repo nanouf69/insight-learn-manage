@@ -557,12 +557,31 @@ const CorrectionQRCTab = () => {
     const groups: AttemptGroup[] = [];
     groupsByMatiere.forEach((list) => groups.push(...list));
 
-    // Dernière tentative connue par apprenant + examen + matière (sert à
-    // rattacher les réponses en cours de saisie au bon passage).
-    const derniereTentative = new Map<string, number>();
+    // Rattachement d'une validation existante au passage concerné :
+    // 1) la validation enregistrée sur le passage lui-même ;
+    // 2) sinon, rattrapage UNIQUEMENT si la correspondance est certaine —
+    //    même apprenant, même examen, même question, même passage (date),
+    //    et une seule validation candidate écrite sans code matière
+    //    (lignes bilan regroupées). Tout cas ambigu est laissé intact.
+    const findValidationForGroup = (g: AttemptGroup, matiereId: string, questionId: number): any | null => {
+      const own = getCorrectionForQuestion(g.corrections, questionId);
+      if (isAdminValidatedCorrection(own, g.completedAt)) return own;
+      const candidates = (validationsByQuestion.get(`${g.apprenantId}__${g.quizId}__${questionId}`) || [])
+        .filter(v => Math.abs(v.time - g.lastTime) <= MEME_PASSAGE_MS && (v.matiereId || "") !== (matiereId || ""));
+      if (candidates.length === 0) return null;
+      const certains = candidates.filter(v => !v.matiereId || !matiereId);
+      if (certains.length === 1) { validationsRecuperees++; return certains[0].correction; }
+      validationsAmbigues++;
+      return null;
+    };
+
+    // Dernier passage connu par apprenant + examen + matière (sert à rattacher
+    // les réponses en cours de saisie au bon passage).
+    const dernierPassage = new Map<string, AttemptGroup>();
     groups.forEach((g) => {
       const k = `${g.apprenantId}__${g.quizId}__${g.matiereId}`;
-      derniereTentative.set(k, Math.max(derniereTentative.get(k) ?? 0, g.tentative));
+      const prev = dernierPassage.get(k);
+      if (!prev || g.lastTime > prev.lastTime) dernierPassage.set(k, g);
     });
 
     for (const g of groups.values()) {
