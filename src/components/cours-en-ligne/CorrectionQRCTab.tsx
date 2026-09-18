@@ -505,51 +505,82 @@ const CorrectionQRCTab = () => {
       return null;
     };
 
-    // ── Regroupement par TENTATIVE (fusion des doubles écritures) ────────
+    // ── Regroupement par PASSAGE RÉEL (fusion des doubles écritures) ─────
+    // Un passage = apprenant + examen + matière + fenêtre de temps courte.
+    // Deux lignes écrites à quelques secondes d'intervalle sont la même
+    // tentative, même si elles portent un numéro de tentative différent.
+    // Deux passages réellement distincts (plusieurs minutes d'écart) restent
+    // deux tentatives séparées, donc deux QRC à corriger.
+    const MEME_PASSAGE_MS = 5 * 60 * 1000;
     type AttemptGroup = {
       primaryId: string; apprenantId: string; userId?: string; quizId: string; quizType: string;
       quizTitre: string; matiereId: string; matiereNom: string; tentative: number; completedAt: string;
       scoreObtenu: number; scoreMax: number; noteSur20: number | null;
       questions: any[] | null; reponses: Record<string, any>; corrections: Record<string, any>; rows: number;
+      lastTime: number;
     };
-    const groups = new Map<string, AttemptGroup>();
+    const groupsByMatiere = new Map<string, AttemptGroup[]>();
     let doublonsTechniques = 0;
 
-    for (const r of results as any[]) {
+    // Les lignes arrivent de la plus récente à la plus ancienne : on les
+    // traite de la plus ancienne à la plus récente pour numéroter les passages.
+    const resultsAsc = [...(results as any[])].sort(
+      (a, b) => (new Date(a.completed_at).getTime() || 0) - (new Date(b.completed_at).getTime() || 0),
+    );
+
+    for (const r of resultsAsc) {
       const details = (r.details as any) || {};
-      const tentative = getTentative(r);
       const mid = r.matiere_id || "";
-      const gKey = `${r.apprenant_id}__${r.quiz_id}__${mid}__T${tentative}`;
+      const mKey = `${r.apprenant_id}__${r.quiz_id}__${mid}`;
+      const time = new Date(r.completed_at).getTime() || 0;
       const questions = Array.isArray(details.questions) && details.questions.length > 0 ? details.questions : null;
-      const existing = groups.get(gKey);
-      if (!existing) {
-        groups.set(gKey, {
-          primaryId: r.id, apprenantId: r.apprenant_id, userId: r.user_id, quizId: r.quiz_id,
-          quizType: r.quiz_type, quizTitre: r.quiz_titre, matiereId: mid, matiereNom: r.matiere_nom || "",
-          tentative, completedAt: r.completed_at,
-          scoreObtenu: r.score_obtenu ?? 0, scoreMax: r.score_max ?? 20, noteSur20: r.note_sur_20 ?? null,
-          questions,
-          reponses: { ...(details.reponses || {}) },
-          corrections: { ...(details.correctionsIA || {}) },
-          rows: 1,
+      const list = groupsByMatiere.get(mKey) || [];
+      const last = list[list.length - 1];
+
+      if (last && time - last.lastTime <= MEME_PASSAGE_MS) {
+        // Même passage : on complète ce qui manque, sans jamais écraser.
+        doublonsTechniques++;
+        last.rows++;
+        last.lastTime = time;
+        if (r.completed_at) last.completedAt = r.completed_at;
+        if (questions && (!last.questions || questions.length > last.questions.length)) {
+          last.questions = questions;
+          last.primaryId = r.id;
+        }
+        Object.entries(details.reponses || {}).forEach(([k, v]) => {
+          const current = last.reponses[k];
+          if (current == null || (typeof current === "string" && current.trim() === "")) last.reponses[k] = v;
         });
+        Object.entries(details.correctionsIA || {}).forEach(([k, v]) => {
+          const current = last.corrections[k];
+          if (current == null || (!isAdminValidatedCorrection(current, last.completedAt) && isAdminValidatedCorrection(v, r.completed_at))) {
+            last.corrections[k] = v;
+          }
+        });
+        if (!last.matiereNom && r.matiere_nom) last.matiereNom = r.matiere_nom;
+        if ((r.score_obtenu ?? 0) > last.scoreObtenu) {
+          last.scoreObtenu = r.score_obtenu ?? 0;
+          last.noteSur20 = r.note_sur_20 ?? last.noteSur20;
+        }
         continue;
       }
-      // Doublon technique du même passage : on complète ce qui manque, on
-      // n'écrase jamais (les lignes arrivent de la plus récente à la plus ancienne).
-      doublonsTechniques++;
-      existing.rows++;
-      if (!existing.questions && questions) { existing.questions = questions; existing.primaryId = r.id; }
-      Object.entries(details.reponses || {}).forEach(([k, v]) => {
-        const current = existing.reponses[k];
-        if (current == null || (typeof current === "string" && current.trim() === "")) existing.reponses[k] = v;
+
+      list.push({
+        primaryId: r.id, apprenantId: r.apprenant_id, userId: r.user_id, quizId: r.quiz_id,
+        quizType: r.quiz_type, quizTitre: r.quiz_titre, matiereId: mid, matiereNom: r.matiere_nom || "",
+        tentative: list.length + 1, completedAt: r.completed_at,
+        scoreObtenu: r.score_obtenu ?? 0, scoreMax: r.score_max ?? 20, noteSur20: r.note_sur_20 ?? null,
+        questions,
+        reponses: { ...(details.reponses || {}) },
+        corrections: { ...(details.correctionsIA || {}) },
+        rows: 1,
+        lastTime: time,
       });
-      Object.entries(details.correctionsIA || {}).forEach(([k, v]) => {
-        if (existing.corrections[k] == null) existing.corrections[k] = v;
-      });
-      if (!existing.matiereNom && r.matiere_nom) existing.matiereNom = r.matiere_nom;
-      if (!existing.completedAt && r.completed_at) existing.completedAt = r.completed_at;
+      groupsByMatiere.set(mKey, list);
     }
+
+    const groups: AttemptGroup[] = [];
+    groupsByMatiere.forEach((list) => groups.push(...list));
 
     // Dernière tentative connue par apprenant + examen + matière (sert à
     // rattacher les réponses en cours de saisie au bon passage).
