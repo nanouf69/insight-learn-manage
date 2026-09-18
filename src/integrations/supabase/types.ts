@@ -1191,7 +1191,13 @@ export type Database = {
       }
       devis_envois: {
         Row: {
-          apprenant_id: string
+          apprenant_id: string | null
+          client_adresse: string | null
+          client_code_postal: string | null
+          client_email: string | null
+          client_nom: string | null
+          client_telephone: string | null
+          client_ville: string | null
           created_at: string
           date_devis: string | null
           date_validite: string | null
@@ -1202,12 +1208,19 @@ export type Database = {
           id: string
           modele: string
           montant: string | null
+          organisation_id: string | null
           signed_at: string | null
           statut: string
           token: string
         }
         Insert: {
-          apprenant_id: string
+          apprenant_id?: string | null
+          client_adresse?: string | null
+          client_code_postal?: string | null
+          client_email?: string | null
+          client_nom?: string | null
+          client_telephone?: string | null
+          client_ville?: string | null
           created_at?: string
           date_devis?: string | null
           date_validite?: string | null
@@ -1218,12 +1231,19 @@ export type Database = {
           id?: string
           modele: string
           montant?: string | null
+          organisation_id?: string | null
           signed_at?: string | null
           statut?: string
           token?: string
         }
         Update: {
-          apprenant_id?: string
+          apprenant_id?: string | null
+          client_adresse?: string | null
+          client_code_postal?: string | null
+          client_email?: string | null
+          client_nom?: string | null
+          client_telephone?: string | null
+          client_ville?: string | null
           created_at?: string
           date_devis?: string | null
           date_validite?: string | null
@@ -1234,6 +1254,7 @@ export type Database = {
           id?: string
           modele?: string
           montant?: string | null
+          organisation_id?: string | null
           signed_at?: string | null
           statut?: string
           token?: string
@@ -1244,6 +1265,13 @@ export type Database = {
             columns: ["apprenant_id"]
             isOneToOne: false
             referencedRelation: "apprenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "devis_envois_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organismes"
             referencedColumns: ["id"]
           },
         ]
