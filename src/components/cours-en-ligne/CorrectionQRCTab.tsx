@@ -164,7 +164,7 @@ function getCorrectionKey(apprenantId: string, quizId: string, matiereId: string
   return `${apprenantId}__${quizId}__${matiereId || ""}__${questionId}`;
 }
 
-function isAdminValidatedCorrection(correction: unknown): boolean {
+function isAdminValidatedCorrection(correction: unknown, completedAt?: string | null): boolean {
   if (!correction || typeof correction !== "object") return false;
   const correctionRecord = correction as Record<string, unknown>;
   if (correctionRecord.validatedByAdmin === true) return true;
@@ -174,7 +174,22 @@ function isAdminValidatedCorrection(correction: unknown): boolean {
     explication.includes("correction manuelle par l'administrateur") ||
     explication.includes("validation manuelle (masqué par admin)");
 
-  return correctionRecord.manuel === true && !!correctionRecord.correctedAt && hasLegacyAdminMarker;
+  if (correctionRecord.manuel === true && !!correctionRecord.correctedAt && hasLegacyAdminMarker) return true;
+
+  // PREUVE CERTAINE (lecture seule, aucun recalcul) : une correction portant le
+  // marqueur admin dont la date de correction est postérieure de plus d'une
+  // minute à la fin du passage ne peut pas provenir d'un calcul automatique
+  // (celui-ci s'écrit à la seconde du passage). Elle est donc reconnue comme
+  // déjà corrigée, sans que ses points ni son contenu soient modifiés.
+  if (hasLegacyAdminMarker && correctionRecord.correctedAt && completedAt) {
+    const corrected = new Date(safeStr(correctionRecord.correctedAt)).getTime();
+    const completed = new Date(completedAt).getTime();
+    if (Number.isFinite(corrected) && Number.isFinite(completed) && corrected > completed + 60_000) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 function buildQuestionListFromMatiere(matiere: Matiere, reponses: Record<string | number, any>): any[] {
