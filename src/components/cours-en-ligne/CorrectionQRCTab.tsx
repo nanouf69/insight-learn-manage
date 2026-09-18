@@ -756,6 +756,7 @@ const CorrectionQRCTab = () => {
           quizTitre: examen?.titre || quizId,
           quizId,
           quizType: "examen_blanc",
+          dbTentative: passage?.dbTentative ?? 1,
           tentative,
           matiereId,
           matiereNom: matiere.nom,
