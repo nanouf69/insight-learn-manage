@@ -302,8 +302,8 @@ const CorrectionQRCTab = () => {
     const filteredList = list.filter(item => {
       if (filter === "pending" && item.corrigeManuel) return false;
       if (filter === "done" && !item.corrigeManuel) return false;
-      if (filter === "today" && !isToday(item.completedAt)) return false;
-      if (filter === "today-pending" && (!isToday(item.completedAt) || item.corrigeManuel)) return false;
+      if (filter === "today" && !isAnsweredToday(item)) return false;
+      if (filter === "today-pending" && (!isAnsweredToday(item) || item.corrigeManuel)) return false;
       if (examenFilter !== "all") {
         const [cat, num] = examenFilter.split(":");
         if (getExamCategory(item.quizTitre, item.quizId, item.apprenantTypeMode).key !== cat) return false;
@@ -992,8 +992,8 @@ const CorrectionQRCTab = () => {
   const filtered = items.filter(item => {
     if (filter === "pending" && item.corrigeManuel) return false;
     if (filter === "done" && !item.corrigeManuel) return false;
-    if (filter === "today" && !isToday(item.completedAt)) return false;
-    if (filter === "today-pending" && (!isToday(item.completedAt) || item.corrigeManuel)) return false;
+    if (filter === "today" && !isAnsweredToday(item)) return false;
+    if (filter === "today-pending" && (!isAnsweredToday(item) || item.corrigeManuel)) return false;
     if (examenFilter !== "all") {
       const [cat, num] = examenFilter.split(":");
       if (getExamCategory(item.quizTitre, item.quizId, item.apprenantTypeMode).key !== cat) return false;
