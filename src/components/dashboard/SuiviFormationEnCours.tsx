@@ -165,6 +165,12 @@ export function SuiviFormationEnCours({ onNavigateToApprenant }: Props) {
             <p className="text-xs text-muted-foreground truncate">
               {l.formation_choisie || l.type_apprenant || ""}
             </p>
+            {l.dateDebut && l.dateFin && (
+              <p className="text-xs font-medium text-foreground/80 mt-0.5">
+                Du {fmtDate(l.dateDebut)} au {fmtDate(l.dateFin)}
+                {l.horaires ? ` · ${l.horaires}` : ""}
+              </p>
+            )}
           </div>
           {complet ? (
             <Badge className="bg-success/10 text-success border-success/30 shrink-0">
