@@ -830,41 +830,31 @@ export function mergeQuestionsForMatiere(
   const normalizeType = (v: unknown) => String(v ?? "").trim().toUpperCase();
   const normalizeText = (v: unknown) => String(v ?? "").trim().replace(/\s+/g, " ").toLowerCase();
 
-  const getKey = (q: any) => {
-    const id = Number(q?.id);
-    const type = normalizeType(q?.type);
-    const enonce = normalizeText(q?.enonce);
-    if (enonce) return `${id}::${type}::${enonce}`;
-    return `${id}::${type}`;
-  };
+  /**
+   * IDENTITÉ RÉELLE d'une question = numéro + énoncé.
+   * Le seul numéro ne suffit JAMAIS : deux questions portant le même numéro
+   * mais un énoncé différent sont des questions différentes et ne doivent
+   * jamais échanger propositions, bonnes réponses, explications ou images.
+   */
+  const getIdentity = (q: any) => `${Number(q?.id)}::${normalizeText(q?.enonce)}`;
 
-  // Build source lookup
-  const sourceByKey = new Map<string, Question>();
-  const sourceById = new Map<number, Question[]>();
+  /** Une question modifiée dans Gestion est prioritaire sur la version d'origine. */
+  const isAdminEdited = (q: any) =>
+    Boolean(q?.manually_edited) || Boolean(q?._editedAt);
+
+  // Build source lookup — par identité réelle uniquement
+  const sourceByIdentity = new Map<string, Question>();
   safeSrc.forEach((srcQ) => {
-    sourceByKey.set(getKey(srcQ), srcQ);
-    const numId = Number(srcQ?.id);
-    if (!Number.isNaN(numId)) {
-      const arr = sourceById.get(numId) ?? [];
-      arr.push(srcQ);
-      sourceById.set(numId, arr);
-    }
+    sourceByIdentity.set(getIdentity(srcQ), srcQ);
   });
 
   // Iterate saved order — merge with source metadata when matched
   return safeSaved.map((savedQ) => {
-    const key = getKey(savedQ);
-    let sourceQ = sourceByKey.get(key);
+    const sourceQ = sourceByIdentity.get(getIdentity(savedQ));
 
     if (!sourceQ) {
-      const sameId = sourceById.get(Number(savedQ?.id)) ?? [];
-      const sameType = sameId.find((c) => normalizeType(c?.type) === normalizeType(savedQ?.type));
-      sourceQ = sameType ?? sameId[0];
-    }
-
-    if (!sourceQ) {
-      // Custom admin question (not in source) — keep as-is.
-      // null means "admin deleted image"; only fall back to image_url when key is absent/undefined.
+      // Pas de question d'origine réellement identique (question ajoutée ou
+      // énoncé modifié par l'Admin) — la version enregistrée fait foi telle quelle.
       const customImage = savedQ?.image === null ? null : (savedQ?.image || (savedQ as any)?.image_url || undefined);
       return { ...savedQ, image: customImage } as Question;
     }
@@ -882,21 +872,42 @@ export function mergeQuestionsForMatiere(
       image: mergedImage,
     };
 
-    // For QRC: restore source keywords if admin didn't set any
-    if (normalizeType(merged.type) === "QRC") {
-      const hasSavedKw = Array.isArray(savedQ?.reponses_possibles) && savedQ.reponses_possibles.length > 0;
-      const srcKw = Array.isArray(sourceQ?.reponses_possibles) ? sourceQ.reponses_possibles : [];
-      if (!hasSavedKw && srcKw.length > 0) {
-        return { ...merged, reponses_possibles: [...srcKw] };
+    const savedType = normalizeType(savedQ?.type);
+    const adminEdited = isAdminEdited(savedQ);
+
+    if (savedType === "QRC") {
+      // Une QRC enregistrée ne récupère JAMAIS les propositions d'un QCM d'origine.
+      if (!Array.isArray((savedQ as any)?.choix) || (savedQ as any).choix.length === 0) {
+        delete (merged as any).choix;
       }
+      merged.type = "QRC" as any;
+      if (!adminEdited && isMistypedAsQRC(merged)) {
+        return { ...merged, type: "QCM" } as Question;
+      }
+      // Mots-clés : repli sur l'origine seulement si l'origine est bien une QRC
+      // et que l'Admin n'en a saisi aucun.
+      const hasSavedKw = Array.isArray(savedQ?.reponses_possibles) && savedQ.reponses_possibles.length > 0;
+      const srcKw = normalizeType(sourceQ?.type) === "QRC" && Array.isArray(sourceQ?.reponses_possibles)
+        ? sourceQ.reponses_possibles
+        : [];
+      if (!hasSavedKw && srcKw.length > 0 && !adminEdited) {
+        return { ...merged, reponses_possibles: [...srcKw] } as Question;
+      }
+      if (!hasSavedKw && adminEdited) {
+        delete (merged as any).reponses_possibles;
+      }
+      return merged;
     }
 
+    if (savedType === "QCM" && Array.isArray((savedQ as any)?.choix)) {
+      // Seules les propositions saisies par l'Admin sont utilisées.
+      (merged as any).choix = (savedQ as any).choix;
+      delete (merged as any).reponseQRC;
+    }
 
-    // Safety: if a question is declared QRC but has a proper QCM shape
-    // (choices with a correct flag), auto-correct the type so it's rendered
-    // and scored as a QCM. Prevents students from typing a free-text answer
-    // to what is really a multiple-choice question.
-    if (isMistypedAsQRC(merged)) {
+    // Garde-fou "QRC mal typée" : uniquement pour les questions JAMAIS modifiées
+    // dans Gestion. Un type choisi par l'Admin n'est jamais requalifié.
+    if (!adminEdited && isMistypedAsQRC(merged)) {
       console.warn(
         `[examens-blancs] Question mistyped as QRC (id=${merged.id}) — auto-corrected to QCM.`,
       );
