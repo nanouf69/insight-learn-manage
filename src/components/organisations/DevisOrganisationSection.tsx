@@ -122,6 +122,34 @@ export function DevisOrganisationSection({ organisation }: Props) {
         contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         upsert: true,
       });
+      const { data: urlData } = supabase.storage.from("devis").getPublicUrl(storagePath);
+
+      // Enregistrement de l'envoi avec token de signature
+      const { data: devisRecord } = await supabase
+        .from("devis_envois")
+        .insert({
+          organisation_id: organisation.id,
+          client_nom: organisation.nom || "",
+          client_email: organisation.email || "",
+          client_adresse: organisation.adresse || "",
+          client_code_postal: organisation.code_postal || "",
+          client_ville: organisation.ville || "",
+          client_telephone: organisation.telephone || "",
+          modele: tmpl?.label || "devis",
+          montant: `${total} €`,
+          formation: tmpl?.label || "",
+          fichier_url: urlData.publicUrl,
+          statut: "envoye",
+          dates_formation: datesFormation || null,
+          date_devis: dateDevis || null,
+          date_validite: dateValidite || null,
+        })
+        .select("token")
+        .single();
+
+      const signLink = devisRecord?.token
+        ? `${window.location.origin}/devis?token=${devisRecord.token}`
+        : "";
 
       const subject = `Votre devis FTRANSPORT — ${tmpl?.label}`;
       const htmlBody = `<p>Bonjour,</p>
@@ -131,8 +159,11 @@ Nombre de participants : <strong>${nbParticipants}</strong><br/>
 Montant total : <strong>${total} € TTC</strong> (non assujetti à la TVA)</p>
 ${datesFormation ? `<p>Dates de formation : <strong>${datesFormation}</strong></p>` : ""}
 ${dateValidite ? `<p>Devis valable jusqu'au ${formatDateFr(dateValidite)}.</p>` : ""}
+${signLink ? `<p>📝 <strong>Pour consulter et signer votre devis en ligne :</strong><br/>
+<a href="${signLink}" style="display:inline-block;padding:12px 24px;background:#2563eb;color:#fff;text-decoration:none;border-radius:8px;font-weight:bold;margin-top:8px;">Accéder à mon devis et le signer</a></p>` : ""}
 <p>Pour toute question : 04.28.29.60.91 — contact@ftransport.fr</p>
 <p>Cordialement,<br/>FTRANSPORT</p>`;
+
 
       for (const to of [organisation.email, "contact@ftransport.fr"]) {
         const { error } = await supabase.functions.invoke("send-document-email", {

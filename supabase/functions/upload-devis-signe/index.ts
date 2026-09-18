@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
     // Validate token
     const { data: devis, error: devisError } = await supabase
       .from("devis_envois")
-      .select("id, apprenant_id, devis_signe_url, modele, formation, montant")
+      .select("id, apprenant_id, devis_signe_url, modele, formation, montant, client_nom, client_email")
       .eq("token", token)
       .single();
 
@@ -90,71 +90,82 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Get apprenant info for notification
-    const { data: apprenant } = await supabase
-      .from("apprenants")
-      .select("nom, prenom, email, auth_user_id, formation_choisie, date_debut_formation, date_fin_formation")
-      .eq("id", devis.apprenant_id)
-      .single();
+    // Get apprenant info for notification (only for learner quotes)
+    let apprenant: any = null;
+    if (devis.apprenant_id) {
+      const { data } = await supabase
+        .from("apprenants")
+        .select("nom, prenom, email, auth_user_id, formation_choisie, date_debut_formation, date_fin_formation")
+        .eq("id", devis.apprenant_id)
+        .maybeSingle();
+      apprenant = data;
+    }
 
-    // Make the signed quote visible in the learner CRM > Formulaires tab
-    const signedDocumentData = {
-      formation: devis.formation || apprenant?.formation_choisie || devis.modele || "Formation continue",
-      modele: devis.modele,
-      montant: devis.montant || null,
-      date_debut_formation: apprenant?.date_debut_formation || null,
-      date_fin_formation: apprenant?.date_fin_formation || null,
-      devis_signe_url: urlData.publicUrl,
-      fichier_url: urlData.publicUrl,
-      statut: "signé",
-      signed_at: new Date().toISOString(),
-    };
+    const clientLabel = devis.apprenant_id
+      ? `${apprenant?.prenom || ""} ${apprenant?.nom || ""}`.trim()
+      : (devis.client_nom || "Client");
 
-    const { data: existingSignedDocument } = await supabase
-      .from("apprenant_documents_completes")
-      .select("id, donnees")
-      .eq("apprenant_id", devis.apprenant_id)
-      .eq("type_document", "devis-formation-continue")
-      .order("completed_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    if (devis.apprenant_id) {
+      // Make the signed quote visible in the learner CRM > Formulaires tab
+      const signedDocumentData = {
+        formation: devis.formation || apprenant?.formation_choisie || devis.modele || "Formation continue",
+        modele: devis.modele,
+        montant: devis.montant || null,
+        date_debut_formation: apprenant?.date_debut_formation || null,
+        date_fin_formation: apprenant?.date_fin_formation || null,
+        devis_signe_url: urlData.publicUrl,
+        fichier_url: urlData.publicUrl,
+        statut: "signé",
+        signed_at: new Date().toISOString(),
+      };
 
-    if (existingSignedDocument) {
-      const { error: formUpdateError } = await supabase
+      const { data: existingSignedDocument } = await supabase
         .from("apprenant_documents_completes")
-        .update({
+        .select("id, donnees")
+        .eq("apprenant_id", devis.apprenant_id)
+        .eq("type_document", "devis-formation-continue")
+        .order("completed_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (existingSignedDocument) {
+        const { error: formUpdateError } = await supabase
+          .from("apprenant_documents_completes")
+          .update({
+            titre: `Devis signé — ${signedDocumentData.formation}`,
+            donnees: {
+              ...(existingSignedDocument.donnees || {}),
+              ...signedDocumentData,
+            },
+            completed_at: signedDocumentData.signed_at,
+            updated_at: signedDocumentData.signed_at,
+          })
+          .eq("id", existingSignedDocument.id);
+        if (formUpdateError) console.error("CRM form update error:", formUpdateError);
+      } else {
+        const { error: formInsertError } = await supabase.from("apprenant_documents_completes").insert({
+          apprenant_id: devis.apprenant_id,
+          user_id: apprenant?.auth_user_id || "00000000-0000-0000-0000-000000000000",
+          type_document: "devis-formation-continue",
           titre: `Devis signé — ${signedDocumentData.formation}`,
-          donnees: {
-            ...(existingSignedDocument.donnees || {}),
-            ...signedDocumentData,
-          },
-          completed_at: signedDocumentData.signed_at,
-          updated_at: signedDocumentData.signed_at,
-        })
-        .eq("id", existingSignedDocument.id);
-      if (formUpdateError) console.error("CRM form update error:", formUpdateError);
-    } else {
-      const { error: formInsertError } = await supabase.from("apprenant_documents_completes").insert({
-        apprenant_id: devis.apprenant_id,
-        user_id: apprenant?.auth_user_id || "00000000-0000-0000-0000-000000000000",
-        type_document: "devis-formation-continue",
-        titre: `Devis signé — ${signedDocumentData.formation}`,
-        donnees: signedDocumentData,
-      });
-      if (formInsertError) console.error("CRM form insert error:", formInsertError);
+          donnees: signedDocumentData,
+        });
+        if (formInsertError) console.error("CRM form insert error:", formInsertError);
+      }
     }
 
     // Create system alert for admin
     await supabase.from("alertes_systeme").insert({
       type: "devis_signe",
-      titre: `📝 Devis signé reçu — ${apprenant?.prenom} ${apprenant?.nom}`,
-      message: `${apprenant?.prenom} ${apprenant?.nom} a renvoyé son devis signé (${devis.modele}).`,
+      titre: `📝 Devis signé reçu — ${clientLabel}`,
+      message: `${clientLabel} a renvoyé son devis signé (${devis.modele}).`,
       details: JSON.stringify({
         apprenant_id: devis.apprenant_id,
         devis_id: devis.id,
         fichier: urlData.publicUrl,
       }),
     });
+
 
     // Send notification email to admin
     try {
@@ -169,8 +180,8 @@ Deno.serve(async (req) => {
           body: JSON.stringify({
             from: "FTRANSPORT <noreply@ftransport.fr>",
             to: "contact@ftransport.fr",
-            subject: `📝 Devis signé reçu — ${apprenant?.prenom} ${apprenant?.nom}`,
-            html: `<p>Bonjour,</p><p><strong>${apprenant?.prenom} ${apprenant?.nom}</strong> a renvoyé son devis signé pour <strong>${devis.modele}</strong>.</p><p><a href="${urlData.publicUrl}">📥 Télécharger le devis signé</a></p>`,
+            subject: `📝 Devis signé reçu — ${clientLabel}`,
+            html: `<p>Bonjour,</p><p><strong>${clientLabel}</strong> a renvoyé son devis signé pour <strong>${devis.modele}</strong>.</p><p><a href="${urlData.publicUrl}">📥 Télécharger le devis signé</a></p>`,
           }),
         });
       }
