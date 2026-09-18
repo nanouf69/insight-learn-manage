@@ -1310,6 +1310,10 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
       // admin action, never a side-effect of Save.
       const synced = JSON.parse(JSON.stringify(snapshot)) as ExamenBlanc[];
 
+      // Lettres de propositions : réparation technique par position (A, B, C…)
+      // avant écriture, pour que les doublons ne soient jamais réenregistrés.
+      normalizeQcmChoiceLetters(synced);
+
       // RÈGLE MATIÈRE PARTAGÉE : une matière modifiée (ajout, suppression ou
       // correction d'une question/réponse) est répercutée sur TOUS les examens
       // et bilans qui utilisent exactement la même matière (même `id`).
