@@ -117,6 +117,25 @@ Deno.serve(async (req) => {
     }
 
     const confirmation = data[0];
+
+    // Sécurité : dès que la dernière réponse est confirmée en base, on vérifie
+    // côté serveur si le module est intégralement répondu et, si oui, on force
+    // sa validation. Aucune réponse n'est modifiée ni recréée ici.
+    let autoValidation: unknown = null;
+    const totalQuestions = Number(module_total_questions);
+    if (typeof module_id === "number" && Number.isFinite(totalQuestions) && totalQuestions > 0) {
+      const { data: av, error: avError } = await supabase.rpc("autovalidate_module_if_complete", {
+        _apprenant_id: apprenant_id,
+        _module_id: module_id,
+        _total_questions: Math.round(totalQuestions),
+      });
+      if (avError) {
+        console.error("[upsert-reponse-apprenant] autovalidation error:", avError);
+      } else {
+        autoValidation = av?.[0] ?? null;
+      }
+    }
+
     return new Response(JSON.stringify({
       success: true,
       confirmed: true,
@@ -124,6 +143,7 @@ Deno.serve(async (req) => {
       tentative: confirmation.stored_tentative,
       updated_at: confirmation.stored_updated_at,
       accepted_event_ids: confirmation.accepted_event_ids ?? [],
+      auto_validation: autoValidation,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
