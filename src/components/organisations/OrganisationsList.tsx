@@ -6,12 +6,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Mail, Phone, MapPin, Landmark, ChevronRight, Inbox, Send, Eye, RefreshCw, Loader2, PenLine } from "lucide-react";
+import { Mail, Phone, MapPin, Landmark, ChevronRight, Inbox, Send, Eye, RefreshCw, Loader2, PenLine, FileText } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { OrganisationForm } from "./OrganisationForm";
+import { DevisOrganisationSection } from "./DevisOrganisationSection";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { toast } from "sonner";
@@ -372,7 +373,16 @@ export function OrganisationsList() {
                     <Inbox className="h-4 w-4" />
                     Reçus ({receivedEmails.length})
                   </TabsTrigger>
+                  <TabsTrigger value="devis" className="flex-1 gap-2">
+                    <FileText className="h-4 w-4" />
+                    Devis
+                  </TabsTrigger>
                 </TabsList>
+
+                <TabsContent value="devis">
+                  <DevisOrganisationSection organisation={selectedOrg} />
+                </TabsContent>
+
 
                 <TabsContent value="sent">
                   {sentEmails.length === 0 ? (
