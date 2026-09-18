@@ -224,4 +224,49 @@ export function isMatiereQrcPending(matiere: any, corrections: any): boolean {
   return validatedCount < qrc.length;
 }
 
+/**
+ * IDENTITÉ STABLE DES QRC D'UNE TENTATIVE DÉJÀ PASSÉE.
+ *
+ * Une QRC déjà passée est identifiée par le snapshot de la tentative
+ * (details.questions / details.snapshot.questions), jamais par la position
+ * actuelle des questions dans Gestion. Ajouter, supprimer, déplacer ou
+ * renuméroter une question plus tard n'a donc aucun effet sur la tentative
+ * ni sur la reconnaissance des corrections déjà validées.
+ * Lecture seule : aucune donnée n'est modifiée ni reconstruite.
+ */
+export function getAttemptQrcQuestionIds(matiere: any, details: any): number[] | null {
+  const snap = Array.isArray(details?.questions) && details.questions.length
+    ? details.questions
+    : (Array.isArray(details?.snapshot?.questions) && details.snapshot.questions.length
+        ? details.snapshot.questions
+        : null);
+  if (!snap) return null;
+  const ids = snap
+    .filter((q: any) => {
+      const type = q?.type
+        ? normalizeQuestionType(q.type)
+        : (/\(qrc\)/i.test(String(q?.enonce ?? "")) ? "QRC" : "QCM");
+      if (type !== "QRC") return false;
+      const qMat = q?.matiereId != null ? String(q.matiereId) : "";
+      return !qMat || !matiere?.id || qMat === String(matiere.id);
+    })
+    .map((q: any) => Number(q?.questionId ?? q?.id))
+    .filter((v: number) => Number.isFinite(v));
+  return ids.length ? Array.from(new Set<number>(ids)) : null;
+}
+
+/**
+ * Variante « tentative » de isMatiereQrcPending : privilégie l'identité
+ * enregistrée dans le snapshot, puis retombe sur la définition actuelle.
+ */
+export function isMatiereQrcPendingForAttempt(matiere: any, details: any): boolean {
+  const corr = details?.correctionsIA || details?.snapshot?.correctionsIA || {};
+  const snapIds = getAttemptQrcQuestionIds(matiere, details);
+  if (snapIds) {
+    return snapIds.some((id) => !isQrcCorrectionValidated(corr?.[id] ?? corr?.[String(id)] ?? corr?.[`Q${id}`]));
+  }
+  return isMatiereQrcPending(matiere, corr);
+}
+
+
 
