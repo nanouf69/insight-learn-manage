@@ -1042,6 +1042,30 @@ export default function ExamensBlancsPage({
       })),
     };
 
+    // FINALISATION IDEMPOTENTE : si une écriture du MÊME passage réel existe
+    // déjà (double clic, réessai réseau, rechargement), on réutilise son numéro
+    // de tentative pour mettre à jour cette ligne au lieu d'en créer une sœur.
+    // Aucune donnée existante n'est supprimée ni réécrite hors de ce passage.
+    const desiredTentative = Math.max(currentTentativeRef.current || currentTentative || 1, 1);
+    let effectiveTentative = desiredTentative;
+    try {
+      const { data: existingRows } = await supabase
+        .from("apprenant_quiz_results" as any)
+        .select("id, quiz_id, quiz_type, matiere_id, tentative, completed_at, created_at, details")
+        .eq("apprenant_id", apprenantId)
+        .eq("quiz_id", examen.id)
+        .eq("quiz_type", quizType);
+      effectiveTentative = resolveIdempotentTentative({
+        rows: (existingRows as any[]) || [],
+        quizId: examen.id,
+        quizType,
+        matiereId: resultat.matiereId,
+        desiredTentative,
+      });
+    } catch (lookupError) {
+      console.warn("[ExamSubmission][EB] Lecture des passages existants impossible:", lookupError);
+    }
+
     const payload = {
       apprenant_id: apprenantId, user_id: userId, quiz_type: quizType, quiz_id: examen.id, quiz_titre: examen.titre,
       matiere_id: resultat.matiereId, matiere_nom: resultat.nomMatiere, score_obtenu: safeScoreObtenu, score_max: safeScoreMax,
@@ -1054,7 +1078,7 @@ export default function ExamensBlancsPage({
         snapshot,
         ...(hasQrc ? { qrc_pending_correction: true } : {}),
       },
-      tentative: Math.max(currentTentativeRef.current || currentTentative || 1, 1),
+      tentative: effectiveTentative,
     };
 
     // Save with retry logic to prevent silent data loss.
