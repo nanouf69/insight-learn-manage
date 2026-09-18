@@ -35,6 +35,21 @@ export function DevisOrganisationSection({ organisation }: Props) {
   const [datesFormation, setDatesFormation] = useState<string>("");
   const [generating, setGenerating] = useState(false);
   const [sending, setSending] = useState(false);
+  const [historique, setHistorique] = useState<any[]>([]);
+
+  const chargerHistorique = useCallback(async () => {
+    if (!organisation?.id) return;
+    const { data } = await supabase
+      .from("devis_envois")
+      .select("id, token, modele, montant, statut, signed_at, devis_signe_url, fichier_url, created_at")
+      .eq("organisation_id", organisation.id)
+      .order("created_at", { ascending: false });
+    setHistorique(data || []);
+  }, [organisation?.id]);
+
+  useEffect(() => {
+    chargerHistorique();
+  }, [chargerHistorique]);
 
   const tmpl = useMemo(() => DEVIS_TEMPLATES.find((t) => t.id === templateId), [templateId]);
   const total = (prixUnitaire || 0) * (nbParticipants || 0);
