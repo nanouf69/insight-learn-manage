@@ -135,6 +135,9 @@ export function SuiviFormationEnCours({ onNavigateToApprenant }: Props) {
           pole: poleByAppr.get(a.id)!,
           signatures: signCount.get(a.id) || 0,
           manquantsDocs: DOCS_REQUIS.filter((d) => !docSet.has(`${a.id}|${d.type}`)).map((d) => d.label),
+          dateDebut: datesByAppr.get(a.id)?.debut ?? null,
+          dateFin: datesByAppr.get(a.id)?.fin ?? null,
+          horaires: datesByAppr.get(a.id)?.horaires ?? null,
         }))
         .sort((x, y) => `${x.nom} ${x.prenom}`.localeCompare(`${y.nom} ${y.prenom}`));
     },
