@@ -1265,8 +1265,18 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
           email: apprenant.email,
           dateNaissance: apprenant.date_naissance,
         },
-        typeFinancement: apprenant.financeur_nom ? 'organisme' : 'personnel',
-        financeur: apprenant.financeur_nom ? {
+        typeFinancement: isOrgFinanceur || apprenant.financeur_nom ? 'organisme' : 'personnel',
+        financeur: isOrgFinanceur ? {
+          nom: organismeSelectionne.nom,
+          type: 'organisation',
+          adresse: organismeSelectionne.adresse,
+          codePostal: organismeSelectionne.code_postal,
+          ville: organismeSelectionne.ville,
+          siret: organismeSelectionne.siret_complet || organismeSelectionne.siret,
+          email: organismeSelectionne.email,
+          telephone: organismeSelectionne.telephone,
+          contactNom: undefined,
+        } : apprenant.financeur_nom ? {
           nom: apprenant.financeur_nom,
           type: apprenant.financeur_type,
           adresse: apprenant.financeur_adresse,
