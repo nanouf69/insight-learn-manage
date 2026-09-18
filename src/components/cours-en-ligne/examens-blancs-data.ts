@@ -6180,7 +6180,7 @@ L'interaction entre voitures autonomes et véhicule classique est l'autre grand 
         choix: [
           { lettre: "A", texte: "37 000 €" },
           { lettre: "B", texte: "43 000 €", correct: true },
-          { lettre: "D", texte: "27 000 €" },
+          { lettre: "C", texte: "27 000 €" },
         ],
       },
       {
@@ -6863,7 +6863,7 @@ const eb5Matieres: Matiere[] = [
         choix: [
           { lettre: "A", texte: "50 m" },
           { lettre: "B", texte: "80 m", correct: true },
-          { lettre: "D", texte: "70 m" },
+          { lettre: "C", texte: "70 m" },
         ],
       },
       {
