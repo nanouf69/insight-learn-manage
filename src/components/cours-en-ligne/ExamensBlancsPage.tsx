@@ -981,7 +981,7 @@ export default function ExamensBlancsPage({
     return totalPoints;
   };
 
-  const saveMatiereResult = async ({ examen, matiere, resultat, dureeSecondes }: { examen: ExamenBlanc; matiere: Matiere; resultat: ResultatMatiere; dureeSecondes: number }) => {
+  const saveMatiereResultInner = async ({ examen, matiere, resultat, dureeSecondes }: { examen: ExamenBlanc; matiere: Matiere; resultat: ResultatMatiere; dureeSecondes: number }) => {
     if (!apprenantId || !userId) return;
     let rawQuestions = matiere?.questions || [];
     // FIX: fallback to source data when matiere.questions is empty (frozen examenChoisi)
