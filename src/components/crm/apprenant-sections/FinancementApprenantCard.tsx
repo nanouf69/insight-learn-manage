@@ -92,13 +92,14 @@ export function FinancementApprenantCard({ apprenant, onNavigateToComptabilite }
     date_paiement: new Date().toISOString().slice(0, 10),
     montant: "",
     moyen_paiement: "Virement bancaire",
+    formation: "",
     notes: "",
   });
 
   const refreshPaiements = async () => {
     const { data } = await supabase
       .from("apprenant_paiements")
-      .select("id, montant, moyen_paiement, date_paiement, notes")
+      .select("id, montant, moyen_paiement, date_paiement, notes, formation")
       .eq("apprenant_id", apprenant.id)
       .order("date_paiement", { ascending: false });
     setPaiements(data ?? []);
