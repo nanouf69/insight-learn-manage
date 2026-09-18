@@ -275,14 +275,17 @@ export function reconcileSharedMatieres(
   examens: ExamenBlanc[],
   savedAtByExamIdx: Record<number, number>,
 ): void {
+  // La clé de partage inclut OBLIGATOIREMENT le numéro d'examen :
+  // VTC N°1 / TAXI N°1 / VA N°1 se partagent, jamais N°1 avec N°2…N°6.
   const best = new Map<string, { rank: MatiereRank; matiere: Matiere }>();
   examens.forEach((ex, idx) => {
     const moduleTs = savedAtByExamIdx[idx] ?? 0;
     (ex.matieres ?? []).forEach((m) => {
       if (!m?.id) return;
+      const key = getMatiereSyncKey(ex.id, m.id);
       const rank = getMatiereRank(m, moduleTs);
-      const current = best.get(m.id);
-      if (!current || isRankNewer(rank, current.rank)) best.set(m.id, { rank, matiere: m });
+      const current = best.get(key);
+      if (!current || isRankNewer(rank, current.rank)) best.set(key, { rank, matiere: m });
     });
   });
 
@@ -290,13 +293,14 @@ export function reconcileSharedMatieres(
     const moduleTs = savedAtByExamIdx[idx] ?? 0;
     ex.matieres = (ex.matieres ?? []).map((m) => {
       if (!m?.id) return m;
-      const winner = best.get(m.id);
+      const winner = best.get(getMatiereSyncKey(ex.id, m.id));
       if (!winner || winner.matiere === m) return m;
       if (!isRankNewer(winner.rank, getMatiereRank(m, moduleTs))) return m;
       return JSON.parse(JSON.stringify(winner.matiere)) as Matiere;
     });
   });
 }
+
 
 
 // Load saved exam overrides from DB — NO CACHE, always fresh from DB
