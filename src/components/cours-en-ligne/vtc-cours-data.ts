@@ -9,9 +9,10 @@ import { REGLEMENTATION_SPECIFIQUE_VTC_EXERCICES } from "./exercices/reglementat
 import { SECURITE_ROUTIERE_EXERCICES } from "./exercices/securite-routiere-exercices-data";
 import SECURITE_ROUTIERE_2_ASSET from "@/assets/cours-vtc/C_Securite_Routiere_FINAL_2.pptx.asset.json";
 import SECURITE_ROUTIERE_3_ASSET from "@/assets/cours-vtc/SECURITE_ROUTIERE_3SUR3_v2.pptx.asset.json";
-import GESTION_2_ASSET from "@/assets/cours-vtc/GESTION_2SUR3_v9.pptx.asset.json";
-import GESTION_3_ASSET from "@/assets/cours-vtc/GESTION_3SUR3_v10.pptx.asset.json";
-import DEVELOPPEMENT_COMMERCIAL_ASSET from "@/assets/cours-vtc/Developpement_commercial_1SUR1_v7.pptx.asset.json";
+import GESTION_2_ASSET from "@/assets/cours-vtc/GESTION_2SUR3_v9-2.pptx.asset.json";
+import GESTION_3_ASSET from "@/assets/cours-vtc/GESTION_3SUR3_v11.pptx.asset.json";
+import DEVELOPPEMENT_COMMERCIAL_ASSET from "@/assets/cours-vtc/Developpement_commercial_1SUR1_v11.pptx.asset.json";
+import REGLEMENTATION_VTC_ASSET from "@/assets/cours-vtc/Reglementation_VTC_1SUR1_v5_1.pptx.asset.json";
 
 const SECURITE_ROUTIERE_2_PPTX = `${SECURITE_ROUTIERE_2_ASSET.url}?v=20260915-2100`;
 const SECURITE_ROUTIERE_3_PPTX = `${SECURITE_ROUTIERE_3_ASSET.url}?v=20260916-1300`;
