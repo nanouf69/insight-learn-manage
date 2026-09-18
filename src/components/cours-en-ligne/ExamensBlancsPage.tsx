@@ -734,6 +734,12 @@ export default function ExamensBlancsPage({
       .eq("quiz_type", quizType);
 
     const rows = selectLatestAttemptRows(mergePassageSiblingRows(excludeResultPlaceholders(data as any[])));
+    // Surveillance (lecture seule) : journalise toute divergence « élève en
+    // attente / aucune QRC réellement à corriger ». Ne modifie jamais rien.
+    try {
+      const coherence = auditQrcCoherence(data as any[]);
+      if (coherence.incoherences.length > 0) void reportQrcIncoherence(coherence, "examens-blancs/resultats");
+    } catch { /* la surveillance ne doit jamais bloquer l'affichage */ }
     const hasOnlyZeroScores = rows.length > 0 && rows.every((row: any) => toFiniteNumber(row?.score_obtenu, 0) <= 0);
 
     // Rebuild from stored responses if quiz_results is empty or only zero-score rows
