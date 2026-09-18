@@ -482,6 +482,11 @@ export async function loadSavedExamens(notifyRepairs: boolean = false): Promise<
 
   repairCorrectFlags(examens, notifyRepairs);
 
+  // Réparation technique des lettres de propositions (doublons / lettres
+  // manquantes / non alphabétiques) : uniquement A, B, C, D, E par position.
+  // Aucun texte, ordre, bonne réponse, type ou point n'est modifié.
+  normalizeQcmChoiceLetters(examens);
+
   // Apply fournisseur (formateur) overrides on top of admin's saved data.
   // The fournisseur portal saves modifications in `quiz_questions_overrides`
   // with quiz_id like "bilan-examen-ta". Without this step, students taking
