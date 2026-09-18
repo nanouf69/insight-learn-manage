@@ -903,6 +903,57 @@ export type Database = {
           },
         ]
       }
+      bilan_sync_backups: {
+        Row: {
+          created_at: string
+          id: string
+          label: string
+          module_data: Json
+          module_id: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          label: string
+          module_data: Json
+          module_id: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label?: string
+          module_data?: Json
+          module_id?: number
+        }
+        Relationships: []
+      }
+      bilan_sync_removed_questions: {
+        Row: {
+          created_at: string
+          exercice_id: string
+          exercice_titre: string | null
+          id: string
+          module_id: number
+          question: Json
+        }
+        Insert: {
+          created_at?: string
+          exercice_id: string
+          exercice_titre?: string | null
+          id?: string
+          module_id: number
+          question: Json
+        }
+        Update: {
+          created_at?: string
+          exercice_id?: string
+          exercice_titre?: string | null
+          id?: string
+          module_id?: number
+          question?: Json
+        }
+        Relationships: []
+      }
       bpf: {
         Row: {
           annee: number
@@ -4170,6 +4221,7 @@ export type Database = {
           validated: boolean
         }[]
       }
+      bilan_sync_mapping: { Args: never; Returns: Json }
       check_apprenant_session: {
         Args: { _apprenant_id: string; _connexion_id: string; _event?: string }
         Returns: {
@@ -4543,6 +4595,14 @@ export type Database = {
       sync_admin_canonical_quiz_questions: {
         Args: { p_exercises: Json; p_module_id: number }
         Returns: undefined
+      }
+      sync_bilan_from_cours: {
+        Args: {
+          _dst_module: number
+          _log_removed?: boolean
+          _src_module: number
+        }
+        Returns: number
       }
       text_soundex: { Args: { "": string }; Returns: string }
       unaccent: { Args: { "": string }; Returns: string }
