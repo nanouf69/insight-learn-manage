@@ -84,7 +84,7 @@ const ResultatsSessionPage = () => {
   const [quizResults, setQuizResults] = useState<QuizResultRow[]>([]);
   const [loadingData, setLoadingData] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
-  const [expandedExam, setExpandedExam] = useState<string | null>(null);
+  const [collapsedExams, setCollapsedExams] = useState<Set<string>>(new Set());
   const [expandedMatiere, setExpandedMatiere] = useState<string | null>(null);
   const [expandedModule, setExpandedModule] = useState<number | null>(null);
   const [fullscreen, setFullscreen] = useState(false);
@@ -130,7 +130,16 @@ const ResultatsSessionPage = () => {
       let apprenantIds: string[] = [];
       let apprenantList: ApprenantRow[] = [];
 
-      if (selectedSessionId === "e-learning") {
+      if (selectedSessionId === "all") {
+        const { data: allApprenants } = await supabase
+          .from("apprenants")
+          .select("id, nom, prenom, formation_choisie")
+          .is("deleted_at", null)
+          .order("nom")
+          .limit(5000);
+        apprenantList = (allApprenants as ApprenantRow[]) || [];
+        apprenantIds = apprenantList.map(a => a.id);
+      } else if (selectedSessionId === "e-learning") {
         const { data: eLearningApprenants } = await supabase
           .from("apprenants")
           .select("id, nom, prenom, formation_choisie")
@@ -160,21 +169,50 @@ const ResultatsSessionPage = () => {
       setApprenants(apprenantList);
 
       if (apprenantIds.length > 0) {
-        // Fetch completions and quiz results in parallel
-        const [completionRes, quizRes] = await Promise.all([
-          supabase
-            .from("apprenant_module_completion")
-            .select("apprenant_id, module_id, score_obtenu, score_max, details")
-            .eq("status", "completed")
-            .in("apprenant_id", apprenantIds),
-          supabase
-            .from("apprenant_quiz_results")
-            .select("id, apprenant_id, quiz_id, quiz_titre, quiz_type, score_obtenu, score_max, note_sur_20, reussi, matiere_id, matiere_nom, completed_at, duree_secondes, details")
-            .in("apprenant_id", apprenantIds)
-            .order("completed_at", { ascending: false }),
-        ]);
-        setCompletions((completionRes.data as CompletionRow[]) || []);
-        setQuizResults((quizRes.data as QuizResultRow[]) || []);
+        const ID_CHUNK = 150;
+        const PAGE = 1000;
+        const chunks: string[][] = [];
+        for (let i = 0; i < apprenantIds.length; i += ID_CHUNK) chunks.push(apprenantIds.slice(i, i + ID_CHUNK));
+
+        const fetchAllPages = async (
+          build: (ids: string[], from: number, to: number) => any,
+          ids: string[],
+        ) => {
+          const rows: any[] = [];
+          let from = 0;
+          // eslint-disable-next-line no-constant-condition
+          while (true) {
+            const { data } = await build(ids, from, from + PAGE - 1);
+            const batch = data || [];
+            rows.push(...batch);
+            if (batch.length < PAGE) break;
+            from += PAGE;
+          }
+          return rows;
+        };
+
+        const completionRows: any[] = [];
+        const quizRows: any[] = [];
+        for (const ids of chunks) {
+          const [c, q] = await Promise.all([
+            fetchAllPages((cIds, from, to) => supabase
+              .from("apprenant_module_completion")
+              .select("apprenant_id, module_id, score_obtenu, score_max, details")
+              .eq("status", "completed")
+              .in("apprenant_id", cIds)
+              .range(from, to), ids),
+            fetchAllPages((cIds, from, to) => supabase
+              .from("apprenant_quiz_results")
+              .select("id, apprenant_id, quiz_id, quiz_titre, quiz_type, score_obtenu, score_max, note_sur_20, reussi, matiere_id, matiere_nom, completed_at, duree_secondes, details")
+              .in("apprenant_id", cIds)
+              .order("completed_at", { ascending: false })
+              .range(from, to), ids),
+          ]);
+          completionRows.push(...c);
+          quizRows.push(...q);
+        }
+        setCompletions(completionRows as CompletionRow[]);
+        setQuizResults(quizRows as QuizResultRow[]);
       } else {
         setCompletions([]);
         setQuizResults([]);
@@ -475,9 +513,11 @@ const ResultatsSessionPage = () => {
   }, [moduleAverages]);
 
   const selectedSession = sessions.find(s => s.id === selectedSessionId);
-  const sessionLabel = selectedSessionId === "e-learning"
-    ? "E-Learning"
-    : selectedSession?.nom || `Session du ${selectedSession?.date_debut || ""}`;
+  const sessionLabel = selectedSessionId === "all"
+    ? "Toutes les sessions"
+    : selectedSessionId === "e-learning"
+      ? "E-Learning"
+      : selectedSession?.nom || `Session du ${selectedSession?.date_debut || ""}`;
 
   const formatDate = (d: string) => {
     try { return new Date(d).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" }); }
@@ -535,6 +575,7 @@ const ResultatsSessionPage = () => {
               <SelectValue placeholder="Sélectionner une session" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="all">📋 Toutes les sessions (tous les apprenants)</SelectItem>
               <SelectItem value="e-learning">🖥️ E-Learning (tous)</SelectItem>
               {sessions.map(s => {
                 const now = new Date();
@@ -912,7 +953,7 @@ const ResultatsSessionPage = () => {
                 <Card><CardContent className="py-12 text-center text-muted-foreground">Aucun examen blanc passé pour cette session.</CardContent></Card>
               ) : (
                 Object.entries(examStats).map(([qId, s]) => {
-                  const isExpanded = expandedExam === qId;
+                  const isExpanded = !collapsedExams.has(qId);
                   const tauxReussite = s.nbCandidats > 0 ? Math.round((s.nbReussi / s.nbCandidats) * 100) : 0;
                   const matieresArr = Object.values(s.matieres).sort((a, b) => a.nom.localeCompare(b.nom));
 
@@ -921,7 +962,11 @@ const ResultatsSessionPage = () => {
                       {/* Exam header */}
                       <div
                         className="px-5 py-4 flex items-center justify-between cursor-pointer hover:bg-muted/20 transition-colors"
-                        onClick={() => setExpandedExam(isExpanded ? null : qId)}
+                        onClick={() => setCollapsedExams(prev => {
+                          const next = new Set(prev);
+                          if (next.has(qId)) next.delete(qId); else next.add(qId);
+                          return next;
+                        })}
                       >
                         <div className="flex items-center gap-3">
                           {isExpanded ? <ChevronDown className="w-5 h-5 text-muted-foreground" /> : <ChevronRight className="w-5 h-5 text-muted-foreground" />}
