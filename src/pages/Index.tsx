@@ -354,6 +354,9 @@ const Index = () => {
               </Button>
             </div>
 
+            {/* Apprenants actuellement en formation — journée / soirée */}
+            <SuiviFormationEnCours onNavigateToApprenant={handleNavigateToApprenant} />
+
             {/* Tâches à faire */}
             <DashboardTasks />
 
