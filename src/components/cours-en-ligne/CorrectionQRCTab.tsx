@@ -457,53 +457,28 @@ const CorrectionQRCTab = () => {
     const qrcItems: QrcItem[] = [];
     const seenQrcKeys = new Set<string>();
 
-    const getTentative = (row: any): number => {
-      const n = Number(row?.tentative);
-      return Number.isFinite(n) && n > 0 ? Math.floor(n) : 1;
-    };
     const attemptKey = (a: string, q: string, m: string, t: number, qid: number) =>
       `${a}__${q}__${m || ""}__T${t}__${qid}`;
-    const looseKey = (a: string, q: string, t: number, qid: number) => `${a}__${q}__T${t}__${qid}`;
 
     // ── Index des validations admin déjà enregistrées ───────────────────
-    type ValidationRecord = { correction: any; matiereId: string };
-    const validationsExact = new Map<string, any>();
+    // Une validation est rattachée à SON passage (date de fin du passage),
+    // jamais à un simple numéro de question.
+    type ValidationRecord = { correction: any; matiereId: string; time: number };
     const validationsByQuestion = new Map<string, ValidationRecord[]>();
     let validationsRecuperees = 0;
     let validationsAmbigues = 0;
 
     for (const r of results as any[]) {
-      const tentative = getTentative(r);
       const correctionsIA = ((r.details as any)?.correctionsIA || {}) as Record<string | number, any>;
       Object.entries(correctionsIA).forEach(([rawQuestionId, correction]) => {
         const questionId = Number(String(rawQuestionId).replace(/^Q/i, ""));
         if (!Number.isFinite(questionId) || !isAdminValidatedCorrection(correction, r.completed_at)) return;
-        const mid = r.matiere_id || "";
-        const exactK = attemptKey(r.apprenant_id, r.quiz_id, mid, tentative, questionId);
-        if (!validationsExact.has(exactK)) validationsExact.set(exactK, correction);
-        const lk = looseKey(r.apprenant_id, r.quiz_id, tentative, questionId);
+        const lk = `${r.apprenant_id}__${r.quiz_id}__${questionId}`;
         const list = validationsByQuestion.get(lk) || [];
-        list.push({ correction, matiereId: mid });
+        list.push({ correction, matiereId: r.matiere_id || "", time: new Date(r.completed_at).getTime() || 0 });
         validationsByQuestion.set(lk, list);
       });
     }
-
-    // Rattachement d'une validation existante : correspondance exacte d'abord,
-    // puis rattrapage UNIQUEMENT si la correspondance est certaine (même
-    // apprenant, même examen, même tentative, même question, et une seule
-    // validation candidate enregistrée sans code matière — cas des lignes
-    // bilan regroupées). Tout cas ambigu est laissé intact et compté.
-    const findValidation = (apprenantId: string, quizId: string, matiereId: string, tentative: number, questionId: number): any | null => {
-      const exact = validationsExact.get(attemptKey(apprenantId, quizId, matiereId, tentative, questionId));
-      if (exact) return exact;
-      const candidates = (validationsByQuestion.get(looseKey(apprenantId, quizId, tentative, questionId)) || [])
-        .filter(v => (v.matiereId || "") !== (matiereId || ""));
-      if (candidates.length === 0) return null;
-      const certains = candidates.filter(v => !v.matiereId || !matiereId);
-      if (certains.length === 1) { validationsRecuperees++; return certains[0].correction; }
-      validationsAmbigues++;
-      return null;
-    };
 
     // ── Regroupement par PASSAGE RÉEL (fusion des doubles écritures) ─────
     // Un passage = apprenant + examen + matière + fenêtre de temps courte.
