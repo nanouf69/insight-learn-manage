@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { tousLesExamens, getPointsParQuestion, type ExamenBlanc, type Matiere } from "./examens-blancs-data";
 import { loadSavedExamens } from "./ExamensBlancsEditor";
-import { buildExamenMap, findMatiereWithFallback, getSourceQuestions, computeReussiForResult } from "./exam-helpers";
+import { buildExamenMap, findMatiereWithFallback, getSourceQuestions, computeReussiForResult, isResultPlaceholder } from "./exam-helpers";
 
 interface QrcItem {
   resultId: string;

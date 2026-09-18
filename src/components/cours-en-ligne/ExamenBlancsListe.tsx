@@ -16,7 +16,7 @@ import {
   selectLatestAttemptRows,
 } from "./examens-blancs-utils";
 import { computeMoyenneExamen, computeMatiereScore, computeMatiereScoreForAttempt, resolveMatiereForScoring } from "./examens-blancs-scoring";
-import { isMatiereQrcPendingForAttempt } from "./exam-helpers";
+import { isMatiereQrcPendingForAttempt, excludeResultPlaceholders } from "./exam-helpers";
 import { toast } from "sonner";
 
 /**
