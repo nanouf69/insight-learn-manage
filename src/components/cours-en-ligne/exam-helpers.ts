@@ -378,7 +378,13 @@ export function mergePassageSiblingRows<T extends Record<string, any>>(rows: T[]
       ...r,
       details: {
         ...details,
-        reponses: { ...(m.reponses || {}), ...(details.reponses || {}) },
+        reponses: (() => {
+          const own = { ...(details.reponses || {}) };
+          Object.entries(m.reponses || {}).forEach(([k, v]) => {
+            if (isBlankAnswer(own[k]) && !isBlankAnswer(v)) own[k] = v;
+          });
+          return own;
+        })(),
         correctionsIA: { ...(details.correctionsIA || {}), ...m.corrections },
       },
     };
