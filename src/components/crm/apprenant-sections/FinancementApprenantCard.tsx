@@ -181,7 +181,7 @@ export function FinancementApprenantCard({ apprenant, onNavigateToComptabilite }
       setLoading(true);
       const { data: pData } = await supabase
         .from("apprenant_paiements")
-        .select("id, montant, moyen_paiement, date_paiement, notes")
+        .select("id, montant, moyen_paiement, date_paiement, notes, formation")
         .eq("apprenant_id", apprenant.id)
         .order("date_paiement", { ascending: false });
 
@@ -363,6 +363,7 @@ export function FinancementApprenantCard({ apprenant, onNavigateToComptabilite }
                   <span className="text-muted-foreground truncate">
                     {p.date_paiement ? format(parseISO(p.date_paiement), "dd MMM yyyy", { locale: fr }) : "-"}
                     {p.moyen_paiement ? ` · ${p.moyen_paiement}` : ""}
+                    {p.formation ? ` · ${p.formation}` : ""}
                     {p.notes ? ` · ${p.notes}` : ""}
                   </span>
                   <span className="flex items-center gap-1 whitespace-nowrap">
