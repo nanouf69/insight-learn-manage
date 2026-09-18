@@ -689,10 +689,65 @@ const CorrectionQRCTab = () => {
     }
 
     setItems(qrcItems);
+
+    // ---- Contrôle automatique (lecture seule, aucune donnée modifiée) ----
+    // Détecte les QRC réellement répondues en base qui ne remontent pas dans la file.
+    try {
+      const since = new Date();
+      since.setDate(since.getDate() - 30);
+      const { data: controlRows } = await supabase
+        .from("reponses_apprenants" as any)
+        .select("apprenant_id, exercice_id, reponses, updated_at")
+        .eq("exercice_type", "examen_blanc")
+        .gte("updated_at", since.toISOString());
+
+      let missing = 0;
+      const missingApprenants = new Set<string>();
+      for (const row of (controlRows || []) as any[]) {
+        const [quizId, matiereId] = safeStr(row.exercice_id).split("__");
+        if (!quizId || !matiereId) continue;
+        const matiere = findMatiereWithFallback(examenMap, tousLesExamens, quizId, matiereId);
+        if (!matiere) continue;
+        for (const q of getSourceQuestions(matiere, tousLesExamens)) {
+          if (!q || String(q.type).toUpperCase() !== "QRC") continue;
+          const rep = safeStr((row.reponses || {})?.[q.id] ?? (row.reponses || {})?.[String(q.id)] ?? "");
+          if (!rep.trim()) continue;
+          const key = getCorrectionKey(row.apprenant_id, quizId, matiereId, q.id);
+          if (manualCorrectionKeys.has(key) || seenQrcKeys.has(key)) continue;
+          missing++;
+          missingApprenants.add(row.apprenant_id);
+        }
+      }
+      setIntegrityAlert(missing > 0 ? { count: missing, apprenants: missingApprenants.size } : null);
+    } catch (e) {
+      console.error("Contrôle intégrité QRC:", e);
+    }
+
     if (!opts?.silent) setLoading(false);
   }, [examenMap]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  // Remontée immédiate : dès qu'un résultat ou une réponse d'examen blanc est
+  // écrit en base (n'importe quel apprenant, filière, matière, tentative),
+  // la file de correction se recharge silencieusement.
+  useEffect(() => {
+    if (Object.keys(examenMap).length === 0) return;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const schedule = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => { fetchData({ silent: true }); }, 1500);
+    };
+    const channel = supabase
+      .channel("correction-qrc-live")
+      .on("postgres_changes", { event: "*", schema: "public", table: "apprenant_quiz_results" }, schedule)
+      .on("postgres_changes", { event: "*", schema: "public", table: "reponses_apprenants" }, schedule)
+      .subscribe();
+    return () => {
+      if (timer) clearTimeout(timer);
+      supabase.removeChannel(channel);
+    };
+  }, [fetchData, examenMap]);
 
   const handleSaveCorrection = async (item: QrcItem, newPoints: number) => {
     const uniqueKey = `${item.resultId}-${item.questionId}`;
