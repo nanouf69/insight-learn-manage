@@ -369,7 +369,7 @@ const ResultatsSessionPage = () => {
         nbEchec,
         moyenneNote: nbCandidats > 0 ? Math.round((totalNote / nbCandidats) * 10) / 10 : 0,
         matieres,
-        apprenantDetails: apprenantDetails.sort((a, b) => a.nom.localeCompare(b.nom)),
+        apprenantDetails: apprenantDetails.sort((a, b) => b.note - a.note || a.nom.localeCompare(b.nom)),
       };
     }
     return stats;
@@ -1013,7 +1013,7 @@ const ResultatsSessionPage = () => {
                                             {isMatiereExpanded ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" /> : <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />}
                                             <span className="text-sm font-medium truncate">{m.nom}</span>
                                           </div>
-                                          <span className={`text-sm font-bold ${getNoteColor(mAvg)}`}>{mAvg}/20</span>
+                                          <span className={`text-sm font-bold ${getNoteColor(mAvg)}`}>Moy. {mAvg}/20</span>
                                         </div>
                                         <Progress value={mTaux} className="h-2" />
                                         <div className="flex items-center justify-between text-xs text-muted-foreground">
