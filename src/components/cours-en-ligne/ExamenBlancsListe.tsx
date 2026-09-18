@@ -506,8 +506,8 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
                           .filter((m) => {
                             const sd = findScoreForMatiere(scores, m);
                             if (!sd) return false;
-                            const corr = (sd as any).correctionsIA || (sd as any).details?.correctionsIA || {};
-                            return isMatiereQrcPending(m, corr);
+                            const det = (sd as any).details ?? { correctionsIA: (sd as any).correctionsIA };
+                            return isMatiereQrcPendingForAttempt(m, det);
                           })
                           .map((m) => m.id),
                       );
