@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * SÉCURITÉ 2 — Le statut réussi/échoué utilise EXACTEMENT la même règle que le
  * résultat définitif : barème de la matière + seuil éliminatoire
