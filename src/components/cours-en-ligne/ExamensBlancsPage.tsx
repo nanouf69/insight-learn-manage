@@ -30,6 +30,7 @@ import { EcranSelection } from "./ExamenBlancsListe";
 import { PassageMatiere, TransitionMatiere } from "./ExamenBlancsPassage";
 import { EcranResultats, RevisionFausses } from "./ExamenBlancsResultats";
 import { computeMatiereScore, computeMatiereScoreForAttempt, resolveMatiereForScoring, MATIERE_SNAPSHOT_VERSION } from "./examens-blancs-scoring";
+import { excludeResultPlaceholders } from "./exam-helpers";
 
 /**
  * Retrouve la version ORIGINALE (source statique, jamais éditée) d'une matière
