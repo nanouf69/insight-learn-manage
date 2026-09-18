@@ -1095,8 +1095,9 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
   };
 
   const sendDevisEmail = async () => {
-    if (!apprenant.email) {
-      toast.error("Aucun email renseigné pour cet apprenant");
+    const destinataire = devisClient.email || apprenant.email;
+    if (!destinataire) {
+      toast.error(isOrgFinanceur ? "Aucun email renseigné pour cette organisation" : "Aucun email renseigné pour cet apprenant");
       return;
     }
     if (!validateBeforeSend()) return;
