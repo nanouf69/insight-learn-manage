@@ -450,11 +450,14 @@ export default function ExamensBlancsPage({
     if (apprenantId) {
       const { data: tRows } = await supabase
         .from("apprenant_quiz_results" as any)
-        .select("tentative")
+        .select("tentative, details")
         .eq("apprenant_id", apprenantId)
         .eq("quiz_id", latestExamen.id)
         .eq("quiz_type", quizType);
-      const maxT = ((tRows as any[]) || []).reduce((m, r) => Math.max(m, toFiniteNumber(r?.tentative, 1)), 0);
+      // Les lignes techniques « en attente de finalisation » ne comptent pas :
+      // sinon la vraie note partirait sur une tentative supplémentaire au lieu
+      // de remplacer la ligne à 0.
+      const maxT = excludeResultPlaceholders(tRows as any[]).reduce((m: number, r: any) => Math.max(m, toFiniteNumber(r?.tentative, 1)), 0);
       nextTentative = forceRetake ? Math.max(maxT + 1, 2) : Math.max(maxT, 1);
     }
     setCurrentTentative(nextTentative);
