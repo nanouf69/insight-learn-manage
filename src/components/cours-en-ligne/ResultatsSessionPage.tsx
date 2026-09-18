@@ -84,7 +84,7 @@ const ResultatsSessionPage = () => {
   const [quizResults, setQuizResults] = useState<QuizResultRow[]>([]);
   const [loadingData, setLoadingData] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
-  const [expandedExam, setExpandedExam] = useState<string | null>(null);
+  const [collapsedExams, setCollapsedExams] = useState<Set<string>>(new Set());
   const [expandedMatiere, setExpandedMatiere] = useState<string | null>(null);
   const [expandedModule, setExpandedModule] = useState<number | null>(null);
   const [fullscreen, setFullscreen] = useState(false);
