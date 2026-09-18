@@ -1402,6 +1402,70 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
         </TabsList>
 
         <TabsContent value="devis" className="space-y-6 mt-4">
+          {/* ═══ CHOIX DU FINANCEUR ═══ */}
+          <Card className="border-primary/30">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <FileText className="w-5 h-5 text-primary" />
+                Choix du financeur
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex flex-col gap-2">
+                <button
+                  type="button"
+                  onClick={() => { setFinanceurMode('apprenant'); setOrganismeId(""); }}
+                  className={`w-full text-left px-4 py-3 rounded-lg border-2 text-sm font-medium transition-all ${financeurMode === 'apprenant' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/40'}`}
+                >
+                  L'apprenant lui-même
+                  <span className="block text-xs font-normal text-muted-foreground">
+                    {`${apprenant.prenom || ''} ${apprenant.nom || ''}`.trim()}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFinanceurMode('organisation')}
+                  className={`w-full text-left px-4 py-3 rounded-lg border-2 text-sm font-medium transition-all ${financeurMode === 'organisation' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/40'}`}
+                >
+                  Une organisation
+                  <span className="block text-xs font-normal text-muted-foreground">
+                    Entreprise ou organisme enregistré dans la base
+                  </span>
+                </button>
+              </div>
+
+              {financeurMode === 'organisation' && (
+                <div className="space-y-2">
+                  <Label>Organisation financeur</Label>
+                  <Select value={organismeId} onValueChange={setOrganismeId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner une organisation..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {organismes.map(o => (
+                        <SelectItem key={o.id} value={o.id}>{o.nom}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {organismes.length === 0 && (
+                    <p className="text-xs text-muted-foreground">Aucune organisation enregistrée pour le moment.</p>
+                  )}
+                </div>
+              )}
+
+              <div className="rounded-lg border bg-muted/30 p-3 text-sm space-y-0.5">
+                <p className="font-semibold">{devisClient.nomComplet || '—'}</p>
+                <p className="text-muted-foreground">
+                  {[devisClient.adresse, devisClient.codePostal, devisClient.ville].filter(Boolean).join(', ') || '—'}
+                </p>
+                <p className="text-muted-foreground">{[devisClient.telephone, devisClient.email].filter(Boolean).join(' · ') || '—'}</p>
+                <p className="text-xs text-muted-foreground pt-1">
+                  Ces coordonnées seront utilisées comme client du devis et comme destinataire de l'email.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* ═══ SECTION 1 : DEVIS DOCX TEMPLATES ═══ */}
           <Card className="border-primary/30">
             <CardHeader>
