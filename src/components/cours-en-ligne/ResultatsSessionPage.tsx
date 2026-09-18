@@ -169,21 +169,50 @@ const ResultatsSessionPage = () => {
       setApprenants(apprenantList);
 
       if (apprenantIds.length > 0) {
-        // Fetch completions and quiz results in parallel
-        const [completionRes, quizRes] = await Promise.all([
-          supabase
-            .from("apprenant_module_completion")
-            .select("apprenant_id, module_id, score_obtenu, score_max, details")
-            .eq("status", "completed")
-            .in("apprenant_id", apprenantIds),
-          supabase
-            .from("apprenant_quiz_results")
-            .select("id, apprenant_id, quiz_id, quiz_titre, quiz_type, score_obtenu, score_max, note_sur_20, reussi, matiere_id, matiere_nom, completed_at, duree_secondes, details")
-            .in("apprenant_id", apprenantIds)
-            .order("completed_at", { ascending: false }),
-        ]);
-        setCompletions((completionRes.data as CompletionRow[]) || []);
-        setQuizResults((quizRes.data as QuizResultRow[]) || []);
+        const ID_CHUNK = 150;
+        const PAGE = 1000;
+        const chunks: string[][] = [];
+        for (let i = 0; i < apprenantIds.length; i += ID_CHUNK) chunks.push(apprenantIds.slice(i, i + ID_CHUNK));
+
+        const fetchAllPages = async (
+          build: (ids: string[], from: number, to: number) => any,
+          ids: string[],
+        ) => {
+          const rows: any[] = [];
+          let from = 0;
+          // eslint-disable-next-line no-constant-condition
+          while (true) {
+            const { data } = await build(ids, from, from + PAGE - 1);
+            const batch = data || [];
+            rows.push(...batch);
+            if (batch.length < PAGE) break;
+            from += PAGE;
+          }
+          return rows;
+        };
+
+        const completionRows: any[] = [];
+        const quizRows: any[] = [];
+        for (const ids of chunks) {
+          const [c, q] = await Promise.all([
+            fetchAllPages((cIds, from, to) => supabase
+              .from("apprenant_module_completion")
+              .select("apprenant_id, module_id, score_obtenu, score_max, details")
+              .eq("status", "completed")
+              .in("apprenant_id", cIds)
+              .range(from, to), ids),
+            fetchAllPages((cIds, from, to) => supabase
+              .from("apprenant_quiz_results")
+              .select("id, apprenant_id, quiz_id, quiz_titre, quiz_type, score_obtenu, score_max, note_sur_20, reussi, matiere_id, matiere_nom, completed_at, duree_secondes, details")
+              .in("apprenant_id", cIds)
+              .order("completed_at", { ascending: false })
+              .range(from, to), ids),
+          ]);
+          completionRows.push(...c);
+          quizRows.push(...q);
+        }
+        setCompletions(completionRows as CompletionRow[]);
+        setQuizResults(quizRows as QuizResultRow[]);
       } else {
         setCompletions([]);
         setQuizResults([]);
