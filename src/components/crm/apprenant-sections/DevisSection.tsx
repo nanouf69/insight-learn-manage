@@ -1374,7 +1374,7 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
         body: {
           action: 'send',
           userEmail: 'contact@ftransport.fr',
-          to: apprenant.email,
+          to: destinataire,
           subject: em.subject,
           body: bodyHtml,
           apprenantId: apprenant.id,
@@ -1382,7 +1382,7 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
         },
       });
       if (error) throw error;
-      toast.success(`Devis envoyé par email à ${apprenant.email}`);
+      toast.success(`Devis envoyé par email à ${destinataire}`);
     } catch (err: any) {
       console.error(err);
       toast.error("Erreur envoi devis : " + (err.message || ""));
