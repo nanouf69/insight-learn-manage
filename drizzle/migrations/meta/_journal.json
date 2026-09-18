@@ -148,6 +148,13 @@
       "when": 1789738329110,
       "tag": "0020_devis_envois_client_direct",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1789742249554,
+      "tag": "0021_autovalidate_module_if_complete",
+      "breakpoints": true
     }
   ]
 }

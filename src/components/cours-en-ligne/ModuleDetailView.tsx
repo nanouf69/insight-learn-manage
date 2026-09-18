@@ -6261,6 +6261,19 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     const activeCours = moduleData.cours.filter(c => c.actif && !(hideFormulaires && c.checklistType && HIDDEN_CHECKLIST_TYPES.includes(c.checklistType)));
     const activeExercices = moduleData.exercices.filter(e => e.actif) as ExerciceItem[];
 
+    // Nombre total de questions actives du module : transmis au serveur avec
+    // chaque sauvegarde de réponse pour permettre la validation automatique
+    // du module dès que toutes les questions sont réellement répondues.
+    const totalQuestionsModule = activeExercices.reduce(
+      (sum, exo) => sum + (exo.questions?.length || 0),
+      0,
+    );
+    const totalQuestionsModuleRef = useRef(totalQuestionsModule);
+    useEffect(() => {
+      totalQuestionsModuleRef.current = totalQuestionsModule;
+    }, [totalQuestionsModule]);
+
+
     const scrollToRevisionStart = useCallback((exoId: number) => {
       const target =
         document.getElementById(`exo-revision-top-${exoId}`) ||
@@ -6994,6 +7007,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               apprenant_id: apprenantId,
               user_id: userIdForSaveRef.current || undefined,
               module_id: module.id,
+              module_total_questions: totalQuestionsModuleRef.current,
               exercice_id: `module_${module.id}_exo_${exoId}`,
               exercice_type: "quiz",
               reponses: exoAnswers,
@@ -7085,6 +7099,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             apprenant_id: apprenantId,
             user_id: userIdForSaveRef.current as string,
             module_id: module.id,
+            module_total_questions: totalQuestionsModuleRef.current,
             exercice_id: `module_${module.id}_exo_${exoId}`,
             exercice_type: "quiz",
             reponses: exoAnswers,
@@ -8362,6 +8377,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                             apprenant_id: apprenantId,
                             user_id: userIdForSaveRef.current || undefined,
                             module_id: module.id,
+                            module_total_questions: totalQuestionsModuleRef.current,
                             exercice_id: exerciceId,
                             exercice_type: "quiz",
                             reponses: exoAnswers,
