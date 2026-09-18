@@ -16,7 +16,7 @@ import {
   selectLatestAttemptRows,
 } from "./examens-blancs-utils";
 import { computeMoyenneExamen, computeMatiereScore, computeMatiereScoreForAttempt, resolveMatiereForScoring } from "./examens-blancs-scoring";
-import { isMatiereQrcPendingForAttempt, excludeResultPlaceholders } from "./exam-helpers";
+import { isMatiereQrcPendingForAttempt, excludeResultPlaceholders, mergePassageSiblingRows } from "./exam-helpers";
 import { toast } from "sonner";
 
 /**
@@ -94,7 +94,7 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
         if (data) {
           // Les lignes techniques « en attente de finalisation » (score 0 créé
           // par le filet de sécurité) ne sont jamais des notes.
-          const allRows = excludeResultPlaceholders(data as any[]);
+          const allRows = mergePassageSiblingRows(excludeResultPlaceholders(data as any[]));
           const allRowsByQuiz = new Map<string, any[]>();
           allRows.forEach((r: any) => {
             if (!r.quiz_id) return;

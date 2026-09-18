@@ -8,7 +8,7 @@ import { EXAMENS_BLANCS_VTC, EXAMENS_BLANCS_TAXI, EXAMENS_BLANCS_TA, EXAMENS_BLA
 import { loadSavedExamens } from "@/components/cours-en-ligne/ExamensBlancsEditor";
 import { computeMoyenneExamen, computeMatiereScoreForAttempt } from "@/components/cours-en-ligne/examens-blancs-scoring";
 import { findScoreForMatiere, buildMatiereLookupKeys } from "@/components/cours-en-ligne/examens-blancs-utils";
-import { isQrcPendingCorrection, isMatiereQrcPendingForAttempt, excludeResultPlaceholders } from "@/components/cours-en-ligne/exam-helpers";
+import { isQrcPendingCorrection, isMatiereQrcPendingForAttempt, excludeResultPlaceholders, mergePassageSiblingRows } from "@/components/cours-en-ligne/exam-helpers";
 
 // Repli statique uniquement : la source de vérité affichée est la définition
 // enregistrée en base (identique à l'écran apprenant), chargée via loadSavedExamens().
@@ -58,7 +58,7 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
         .eq("type_document", "bilan_examen_blanc")
         .order("completed_at", { ascending: false }),
     ]).then(([scoresRes, bilansRes]) => {
-      if (scoresRes.data) setExamScores(excludeResultPlaceholders(scoresRes.data) as any[]);
+      if (scoresRes.data) setExamScores(mergePassageSiblingRows(excludeResultPlaceholders(scoresRes.data)) as any[]);
       if (bilansRes.data) {
         const map: Record<string, string> = {};
         (bilansRes.data as any[]).forEach((b: any) => {

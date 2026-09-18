@@ -22,7 +22,7 @@ import {
   getQuestionImageValue,
 } from "./examens-blancs-utils";
 import { computeMoyenneExamen, computeResultatMatiereScore, getSeuilEliminatoireAffiche } from "./examens-blancs-scoring";
-import { isQrcCorrectionValidated } from "./exam-helpers";
+import { isQrcCorrectionValidated, isQrcAnswerCertainlyEmpty } from "./exam-helpers";
 
 
 function EcranResultats({
@@ -534,6 +534,9 @@ function EcranResultats({
       if (qrcQuestions.length === 0) continue;
       const cacheMatiere = correctionsIA[mi] || resultatMatiere.correctionsIA || {};
       for (const q of qrcQuestions) {
+        // QRC réellement laissée vide par l'élève : 0 point d'office, jamais bloquante.
+        const detailsMatiere = (resultatMatiere as any).details ?? null;
+        if (detailsMatiere && isQrcAnswerCertainlyEmpty(detailsMatiere, q.id)) continue;
         const corr = (cacheMatiere as any)[q.id] ?? (cacheMatiere as any)[String(q.id)];
         if (!isQrcCorrectionValidated(corr)) { pending.add(matiere.id); break; }
       }

@@ -190,12 +190,53 @@ export function isQrcCorrectionValidated(correction: any): boolean {
   return correction.manuel === true && !!correction.correctedAt && legacyAdminMarker;
 }
 
+/** Fenêtre technique : deux écritures du même passage (doublons techniques). */
+export const MEME_PASSAGE_MS = 5 * 60 * 1000;
+
+function isBlankAnswer(value: unknown): boolean {
+  if (value == null) return true;
+  if (Array.isArray(value)) return value.length === 0 || value.every((v) => String(v ?? "").trim() === "");
+  return String(value).trim() === "";
+}
+
+function getSnapshotQuestions(details: any): any[] | null {
+  if (Array.isArray(details?.questions) && details.questions.length) return details.questions;
+  if (Array.isArray(details?.snapshot?.questions) && details.snapshot.questions.length) return details.snapshot.questions;
+  return null;
+}
+
+/**
+ * QRC RÉELLEMENT LAISSÉE VIDE PAR L'ÉLÈVE.
+ *
+ * Certitude exigée : la tentative a bien été finalisée (snapshot des questions
+ * présent), l'entrée de la question existe dans ce snapshot, elle porte
+ * explicitement une réponse vide, et aucune réponse n'existe non plus dans les
+ * réponses enregistrées. Dans ce cas seulement : 0 point d'office, la matière
+ * n'est pas bloquée et la QRC ne remonte pas dans la file de correction.
+ * Une réponse perdue (aucune trace de réponse dans le snapshot) reste bloquante.
+ */
+export function isQrcAnswerCertainlyEmpty(details: any, questionId: unknown): boolean {
+  const snap = getSnapshotQuestions(details);
+  if (!snap) return false;
+  const entry = snap.find((q: any) => String(q?.questionId ?? q?.id) === String(questionId));
+  if (!entry || typeof entry !== "object") return false;
+  if (!("reponseEleve" in entry)) return false;
+  if (!isBlankAnswer((entry as any).reponseEleve)) return false;
+  const reponses = details?.reponses ?? details?.snapshot?.reponses;
+  if (reponses && typeof reponses === "object") {
+    const v = (reponses as any)[questionId as any] ?? (reponses as any)[String(questionId)];
+    if (!isBlankAnswer(v)) return false;
+  }
+  return true;
+}
+
 export function isQrcPendingCorrection(details: any): boolean {
   if (!details || details.qrc_pending_correction !== true) return false;
   const questions = Array.isArray(details.questions) ? details.questions : [];
   const qrcIds = questions
     .filter((q: any) => normalizeQuestionType(q?.type) === "QRC")
-    .map((q: any) => String(q?.questionId ?? q?.id));
+    .map((q: any) => String(q?.questionId ?? q?.id))
+    .filter((id: string) => !isQrcAnswerCertainlyEmpty(details, id));
   if (qrcIds.length === 0) return false;
   const corrections = details.correctionsIA || {};
   return qrcIds.some((id: string) => !isQrcCorrectionValidated(corrections?.[id] ?? corrections?.[`Q${id}`]));
@@ -203,13 +244,16 @@ export function isQrcPendingCorrection(details: any): boolean {
 
 /**
  * RÈGLE GÉNÉRALE (toutes filières, tous examens blancs, toutes tentatives) :
- * tant qu'une QRC d'une matière n'a pas été validée manuellement par le
- * formateur, aucune note définitive de cette matière ne peut être publiée.
+ * tant qu'une QRC RÉPONDUE d'une matière n'a pas été validée manuellement par
+ * le formateur, aucune note définitive de cette matière ne peut être publiée.
+ * Une QRC réellement laissée vide vaut 0 et ne bloque pas.
  * Lecture seule : ne modifie aucune réponse, note ou correction.
  */
-export function isMatiereQrcPending(matiere: any, corrections: any): boolean {
+export function isMatiereQrcPending(matiere: any, corrections: any, details?: any): boolean {
   const questions = Array.isArray(matiere?.questions) ? matiere.questions : [];
-  const qrc = questions.filter((q: any) => q && normalizeQuestionType(q?.type) === "QRC");
+  const qrc = questions
+    .filter((q: any) => q && normalizeQuestionType(q?.type) === "QRC")
+    .filter((q: any) => !isQrcAnswerCertainlyEmpty(details, q?.id));
   if (qrc.length === 0) return false;
   const corr = corrections || {};
   const pendingByIds = qrc.some((q: any) => {
@@ -236,11 +280,7 @@ export function isMatiereQrcPending(matiere: any, corrections: any): boolean {
  * Lecture seule : aucune donnée n'est modifiée ni reconstruite.
  */
 export function getAttemptQrcQuestionIds(matiere: any, details: any): number[] | null {
-  const snap = Array.isArray(details?.questions) && details.questions.length
-    ? details.questions
-    : (Array.isArray(details?.snapshot?.questions) && details.snapshot.questions.length
-        ? details.snapshot.questions
-        : null);
+  const snap = getSnapshotQuestions(details);
   if (!snap) return null;
   const ids = snap
     .filter((q: any) => {
@@ -264,10 +304,93 @@ export function isMatiereQrcPendingForAttempt(matiere: any, details: any): boole
   const corr = details?.correctionsIA || details?.snapshot?.correctionsIA || {};
   const snapIds = getAttemptQrcQuestionIds(matiere, details);
   if (snapIds) {
-    return snapIds.some((id) => !isQrcCorrectionValidated(corr?.[id] ?? corr?.[String(id)] ?? corr?.[`Q${id}`]));
+    return snapIds
+      .filter((id) => !isQrcAnswerCertainlyEmpty(details, id))
+      .some((id) => !isQrcCorrectionValidated(corr?.[id] ?? corr?.[String(id)] ?? corr?.[`Q${id}`]));
   }
-  return isMatiereQrcPending(matiere, corr);
+  return isMatiereQrcPending(matiere, corr, details);
 }
+
+/**
+ * DOUBLES ÉCRITURES TECHNIQUES D'UN MÊME PASSAGE.
+ *
+ * L'application écrit parfois plusieurs lignes de résultat pour le même
+ * passage à quelques secondes d'intervalle. La validation manuelle du
+ * formateur n'est enregistrée que sur l'une d'elles : les autres gardent
+ * l'ancienne correction automatique et bloquent la note à tort.
+ *
+ * Cette fonction ne modifie AUCUNE donnée en base : elle fusionne en mémoire
+ * les corrections et les réponses des lignes d'un même passage
+ * (apprenant + examen + matière + fenêtre technique), en retenant toujours la
+ * validation manuelle existante — points et commentaires inchangés.
+ * Deux passages réellement distincts restent séparés.
+ */
+export function mergePassageSiblingRows<T extends Record<string, any>>(rows: T[] | null | undefined): T[] {
+  const list = (rows as any[]) || [];
+  if (list.length === 0) return [];
+  const asc = [...list].sort(
+    (a, b) => (new Date(a?.completed_at).getTime() || 0) - (new Date(b?.completed_at).getTime() || 0),
+  );
+  type Group = { rows: any[]; corrections: Record<string, any>; reponses: Record<string, any>; lastTime: number };
+  const byMatiere = new Map<string, Group[]>();
+
+  for (const r of asc) {
+    const key = `${r?.apprenant_id ?? ""}__${r?.quiz_id ?? ""}__${r?.matiere_id ?? ""}`;
+    const time = new Date(r?.completed_at).getTime() || 0;
+    const groups = byMatiere.get(key) || [];
+    const last = groups[groups.length - 1];
+    const details = r?.details || {};
+    const target = last && time - last.lastTime <= MEME_PASSAGE_MS
+      ? last
+      : (() => {
+          const g: Group = { rows: [], corrections: {}, reponses: {}, lastTime: time };
+          groups.push(g);
+          byMatiere.set(key, groups);
+          return g;
+        })();
+    target.lastTime = time;
+    target.rows.push(r);
+    Object.entries(details.reponses || {}).forEach(([k, v]) => {
+      if (isBlankAnswer(target.reponses[k]) && !isBlankAnswer(v)) target.reponses[k] = v;
+    });
+    Object.entries(details.correctionsIA || {}).forEach(([k, v]) => {
+      const current = target.corrections[k];
+      if (current == null || (!isQrcCorrectionValidated(current) && isQrcCorrectionValidated(v))) {
+        target.corrections[k] = v;
+      }
+    });
+  }
+
+  const merged = new Map<any, { corrections: Record<string, any>; reponses: Record<string, any> }>();
+  byMatiere.forEach((groups) => {
+    groups.forEach((g) => {
+      if (g.rows.length <= 1) return;
+      g.rows.forEach((r) => merged.set(r, { corrections: g.corrections, reponses: g.reponses }));
+    });
+  });
+
+  if (merged.size === 0) return list as T[];
+  return list.map((r) => {
+    const m = merged.get(r);
+    if (!m) return r;
+    const details = r?.details || {};
+    return {
+      ...r,
+      details: {
+        ...details,
+        reponses: (() => {
+          const own = { ...(details.reponses || {}) };
+          Object.entries(m.reponses || {}).forEach(([k, v]) => {
+            if (isBlankAnswer(own[k]) && !isBlankAnswer(v)) own[k] = v;
+          });
+          return own;
+        })(),
+        correctionsIA: { ...(details.correctionsIA || {}), ...m.corrections },
+      },
+    };
+  }) as T[];
+}
+
 
 
 

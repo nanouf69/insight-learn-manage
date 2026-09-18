@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { tousLesExamens, getPointsParQuestion, type ExamenBlanc, type Matiere } from "./examens-blancs-data";
 import { loadSavedExamens } from "./ExamensBlancsEditor";
-import { buildExamenMap, findMatiereWithFallback, getSourceQuestions, computeReussiForResult, isResultPlaceholder } from "./exam-helpers";
+import { buildExamenMap, findMatiereWithFallback, getSourceQuestions, computeReussiForResult, isResultPlaceholder, isQrcAnswerCertainlyEmpty } from "./exam-helpers";
 
 interface QrcItem {
   resultId: string;
@@ -320,7 +320,7 @@ function sortQrcItems(list: QrcItem[], sortOrder: "desc" | "asc"): QrcItem[] {
 const CorrectionQRCTab = () => {
   const [items, setItems] = useState<QrcItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"all" | "pending" | "done" | "today" | "today-pending">("today-pending");
+  const [filter, setFilter] = useState<"all" | "pending" | "done" | "today" | "today-pending">("pending");
   const [searchQuery, setSearchQuery] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingPoints, setEditingPoints] = useState(0);
@@ -636,6 +636,14 @@ const CorrectionQRCTab = () => {
           ? q.reponseEleve
           : (g.reponses?.[questionId] ?? g.reponses?.[String(questionId)] ?? "");
         const reponseEleveStr = safeStr(reponseEleveRaw);
+
+        // QRC réellement laissée vide par l'élève (snapshot du passage présent et
+        // réponse explicitement vide) : elle vaut 0 et ne remonte pas dans la file.
+        // Une réponse simplement absente (perte de synchronisation) reste à corriger.
+        if (!hasManualCorrection && !reponseEleveStr.trim() && g.questions
+          && isQrcAnswerCertainlyEmpty({ questions: g.questions, reponses: g.reponses }, questionId)) {
+          continue;
+        }
 
         const reponseCorrecteStr = q.reponseCorrecte
           ? safeStr(q.reponseCorrecte)
