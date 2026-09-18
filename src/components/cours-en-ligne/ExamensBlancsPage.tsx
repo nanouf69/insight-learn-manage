@@ -1136,7 +1136,7 @@ export default function ExamensBlancsPage({
     if (!apprenantId) return saveMatiereResultInner(args);
     const key = buildFinalizationKey({
       apprenantId,
-      quizType,
+      quizType: args.examen.id.startsWith("bilan-") ? "bilan" : "examen_blanc",
       quizId: args.examen.id,
       matiereId: args.resultat.matiereId,
       tentative: Math.max(currentTentativeRef.current || currentTentative || 1, 1),
