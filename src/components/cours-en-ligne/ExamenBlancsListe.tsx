@@ -606,9 +606,9 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
                     <div className="space-y-1">
                       {examen.matieres.map(m => {
                         const scoreData = findScoreForMatiere(scores, m);
-                        const qrcPendingMatiere = !!scoreData && isMatiereQrcPending(
+                        const qrcPendingMatiere = !!scoreData && isMatiereQrcPendingForAttempt(
                           m,
-                          (scoreData as any).correctionsIA || (scoreData as any).details?.correctionsIA || {},
+                          (scoreData as any).details ?? { correctionsIA: (scoreData as any).correctionsIA },
                         );
                         return (
                           <div key={m.id} className="flex justify-between text-xs text-muted-foreground">
