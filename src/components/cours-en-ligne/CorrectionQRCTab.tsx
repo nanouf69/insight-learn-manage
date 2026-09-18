@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { tousLesExamens, getPointsParQuestion, type ExamenBlanc, type Matiere } from "./examens-blancs-data";
 import { loadSavedExamens } from "./ExamensBlancsEditor";
-import { buildExamenMap, findMatiereWithFallback, getSourceQuestions } from "./exam-helpers";
+import { buildExamenMap, findMatiereWithFallback, getSourceQuestions, computeReussiForResult } from "./exam-helpers";
 
 interface QrcItem {
   resultId: string;
@@ -833,7 +833,18 @@ const CorrectionQRCTab = () => {
         score_obtenu: Math.min(Math.max(newScore, 0), scoreMax),
         score_max: scoreMax,
         note_sur_20: noteSur20,
-        reussi: noteSur20 >= 10,
+        // Même fonction de calcul que le résultat définitif (barème + seuil
+        // éliminatoire de la matière), jamais un simple « ≥ 10 ».
+        reussi:
+          computeReussiForResult(
+            {
+              score_obtenu: Math.min(Math.max(newScore, 0), scoreMax),
+              score_max: scoreMax,
+              matiere_nom: item.matiereNom,
+              details: { ...((existing as any)?.details || {}), questions, correctionsIA },
+            },
+            matiere,
+          ) ?? false,
         completed_at: (existing as any)?.details
           ? ((existing as any).completed_at || (autosaveRow as any).updated_at || new Date().toISOString())
           : ((autosaveRow as any).updated_at || new Date().toISOString()),
@@ -980,6 +991,20 @@ const CorrectionQRCTab = () => {
       .update({
         score_obtenu: protectedScore,
         note_sur_20: noteSur20,
+        // Le statut secondaire « réussi » est recalculé avec la même fonction
+        // que le résultat définitif. Tant qu'une QRC reste à corriger, il reste
+        // à false : aucun statut définitif n'est publié (l'affichage montre
+        // « En attente de correction »).
+        reussi:
+          computeReussiForResult(
+            {
+              score_obtenu: protectedScore,
+              score_max: scoreMax,
+              matiere_nom: item.matiereNom,
+              details: { ...details, correctionsIA },
+            },
+            matiere,
+          ) ?? false,
         details: {
           ...details,
           correctionsIA,

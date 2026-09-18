@@ -5,7 +5,7 @@ import { Trophy, TrendingUp, Clock, Target, BookOpen, ChevronDown, ChevronUp, Gr
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { MODULES_DATA } from "./formations-data";
-import { isQrcPendingCorrection } from "./exam-helpers";
+import { isQrcPendingCorrection, computeReussiForResult } from "./exam-helpers";
 
 interface QuizResult {
   id: string;
@@ -630,9 +630,17 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
                             ⏳ En attente de correction
                           </span>
                         ) : (
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${r.reussi ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"}`}>
-                            {r.reussi ? "✅ Réussi" : "❌ Échoué"}
-                          </span>
+                          (() => {
+                            // Statut calculé avec la MÊME règle que le résultat
+                            // définitif (barème + seuil éliminatoire), jamais le
+                            // champ brut enregistré.
+                            const admis = computeReussiForResult(r as any) ?? false;
+                            return (
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${admis ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"}`}>
+                                {admis ? "✅ Réussi" : "❌ Échoué"}
+                              </span>
+                            );
+                          })()
                         )}
                       </div>
                       <div className="md:col-span-1 text-center text-xs text-slate-500">
@@ -662,8 +670,11 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
           const examsWithFailed = Object.entries(examGroups)
             .map(([quizId, results]) => {
               const failed = results.filter(r => {
+                // Tant qu'une QRC reste à corriger : aucun statut définitif.
+                const admis = computeReussiForResult(r as any);
+                if (admis === null) return false;
                 const note = normalizeQuizNoteSur20(r);
-                return note != null && (!r.reussi || note < 10);
+                return note != null && (!admis || note < 10);
               });
               if (failed.length === 0) return null;
               const examTitle = results[0]?.quiz_titre?.replace(/\s*-\s*.*$/, '') || quizId;
