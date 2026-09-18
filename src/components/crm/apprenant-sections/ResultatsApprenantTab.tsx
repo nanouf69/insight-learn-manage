@@ -138,7 +138,18 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
               const isReussi = bilanExamen?.admisGlobal ?? moyenne >= 10;
               const bilan = bilans[quizId];
               // QRC non encore corrigées manuellement : pas de statut définitif.
-              const enAttenteCorrection = exam.matieres.some((m: any) => isQrcPendingCorrection(m?.details));
+              // Règle générale : le drapeau `qrc_pending_correction` n'existe que sur
+              // les nouveaux résultats → on vérifie AUSSI chaque QRC de la définition
+              // d'examen contre les corrections validées manuellement.
+              const matiereEnAttenteQrc = (m: any) => {
+                if (isQrcPendingCorrection(m?.details)) return true;
+                const def = examenDef?.matieres.find(
+                  (md: any) => md.id === m.matiere_id || md.nom === m.matiere_nom,
+                );
+                if (!def) return false;
+                return isMatiereQrcPending(def, m?.details?.correctionsIA || m?.correctionsIA || {});
+              };
+              const enAttenteCorrection = exam.matieres.some((m: any) => matiereEnAttenteQrc(m));
 
               return (
                 <div key={quizId} className="border rounded-lg p-4 space-y-3">
