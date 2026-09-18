@@ -92,6 +92,11 @@ export function SuiviFormationEnCours({ onNavigateToApprenant }: Props) {
           /1[7-9]:|2[0-3]:/.test(creneauxStr) ||
           (heureDeb && parseInt(heureDeb.split(":")[0], 10) >= 17);
         poleByAppr.set(sa.apprenant_id, isEvening ? "soiree" : "journee");
+        datesByAppr.set(sa.apprenant_id, {
+          debut: start,
+          fin: end,
+          horaires: isEvening ? "17h–21h" : "9h–12h / 13h–16h",
+        });
       }
 
       const actifs = presentiels.filter((a) => poleByAppr.has(a.id));
