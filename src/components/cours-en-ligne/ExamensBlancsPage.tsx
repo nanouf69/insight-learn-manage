@@ -33,6 +33,7 @@ import { computeMatiereScore, computeMatiereScoreForAttempt, resolveMatiereForSc
 import { excludeResultPlaceholders, mergePassageSiblingRows } from "./exam-helpers";
 import { buildFinalizationKey, runFinalizationOnce, resolveIdempotentTentative } from "@/lib/examFinalizationGuard";
 import { auditQrcCoherence, reportQrcIncoherence } from "@/lib/examPassageIdentity";
+import { recoverMatiereFromSavedAnswers, canFinalizeMatiere } from "@/lib/examMatiereRecovery";
 
 /**
  * Retrouve la version ORIGINALE (source statique, jamais éditée) d'une matière
