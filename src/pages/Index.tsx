@@ -312,17 +312,17 @@ const Index = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
               <StatCard 
                 title="Formations actives" 
-                value={12} 
-                change={8}
+                value={nbFormationsActives ?? "—"} 
                 icon={GraduationCap}
                 iconColor="primary"
+                subtitle="Sessions en cours aujourd'hui"
               />
               <StatCard 
                 title="Apprenants" 
-                value={156} 
-                change={12}
+                value={nbApprenants ?? "—"} 
                 icon={Users}
                 iconColor="accent"
+                subtitle="Dossiers actifs"
               />
               <StatCard 
                 title="Total entré (relevés)" 
