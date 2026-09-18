@@ -339,6 +339,24 @@ export function FinancementApprenantCard({ apprenant, onNavigateToComptabilite }
                 </Select>
               </div>
               <div className="space-y-1">
+                <Label>Formation concernée</Label>
+                <Select
+                  value={form.formation}
+                  onValueChange={(value) => setForm((f) => ({ ...f, formation: value }))}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Choisir la formation" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background z-50">
+                    {FORMATIONS_PAIEMENT.map((f) => (
+                      <SelectItem key={f} value={f}>
+                        {f}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
                 <Label htmlFor="paiement-notes">Note (facultatif)</Label>
                 <Input
                   id="paiement-notes"
