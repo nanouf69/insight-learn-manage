@@ -16,7 +16,7 @@ import {
   selectLatestAttemptRows,
 } from "./examens-blancs-utils";
 import { computeMoyenneExamen, computeMatiereScore, computeMatiereScoreForAttempt, resolveMatiereForScoring } from "./examens-blancs-scoring";
-import { isMatiereQrcPending } from "./exam-helpers";
+import { isMatiereQrcPendingForAttempt } from "./exam-helpers";
 import { toast } from "sonner";
 
 /**
@@ -506,8 +506,8 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
                           .filter((m) => {
                             const sd = findScoreForMatiere(scores, m);
                             if (!sd) return false;
-                            const corr = (sd as any).correctionsIA || (sd as any).details?.correctionsIA || {};
-                            return isMatiereQrcPending(m, corr);
+                            const det = (sd as any).details ?? { correctionsIA: (sd as any).correctionsIA };
+                            return isMatiereQrcPendingForAttempt(m, det);
                           })
                           .map((m) => m.id),
                       );
@@ -606,9 +606,9 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
                     <div className="space-y-1">
                       {examen.matieres.map(m => {
                         const scoreData = findScoreForMatiere(scores, m);
-                        const qrcPendingMatiere = !!scoreData && isMatiereQrcPending(
+                        const qrcPendingMatiere = !!scoreData && isMatiereQrcPendingForAttempt(
                           m,
-                          (scoreData as any).correctionsIA || (scoreData as any).details?.correctionsIA || {},
+                          (scoreData as any).details ?? { correctionsIA: (scoreData as any).correctionsIA },
                         );
                         return (
                           <div key={m.id} className="flex justify-between text-xs text-muted-foreground">

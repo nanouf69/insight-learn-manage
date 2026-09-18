@@ -8,7 +8,7 @@ import { EXAMENS_BLANCS_VTC, EXAMENS_BLANCS_TAXI, EXAMENS_BLANCS_TA, EXAMENS_BLA
 import { loadSavedExamens } from "@/components/cours-en-ligne/ExamensBlancsEditor";
 import { computeMoyenneExamen, computeMatiereScoreForAttempt } from "@/components/cours-en-ligne/examens-blancs-scoring";
 import { findScoreForMatiere, buildMatiereLookupKeys } from "@/components/cours-en-ligne/examens-blancs-utils";
-import { isQrcPendingCorrection, isMatiereQrcPending } from "@/components/cours-en-ligne/exam-helpers";
+import { isQrcPendingCorrection, isMatiereQrcPendingForAttempt } from "@/components/cours-en-ligne/exam-helpers";
 
 // Repli statique uniquement : la source de vérité affichée est la définition
 // enregistrée en base (identique à l'écran apprenant), chargée via loadSavedExamens().
@@ -147,7 +147,7 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
                   (md: any) => md.id === m.matiere_id || md.nom === m.matiere_nom,
                 );
                 if (!def) return false;
-                return isMatiereQrcPending(def, m?.details?.correctionsIA || m?.correctionsIA || {});
+                return isMatiereQrcPendingForAttempt(def, m?.details ?? { correctionsIA: m?.correctionsIA });
               };
               const enAttenteCorrection = exam.matieres.some((m: any) => matiereEnAttenteQrc(m));
 
