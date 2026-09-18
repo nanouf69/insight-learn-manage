@@ -72,6 +72,7 @@ export function SuiviFormationEnCours({ onNavigateToApprenant }: Props) {
       if (errSA) throw errSA;
 
       const poleByAppr = new Map<string, "journee" | "soiree">();
+      const datesByAppr = new Map<string, { debut: string; fin: string; horaires: string | null }>();
       for (const sa of (sessionAppr || []) as any[]) {
         const sess = sa.session;
         if (!sess) continue;
