@@ -39,6 +39,7 @@ import { CodesAccesEnvoyes } from "@/components/dashboard/CodesAccesEnvoyes";
 import { DashboardTasks } from "@/components/dashboard/DashboardTasks";
 import { FormationsBientotTerminees } from "@/components/dashboard/FormationsBientotTerminees";
 import { CreneauxRdvAdmin } from "@/components/dashboard/CreneauxRdvAdmin";
+import { SuiviFormationEnCours } from "@/components/dashboard/SuiviFormationEnCours";
 import { GraduationCap, Users, ArrowDownCircle, ArrowUpCircle, Menu, X, Send, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
