@@ -233,15 +233,10 @@ export function detectMatiereAnomalies(
     }
   });
 
-  // 12. Matière partagée non synchronisée
-  const empreinte = empreinteMatiere(matiere);
-  for (const autre of contexte.autresCopies ?? []) {
-    if (empreinteMatiere(autre.matiere) !== empreinte) {
-      anomalies.push(
-        `Matière partagée non synchronisée : contenu différent de la même matière dans ${autre.examTitre}`,
-      );
-    }
-  }
+  // 12. Matière partagée non synchronisée : masqué volontairement (demande Admin).
+  // Le mécanisme de synchronisation lui-même n'est pas modifié ; seule cette
+  // alerte d'affichage est retirée du contrôle des anomalies pour ne pas
+  // polluer le diagnostic avec les différences de contenu entre examens.
 
   return anomalies;
 }
