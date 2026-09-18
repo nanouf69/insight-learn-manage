@@ -30,7 +30,7 @@ import { EcranSelection } from "./ExamenBlancsListe";
 import { PassageMatiere, TransitionMatiere } from "./ExamenBlancsPassage";
 import { EcranResultats, RevisionFausses } from "./ExamenBlancsResultats";
 import { computeMatiereScore, computeMatiereScoreForAttempt, resolveMatiereForScoring, MATIERE_SNAPSHOT_VERSION } from "./examens-blancs-scoring";
-import { excludeResultPlaceholders } from "./exam-helpers";
+import { excludeResultPlaceholders, mergePassageSiblingRows } from "./exam-helpers";
 
 /**
  * Retrouve la version ORIGINALE (source statique, jamais éditée) d'une matière
@@ -249,7 +249,9 @@ export default function ExamensBlancsPage({
           .eq("quiz_type", quizType);
 
         if (!cancelled && !error) {
-          const rows = excludeResultPlaceholders(data as any[]);
+          // Même logique de passage que la file Correction QRC et l'écran récapitulatif :
+          // les écritures techniques d'un même passage réel sont lues ensemble (lecture seule).
+          const rows = mergePassageSiblingRows(excludeResultPlaceholders(data as any[]));
           const validMatieres = (found.matieres || []).filter((m): m is Matiere => Boolean(m));
           const required = Math.max(validMatieres.length || 1, 1);
 
@@ -475,7 +477,7 @@ export default function ExamensBlancsPage({
 
       if (error) { toast.error("Vérification de sécurité impossible. Réessayez."); return; }
 
-      const completedRows = excludeResultPlaceholders(existingResults as any[]);
+      const completedRows = mergePassageSiblingRows(excludeResultPlaceholders(existingResults as any[]));
       const validMatieres = (latestExamen.matieres || []).filter((m): m is Matiere => Boolean(m));
       const matieresTotal = Math.max(validMatieres.length || 1, 1);
 
@@ -729,7 +731,7 @@ export default function ExamensBlancsPage({
       .eq("quiz_id", examReference.id)
       .eq("quiz_type", quizType);
 
-    const rows = selectLatestAttemptRows(excludeResultPlaceholders(data as any[]));
+    const rows = selectLatestAttemptRows(mergePassageSiblingRows(excludeResultPlaceholders(data as any[])));
     const hasOnlyZeroScores = rows.length > 0 && rows.every((row: any) => toFiniteNumber(row?.score_obtenu, 0) <= 0);
 
     // Rebuild from stored responses if quiz_results is empty or only zero-score rows
