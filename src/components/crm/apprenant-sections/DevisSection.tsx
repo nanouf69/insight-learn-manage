@@ -1218,8 +1218,8 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
       const { data, error } = await supabase.from('factures').insert({
         numero,
         apprenant_id: apprenant.id,
-        client_nom: `${apprenant.civilite || ''} ${apprenant.prenom} ${apprenant.nom}`.trim(),
-        client_adresse: [apprenant.adresse, apprenant.code_postal, apprenant.ville].filter(Boolean).join(', '),
+        client_nom: devisClient.nomComplet,
+        client_adresse: [devisClient.adresse, devisClient.codePostal, devisClient.ville].filter(Boolean).join(', '),
         date_emission: dateDevis,
         date_echeance: dateValidite,
         montant_ht: totalHT,
