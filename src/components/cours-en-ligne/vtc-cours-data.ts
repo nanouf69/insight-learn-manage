@@ -9,15 +9,17 @@ import { REGLEMENTATION_SPECIFIQUE_VTC_EXERCICES } from "./exercices/reglementat
 import { SECURITE_ROUTIERE_EXERCICES } from "./exercices/securite-routiere-exercices-data";
 import SECURITE_ROUTIERE_2_ASSET from "@/assets/cours-vtc/C_Securite_Routiere_FINAL_2.pptx.asset.json";
 import SECURITE_ROUTIERE_3_ASSET from "@/assets/cours-vtc/SECURITE_ROUTIERE_3SUR3_v2.pptx.asset.json";
-import GESTION_2_ASSET from "@/assets/cours-vtc/GESTION_2SUR3_v9.pptx.asset.json";
-import GESTION_3_ASSET from "@/assets/cours-vtc/GESTION_3SUR3_v10.pptx.asset.json";
-import DEVELOPPEMENT_COMMERCIAL_ASSET from "@/assets/cours-vtc/Developpement_commercial_1SUR1_v7.pptx.asset.json";
+import GESTION_2_ASSET from "@/assets/cours-vtc/GESTION_2SUR3_v9-2.pptx.asset.json";
+import GESTION_3_ASSET from "@/assets/cours-vtc/GESTION_3SUR3_v11.pptx.asset.json";
+import DEVELOPPEMENT_COMMERCIAL_ASSET from "@/assets/cours-vtc/Developpement_commercial_1SUR1_v11.pptx.asset.json";
+import REGLEMENTATION_VTC_ASSET from "@/assets/cours-vtc/Reglementation_VTC_1SUR1_v5_1.pptx.asset.json";
 
 const SECURITE_ROUTIERE_2_PPTX = `${SECURITE_ROUTIERE_2_ASSET.url}?v=20260915-2100`;
 const SECURITE_ROUTIERE_3_PPTX = `${SECURITE_ROUTIERE_3_ASSET.url}?v=20260916-1300`;
-const GESTION_2_PPTX = `${GESTION_2_ASSET.url}?v=20260917-1210`;
-const GESTION_3_PPTX = `${GESTION_3_ASSET.url}?v=20260917-1210`;
-const DEVELOPPEMENT_COMMERCIAL_PPTX = `${DEVELOPPEMENT_COMMERCIAL_ASSET.url}?v=20260917-1413`;
+const GESTION_2_PPTX = `${GESTION_2_ASSET.url}?v=20260918-2109`;
+const GESTION_3_PPTX = `${GESTION_3_ASSET.url}?v=20260918-2109`;
+const DEVELOPPEMENT_COMMERCIAL_PPTX = `${DEVELOPPEMENT_COMMERCIAL_ASSET.url}?v=20260918-2109`;
+const REGLEMENTATION_VTC_PPTX = `${REGLEMENTATION_VTC_ASSET.url}?v=20260918-2109`;
 interface ContentItem {
   id: number;
   titre: string;
@@ -78,7 +80,7 @@ const MATIERE_A: ContentItem[] = [
     sousTitre: "Suite de la réglementation T3P",
     fichiers: [
       { nom: "PDF HD Partie 2", url: "/cours/vtc/A_T3P_2.pdf?v=20260819-1732" },
-      { nom: "PowerPoint Partie 2", url: "/cours/vtc/A_T3P_partie_2.pptx?v=20260908-1500" },
+      { nom: "PowerPoint Partie 2", url: "/cours/vtc/A_T3P_partie_2.pptx?v=20260918-2109" },
     ],
   },
 ];
@@ -235,6 +237,7 @@ const MATIERE_G: ContentItem[] = [
     sousTitre: "Réglementation spécifique aux VTC",
     fichiers: [
       { nom: "PDF HD", url: "/cours/vtc/F_Reglementation_Specifique_1.pdf?v=20260819-1732" },
+      { nom: "PowerPoint Réglementation VTC", url: REGLEMENTATION_VTC_PPTX },
     ],
   },
 ];
