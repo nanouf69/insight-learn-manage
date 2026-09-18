@@ -953,7 +953,7 @@ const ResultatsSessionPage = () => {
                 <Card><CardContent className="py-12 text-center text-muted-foreground">Aucun examen blanc passé pour cette session.</CardContent></Card>
               ) : (
                 Object.entries(examStats).map(([qId, s]) => {
-                  const isExpanded = expandedExam === qId;
+                  const isExpanded = !collapsedExams.has(qId);
                   const tauxReussite = s.nbCandidats > 0 ? Math.round((s.nbReussi / s.nbCandidats) * 100) : 0;
                   const matieresArr = Object.values(s.matieres).sort((a, b) => a.nom.localeCompare(b.nom));
 
