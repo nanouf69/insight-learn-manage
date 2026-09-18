@@ -164,7 +164,7 @@ function getCorrectionKey(apprenantId: string, quizId: string, matiereId: string
   return `${apprenantId}__${quizId}__${matiereId || ""}__${questionId}`;
 }
 
-function isAdminValidatedCorrection(correction: unknown): boolean {
+function isAdminValidatedCorrection(correction: unknown, completedAt?: string | null): boolean {
   if (!correction || typeof correction !== "object") return false;
   const correctionRecord = correction as Record<string, unknown>;
   if (correctionRecord.validatedByAdmin === true) return true;
@@ -174,7 +174,22 @@ function isAdminValidatedCorrection(correction: unknown): boolean {
     explication.includes("correction manuelle par l'administrateur") ||
     explication.includes("validation manuelle (masqué par admin)");
 
-  return correctionRecord.manuel === true && !!correctionRecord.correctedAt && hasLegacyAdminMarker;
+  if (correctionRecord.manuel === true && !!correctionRecord.correctedAt && hasLegacyAdminMarker) return true;
+
+  // PREUVE CERTAINE (lecture seule, aucun recalcul) : une correction portant le
+  // marqueur admin dont la date de correction est postérieure de plus d'une
+  // minute à la fin du passage ne peut pas provenir d'un calcul automatique
+  // (celui-ci s'écrit à la seconde du passage). Elle est donc reconnue comme
+  // déjà corrigée, sans que ses points ni son contenu soient modifiés.
+  if (hasLegacyAdminMarker && correctionRecord.correctedAt && completedAt) {
+    const corrected = new Date(safeStr(correctionRecord.correctedAt)).getTime();
+    const completed = new Date(completedAt).getTime();
+    if (Number.isFinite(corrected) && Number.isFinite(completed) && corrected > completed + 60_000) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 function buildQuestionListFromMatiere(matiere: Matiere, reponses: Record<string | number, any>): any[] {
@@ -287,8 +302,8 @@ const CorrectionQRCTab = () => {
     const filteredList = list.filter(item => {
       if (filter === "pending" && item.corrigeManuel) return false;
       if (filter === "done" && !item.corrigeManuel) return false;
-      if (filter === "today" && !isToday(item.completedAt)) return false;
-      if (filter === "today-pending" && (!isToday(item.completedAt) || item.corrigeManuel)) return false;
+      if (filter === "today" && !isAnsweredToday(item)) return false;
+      if (filter === "today-pending" && (!isAnsweredToday(item) || item.corrigeManuel)) return false;
       if (examenFilter !== "all") {
         const [cat, num] = examenFilter.split(":");
         if (getExamCategory(item.quizTitre, item.quizId, item.apprenantTypeMode).key !== cat) return false;
@@ -397,7 +412,7 @@ const CorrectionQRCTab = () => {
       const correctionsIA = ((r.details as any)?.correctionsIA || {}) as Record<string | number, any>;
       Object.entries(correctionsIA).forEach(([rawQuestionId, correction]) => {
         const questionId = Number(String(rawQuestionId).replace(/^Q/i, ""));
-        if (!Number.isFinite(questionId) || !isAdminValidatedCorrection(correction)) return;
+        if (!Number.isFinite(questionId) || !isAdminValidatedCorrection(correction, r.completed_at)) return;
         const correctionKey = getCorrectionKey(r.apprenant_id, r.quiz_id, r.matiere_id || "", questionId);
         manualCorrectionKeys.add(correctionKey);
         manualCorrectionsByKey.set(correctionKey, correction);
@@ -466,7 +481,7 @@ const CorrectionQRCTab = () => {
         const correction = manualCorrectionsByKey.get(qrcKey) ?? getCorrectionForQuestion(correctionsIA, questionId);
         // STRICT : seules les validations admin comptent, y compris l'ancien format
         // écrit avant l'ajout de `validatedByAdmin`.
-        const hasManualCorrection = manualCorrectionKeys.has(qrcKey) || isAdminValidatedCorrection(correction);
+        const hasManualCorrection = manualCorrectionKeys.has(qrcKey) || isAdminValidatedCorrection(correction, r.completed_at);
 
         const app = apprenantMap[r.apprenant_id] || { nom: "Inconnu", prenom: "", mode: "presentiel" as const };
 
@@ -965,7 +980,16 @@ const CorrectionQRCTab = () => {
     return dt.getFullYear() === now.getFullYear() && dt.getMonth() === now.getMonth() && dt.getDate() === now.getDate();
   };
 
-  const todayItems = items.filter(i => isToday(i.completedAt));
+  const isAnsweredToday = (item: QrcItem) =>
+    isToday(item.completedAt) && safeStr(item.reponseEleve).trim() !== "";
+
+
+
+  // « QRC répondues aujourd'hui » : uniquement les QRC uniques (déjà dédoublonnées
+  // par apprenant + examen + matière + question) dont la réponse élève est
+  // réellement non vide. Une réponse vide ou composée d'espaces n'est jamais
+  // comptée comme répondue.
+  const todayItems = items.filter(i => isAnsweredToday(i));
   const todayCount = todayItems.length;
   const todayPendingItems = todayItems.filter(i => !i.corrigeManuel);
   const todayPendingCount = todayPendingItems.length;
@@ -973,8 +997,8 @@ const CorrectionQRCTab = () => {
   const filtered = items.filter(item => {
     if (filter === "pending" && item.corrigeManuel) return false;
     if (filter === "done" && !item.corrigeManuel) return false;
-    if (filter === "today" && !isToday(item.completedAt)) return false;
-    if (filter === "today-pending" && (!isToday(item.completedAt) || item.corrigeManuel)) return false;
+    if (filter === "today" && !isAnsweredToday(item)) return false;
+    if (filter === "today-pending" && (!isAnsweredToday(item) || item.corrigeManuel)) return false;
     if (examenFilter !== "all") {
       const [cat, num] = examenFilter.split(":");
       if (getExamCategory(item.quizTitre, item.quizId, item.apprenantTypeMode).key !== cat) return false;
