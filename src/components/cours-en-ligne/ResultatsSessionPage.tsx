@@ -475,9 +475,11 @@ const ResultatsSessionPage = () => {
   }, [moduleAverages]);
 
   const selectedSession = sessions.find(s => s.id === selectedSessionId);
-  const sessionLabel = selectedSessionId === "e-learning"
-    ? "E-Learning"
-    : selectedSession?.nom || `Session du ${selectedSession?.date_debut || ""}`;
+  const sessionLabel = selectedSessionId === "all"
+    ? "Toutes les sessions"
+    : selectedSessionId === "e-learning"
+      ? "E-Learning"
+      : selectedSession?.nom || `Session du ${selectedSession?.date_debut || ""}`;
 
   const formatDate = (d: string) => {
     try { return new Date(d).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" }); }
