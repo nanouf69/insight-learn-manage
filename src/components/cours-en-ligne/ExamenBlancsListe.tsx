@@ -605,10 +605,16 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
                     <div className="space-y-1">
                       {examen.matieres.map(m => {
                         const scoreData = findScoreForMatiere(scores, m);
+                        const qrcPendingMatiere = !!scoreData && isMatiereQrcPending(
+                          m,
+                          (scoreData as any).correctionsIA || (scoreData as any).details?.correctionsIA || {},
+                        );
                         return (
                           <div key={m.id} className="flex justify-between text-xs text-muted-foreground">
                             <span className="truncate pr-2">{m.nom.split(" - ")[0]}</span>
-                            {isCompleted && scoreData ? (() => {
+                            {isCompleted && scoreData && qrcPendingMatiere ? (
+                              <span className="shrink-0 font-semibold text-amber-600">⏳ En attente</span>
+                            ) : isCompleted && scoreData ? (() => {
                               const score = computeMatiereScoreForAttempt(
                                 m,
                                 {
