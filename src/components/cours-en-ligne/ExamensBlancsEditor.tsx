@@ -1512,6 +1512,20 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
     const currentFingerprint = JSON.stringify(examens);
     if (currentFingerprint === lastSavedFingerprintRef.current) return;
 
+    // RÈGLE : un simple chargement / fusion / rafraîchissement / affichage ne
+    // doit JAMAIS réécrire le contenu en base. On n'enregistre que si le
+    // contenu réel d'au moins une matière a changé depuis le dernier état connu.
+    const hasRealMatiereChange = examens.some((ex) => {
+      const moduleId = getModuleIdForExamId(ex.id);
+      const known = lastSavedModuleFingerprintsRef.current[moduleId];
+      if (known === undefined) return false;
+      return known !== JSON.stringify(ex.matieres ?? []);
+    });
+    if (!hasRealMatiereChange) {
+      lastSavedFingerprintRef.current = currentFingerprint;
+      return;
+    }
+
     pendingExamSaveRef.current = examens;
 
     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
