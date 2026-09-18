@@ -30,6 +30,7 @@ import { EcranSelection } from "./ExamenBlancsListe";
 import { PassageMatiere, TransitionMatiere } from "./ExamenBlancsPassage";
 import { EcranResultats, RevisionFausses } from "./ExamenBlancsResultats";
 import { computeMatiereScore, computeMatiereScoreForAttempt, resolveMatiereForScoring, MATIERE_SNAPSHOT_VERSION } from "./examens-blancs-scoring";
+import { excludeResultPlaceholders } from "./exam-helpers";
 
 /**
  * Retrouve la version ORIGINALE (source statique, jamais éditée) d'une matière
@@ -248,7 +249,7 @@ export default function ExamensBlancsPage({
           .eq("quiz_type", quizType);
 
         if (!cancelled && !error) {
-          const rows = (data as any[]) || [];
+          const rows = excludeResultPlaceholders(data as any[]);
           const validMatieres = (found.matieres || []).filter((m): m is Matiere => Boolean(m));
           const required = Math.max(validMatieres.length || 1, 1);
 
@@ -449,11 +450,14 @@ export default function ExamensBlancsPage({
     if (apprenantId) {
       const { data: tRows } = await supabase
         .from("apprenant_quiz_results" as any)
-        .select("tentative")
+        .select("tentative, details")
         .eq("apprenant_id", apprenantId)
         .eq("quiz_id", latestExamen.id)
         .eq("quiz_type", quizType);
-      const maxT = ((tRows as any[]) || []).reduce((m, r) => Math.max(m, toFiniteNumber(r?.tentative, 1)), 0);
+      // Les lignes techniques « en attente de finalisation » ne comptent pas :
+      // sinon la vraie note partirait sur une tentative supplémentaire au lieu
+      // de remplacer la ligne à 0.
+      const maxT = excludeResultPlaceholders(tRows as any[]).reduce((m: number, r: any) => Math.max(m, toFiniteNumber(r?.tentative, 1)), 0);
       nextTentative = forceRetake ? Math.max(maxT + 1, 2) : Math.max(maxT, 1);
     }
     setCurrentTentative(nextTentative);
@@ -471,7 +475,7 @@ export default function ExamensBlancsPage({
 
       if (error) { toast.error("Vérification de sécurité impossible. Réessayez."); return; }
 
-      const completedRows = (existingResults as any[]) || [];
+      const completedRows = excludeResultPlaceholders(existingResults as any[]);
       const validMatieres = (latestExamen.matieres || []).filter((m): m is Matiere => Boolean(m));
       const matieresTotal = Math.max(validMatieres.length || 1, 1);
 
@@ -725,7 +729,7 @@ export default function ExamensBlancsPage({
       .eq("quiz_id", examReference.id)
       .eq("quiz_type", quizType);
 
-    const rows = selectLatestAttemptRows((data as any[]) || []);
+    const rows = selectLatestAttemptRows(excludeResultPlaceholders(data as any[]));
     const hasOnlyZeroScores = rows.length > 0 && rows.every((row: any) => toFiniteNumber(row?.score_obtenu, 0) <= 0);
 
     // Rebuild from stored responses if quiz_results is empty or only zero-score rows
