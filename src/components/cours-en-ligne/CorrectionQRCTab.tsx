@@ -507,9 +507,8 @@ const CorrectionQRCTab = () => {
           autoExplication = correction.explication || null;
         }
 
-        // If this is a retake and no manual correction yet, auto-score with keywords and mark as corrected
-        const isAutoScoredRetake = isRetake && !hasManualCorrection;
-
+        // Une QRC ne sort de la file QUE sur validation manuelle de l'administrateur,
+        // quelle que soit la tentative (1re, 2e, 3e...). Aucune notation automatique.
         qrcItems.push({
           resultId: r.id,
           source: "result",
@@ -526,18 +525,19 @@ const CorrectionQRCTab = () => {
           reponseEleve: reponseEleveStr,
           reponseCorrecte: reponseCorrecteStr,
           pointsMax: pts,
-          pointsObtenus: (hasManualCorrection || isAutoScoredRetake)
-            ? clampToHalfStep(hasManualCorrection ? (correction.pointsObtenus ?? 0) : autoScore, pts)
+          pointsObtenus: hasManualCorrection
+            ? clampToHalfStep(correction.pointsObtenus ?? 0, pts)
             : null,
-          corrigeManuel: !!(hasManualCorrection || isAutoScoredRetake),
+          corrigeManuel: hasManualCorrection,
           completedAt: r.completed_at,
           autoScore,
-          autoExplication: isAutoScoredRetake ? `Notation auto (repasse) : ${autoExplication || "mots-clés"}` : autoExplication,
+          autoExplication,
           noteSur20: r.note_sur_20 ?? null,
           scoreMatiereObtenu: r.score_obtenu ?? 0,
           scoreMatiereMax: r.score_max ?? 20,
-          commentaire: isAutoScoredRetake ? "Notation automatique par mots-clés (examen refait)" : (correction && typeof correction === "object" ? (correction.commentaire || "") : ""),
-          correctedAt: (hasManualCorrection || isAutoScoredRetake) ? (correction?.correctedAt || r.completed_at || null) : null,
+          commentaire: correction && typeof correction === "object" ? (correction.commentaire || "") : "",
+          correctedAt: hasManualCorrection ? (correction?.correctedAt || r.completed_at || null) : null,
+
           apprenantTypeMode: app.mode,
           questionSupprimee,
         });
