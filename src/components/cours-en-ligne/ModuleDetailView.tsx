@@ -8377,6 +8377,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                             apprenant_id: apprenantId,
                             user_id: userIdForSaveRef.current || undefined,
                             module_id: module.id,
+                            module_total_questions: totalQuestionsModuleRef.current,
                             exercice_id: exerciceId,
                             exercice_type: "quiz",
                             reponses: exoAnswers,
