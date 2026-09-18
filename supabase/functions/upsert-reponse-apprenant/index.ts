@@ -52,6 +52,7 @@ Deno.serve(async (req) => {
       completed,
       updated_at,
       events,
+      module_total_questions,
     } = body ?? {};
 
     if (!apprenant_id || !exercice_id || !exercice_type || typeof reponses !== "object" || Array.isArray(reponses)) {
