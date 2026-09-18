@@ -848,7 +848,7 @@ const CorrectionQRCTab = () => {
         .eq("quiz_id", item.quizId)
         .eq("quiz_type", item.quizType)
         .eq("matiere_id", item.matiereId)
-        .eq("tentative", 1)
+        .eq("tentative", item.tentative || 1)
         .maybeSingle();
 
       // FIX: merge correctement — les corrections existantes en base d'abord,
@@ -888,7 +888,7 @@ const CorrectionQRCTab = () => {
         quiz_titre: examen?.titre || item.quizTitre,
         matiere_id: item.matiereId,
         matiere_nom: item.matiereNom,
-        tentative: 1,
+        tentative: item.tentative || 1,
         score_obtenu: Math.min(Math.max(newScore, 0), scoreMax),
         score_max: scoreMax,
         note_sur_20: noteSur20,
@@ -942,7 +942,7 @@ const CorrectionQRCTab = () => {
           .eq("quiz_id", item.quizId)
           .eq("quiz_type", item.quizType)
           .eq("matiere_id", item.matiereId)
-          .eq("tentative", 1)
+          .eq("tentative", item.tentative || 1)
           .maybeSingle();
         if ((latest as any)?.id) {
           savedResultId = (latest as any).id;
@@ -1114,7 +1114,7 @@ const CorrectionQRCTab = () => {
   // Matières dont au moins une QRC reste à corriger : aucune note définitive
   // ne doit y être affichée (Admin comme apprenant).
   const pendingMatiereKeys = new Set(
-    pendingItems.map(i => `${i.apprenantId}__${i.quizId}__${i.matiereId || ""}`),
+    pendingItems.map(i => `${i.apprenantId}__${i.quizId}__${i.matiereId || ""}__T${i.tentative}`),
   );
 
 
@@ -1208,20 +1208,8 @@ const CorrectionQRCTab = () => {
         .map(([n, total]) => ({ value: `${k}:${n}`, label: `Examen Blanc N°${n} — ${examOptionsByCat[k].label}`, total })),
     }));
 
-  const sortedFiltered = [...filtered].sort((a, b) => {
-    // PRIORITÉ : présentiel d'abord (toujours, indépendamment du tri date)
-    const prioA = a.apprenantTypeMode === "presentiel" ? 0 : 1;
-    const prioB = b.apprenantTypeMode === "presentiel" ? 0 : 1;
-    if (prioA !== prioB) return prioA - prioB;
-    const dateA = new Date(a.completedAt).getTime() || 0;
-    const dateB = new Date(b.completedAt).getTime() || 0;
-    if (dateA !== dateB) return sortOrder === "desc" ? dateB - dateA : dateA - dateB;
-    const numA = parseInt((a.quizTitre.match(/N°(\d+)/)?.[1]) || "0", 10);
-    const numB = parseInt((b.quizTitre.match(/N°(\d+)/)?.[1]) || "0", 10);
-    if (numA !== numB) return numA - numB;
-    if (a.matiereId !== b.matiereId) return a.matiereId.localeCompare(b.matiereId);
-    return a.questionId - b.questionId;
-  });
+  // apprenant → examen → tentative → matière → n° de question croissant
+  const sortedFiltered = sortQrcItems(filtered, sortOrder);
 
   // Reset index when filter/search/sort changes
   useEffect(() => {
