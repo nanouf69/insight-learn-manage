@@ -39,7 +39,7 @@ function estRempli(type: string, d: any): boolean {
     const sign = typeof d.signature === "string" && d.signature.length > 100;
     return elig > 0 && comp > 0 && d.engagementAccepted === true && sign;
   }
-  // projet professionnel
+  // projet professionnel — mêmes champs obligatoires que le formulaire
   const req = [
     "statutActuel",
     "motivations",
@@ -49,7 +49,20 @@ function estRempli(type: string, d: any): boolean {
     "besoinsAdaptation",
     "accesOrdinateur",
   ];
-  return req.every((k) => String(d[k] ?? "").trim() !== "");
+  const isTaxi = String(d.formType || "").toUpperCase() === "TAXI";
+  const extra = isTaxi
+    ? [
+        "diffTaxiVtc",
+        "modeExerciceTaxi",
+        "demandeADS",
+        "zoneExercice",
+        "activitesCompl",
+        "connaitZone",
+        "conduiteUrbaine",
+        "connaitSites",
+      ]
+    : ["modeExercice", "commentConnu", "consulteProgram", "saitExamen"];
+  return [...req, ...extra].every((k) => String(d[k] ?? "").trim() !== "");
 }
 
 Deno.serve(async (req) => {
