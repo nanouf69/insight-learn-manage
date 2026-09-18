@@ -1179,14 +1179,14 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
         body: {
           action: 'send',
           userEmail: 'contact@ftransport.fr',
-          to: apprenant.email,
+          to: destinataire,
           subject: emailContent.subject,
           body: bodyHtml,
           apprenantId: apprenant.id,
         }
       });
       if (error) throw error;
-      toast.success(`Email de devis envoyé à ${apprenant.email} avec lien de signature`);
+      toast.success(`Email de devis envoyé à ${destinataire} avec lien de signature`);
       setShowEmailPreview(false);
     } catch (err: any) {
       console.error(err);
