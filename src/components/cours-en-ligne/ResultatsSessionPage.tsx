@@ -537,6 +537,7 @@ const ResultatsSessionPage = () => {
               <SelectValue placeholder="Sélectionner une session" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="all">📋 Toutes les sessions (tous les apprenants)</SelectItem>
               <SelectItem value="e-learning">🖥️ E-Learning (tous)</SelectItem>
               {sessions.map(s => {
                 const now = new Date();
