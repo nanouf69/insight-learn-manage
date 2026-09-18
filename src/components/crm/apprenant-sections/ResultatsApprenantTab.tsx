@@ -8,7 +8,7 @@ import { EXAMENS_BLANCS_VTC, EXAMENS_BLANCS_TAXI, EXAMENS_BLANCS_TA, EXAMENS_BLA
 import { loadSavedExamens } from "@/components/cours-en-ligne/ExamensBlancsEditor";
 import { computeMoyenneExamen, computeMatiereScoreForAttempt } from "@/components/cours-en-ligne/examens-blancs-scoring";
 import { findScoreForMatiere, buildMatiereLookupKeys } from "@/components/cours-en-ligne/examens-blancs-utils";
-import { isQrcPendingCorrection } from "@/components/cours-en-ligne/exam-helpers";
+import { isQrcPendingCorrection, isMatiereQrcPending } from "@/components/cours-en-ligne/exam-helpers";
 
 // Repli statique uniquement : la source de vérité affichée est la définition
 // enregistrée en base (identique à l'écran apprenant), chargée via loadSavedExamens().
@@ -186,7 +186,7 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
                         ? computeMatiereScoreForAttempt(matiereDef, m as any)
                         : null;
                       const note = recomputed?.noteSur20 ?? (Number(m.note_sur_20) || 0);
-                      const matiereEnAttente = isQrcPendingCorrection(m?.details);
+                      const matiereEnAttente = matiereEnAttenteQrc(m);
                       return (
                         <div key={i} className="flex justify-between text-xs border rounded px-2 py-1">
                           <span className="truncate pr-1">{(m.matiere_nom || m.matiere_id || "?").split(" - ")[0]}</span>
