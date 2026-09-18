@@ -1017,6 +1017,19 @@ export default function ExamensBlancsPage({
     const quizType = examen.id.startsWith("bilan-") ? "bilan" : "examen_blanc";
     const noteSur20 = normalizeNoteSur20(safeScoreObtenu, safeScoreMax);
 
+    // GARDE-FOU : jamais de note artificielle à 0. Si aucune réponse n'est
+    // réellement présente, on n'écrit AUCUN résultat : les réponses déjà
+    // sauvegardées restent intactes et la reprise pourra reconstruire la note.
+    const recovery = recoverMatiereFromSavedAnswers({
+      matiere,
+      reponses: resultat.reponses as any,
+      correctionsIA: frozenCorrections,
+    });
+    if (!canFinalizeMatiere(recovery) && safeScoreObtenu === 0) {
+      console.warn("[ExamSubmission][EB] Finalisation refusée : aucune réponse enregistrée pour", resultat.matiereId);
+      return false;
+    }
+
     // QRC : tant que l'administrateur n'a pas validé les QRC, la matière reste
     // « En attente de correction » (pas de statut Réussi/Échoué définitif).
     const hasQrc = questionsSafe.some((q: any) => String(q?.type || "").toUpperCase() === "QRC");
