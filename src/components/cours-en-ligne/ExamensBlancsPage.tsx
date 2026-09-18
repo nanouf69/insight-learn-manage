@@ -33,6 +33,7 @@ import { computeMatiereScore, computeMatiereScoreForAttempt, resolveMatiereForSc
 import { excludeResultPlaceholders, mergePassageSiblingRows } from "./exam-helpers";
 import { buildFinalizationKey, runFinalizationOnce, resolveIdempotentTentative } from "@/lib/examFinalizationGuard";
 import { auditQrcCoherence, reportQrcIncoherence } from "@/lib/examPassageIdentity";
+import { recoverMatiereFromSavedAnswers, canFinalizeMatiere } from "@/lib/examMatiereRecovery";
 
 /**
  * Retrouve la version ORIGINALE (source statique, jamais éditée) d'une matière
@@ -1016,6 +1017,19 @@ export default function ExamensBlancsPage({
     const safeScoreObtenu = safeScoreMax > 0 ? clamp(toFiniteNumber(resultat.noteObtenue, 0), 0, safeScoreMax) : Math.max(toFiniteNumber(resultat.noteObtenue, 0), 0);
     const quizType = examen.id.startsWith("bilan-") ? "bilan" : "examen_blanc";
     const noteSur20 = normalizeNoteSur20(safeScoreObtenu, safeScoreMax);
+
+    // GARDE-FOU : jamais de note artificielle à 0. Si aucune réponse n'est
+    // réellement présente, on n'écrit AUCUN résultat : les réponses déjà
+    // sauvegardées restent intactes et la reprise pourra reconstruire la note.
+    const recovery = recoverMatiereFromSavedAnswers({
+      matiere: { ...matiere, questions: questionsSafe } as any,
+      reponses: resultat.reponses as any,
+      correctionsIA: frozenCorrections,
+    });
+    if (!canFinalizeMatiere(recovery) && safeScoreObtenu === 0) {
+      console.warn("[ExamSubmission][EB] Finalisation refusée : aucune réponse enregistrée pour", resultat.matiereId);
+      return false;
+    }
 
     // QRC : tant que l'administrateur n'a pas validé les QRC, la matière reste
     // « En attente de correction » (pas de statut Réussi/Échoué définitif).
