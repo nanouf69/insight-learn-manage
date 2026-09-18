@@ -855,8 +855,43 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
   const [showEmailPreview, setShowEmailPreview] = useState(false);
   const [sendingEmail, setSendingEmail] = useState(false);
   const [sendingDevisEmail, setSendingDevisEmail] = useState(false);
+  const [financeurMode, setFinanceurMode] = useState<'apprenant' | 'organisation'>('apprenant');
+  const [organismes, setOrganismes] = useState<any[]>([]);
+  const [organismeId, setOrganismeId] = useState<string>("");
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const lastPos = useRef<{ x: number; y: number } | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from('organismes')
+        .select('id, nom, siret, siret_complet, numero_tva, adresse, code_postal, ville, telephone, email')
+        .order('nom');
+      setOrganismes(data ?? []);
+    })();
+  }, []);
+
+  const organismeSelectionne = organismes.find(o => o.id === organismeId) || null;
+  const isOrgFinanceur = financeurMode === 'organisation' && !!organismeSelectionne;
+
+  // Coordonnées « client » utilisées dans le devis selon le financeur choisi
+  const devisClient = isOrgFinanceur
+    ? {
+        nomComplet: organismeSelectionne.nom || '',
+        adresse: organismeSelectionne.adresse || '',
+        codePostal: organismeSelectionne.code_postal || '',
+        ville: organismeSelectionne.ville || '',
+        telephone: organismeSelectionne.telephone || '',
+        email: organismeSelectionne.email || '',
+      }
+    : {
+        nomComplet: `${apprenant.civilite || ''} ${apprenant.prenom || ''} ${apprenant.nom || ''}`.trim(),
+        adresse: apprenant.adresse || '',
+        codePostal: apprenant.code_postal || '',
+        ville: apprenant.ville || '',
+        telephone: apprenant.telephone || '',
+        email: apprenant.email || '',
+      };
 
   useEffect(() => {
     if (!selectedTemplateConfig) return;
@@ -991,13 +1026,13 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
       const arrayBuffer = await response.arrayBuffer();
 
       const sharedPayload = {
-        client_nom: `${apprenant.civilite || ''} ${apprenant.prenom || ''} ${apprenant.nom || ''}`.trim(),
-        client_adresse1: apprenant.adresse || '',
-        client_codep: apprenant.code_postal || '',
-        client_ville: apprenant.ville || '',
-        client_tel: apprenant.telephone || '',
-        client_mail: apprenant.email || '',
-        client_email: apprenant.email || '',
+        client_nom: devisClient.nomComplet,
+        client_adresse1: devisClient.adresse,
+        client_codep: devisClient.codePostal,
+        client_ville: devisClient.ville,
+        client_tel: devisClient.telephone,
+        client_mail: devisClient.email,
+        client_email: devisClient.email,
         devis_date: formatDateForDevis(dateDevis),
         devis_ligne_produit_date1: formatDateForDevis(apprenant.date_formation_catalogue || apprenant.date_debut_formation),
         montant: String(selectedTemplatePrix),
@@ -1060,8 +1095,9 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
   };
 
   const sendDevisEmail = async () => {
-    if (!apprenant.email) {
-      toast.error("Aucun email renseigné pour cet apprenant");
+    const destinataire = devisClient.email || apprenant.email;
+    if (!destinataire) {
+      toast.error(isOrgFinanceur ? "Aucun email renseigné pour cette organisation" : "Aucun email renseigné pour cet apprenant");
       return;
     }
     if (!validateBeforeSend()) return;
@@ -1082,13 +1118,13 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
       const arrayBuffer = await response.arrayBuffer();
 
       const sharedPayload = {
-        client_nom: `${apprenant.civilite || ''} ${apprenant.prenom || ''} ${apprenant.nom || ''}`.trim(),
-        client_adresse1: apprenant.adresse || '',
-        client_codep: apprenant.code_postal || '',
-        client_ville: apprenant.ville || '',
-        client_tel: apprenant.telephone || '',
-        client_mail: apprenant.email || '',
-        client_email: apprenant.email || '',
+        client_nom: devisClient.nomComplet,
+        client_adresse1: devisClient.adresse,
+        client_codep: devisClient.codePostal,
+        client_ville: devisClient.ville,
+        client_tel: devisClient.telephone,
+        client_mail: devisClient.email,
+        client_email: devisClient.email,
         devis_date: formatDateForDevis(dateDevis),
         devis_ligne_produit_date1: formatDateForDevis(apprenant.date_formation_catalogue || apprenant.date_debut_formation),
         montant: String(selectedTemplatePrix),
@@ -1143,14 +1179,14 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
         body: {
           action: 'send',
           userEmail: 'contact@ftransport.fr',
-          to: apprenant.email,
+          to: destinataire,
           subject: emailContent.subject,
           body: bodyHtml,
           apprenantId: apprenant.id,
         }
       });
       if (error) throw error;
-      toast.success(`Email de devis envoyé à ${apprenant.email} avec lien de signature`);
+      toast.success(`Email de devis envoyé à ${destinataire} avec lien de signature`);
       setShowEmailPreview(false);
     } catch (err: any) {
       console.error(err);
@@ -1182,8 +1218,8 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
       const { data, error } = await supabase.from('factures').insert({
         numero,
         apprenant_id: apprenant.id,
-        client_nom: `${apprenant.civilite || ''} ${apprenant.prenom} ${apprenant.nom}`.trim(),
-        client_adresse: [apprenant.adresse, apprenant.code_postal, apprenant.ville].filter(Boolean).join(', '),
+        client_nom: devisClient.nomComplet,
+        client_adresse: [devisClient.adresse, devisClient.codePostal, devisClient.ville].filter(Boolean).join(', '),
         date_emission: dateDevis,
         date_echeance: dateValidite,
         montant_ht: totalHT,
@@ -1229,8 +1265,18 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
           email: apprenant.email,
           dateNaissance: apprenant.date_naissance,
         },
-        typeFinancement: apprenant.financeur_nom ? 'organisme' : 'personnel',
-        financeur: apprenant.financeur_nom ? {
+        typeFinancement: isOrgFinanceur || apprenant.financeur_nom ? 'organisme' : 'personnel',
+        financeur: isOrgFinanceur ? {
+          nom: organismeSelectionne.nom,
+          type: 'organisation',
+          adresse: organismeSelectionne.adresse,
+          codePostal: organismeSelectionne.code_postal,
+          ville: organismeSelectionne.ville,
+          siret: organismeSelectionne.siret_complet || organismeSelectionne.siret,
+          email: organismeSelectionne.email,
+          telephone: organismeSelectionne.telephone,
+          contactNom: undefined,
+        } : apprenant.financeur_nom ? {
           nom: apprenant.financeur_nom,
           type: apprenant.financeur_type,
           adresse: apprenant.financeur_adresse,
@@ -1277,8 +1323,9 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
 
 
   const envoyerDevisParEmail = async () => {
-    if (!apprenant.email) {
-      toast.error("L'apprenant n'a pas d'adresse email.");
+    const destinataire = devisClient.email || apprenant.email;
+    if (!destinataire) {
+      toast.error(isOrgFinanceur ? "Cette organisation n'a pas d'adresse email." : "L'apprenant n'a pas d'adresse email.");
       return;
     }
     if (!validateBeforeSend()) return;
@@ -1327,7 +1374,7 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
         body: {
           action: 'send',
           userEmail: 'contact@ftransport.fr',
-          to: apprenant.email,
+          to: destinataire,
           subject: em.subject,
           body: bodyHtml,
           apprenantId: apprenant.id,
@@ -1335,7 +1382,7 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
         },
       });
       if (error) throw error;
-      toast.success(`Devis envoyé par email à ${apprenant.email}`);
+      toast.success(`Devis envoyé par email à ${destinataire}`);
     } catch (err: any) {
       console.error(err);
       toast.error("Erreur envoi devis : " + (err.message || ""));
@@ -1355,6 +1402,70 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
         </TabsList>
 
         <TabsContent value="devis" className="space-y-6 mt-4">
+          {/* ═══ CHOIX DU FINANCEUR ═══ */}
+          <Card className="border-primary/30">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <FileText className="w-5 h-5 text-primary" />
+                Choix du financeur
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex flex-col gap-2">
+                <button
+                  type="button"
+                  onClick={() => { setFinanceurMode('apprenant'); setOrganismeId(""); }}
+                  className={`w-full text-left px-4 py-3 rounded-lg border-2 text-sm font-medium transition-all ${financeurMode === 'apprenant' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/40'}`}
+                >
+                  L'apprenant lui-même
+                  <span className="block text-xs font-normal text-muted-foreground">
+                    {`${apprenant.prenom || ''} ${apprenant.nom || ''}`.trim()}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFinanceurMode('organisation')}
+                  className={`w-full text-left px-4 py-3 rounded-lg border-2 text-sm font-medium transition-all ${financeurMode === 'organisation' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/40'}`}
+                >
+                  Une organisation
+                  <span className="block text-xs font-normal text-muted-foreground">
+                    Entreprise ou organisme enregistré dans la base
+                  </span>
+                </button>
+              </div>
+
+              {financeurMode === 'organisation' && (
+                <div className="space-y-2">
+                  <Label>Organisation financeur</Label>
+                  <Select value={organismeId} onValueChange={setOrganismeId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner une organisation..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {organismes.map(o => (
+                        <SelectItem key={o.id} value={o.id}>{o.nom}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {organismes.length === 0 && (
+                    <p className="text-xs text-muted-foreground">Aucune organisation enregistrée pour le moment.</p>
+                  )}
+                </div>
+              )}
+
+              <div className="rounded-lg border bg-muted/30 p-3 text-sm space-y-0.5">
+                <p className="font-semibold">{devisClient.nomComplet || '—'}</p>
+                <p className="text-muted-foreground">
+                  {[devisClient.adresse, devisClient.codePostal, devisClient.ville].filter(Boolean).join(', ') || '—'}
+                </p>
+                <p className="text-muted-foreground">{[devisClient.telephone, devisClient.email].filter(Boolean).join(' · ') || '—'}</p>
+                <p className="text-xs text-muted-foreground pt-1">
+                  Ces coordonnées seront utilisées comme client du devis et comme destinataire de l'email.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* ═══ SECTION 1 : DEVIS DOCX TEMPLATES ═══ */}
           <Card className="border-primary/30">
             <CardHeader>
