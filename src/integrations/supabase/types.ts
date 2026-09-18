@@ -3639,6 +3639,7 @@ export type Database = {
           exercice_type: string
           id: string
           reponses: Json
+          reponses_meta: Json
           score: number | null
           status: string
           submitted_at: string | null
@@ -3646,6 +3647,7 @@ export type Database = {
           total_questions: number | null
           updated_at: string
           user_id: string
+          write_seq: number
         }
         Insert: {
           apprenant_id: string
@@ -3656,6 +3658,7 @@ export type Database = {
           exercice_type?: string
           id?: string
           reponses?: Json
+          reponses_meta?: Json
           score?: number | null
           status?: string
           submitted_at?: string | null
@@ -3663,6 +3666,7 @@ export type Database = {
           total_questions?: number | null
           updated_at?: string
           user_id: string
+          write_seq?: number
         }
         Update: {
           apprenant_id?: string
@@ -3673,6 +3677,7 @@ export type Database = {
           exercice_type?: string
           id?: string
           reponses?: Json
+          reponses_meta?: Json
           score?: number | null
           status?: string
           submitted_at?: string | null
@@ -3680,6 +3685,7 @@ export type Database = {
           total_questions?: number | null
           updated_at?: string
           user_id?: string
+          write_seq?: number
         }
         Relationships: [
           {
@@ -4337,6 +4343,30 @@ export type Database = {
           stored_updated_at: string
         }[]
       }
+      persist_answer_batch_v2: {
+        Args: {
+          p_apprenant_id: string
+          p_base_seq: number
+          p_completed: boolean
+          p_events: Json
+          p_exercice_id: string
+          p_exercice_type: string
+          p_module_id: number
+          p_reponses: Json
+          p_score: number
+          p_user_id: string
+        }
+        Returns: {
+          accepted_event_ids: string[]
+          frozen: boolean
+          saved: boolean
+          skipped_questions: string[]
+          stored_reponses: Json
+          stored_tentative: number
+          stored_updated_at: string
+          stored_write_seq: number
+        }[]
+      }
       reset_quiz_attempt: {
         Args: { _apprenant_id: string; _exercice_id: string }
         Returns: {
@@ -4348,6 +4378,7 @@ export type Database = {
           exercice_type: string
           id: string
           reponses: Json
+          reponses_meta: Json
           score: number | null
           status: string
           submitted_at: string | null
@@ -4355,6 +4386,7 @@ export type Database = {
           total_questions: number | null
           updated_at: string
           user_id: string
+          write_seq: number
         }
         SetofOptions: {
           from: "*"
@@ -4577,6 +4609,7 @@ export type Database = {
           exercice_type: string
           id: string
           reponses: Json
+          reponses_meta: Json
           score: number | null
           status: string
           submitted_at: string | null
@@ -4584,6 +4617,7 @@ export type Database = {
           total_questions: number | null
           updated_at: string
           user_id: string
+          write_seq: number
         }
         SetofOptions: {
           from: "*"

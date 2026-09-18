@@ -51,6 +51,7 @@ Deno.serve(async (req) => {
       score,
       completed,
       updated_at,
+      base_seq,
       events,
       module_total_questions,
     } = body ?? {};
@@ -89,7 +90,15 @@ Deno.serve(async (req) => {
     }
 
     const safeEvents = Array.isArray(events) ? events.slice(0, 500) : [];
-    const { data, error } = await supabase.rpc("persist_answer_batch", {
+    // ORDRE DES ÉCRITURES DÉCIDÉ PAR LE SERVEUR.
+    // `base_seq` = dernier numéro d'écriture connu du client au moment où la
+    // réponse a été composée. Le serveur refuse toute valeur plus ancienne que
+    // ce qui est déjà enregistré pour la même question, et fige une tentative
+    // déjà terminée. L'horloge de l'appareil n'intervient plus (`updated_at`
+    // n'est conservé que pour compatibilité des anciens envois).
+    void updated_at;
+    const safeBaseSeq = Number.isFinite(Number(base_seq)) ? Math.max(0, Math.floor(Number(base_seq))) : 0;
+    const { data, error } = await supabase.rpc("persist_answer_batch_v2", {
       p_apprenant_id: apprenant_id,
       p_user_id: effectiveUserId,
       p_module_id: typeof module_id === "number" ? module_id : null,
@@ -98,7 +107,7 @@ Deno.serve(async (req) => {
       p_reponses: reponses ?? {},
       p_completed: Boolean(completed),
       p_score: score ?? null,
-      p_updated_at: updated_at ?? new Date().toISOString(),
+      p_base_seq: safeBaseSeq,
       p_events: safeEvents,
     });
 
@@ -142,6 +151,9 @@ Deno.serve(async (req) => {
       exercice_id,
       tentative: confirmation.stored_tentative,
       updated_at: confirmation.stored_updated_at,
+      write_seq: confirmation.stored_write_seq ?? 0,
+      frozen: confirmation.frozen === true,
+      skipped_questions: confirmation.skipped_questions ?? [],
       accepted_event_ids: confirmation.accepted_event_ids ?? [],
       auto_validation: autoValidation,
     }), {

@@ -7,6 +7,7 @@
  * the components use the same logic (single source of truth).
  */
 import type { ExamenBlanc, Matiere, Question } from "./examens-blancs-data";
+import { computeAdmisForMatiere } from "./examens-blancs-utils";
 
 // ─── From CorrectionQRCTab.tsx:167-172 ───────────────────────────────────
 
@@ -270,3 +271,49 @@ export function isMatiereQrcPendingForAttempt(matiere: any, details: any): boole
 
 
 
+
+// ─── Statut réussi/échoué : une seule et même règle partout ───────────────
+
+/**
+ * Seuil éliminatoire de la matière, exprimé /20 (6/20 partout, 4/20 Anglais).
+ * Priorité : matière courante → snapshot figé de la tentative → repli par nom.
+ */
+export function getNoteEliminatoireSur20(
+  details: any,
+  matiereNom?: string | null,
+  matiere?: any,
+): number {
+  const fromMatiere = Number(matiere?.noteEliminatoire);
+  if (Number.isFinite(fromMatiere) && fromMatiere > 0) return fromMatiere;
+  const fromSnapshot = Number(details?.snapshot?.noteEliminatoire);
+  if (Number.isFinite(fromSnapshot) && fromSnapshot > 0) return fromSnapshot;
+  const nom = String(matiereNom ?? details?.snapshot?.nom ?? "").toLowerCase();
+  return nom.includes("anglais") ? 4 : 6;
+}
+
+/**
+ * Statut réussi/échoué d'un résultat de matière, calculé avec EXACTEMENT la
+ * même fonction que le résultat définitif (`computeAdmisForMatiere`), donc avec
+ * le barème de la matière et son seuil éliminatoire — jamais un simple ≥ 10.
+ * Renvoie `null` tant qu'une QRC reste à corriger : aucun statut définitif.
+ */
+export function computeReussiForResult(
+  row: {
+    score_obtenu?: unknown;
+    score_max?: unknown;
+    matiere_nom?: string | null;
+    reussi?: unknown;
+    details?: any;
+  },
+  matiere?: any,
+): boolean | null {
+  if (isQrcPendingCorrection(row?.details)) return null;
+  const seuil = getNoteEliminatoireSur20(row?.details, row?.matiere_nom, matiere);
+  return computeAdmisForMatiere(
+    row?.score_obtenu,
+    row?.score_max,
+    seuil,
+    matiere?.noteSur,
+    Boolean(row?.reussi),
+  );
+}
