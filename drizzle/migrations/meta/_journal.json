@@ -162,6 +162,13 @@
       "when": 1789746099958,
       "tag": "0022_add_formation_to_apprenant_paiements",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1789751213852,
+      "tag": "0023_bilan_sync_from_cours",
+      "breakpoints": true
     }
   ]
 }
