@@ -23,6 +23,44 @@
  */
 
 const QUEUE_KEY = "answer_save_queue_v1";
+/**
+ * Dernier numéro d'écriture SERVEUR connu, par (apprenant, exercice).
+ * C'est le serveur — jamais l'horloge de l'appareil — qui décide de l'ordre des
+ * écritures : une réponse composée hors connexion emporte le numéro qu'elle
+ * connaissait, et le serveur refuse de lui laisser écraser une réponse plus
+ * récente enregistrée entre-temps (autre onglet, autre appareil).
+ */
+const SEQ_KEY = "answer_write_seq_v1";
+
+const seqKeyFor = (apprenantId: string, exerciceId: string) => `${apprenantId}__${exerciceId}`;
+
+function readSeqMap(): Record<string, number> {
+  try {
+    const raw = localStorage.getItem(SEQ_KEY);
+    const parsed = raw ? JSON.parse(raw) : null;
+    return parsed && typeof parsed === "object" ? (parsed as Record<string, number>) : {};
+  } catch {
+    return {};
+  }
+}
+
+function getKnownWriteSeq(apprenantId: string, exerciceId: string): number {
+  const value = readSeqMap()[seqKeyFor(apprenantId, exerciceId)];
+  return Number.isFinite(value) ? Number(value) : 0;
+}
+
+function rememberWriteSeq(apprenantId: string, exerciceId: string, seq: number): void {
+  if (!Number.isFinite(seq)) return;
+  try {
+    const map = readSeqMap();
+    const key = seqKeyFor(apprenantId, exerciceId);
+    if ((map[key] ?? 0) >= seq) return;
+    map[key] = seq;
+    localStorage.setItem(SEQ_KEY, JSON.stringify(map));
+  } catch {
+    /* le serveur reste de toute façon l'arbitre : au pire, base_seq reste bas */
+  }
+}
 // POINT 7 — AUCUNE suppression silencieuse : il n'existe plus de plafond du
 // nombre de réponses en attente. Si le stockage du navigateur sature, la file
 // bascule en mémoire et une alerte est remontée : rien n'est jamais effacé
@@ -54,6 +92,8 @@ export interface AnswerSavePayload {
   completed?: boolean;
   score?: number | null;
   updated_at?: string;
+  /** Dernier numéro d'écriture serveur connu au moment de la saisie. */
+  base_seq?: number;
   events?: AnswerJournalEvent[];
 }
 
@@ -326,7 +366,21 @@ async function sendItem(item: QueueItem): Promise<SendResult> {
     });
     if (res.ok) {
       const confirmation = await res.json().catch(() => null);
-      return confirmation?.success === true && confirmation?.confirmed === true ? "ok" : "retry";
+      if (confirmation?.success === true && confirmation?.confirmed === true) {
+        rememberWriteSeq(
+          item.payload.apprenant_id,
+          item.payload.exercice_id,
+          Number(confirmation.write_seq ?? 0),
+        );
+        if (confirmation.frozen === true) {
+          console.warn(
+            "[answerPersistence] Tentative déjà terminée : réponse en attente non appliquée (journalisée)",
+            item.payload.exercice_id,
+          );
+        }
+        return "ok";
+      }
+      return "retry";
     }
     const text = await res.text();
     console.error("[answerPersistence] Échec sauvegarde", res.status, text);
@@ -415,6 +469,7 @@ export function enqueueAnswerSave(payload: AnswerSavePayload): void {
     payload: {
       ...payload,
       updated_at: payload.updated_at ?? new Date().toISOString(),
+      base_seq: payload.base_seq ?? getKnownWriteSeq(payload.apprenant_id, payload.exercice_id),
       events: (payload.events ?? []).map((event) => ({
         ...event,
         event_id: event.event_id ?? makeEventId(),
@@ -440,6 +495,13 @@ export function enqueueAnswerSave(payload: AnswerSavePayload): void {
   if (sameExoIdx >= 0) {
     const previous = queue[sameExoIdx];
     item.payload.events = [...(previous.payload.events ?? []), ...(item.payload.events ?? [])];
+    // Compactage : on conserve le numéro d'écriture le PLUS ANCIEN des deux.
+    // Prudence volontaire — si une écriture plus récente est arrivée côté
+    // serveur entre-temps, elle ne sera pas écrasée.
+    item.payload.base_seq = Math.min(
+      previous.payload.base_seq ?? 0,
+      item.payload.base_seq ?? 0,
+    );
     queue.splice(sameExoIdx, 1);
   }
   queue.push(item);
