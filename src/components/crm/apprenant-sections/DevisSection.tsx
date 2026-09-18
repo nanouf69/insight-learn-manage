@@ -1117,13 +1117,13 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
       const arrayBuffer = await response.arrayBuffer();
 
       const sharedPayload = {
-        client_nom: `${apprenant.civilite || ''} ${apprenant.prenom || ''} ${apprenant.nom || ''}`.trim(),
-        client_adresse1: apprenant.adresse || '',
-        client_codep: apprenant.code_postal || '',
-        client_ville: apprenant.ville || '',
-        client_tel: apprenant.telephone || '',
-        client_mail: apprenant.email || '',
-        client_email: apprenant.email || '',
+        client_nom: devisClient.nomComplet,
+        client_adresse1: devisClient.adresse,
+        client_codep: devisClient.codePostal,
+        client_ville: devisClient.ville,
+        client_tel: devisClient.telephone,
+        client_mail: devisClient.email,
+        client_email: devisClient.email,
         devis_date: formatDateForDevis(dateDevis),
         devis_ligne_produit_date1: formatDateForDevis(apprenant.date_formation_catalogue || apprenant.date_debut_formation),
         montant: String(selectedTemplatePrix),
