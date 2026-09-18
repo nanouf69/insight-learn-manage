@@ -614,7 +614,7 @@ const CorrectionQRCTab = () => {
 
         const pts = getPointsParQuestion(effectiveMatiereId, "QRC", perQuestionMatiere || undefined);
 
-        const validation = findValidation(g.apprenantId, g.quizId, effectiveMatiereId, g.tentative, questionId);
+        const validation = findValidationForGroup(g, effectiveMatiereId, questionId);
         const correction = validation ?? getCorrectionForQuestion(g.corrections, questionId);
         const hasManualCorrection = !!validation || isAdminValidatedCorrection(correction, g.completedAt);
 
@@ -726,7 +726,8 @@ const CorrectionQRCTab = () => {
       const reponses = row.reponses || {};
       const app = apprenantMap[row.apprenant_id] || { nom: "Inconnu", prenom: "", mode: "presentiel" as const };
       const examen = examenMap[quizId];
-      const tentative = derniereTentative.get(`${row.apprenant_id}__${quizId}__${matiereId}`) ?? 1;
+      const passage = dernierPassage.get(`${row.apprenant_id}__${quizId}__${matiereId}`);
+      const tentative = passage?.tentative ?? 1;
 
       for (const q of questions) {
         if (!q || String(q.type).toUpperCase() !== "QRC") continue;
@@ -734,7 +735,7 @@ const CorrectionQRCTab = () => {
         if (!reponseEleveStr.trim()) continue;
         const qrcKey = attemptKey(row.apprenant_id, quizId, matiereId, tentative, q.id);
         if (seenQrcKeys.has(qrcKey)) continue;
-        if (findValidation(row.apprenant_id, quizId, matiereId, tentative, q.id)) continue;
+        if (passage && findValidationForGroup(passage, matiereId, q.id)) continue;
         seenQrcKeys.add(qrcKey);
 
         const pts = getPointsParQuestion(matiereId, "QRC", matiere);
