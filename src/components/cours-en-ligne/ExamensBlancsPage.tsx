@@ -1121,6 +1121,24 @@ export default function ExamensBlancsPage({
     return saved;
   };
 
+  /**
+   * Garde-fou anti double écriture : deux finalisations simultanées de la même
+   * matière (double clic, réessai, deux requêtes en parallèle) partagent la
+   * même promesse et ne produisent donc qu'un seul enregistrement.
+   */
+  const saveMatiereResult = async (args: { examen: ExamenBlanc; matiere: Matiere; resultat: ResultatMatiere; dureeSecondes: number }) => {
+    if (!apprenantId) return saveMatiereResultInner(args);
+    const key = buildFinalizationKey({
+      apprenantId,
+      quizType,
+      quizId: args.examen.id,
+      matiereId: args.resultat.matiereId,
+      tentative: Math.max(currentTentativeRef.current || currentTentative || 1, 1),
+    });
+    return runFinalizationOnce(key, () => saveMatiereResultInner(args));
+  };
+
+
   const handleTerminerMatiere = async (reponses: Reponses) => {
     try {
       if (!examenChoisi) return;
