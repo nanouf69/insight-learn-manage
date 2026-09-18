@@ -317,3 +317,22 @@ export function computeReussiForResult(
     Boolean(row?.reussi),
   );
 }
+
+/**
+ * Ligne technique créée par le filet de sécurité de la base lorsqu'une matière
+ * a été marquée terminée sans que la note ait pu être écrite (« Sauvegarde en
+ * attente »). Elle porte un score 0 qui n'est PAS une note : elle ne doit
+ * jamais être affichée ni comptée comme un résultat.
+ */
+export function isResultPlaceholder(row: any): boolean {
+  const d = (row && (row as any).details) || {};
+  if (!d || typeof d !== "object") return false;
+  const questions = (d as any).questions;
+  const hasQuestions = Array.isArray(questions) && questions.length > 0;
+  return Boolean((d as any).auto_created) && Boolean((d as any).needs_recompute) && !hasQuestions;
+}
+
+/** Retire les lignes techniques « en attente de finalisation » d'une liste de résultats. */
+export function excludeResultPlaceholders<T>(rows: T[] | null | undefined): T[] {
+  return ((rows as any[]) || []).filter((r) => !isResultPlaceholder(r)) as T[];
+}
