@@ -6,7 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 import { Loader2, Send, Video, CheckCircle2, XCircle, History } from "lucide-react";
+import { AccuseReceptionBadge, findAccuse, type AccuseReception } from "@/components/emails/AccuseReceptionBadge";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -90,6 +92,22 @@ export function TeamsLinkSender({ open, onOpenChange, sessionId, recipients }: T
     enabled: open,
   });
 
+  const { data: accuses = [] } = useQuery<AccuseReception[]>({
+    queryKey: ["accuses-lien-teams", sessionId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("email_accuses")
+        .select("id, apprenant_id, destinataire, sujet, statut, sent_at, delivered_at, opened_at, last_opened_at, open_count, failed_at, erreur")
+        .eq("sujet", SUBJECT)
+        .order("sent_at", { ascending: false })
+        .limit(1000);
+      if (error) throw error;
+      return (data ?? []) as AccuseReception[];
+    },
+    enabled: open,
+    refetchInterval: open ? 30000 : false,
+  });
+
   const linkValid = isValidUrl(lien);
   const canSend = linkValid && selected.length > 0 && !sending;
 
@@ -150,6 +168,7 @@ export function TeamsLinkSender({ open, onOpenChange, sessionId, recipients }: T
         created_by: userData?.user?.id ?? null,
       });
       await queryClient.invalidateQueries({ queryKey: ["envois-lien-teams", sessionId] });
+      await queryClient.invalidateQueries({ queryKey: ["accuses-lien-teams", sessionId] });
     } catch (histErr) {
       console.warn("Historique d'envoi non enregistré:", histErr);
     }
@@ -301,12 +320,33 @@ export function TeamsLinkSender({ open, onOpenChange, sessionId, recipients }: T
                     </div>
                     <p className="truncate text-muted-foreground">{h.lien}</p>
                     <div className="flex items-end justify-between gap-2">
-                      <p className="text-muted-foreground">
-                        {(Array.isArray(h.destinataires) ? h.destinataires : [])
-                          .map((d: any) => d?.nom || d?.email)
-                          .filter(Boolean)
-                          .join(", ")}
-                      </p>
+                      <div className="min-w-0 space-y-1.5">
+                        {(Array.isArray(h.destinataires) ? h.destinataires : []).map((d: any, index: number) => {
+                          const email = String(d?.email ?? "").trim().toLowerCase();
+                          const accuse = findAccuse(
+                            accuses.filter((item) => item.destinataire.trim().toLowerCase() === email),
+                            SUBJECT,
+                            h.created_at,
+                          );
+
+                          return (
+                            <div key={`${email}-${index}`} className="flex flex-wrap items-center gap-1.5">
+                              <span className="text-muted-foreground">{d?.nom || d?.email}</span>
+                              {d?.statut === "echec" ? (
+                                <Badge variant="destructive" className="h-5 py-0 text-[10px]">
+                                  Échec de l’envoi
+                                </Badge>
+                              ) : accuse ? (
+                                <AccuseReceptionBadge accuse={accuse} />
+                              ) : (
+                                <Badge variant="secondary" className="h-5 py-0 text-[10px]">
+                                  Envoyé — suivi indisponible
+                                </Badge>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
                       <Button
                         type="button"
                         variant="outline"
