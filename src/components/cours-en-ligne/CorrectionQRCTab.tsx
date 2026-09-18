@@ -363,10 +363,22 @@ const CorrectionQRCTab = () => {
     if (Object.keys(examenMap).length === 0) return;
     if (!opts?.silent) setLoading(true);
 
+    // Session admin : on s'assure d'avoir un jeton valide AVANT toute requête,
+    // sinon un 401 ferait croire à tort qu'il n'y a aucune QRC à corriger.
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData?.session) {
+      const { data: refreshed } = await supabase.auth.refreshSession();
+      if (!refreshed?.session) {
+        setLoadError("Session administrateur expirée : impossible de charger les QRC. Reconnectez-vous puis cliquez sur Réactualiser.");
+        if (!opts?.silent) setLoading(false);
+        return;
+      }
+    }
+
     // Fetch all exam_blanc results that have QRC questions (Supabase client is capped at 1000 rows per request)
     const pageSize = 1000;
     const results: any[] = [];
-    for (let from = 0; ; from += pageSize) {
+    for (let from = 0, retried = false; ; from += pageSize) {
       const { data, error } = await supabase
         .from("apprenant_quiz_results")
         .select("id, apprenant_id, quiz_id, quiz_type, quiz_titre, matiere_id, matiere_nom, details, completed_at, score_obtenu, score_max, note_sur_20")
@@ -375,13 +387,21 @@ const CorrectionQRCTab = () => {
         .range(from, from + pageSize - 1);
 
       if (error) {
+        // Une seule tentative de renouvellement de session, puis erreur explicite.
+        if (!retried) {
+          retried = true;
+          const { data: refreshed } = await supabase.auth.refreshSession();
+          if (refreshed?.session) { from -= pageSize; continue; }
+        }
         console.error("Erreur chargement résultats:", error);
+        setLoadError(`Chargement impossible : ${error.message}. Aucune QRC n'a pu être lue (ce n'est pas un écran vide).`);
         if (!opts?.silent) setLoading(false);
         return;
       }
       results.push(...(data || []));
       if (!data || data.length < pageSize) break;
     }
+    setLoadError(null);
 
     // Fetch apprenant names
     const apprenantIds = [...new Set(results.map((r: any) => r.apprenant_id))];
