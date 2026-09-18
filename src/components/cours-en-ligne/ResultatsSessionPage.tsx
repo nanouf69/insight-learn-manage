@@ -130,7 +130,16 @@ const ResultatsSessionPage = () => {
       let apprenantIds: string[] = [];
       let apprenantList: ApprenantRow[] = [];
 
-      if (selectedSessionId === "e-learning") {
+      if (selectedSessionId === "all") {
+        const { data: allApprenants } = await supabase
+          .from("apprenants")
+          .select("id, nom, prenom, formation_choisie")
+          .is("deleted_at", null)
+          .order("nom")
+          .limit(5000);
+        apprenantList = (allApprenants as ApprenantRow[]) || [];
+        apprenantIds = apprenantList.map(a => a.id);
+      } else if (selectedSessionId === "e-learning") {
         const { data: eLearningApprenants } = await supabase
           .from("apprenants")
           .select("id, nom, prenom, formation_choisie")
