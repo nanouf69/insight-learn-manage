@@ -1323,8 +1323,9 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
 
 
   const envoyerDevisParEmail = async () => {
-    if (!apprenant.email) {
-      toast.error("L'apprenant n'a pas d'adresse email.");
+    const destinataire = devisClient.email || apprenant.email;
+    if (!destinataire) {
+      toast.error(isOrgFinanceur ? "Cette organisation n'a pas d'adresse email." : "L'apprenant n'a pas d'adresse email.");
       return;
     }
     if (!validateBeforeSend()) return;
