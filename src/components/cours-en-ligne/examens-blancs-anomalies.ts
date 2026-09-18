@@ -6,6 +6,7 @@
 // Elles renvoient uniquement une liste de messages à afficher.
 
 import { getPointsParQuestion, type ExamenBlanc, type Matiere, type Question } from "./examens-blancs-data";
+import { canSyncExams } from "./examens-blancs-sync-scope";
 
 export const BAREME_CIBLE = 20;
 
@@ -252,12 +253,30 @@ export interface ExamenAnomalies {
   totalAnomalie: string | null;
 }
 
-/** Nombre total de questions attendu pour un examen blanc complet (7 matières). */
+/** Nombre total de questions attendu pour un examen blanc COMPLET (7 matières). */
 export const TOTAL_QUESTIONS_ATTENDU = 107;
 
 /**
+ * Nombre de questions attendu pour CET examen : somme des formats officiels de
+ * ses propres matières. Un examen TA/VA (matières spécifiques uniquement) n'est
+ * donc jamais comparé au total d'un examen complet.
+ */
+export function getTotalQuestionsAttendu(examen: ExamenBlanc): number | null {
+  const matieres = examen?.matieres ?? [];
+  if (matieres.length === 0) return null;
+  let total = 0;
+  for (const matiere of matieres) {
+    const format = matiere ? FORMATS_OFFICIELS[matiere.id] : undefined;
+    if (!format) return null; // format inconnu → pas de contrôle de total
+    total += format.qcm + format.qrc;
+  }
+  return total;
+}
+
+/**
  * Analyse un examen entier. `tousLesExamensCharges` sert uniquement à repérer
- * les copies partagées d'une même matière (comparaison en lecture seule).
+ * les copies partagées d'une même matière (comparaison en lecture seule) —
+ * uniquement parmi les examens du MÊME NUMÉRO.
  */
 export function detectExamenAnomalies(
   examen: ExamenBlanc,
@@ -274,7 +293,7 @@ export function detectExamenAnomalies(
     ).length;
     if (!matiere) continue;
     const autresCopies = tousLesExamensCharges
-      .filter((ex) => ex && ex.id !== examen.id)
+      .filter((ex) => ex && ex.id !== examen.id && canSyncExams(ex.id, examen.id))
       .flatMap((ex) =>
         (ex.matieres ?? [])
           .filter((m) => m && m.id === matiere.id)
@@ -288,16 +307,19 @@ export function detectExamenAnomalies(
     }
   }
 
-  // Contrôle du nombre TOTAL de questions (lecture seule)
+  // Contrôle du nombre TOTAL de questions (lecture seule), selon le format
+  // réellement attendu pour CE type d'examen (complet, TA, VA, bilan…).
   let totalAnomalie: string | null = null;
-  if (totalQuestions !== TOTAL_QUESTIONS_ATTENDU) {
-    const ecart = TOTAL_QUESTIONS_ATTENDU - totalQuestions;
+  const attendu = getTotalQuestionsAttendu(examen);
+  if (attendu !== null && totalQuestions !== attendu) {
+    const ecart = attendu - totalQuestions;
     totalAnomalie =
       ecart > 0
-        ? `Nombre total incorrect : ${totalQuestions}/${TOTAL_QUESTIONS_ATTENDU} questions — il manque ${ecart} question${ecart > 1 ? "s" : ""}`
-        : `Nombre total incorrect : ${totalQuestions}/${TOTAL_QUESTIONS_ATTENDU} questions — ${-ecart} question${-ecart > 1 ? "s" : ""} en trop`;
+        ? `Nombre total incorrect : ${totalQuestions}/${attendu} questions — il manque ${ecart} question${ecart > 1 ? "s" : ""}`
+        : `Nombre total incorrect : ${totalQuestions}/${attendu} questions — ${-ecart} question${-ecart > 1 ? "s" : ""} en trop`;
     total += 1;
   }
 
   return { parMatiere, matieresEnAnomalie, total, totalQuestions, totalAnomalie };
 }
+

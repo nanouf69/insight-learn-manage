@@ -1712,6 +1712,54 @@ export type Database = {
         }
         Relationships: []
       }
+      examens_blancs_audit_log: {
+        Row: {
+          action: string
+          ancienne_valeur: Json | null
+          author_email: string | null
+          author_user_id: string | null
+          created_at: string
+          exam_id: string
+          filiere: string | null
+          id: string
+          matiere_id: string | null
+          matiere_nom: string | null
+          nouvelle_valeur: Json | null
+          numero_examen: number | null
+          question_id: string | null
+        }
+        Insert: {
+          action: string
+          ancienne_valeur?: Json | null
+          author_email?: string | null
+          author_user_id?: string | null
+          created_at?: string
+          exam_id: string
+          filiere?: string | null
+          id?: string
+          matiere_id?: string | null
+          matiere_nom?: string | null
+          nouvelle_valeur?: Json | null
+          numero_examen?: number | null
+          question_id?: string | null
+        }
+        Update: {
+          action?: string
+          ancienne_valeur?: Json | null
+          author_email?: string | null
+          author_user_id?: string | null
+          created_at?: string
+          exam_id?: string
+          filiere?: string | null
+          id?: string
+          matiere_id?: string | null
+          matiere_nom?: string | null
+          nouvelle_valeur?: Json | null
+          numero_examen?: number | null
+          question_id?: string | null
+        }
+        Relationships: []
+      }
       facture_electronique_evenements: {
         Row: {
           created_at: string

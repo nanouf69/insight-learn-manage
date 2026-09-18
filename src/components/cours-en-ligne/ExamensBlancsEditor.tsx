@@ -21,6 +21,8 @@ import {
   applyFournisseurOverridesToExamens,
   FOURNISSEUR_QUIZ_TO_EXAM,
 } from "./fournisseur-exam-overrides";
+import { getMatiereSyncKey, getExamIdentity } from "./examens-blancs-sync-scope";
+import { diffMatiereForAudit, recordExamAuditEntries, type ExamAuditEntry } from "./examens-blancs-audit";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { RichText } from "@/lib/richText";
@@ -275,14 +277,17 @@ export function reconcileSharedMatieres(
   examens: ExamenBlanc[],
   savedAtByExamIdx: Record<number, number>,
 ): void {
+  // La clé de partage inclut OBLIGATOIREMENT le numéro d'examen :
+  // VTC N°1 / TAXI N°1 / VA N°1 se partagent, jamais N°1 avec N°2…N°6.
   const best = new Map<string, { rank: MatiereRank; matiere: Matiere }>();
   examens.forEach((ex, idx) => {
     const moduleTs = savedAtByExamIdx[idx] ?? 0;
     (ex.matieres ?? []).forEach((m) => {
       if (!m?.id) return;
+      const key = getMatiereSyncKey(ex.id, m.id);
       const rank = getMatiereRank(m, moduleTs);
-      const current = best.get(m.id);
-      if (!current || isRankNewer(rank, current.rank)) best.set(m.id, { rank, matiere: m });
+      const current = best.get(key);
+      if (!current || isRankNewer(rank, current.rank)) best.set(key, { rank, matiere: m });
     });
   });
 
@@ -290,13 +295,14 @@ export function reconcileSharedMatieres(
     const moduleTs = savedAtByExamIdx[idx] ?? 0;
     ex.matieres = (ex.matieres ?? []).map((m) => {
       if (!m?.id) return m;
-      const winner = best.get(m.id);
+      const winner = best.get(getMatiereSyncKey(ex.id, m.id));
       if (!winner || winner.matiere === m) return m;
       if (!isRankNewer(winner.rank, getMatiereRank(m, moduleTs))) return m;
       return JSON.parse(JSON.stringify(winner.matiere)) as Matiere;
     });
   });
 }
+
 
 
 // Load saved exam overrides from DB — NO CACHE, always fresh from DB
@@ -1314,11 +1320,14 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
       // avant écriture, pour que les doublons ne soient jamais réenregistrés.
       normalizeQcmChoiceLetters(synced);
 
-      // RÈGLE MATIÈRE PARTAGÉE : une matière modifiée (ajout, suppression ou
-      // correction d'une question/réponse) est répercutée sur TOUS les examens
-      // et bilans qui utilisent exactement la même matière (même `id`).
-      // Les matières différentes ne sont jamais touchées.
-      const changedMatieresById = new Map<string, Matiere>();
+      // RÈGLE MATIÈRE PARTAGÉE — LIÉE AU NUMÉRO D'EXAMEN :
+      // une matière modifiée (ajout, suppression, modification de question,
+      // QCM↔QRC, proposition, bonne réponse, explication, image, ordre) est
+      // répercutée UNIQUEMENT sur les examens du MÊME NUMÉRO qui utilisent la
+      // même matière (VTC N°x ↔ TAXI N°x, VTC N°x ↔ VA N°x, TAXI N°x ↔ TA N°x).
+      // Jamais vers un autre numéro d'examen (N°1 ≠ N°2 ≠ … ≠ N°6).
+      const changedMatieresByKey = new Map<string, Matiere>();
+      const auditEntries: ExamAuditEntry[] = [];
       synced.forEach((ex) => {
         const moduleId = getModuleIdForExamId(ex.id);
         const previousFingerprint = lastSavedModuleFingerprintsRef.current[moduleId];
@@ -1335,28 +1344,34 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
           if (!m?.id) return;
           const before = previousMatieres.find((pm) => pm?.id === m.id);
           if (!before || !isSameMatiereContent(before, m)) {
-            changedMatieresById.set(m.id, m);
+            changedMatieresByKey.set(getMatiereSyncKey(ex.id, m.id), m);
+            try {
+              auditEntries.push(...diffMatiereForAudit(ex.id, before, m));
+            } catch {}
           }
         });
       });
 
-      if (changedMatieresById.size > 0) {
+      if (changedMatieresByKey.size > 0) {
         // Horodatage de la modification RÉELLE de la matière : c'est cette date
         // (et non la date d'enregistrement de l'examen) qui détermine ensuite la
-        // version de référence partout où la matière est utilisée.
+        // version de référence dans le MÊME groupe de synchronisation.
         const editedAt = new Date().toISOString();
-        changedMatieresById.forEach((m) => {
+        changedMatieresByKey.forEach((m) => {
           (m as any)._editedAt = editedAt;
         });
         synced.forEach((ex) => {
           ex.matieres = (ex.matieres ?? []).map((m) => {
             if (!m?.id) return m;
-            const updated = changedMatieresById.get(m.id);
+            const updated = changedMatieresByKey.get(getMatiereSyncKey(ex.id, m.id));
             if (!updated || updated === m) return m;
             return JSON.parse(JSON.stringify(updated)) as Matiere;
           });
         });
+        // Journal des modifications Admin (best effort, jamais bloquant).
+        void recordExamAuditEntries(auditEntries);
       }
+
 
 
       const now = new Date().toISOString();

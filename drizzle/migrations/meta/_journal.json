@@ -134,6 +134,13 @@
       "when": 1789566166328,
       "tag": "0018_exam_timer_clock_timestamp",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1789737562400,
+      "tag": "0019_create_examens_blancs_audit_log",
+      "breakpoints": true
     }
   ]
 }
