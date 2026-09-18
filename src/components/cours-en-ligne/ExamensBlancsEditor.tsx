@@ -1075,7 +1075,7 @@ function MatiereEditor({
                       setEditingTexte(true);
                     }}
                   >
-                    <Edit2 className="w-3 h-3" />
+                    <Pencil className="w-3 h-3" />
                     Modifier le texte
                   </Button>
                 )}
