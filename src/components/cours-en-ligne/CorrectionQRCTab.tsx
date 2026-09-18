@@ -1173,6 +1173,25 @@ const CorrectionQRCTab = () => {
         </div>
       </div>
 
+      {loadError && (
+        <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-4">
+          <p className="font-semibold text-destructive">Les QRC n'ont pas pu être chargées</p>
+          <p className="text-sm mt-1">{loadError}</p>
+          <p className="text-sm mt-1">Les compteurs affichés ci-dessus ne sont pas fiables tant que cette erreur persiste.</p>
+        </div>
+      )}
+
+      {integrityAlert && (
+        <div className="rounded-lg border border-amber-400 bg-amber-50 p-4">
+          <p className="font-semibold text-amber-900">
+            Contrôle automatique : {integrityAlert.count} QRC répondue(s) ({integrityAlert.apprenants} apprenant(s)) ne remontent pas dans la file de correction
+          </p>
+          <p className="text-sm text-amber-900 mt-1">
+            Alerte informative uniquement : aucune réponse, note ou correction n'a été modifiée.
+          </p>
+        </div>
+      )}
+
       {/* Sélecteur d'examen blanc (menu déroulant) */}
       <div className="flex items-center gap-3 flex-wrap">
         <span className="text-sm font-medium text-muted-foreground">Examen :</span>
