@@ -369,7 +369,7 @@ const ResultatsSessionPage = () => {
         nbEchec,
         moyenneNote: nbCandidats > 0 ? Math.round((totalNote / nbCandidats) * 10) / 10 : 0,
         matieres,
-        apprenantDetails: apprenantDetails.sort((a, b) => a.nom.localeCompare(b.nom)),
+        apprenantDetails: apprenantDetails.sort((a, b) => b.note - a.note || a.nom.localeCompare(b.nom)),
       };
     }
     return stats;
@@ -1013,7 +1013,7 @@ const ResultatsSessionPage = () => {
                                             {isMatiereExpanded ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" /> : <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />}
                                             <span className="text-sm font-medium truncate">{m.nom}</span>
                                           </div>
-                                          <span className={`text-sm font-bold ${getNoteColor(mAvg)}`}>{mAvg}/20</span>
+                                          <span className={`text-sm font-bold ${getNoteColor(mAvg)}`}>Moy. {mAvg}/20</span>
                                         </div>
                                         <Progress value={mTaux} className="h-2" />
                                         <div className="flex items-center justify-between text-xs text-muted-foreground">
@@ -1091,6 +1091,26 @@ const ResultatsSessionPage = () => {
                                 </TableRow>
                               </TableHeader>
                               <TableBody>
+                                {/* Moyenne par matière */}
+                                <TableRow className="bg-primary/5 border-b-2 border-primary/20">
+                                  <TableCell className="font-bold text-sm">Moyenne par matière</TableCell>
+                                  <TableCell className="text-center">
+                                    <span className={`font-bold ${getNoteColor(s.moyenneNote)}`}>{s.moyenneNote}/20</span>
+                                  </TableCell>
+                                  <TableCell className="text-center">
+                                    <Badge variant="secondary" className="text-[10px]">
+                                      {s.nbCandidats > 0 ? Math.round((s.nbReussi / s.nbCandidats) * 100) : 0}% admis
+                                    </Badge>
+                                  </TableCell>
+                                  {matieresArr.map(m => {
+                                    const mAvgRow = m.count > 0 ? Math.round((m.totalNote / m.count) * 10) / 10 : 0;
+                                    return (
+                                      <TableCell key={m.nom} className="text-center">
+                                        <span className={`text-xs font-bold ${getNoteColor(mAvgRow)}`}>{mAvgRow}/20</span>
+                                      </TableCell>
+                                    );
+                                  })}
+                                </TableRow>
                                 {s.apprenantDetails.map(ad => (
                                   <TableRow key={ad.id} className="hover:bg-muted/20">
                                     <TableCell className="font-medium text-sm">{ad.prenom} {ad.nom}</TableCell>
