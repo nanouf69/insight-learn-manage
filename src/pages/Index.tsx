@@ -39,6 +39,7 @@ import { CodesAccesEnvoyes } from "@/components/dashboard/CodesAccesEnvoyes";
 import { DashboardTasks } from "@/components/dashboard/DashboardTasks";
 import { FormationsBientotTerminees } from "@/components/dashboard/FormationsBientotTerminees";
 import { CreneauxRdvAdmin } from "@/components/dashboard/CreneauxRdvAdmin";
+import { SuiviFormationEnCours } from "@/components/dashboard/SuiviFormationEnCours";
 import { GraduationCap, Users, ArrowDownCircle, ArrowUpCircle, Menu, X, Send, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
@@ -121,6 +122,29 @@ const Index = () => {
   const [relanceSelected, setRelanceSelected] = useState<Set<string>>(new Set());
   const [relanceFilter, setRelanceFilter] = useState("");
   const [loadingPreview, setLoadingPreview] = useState(false);
+  const [nbFormationsActives, setNbFormationsActives] = useState<number | null>(null);
+  const [nbApprenants, setNbApprenants] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    const fetchCompteurs = async () => {
+      const today = new Date().toISOString().slice(0, 10);
+      const [sessionsRes, apprenantsRes] = await Promise.all([
+        supabase
+          .from("sessions")
+          .select("id", { count: "exact", head: true })
+          .lte("date_debut", today)
+          .gte("date_fin", today),
+        supabase
+          .from("apprenants")
+          .select("id", { count: "exact", head: true })
+          .is("deleted_at", null),
+      ]);
+      setNbFormationsActives(sessionsRes.count ?? 0);
+      setNbApprenants(apprenantsRes.count ?? 0);
+    };
+    fetchCompteurs().catch((error) => console.error("Compteurs dashboard:", error));
+  }, [user]);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -289,17 +313,17 @@ const Index = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
               <StatCard 
                 title="Formations actives" 
-                value={12} 
-                change={8}
+                value={nbFormationsActives ?? "—"} 
                 icon={GraduationCap}
                 iconColor="primary"
+                subtitle="Sessions en cours aujourd'hui"
               />
               <StatCard 
                 title="Apprenants" 
-                value={156} 
-                change={12}
+                value={nbApprenants ?? "—"} 
                 icon={Users}
                 iconColor="accent"
+                subtitle="Dossiers actifs"
               />
               <StatCard 
                 title="Total entré (relevés)" 
@@ -330,6 +354,9 @@ const Index = () => {
                 {sendingRelance ? "Envoi en cours..." : "📋 Relancer dossiers bienvenue incomplets"}
               </Button>
             </div>
+
+            {/* Apprenants actuellement en formation — journée / soirée */}
+            <SuiviFormationEnCours onNavigateToApprenant={handleNavigateToApprenant} />
 
             {/* Tâches à faire */}
             <DashboardTasks />
