@@ -1060,12 +1060,58 @@ function MatiereEditor({
       {/* Questions */}
       {expanded && (
         <div className="p-4 space-y-3">
-          {matiere.texteSupport && (
+          {(matiere.texteSupport || isFrancais) && (
             <div className="mb-4 p-4 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
-              <p className="text-xs font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wide mb-2">📄 Texte support — Français</p>
-              <p className="text-sm text-foreground whitespace-pre-line leading-relaxed">{matiere.texteSupport}</p>
-              {matiere.texteSource && (
-                <p className="text-xs text-muted-foreground mt-2 italic">Source : {matiere.texteSource}</p>
+              <div className="flex items-start justify-between gap-2 mb-2">
+                <p className="text-xs font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wide">📄 Texte support — Français</p>
+                {!editingTexte && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 gap-1 text-xs"
+                    onClick={() => {
+                      setTexteDraft(matiere.texteSupport ?? "");
+                      setTexteSourceDraft(matiere.texteSource ?? "");
+                      setEditingTexte(true);
+                    }}
+                  >
+                    <Edit2 className="w-3 h-3" />
+                    Modifier le texte
+                  </Button>
+                )}
+              </div>
+
+              {editingTexte ? (
+                <div className="space-y-2">
+                  <Textarea
+                    value={texteDraft}
+                    onChange={(e) => setTexteDraft(e.target.value)}
+                    className="min-h-[260px] text-sm leading-relaxed bg-background"
+                    placeholder="Saisissez ici le texte support de l'épreuve de français…"
+                  />
+                  <Input
+                    value={texteSourceDraft}
+                    onChange={(e) => setTexteSourceDraft(e.target.value)}
+                    placeholder="Source du texte (facultatif)"
+                    className="text-xs bg-background"
+                  />
+                  <div className="flex gap-2">
+                    <Button size="sm" onClick={saveTexteSupport}>Enregistrer le texte</Button>
+                    <Button size="sm" variant="ghost" onClick={() => setEditingTexte(false)}>Annuler</Button>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    Seul le texte support est modifié — les questions, réponses, notes et tentatives restent inchangées.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <p className="text-sm text-foreground whitespace-pre-line leading-relaxed">
+                    {matiere.texteSupport || <span className="italic text-muted-foreground">Aucun texte support pour le moment.</span>}
+                  </p>
+                  {matiere.texteSource && (
+                    <p className="text-xs text-muted-foreground mt-2 italic">Source : {matiere.texteSource}</p>
+                  )}
+                </>
               )}
             </div>
           )}
