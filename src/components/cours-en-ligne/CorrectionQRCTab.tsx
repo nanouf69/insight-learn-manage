@@ -404,13 +404,12 @@ const CorrectionQRCTab = () => {
       });
     }
 
-    // Count how many results exist per apprenant + quiz + matiere (to detect retakes)
-    // Must include matiere_id because each exam has ~7 matiere rows per attempt
-    const attemptCounts: Record<string, number> = {};
-    for (const r of results as any[]) {
-      const countKey = `${r.apprenant_id}__${r.quiz_id}__${r.matiere_id || ""}`;
-      attemptCounts[countKey] = (attemptCounts[countKey] || 0) + 1;
-    }
+    // RÈGLE : une tentative = le numéro réel de tentative enregistré, jamais le
+    // nombre de lignes de résultat en base. Deux lignes techniques écrites à
+    // quelques fractions de seconde pour le même passage restent UNE tentative.
+    // Aucune correction QRC n'est déduite du nombre de tentatives : seule la
+    // validation manuelle de l'administrateur fait sortir une QRC de la file.
+
 
     // Deduplicate: keep only the latest result per apprenant + quiz + matière
     const seenApprenantQuizMatiere = new Set<string>();
@@ -426,9 +425,6 @@ const CorrectionQRCTab = () => {
       const defaultMatiere = findMatiereWithFallback(examenMap, tousLesExamens, r.quiz_id, r.matiere_id || "");
       const matiere = chooseMatiereMatchingResponses(defaultMatiere, examenMap, r.matiere_id || "", reponses);
 
-      // Detect if this is a retake (more than one result for same apprenant + quiz + matiere)
-      const countKey = `${r.apprenant_id}__${r.quiz_id}__${r.matiere_id || ""}`;
-      const isRetake = (attemptCounts[countKey] || 1) > 1;
 
       // Build question list: prefer details.questions, but fall back to examen definition + correctionsIA
       let questionList = Array.isArray(details.questions) && details.questions.length > 0
@@ -511,9 +507,8 @@ const CorrectionQRCTab = () => {
           autoExplication = correction.explication || null;
         }
 
-        // If this is a retake and no manual correction yet, auto-score with keywords and mark as corrected
-        const isAutoScoredRetake = isRetake && !hasManualCorrection;
-
+        // Une QRC ne sort de la file QUE sur validation manuelle de l'administrateur,
+        // quelle que soit la tentative (1re, 2e, 3e...). Aucune notation automatique.
         qrcItems.push({
           resultId: r.id,
           source: "result",
@@ -530,18 +525,19 @@ const CorrectionQRCTab = () => {
           reponseEleve: reponseEleveStr,
           reponseCorrecte: reponseCorrecteStr,
           pointsMax: pts,
-          pointsObtenus: (hasManualCorrection || isAutoScoredRetake)
-            ? clampToHalfStep(hasManualCorrection ? (correction.pointsObtenus ?? 0) : autoScore, pts)
+          pointsObtenus: hasManualCorrection
+            ? clampToHalfStep(correction.pointsObtenus ?? 0, pts)
             : null,
-          corrigeManuel: !!(hasManualCorrection || isAutoScoredRetake),
+          corrigeManuel: hasManualCorrection,
           completedAt: r.completed_at,
           autoScore,
-          autoExplication: isAutoScoredRetake ? `Notation auto (repasse) : ${autoExplication || "mots-clés"}` : autoExplication,
+          autoExplication,
           noteSur20: r.note_sur_20 ?? null,
           scoreMatiereObtenu: r.score_obtenu ?? 0,
           scoreMatiereMax: r.score_max ?? 20,
-          commentaire: isAutoScoredRetake ? "Notation automatique par mots-clés (examen refait)" : (correction && typeof correction === "object" ? (correction.commentaire || "") : ""),
-          correctedAt: (hasManualCorrection || isAutoScoredRetake) ? (correction?.correctedAt || r.completed_at || null) : null,
+          commentaire: correction && typeof correction === "object" ? (correction.commentaire || "") : "",
+          correctedAt: hasManualCorrection ? (correction?.correctedAt || r.completed_at || null) : null,
+
           apprenantTypeMode: app.mode,
           questionSupprimee,
         });
