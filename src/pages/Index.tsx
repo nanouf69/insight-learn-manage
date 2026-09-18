@@ -121,6 +121,29 @@ const Index = () => {
   const [relanceSelected, setRelanceSelected] = useState<Set<string>>(new Set());
   const [relanceFilter, setRelanceFilter] = useState("");
   const [loadingPreview, setLoadingPreview] = useState(false);
+  const [nbFormationsActives, setNbFormationsActives] = useState<number | null>(null);
+  const [nbApprenants, setNbApprenants] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    const fetchCompteurs = async () => {
+      const today = new Date().toISOString().slice(0, 10);
+      const [sessionsRes, apprenantsRes] = await Promise.all([
+        supabase
+          .from("sessions")
+          .select("id", { count: "exact", head: true })
+          .lte("date_debut", today)
+          .gte("date_fin", today),
+        supabase
+          .from("apprenants")
+          .select("id", { count: "exact", head: true })
+          .is("deleted_at", null),
+      ]);
+      setNbFormationsActives(sessionsRes.count ?? 0);
+      setNbApprenants(apprenantsRes.count ?? 0);
+    };
+    fetchCompteurs().catch((error) => console.error("Compteurs dashboard:", error));
+  }, [user]);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
