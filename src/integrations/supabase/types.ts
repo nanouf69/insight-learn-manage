@@ -465,6 +465,7 @@ export type Database = {
           apprenant_id: string
           created_at: string
           date_paiement: string | null
+          formation: string | null
           id: string
           montant: number
           moyen_paiement: string | null
@@ -474,6 +475,7 @@ export type Database = {
           apprenant_id: string
           created_at?: string
           date_paiement?: string | null
+          formation?: string | null
           id?: string
           montant?: number
           moyen_paiement?: string | null
@@ -483,6 +485,7 @@ export type Database = {
           apprenant_id?: string
           created_at?: string
           date_paiement?: string | null
+          formation?: string | null
           id?: string
           montant?: number
           moyen_paiement?: string | null

@@ -1,0 +1,1 @@
+ALTER TABLE public.apprenant_paiements ADD COLUMN IF NOT EXISTS formation text;
