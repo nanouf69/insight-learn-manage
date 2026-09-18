@@ -26,6 +26,16 @@ const MOYENS_PAIEMENT = [
   "Autre",
 ];
 
+const FORMATIONS_PAIEMENT = [
+  "Formation VTC",
+  "Formation TAXI",
+  "Formation continue VTC",
+  "Formation continue TAXI",
+  "Repassage examen pratique VTC",
+  "Repassage examen pratique TAXI",
+];
+
+
 
 const fmt = (n: number) =>
   new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 2 }).format(n || 0);
@@ -82,13 +92,14 @@ export function FinancementApprenantCard({ apprenant, onNavigateToComptabilite }
     date_paiement: new Date().toISOString().slice(0, 10),
     montant: "",
     moyen_paiement: "Virement bancaire",
+    formation: "",
     notes: "",
   });
 
   const refreshPaiements = async () => {
     const { data } = await supabase
       .from("apprenant_paiements")
-      .select("id, montant, moyen_paiement, date_paiement, notes")
+      .select("id, montant, moyen_paiement, date_paiement, notes, formation")
       .eq("apprenant_id", apprenant.id)
       .order("date_paiement", { ascending: false });
     setPaiements(data ?? []);
@@ -104,12 +115,17 @@ export function FinancementApprenantCard({ apprenant, onNavigateToComptabilite }
       toast.error("Indiquez un montant supérieur à 0.");
       return;
     }
+    if (!form.formation) {
+      toast.error("Choisissez la formation concernée par ce paiement.");
+      return;
+    }
     setSaving(true);
     const { error } = await supabase.from("apprenant_paiements").insert({
       apprenant_id: apprenant.id,
       date_paiement: form.date_paiement,
       montant,
       moyen_paiement: form.moyen_paiement,
+      formation: form.formation,
       notes: form.notes.trim() || null,
     });
     setSaving(false);
@@ -123,6 +139,7 @@ export function FinancementApprenantCard({ apprenant, onNavigateToComptabilite }
       date_paiement: new Date().toISOString().slice(0, 10),
       montant: "",
       moyen_paiement: "Virement bancaire",
+      formation: "",
       notes: "",
     });
     await refreshPaiements();
@@ -164,7 +181,7 @@ export function FinancementApprenantCard({ apprenant, onNavigateToComptabilite }
       setLoading(true);
       const { data: pData } = await supabase
         .from("apprenant_paiements")
-        .select("id, montant, moyen_paiement, date_paiement, notes")
+        .select("id, montant, moyen_paiement, date_paiement, notes, formation")
         .eq("apprenant_id", apprenant.id)
         .order("date_paiement", { ascending: false });
 
@@ -322,6 +339,24 @@ export function FinancementApprenantCard({ apprenant, onNavigateToComptabilite }
                 </Select>
               </div>
               <div className="space-y-1">
+                <Label>Formation concernée</Label>
+                <Select
+                  value={form.formation}
+                  onValueChange={(value) => setForm((f) => ({ ...f, formation: value }))}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Choisir la formation" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background z-50">
+                    {FORMATIONS_PAIEMENT.map((f) => (
+                      <SelectItem key={f} value={f}>
+                        {f}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
                 <Label htmlFor="paiement-notes">Note (facultatif)</Label>
                 <Input
                   id="paiement-notes"
@@ -346,6 +381,7 @@ export function FinancementApprenantCard({ apprenant, onNavigateToComptabilite }
                   <span className="text-muted-foreground truncate">
                     {p.date_paiement ? format(parseISO(p.date_paiement), "dd MMM yyyy", { locale: fr }) : "-"}
                     {p.moyen_paiement ? ` · ${p.moyen_paiement}` : ""}
+                    {p.formation ? ` · ${p.formation}` : ""}
                     {p.notes ? ` · ${p.notes}` : ""}
                   </span>
                   <span className="flex items-center gap-1 whitespace-nowrap">

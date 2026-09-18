@@ -155,6 +155,13 @@
       "when": 1789742249554,
       "tag": "0021_autovalidate_module_if_complete",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1789746099958,
+      "tag": "0022_add_formation_to_apprenant_paiements",
+      "breakpoints": true
     }
   ]
 }
