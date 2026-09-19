@@ -75,6 +75,7 @@ const pageConfig = {
   "diagnostic-acces": { title: "Diagnostic accès", subtitle: "État d'accès e-learning de tous les apprenants" },
   renouvellements: { title: "Renouvellements", subtitle: "Échéances véhicules, agréments TAXI/VTC et Qualiopi" },
   "creneaux-25-mai": { title: "Créneaux lundi 25 mai", subtitle: "Q/R avant l'examen du 26 mai — temps réel" },
+  qualiopi: { title: "Qualiopi", subtitle: "Pilotage des preuves — 7 critères et 32 indicateurs du Référentiel National Qualité" },
 };
 
 const getInitialNavigationFromUrl = () => {
