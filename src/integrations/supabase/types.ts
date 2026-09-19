@@ -3332,6 +3332,145 @@ export type Database = {
         }
         Relationships: []
       }
+      qualiopi_indicateurs_etat: {
+        Row: {
+          applicable: boolean
+          commentaire_auditeur: string | null
+          created_at: string
+          date_verification: string | null
+          id: string
+          indicateur: number
+          maj_annuelle: boolean
+          responsable: string | null
+          statut: string
+          updated_at: string
+        }
+        Insert: {
+          applicable?: boolean
+          commentaire_auditeur?: string | null
+          created_at?: string
+          date_verification?: string | null
+          id?: string
+          indicateur: number
+          maj_annuelle?: boolean
+          responsable?: string | null
+          statut?: string
+          updated_at?: string
+        }
+        Update: {
+          applicable?: boolean
+          commentaire_auditeur?: string | null
+          created_at?: string
+          date_verification?: string | null
+          id?: string
+          indicateur?: number
+          maj_annuelle?: boolean
+          responsable?: string | null
+          statut?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      qualiopi_preuve_liens: {
+        Row: {
+          created_at: string
+          id: string
+          indicateur: number
+          justification: string | null
+          preuve_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          indicateur: number
+          justification?: string | null
+          preuve_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          indicateur?: number
+          justification?: string | null
+          preuve_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "qualiopi_preuve_liens_preuve_id_fkey"
+            columns: ["preuve_id"]
+            isOneToOne: false
+            referencedRelation: "qualiopi_preuves"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      qualiopi_preuves: {
+        Row: {
+          archivee: boolean
+          archivee_le: string | null
+          created_at: string
+          created_by: string | null
+          date_preuve: string | null
+          description: string | null
+          fichiers: Json
+          id: string
+          lien_url: string | null
+          remplace_preuve_id: string | null
+          source_id: string | null
+          source_table: string | null
+          source_type: string
+          titre: string
+          updated_at: string
+          valide_au: string | null
+          valide_du: string | null
+        }
+        Insert: {
+          archivee?: boolean
+          archivee_le?: string | null
+          created_at?: string
+          created_by?: string | null
+          date_preuve?: string | null
+          description?: string | null
+          fichiers?: Json
+          id?: string
+          lien_url?: string | null
+          remplace_preuve_id?: string | null
+          source_id?: string | null
+          source_table?: string | null
+          source_type?: string
+          titre: string
+          updated_at?: string
+          valide_au?: string | null
+          valide_du?: string | null
+        }
+        Update: {
+          archivee?: boolean
+          archivee_le?: string | null
+          created_at?: string
+          created_by?: string | null
+          date_preuve?: string | null
+          description?: string | null
+          fichiers?: Json
+          id?: string
+          lien_url?: string | null
+          remplace_preuve_id?: string | null
+          source_id?: string | null
+          source_table?: string | null
+          source_type?: string
+          titre?: string
+          updated_at?: string
+          valide_au?: string | null
+          valide_du?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "qualiopi_preuves_remplace_preuve_id_fkey"
+            columns: ["remplace_preuve_id"]
+            isOneToOne: false
+            referencedRelation: "qualiopi_preuves"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quiz_question_bindings: {
         Row: {
           created_at: string
