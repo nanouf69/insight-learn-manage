@@ -54,6 +54,7 @@ const menuItems = [
   { id: "cours-en-ligne", label: "Cours en ligne", icon: Monitor },
   { id: "fournisseurs", label: "Fournisseurs", icon: Package },
   { id: "renouvellements", label: "Renouvellements", icon: BadgeCheck },
+  { id: "qualiopi", label: "Qualiopi", icon: ShieldCheck },
   { id: "diagnostic-acces", label: "Diagnostic accès", icon: ShieldCheck },
   { id: "suivi-emails", label: "Suivi des emails", icon: MailCheck },
   { id: "corbeille", label: "Corbeille", icon: Trash2 },

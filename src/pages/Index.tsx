@@ -14,6 +14,7 @@ import { PlanningCalendar } from "@/components/planning/PlanningCalendar";
 import { DocumentsList } from "@/components/documents/DocumentsList";
 import { SettingsPage } from "@/components/settings/SettingsPage";
 import { RenouvellementsPage } from "@/components/renouvellements/RenouvellementsPage";
+import { QualiopiPage } from "@/components/qualiopi/QualiopiPage";
 import { SessionsList } from "@/components/sessions/SessionsList";
 import { OrganisationsList } from "@/components/organisations/OrganisationsList";
 import { FormateursList } from "@/components/formateurs/FormateursList";
@@ -74,6 +75,7 @@ const pageConfig = {
   "diagnostic-acces": { title: "Diagnostic accès", subtitle: "État d'accès e-learning de tous les apprenants" },
   renouvellements: { title: "Renouvellements", subtitle: "Échéances véhicules, agréments TAXI/VTC et Qualiopi" },
   "creneaux-25-mai": { title: "Créneaux lundi 25 mai", subtitle: "Q/R avant l'examen du 26 mai — temps réel" },
+  qualiopi: { title: "Qualiopi", subtitle: "Pilotage des preuves — 7 critères et 32 indicateurs du Référentiel National Qualité" },
 };
 
 const getInitialNavigationFromUrl = () => {
@@ -439,6 +441,8 @@ const Index = () => {
         return <SuiviEmailsPage />;
       case "renouvellements":
         return <RenouvellementsPage />;
+      case "qualiopi":
+        return <QualiopiPage />;
       case "settings":
         return <SettingsPage />;
       default:
