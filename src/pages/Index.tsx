@@ -14,6 +14,7 @@ import { PlanningCalendar } from "@/components/planning/PlanningCalendar";
 import { DocumentsList } from "@/components/documents/DocumentsList";
 import { SettingsPage } from "@/components/settings/SettingsPage";
 import { RenouvellementsPage } from "@/components/renouvellements/RenouvellementsPage";
+import { QualiopiPage } from "@/components/qualiopi/QualiopiPage";
 import { SessionsList } from "@/components/sessions/SessionsList";
 import { OrganisationsList } from "@/components/organisations/OrganisationsList";
 import { FormateursList } from "@/components/formateurs/FormateursList";
@@ -439,6 +440,8 @@ const Index = () => {
         return <SuiviEmailsPage />;
       case "renouvellements":
         return <RenouvellementsPage />;
+      case "qualiopi":
+        return <QualiopiPage />;
       case "settings":
         return <SettingsPage />;
       default:
