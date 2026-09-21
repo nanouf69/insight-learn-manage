@@ -622,7 +622,7 @@ const CorrectionQRCTab = () => {
       const t = String(a.type_apprenant || "").toLowerCase();
       const mode: "presentiel" | "elearning" = t.endsWith("-e") || t.includes("-e-") ? "elearning"
         : (t === "vtc-e-presentiel" ? "presentiel" : (t.endsWith("-e") ? "elearning" : "presentiel"));
-      apprenantMap[a.id] = { nom: a.nom, prenom: a.prenom, mode };
+      apprenantMap[a.id] = { nom: a.nom, prenom: a.prenom, mode, formationActive: isFormationActiveToday(a) };
     });
 
     // ────────────────────────────────────────────────────────────────────
