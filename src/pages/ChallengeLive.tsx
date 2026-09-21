@@ -39,7 +39,27 @@ export default function ChallengeLive() {
   const [projection, setProjection] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState<string>("");
 
+  // Source des questions (LECTURE SEULE) — pilote : une seule matiere VTC.
+  const [sources, setSources] = useState<SourceQuiz[]>([]);
+  const [matiere, setMatiere] = useState<string>(PILOTE_MATIERE);
+  const [quizId, setQuizId] = useState<string>("");
+  const [nombre, setNombre] = useState<string>("20");
+  const [typeFiltre, setTypeFiltre] = useState<"tous" | "qcm" | "qrc">("tous");
+  const [ordre, setOrdre] = useState<"origine" | "aleatoire">("origine");
+
   const { session, participants, responses, connected, refresh } = useLiveChallengeState(activeId);
+
+  useEffect(() => {
+    fetchVtcSourceQuizzes()
+      .then(setSources)
+      .catch(() => toast.error("Impossible de lire les questions VTC"));
+  }, []);
+
+  const matieres = useMemo(() => Array.from(new Set(sources.map((s) => s.matiere))), [sources]);
+  const quizOfMatiere = useMemo(() => sources.filter((s) => s.matiere === matiere), [sources, matiere]);
+  useEffect(() => {
+    setQuizId(quizOfMatiere[0] ? String(quizOfMatiere[0].exerciceId) : "");
+  }, [quizOfMatiere]);
 
   useEffect(() => {
     fetchLiveSessions()
