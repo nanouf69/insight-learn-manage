@@ -35,6 +35,8 @@ interface Eb2PendingAttempt {
   matieres: string[];
   /** true si au moins une QRC de ce passage est réellement présente dans la file de correction. */
   hasQueueMatch: boolean;
+  /** true si la formation de l'apprenant est active aujourd'hui (début ≤ aujourd'hui ≤ fin). */
+  formationActive: boolean;
 }
 
 interface QrcItem {
