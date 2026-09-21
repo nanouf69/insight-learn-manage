@@ -52,6 +52,14 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
   // Passage réellement OUVERT (tentative en cours non terminée), même si l'examen
   // a déjà été terminé lors d'une tentative précédente. Affichage uniquement.
   const [openAttemptIds, setOpenAttemptIds] = useState<Set<string>>(new Set());
+  // Fin de la dernière tentative réellement passée (terminée ou en attente de
+  // correction QRC) — sert au délai de 48 h avant une NOUVELLE tentative.
+  const [lastFinishedByExam, setLastFinishedByExam] = useState<Record<string, number>>({});
+  const [nowTick, setNowTick] = useState<number>(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNowTick(Date.now()), 60_000);
+    return () => clearInterval(id);
+  }, []);
   const [examScores, setExamScores] = useState<Record<string, ExamScoreItem[]>>({});
   const [previousExamAverages, setPreviousExamAverages] = useState<Record<string, number | null>>({});
   // Ref so the score-fetch effect below can read the LATEST exam definitions
