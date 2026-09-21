@@ -28,6 +28,7 @@ import {
   extractMatiereKeyFromExerciceId,
   selectLatestAttemptRows, getAttemptNumber, findBestSavedAnswerRow,
   getSavedAnswerRowAttempt, getSavedAnswerRowTimestamp, getMeaningfulAnswerCount,
+  allocateFreshExamMatiereExerciceId,
   type SavedExamAnswerRow,
 } from "./examens-blancs-utils";
 import { recoverCorruptedScoreRow, isCorruptedZeroRow, persistExamSession as persistExamSessionUtil, shouldTriggerPollingRefresh } from "./examens-blancs-utils";
