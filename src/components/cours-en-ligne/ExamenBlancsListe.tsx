@@ -692,6 +692,14 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
           </div>
         </div>
       )}
+
+      <RefaireExamenDialog
+        open={!!retakeExamen}
+        onOpenChange={(o) => { if (!o) setRetakeExamen(null); }}
+        hasResumableAttempt={!!retakeExamen && startedNotFinishedIds.has(retakeExamen.id)}
+        onResume={() => { const ex = retakeExamen; setRetakeExamen(null); if (ex) onStart(ex, false); }}
+        onConfirm={() => { const ex = retakeExamen; setRetakeExamen(null); if (ex) onStart(ex, true); }}
+      />
     </div>
   );
 }
