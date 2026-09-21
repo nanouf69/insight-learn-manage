@@ -10,7 +10,32 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { tousLesExamens, getPointsParQuestion, type ExamenBlanc, type Matiere } from "./examens-blancs-data";
 import { loadSavedExamens } from "./ExamensBlancsEditor";
-import { buildExamenMap, findMatiereWithFallback, getSourceQuestions, computeReussiForResult, isResultPlaceholder, isQrcAnswerCertainlyEmpty } from "./exam-helpers";
+import { buildExamenMap, findMatiereWithFallback, getSourceQuestions, computeReussiForResult, isResultPlaceholder, isQrcAnswerCertainlyEmpty, isExamAttemptPublicationPending, isMatiereQrcPendingForAttempt } from "./exam-helpers";
+
+/** Examens Blancs N°2, toutes filières (VTC, TAXI, VA, TA). */
+const EB2_QUIZ_IDS = new Set(["EB2", "EB2-TAXI", "eb2-va", "eb2-ta"]);
+const EB2_FILIERE_LABEL: Record<string, string> = {
+  "EB2": "VTC", "EB2-TAXI": "TAXI", "eb2-va": "VA", "eb2-ta": "TA",
+};
+
+/** Passage réel d'un apprenant sur UN examen : apprenant + examen + tentative persistante. */
+function buildAttemptKey(apprenantId: string, quizId: string, dbTentative: number | null | undefined, passageKey: string): string {
+  return `${apprenantId}__${quizId}__${dbTentative != null ? `T${dbTentative}` : passageKey}`;
+}
+
+interface Eb2PendingAttempt {
+  attemptKey: string;
+  apprenantId: string;
+  apprenant: string;
+  filiere: string;
+  quizId: string;
+  quizTitre: string;
+  tentativeLabel: string;
+  completedAt: string;
+  matieres: string[];
+  /** true si au moins une QRC de ce passage est réellement présente dans la file de correction. */
+  hasQueueMatch: boolean;
+}
 
 interface QrcItem {
   resultId: string;
