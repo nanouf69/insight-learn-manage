@@ -24,6 +24,8 @@ import DevisPublic from "./pages/DevisPublic";
 import DevisPersonnel from "./pages/DevisPersonnel";
 import ReservationCarteVtc from "./pages/ReservationCarteVtc";
 import Booking from "./pages/Booking";
+import ChallengePublic from "./pages/ChallengePublic";
+import ChallengeLive from "./pages/ChallengeLive";
 import SessionDetailPage from "./pages/SessionDetailPage";
 import SessionElearningPage from "./pages/SessionElearningPage";
 import DiagnosticExamensBlancs from "./pages/DiagnosticExamensBlancs";
@@ -127,6 +129,13 @@ function App() {
                 <Route path="/devis" element={<ErrorBoundary><DevisPublic /></ErrorBoundary>} />
                 <Route path="/devis-personnel" element={<ErrorBoundary><DevisPersonnel /></ErrorBoundary>} />
                 <Route path="/booking" element={<ErrorBoundary><Booking /></ErrorBoundary>} />
+                <Route path="/challenge" element={<ErrorBoundary><ChallengePublic /></ErrorBoundary>} />
+                <Route path="/challenge/:code" element={<ErrorBoundary><ChallengePublic /></ErrorBoundary>} />
+                <Route path="/challenge-live" element={
+                  <ProtectedRoute>
+                    <ErrorBoundary><ChallengeLive /></ErrorBoundary>
+                  </ProtectedRoute>
+                } />
 
                 <Route path="/sessions/:id" element={
                   <ProtectedRoute>
