@@ -266,6 +266,19 @@ function formatDateOnlyFR(value: string): string {
   return new Date(value).toLocaleDateString("fr-FR");
 }
 
+/**
+ * Formation active AUJOURD'HUI : date de début ≤ aujourd'hui ≤ date de fin.
+ * Lecture seule : sert uniquement au filtrage d'affichage de l'encadré vert.
+ */
+function isFormationActiveToday(a: { date_debut_cours_en_ligne?: string | null; date_fin_cours_en_ligne?: string | null }): boolean {
+  const debut = a?.date_debut_cours_en_ligne ? String(a.date_debut_cours_en_ligne).slice(0, 10) : null;
+  const fin = a?.date_fin_cours_en_ligne ? String(a.date_fin_cours_en_ligne).slice(0, 10) : null;
+  if (!debut || !fin) return false;
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  return debut <= today && today <= fin;
+}
+
 function formatPassageDateTimeFR(value: string | null | undefined): string {
   const date = value ? new Date(value) : null;
   if (!date || !Number.isFinite(date.getTime())) return "date inconnue";
