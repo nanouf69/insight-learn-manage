@@ -11,8 +11,11 @@ export type LiveQuestion = {
   type: "qcm" | "qrc";
   propositions?: string[];
   bonneReponse?: string | null;
+  /** QCM a plusieurs bonnes reponses : toute proposition correcte compte juste. */
+  bonnesReponses?: string[];
   points?: number;
   explication?: string | null;
+  image?: string | null;
 };
 
 export type LiveSession = {
