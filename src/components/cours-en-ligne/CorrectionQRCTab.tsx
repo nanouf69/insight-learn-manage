@@ -170,15 +170,16 @@ function getCorrectionKey(apprenantId: string, quizId: string, matiereId: string
 
 /**
  * Deux entrées désignent la même QRC réellement passée lorsque l'apprenant,
- * l'examen, la matière, l'identifiant stable de la question ET le texte exact
- * de la réponse de l'élève sont identiques. C'est le cas quand un même passage
- * a été écrit sur plusieurs lignes techniques (finalisation, reprise, double
- * écriture). Une vraie nouvelle tentative, avec une réponse différente, reste
- * une QRC distincte à corriger.
+ * l'examen, la matière, LE PASSAGE/TENTATIVE et l'identifiant stable de la
+ * question sont identiques, et que le texte de la réponse est le même.
+ * Le texte sert uniquement à reconnaître les lignes techniques jumelles d'un
+ * même passage (finalisation, reprise, double écriture). Une vraie nouvelle
+ * tentative reste une QRC distincte à corriger, même si l'élève donne
+ * exactement la même réponse que lors de sa tentative précédente.
  */
 export function isSameQrcContent(
-  a: { apprenantId: string; quizId: string; matiereId: string; questionId: number; reponseEleve?: string },
-  b: { apprenantId: string; quizId: string; matiereId: string; questionId: number; reponseEleve?: string },
+  a: { apprenantId: string; quizId: string; matiereId: string; tentative?: number; questionId: number; reponseEleve?: string },
+  b: { apprenantId: string; quizId: string; matiereId: string; tentative?: number; questionId: number; reponseEleve?: string },
 ): boolean {
   const texteA = normalizeText(safeStr(a.reponseEleve));
   if (!texteA) return false;
@@ -186,6 +187,7 @@ export function isSameQrcContent(
     a.apprenantId === b.apprenantId &&
     a.quizId === b.quizId &&
     (a.matiereId || "") === (b.matiereId || "") &&
+    (a.tentative ?? 1) === (b.tentative ?? 1) &&
     a.questionId === b.questionId &&
     texteA === normalizeText(safeStr(b.reponseEleve))
   );
