@@ -1252,7 +1252,12 @@ const CorrectionQRCTab = () => {
 
   const handleSaveCorrection = async (item: QrcItem, newPoints: number) => {
     const uniqueKey = `${item.resultId}-${item.questionId}`;
+    // Historique de navigation : la QRC corrigée reste accessible avec « Précédent »
+    // pendant toute la session de correction (aucune donnée modifiée par cet ajout).
+    keptKeysRef.current.add(qrcNavKey(item));
+    setKeptVersion((v) => v + 1);
     setSavingId(uniqueKey);
+
 
     const clamped = clampToHalfStep(newPoints, item.pointsMax);
 
