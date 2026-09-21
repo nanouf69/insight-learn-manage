@@ -27,6 +27,7 @@ import {
 } from "./examens-blancs-utils";
 import { computeMoyenneExamen, computeResultatMatiereScore, getSeuilEliminatoireAffiche } from "./examens-blancs-scoring";
 import { isExamAttemptPublicationPending } from "./exam-helpers";
+import { useQrcEnginePending } from "@/hooks/useQrcEnginePending";
 
 
 function EcranResultats({
@@ -83,13 +84,19 @@ function EcranResultats({
   const [isRetake, setIsRetake] = useState(false);
   const [activeTab, setActiveTab] = useState<"resultats" | "revision">("resultats");
 
-  const hasQrcPendingValidation = isExamAttemptPublicationPending(
-    resultats.map((resultat, index) => ({
-      ...resultat,
-      correctionsIA: correctionsIA[index] ?? resultat.correctionsIA,
-    })),
-    examen,
-  );
+  // Examen branché sur le nouveau moteur QRC → le blocage vient des mêmes
+  // identifiants que la file de correction. Sinon : règle historique inchangée.
+  const qrcEngine = useQrcEnginePending(apprenantId, [examen?.id].filter(Boolean) as string[]);
+  const engineExamPending = qrcEngine.isExamPending(examen?.id || "");
+  const hasQrcPendingValidation = engineExamPending !== null
+    ? engineExamPending
+    : isExamAttemptPublicationPending(
+        resultats.map((resultat, index) => ({
+          ...resultat,
+          correctionsIA: correctionsIA[index] ?? resultat.correctionsIA,
+        })),
+        examen,
+      );
 
   // Detect if this is a retake (multiple results exist for same apprenant + quiz)
   useEffect(() => {

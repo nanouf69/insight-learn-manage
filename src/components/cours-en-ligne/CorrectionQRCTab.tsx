@@ -11,6 +11,8 @@ import { toast } from "sonner";
 import { tousLesExamens, getPointsParQuestion, type ExamenBlanc, type Matiere } from "./examens-blancs-data";
 import { loadSavedExamens } from "./ExamensBlancsEditor";
 import { buildExamenMap, findMatiereWithFallback, getSourceQuestions, computeReussiForResult, isResultPlaceholder, isQrcAnswerCertainlyEmpty, isExamAttemptPublicationPending, isMatiereQrcPendingForAttempt } from "./exam-helpers";
+import { loadQrcEngineQuizIds } from "@/lib/qrcInstances";
+import { QrcInstancesPanel } from "./QrcInstancesPanel";
 
 /** Examens Blancs N°2, toutes filières (VTC, TAXI, VA, TA). */
 const EB2_QUIZ_IDS = new Set(["EB2", "EB2-TAXI", "eb2-va", "eb2-ta"]);
@@ -717,7 +719,13 @@ const CorrectionQRCTab = () => {
 
     // Les lignes arrivent de la plus récente à la plus ancienne : on les
     // traite de la plus ancienne à la plus récente, sans renuméroter les passages.
-    const resultsAsc = (results as any[]).filter((r) => !isResultPlaceholder(r)).sort(
+    // Examens branchés sur le nouveau moteur QRC : leur file est servie
+    // exclusivement par `qrc_instances` (panneau dédié ci-dessus), jamais par
+    // l'ancien rapprochement — aucune QRC ne peut donc apparaître deux fois.
+    const engineQuizIds = await loadQrcEngineQuizIds(true);
+    const resultsAsc = (results as any[])
+      .filter((r) => !isResultPlaceholder(r) && !engineQuizIds.has(String(r.quiz_id)))
+      .sort(
       (a, b) => (new Date(a.completed_at).getTime() || 0) - (new Date(b.completed_at).getTime() || 0),
     );
 
@@ -1835,6 +1843,9 @@ const CorrectionQRCTab = () => {
           </p>
         </div>
       )}
+
+      {/* Nouveau moteur QRC : examens explicitement branchés uniquement. */}
+      <QrcInstancesPanel />
 
       {todayBlockingMissingItems.length > 0 ? (
         <div className="rounded-lg border border-destructive bg-destructive/10 p-4">

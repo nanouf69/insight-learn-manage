@@ -38,6 +38,14 @@ import { EcranResultats, RevisionFausses } from "./ExamenBlancsResultats";
 import { computeMatiereScore, computeMatiereScoreForAttempt, resolveMatiereForScoring, MATIERE_SNAPSHOT_VERSION } from "./examens-blancs-scoring";
 import { excludeResultPlaceholders, mergePassageSiblingRows } from "./exam-helpers";
 import { buildFinalizationKey, runFinalizationOnce, resolveIdempotentTentative } from "@/lib/examFinalizationGuard";
+import { syncQrcInstances } from "@/lib/qrcInstances";
+
+/** Texte exact de la réponse QRC de l'élève (jamais reformaté ni corrigé). */
+function safeQrcAnswerText(value: unknown): string {
+  if (value == null) return "";
+  if (Array.isArray(value)) return value.join(" ");
+  return String(value);
+}
 import { auditQrcCoherence, reportQrcIncoherence } from "@/lib/examPassageIdentity";
 import { recoverMatiereFromSavedAnswers, canFinalizeMatiere } from "@/lib/examMatiereRecovery";
 
@@ -1039,6 +1047,34 @@ export default function ExamensBlancsPage({
         { duration: 15000 },
       );
     }
+    // NOUVEAU MOTEUR QRC (examens branchés uniquement, via drapeau en base) :
+    // chaque QRC répondue reçoit un identifiant unique et définitif. L'appel est
+    // idempotent : double clic, F5, renvoi ou double finalisation ne peuvent pas
+    // créer une deuxième QRC. Aucun effet sur les examens non branchés.
+    if (saved) {
+      try {
+        const qrcItems = questionsSafe
+          .filter((q: any) => String(q?.type || "").toUpperCase() === "QRC")
+          .map((q: any) => ({
+            question_id: q.id,
+            reponse_eleve: safeQrcAnswerText(resultat.reponses?.[q.id] ?? resultat.reponses?.[String(q.id)]),
+            points_max: getPointsParQuestion(matiere.id, "QRC", matiere),
+          }))
+          .filter((i) => i.reponse_eleve.trim().length > 0);
+        if (qrcItems.length > 0) {
+          await syncQrcInstances({
+            apprenantId,
+            quizId: examen.id,
+            matiereId: resultat.matiereId,
+            tentative: effectiveTentative,
+            items: qrcItems,
+          });
+        }
+      } catch (qrcError) {
+        console.warn("[ExamSubmission][EB] Synchronisation QRC (nouveau moteur) impossible:", qrcError);
+      }
+    }
+
     return saved;
   };
 
