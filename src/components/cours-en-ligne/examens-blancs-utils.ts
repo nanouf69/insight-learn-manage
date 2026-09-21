@@ -1320,7 +1320,9 @@ export function resolveExamPassage({
 }): ExamPassageResolution {
   const validMatieres = safeArray(matieres).filter(Boolean) as Array<Pick<Matiere, "id" | "nom">>;
   const results = safeArray(resultRows).filter(Boolean);
-  const answers = safeArray(savedRows).filter((row) => Boolean(row) && Boolean(parseExamAnswerKey(safeStr(row.exercice_id), examId)));
+  const answers = (safeArray(savedRows) as SavedExamAnswerRow[]).filter(
+    (row) => Boolean(row) && Boolean(parseExamAnswerKey(safeStr(row?.exercice_id), examId)),
+  );
 
   const occupiedExerciceIds = new Set(answers.map((row) => safeStr(row.exercice_id)));
   const frozenExerciceIds = new Set(

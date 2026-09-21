@@ -48,6 +48,9 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
   const [typeFiltre, setTypeFiltre] = useState<"tous" | "TAXI" | "VTC" | "TA" | "VA">(forcedType || "tous");
   const [completedExamIds, setCompletedExamIds] = useState<Set<string>>(new Set());
   const [startedNotFinishedIds, setStartedNotFinishedIds] = useState<Set<string>>(new Set());
+  // Passage réellement OUVERT (tentative en cours non terminée), même si l'examen
+  // a déjà été terminé lors d'une tentative précédente. Affichage uniquement.
+  const [openAttemptIds, setOpenAttemptIds] = useState<Set<string>>(new Set());
   const [examScores, setExamScores] = useState<Record<string, ExamScoreItem[]>>({});
   const [previousExamAverages, setPreviousExamAverages] = useState<Record<string, number | null>>({});
   // Ref so the score-fetch effect below can read the LATEST exam definitions
@@ -361,7 +364,7 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
           //    on considère l'examen comme terminé si toutes ses matières ont completed=true dans reponses_apprenants.
           supabase
             .from("reponses_apprenants" as any)
-            .select("exercice_id, completed")
+            .select("exercice_id, completed, reponses")
             .eq("apprenant_id", apprenantId)
             .eq("exercice_type", "examen_blanc")
             .then(({ data: repData }) => {
@@ -375,16 +378,25 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
               }
 
 
+              const open = new Set<string>();
               if (repData) {
                 (repData as any[]).forEach((r: any) => {
                   const id: string = r?.exercice_id || "";
                   const quizId = examensDataRef.current.find((exam) => parseExamAnswerKey(id, exam.id))?.id ?? "";
-                  if (quizId && !mergedCompleted.has(quizId)) {
+                  if (!quizId) return;
+                  if (!mergedCompleted.has(quizId)) {
                     started.add(quizId);
+                  }
+                  // Un passage ouvert (non finalisé, avec au moins une réponse) reste
+                  // reprenable même si une tentative précédente est terminée.
+                  const nbReponses = r?.reponses && typeof r.reponses === "object" ? Object.keys(r.reponses).length : 0;
+                  if (r?.completed !== true && nbReponses > 0) {
+                    open.add(quizId);
                   }
                 });
               }
               setStartedNotFinishedIds(started);
+              setOpenAttemptIds(open);
             });
         }
       });
@@ -646,6 +658,17 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
                         Voir mes résultats
                       </Button>
                     )}
+                    {isCompleted && openAttemptIds.has(examen.id) && (
+                      <Button
+                        className="w-full mt-2 gap-2 border-2 border-orange-400 bg-orange-50 text-orange-800 hover:bg-orange-100"
+                        variant="outline"
+                        disabled={pausedExamIds?.has(examen.id)}
+                        onClick={(e) => { e.stopPropagation(); onStart(examen, false); }}
+                      >
+                        ▶ Reprendre ma tentative en cours
+                        <ChevronRight className="w-4 h-4" />
+                      </Button>
+                    )}
                     <Button
                       className="w-full mt-2 gap-2"
                       variant={isCompleted ? "outline" : isStartedNotFinished ? "default" : "default"}
@@ -703,7 +726,7 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
       <RefaireExamenDialog
         open={!!retakeExamen}
         onOpenChange={(o) => { if (!o) setRetakeExamen(null); }}
-        hasResumableAttempt={!!retakeExamen && startedNotFinishedIds.has(retakeExamen.id)}
+        hasResumableAttempt={!!retakeExamen && (startedNotFinishedIds.has(retakeExamen.id) || openAttemptIds.has(retakeExamen.id))}
         onResume={() => { const ex = retakeExamen; setRetakeExamen(null); if (ex) onStart(ex, false); }}
         onConfirm={() => { const ex = retakeExamen; setRetakeExamen(null); if (ex) onStart(ex, true); }}
       />
