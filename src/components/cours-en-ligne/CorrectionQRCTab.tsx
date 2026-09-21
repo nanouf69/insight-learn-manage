@@ -346,7 +346,7 @@ function sortQrcItems(list: QrcItem[], sortOrder: "desc" | "asc"): QrcItem[] {
 const CorrectionQRCTab = () => {
   const [items, setItems] = useState<QrcItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"all" | "pending" | "done" | "today" | "today-pending">("pending");
+  const [filter, setFilter] = useState<"all" | "pending" | "done" | "today" | "today-pending" | "blocking">("pending");
   const [searchQuery, setSearchQuery] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingPoints, setEditingPoints] = useState(0);
@@ -370,6 +370,7 @@ const CorrectionQRCTab = () => {
       if (filter === "done" && !item.corrigeManuel) return false;
       if (filter === "today" && !isAnsweredToday(item)) return false;
       if (filter === "today-pending" && (!isAnsweredToday(item) || item.corrigeManuel)) return false;
+      if (filter === "blocking" && !isBlockingResult(item)) return false;
       if (examenFilter !== "all") {
         const [cat, num] = examenFilter.split(":");
         if (getExamCategory(item.quizTitre, item.quizId, item.apprenantTypeMode).key !== cat) return false;
