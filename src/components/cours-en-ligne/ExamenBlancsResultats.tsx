@@ -13,6 +13,7 @@ import {
   ArrowLeft, ArrowRight, CheckCircle2, XCircle, AlertTriangle,
   Trophy, RotateCcw, ChevronRight, BookOpen, Loader2, Bot, Clock, Pencil
 } from "lucide-react";
+import { RefaireExamenDialog } from "./RefaireExamenDialog";
 import { getPointsParQuestion, isCalculQuestion, type ExamenBlanc, type Matiere, type Question } from "./examens-blancs-data";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -62,6 +63,7 @@ function EcranResultats({
     (r) => r.correctionsIA && Object.values(r.correctionsIA).some((value) => value && value !== "loading")
   );
 
+  const [retakeConfirmOpen, setRetakeConfirmOpen] = useState(false);
   const [correctionsIA, setCorrectionsIA] = useState<{ [matiereIdx: number]: CorrectionCache }>(() => {
     if (!hasPreloadedCorrections) return {};
     // Initialize from preloaded data
@@ -1040,12 +1042,17 @@ function EcranResultats({
           Retour aux examens
         </Button>
         {canRetry && (
-          <Button onClick={() => { if (window.confirm("Êtes-vous sûr de vouloir tout recommencer ? Votre progression actuelle sera perdue.")) { onRecommencer(); window.scrollTo({ top: 0, behavior: "smooth" }); } }} className="flex-1 gap-2">
+          <Button onClick={() => setRetakeConfirmOpen(true)} className="flex-1 gap-2">
             <RotateCcw className="w-4 h-4" />
             Recommencer
           </Button>
         )}
       </div>
+      <RefaireExamenDialog
+        open={retakeConfirmOpen}
+        onOpenChange={setRetakeConfirmOpen}
+        onConfirm={() => { onRecommencer(); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+      />
       </TabsContent>
 
       {!hasQrcPendingValidation && <TabsContent value="revision">
