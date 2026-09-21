@@ -1500,6 +1500,7 @@ const CorrectionQRCTab = () => {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value="blocking">🚨 QRC bloquant des résultats ({blockingCount})</SelectItem>
             <SelectItem value="today">🔥 QRC répondues aujourd'hui ({todayCount})</SelectItem>
             <SelectItem value="today-pending">⏳ À corriger aujourd'hui ({todayPendingCount})</SelectItem>
             <SelectItem value="pending">⏳ En attente uniquement</SelectItem>
