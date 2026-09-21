@@ -163,6 +163,10 @@ export async function createPreuve(input: {
     .insert({
       titre: input.titre,
       description: input.description ?? null,
+      ce_que_demontre: input.ce_que_demontre ?? null,
+      emplacement: input.emplacement ?? null,
+      remarque_interne: input.remarque_interne ?? null,
+      source_libelle: input.source_libelle ?? null,
       date_preuve: input.date_preuve ?? null,
       valide_du: input.valide_du ?? null,
       valide_au: input.valide_au ?? null,
