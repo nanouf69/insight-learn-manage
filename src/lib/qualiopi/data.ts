@@ -49,6 +49,9 @@ export const DEFAULT_ETAT = (n: number): QualiopiEtat => ({
   applicable: true,
   responsable: null,
   commentaire_auditeur: null,
+  script_auditeur: null,
+  points_vigilance: null,
+  remarques: null,
   date_verification: null,
   maj_annuelle: false,
 });
