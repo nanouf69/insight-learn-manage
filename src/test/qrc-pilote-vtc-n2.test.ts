@@ -17,7 +17,8 @@ describe("Pilote QRC — un seul vrai examen, jamais de mélange", () => {
     expect(tab).toContain("fetchQrcEngineAttemptIds");
     expect(tab).toContain("engineAttemptIds.has(");
     // L'exclusion ne doit jamais porter sur l'examen entier (historique conservé).
-    expect(tab).not.toContain("!engineQuizIds.has(String(r.quiz_id))");
+    expect(tab).not.toContain("!isResultPlaceholder(r) && !engineQuizIds");
+    expect(tab).toContain("!isResultPlaceholder(r) && !isHandledByEngine(r)");
   });
 
   it("le nouveau moteur ne peut que bloquer en plus, jamais débloquer l'historique", () => {
