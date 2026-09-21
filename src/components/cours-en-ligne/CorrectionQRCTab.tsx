@@ -599,6 +599,22 @@ const CorrectionQRCTab = () => {
     const groups: AttemptGroup[] = [];
     groupsByMatiere.forEach((list) => groups.push(...list));
 
+    // Index des validations, rattaché au PASSAGE réel (et non à la ligne
+    // technique qui l'a enregistrée). Chaque passage a son propre index : une
+    // nouvelle tentative ne récupère jamais la validation d'une tentative
+    // précédente, même avec une réponse strictement identique.
+    groups.forEach((g) => {
+      Object.entries(g.corrections || {}).forEach(([rawQuestionId, correction]) => {
+        const questionId = Number(String(rawQuestionId).replace(/^Q/i, ""));
+        if (!Number.isFinite(questionId) || !isAdminValidatedCorrection(correction, g.completedAt)) return;
+        const reponse = g.reponses?.[questionId] ?? g.reponses?.[String(questionId)];
+        if (!safeStr(reponse).trim()) return;
+        const ck = answerIdentity(g.apprenantId, g.quizId, g.matiereId, g.tentative, questionId, reponse);
+        if (!validatedByAnswer.has(ck)) validatedByAnswer.set(ck, correction);
+      });
+    });
+
+
     // Rattachement d'une validation existante au passage concerné :
     // 1) la validation enregistrée sur le passage lui-même ;
     // 2) sinon, rattrapage UNIQUEMENT si la correspondance est certaine —
