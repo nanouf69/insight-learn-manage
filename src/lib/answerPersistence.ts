@@ -550,7 +550,10 @@ async function sendItem(item: QueueItem): Promise<SendResult> {
     // sert à rien et masque les vraies erreurs ; l'élément est conservé
     // (aucune réponse n'est supprimée) et sera retenté au prochain changement
     // de session.
-    if (res.status === 403) return "blocked";
+    if (res.status === 403) {
+      notifyAnswerSaveRejected(item.payload.exercice_id, "forbidden");
+      return "blocked";
+    }
     return "retry";
   } catch (e) {
     console.error("[answerPersistence] Erreur réseau sauvegarde", e);
