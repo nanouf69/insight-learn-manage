@@ -90,24 +90,75 @@ export default function ChallengeLive() {
   const currentIndex = session?.current_index ?? 0;
   const currentQuestion = questions[currentIndex];
 
-  const currentResponses = responses.filter((r) => r.question_id === currentQuestion?.id);
+  // Une reponse n'est jamais comptee deux fois : dedoublonnage par participant.
+  const currentResponses = useMemo(() => {
+    const byParticipant = new Map<string, (typeof responses)[number]>();
+    responses
+      .filter((r) => r.question_id === currentQuestion?.id)
+      .forEach((r) => byParticipant.set(r.participant_id, r));
+    return Array.from(byParticipant.values());
+  }, [responses, currentQuestion?.id]);
+
   const answeredIds = new Set(currentResponses.map((r) => r.participant_id));
   const sansReponse = participants.filter((p) => !answeredIds.has(p.id));
   const bonnes = currentResponses.filter((r) => r.est_correcte === true).length;
   const mauvaises = currentResponses.filter((r) => r.est_correcte === false).length;
   const qrcAttente = currentResponses.filter((r) => r.question_type === "qrc" && !r.corrigee_manuellement);
 
+  // Controles automatiques de coherence sur la question en cours.
+  const controleParticipants = currentResponses.length + sansReponse.length === participants.length;
+  const controleReponses = bonnes + mauvaises + qrcAttente.length === currentResponses.length;
+
+  // Classement final : QRC en attente => score PROVISOIRE.
+  const classement = useMemo(() => {
+    return participants
+      .map((p) => {
+        const mine = responses.filter((r) => r.participant_id === p.id);
+        const uniques = new Map(mine.map((r) => [r.question_id, r]));
+        const list = Array.from(uniques.values());
+        const bonnes = list.filter((r) => r.est_correcte === true).length;
+        const mauvaises = list.filter((r) => r.est_correcte === false).length;
+        const attente = list.filter((r) => r.question_type === "qrc" && !r.corrigee_manuellement).length;
+        return {
+          id: p.id,
+          nom: session?.masquer_noms ? `Participant ${p.id.slice(0, 4).toUpperCase()}` : p.display_name,
+          bonnes,
+          mauvaises,
+          sansReponse: Math.max(questions.length - list.length, 0),
+          attente,
+          score: Number(p.score),
+        };
+      })
+      .sort((a, b) => b.score - a.score);
+  }, [participants, responses, questions.length, session?.masquer_noms]);
+  const qrcEnAttenteTotal = classement.reduce((s, c) => s + c.attente, 0);
+
   const handleCreate = async () => {
+    if (!quizId) {
+      toast.error("Choisissez un quiz source");
+      return;
+    }
     setCreating(true);
     try {
+      const source = sources.find((s) => String(s.exerciceId) === quizId);
+      const snapshot = await buildSnapshotFromSource(Number(quizId), {
+        nombre: Number(nombre) || 20,
+        typeFiltre,
+        ordre,
+      });
+      if (snapshot.length === 0) {
+        toast.error("Aucune question ne correspond à ces critères");
+        return;
+      }
       const created = await createLiveSession({
         titre,
-        questions: DEMO_QUESTIONS,
-        sourceLabel: "Questions de démonstration",
+        questions: snapshot,
+        sourceQuizId: quizId,
+        sourceLabel: `VTC · ${source?.titre ?? ""}`,
       });
       setSessions((prev) => [created, ...prev]);
       setActiveId(created.id);
-      toast.success(`Challenge lancé — code ${created.code}`);
+      toast.success(`Challenge lancé — ${snapshot.length} questions — code ${created.code}`);
     } catch {
       toast.error("Le challenge n'a pas pu être lancé");
     } finally {
