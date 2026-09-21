@@ -4578,18 +4578,45 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     };
 
     void loadCanonicalQuestions();
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
     const channel = supabase
       .channel(`canonical-module-${module.id}-${canonicalRefreshKey}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "quiz_questions" }, (payload) => {
         const row = (payload.new ?? payload.old) as { quiz_id?: string } | null;
         if (!row?.quiz_id || quizIds.includes(row.quiz_id)) void loadCanonicalQuestions();
       })
-      .subscribe();
+      .subscribe((status) => {
+        // Un canal temps réel coupé ne doit jamais figer le contenu affiché :
+        // on relit la base à la reconnexion.
+        if (status === "SUBSCRIBED") {
+          void loadCanonicalQuestions();
+          return;
+        }
+        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+          if (reconnectTimer) clearTimeout(reconnectTimer);
+          reconnectTimer = setTimeout(() => {
+            if (!cancelled) void loadCanonicalQuestions();
+          }, 3000);
+        }
+      });
     const onFocus = () => void loadCanonicalQuestions();
+    const onVisibilityChange = () => {
+      if (!document.hidden) void loadCanonicalQuestions();
+    };
+    // Filet de sécurité : les questions canoniques (bilans/quiz) étaient
+    // rafraîchies uniquement par le temps réel ou le focus. Un événement
+    // manqué laissait l'ancienne version affichée plusieurs minutes.
+    const pollInterval = window.setInterval(() => {
+      if (!document.hidden) void loadCanonicalQuestions();
+    }, 15_000);
     window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisibilityChange);
     return () => {
       cancelled = true;
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      window.clearInterval(pollInterval);
       window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
       void supabase.removeChannel(channel);
     };
   }, [editorStateHydrated, module.id, canonicalRefreshKey]);
