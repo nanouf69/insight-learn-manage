@@ -951,7 +951,7 @@ function EcranResultats({
           </CardContent>
         </Card>
         )}
-      </div>
+      </div>}
 
       {/* Bouton refaire les fausses — EN HAUT bien visible */}
       {!hasQrcPendingValidation && (() => {
