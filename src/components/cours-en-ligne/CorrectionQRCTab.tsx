@@ -23,7 +23,11 @@ interface QrcItem {
   quizTitre: string;
   quizId: string;
   quizType: string;
-  /** Numéro de tentative réel du passage : fait partie de l'identité d'une QRC. */
+  /** Identité persistante du passage : tentative enregistrée en base ou date du passage si l'ancien numéro est ambigu. */
+  passageKey: string;
+  tentativeLabel: string;
+  tentativeSortValue: number;
+  /** Numéro de tentative réellement enregistré si fiable ; jamais recalculé depuis l'ordre d'affichage. */
   tentative: number;
   /** Numéro de tentative tel qu'enregistré en base (cible d'écriture). */
   dbTentative?: number;
@@ -197,8 +201,8 @@ function getMatiereOrderValue(matiereNom: string, matiereId?: string): number {
   return Number.MAX_SAFE_INTEGER;
 }
 
-function getBlockingGroupKey(item: Pick<QrcItem, "apprenantId" | "quizId" | "tentative" | "matiereId">): string {
-  return `${item.apprenantId}__${item.quizId}__T${item.tentative}__${item.matiereId || ""}`;
+function getBlockingGroupKey(item: Pick<QrcItem, "apprenantId" | "quizId" | "passageKey" | "matiereId">): string {
+  return `${item.apprenantId}__${item.quizId}__${item.passageKey}__${item.matiereId || ""}`;
 }
 
 function compareBlockingQrcItems(a: QrcItem, b: QrcItem): number {
@@ -213,7 +217,9 @@ function compareBlockingQrcItems(a: QrcItem, b: QrcItem): number {
   const byExamTitle = a.quizTitre.localeCompare(b.quizTitre, "fr", { sensitivity: "base" });
   if (byExamTitle !== 0) return byExamTitle;
 
-  if (a.tentative !== b.tentative) return a.tentative - b.tentative;
+  if (a.tentativeSortValue !== b.tentativeSortValue) return a.tentativeSortValue - b.tentativeSortValue;
+  const byPassageDate = (new Date(a.completedAt).getTime() || 0) - (new Date(b.completedAt).getTime() || 0);
+  if (byPassageDate !== 0) return byPassageDate;
 
   const byMatiereOrder = getMatiereOrderValue(a.matiereNom, a.matiereId) - getMatiereOrderValue(b.matiereNom, b.matiereId);
   if (byMatiereOrder !== 0) return byMatiereOrder;
@@ -233,6 +239,36 @@ function formatDateOnlyFR(value: string): string {
   return new Date(value).toLocaleDateString("fr-FR");
 }
 
+function formatPassageDateTimeFR(value: string | null | undefined): string {
+  const date = value ? new Date(value) : null;
+  if (!date || !Number.isFinite(date.getTime())) return "date inconnue";
+  return date.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+}
+
+function getStoredTentative(value: unknown): number | null {
+  const n = Number(value);
+  if (!Number.isFinite(n) || n <= 0) return null;
+  return Math.floor(n);
+}
+
+function parseExamAnswerExerciceId(value: unknown): { quizId: string; matiereId: string; tentative: number | null } {
+  const parts = safeStr(value).split("__");
+  const quizId = parts[0] || "";
+  const suffix = parts[parts.length - 1] || "";
+  const suffixTentative = suffix.match(/^t(\d+)$/i)?.[1];
+  const matiereParts = suffixTentative ? parts.slice(1, -1) : parts.slice(1);
+  return {
+    quizId,
+    matiereId: matiereParts.join("__"),
+    tentative: suffixTentative ? getStoredTentative(suffixTentative) : null,
+  };
+}
+
+function buildFallbackPassageKey(identityKey: string, completedAt: string | null | undefined, primaryId: string): string {
+  const time = completedAt ? new Date(completedAt).getTime() : 0;
+  return `${identityKey}__P${Number.isFinite(time) && time > 0 ? time : primaryId}`;
+}
+
 /**
  * Deux entrées désignent la même QRC réellement passée lorsque l'apprenant,
  * l'examen, la matière, LE PASSAGE/TENTATIVE et l'identifiant stable de la
@@ -243,16 +279,19 @@ function formatDateOnlyFR(value: string): string {
  * exactement la même réponse que lors de sa tentative précédente.
  */
 export function isSameQrcContent(
-  a: { apprenantId: string; quizId: string; matiereId: string; tentative?: number; questionId: number; reponseEleve?: string },
-  b: { apprenantId: string; quizId: string; matiereId: string; tentative?: number; questionId: number; reponseEleve?: string },
+  a: { apprenantId: string; quizId: string; matiereId: string; passageKey?: string; tentative?: number; questionId: number; reponseEleve?: string },
+  b: { apprenantId: string; quizId: string; matiereId: string; passageKey?: string; tentative?: number; questionId: number; reponseEleve?: string },
 ): boolean {
   const texteA = normalizeText(safeStr(a.reponseEleve));
   if (!texteA) return false;
+  const samePassage = a.passageKey || b.passageKey
+    ? !!a.passageKey && !!b.passageKey && a.passageKey === b.passageKey
+    : (a.tentative ?? 1) === (b.tentative ?? 1);
   return (
     a.apprenantId === b.apprenantId &&
     a.quizId === b.quizId &&
     (a.matiereId || "") === (b.matiereId || "") &&
-    (a.tentative ?? 1) === (b.tentative ?? 1) &&
+    samePassage &&
     a.questionId === b.questionId &&
     texteA === normalizeText(safeStr(b.reponseEleve))
   );
@@ -402,7 +441,9 @@ function sortQrcItems(list: QrcItem[], sortOrder: "desc" | "asc"): QrcItem[] {
     const numB = parseInt((b.quizTitre?.match(/N°(\d+)/)?.[1]) || "0", 10);
     if (numA !== numB) return numA - numB;
     if (a.quizId !== b.quizId) return a.quizId.localeCompare(b.quizId);
-    if (a.tentative !== b.tentative) return a.tentative - b.tentative;
+    if (a.tentativeSortValue !== b.tentativeSortValue) return a.tentativeSortValue - b.tentativeSortValue;
+    const byPassageDate = (new Date(a.completedAt).getTime() || 0) - (new Date(b.completedAt).getTime() || 0);
+    if (byPassageDate !== 0) return byPassageDate;
     if (a.matiereId !== b.matiereId) return a.matiereId.localeCompare(b.matiereId);
     return a.questionId - b.questionId;
   });
@@ -553,8 +594,8 @@ const CorrectionQRCTab = () => {
     const qrcItems: QrcItem[] = [];
     const seenQrcKeys = new Set<string>();
 
-    const attemptKey = (a: string, q: string, m: string, t: number, qid: number) =>
-      `${a}__${q}__${m || ""}__T${t}__${qid}`;
+    const attemptKey = (a: string, q: string, m: string, passageKey: string, qid: number) =>
+      `${a}__${q}__${m || ""}__${passageKey}__${qid}`;
 
     // Identité d'une QRC réellement passée : apprenant + examen + matière +
     // PASSAGE/TENTATIVE RÉEL + question stable. Le texte de la réponse n'entre
@@ -562,8 +603,8 @@ const CorrectionQRCTab = () => {
     // techniques jumelles (finalisation, reprise, double écriture) écrites pour
     // ce passage. Deux tentatives réelles restent TOUJOURS deux QRC distinctes,
     // même si l'élève a répondu exactement la même chose.
-    const answerIdentity = (a: string, q: string, m: string, passage: number, qid: number, reponse: unknown) =>
-      `${a}__${q}__${m || ""}__P${passage}__${qid}__${normalizeText(safeStr(reponse))}`;
+    const answerIdentity = (a: string, q: string, m: string, passageKey: string, qid: number, reponse: unknown) =>
+      `${a}__${q}__${m || ""}__${passageKey}__${qid}__${normalizeText(safeStr(reponse))}`;
     const validatedByAnswer = new Map<string, any>();
     const itemIndexByContent = new Map<string, number>();
 
@@ -599,10 +640,11 @@ const CorrectionQRCTab = () => {
     const MEME_PASSAGE_MS = 5 * 60 * 1000;
     type AttemptGroup = {
       primaryId: string; apprenantId: string; userId?: string; quizId: string; quizType: string;
-      quizTitre: string; matiereId: string; matiereNom: string; tentative: number; dbTentative: number; completedAt: string;
+      quizTitre: string; matiereId: string; matiereNom: string; identityKey: string; passageKey: string;
+      tentative: number; dbTentative?: number; tentativeLabel: string; tentativeSortValue: number; completedAt: string;
       scoreObtenu: number; scoreMax: number; noteSur20: number | null;
       questions: any[] | null; reponses: Record<string, any>; corrections: Record<string, any>; rows: number;
-      lastTime: number;
+      firstTime: number; lastTime: number;
     };
     const groupsByMatiere = new Map<string, AttemptGroup[]>();
     let doublonsTechniques = 0;
@@ -616,13 +658,14 @@ const CorrectionQRCTab = () => {
     for (const r of resultsAsc) {
       const details = (r.details as any) || {};
       const mid = r.matiere_id || "";
-      const mKey = `${r.apprenant_id}__${r.quiz_id}__${mid}`;
+      const mKey = `${r.apprenant_id}__${r.quiz_type}__${r.quiz_id}__${mid}`;
       const time = new Date(r.completed_at).getTime() || 0;
+      const storedTentative = getStoredTentative(r.tentative);
       const questions = Array.isArray(details.questions) && details.questions.length > 0 ? details.questions : null;
       const list = groupsByMatiere.get(mKey) || [];
       const last = list[list.length - 1];
 
-      if (last && time - last.lastTime <= MEME_PASSAGE_MS) {
+      if (last && storedTentative != null && last.dbTentative === storedTentative && time - last.lastTime <= MEME_PASSAGE_MS) {
         // Même passage : on complète ce qui manque, sans jamais écraser.
         doublonsTechniques++;
         last.rows++;
@@ -650,21 +693,54 @@ const CorrectionQRCTab = () => {
         continue;
       }
 
+      const initialPassageKey = storedTentative != null
+        ? `${mKey}__T${storedTentative}`
+        : buildFallbackPassageKey(mKey, r.completed_at, r.id);
+
       list.push({
         primaryId: r.id, apprenantId: r.apprenant_id, userId: r.user_id, quizId: r.quiz_id,
         quizType: r.quiz_type, quizTitre: r.quiz_titre, matiereId: mid, matiereNom: r.matiere_nom || "",
-        tentative: list.length + 1,
-        dbTentative: Number.isFinite(Number(r.tentative)) && Number(r.tentative) > 0 ? Math.floor(Number(r.tentative)) : 1,
+        identityKey: mKey,
+        passageKey: initialPassageKey,
+        tentative: storedTentative ?? 0,
+        dbTentative: storedTentative ?? undefined,
+        tentativeLabel: storedTentative != null ? `tentative ${storedTentative}` : `Passage du ${formatPassageDateTimeFR(r.completed_at)}`,
+        tentativeSortValue: storedTentative ?? Number.MAX_SAFE_INTEGER,
         completedAt: r.completed_at,
         scoreObtenu: r.score_obtenu ?? 0, scoreMax: r.score_max ?? 20, noteSur20: r.note_sur_20 ?? null,
         questions,
         reponses: { ...(details.reponses || {}) },
         corrections: { ...(details.correctionsIA || {}) },
         rows: 1,
+        firstTime: time,
         lastTime: time,
       });
       groupsByMatiere.set(mKey, list);
     }
+
+    // Le libellé « tentative X » n'est affiché que si X est unique pour cette
+    // identité apprenant+examen+matière. Si d'anciennes lignes réutilisent le
+    // même numéro pour plusieurs passages réels, on affiche la date du passage
+    // plutôt que d'inventer/renuméroter un numéro.
+    groupsByMatiere.forEach((list) => {
+      const occurrences = new Map<number, number>();
+      list.forEach((g) => {
+        if (g.dbTentative != null) occurrences.set(g.dbTentative, (occurrences.get(g.dbTentative) || 0) + 1);
+      });
+      list.forEach((g) => {
+        if (g.dbTentative != null && occurrences.get(g.dbTentative) === 1) {
+          g.passageKey = `${g.identityKey}__T${g.dbTentative}`;
+          g.tentative = g.dbTentative;
+          g.tentativeLabel = `tentative ${g.dbTentative}`;
+          g.tentativeSortValue = g.dbTentative;
+          return;
+        }
+        g.passageKey = buildFallbackPassageKey(g.identityKey, g.completedAt, g.primaryId);
+        g.tentative = 0;
+        g.tentativeLabel = `Passage du ${formatPassageDateTimeFR(g.completedAt)}`;
+        g.tentativeSortValue = Number.MAX_SAFE_INTEGER;
+      });
+    });
 
     const groups: AttemptGroup[] = [];
     groupsByMatiere.forEach((list) => groups.push(...list));
@@ -679,7 +755,7 @@ const CorrectionQRCTab = () => {
         if (!Number.isFinite(questionId) || !isAdminValidatedCorrection(correction, g.completedAt)) return;
         const reponse = g.reponses?.[questionId] ?? g.reponses?.[String(questionId)];
         if (!safeStr(reponse).trim()) return;
-        const ck = answerIdentity(g.apprenantId, g.quizId, g.matiereId, g.tentative, questionId, reponse);
+        const ck = answerIdentity(g.apprenantId, g.quizId, g.matiereId, g.passageKey, questionId, reponse);
         if (!validatedByAnswer.has(ck)) validatedByAnswer.set(ck, correction);
       });
     });
@@ -711,6 +787,31 @@ const CorrectionQRCTab = () => {
       const prev = dernierPassage.get(k);
       if (!prev || g.lastTime > prev.lastTime) dernierPassage.set(k, g);
     });
+    const passageParTentative = new Map<string, AttemptGroup>();
+    const tentativeOccurrences = new Map<string, number>();
+    groups.forEach((g) => {
+      if (g.dbTentative == null) return;
+      const k = `${g.apprenantId}__${g.quizId}__${g.matiereId}__T${g.dbTentative}`;
+      tentativeOccurrences.set(k, (tentativeOccurrences.get(k) || 0) + 1);
+    });
+    groups.forEach((g) => {
+      if (g.dbTentative == null) return;
+      const k = `${g.apprenantId}__${g.quizId}__${g.matiereId}__T${g.dbTentative}`;
+      if (tentativeOccurrences.get(k) === 1) passageParTentative.set(k, g);
+    });
+    const findPassageForAutosave = (apprenantId: string, quizId: string, matiereId: string, tentative: number | null, at: string | null | undefined): AttemptGroup | undefined => {
+      if (tentative != null) {
+        const byTentative = passageParTentative.get(`${apprenantId}__${quizId}__${matiereId}__T${tentative}`);
+        if (byTentative) return byTentative;
+      }
+      const time = at ? new Date(at).getTime() : 0;
+      if (!Number.isFinite(time) || time <= 0) return undefined;
+      const candidates = groupsByMatiere.get(`${apprenantId}__examen_blanc__${quizId}__${matiereId}`) || [];
+      return candidates
+        .map((g) => ({ group: g, distance: Math.min(Math.abs(time - g.firstTime), Math.abs(time - g.lastTime)) }))
+        .filter(({ distance }) => distance <= MEME_PASSAGE_MS)
+        .sort((a, b) => a.distance - b.distance)[0]?.group;
+    };
 
     for (const g of groups.values()) {
       const defaultMatiere = findMatiereWithFallback(examenMap, tousLesExamens, g.quizId, g.matiereId);
@@ -736,7 +837,7 @@ const CorrectionQRCTab = () => {
         const perQuestionMatiere = matiere
           || findMatiereWithFallback(examenMap, tousLesExamens, g.quizId, effectiveMatiereId);
 
-        const qrcKey = attemptKey(g.apprenantId, g.quizId, effectiveMatiereId, g.tentative, questionId);
+        const qrcKey = attemptKey(g.apprenantId, g.quizId, effectiveMatiereId, g.passageKey, questionId);
         if (seenQrcKeys.has(qrcKey)) continue;
         seenQrcKeys.add(qrcKey);
 
@@ -758,7 +859,7 @@ const CorrectionQRCTab = () => {
         // n'est recalculé ni réécrit, et aucune autre tentative n'est touchée.
         if (!hasManualCorrection && reponseEleveStr.trim()) {
           const dejaValidee = validatedByAnswer.get(
-            answerIdentity(g.apprenantId, g.quizId, effectiveMatiereId, g.tentative, questionId, reponseEleveStr),
+            answerIdentity(g.apprenantId, g.quizId, effectiveMatiereId, g.passageKey, questionId, reponseEleveStr),
           );
           if (dejaValidee) {
             correction = dejaValidee;
@@ -804,7 +905,7 @@ const CorrectionQRCTab = () => {
         }
 
         const contentKey = reponseEleveStr.trim()
-          ? answerIdentity(g.apprenantId, g.quizId, effectiveMatiereId, g.tentative, questionId, reponseEleveStr)
+          ? answerIdentity(g.apprenantId, g.quizId, effectiveMatiereId, g.passageKey, questionId, reponseEleveStr)
           : null;
         const item: QrcItem = {
           resultId: g.primaryId,
@@ -816,6 +917,9 @@ const CorrectionQRCTab = () => {
           quizTitre: g.quizTitre,
           quizId: g.quizId,
           quizType: g.quizType,
+          passageKey: g.passageKey,
+          tentativeLabel: g.tentativeLabel,
+          tentativeSortValue: g.tentativeSortValue,
           tentative: g.tentative,
           dbTentative: g.dbTentative,
           matiereId: effectiveMatiereId,
@@ -842,7 +946,8 @@ const CorrectionQRCTab = () => {
         // Même réponse déjà présente (deuxième écriture technique du passage) :
         // une seule entrée est conservée, la version corrigée faisant foi.
         if (contentKey && itemIndexByContent.has(contentKey)) {
-          const idx = itemIndexByContent.get(contentKey)!;
+          const idx = itemIndexByContent.get(contentKey);
+          if (idx == null) continue;
           if (!qrcItems[idx].corrigeManuel && item.corrigeManuel) qrcItems[idx] = item;
           continue;
         }
@@ -860,7 +965,7 @@ const CorrectionQRCTab = () => {
     for (let from = 0; ; from += 1000) {
       const { data, error } = await supabase
         .from("reponses_apprenants" as any)
-        .select("id, apprenant_id, user_id, exercice_id, exercice_type, reponses, completed, updated_at")
+        .select("id, apprenant_id, user_id, exercice_id, exercice_type, reponses, completed, updated_at, submitted_at, tentative")
         .eq("exercice_type", "examen_blanc")
         .like("exercice_id", "%__%")
         .order("updated_at", { ascending: false })
@@ -885,7 +990,9 @@ const CorrectionQRCTab = () => {
     }
 
     for (const row of autosaves) {
-      const [quizId, matiereId] = safeStr(row.exercice_id).split("__");
+      const parsedExercice = parseExamAnswerExerciceId(row.exercice_id);
+      const quizId = parsedExercice.quizId;
+      const matiereId = parsedExercice.matiereId;
       if (!quizId || !matiereId) continue;
       const matiere = findMatiereWithFallback(examenMap, tousLesExamens, quizId, matiereId);
       if (!matiere) continue;
@@ -893,8 +1000,17 @@ const CorrectionQRCTab = () => {
       const reponses = row.reponses || {};
       const app = apprenantMap[row.apprenant_id] || { nom: "Inconnu", prenom: "", mode: "presentiel" as const };
       const examen = examenMap[quizId];
-      const passage = dernierPassage.get(`${row.apprenant_id}__${quizId}__${matiereId}`);
-      const tentative = passage?.tentative ?? 1;
+      const rowTentative = parsedExercice.tentative ?? getStoredTentative(row.tentative);
+      const passage = findPassageForAutosave(row.apprenant_id, quizId, matiereId, rowTentative, row.submitted_at || row.updated_at);
+      const fallbackIdentityKey = `${row.apprenant_id}__examen_blanc__${quizId}__${matiereId}`;
+      const autosavePassageKey = passage?.passageKey
+        ?? (parsedExercice.tentative != null
+          ? `${fallbackIdentityKey}__T${parsedExercice.tentative}`
+          : buildFallbackPassageKey(fallbackIdentityKey, row.submitted_at || row.updated_at, row.id));
+      const autosaveTentative = passage?.tentative ?? (parsedExercice.tentative ?? 0);
+      const autosaveTentativeLabel = passage?.tentativeLabel
+        ?? (parsedExercice.tentative != null ? `tentative ${parsedExercice.tentative}` : `Passage du ${formatPassageDateTimeFR(row.submitted_at || row.updated_at)}`);
+      const autosaveTentativeSortValue = passage?.tentativeSortValue ?? (parsedExercice.tentative ?? Number.MAX_SAFE_INTEGER);
       const passageSnapshotQrcIds = getSnapshotQrcQuestionIds(passage?.questions);
 
       for (const q of questions) {
@@ -902,13 +1018,13 @@ const CorrectionQRCTab = () => {
         if (passageSnapshotQrcIds && !passageSnapshotQrcIds.has(Number(q.id))) continue;
         const reponseEleveStr = safeStr(reponses?.[q.id] ?? reponses?.[String(q.id)] ?? "");
         if (!reponseEleveStr.trim()) continue;
-        const qrcKey = attemptKey(row.apprenant_id, quizId, matiereId, tentative, q.id);
+        const qrcKey = attemptKey(row.apprenant_id, quizId, matiereId, autosavePassageKey, q.id);
         if (seenQrcKeys.has(qrcKey)) continue;
         if (passage && findValidationForGroup(passage, matiereId, q.id)) continue;
         // Cette réponse exacte a déjà été validée ou déjà listée pour CE
         // passage : elle ne revient pas dans la file. Une autre tentative
         // conserve sa propre entrée.
-        const autosaveContentKey = answerIdentity(row.apprenant_id, quizId, matiereId, tentative, q.id, reponseEleveStr);
+        const autosaveContentKey = answerIdentity(row.apprenant_id, quizId, matiereId, autosavePassageKey, q.id, reponseEleveStr);
         if (validatedByAnswer.has(autosaveContentKey)) continue;
         if (itemIndexByContent.has(autosaveContentKey)) continue;
         itemIndexByContent.set(autosaveContentKey, qrcItems.length);
@@ -917,7 +1033,7 @@ const CorrectionQRCTab = () => {
         const pts = getPointsParQuestion(matiereId, "QRC", matiere);
         const recomputed = recomputeQrcAutoScore(q, reponseEleveStr, pts);
         qrcItems.push({
-          resultId: `autosave:${row.id}:${quizId}:${matiereId}:T${tentative}`,
+          resultId: `autosave:${row.id}:${quizId}:${matiereId}:${autosavePassageKey}`,
           source: "autosave",
           autosaveId: row.id,
           userId: row.user_id,
@@ -927,8 +1043,11 @@ const CorrectionQRCTab = () => {
           quizTitre: examen?.titre || quizId,
           quizId,
           quizType: "examen_blanc",
-          dbTentative: passage?.dbTentative ?? 1,
-          tentative,
+          passageKey: autosavePassageKey,
+          tentativeLabel: autosaveTentativeLabel,
+          tentativeSortValue: autosaveTentativeSortValue,
+          dbTentative: passage?.dbTentative ?? rowTentative ?? undefined,
+          tentative: autosaveTentative,
           matiereId,
           matiereNom: matiere.nom,
           questionId: q.id,
@@ -959,19 +1078,26 @@ const CorrectionQRCTab = () => {
       let missing = 0;
       const missingApprenants = new Set<string>();
       for (const row of autosaves) {
-        const [quizId, matiereId] = safeStr(row.exercice_id).split("__");
+        const parsedExercice = parseExamAnswerExerciceId(row.exercice_id);
+        const quizId = parsedExercice.quizId;
+        const matiereId = parsedExercice.matiereId;
         if (!quizId || !matiereId) continue;
         const matiere = findMatiereWithFallback(examenMap, tousLesExamens, quizId, matiereId);
         if (!matiere) continue;
-        const passage = dernierPassage.get(`${row.apprenant_id}__${quizId}__${matiereId}`);
-        const tentative = passage?.tentative ?? 1;
+        const rowTentative = parsedExercice.tentative ?? getStoredTentative(row.tentative);
+        const passage = findPassageForAutosave(row.apprenant_id, quizId, matiereId, rowTentative, row.submitted_at || row.updated_at);
+        const fallbackIdentityKey = `${row.apprenant_id}__examen_blanc__${quizId}__${matiereId}`;
+        const autosavePassageKey = passage?.passageKey
+          ?? (parsedExercice.tentative != null
+            ? `${fallbackIdentityKey}__T${parsedExercice.tentative}`
+            : buildFallbackPassageKey(fallbackIdentityKey, row.submitted_at || row.updated_at, row.id));
         const passageSnapshotQrcIds = getSnapshotQrcQuestionIds(passage?.questions);
         for (const q of getSourceQuestions(matiere, tousLesExamens)) {
           if (!q || String(q.type).toUpperCase() !== "QRC") continue;
           if (passageSnapshotQrcIds && !passageSnapshotQrcIds.has(Number(q.id))) continue;
           const rep = safeStr((row.reponses || {})?.[q.id] ?? (row.reponses || {})?.[String(q.id)] ?? "");
           if (!rep.trim()) continue;
-          if (seenQrcKeys.has(attemptKey(row.apprenant_id, quizId, matiereId, tentative, q.id))) continue;
+          if (seenQrcKeys.has(attemptKey(row.apprenant_id, quizId, matiereId, autosavePassageKey, q.id))) continue;
           if (passage && findValidationForGroup(passage, matiereId, q.id)) continue;
           missing++;
           missingApprenants.add(row.apprenant_id);
@@ -1326,7 +1452,7 @@ const CorrectionQRCTab = () => {
   // Matières dont au moins une QRC reste à corriger : aucune note définitive
   // ne doit y être affichée (Admin comme apprenant).
   const pendingMatiereKeys = new Set(
-    pendingItems.map(i => `${i.apprenantId}__${i.quizId}__${i.matiereId || ""}__T${i.tentative}`),
+    pendingItems.map(i => `${i.apprenantId}__${i.quizId}__${i.matiereId || ""}__${i.passageKey}`),
   );
 
 
@@ -1384,7 +1510,7 @@ const CorrectionQRCTab = () => {
   // Récapitulatif : apprenant → examen → tentative → matière → QRC restantes.
   const blockingGroups = (() => {
     const map = new Map<string, {
-      key: string; firstItem: QrcItem; apprenant: string; quizTitre: string; tentative: number; matiereNom: string; count: number; datePassage: string; minQuestionId: number;
+      key: string; firstItem: QrcItem; apprenant: string; quizTitre: string; tentativeLabel: string; matiereNom: string; count: number; datePassage: string; minQuestionId: number;
     }>();
     for (const i of sortBlockingQrcItems(blockingItems)) {
       const key = getBlockingGroupKey(i);
@@ -1399,7 +1525,7 @@ const CorrectionQRCTab = () => {
           firstItem: i,
           apprenant: `${i.apprenantNom} ${i.apprenantPrenom}`.trim(),
           quizTitre: i.quizTitre,
-          tentative: i.tentative,
+          tentativeLabel: i.tentativeLabel,
           matiereNom: i.matiereNom || i.matiereId,
           count: 1,
           datePassage: i.completedAt,
@@ -1666,7 +1792,7 @@ const CorrectionQRCTab = () => {
             {activeBlockingGroup && (
               <div className="flex items-center justify-between gap-3 rounded-md border border-destructive/30 bg-destructive/5 p-3">
                 <p className="font-semibold text-destructive">
-                  Correction directe : {activeBlockingGroup.apprenant} — {activeBlockingGroup.quizTitre} — tentative {activeBlockingGroup.tentative} — {activeBlockingGroup.matiereNom}
+                  Correction directe : {activeBlockingGroup.apprenant} — {activeBlockingGroup.quizTitre} — {activeBlockingGroup.tentativeLabel} — {activeBlockingGroup.matiereNom}
                 </p>
                 <Button variant="outline" size="sm" onClick={() => setActiveBlockingGroupKey(null)}>
                   Voir toutes les lignes
@@ -1688,7 +1814,7 @@ const CorrectionQRCTab = () => {
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-bold text-foreground">{g.apprenant}</span>
                     <span className="text-muted-foreground">→ {g.quizTitre}</span>
-                    <span className="text-muted-foreground">→ tentative {g.tentative}</span>
+                    <span className="text-muted-foreground">→ {g.tentativeLabel}</span>
                   </div>
                   <div className="text-muted-foreground">→ {g.matiereNom}</div>
                 </div>
@@ -1794,7 +1920,7 @@ const CorrectionQRCTab = () => {
             const isSaving = savingId === uniqueKey;
             // La note d'une matière n'est publiée qu'une fois TOUTES ses QRC corrigées.
             const matierePending = pendingMatiereKeys.has(
-              `${item.apprenantId}__${item.quizId}__${item.matiereId || ""}__T${item.tentative}`,
+              `${item.apprenantId}__${item.quizId}__${item.matiereId || ""}__${item.passageKey}`,
             );
 
 
@@ -1810,6 +1936,7 @@ const CorrectionQRCTab = () => {
                           {item.apprenantPrenom} {item.apprenantNom}
                         </Badge>
                         <Badge variant="outline" className="text-xs">{item.quizTitre}</Badge>
+                        <Badge variant="outline" className="text-xs">{item.tentativeLabel}</Badge>
                         <Badge variant="outline" className="text-xs">{item.matiereNom}</Badge>
                       </div>
                       <p className="text-xs text-muted-foreground">

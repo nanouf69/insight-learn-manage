@@ -37,6 +37,17 @@ describe("Identité d'une QRC : passage réel d'abord", () => {
     expect(isSameQrcContent(base, { ...base, tentative: 2, reponseEleve: "Autre réponse" })).toBe(false);
   });
 
+  it("le passage persistant prime sur tout numéro recalculé", () => {
+    expect(isSameQrcContent(
+      { ...base, passageKey: "A1__EB2__t3p__T2", tentative: 99 },
+      { ...base, passageKey: "A1__EB2__t3p__T2", tentative: 1 },
+    )).toBe(true);
+    expect(isSameQrcContent(
+      { ...base, passageKey: "A1__EB2__t3p__T2", tentative: 2 },
+      { ...base, passageKey: "A1__EB2__t3p__T3", tentative: 2 },
+    )).toBe(false);
+  });
+
   it("ne mélange jamais deux apprenants, examens, matières ou questions", () => {
     expect(isSameQrcContent(base, { ...base, apprenantId: "A2" })).toBe(false);
     expect(isSameQrcContent(base, { ...base, quizId: "EB3" })).toBe(false);
