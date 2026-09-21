@@ -6,7 +6,15 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { CheckCircle2, Clock, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { fetchQrcInstances, loadQrcEngineQuizIds, validateQrcInstance, type QrcInstanceRow } from "@/lib/qrcInstances";
+import {
+  disableQrcEngine,
+  fetchQrcInstances,
+  fetchQrcPilotIntegrity,
+  loadQrcEngineQuizIds,
+  validateQrcInstance,
+  type QrcInstanceRow,
+  type QrcPilotIntegrity,
+} from "@/lib/qrcInstances";
 
 /**
  * FILE DE CORRECTION — NOUVEAU MOTEUR « 1 QRC = 1 IDENTIFIANT UNIQUE ».
