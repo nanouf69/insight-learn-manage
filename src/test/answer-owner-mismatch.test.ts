@@ -35,8 +35,8 @@ describe("Propriété des sauvegardes de réponses", () => {
     setAnswerSaveOwnership({ apprenantId: null, previewReadOnly: false });
   });
 
-  it("aucun rattachement connu : comportement inchangé", () => {
-    expect(canQueueAnswerSaveFor("apprenant-A")).toBe(true);
+  it("aucun rattachement connu : aucune écriture ne part avant identification", () => {
+    expect(canQueueAnswerSaveFor("apprenant-A")).toBe(false);
   });
 
   it("session apprenant A : refuse une réponse visant le dossier B", () => {
@@ -54,6 +54,37 @@ describe("Propriété des sauvegardes de réponses", () => {
       reponses: { q1: "a" },
     } as any);
     expect(getPendingAnswerSaves()).toBe(0);
+  });
+
+  it("aperçu : une ancienne réponse en attente n'est jamais envoyée", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    localStorage.setItem("answer_save_queue_v1", JSON.stringify([{
+      id: "ancienne-preview",
+      payload: {
+        apprenant_id: "apprenant-A",
+        exercice_id: "quiz-ancien",
+        exercice_type: "quiz",
+        reponses: { q1: "A" },
+      },
+      queued_at: new Date().toISOString(),
+      attempts: 0,
+      owner_user_id: "admin-auth-id",
+    }]));
+
+    setAnswerSaveOwnership({ previewReadOnly: true });
+    enqueueAnswerSave({
+      apprenant_id: "apprenant-A",
+      exercice_id: "quiz-nouveau",
+      exercice_type: "quiz",
+      reponses: { q2: "B" },
+    } as any);
+    await Promise.resolve();
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    const queue = JSON.parse(localStorage.getItem("answer_save_queue_v1") ?? "[]");
+    expect(queue).toHaveLength(1);
+    expect(queue[0].id).toBe("ancienne-preview");
   });
 
   it("session apprenant : la réponse est bien mise en file", () => {

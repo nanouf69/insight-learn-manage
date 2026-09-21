@@ -20,6 +20,7 @@ import {
   getPendingAnswerSaves,
   subscribeAnswerSaveState,
   setAnswerSaveAuthToken,
+  setAnswerSaveOwnership,
 } from "@/lib/answerPersistence";
 
 const flush = async (ms = 0) => {
@@ -43,6 +44,7 @@ describe("Persistance des réponses apprenants", () => {
     localStorage.clear();
     vi.useFakeTimers();
     setAnswerSaveAuthToken("test-token");
+    setAnswerSaveOwnership({ apprenantId: payload().apprenant_id });
   });
   afterEach(() => {
     vi.useRealTimers();
