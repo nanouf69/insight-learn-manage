@@ -1893,6 +1893,39 @@ export type Database = {
         }
         Relationships: []
       }
+      exam_content_backup_20260921: {
+        Row: {
+          backup_at: string
+          deleted_cours: Json | null
+          deleted_exercices: Json | null
+          id: string
+          module_data: Json
+          module_id: number
+          source_fingerprint: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          backup_at?: string
+          deleted_cours?: Json | null
+          deleted_exercices?: Json | null
+          id?: string
+          module_data: Json
+          module_id: number
+          source_fingerprint?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          backup_at?: string
+          deleted_cours?: Json | null
+          deleted_exercices?: Json | null
+          id?: string
+          module_data?: Json
+          module_id?: number
+          source_fingerprint?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       exam_content_write_log: {
         Row: {
           action: string
