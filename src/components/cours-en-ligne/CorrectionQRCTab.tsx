@@ -2266,7 +2266,7 @@ const CorrectionQRCTab = () => {
                       }}
                       disabled={isSaving}
                     >
-                      {isSaving ? "..." : "✓ Valider"}
+                      {isSaving ? "..." : item.corrigeManuel ? "✓ Confirmer la nouvelle note" : "✓ Valider"}
                     </Button>
                     <Button
                       size="sm"
@@ -2279,9 +2279,17 @@ const CorrectionQRCTab = () => {
                       🚫 Ne pas comptabiliser
                     </Button>
                     {item.corrigeManuel && !isSaving && (
-                      <Badge className="bg-green-100 text-green-700 border-green-300 text-xs ml-1">✅ Corrigé</Badge>
+                      <Badge className="bg-green-100 text-green-700 border-green-300 text-xs ml-1">✅ Déjà corrigée</Badge>
                     )}
                   </div>
+
+                  {item.corrigeManuel && (
+                    <p className="text-xs text-green-700">
+                      ✅ Déjà corrigée — {(item.pointsObtenus ?? item.autoScore)}/{item.pointsMax} pts enregistrés. Cette QRC reste corrigée ;
+                      modifiez les points ou le commentaire puis confirmez la nouvelle note pour la changer.
+                    </p>
+                  )}
+
 
                   {/* Commentaire pour l'apprenant */}
                   <div className="space-y-2">
