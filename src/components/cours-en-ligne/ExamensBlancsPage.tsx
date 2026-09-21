@@ -152,6 +152,8 @@ export default function ExamensBlancsPage({
   const [currentTentative, setCurrentTentative] = useState<number>(1);
   const currentTentativeRef = useRef<number>(1);
   const [resumeExerciceIds, setResumeExerciceIds] = useState<Record<string, string>>({});
+  // Identité du passage en cours : "new" = tentative neuve, "resume" = reprise.
+  const currentPassageModeRef = useRef<"resume" | "new">("new");
   const phaseRef = useRef(phase);
   useEffect(() => { phaseRef.current = phase; }, [phase]);
 
@@ -559,6 +561,7 @@ export default function ExamensBlancsPage({
       const hasIncompletePassage = passage.mode === "resume" && !allCompleted && (hasSavedWork || completedMatiereCount > 0);
 
       nextTentative = passage.tentative;
+      currentPassageModeRef.current = passage.mode;
       setResumeExerciceIds(passage.exerciceIds);
       setCurrentTentative(nextTentative);
       currentTentativeRef.current = nextTentative;
@@ -975,6 +978,7 @@ export default function ExamensBlancsPage({
         quizType,
         matiereId: resultat.matiereId,
         desiredTentative,
+        passageMode: currentPassageModeRef.current,
       });
     } catch (lookupError) {
       console.warn("[ExamSubmission][EB] Lecture des passages existants impossible:", lookupError);

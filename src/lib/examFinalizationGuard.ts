@@ -71,10 +71,17 @@ export function resolveIdempotentTentative(input: {
   matiereId: string;
   desiredTentative: number;
   now?: number;
+  /**
+   * "new" = passage tout neuf (Refaire l'examen). On ne réutilise JAMAIS le
+   * numéro d'une tentative précédente, même remise il y a quelques secondes :
+   * l'ancienne note reste définitivement intacte.
+   */
+  passageMode?: "resume" | "new";
 }): number {
   const desired = Math.max(1, Math.floor(input.desiredTentative || 1));
   const now = input.now ?? Date.now();
   const matiere = normalizeMatiereId(input.matiereId);
+  if (input.passageMode === "new") return desired;
 
   const siblings = (input.rows || [])
     .filter((r) => r && !isResultPlaceholder(r))
@@ -91,5 +98,8 @@ export function resolveIdempotentTentative(input: {
     .filter((r) => r.time > 0 && now - r.time <= PASSAGE_WINDOW_MS)
     .sort((a, b) => b.time - a.time);
 
-  return siblings.length > 0 ? siblings[0].tentative : desired;
+  // Un passage repris ne peut retomber que sur un numéro déjà connu et jamais
+  // au-delà du passage en cours : aucune ancienne tentative n'est écrasée.
+  const reusable = siblings.find((s) => s.tentative === desired) ?? siblings[0];
+  return reusable && reusable.tentative <= desired ? reusable.tentative : desired;
 }
