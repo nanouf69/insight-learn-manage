@@ -852,15 +852,19 @@ const CorrectionQRCTab = () => {
     // plutôt que d'inventer/renuméroter un numéro.
     groupsByMatiere.forEach((list) => {
       const occurrences = new Map<number, number>();
+      const canonicalTentative = (g: AttemptGroup): number | null =>
+        g.mergedTentatives.length > 0 ? Math.min(...g.mergedTentatives) : (g.dbTentative ?? null);
       list.forEach((g) => {
-        if (g.dbTentative != null) occurrences.set(g.dbTentative, (occurrences.get(g.dbTentative) || 0) + 1);
+        const t = canonicalTentative(g);
+        if (t != null) occurrences.set(t, (occurrences.get(t) || 0) + 1);
       });
       list.forEach((g) => {
-        if (g.dbTentative != null && occurrences.get(g.dbTentative) === 1) {
-          g.passageKey = `${g.identityKey}__T${g.dbTentative}`;
-          g.tentative = g.dbTentative;
-          g.tentativeLabel = `tentative ${g.dbTentative}`;
-          g.tentativeSortValue = g.dbTentative;
+        const t = canonicalTentative(g);
+        if (t != null && occurrences.get(t) === 1) {
+          g.passageKey = `${g.identityKey}__T${t}`;
+          g.tentative = t;
+          g.tentativeLabel = `tentative ${t}`;
+          g.tentativeSortValue = t;
           return;
         }
         g.passageKey = buildFallbackPassageKey(g.identityKey, g.completedAt, g.primaryId);
@@ -869,6 +873,7 @@ const CorrectionQRCTab = () => {
         g.tentativeSortValue = Number.MAX_SAFE_INTEGER;
       });
     });
+
 
     const groups: AttemptGroup[] = [];
     groupsByMatiere.forEach((list) => groups.push(...list));
