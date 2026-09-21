@@ -168,6 +168,30 @@ function getCorrectionKey(apprenantId: string, quizId: string, matiereId: string
   return `${apprenantId}__${quizId}__${matiereId || ""}__${questionId}`;
 }
 
+/**
+ * Deux entrées désignent la même QRC réellement passée lorsque l'apprenant,
+ * l'examen, la matière, l'identifiant stable de la question ET le texte exact
+ * de la réponse de l'élève sont identiques. C'est le cas quand un même passage
+ * a été écrit sur plusieurs lignes techniques (finalisation, reprise, double
+ * écriture). Une vraie nouvelle tentative, avec une réponse différente, reste
+ * une QRC distincte à corriger.
+ */
+export function isSameQrcContent(
+  a: { apprenantId: string; quizId: string; matiereId: string; questionId: number; reponseEleve?: string },
+  b: { apprenantId: string; quizId: string; matiereId: string; questionId: number; reponseEleve?: string },
+): boolean {
+  const texteA = normalizeText(safeStr(a.reponseEleve));
+  if (!texteA) return false;
+  return (
+    a.apprenantId === b.apprenantId &&
+    a.quizId === b.quizId &&
+    (a.matiereId || "") === (b.matiereId || "") &&
+    a.questionId === b.questionId &&
+    texteA === normalizeText(safeStr(b.reponseEleve))
+  );
+}
+
+
 function isAdminValidatedCorrection(correction: unknown, completedAt?: string | null): boolean {
   if (!correction || typeof correction !== "object") return false;
   const correctionRecord = correction as Record<string, unknown>;
@@ -462,6 +486,19 @@ const CorrectionQRCTab = () => {
     const attemptKey = (a: string, q: string, m: string, t: number, qid: number) =>
       `${a}__${q}__${m || ""}__T${t}__${qid}`;
 
+    // Identité de CONTENU d'une QRC : apprenant + examen + matière + question
+    // stable + texte exact de la réponse de l'élève.
+    // Elle sert uniquement à reconnaître qu'un même passage a été écrit sur
+    // plusieurs lignes techniques (finalisation, reprise, double écriture) :
+    // la correction enregistrée sur l'une vaut pour l'autre, et la QRC
+    // n'apparaît qu'une seule fois. Une vraie nouvelle tentative, avec une
+    // réponse réellement différente, garde son identité propre.
+    const answerIdentity = (a: string, q: string, m: string, qid: number, reponse: unknown) =>
+      `${a}__${q}__${m || ""}__${qid}__${normalizeText(safeStr(reponse))}`;
+    const validatedByAnswer = new Map<string, any>();
+    const itemIndexByContent = new Map<string, number>();
+
+
     // ── Index des validations admin déjà enregistrées ───────────────────
     // Une validation est rattachée à SON passage (date de fin du passage),
     // jamais à un simple numéro de question.
@@ -479,6 +516,16 @@ const CorrectionQRCTab = () => {
         const list = validationsByQuestion.get(lk) || [];
         list.push({ correction, matiereId: r.matiere_id || "", time: new Date(r.completed_at).getTime() || 0 });
         validationsByQuestion.set(lk, list);
+
+        // Index par contenu : la validation suit la réponse exacte de l'élève,
+        // quelle que soit la ligne technique sur laquelle elle a été écrite.
+        const reponse = (r.details as any)?.reponses?.[questionId]
+          ?? (r.details as any)?.reponses?.[String(questionId)];
+        const texte = safeStr(reponse).trim();
+        if (texte) {
+          const ck = answerIdentity(r.apprenant_id, r.quiz_id, r.matiere_id || "", questionId, reponse);
+          if (!validatedByAnswer.has(ck)) validatedByAnswer.set(ck, correction);
+        }
       });
     }
 
@@ -618,9 +665,28 @@ const CorrectionQRCTab = () => {
 
         const pts = getPointsParQuestion(effectiveMatiereId, "QRC", perQuestionMatiere || undefined);
 
+        const reponseEleveRaw = q.reponseEleve != null && q.reponseEleve !== ""
+          ? q.reponseEleve
+          : (g.reponses?.[questionId] ?? g.reponses?.[String(questionId)] ?? "");
+        const reponseEleveStr = safeStr(reponseEleveRaw);
+
         const validation = findValidationForGroup(g, effectiveMatiereId, questionId);
-        const correction = validation ?? getCorrectionForQuestion(g.corrections, questionId);
-        const hasManualCorrection = !!validation || isAdminValidatedCorrection(correction, g.completedAt);
+        let correction = validation ?? getCorrectionForQuestion(g.corrections, questionId);
+        let hasManualCorrection = !!validation || isAdminValidatedCorrection(correction, g.completedAt);
+
+        // Rattrapage par identité de contenu : la même réponse de l'élève, pour
+        // le même apprenant, le même examen, la même matière et la même
+        // question, a déjà été validée sur une autre écriture du passage.
+        // La correction existante fait foi — rien n'est recalculé ni réécrit.
+        if (!hasManualCorrection && reponseEleveStr.trim()) {
+          const dejaValidee = validatedByAnswer.get(
+            answerIdentity(g.apprenantId, g.quizId, effectiveMatiereId, questionId, reponseEleveStr),
+          );
+          if (dejaValidee) {
+            correction = dejaValidee;
+            hasManualCorrection = true;
+          }
+        }
 
         const app = apprenantMap[g.apprenantId] || { nom: "Inconnu", prenom: "", mode: "presentiel" as const };
 
@@ -632,11 +698,6 @@ const CorrectionQRCTab = () => {
         const currentQuestionText = normalizeText(safeStr(currentQuestionDef?.enonce));
         const questionSupprimee = !currentQuestionDef || (!!savedQuestionText && !!currentQuestionText && savedQuestionText !== currentQuestionText);
 
-        const reponseEleveRaw = q.reponseEleve != null && q.reponseEleve !== ""
-          ? q.reponseEleve
-          : (g.reponses?.[questionId] ?? g.reponses?.[String(questionId)] ?? "");
-        const reponseEleveStr = safeStr(reponseEleveRaw);
-
         // QRC réellement laissée vide par l'élève (snapshot du passage présent et
         // réponse explicitement vide) : elle vaut 0 et ne remonte pas dans la file.
         // Une réponse simplement absente (perte de synchronisation) reste à corriger.
@@ -644,6 +705,7 @@ const CorrectionQRCTab = () => {
           && isQrcAnswerCertainlyEmpty({ questions: g.questions, reponses: g.reponses }, questionId)) {
           continue;
         }
+
 
         const reponseCorrecteStr = q.reponseCorrecte
           ? safeStr(q.reponseCorrecte)
@@ -663,7 +725,10 @@ const CorrectionQRCTab = () => {
           autoExplication = correction.explication || null;
         }
 
-        qrcItems.push({
+        const contentKey = reponseEleveStr.trim()
+          ? answerIdentity(g.apprenantId, g.quizId, effectiveMatiereId, questionId, reponseEleveStr)
+          : null;
+        const item: QrcItem = {
           resultId: g.primaryId,
           source: "result",
           userId: g.userId,
@@ -694,7 +759,18 @@ const CorrectionQRCTab = () => {
           correctedAt: hasManualCorrection ? (correction?.correctedAt || g.completedAt || null) : null,
           apprenantTypeMode: app.mode,
           questionSupprimee,
-        });
+        };
+
+        // Même réponse déjà présente (deuxième écriture technique du passage) :
+        // une seule entrée est conservée, la version corrigée faisant foi.
+        if (contentKey && itemIndexByContent.has(contentKey)) {
+          const idx = itemIndexByContent.get(contentKey)!;
+          if (!qrcItems[idx].corrigeManuel && item.corrigeManuel) qrcItems[idx] = item;
+          continue;
+        }
+        if (contentKey) itemIndexByContent.set(contentKey, qrcItems.length);
+        qrcItems.push(item);
+
       }
     }
 
@@ -749,6 +825,12 @@ const CorrectionQRCTab = () => {
         const qrcKey = attemptKey(row.apprenant_id, quizId, matiereId, tentative, q.id);
         if (seenQrcKeys.has(qrcKey)) continue;
         if (passage && findValidationForGroup(passage, matiereId, q.id)) continue;
+        // Cette réponse exacte a déjà été validée ou déjà listée depuis un
+        // enregistrement de fin : elle ne revient pas dans la file.
+        const autosaveContentKey = answerIdentity(row.apprenant_id, quizId, matiereId, q.id, reponseEleveStr);
+        if (validatedByAnswer.has(autosaveContentKey)) continue;
+        if (itemIndexByContent.has(autosaveContentKey)) continue;
+        itemIndexByContent.set(autosaveContentKey, qrcItems.length);
         seenQrcKeys.add(qrcKey);
 
         const pts = getPointsParQuestion(matiereId, "QRC", matiere);
@@ -1001,9 +1083,10 @@ const CorrectionQRCTab = () => {
       } else {
         toast.success(`QRC corrigée : ${clamped}/${item.pointsMax} pts`);
         setItems(prev => {
-          const updated = prev.map(i => i.resultId === item.resultId && i.questionId === item.questionId
+          const updated = prev.map(i => (i.resultId === item.resultId && i.questionId === item.questionId) || isSameQrcContent(i, item)
             ? { ...i, resultId: savedResultId || i.resultId, source: "result" as const, pointsObtenus: clamped, corrigeManuel: true, commentaire: editingComments[uniqueKey] ?? item.commentaire ?? "", correctedAt: new Date().toISOString(), noteSur20, scoreMatiereObtenu: payload.score_obtenu }
             : i);
+
 
           setTimeout(() => {
             setCurrentIndex(prevIndex => {
@@ -1125,6 +1208,11 @@ const CorrectionQRCTab = () => {
               return { ...i, ...upd, pointsObtenus: clamped, corrigeManuel: true, commentaire: commentaire || "", correctedAt: new Date().toISOString() };
             }
             return { ...i, ...upd };
+          }
+          // Écriture technique jumelle du même passage (même réponse exacte) :
+          // elle suit immédiatement la validation et ne réapparaît pas.
+          if (isSameQrcContent(i, item)) {
+            return { ...i, pointsObtenus: clamped, corrigeManuel: true, commentaire: commentaire || "", correctedAt: new Date().toISOString() };
           }
           return i;
         });
