@@ -1517,7 +1517,8 @@ const CorrectionQRCTab = () => {
       if (prev) {
         prev.count += 1;
         prev.minQuestionId = Math.min(prev.minQuestionId, i.questionId);
-        if ((new Date(i.completedAt).getTime() || 0) < (new Date(prev.datePassage).getTime() || 0)) prev.datePassage = i.completedAt;
+        // Date de référence du groupe = la QRC bloquante la PLUS RÉCENTE du passage.
+        if ((new Date(i.completedAt).getTime() || 0) > (new Date(prev.datePassage).getTime() || 0)) prev.datePassage = i.completedAt;
       } else {
         map.set(key, {
           key,
@@ -1532,7 +1533,14 @@ const CorrectionQRCTab = () => {
         });
       }
     }
-    return Array.from(map.values()).sort((a, b) => compareBlockingQrcItems(a.firstItem, b.firstItem) || a.minQuestionId - b.minQuestionId);
+    // Affichage uniquement : PLUS RÉCENT → PLUS ANCIEN, par date/heure réelle
+    // du passage contenant les QRC bloquantes (jamais par nom, examen ou tentative).
+    // À date/heure identique, ordre stable alphanumérique conservé.
+    return Array.from(map.values()).sort((a, b) =>
+      ((new Date(b.datePassage).getTime() || 0) - (new Date(a.datePassage).getTime() || 0))
+      || compareBlockingQrcItems(a.firstItem, b.firstItem)
+      || a.minQuestionId - b.minQuestionId
+    );
   })();
 
   const activeBlockingGroup = activeBlockingGroupKey
