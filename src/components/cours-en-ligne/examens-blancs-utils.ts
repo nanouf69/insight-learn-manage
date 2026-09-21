@@ -1,4 +1,5 @@
 import { getPointsParQuestion, isCalculQuestion } from "./examens-blancs-data";
+import { buildExamMatiereExerciceId } from "@/lib/quizAttempts";
 import type { ExamenBlanc, Matiere, Question, CorrectionQRC, ExamScoreItem, Reponses, ReponseQCM, ReponseQRC, ResultatMatiere } from "./examens-blancs-types";
 
 /** Safely coerce any value to string */
@@ -1302,11 +1303,6 @@ export interface ExamPassageResolution {
   exerciceIds: Record<string, string>;
   /** matiereIds déjà finalisées dans ce passage (intouchables) */
   completedMatiereIds: string[];
-}
-
-export function buildExamMatiereExerciceId(examId: string, matiereId: string, tentative: number): string {
-  const n = Math.max(Math.trunc(toFiniteNumber(tentative, 1)), 1);
-  return `${examId || "exam"}__${matiereId}${n > 1 ? `__t${n}` : ""}`;
 }
 
 export function resolveExamPassage({
