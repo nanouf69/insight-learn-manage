@@ -19,6 +19,7 @@ import { computeMoyenneExamen, computeMatiereScore, computeMatiereScoreForAttemp
 import { isExamAttemptPublicationPending, isMatiereQrcPendingForAttempt, excludeResultPlaceholders, mergePassageSiblingRows } from "./exam-helpers";
 import { toast } from "sonner";
 import { RefaireExamenDialog } from "./RefaireExamenDialog";
+import { computeExamRetakeLock, examRetakeLockMessage } from "@/lib/examRetakeDelay";
 
 /**
  * Retrouve la version ORIGINALE (source statique) d'une matière pour un examen
