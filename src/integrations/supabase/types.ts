@@ -903,6 +903,33 @@ export type Database = {
           },
         ]
       }
+      backup_bilan_examen_modules: {
+        Row: {
+          created_at: string
+          id: string
+          module_data: Json
+          module_id: number
+          motif: string
+          source_updated_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          module_data: Json
+          module_id: number
+          motif: string
+          source_updated_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          module_data?: Json
+          module_id?: number
+          motif?: string
+          source_updated_at?: string | null
+        }
+        Relationships: []
+      }
       backup_resultats_0_technique: {
         Row: {
           apprenant_id: string | null
@@ -4762,6 +4789,7 @@ export type Database = {
           ville: string
         }[]
       }
+      shared_exercice_key: { Args: { e: Json }; Returns: string }
       soundex: { Args: { "": string }; Returns: string }
       start_apprenant_connexion:
         | {
