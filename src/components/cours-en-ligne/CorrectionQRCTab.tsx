@@ -1173,6 +1173,7 @@ const CorrectionQRCTab = () => {
         completedAt: latest.completedAt,
         matieres: Array.from(new Set(matieres)),
         hasQueueMatch: attemptKeysInQueue.has(key),
+        formationActive: app.formationActive,
       });
     });
     eb2Pending.sort((a, b) =>
