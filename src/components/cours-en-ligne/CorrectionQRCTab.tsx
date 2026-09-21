@@ -10,7 +10,32 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { tousLesExamens, getPointsParQuestion, type ExamenBlanc, type Matiere } from "./examens-blancs-data";
 import { loadSavedExamens } from "./ExamensBlancsEditor";
-import { buildExamenMap, findMatiereWithFallback, getSourceQuestions, computeReussiForResult, isResultPlaceholder, isQrcAnswerCertainlyEmpty } from "./exam-helpers";
+import { buildExamenMap, findMatiereWithFallback, getSourceQuestions, computeReussiForResult, isResultPlaceholder, isQrcAnswerCertainlyEmpty, isExamAttemptPublicationPending, isMatiereQrcPendingForAttempt } from "./exam-helpers";
+
+/** Examens Blancs N°2, toutes filières (VTC, TAXI, VA, TA). */
+const EB2_QUIZ_IDS = new Set(["EB2", "EB2-TAXI", "eb2-va", "eb2-ta"]);
+const EB2_FILIERE_LABEL: Record<string, string> = {
+  "EB2": "VTC", "EB2-TAXI": "TAXI", "eb2-va": "VA", "eb2-ta": "TA",
+};
+
+/** Passage réel d'un apprenant sur UN examen : apprenant + examen + tentative persistante. */
+function buildAttemptKey(apprenantId: string, quizId: string, dbTentative: number | null | undefined, passageKey: string): string {
+  return `${apprenantId}__${quizId}__${dbTentative != null ? `T${dbTentative}` : passageKey}`;
+}
+
+interface Eb2PendingAttempt {
+  attemptKey: string;
+  apprenantId: string;
+  apprenant: string;
+  filiere: string;
+  quizId: string;
+  quizTitre: string;
+  tentativeLabel: string;
+  completedAt: string;
+  matieres: string[];
+  /** true si au moins une QRC de ce passage est réellement présente dans la file de correction. */
+  hasQueueMatch: boolean;
+}
 
 interface QrcItem {
   resultId: string;
@@ -468,6 +493,8 @@ const CorrectionQRCTab = () => {
   const [loadError, setLoadError] = useState<string | null>(null);
   // Contrôle automatique : QRC répondues présentes en base mais absentes de la file.
   const [integrityAlert, setIntegrityAlert] = useState<{ count: number; apprenants: number } | null>(null);
+  // Passages EB N°2 sans note définitive (même règle que le portail apprenant).
+  const [eb2PendingAttempts, setEb2PendingAttempts] = useState<Eb2PendingAttempt[]>([]);
 
   // Mirrors the filter + sort applied to `sortedFiltered` in the render, so that
   // auto-advance after saving picks the correct next item.
@@ -1071,6 +1098,74 @@ const CorrectionQRCTab = () => {
     }
 
     setItems(qrcItems);
+
+    // ────────────────────────────────────────────────────────────────────
+    // CONTRÔLE EB N°2 (lecture seule) : tous les passages EB N°2 dont la note
+    // définitive n'est pas publiable à cause des QRC, avec la MÊME règle que
+    // le portail apprenant (isExamAttemptPublicationPending). Le rapprochement
+    // avec la file de correction se fait sur le passage réel :
+    // apprenant + examen exact + tentative persistante + matière + question.
+    // Aucune donnée n'est modifiée ici.
+    // ────────────────────────────────────────────────────────────────────
+    const attemptKeysInQueue = new Set(
+      qrcItems
+        .filter((i) => !i.corrigeManuel && safeStr(i.reponseEleve).trim() !== "")
+        .map((i) => buildAttemptKey(i.apprenantId, i.quizId, i.dbTentative, i.passageKey)),
+    );
+    const eb2Attempts = new Map<string, AttemptGroup[]>();
+    for (const g of groups) {
+      if (g.quizType !== "examen_blanc" || !EB2_QUIZ_IDS.has(g.quizId)) continue;
+      const key = buildAttemptKey(g.apprenantId, g.quizId, g.dbTentative, g.passageKey);
+      const list = eb2Attempts.get(key) || [];
+      list.push(g);
+      eb2Attempts.set(key, list);
+    }
+    const eb2Pending: Eb2PendingAttempt[] = [];
+    eb2Attempts.forEach((gs, key) => {
+      const examen = examenMap[gs[0].quizId];
+      const rowsLike = gs.map((g) => ({
+        matiereId: g.matiereId,
+        matiere_id: g.matiereId,
+        matiere_nom: g.matiereNom,
+        details: {
+          ...(g.questions ? { questions: g.questions } : {}),
+          reponses: g.reponses,
+          correctionsIA: g.corrections,
+        },
+      }));
+      if (!isExamAttemptPublicationPending(rowsLike, examen)) return;
+      const matieres = gs
+        .filter((g) => {
+          const matiere = findMatiereWithFallback(examenMap, tousLesExamens, g.quizId, g.matiereId);
+          if (!matiere) return false;
+          return isMatiereQrcPendingForAttempt(matiere, {
+            ...(g.questions ? { questions: g.questions } : {}),
+            reponses: g.reponses,
+            correctionsIA: g.corrections,
+          });
+        })
+        .map((g) => g.matiereNom || g.matiereId);
+      const app = apprenantMap[gs[0].apprenantId] || { nom: "Inconnu", prenom: "", mode: "presentiel" as const };
+      const latest = gs.reduce((acc, g) => ((new Date(g.completedAt).getTime() || 0) > (new Date(acc.completedAt).getTime() || 0) ? g : acc), gs[0]);
+      eb2Pending.push({
+        attemptKey: key,
+        apprenantId: gs[0].apprenantId,
+        apprenant: `${app.nom} ${app.prenom}`.trim(),
+        filiere: EB2_FILIERE_LABEL[gs[0].quizId] || gs[0].quizId,
+        quizId: gs[0].quizId,
+        quizTitre: latest.quizTitre || gs[0].quizId,
+        tentativeLabel: latest.tentativeLabel,
+        completedAt: latest.completedAt,
+        matieres: Array.from(new Set(matieres)),
+        hasQueueMatch: attemptKeysInQueue.has(key),
+      });
+    });
+    eb2Pending.sort((a, b) =>
+      ((new Date(b.completedAt).getTime() || 0) - (new Date(a.completedAt).getTime() || 0))
+      || a.apprenant.localeCompare(b.apprenant, "fr", { sensitivity: "base" }),
+    );
+    setEb2PendingAttempts(eb2Pending);
+
 
     // ---- Contrôle automatique (lecture seule, aucune donnée modifiée) ----
     try {
