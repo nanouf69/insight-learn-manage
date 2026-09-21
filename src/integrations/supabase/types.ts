@@ -1188,6 +1188,203 @@ export type Database = {
         }
         Relationships: []
       }
+      canonical_exam_attempts: {
+        Row: {
+          apprenant_ref: string
+          attempt_id: string
+          is_pilot: boolean
+          quiz_id: string
+          snapshot: Json
+          snapshot_versions: Json
+          started_at: string
+          tentative: number
+        }
+        Insert: {
+          apprenant_ref: string
+          attempt_id?: string
+          is_pilot?: boolean
+          quiz_id: string
+          snapshot: Json
+          snapshot_versions?: Json
+          started_at?: string
+          tentative?: number
+        }
+        Update: {
+          apprenant_ref?: string
+          attempt_id?: string
+          is_pilot?: boolean
+          quiz_id?: string
+          snapshot?: Json
+          snapshot_versions?: Json
+          started_at?: string
+          tentative?: number
+        }
+        Relationships: []
+      }
+      canonical_pilot_flags: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          note: string | null
+          scope_id: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          note?: string | null
+          scope_id: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          note?: string | null
+          scope_id?: string
+        }
+        Relationships: []
+      }
+      canonical_question_usages: {
+        Row: {
+          created_at: string
+          exercise_id: number | null
+          id: string
+          module_id: number | null
+          position: number
+          question_id: string
+          quiz_id: string
+          usage_kind: string
+        }
+        Insert: {
+          created_at?: string
+          exercise_id?: number | null
+          id?: string
+          module_id?: number | null
+          position?: number
+          question_id: string
+          quiz_id: string
+          usage_kind: string
+        }
+        Update: {
+          created_at?: string
+          exercise_id?: number | null
+          id?: string
+          module_id?: number | null
+          position?: number
+          question_id?: string
+          quiz_id?: string
+          usage_kind?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "canonical_question_usages_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "canonical_questions"
+            referencedColumns: ["question_id"]
+          },
+        ]
+      }
+      canonical_question_write_log: {
+        Row: {
+          accepted: boolean
+          created_at: string
+          expected_version: number | null
+          id: string
+          origin: string | null
+          payload: Json | null
+          question_id: string
+          reason: string | null
+          resulting_version: number | null
+          server_version_before: number | null
+        }
+        Insert: {
+          accepted: boolean
+          created_at?: string
+          expected_version?: number | null
+          id?: string
+          origin?: string | null
+          payload?: Json | null
+          question_id: string
+          reason?: string | null
+          resulting_version?: number | null
+          server_version_before?: number | null
+        }
+        Update: {
+          accepted?: boolean
+          created_at?: string
+          expected_version?: number | null
+          id?: string
+          origin?: string | null
+          payload?: Json | null
+          question_id?: string
+          reason?: string | null
+          resulting_version?: number | null
+          server_version_before?: number | null
+        }
+        Relationships: []
+      }
+      canonical_questions: {
+        Row: {
+          bareme: number
+          bonnes_reponses: Json
+          choix: Json
+          coefficient: number
+          created_at: string
+          enonce: string
+          explication: string | null
+          explications_choix: Json
+          identity_key: string
+          is_pilot: boolean
+          medias: Json
+          mots_cles: Json
+          proprietes: Json
+          question_id: string
+          reponse_qrc: string | null
+          type: string
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          bareme?: number
+          bonnes_reponses?: Json
+          choix?: Json
+          coefficient?: number
+          created_at?: string
+          enonce?: string
+          explication?: string | null
+          explications_choix?: Json
+          identity_key: string
+          is_pilot?: boolean
+          medias?: Json
+          mots_cles?: Json
+          proprietes?: Json
+          question_id?: string
+          reponse_qrc?: string | null
+          type?: string
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          bareme?: number
+          bonnes_reponses?: Json
+          choix?: Json
+          coefficient?: number
+          created_at?: string
+          enonce?: string
+          explication?: string | null
+          explications_choix?: Json
+          identity_key?: string
+          is_pilot?: boolean
+          medias?: Json
+          mots_cles?: Json
+          proprietes?: Json
+          question_id?: string
+          reponse_qrc?: string | null
+          type?: string
+          updated_at?: string
+          version?: number
+        }
+        Relationships: []
+      }
       contacts: {
         Row: {
           created_at: string
@@ -5101,6 +5298,27 @@ export type Database = {
         }[]
       }
       bilan_sync_mapping: { Args: never; Returns: Json }
+      canonical_get_quiz_questions: {
+        Args: { p_quiz_id: string }
+        Returns: Json
+      }
+      canonical_start_exam_attempt: {
+        Args: {
+          p_apprenant_ref: string
+          p_quiz_id: string
+          p_tentative?: number
+        }
+        Returns: Json
+      }
+      canonical_update_question: {
+        Args: {
+          p_expected_version: number
+          p_fields: Json
+          p_origin?: string
+          p_question_id: string
+        }
+        Returns: Json
+      }
       check_apprenant_session: {
         Args: { _apprenant_id: string; _connexion_id: string; _event?: string }
         Returns: {
