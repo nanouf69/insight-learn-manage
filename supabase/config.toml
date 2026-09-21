@@ -103,3 +103,6 @@ verify_jwt = false
 
 [functions.identifiants-t3p-public]
 verify_jwt = false
+
+[functions.send-prestataire-facture-request]
+verify_jwt = false

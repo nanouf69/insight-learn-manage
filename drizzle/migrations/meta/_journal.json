@@ -225,6 +225,20 @@
       "when": 1789978157287,
       "tag": "0031_apprenant_abandon",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1789983607429,
+      "tag": "0032_prestataire_factures_manquantes",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1789983629419,
+      "tag": "0033_prestataire_justificatifs_storage_policies",
+      "breakpoints": true
     }
   ]
 }

@@ -3335,6 +3335,282 @@ export type Database = {
         }
         Relationships: []
       }
+      prestataire_dossiers: {
+        Row: {
+          adresse: string | null
+          commentaire_interne: string | null
+          created_at: string
+          created_by: string | null
+          date_paiement: string | null
+          date_prestation: string | null
+          derniere_action_le: string | null
+          description_prestation: string | null
+          email: string | null
+          est_test: boolean
+          facture_montant_ht: number | null
+          facture_montant_ttc: number | null
+          facture_numero: string | null
+          facture_recue_le: string | null
+          facture_tva: number | null
+          id: string
+          mode_paiement: string | null
+          montant_ht: number | null
+          montant_paye: number | null
+          montant_ttc: number | null
+          numero_commande: string | null
+          periode_debut: string | null
+          periode_fin: string | null
+          prestataire_nom: string | null
+          prestataire_prenom: string | null
+          raison_sociale: string | null
+          reference: string | null
+          reference_paiement: string | null
+          siren: string | null
+          siret: string | null
+          statut: string
+          telephone: string | null
+          tva: number | null
+          updated_at: string
+        }
+        Insert: {
+          adresse?: string | null
+          commentaire_interne?: string | null
+          created_at?: string
+          created_by?: string | null
+          date_paiement?: string | null
+          date_prestation?: string | null
+          derniere_action_le?: string | null
+          description_prestation?: string | null
+          email?: string | null
+          est_test?: boolean
+          facture_montant_ht?: number | null
+          facture_montant_ttc?: number | null
+          facture_numero?: string | null
+          facture_recue_le?: string | null
+          facture_tva?: number | null
+          id?: string
+          mode_paiement?: string | null
+          montant_ht?: number | null
+          montant_paye?: number | null
+          montant_ttc?: number | null
+          numero_commande?: string | null
+          periode_debut?: string | null
+          periode_fin?: string | null
+          prestataire_nom?: string | null
+          prestataire_prenom?: string | null
+          raison_sociale?: string | null
+          reference?: string | null
+          reference_paiement?: string | null
+          siren?: string | null
+          siret?: string | null
+          statut?: string
+          telephone?: string | null
+          tva?: number | null
+          updated_at?: string
+        }
+        Update: {
+          adresse?: string | null
+          commentaire_interne?: string | null
+          created_at?: string
+          created_by?: string | null
+          date_paiement?: string | null
+          date_prestation?: string | null
+          derniere_action_le?: string | null
+          description_prestation?: string | null
+          email?: string | null
+          est_test?: boolean
+          facture_montant_ht?: number | null
+          facture_montant_ttc?: number | null
+          facture_numero?: string | null
+          facture_recue_le?: string | null
+          facture_tva?: number | null
+          id?: string
+          mode_paiement?: string | null
+          montant_ht?: number | null
+          montant_paye?: number | null
+          montant_ttc?: number | null
+          numero_commande?: string | null
+          periode_debut?: string | null
+          periode_fin?: string | null
+          prestataire_nom?: string | null
+          prestataire_prenom?: string | null
+          raison_sociale?: string | null
+          reference?: string | null
+          reference_paiement?: string | null
+          siren?: string | null
+          siret?: string | null
+          statut?: string
+          telephone?: string | null
+          tva?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      prestataire_email_templates: {
+        Row: {
+          corps: string
+          id: string
+          objet: string
+          updated_at: string
+        }
+        Insert: {
+          corps?: string
+          id: string
+          objet?: string
+          updated_at?: string
+        }
+        Update: {
+          corps?: string
+          id?: string
+          objet?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      prestataire_envois: {
+        Row: {
+          corps_html: string
+          created_at: string
+          declenche_par: string | null
+          declenche_par_email: string | null
+          destinataire_email: string
+          destinataire_nom: string | null
+          dossier_id: string
+          envoye_le: string | null
+          erreur: string | null
+          id: string
+          objet: string
+          provider_message_id: string | null
+          statut: string
+          type_envoi: string
+        }
+        Insert: {
+          corps_html: string
+          created_at?: string
+          declenche_par?: string | null
+          declenche_par_email?: string | null
+          destinataire_email: string
+          destinataire_nom?: string | null
+          dossier_id: string
+          envoye_le?: string | null
+          erreur?: string | null
+          id?: string
+          objet: string
+          provider_message_id?: string | null
+          statut?: string
+          type_envoi?: string
+        }
+        Update: {
+          corps_html?: string
+          created_at?: string
+          declenche_par?: string | null
+          declenche_par_email?: string | null
+          destinataire_email?: string
+          destinataire_nom?: string | null
+          dossier_id?: string
+          envoye_le?: string | null
+          erreur?: string | null
+          id?: string
+          objet?: string
+          provider_message_id?: string | null
+          statut?: string
+          type_envoi?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prestataire_envois_dossier_id_fkey"
+            columns: ["dossier_id"]
+            isOneToOne: false
+            referencedRelation: "prestataire_dossiers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prestataire_historique: {
+        Row: {
+          action: string
+          created_at: string
+          details: Json
+          dossier_id: string
+          id: string
+          utilisateur: string | null
+          utilisateur_email: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: Json
+          dossier_id: string
+          id?: string
+          utilisateur?: string | null
+          utilisateur_email?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: Json
+          dossier_id?: string
+          id?: string
+          utilisateur?: string | null
+          utilisateur_email?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prestataire_historique_dossier_id_fkey"
+            columns: ["dossier_id"]
+            isOneToOne: false
+            referencedRelation: "prestataire_dossiers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prestataire_pieces: {
+        Row: {
+          chemin: string
+          content_type: string | null
+          created_at: string
+          created_by: string | null
+          dossier_id: string
+          id: string
+          nom_fichier: string | null
+          taille: number | null
+          titre: string | null
+          type_piece: string
+        }
+        Insert: {
+          chemin: string
+          content_type?: string | null
+          created_at?: string
+          created_by?: string | null
+          dossier_id: string
+          id?: string
+          nom_fichier?: string | null
+          taille?: number | null
+          titre?: string | null
+          type_piece?: string
+        }
+        Update: {
+          chemin?: string
+          content_type?: string | null
+          created_at?: string
+          created_by?: string | null
+          dossier_id?: string
+          id?: string
+          nom_fichier?: string | null
+          taille?: number | null
+          titre?: string | null
+          type_piece?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prestataire_pieces_dossier_id_fkey"
+            columns: ["dossier_id"]
+            isOneToOne: false
+            referencedRelation: "prestataire_dossiers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string | null
