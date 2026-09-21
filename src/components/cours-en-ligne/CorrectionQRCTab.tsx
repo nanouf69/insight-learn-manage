@@ -612,7 +612,7 @@ const CorrectionQRCTab = () => {
       if (chunk.length === 0) continue;
       const { data } = await supabase
         .from("apprenants")
-        .select("id, nom, prenom, type_apprenant")
+        .select("id, nom, prenom, type_apprenant, date_debut_cours_en_ligne, date_fin_cours_en_ligne")
         .in("id", chunk);
       apprenants.push(...(data || []));
     }
