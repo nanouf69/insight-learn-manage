@@ -25,6 +25,7 @@ import { DossierDocumentsLibres } from "./DossierDocumentsLibres";
 import { getSessionEndMs, getSessionDurationMinutes, clampConnexionsToAccessEnd } from "@/lib/reports/session-duration";
 import { fetchPratiqueSlotDetails } from "@/lib/pratiqueSlots";
 import { computePresentielHours } from "@/lib/presentielHours";
+import { isExamAttemptPublicationPending } from "@/components/cours-en-ligne/exam-helpers";
 
 
 /** Renders donnees content with real question texts instead of raw JSON */
@@ -525,7 +526,7 @@ export function ControleQualiteTab({ apprenant }: Props) {
               .range(from, to)),
             fetchAllRows<any>((from, to) => supabase
               .from("apprenant_quiz_results")
-              .select("quiz_titre, matiere_nom, score_obtenu, score_max, note_sur_20, reussi, duree_secondes, completed_at")
+              .select("quiz_id, quiz_type, quiz_titre, matiere_id, matiere_nom, score_obtenu, score_max, note_sur_20, reussi, duree_secondes, completed_at, tentative, details")
               .eq("apprenant_id", apprenant.id)
               .order("completed_at", { ascending: true })
               .range(from, to)),
@@ -583,9 +584,25 @@ export function ControleQualiteTab({ apprenant }: Props) {
             }
           }
 
+          // Un passage d'Examen Blanc en attente d'une seule QRC ne publie
+          // aucune note dans la fiche Qualiopi ni dans sa moyenne.
+          const pendingQuizIndexes = new Set<number>();
+          const examGroups = new Map<string, { row: any; index: number }[]>();
+          quizzes.forEach((q: any, index: number) => {
+            if (q.quiz_type !== "examen_blanc" && q.quiz_type !== "examen_blanc_taxi") return;
+            const key = `${q.quiz_id}__${q.tentative ?? 1}`;
+            examGroups.set(key, [...(examGroups.get(key) || []), { row: q, index }]);
+          });
+          examGroups.forEach((items) => {
+            if (isExamAttemptPublicationPending(items.map((item) => item.row))) {
+              items.forEach((item) => pendingQuizIndexes.add(item.index));
+            }
+          });
+          const publishedQuizzes = quizzes.filter((_: any, index: number) => !pendingQuizIndexes.has(index));
+
           // Quiz per matière/module
           const quizByMod = new Map<string, any[]>();
-          for (const q of quizzes) {
+          for (const q of publishedQuizzes) {
             const key = q.matiere_nom || "Quiz";
             const arr = quizByMod.get(key) || [];
             arr.push(q);
@@ -683,7 +700,7 @@ export function ControleQualiteTab({ apprenant }: Props) {
           const grandTotalSec = onlineSec + presentielTotalSec;
 
 
-          const notes = quizzes
+          const notes = publishedQuizzes
             .filter((q: any) => q.note_sur_20 != null)
             .map((q: any) => Number(q.note_sur_20));
           const avgLabel = notes.length

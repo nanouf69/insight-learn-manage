@@ -1,6 +1,8 @@
 /** @vitest-environment node */
 import { describe, expect, it } from "vitest";
 import { isExamAttemptPublicationPending } from "@/components/cours-en-ligne/exam-helpers";
+import fs from "node:fs";
+import path from "node:path";
 
 const examen = {
   matieres: [
@@ -34,5 +36,20 @@ describe("Publication atomique des résultats d'Examens Blancs", () => {
       matiere_id: "gestion",
       details: { qrc_pending_correction: true, questions: [{ questionId: 1, type: "QRC", reponseEleve: "x" }], correctionsIA: {} },
     }])).toBe(true);
+  });
+
+  it("toutes les surfaces chiffrées utilisent le verrou commun", () => {
+    const files = [
+      "src/components/cours-en-ligne/ExamenBlancsResultats.tsx",
+      "src/components/cours-en-ligne/ExamenBlancsListe.tsx",
+      "src/components/cours-en-ligne/NotesView.tsx",
+      "src/components/cours-en-ligne/ResultatsSessionPage.tsx",
+      "src/components/crm/apprenant-sections/ResultatsApprenantTab.tsx",
+      "src/components/crm/apprenant-sections/ControleQualiteTab.tsx",
+    ];
+    files.forEach((file) => {
+      const source = fs.readFileSync(path.resolve(process.cwd(), file), "utf8");
+      expect(source, file).toContain("isExamAttemptPublicationPending");
+    });
   });
 });
