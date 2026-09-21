@@ -247,7 +247,7 @@ const writeQueue = (items: QueueItem[]) => {
 };
 
 const emit = () => {
-  const pending = readQueue().filter(isOwnedByCurrentUser).length;
+  const pending = readQueue().filter(isActivelyPending).length;
   listeners.forEach((l) => {
     try {
       l(state, pending);
@@ -265,12 +265,17 @@ const setState = (next: AnswerSaveState) => {
 /** Permet à l'UI de suivre l'état réel de l'enregistrement. */
 export function subscribeAnswerSaveState(listener: Listener): () => void {
   listeners.add(listener);
-  listener(state, readQueue().filter(isOwnedByCurrentUser).length);
+  listener(state, readQueue().filter(isActivelyPending).length);
   return () => listeners.delete(listener);
 }
 
 export function getPendingAnswerSaves(): number {
-  return readQueue().filter(isOwnedByCurrentUser).length;
+  return readQueue().filter(isActivelyPending).length;
+}
+
+/** Réponses conservées mais refusées par le serveur (403) — jamais supprimées. */
+export function getBlockedAnswerSaves(): number {
+  return readQueue().filter((item) => item.blocked === true).length;
 }
 
 export function getPendingAnswers(
@@ -376,7 +381,7 @@ export async function flushAnswerSavesAndWait(
       (item) =>
         item.payload.apprenant_id === apprenantId &&
         item.payload.exercice_id === exerciceId &&
-        isOwnedByCurrentUser(item)
+        isActivelyPending(item)
     );
     if (!pending) return true;
     await new Promise((resolve) => setTimeout(resolve, 100));
@@ -476,7 +481,7 @@ async function processQueue(): Promise<void> {
   if (processing) return;
   // Sans session valide, on n'envoie rien : la file attend la reconnexion.
   if (!authToken) {
-    if (readQueue().some(isOwnedByCurrentUser)) setState("error");
+    if (readQueue().some(isActivelyPending)) setState("error");
     return;
   }
   processing = true;
@@ -520,7 +525,7 @@ async function processQueue(): Promise<void> {
         if (result === "retry") hadFailure = true;
       }
     }
-    const remaining = queue.filter(isOwnedByCurrentUser);
+    const remaining = queue.filter(isActivelyPending);
     if (remaining.length === 0) {
       setState("saved");
     } else {
@@ -540,6 +545,17 @@ async function processQueue(): Promise<void> {
  */
 export function enqueueAnswerSave(payload: AnswerSavePayload): void {
   if (!payload?.apprenant_id || !payload?.exercice_id) return;
+  // RÈGLE COMMUNE DE PROPRIÉTÉ : une réponse n'est mise en file que si le
+  // dossier apprenant visé est bien celui de la session en cours. Sur un écran
+  // de consultation (aperçu admin/formateur), rien n'est mis en file : on
+  // n'écrit jamais sous le compte d'un autre apprenant.
+  if (!canQueueAnswerSaveFor(payload.apprenant_id)) {
+    console.warn(
+      "[answerPersistence] Sauvegarde ignorée : la session en cours n'est pas propriétaire de ce dossier apprenant.",
+      { exercice_id: payload.exercice_id },
+    );
+    return;
+  }
   const item: QueueItem = {
     id: `${payload.exercice_id}__${Date.now()}__${Math.random().toString(36).slice(2, 8)}`,
     payload: {
