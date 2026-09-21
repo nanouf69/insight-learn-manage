@@ -35,6 +35,8 @@ interface Eb2PendingAttempt {
   matieres: string[];
   /** true si au moins une QRC de ce passage est réellement présente dans la file de correction. */
   hasQueueMatch: boolean;
+  /** true si la formation de l'apprenant est active aujourd'hui (début ≤ aujourd'hui ≤ fin). */
+  formationActive: boolean;
 }
 
 interface QrcItem {
@@ -262,6 +264,19 @@ function sortBlockingQrcItems(list: QrcItem[]): QrcItem[] {
 function formatDateOnlyFR(value: string): string {
   if (!value) return "";
   return new Date(value).toLocaleDateString("fr-FR");
+}
+
+/**
+ * Formation active AUJOURD'HUI : date de début ≤ aujourd'hui ≤ date de fin.
+ * Lecture seule : sert uniquement au filtrage d'affichage de l'encadré vert.
+ */
+function isFormationActiveToday(a: { date_debut_cours_en_ligne?: string | null; date_fin_cours_en_ligne?: string | null }): boolean {
+  const debut = a?.date_debut_cours_en_ligne ? String(a.date_debut_cours_en_ligne).slice(0, 10) : null;
+  const fin = a?.date_fin_cours_en_ligne ? String(a.date_fin_cours_en_ligne).slice(0, 10) : null;
+  if (!debut || !fin) return false;
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  return debut <= today && today <= fin;
 }
 
 function formatPassageDateTimeFR(value: string | null | undefined): string {
@@ -597,17 +612,17 @@ const CorrectionQRCTab = () => {
       if (chunk.length === 0) continue;
       const { data } = await supabase
         .from("apprenants")
-        .select("id, nom, prenom, type_apprenant")
+        .select("id, nom, prenom, type_apprenant, date_debut_cours_en_ligne, date_fin_cours_en_ligne")
         .in("id", chunk);
       apprenants.push(...(data || []));
     }
 
-    const apprenantMap: Record<string, { nom: string; prenom: string; mode: "presentiel" | "elearning" }> = {};
+    const apprenantMap: Record<string, { nom: string; prenom: string; mode: "presentiel" | "elearning"; formationActive: boolean }> = {};
     (apprenants || []).forEach((a: any) => {
       const t = String(a.type_apprenant || "").toLowerCase();
       const mode: "presentiel" | "elearning" = t.endsWith("-e") || t.includes("-e-") ? "elearning"
         : (t === "vtc-e-presentiel" ? "presentiel" : (t.endsWith("-e") ? "elearning" : "presentiel"));
-      apprenantMap[a.id] = { nom: a.nom, prenom: a.prenom, mode };
+      apprenantMap[a.id] = { nom: a.nom, prenom: a.prenom, mode, formationActive: isFormationActiveToday(a) };
     });
 
     // ────────────────────────────────────────────────────────────────────
@@ -893,7 +908,7 @@ const CorrectionQRCTab = () => {
           }
         }
 
-        const app = apprenantMap[g.apprenantId] || { nom: "Inconnu", prenom: "", mode: "presentiel" as const };
+        const app = apprenantMap[g.apprenantId] || { nom: "Inconnu", prenom: "", mode: "presentiel" as const, formationActive: false };
 
         const questionDef = perQuestionMatiere?.questions?.find((mq: any) => mq && mq.id === questionId);
         const currentExamen = examenMap[g.quizId];
@@ -1006,12 +1021,12 @@ const CorrectionQRCTab = () => {
     for (let i = 0; i < missingAutosaveApprenantIds.length; i += 500) {
       const { data } = await supabase
         .from("apprenants")
-        .select("id, nom, prenom, type_apprenant")
+        .select("id, nom, prenom, type_apprenant, date_debut_cours_en_ligne, date_fin_cours_en_ligne")
         .in("id", missingAutosaveApprenantIds.slice(i, i + 500));
       (data || []).forEach((a: any) => {
         const t = String(a.type_apprenant || "").toLowerCase();
         const mode: "presentiel" | "elearning" = t.endsWith("-e") || t.includes("-e-") ? "elearning" : "presentiel";
-        apprenantMap[a.id] = { nom: a.nom, prenom: a.prenom, mode };
+        apprenantMap[a.id] = { nom: a.nom, prenom: a.prenom, mode, formationActive: isFormationActiveToday(a) };
       });
     }
 
@@ -1024,7 +1039,7 @@ const CorrectionQRCTab = () => {
       if (!matiere) continue;
       const questions = getSourceQuestions(matiere, tousLesExamens);
       const reponses = row.reponses || {};
-      const app = apprenantMap[row.apprenant_id] || { nom: "Inconnu", prenom: "", mode: "presentiel" as const };
+      const app = apprenantMap[row.apprenant_id] || { nom: "Inconnu", prenom: "", mode: "presentiel" as const, formationActive: false };
       const examen = examenMap[quizId];
       const rowTentative = parsedExercice.tentative ?? getStoredTentative(row.tentative);
       const passage = findPassageForAutosave(row.apprenant_id, quizId, matiereId, rowTentative, row.submitted_at || row.updated_at);
@@ -1145,7 +1160,7 @@ const CorrectionQRCTab = () => {
           });
         })
         .map((g) => g.matiereNom || g.matiereId);
-      const app = apprenantMap[gs[0].apprenantId] || { nom: "Inconnu", prenom: "", mode: "presentiel" as const };
+      const app = apprenantMap[gs[0].apprenantId] || { nom: "Inconnu", prenom: "", mode: "presentiel" as const, formationActive: false };
       const latest = gs.reduce((acc, g) => ((new Date(g.completedAt).getTime() || 0) > (new Date(acc.completedAt).getTime() || 0) ? g : acc), gs[0]);
       eb2Pending.push({
         attemptKey: key,
@@ -1158,6 +1173,7 @@ const CorrectionQRCTab = () => {
         completedAt: latest.completedAt,
         matieres: Array.from(new Set(matieres)),
         hasQueueMatch: attemptKeysInQueue.has(key),
+        formationActive: app.formationActive,
       });
     });
     eb2Pending.sort((a, b) =>
@@ -1642,19 +1658,33 @@ const CorrectionQRCTab = () => {
     ? blockingGroups.find((g) => g.key === activeBlockingGroupKey)
     : null;
 
-  // ── EB N°2 : apprenants sans note définitive + contrôle A − B = 0 ──────
-  // A = passages EB N°2 bloqués par des QRC (règle du portail apprenant)
-  // B = passages réellement présents dans « QRC bloquant des résultats »
+  // ── EB N°2 : apprenants ACTUELLEMENT EN FORMATION bloqués AUJOURD'HUI ──
+  // 5 conditions cumulatives (affichage/filtrage uniquement, aucune écriture) :
+  //  1) formation active aujourd'hui (début ≤ aujourd'hui ≤ fin)
+  //  2) examen = Examen Blanc N°2 (VTC / TAXI / VA / TA)
+  //  3) QRC répondue AUJOURD'HUI
+  //  4) QRC réellement non validée manuellement
+  //  5) résultat réellement bloqué par cette QRC (règle du portail apprenant)
+  // Les QRC plus anciennes restent intactes et accessibles dans les autres filtres.
   const eb2Rows = eb2PendingAttempts
+    .filter((a) => a.formationActive)
     .map((a) => {
       const own = blockingItems.filter(
-        (i) => buildAttemptKey(i.apprenantId, i.quizId, i.dbTentative, i.passageKey) === a.attemptKey,
+        (i) =>
+          buildAttemptKey(i.apprenantId, i.quizId, i.dbTentative, i.passageKey) === a.attemptKey
+          && isAnsweredToday(i),
       );
       const groupKey = own.length ? getBlockingGroupKey(sortBlockingQrcItems(own)[0]) : null;
       const matieresRestantes = Array.from(new Set(own.map((i) => i.matiereNom || i.matiereId)));
-      return { ...a, count: own.length, groupKey, matieresRestantes };
+      const derniereQrc = own.reduce<string>(
+        (acc, i) => ((new Date(i.completedAt).getTime() || 0) > (new Date(acc).getTime() || 0) ? i.completedAt : acc),
+        own[0]?.completedAt || a.completedAt,
+      );
+      return { ...a, count: own.length, groupKey, matieresRestantes, derniereQrc };
     })
-    .filter((r) => r.count > 0 || !r.hasQueueMatch);
+    // Anomalie du jour uniquement : passage du jour bloqué mais absent de la file.
+    .filter((r) => r.count > 0 || (!r.hasQueueMatch && isToday(r.completedAt)))
+    .sort((a, b) => (new Date(b.derniereQrc).getTime() || 0) - (new Date(a.derniereQrc).getTime() || 0));
   const eb2Anomalies = eb2Rows.filter((r) => r.count === 0);
 
   const goToBlockingGroup = (key: string) => {
@@ -1789,8 +1819,12 @@ const CorrectionQRCTab = () => {
         <Card className="border-green-500/50 bg-green-50/60">
           <CardHeader className="pb-2">
             <CardTitle className="text-base text-green-900">
-              🟢 APPRENANTS EB N°2 SANS NOTE DÉFINITIVE ({eb2Rows.length})
+              🟢 APPRENANTS ACTUELLEMENT EN FORMATION — EB N°2 BLOQUÉS AUJOURD'HUI ({eb2Rows.length})
             </CardTitle>
+            <p className="text-xs text-green-900/80">
+              Formation active à la date du jour + QRC d'Examen Blanc N°2 répondues aujourd'hui et non validées.
+              Les QRC plus anciennes restent intactes et consultables dans les autres filtres.
+            </p>
           </CardHeader>
           <CardContent className="space-y-2 text-sm max-h-96 overflow-auto">
             {eb2Anomalies.length > 0 && (
@@ -1819,7 +1853,7 @@ const CorrectionQRCTab = () => {
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-bold text-foreground">{r.apprenant}</span>
                     <Badge variant="outline">{r.filiere}</Badge>
-                    <span className="text-muted-foreground">→ {r.quizTitre}</span>
+                    <span className="text-muted-foreground">→ Examen Blanc N°2</span>
                     <span className="text-muted-foreground">→ {r.tentativeLabel}</span>
                   </div>
                   <div className="text-muted-foreground">
@@ -1827,15 +1861,15 @@ const CorrectionQRCTab = () => {
                   </div>
                   <div className="text-xs text-muted-foreground">
                     {r.count > 0
-                      ? `${r.count} QRC répondue(s) non validée(s) manuellement : la note définitive reste bloquée.`
-                      : "Passage bloqué côté apprenant mais aucune QRC correspondante dans la file — anomalie signalée ci-dessus."}
+                      ? `${r.count} QRC répondue(s) aujourd'hui non validée(s) manuellement : la note définitive reste bloquée.`
+                      : "Passage du jour bloqué côté apprenant mais aucune QRC correspondante dans la file — anomalie signalée ci-dessus."}
                   </div>
                 </div>
                 <Badge variant="destructive" className="text-sm font-black uppercase px-3 py-1.5">
-                  {r.count} QRC restantes
+                  {r.count} QRC restantes aujourd'hui
                 </Badge>
-                <span className="text-destructive font-black text-xl leading-none tabular-nums">
-                  {formatDateOnlyFR(r.completedAt)}
+                <span className="text-destructive font-black text-base leading-none tabular-nums">
+                  {formatPassageDateTimeFR(r.derniereQrc)}
                 </span>
                 {r.groupKey && (
                   <Button
