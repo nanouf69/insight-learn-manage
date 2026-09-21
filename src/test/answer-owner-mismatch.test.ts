@@ -1,0 +1,76 @@
+/**
+ * 403 auth_user_id_mismatch — la protection reste, le rattachement est corrigé.
+ *
+ * Cause : en aperçu admin/formateur (CoursPublic embedded), les écrans quiz
+ * recevaient l'apprenant_id du dossier consulté alors que la session connectée
+ * est celle de l'admin. Chaque interaction mettait en file une réponse qui ne
+ * pouvait appartenir qu'à un autre compte → 403 en boucle, file bloquée.
+ */
+import { describe, it, expect, beforeEach } from "vitest";
+import fs from "fs";
+import path from "path";
+import {
+  setAnswerSaveOwnership,
+  canQueueAnswerSaveFor,
+  enqueueAnswerSave,
+  getPendingAnswerSaves,
+} from "@/lib/answerPersistence";
+
+const read = (p: string) => fs.readFileSync(path.resolve(process.cwd(), p), "utf8");
+
+describe("Propriété des sauvegardes de réponses", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    setAnswerSaveOwnership({ apprenantId: null, previewReadOnly: false });
+  });
+
+  it("aucun rattachement connu : comportement inchangé", () => {
+    expect(canQueueAnswerSaveFor("apprenant-A")).toBe(true);
+  });
+
+  it("session apprenant A : refuse une réponse visant le dossier B", () => {
+    setAnswerSaveOwnership({ apprenantId: "apprenant-A" });
+    expect(canQueueAnswerSaveFor("apprenant-A")).toBe(true);
+    expect(canQueueAnswerSaveFor("apprenant-B")).toBe(false);
+  });
+
+  it("aperçu (admin/formateur) : rien n'est mis en file", () => {
+    setAnswerSaveOwnership({ previewReadOnly: true });
+    enqueueAnswerSave({
+      apprenant_id: "apprenant-A",
+      exercice_id: "quiz-1",
+      exercice_type: "quiz",
+      reponses: { q1: "a" },
+    } as any);
+    expect(getPendingAnswerSaves()).toBe(0);
+  });
+
+  it("session apprenant : la réponse est bien mise en file", () => {
+    setAnswerSaveOwnership({ apprenantId: "apprenant-A" });
+    enqueueAnswerSave({
+      apprenant_id: "apprenant-A",
+      exercice_id: "quiz-1",
+      exercice_type: "quiz",
+      reponses: { q1: "a" },
+    } as any);
+    expect(getPendingAnswerSaves()).toBe(1);
+  });
+
+  it("la protection serveur auth_user_id_mismatch n'est jamais retirée", () => {
+    const fn = read("supabase/functions/upsert-reponse-apprenant/index.ts");
+    expect(fn).toContain("auth_user_id_mismatch");
+    expect(fn).toContain("learner.auth_user_id !== effectiveUserId");
+  });
+
+  it("les réponses refusées sont conservées, pas supprimées", () => {
+    const src = read("src/lib/answerPersistence.ts");
+    expect(src).toContain("item.blocked");
+    expect(src).toContain("getBlockedAnswerSaves");
+  });
+
+  it("l'aperçu apprenant déclare explicitement le mode consultation", () => {
+    const src = read("src/pages/CoursPublic.tsx");
+    expect(src).toContain("setAnswerSaveOwnership");
+    expect(src).toContain("previewReadOnly: !!embedded");
+  });
+});
