@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { tousLesExamens, getPointsParQuestion, type ExamenBlanc, type Matiere } from "./examens-blancs-data";
 import { loadSavedExamens } from "./ExamensBlancsEditor";
 import { buildExamenMap, findMatiereWithFallback, getSourceQuestions, computeReussiForResult, isResultPlaceholder, isQrcAnswerCertainlyEmpty, isExamAttemptPublicationPending, isMatiereQrcPendingForAttempt } from "./exam-helpers";
-import { loadQrcEngineQuizIds } from "@/lib/qrcInstances";
+import { loadQrcEngineQuizIds, fetchQrcEngineAttemptIds, buildQrcAttemptId } from "@/lib/qrcInstances";
 import { QrcInstancesPanel } from "./QrcInstancesPanel";
 
 /** Examens Blancs N°2, toutes filières (VTC, TAXI, VA, TA). */
