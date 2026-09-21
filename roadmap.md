@@ -26,3 +26,6 @@
 - [x] Exiger la finalisation réelle de toutes les matières avant d’afficher « Refaire l’examen ».
 - [x] Tester F5, déconnexion, fermeture, retour et coupure réseau sans aucune modification pédagogique.
 - [x] Produire les audits en lecture seule des passages multiples et des zéros suspects.
+- [x] Verrouiller atomiquement tous les résultats d’Examens Blancs jusqu’à la dernière QRC validée.
+- [x] Masquer notes, bilans, statuts, révisions et statistiques provisoires sur toutes les vues.
+- [x] Tester 0 QRC, correction partielle, dernière validation, F5 et reconnexion sans écriture apprenant.
