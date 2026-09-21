@@ -170,15 +170,16 @@ function getCorrectionKey(apprenantId: string, quizId: string, matiereId: string
 
 /**
  * Deux entrées désignent la même QRC réellement passée lorsque l'apprenant,
- * l'examen, la matière, l'identifiant stable de la question ET le texte exact
- * de la réponse de l'élève sont identiques. C'est le cas quand un même passage
- * a été écrit sur plusieurs lignes techniques (finalisation, reprise, double
- * écriture). Une vraie nouvelle tentative, avec une réponse différente, reste
- * une QRC distincte à corriger.
+ * l'examen, la matière, LE PASSAGE/TENTATIVE et l'identifiant stable de la
+ * question sont identiques, et que le texte de la réponse est le même.
+ * Le texte sert uniquement à reconnaître les lignes techniques jumelles d'un
+ * même passage (finalisation, reprise, double écriture). Une vraie nouvelle
+ * tentative reste une QRC distincte à corriger, même si l'élève donne
+ * exactement la même réponse que lors de sa tentative précédente.
  */
 export function isSameQrcContent(
-  a: { apprenantId: string; quizId: string; matiereId: string; questionId: number; reponseEleve?: string },
-  b: { apprenantId: string; quizId: string; matiereId: string; questionId: number; reponseEleve?: string },
+  a: { apprenantId: string; quizId: string; matiereId: string; tentative?: number; questionId: number; reponseEleve?: string },
+  b: { apprenantId: string; quizId: string; matiereId: string; tentative?: number; questionId: number; reponseEleve?: string },
 ): boolean {
   const texteA = normalizeText(safeStr(a.reponseEleve));
   if (!texteA) return false;
@@ -186,6 +187,7 @@ export function isSameQrcContent(
     a.apprenantId === b.apprenantId &&
     a.quizId === b.quizId &&
     (a.matiereId || "") === (b.matiereId || "") &&
+    (a.tentative ?? 1) === (b.tentative ?? 1) &&
     a.questionId === b.questionId &&
     texteA === normalizeText(safeStr(b.reponseEleve))
   );
@@ -486,17 +488,17 @@ const CorrectionQRCTab = () => {
     const attemptKey = (a: string, q: string, m: string, t: number, qid: number) =>
       `${a}__${q}__${m || ""}__T${t}__${qid}`;
 
-    // Identité de CONTENU d'une QRC : apprenant + examen + matière + question
-    // stable + texte exact de la réponse de l'élève.
-    // Elle sert uniquement à reconnaître qu'un même passage a été écrit sur
-    // plusieurs lignes techniques (finalisation, reprise, double écriture) :
-    // la correction enregistrée sur l'une vaut pour l'autre, et la QRC
-    // n'apparaît qu'une seule fois. Une vraie nouvelle tentative, avec une
-    // réponse réellement différente, garde son identité propre.
-    const answerIdentity = (a: string, q: string, m: string, qid: number, reponse: unknown) =>
-      `${a}__${q}__${m || ""}__${qid}__${normalizeText(safeStr(reponse))}`;
+    // Identité d'une QRC réellement passée : apprenant + examen + matière +
+    // PASSAGE/TENTATIVE RÉEL + question stable. Le texte de la réponse n'entre
+    // en jeu qu'à l'intérieur d'un même passage, pour reconnaître les lignes
+    // techniques jumelles (finalisation, reprise, double écriture) écrites pour
+    // ce passage. Deux tentatives réelles restent TOUJOURS deux QRC distinctes,
+    // même si l'élève a répondu exactement la même chose.
+    const answerIdentity = (a: string, q: string, m: string, passage: number, qid: number, reponse: unknown) =>
+      `${a}__${q}__${m || ""}__P${passage}__${qid}__${normalizeText(safeStr(reponse))}`;
     const validatedByAnswer = new Map<string, any>();
     const itemIndexByContent = new Map<string, number>();
+
 
 
     // ── Index des validations admin déjà enregistrées ───────────────────
@@ -517,15 +519,6 @@ const CorrectionQRCTab = () => {
         list.push({ correction, matiereId: r.matiere_id || "", time: new Date(r.completed_at).getTime() || 0 });
         validationsByQuestion.set(lk, list);
 
-        // Index par contenu : la validation suit la réponse exacte de l'élève,
-        // quelle que soit la ligne technique sur laquelle elle a été écrite.
-        const reponse = (r.details as any)?.reponses?.[questionId]
-          ?? (r.details as any)?.reponses?.[String(questionId)];
-        const texte = safeStr(reponse).trim();
-        if (texte) {
-          const ck = answerIdentity(r.apprenant_id, r.quiz_id, r.matiere_id || "", questionId, reponse);
-          if (!validatedByAnswer.has(ck)) validatedByAnswer.set(ck, correction);
-        }
       });
     }
 
@@ -608,6 +601,22 @@ const CorrectionQRCTab = () => {
     const groups: AttemptGroup[] = [];
     groupsByMatiere.forEach((list) => groups.push(...list));
 
+    // Index des validations, rattaché au PASSAGE réel (et non à la ligne
+    // technique qui l'a enregistrée). Chaque passage a son propre index : une
+    // nouvelle tentative ne récupère jamais la validation d'une tentative
+    // précédente, même avec une réponse strictement identique.
+    groups.forEach((g) => {
+      Object.entries(g.corrections || {}).forEach(([rawQuestionId, correction]) => {
+        const questionId = Number(String(rawQuestionId).replace(/^Q/i, ""));
+        if (!Number.isFinite(questionId) || !isAdminValidatedCorrection(correction, g.completedAt)) return;
+        const reponse = g.reponses?.[questionId] ?? g.reponses?.[String(questionId)];
+        if (!safeStr(reponse).trim()) return;
+        const ck = answerIdentity(g.apprenantId, g.quizId, g.matiereId, g.tentative, questionId, reponse);
+        if (!validatedByAnswer.has(ck)) validatedByAnswer.set(ck, correction);
+      });
+    });
+
+
     // Rattachement d'une validation existante au passage concerné :
     // 1) la validation enregistrée sur le passage lui-même ;
     // 2) sinon, rattrapage UNIQUEMENT si la correspondance est certaine —
@@ -674,13 +683,14 @@ const CorrectionQRCTab = () => {
         let correction = validation ?? getCorrectionForQuestion(g.corrections, questionId);
         let hasManualCorrection = !!validation || isAdminValidatedCorrection(correction, g.completedAt);
 
-        // Rattrapage par identité de contenu : la même réponse de l'élève, pour
-        // le même apprenant, le même examen, la même matière et la même
-        // question, a déjà été validée sur une autre écriture du passage.
-        // La correction existante fait foi — rien n'est recalculé ni réécrit.
+        // Rattrapage à l'intérieur du MÊME passage : la même réponse, pour le
+        // même apprenant, le même examen, la même matière, la même question et
+        // la même tentative, a déjà été validée sur une autre écriture
+        // technique de ce passage. La correction existante fait foi — rien
+        // n'est recalculé ni réécrit, et aucune autre tentative n'est touchée.
         if (!hasManualCorrection && reponseEleveStr.trim()) {
           const dejaValidee = validatedByAnswer.get(
-            answerIdentity(g.apprenantId, g.quizId, effectiveMatiereId, questionId, reponseEleveStr),
+            answerIdentity(g.apprenantId, g.quizId, effectiveMatiereId, g.tentative, questionId, reponseEleveStr),
           );
           if (dejaValidee) {
             correction = dejaValidee;
@@ -726,7 +736,7 @@ const CorrectionQRCTab = () => {
         }
 
         const contentKey = reponseEleveStr.trim()
-          ? answerIdentity(g.apprenantId, g.quizId, effectiveMatiereId, questionId, reponseEleveStr)
+          ? answerIdentity(g.apprenantId, g.quizId, effectiveMatiereId, g.tentative, questionId, reponseEleveStr)
           : null;
         const item: QrcItem = {
           resultId: g.primaryId,
@@ -825,9 +835,10 @@ const CorrectionQRCTab = () => {
         const qrcKey = attemptKey(row.apprenant_id, quizId, matiereId, tentative, q.id);
         if (seenQrcKeys.has(qrcKey)) continue;
         if (passage && findValidationForGroup(passage, matiereId, q.id)) continue;
-        // Cette réponse exacte a déjà été validée ou déjà listée depuis un
-        // enregistrement de fin : elle ne revient pas dans la file.
-        const autosaveContentKey = answerIdentity(row.apprenant_id, quizId, matiereId, q.id, reponseEleveStr);
+        // Cette réponse exacte a déjà été validée ou déjà listée pour CE
+        // passage : elle ne revient pas dans la file. Une autre tentative
+        // conserve sa propre entrée.
+        const autosaveContentKey = answerIdentity(row.apprenant_id, quizId, matiereId, tentative, q.id, reponseEleveStr);
         if (validatedByAnswer.has(autosaveContentKey)) continue;
         if (itemIndexByContent.has(autosaveContentKey)) continue;
         itemIndexByContent.set(autosaveContentKey, qrcItems.length);

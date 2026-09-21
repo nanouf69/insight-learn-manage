@@ -1,10 +1,12 @@
 /** @vitest-environment node */
 /**
- * Règle : une QRC validée aujourd'hui sort définitivement de
- * « À corriger aujourd'hui » et n'apparaît qu'une seule fois dans
- * « Déjà corrigées », même quand le passage a été écrit sur plusieurs
- * lignes techniques. Une vraie nouvelle tentative (réponse différente)
- * reste une QRC à corriger. Aucune donnée n'est écrite par ces tests.
+ * Règles vérifiées :
+ *  - une QRC validée sort définitivement de « À corriger aujourd'hui » ;
+ *  - les lignes techniques jumelles d'un MÊME passage ne créent qu'une entrée ;
+ *  - une VRAIE nouvelle tentative reste une QRC distincte à corriger, même si
+ *    l'élève donne exactement la même réponse que la tentative précédente.
+ * L'identité vient du passage/tentative réel, jamais du contenu de la réponse.
+ * Aucun test n'écrit en base.
  */
 import { describe, it, expect } from "vitest";
 import { isSameQrcContent } from "@/components/cours-en-ligne/CorrectionQRCTab";
@@ -13,21 +15,26 @@ const base = {
   apprenantId: "A1",
   quizId: "EB2",
   matiereId: "t3p",
+  tentative: 1,
   questionId: 1,
   reponseEleve: "Titulaire permis de conduire\nVisite médicale apte",
 };
 
-describe("Identité de contenu d'une QRC", () => {
+describe("Identité d'une QRC : passage réel d'abord", () => {
   it("deux écritures techniques du même passage = la même QRC", () => {
     expect(isSameQrcContent(base, { ...base })).toBe(true);
   });
 
-  it("insensible aux espaces et à la casse de la même réponse", () => {
+  it("insensible aux espaces et à la casse à l'intérieur du même passage", () => {
     expect(isSameQrcContent(base, { ...base, reponseEleve: "  TITULAIRE PERMIS DE CONDUIRE   Visite médicale apte " })).toBe(true);
   });
 
-  it("une réponse réellement différente (nouvelle tentative) reste distincte", () => {
-    expect(isSameQrcContent(base, { ...base, reponseEleve: "Autre réponse donnée au second passage" })).toBe(false);
+  it("une nouvelle tentative avec EXACTEMENT la même réponse reste une QRC distincte", () => {
+    expect(isSameQrcContent(base, { ...base, tentative: 2 })).toBe(false);
+  });
+
+  it("une nouvelle tentative avec une réponse différente reste évidemment distincte", () => {
+    expect(isSameQrcContent(base, { ...base, tentative: 2, reponseEleve: "Autre réponse" })).toBe(false);
   });
 
   it("ne mélange jamais deux apprenants, examens, matières ou questions", () => {
