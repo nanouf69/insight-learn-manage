@@ -734,7 +734,7 @@ const CorrectionQRCTab = () => {
         }
 
         const contentKey = reponseEleveStr.trim()
-          ? answerIdentity(g.apprenantId, g.quizId, effectiveMatiereId, questionId, reponseEleveStr)
+          ? answerIdentity(g.apprenantId, g.quizId, effectiveMatiereId, g.tentative, questionId, reponseEleveStr)
           : null;
         const item: QrcItem = {
           resultId: g.primaryId,
