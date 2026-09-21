@@ -20,6 +20,7 @@ import { isExamAttemptPublicationPending, isMatiereQrcPendingForAttempt, exclude
 import { toast } from "sonner";
 import { RefaireExamenDialog } from "./RefaireExamenDialog";
 import { computeExamRetakeLock, examRetakeLockMessage } from "@/lib/examRetakeDelay";
+import { useQrcEnginePending } from "@/hooks/useQrcEnginePending";
 
 /**
  * Retrouve la version ORIGINALE (source statique) d'une matière pour un examen
@@ -38,6 +39,10 @@ function findStaticFallbackMatiere(examId: string, matiereId: string, matiereNom
 
 function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaultBilanId, apprenantType, examensData, apprenantId, isAdmin, refreshKey, pausedExamIds, onPauseToggle }: { onStart: (examen: ExamenBlanc, forceRetake?: boolean) => void; onStartPartial?: (examen: ExamenBlanc) => void; onEdit: () => void; onViewResults: (examen: ExamenBlanc) => void; defaultBilanId?: string | null; apprenantType?: string | null; examensData: ExamenBlanc[]; apprenantId?: string | null; isAdmin?: boolean; refreshKey?: number; pausedExamIds?: Set<string>; onPauseToggle?: (examId: string) => void }) {
   const [retakeExamen, setRetakeExamen] = useState<ExamenBlanc | null>(null);
+  // Examens branchés sur le nouveau moteur QRC : le blocage de la note vient
+  // exactement des mêmes identifiants que la file de correction du formateur.
+  // Pour tous les autres examens, la règle historique est conservée telle quelle.
+  const qrcEngine = useQrcEnginePending(apprenantId, (examensData || []).map((e) => e.id));
   // Determine the forced exam type from the student's formation type
   const forcedType = (() => {
     if (!apprenantType) return null;
@@ -506,7 +511,10 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
                     {isCompleted && (() => {
                       // RÈGLE : aucune note finale publiée tant qu'une QRC de cette
                       // tentative n'a pas été validée manuellement par le formateur.
-                       const publicationPending = isExamAttemptPublicationPending(scores, examen);
+                       const enginePending = qrcEngine.isExamPending(examen.id);
+                       const publicationPending = enginePending !== null
+                         ? enginePending
+                         : isExamAttemptPublicationPending(scores, examen);
                        if (publicationPending) {
                         return (
                           <div className="flex flex-col items-center gap-1 mt-2 rounded-lg px-3 py-2 border-2 bg-amber-50 border-amber-400">
@@ -605,11 +613,14 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
                         // STATUT PAR MATIÈRE (jamais hérité du blocage global de l'examen) :
                         // une matière est « en attente » uniquement si ELLE contient encore
                         // une QRC répondue non validée manuellement pour CE passage.
-                        const publicationPending = !!scoreData && isMatiereQrcPendingForAttempt(m, {
-                          ...((scoreData as any)?.details || {}),
-                          reponses: (scoreData as any)?.reponses ?? (scoreData as any)?.details?.reponses,
-                          correctionsIA: (scoreData as any)?.correctionsIA ?? (scoreData as any)?.details?.correctionsIA,
-                        });
+                        const engineMatierePending = qrcEngine.isMatierePending(examen.id, m.id);
+                        const publicationPending = engineMatierePending !== null
+                          ? (!!scoreData && engineMatierePending)
+                          : (!!scoreData && isMatiereQrcPendingForAttempt(m, {
+                              ...((scoreData as any)?.details || {}),
+                              reponses: (scoreData as any)?.reponses ?? (scoreData as any)?.details?.reponses,
+                              correctionsIA: (scoreData as any)?.correctionsIA ?? (scoreData as any)?.details?.correctionsIA,
+                            }));
                         return (
                           <div key={m.id} className="flex justify-between text-xs text-muted-foreground">
                             <span className="truncate pr-2">{m.nom.split(" - ")[0]}</span>
