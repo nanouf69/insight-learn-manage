@@ -908,7 +908,7 @@ const CorrectionQRCTab = () => {
           }
         }
 
-        const app = apprenantMap[g.apprenantId] || { nom: "Inconnu", prenom: "", mode: "presentiel" as const };
+        const app = apprenantMap[g.apprenantId] || { nom: "Inconnu", prenom: "", mode: "presentiel" as const, formationActive: false };
 
         const questionDef = perQuestionMatiere?.questions?.find((mq: any) => mq && mq.id === questionId);
         const currentExamen = examenMap[g.quizId];
@@ -1039,7 +1039,7 @@ const CorrectionQRCTab = () => {
       if (!matiere) continue;
       const questions = getSourceQuestions(matiere, tousLesExamens);
       const reponses = row.reponses || {};
-      const app = apprenantMap[row.apprenant_id] || { nom: "Inconnu", prenom: "", mode: "presentiel" as const };
+      const app = apprenantMap[row.apprenant_id] || { nom: "Inconnu", prenom: "", mode: "presentiel" as const, formationActive: false };
       const examen = examenMap[quizId];
       const rowTentative = parsedExercice.tentative ?? getStoredTentative(row.tentative);
       const passage = findPassageForAutosave(row.apprenant_id, quizId, matiereId, rowTentative, row.submitted_at || row.updated_at);
@@ -1160,7 +1160,7 @@ const CorrectionQRCTab = () => {
           });
         })
         .map((g) => g.matiereNom || g.matiereId);
-      const app = apprenantMap[gs[0].apprenantId] || { nom: "Inconnu", prenom: "", mode: "presentiel" as const };
+      const app = apprenantMap[gs[0].apprenantId] || { nom: "Inconnu", prenom: "", mode: "presentiel" as const, formationActive: false };
       const latest = gs.reduce((acc, g) => ((new Date(g.completedAt).getTime() || 0) > (new Date(acc.completedAt).getTime() || 0) ? g : acc), gs[0]);
       eb2Pending.push({
         attemptKey: key,
