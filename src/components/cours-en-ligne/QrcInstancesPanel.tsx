@@ -25,11 +25,29 @@ export function QrcInstancesPanel() {
   const [comments, setComments] = useState<Record<string, string>>({});
   const [showCorrected, setShowCorrected] = useState(false);
   const [enabledQuizIds, setEnabledQuizIds] = useState<string[]>([]);
+  const [controls, setControls] = useState<QrcPilotIntegrity[]>([]);
 
   const load = useCallback(async () => {
     const enabled = await loadQrcEngineQuizIds(true);
     setEnabledQuizIds(Array.from(enabled));
-    if (enabled.size === 0) { setRows([]); setLoading(false); return; }
+    if (enabled.size === 0) { setRows([]); setControls([]); setLoading(false); return; }
+
+    // CONTRÔLE AUTOMATIQUE (lecture seule) sur chaque examen branché :
+    // QRC répondues = identifiants créés = en attente + corrigées, 0 doublon,
+    // 0 correction perdue. À la moindre égalité fausse, le moteur est coupé
+    // immédiatement pour les NOUVELLES QRC, sans toucher à l'enregistré.
+    const checks: QrcPilotIntegrity[] = [];
+    for (const quizId of enabled) {
+      const res = await fetchQrcPilotIntegrity(quizId);
+      if (!res) continue;
+      if (res.anomalie) {
+        const coupe = await disableQrcEngine(quizId, "Coupure automatique : contrôle d'intégrité en échec");
+        checks.push({ ...res, coupe });
+      } else {
+        checks.push(res);
+      }
+    }
+    setControls(checks);
     const data = await fetchQrcInstances();
     setRows(data);
     const ids = [...new Set(data.map((r) => r.apprenant_id))];
