@@ -641,9 +641,28 @@ const CorrectionQRCTab = () => {
 
         const pts = getPointsParQuestion(effectiveMatiereId, "QRC", perQuestionMatiere || undefined);
 
+        const reponseEleveRaw = q.reponseEleve != null && q.reponseEleve !== ""
+          ? q.reponseEleve
+          : (g.reponses?.[questionId] ?? g.reponses?.[String(questionId)] ?? "");
+        const reponseEleveStr = safeStr(reponseEleveRaw);
+
         const validation = findValidationForGroup(g, effectiveMatiereId, questionId);
-        const correction = validation ?? getCorrectionForQuestion(g.corrections, questionId);
-        const hasManualCorrection = !!validation || isAdminValidatedCorrection(correction, g.completedAt);
+        let correction = validation ?? getCorrectionForQuestion(g.corrections, questionId);
+        let hasManualCorrection = !!validation || isAdminValidatedCorrection(correction, g.completedAt);
+
+        // Rattrapage par identité de contenu : la même réponse de l'élève, pour
+        // le même apprenant, le même examen, la même matière et la même
+        // question, a déjà été validée sur une autre écriture du passage.
+        // La correction existante fait foi — rien n'est recalculé ni réécrit.
+        if (!hasManualCorrection && reponseEleveStr.trim()) {
+          const dejaValidee = validatedByAnswer.get(
+            answerIdentity(g.apprenantId, g.quizId, effectiveMatiereId, questionId, reponseEleveStr),
+          );
+          if (dejaValidee) {
+            correction = dejaValidee;
+            hasManualCorrection = true;
+          }
+        }
 
         const app = apprenantMap[g.apprenantId] || { nom: "Inconnu", prenom: "", mode: "presentiel" as const };
 
@@ -655,11 +674,6 @@ const CorrectionQRCTab = () => {
         const currentQuestionText = normalizeText(safeStr(currentQuestionDef?.enonce));
         const questionSupprimee = !currentQuestionDef || (!!savedQuestionText && !!currentQuestionText && savedQuestionText !== currentQuestionText);
 
-        const reponseEleveRaw = q.reponseEleve != null && q.reponseEleve !== ""
-          ? q.reponseEleve
-          : (g.reponses?.[questionId] ?? g.reponses?.[String(questionId)] ?? "");
-        const reponseEleveStr = safeStr(reponseEleveRaw);
-
         // QRC réellement laissée vide par l'élève (snapshot du passage présent et
         // réponse explicitement vide) : elle vaut 0 et ne remonte pas dans la file.
         // Une réponse simplement absente (perte de synchronisation) reste à corriger.
@@ -667,6 +681,7 @@ const CorrectionQRCTab = () => {
           && isQrcAnswerCertainlyEmpty({ questions: g.questions, reponses: g.reponses }, questionId)) {
           continue;
         }
+
 
         const reponseCorrecteStr = q.reponseCorrecte
           ? safeStr(q.reponseCorrecte)
