@@ -182,6 +182,16 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
 
           setCompletedExamIds(completedIds);
 
+          // Date de fin de la dernière tentative par examen (lecture seule).
+          const finishedAt: Record<string, number> = {};
+          latestRows.forEach((r: any) => {
+            const quizId = r?.quiz_id;
+            if (!quizId) return;
+            const t = toTimestamp(r?.completed_at) || toTimestamp(r?.created_at);
+            if (t > (finishedAt[quizId] ?? 0)) finishedAt[quizId] = t;
+          });
+          setLastFinishedByExam(finishedAt);
+
           const scores: Record<string, ExamScoreItem[]> = {};
           latestRows.forEach((r: any) => {
             const recovered = recoverCorruptedScoreRow(r, examensDataRef.current);
