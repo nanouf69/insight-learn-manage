@@ -17,22 +17,19 @@ import {
   type LiveSession,
 } from "@/lib/liveChallenge";
 
-const DEMO_QUESTIONS: LiveQuestion[] = [
-  {
-    id: "demo-1",
-    enonce: "Quelle est la durée maximale de conduite continue autorisée ?",
-    type: "qcm",
-    propositions: ["2 heures", "4 h 30", "6 heures"],
-    bonneReponse: "4 h 30",
-    points: 1,
-  },
-  {
-    id: "demo-2",
-    enonce: "Citez deux obligations du conducteur VTC avant une course.",
-    type: "qrc",
-    points: 2,
-  },
-];
+import {
+  PILOTE_MATIERE,
+  buildSnapshotFromSource,
+  fetchVtcSourceQuizzes,
+  type SourceQuiz,
+} from "@/lib/liveChallengeSource";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function ChallengeLive() {
   const [sessions, setSessions] = useState<LiveSession[]>([]);
