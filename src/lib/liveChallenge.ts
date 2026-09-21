@@ -199,10 +199,12 @@ export async function submitLiveResponse(params: {
   reponse: string;
 }): Promise<LiveResponse> {
   const { question } = params;
+  const attendues = (question.bonnesReponses && question.bonnesReponses.length > 0
+    ? question.bonnesReponses
+    : [question.bonneReponse || ""]
+  ).map(normalize);
   const estCorrecte =
-    question.type === "qrc"
-      ? null
-      : normalize(params.reponse) === normalize(question.bonneReponse || "");
+    question.type === "qrc" ? null : attendues.includes(normalize(params.reponse));
   const { data, error } = await supabase.rpc("live_submit_response", {
     _participant_id: params.participantId,
     _device_token: getDeviceToken(),
