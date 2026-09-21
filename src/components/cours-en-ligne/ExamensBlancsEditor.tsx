@@ -1375,11 +1375,18 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
 
 
       const now = new Date().toISOString();
+      const writeOrigin = showSuccessToast ? "manuel" : "autosave";
       const changedModuleFingerprints: Record<number, string> = {};
       const rows = synced
         .map((ex, i) => {
           const moduleId = getModuleIdForExamId(ex.id);
           const moduleFingerprint = JSON.stringify(ex.matieres ?? []);
+          // IDENTITÉ INCOMPLÈTE = AUCUNE SAUVEGARDE.
+          // Tant que la référence serveur de cet examen n'est pas connue
+          // (chargement non terminé), on n'écrit rien : c'est ce cas qui avait
+          // permis une écriture massive non journalisée le 21/09.
+          if (lastSavedModuleFingerprintsRef.current[moduleId] === undefined) return null;
+          if (!ex.id || !Array.isArray(ex.matieres) || ex.matieres.length === 0) return null;
           const hasChanged = lastSavedModuleFingerprintsRef.current[moduleId] !== moduleFingerprint;
 
           if (!hasChanged) return null;
@@ -1390,12 +1397,15 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
             module_data: {
               id: ex.id,
               matieres: ex.matieres,
+              editorSchemaVersion: EXAM_EDITOR_SCHEMA_VERSION,
+              writeOrigin,
             } as any,
             deleted_cours: [] as any,
             deleted_exercices: [] as any,
           };
         })
         .filter((row): row is NonNullable<typeof row> => row !== null);
+
 
       if (rows.length === 0) {
         lastSavedFingerprintRef.current = JSON.stringify(synced);
