@@ -24,7 +24,7 @@ import {
   getQuestionImageValue,
 } from "./examens-blancs-utils";
 import { computeMoyenneExamen, computeResultatMatiereScore, getSeuilEliminatoireAffiche } from "./examens-blancs-scoring";
-import { isQrcCorrectionValidated, isQrcAnswerCertainlyEmpty } from "./exam-helpers";
+import { isExamAttemptPublicationPending } from "./exam-helpers";
 
 
 function EcranResultats({
@@ -80,6 +80,14 @@ function EcranResultats({
   const [isRetake, setIsRetake] = useState(false);
   const [activeTab, setActiveTab] = useState<"resultats" | "revision">("resultats");
 
+  const hasQrcPendingValidation = isExamAttemptPublicationPending(
+    resultats.map((resultat, index) => ({
+      ...resultat,
+      correctionsIA: correctionsIA[index] ?? resultat.correctionsIA,
+    })),
+    examen,
+  );
+
   // Detect if this is a retake (multiple results exist for same apprenant + quiz)
   useEffect(() => {
     if (!apprenantId || !examen?.id) return;
@@ -96,7 +104,7 @@ function EcranResultats({
 
   // === BILAN AUTOMATIQUE ===
   const generateBilanAuto = useCallback(() => {
-    if (!resultats || resultats.length === 0) return null;
+    if (hasQrcPendingValidation || !resultats || resultats.length === 0) return null;
 
     // Utilise le helper PARTAGÉ pour aligner la moyenne du bilan sur les autres écrans.
     const bilan = computeMoyenneExamen(examen, (m) => {
@@ -188,7 +196,7 @@ function EcranResultats({
     }
 
     return lines.join("\n");
-  }, [resultats, examen]);
+  }, [resultats, examen, correctionsIA, hasQrcPendingValidation]);
 
   // Auto-save bilan to DB
   useEffect(() => {
@@ -522,32 +530,6 @@ function EcranResultats({
     .filter(r => !r.admis)
     .map(r => r.nomMatiere.split(" - ")[0]);
 
-  // QRC : aucune note définitive tant que TOUTES les QRC d'une matière n'ont pas
-  // été corrigées et validées manuellement (présentiel, e-learning et repasses).
-  const matieresEnAttenteQrc = (() => {
-    const pending = new Set<string>();
-    for (let mi = 0; mi < examen.matieres.length; mi++) {
-      const matiere = examen.matieres[mi];
-      if (!matiere) continue;
-      const resultatMatiere = resultatsAvecIA[mi];
-      if (!resultatMatiere || (resultatMatiere as any).nonPassee) continue;
-      const questionsSafe = (matiere.questions || []).filter((q): q is Question => q != null && q?.type !== undefined);
-      const qrcQuestions = questionsSafe.filter(q => q?.type === "QRC");
-      if (qrcQuestions.length === 0) continue;
-      const cacheMatiere = correctionsIA[mi] || resultatMatiere.correctionsIA || {};
-      for (const q of qrcQuestions) {
-        // QRC réellement laissée vide par l'élève : 0 point d'office, jamais bloquante.
-        const detailsMatiere = (resultatMatiere as any).details ?? null;
-        if (detailsMatiere && isQrcAnswerCertainlyEmpty(detailsMatiere, q.id)) continue;
-        const corr = (cacheMatiere as any)[q.id] ?? (cacheMatiere as any)[String(q.id)];
-        if (!isQrcCorrectionValidated(corr)) { pending.add(matiere.id); break; }
-      }
-    }
-    return pending;
-  })();
-  const hasQrcPendingValidation = !isAdmin && matieresEnAttenteQrc.size > 0;
-
-
   // Questions fausses à réviser (même logique que RevisionPhaseView)
   const wrongQuestions = useMemo(() => {
     const out: { matiere: Matiere; question: Question; matiereNom: string }[] = [];
@@ -664,7 +646,7 @@ function EcranResultats({
           (1re, 2e, 3e...) attend la correction manuelle du formateur. */}
 
 
-      <div className="space-y-4">
+      {!hasQrcPendingValidation && <div className="space-y-4">
         <div className="flex items-center gap-2">
           <div className="w-1 h-6 rounded-full" style={{ backgroundColor: '#00B4D8' }} />
           <h4 className="font-semibold text-lg" style={{ color: '#0D2540' }}>Résultats par matière</h4>
@@ -723,13 +705,7 @@ function EcranResultats({
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      {matieresEnAttenteQrc.has(r.matiereId) && !isAdmin ? (
-                        <div className="text-right">
-                          <span className="text-base font-bold text-amber-600">⏳ En attente de correction</span>
-                          <p className="text-xs text-muted-foreground">Note publiée après correction des QRC</p>
-                        </div>
-                      ) : (
-                        <>
+                      <>
                           <div className="text-right">
                             <span className="text-2xl font-bold" style={{ color: r.admis ? '#00B4D8' : '#ef4444' }}>
                               {noteSur20.toFixed(1)} / 20
@@ -742,7 +718,6 @@ function EcranResultats({
                             <XCircle className="w-5 h-5 text-red-500" />
                           )}
                         </>
-                      )}
                       <ChevronRight className={`w-4 h-4 text-muted-foreground transition-transform ${isExpanded ? "rotate-90" : ""}`} />
 
                     </div>
@@ -953,7 +928,7 @@ function EcranResultats({
             <CardContent className="py-6 px-5 text-center">
               <Clock className="w-8 h-8 mx-auto mb-2 text-amber-500" />
               <p className="text-xl font-black text-amber-600">En attente de validation du formateur</p>
-              <p className="text-sm text-muted-foreground mt-1">Le résultat final sera disponible après correction des QRC par votre formateur.</p>
+              <p className="text-sm text-muted-foreground mt-1">Votre bilan et votre résultat final seront disponibles après la correction de toutes les QRC.</p>
             </CardContent>
           </Card>
         ) : (
@@ -1033,7 +1008,7 @@ function EcranResultats({
 
 
       {/* Bilan automatique */}
-      {(() => {
+      {!hasQrcPendingValidation && (() => {
         const bilan = generateBilanAuto();
         if (!bilan) return null;
         return (
