@@ -402,6 +402,49 @@ function isAdminValidatedCorrection(correction: unknown, completedAt?: string | 
   return false;
 }
 
+/**
+ * SIGNATURE DÉTERMINISTE D'UN PASSAGE (lecture seule, aucune écriture).
+ *
+ * Deux écritures techniques appartiennent au même passage réel UNIQUEMENT si
+ * l'intégralité des réponses enregistrées est strictement identique, caractère
+ * pour caractère, et qu'au moins une réponse est rédigée à la main (texte libre
+ * d'au moins 8 caractères contenant un espace). Aucune notion de durée ni de
+ * proximité horaire n'entre dans cette identité : deux vraies tentatives, même
+ * enregistrées à quelques secondes d'intervalle, ne peuvent pas être confondues
+ * tant qu'une seule réponse diffère.
+ *
+ * Renvoie null lorsque la preuve n'est pas certaine (aucune réponse rédigée) :
+ * le cas reste alors traité comme un passage distinct, jamais fusionné.
+ */
+export function buildAnswerSignature(details: any): string | null {
+  if (!details || typeof details !== "object") return null;
+  const answers = new Map<string, string>();
+
+  const add = (key: unknown, value: unknown) => {
+    const k = safeStr(key).trim();
+    if (!k) return;
+    const v = safeStr(value);
+    if (!v.trim()) return;
+    if (!answers.has(k)) answers.set(k, v);
+  };
+
+  Object.entries((details.reponses || {}) as Record<string, unknown>).forEach(([k, v]) => add(k, v));
+  if (Array.isArray(details.questions)) {
+    details.questions.forEach((q: any) => add(q?.questionId ?? q?.id, q?.reponseEleve));
+  }
+
+  if (answers.size === 0) return null;
+  const hasFreeText = [...answers.values()].some((v) => v.trim().length >= 8 && /\s/.test(v.trim()));
+  if (!hasFreeText) return null;
+
+  return [...answers.entries()]
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([k, v]) => `${k}=${v}`)
+    .join("\u0001");
+}
+
+
+
 function buildQuestionListFromMatiere(matiere: Matiere, reponses: Record<string | number, any>): any[] {
   const sourceQuestions = getSourceQuestions(matiere, tousLesExamens);
   return sourceQuestions.map((mq: any) => {
@@ -720,10 +763,14 @@ const CorrectionQRCTab = () => {
     }
 
     // ── Regroupement par PASSAGE RÉEL (fusion des doubles écritures) ─────
-    // Un passage = apprenant + examen + matière + tentative persistante.
-    // Deux lignes écrites à quelques secondes d'intervalle ne sont fusionnées
-    // que si elles portent le même numéro persistant. Des numéros persistants
-    // différents restent toujours séparés, même avec des réponses identiques.
+    // IDENTITÉ DÉTERMINISTE, SANS FENÊTRE DE TEMPS :
+    //  1) même numéro de tentative persistant  → même passage (par définition) ;
+    //  2) sinon, SIGNATURE DE RÉPONSES STRICTEMENT IDENTIQUE (toutes les
+    //     réponses enregistrées, caractère pour caractère, avec au moins une
+    //     réponse rédigée) → il s'agit d'une ré-écriture du même passage.
+    // Toute divergence, même d'un seul caractère, laisse les lignes SÉPARÉES :
+    // deux vraies tentatives restent deux passages distincts, même rapprochées
+    // dans le temps. Aucune donnée n'est modifiée : regroupement d'affichage.
     const MEME_PASSAGE_MS = 5 * 60 * 1000;
     type AttemptGroup = {
       primaryId: string; apprenantId: string; userId?: string; quizId: string; quizType: string;
@@ -732,9 +779,14 @@ const CorrectionQRCTab = () => {
       scoreObtenu: number; scoreMax: number; noteSur20: number | null;
       questions: any[] | null; reponses: Record<string, any>; corrections: Record<string, any>; rows: number;
       firstTime: number; lastTime: number;
+      /** Signature déterministe des réponses (preuve de ré-écriture du même passage). */
+      answerSignature: string | null;
+      /** Numéros de tentative techniques regroupés dans ce passage réel. */
+      mergedTentatives: number[];
     };
     const groupsByMatiere = new Map<string, AttemptGroup[]>();
     let doublonsTechniques = 0;
+
 
     // Les lignes arrivent de la plus récente à la plus ancienne : on les
     // traite de la plus ancienne à la plus récente, sans renuméroter les passages.
@@ -768,32 +820,43 @@ const CorrectionQRCTab = () => {
       const storedTentative = getStoredTentative(r.tentative);
       const questions = Array.isArray(details.questions) && details.questions.length > 0 ? details.questions : null;
       const list = groupsByMatiere.get(mKey) || [];
-      const last = list[list.length - 1];
+      const signature = buildAnswerSignature(details);
 
-      if (last && storedTentative != null && last.dbTentative === storedTentative && time - last.lastTime <= MEME_PASSAGE_MS) {
+      // Cible de fusion : même numéro de tentative persistant, ou signature de
+      // réponses strictement identique. Jamais une simple proximité horaire.
+      const target = list.find((g) =>
+        (storedTentative != null && g.dbTentative === storedTentative)
+        || (!!signature && g.answerSignature === signature),
+      );
+
+      if (target) {
         // Même passage : on complète ce qui manque, sans jamais écraser.
         doublonsTechniques++;
-        last.rows++;
-        last.lastTime = time;
-        if (r.completed_at) last.completedAt = r.completed_at;
-        if (questions && (!last.questions || questions.length > last.questions.length)) {
-          last.questions = questions;
-          last.primaryId = r.id;
+        target.rows++;
+        target.lastTime = Math.max(target.lastTime, time);
+        if (r.completed_at && time >= target.lastTime) target.completedAt = r.completed_at;
+        if (storedTentative != null && !target.mergedTentatives.includes(storedTentative)) {
+          target.mergedTentatives.push(storedTentative);
+        }
+        if (!target.answerSignature && signature) target.answerSignature = signature;
+        if (questions && (!target.questions || questions.length > target.questions.length)) {
+          target.questions = questions;
+          target.primaryId = r.id;
         }
         Object.entries(details.reponses || {}).forEach(([k, v]) => {
-          const current = last.reponses[k];
-          if (current == null || (typeof current === "string" && current.trim() === "")) last.reponses[k] = v;
+          const current = target.reponses[k];
+          if (current == null || (typeof current === "string" && current.trim() === "")) target.reponses[k] = v;
         });
         Object.entries(details.correctionsIA || {}).forEach(([k, v]) => {
-          const current = last.corrections[k];
-          if (current == null || (!isAdminValidatedCorrection(current, last.completedAt) && isAdminValidatedCorrection(v, r.completed_at))) {
-            last.corrections[k] = v;
+          const current = target.corrections[k];
+          if (current == null || (!isAdminValidatedCorrection(current, target.completedAt) && isAdminValidatedCorrection(v, r.completed_at))) {
+            target.corrections[k] = v;
           }
         });
-        if (!last.matiereNom && r.matiere_nom) last.matiereNom = r.matiere_nom;
-        if ((r.score_obtenu ?? 0) > last.scoreObtenu) {
-          last.scoreObtenu = r.score_obtenu ?? 0;
-          last.noteSur20 = r.note_sur_20 ?? last.noteSur20;
+        if (!target.matiereNom && r.matiere_nom) target.matiereNom = r.matiere_nom;
+        if ((r.score_obtenu ?? 0) > target.scoreObtenu) {
+          target.scoreObtenu = r.score_obtenu ?? 0;
+          target.noteSur20 = r.note_sur_20 ?? target.noteSur20;
         }
         continue;
       }
@@ -819,8 +882,11 @@ const CorrectionQRCTab = () => {
         rows: 1,
         firstTime: time,
         lastTime: time,
+        answerSignature: signature,
+        mergedTentatives: storedTentative != null ? [storedTentative] : [],
       });
       groupsByMatiere.set(mKey, list);
+
     }
 
     // Le libellé « tentative X » n'est affiché que si X est unique pour cette
@@ -829,15 +895,19 @@ const CorrectionQRCTab = () => {
     // plutôt que d'inventer/renuméroter un numéro.
     groupsByMatiere.forEach((list) => {
       const occurrences = new Map<number, number>();
+      const canonicalTentative = (g: AttemptGroup): number | null =>
+        g.mergedTentatives.length > 0 ? Math.min(...g.mergedTentatives) : (g.dbTentative ?? null);
       list.forEach((g) => {
-        if (g.dbTentative != null) occurrences.set(g.dbTentative, (occurrences.get(g.dbTentative) || 0) + 1);
+        const t = canonicalTentative(g);
+        if (t != null) occurrences.set(t, (occurrences.get(t) || 0) + 1);
       });
       list.forEach((g) => {
-        if (g.dbTentative != null && occurrences.get(g.dbTentative) === 1) {
-          g.passageKey = `${g.identityKey}__T${g.dbTentative}`;
-          g.tentative = g.dbTentative;
-          g.tentativeLabel = `tentative ${g.dbTentative}`;
-          g.tentativeSortValue = g.dbTentative;
+        const t = canonicalTentative(g);
+        if (t != null && occurrences.get(t) === 1) {
+          g.passageKey = `${g.identityKey}__T${t}`;
+          g.tentative = t;
+          g.tentativeLabel = `tentative ${t}`;
+          g.tentativeSortValue = t;
           return;
         }
         g.passageKey = buildFallbackPassageKey(g.identityKey, g.completedAt, g.primaryId);
@@ -846,6 +916,7 @@ const CorrectionQRCTab = () => {
         g.tentativeSortValue = Number.MAX_SAFE_INTEGER;
       });
     });
+
 
     const groups: AttemptGroup[] = [];
     groupsByMatiere.forEach((list) => groups.push(...list));
