@@ -19,3 +19,10 @@
 - [x] Garantir la reprise hors-ligne après actualisation, fermeture, reconnexion et changement de session.
 - [x] Ajouter l’idempotence et le rattachement stable apprenant/tentative/quiz/question côté base.
 - [x] Tester coupure réseau, reprise, déduplication et finalisation sur examens blancs et quiz modules.
+
+- [ ] Rendre la reprise des examens blancs compatible avec les identifiants historiques et actuels, sans migration de données.
+- [ ] Faire primer toute réponse non vide sur une ligne vide compatible du même passage.
+- [ ] Reprendre le passage incomplet depuis les réponses, résultats, tentative et dernière activité.
+- [ ] Exiger la finalisation réelle de toutes les matières avant d’afficher « Refaire l’examen ».
+- [ ] Tester F5, déconnexion, fermeture, retour et coupure réseau sans aucune modification pédagogique.
+- [ ] Produire les audits en lecture seule des passages multiples et des zéros suspects.
