@@ -10337,22 +10337,15 @@ export const bilanExamenTA: ExamenBlanc = {
 };
 
 // ===== BILAN EXAMEN VA (passerelle VTC pour TAXI) =====
-const bilan_dev_commercial_va: Matiere = {
-  id: "bilan_dev_commercial",
-  nom: "F(V) — Développement commercial et gestion propre à l'activité de VTC",
-  duree: 30,
-  coefficient: 3,
-  noteEliminatoire: 0,
-  noteSur: BILAN_DEV_COMMERCIAL_QUESTIONS.length,
-  questions: BILAN_DEV_COMMERCIAL_QUESTIONS,
-};
-
+// Les matières F(V) et G(V) du VA sont STRICTEMENT les mêmes objets que celles du
+// BILAN EXAMEN VTC : même identité stable de matière, donc synchronisation
+// permanente VTC <-> VA et aucune contamination possible depuis le TAXI.
 export const bilanExamenVA: ExamenBlanc = {
   id: "bilan-va",
   numero: 9,
   type: "VTC",
   titre: "Bilan Examen VA — Développement Commercial & Réglementation Spécifique",
-  matieres: [bilan_dev_commercial_va, bilan_reglementation_vtc_specifique],
+  matieres: [bilan_dev_commercial_vtc, bilan_reglementation_vtc_specifique],
 };
 
 // ===== EXAMENS BLANCS TA (Passerelle Taxi) — Réglementation Nationale + Locale =====
