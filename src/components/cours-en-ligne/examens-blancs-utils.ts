@@ -580,14 +580,111 @@ export function persistExamSession(
   } catch { }
 }
 
+export interface SavedExamAnswerRow {
+  exercice_id: string;
+  reponses?: Record<string, unknown> | null;
+  completed?: boolean | null;
+  status?: string | null;
+  tentative?: number | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+  submitted_at?: string | null;
+  write_seq?: number | null;
+}
+
+export interface ParsedExamAnswerKey {
+  matiereKey: string;
+  tentative: number;
+  separator: "legacy" | "canonical";
+}
+
 /**
- * Extract the matiere key from an exercice_id.
- * exercice_id format: `${examId}__${matiereId}` (double underscore separator).
+ * Lit les deux générations d'identifiants sans réécrire les données :
+ * `EB2_matiere` et `EB2__matiere`, avec un éventuel suffixe de tentative.
  */
+export function parseExamAnswerKey(exerciceId: string, examId: string): ParsedExamAnswerKey | null {
+  const canonicalPrefix = `${examId}__`;
+  const legacyPrefix = `${examId}_`;
+  let remainder = "";
+  let separator: ParsedExamAnswerKey["separator"];
+
+  if (exerciceId.startsWith(canonicalPrefix)) {
+    remainder = exerciceId.slice(canonicalPrefix.length);
+    separator = "canonical";
+  } else if (exerciceId.startsWith(legacyPrefix)) {
+    remainder = exerciceId.slice(legacyPrefix.length);
+    separator = "legacy";
+  } else {
+    return null;
+  }
+
+  const suffix = remainder.match(/(?:__|_)t(\d+)$/i);
+  const tentative = suffix ? Math.max(Number.parseInt(suffix[1] ?? "1", 10) || 1, 1) : 1;
+  const matiereKey = suffix ? remainder.slice(0, suffix.index) : remainder;
+  return matiereKey ? { matiereKey, tentative, separator } : null;
+}
+
 export function extractMatiereKeyFromExerciceId(exerciceId: string, examId: string): string {
-  const prefix = `${examId}__`;
-  if (!exerciceId.startsWith(prefix)) return "";
-  return exerciceId.slice(prefix.length);
+  return parseExamAnswerKey(exerciceId, examId)?.matiereKey ?? "";
+}
+
+export function getMeaningfulAnswerCount(reponses: unknown): number {
+  if (!reponses || typeof reponses !== "object" || Array.isArray(reponses)) return 0;
+  return Object.values(reponses as Record<string, unknown>).filter((value) => {
+    if (Array.isArray(value)) return value.length > 0;
+    if (typeof value === "string") return value.trim().length > 0;
+    return value !== null && value !== undefined;
+  }).length;
+}
+
+export function getSavedAnswerRowAttempt(row: SavedExamAnswerRow, examId: string): number {
+  const parsedAttempt = parseExamAnswerKey(safeStr(row.exercice_id), examId)?.tentative ?? 1;
+  return Math.max(Math.trunc(toFiniteNumber(row.tentative, parsedAttempt)), parsedAttempt, 1);
+}
+
+export function getSavedAnswerRowTimestamp(row: SavedExamAnswerRow): number {
+  return Math.max(toTimestamp(row.updated_at), toTimestamp(row.submitted_at), toTimestamp(row.created_at));
+}
+
+/**
+ * Sélection déterministe et strictement en lecture : une ligne non vide gagne
+ * toujours contre une ligne vide compatible, puis la dernière activité gagne.
+ */
+export function pickBestSavedAnswerRow<T extends SavedExamAnswerRow>(previous: T | undefined, current: T): T {
+  if (!previous) return current;
+  const previousCount = getMeaningfulAnswerCount(previous.reponses);
+  const currentCount = getMeaningfulAnswerCount(current.reponses);
+  if (previousCount === 0 && currentCount > 0) return current;
+  if (previousCount > 0 && currentCount === 0) return previous;
+  if (currentCount !== previousCount) return currentCount > previousCount ? current : previous;
+  const previousTs = getSavedAnswerRowTimestamp(previous);
+  const currentTs = getSavedAnswerRowTimestamp(current);
+  if (currentTs !== previousTs) return currentTs > previousTs ? current : previous;
+  const previousSeq = toFiniteNumber(previous.write_seq, 0);
+  const currentSeq = toFiniteNumber(current.write_seq, 0);
+  return currentSeq > previousSeq ? current : previous;
+}
+
+export function findBestSavedAnswerRow<T extends SavedExamAnswerRow>({
+  rows,
+  examId,
+  matiere,
+  tentative,
+}: {
+  rows: T[];
+  examId: string;
+  matiere: Pick<Matiere, "id" | "nom">;
+  tentative?: number;
+}): T | undefined {
+  const expectedKeys = buildMatiereLookupKeys(matiere.id, matiere.nom);
+  return rows.reduce<T | undefined>((best, row) => {
+    const parsed = parseExamAnswerKey(safeStr(row.exercice_id), examId);
+    if (!parsed) return best;
+    if (tentative != null && getSavedAnswerRowAttempt(row, examId) !== tentative) return best;
+    const rowKeys = buildMatiereLookupKeys(parsed.matiereKey, parsed.matiereKey);
+    if (!shareLookupKey(rowKeys, expectedKeys)) return best;
+    return pickBestSavedAnswerRow(best, row);
+  }, undefined);
 }
 
 /**

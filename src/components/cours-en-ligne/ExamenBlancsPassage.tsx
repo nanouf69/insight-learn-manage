@@ -38,6 +38,7 @@ function PassageMatiere({
   userId,
   examenId,
   tentative = 1,
+  exerciceIdOverride,
   onLearnerActivity,
 }: {
   matiere: Matiere;
@@ -49,6 +50,7 @@ function PassageMatiere({
   userId?: string | null;
   examenId?: string;
   tentative?: number;
+  exerciceIdOverride?: string;
   onLearnerActivity?: () => void;
 }) {
 
@@ -112,7 +114,7 @@ function PassageMatiere({
   // Load saved responses on mount
   // FIX: use double underscore `__` to match handleTerminerMatiere in ExamensBlancsPage.tsx
   const tentativeSuffix = (tentative && tentative > 1) ? `__t${tentative}` : "";
-  const exerciceKey = `${examenId || "exam"}__${matiere.id}${tentativeSuffix}`;
+  const exerciceKey = exerciceIdOverride || `${examenId || "exam"}__${matiere.id}${tentativeSuffix}`;
 
   useEffect(() => {
     if (!apprenantId || initialLoaded) return;
@@ -127,9 +129,8 @@ function PassageMatiere({
         if (error) {
           console.warn("[AutoSave] Load query error:", error.message);
         } else if (data) {
-          const completed = (data as any)?.completed ?? false;
           const rawReponses = (data as any)?.reponses;
-          if (!completed && rawReponses) {
+          if (rawReponses && Object.keys(rawReponses).length > 0) {
             const pending = getPendingAnswers(apprenantId, exerciceKey) as Reponses | null;
             const parsed = normalizeReponses({ ...rawReponses, ...(pending ?? {}) });
             const answeredCount = Object.keys(parsed).length;

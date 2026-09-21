@@ -13,6 +13,9 @@ import {
   buildMatiereLookupKeys,
   shareLookupKey,
   extractMatiereKeyFromExerciceId,
+  parseExamAnswerKey,
+  findBestSavedAnswerRow,
+  getMeaningfulAnswerCount,
 } from "../components/cours-en-ligne/examens-blancs-utils";
 
 // ────────────────────────────────────────────────────────────
@@ -100,6 +103,20 @@ describe("Bug 1 — exercice_id matiereKey extraction", () => {
     expect(extractMatiereKeyFromExerciceId("EB3-TAXI__securite", "EB3-TAXI")).toBe("securite");
   });
 
+  it("reconnaît aussi l'ancien séparateur simple sans migration", () => {
+    expect(extractMatiereKeyFromExerciceId("EB2_gestion", "EB2")).toBe("gestion");
+    expect(parseExamAnswerKey("EB2_gestion", "EB2")).toEqual({
+      matiereKey: "gestion",
+      tentative: 1,
+      separator: "legacy",
+    });
+  });
+
+  it("conserve la tentative portée par les deux formats", () => {
+    expect(parseExamAnswerKey("EB2__gestion__t3", "EB2")?.tentative).toBe(3);
+    expect(parseExamAnswerKey("EB2_gestion_t2", "EB2")?.tentative).toBe(2);
+  });
+
   it("extracted key should produce matching lookup keys with live definition", () => {
     const matiereKey = extractMatiereKeyFromExerciceId("EB1__d", "EB1");
     const responseKeys = buildMatiereLookupKeys(matiereKey, matiereKey);
@@ -112,6 +129,61 @@ describe("Bug 1 — exercice_id matiereKey extraction", () => {
     const responseKeys = buildMatiereLookupKeys(matiereKey, matiereKey);
     const liveKeys = buildMatiereLookupKeys("francais", "Français");
     expect(shareLookupKey(responseKeys, liveKeys)).toBe(true);
+  });
+});
+
+describe("Reprise déterministe des réponses historiques", () => {
+  const matiere = { id: "gestion", nom: "B - Gestion" };
+
+  it("fait toujours primer les vraies réponses sur une ligne vide plus récente", () => {
+    const rows = [
+      { exercice_id: "EB2_gestion", reponses: { 1: ["A"], 2: "réponse" }, tentative: 1, updated_at: "2026-03-19T10:00:00Z" },
+      { exercice_id: "EB2__gestion", reponses: {}, completed: true, tentative: 1, updated_at: "2026-04-01T10:00:00Z" },
+    ];
+    const best = findBestSavedAnswerRow({ rows, examId: "EB2", matiere, tentative: 1 });
+    expect(best?.exercice_id).toBe("EB2_gestion");
+    expect(getMeaningfulAnswerCount(best?.reponses)).toBe(2);
+  });
+
+  it("ne mélange jamais deux tentatives", () => {
+    const rows = [
+      { exercice_id: "EB2_gestion", reponses: { 1: ["A"], 2: ["B"] }, tentative: 1 },
+      { exercice_id: "EB2__gestion__t2", reponses: { 1: ["C"] }, tentative: 2 },
+    ];
+    expect(findBestSavedAnswerRow({ rows, examId: "EB2", matiere, tentative: 1 })?.exercice_id).toBe("EB2_gestion");
+    expect(findBestSavedAnswerRow({ rows, examId: "EB2", matiere, tentative: 2 })?.exercice_id).toBe("EB2__gestion__t2");
+  });
+
+  it("conserve la ligne non vide la plus complète avant la date d'activité", () => {
+    const rows = [
+      { exercice_id: "EB2_gestion", reponses: { 1: ["A"] }, tentative: 1, updated_at: "2026-04-02T10:00:00Z" },
+      { exercice_id: "EB2__gestion", reponses: { 1: ["A"], 2: ["B"] }, tentative: 1, updated_at: "2026-04-01T10:00:00Z" },
+    ];
+    expect(findBestSavedAnswerRow({ rows, examId: "EB2", matiere, tentative: 1 })?.exercice_id).toBe("EB2__gestion");
+  });
+
+  it("reconstruit les 107 réponses historiques de VTC N°2 sans les réécrire", () => {
+    const matieres = [
+      { matiere: { id: "t3p", nom: "A - T3P" }, rows: [
+        { exercice_id: "EB2_t3p", reponses: Object.fromEntries(Array.from({ length: 15 }, (_, i) => [i + 1, ["A"]])), tentative: 1 },
+        { exercice_id: "EB2__t3p", reponses: Object.fromEntries(Array.from({ length: 12 }, (_, i) => [i + 1, ["B"]])), tentative: 1, completed: true },
+      ]},
+      { matiere: { id: "gestion", nom: "B - Gestion" }, count: 18 },
+      { matiere: { id: "securite", nom: "C - Sécurité" }, count: 20 },
+      { matiere: { id: "francais", nom: "D - Français" }, count: 10 },
+      { matiere: { id: "anglais", nom: "E - Anglais" }, count: 20 },
+      { matiere: { id: "reglementation_vtc", nom: "F(V) - VTC" }, count: 16 },
+      { matiere: { id: "reglementation_vtc2", nom: "G(V) - VTC" }, count: 8 },
+    ];
+    const total = matieres.reduce((sum, entry) => {
+      const rows = entry.rows ?? [{
+        exercice_id: `EB2_${entry.matiere.id}`,
+        reponses: Object.fromEntries(Array.from({ length: entry.count ?? 0 }, (_, i) => [i + 1, ["A"]])),
+        tentative: 1,
+      }];
+      return sum + getMeaningfulAnswerCount(findBestSavedAnswerRow({ rows, examId: "EB2", matiere: entry.matiere, tentative: 1 })?.reponses);
+    }, 0);
+    expect(total).toBe(107);
   });
 });
 

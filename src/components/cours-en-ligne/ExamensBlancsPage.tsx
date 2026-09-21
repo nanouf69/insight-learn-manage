@@ -23,7 +23,9 @@ import {
   evaluateQrcDeterministic, computeAdmisForMatiere,
   buildMatiereLookupKeys, shareLookupKey, getMatiereCanonicalKey,
   extractMatiereKeyFromExerciceId,
-  selectLatestAttemptRows, getAttemptNumber,
+  selectLatestAttemptRows, getAttemptNumber, findBestSavedAnswerRow,
+  getSavedAnswerRowAttempt, getSavedAnswerRowTimestamp, getMeaningfulAnswerCount,
+  type SavedExamAnswerRow,
 } from "./examens-blancs-utils";
 import { recoverCorruptedScoreRow, isCorruptedZeroRow, persistExamSession as persistExamSessionUtil, shouldTriggerPollingRefresh } from "./examens-blancs-utils";
 import { EcranSelection } from "./ExamenBlancsListe";
@@ -145,6 +147,7 @@ export default function ExamensBlancsPage({
   const [pausedExamIds, setPausedExamIds] = useState<Set<string>>(new Set());
   const [currentTentative, setCurrentTentative] = useState<number>(1);
   const currentTentativeRef = useRef<number>(1);
+  const [resumeExerciceIds, setResumeExerciceIds] = useState<Record<string, string>>({});
   const phaseRef = useRef(phase);
   useEffect(() => { phaseRef.current = phase; }, [phase]);
 
@@ -450,79 +453,61 @@ export default function ExamensBlancsPage({
     const latestExamen = applyMatiereFilter(liveExamens.find((live) => live.id === examen.id) ?? examen, matiereFilterRef.current)!;
     const quizType = latestExamen.id.startsWith("bilan-") ? "bilan" : "examen_blanc";
 
-    // Compute current tentative: max existing + 1 on retake, else max existing (or 1)
     let nextTentative = 1;
-    if (apprenantId) {
-      const { data: tRows } = await supabase
-        .from("apprenant_quiz_results" as any)
-        .select("tentative, details")
-        .eq("apprenant_id", apprenantId)
-        .eq("quiz_id", latestExamen.id)
-        .eq("quiz_type", quizType);
-      // Les lignes techniques « en attente de finalisation » ne comptent pas :
-      // sinon la vraie note partirait sur une tentative supplémentaire au lieu
-      // de remplacer la ligne à 0.
-      const maxT = excludeResultPlaceholders(tRows as any[]).reduce((m: number, r: any) => Math.max(m, toFiniteNumber(r?.tentative, 1)), 0);
-      nextTentative = forceRetake ? Math.max(maxT + 1, 2) : Math.max(maxT, 1);
-    }
-    setCurrentTentative(nextTentative);
-    currentTentativeRef.current = nextTentative;
-
-
-    if (!isAdmin && apprenantId && !forceRetake) {
-      // Check which matières are already completed
-      const { data: existingResults, error } = await supabase
+    if (apprenantId && !isAdmin) {
+      const [{ data: tRows, error: resultError }, { data: answerRows, error: answerError }] = await Promise.all([
+        supabase
         .from("apprenant_quiz_results" as any)
         .select("id, matiere_id, matiere_nom, score_obtenu, score_max, reussi, details, tentative, completed_at, created_at")
         .eq("apprenant_id", apprenantId)
         .eq("quiz_id", latestExamen.id)
-        .eq("quiz_type", quizType);
-
-      if (error) { toast.error("Vérification de sécurité impossible. Réessayez."); return; }
-
-      const completedRows = mergePassageSiblingRows(excludeResultPlaceholders(existingResults as any[]));
-      const validMatieres = (latestExamen.matieres || []).filter((m): m is Matiere => Boolean(m));
-      const matieresTotal = Math.max(validMatieres.length || 1, 1);
-
-      // Secondary fallback: STRICT — every matiere must have at least one completed=true response,
-      // and NO matiere may have any completed=false/missing response. Otherwise the exam is not done.
-      let responseFallbackCompleted = false;
-      if (completedRows.length < validMatieres.length) {
-        const { data: savedResponses } = await supabase
+        .eq("quiz_type", quizType),
+        supabase
           .from("reponses_apprenants" as any)
-          .select("exercice_id, completed")
+          .select("exercice_id, reponses, completed, status, tentative, created_at, updated_at, submitted_at, write_seq")
           .eq("apprenant_id", apprenantId)
-          .eq("exercice_type", "examen_blanc")
-          .like("exercice_id", `${latestExamen.id}_%`);
+          .eq("exercice_type", quizType)
+          .like("exercice_id", `${latestExamen.id}_%`),
+      ]);
 
-        const completedResponseLookupKeys = new Set<string>();
-        const notCompletedResponseLookupKeys = new Set<string>();
-        ((savedResponses as any[]) || []).forEach((r: any) => {
-          const exerciceId = safeStr(r?.exercice_id);
-          const matiereKey = extractMatiereKeyFromExerciceId(exerciceId, latestExamen.id);
-          if (!matiereKey) return;
-          const keys = buildMatiereLookupKeys(matiereKey, matiereKey);
-          if (r?.completed === true) {
-            keys.forEach((k) => completedResponseLookupKeys.add(k));
-          } else {
-            keys.forEach((k) => notCompletedResponseLookupKeys.add(k));
-          }
-        });
+      if (resultError || answerError) { toast.error("Vérification de sécurité impossible. Réessayez."); return; }
 
-        responseFallbackCompleted =
-          validMatieres.length > 0 &&
-          validMatieres.every((m) => {
-            const keys = buildMatiereLookupKeys(m.id, m.nom);
-            const hasCompleted = keys.some((k) => completedResponseLookupKeys.has(k));
-            const hasNotCompleted = keys.some((k) => notCompletedResponseLookupKeys.has(k));
-            // Strict: must have completed=true AND no completed=false/missing on this matiere
-            return hasCompleted && !hasNotCompleted;
-          });
-      }
-
-
+      const allResultRows = mergePassageSiblingRows(excludeResultPlaceholders(tRows as any[]));
+      const savedRows = (((answerRows as unknown) as SavedExamAnswerRow[]) || []).filter((row) =>
+        Boolean(extractMatiereKeyFromExerciceId(safeStr(row.exercice_id), latestExamen.id))
+      );
+      const knownAttempts = new Set<number>([1]);
+      allResultRows.forEach((row: any) => knownAttempts.add(getAttemptNumber(row)));
+      savedRows.forEach((row) => knownAttempts.add(getSavedAnswerRowAttempt(row, latestExamen.id)));
+      const validMatieres = (latestExamen.matieres || []).filter((m): m is Matiere => Boolean(m));
+      const attemptStates = Array.from(knownAttempts).map((attempt) => {
+        const resultRows = allResultRows.filter((row: any) => getAttemptNumber(row) === attempt);
+        const resultKeys = new Set<string>();
+        resultRows.forEach((row: any) => buildMatiereLookupKeys(row?.matiere_id, row?.matiere_nom).forEach((key) => resultKeys.add(key)));
+        const completedCount = validMatieres.filter((matiere) =>
+          buildMatiereLookupKeys(matiere.id, matiere.nom).some((key) => resultKeys.has(key))
+        ).length;
+        const answerRowsForAttempt = savedRows.filter((row) => getSavedAnswerRowAttempt(row, latestExamen.id) === attempt);
+        return {
+          attempt,
+          completedCount,
+          hasWork: answerRowsForAttempt.some((row) => getMeaningfulAnswerCount(row.reponses) > 0) || completedCount > 0,
+          lastActivity: Math.max(
+            ...answerRowsForAttempt.map(getSavedAnswerRowTimestamp),
+            ...resultRows.map((row: any) => Math.max(toTimestamp(row.completed_at), toTimestamp(row.created_at))),
+            0,
+          ),
+        };
+      });
+      const unfinishedAttempts = attemptStates
+        .filter((state) => state.hasWork && state.completedCount < validMatieres.length)
+        .sort((a, b) => b.lastActivity - a.lastActivity || b.attempt - a.attempt);
+      const activeAttempt = unfinishedAttempts[0]?.attempt
+        ?? attemptStates.reduce((max, state) => Math.max(max, state.attempt), 1);
+      const completedRows = allResultRows.filter((row: any) => getAttemptNumber(row) === activeAttempt);
+      const matieresTotal = Math.max(validMatieres.length || 1, 1);
       const latestByCanonicalKey = new Map<string, any>();
-      selectLatestAttemptRows(completedRows).forEach((row: any) => {
+      completedRows.forEach((row: any) => {
         const key = getMatiereCanonicalKey(row?.matiere_id, row?.matiere_nom);
         const prev = latestByCanonicalKey.get(key);
         const prevTs = prev ? Math.max(toTimestamp(prev.completed_at), toTimestamp(prev.created_at)) : 0;
@@ -542,26 +527,33 @@ export default function ExamensBlancsPage({
       const completedMatiereCount = validMatieres.filter((m) => isMatiereDone(m)).length;
       const allCompleted = completedMatiereCount >= matieresTotal;
 
-      if (allCompleted || responseFallbackCompleted) {
-        // Redirect to results view instead of blocking with toast
+      if (allCompleted && !forceRetake) {
         toast.info("Examen déjà terminé. Affichage de vos résultats.", { duration: 3000, icon: "✅" });
         handleViewResults(latestExamen);
         return;
       }
 
-      // Fallback for legacy/corrupted rows where matière_id/matière_nom mapping is partially lost
-      const legacyCompletionFallback =
-        completedRows.length >= matieresTotal &&
-        completedMatiereCount >= Math.max(matieresTotal - 1, 0);
+      const bestRowsByMatiere = new Map<string, SavedExamAnswerRow>();
+      validMatieres.forEach((matiere) => {
+        const best = findBestSavedAnswerRow({ rows: savedRows, examId: latestExamen.id, matiere, tentative: activeAttempt });
+        if (best) bestRowsByMatiere.set(matiere.id, best);
+      });
+      const hasSavedWork = Array.from(bestRowsByMatiere.values()).some((row) => getMeaningfulAnswerCount(row.reponses) > 0);
+      const hasIncompletePassage = !allCompleted && (hasSavedWork || completedMatiereCount > 0);
 
-      if (legacyCompletionFallback) {
-        toast.info("Examen déjà terminé. Affichage de vos résultats.", { duration: 3000, icon: "✅" });
-        handleViewResults(latestExamen);
-        return;
+      if (forceRetake && allCompleted) {
+        nextTentative = Math.max(activeAttempt + 1, 2);
+        setResumeExerciceIds({});
+      } else {
+        nextTentative = activeAttempt;
+        setResumeExerciceIds(Object.fromEntries(
+          Array.from(bestRowsByMatiere.entries()).map(([matiereId, row]) => [matiereId, row.exercice_id])
+        ));
       }
+      setCurrentTentative(nextTentative);
+      currentTentativeRef.current = nextTentative;
 
-      // If partially completed, resume at first uncompleted matière
-      if (latestCompletedRows.length > 0) {
+      if (hasIncompletePassage) {
         const preloadedResults: ResultatMatiere[] = [];
 
         for (let i = 0; i < latestExamen.matieres.length; i++) {
@@ -595,8 +587,11 @@ export default function ExamensBlancsPage({
           }
         }
 
-        // Find actual first uncompleted
-        const resumeIndex = latestExamen.matieres.findIndex((m) => m && !isMatiereDone(m));
+        const unfinishedStarted = latestExamen.matieres
+          .map((matiere, index) => ({ matiere, index, row: matiere ? bestRowsByMatiere.get(matiere.id) : undefined }))
+          .filter(({ matiere, row }) => Boolean(matiere && row && !isMatiereDone(matiere) && getMeaningfulAnswerCount(row?.reponses) > 0))
+          .sort((a, b) => getSavedAnswerRowTimestamp(b.row as SavedExamAnswerRow) - getSavedAnswerRowTimestamp(a.row as SavedExamAnswerRow));
+        const resumeIndex = unfinishedStarted[0]?.index ?? latestExamen.matieres.findIndex((m) => m && !isMatiereDone(m));
         if (resumeIndex < 0) {
           // All done by ID match — show results
           toast.info("Examen déjà terminé. Affichage de vos résultats.", { duration: 3000, icon: "✅" });
@@ -615,7 +610,12 @@ export default function ExamensBlancsPage({
         setPhase("intro");
         return;
       }
+    } else if (apprenantId) {
+      setResumeExerciceIds({});
     }
+
+    setCurrentTentative(nextTentative);
+    currentTentativeRef.current = nextTentative;
 
     setBilanPrefiltre(null);
     setExamenChoisi(latestExamen);
@@ -685,31 +685,6 @@ export default function ExamensBlancsPage({
         const safeMaxPoints = score?.scoreMax ?? maxPoints;
         const noteSur20 = score?.noteSur20 ?? normalizeNoteSur20(safeNote, safeMaxPoints);
         const admis = score?.admis ?? computeAdmisForMatiere(safeNote, safeMaxPoints, matiere.noteEliminatoire, matiere.noteSur || 20, false);
-
-        await supabase
-          .from("apprenant_quiz_results" as any)
-          .upsert([{
-            apprenant_id: apprenantId,
-            user_id: userId,
-            quiz_type: quizType,
-            quiz_id: examReference.id,
-            quiz_titre: examReference.titre,
-            matiere_id: matiere.id,
-            matiere_nom: matiere.nom,
-            score_obtenu: safeNote,
-            score_max: safeMaxPoints,
-            note_sur_20: noteSur20,
-            reussi: admis,
-            details: questionsSafe.some((q) => String(q?.type || "").toUpperCase() === "QRC")
-              ? {
-                  reponses,
-                  qrc_pending_correction: true,
-                  questions: questionsSafe.map((q) => ({ questionId: q.id, type: q?.type || "QCM", enonce: q.enonce || "" })),
-                }
-              : { reponses },
-
-            tentative: 1,
-          }] as any, { onConflict: "apprenant_id,quiz_id,matiere_id,tentative" } as any);
 
         rebuiltResults.push({
           matiereId: matiere.id,
@@ -825,19 +800,7 @@ export default function ExamensBlancsPage({
           safeScoreObtenu = recovered.score_obtenu;
           normalizedScoreMax = recovered.score_max;
           console.warn(`[handleViewResults][AutoHeal] ${row.quiz_id}/${row.matiere_id}: 0 -> ${recovered.score_obtenu}/${recovered.score_max}`);
-          // Persist healed score back to DB (fire-and-forget)
-          void supabase
-            .from("apprenant_quiz_results" as any)
-            .update({
-              score_obtenu: recovered.score_obtenu,
-              score_max: recovered.score_max,
-              note_sur_20: recovered.note_sur_20,
-            } as any)
-            .eq("id", row.id)
-            .then(({ error }) => {
-              if (error) console.error("[AutoHeal] DB update failed:", error);
-              else console.log(`[AutoHeal] DB healed ${row.quiz_id}/${row.matiere_id} -> ${recovered.score_obtenu}`);
-            });
+          // Diagnostic d'affichage uniquement : aucune note n'est réécrite.
         }
       }
 
@@ -858,89 +821,6 @@ export default function ExamensBlancsPage({
     });
 
     if (results.length === 0) { toast.error("Résultats introuvables pour les matières de cet examen."); return; }
-
-    // BACKFILL : pour les matières marquées "non passée" mais qui ont en réalité
-    // une réponse complète dans reponses_apprenants (bug historique de sauvegarde),
-    // on recalcule le score depuis les réponses brutes et on l'upsert dans
-    // apprenant_quiz_results afin qu'elles apparaissent avec leur vraie note.
-    const missingMatieres = results
-      .map((r, i) => ({ r, matiere: examReference.matieres[i] }))
-      .filter(({ r, matiere }) => r?.nonPassee && matiere);
-
-    if (missingMatieres.length > 0 && userId) {
-      const { data: savedResponses } = await supabase
-        .from("reponses_apprenants" as any)
-        .select("exercice_id, reponses, completed")
-        .eq("apprenant_id", apprenantId)
-        .eq("exercice_type", "examen_blanc")
-        .like("exercice_id", `${examReference.id}_%`);
-
-      const responseRows = (savedResponses as any[]) || [];
-      let healedCount = 0;
-
-      for (const { r: placeholder, matiere } of missingMatieres) {
-        if (!matiere) continue;
-        const expectedKeys = buildMatiereLookupKeys(matiere.id, matiere.nom);
-        const resp = responseRows.find((row: any) => {
-          const exerciceId = safeStr(row?.exercice_id);
-          const matiereKey = extractMatiereKeyFromExerciceId(exerciceId, examReference.id);
-          if (!matiereKey) return false;
-          return shareLookupKey(buildMatiereLookupKeys(matiereKey, matiereKey), expectedKeys);
-        });
-        if (!resp) continue;
-
-        const reponses = resp.reponses || {};
-        // Skip if no responses at all
-        if (Object.keys(reponses).length === 0) continue;
-
-        const questionsSafe = (matiere.questions ?? []).filter((q): q is Question => q != null && q?.type != null);
-        const maxPoints = questionsSafe.reduce((acc, q) => acc + getPointsParQuestion(matiere.id, q?.type || "QCM", matiere), 0);
-        const score = computeMatiereScore(matiere, reponses, 0, maxPoints, null, findStaticFallbackMatiere(examReference.id, matiere.id, matiere.nom));
-        const safeNote = score?.scoreObtenu ?? 0;
-        const safeMaxPoints = score?.scoreMax ?? maxPoints;
-        const noteSur20 = score?.noteSur20 ?? normalizeNoteSur20(safeNote, safeMaxPoints);
-        const admis = score?.admis ?? computeAdmisForMatiere(safeNote, safeMaxPoints, matiere.noteEliminatoire, matiere.noteSur || 20, false);
-
-        // Upsert into apprenant_quiz_results so future loads see it
-        await supabase
-          .from("apprenant_quiz_results" as any)
-          .upsert([{
-            apprenant_id: apprenantId,
-            user_id: userId,
-            quiz_type: quizType,
-            quiz_id: examReference.id,
-            quiz_titre: examReference.titre,
-            matiere_id: matiere.id,
-            matiere_nom: matiere.nom,
-            score_obtenu: safeNote,
-            score_max: safeMaxPoints,
-            note_sur_20: noteSur20,
-            reussi: admis,
-            details: questionsSafe.some((q) => String(q?.type || "").toUpperCase() === "QRC")
-              ? {
-                  reponses,
-                  qrc_pending_correction: true,
-                  questions: questionsSafe.map((q) => ({ questionId: q.id, type: q?.type || "QCM", enonce: q.enonce || "" })),
-                }
-              : { reponses },
-
-            tentative: 1,
-          }] as any, { onConflict: "apprenant_id,quiz_id,matiere_id,tentative" } as any);
-
-        // Replace the placeholder in results in-place
-        placeholder.noteObtenue = safeNote;
-        placeholder.maxPoints = safeMaxPoints;
-        placeholder.admis = admis;
-        placeholder.reponses = reponses;
-        placeholder.nonPassee = false;
-        healedCount++;
-        console.warn(`[handleViewResults][Backfill] Healed missing score for ${examReference.id}/${matiere.id}: ${safeNote}/${maxPoints}`);
-      }
-
-      if (healedCount > 0) {
-        toast.success(`${healedCount} matière(s) récupérée(s) depuis vos réponses.`);
-      }
-    }
 
     // Affichage des résultats : on montre la version exacte passée par l'apprenant
     // (snapshot) quand elle existe, sinon la version actuelle (comportement historique).
@@ -1170,7 +1050,7 @@ export default function ExamensBlancsPage({
       // les réponses confirmées ne correspondent pas exactement à l'écran.
       if (apprenantId && userId) {
         const tSuffix = (currentTentative && currentTentative > 1) ? `__t${currentTentative}` : "";
-        const exerciceKey = `${examenChoisi.id}__${matiere.id}${tSuffix}`;
+        const exerciceKey = resumeExerciceIds[matiere.id] || `${examenChoisi.id}__${matiere.id}${tSuffix}`;
         const quizType = examenChoisi.id.startsWith("bilan-") ? "bilan" : "examen_blanc";
         const { data: confirmedRow, error: confirmationError } = await supabase
           .from("reponses_apprenants" as any)
@@ -1494,7 +1374,7 @@ export default function ExamensBlancsPage({
               <ArrowLeft className="w-4 h-4" /> Retour à la liste
             </Button>
           </div>
-          <PassageMatiere key={`${examenChoisi.id}_${matiere.id}_t${currentTentative}`} matiere={matiere} numero={matiereIndex + 1} total={examenChoisi.matieres.length} onTerminer={handleTerminerMatiere} isBilan={examenChoisi.id.startsWith("bilan-")} apprenantId={apprenantId} userId={userId} examenId={examenChoisi.id} tentative={currentTentative} onLearnerActivity={onLearnerActivity} />
+          <PassageMatiere key={`${examenChoisi.id}_${matiere.id}_t${currentTentative}`} matiere={matiere} numero={matiereIndex + 1} total={examenChoisi.matieres.length} onTerminer={handleTerminerMatiere} isBilan={examenChoisi.id.startsWith("bilan-")} apprenantId={apprenantId} userId={userId} examenId={examenChoisi.id} tentative={currentTentative} exerciceIdOverride={resumeExerciceIds[matiere.id]} onLearnerActivity={onLearnerActivity} />
 
         </div>
         <div className="hidden min-[520px]:block w-36 sm:w-40 md:w-48 lg:w-56 shrink-0">
