@@ -1664,15 +1664,7 @@ const CorrectionQRCTab = () => {
   const isAnsweredToday = (item: QrcItem) =>
     isToday(item.completedAt) && safeStr(item.reponseEleve).trim() !== "";
 
-  /**
-   * QRC BLOQUANT UN RÉSULTAT — MÊME RÈGLE QUE L'ÉCRAN APPRENANT.
-   * Une QRC réellement répondue et non validée manuellement empêche la
-   * publication du résultat (« En attente de correction des QRC »), quelle que
-   * soit sa date. Une QRC laissée vide ne bloque pas. Lecture/affichage
-   * uniquement : aucune correction, note ou donnée n'est modifiée ici.
-   */
-  const isBlockingResult = (item: QrcItem) =>
-    !item.corrigeManuel && safeStr(item.reponseEleve).trim() !== "";
+  const isBlockingResult = (item: QrcItem) => isBlockingQrcItem(item);
 
   // « QRC répondues aujourd'hui » : uniquement les QRC uniques (déjà dédoublonnées
   // par apprenant + examen + matière + question) dont la réponse élève est
@@ -1683,9 +1675,24 @@ const CorrectionQRCTab = () => {
   const todayPendingItems = todayItems.filter(i => !i.corrigeManuel);
   const todayPendingCount = todayPendingItems.length;
 
-  const blockingItems = scopedItems.filter(isBlockingResult);
+  // SOURCE DE VÉRITÉ DU BLOCAGE : calculée sur TOUTES les QRC chargées,
+  // jamais sur le périmètre visuel « tentative 1 ». Dédoublonnage par identité
+  // passage + matière + question pour ne jamais compter deux fois la même QRC.
+  const blockingItems = (() => {
+    const seen = new Set<string>();
+    const out: QrcItem[] = [];
+    for (const i of items) {
+      if (!isBlockingQrcItem(i)) continue;
+      const key = getQrcQueueIdentity(i);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push(i);
+    }
+    return out;
+  })();
   const blockingCount = blockingItems.length;
   const olderBlockingCount = blockingItems.filter(i => !isAnsweredToday(i)).length;
+
 
   // Contrôle mathématique demandé : les deux vues sont des filtres de la même
   // source et utilisent la même identité passage + matière + question.
