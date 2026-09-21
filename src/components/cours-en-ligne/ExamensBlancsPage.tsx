@@ -963,6 +963,9 @@ export default function ExamensBlancsPage({
         reponseQRC: q.reponseQRC,
         reponses_possibles: q.reponses_possibles,
         points: getPointsParQuestion(matiere.id, q?.type || "QCM", matiere),
+        // Image telle qu'elle était présentée à l'apprenant (relecture fidèle).
+        image: q.image ?? null,
+        imageSize: q.imageSize ?? q.image_size ?? null,
         ordre: idx,
       })),
     };
