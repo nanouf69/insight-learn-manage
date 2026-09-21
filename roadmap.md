@@ -31,3 +31,10 @@
 - [x] Tester 0 QRC, correction partielle, dernière validation, F5 et reconnexion sans écriture apprenant.
 - [x] Aligner toutes les listes et tous les compteurs Correction QRC sur le filtre Tentative sélectionné.
 - [x] Contrôler que toute QRC du jour réellement bloquante existe dans la file QRC bloquantes avec la même identité stable.
+
+- [x] Nouveau moteur QRC : 1 QRC = 1 identifiant unique et immuable (table qrc_instances, contrainte d'unicité, états EN_ATTENTE/CORRIGÉE).
+- [x] Écriture idempotente serveur (upsert_qrc_instances) et validation formateur réservée aux admins (validate_qrc_instance).
+- [x] Source unique pour la file de correction et le blocage de note (qrc_attempt_publication_state).
+- [x] Tests sur examen blanc de test EB-TEST-QRC : 10 IDs, double envoi, F5, correction 1 → 9 → 0, nouvelle tentative = 10 nouveaux IDs.
+- [ ] Brancher l'interface Correction QRC et le portail apprenant sur qrc_instances (après accord).
+- [ ] Migration éventuelle de l'historique QRC (interdite sans accord explicite).

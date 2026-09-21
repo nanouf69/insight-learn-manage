@@ -3737,6 +3737,81 @@ export type Database = {
         }
         Relationships: []
       }
+      qrc_engine_flags: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          note: string | null
+          quiz_id: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          note?: string | null
+          quiz_id: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          note?: string | null
+          quiz_id?: string
+        }
+        Relationships: []
+      }
+      qrc_instances: {
+        Row: {
+          apprenant_id: string
+          attempt_id: string
+          commentaire: string | null
+          corrected_at: string | null
+          corrected_by: string | null
+          created_at: string
+          etat: Database["public"]["Enums"]["qrc_instance_etat"]
+          id: string
+          matiere_id: string
+          points_max: number
+          points_obtenus: number | null
+          question_id: string
+          quiz_id: string
+          reponse_eleve: string
+          updated_at: string
+        }
+        Insert: {
+          apprenant_id: string
+          attempt_id: string
+          commentaire?: string | null
+          corrected_at?: string | null
+          corrected_by?: string | null
+          created_at?: string
+          etat?: Database["public"]["Enums"]["qrc_instance_etat"]
+          id?: string
+          matiere_id: string
+          points_max?: number
+          points_obtenus?: number | null
+          question_id: string
+          quiz_id: string
+          reponse_eleve?: string
+          updated_at?: string
+        }
+        Update: {
+          apprenant_id?: string
+          attempt_id?: string
+          commentaire?: string | null
+          corrected_at?: string | null
+          corrected_by?: string | null
+          created_at?: string
+          etat?: Database["public"]["Enums"]["qrc_instance_etat"]
+          id?: string
+          matiere_id?: string
+          points_max?: number
+          points_obtenus?: number | null
+          question_id?: string
+          quiz_id?: string
+          reponse_eleve?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       qualiopi_indicateurs_etat: {
         Row: {
           applicable: boolean
@@ -5005,6 +5080,16 @@ export type Database = {
           stored_write_seq: number
         }[]
       }
+      qrc_attempt_publication_state: {
+        Args: { p_attempt_id: string }
+        Returns: {
+          corrigees: number
+          en_attente: number
+          publiable: boolean
+          total: number
+        }[]
+      }
+      qrc_engine_enabled: { Args: { _quiz_id: string }; Returns: boolean }
       reset_quiz_attempt: {
         Args: { _apprenant_id: string; _exercice_id: string }
         Returns: {
@@ -5364,9 +5449,68 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      upsert_qrc_instances: {
+        Args: {
+          p_apprenant_id: string
+          p_attempt_id: string
+          p_items: Json
+          p_matiere_id: string
+          p_quiz_id: string
+        }
+        Returns: {
+          apprenant_id: string
+          attempt_id: string
+          commentaire: string | null
+          corrected_at: string | null
+          corrected_by: string | null
+          created_at: string
+          etat: Database["public"]["Enums"]["qrc_instance_etat"]
+          id: string
+          matiere_id: string
+          points_max: number
+          points_obtenus: number | null
+          question_id: string
+          quiz_id: string
+          reponse_eleve: string
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "qrc_instances"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      validate_qrc_instance: {
+        Args: { p_commentaire: string; p_instance_id: string; p_points: number }
+        Returns: {
+          apprenant_id: string
+          attempt_id: string
+          commentaire: string | null
+          corrected_at: string | null
+          corrected_by: string | null
+          created_at: string
+          etat: Database["public"]["Enums"]["qrc_instance_etat"]
+          id: string
+          matiere_id: string
+          points_max: number
+          points_obtenus: number | null
+          question_id: string
+          quiz_id: string
+          reponse_eleve: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "qrc_instances"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
+      qrc_instance_etat: "en_attente" | "corrigee"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -5495,6 +5639,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],
+      qrc_instance_etat: ["en_attente", "corrigee"],
     },
   },
 } as const
