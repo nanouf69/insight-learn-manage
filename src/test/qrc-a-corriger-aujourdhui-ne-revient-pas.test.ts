@@ -9,7 +9,7 @@
  * Aucun test n'écrit en base.
  */
 import { describe, it, expect } from "vitest";
-import { isSameQrcContent } from "@/components/cours-en-ligne/CorrectionQRCTab";
+import { getSnapshotQrcQuestionIds, isSameQrcContent } from "@/components/cours-en-ligne/CorrectionQRCTab";
 
 const base = {
   apprenantId: "A1",
@@ -46,5 +46,17 @@ describe("Identité d'une QRC : passage réel d'abord", () => {
 
   it("une réponse vide ne rapproche jamais deux QRC entre elles", () => {
     expect(isSameQrcContent({ ...base, reponseEleve: "   " }, { ...base, reponseEleve: "" })).toBe(false);
+  });
+
+  it("les réponses sauvegardées ne réinjectent pas des questions hors snapshot du passage", () => {
+    const ids = getSnapshotQrcQuestionIds([
+      { questionId: 1, type: "QRC" },
+      { questionId: 2, type: "QRC" },
+      { questionId: 3, type: "QCM" },
+    ]);
+    expect(ids?.has(1)).toBe(true);
+    expect(ids?.has(2)).toBe(true);
+    expect(ids?.has(3)).toBe(false);
+    expect(ids?.has(4)).toBe(false);
   });
 });
