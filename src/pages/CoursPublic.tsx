@@ -37,6 +37,7 @@ import { getExpectedPratiqueEmargements } from "@/lib/pratiqueEmargements";
 import { useAuth } from "@/contexts/AuthContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { flushOwnAnswerSavesBeforeLogout, setAnswerSaveOwnership } from "@/lib/answerPersistence";
+import { isLearnerPreviewReadOnly, setLearnerPreviewReadOnly } from "@/lib/learnerPreviewGuard";
 import { computeUnlockState, isModuleLocked as computeIsModuleLocked } from "@/lib/moduleUnlockLogic";
 import {
   fetchModuleCompletions,
@@ -939,6 +940,14 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   }, []);
 
   const isStudentSession = !embedded && !!effectiveUserId && !!apprenant?.id;
+
+  // Verrou central « Vue apprenant » armé DÈS LE RENDU (avant tout effet
+  // enfant) : en aperçu admin/formateur, aucune écriture liée à l'élève
+  // (réponses, tentatives, notes, progression, chronomètres, temps, documents,
+  // suivi des heures) ne peut partir, même si elle est appelée par erreur.
+  if (isLearnerPreviewReadOnly() !== !!embedded) {
+    setLearnerPreviewReadOnly(!!embedded);
+  }
 
   // Rattachement de propriété des sauvegardes de réponses : en aperçu
   // (admin/formateur consultant la vue d'un apprenant), aucune réponse n'est

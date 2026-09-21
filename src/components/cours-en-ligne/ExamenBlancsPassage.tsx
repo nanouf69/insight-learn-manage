@@ -1,3 +1,4 @@
+import { blockLearnerWrite } from "@/lib/learnerPreviewGuard";
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -450,6 +451,11 @@ function PassageMatiere({
 
     const sync = async () => {
       if (!apprenantId) {
+        if (!cancelled) setServerRemaining((prev) => prev ?? dureeSecondes);
+        return;
+      }
+      // Consultation admin : l'examen ne doit jamais être « démarré ».
+      if (blockLearnerWrite("start_or_get_exam_timer")) {
         if (!cancelled) setServerRemaining((prev) => prev ?? dureeSecondes);
         return;
       }

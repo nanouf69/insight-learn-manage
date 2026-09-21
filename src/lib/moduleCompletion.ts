@@ -1,3 +1,4 @@
+import { blockLearnerWrite } from "@/lib/learnerPreviewGuard";
 import { supabase } from "@/integrations/supabase/client";
 
 /**
@@ -67,6 +68,7 @@ export async function saveModuleCompletion(
   } = params;
 
   if (!apprenantId || !Number.isFinite(moduleId)) return false;
+  if (blockLearnerWrite(`save_module_completion(module ${moduleId})`)) return false;
 
   const payload = {
     _apprenant_id: apprenantId,

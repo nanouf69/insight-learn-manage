@@ -1,3 +1,4 @@
+import { blockLearnerWrite } from "@/lib/learnerPreviewGuard";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -155,7 +156,7 @@ export function usePresenceCheck({
         modalDeadlineRef.current = deadline;
         setCountdownDeadline(deadline);
 
-        if (!promptLoggedRef.current) {
+        if (!promptLoggedRef.current && !blockLearnerWrite("apprenant_module_activites")) {
           promptLoggedRef.current = true;
           await supabase.from("apprenant_module_activites" as any).insert({
             apprenant_id: apprenantId,
