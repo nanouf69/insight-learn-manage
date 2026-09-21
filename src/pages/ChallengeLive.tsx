@@ -350,6 +350,13 @@ export default function ChallengeLive() {
                 <Stat label="Bonnes" value={bonnes} />
                 <Stat label="Mauvaises" value={mauvaises} />
               </div>
+              {(!controleParticipants || !controleReponses) && (
+                <div className="rounded-lg border border-destructive p-3 text-sm text-destructive">
+                  🚨 Contrôle de cohérence en échec sur cette question
+                  {!controleParticipants && " — ont répondu + sans réponse ≠ participants"}
+                  {!controleReponses && " — bonnes + mauvaises + QRC en attente ≠ réponses reçues"}
+                </div>
+              )}
               <div className="flex gap-2">
                 <Button variant="outline" onClick={() => move(-1)} disabled={currentIndex === 0}>
                   ← Précédente
