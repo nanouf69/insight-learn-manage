@@ -195,6 +195,55 @@ export async function validateQrcInstance(
   return (Array.isArray(data) ? data[0] : data) as unknown as QrcInstanceRow;
 }
 
+export interface QrcPilotIntegrity {
+  quizId: string;
+  passages: number;
+  qrcRepondues: number;
+  idsCrees: number;
+  enAttente: number;
+  corrigees: number;
+  doublons: number;
+  manquantes: number;
+  correctionsPerdues: number;
+  anomalie: boolean;
+  /** true si le drapeau a été coupé automatiquement suite à l'anomalie. */
+  coupe?: boolean;
+}
+
+/** Contrôle d'intégrité du pilote (lecture seule côté base). */
+export async function fetchQrcPilotIntegrity(quizId: string): Promise<QrcPilotIntegrity | null> {
+  const { data, error } = await supabase.rpc("qrc_pilot_integrity", { p_quiz_id: quizId });
+  if (error) {
+    console.warn("[qrcInstances] contrôle d'intégrité impossible:", error.message);
+    return null;
+  }
+  const row: any = Array.isArray(data) ? data[0] : data;
+  if (!row) return null;
+  return {
+    quizId,
+    passages: Number(row.passages ?? 0),
+    qrcRepondues: Number(row.qrc_repondues ?? 0),
+    idsCrees: Number(row.ids_crees ?? 0),
+    enAttente: Number(row.en_attente ?? 0),
+    corrigees: Number(row.corrigees ?? 0),
+    doublons: Number(row.doublons ?? 0),
+    manquantes: Number(row.manquantes ?? 0),
+    correctionsPerdues: Number(row.corrections_perdues ?? 0),
+    anomalie: Boolean(row.anomalie),
+  };
+}
+
+/** Coupure du moteur pour un examen — les données enregistrées sont conservées. */
+export async function disableQrcEngine(quizId: string, reason: string): Promise<boolean> {
+  const { data, error } = await supabase.rpc("qrc_disable_engine", { p_quiz_id: quizId, p_reason: reason });
+  if (error) {
+    console.error("[qrcInstances] coupure du moteur impossible:", error.message);
+    return false;
+  }
+  enabledQuizIdsPromise = null;
+  return Boolean(data);
+}
+
 /** État de publication d'un passage : source unique, identique à la file. */
 export async function fetchQrcPublicationState(attemptId: string) {
   const { data, error } = await supabase.rpc("qrc_attempt_publication_state", { p_attempt_id: attemptId });
