@@ -402,6 +402,49 @@ function isAdminValidatedCorrection(correction: unknown, completedAt?: string | 
   return false;
 }
 
+/**
+ * SIGNATURE DÉTERMINISTE D'UN PASSAGE (lecture seule, aucune écriture).
+ *
+ * Deux écritures techniques appartiennent au même passage réel UNIQUEMENT si
+ * l'intégralité des réponses enregistrées est strictement identique, caractère
+ * pour caractère, et qu'au moins une réponse est rédigée à la main (texte libre
+ * d'au moins 8 caractères contenant un espace). Aucune notion de durée ni de
+ * proximité horaire n'entre dans cette identité : deux vraies tentatives, même
+ * enregistrées à quelques secondes d'intervalle, ne peuvent pas être confondues
+ * tant qu'une seule réponse diffère.
+ *
+ * Renvoie null lorsque la preuve n'est pas certaine (aucune réponse rédigée) :
+ * le cas reste alors traité comme un passage distinct, jamais fusionné.
+ */
+export function buildAnswerSignature(details: any): string | null {
+  if (!details || typeof details !== "object") return null;
+  const answers = new Map<string, string>();
+
+  const add = (key: unknown, value: unknown) => {
+    const k = safeStr(key).trim();
+    if (!k) return;
+    const v = safeStr(value);
+    if (!v.trim()) return;
+    if (!answers.has(k)) answers.set(k, v);
+  };
+
+  Object.entries((details.reponses || {}) as Record<string, unknown>).forEach(([k, v]) => add(k, v));
+  if (Array.isArray(details.questions)) {
+    details.questions.forEach((q: any) => add(q?.questionId ?? q?.id, q?.reponseEleve));
+  }
+
+  if (answers.size === 0) return null;
+  const hasFreeText = [...answers.values()].some((v) => v.trim().length >= 8 && /\s/.test(v.trim()));
+  if (!hasFreeText) return null;
+
+  return [...answers.entries()]
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([k, v]) => `${k}=${v}`)
+    .join("\u0001");
+}
+
+
+
 function buildQuestionListFromMatiere(matiere: Matiere, reponses: Record<string | number, any>): any[] {
   const sourceQuestions = getSourceQuestions(matiere, tousLesExamens);
   return sourceQuestions.map((mq: any) => {
