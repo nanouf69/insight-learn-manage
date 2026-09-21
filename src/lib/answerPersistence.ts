@@ -242,6 +242,49 @@ export const onAnswerStorageSaturation = (
 
 export const isAnswerStorageSaturated = (): boolean => storageSaturated;
 
+/**
+ * Refus explicite du serveur (passage déjà terminé, ou compte non propriétaire).
+ * L'apprenant doit le voir IMMÉDIATEMENT : on n'affiche jamais « enregistré »
+ * pour une réponse que la base n'a pas appliquée.
+ */
+export interface AnswerSaveRejection {
+  exerciceId: string;
+  reason: "frozen" | "forbidden";
+  at: string;
+}
+
+let lastRejection: AnswerSaveRejection | null = null;
+const rejectionListeners = new Set<(rejection: AnswerSaveRejection | null) => void>();
+
+const emitRejection = () => {
+  rejectionListeners.forEach((listener) => {
+    try {
+      listener(lastRejection);
+    } catch {
+      /* noop */
+    }
+  });
+};
+
+const notifyAnswerSaveRejected = (exerciceId: string, reason: AnswerSaveRejection["reason"]) => {
+  lastRejection = { exerciceId, reason, at: new Date().toISOString() };
+  emitRejection();
+};
+
+export const onAnswerSaveRejected = (
+  listener: (rejection: AnswerSaveRejection | null) => void,
+): (() => void) => {
+  rejectionListeners.add(listener);
+  listener(lastRejection);
+  return () => rejectionListeners.delete(listener);
+};
+
+export const clearAnswerSaveRejection = (): void => {
+  if (!lastRejection) return;
+  lastRejection = null;
+  emitRejection();
+};
+
 function readQueue(): QueueItem[] {
   if (memoryQueue) return memoryQueue;
   try {
@@ -492,6 +535,10 @@ async function sendItem(item: QueueItem): Promise<SendResult> {
             "[answerPersistence] Tentative déjà terminée : réponse en attente non appliquée (journalisée)",
             item.payload.exercice_id,
           );
+          // Refus silencieux impossible : l'apprenant est alerté immédiatement.
+          notifyAnswerSaveRejected(item.payload.exercice_id, "frozen");
+        } else {
+          clearAnswerSaveRejection();
         }
         return "ok";
       }
@@ -503,7 +550,10 @@ async function sendItem(item: QueueItem): Promise<SendResult> {
     // sert à rien et masque les vraies erreurs ; l'élément est conservé
     // (aucune réponse n'est supprimée) et sera retenté au prochain changement
     // de session.
-    if (res.status === 403) return "blocked";
+    if (res.status === 403) {
+      notifyAnswerSaveRejected(item.payload.exercice_id, "forbidden");
+      return "blocked";
+    }
     return "retry";
   } catch (e) {
     console.error("[answerPersistence] Erreur réseau sauvegarde", e);

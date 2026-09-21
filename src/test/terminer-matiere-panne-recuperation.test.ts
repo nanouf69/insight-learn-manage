@@ -29,6 +29,7 @@ import {
   enqueueAnswerSave,
   getPendingAnswers,
   setAnswerSaveAuthToken,
+  setAnswerSaveOwnership,
 } from "@/lib/answerPersistence";
 
 const matiere: any = {
@@ -107,6 +108,7 @@ describe("Quitter / revenir et coupure réseau", () => {
   beforeEach(() => {
     localStorage.clear();
     setAnswerSaveAuthToken("test-token", "apprenant-11");
+    setAnswerSaveOwnership({ apprenantId: "apprenant-11", previewReadOnly: false });
   });
   afterEach(() => vi.restoreAllMocks());
 

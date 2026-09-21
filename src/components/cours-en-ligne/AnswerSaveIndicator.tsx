@@ -3,6 +3,8 @@ import { AlertTriangle, Check, Loader2 } from "lucide-react";
 import {
   subscribeAnswerSaveState,
   onAnswerStorageSaturation,
+  onAnswerSaveRejected,
+  type AnswerSaveRejection,
   type AnswerSaveState,
 } from "@/lib/answerPersistence";
 
@@ -21,6 +23,26 @@ export function AnswerSaveIndicator({ className = "" }: { className?: string }) 
   }), []);
 
   useEffect(() => onAnswerStorageSaturation((s) => setSaturated(s)), []);
+
+  const [rejection, setRejection] = useState<AnswerSaveRejection | null>(null);
+  useEffect(() => onAnswerSaveRejected((r) => setRejection(r)), []);
+
+  // Le serveur a refusé d'appliquer la réponse : alerte immédiate, jamais
+  // « enregistré ». La sauvegarde repart automatiquement sur le bon passage.
+  if (rejection) {
+    return (
+      <div
+        role="alert"
+        className={`flex items-center gap-2 rounded-md border border-destructive bg-destructive/10 px-3 py-1.5 text-sm font-semibold text-destructive ${className}`}
+      >
+        <AlertTriangle className="h-4 w-4 shrink-0" />
+        <span>
+          🔴 Votre réponse n'a pas encore été enregistrée. Ne fermez pas cette page.
+          Nouvelle tentative de sauvegarde en cours.
+        </span>
+      </div>
+    );
+  }
 
   // Stockage de la tablette saturé : alerte claire, aucune réponse supprimée.
   if (saturated) {

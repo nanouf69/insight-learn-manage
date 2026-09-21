@@ -17,7 +17,7 @@ if (typeof globalThis.localStorage === "undefined") {
   };
 }
 
-import { enqueueAnswerSave, setAnswerSaveAuthToken } from "@/lib/answerPersistence";
+import { enqueueAnswerSave, setAnswerSaveAuthToken, setAnswerSaveOwnership } from "@/lib/answerPersistence";
 
 const APPRENANT = "11111111-1111-1111-1111-111111111111";
 const EXO = "EB1__gestion__t1";
@@ -40,6 +40,7 @@ describe("Ordre des écritures décidé par le serveur", () => {
   beforeEach(() => {
     localStorage.clear();
     setAnswerSaveAuthToken("test-token", "22222222-2222-2222-2222-222222222222");
+    setAnswerSaveOwnership({ apprenantId: APPRENANT, previewReadOnly: false });
   });
   afterEach(() => vi.restoreAllMocks());
 
