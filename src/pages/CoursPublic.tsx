@@ -939,6 +939,18 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   }, []);
 
   const isStudentSession = !embedded && !!effectiveUserId && !!apprenant?.id;
+
+  // Rattachement de propriété des sauvegardes de réponses : en aperçu
+  // (admin/formateur consultant la vue d'un apprenant), aucune réponse n'est
+  // mise en file ni envoyée sous le compte connecté.
+  useEffect(() => {
+    setAnswerSaveOwnership({
+      apprenantId: embedded ? null : apprenant?.id ?? null,
+      previewReadOnly: !!embedded,
+    });
+    return () => setAnswerSaveOwnership({ apprenantId: null, previewReadOnly: false });
+  }, [embedded, apprenant?.id]);
+
   const { trackModuleActivity, markActivity, connexionId, endConnexion, alreadyConnected, otherSessionInfo, forceDisconnectOthers } = useConnexionTracking({
     apprenantId: !embedded && apprenant?.id ? apprenant.id : null,
     userId: effectiveUserId || null,
