@@ -1819,8 +1819,12 @@ const CorrectionQRCTab = () => {
         <Card className="border-green-500/50 bg-green-50/60">
           <CardHeader className="pb-2">
             <CardTitle className="text-base text-green-900">
-              🟢 APPRENANTS EB N°2 SANS NOTE DÉFINITIVE ({eb2Rows.length})
+              🟢 APPRENANTS ACTUELLEMENT EN FORMATION — EB N°2 BLOQUÉS AUJOURD'HUI ({eb2Rows.length})
             </CardTitle>
+            <p className="text-xs text-green-900/80">
+              Formation active à la date du jour + QRC d'Examen Blanc N°2 répondues aujourd'hui et non validées.
+              Les QRC plus anciennes restent intactes et consultables dans les autres filtres.
+            </p>
           </CardHeader>
           <CardContent className="space-y-2 text-sm max-h-96 overflow-auto">
             {eb2Anomalies.length > 0 && (
