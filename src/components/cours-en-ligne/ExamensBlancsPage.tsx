@@ -541,18 +541,38 @@ export default function ExamensBlancsPage({
         const best = findBestSavedAnswerRow({ rows: savedRows, examId: latestExamen.id, matiere, tentative: activeAttempt });
         if (best) bestRowsByMatiere.set(matiere.id, best);
       });
-      const hasSavedWork = Array.from(bestRowsByMatiere.values()).some((row) => getMeaningfulAnswerCount(row.reponses) > 0);
+
+      // RÈGLE ABSOLUE : un passage terminé est IMMUABLE. Ses réponses, QRC,
+      // corrections et notes restent définitives, et AUCUNE nouvelle réponse
+      // n'est jamais réécrite dedans (le serveur les refuserait en silence).
+      const frozenExerciceIds = new Set<string>(
+        savedRows
+          .filter((row: any) => row?.completed === true || row?.status === "submitted")
+          .map((row) => safeStr(row.exercice_id)),
+      );
+      const isResumableRow = (row?: SavedExamAnswerRow) =>
+        Boolean(row) && !frozenExerciceIds.has(safeStr(row!.exercice_id));
+
+      const hasSavedWork = Array.from(bestRowsByMatiere.values())
+        .some((row) => isResumableRow(row) && getMeaningfulAnswerCount(row.reponses) > 0);
       const hasIncompletePassage = !allCompleted && (hasSavedWork || completedMatiereCount > 0);
 
-      if (forceRetake && allCompleted) {
-        nextTentative = Math.max(activeAttempt + 1, 2);
-        setResumeExerciceIds({});
-      } else {
-        nextTentative = activeAttempt;
-        setResumeExerciceIds(Object.fromEntries(
-          Array.from(bestRowsByMatiere.entries()).map(([matiereId, row]) => [matiereId, row.exercice_id])
-        ));
-      }
+      nextTentative = forceRetake && allCompleted
+        ? Math.max(activeAttempt + 1, 2)
+        : activeAttempt;
+
+      // Reprise uniquement sur un passage NON terminé ; sinon nouvelle clé de
+      // passage libre. Rien n'est vidé, remplacé ni renuméroté en base.
+      setResumeExerciceIds(Object.fromEntries(
+        validMatieres.map((matiere) => {
+          const best = bestRowsByMatiere.get(matiere.id);
+          if (!forceRetake && isResumableRow(best)) return [matiere.id, safeStr(best!.exercice_id)];
+          return [
+            matiere.id,
+            allocateFreshExamMatiereExerciceId(latestExamen.id, matiere.id, nextTentative, frozenExerciceIds),
+          ];
+        }),
+      ));
       setCurrentTentative(nextTentative);
       currentTentativeRef.current = nextTentative;
 
