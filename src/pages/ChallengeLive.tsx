@@ -199,11 +199,83 @@ export default function ChallengeLive() {
         </CardHeader>
         <CardContent className="space-y-3">
           <Input value={titre} onChange={(e) => setTitre(e.target.value)} placeholder="Titre du challenge" />
-          <Button onClick={handleCreate} disabled={creating} className="w-full">
+
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground">Filière</label>
+            <Input value="VTC" readOnly className="w-full" />
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground">Matière</label>
+            <Select value={matiere} onValueChange={setMatiere}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Matière" />
+              </SelectTrigger>
+              <SelectContent>
+                {matieres.map((m) => (
+                  <SelectItem key={m} value={m} disabled={m !== PILOTE_MATIERE}>
+                    {m}
+                    {m !== PILOTE_MATIERE ? " (hors pilote)" : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground">Quiz / module source</label>
+            <Select value={quizId} onValueChange={setQuizId}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Quiz source" />
+              </SelectTrigger>
+              <SelectContent>
+                {quizOfMatiere.map((q) => (
+                  <SelectItem key={q.exerciceId} value={String(q.exerciceId)}>
+                    {q.titre} ({q.nbQuestions} questions)
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground">Nombre de questions souhaitées</label>
+            <Input type="number" min={1} value={nombre} onChange={(e) => setNombre(e.target.value)} />
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground">Type de questions</label>
+            <Select value={typeFiltre} onValueChange={(v) => setTypeFiltre(v as typeof typeFiltre)}>
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="tous">Mélange QCM + QRC</SelectItem>
+                <SelectItem value="qcm">QCM uniquement</SelectItem>
+                <SelectItem value="qrc">QRC uniquement</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground">Ordre</label>
+            <Select value={ordre} onValueChange={(v) => setOrdre(v as typeof ordre)}>
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="origine">Ordre d'origine</SelectItem>
+                <SelectItem value="aleatoire">Ordre aléatoire</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <Button onClick={handleCreate} disabled={creating || !quizId} className="w-full">
             ▶ Lancer un challenge en direct
           </Button>
           <p className="text-xs text-muted-foreground">
-            Les questions sont figées au lancement : modifier le quiz d'origine ne change pas un challenge en cours.
+            Les questions existantes sont uniquement lues : une copie indépendante est figée au lancement. Modifier ou
+            supprimer ensuite une question d'origine ne change jamais un challenge déjà lancé.
           </p>
           {sessions.length > 0 && (
             <div className="flex flex-wrap gap-2 pt-2">
