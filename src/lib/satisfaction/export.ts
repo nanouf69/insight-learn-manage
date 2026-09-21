@@ -1,13 +1,13 @@
 import jsPDF from "jspdf";
 import { format } from "date-fns";
-import type { RapportAnnuel } from "./data";
+import type { IndicateursAnnuels, RapportAnnuel } from "./data";
 
 const MOIS = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
 
 const n1 = (v: number | null) => (typeof v === "number" ? v.toFixed(1) : "—");
 const n0 = (v: number | null) => (typeof v === "number" ? `${Math.round(v)} %` : "—");
 
-export function exportRapportAnnuelCsv(rapport: RapportAnnuel) {
+export function exportRapportAnnuelCsv(rapport: RapportAnnuel, indicateurs?: IndicateursAnnuels) {
   const esc = (v: string) => `"${(v ?? "").replace(/"/g, '""')}"`;
   const lines: string[] = [];
   lines.push(esc(`Rapport annuel de satisfaction ${rapport.annee} — FTRANSPORT`));
@@ -18,6 +18,12 @@ export function exportRapportAnnuelCsv(rapport: RapportAnnuel) {
   lines.push(["Moyenne des critères /5", n1(rapport.moyenneCriteres)].map(esc).join(";"));
   lines.push(["Taux de satisfaction (notes ≥ 4)", n0(rapport.tauxSatisfaction)].map(esc).join(";"));
   lines.push(["Recommanderaient la formation /5", n1(rapport.recommandation)].map(esc).join(";"));
+  if (indicateurs) {
+    lines.push(["Stagiaires formés", String(indicateurs.stagiairesFormes)].map(esc).join(";"));
+    lines.push(["Taux d'abandon", `${n0(indicateurs.tauxAbandon)} (${indicateurs.abandons})`].map(esc).join(";"));
+    lines.push(["Taux de présentation à l'examen", `${n0(indicateurs.tauxPresentation)} (${indicateurs.presentes})`].map(esc).join(";"));
+    lines.push(["Taux de réussite à l'examen", `${n0(indicateurs.tauxReussite)} (${indicateurs.admis} admis / ${indicateurs.presentes} présentés)`].map(esc).join(";"));
+  }
   lines.push("");
   lines.push(["Formation", "Réponses", "Moyenne /5"].map(esc).join(";"));
   rapport.parFormation.forEach((f) => lines.push([f.formation, String(f.nb), n1(f.moyenne)].map(esc).join(";")));
@@ -52,7 +58,7 @@ export function exportRapportAnnuelCsv(rapport: RapportAnnuel) {
   URL.revokeObjectURL(a.href);
 }
 
-export function exportRapportAnnuelPdf(rapport: RapportAnnuel) {
+export function exportRapportAnnuelPdf(rapport: RapportAnnuel, indicateurs?: IndicateursAnnuels) {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const M = 14;
   const W = 210;
@@ -85,6 +91,14 @@ export function exportRapportAnnuelPdf(rapport: RapportAnnuel) {
     ["Taux de satisfaction", n0(rapport.tauxSatisfaction)],
     ["Recommandation", `${n1(rapport.recommandation)} / 5`],
   ];
+  if (indicateurs) {
+    kpis.push(
+      ["Stagiaires formés", String(indicateurs.stagiairesFormes)],
+      ["Taux d'abandon", `${n0(indicateurs.tauxAbandon)} (${indicateurs.abandons} abandon(s))`],
+      ["Taux de présentation à l'examen", `${n0(indicateurs.tauxPresentation)} (${indicateurs.presentes} présenté(s))`],
+      ["Taux de réussite à l'examen", `${n0(indicateurs.tauxReussite)} (${indicateurs.admis} admis / ${indicateurs.presentes} présentés)`],
+    );
+  }
   doc.setFontSize(10);
   kpis.forEach(([k, v]) => {
     page();

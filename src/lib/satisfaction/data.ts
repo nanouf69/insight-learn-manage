@@ -155,6 +155,83 @@ export interface RapportAnnuel {
 
 const moy = (vals: number[]) => (vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null);
 
+// ===== Indicateurs annuels de formation (stagiaires) =====
+
+export interface StagiaireRow {
+  id: string;
+  type: string;
+  statut: string;
+  annee: number;
+  abandonnee: boolean;
+  presente: boolean;
+  admis: boolean;
+}
+
+export interface IndicateursAnnuels {
+  stagiairesFormes: number;
+  abandons: number;
+  tauxAbandon: number | null;
+  presentes: number;
+  tauxPresentation: number | null;
+  admis: number;
+  tauxReussite: number | null;
+}
+
+export async function loadStagiaires(): Promise<StagiaireRow[]> {
+  const rows: Record<string, unknown>[] = [];
+  const pageSize = 1000;
+  for (let from = 0; ; from += pageSize) {
+    const { data, error } = await supabase
+      .from("apprenants")
+      .select("id, type_apprenant, statut, date_debut_formation, created_at, resultat_examen, abandonnee, deleted_at")
+      .is("deleted_at", null)
+      .range(from, from + pageSize - 1);
+    if (error) throw error;
+    rows.push(...((data ?? []) as Record<string, unknown>[]));
+    if (!data || data.length < pageSize) break;
+  }
+  return rows.map((r) => {
+    const debut = typeof r.date_debut_formation === "string" ? r.date_debut_formation : "";
+    const ref = debut || String(r.created_at ?? "");
+    const resultat = typeof r.resultat_examen === "string" ? r.resultat_examen.toLowerCase() : "";
+    return {
+      id: String(r.id),
+      type: typeof r.type_apprenant === "string" ? r.type_apprenant : "",
+      statut: typeof r.statut === "string" ? r.statut : "",
+      annee: ref ? new Date(ref).getFullYear() : 0,
+      abandonnee: r.abandonnee === true,
+      presente: resultat === "oui" || resultat === "non",
+      admis: resultat === "oui",
+    } satisfies StagiaireRow;
+  });
+}
+
+export function computeIndicateurs(
+  stagiaires: StagiaireRow[],
+  annee: number,
+  formation: string, // libellé ou "toutes"
+): IndicateursAnnuels {
+  const base = stagiaires.filter(
+    (s) =>
+      s.annee === annee &&
+      s.statut !== "prospect" &&
+      (formation === "toutes" || formationLabel(s.type) === formation),
+  );
+  const formes = base.length;
+  const abandons = base.filter((s) => s.abandonnee).length;
+  const presentes = base.filter((s) => s.presente).length;
+  const admis = base.filter((s) => s.admis).length;
+  return {
+    stagiairesFormes: formes,
+    abandons,
+    tauxAbandon: formes ? (abandons / formes) * 100 : null,
+    presentes,
+    tauxPresentation: formes ? (presentes / formes) * 100 : null,
+    admis,
+    tauxReussite: presentes ? (admis / presentes) * 100 : null,
+  };
+}
+
 export function buildRapportAnnuel(all: EnqueteSatisfaction[], annee: number): RapportAnnuel {
   const enquetes = all.filter((e) => e.annee === annee);
   const criteres = statsParCritere(enquetes);
