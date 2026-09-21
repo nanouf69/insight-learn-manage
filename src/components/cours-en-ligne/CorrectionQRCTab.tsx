@@ -456,34 +456,23 @@ function chooseMatiereMatchingResponses(
 }
 
 /**
- * Classement de la file : apprenant → examen → tentative → matière → n° de
- * question croissant, afin de corriger tout le passage d'un élève d'un bloc.
- * Les apprenants sont ordonnés par date de passage (présentiel prioritaire).
+ * Classement de la file : DATE/HEURE RÉELLE de la réponse/passage décroissante
+ * (par défaut — « Plus récent » en premier), indépendamment de la date de
+ * création de l'apprenant ou de l'ordre alphabétique.
+ * À date/heure identique (même passage), on reste dans le bloc de l'élève :
+ * examen → tentative → matière → n° de question croissant.
  */
 function sortQrcItems(list: QrcItem[], sortOrder: "desc" | "asc"): QrcItem[] {
-  const latestByApprenant = new Map<string, number>();
-  list.forEach((i) => {
-    const t = new Date(i.completedAt).getTime() || 0;
-    latestByApprenant.set(i.apprenantId, Math.max(latestByApprenant.get(i.apprenantId) ?? 0, t));
-  });
   return [...list].sort((a, b) => {
-    const prioA = a.apprenantTypeMode === "presentiel" ? 0 : 1;
-    const prioB = b.apprenantTypeMode === "presentiel" ? 0 : 1;
-    if (prioA !== prioB) return prioA - prioB;
-    const dateA = latestByApprenant.get(a.apprenantId) ?? 0;
-    const dateB = latestByApprenant.get(b.apprenantId) ?? 0;
+    const dateA = new Date(a.completedAt).getTime() || 0;
+    const dateB = new Date(b.completedAt).getTime() || 0;
     if (dateA !== dateB) return sortOrder === "desc" ? dateB - dateA : dateA - dateB;
     const nomA = `${a.apprenantNom} ${a.apprenantPrenom}`.toLowerCase();
     const nomB = `${b.apprenantNom} ${b.apprenantPrenom}`.toLowerCase();
     if (nomA !== nomB) return nomA.localeCompare(nomB);
     if (a.apprenantId !== b.apprenantId) return a.apprenantId.localeCompare(b.apprenantId);
-    const numA = parseInt((a.quizTitre?.match(/N°(\d+)/)?.[1]) || "0", 10);
-    const numB = parseInt((b.quizTitre?.match(/N°(\d+)/)?.[1]) || "0", 10);
-    if (numA !== numB) return numA - numB;
     if (a.quizId !== b.quizId) return a.quizId.localeCompare(b.quizId);
     if (a.tentativeSortValue !== b.tentativeSortValue) return a.tentativeSortValue - b.tentativeSortValue;
-    const byPassageDate = (new Date(a.completedAt).getTime() || 0) - (new Date(b.completedAt).getTime() || 0);
-    if (byPassageDate !== 0) return byPassageDate;
     if (a.matiereId !== b.matiereId) return a.matiereId.localeCompare(b.matiereId);
     return a.questionId - b.questionId;
   });
@@ -494,6 +483,9 @@ const CorrectionQRCTab = () => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "pending" | "done" | "today" | "today-pending" | "blocking">("pending");
   const [searchQuery, setSearchQuery] = useState("");
+  // Filtre par défaut : tentative 1 uniquement (les refontes — tentative 2+ —
+  // restent accessibles via « Toutes les tentatives », sans jamais les modifier).
+  const [tentativeFilter, setTentativeFilter] = useState<"1" | "all">("1");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingPoints, setEditingPoints] = useState(0);
   const [savingId, setSavingId] = useState<string | null>(null);
@@ -530,6 +522,11 @@ const CorrectionQRCTab = () => {
     if (filter === "today-pending" && (!isAnsweredToday(item) || (item.corrigeManuel && !kept))) return false;
     if (filter === "blocking" && !isBlockingResult(item) && !kept) return false;
     if (filter === "blocking" && activeBlockingGroupKey && getBlockingGroupKey(item) !== activeBlockingGroupKey) return false;
+    // Tentative 1 uniquement (hors file bloquante, qui garde son propre regroupement).
+    if (filter !== "blocking" && tentativeFilter === "1") {
+      const t = item.dbTentative;
+      if (t != null && t !== 1) return false;
+    }
     if (examenFilter !== "all") {
       const [cat, num] = examenFilter.split(":");
       if (getExamCategory(item.quizTitre, item.quizId, item.apprenantTypeMode).key !== cat) return false;
@@ -1761,7 +1758,7 @@ const CorrectionQRCTab = () => {
     setCurrentIndex(0);
     keptKeysRef.current = new Set();
     setKeptVersion((v) => v + 1);
-  }, [filter, searchQuery, sortOrder, examenFilter, activeBlockingGroupKey]);
+  }, [filter, searchQuery, sortOrder, examenFilter, tentativeFilter, activeBlockingGroupKey]);
 
 
   useEffect(() => {
@@ -1954,6 +1951,15 @@ const CorrectionQRCTab = () => {
             <SelectItem value="pending">⏳ En attente uniquement</SelectItem>
             <SelectItem value="done">✅ Déjà corrigées</SelectItem>
             <SelectItem value="all">Toutes</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={tentativeFilter} onValueChange={(v) => setTentativeFilter(v as "1" | "all")}>
+          <SelectTrigger className="w-44">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="1">Tentative 1 uniquement</SelectItem>
+            <SelectItem value="all">Toutes les tentatives</SelectItem>
           </SelectContent>
         </Select>
         {filter === "blocking" ? (
