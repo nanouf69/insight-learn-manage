@@ -22,7 +22,8 @@ import {
   MailCheck,
   ShieldCheck,
   CalendarClock,
-  BadgeCheck
+  BadgeCheck,
+  Smile
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -54,6 +55,7 @@ const menuItems = [
   { id: "cours-en-ligne", label: "Cours en ligne", icon: Monitor },
   { id: "fournisseurs", label: "Fournisseurs", icon: Package },
   { id: "renouvellements", label: "Renouvellements", icon: BadgeCheck },
+  { id: "satisfaction", label: "Enquêtes de satisfaction", icon: Smile },
   { id: "qualiopi", label: "Qualiopi", icon: ShieldCheck },
   { id: "diagnostic-acces", label: "Diagnostic accès", icon: ShieldCheck },
   { id: "suivi-emails", label: "Suivi des emails", icon: MailCheck },
