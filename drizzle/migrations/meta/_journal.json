@@ -246,6 +246,13 @@
       "when": 1789995518198,
       "tag": "0034_qualiopi_dossier_audit_indicateurs_1_5",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1790007754575,
+      "tag": "0035_exam_content_integrity_guard",
+      "breakpoints": true
     }
   ]
 }

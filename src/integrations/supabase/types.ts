@@ -1893,6 +1893,69 @@ export type Database = {
         }
         Relationships: []
       }
+      exam_content_write_log: {
+        Row: {
+          action: string
+          author_email: string | null
+          author_user_id: string | null
+          created_at: string
+          details: Json | null
+          editor_schema_version: string | null
+          exam_id: string | null
+          examen_source_suspecte: string | null
+          id: string
+          matiere_id: string | null
+          module_id: number | null
+          motif_refus: string | null
+          origine: string | null
+          questions_apres: number | null
+          questions_avant: number | null
+          signature_apres: string | null
+          signature_avant: string | null
+          statut: string
+        }
+        Insert: {
+          action: string
+          author_email?: string | null
+          author_user_id?: string | null
+          created_at?: string
+          details?: Json | null
+          editor_schema_version?: string | null
+          exam_id?: string | null
+          examen_source_suspecte?: string | null
+          id?: string
+          matiere_id?: string | null
+          module_id?: number | null
+          motif_refus?: string | null
+          origine?: string | null
+          questions_apres?: number | null
+          questions_avant?: number | null
+          signature_apres?: string | null
+          signature_avant?: string | null
+          statut?: string
+        }
+        Update: {
+          action?: string
+          author_email?: string | null
+          author_user_id?: string | null
+          created_at?: string
+          details?: Json | null
+          editor_schema_version?: string | null
+          exam_id?: string | null
+          examen_source_suspecte?: string | null
+          id?: string
+          matiere_id?: string | null
+          module_id?: number | null
+          motif_refus?: string | null
+          origine?: string | null
+          questions_apres?: number | null
+          questions_avant?: number | null
+          signature_apres?: string | null
+          signature_avant?: string | null
+          statut?: string
+        }
+        Relationships: []
+      }
       examens_blancs_audit_log: {
         Row: {
           action: string
@@ -4795,6 +4858,10 @@ export type Database = {
           closed_no_response: number
         }[]
       }
+      exam_editor_required_schema_version: { Args: never; Returns: string }
+      exam_id_for_module: { Args: { _module_id: number }; Returns: string }
+      exam_matiere_signature: { Args: { _matiere: Json }; Returns: string }
+      exam_numero_from_id: { Args: { _exam_id: string }; Returns: number }
       get_active_apprenant_connexion_info: {
         Args: { _apprenant_id: string; _client_session_id?: string }
         Returns: {
