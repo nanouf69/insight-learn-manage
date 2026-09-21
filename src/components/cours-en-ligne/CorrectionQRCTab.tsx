@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -511,35 +511,50 @@ const CorrectionQRCTab = () => {
   // Passages EB N°2 sans note définitive (même règle que le portail apprenant).
   const [eb2PendingAttempts, setEb2PendingAttempts] = useState<Eb2PendingAttempt[]>([]);
 
+  // ── Historique de navigation de la session de correction ──
+  // Une QRC validée pendant la session reste visible dans la file courante
+  // (badge « ✅ Déjà corrigée ») afin que « Précédent » puisse y revenir.
+  // Elle n'est JAMAIS remise en attente : son état corrigé est conservé.
+  // Identité stable : apprenant + examen + tentative/passage + matière + question.
+  const qrcNavKey = (i: QrcItem) =>
+    `${i.apprenantId}__${i.quizId}__${i.dbTentative ?? 1}__${i.passageKey}__${i.matiereId || ""}__${i.questionId}`;
+  const keptKeysRef = useRef<Set<string>>(new Set());
+  const [keptVersion, setKeptVersion] = useState(0);
+  const isKeptInSession = (item: QrcItem) => item.corrigeManuel && keptKeysRef.current.has(qrcNavKey(item));
+
+  const matchesFilter = (item: QrcItem): boolean => {
+    const kept = isKeptInSession(item);
+    if (filter === "pending" && item.corrigeManuel && !kept) return false;
+    if (filter === "done" && !item.corrigeManuel) return false;
+    if (filter === "today" && !isAnsweredToday(item)) return false;
+    if (filter === "today-pending" && (!isAnsweredToday(item) || (item.corrigeManuel && !kept))) return false;
+    if (filter === "blocking" && !isBlockingResult(item) && !kept) return false;
+    if (filter === "blocking" && activeBlockingGroupKey && getBlockingGroupKey(item) !== activeBlockingGroupKey) return false;
+    if (examenFilter !== "all") {
+      const [cat, num] = examenFilter.split(":");
+      if (getExamCategory(item.quizTitre, item.quizId, item.apprenantTypeMode).key !== cat) return false;
+      if (num && getExamNum(item.quizTitre) !== num) return false;
+    }
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      return (
+        item.apprenantNom.toLowerCase().includes(q) ||
+        item.apprenantPrenom.toLowerCase().includes(q) ||
+        item.quizTitre.toLowerCase().includes(q) ||
+        item.matiereNom.toLowerCase().includes(q) ||
+        item.enonce.toLowerCase().includes(q)
+      );
+    }
+    return true;
+  };
+
   // Mirrors the filter + sort applied to `sortedFiltered` in the render, so that
   // auto-advance after saving picks the correct next item.
   const computeSortedFiltered = (list: QrcItem[]): QrcItem[] => {
-    const filteredList = list.filter(item => {
-      if (filter === "pending" && item.corrigeManuel) return false;
-      if (filter === "done" && !item.corrigeManuel) return false;
-      if (filter === "today" && !isAnsweredToday(item)) return false;
-      if (filter === "today-pending" && (!isAnsweredToday(item) || item.corrigeManuel)) return false;
-      if (filter === "blocking" && !isBlockingResult(item)) return false;
-      if (filter === "blocking" && activeBlockingGroupKey && getBlockingGroupKey(item) !== activeBlockingGroupKey) return false;
-      if (examenFilter !== "all") {
-        const [cat, num] = examenFilter.split(":");
-        if (getExamCategory(item.quizTitre, item.quizId, item.apprenantTypeMode).key !== cat) return false;
-        if (num && getExamNum(item.quizTitre) !== num) return false;
-      }
-      if (searchQuery) {
-        const q = searchQuery.toLowerCase();
-        return (
-          item.apprenantNom.toLowerCase().includes(q) ||
-          item.apprenantPrenom.toLowerCase().includes(q) ||
-          item.quizTitre.toLowerCase().includes(q) ||
-          item.matiereNom.toLowerCase().includes(q) ||
-          item.enonce.toLowerCase().includes(q)
-        );
-      }
-      return true;
-    });
+    const filteredList = list.filter(matchesFilter);
     return filter === "blocking" ? sortBlockingQrcItems(filteredList) : sortQrcItems(filteredList, sortOrder);
   };
+
 
   const QUICK_COMMENTS = [
     "Précisez !!!",
@@ -1252,7 +1267,12 @@ const CorrectionQRCTab = () => {
 
   const handleSaveCorrection = async (item: QrcItem, newPoints: number) => {
     const uniqueKey = `${item.resultId}-${item.questionId}`;
+    // Historique de navigation : la QRC corrigée reste accessible avec « Précédent »
+    // pendant toute la session de correction (aucune donnée modifiée par cet ajout).
+    keptKeysRef.current.add(qrcNavKey(item));
+    setKeptVersion((v) => v + 1);
     setSavingId(uniqueKey);
+
 
     const clamped = clampToHalfStep(newPoints, item.pointsMax);
 
@@ -1698,30 +1718,10 @@ const CorrectionQRCTab = () => {
     });
   };
 
-  const filtered = items.filter(item => {
-    if (filter === "pending" && item.corrigeManuel) return false;
-    if (filter === "done" && !item.corrigeManuel) return false;
-    if (filter === "today" && !isAnsweredToday(item)) return false;
-    if (filter === "today-pending" && (!isAnsweredToday(item) || item.corrigeManuel)) return false;
-    if (filter === "blocking" && !isBlockingResult(item)) return false;
-    if (filter === "blocking" && activeBlockingGroupKey && getBlockingGroupKey(item) !== activeBlockingGroupKey) return false;
-    if (examenFilter !== "all") {
-      const [cat, num] = examenFilter.split(":");
-      if (getExamCategory(item.quizTitre, item.quizId, item.apprenantTypeMode).key !== cat) return false;
-      if (num && getExamNum(item.quizTitre) !== num) return false;
-    }
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      return (
-        item.apprenantNom.toLowerCase().includes(q) ||
-        item.apprenantPrenom.toLowerCase().includes(q) ||
-        item.quizTitre.toLowerCase().includes(q) ||
-        item.matiereNom.toLowerCase().includes(q) ||
-        item.enonce.toLowerCase().includes(q)
-      );
-    }
-    return true;
-  });
+  // keptVersion force le recalcul quand une QRC corrigée est conservée dans l'historique.
+  void keptVersion;
+  const filtered = items.filter(matchesFilter);
+
 
   // Build available exam list grouped by category, each with its numbers
   type ExamOption = { value: string; label: string; total: number };
@@ -1755,10 +1755,14 @@ const CorrectionQRCTab = () => {
   // apprenant → examen → tentative → matière → n° de question croissant
   const sortedFiltered = filter === "blocking" ? sortBlockingQrcItems(filtered) : sortQrcItems(filtered, sortOrder);
 
-  // Reset index when filter/search/sort changes
+  // Reset index when filter/search/sort changes (nouvelle session de navigation :
+  // l'historique des QRC corrigées conservées est remis à zéro, sans rien modifier en base).
   useEffect(() => {
     setCurrentIndex(0);
+    keptKeysRef.current = new Set();
+    setKeptVersion((v) => v + 1);
   }, [filter, searchQuery, sortOrder, examenFilter, activeBlockingGroupKey]);
+
 
   useEffect(() => {
     if (activeBlockingGroupKey && !blockingGroups.some((g) => g.key === activeBlockingGroupKey)) {
@@ -2262,7 +2266,7 @@ const CorrectionQRCTab = () => {
                       }}
                       disabled={isSaving}
                     >
-                      {isSaving ? "..." : "✓ Valider"}
+                      {isSaving ? "..." : item.corrigeManuel ? "✓ Confirmer la nouvelle note" : "✓ Valider"}
                     </Button>
                     <Button
                       size="sm"
@@ -2275,9 +2279,17 @@ const CorrectionQRCTab = () => {
                       🚫 Ne pas comptabiliser
                     </Button>
                     {item.corrigeManuel && !isSaving && (
-                      <Badge className="bg-green-100 text-green-700 border-green-300 text-xs ml-1">✅ Corrigé</Badge>
+                      <Badge className="bg-green-100 text-green-700 border-green-300 text-xs ml-1">✅ Déjà corrigée</Badge>
                     )}
                   </div>
+
+                  {item.corrigeManuel && (
+                    <p className="text-xs text-green-700">
+                      ✅ Déjà corrigée — {(item.pointsObtenus ?? item.autoScore)}/{item.pointsMax} pts enregistrés. Cette QRC reste corrigée ;
+                      modifiez les points ou le commentaire puis confirmez la nouvelle note pour la changer.
+                    </p>
+                  )}
+
 
                   {/* Commentaire pour l'apprenant */}
                   <div className="space-y-2">
