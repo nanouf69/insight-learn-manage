@@ -1784,6 +1784,75 @@ const CorrectionQRCTab = () => {
         </div>
       )}
 
+      {/* Contrôle EB N°2 : aucun apprenant bloqué ne peut rester invisible ici. */}
+      {eb2Rows.length > 0 && (
+        <Card className="border-green-500/50 bg-green-50/60">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base text-green-900">
+              🟢 APPRENANTS EB N°2 SANS NOTE DÉFINITIVE ({eb2Rows.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 text-sm max-h-96 overflow-auto">
+            {eb2Anomalies.length > 0 && (
+              <div className="rounded-md border border-destructive bg-destructive/10 p-3">
+                <p className="font-bold text-destructive">
+                  🚨 ANOMALIE : {eb2Anomalies.length} passage(s) sans note définitive ne remontent pas dans la correction QRC
+                </p>
+                <ul className="mt-1 text-destructive text-xs list-disc pl-5">
+                  {eb2Anomalies.map((r) => (
+                    <li key={r.attemptKey}>
+                      {r.apprenant} — {r.filiere} — {r.tentativeLabel} — {formatDateOnlyFR(r.completedAt)} — matières : {r.matieres.join(", ") || "—"}
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-1 text-xs text-destructive">
+                  Signalement uniquement : aucune correction, note ou réponse n'a été modifiée.
+                </p>
+              </div>
+            )}
+            {eb2Rows.map((r) => (
+              <div
+                key={r.attemptKey}
+                className="flex flex-wrap items-center gap-3 border-b last:border-0 py-3 px-2"
+              >
+                <div className="min-w-0 flex-1 space-y-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-bold text-foreground">{r.apprenant}</span>
+                    <Badge variant="outline">{r.filiere}</Badge>
+                    <span className="text-muted-foreground">→ {r.quizTitre}</span>
+                    <span className="text-muted-foreground">→ {r.tentativeLabel}</span>
+                  </div>
+                  <div className="text-muted-foreground">
+                    Matières : {(r.matieresRestantes.length ? r.matieresRestantes : r.matieres).join(", ") || "—"}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {r.count > 0
+                      ? `${r.count} QRC répondue(s) non validée(s) manuellement : la note définitive reste bloquée.`
+                      : "Passage bloqué côté apprenant mais aucune QRC correspondante dans la file — anomalie signalée ci-dessus."}
+                  </div>
+                </div>
+                <Badge variant="destructive" className="text-sm font-black uppercase px-3 py-1.5">
+                  {r.count} QRC restantes
+                </Badge>
+                <span className="text-destructive font-black text-xl leading-none tabular-nums">
+                  {formatDateOnlyFR(r.completedAt)}
+                </span>
+                {r.groupKey && (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="font-black uppercase"
+                    onClick={() => goToBlockingGroup(r.groupKey!)}
+                  >
+                    🔴 CORRIGER LES QRC
+                  </Button>
+                )}
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Sélecteur d'examen blanc (menu déroulant) */}
       <div className="flex items-center gap-3 flex-wrap">
         <span className="text-sm font-medium text-muted-foreground">Examen :</span>
