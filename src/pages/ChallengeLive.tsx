@@ -17,22 +17,19 @@ import {
   type LiveSession,
 } from "@/lib/liveChallenge";
 
-const DEMO_QUESTIONS: LiveQuestion[] = [
-  {
-    id: "demo-1",
-    enonce: "Quelle est la durée maximale de conduite continue autorisée ?",
-    type: "qcm",
-    propositions: ["2 heures", "4 h 30", "6 heures"],
-    bonneReponse: "4 h 30",
-    points: 1,
-  },
-  {
-    id: "demo-2",
-    enonce: "Citez deux obligations du conducteur VTC avant une course.",
-    type: "qrc",
-    points: 2,
-  },
-];
+import {
+  PILOTE_MATIERE,
+  buildSnapshotFromSource,
+  fetchVtcSourceQuizzes,
+  type SourceQuiz,
+} from "@/lib/liveChallengeSource";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function ChallengeLive() {
   const [sessions, setSessions] = useState<LiveSession[]>([]);
@@ -42,7 +39,27 @@ export default function ChallengeLive() {
   const [projection, setProjection] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState<string>("");
 
+  // Source des questions (LECTURE SEULE) — pilote : une seule matiere VTC.
+  const [sources, setSources] = useState<SourceQuiz[]>([]);
+  const [matiere, setMatiere] = useState<string>(PILOTE_MATIERE);
+  const [quizId, setQuizId] = useState<string>("");
+  const [nombre, setNombre] = useState<string>("20");
+  const [typeFiltre, setTypeFiltre] = useState<"tous" | "qcm" | "qrc">("tous");
+  const [ordre, setOrdre] = useState<"origine" | "aleatoire">("origine");
+
   const { session, participants, responses, connected, refresh } = useLiveChallengeState(activeId);
+
+  useEffect(() => {
+    fetchVtcSourceQuizzes()
+      .then(setSources)
+      .catch(() => toast.error("Impossible de lire les questions VTC"));
+  }, []);
+
+  const matieres = useMemo(() => Array.from(new Set(sources.map((s) => s.matiere))), [sources]);
+  const quizOfMatiere = useMemo(() => sources.filter((s) => s.matiere === matiere), [sources, matiere]);
+  useEffect(() => {
+    setQuizId(quizOfMatiere[0] ? String(quizOfMatiere[0].exerciceId) : "");
+  }, [quizOfMatiere]);
 
   useEffect(() => {
     fetchLiveSessions()
@@ -73,24 +90,75 @@ export default function ChallengeLive() {
   const currentIndex = session?.current_index ?? 0;
   const currentQuestion = questions[currentIndex];
 
-  const currentResponses = responses.filter((r) => r.question_id === currentQuestion?.id);
+  // Une reponse n'est jamais comptee deux fois : dedoublonnage par participant.
+  const currentResponses = useMemo(() => {
+    const byParticipant = new Map<string, (typeof responses)[number]>();
+    responses
+      .filter((r) => r.question_id === currentQuestion?.id)
+      .forEach((r) => byParticipant.set(r.participant_id, r));
+    return Array.from(byParticipant.values());
+  }, [responses, currentQuestion?.id]);
+
   const answeredIds = new Set(currentResponses.map((r) => r.participant_id));
   const sansReponse = participants.filter((p) => !answeredIds.has(p.id));
   const bonnes = currentResponses.filter((r) => r.est_correcte === true).length;
   const mauvaises = currentResponses.filter((r) => r.est_correcte === false).length;
   const qrcAttente = currentResponses.filter((r) => r.question_type === "qrc" && !r.corrigee_manuellement);
 
+  // Controles automatiques de coherence sur la question en cours.
+  const controleParticipants = currentResponses.length + sansReponse.length === participants.length;
+  const controleReponses = bonnes + mauvaises + qrcAttente.length === currentResponses.length;
+
+  // Classement final : QRC en attente => score PROVISOIRE.
+  const classement = useMemo(() => {
+    return participants
+      .map((p) => {
+        const mine = responses.filter((r) => r.participant_id === p.id);
+        const uniques = new Map(mine.map((r) => [r.question_id, r]));
+        const list = Array.from(uniques.values());
+        const bonnes = list.filter((r) => r.est_correcte === true).length;
+        const mauvaises = list.filter((r) => r.est_correcte === false).length;
+        const attente = list.filter((r) => r.question_type === "qrc" && !r.corrigee_manuellement).length;
+        return {
+          id: p.id,
+          nom: session?.masquer_noms ? `Participant ${p.id.slice(0, 4).toUpperCase()}` : p.display_name,
+          bonnes,
+          mauvaises,
+          sansReponse: Math.max(questions.length - list.length, 0),
+          attente,
+          score: Number(p.score),
+        };
+      })
+      .sort((a, b) => b.score - a.score);
+  }, [participants, responses, questions.length, session?.masquer_noms]);
+  const qrcEnAttenteTotal = classement.reduce((s, c) => s + c.attente, 0);
+
   const handleCreate = async () => {
+    if (!quizId) {
+      toast.error("Choisissez un quiz source");
+      return;
+    }
     setCreating(true);
     try {
+      const source = sources.find((s) => String(s.exerciceId) === quizId);
+      const snapshot = await buildSnapshotFromSource(Number(quizId), {
+        nombre: Number(nombre) || 20,
+        typeFiltre,
+        ordre,
+      });
+      if (snapshot.length === 0) {
+        toast.error("Aucune question ne correspond à ces critères");
+        return;
+      }
       const created = await createLiveSession({
         titre,
-        questions: DEMO_QUESTIONS,
-        sourceLabel: "Questions de démonstration",
+        questions: snapshot,
+        sourceQuizId: quizId,
+        sourceLabel: `VTC · ${source?.titre ?? ""}`,
       });
       setSessions((prev) => [created, ...prev]);
       setActiveId(created.id);
-      toast.success(`Challenge lancé — code ${created.code}`);
+      toast.success(`Challenge lancé — ${snapshot.length} questions — code ${created.code}`);
     } catch {
       toast.error("Le challenge n'a pas pu être lancé");
     } finally {
@@ -131,11 +199,83 @@ export default function ChallengeLive() {
         </CardHeader>
         <CardContent className="space-y-3">
           <Input value={titre} onChange={(e) => setTitre(e.target.value)} placeholder="Titre du challenge" />
-          <Button onClick={handleCreate} disabled={creating} className="w-full">
+
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground">Filière</label>
+            <Input value="VTC" readOnly className="w-full" />
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground">Matière</label>
+            <Select value={matiere} onValueChange={setMatiere}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Matière" />
+              </SelectTrigger>
+              <SelectContent>
+                {matieres.map((m) => (
+                  <SelectItem key={m} value={m} disabled={m !== PILOTE_MATIERE}>
+                    {m}
+                    {m !== PILOTE_MATIERE ? " (hors pilote)" : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground">Quiz / module source</label>
+            <Select value={quizId} onValueChange={setQuizId}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Quiz source" />
+              </SelectTrigger>
+              <SelectContent>
+                {quizOfMatiere.map((q) => (
+                  <SelectItem key={q.exerciceId} value={String(q.exerciceId)}>
+                    {q.titre} ({q.nbQuestions} questions)
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground">Nombre de questions souhaitées</label>
+            <Input type="number" min={1} value={nombre} onChange={(e) => setNombre(e.target.value)} />
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground">Type de questions</label>
+            <Select value={typeFiltre} onValueChange={(v) => setTypeFiltre(v as typeof typeFiltre)}>
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="tous">Mélange QCM + QRC</SelectItem>
+                <SelectItem value="qcm">QCM uniquement</SelectItem>
+                <SelectItem value="qrc">QRC uniquement</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground">Ordre</label>
+            <Select value={ordre} onValueChange={(v) => setOrdre(v as typeof ordre)}>
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="origine">Ordre d'origine</SelectItem>
+                <SelectItem value="aleatoire">Ordre aléatoire</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <Button onClick={handleCreate} disabled={creating || !quizId} className="w-full">
             ▶ Lancer un challenge en direct
           </Button>
           <p className="text-xs text-muted-foreground">
-            Les questions sont figées au lancement : modifier le quiz d'origine ne change pas un challenge en cours.
+            Les questions existantes sont uniquement lues : une copie indépendante est figée au lancement. Modifier ou
+            supprimer ensuite une question d'origine ne change jamais un challenge déjà lancé.
           </p>
           {sessions.length > 0 && (
             <div className="flex flex-wrap gap-2 pt-2">
@@ -210,6 +350,13 @@ export default function ChallengeLive() {
                 <Stat label="Bonnes" value={bonnes} />
                 <Stat label="Mauvaises" value={mauvaises} />
               </div>
+              {(!controleParticipants || !controleReponses) && (
+                <div className="rounded-lg border border-destructive p-3 text-sm text-destructive">
+                  🚨 Contrôle de cohérence en échec sur cette question
+                  {!controleParticipants && " — ont répondu + sans réponse ≠ participants"}
+                  {!controleReponses && " — bonnes + mauvaises + QRC en attente ≠ réponses reçues"}
+                </div>
+              )}
               <div className="flex gap-2">
                 <Button variant="outline" onClick={() => move(-1)} disabled={currentIndex === 0}>
                   ← Précédente
@@ -255,25 +402,52 @@ export default function ChallengeLive() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Classement en direct</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-1">
-                {[...participants]
-                  .sort((a, b) => Number(b.score) - Number(a.score))
-                  .map((p, i) => (
-                    <div key={p.id} className="flex justify-between border-b py-1 text-sm">
-                      <span>
-                        {i + 1}. {session.masquer_noms ? `Participant ${p.id.slice(0, 4).toUpperCase()}` : p.display_name}
-                        {!answeredIds.has(p.id) && <span className="ml-2 text-muted-foreground">(en attente)</span>}
-                      </span>
-                      <span className="font-semibold">{Number(p.score)} pt</span>
-                    </div>
-                  ))}
-                {participants.length === 0 && (
-                  <p className="text-sm text-muted-foreground">Aucun participant connecté pour l'instant.</p>
+              <CardTitle>
+                {session.statut === "terminee" ? "Classement final" : "Classement en direct"}
+                {qrcEnAttenteTotal > 0 && (
+                  <Badge variant="secondary" className="ml-2">
+                    PROVISOIRE — {qrcEnAttenteTotal} QRC en attente de correction
+                  </Badge>
                 )}
-              </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-muted-foreground">
+                    <th className="py-1">#</th>
+                    <th>Nom</th>
+                    <th className="text-center">Bonnes</th>
+                    <th className="text-center">Mauvaises</th>
+                    <th className="text-center">Sans réponse</th>
+                    <th className="text-center">QRC en attente</th>
+                    <th className="text-right">Score</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {classement.map((c, i) => (
+                    <tr key={c.id} className="border-t">
+                      <td className="py-1">{i + 1}</td>
+                      <td>{c.nom}</td>
+                      <td className="text-center">{c.bonnes}</td>
+                      <td className="text-center">{c.mauvaises}</td>
+                      <td className="text-center">{c.sansReponse}</td>
+                      <td className="text-center">{c.attente}</td>
+                      <td className="text-right font-semibold">
+                        {c.score} pt{c.attente > 0 ? " *" : ""}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {classement.length === 0 && (
+                <p className="text-sm text-muted-foreground">Aucun participant connecté pour l'instant.</p>
+              )}
+              {qrcEnAttenteTotal > 0 && (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  * Score provisoire : des réponses ouvertes restent à corriger.
+                </p>
+              )}
             </CardContent>
           </Card>
         </>

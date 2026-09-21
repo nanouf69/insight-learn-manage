@@ -11,8 +11,11 @@ export type LiveQuestion = {
   type: "qcm" | "qrc";
   propositions?: string[];
   bonneReponse?: string | null;
+  /** QCM a plusieurs bonnes reponses : toute proposition correcte compte juste. */
+  bonnesReponses?: string[];
   points?: number;
   explication?: string | null;
+  image?: string | null;
 };
 
 export type LiveSession = {
@@ -196,10 +199,12 @@ export async function submitLiveResponse(params: {
   reponse: string;
 }): Promise<LiveResponse> {
   const { question } = params;
+  const attendues = (question.bonnesReponses && question.bonnesReponses.length > 0
+    ? question.bonnesReponses
+    : [question.bonneReponse || ""]
+  ).map(normalize);
   const estCorrecte =
-    question.type === "qrc"
-      ? null
-      : normalize(params.reponse) === normalize(question.bonneReponse || "");
+    question.type === "qrc" ? null : attendues.includes(normalize(params.reponse));
   const { data, error } = await supabase.rpc("live_submit_response", {
     _participant_id: params.participantId,
     _device_token: getDeviceToken(),
