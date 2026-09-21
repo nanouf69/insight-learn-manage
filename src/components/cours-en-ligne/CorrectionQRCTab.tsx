@@ -261,6 +261,21 @@ function sortBlockingQrcItems(list: QrcItem[]): QrcItem[] {
   return [...list].sort(compareBlockingQrcItems);
 }
 
+/** Périmètre commun à toutes les listes et tous les compteurs de l'écran. */
+export function isInTentativeScope(
+  item: Pick<QrcItem, "dbTentative">,
+  tentativeFilter: "1" | "all",
+): boolean {
+  return tentativeFilter === "all" || item.dbTentative === 1;
+}
+
+/** Identité exacte utilisée pour comparer les files « aujourd'hui » et « bloquantes ». */
+export function getQrcQueueIdentity(
+  item: Pick<QrcItem, "apprenantId" | "quizId" | "passageKey" | "matiereId" | "questionId">,
+): string {
+  return `${item.apprenantId}__${item.quizId}__${item.passageKey}__${item.matiereId || ""}__${item.questionId}`;
+}
+
 function formatDateOnlyFR(value: string): string {
   if (!value) return "";
   return new Date(value).toLocaleDateString("fr-FR");
@@ -522,11 +537,9 @@ const CorrectionQRCTab = () => {
     if (filter === "today-pending" && (!isAnsweredToday(item) || (item.corrigeManuel && !kept))) return false;
     if (filter === "blocking" && !isBlockingResult(item) && !kept) return false;
     if (filter === "blocking" && activeBlockingGroupKey && getBlockingGroupKey(item) !== activeBlockingGroupKey) return false;
-    // Tentative 1 uniquement (hors file bloquante, qui garde son propre regroupement).
-    if (filter !== "blocking" && tentativeFilter === "1") {
-      const t = item.dbTentative;
-      if (t != null && t !== 1) return false;
-    }
+    // Le même périmètre s'applique sans exception aux listes du jour,
+    // bloquantes, en attente, corrigées et à leurs compteurs.
+    if (!isInTentativeScope(item, tentativeFilter)) return false;
     if (examenFilter !== "all") {
       const [cat, num] = examenFilter.split(":");
       if (getExamCategory(item.quizTitre, item.quizId, item.apprenantTypeMode).key !== cat) return false;
@@ -1572,9 +1585,10 @@ const CorrectionQRCTab = () => {
     setEditingId(null);
   };
 
-  const pendingItems = items.filter(i => !i.corrigeManuel);
+  const scopedItems = items.filter((i) => isInTentativeScope(i, tentativeFilter));
+  const pendingItems = scopedItems.filter(i => !i.corrigeManuel);
   const pendingCount = pendingItems.length;
-  const doneCount = items.filter(i => i.corrigeManuel).length;
+  const doneCount = scopedItems.filter(i => i.corrigeManuel).length;
 
   // Matières dont au moins une QRC reste à corriger : aucune note définitive
   // ne doit y être affichée (Admin comme apprenant).
@@ -1625,14 +1639,21 @@ const CorrectionQRCTab = () => {
   // par apprenant + examen + matière + question) dont la réponse élève est
   // réellement non vide. Une réponse vide ou composée d'espaces n'est jamais
   // comptée comme répondue.
-  const todayItems = items.filter(i => isAnsweredToday(i));
+  const todayItems = scopedItems.filter(i => isAnsweredToday(i));
   const todayCount = todayItems.length;
   const todayPendingItems = todayItems.filter(i => !i.corrigeManuel);
   const todayPendingCount = todayPendingItems.length;
 
-  const blockingItems = items.filter(isBlockingResult);
+  const blockingItems = scopedItems.filter(isBlockingResult);
   const blockingCount = blockingItems.length;
   const olderBlockingCount = blockingItems.filter(i => !isAnsweredToday(i)).length;
+
+  // Contrôle mathématique demandé : les deux vues sont des filtres de la même
+  // source et utilisent la même identité passage + matière + question.
+  const blockingIdentitySet = new Set(blockingItems.map(getQrcQueueIdentity));
+  const todayBlockingMissingItems = todayPendingItems.filter(
+    (item) => isBlockingResult(item) && !blockingIdentitySet.has(getQrcQueueIdentity(item)),
+  );
 
   // Récapitulatif : apprenant → examen → tentative → matière → QRC restantes.
   const blockingGroups = (() => {
@@ -1727,8 +1748,8 @@ const CorrectionQRCTab = () => {
     : filter === "today" ? todayItems
     : filter === "today-pending" ? todayPendingItems
     : filter === "blocking" ? blockingItems
-    : filter === "done" ? items.filter(i => i.corrigeManuel)
-    : items;
+    : filter === "done" ? scopedItems.filter(i => i.corrigeManuel)
+    : scopedItems;
 
   for (const i of examOptionSource) {
     const cat = getExamCategory(i.quizTitre, i.quizId, i.apprenantTypeMode);
@@ -1812,6 +1833,26 @@ const CorrectionQRCTab = () => {
           <p className="text-sm text-amber-900 mt-1">
             Alerte informative uniquement : aucune réponse, note ou correction n'a été modifiée.
           </p>
+        </div>
+      )}
+
+      {todayBlockingMissingItems.length > 0 ? (
+        <div className="rounded-lg border border-destructive bg-destructive/10 p-4">
+          <p className="font-bold text-destructive">
+            🚨 ANOMALIE : {todayBlockingMissingItems.length} QRC d'aujourd'hui bloquent une note mais sont absentes de la file QRC bloquantes.
+          </p>
+          <ul className="mt-2 space-y-1 text-xs text-destructive">
+            {todayBlockingMissingItems.map((item) => (
+              <li key={getQrcQueueIdentity(item)}>
+                {item.apprenantNom} {item.apprenantPrenom} | {item.quizTitre} | {item.tentativeLabel} | {item.matiereNom || item.matiereId} | Q{item.questionId} | {formatPassageDateTimeFR(item.completedAt)}
+              </li>
+            ))}
+          </ul>
+          <p className="mt-2 text-xs text-destructive">Signalement en lecture seule : aucune correction, réponse, note ou tentative n'a été modifiée.</p>
+        </div>
+      ) : (
+        <div className="rounded-lg border border-green-500/40 bg-green-50/60 p-3 text-sm font-medium text-green-900">
+          Contrôle QRC du jour : {todayPendingCount} réellement bloquante(s) − {todayPendingCount} présente(s) dans « QRC bloquant » = 0.
         </div>
       )}
 
