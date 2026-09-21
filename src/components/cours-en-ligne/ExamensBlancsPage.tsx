@@ -1049,8 +1049,10 @@ export default function ExamensBlancsPage({
       // On relit la base avant tout calcul de résultat : aucune progression si
       // les réponses confirmées ne correspondent pas exactement à l'écran.
       if (apprenantId && userId) {
-        const tSuffix = (currentTentative && currentTentative > 1) ? `__t${currentTentative}` : "";
-        const exerciceKey = resumeExerciceIds[matiere.id] || `${examenChoisi.id}__${matiere.id}${tSuffix}`;
+        const exerciceKey =
+          resumeExerciceIds[matiere.id] ||
+          buildExamMatiereExerciceId(examenChoisi.id, matiere.id, currentTentative);
+
         const quizType = examenChoisi.id.startsWith("bilan-") ? "bilan" : "examen_blanc";
         const { data: confirmedRow, error: confirmationError } = await supabase
           .from("reponses_apprenants" as any)

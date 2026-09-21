@@ -24,8 +24,11 @@ import {
   flushAnswerSavesAndWait,
   flushAnswerSavesOnUnload,
   getPendingAnswers,
+  mergeSavedAndPendingAnswers,
   subscribeAnswerSaveState,
 } from "@/lib/answerPersistence";
+import { buildExamMatiereExerciceId } from "@/lib/quizAttempts";
+
 
 // ===== PASSAGE D'UNE MATIÈRE =====
 function PassageMatiere({
