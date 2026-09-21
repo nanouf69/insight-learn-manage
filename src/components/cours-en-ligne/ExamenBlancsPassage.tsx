@@ -24,7 +24,7 @@ import {
   flushAnswerSavesAndWait,
   flushAnswerSavesOnUnload,
   mergeSavedAndPendingAnswers,
-  mergeSavedAndPendingAnswers,
+
   subscribeAnswerSaveState,
 } from "@/lib/answerPersistence";
 import { buildExamMatiereExerciceId } from "@/lib/quizAttempts";
