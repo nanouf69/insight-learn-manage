@@ -1282,3 +1282,150 @@ export function normalizeQcmChoiceLetters(
 
   return { questionsRepaired: details.length, details };
 }
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * CŒUR DES EXAMENS BLANCS — identité unique et persistante d'un passage.
+ *
+ * Règles (aucune donnée existante n'est lue en écriture, modifiée ni renumérotée) :
+ *  1. Une tentative commencée porte UN numéro de passage ; toutes ses matières
+ *     utilisent la clé `${examId}__${matiere}` (t1) ou `${examId}__${matiere}__tN`.
+ *  2. Une tentative terminée est IMMUABLE : sa clé n'est jamais réutilisée.
+ *  3. Reprendre (F5, déconnexion, retour) = le MÊME passage ouvert.
+ *  4. Refaire = un NOUVEAU numéro, strictement supérieur à tous ceux connus,
+ *     et dont AUCUNE clé de matière n'existe déjà en base.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+export interface ExamPassageResolution {
+  mode: "resume" | "new";
+  tentative: number;
+  /** matiereId → exercice_id persistant du passage */
+  exerciceIds: Record<string, string>;
+  /** matiereIds déjà finalisées dans ce passage (intouchables) */
+  completedMatiereIds: string[];
+}
+
+export function buildExamMatiereExerciceId(examId: string, matiereId: string, tentative: number): string {
+  const n = Math.max(Math.trunc(toFiniteNumber(tentative, 1)), 1);
+  return `${examId || "exam"}__${matiereId}${n > 1 ? `__t${n}` : ""}`;
+}
+
+export function resolveExamPassage({
+  examId,
+  matieres,
+  resultRows,
+  savedRows,
+  forceRetake = false,
+}: {
+  examId: string;
+  matieres: Array<Pick<Matiere, "id" | "nom">>;
+  resultRows: any[];
+  savedRows: SavedExamAnswerRow[];
+  forceRetake?: boolean;
+}): ExamPassageResolution {
+  const validMatieres = safeArray(matieres).filter(Boolean) as Array<Pick<Matiere, "id" | "nom">>;
+  const results = safeArray(resultRows).filter(Boolean);
+  const answers = safeArray(savedRows).filter((row) => Boolean(row) && Boolean(parseExamAnswerKey(safeStr(row.exercice_id), examId)));
+
+  const occupiedExerciceIds = new Set(answers.map((row) => safeStr(row.exercice_id)));
+  const frozenExerciceIds = new Set(
+    answers
+      .filter((row: any) => row?.completed === true || row?.status === "submitted")
+      .map((row) => safeStr(row.exercice_id)),
+  );
+
+  const knownAttempts = new Set<number>([1]);
+  results.forEach((row: any) => knownAttempts.add(getAttemptNumber(row)));
+  answers.forEach((row) => knownAttempts.add(getSavedAnswerRowAttempt(row, examId)));
+
+  const completedKeysByAttempt = new Map<number, Set<string>>();
+  results.forEach((row: any) => {
+    const attempt = getAttemptNumber(row);
+    const set = completedKeysByAttempt.get(attempt) ?? new Set<string>();
+    buildMatiereLookupKeys(row?.matiere_id, row?.matiere_nom).forEach((key) => set.add(key));
+    completedKeysByAttempt.set(attempt, set);
+  });
+
+  const completedMatieresFor = (attempt: number) => {
+    const keys = completedKeysByAttempt.get(attempt) ?? new Set<string>();
+    return validMatieres.filter((m) => buildMatiereLookupKeys(m.id, m.nom).some((k) => keys.has(k)));
+  };
+
+  const rowForMatiere = (attempt: number, matiere: Pick<Matiere, "id" | "nom">) =>
+    findBestSavedAnswerRow({ rows: answers, examId, matiere, tentative: attempt });
+
+  /** Un passage est repris seulement si aucune matière restante n'est verrouillée. */
+  const buildResume = (attempt: number): ExamPassageResolution | null => {
+    const done = new Set(completedMatieresFor(attempt).map((m) => m.id));
+    const exerciceIds: Record<string, string> = {};
+    for (const matiere of validMatieres) {
+      const existing = rowForMatiere(attempt, matiere);
+      const existingId = existing ? safeStr(existing.exercice_id) : "";
+      if (existingId && !frozenExerciceIds.has(existingId)) {
+        exerciceIds[matiere.id] = existingId;
+        continue;
+      }
+      const canonical = buildExamMatiereExerciceId(examId, matiere.id, attempt);
+      if (done.has(matiere.id)) {
+        // Matière déjà finalisée dans ce passage : clé conservée, jamais réécrite.
+        exerciceIds[matiere.id] = existingId || canonical;
+        continue;
+      }
+      if (frozenExerciceIds.has(canonical) || (existingId && frozenExerciceIds.has(existingId))) {
+        return null; // cible verrouillée → on n'écrit jamais dedans
+      }
+      exerciceIds[matiere.id] = canonical;
+    }
+    return { mode: "resume", tentative: attempt, exerciceIds, completedMatiereIds: Array.from(done) };
+  };
+
+  const attemptStates = Array.from(knownAttempts).map((attempt) => {
+    const rows = answers.filter((row) => getSavedAnswerRowAttempt(row, examId) === attempt);
+    const resultsForAttempt = results.filter((row: any) => getAttemptNumber(row) === attempt);
+    return {
+      attempt,
+      completedCount: completedMatieresFor(attempt).length,
+      hasWork: rows.some((row) => getMeaningfulAnswerCount(row.reponses) > 0) || resultsForAttempt.length > 0,
+      lastActivity: Math.max(
+        0,
+        ...rows.map(getSavedAnswerRowTimestamp),
+        ...resultsForAttempt.map((row: any) => getScoreRowTimestamp(row)),
+      ),
+    };
+  });
+
+  if (!forceRetake) {
+    const open = attemptStates
+      .filter((s) => s.hasWork && s.completedCount < validMatieres.length)
+      .sort((a, b) => b.lastActivity - a.lastActivity || b.attempt - a.attempt);
+    for (const state of open) {
+      const resumed = buildResume(state.attempt);
+      if (resumed) return resumed;
+    }
+    const untouched = attemptStates.find((s) => !s.hasWork);
+    if (untouched) {
+      const resumed = buildResume(untouched.attempt);
+      if (resumed) return resumed;
+    }
+  }
+
+  // Nouveau passage : numéro strictement libre pour TOUTES les matières.
+  const maxKnown = Array.from(knownAttempts).reduce((max, n) => Math.max(max, n), 1);
+  const usedResultAttempts = new Set(results.map((row: any) => getAttemptNumber(row)));
+  let tentative = forceRetake || attemptStates.some((s) => s.hasWork) ? maxKnown + 1 : 1;
+  for (let guard = 0; guard < 500; guard += 1) {
+    const collides =
+      usedResultAttempts.has(tentative) ||
+      validMatieres.some((m) => occupiedExerciceIds.has(buildExamMatiereExerciceId(examId, m.id, tentative)));
+    if (!collides) break;
+    tentative += 1;
+  }
+
+  return {
+    mode: "new",
+    tentative,
+    exerciceIds: Object.fromEntries(
+      validMatieres.map((m) => [m.id, buildExamMatiereExerciceId(examId, m.id, tentative)]),
+    ),
+    completedMatiereIds: [],
+  };
+}
