@@ -157,52 +157,23 @@ export function useAutoSaveReponses<T = Record<string, any>>({
     [apprenantId, exerciceId, exerciceType, saveReponses]
   );
 
-  // beforeunload: flush pending save synchronously
+  // beforeunload : on ne contourne PLUS le moteur central (l'ancien envoi XHR
+  // direct ignorait le contrôle d'antériorité `base_seq`). On se contente de
+  // pousser la file durable, qui applique les mêmes protections que partout.
   useEffect(() => {
     const flushSave = () => {
       if (!apprenantId) return;
-      const latest = latestReponsesRef.current;
-      if (!latest) return;
-
-      const baseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const apikey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-      if (!baseUrl || !apikey) {
-        console.error("[AutoSaveReponses] Missing backend configuration for upsert-reponse-apprenant flush");
-        return;
-      }
-
-      // BUG #7 FIX: send auth.uid() as user_id + Authorization header
-      const row: Record<string, any> = {
-        apprenant_id: apprenantId,
-        user_id: userIdRef.current || apprenantId,
-        exercice_id: exerciceId,
-        exercice_type: exerciceType,
-        reponses: latest.reponses,
-        completed: latest.completed ?? false,
-        updated_at: new Date().toISOString(),
-      };
-      if (latest.score !== undefined && latest.score !== null) {
-        row.score = latest.score;
-      }
-      try {
-        console.log("[AutoSaveReponses] FLUSH XHR via Edge Function — user_id:", row.user_id, "| exercice_id:", exerciceId);
-        const url = `${baseUrl}/functions/v1/upsert-reponse-apprenant`;
-        const xhr = new XMLHttpRequest();
-        xhr.open("POST", url, false);
-        xhr.setRequestHeader("Content-Type", "application/json");
-        xhr.setRequestHeader("apikey", apikey);
-        if (jwtTokenRef.current) {
-          xhr.setRequestHeader("Authorization", `Bearer ${jwtTokenRef.current}`);
-        }
-        xhr.send(JSON.stringify(row));
-      } catch (_) {}
+      flushAnswerSavesOnUnload();
     };
     window.addEventListener("beforeunload", flushSave);
+    window.addEventListener("pagehide", flushSave);
     return () => {
       window.removeEventListener("beforeunload", flushSave);
+      window.removeEventListener("pagehide", flushSave);
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [apprenantId, exerciceId, exerciceType]);
+  }, [apprenantId]);
+
 
   return { loadedReponses, isLoaded, isSubmitted, saveReponses, markCompleted };
 }
