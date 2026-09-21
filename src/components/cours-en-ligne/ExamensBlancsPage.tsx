@@ -537,43 +537,29 @@ export default function ExamensBlancsPage({
         return;
       }
 
+      // SOURCE UNIQUE D'IDENTITÉ DU PASSAGE : reprise du passage ouvert, ou
+      // création d'un passage entièrement neuf. Jamais d'écriture dans une
+      // tentative terminée (elle est immuable).
+      const passage = resolveExamPassage({
+        examId: latestExamen.id,
+        matieres: validMatieres,
+        resultRows: allResultRows,
+        savedRows,
+        forceRetake,
+      });
+
       const bestRowsByMatiere = new Map<string, SavedExamAnswerRow>();
       validMatieres.forEach((matiere) => {
-        const best = findBestSavedAnswerRow({ rows: savedRows, examId: latestExamen.id, matiere, tentative: activeAttempt });
+        const best = findBestSavedAnswerRow({ rows: savedRows, examId: latestExamen.id, matiere, tentative: passage.tentative });
         if (best) bestRowsByMatiere.set(matiere.id, best);
       });
 
-      // RÈGLE ABSOLUE : un passage terminé est IMMUABLE. Ses réponses, QRC,
-      // corrections et notes restent définitives, et AUCUNE nouvelle réponse
-      // n'est jamais réécrite dedans (le serveur les refuserait en silence).
-      const frozenExerciceIds = new Set<string>(
-        savedRows
-          .filter((row: any) => row?.completed === true || row?.status === "submitted")
-          .map((row) => safeStr(row.exercice_id)),
-      );
-      const isResumableRow = (row?: SavedExamAnswerRow) =>
-        Boolean(row) && !frozenExerciceIds.has(safeStr(row!.exercice_id));
+      const hasSavedWork = passage.mode === "resume"
+        && Array.from(bestRowsByMatiere.values()).some((row) => getMeaningfulAnswerCount(row.reponses) > 0);
+      const hasIncompletePassage = passage.mode === "resume" && !allCompleted && (hasSavedWork || completedMatiereCount > 0);
 
-      const hasSavedWork = Array.from(bestRowsByMatiere.values())
-        .some((row) => isResumableRow(row) && getMeaningfulAnswerCount(row.reponses) > 0);
-      const hasIncompletePassage = !allCompleted && (hasSavedWork || completedMatiereCount > 0);
-
-      nextTentative = forceRetake && allCompleted
-        ? Math.max(activeAttempt + 1, 2)
-        : activeAttempt;
-
-      // Reprise uniquement sur un passage NON terminé ; sinon nouvelle clé de
-      // passage libre. Rien n'est vidé, remplacé ni renuméroté en base.
-      setResumeExerciceIds(Object.fromEntries(
-        validMatieres.map((matiere) => {
-          const best = bestRowsByMatiere.get(matiere.id);
-          if (!forceRetake && isResumableRow(best)) return [matiere.id, safeStr(best!.exercice_id)];
-          return [
-            matiere.id,
-            allocateFreshExamMatiereExerciceId(latestExamen.id, matiere.id, nextTentative, frozenExerciceIds),
-          ];
-        }),
-      ));
+      nextTentative = passage.tentative;
+      setResumeExerciceIds(passage.exerciceIds);
       setCurrentTentative(nextTentative);
       currentTentativeRef.current = nextTentative;
 
