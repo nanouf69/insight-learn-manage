@@ -3048,6 +3048,170 @@ export type Database = {
           },
         ]
       }
+      live_participants: {
+        Row: {
+          apprenant_id: string | null
+          device_token: string
+          display_name: string
+          id: string
+          joined_at: string
+          last_seen_at: string
+          live_session_id: string
+          score: number
+        }
+        Insert: {
+          apprenant_id?: string | null
+          device_token: string
+          display_name: string
+          id?: string
+          joined_at?: string
+          last_seen_at?: string
+          live_session_id: string
+          score?: number
+        }
+        Update: {
+          apprenant_id?: string | null
+          device_token?: string
+          display_name?: string
+          id?: string
+          joined_at?: string
+          last_seen_at?: string
+          live_session_id?: string
+          score?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_participants_live_session_id_fkey"
+            columns: ["live_session_id"]
+            isOneToOne: false
+            referencedRelation: "live_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      live_responses: {
+        Row: {
+          commentaire: string | null
+          corrected_at: string | null
+          corrected_by: string | null
+          corrigee_manuellement: boolean
+          created_at: string
+          est_correcte: boolean | null
+          id: string
+          live_session_id: string
+          participant_id: string
+          points_max: number
+          points_obtenus: number | null
+          question_id: string
+          question_index: number
+          question_type: string
+          reponse: string | null
+          updated_at: string
+        }
+        Insert: {
+          commentaire?: string | null
+          corrected_at?: string | null
+          corrected_by?: string | null
+          corrigee_manuellement?: boolean
+          created_at?: string
+          est_correcte?: boolean | null
+          id?: string
+          live_session_id: string
+          participant_id: string
+          points_max?: number
+          points_obtenus?: number | null
+          question_id: string
+          question_index?: number
+          question_type?: string
+          reponse?: string | null
+          updated_at?: string
+        }
+        Update: {
+          commentaire?: string | null
+          corrected_at?: string | null
+          corrected_by?: string | null
+          corrigee_manuellement?: boolean
+          created_at?: string
+          est_correcte?: boolean | null
+          id?: string
+          live_session_id?: string
+          participant_id?: string
+          points_max?: number
+          points_obtenus?: number | null
+          question_id?: string
+          question_index?: number
+          question_type?: string
+          reponse?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_responses_live_session_id_fkey"
+            columns: ["live_session_id"]
+            isOneToOne: false
+            referencedRelation: "live_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "live_responses_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "live_participants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      live_sessions: {
+        Row: {
+          code: string
+          created_at: string
+          created_by: string | null
+          current_index: number
+          ended_at: string | null
+          id: string
+          masquer_noms: boolean
+          questions_snapshot: Json
+          reveal_results: boolean
+          source_label: string | null
+          source_quiz_id: string | null
+          statut: string
+          titre: string
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          created_by?: string | null
+          current_index?: number
+          ended_at?: string | null
+          id?: string
+          masquer_noms?: boolean
+          questions_snapshot?: Json
+          reveal_results?: boolean
+          source_label?: string | null
+          source_quiz_id?: string | null
+          statut?: string
+          titre?: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          current_index?: number
+          ended_at?: string | null
+          id?: string
+          masquer_noms?: boolean
+          questions_snapshot?: Json
+          reveal_results?: boolean
+          source_label?: string | null
+          source_quiz_id?: string | null
+          statut?: string
+          titre?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       module_admin_audit_log: {
         Row: {
           action: string
@@ -5018,6 +5182,88 @@ export type Database = {
         Returns: boolean
       }
       jsonb_as_array: { Args: { p: Json }; Returns: Json }
+      live_correct_response: {
+        Args: { _commentaire: string; _points: number; _response_id: string }
+        Returns: {
+          commentaire: string | null
+          corrected_at: string | null
+          corrected_by: string | null
+          corrigee_manuellement: boolean
+          created_at: string
+          est_correcte: boolean | null
+          id: string
+          live_session_id: string
+          participant_id: string
+          points_max: number
+          points_obtenus: number | null
+          question_id: string
+          question_index: number
+          question_type: string
+          reponse: string | null
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "live_responses"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      live_join_session: {
+        Args: { _code: string; _device_token: string; _display_name: string }
+        Returns: {
+          apprenant_id: string | null
+          device_token: string
+          display_name: string
+          id: string
+          joined_at: string
+          last_seen_at: string
+          live_session_id: string
+          score: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "live_participants"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      live_submit_response: {
+        Args: {
+          _device_token: string
+          _est_correcte: boolean
+          _participant_id: string
+          _points_max: number
+          _question_id: string
+          _question_index: number
+          _question_type: string
+          _reponse: string
+        }
+        Returns: {
+          commentaire: string | null
+          corrected_at: string | null
+          corrected_by: string | null
+          corrigee_manuellement: boolean
+          created_at: string
+          est_correcte: boolean | null
+          id: string
+          live_session_id: string
+          participant_id: string
+          points_max: number
+          points_obtenus: number | null
+          question_id: string
+          question_index: number
+          question_type: string
+          reponse: string | null
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "live_responses"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       log_error: {
         Args: {
           _component_stack?: string
