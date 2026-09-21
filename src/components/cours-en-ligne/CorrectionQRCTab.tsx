@@ -1287,7 +1287,15 @@ const CorrectionQRCTab = () => {
   const isAnsweredToday = (item: QrcItem) =>
     isToday(item.completedAt) && safeStr(item.reponseEleve).trim() !== "";
 
-
+  /**
+   * QRC BLOQUANT UN RÉSULTAT — MÊME RÈGLE QUE L'ÉCRAN APPRENANT.
+   * Une QRC réellement répondue et non validée manuellement empêche la
+   * publication du résultat (« En attente de correction des QRC »), quelle que
+   * soit sa date. Une QRC laissée vide ne bloque pas. Lecture/affichage
+   * uniquement : aucune correction, note ou donnée n'est modifiée ici.
+   */
+  const isBlockingResult = (item: QrcItem) =>
+    !item.corrigeManuel && safeStr(item.reponseEleve).trim() !== "";
 
   // « QRC répondues aujourd'hui » : uniquement les QRC uniques (déjà dédoublonnées
   // par apprenant + examen + matière + question) dont la réponse élève est
@@ -1297,6 +1305,37 @@ const CorrectionQRCTab = () => {
   const todayCount = todayItems.length;
   const todayPendingItems = todayItems.filter(i => !i.corrigeManuel);
   const todayPendingCount = todayPendingItems.length;
+
+  const blockingItems = items.filter(isBlockingResult);
+  const blockingCount = blockingItems.length;
+  const olderBlockingCount = blockingItems.filter(i => !isAnsweredToday(i)).length;
+
+  // Récapitulatif : apprenant → examen → tentative → matière → QRC restantes.
+  const blockingGroups = (() => {
+    const map = new Map<string, {
+      apprenant: string; quizTitre: string; tentative: number; matiereNom: string; count: number; derniere: string;
+    }>();
+    for (const i of blockingItems) {
+      const key = `${i.apprenantId}__${i.quizId}__T${i.tentative}__${i.matiereId || ""}`;
+      const prev = map.get(key);
+      if (prev) {
+        prev.count += 1;
+        if (i.completedAt > prev.derniere) prev.derniere = i.completedAt;
+      } else {
+        map.set(key, {
+          apprenant: `${i.apprenantNom} ${i.apprenantPrenom}`.trim(),
+          quizTitre: i.quizTitre,
+          tentative: i.tentative,
+          matiereNom: i.matiereNom || i.matiereId,
+          count: 1,
+          derniere: i.completedAt,
+        });
+      }
+    }
+    return Array.from(map.values()).sort(
+      (a, b) => a.apprenant.localeCompare(b.apprenant) || a.quizTitre.localeCompare(b.quizTitre) || a.tentative - b.tentative,
+    );
+  })();
 
   const filtered = items.filter(item => {
     if (filter === "pending" && item.corrigeManuel) return false;
