@@ -720,10 +720,14 @@ const CorrectionQRCTab = () => {
     }
 
     // ── Regroupement par PASSAGE RÉEL (fusion des doubles écritures) ─────
-    // Un passage = apprenant + examen + matière + tentative persistante.
-    // Deux lignes écrites à quelques secondes d'intervalle ne sont fusionnées
-    // que si elles portent le même numéro persistant. Des numéros persistants
-    // différents restent toujours séparés, même avec des réponses identiques.
+    // IDENTITÉ DÉTERMINISTE, SANS FENÊTRE DE TEMPS :
+    //  1) même numéro de tentative persistant  → même passage (par définition) ;
+    //  2) sinon, SIGNATURE DE RÉPONSES STRICTEMENT IDENTIQUE (toutes les
+    //     réponses enregistrées, caractère pour caractère, avec au moins une
+    //     réponse rédigée) → il s'agit d'une ré-écriture du même passage.
+    // Toute divergence, même d'un seul caractère, laisse les lignes SÉPARÉES :
+    // deux vraies tentatives restent deux passages distincts, même rapprochées
+    // dans le temps. Aucune donnée n'est modifiée : regroupement d'affichage.
     const MEME_PASSAGE_MS = 5 * 60 * 1000;
     type AttemptGroup = {
       primaryId: string; apprenantId: string; userId?: string; quizId: string; quizType: string;
@@ -732,9 +736,14 @@ const CorrectionQRCTab = () => {
       scoreObtenu: number; scoreMax: number; noteSur20: number | null;
       questions: any[] | null; reponses: Record<string, any>; corrections: Record<string, any>; rows: number;
       firstTime: number; lastTime: number;
+      /** Signature déterministe des réponses (preuve de ré-écriture du même passage). */
+      answerSignature: string | null;
+      /** Numéros de tentative techniques regroupés dans ce passage réel. */
+      mergedTentatives: number[];
     };
     const groupsByMatiere = new Map<string, AttemptGroup[]>();
     let doublonsTechniques = 0;
+
 
     // Les lignes arrivent de la plus récente à la plus ancienne : on les
     // traite de la plus ancienne à la plus récente, sans renuméroter les passages.
