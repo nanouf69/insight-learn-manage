@@ -701,7 +701,10 @@ const CorrectionQRCTab = () => {
           autoExplication = correction.explication || null;
         }
 
-        qrcItems.push({
+        const contentKey = reponseEleveStr.trim()
+          ? answerIdentity(g.apprenantId, g.quizId, effectiveMatiereId, questionId, reponseEleveStr)
+          : null;
+        const item: QrcItem = {
           resultId: g.primaryId,
           source: "result",
           userId: g.userId,
@@ -732,7 +735,18 @@ const CorrectionQRCTab = () => {
           correctedAt: hasManualCorrection ? (correction?.correctedAt || g.completedAt || null) : null,
           apprenantTypeMode: app.mode,
           questionSupprimee,
-        });
+        };
+
+        // Même réponse déjà présente (deuxième écriture technique du passage) :
+        // une seule entrée est conservée, la version corrigée faisant foi.
+        if (contentKey && itemIndexByContent.has(contentKey)) {
+          const idx = itemIndexByContent.get(contentKey)!;
+          if (!qrcItems[idx].corrigeManuel && item.corrigeManuel) qrcItems[idx] = item;
+          continue;
+        }
+        if (contentKey) itemIndexByContent.set(contentKey, qrcItems.length);
+        qrcItems.push(item);
+
       }
     }
 
