@@ -1,3 +1,4 @@
+import { blockLearnerWrite } from "@/lib/learnerPreviewGuard";
 import { useEffect, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -55,6 +56,8 @@ export default function StudentHoursTracker({
   const updatedKeyRef = useRef<string | null>(null);
   useEffect(() => {
     if (!apprenantId) return;
+    // Consultation admin : aucun champ du dossier élève n'est modifié.
+    if (blockLearnerWrite("apprenants.date_examen_theorique")) return;
     if (examAlreadyTaken) return;
     const saved = (dateExamenTheorique || "").trim();
     if (!saved) return;

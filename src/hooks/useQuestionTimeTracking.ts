@@ -1,3 +1,4 @@
+import { blockLearnerWrite } from "@/lib/learnerPreviewGuard";
 import { useCallback, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -60,6 +61,7 @@ export function useQuestionTimeTracking(apprenantId?: string | null) {
     const rows = queueRef.current;
     if (rows.length === 0) return;
     queueRef.current = [];
+    if (blockLearnerWrite("apprenant_question_temps(flush)")) return;
     try {
       await supabase.from("apprenant_question_temps" as any).insert(rows as any);
     } catch (_) {
@@ -93,6 +95,7 @@ export function useQuestionTimeTracking(apprenantId?: string | null) {
   const trackQuestion = useCallback(
     (ev: QuestionTimeEvent) => {
       if (!apprenantId) return;
+      if (blockLearnerWrite("apprenant_question_temps")) return;
       const now = Date.now();
       const elapsed = Math.round((now - lastTickRef.current) / 1000);
       lastTickRef.current = now;

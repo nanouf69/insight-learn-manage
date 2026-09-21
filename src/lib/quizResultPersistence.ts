@@ -11,6 +11,7 @@
  * l'apprenant B — il reste simplement en attente du retour de son propriétaire.
  * Rien n'est jamais supprimé silencieusement.
  */
+import { blockLearnerWrite } from "@/lib/learnerPreviewGuard";
 import { supabase } from "@/integrations/supabase/client";
 
 const QUEUE_KEY = "quiz_result_save_queue_v1";
@@ -78,6 +79,7 @@ let processing = false;
 
 /** Met une note en file durable (dernière valeur gagnante pour la même clé). */
 export function enqueueQuizResultSave(payload: QuizResultPayload) {
+  if (blockLearnerWrite("enqueue_quiz_result")) return;
   const queue = readQueue().filter((it) => itemKey(it.payload) !== itemKey(payload));
   queue.push({
     id: makeId(),

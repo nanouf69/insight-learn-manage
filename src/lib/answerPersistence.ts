@@ -30,6 +30,8 @@ const QUEUE_KEY = "answer_save_queue_v1";
  * connaissait, et le serveur refuse de lui laisser écraser une réponse plus
  * récente enregistrée entre-temps (autre onglet, autre appareil).
  */
+import { setLearnerPreviewReadOnly, isLearnerPreviewReadOnly } from "@/lib/learnerPreviewGuard";
+
 const SEQ_KEY = "answer_write_seq_v1";
 
 const seqKeyFor = (apprenantId: string, exerciceId: string) => `${apprenantId}__${exerciceId}`;
@@ -146,11 +148,13 @@ export function setAnswerSaveOwnership(options: {
 }): void {
   sessionApprenantId = options.apprenantId ?? null;
   previewReadOnly = options.previewReadOnly === true;
+  // Verrou central partagé par toutes les écritures « Vue apprenant ».
+  setLearnerPreviewReadOnly(previewReadOnly);
 }
 
 /** Cette sauvegarde peut-elle légitimement partir sous la session en cours ? */
 export function canQueueAnswerSaveFor(apprenantId: string): boolean {
-  if (previewReadOnly) return false;
+  if (previewReadOnly || isLearnerPreviewReadOnly()) return false;
   if (!sessionApprenantId) return true; // aucun rattachement connu : comportement inchangé
   return sessionApprenantId === apprenantId;
 }

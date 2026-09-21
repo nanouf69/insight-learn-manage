@@ -1,3 +1,4 @@
+import { blockLearnerWrite } from "@/lib/learnerPreviewGuard";
 import { supabase } from "@/integrations/supabase/client";
 
 /**
@@ -84,6 +85,8 @@ export async function submitQuizAttempt(params: {
       ? Math.round((bonnesReponses / totalQuestions) * 100)
       : null);
 
+  if (blockLearnerWrite("submit_quiz_attempt")) return null;
+
   const { data, error } = await (supabase as any).rpc("submit_quiz_attempt", {
     _apprenant_id: apprenantId,
     _exercice_id: exerciceId,
@@ -127,6 +130,7 @@ export async function resetQuizAttempt(
   apprenantId: string,
   exerciceId: string
 ): Promise<boolean> {
+  if (blockLearnerWrite("reset_quiz_attempt")) return false;
   const { error } = await (supabase as any).rpc("reset_quiz_attempt", {
     _apprenant_id: apprenantId,
     _exercice_id: exerciceId,

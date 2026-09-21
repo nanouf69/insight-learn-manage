@@ -1,6 +1,7 @@
 // Re-export all sub-components and utilities for backward compatibility
 // This file was split from the original monolithic ExamensBlancsPage.tsx
 
+import { blockLearnerWrite } from "@/lib/learnerPreviewGuard";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ChevronRight, Loader2, RotateCcw, CheckCircle2 } from "lucide-react";
@@ -989,6 +990,9 @@ export default function ExamensBlancsPage({
     // expire in the background (Android battery-saving throttling). A stale
     // token makes the write fail RLS checks silently. Before each retry, force
     // a session refresh so an expired token doesn't keep failing forever.
+    // Consultation admin (Vue apprenant) : aucune note ni tentative créée.
+    if (blockLearnerWrite("apprenant_quiz_results(examen blanc)")) return;
+
     let saved = false;
     for (let attempt = 0; attempt < 3 && !saved; attempt++) {
       if (attempt > 0) {

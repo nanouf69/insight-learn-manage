@@ -1,3 +1,4 @@
+import { blockLearnerWrite } from "@/lib/learnerPreviewGuard";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { getPendingAnswers, mergeSavedAndPendingAnswers } from "@/lib/answerPersistence";
 
@@ -203,6 +204,7 @@ function EcranResultats({
     if (!apprenantId || !userId || !examen?.id) return;
     const bilan = generateBilanAuto();
     if (!bilan) return;
+    if (blockLearnerWrite("bilan_examen_blanc(apprenant_documents_completes)")) return;
     supabase.from("apprenant_documents_completes").upsert({
       apprenant_id: apprenantId,
       user_id: userId,
@@ -312,6 +314,7 @@ function EcranResultats({
       const noteSur20 = normalizeNoteSur20(scoreRecalcule, safeMax);
 
       // Update the existing row with corrections
+      if (blockLearnerWrite("apprenant_quiz_results(recalcul corrections)")) continue;
       let updateQuery = supabase
         .from("apprenant_quiz_results" as any)
         .update({
@@ -474,6 +477,8 @@ function EcranResultats({
   // so the list view averages stay in sync with the detail view
   useEffect(() => {
     if (!apprenantId || !examen || hasQrcPendingValidation) return;
+    // Consultation admin : aucun score n'est réécrit dans le dossier de l'élève.
+    if (blockLearnerWrite("apprenant_quiz_results(auto-save scores)")) return;
     const quizType = examen.id?.startsWith("taxi") ? "examen_blanc_taxi" : "examen_blanc";
     resultatsAvecIA.forEach(async (r, mi) => {
       if (r.nonPassee) return; // Skip placeholder rows (matière not attempted)
@@ -1160,6 +1165,7 @@ function RevisionFausses({
     correctedQuestions: string[],
   ) => {
     if (!apprenantId || !userId) return;
+    if (blockLearnerWrite("revision_progress(reponses_apprenants)")) return;
     const payload = {
       apprenant_id: apprenantId,
       user_id: userId,
@@ -1301,7 +1307,7 @@ function RevisionFausses({
     } else {
       // Save final revision results to database
       const finalCorrected = correctedCount;
-      if (apprenantId && userId && examenId) {
+      if (apprenantId && userId && examenId && !blockLearnerWrite("revision_fausses(fin)")) {
         try {
           // Mark the in-progress record as completed
           await supabase
