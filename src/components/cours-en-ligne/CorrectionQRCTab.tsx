@@ -168,6 +168,57 @@ function getCorrectionKey(apprenantId: string, quizId: string, matiereId: string
   return `${apprenantId}__${quizId}__${matiereId || ""}__${questionId}`;
 }
 
+function getExamNumberValue(titre: string, quizId?: string): number {
+  const fromTitle = titre.match(/N[°º]\s*(\d+)/i)?.[1];
+  const fromId = quizId?.match(/eb\s*(\d+)/i)?.[1] || quizId?.match(/eb(\d+)/i)?.[1];
+  const value = Number(fromTitle || fromId || Number.MAX_SAFE_INTEGER);
+  return Number.isFinite(value) ? value : Number.MAX_SAFE_INTEGER;
+}
+
+function getMatiereOrderValue(matiereNom: string, matiereId?: string): number {
+  const raw = `${matiereNom || ""} ${matiereId || ""}`;
+  const match = raw.match(/^\s*([A-G])\s*(?:\(|-|–|—|\.)/i)
+    || raw.match(/(?:^|\s)([A-G])\s*(?:\(|-|–|—|\.)/i);
+  if (match?.[1]) return match[1].toUpperCase().charCodeAt(0) - "A".charCodeAt(0);
+  return Number.MAX_SAFE_INTEGER;
+}
+
+function getBlockingGroupKey(item: Pick<QrcItem, "apprenantId" | "quizId" | "tentative" | "matiereId">): string {
+  return `${item.apprenantId}__${item.quizId}__T${item.tentative}__${item.matiereId || ""}`;
+}
+
+function compareBlockingQrcItems(a: QrcItem, b: QrcItem): number {
+  const nameA = `${a.apprenantNom} ${a.apprenantPrenom}`.trim();
+  const nameB = `${b.apprenantNom} ${b.apprenantPrenom}`.trim();
+  const byName = nameA.localeCompare(nameB, "fr", { sensitivity: "base" });
+  if (byName !== 0) return byName;
+
+  const byExam = getExamNumberValue(a.quizTitre, a.quizId) - getExamNumberValue(b.quizTitre, b.quizId);
+  if (byExam !== 0) return byExam;
+
+  const byExamTitle = a.quizTitre.localeCompare(b.quizTitre, "fr", { sensitivity: "base" });
+  if (byExamTitle !== 0) return byExamTitle;
+
+  if (a.tentative !== b.tentative) return a.tentative - b.tentative;
+
+  const byMatiereOrder = getMatiereOrderValue(a.matiereNom, a.matiereId) - getMatiereOrderValue(b.matiereNom, b.matiereId);
+  if (byMatiereOrder !== 0) return byMatiereOrder;
+
+  const byMatiere = (a.matiereNom || a.matiereId).localeCompare(b.matiereNom || b.matiereId, "fr", { sensitivity: "base" });
+  if (byMatiere !== 0) return byMatiere;
+
+  return a.questionId - b.questionId;
+}
+
+function sortBlockingQrcItems(list: QrcItem[]): QrcItem[] {
+  return [...list].sort(compareBlockingQrcItems);
+}
+
+function formatDateOnlyFR(value: string): string {
+  if (!value) return "";
+  return new Date(value).toLocaleDateString("fr-FR");
+}
+
 /**
  * Deux entrées désignent la même QRC réellement passée lorsque l'apprenant,
  * l'examen, la matière, LE PASSAGE/TENTATIVE et l'identifiant stable de la
@@ -357,6 +408,7 @@ const CorrectionQRCTab = () => {
   const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
   const [examenFilter, setExamenFilter] = useState<string>("all");
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [activeBlockingGroupKey, setActiveBlockingGroupKey] = useState<string | null>(null);
   // Erreur de chargement (session expirée, 401, permissions) : on n'affiche JAMAIS 0 silencieusement.
   const [loadError, setLoadError] = useState<string | null>(null);
   // Contrôle automatique : QRC répondues présentes en base mais absentes de la file.
@@ -371,6 +423,7 @@ const CorrectionQRCTab = () => {
       if (filter === "today" && !isAnsweredToday(item)) return false;
       if (filter === "today-pending" && (!isAnsweredToday(item) || item.corrigeManuel)) return false;
       if (filter === "blocking" && !isBlockingResult(item)) return false;
+      if (filter === "blocking" && activeBlockingGroupKey && getBlockingGroupKey(item) !== activeBlockingGroupKey) return false;
       if (examenFilter !== "all") {
         const [cat, num] = examenFilter.split(":");
         if (getExamCategory(item.quizTitre, item.quizId, item.apprenantTypeMode).key !== cat) return false;
@@ -388,7 +441,7 @@ const CorrectionQRCTab = () => {
       }
       return true;
     });
-    return sortQrcItems(filteredList, sortOrder);
+    return filter === "blocking" ? sortBlockingQrcItems(filteredList) : sortQrcItems(filteredList, sortOrder);
   };
 
   const QUICK_COMMENTS = [
@@ -1313,29 +1366,46 @@ const CorrectionQRCTab = () => {
   // Récapitulatif : apprenant → examen → tentative → matière → QRC restantes.
   const blockingGroups = (() => {
     const map = new Map<string, {
-      apprenant: string; quizTitre: string; tentative: number; matiereNom: string; count: number; derniere: string;
+      key: string; firstItem: QrcItem; apprenant: string; quizTitre: string; tentative: number; matiereNom: string; count: number; datePassage: string; minQuestionId: number;
     }>();
-    for (const i of blockingItems) {
-      const key = `${i.apprenantId}__${i.quizId}__T${i.tentative}__${i.matiereId || ""}`;
+    for (const i of sortBlockingQrcItems(blockingItems)) {
+      const key = getBlockingGroupKey(i);
       const prev = map.get(key);
       if (prev) {
         prev.count += 1;
-        if (i.completedAt > prev.derniere) prev.derniere = i.completedAt;
+        prev.minQuestionId = Math.min(prev.minQuestionId, i.questionId);
+        if ((new Date(i.completedAt).getTime() || 0) < (new Date(prev.datePassage).getTime() || 0)) prev.datePassage = i.completedAt;
       } else {
         map.set(key, {
+          key,
+          firstItem: i,
           apprenant: `${i.apprenantNom} ${i.apprenantPrenom}`.trim(),
           quizTitre: i.quizTitre,
           tentative: i.tentative,
           matiereNom: i.matiereNom || i.matiereId,
           count: 1,
-          derniere: i.completedAt,
+          datePassage: i.completedAt,
+          minQuestionId: i.questionId,
         });
       }
     }
-    return Array.from(map.values()).sort(
-      (a, b) => a.apprenant.localeCompare(b.apprenant) || a.quizTitre.localeCompare(b.quizTitre) || a.tentative - b.tentative,
-    );
+    return Array.from(map.values()).sort((a, b) => compareBlockingQrcItems(a.firstItem, b.firstItem) || a.minQuestionId - b.minQuestionId);
   })();
+
+  const activeBlockingGroup = activeBlockingGroupKey
+    ? blockingGroups.find((g) => g.key === activeBlockingGroupKey)
+    : null;
+
+  const goToBlockingGroup = (key: string) => {
+    setFilter("blocking");
+    setActiveBlockingGroupKey(key);
+    setSearchQuery("");
+    setExamenFilter("all");
+    setCurrentIndex(0);
+    window.requestAnimationFrame(() => {
+      document.getElementById("qrc-correction-current")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  };
 
   const filtered = items.filter(item => {
     if (filter === "pending" && item.corrigeManuel) return false;
@@ -1343,6 +1413,7 @@ const CorrectionQRCTab = () => {
     if (filter === "today" && !isAnsweredToday(item)) return false;
     if (filter === "today-pending" && (!isAnsweredToday(item) || item.corrigeManuel)) return false;
     if (filter === "blocking" && !isBlockingResult(item)) return false;
+    if (filter === "blocking" && activeBlockingGroupKey && getBlockingGroupKey(item) !== activeBlockingGroupKey) return false;
     if (examenFilter !== "all") {
       const [cat, num] = examenFilter.split(":");
       if (getExamCategory(item.quizTitre, item.quizId, item.apprenantTypeMode).key !== cat) return false;
@@ -1391,12 +1462,18 @@ const CorrectionQRCTab = () => {
     }));
 
   // apprenant → examen → tentative → matière → n° de question croissant
-  const sortedFiltered = sortQrcItems(filtered, sortOrder);
+  const sortedFiltered = filter === "blocking" ? sortBlockingQrcItems(filtered) : sortQrcItems(filtered, sortOrder);
 
   // Reset index when filter/search/sort changes
   useEffect(() => {
     setCurrentIndex(0);
-  }, [filter, searchQuery, sortOrder, examenFilter]);
+  }, [filter, searchQuery, sortOrder, examenFilter, activeBlockingGroupKey]);
+
+  useEffect(() => {
+    if (activeBlockingGroupKey && !blockingGroups.some((g) => g.key === activeBlockingGroupKey)) {
+      setActiveBlockingGroupKey(null);
+    }
+  }, [activeBlockingGroupKey, blockingGroups]);
 
   if (loading) {
     return (
@@ -1494,7 +1571,10 @@ const CorrectionQRCTab = () => {
             className="pl-9"
           />
         </div>
-        <Select value={filter} onValueChange={(v) => setFilter(v as any)}>
+        <Select value={filter} onValueChange={(v) => {
+          setFilter(v as any);
+          if (v !== "blocking") setActiveBlockingGroupKey(null);
+        }}>
           <SelectTrigger className="w-48">
             <Filter className="w-4 h-4 mr-2" />
             <SelectValue />
@@ -1508,15 +1588,22 @@ const CorrectionQRCTab = () => {
             <SelectItem value="all">Toutes</SelectItem>
           </SelectContent>
         </Select>
-        <Button
-          variant="outline"
-          size="sm"
-          className="gap-1.5"
-          onClick={() => setSortOrder(prev => prev === "desc" ? "asc" : "desc")}
-        >
-          <ArrowUpDown className="w-4 h-4" />
-          {sortOrder === "desc" ? "Plus récent" : "Plus ancien"}
-        </Button>
+        {filter === "blocking" ? (
+          <Badge variant="outline" className="gap-1.5 py-2 px-3">
+            <ArrowUpDown className="w-4 h-4" />
+            Tri A→Z / N° / tentative / matière / QRC
+          </Badge>
+        ) : (
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5"
+            onClick={() => setSortOrder(prev => prev === "desc" ? "asc" : "desc")}
+          >
+            <ArrowUpDown className="w-4 h-4" />
+            {sortOrder === "desc" ? "Plus récent" : "Plus ancien"}
+          </Button>
+        )}
         <Button
           variant="outline"
           size="sm"
@@ -1557,17 +1644,53 @@ const CorrectionQRCTab = () => {
           <CardHeader className="pb-2">
             <CardTitle className="text-base">Résultats actuellement bloqués</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-1 text-sm max-h-64 overflow-auto">
-            {blockingGroups.map((g, idx) => (
-              <div key={idx} className="flex flex-wrap items-center gap-2 border-b last:border-0 py-1">
-                <span className="font-medium">{g.apprenant}</span>
-                <span className="text-muted-foreground">→ {g.quizTitre}</span>
-                <span className="text-muted-foreground">→ tentative {g.tentative}</span>
-                <span className="text-muted-foreground">→ {g.matiereNom}</span>
-                <Badge variant="destructive">{g.count} QRC restantes</Badge>
-                <span className="text-xs text-muted-foreground">
-                  {g.derniere ? new Date(g.derniere).toLocaleDateString("fr-FR") : ""}
+          <CardContent className="space-y-2 text-sm max-h-80 overflow-auto">
+            {activeBlockingGroup && (
+              <div className="flex items-center justify-between gap-3 rounded-md border border-destructive/30 bg-destructive/5 p-3">
+                <p className="font-semibold text-destructive">
+                  Correction directe : {activeBlockingGroup.apprenant} — {activeBlockingGroup.quizTitre} — tentative {activeBlockingGroup.tentative} — {activeBlockingGroup.matiereNom}
+                </p>
+                <Button variant="outline" size="sm" onClick={() => setActiveBlockingGroupKey(null)}>
+                  Voir toutes les lignes
+                </Button>
+              </div>
+            )}
+            {blockingGroups.map((g) => (
+              <div
+                key={g.key}
+                role="button"
+                tabIndex={0}
+                onClick={() => goToBlockingGroup(g.key)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") goToBlockingGroup(g.key);
+                }}
+                className={`flex flex-wrap items-center gap-3 border-b last:border-0 py-3 px-2 cursor-pointer transition-colors hover:bg-destructive/5 ${activeBlockingGroupKey === g.key ? "bg-destructive/10" : ""}`}
+              >
+                <div className="min-w-0 flex-1 space-y-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-bold text-foreground">{g.apprenant}</span>
+                    <span className="text-muted-foreground">→ {g.quizTitre}</span>
+                    <span className="text-muted-foreground">→ tentative {g.tentative}</span>
+                  </div>
+                  <div className="text-muted-foreground">→ {g.matiereNom}</div>
+                </div>
+                <Badge variant="destructive" className="text-sm font-black uppercase px-3 py-1.5">
+                  {g.count} QRC restantes
+                </Badge>
+                <span className="text-destructive font-black text-2xl md:text-3xl leading-none tabular-nums">
+                  {formatDateOnlyFR(g.datePassage)}
                 </span>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="font-black uppercase tracking-normal"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    goToBlockingGroup(g.key);
+                  }}
+                >
+                  🔴 CORRIGER LES QRC
+                </Button>
               </div>
             ))}
           </CardContent>
@@ -1658,7 +1781,7 @@ const CorrectionQRCTab = () => {
 
 
             return (
-              <Card key={uniqueKey} className={`transition-colors ${item.corrigeManuel ? "border-green-200 bg-green-50/30" : "border-amber-200 bg-amber-50/20"}`}>
+              <Card id="qrc-correction-current" key={uniqueKey} className={`transition-colors ${item.corrigeManuel ? "border-green-200 bg-green-50/30" : "border-amber-200 bg-amber-50/20"}`}>
                 <CardContent className="py-4 px-5 space-y-3">
                   {/* Header */}
                   <div className="flex items-start justify-between gap-3 flex-wrap">
