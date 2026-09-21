@@ -260,6 +260,13 @@
       "when": 1790008532413,
       "tag": "0036_backup_examens_blancs_before_restore_20260921",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1790013512723,
+      "tag": "0037_exam_retake_delay_48h",
+      "breakpoints": true
     }
   ]
 }
