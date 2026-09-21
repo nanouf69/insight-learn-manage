@@ -364,18 +364,6 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
             .eq("exercice_type", "examen_blanc")
             .then(({ data: repData }) => {
               const started = new Set<string>();
-              const completedMatieresByQuiz = new Map<string, Set<string>>();
-              if (repData) {
-                (repData as any[]).forEach((r: any) => {
-                  const id: string = r?.exercice_id || "";
-                  const quizId = examensDataRef.current.find((exam) => parseExamAnswerKey(id, exam.id))?.id ?? "";
-                  const matiereKey = quizId ? parseExamAnswerKey(id, quizId)?.matiereKey ?? "" : "";
-                  if (r?.completed && quizId && matiereKey) {
-                    if (!completedMatieresByQuiz.has(quizId)) completedMatieresByQuiz.set(quizId, new Set());
-                    completedMatieresByQuiz.get(quizId)!.add(matiereKey.toLowerCase());
-                  }
-                });
-              }
 
               // Une sauvegarde de réponses, même marquée completed, ne remplace
               // jamais une finalisation réelle dans apprenant_quiz_results.
@@ -389,7 +377,7 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
                 (repData as any[]).forEach((r: any) => {
                   const id: string = r?.exercice_id || "";
                   const quizId = examensDataRef.current.find((exam) => parseExamAnswerKey(id, exam.id))?.id ?? "";
-                  if (!mergedCompleted.has(quizId)) {
+                  if (quizId && !mergedCompleted.has(quizId)) {
                     started.add(quizId);
                   }
                 });

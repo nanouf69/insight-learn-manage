@@ -565,7 +565,7 @@ export default function ExamensBlancsPage({
 
         const unfinishedStarted = latestExamen.matieres
           .map((matiere, index) => ({ matiere, index, row: matiere ? bestRowsByMatiere.get(matiere.id) : undefined }))
-          .filter(({ matiere, row }) => Boolean(matiere && row && !isMatiereDone(matiere) && getMeaningfulAnswerCount(row.reponses) > 0))
+          .filter(({ matiere, row }) => Boolean(matiere && row && !isMatiereDone(matiere) && getMeaningfulAnswerCount(row?.reponses) > 0))
           .sort((a, b) => getSavedAnswerRowTimestamp(b.row as SavedExamAnswerRow) - getSavedAnswerRowTimestamp(a.row as SavedExamAnswerRow));
         const resumeIndex = unfinishedStarted[0]?.index ?? latestExamen.matieres.findIndex((m) => m && !isMatiereDone(m));
         if (resumeIndex < 0) {
