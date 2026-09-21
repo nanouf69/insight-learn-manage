@@ -160,6 +160,20 @@ function getQuestionId(question: any): number | null {
   return Number.isFinite(questionId) ? questionId : null;
 }
 
+export function getSnapshotQrcQuestionIds(questions: any[] | null | undefined): Set<number> | null {
+  if (!Array.isArray(questions) || questions.length === 0) return null;
+  const ids = questions
+    .filter((q: any) => {
+      const type = q?.type
+        ? String(q.type).trim().toUpperCase()
+        : (/(\(qrc\))/i.test(safeStr(q?.enonce)) ? "QRC" : "QCM");
+      return type === "QRC";
+    })
+    .map((q: any) => Number(q?.questionId ?? q?.id))
+    .filter((id: number) => Number.isFinite(id));
+  return ids.length > 0 ? new Set(ids) : null;
+}
+
 function getCorrectionForQuestion(correctionsIA: Record<string | number, any>, questionId: number): any {
   return correctionsIA?.[questionId] ?? correctionsIA?.[String(questionId)] ?? correctionsIA?.[`Q${questionId}`] ?? null;
 }
@@ -881,9 +895,11 @@ const CorrectionQRCTab = () => {
       const examen = examenMap[quizId];
       const passage = dernierPassage.get(`${row.apprenant_id}__${quizId}__${matiereId}`);
       const tentative = passage?.tentative ?? 1;
+      const passageSnapshotQrcIds = getSnapshotQrcQuestionIds(passage?.questions);
 
       for (const q of questions) {
         if (!q || String(q.type).toUpperCase() !== "QRC") continue;
+        if (passageSnapshotQrcIds && !passageSnapshotQrcIds.has(Number(q.id))) continue;
         const reponseEleveStr = safeStr(reponses?.[q.id] ?? reponses?.[String(q.id)] ?? "");
         if (!reponseEleveStr.trim()) continue;
         const qrcKey = attemptKey(row.apprenant_id, quizId, matiereId, tentative, q.id);
@@ -949,8 +965,10 @@ const CorrectionQRCTab = () => {
         if (!matiere) continue;
         const passage = dernierPassage.get(`${row.apprenant_id}__${quizId}__${matiereId}`);
         const tentative = passage?.tentative ?? 1;
+        const passageSnapshotQrcIds = getSnapshotQrcQuestionIds(passage?.questions);
         for (const q of getSourceQuestions(matiere, tousLesExamens)) {
           if (!q || String(q.type).toUpperCase() !== "QRC") continue;
+          if (passageSnapshotQrcIds && !passageSnapshotQrcIds.has(Number(q.id))) continue;
           const rep = safeStr((row.reponses || {})?.[q.id] ?? (row.reponses || {})?.[String(q.id)] ?? "");
           if (!rep.trim()) continue;
           if (seenQrcKeys.has(attemptKey(row.apprenant_id, quizId, matiereId, tentative, q.id))) continue;
