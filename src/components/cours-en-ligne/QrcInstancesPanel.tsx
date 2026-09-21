@@ -77,7 +77,7 @@ export function QrcInstancesPanel() {
     <Card className="border-2 border-blue-400 bg-blue-50/40">
       <CardHeader className="pb-3">
         <CardTitle className="flex flex-wrap items-center gap-2 text-base">
-          🧪 Correction QRC — examen(s) de test branché(s)
+          🧪 Correction QRC — nouveau moteur (examens pilotes)
           <Badge variant="secondary">{enabledQuizIds.join(", ") || "—"}</Badge>
           <Badge className="bg-amber-500 text-white">{pending.length} à corriger</Badge>
           <Badge variant="outline">{corrected.length} corrigée(s)</Badge>
