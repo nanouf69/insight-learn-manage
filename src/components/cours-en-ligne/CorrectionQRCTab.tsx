@@ -263,13 +263,32 @@ function sortBlockingQrcItems(list: QrcItem[]): QrcItem[] {
   return [...list].sort(compareBlockingQrcItems);
 }
 
-/** Périmètre commun à toutes les listes et tous les compteurs de l'écran. */
+/**
+ * QRC BLOQUANT UN RÉSULTAT — SOURCE DE VÉRITÉ DU BLOCAGE.
+ * Une QRC réellement répondue et non validée manuellement empêche la
+ * publication du résultat, quelle que soit la ligne technique (« tentative »)
+ * sur laquelle elle a été enregistrée. Lecture/affichage uniquement.
+ */
+export function isBlockingQrcItem(
+  item: Pick<QrcItem, "corrigeManuel" | "reponseEleve">,
+): boolean {
+  return !item.corrigeManuel && safeStr(item.reponseEleve).trim() !== "";
+}
+
+/**
+ * Périmètre de confort de la liste normale.
+ * IMPORTANT : ce filtre ne doit JAMAIS masquer une QRC qui bloque un résultat.
+ */
 export function isInTentativeScope(
-  item: Pick<QrcItem, "dbTentative">,
+  item: Pick<QrcItem, "dbTentative" | "corrigeManuel" | "reponseEleve">,
   tentativeFilter: "1" | "all",
 ): boolean {
-  return tentativeFilter === "all" || item.dbTentative === 1;
+  if (tentativeFilter === "all" || item.dbTentative === 1) return true;
+  // Une écriture technique « tentative 2/3 » qui porte une QRC bloquante
+  // reste toujours accessible à la correction.
+  return isBlockingQrcItem(item);
 }
+
 
 /** Identité exacte utilisée pour comparer les files « aujourd'hui » et « bloquantes ». */
 export function getQrcQueueIdentity(
