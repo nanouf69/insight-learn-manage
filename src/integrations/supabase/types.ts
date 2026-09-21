@@ -4790,6 +4790,7 @@ export type Database = {
         }[]
       }
       shared_exercice_key: { Args: { e: Json }; Returns: string }
+      shared_exercice_strict_key: { Args: { e: Json }; Returns: string }
       soundex: { Args: { "": string }; Returns: string }
       start_apprenant_connexion:
         | {

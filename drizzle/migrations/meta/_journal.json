@@ -211,6 +211,13 @@
       "when": 1789975386939,
       "tag": "0029_bilan_shared_exercice_stable_identity_and_va_backup",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1789976360311,
+      "tag": "0030_shared_exercice_removal_requires_matiere_key",
+      "breakpoints": true
     }
   ]
 }
