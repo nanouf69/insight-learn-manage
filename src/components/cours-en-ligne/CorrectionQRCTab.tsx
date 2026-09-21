@@ -1755,10 +1755,14 @@ const CorrectionQRCTab = () => {
   // apprenant → examen → tentative → matière → n° de question croissant
   const sortedFiltered = filter === "blocking" ? sortBlockingQrcItems(filtered) : sortQrcItems(filtered, sortOrder);
 
-  // Reset index when filter/search/sort changes
+  // Reset index when filter/search/sort changes (nouvelle session de navigation :
+  // l'historique des QRC corrigées conservées est remis à zéro, sans rien modifier en base).
   useEffect(() => {
     setCurrentIndex(0);
+    keptKeysRef.current = new Set();
+    setKeptVersion((v) => v + 1);
   }, [filter, searchQuery, sortOrder, examenFilter, activeBlockingGroupKey]);
+
 
   useEffect(() => {
     if (activeBlockingGroupKey && !blockingGroups.some((g) => g.key === activeBlockingGroupKey)) {
