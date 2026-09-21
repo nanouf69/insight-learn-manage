@@ -18,6 +18,7 @@ import {
   getPendingAnswers,
   getPendingAnswerSaves,
   setAnswerSaveAuthToken,
+  setAnswerSaveOwnership,
 } from "@/lib/answerPersistence";
 
 const read = (p: string) => readFileSync(join(process.cwd(), p), "utf-8");
@@ -59,6 +60,7 @@ describe("15 réponses sur 20, hors ligne puis retour", () => {
   beforeEach(() => {
     localStorage.clear();
     setAnswerSaveAuthToken("test-token", "auth-test");
+    setAnswerSaveOwnership({ apprenantId: "auth-test", previewReadOnly: false });
   });
   afterEach(() => vi.restoreAllMocks());
 
