@@ -48,6 +48,9 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
   const [typeFiltre, setTypeFiltre] = useState<"tous" | "TAXI" | "VTC" | "TA" | "VA">(forcedType || "tous");
   const [completedExamIds, setCompletedExamIds] = useState<Set<string>>(new Set());
   const [startedNotFinishedIds, setStartedNotFinishedIds] = useState<Set<string>>(new Set());
+  // Passage réellement OUVERT (tentative en cours non terminée), même si l'examen
+  // a déjà été terminé lors d'une tentative précédente. Affichage uniquement.
+  const [openAttemptIds, setOpenAttemptIds] = useState<Set<string>>(new Set());
   const [examScores, setExamScores] = useState<Record<string, ExamScoreItem[]>>({});
   const [previousExamAverages, setPreviousExamAverages] = useState<Record<string, number | null>>({});
   // Ref so the score-fetch effect below can read the LATEST exam definitions
