@@ -483,6 +483,9 @@ const CorrectionQRCTab = () => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "pending" | "done" | "today" | "today-pending" | "blocking">("pending");
   const [searchQuery, setSearchQuery] = useState("");
+  // Filtre par défaut : tentative 1 uniquement (les refontes — tentative 2+ —
+  // restent accessibles via « Toutes les tentatives », sans jamais les modifier).
+  const [tentativeFilter, setTentativeFilter] = useState<"1" | "all">("1");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingPoints, setEditingPoints] = useState(0);
   const [savingId, setSavingId] = useState<string | null>(null);
@@ -519,6 +522,11 @@ const CorrectionQRCTab = () => {
     if (filter === "today-pending" && (!isAnsweredToday(item) || (item.corrigeManuel && !kept))) return false;
     if (filter === "blocking" && !isBlockingResult(item) && !kept) return false;
     if (filter === "blocking" && activeBlockingGroupKey && getBlockingGroupKey(item) !== activeBlockingGroupKey) return false;
+    // Tentative 1 uniquement (hors file bloquante, qui garde son propre regroupement).
+    if (filter !== "blocking" && tentativeFilter === "1") {
+      const t = item.dbTentative;
+      if (t != null && t !== 1) return false;
+    }
     if (examenFilter !== "all") {
       const [cat, num] = examenFilter.split(":");
       if (getExamCategory(item.quizTitre, item.quizId, item.apprenantTypeMode).key !== cat) return false;
