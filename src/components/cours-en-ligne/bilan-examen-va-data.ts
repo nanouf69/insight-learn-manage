@@ -19,5 +19,5 @@ function matiereToExercice(matiere: typeof bilanExamenVA.matieres[0], baseId: nu
 }
 
 export const BILAN_EXAMEN_VA = bilanExamenVA.matieres.map((m, i) =>
-  matiereToExercice(m, 600 + i)
+  matiereToExercice(m, 505 + i)
 );
