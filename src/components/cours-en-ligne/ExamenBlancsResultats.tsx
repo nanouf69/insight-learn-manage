@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { getPendingAnswers, mergeSavedAndPendingAnswers } from "@/lib/answerPersistence";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -1143,18 +1145,28 @@ function RevisionFausses({
           .limit(1)
           .maybeSingle();
 
-        if (data?.reponses && typeof data.reponses === "object") {
-          const saved = data.reponses as any;
-          if (saved.answers && typeof saved.answers === "object") {
-            setReponses(saved.answers);
-          }
-          if (typeof saved.correctedCount === "number") {
-            setCorrectedCount(saved.correctedCount);
-          }
+        const saved = (data?.reponses && typeof data.reponses === "object" ? data.reponses : {}) as any;
+        // Règle générale : les réponses locales encore en attente d'envoi
+        // restent affichées après F5 / reconnexion, et une valeur vide
+        // n'écrase jamais une réponse réellement saisie.
+        const pending = getPendingAnswers(apprenantId, exerciceId) as any;
+        const mergedAnswers = mergeSavedAndPendingAnswers(
+          (saved.answers && typeof saved.answers === "object" ? saved.answers : {}) as any,
+          apprenantId,
+          exerciceId,
+        );
+        const pendingAnswers = pending?.answers && typeof pending.answers === "object" ? pending.answers : {};
+        const finalAnswers = { ...mergedAnswers, ...pendingAnswers };
+        if (Object.keys(finalAnswers).length > 0) setReponses(finalAnswers as any);
+        if (typeof saved.correctedCount === "number") {
+          setCorrectedCount(saved.correctedCount);
+        }
+        if (data?.reponses) {
           // Toujours repartir de la 1ère question lors d'un "Refaire les fausses"
           setCurrentIndex(0);
           setShowCorrection(false);
         }
+
       } catch (err) {
         console.error("Erreur chargement révision:", err);
       } finally {

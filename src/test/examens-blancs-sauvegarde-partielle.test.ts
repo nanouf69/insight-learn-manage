@@ -51,8 +51,7 @@ describe("Réponse enregistrée ≠ matière terminée", () => {
 
   it("les réponses partielles sont rechargées au retour (fusion base + file locale)", () => {
     const src = read(SRC);
-    expect(src).toContain("getPendingAnswers(apprenantId, exerciceKey)");
-    expect(src).toContain("...rawReponses, ...(pending ?? {})");
+    expect(src).toContain("mergeSavedAndPendingAnswers(rawReponses as any, apprenantId, exerciceKey)");
   });
 });
 

@@ -28,7 +28,7 @@ import {
 } from "@/lib/quizAttempts";
 import { useQuestionTimeTracking } from "@/hooks/useQuestionTimeTracking";
 import { reconcileHistoricalAnswers } from "@/lib/historicalAnswerReconciliation";
-import { answersAreEqual, enqueueAnswerSave, flushAnswerSavesAndWait, flushAnswerSavesOnUnload, getPendingAnswers } from "@/lib/answerPersistence";
+import { answersAreEqual, enqueueAnswerSave, flushAnswerSavesAndWait, flushAnswerSavesOnUnload, getPendingAnswers, mergeSavedAndPendingAnswers } from "@/lib/answerPersistence";
 import { AnswerSaveIndicator } from "./AnswerSaveIndicator";
 
 import { ColoredTextField } from "./ColoredTextField";
@@ -6904,9 +6904,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                   }
                 });
                 exerciceIds.forEach((exerciceId) => {
-                  const pending = getPendingAnswers(apprenantId, exerciceId);
-                  if (pending) Object.assign(redo, pending);
+                  // Règle générale : la réponse locale non encore synchronisée
+                  // gagne, mais une valeur vide n'écrase jamais une réponse.
+                  Object.assign(redo, mergeSavedAndPendingAnswers(redo, apprenantId, exerciceId));
                 });
+
                 if (Object.keys(redo).length > 0) {
                   const reconciledRedo = reconcileHistoricalAnswers(
                     redo,
@@ -6941,9 +6943,12 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                   }
                 });
                 exerciceIds.forEach((exerciceId) => {
-                  const pending = getPendingAnswers(apprenantId, exerciceId);
-                  if (pending) Object.assign(restored, pending);
+                  Object.assign(
+                    restored,
+                    mergeSavedAndPendingAnswers(restored, apprenantId, exerciceId),
+                  );
                 });
+
                 if (Object.keys(restored).length > 0) {
                   // Une réponse locale non confirmée est plus récente que la base
                   // et doit rester cochée après actualisation ou réouverture.

@@ -23,9 +23,12 @@ import {
   answersAreEqual,
   flushAnswerSavesAndWait,
   flushAnswerSavesOnUnload,
-  getPendingAnswers,
+  mergeSavedAndPendingAnswers,
+
   subscribeAnswerSaveState,
 } from "@/lib/answerPersistence";
+import { buildExamMatiereExerciceId } from "@/lib/quizAttempts";
+
 
 // ===== PASSAGE D'UNE MATIÈRE =====
 function PassageMatiere({
@@ -112,9 +115,9 @@ function PassageMatiere({
   }, [userId]);
 
   // Load saved responses on mount
-  // FIX: use double underscore `__` to match handleTerminerMatiere in ExamensBlancsPage.tsx
-  const tentativeSuffix = (tentative && tentative > 1) ? `__t${tentative}` : "";
-  const exerciceKey = exerciceIdOverride || `${examenId || "exam"}__${matiere.id}${tentativeSuffix}`;
+  // Clé canonique unique (buildExamMatiereExerciceId), compatible en lecture
+  // avec les identifiants historiques via `exerciceIdOverride`.
+  const exerciceKey = exerciceIdOverride || buildExamMatiereExerciceId(examenId, matiere.id, tentative);
 
   useEffect(() => {
     if (!apprenantId || initialLoaded) return;
@@ -128,47 +131,47 @@ function PassageMatiere({
           .maybeSingle();
         if (error) {
           console.warn("[AutoSave] Load query error:", error.message);
-        } else if (data) {
-          const rawReponses = (data as any)?.reponses;
-          if (rawReponses && Object.keys(rawReponses).length > 0) {
-            const pending = getPendingAnswers(apprenantId, exerciceKey) as Reponses | null;
-            const parsed = normalizeReponses({ ...rawReponses, ...(pending ?? {}) });
-            const answeredCount = Object.keys(parsed).length;
-            console.log(`[AutoSave] Loaded ${answeredCount} saved responses for ${exerciceKey}`);
-            setReponses(parsed);
+        }
+        // RÈGLE GÉNÉRALE : une ligne vide (ou absente, ou en erreur de lecture)
+        // ne doit jamais masquer une réponse réellement saisie encore en file
+        // d'attente locale. Les réponses non vides gagnent toujours.
+        const rawReponses = (!error ? (data as any)?.reponses : null) as Reponses | null;
+        const merged = mergeSavedAndPendingAnswers(rawReponses as any, apprenantId, exerciceKey) as Reponses;
+        if (Object.keys(merged).length > 0) {
+          const parsed = normalizeReponses(merged);
+          const answeredCount = Object.keys(parsed).length;
+          console.log(`[AutoSave] Loaded ${answeredCount} saved responses for ${exerciceKey}`);
+          setReponses(parsed);
 
-            // Resume at the last answered question (or the next unanswered one)
-            if (answeredCount > 0 && questionsSafe.length > 0) {
-              // Find the first unanswered question index
-              let resumeIndex = 0;
-              for (let i = 0; i < questionsSafe.length; i++) {
-                const q = questionsSafe[i];
-                if (!q) continue;
-                const rep = parsed[q.id] ?? parsed[String(q.id)];
-                const hasAnswer = q?.type === "QCM"
-                  ? Array.isArray(rep) && rep.length > 0
-                  : typeof rep === "string" && rep.trim().length > 0;
-                if (!hasAnswer) {
-                  resumeIndex = i;
-                  break;
-                }
-                resumeIndex = i; // if all answered, stay on last
+          // Resume at the last answered question (or the next unanswered one)
+          if (answeredCount > 0 && questionsSafe.length > 0) {
+            // Find the first unanswered question index
+            let resumeIndex = 0;
+            for (let i = 0; i < questionsSafe.length; i++) {
+              const q = questionsSafe[i];
+              if (!q) continue;
+              const rep = parsed[q.id] ?? parsed[String(q.id)];
+              const hasAnswer = q?.type === "QCM"
+                ? Array.isArray(rep) && rep.length > 0
+                : typeof rep === "string" && rep.trim().length > 0;
+              if (!hasAnswer) {
+                resumeIndex = i;
+                break;
               }
-              setQuestionIndex(resumeIndex);
-              toast.info(`Vous reprenez votre examen à la question Q${questionsSafe[resumeIndex]?.id ?? (resumeIndex + 1)} (${resumeIndex + 1}/${questionsSafe.length})`, {
-                duration: 4000,
-                icon: "📝",
-              });
+              resumeIndex = i; // if all answered, stay on last
             }
+            setQuestionIndex(resumeIndex);
+            toast.info(`Vous reprenez votre examen à la question Q${questionsSafe[resumeIndex]?.id ?? (resumeIndex + 1)} (${resumeIndex + 1}/${questionsSafe.length})`, {
+              duration: 4000,
+              icon: "📝",
+            });
           }
-        } else {
-          const pending = getPendingAnswers(apprenantId, exerciceKey) as Reponses | null;
-          if (pending) setReponses(normalizeReponses(pending));
         }
       } catch (e) { console.error("[AutoSave] Load error:", e); }
       setInitialLoaded(true);
     })();
   }, [apprenantId, exerciceKey, initialLoaded]);
+
 
   // Silent auto-save on every change
   const latestReponsesRef = useRef<Reponses>({});
