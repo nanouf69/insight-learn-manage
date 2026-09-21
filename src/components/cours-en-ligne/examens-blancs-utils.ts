@@ -1397,10 +1397,12 @@ export function resolveExamPassage({
       const resumed = buildResume(state.attempt);
       if (resumed) return resumed;
     }
+    // Passage connu mais encore vierge : on le réutilise tel quel, en le
+    // déclarant neuf (aucune note existante ne peut être écrasée).
     const untouched = attemptStates.find((s) => !s.hasWork);
     if (untouched) {
       const resumed = buildResume(untouched.attempt);
-      if (resumed) return resumed;
+      if (resumed) return { ...resumed, mode: "new" };
     }
   }
 
