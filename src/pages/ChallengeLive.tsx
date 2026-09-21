@@ -402,25 +402,52 @@ export default function ChallengeLive() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Classement en direct</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-1">
-                {[...participants]
-                  .sort((a, b) => Number(b.score) - Number(a.score))
-                  .map((p, i) => (
-                    <div key={p.id} className="flex justify-between border-b py-1 text-sm">
-                      <span>
-                        {i + 1}. {session.masquer_noms ? `Participant ${p.id.slice(0, 4).toUpperCase()}` : p.display_name}
-                        {!answeredIds.has(p.id) && <span className="ml-2 text-muted-foreground">(en attente)</span>}
-                      </span>
-                      <span className="font-semibold">{Number(p.score)} pt</span>
-                    </div>
-                  ))}
-                {participants.length === 0 && (
-                  <p className="text-sm text-muted-foreground">Aucun participant connecté pour l'instant.</p>
+              <CardTitle>
+                {session.statut === "terminee" ? "Classement final" : "Classement en direct"}
+                {qrcEnAttenteTotal > 0 && (
+                  <Badge variant="secondary" className="ml-2">
+                    PROVISOIRE — {qrcEnAttenteTotal} QRC en attente de correction
+                  </Badge>
                 )}
-              </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-muted-foreground">
+                    <th className="py-1">#</th>
+                    <th>Nom</th>
+                    <th className="text-center">Bonnes</th>
+                    <th className="text-center">Mauvaises</th>
+                    <th className="text-center">Sans réponse</th>
+                    <th className="text-center">QRC en attente</th>
+                    <th className="text-right">Score</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {classement.map((c, i) => (
+                    <tr key={c.id} className="border-t">
+                      <td className="py-1">{i + 1}</td>
+                      <td>{c.nom}</td>
+                      <td className="text-center">{c.bonnes}</td>
+                      <td className="text-center">{c.mauvaises}</td>
+                      <td className="text-center">{c.sansReponse}</td>
+                      <td className="text-center">{c.attente}</td>
+                      <td className="text-right font-semibold">
+                        {c.score} pt{c.attente > 0 ? " *" : ""}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {classement.length === 0 && (
+                <p className="text-sm text-muted-foreground">Aucun participant connecté pour l'instant.</p>
+              )}
+              {qrcEnAttenteTotal > 0 && (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  * Score provisoire : des réponses ouvertes restent à corriger.
+                </p>
+              )}
             </CardContent>
           </Card>
         </>
