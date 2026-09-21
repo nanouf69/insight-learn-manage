@@ -364,7 +364,7 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
           //    on considère l'examen comme terminé si toutes ses matières ont completed=true dans reponses_apprenants.
           supabase
             .from("reponses_apprenants" as any)
-            .select("exercice_id, completed")
+            .select("exercice_id, completed, reponses")
             .eq("apprenant_id", apprenantId)
             .eq("exercice_type", "examen_blanc")
             .then(({ data: repData }) => {
