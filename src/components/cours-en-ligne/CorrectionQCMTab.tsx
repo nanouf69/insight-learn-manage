@@ -287,24 +287,41 @@ const CorrectionQCMTab = () => {
         // Merge edited QCM responses with existing data
         const { data: existingRep } = await supabase
           .from("reponses_apprenants")
-          .select("reponses")
+          .select("reponses, updated_at")
           .eq("id", editingRow.reponseId)
           .maybeSingle();
 
         const existing = safeRecord(existingRep?.reponses);
         const merged = { ...existing };
-        // Only update QCM question IDs
+        // Only update QCM question IDs (les QRC et leurs corrections manuelles
+        // ne sont jamais touchées).
         for (const q of matiere.questions) {
           if (q.type === "QCM") {
             merged[String(q.id)] = editedReponses[q.id] ?? [];
           }
         }
 
-        await supabase
+        // ANTÉRIORITÉ DES ÉCRITURES : si l'apprenant (ou un autre écran) a
+        // enregistré entre-temps, on n'écrase rien et on demande de recharger.
+        const guard = supabase
           .from("reponses_apprenants")
           .update({ reponses: merged as any, updated_at: new Date().toISOString() })
           .eq("id", editingRow.reponseId);
+        const { data: updated, error: updateError } = await (
+          existingRep?.updated_at
+            ? guard.eq("updated_at", existingRep.updated_at)
+            : guard.is("updated_at", null)
+        ).select("id");
+
+        if (updateError || !updated || updated.length === 0) {
+          toast.error(
+            "Les réponses de cet apprenant ont été modifiées entre-temps : rien n'a été écrasé. Rechargez la page avant de corriger.",
+          );
+          setSaving(false);
+          return;
+        }
       }
+
 
       // Update apprenant_quiz_results
       await supabase
