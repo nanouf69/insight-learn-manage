@@ -145,7 +145,11 @@ export function IndicateurDialog({ indicateur, etat, preuves, onOpenChange, onCh
                   <div className="flex justify-between gap-3">
                     <div className="min-w-0">
                       <p className="text-sm font-medium">{p.titre}</p>
-                      {p.description && <p className="text-xs text-muted-foreground mt-0.5">{p.description}</p>}
+                      {p.ce_que_demontre && <p className="text-xs mt-0.5"><span className="font-medium">Ce que démontre la preuve : </span>{p.ce_que_demontre}</p>}
+                      {p.description && p.description !== p.ce_que_demontre && <p className="text-xs text-muted-foreground mt-0.5">{p.description}</p>}
+                      {p.emplacement && <p className="text-xs text-muted-foreground mt-0.5">Emplacement : {p.emplacement}</p>}
+                      {p.source_libelle && <p className="text-xs text-muted-foreground">Source : {p.source_libelle}</p>}
+                      {p.remarque_interne && <p className="text-xs text-muted-foreground italic">Remarque interne : {p.remarque_interne}</p>}
                       <p className="text-xs text-muted-foreground mt-1">
                         {p.date_preuve ? `Date : ${p.date_preuve}` : "Sans date"}
                         {p.valide_au ? ` — valide jusqu'au ${p.valide_au}` : ""}
@@ -245,6 +249,31 @@ export function IndicateurDialog({ indicateur, etat, preuves, onOpenChange, onCh
                 placeholder="Expliquez comment les preuves présentées démontrent le respect de l'indicateur."
               />
               <div className="space-y-1.5">
+                <Label>Script de présentation à l'auditeur</Label>
+                <Textarea
+                  rows={5}
+                  value={local.script_auditeur ?? ""}
+                  onChange={(e) => setLocal({ ...local, script_auditeur: e.target.value })}
+                  placeholder="Phrase de présentation à dire à l'auditeur pour cet indicateur."
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Points de vigilance</Label>
+                <Textarea
+                  rows={3}
+                  value={local.points_vigilance ?? ""}
+                  onChange={(e) => setLocal({ ...local, points_vigilance: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Remarques</Label>
+                <Textarea
+                  rows={3}
+                  value={local.remarques ?? ""}
+                  onChange={(e) => setLocal({ ...local, remarques: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1.5">
                 <Label>Statut (décision humaine)</Label>
                 <Select value={local.applicable ? local.statut : "non_applicable"}
                   onValueChange={(v) => setLocal({ ...local, statut: v as QualiopiStatut, applicable: v !== "non_applicable" })}>
@@ -255,6 +284,9 @@ export function IndicateurDialog({ indicateur, etat, preuves, onOpenChange, onCh
                     ))}
                   </SelectContent>
                 </Select>
+                <p className="text-[11px] text-muted-foreground">
+                  La présence de preuves ne vaut jamais conformité : le statut reste choisi manuellement.
+                </p>
               </div>
               <div className="space-y-1.5">
                 <Label>Responsable</Label>

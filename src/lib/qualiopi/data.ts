@@ -12,6 +12,10 @@ export interface QualiopiPreuve {
   id: string;
   titre: string;
   description: string | null;
+  ce_que_demontre: string | null;
+  emplacement: string | null;
+  remarque_interne: string | null;
+  source_libelle: string | null;
   date_preuve: string | null;
   valide_du: string | null;
   valide_au: string | null;
@@ -32,6 +36,9 @@ export interface QualiopiEtat {
   applicable: boolean;
   responsable: string | null;
   commentaire_auditeur: string | null;
+  script_auditeur: string | null;
+  points_vigilance: string | null;
+  remarques: string | null;
   date_verification: string | null;
   maj_annuelle: boolean;
 }
@@ -42,6 +49,9 @@ export const DEFAULT_ETAT = (n: number): QualiopiEtat => ({
   applicable: true,
   responsable: null,
   commentaire_auditeur: null,
+  script_auditeur: null,
+  points_vigilance: null,
+  remarques: null,
   date_verification: null,
   maj_annuelle: false,
 });
@@ -62,6 +72,9 @@ export async function loadQualiopi(): Promise<{ etats: Record<number, QualiopiEt
       applicable: row.applicable,
       responsable: row.responsable,
       commentaire_auditeur: row.commentaire_auditeur,
+      script_auditeur: row.script_auditeur ?? null,
+      points_vigilance: row.points_vigilance ?? null,
+      remarques: row.remarques ?? null,
       date_verification: row.date_verification,
       maj_annuelle: row.maj_annuelle,
     };
@@ -93,6 +106,9 @@ export async function saveEtat(etat: QualiopiEtat) {
         applicable: etat.applicable,
         responsable: etat.responsable,
         commentaire_auditeur: etat.commentaire_auditeur,
+        script_auditeur: etat.script_auditeur,
+        points_vigilance: etat.points_vigilance,
+        remarques: etat.remarques,
         date_verification: etat.date_verification,
         maj_annuelle: etat.maj_annuelle,
       },
@@ -128,6 +144,10 @@ export async function archivePreuve(preuveId: string, archivee: boolean) {
 export async function createPreuve(input: {
   titre: string;
   description?: string | null;
+  ce_que_demontre?: string | null;
+  emplacement?: string | null;
+  remarque_interne?: string | null;
+  source_libelle?: string | null;
   date_preuve?: string | null;
   valide_du?: string | null;
   valide_au?: string | null;
@@ -143,6 +163,10 @@ export async function createPreuve(input: {
     .insert({
       titre: input.titre,
       description: input.description ?? null,
+      ce_que_demontre: input.ce_que_demontre ?? null,
+      emplacement: input.emplacement ?? null,
+      remarque_interne: input.remarque_interne ?? null,
+      source_libelle: input.source_libelle ?? null,
       date_preuve: input.date_preuve ?? null,
       valide_du: input.valide_du ?? null,
       valide_au: input.valide_au ?? null,

@@ -9,6 +9,9 @@ export interface ExportRow {
   intitule: string;
   exigence: string;
   preuves: string[];
+  script: string;
+  vigilance: string;
+  remarques: string;
   commentaire: string;
   statut: string;
   responsable: string;
@@ -27,7 +30,10 @@ export function buildExportRows(
       indicateur: ind.numero,
       intitule: ind.intitule,
       exigence: ind.niveauAttendu,
-      preuves: preuves.map((p) => p.titre),
+      preuves: preuves.map((p) => `${p.titre}${p.emplacement ? ` — ${p.emplacement}` : ""}${p.source_libelle ? ` (source : ${p.source_libelle})` : ""}`),
+      script: etat?.script_auditeur || "",
+      vigilance: etat?.points_vigilance || "",
+      remarques: etat?.remarques || "",
       commentaire: etat?.commentaire_auditeur || "",
       statut: STATUT_LABELS[etat?.statut ?? "preuve_manquante"],
       responsable: etat?.responsable || "",
@@ -37,13 +43,13 @@ export function buildExportRows(
 }
 
 export function exportQualiopiCsv(rows: ExportRow[]) {
-  const head = ["Critère", "Indicateur", "Intitulé", "Exigence", "Preuves disponibles", "Commentaire auditeur", "Statut", "Responsable", "Dernière vérification"];
+  const head = ["Critère", "Indicateur", "Intitulé", "Exigence", "Preuves disponibles et emplacement", "Script auditeur", "Points de vigilance", "Remarques", "Commentaire auditeur", "Statut", "Responsable", "Dernière vérification"];
   const esc = (v: string) => `"${(v ?? "").replace(/"/g, '""')}"`;
   const lines = [head.map(esc).join(";")];
   for (const r of rows) {
     lines.push([
       String(r.critere), String(r.indicateur), r.intitule, r.exigence,
-      r.preuves.join(" | "), r.commentaire, r.statut, r.responsable, r.verification,
+      r.preuves.join(" | "), r.script, r.vigilance, r.remarques, r.commentaire, r.statut, r.responsable, r.verification,
     ].map(esc).join(";"));
   }
   const blob = new Blob(["\uFEFF" + lines.join("\n")], { type: "text/csv;charset=utf-8;" });
@@ -78,6 +84,9 @@ export function exportQualiopiPdf(rows: ExportRow[]) {
     const block: string[] = [];
     block.push(`Exigence : ${r.exigence}`);
     block.push(`Preuves : ${r.preuves.length ? r.preuves.join(" ; ") : "aucune preuve rattachée"}`);
+    if (r.script) block.push(`Script auditeur : ${r.script}`);
+    if (r.vigilance) block.push(`Points de vigilance : ${r.vigilance}`);
+    if (r.remarques) block.push(`Remarques : ${r.remarques}`);
     if (r.commentaire) block.push(`Commentaire : ${r.commentaire}`);
     block.push(`Statut : ${r.statut}${r.responsable ? ` — Responsable : ${r.responsable}` : ""}${r.verification ? ` — Vérifié le ${r.verification}` : ""}`);
 

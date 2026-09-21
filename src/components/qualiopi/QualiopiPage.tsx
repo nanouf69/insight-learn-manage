@@ -13,6 +13,7 @@ import { buildExportRows, exportQualiopiCsv, exportQualiopiPdf } from "@/lib/qua
 import { IndicateurDialog } from "./IndicateurDialog";
 
 const statutVariant: Record<QualiopiStatut, string> = {
+  documente: "bg-blue-100 text-blue-800 border-blue-200",
   conforme: "bg-green-100 text-green-800 border-green-200",
   a_completer: "bg-amber-100 text-amber-800 border-amber-200",
   preuve_manquante: "bg-red-100 text-red-800 border-red-200",
@@ -52,18 +53,18 @@ export function QualiopiPage() {
   }, [preuves]);
 
   const stats = useMemo(() => {
-    let applicables = 0, conformes = 0, aCompleter = 0, sansPreuve = 0, nonApplicables = 0, couverts = 0;
+    let applicables = 0, documentes = 0, aCompleter = 0, sansPreuve = 0, nonApplicables = 0, couverts = 0;
     for (const ind of INDICATEURS) {
       const e = etats[ind.numero];
       const actives = (preuvesParIndicateur[ind.numero] || []).filter((p) => !p.archivee);
       if (!e?.applicable || e?.statut === "non_applicable") { nonApplicables++; continue; }
       applicables++;
       if (actives.length > 0) couverts++; else sansPreuve++;
-      if (e.statut === "conforme") conformes++;
+      if (e.statut === "documente" || e.statut === "conforme") documentes++;
       if (e.statut === "a_completer") aCompleter++;
     }
     return {
-      applicables, conformes, aCompleter, sansPreuve, nonApplicables,
+      applicables, documentes, aCompleter, sansPreuve, nonApplicables,
       couverture: applicables ? Math.round((couverts / applicables) * 100) : 0,
     };
   }, [etats, preuvesParIndicateur]);
@@ -91,7 +92,7 @@ export function QualiopiPage() {
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         {[
           { label: "Indicateurs applicables", value: stats.applicables },
-          { label: "Conformes", value: stats.conformes },
+          { label: "Documentés", value: stats.documentes },
           { label: "À compléter", value: stats.aCompleter },
           { label: "Sans preuve", value: stats.sansPreuve },
           { label: "Non applicables", value: stats.nonApplicables },
@@ -219,12 +220,17 @@ export function QualiopiPage() {
                             {STATUT_LABELS[e?.statut ?? "preuve_manquante"]}
                           </Badge>
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1">{ind.niveauAttendu}</p>
+                        <p className="text-xs text-muted-foreground mt-1"><span className="font-medium text-foreground">Exigence : </span>{ind.niveauAttendu}</p>
                         <div className="mt-2 space-y-1">
+                          <p className="text-xs font-medium">Preuves disponibles et emplacement</p>
                           {actives.length === 0 && <p className="text-xs text-red-600">Aucune preuve rattachée.</p>}
                           {actives.map((p) => (
                             <div key={p.id} className="flex items-center justify-between gap-2 text-xs border rounded px-2 py-1">
-                              <span className="truncate">{p.titre}</span>
+                              <span className="truncate">
+                                {p.titre}
+                                {p.emplacement ? ` — ${p.emplacement}` : ""}
+                                {p.source_libelle ? ` (source : ${p.source_libelle})` : ""}
+                              </span>
                               <span className="flex gap-1 shrink-0">
                                 {p.lien_url && <Button size="sm" variant="ghost" className="h-6 text-xs" onClick={() => window.open(p.lien_url!, "_blank")}>Ouvrir le lien</Button>}
                                 {p.fichiers.map((f, i) => (
@@ -237,6 +243,21 @@ export function QualiopiPage() {
                             </div>
                           ))}
                         </div>
+                        {e?.script_auditeur && (
+                          <div className="mt-2 rounded border bg-muted/40 p-2">
+                            <p className="text-xs font-medium">Script de présentation à l'auditeur</p>
+                            <p className="text-xs text-muted-foreground whitespace-pre-line mt-1">{e.script_auditeur}</p>
+                          </div>
+                        )}
+                        {e?.points_vigilance && (
+                          <p className="text-xs mt-2 text-amber-700"><span className="font-medium">Points de vigilance : </span>{e.points_vigilance}</p>
+                        )}
+                        {e?.remarques && (
+                          <p className="text-xs mt-1 text-muted-foreground"><span className="font-medium">Remarques : </span>{e.remarques}</p>
+                        )}
+                        {e?.date_verification && (
+                          <p className="text-[11px] mt-1 text-muted-foreground">Date de vérification : {e.date_verification}</p>
+                        )}
                         {e?.commentaire_auditeur && (
                           <p className="text-xs mt-2 italic text-muted-foreground">Commentaire : {e.commentaire_auditeur}</p>
                         )}

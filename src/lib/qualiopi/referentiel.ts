@@ -2,14 +2,18 @@
 // Les exemples de preuves proviennent du Guide de lecture : ce sont des EXEMPLES,
 // non exhaustifs et non obligatoires. Toute autre preuve pertinente est recevable.
 
-export type QualiopiStatut = "conforme" | "a_completer" | "preuve_manquante" | "non_applicable";
+export type QualiopiStatut = "documente" | "conforme" | "a_completer" | "preuve_manquante" | "non_applicable";
 
 export const STATUT_LABELS: Record<QualiopiStatut, string> = {
+  documente: "Documenté",
   conforme: "Conforme",
   a_completer: "À compléter",
-  preuve_manquante: "Preuve manquante",
+  preuve_manquante: "Sans preuve",
   non_applicable: "Non applicable",
 };
+
+// Un indicateur n'est jamais déclaré conforme automatiquement : la présence de preuves
+// ne vaut pas décision de conformité, seule une validation humaine le permet.
 
 export interface QualiopiIndicateur {
   numero: number;
