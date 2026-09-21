@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { allocateFreshExamMatiereExerciceId } from "../examens-blancs-utils";
 
