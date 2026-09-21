@@ -346,7 +346,7 @@ function sortQrcItems(list: QrcItem[], sortOrder: "desc" | "asc"): QrcItem[] {
 const CorrectionQRCTab = () => {
   const [items, setItems] = useState<QrcItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"all" | "pending" | "done" | "today" | "today-pending">("pending");
+  const [filter, setFilter] = useState<"all" | "pending" | "done" | "today" | "today-pending" | "blocking">("pending");
   const [searchQuery, setSearchQuery] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingPoints, setEditingPoints] = useState(0);
@@ -370,6 +370,7 @@ const CorrectionQRCTab = () => {
       if (filter === "done" && !item.corrigeManuel) return false;
       if (filter === "today" && !isAnsweredToday(item)) return false;
       if (filter === "today-pending" && (!isAnsweredToday(item) || item.corrigeManuel)) return false;
+      if (filter === "blocking" && !isBlockingResult(item)) return false;
       if (examenFilter !== "all") {
         const [cat, num] = examenFilter.split(":");
         if (getExamCategory(item.quizTitre, item.quizId, item.apprenantTypeMode).key !== cat) return false;
@@ -1286,7 +1287,15 @@ const CorrectionQRCTab = () => {
   const isAnsweredToday = (item: QrcItem) =>
     isToday(item.completedAt) && safeStr(item.reponseEleve).trim() !== "";
 
-
+  /**
+   * QRC BLOQUANT UN RÉSULTAT — MÊME RÈGLE QUE L'ÉCRAN APPRENANT.
+   * Une QRC réellement répondue et non validée manuellement empêche la
+   * publication du résultat (« En attente de correction des QRC »), quelle que
+   * soit sa date. Une QRC laissée vide ne bloque pas. Lecture/affichage
+   * uniquement : aucune correction, note ou donnée n'est modifiée ici.
+   */
+  const isBlockingResult = (item: QrcItem) =>
+    !item.corrigeManuel && safeStr(item.reponseEleve).trim() !== "";
 
   // « QRC répondues aujourd'hui » : uniquement les QRC uniques (déjà dédoublonnées
   // par apprenant + examen + matière + question) dont la réponse élève est
@@ -1297,11 +1306,43 @@ const CorrectionQRCTab = () => {
   const todayPendingItems = todayItems.filter(i => !i.corrigeManuel);
   const todayPendingCount = todayPendingItems.length;
 
+  const blockingItems = items.filter(isBlockingResult);
+  const blockingCount = blockingItems.length;
+  const olderBlockingCount = blockingItems.filter(i => !isAnsweredToday(i)).length;
+
+  // Récapitulatif : apprenant → examen → tentative → matière → QRC restantes.
+  const blockingGroups = (() => {
+    const map = new Map<string, {
+      apprenant: string; quizTitre: string; tentative: number; matiereNom: string; count: number; derniere: string;
+    }>();
+    for (const i of blockingItems) {
+      const key = `${i.apprenantId}__${i.quizId}__T${i.tentative}__${i.matiereId || ""}`;
+      const prev = map.get(key);
+      if (prev) {
+        prev.count += 1;
+        if (i.completedAt > prev.derniere) prev.derniere = i.completedAt;
+      } else {
+        map.set(key, {
+          apprenant: `${i.apprenantNom} ${i.apprenantPrenom}`.trim(),
+          quizTitre: i.quizTitre,
+          tentative: i.tentative,
+          matiereNom: i.matiereNom || i.matiereId,
+          count: 1,
+          derniere: i.completedAt,
+        });
+      }
+    }
+    return Array.from(map.values()).sort(
+      (a, b) => a.apprenant.localeCompare(b.apprenant) || a.quizTitre.localeCompare(b.quizTitre) || a.tentative - b.tentative,
+    );
+  })();
+
   const filtered = items.filter(item => {
     if (filter === "pending" && item.corrigeManuel) return false;
     if (filter === "done" && !item.corrigeManuel) return false;
     if (filter === "today" && !isAnsweredToday(item)) return false;
     if (filter === "today-pending" && (!isAnsweredToday(item) || item.corrigeManuel)) return false;
+    if (filter === "blocking" && !isBlockingResult(item)) return false;
     if (examenFilter !== "all") {
       const [cat, num] = examenFilter.split(":");
       if (getExamCategory(item.quizTitre, item.quizId, item.apprenantTypeMode).key !== cat) return false;
@@ -1326,6 +1367,7 @@ const CorrectionQRCTab = () => {
   const examOptionSource = filter === "pending" ? pendingItems
     : filter === "today" ? todayItems
     : filter === "today-pending" ? todayPendingItems
+    : filter === "blocking" ? blockingItems
     : filter === "done" ? items.filter(i => i.corrigeManuel)
     : items;
 
@@ -1458,6 +1500,7 @@ const CorrectionQRCTab = () => {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value="blocking">🚨 QRC bloquant des résultats ({blockingCount})</SelectItem>
             <SelectItem value="today">🔥 QRC répondues aujourd'hui ({todayCount})</SelectItem>
             <SelectItem value="today-pending">⏳ À corriger aujourd'hui ({todayPendingCount})</SelectItem>
             <SelectItem value="pending">⏳ En attente uniquement</SelectItem>
@@ -1489,6 +1532,48 @@ const CorrectionQRCTab = () => {
         </Button>
       </div>
 
+      {/* Alerte prioritaire : QRC (même anciennes) qui bloquent encore un résultat. */}
+      {blockingCount > 0 && filter !== "blocking" && (
+        <Card className="border-destructive/40 bg-destructive/5">
+          <CardContent className="py-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="font-semibold text-destructive">
+                🚨 {blockingCount} QRC bloquent encore la publication de résultats
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Dont {olderBlockingCount} QRC plus anciennes qu'aujourd'hui — tant qu'elles ne sont pas validées,
+                l'apprenant reste « En attente de correction des QRC ».
+              </p>
+            </div>
+            <Button variant="destructive" size="sm" onClick={() => { setFilter("blocking"); setCurrentIndex(0); }}>
+              Voir les QRC bloquantes
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {filter === "blocking" && blockingGroups.length > 0 && (
+        <Card className="border-destructive/40">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Résultats actuellement bloqués</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-1 text-sm max-h-64 overflow-auto">
+            {blockingGroups.map((g, idx) => (
+              <div key={idx} className="flex flex-wrap items-center gap-2 border-b last:border-0 py-1">
+                <span className="font-medium">{g.apprenant}</span>
+                <span className="text-muted-foreground">→ {g.quizTitre}</span>
+                <span className="text-muted-foreground">→ tentative {g.tentative}</span>
+                <span className="text-muted-foreground">→ {g.matiereNom}</span>
+                <Badge variant="destructive">{g.count} QRC restantes</Badge>
+                <span className="text-xs text-muted-foreground">
+                  {g.derniere ? new Date(g.derniere).toLocaleDateString("fr-FR") : ""}
+                </span>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
       {sortedFiltered.length === 0 ? (
         filter === "pending" && !searchQuery.trim() && examenFilter === "all" ? (
           <div className="min-h-[340px] rounded-xl border bg-background flex items-center justify-center">
@@ -1500,12 +1585,27 @@ const CorrectionQRCTab = () => {
               <FileText className="w-12 h-12 mx-auto mb-3 opacity-30" />
               <p className="font-medium">
                 {filter === "today-pending"
-                  ? "Aucune QRC en attente aujourd'hui — toutes corrigées ✅"
+                  ? blockingCount > 0
+                    ? `Toutes les QRC d'aujourd'hui sont corrigées, mais ${blockingCount} QRC plus anciennes bloquent encore des résultats.`
+                    : "Aucune QRC en attente aujourd'hui — toutes corrigées ✅"
+                  : filter === "blocking"
+                  ? "Aucune QRC ne bloque de résultat ✅"
                   : filter === "pending"
                   ? "Aucune QRC en attente de correction"
                   : "Aucune QRC trouvée"}
               </p>
-              <p className="text-sm mt-1">Les réponses QRC apparaîtront ici au fur et à mesure des examens</p>
+              {filter === "today-pending" && blockingCount > 0 ? (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="mt-3"
+                  onClick={() => { setFilter("blocking"); setCurrentIndex(0); }}
+                >
+                  Voir les QRC bloquantes
+                </Button>
+              ) : (
+                <p className="text-sm mt-1">Les réponses QRC apparaîtront ici au fur et à mesure des examens</p>
+              )}
             </CardContent>
           </Card>
         )
