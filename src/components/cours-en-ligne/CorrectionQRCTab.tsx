@@ -511,35 +511,50 @@ const CorrectionQRCTab = () => {
   // Passages EB N°2 sans note définitive (même règle que le portail apprenant).
   const [eb2PendingAttempts, setEb2PendingAttempts] = useState<Eb2PendingAttempt[]>([]);
 
+  // ── Historique de navigation de la session de correction ──
+  // Une QRC validée pendant la session reste visible dans la file courante
+  // (badge « ✅ Déjà corrigée ») afin que « Précédent » puisse y revenir.
+  // Elle n'est JAMAIS remise en attente : son état corrigé est conservé.
+  // Identité stable : apprenant + examen + tentative/passage + matière + question.
+  const qrcNavKey = (i: QrcItem) =>
+    `${i.apprenantId}__${i.quizId}__${i.dbTentative ?? 1}__${i.passageKey}__${i.matiereId || ""}__${i.questionId}`;
+  const keptKeysRef = useRef<Set<string>>(new Set());
+  const [keptVersion, setKeptVersion] = useState(0);
+  const isKeptInSession = (item: QrcItem) => item.corrigeManuel && keptKeysRef.current.has(qrcNavKey(item));
+
+  const matchesFilter = (item: QrcItem): boolean => {
+    const kept = isKeptInSession(item);
+    if (filter === "pending" && item.corrigeManuel && !kept) return false;
+    if (filter === "done" && !item.corrigeManuel) return false;
+    if (filter === "today" && !isAnsweredToday(item)) return false;
+    if (filter === "today-pending" && (!isAnsweredToday(item) || (item.corrigeManuel && !kept))) return false;
+    if (filter === "blocking" && !isBlockingResult(item) && !kept) return false;
+    if (filter === "blocking" && activeBlockingGroupKey && getBlockingGroupKey(item) !== activeBlockingGroupKey) return false;
+    if (examenFilter !== "all") {
+      const [cat, num] = examenFilter.split(":");
+      if (getExamCategory(item.quizTitre, item.quizId, item.apprenantTypeMode).key !== cat) return false;
+      if (num && getExamNum(item.quizTitre) !== num) return false;
+    }
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      return (
+        item.apprenantNom.toLowerCase().includes(q) ||
+        item.apprenantPrenom.toLowerCase().includes(q) ||
+        item.quizTitre.toLowerCase().includes(q) ||
+        item.matiereNom.toLowerCase().includes(q) ||
+        item.enonce.toLowerCase().includes(q)
+      );
+    }
+    return true;
+  };
+
   // Mirrors the filter + sort applied to `sortedFiltered` in the render, so that
   // auto-advance after saving picks the correct next item.
   const computeSortedFiltered = (list: QrcItem[]): QrcItem[] => {
-    const filteredList = list.filter(item => {
-      if (filter === "pending" && item.corrigeManuel) return false;
-      if (filter === "done" && !item.corrigeManuel) return false;
-      if (filter === "today" && !isAnsweredToday(item)) return false;
-      if (filter === "today-pending" && (!isAnsweredToday(item) || item.corrigeManuel)) return false;
-      if (filter === "blocking" && !isBlockingResult(item)) return false;
-      if (filter === "blocking" && activeBlockingGroupKey && getBlockingGroupKey(item) !== activeBlockingGroupKey) return false;
-      if (examenFilter !== "all") {
-        const [cat, num] = examenFilter.split(":");
-        if (getExamCategory(item.quizTitre, item.quizId, item.apprenantTypeMode).key !== cat) return false;
-        if (num && getExamNum(item.quizTitre) !== num) return false;
-      }
-      if (searchQuery) {
-        const q = searchQuery.toLowerCase();
-        return (
-          item.apprenantNom.toLowerCase().includes(q) ||
-          item.apprenantPrenom.toLowerCase().includes(q) ||
-          item.quizTitre.toLowerCase().includes(q) ||
-          item.matiereNom.toLowerCase().includes(q) ||
-          item.enonce.toLowerCase().includes(q)
-        );
-      }
-      return true;
-    });
+    const filteredList = list.filter(matchesFilter);
     return filter === "blocking" ? sortBlockingQrcItems(filteredList) : sortQrcItems(filteredList, sortOrder);
   };
+
 
   const QUICK_COMMENTS = [
     "Précisez !!!",
