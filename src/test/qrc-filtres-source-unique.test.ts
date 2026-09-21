@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
-import { getQrcQueueIdentity, isInTentativeScope, isBlockingQrcItem } from "@/components/cours-en-ligne/CorrectionQRCTab";
+import { getQrcQueueIdentity, isInTentativeScope, isBlockingQrcItem, buildAnswerSignature } from "@/components/cours-en-ligne/CorrectionQRCTab";
 
 const qrc = (
   tentative: number | undefined,
@@ -46,5 +46,38 @@ describe("Correction QRC — périmètre unique des compteurs et listes", () => 
   it("l'identité de rapprochement inclut passage, matière et question", () => {
     expect(getQrcQueueIdentity(qrc(1, 7))).not.toBe(getQrcQueueIdentity(qrc(2, 7)));
     expect(getQrcQueueIdentity(qrc(1, 7))).not.toBe(getQrcQueueIdentity(qrc(1, 8)));
+  });
+});
+
+describe("Identité de passage — signature déterministe (jamais une fenêtre de temps)", () => {
+  const yasinF = {
+    reponses: {
+      "1": "Le livret de métrologie",
+      "2": "Transport d usager à titre honereux",
+      "3": "2 mois",
+      "4": "Calculé de totalité de la course",
+    },
+  };
+
+  it("deux écritures du même passage (réponses strictement identiques) partagent la même signature", () => {
+    const t1 = buildAnswerSignature({ ...yasinF });
+    const t2 = buildAnswerSignature({ ...yasinF, questions: [{ questionId: 1, reponseEleve: "Le livret de métrologie" }] });
+    const t3 = buildAnswerSignature({ ...yasinF, correctionsIA: { "1": { manuel: true } } });
+    expect(t1).not.toBeNull();
+    expect(t2).toBe(t1);
+    expect(t3).toBe(t1);
+  });
+
+  it("une seule réponse différente = deux passages distincts, même à quelques secondes d'écart", () => {
+    const autre = buildAnswerSignature({
+      reponses: { ...yasinF.reponses, "3": "3 mois" },
+    });
+    expect(autre).not.toBe(buildAnswerSignature(yasinF));
+  });
+
+  it("aucune preuve certaine (pas de réponse rédigée) = pas de signature, donc jamais de fusion", () => {
+    expect(buildAnswerSignature({ reponses: { "1": "A", "2": "B" } })).toBeNull();
+    expect(buildAnswerSignature({ reponses: {} })).toBeNull();
+    expect(buildAnswerSignature({ reponses: { "1": ".", "2": "." } })).toBeNull();
   });
 });
