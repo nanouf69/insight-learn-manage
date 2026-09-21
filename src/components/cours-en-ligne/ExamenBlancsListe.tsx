@@ -658,6 +658,17 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
                         Voir mes résultats
                       </Button>
                     )}
+                    {isCompleted && openAttemptIds.has(examen.id) && (
+                      <Button
+                        className="w-full mt-2 gap-2 border-2 border-orange-400 bg-orange-50 text-orange-800 hover:bg-orange-100"
+                        variant="outline"
+                        disabled={pausedExamIds?.has(examen.id)}
+                        onClick={(e) => { e.stopPropagation(); onStart(examen, false); }}
+                      >
+                        ▶ Reprendre ma tentative en cours
+                        <ChevronRight className="w-4 h-4" />
+                      </Button>
+                    )}
                     <Button
                       className="w-full mt-2 gap-2"
                       variant={isCompleted ? "outline" : isStartedNotFinished ? "default" : "default"}
