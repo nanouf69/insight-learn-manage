@@ -43,3 +43,6 @@
 - [x] PILOTE réel : nouveau moteur QRC activé sur Examen Blanc VTC N°2 (EB2) UNIQUEMENT. Contrôle automatique d'intégrité + coupure automatique du drapeau en cas d'anomalie, sans suppression. Ne pas généraliser à TAXI/VA/TA ni aux autres numéros sans accord.
 
 - [x] Nouveau module "Challenge en direct" (tables live_sessions/live_participants/live_responses, temps reel + rattrapage, snapshot des questions, 1 reponse = 1 identifiant unique). Isole des examens blancs / e-learning. Pas branche sur de vrais apprenants.
+
+- [x] Challenge en direct — pilote branché sur la matière VTC « Réglementation Spécifique VTC » (lecture seule, snapshot figé)
+- [ ] Généralisation aux autres matières : en attente de validation utilisateur
