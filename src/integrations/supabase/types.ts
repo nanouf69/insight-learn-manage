@@ -3650,7 +3650,10 @@ export type Database = {
           id: string
           indicateur: number
           maj_annuelle: boolean
+          points_vigilance: string | null
+          remarques: string | null
           responsable: string | null
+          script_auditeur: string | null
           statut: string
           updated_at: string
         }
@@ -3662,7 +3665,10 @@ export type Database = {
           id?: string
           indicateur: number
           maj_annuelle?: boolean
+          points_vigilance?: string | null
+          remarques?: string | null
           responsable?: string | null
+          script_auditeur?: string | null
           statut?: string
           updated_at?: string
         }
@@ -3674,7 +3680,10 @@ export type Database = {
           id?: string
           indicateur?: number
           maj_annuelle?: boolean
+          points_vigilance?: string | null
+          remarques?: string | null
           responsable?: string | null
+          script_auditeur?: string | null
           statut?: string
           updated_at?: string
         }
@@ -3716,15 +3725,20 @@ export type Database = {
         Row: {
           archivee: boolean
           archivee_le: string | null
+          ce_que_demontre: string | null
           created_at: string
           created_by: string | null
           date_preuve: string | null
           description: string | null
+          emplacement: string | null
           fichiers: Json
           id: string
           lien_url: string | null
+          ref_key: string | null
+          remarque_interne: string | null
           remplace_preuve_id: string | null
           source_id: string | null
+          source_libelle: string | null
           source_table: string | null
           source_type: string
           titre: string
@@ -3735,15 +3749,20 @@ export type Database = {
         Insert: {
           archivee?: boolean
           archivee_le?: string | null
+          ce_que_demontre?: string | null
           created_at?: string
           created_by?: string | null
           date_preuve?: string | null
           description?: string | null
+          emplacement?: string | null
           fichiers?: Json
           id?: string
           lien_url?: string | null
+          ref_key?: string | null
+          remarque_interne?: string | null
           remplace_preuve_id?: string | null
           source_id?: string | null
+          source_libelle?: string | null
           source_table?: string | null
           source_type?: string
           titre: string
@@ -3754,15 +3773,20 @@ export type Database = {
         Update: {
           archivee?: boolean
           archivee_le?: string | null
+          ce_que_demontre?: string | null
           created_at?: string
           created_by?: string | null
           date_preuve?: string | null
           description?: string | null
+          emplacement?: string | null
           fichiers?: Json
           id?: string
           lien_url?: string | null
+          ref_key?: string | null
+          remarque_interne?: string | null
           remplace_preuve_id?: string | null
           source_id?: string | null
+          source_libelle?: string | null
           source_table?: string | null
           source_type?: string
           titre?: string

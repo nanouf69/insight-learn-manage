@@ -239,6 +239,13 @@
       "when": 1789983629419,
       "tag": "0033_prestataire_justificatifs_storage_policies",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1789995518198,
+      "tag": "0034_qualiopi_dossier_audit_indicateurs_1_5",
+      "breakpoints": true
     }
   ]
 }
