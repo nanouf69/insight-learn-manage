@@ -144,6 +144,10 @@ export async function archivePreuve(preuveId: string, archivee: boolean) {
 export async function createPreuve(input: {
   titre: string;
   description?: string | null;
+  ce_que_demontre?: string | null;
+  emplacement?: string | null;
+  remarque_interne?: string | null;
+  source_libelle?: string | null;
   date_preuve?: string | null;
   valide_du?: string | null;
   valide_au?: string | null;
