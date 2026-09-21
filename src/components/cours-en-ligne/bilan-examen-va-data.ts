@@ -5,6 +5,7 @@ import { bilanExamenVA } from "./examens-blancs-data";
 function matiereToExercice(matiere: typeof bilanExamenVA.matieres[0], baseId: number) {
   return {
     id: baseId,
+    matiereKey: (matiere as any).id,
     titre: `📝 ${matiere.nom}`,
     sousTitre: `${matiere.questions.length} questions — Bilan Examen`,
     actif: true,
