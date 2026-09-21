@@ -1026,7 +1026,7 @@ const CorrectionQRCTab = () => {
       (data || []).forEach((a: any) => {
         const t = String(a.type_apprenant || "").toLowerCase();
         const mode: "presentiel" | "elearning" = t.endsWith("-e") || t.includes("-e-") ? "elearning" : "presentiel";
-        apprenantMap[a.id] = { nom: a.nom, prenom: a.prenom, mode };
+        apprenantMap[a.id] = { nom: a.nom, prenom: a.prenom, mode, formationActive: isFormationActiveToday(a) };
       });
     }
 
