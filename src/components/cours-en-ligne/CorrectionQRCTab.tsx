@@ -1342,6 +1342,7 @@ const CorrectionQRCTab = () => {
     if (filter === "done" && !item.corrigeManuel) return false;
     if (filter === "today" && !isAnsweredToday(item)) return false;
     if (filter === "today-pending" && (!isAnsweredToday(item) || item.corrigeManuel)) return false;
+    if (filter === "blocking" && !isBlockingResult(item)) return false;
     if (examenFilter !== "all") {
       const [cat, num] = examenFilter.split(":");
       if (getExamCategory(item.quizTitre, item.quizId, item.apprenantTypeMode).key !== cat) return false;
@@ -1366,6 +1367,7 @@ const CorrectionQRCTab = () => {
   const examOptionSource = filter === "pending" ? pendingItems
     : filter === "today" ? todayItems
     : filter === "today-pending" ? todayPendingItems
+    : filter === "blocking" ? blockingItems
     : filter === "done" ? items.filter(i => i.corrigeManuel)
     : items;
 
