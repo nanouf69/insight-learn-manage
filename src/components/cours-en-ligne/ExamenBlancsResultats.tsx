@@ -473,7 +473,7 @@ function EcranResultats({
   // Auto-save recalculated scores to DB for ALL users (not just admin)
   // so the list view averages stay in sync with the detail view
   useEffect(() => {
-    if (!apprenantId || !examen) return;
+    if (!apprenantId || !examen || hasQrcPendingValidation) return;
     const quizType = examen.id?.startsWith("taxi") ? "examen_blanc_taxi" : "examen_blanc";
     resultatsAvecIA.forEach(async (r, mi) => {
       if (r.nonPassee) return; // Skip placeholder rows (matière not attempted)
@@ -509,7 +509,7 @@ function EcranResultats({
         : updateQuery.eq("tentative", toFiniteNumber((r as any).tentative, currentTentative || 1));
       await updateQuery;
     });
-  }, [isViewingSaved, resultatsAvecIA.map(r => r.noteObtenue).join(",")]);
+  }, [isViewingSaved, resultatsAvecIA.map(r => r.noteObtenue).join(","), hasQrcPendingValidation]);
 
   // Moyenne globale calculée via le helper PARTAGÉ avec la vue liste et le bilan
   // texte → les 3 écrans affichent EXACTEMENT la même note.
@@ -572,12 +572,12 @@ function EcranResultats({
     <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "resultats" | "revision")} className="space-y-6">
       <TabsList className="w-full grid grid-cols-2">
         <TabsTrigger value="resultats">📊 Résultats</TabsTrigger>
-        <TabsTrigger value="revision" disabled={wrongQuestions.length === 0}>📖 Relire les questions fausses</TabsTrigger>
+        <TabsTrigger value="revision" disabled={hasQrcPendingValidation || wrongQuestions.length === 0}>📖 Relire les questions fausses</TabsTrigger>
       </TabsList>
 
       <TabsContent value="resultats" className="space-y-6">
         {/* Bandeau correction IA en cours */}
-      {correctionEnCours && (
+      {!hasQrcPendingValidation && correctionEnCours && (
         <div className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg text-blue-700 text-sm">
           <Bot className="w-4 h-4 shrink-0" />
           <Loader2 className="w-4 h-4 animate-spin shrink-0" />
@@ -997,7 +997,7 @@ function EcranResultats({
         );
       })()}
 
-      {revisionDejaFaite && (
+      {!hasQrcPendingValidation && revisionDejaFaite && (
         <div className="w-full text-center py-3 px-4 rounded-lg bg-green-50 border border-green-200">
           <p className="text-sm font-semibold text-green-700 flex items-center justify-center gap-2">
             <CheckCircle2 className="w-4 h-4" />
@@ -1043,7 +1043,7 @@ function EcranResultats({
       </div>
       </TabsContent>
 
-      <TabsContent value="revision">
+      {!hasQrcPendingValidation && <TabsContent value="revision">
         <div className="max-w-3xl mx-auto space-y-6">
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="sm" onClick={() => setActiveTab("resultats")} className="gap-2">
@@ -1066,7 +1066,7 @@ function EcranResultats({
             examenId={examen.id}
           />
         </div>
-      </TabsContent>
+      </TabsContent>}
     </Tabs>
   );
 }
