@@ -5,6 +5,8 @@ import { BILAN_FRANCAIS_QUESTIONS } from "./bilan-questions-francais";
 import { BILAN_ANGLAIS_QUESTIONS } from "./bilan-questions-anglais";
 import { BILAN_REGLEMENTATION_VTC_QUESTIONS } from "./bilan-questions-reglementation-vtc";
 import { BILAN_DEV_COMMERCIAL_QUESTIONS } from "./bilan-questions-dev-commercial";
+import { BILAN_EXERCICE_COMPLEMENTAIRE_TAXI_QUESTIONS } from "./bilan-questions-exercice-complementaire-taxi";
+import { BILAN_EXERCICE_COMPLEMENTAIRE_VTC_QUESTIONS } from "./bilan-questions-exercice-complementaire-vtc";
 import {
   taxi_nationale_eb1,
   taxi_locale_eb1,
@@ -10273,6 +10275,17 @@ const bilan_reglementation_taxi_locale: Matiere = {
   ],
 };
 
+// Exercice complémentaire TAXI — matière additionnelle, identité stable propre.
+const bilan_exercice_complementaire_taxi: Matiere = {
+  id: "bilan_exercice_complementaire_taxi",
+  nom: "H - Exercice complémentaire (QCM + QRC)",
+  duree: 60,
+  coefficient: 1,
+  noteEliminatoire: 0,
+  noteSur: 0,
+  questions: BILAN_EXERCICE_COMPLEMENTAIRE_TAXI_QUESTIONS,
+};
+
 export const bilanExamenTaxi: ExamenBlanc = {
   id: "bilan-taxi",
   numero: 7,
@@ -10286,6 +10299,7 @@ export const bilanExamenTaxi: ExamenBlanc = {
     bilan_anglais_taxi,
     bilan_reglementation_taxi_specifique,
     bilan_reglementation_taxi_locale,
+    bilan_exercice_complementaire_taxi,
   ],
 };
 
@@ -10311,6 +10325,17 @@ const bilan_reglementation_vtc_specifique: Matiere = {
   questions: BILAN_REGLEMENTATION_VTC_QUESTIONS,
 };
 
+// Exercice complémentaire VTC — matière additionnelle, identité stable propre.
+const bilan_exercice_complementaire_vtc: Matiere = {
+  id: "bilan_exercice_complementaire_vtc",
+  nom: "H - Exercice complémentaire (QCM + QRC)",
+  duree: 60,
+  coefficient: 1,
+  noteEliminatoire: 0,
+  noteSur: 0,
+  questions: BILAN_EXERCICE_COMPLEMENTAIRE_VTC_QUESTIONS,
+};
+
 export const bilanExamenVTC: ExamenBlanc = {
   id: "bilan-vtc",
   numero: 7,
@@ -10324,6 +10349,7 @@ export const bilanExamenVTC: ExamenBlanc = {
     bilan_anglais_taxi,
     bilan_dev_commercial_vtc,
     bilan_reglementation_vtc_specifique,
+    bilan_exercice_complementaire_vtc,
   ],
 };
 
