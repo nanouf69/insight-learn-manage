@@ -517,15 +517,6 @@ const CorrectionQRCTab = () => {
         list.push({ correction, matiereId: r.matiere_id || "", time: new Date(r.completed_at).getTime() || 0 });
         validationsByQuestion.set(lk, list);
 
-        // Index par contenu : la validation suit la réponse exacte de l'élève,
-        // quelle que soit la ligne technique sur laquelle elle a été écrite.
-        const reponse = (r.details as any)?.reponses?.[questionId]
-          ?? (r.details as any)?.reponses?.[String(questionId)];
-        const texte = safeStr(reponse).trim();
-        if (texte) {
-          const ck = answerIdentity(r.apprenant_id, r.quiz_id, r.matiere_id || "", questionId, reponse);
-          if (!validatedByAnswer.has(ck)) validatedByAnswer.set(ck, correction);
-        }
       });
     }
 
