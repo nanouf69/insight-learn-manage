@@ -288,6 +288,20 @@
       "when": 1790020320109,
       "tag": "0040_live_challenge_engine",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1790023740524,
+      "tag": "0041_canonical_question_pilot",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1790023839775,
+      "tag": "0042_canonical_update_question_refusal_logging",
+      "breakpoints": true
     }
   ]
 }
