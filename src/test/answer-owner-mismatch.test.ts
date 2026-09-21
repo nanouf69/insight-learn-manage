@@ -7,7 +7,7 @@
  * pouvait appartenir qu'à un autre compte → 403 en boucle, file bloquée.
  */
 // @vitest-environment node
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 
 if (typeof globalThis.localStorage === "undefined") {
   const store = new Map<string, string>();
