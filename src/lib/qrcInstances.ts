@@ -153,6 +153,33 @@ export async function fetchQrcInstances(opts?: { quizIds?: string[] }): Promise<
   return (data || []) as unknown as QrcInstanceRow[];
 }
 
+/**
+ * Passages RÉELLEMENT pris en charge par le nouveau moteur.
+ * Sert à exclure ces passages — et EUX SEULS — de l'ancienne file de
+ * correction : l'historique d'un examen piloté reste entièrement lisible et
+ * corrigeable par l'ancien mécanisme, sans jamais créer de doublon.
+ */
+export async function fetchQrcEngineAttemptIds(quizIds?: string[]): Promise<Set<string>> {
+  const enabled = quizIds?.length ? quizIds : Array.from(await loadQrcEngineQuizIds());
+  if (enabled.length === 0) return new Set<string>();
+  const out = new Set<string>();
+  const pageSize = 1000;
+  for (let from = 0; ; from += pageSize) {
+    const { data, error } = await supabase
+      .from("qrc_instances")
+      .select("attempt_id")
+      .in("quiz_id", enabled)
+      .range(from, from + pageSize - 1);
+    if (error) {
+      console.warn("[qrcInstances] lecture des passages branchés impossible:", error.message);
+      break;
+    }
+    (data || []).forEach((r: any) => out.add(String(r.attempt_id)));
+    if (!data || data.length < pageSize) break;
+  }
+  return out;
+}
+
 /** Validation formateur : une seule correction active par identifiant. */
 export async function validateQrcInstance(
   instanceId: string,
