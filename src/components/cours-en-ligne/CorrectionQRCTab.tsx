@@ -1718,30 +1718,10 @@ const CorrectionQRCTab = () => {
     });
   };
 
-  const filtered = items.filter(item => {
-    if (filter === "pending" && item.corrigeManuel) return false;
-    if (filter === "done" && !item.corrigeManuel) return false;
-    if (filter === "today" && !isAnsweredToday(item)) return false;
-    if (filter === "today-pending" && (!isAnsweredToday(item) || item.corrigeManuel)) return false;
-    if (filter === "blocking" && !isBlockingResult(item)) return false;
-    if (filter === "blocking" && activeBlockingGroupKey && getBlockingGroupKey(item) !== activeBlockingGroupKey) return false;
-    if (examenFilter !== "all") {
-      const [cat, num] = examenFilter.split(":");
-      if (getExamCategory(item.quizTitre, item.quizId, item.apprenantTypeMode).key !== cat) return false;
-      if (num && getExamNum(item.quizTitre) !== num) return false;
-    }
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      return (
-        item.apprenantNom.toLowerCase().includes(q) ||
-        item.apprenantPrenom.toLowerCase().includes(q) ||
-        item.quizTitre.toLowerCase().includes(q) ||
-        item.matiereNom.toLowerCase().includes(q) ||
-        item.enonce.toLowerCase().includes(q)
-      );
-    }
-    return true;
-  });
+  // keptVersion force le recalcul quand une QRC corrigée est conservée dans l'historique.
+  void keptVersion;
+  const filtered = items.filter(matchesFilter);
+
 
   // Build available exam list grouped by category, each with its numbers
   type ExamOption = { value: string; label: string; total: number };
