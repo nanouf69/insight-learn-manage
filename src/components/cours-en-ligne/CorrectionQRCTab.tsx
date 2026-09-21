@@ -2240,7 +2240,12 @@ const CorrectionQRCTab = () => {
                 </Button>
               </div>
             )}
-            {blockingGroups.map((g) => (
+            {blockingSearchTokens.length > 0 && visibleBlockingGroups.length === 0 && (
+              <p className="py-4 text-center text-sm text-muted-foreground">
+                Aucun apprenant bloqué ne correspond à « {blockingSearch.trim()} ».
+              </p>
+            )}
+            {visibleBlockingGroups.map((g) => (
               <div
                 key={g.key}
                 role="button"
