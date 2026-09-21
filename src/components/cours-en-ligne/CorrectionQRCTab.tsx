@@ -1853,7 +1853,7 @@ const CorrectionQRCTab = () => {
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-bold text-foreground">{r.apprenant}</span>
                     <Badge variant="outline">{r.filiere}</Badge>
-                    <span className="text-muted-foreground">→ {r.quizTitre}</span>
+                    <span className="text-muted-foreground">→ Examen Blanc N°2</span>
                     <span className="text-muted-foreground">→ {r.tentativeLabel}</span>
                   </div>
                   <div className="text-muted-foreground">
@@ -1861,15 +1861,15 @@ const CorrectionQRCTab = () => {
                   </div>
                   <div className="text-xs text-muted-foreground">
                     {r.count > 0
-                      ? `${r.count} QRC répondue(s) non validée(s) manuellement : la note définitive reste bloquée.`
-                      : "Passage bloqué côté apprenant mais aucune QRC correspondante dans la file — anomalie signalée ci-dessus."}
+                      ? `${r.count} QRC répondue(s) aujourd'hui non validée(s) manuellement : la note définitive reste bloquée.`
+                      : "Passage du jour bloqué côté apprenant mais aucune QRC correspondante dans la file — anomalie signalée ci-dessus."}
                   </div>
                 </div>
                 <Badge variant="destructive" className="text-sm font-black uppercase px-3 py-1.5">
-                  {r.count} QRC restantes
+                  {r.count} QRC restantes aujourd'hui
                 </Badge>
-                <span className="text-destructive font-black text-xl leading-none tabular-nums">
-                  {formatDateOnlyFR(r.completedAt)}
+                <span className="text-destructive font-black text-base leading-none tabular-nums">
+                  {formatPassageDateTimeFR(r.derniereQrc)}
                 </span>
                 {r.groupKey && (
                   <Button
