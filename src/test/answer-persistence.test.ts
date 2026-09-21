@@ -179,9 +179,11 @@ describe("tablette partagée : apprenants successifs", () => {
     for (const l of learners) {
       setAnswerSaveAuthToken(null, null);
       setAnswerSaveAuthToken(`token-${l}`, l);
+      setAnswerSaveOwnership({ apprenantId: l });
       enqueueAnswerSave({ apprenant_id: l, exercice_id: `exo-${l}`, exercice_type: "quiz", reponses: { q1: l } });
       await new Promise((r) => setTimeout(r, 30));
     }
+    setAnswerSaveOwnership({ apprenantId: null });
     setAnswerSaveAuthToken(null, null);
     await new Promise((r) => setTimeout(r, 50));
 

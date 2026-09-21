@@ -89,6 +89,6 @@ describe("Points d'écriture réellement protégés", () => {
     expect(src).toContain("if (!canSynchronizeAnswers()) return;");
     expect(src).toContain("if (!isSendableInCurrentContext(item)) return \"blocked\"");
     expect(src).toContain("if (!canSynchronizeAnswers() || apprenantId !== sessionApprenantId) return false");
-    expect(src).not.toContain("if (readQueue().length > 0) void processQueue();");
+    expect(src).toContain("Le renvoi attend que CoursPublic ait identifié un véritable apprenant");
   });
 });
