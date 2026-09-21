@@ -818,6 +818,7 @@ export default function ExamensBlancsPage({
         admis: canonicalScore?.admis ?? computeAdmisForMatiere(safeScoreObtenu, normalizedScoreMax, matiere.noteEliminatoire, safeNoteSur, Boolean(row.reussi)),
         reponses: row.details?.reponses || {},
         correctionsIA: savedCorrections,
+        details: row.details,
         tentative: getAttemptNumber(row),
       };
     });

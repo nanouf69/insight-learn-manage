@@ -312,6 +312,31 @@ export function isMatiereQrcPendingForAttempt(matiere: any, details: any): boole
 }
 
 /**
+ * Verrou atomique, en lecture seule, d'un passage complet : une seule QRC
+ * encore en attente masque toutes les notes, statuts, bilans et statistiques.
+ */
+export function isExamAttemptPublicationPending(
+  rows: any[] | null | undefined,
+  examen?: { matieres?: any[] } | null,
+): boolean {
+  const list = (rows || []).filter((row) => row && !row?.nonPassee);
+  if (list.some((row) => isQrcPendingCorrection(row?.details))) return true;
+  const matieres = Array.isArray(examen?.matieres) ? examen.matieres : [];
+  return matieres.some((matiere) => {
+    const row = list.find((candidate) =>
+      String(candidate?.matiereId ?? candidate?.matiere_id ?? "") === String(matiere?.id ?? "") ||
+      String(candidate?.nomMatiere ?? candidate?.matiere_nom ?? "") === String(matiere?.nom ?? "")
+    );
+    if (!row) return false;
+    return isMatiereQrcPendingForAttempt(matiere, {
+      ...(row?.details || {}),
+      reponses: row?.reponses ?? row?.details?.reponses,
+      correctionsIA: row?.correctionsIA ?? row?.details?.correctionsIA,
+    });
+  });
+}
+
+/**
  * DOUBLES ÉCRITURES TECHNIQUES D'UN MÊME PASSAGE.
  *
  * L'application écrit parfois plusieurs lignes de résultat pour le même

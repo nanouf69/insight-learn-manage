@@ -16,7 +16,7 @@ import {
   selectLatestAttemptRows, parseExamAnswerKey,
 } from "./examens-blancs-utils";
 import { computeMoyenneExamen, computeMatiereScore, computeMatiereScoreForAttempt, resolveMatiereForScoring } from "./examens-blancs-scoring";
-import { isMatiereQrcPendingForAttempt, excludeResultPlaceholders, mergePassageSiblingRows } from "./exam-helpers";
+import { isExamAttemptPublicationPending, excludeResultPlaceholders, mergePassageSiblingRows } from "./exam-helpers";
 import { toast } from "sonner";
 
 /**
@@ -468,17 +468,8 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
                     {isCompleted && (() => {
                       // RÈGLE : aucune note finale publiée tant qu'une QRC de cette
                       // tentative n'a pas été validée manuellement par le formateur.
-                      const matieresEnAttenteQrc = new Set(
-                        examen.matieres
-                          .filter((m) => {
-                            const sd = findScoreForMatiere(scores, m);
-                            if (!sd) return false;
-                            const det = (sd as any).details ?? { correctionsIA: (sd as any).correctionsIA };
-                            return isMatiereQrcPendingForAttempt(m, det);
-                          })
-                          .map((m) => m.id),
-                      );
-                      if (matieresEnAttenteQrc.size > 0) {
+                       const publicationPending = isExamAttemptPublicationPending(scores, examen);
+                       if (publicationPending) {
                         return (
                           <div className="flex flex-col items-center gap-1 mt-2 rounded-lg px-3 py-2 border-2 bg-amber-50 border-amber-400">
                             <span className="text-amber-700 font-bold text-base uppercase tracking-wide text-center">
@@ -573,14 +564,11 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
                     <div className="space-y-1">
                       {examen.matieres.map(m => {
                         const scoreData = findScoreForMatiere(scores, m);
-                        const qrcPendingMatiere = !!scoreData && isMatiereQrcPendingForAttempt(
-                          m,
-                          (scoreData as any).details ?? { correctionsIA: (scoreData as any).correctionsIA },
-                        );
+                         const publicationPending = isExamAttemptPublicationPending(scores, examen);
                         return (
                           <div key={m.id} className="flex justify-between text-xs text-muted-foreground">
                             <span className="truncate pr-2">{m.nom.split(" - ")[0]}</span>
-                            {isCompleted && scoreData && qrcPendingMatiere ? (
+                             {isCompleted && scoreData && publicationPending ? (
                               <span className="shrink-0 font-semibold text-amber-600">⏳ En attente</span>
                             ) : isCompleted && scoreData ? (() => {
                               const score = computeMatiereScoreForAttempt(
