@@ -486,17 +486,17 @@ const CorrectionQRCTab = () => {
     const attemptKey = (a: string, q: string, m: string, t: number, qid: number) =>
       `${a}__${q}__${m || ""}__T${t}__${qid}`;
 
-    // Identité de CONTENU d'une QRC : apprenant + examen + matière + question
-    // stable + texte exact de la réponse de l'élève.
-    // Elle sert uniquement à reconnaître qu'un même passage a été écrit sur
-    // plusieurs lignes techniques (finalisation, reprise, double écriture) :
-    // la correction enregistrée sur l'une vaut pour l'autre, et la QRC
-    // n'apparaît qu'une seule fois. Une vraie nouvelle tentative, avec une
-    // réponse réellement différente, garde son identité propre.
-    const answerIdentity = (a: string, q: string, m: string, qid: number, reponse: unknown) =>
-      `${a}__${q}__${m || ""}__${qid}__${normalizeText(safeStr(reponse))}`;
+    // Identité d'une QRC réellement passée : apprenant + examen + matière +
+    // PASSAGE/TENTATIVE RÉEL + question stable. Le texte de la réponse n'entre
+    // en jeu qu'à l'intérieur d'un même passage, pour reconnaître les lignes
+    // techniques jumelles (finalisation, reprise, double écriture) écrites pour
+    // ce passage. Deux tentatives réelles restent TOUJOURS deux QRC distinctes,
+    // même si l'élève a répondu exactement la même chose.
+    const answerIdentity = (a: string, q: string, m: string, passage: number, qid: number, reponse: unknown) =>
+      `${a}__${q}__${m || ""}__P${passage}__${qid}__${normalizeText(safeStr(reponse))}`;
     const validatedByAnswer = new Map<string, any>();
     const itemIndexByContent = new Map<string, number>();
+
 
 
     // ── Index des validations admin déjà enregistrées ───────────────────
