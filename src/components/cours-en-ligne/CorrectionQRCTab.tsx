@@ -632,11 +632,10 @@ const CorrectionQRCTab = () => {
     }
 
     // ── Regroupement par PASSAGE RÉEL (fusion des doubles écritures) ─────
-    // Un passage = apprenant + examen + matière + fenêtre de temps courte.
-    // Deux lignes écrites à quelques secondes d'intervalle sont la même
-    // tentative, même si elles portent un numéro de tentative différent.
-    // Deux passages réellement distincts (plusieurs minutes d'écart) restent
-    // deux tentatives séparées, donc deux QRC à corriger.
+    // Un passage = apprenant + examen + matière + tentative persistante.
+    // Deux lignes écrites à quelques secondes d'intervalle ne sont fusionnées
+    // que si elles portent le même numéro persistant. Des numéros persistants
+    // différents restent toujours séparés, même avec des réponses identiques.
     const MEME_PASSAGE_MS = 5 * 60 * 1000;
     type AttemptGroup = {
       primaryId: string; apprenantId: string; userId?: string; quizId: string; quizType: string;
@@ -650,7 +649,7 @@ const CorrectionQRCTab = () => {
     let doublonsTechniques = 0;
 
     // Les lignes arrivent de la plus récente à la plus ancienne : on les
-    // traite de la plus ancienne à la plus récente pour numéroter les passages.
+    // traite de la plus ancienne à la plus récente, sans renuméroter les passages.
     const resultsAsc = (results as any[]).filter((r) => !isResultPlaceholder(r)).sort(
       (a, b) => (new Date(a.completed_at).getTime() || 0) - (new Date(b.completed_at).getTime() || 0),
     );
