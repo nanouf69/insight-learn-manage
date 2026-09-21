@@ -1642,6 +1642,21 @@ const CorrectionQRCTab = () => {
     ? blockingGroups.find((g) => g.key === activeBlockingGroupKey)
     : null;
 
+  // ── EB N°2 : apprenants sans note définitive + contrôle A − B = 0 ──────
+  // A = passages EB N°2 bloqués par des QRC (règle du portail apprenant)
+  // B = passages réellement présents dans « QRC bloquant des résultats »
+  const eb2Rows = eb2PendingAttempts
+    .map((a) => {
+      const own = blockingItems.filter(
+        (i) => buildAttemptKey(i.apprenantId, i.quizId, i.dbTentative, i.passageKey) === a.attemptKey,
+      );
+      const groupKey = own.length ? getBlockingGroupKey(sortBlockingQrcItems(own)[0]) : null;
+      const matieresRestantes = Array.from(new Set(own.map((i) => i.matiereNom || i.matiereId)));
+      return { ...a, count: own.length, groupKey, matieresRestantes };
+    })
+    .filter((r) => r.count > 0 || !r.hasQueueMatch);
+  const eb2Anomalies = eb2Rows.filter((r) => r.count === 0);
+
   const goToBlockingGroup = (key: string) => {
     setFilter("blocking");
     setActiveBlockingGroupKey(key);
