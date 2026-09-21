@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Progress } from "@/components/ui/progress";
 import { Download, FileText, Loader2, Star } from "lucide-react";
 import { toast } from "sonner";
-import { buildRapportAnnuel, loadEnquetes, type EnqueteSatisfaction } from "@/lib/satisfaction/data";
+import { buildRapportAnnuel, computeIndicateurs, loadEnquetes, loadStagiaires, type EnqueteSatisfaction, type StagiaireRow } from "@/lib/satisfaction/data";
 import { exportRapportAnnuelCsv, exportRapportAnnuelPdf } from "@/lib/satisfaction/export";
 
 const n1 = (v: number | null) => (typeof v === "number" ? v.toFixed(1) : "—");
@@ -30,6 +30,7 @@ const Kpi = ({ label, value, hint }: { label: string; value: string; hint?: stri
 export function SatisfactionPage() {
   const [loading, setLoading] = useState(true);
   const [enquetes, setEnquetes] = useState<EnqueteSatisfaction[]>([]);
+  const [stagiaires, setStagiaires] = useState<StagiaireRow[]>([]);
   const [annee, setAnnee] = useState<string>(String(new Date().getFullYear()));
   const [formation, setFormation] = useState<string>("toutes");
   const [recherche, setRecherche] = useState("");
@@ -40,6 +41,7 @@ export function SatisfactionPage() {
       try {
         const rows = await loadEnquetes();
         setEnquetes(rows);
+        setStagiaires(await loadStagiaires());
         const annees = Array.from(new Set(rows.map((r) => r.annee).filter(Boolean))).sort((a, b) => b - a);
         if (annees.length && !annees.includes(Number(annee))) setAnnee(String(annees[0]));
       } catch {
@@ -62,6 +64,10 @@ export function SatisfactionPage() {
     [enquetes, formation],
   );
   const rapport = useMemo(() => buildRapportAnnuel(baseAnnee, Number(annee)), [baseAnnee, annee]);
+  const indicateurs = useMemo(
+    () => computeIndicateurs(stagiaires, Number(annee), formation),
+    [stagiaires, annee, formation],
+  );
 
   const liste = useMemo(() => {
     const q = recherche.trim().toLowerCase();
@@ -109,10 +115,10 @@ export function SatisfactionPage() {
           <Input value={recherche} onChange={(e) => setRecherche(e.target.value)} placeholder="Nom, prénom ou email" />
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => exportRapportAnnuelCsv(rapport)} disabled={!rapport.nbReponses}>
+          <Button variant="outline" onClick={() => exportRapportAnnuelCsv(rapport, indicateurs)} disabled={!rapport.nbReponses}>
             <Download className="w-4 h-4 mr-2" /> Excel
           </Button>
-          <Button onClick={() => exportRapportAnnuelPdf(rapport)} disabled={!rapport.nbReponses}>
+          <Button onClick={() => exportRapportAnnuelPdf(rapport, indicateurs)} disabled={!rapport.nbReponses}>
             <FileText className="w-4 h-4 mr-2" /> Rapport annuel PDF
           </Button>
         </div>
@@ -124,6 +130,13 @@ export function SatisfactionPage() {
         <Kpi label="Moyenne des critères" value={`${n1(rapport.moyenneCriteres)}/5`} />
         <Kpi label="Taux de satisfaction" value={n0(rapport.tauxSatisfaction)} hint="Notes ≥ 4" />
         <Kpi label="Recommandation" value={`${n1(rapport.recommandation)}/5`} />
+      </div>
+
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+        <Kpi label="Stagiaires formés" value={String(indicateurs.stagiairesFormes)} hint={`Année ${rapport.annee}`} />
+        <Kpi label="Taux d'abandon" value={n0(indicateurs.tauxAbandon)} hint={`${indicateurs.abandons} abandon(s)`} />
+        <Kpi label="Présentation à l'examen" value={n0(indicateurs.tauxPresentation)} hint={`${indicateurs.presentes} présenté(s)`} />
+        <Kpi label="Taux de réussite" value={n0(indicateurs.tauxReussite)} hint={`${indicateurs.admis} admis / ${indicateurs.presentes} présentés`} />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
