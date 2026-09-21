@@ -1813,6 +1813,18 @@ const CorrectionQRCTab = () => {
     ? blockingGroups.find((g) => g.key === activeBlockingGroupKey)
     : null;
 
+  // Recherche par nom / prénom dans « Résultats actuellement bloqués » :
+  // temps réel, insensible à la casse et aux accents, porte sur TOUS les
+  // passages bloqués (jamais sur le filtre visuel « tentative 1 »).
+  // Affichage uniquement : aucune donnée QRC, correction, note ou tentative modifiée.
+  const [blockingSearch, setBlockingSearch] = useState("");
+  const normalizedBlockingSearch = normalizeText(blockingSearch);
+  const blockingSearchTokens = normalizedBlockingSearch.split(" ").filter(Boolean);
+  const visibleBlockingGroups = blockingSearchTokens.length === 0 ? blockingGroups : blockingGroups.filter((g) => {
+    const normalizedApprenant = normalizeText(g.apprenant);
+    return blockingSearchTokens.every((token) => normalizedApprenant.includes(token));
+  });
+
   // ── EB N°2 : apprenants ACTUELLEMENT EN FORMATION bloqués AUJOURD'HUI ──
   // 5 conditions cumulatives (affichage/filtrage uniquement, aucune écriture) :
   //  1) formation active aujourd'hui (début ≤ aujourd'hui ≤ fin)
@@ -2188,8 +2200,34 @@ const CorrectionQRCTab = () => {
 
       {filter === "blocking" && blockingGroups.length > 0 && (
         <Card className="border-destructive/40">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Résultats actuellement bloqués</CardTitle>
+          <CardHeader className="pb-2 space-y-2">
+            <div className="flex flex-wrap items-center gap-3">
+              <CardTitle className="text-base">Résultats actuellement bloqués</CardTitle>
+              <Badge variant="outline">
+                {blockingSearchTokens.length > 0
+                  ? `${visibleBlockingGroups.length} passage(s) trouvé(s) sur ${blockingGroups.length}`
+                  : `${blockingGroups.length} passage(s)`}
+              </Badge>
+              <div className="relative flex-1 min-w-[220px] max-w-sm ml-auto">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Rechercher un apprenant : nom, prénom, nom + prénom…"
+                  value={blockingSearch}
+                  onChange={(e) => setBlockingSearch(e.target.value)}
+                  className="pl-9 pr-20"
+                />
+                {blockingSearch.trim() !== "" && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 h-7 px-2 text-xs"
+                    onClick={() => setBlockingSearch("")}
+                  >
+                    ✕ Effacer
+                  </Button>
+                )}
+              </div>
+            </div>
           </CardHeader>
           <CardContent className="space-y-2 text-sm max-h-80 overflow-auto">
             {activeBlockingGroup && (
@@ -2202,7 +2240,12 @@ const CorrectionQRCTab = () => {
                 </Button>
               </div>
             )}
-            {blockingGroups.map((g) => (
+            {blockingSearchTokens.length > 0 && visibleBlockingGroups.length === 0 && (
+              <p className="py-4 text-center text-sm text-muted-foreground">
+                Aucun apprenant bloqué ne correspond à « {blockingSearch.trim()} ».
+              </p>
+            )}
+            {visibleBlockingGroups.map((g) => (
               <div
                 key={g.key}
                 role="button"
