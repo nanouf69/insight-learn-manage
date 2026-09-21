@@ -693,19 +693,29 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
                         <ChevronRight className="w-4 h-4" />
                       </Button>
                     )}
+                    {retakeBlocked && (
+                      <div className="mt-2 rounded-lg border-2 border-slate-300 bg-slate-50 px-3 py-2 text-center text-sm font-semibold text-slate-700">
+                        {examRetakeLockMessage(retakeLock.availableAt)}
+                      </div>
+                    )}
                     <Button
                       className="w-full mt-2 gap-2"
                       variant={isCompleted ? "outline" : isStartedNotFinished ? "default" : "default"}
-                      disabled={pausedExamIds?.has(examen.id) || retakeExamen?.id === examen.id}
+                      disabled={pausedExamIds?.has(examen.id) || retakeExamen?.id === examen.id || retakeBlocked}
                       onClick={(e) => {
                         e.stopPropagation();
+                        if (retakeBlocked) return;
                         // « Refaire l'examen » ne crée jamais une nouvelle tentative directement :
                         // double confirmation explicite obligatoire.
                         if (isCompleted) { setRetakeExamen(examen); return; }
                         onStart(examen, false);
                       }}
                     >
-                      {pausedExamIds?.has(examen.id) ? "⏸ Examen en pause" : isCompleted ? "🔄 Refaire l'examen" : isStartedNotFinished ? "Reprendre l'examen" : "Commencer l'examen"}
+                      {pausedExamIds?.has(examen.id)
+                        ? "⏸ Examen en pause"
+                        : retakeBlocked
+                          ? "🔒 Refaire l'examen indisponible"
+                          : isCompleted ? "🔄 Refaire l'examen" : isStartedNotFinished ? "Reprendre l'examen" : "Commencer l'examen"}
                       <ChevronRight className="w-4 h-4" />
                     </Button>
                     {onStartPartial && (
