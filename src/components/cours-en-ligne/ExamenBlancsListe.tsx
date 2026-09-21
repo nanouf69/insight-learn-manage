@@ -13,7 +13,7 @@ import {
   buildMatiereLookupKeys, getMatiereCanonicalKey, shareLookupKey,
   pickBestScoreRow, recoverCorruptedScoreRow, findScoreForMatiere,
   computeAdmisForMatiere,
-  selectLatestAttemptRows,
+  selectLatestAttemptRows, parseExamAnswerKey,
 } from "./examens-blancs-utils";
 import { computeMoyenneExamen, computeMatiereScore, computeMatiereScoreForAttempt, resolveMatiereForScoring } from "./examens-blancs-scoring";
 import { isMatiereQrcPendingForAttempt, excludeResultPlaceholders, mergePassageSiblingRows } from "./exam-helpers";
@@ -161,8 +161,7 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
               buildMatiereLookupKeys(matiere.id, matiere.nom).some((key) => doneLookupKeys.has(key))
             ).length;
 
-            const fallbackCompleted = rows.length >= requiredMatieres && completedMatiereCount >= Math.max(requiredMatieres - 1, 0);
-            if (completedMatiereCount >= requiredMatieres || fallbackCompleted) {
+            if (completedMatiereCount >= requiredMatieres) {
               completedIds.add(quizId);
             }
           });
@@ -195,21 +194,8 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
               console.warn(
                 `[ExamensBlancs][Recovery] Score restauré ${r.quiz_id}/${r.matiere_id}: ${r.score_obtenu}/${r.score_max} -> ${recovered.score_obtenu}/${recovered.score_max}`
               );
-              // Auto-heal: persist recovered score back to DB (fire-and-forget)
-              if (r.id) {
-                void supabase
-                  .from("apprenant_quiz_results" as any)
-                  .update({
-                    score_obtenu: recovered.score_obtenu,
-                    score_max: recovered.score_max,
-                    note_sur_20: recovered.note_sur_20,
-                  } as any)
-                  .eq("id", r.id)
-                  .then(({ error: healErr }) => {
-                    if (healErr) console.error("[AutoHeal][Liste] DB update failed:", healErr);
-                    else console.log(`[AutoHeal][Liste] Healed ${r.quiz_id}/${r.matiere_id} -> ${recovered.score_obtenu}`);
-                  });
-              }
+              // Affichage récupéré en mémoire uniquement : aucune note existante
+              // n'est réécrite par l'écran de liste.
             }
           });
 
@@ -382,7 +368,8 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
               if (repData) {
                 (repData as any[]).forEach((r: any) => {
                   const id: string = r?.exercice_id || "";
-                  const [quizId, matiereKey] = id.includes("__") ? id.split("__") : [id, ""];
+                  const quizId = examensDataRef.current.find((exam) => parseExamAnswerKey(id, exam.id))?.id ?? "";
+                  const matiereKey = quizId ? parseExamAnswerKey(id, quizId)?.matiereKey ?? "" : "";
                   if (r?.completed && quizId && matiereKey) {
                     if (!completedMatieresByQuiz.has(quizId)) completedMatieresByQuiz.set(quizId, new Set());
                     completedMatieresByQuiz.get(quizId)!.add(matiereKey.toLowerCase());
@@ -390,19 +377,9 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
                 });
               }
 
-              // Merge fallback completion into completedIds
-              // On considère l'examen comme terminé si TOUTES les matières OU au moins N-1
-              // ont completed=true dans reponses_apprenants (aligné sur la tolérance appliquée
-              // à apprenant_quiz_results, pour éviter qu'un seul upsert perdu affiche "Non terminé").
+              // Une sauvegarde de réponses, même marquée completed, ne remplace
+              // jamais une finalisation réelle dans apprenant_quiz_results.
               const mergedCompleted = new Set(completedIds);
-              completedMatieresByQuiz.forEach((doneKeys, quizId) => {
-                const examDef = examensDataRef.current.find((e) => e.id === quizId);
-                const validMatieres = (examDef?.matieres || []).filter((m): m is Matiere => Boolean(m));
-                if (validMatieres.length === 0) return;
-                const doneCount = validMatieres.filter((m) => doneKeys.has(String(m.id).toLowerCase())).length;
-                const threshold = Math.max(validMatieres.length - 1, 1);
-                if (doneCount >= threshold) mergedCompleted.add(quizId);
-              });
               if (mergedCompleted.size !== completedIds.size) {
                 setCompletedExamIds(mergedCompleted);
               }
@@ -411,7 +388,7 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
               if (repData) {
                 (repData as any[]).forEach((r: any) => {
                   const id: string = r?.exercice_id || "";
-                  const quizId = id.includes("__") ? id.split("__")[0] : id;
+                  const quizId = examensDataRef.current.find((exam) => parseExamAnswerKey(id, exam.id))?.id ?? "";
                   if (!mergedCompleted.has(quizId)) {
                     started.add(quizId);
                   }
