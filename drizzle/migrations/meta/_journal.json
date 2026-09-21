@@ -218,6 +218,13 @@
       "when": 1789976360311,
       "tag": "0030_shared_exercice_removal_requires_matiere_key",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1789978157287,
+      "tag": "0031_apprenant_abandon",
+      "breakpoints": true
     }
   ]
 }

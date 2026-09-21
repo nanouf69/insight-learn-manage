@@ -663,6 +663,7 @@ export type Database = {
       }
       apprenants: {
         Row: {
+          abandonnee: boolean
           adresse: string | null
           auth_user_id: string | null
           b2_vierge: boolean | null
@@ -670,6 +671,7 @@ export type Database = {
           code_postal: string | null
           created_at: string
           creneau_horaire: string | null
+          date_abandon: string | null
           date_debut_cours_en_ligne: string | null
           date_debut_formation: string | null
           date_examen_pratique: string | null
@@ -729,6 +731,7 @@ export type Database = {
           ville: string | null
         }
         Insert: {
+          abandonnee?: boolean
           adresse?: string | null
           auth_user_id?: string | null
           b2_vierge?: boolean | null
@@ -736,6 +739,7 @@ export type Database = {
           code_postal?: string | null
           created_at?: string
           creneau_horaire?: string | null
+          date_abandon?: string | null
           date_debut_cours_en_ligne?: string | null
           date_debut_formation?: string | null
           date_examen_pratique?: string | null
@@ -795,6 +799,7 @@ export type Database = {
           ville?: string | null
         }
         Update: {
+          abandonnee?: boolean
           adresse?: string | null
           auth_user_id?: string | null
           b2_vierge?: boolean | null
@@ -802,6 +807,7 @@ export type Database = {
           code_postal?: string | null
           created_at?: string
           creneau_horaire?: string | null
+          date_abandon?: string | null
           date_debut_cours_en_ligne?: string | null
           date_debut_formation?: string | null
           date_examen_pratique?: string | null
@@ -4884,6 +4890,7 @@ export type Database = {
           _ville: string
         }
         Returns: {
+          abandonnee: boolean
           adresse: string | null
           auth_user_id: string | null
           b2_vierge: boolean | null
@@ -4891,6 +4898,7 @@ export type Database = {
           code_postal: string | null
           created_at: string
           creneau_horaire: string | null
+          date_abandon: string | null
           date_debut_cours_en_ligne: string | null
           date_debut_formation: string | null
           date_examen_pratique: string | null
