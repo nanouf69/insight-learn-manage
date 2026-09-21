@@ -24,7 +24,7 @@ import {
   getQuestionImageValue,
 } from "./examens-blancs-utils";
 import { computeMoyenneExamen, computeResultatMatiereScore, getSeuilEliminatoireAffiche } from "./examens-blancs-scoring";
-import { isQrcCorrectionValidated, isQrcAnswerCertainlyEmpty } from "./exam-helpers";
+import { isExamAttemptPublicationPending } from "./exam-helpers";
 
 
 function EcranResultats({
@@ -80,6 +80,14 @@ function EcranResultats({
   const [isRetake, setIsRetake] = useState(false);
   const [activeTab, setActiveTab] = useState<"resultats" | "revision">("resultats");
 
+  const hasQrcPendingValidation = isExamAttemptPublicationPending(
+    resultats.map((resultat, index) => ({
+      ...resultat,
+      correctionsIA: correctionsIA[index] ?? resultat.correctionsIA,
+    })),
+    examen,
+  );
+
   // Detect if this is a retake (multiple results exist for same apprenant + quiz)
   useEffect(() => {
     if (!apprenantId || !examen?.id) return;
@@ -96,7 +104,7 @@ function EcranResultats({
 
   // === BILAN AUTOMATIQUE ===
   const generateBilanAuto = useCallback(() => {
-    if (!resultats || resultats.length === 0) return null;
+    if (hasQrcPendingValidation || !resultats || resultats.length === 0) return null;
 
     // Utilise le helper PARTAGÉ pour aligner la moyenne du bilan sur les autres écrans.
     const bilan = computeMoyenneExamen(examen, (m) => {
@@ -188,7 +196,7 @@ function EcranResultats({
     }
 
     return lines.join("\n");
-  }, [resultats, examen]);
+  }, [resultats, examen, correctionsIA, hasQrcPendingValidation]);
 
   // Auto-save bilan to DB
   useEffect(() => {
@@ -465,7 +473,7 @@ function EcranResultats({
   // Auto-save recalculated scores to DB for ALL users (not just admin)
   // so the list view averages stay in sync with the detail view
   useEffect(() => {
-    if (!apprenantId || !examen) return;
+    if (!apprenantId || !examen || hasQrcPendingValidation) return;
     const quizType = examen.id?.startsWith("taxi") ? "examen_blanc_taxi" : "examen_blanc";
     resultatsAvecIA.forEach(async (r, mi) => {
       if (r.nonPassee) return; // Skip placeholder rows (matière not attempted)
@@ -501,7 +509,7 @@ function EcranResultats({
         : updateQuery.eq("tentative", toFiniteNumber((r as any).tentative, currentTentative || 1));
       await updateQuery;
     });
-  }, [isViewingSaved, resultatsAvecIA.map(r => r.noteObtenue).join(",")]);
+  }, [isViewingSaved, resultatsAvecIA.map(r => r.noteObtenue).join(","), hasQrcPendingValidation]);
 
   // Moyenne globale calculée via le helper PARTAGÉ avec la vue liste et le bilan
   // texte → les 3 écrans affichent EXACTEMENT la même note.
@@ -521,32 +529,6 @@ function EcranResultats({
   const matieresEliminatoires = resultatsAvecIA
     .filter(r => !r.admis)
     .map(r => r.nomMatiere.split(" - ")[0]);
-
-  // QRC : aucune note définitive tant que TOUTES les QRC d'une matière n'ont pas
-  // été corrigées et validées manuellement (présentiel, e-learning et repasses).
-  const matieresEnAttenteQrc = (() => {
-    const pending = new Set<string>();
-    for (let mi = 0; mi < examen.matieres.length; mi++) {
-      const matiere = examen.matieres[mi];
-      if (!matiere) continue;
-      const resultatMatiere = resultatsAvecIA[mi];
-      if (!resultatMatiere || (resultatMatiere as any).nonPassee) continue;
-      const questionsSafe = (matiere.questions || []).filter((q): q is Question => q != null && q?.type !== undefined);
-      const qrcQuestions = questionsSafe.filter(q => q?.type === "QRC");
-      if (qrcQuestions.length === 0) continue;
-      const cacheMatiere = correctionsIA[mi] || resultatMatiere.correctionsIA || {};
-      for (const q of qrcQuestions) {
-        // QRC réellement laissée vide par l'élève : 0 point d'office, jamais bloquante.
-        const detailsMatiere = (resultatMatiere as any).details ?? null;
-        if (detailsMatiere && isQrcAnswerCertainlyEmpty(detailsMatiere, q.id)) continue;
-        const corr = (cacheMatiere as any)[q.id] ?? (cacheMatiere as any)[String(q.id)];
-        if (!isQrcCorrectionValidated(corr)) { pending.add(matiere.id); break; }
-      }
-    }
-    return pending;
-  })();
-  const hasQrcPendingValidation = !isAdmin && matieresEnAttenteQrc.size > 0;
-
 
   // Questions fausses à réviser (même logique que RevisionPhaseView)
   const wrongQuestions = useMemo(() => {
@@ -590,12 +572,12 @@ function EcranResultats({
     <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "resultats" | "revision")} className="space-y-6">
       <TabsList className="w-full grid grid-cols-2">
         <TabsTrigger value="resultats">📊 Résultats</TabsTrigger>
-        <TabsTrigger value="revision" disabled={wrongQuestions.length === 0}>📖 Relire les questions fausses</TabsTrigger>
+        <TabsTrigger value="revision" disabled={hasQrcPendingValidation || wrongQuestions.length === 0}>📖 Relire les questions fausses</TabsTrigger>
       </TabsList>
 
       <TabsContent value="resultats" className="space-y-6">
         {/* Bandeau correction IA en cours */}
-      {correctionEnCours && (
+      {!hasQrcPendingValidation && correctionEnCours && (
         <div className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg text-blue-700 text-sm">
           <Bot className="w-4 h-4 shrink-0" />
           <Loader2 className="w-4 h-4 animate-spin shrink-0" />
@@ -664,7 +646,7 @@ function EcranResultats({
           (1re, 2e, 3e...) attend la correction manuelle du formateur. */}
 
 
-      <div className="space-y-4">
+      {!hasQrcPendingValidation && <div className="space-y-4">
         <div className="flex items-center gap-2">
           <div className="w-1 h-6 rounded-full" style={{ backgroundColor: '#00B4D8' }} />
           <h4 className="font-semibold text-lg" style={{ color: '#0D2540' }}>Résultats par matière</h4>
@@ -723,13 +705,7 @@ function EcranResultats({
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      {matieresEnAttenteQrc.has(r.matiereId) && !isAdmin ? (
-                        <div className="text-right">
-                          <span className="text-base font-bold text-amber-600">⏳ En attente de correction</span>
-                          <p className="text-xs text-muted-foreground">Note publiée après correction des QRC</p>
-                        </div>
-                      ) : (
-                        <>
+                      <>
                           <div className="text-right">
                             <span className="text-2xl font-bold" style={{ color: r.admis ? '#00B4D8' : '#ef4444' }}>
                               {noteSur20.toFixed(1)} / 20
@@ -742,7 +718,6 @@ function EcranResultats({
                             <XCircle className="w-5 h-5 text-red-500" />
                           )}
                         </>
-                      )}
                       <ChevronRight className={`w-4 h-4 text-muted-foreground transition-transform ${isExpanded ? "rotate-90" : ""}`} />
 
                     </div>
@@ -953,7 +928,7 @@ function EcranResultats({
             <CardContent className="py-6 px-5 text-center">
               <Clock className="w-8 h-8 mx-auto mb-2 text-amber-500" />
               <p className="text-xl font-black text-amber-600">En attente de validation du formateur</p>
-              <p className="text-sm text-muted-foreground mt-1">Le résultat final sera disponible après correction des QRC par votre formateur.</p>
+              <p className="text-sm text-muted-foreground mt-1">Votre bilan et votre résultat final seront disponibles après la correction de toutes les QRC.</p>
             </CardContent>
           </Card>
         ) : (
@@ -976,7 +951,7 @@ function EcranResultats({
           </CardContent>
         </Card>
         )}
-      </div>
+      </div>}
 
       {/* Bouton refaire les fausses — EN HAUT bien visible */}
       {!hasQrcPendingValidation && (() => {
@@ -1022,7 +997,7 @@ function EcranResultats({
         );
       })()}
 
-      {revisionDejaFaite && (
+      {!hasQrcPendingValidation && revisionDejaFaite && (
         <div className="w-full text-center py-3 px-4 rounded-lg bg-green-50 border border-green-200">
           <p className="text-sm font-semibold text-green-700 flex items-center justify-center gap-2">
             <CheckCircle2 className="w-4 h-4" />
@@ -1033,7 +1008,7 @@ function EcranResultats({
 
 
       {/* Bilan automatique */}
-      {(() => {
+      {!hasQrcPendingValidation && (() => {
         const bilan = generateBilanAuto();
         if (!bilan) return null;
         return (
@@ -1068,7 +1043,7 @@ function EcranResultats({
       </div>
       </TabsContent>
 
-      <TabsContent value="revision">
+      {!hasQrcPendingValidation && <TabsContent value="revision">
         <div className="max-w-3xl mx-auto space-y-6">
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="sm" onClick={() => setActiveTab("resultats")} className="gap-2">
@@ -1091,7 +1066,7 @@ function EcranResultats({
             examenId={examen.id}
           />
         </div>
-      </TabsContent>
+      </TabsContent>}
     </Tabs>
   );
 }

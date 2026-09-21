@@ -5,7 +5,7 @@ import { Trophy, TrendingUp, Clock, Target, BookOpen, ChevronDown, ChevronUp, Gr
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { MODULES_DATA } from "./formations-data";
-import { isQrcPendingCorrection, computeReussiForResult, excludeResultPlaceholders, mergePassageSiblingRows } from "./exam-helpers";
+import { isExamAttemptPublicationPending, computeReussiForResult, excludeResultPlaceholders, mergePassageSiblingRows } from "./exam-helpers";
 
 interface QuizResult {
   id: string;
@@ -21,6 +21,7 @@ interface QuizResult {
   duree_secondes: number | null;
   completed_at: string;
   details: any;
+  tentative?: number | null;
 }
 
 interface ModuleCompletion {
@@ -179,11 +180,29 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
     });
   };
 
+  const pendingResultIds = useMemo(() => {
+    const groups = new Map<string, QuizResult[]>();
+    quizResults.forEach((row) => {
+      const key = `${row.quiz_id}__${row.tentative ?? 1}`;
+      groups.set(key, [...(groups.get(key) || []), row]);
+    });
+    const ids = new Set<string>();
+    groups.forEach((rows) => {
+      if (isExamAttemptPublicationPending(rows)) rows.forEach((row) => ids.add(row.id));
+    });
+    return ids;
+  }, [quizResults]);
+
+  const publishedQuizResults = useMemo(
+    () => quizResults.filter((row) => !pendingResultIds.has(row.id)),
+    [quizResults, pendingResultIds],
+  );
+
   // Combined stats
   const stats = useMemo(() => {
     const allScores: { score: number; max: number }[] = [];
     
-    quizResults.forEach(r => {
+    publishedQuizResults.forEach(r => {
       // BUG 5: revision_fausses lines must not contribute to Réussi/Échoué stats
       if ((r as any).quiz_type === "revision_fausses") return;
       const noteSur20 = normalizeQuizNoteSur20(r);
@@ -201,10 +220,10 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
     const moyenne = notes.reduce((a, b) => a + b, 0) / notes.length;
     const meilleure = Math.max(...notes);
     const nbReussi = notes.filter(n => n >= 10).length;
-    const totalDuree = quizResults.reduce((acc, r) => acc + (r.duree_secondes || 0), 0);
+    const totalDuree = publishedQuizResults.reduce((acc, r) => acc + (r.duree_secondes || 0), 0);
 
-    return { moyenne, meilleure, nbReussi, total: allScores.length, totalDuree, nbModules: moduleCompletions.length, nbExamens: quizResults.length };
-  }, [quizResults, moduleCompletions]);
+    return { moyenne, meilleure, nbReussi, total: allScores.length, totalDuree, nbModules: moduleCompletions.length, nbExamens: publishedQuizResults.length };
+  }, [publishedQuizResults, moduleCompletions]);
 
   // Group module completions by matière
   const byMatiere = useMemo(() => {
@@ -227,7 +246,7 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
     });
 
     // Add quiz results grouped by matière
-    quizResults.forEach(r => {
+    publishedQuizResults.forEach(r => {
       if (r.matiere_nom) {
         const matiere = r.matiere_nom;
         if (!map[matiere]) map[matiere] = [];
@@ -244,7 +263,7 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
     });
 
     return map;
-  }, [moduleCompletions, quizResults]);
+  }, [moduleCompletions, publishedQuizResults]);
 
   // Group by module
   const byModule = useMemo(() => {
@@ -265,7 +284,7 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
       });
     });
 
-    quizResults.forEach(r => {
+    publishedQuizResults.forEach(r => {
       const name = r.quiz_titre;
       if (!map[name]) map[name] = [];
       map[name].push({
@@ -279,7 +298,7 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
     });
 
     return map;
-  }, [moduleCompletions, quizResults]);
+  }, [moduleCompletions, publishedQuizResults]);
 
   // Radar data from matière averages
   const matiereRadar = useMemo(() => {
@@ -307,7 +326,7 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
       });
     });
 
-    quizResults.forEach(r => {
+    publishedQuizResults.forEach(r => {
       const noteSur20 = normalizeQuizNoteSur20(r);
       if (noteSur20 != null) {
         all.push({ date: new Date(r.completed_at), pct: noteSur20, titre: r.quiz_titre });
@@ -322,7 +341,7 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
         note: Number(item.pct.toFixed(1)),
         titre: item.titre,
       }));
-  }, [moduleCompletions, quizResults]);
+  }, [moduleCompletions, publishedQuizResults]);
 
   const formatDuration = (seconds: number) => {
     const h = Math.floor(seconds / 3600);
@@ -611,7 +630,7 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
                       <div className="md:col-span-3 font-medium text-slate-800">{r.quiz_titre}</div>
                       <div className="md:col-span-2 text-slate-500 text-xs">{r.matiere_nom || "—"}</div>
                       <div className="md:col-span-2 text-center">
-                        {isQrcPendingCorrection((r as any).details) ? (
+                         {pendingResultIds.has(r.id) ? (
                           <span className="text-xs font-semibold text-amber-600">⏳ En attente</span>
                         ) : (
                           <span className={`font-bold ${(noteSur20 ?? 0) >= 10 ? "text-emerald-600" : "text-red-500"}`}>
@@ -625,7 +644,7 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
                           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600">
                             Révision
                           </span>
-                        ) : isQrcPendingCorrection((r as any).details) ? (
+                         ) : pendingResultIds.has(r.id) ? (
                           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
                             ⏳ En attente de correction
                           </span>
@@ -662,7 +681,7 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
           const examGroups: Record<string, QuizResult[]> = {};
           quizResults.forEach(r => {
             // BUG 5: never group revision_fausses as échoué
-            if ((r as any).quiz_type === "revision_fausses") return;
+             if ((r as any).quiz_type === "revision_fausses" || pendingResultIds.has(r.id)) return;
             if (!examGroups[r.quiz_id]) examGroups[r.quiz_id] = [];
             examGroups[r.quiz_id].push(r);
           });

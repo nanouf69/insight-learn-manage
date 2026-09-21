@@ -25,6 +25,7 @@ export interface ResultatMatiere {
   admis: boolean;
   reponses: Reponses;
   correctionsIA?: CorrectionCache;
+  details?: any;
   tentative?: number;
   /** true if this matière was NOT attempted by the learner (placeholder row) */
   nonPassee?: boolean;

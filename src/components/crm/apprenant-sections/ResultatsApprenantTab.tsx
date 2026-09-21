@@ -8,7 +8,7 @@ import { EXAMENS_BLANCS_VTC, EXAMENS_BLANCS_TAXI, EXAMENS_BLANCS_TA, EXAMENS_BLA
 import { loadSavedExamens } from "@/components/cours-en-ligne/ExamensBlancsEditor";
 import { computeMoyenneExamen, computeMatiereScoreForAttempt } from "@/components/cours-en-ligne/examens-blancs-scoring";
 import { findScoreForMatiere, buildMatiereLookupKeys } from "@/components/cours-en-ligne/examens-blancs-utils";
-import { isQrcPendingCorrection, isMatiereQrcPendingForAttempt, excludeResultPlaceholders, mergePassageSiblingRows } from "@/components/cours-en-ligne/exam-helpers";
+import { isExamAttemptPublicationPending, excludeResultPlaceholders, mergePassageSiblingRows } from "@/components/cours-en-ligne/exam-helpers";
 
 // Repli statique uniquement : la source de vérité affichée est la définition
 // enregistrée en base (identique à l'écran apprenant), chargée via loadSavedExamens().
@@ -141,15 +141,7 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
               // Règle générale : le drapeau `qrc_pending_correction` n'existe que sur
               // les nouveaux résultats → on vérifie AUSSI chaque QRC de la définition
               // d'examen contre les corrections validées manuellement.
-              const matiereEnAttenteQrc = (m: any) => {
-                if (isQrcPendingCorrection(m?.details)) return true;
-                const def = examenDef?.matieres.find(
-                  (md: any) => md.id === m.matiere_id || md.nom === m.matiere_nom,
-                );
-                if (!def) return false;
-                return isMatiereQrcPendingForAttempt(def, m?.details ?? { correctionsIA: m?.correctionsIA });
-              };
-              const enAttenteCorrection = exam.matieres.some((m: any) => matiereEnAttenteQrc(m));
+               const enAttenteCorrection = isExamAttemptPublicationPending(exam.matieres, examenDef);
 
               return (
                 <div key={quizId} className="border rounded-lg p-4 space-y-3">
@@ -186,11 +178,10 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
                         ? computeMatiereScoreForAttempt(matiereDef, m as any)
                         : null;
                       const note = recomputed?.noteSur20 ?? (Number(m.note_sur_20) || 0);
-                      const matiereEnAttente = matiereEnAttenteQrc(m);
                       return (
                         <div key={i} className="flex justify-between text-xs border rounded px-2 py-1">
                           <span className="truncate pr-1">{(m.matiere_nom || m.matiere_id || "?").split(" - ")[0]}</span>
-                          {matiereEnAttente ? (
+                           {enAttenteCorrection ? (
                             <span className="font-semibold shrink-0 text-amber-600">⏳</span>
                           ) : (
                             <span className={`font-bold shrink-0 ${note >= 10 ? "text-green-600" : "text-red-500"}`}>
@@ -204,7 +195,7 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
                   </div>
 
                   {/* Bilan auto */}
-                  {bilan && (
+                   {bilan && !enAttenteCorrection && (
                     <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 mt-2">
                       <div className="flex items-center gap-2 mb-2">
                         <Bot className="w-4 h-4 text-primary" />

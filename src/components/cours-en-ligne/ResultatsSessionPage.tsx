@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { MODULES_DATA } from "./formations-data";
+import { computeReussiForResult, isExamAttemptPublicationPending } from "./exam-helpers";
 
 interface SessionOption {
   id: string;
@@ -283,7 +284,7 @@ const ResultatsSessionPage = () => {
   // ── Examens blancs analytics ──
 
   const examBlancResults = useMemo(() => {
-    return quizResults.filter(q => q.quiz_type === "examen_blanc");
+    return quizResults.filter(q => q.quiz_type === "examen_blanc" || q.quiz_type === "examen_blanc_taxi");
   }, [quizResults]);
 
   // Group by quiz_id (examen), then by apprenant (last attempt only)
@@ -324,13 +325,15 @@ const ResultatsSessionPage = () => {
           }
         }
 
+        if (isExamAttemptPublicationPending(Object.values(lastPerMatiere))) continue;
+
         const matiereDetails: { nom: string; note: number; reussi: boolean }[] = [];
         let appTotal = 0, appCount = 0;
 
         for (const [mKey, r] of Object.entries(lastPerMatiere)) {
           const note = r.note_sur_20 != null ? Math.min(r.note_sur_20, 20) : (r.score_max > 0 ? Math.min((r.score_obtenu / r.score_max) * 20, 20) : 0);
           const matNom = r.matiere_nom || r.quiz_titre;
-          const reussiMat = note >= EXAM_PASS_NOTE;
+          const reussiMat = computeReussiForResult(r as any) ?? false;
 
           if (!matieres[mKey]) matieres[mKey] = { nom: matNom, totalNote: 0, count: 0, pass: 0, fail: 0 };
           matieres[mKey].totalNote += note;
@@ -343,7 +346,7 @@ const ResultatsSessionPage = () => {
         }
 
         const noteGlobale = appCount > 0 ? Math.round((appTotal / appCount) * 10) / 10 : 0;
-        const reussiGlobal = noteGlobale >= EXAM_PASS_NOTE;
+        const reussiGlobal = matiereDetails.length > 0 && matiereDetails.every((m) => m.reussi) && noteGlobale >= EXAM_PASS_NOTE;
 
         const apprenant = apprenants.find(a => a.id === appId);
         if (apprenant) {
