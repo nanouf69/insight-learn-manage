@@ -473,7 +473,7 @@ export default function ExamensBlancsPage({
       if (resultError || answerError) { toast.error("Vérification de sécurité impossible. Réessayez."); return; }
 
       const allResultRows = mergePassageSiblingRows(excludeResultPlaceholders(tRows as any[]));
-      const savedRows = ((answerRows as SavedExamAnswerRow[]) || []).filter((row) =>
+      const savedRows = (((answerRows as unknown) as SavedExamAnswerRow[]) || []).filter((row) =>
         Boolean(extractMatiereKeyFromExerciceId(safeStr(row.exercice_id), latestExamen.id))
       );
       const maxResultAttempt = allResultRows.reduce((max: number, row: any) => Math.max(max, getAttemptNumber(row)), 1);
