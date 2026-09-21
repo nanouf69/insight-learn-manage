@@ -164,6 +164,8 @@ interface Apprenant {
   inscrit_france_travail?: boolean | null;
   date_examen_pratique?: string | null;
   documents_complets?: boolean | null;
+  abandonnee?: boolean | null;
+  date_abandon?: string | null;
 }
 
 interface ApprenantEditFormProps {
@@ -299,6 +301,8 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
     heures_pratique: "",
     heures_totales: "",
   });
+  const [abandonnee, setAbandonnee] = useState(false);
+  const [dateAbandon, setDateAbandon] = useState("");
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -361,6 +365,8 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
       setInscritFranceTravail(apprenant.inscrit_france_travail ?? false);
       setDateExamenPratique(apprenant.date_examen_pratique || "");
       setDocumentsComplets(apprenant.documents_complets ?? false);
+      setAbandonnee((apprenant as any).abandonnee ?? false);
+      setDateAbandon((apprenant as any).date_abandon || "");
       // Restaurer la 2ème formation si elle existe
       const formationChoisie = apprenant.formation_choisie || "";
       if (formationChoisie.includes(" + ")) {
@@ -532,6 +538,8 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
       inscrit_france_travail: inscritFranceTravail,
       date_examen_pratique: dateExamenPratique || null,
       documents_complets: documentsComplets,
+      abandonnee,
+      date_abandon: abandonnee ? (dateAbandon || format(new Date(), 'yyyy-MM-dd')) : null,
       date_debut_cours_en_ligne: dateDebutCours ? format(dateDebutCours, 'yyyy-MM-dd') : effectiveDateDebutFormation,
       date_fin_cours_en_ligne: dateFinCours ? format(dateFinCours, 'yyyy-MM-dd') : effectiveDateFinFormation,
       modules_autorises: effectiveModulesAutorises.length > 0 ? effectiveModulesAutorises : null,
@@ -1721,6 +1729,32 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
           </div>
           )}
 
+
+          {/* Abandon */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-medium text-muted-foreground border-b pb-2">Abandon</h3>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="abandonnee"
+                checked={abandonnee}
+                onCheckedChange={(checked) => setAbandonnee(checked === true)}
+              />
+              <Label htmlFor="abandonnee" className="cursor-pointer">
+                L'apprenant a abandonné la formation
+              </Label>
+            </div>
+            {abandonnee && (
+              <div className="space-y-2">
+                <Label htmlFor="date_abandon">Date d'abandon</Label>
+                <Input
+                  id="date_abandon"
+                  type="date"
+                  value={dateAbandon}
+                  onChange={(e) => setDateAbandon(e.target.value)}
+                />
+              </div>
+            )}
+          </div>
 
           {/* Notes */}
           <div className="space-y-4">
