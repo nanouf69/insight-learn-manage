@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { submitQuizAttempt } from "@/lib/quizAttempts";
-import { enqueueAnswerSave, flushAnswerSavesAndWait, getPendingAnswers, type AnswerSavePayload } from "@/lib/answerPersistence";
+import { enqueueAnswerSave, flushAnswerSavesAndWait, flushAnswerSavesOnUnload, mergeSavedAndPendingAnswers, type AnswerSavePayload } from "@/lib/answerPersistence";
 
 interface UseAutoSaveReponsesOptions {
   apprenantId: string | null | undefined;
@@ -83,14 +83,19 @@ export function useAutoSaveReponses<T = Record<string, any>>({
         if (!error && data) {
           setIsSubmitted(((data as any).status ?? ((data as any).completed ? "submitted" : "in_progress")) === "submitted");
         }
-        if (!error && data && !(data as any).completed) {
-          const pending = getPendingAnswers(apprenantId, exerciceId);
-          setLoadedReponses({ ...((data as any).reponses ?? {}), ...(pending ?? {}) } as T);
-          // Existing data in DB → don't force the immediate flush again
-          hasSavedOnceRef.current = true;
-        } else if (!error && data && (data as any).completed) {
-          hasSavedOnceRef.current = true;
+        // Règle générale : on recharge TOUJOURS les réponses (même sur une
+        // ligne terminée ou vide) et les réponses locales encore en attente
+        // gagnent, sans qu'une valeur vide puisse en masquer une.
+        {
+          const merged = mergeSavedAndPendingAnswers(
+            (!error ? ((data as any)?.reponses ?? {}) : {}) as any,
+            apprenantId,
+            exerciceId,
+          );
+          if (Object.keys(merged).length > 0) setLoadedReponses(merged as T);
+          if (!error && data) hasSavedOnceRef.current = true;
         }
+
       } catch (e) {
         console.error("[AutoSaveReponses] Load error:", e);
       }
