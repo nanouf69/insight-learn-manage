@@ -1435,10 +1435,17 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
               { duration: 10000 },
             );
           } else {
-            toast.error(`Sauvegarde impossible: ${(error as any)?.message ?? "erreur inconnue"}`);
+            const guard = describeExamGuardError(error);
+            if (guard) {
+              toast.error(guard, { duration: 15000 });
+              void logExamWriteRefusal(row.module_id, writeOrigin, error);
+            } else {
+              toast.error(`Sauvegarde impossible: ${(error as any)?.message ?? "erreur inconnue"}`);
+            }
           }
           return false;
         }
+
       }
 
       lastSavedFingerprintRef.current = JSON.stringify(synced);
