@@ -1784,7 +1784,19 @@ const CorrectionQRCTab = () => {
 
   // keptVersion force le recalcul quand une QRC corrigée est conservée dans l'historique.
   void keptVersion;
-  const filtered = items.filter(matchesFilter);
+  const filtered = (() => {
+    const list = items.filter(matchesFilter);
+    if (filter !== "blocking") return list;
+    // Vue bloquante : une QRC ne peut jamais apparaître deux fois.
+    const seen = new Set<string>();
+    return list.filter((i) => {
+      const key = getQrcQueueIdentity(i);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  })();
+
 
 
   // Build available exam list grouped by category, each with its numbers
