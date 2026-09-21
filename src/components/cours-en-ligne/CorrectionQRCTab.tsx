@@ -777,32 +777,43 @@ const CorrectionQRCTab = () => {
       const storedTentative = getStoredTentative(r.tentative);
       const questions = Array.isArray(details.questions) && details.questions.length > 0 ? details.questions : null;
       const list = groupsByMatiere.get(mKey) || [];
-      const last = list[list.length - 1];
+      const signature = buildAnswerSignature(details);
 
-      if (last && storedTentative != null && last.dbTentative === storedTentative && time - last.lastTime <= MEME_PASSAGE_MS) {
+      // Cible de fusion : même numéro de tentative persistant, ou signature de
+      // réponses strictement identique. Jamais une simple proximité horaire.
+      const target = list.find((g) =>
+        (storedTentative != null && g.dbTentative === storedTentative)
+        || (!!signature && g.answerSignature === signature),
+      );
+
+      if (target) {
         // Même passage : on complète ce qui manque, sans jamais écraser.
         doublonsTechniques++;
-        last.rows++;
-        last.lastTime = time;
-        if (r.completed_at) last.completedAt = r.completed_at;
-        if (questions && (!last.questions || questions.length > last.questions.length)) {
-          last.questions = questions;
-          last.primaryId = r.id;
+        target.rows++;
+        target.lastTime = Math.max(target.lastTime, time);
+        if (r.completed_at && time >= target.lastTime) target.completedAt = r.completed_at;
+        if (storedTentative != null && !target.mergedTentatives.includes(storedTentative)) {
+          target.mergedTentatives.push(storedTentative);
+        }
+        if (!target.answerSignature && signature) target.answerSignature = signature;
+        if (questions && (!target.questions || questions.length > target.questions.length)) {
+          target.questions = questions;
+          target.primaryId = r.id;
         }
         Object.entries(details.reponses || {}).forEach(([k, v]) => {
-          const current = last.reponses[k];
-          if (current == null || (typeof current === "string" && current.trim() === "")) last.reponses[k] = v;
+          const current = target.reponses[k];
+          if (current == null || (typeof current === "string" && current.trim() === "")) target.reponses[k] = v;
         });
         Object.entries(details.correctionsIA || {}).forEach(([k, v]) => {
-          const current = last.corrections[k];
-          if (current == null || (!isAdminValidatedCorrection(current, last.completedAt) && isAdminValidatedCorrection(v, r.completed_at))) {
-            last.corrections[k] = v;
+          const current = target.corrections[k];
+          if (current == null || (!isAdminValidatedCorrection(current, target.completedAt) && isAdminValidatedCorrection(v, r.completed_at))) {
+            target.corrections[k] = v;
           }
         });
-        if (!last.matiereNom && r.matiere_nom) last.matiereNom = r.matiere_nom;
-        if ((r.score_obtenu ?? 0) > last.scoreObtenu) {
-          last.scoreObtenu = r.score_obtenu ?? 0;
-          last.noteSur20 = r.note_sur_20 ?? last.noteSur20;
+        if (!target.matiereNom && r.matiere_nom) target.matiereNom = r.matiere_nom;
+        if ((r.score_obtenu ?? 0) > target.scoreObtenu) {
+          target.scoreObtenu = r.score_obtenu ?? 0;
+          target.noteSur20 = r.note_sur_20 ?? target.noteSur20;
         }
         continue;
       }
@@ -828,8 +839,11 @@ const CorrectionQRCTab = () => {
         rows: 1,
         firstTime: time,
         lastTime: time,
+        answerSignature: signature,
+        mergedTentatives: storedTentative != null ? [storedTentative] : [],
       });
       groupsByMatiere.set(mKey, list);
+
     }
 
     // Le libellé « tentative X » n'est affiché que si X est unique pour cette
