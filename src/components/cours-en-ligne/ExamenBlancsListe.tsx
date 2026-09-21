@@ -481,7 +481,12 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
               const dureeTotal = examen.matieres.reduce((acc, m) => acc + m.duree, 0);
               const isCompleted = completedExamIds.has(examen.id);
               const isStartedNotFinished = !isCompleted && startedNotFinishedIds.has(examen.id);
-              const canRetake = true;
+              // Délai de 48 h : une NOUVELLE tentative n'est possible que
+              // 2 jours complets après la fin de la précédente. La reprise
+              // d'une tentative EN COURS reste toujours autorisée.
+              const retakeLock = computeExamRetakeLock(lastFinishedByExam[examen.id] ?? null, nowTick);
+              const retakeBlocked = isCompleted && !openAttemptIds.has(examen.id) && retakeLock.locked;
+              const canRetake = !retakeBlocked;
               const canStartExam = true;
               const scores = examScores[examen.id] || [];
               return (
