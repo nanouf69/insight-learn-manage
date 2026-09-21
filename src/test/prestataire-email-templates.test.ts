@@ -27,7 +27,7 @@ describe("Modèles d'e-mails prestataires", () => {
     expect(corps).toContain("Bonjour Jean DUPONT,");
     expect(corps).toContain("Virement");
     expect(corps).toContain("VIR-8821");
-    expect(corps).toContain("1 200,00 €");
+    expect(corps.replace(/[\u00a0\u202f]/g, " ")).toContain("1 200,00 €");
     expect(corps).not.toContain("{{");
   });
 
