@@ -378,16 +378,25 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
               }
 
 
+              const open = new Set<string>();
               if (repData) {
                 (repData as any[]).forEach((r: any) => {
                   const id: string = r?.exercice_id || "";
                   const quizId = examensDataRef.current.find((exam) => parseExamAnswerKey(id, exam.id))?.id ?? "";
-                  if (quizId && !mergedCompleted.has(quizId)) {
+                  if (!quizId) return;
+                  if (!mergedCompleted.has(quizId)) {
                     started.add(quizId);
+                  }
+                  // Un passage ouvert (non finalisé, avec au moins une réponse) reste
+                  // reprenable même si une tentative précédente est terminée.
+                  const nbReponses = r?.reponses && typeof r.reponses === "object" ? Object.keys(r.reponses).length : 0;
+                  if (r?.completed !== true && nbReponses > 0) {
+                    open.add(quizId);
                   }
                 });
               }
               setStartedNotFinishedIds(started);
+              setOpenAttemptIds(open);
             });
         }
       });
