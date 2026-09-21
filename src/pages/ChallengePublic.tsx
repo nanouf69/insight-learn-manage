@@ -155,7 +155,10 @@ export default function ChallengePublic() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <p className="text-lg font-medium">{question.enonce}</p>
+              <p className="text-lg font-medium whitespace-pre-wrap">{question.enonce}</p>
+              {question.image && (
+                <img src={question.image} alt="Illustration de la question" className="max-h-64 rounded-lg" />
+              )}
 
               {alreadyAnswered ? (
                 <div className="rounded-lg border p-3 text-sm">
