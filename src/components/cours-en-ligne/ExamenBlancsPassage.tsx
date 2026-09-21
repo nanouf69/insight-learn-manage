@@ -23,7 +23,7 @@ import {
   answersAreEqual,
   flushAnswerSavesAndWait,
   flushAnswerSavesOnUnload,
-  getPendingAnswers,
+  mergeSavedAndPendingAnswers,
   mergeSavedAndPendingAnswers,
   subscribeAnswerSaveState,
 } from "@/lib/answerPersistence";
