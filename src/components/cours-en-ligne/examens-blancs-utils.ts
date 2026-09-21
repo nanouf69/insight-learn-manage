@@ -637,6 +637,28 @@ export function getMeaningfulAnswerCount(reponses: unknown): number {
   }).length;
 }
 
+/**
+ * RÈGLE ABSOLUE — une tentative terminée est IMMUABLE.
+ *
+ * Quand un apprenant recommence une matière dont le passage est déjà finalisé
+ * (ligne verrouillée côté serveur), on n'écrit JAMAIS dans l'ancienne clé : on
+ * alloue la première clé de tentative encore libre (`__tN`). Aucune donnée
+ * existante n'est lue en écriture, supprimée ni renumérotée.
+ */
+export function allocateFreshExamMatiereExerciceId(
+  examId: string,
+  matiereId: string,
+  startTentative: number,
+  unavailableExerciceIds: Set<string>,
+): string {
+  const start = Math.max(Math.trunc(toFiniteNumber(startTentative, 1)), 1);
+  for (let tentative = start; tentative < start + 500; tentative += 1) {
+    const candidate = `${examId || "exam"}__${matiereId}${tentative > 1 ? `__t${tentative}` : ""}`;
+    if (!unavailableExerciceIds.has(candidate)) return candidate;
+  }
+  return `${examId || "exam"}__${matiereId}__t${start + 500}`;
+}
+
 export function getSavedAnswerRowAttempt(row: SavedExamAnswerRow, examId: string): number {
   const parsedAttempt = parseExamAnswerKey(safeStr(row.exercice_id), examId)?.tentative ?? 1;
   return Math.max(Math.trunc(toFiniteNumber(row.tentative, parsedAttempt)), parsedAttempt, 1);

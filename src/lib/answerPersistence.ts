@@ -242,6 +242,49 @@ export const onAnswerStorageSaturation = (
 
 export const isAnswerStorageSaturated = (): boolean => storageSaturated;
 
+/**
+ * Refus explicite du serveur (passage déjà terminé, ou compte non propriétaire).
+ * L'apprenant doit le voir IMMÉDIATEMENT : on n'affiche jamais « enregistré »
+ * pour une réponse que la base n'a pas appliquée.
+ */
+export interface AnswerSaveRejection {
+  exerciceId: string;
+  reason: "frozen" | "forbidden";
+  at: string;
+}
+
+let lastRejection: AnswerSaveRejection | null = null;
+const rejectionListeners = new Set<(rejection: AnswerSaveRejection | null) => void>();
+
+const emitRejection = () => {
+  rejectionListeners.forEach((listener) => {
+    try {
+      listener(lastRejection);
+    } catch {
+      /* noop */
+    }
+  });
+};
+
+const notifyAnswerSaveRejected = (exerciceId: string, reason: AnswerSaveRejection["reason"]) => {
+  lastRejection = { exerciceId, reason, at: new Date().toISOString() };
+  emitRejection();
+};
+
+export const onAnswerSaveRejected = (
+  listener: (rejection: AnswerSaveRejection | null) => void,
+): (() => void) => {
+  rejectionListeners.add(listener);
+  listener(lastRejection);
+  return () => rejectionListeners.delete(listener);
+};
+
+export const clearAnswerSaveRejection = (): void => {
+  if (!lastRejection) return;
+  lastRejection = null;
+  emitRejection();
+};
+
 function readQueue(): QueueItem[] {
   if (memoryQueue) return memoryQueue;
   try {
