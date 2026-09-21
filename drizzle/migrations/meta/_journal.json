@@ -204,6 +204,13 @@
       "when": 1789821091899,
       "tag": "0028_qualiopi_storage_policies",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1789975386939,
+      "tag": "0029_bilan_shared_exercice_stable_identity_and_va_backup",
+      "breakpoints": true
     }
   ]
 }
