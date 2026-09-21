@@ -16,7 +16,7 @@ import {
   selectLatestAttemptRows, parseExamAnswerKey,
 } from "./examens-blancs-utils";
 import { computeMoyenneExamen, computeMatiereScore, computeMatiereScoreForAttempt, resolveMatiereForScoring } from "./examens-blancs-scoring";
-import { isExamAttemptPublicationPending, excludeResultPlaceholders, mergePassageSiblingRows } from "./exam-helpers";
+import { isExamAttemptPublicationPending, isMatiereQrcPendingForAttempt, excludeResultPlaceholders, mergePassageSiblingRows } from "./exam-helpers";
 import { toast } from "sonner";
 import { RefaireExamenDialog } from "./RefaireExamenDialog";
 
