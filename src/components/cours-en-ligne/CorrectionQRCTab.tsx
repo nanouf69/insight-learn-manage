@@ -263,13 +263,32 @@ function sortBlockingQrcItems(list: QrcItem[]): QrcItem[] {
   return [...list].sort(compareBlockingQrcItems);
 }
 
-/** Périmètre commun à toutes les listes et tous les compteurs de l'écran. */
+/**
+ * QRC BLOQUANT UN RÉSULTAT — SOURCE DE VÉRITÉ DU BLOCAGE.
+ * Une QRC réellement répondue et non validée manuellement empêche la
+ * publication du résultat, quelle que soit la ligne technique (« tentative »)
+ * sur laquelle elle a été enregistrée. Lecture/affichage uniquement.
+ */
+export function isBlockingQrcItem(
+  item: Pick<QrcItem, "corrigeManuel" | "reponseEleve">,
+): boolean {
+  return !item.corrigeManuel && safeStr(item.reponseEleve).trim() !== "";
+}
+
+/**
+ * Périmètre de confort de la liste normale.
+ * IMPORTANT : ce filtre ne doit JAMAIS masquer une QRC qui bloque un résultat.
+ */
 export function isInTentativeScope(
-  item: Pick<QrcItem, "dbTentative">,
+  item: Pick<QrcItem, "dbTentative" | "corrigeManuel" | "reponseEleve">,
   tentativeFilter: "1" | "all",
 ): boolean {
-  return tentativeFilter === "all" || item.dbTentative === 1;
+  if (tentativeFilter === "all" || item.dbTentative === 1) return true;
+  // Une écriture technique « tentative 2/3 » qui porte une QRC bloquante
+  // reste toujours accessible à la correction.
+  return isBlockingQrcItem(item);
 }
+
 
 /** Identité exacte utilisée pour comparer les files « aujourd'hui » et « bloquantes ». */
 export function getQrcQueueIdentity(
@@ -1645,15 +1664,7 @@ const CorrectionQRCTab = () => {
   const isAnsweredToday = (item: QrcItem) =>
     isToday(item.completedAt) && safeStr(item.reponseEleve).trim() !== "";
 
-  /**
-   * QRC BLOQUANT UN RÉSULTAT — MÊME RÈGLE QUE L'ÉCRAN APPRENANT.
-   * Une QRC réellement répondue et non validée manuellement empêche la
-   * publication du résultat (« En attente de correction des QRC »), quelle que
-   * soit sa date. Une QRC laissée vide ne bloque pas. Lecture/affichage
-   * uniquement : aucune correction, note ou donnée n'est modifiée ici.
-   */
-  const isBlockingResult = (item: QrcItem) =>
-    !item.corrigeManuel && safeStr(item.reponseEleve).trim() !== "";
+  const isBlockingResult = (item: QrcItem) => isBlockingQrcItem(item);
 
   // « QRC répondues aujourd'hui » : uniquement les QRC uniques (déjà dédoublonnées
   // par apprenant + examen + matière + question) dont la réponse élève est
@@ -1664,9 +1675,24 @@ const CorrectionQRCTab = () => {
   const todayPendingItems = todayItems.filter(i => !i.corrigeManuel);
   const todayPendingCount = todayPendingItems.length;
 
-  const blockingItems = scopedItems.filter(isBlockingResult);
+  // SOURCE DE VÉRITÉ DU BLOCAGE : calculée sur TOUTES les QRC chargées,
+  // jamais sur le périmètre visuel « tentative 1 ». Dédoublonnage par identité
+  // passage + matière + question pour ne jamais compter deux fois la même QRC.
+  const blockingItems = (() => {
+    const seen = new Set<string>();
+    const out: QrcItem[] = [];
+    for (const i of items) {
+      if (!isBlockingQrcItem(i)) continue;
+      const key = getQrcQueueIdentity(i);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push(i);
+    }
+    return out;
+  })();
   const blockingCount = blockingItems.length;
   const olderBlockingCount = blockingItems.filter(i => !isAnsweredToday(i)).length;
+
 
   // Contrôle mathématique demandé : les deux vues sont des filtres de la même
   // source et utilisent la même identité passage + matière + question.
@@ -1758,7 +1784,19 @@ const CorrectionQRCTab = () => {
 
   // keptVersion force le recalcul quand une QRC corrigée est conservée dans l'historique.
   void keptVersion;
-  const filtered = items.filter(matchesFilter);
+  const filtered = (() => {
+    const list = items.filter(matchesFilter);
+    if (filter !== "blocking") return list;
+    // Vue bloquante : une QRC ne peut jamais apparaître deux fois.
+    const seen = new Set<string>();
+    return list.filter((i) => {
+      const key = getQrcQueueIdentity(i);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  })();
+
 
 
   // Build available exam list grouped by category, each with its numbers
