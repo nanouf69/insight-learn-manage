@@ -1532,6 +1532,48 @@ const CorrectionQRCTab = () => {
         </Button>
       </div>
 
+      {/* Alerte prioritaire : QRC (même anciennes) qui bloquent encore un résultat. */}
+      {blockingCount > 0 && filter !== "blocking" && (
+        <Card className="border-destructive/40 bg-destructive/5">
+          <CardContent className="py-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="font-semibold text-destructive">
+                🚨 {blockingCount} QRC bloquent encore la publication de résultats
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Dont {olderBlockingCount} QRC plus anciennes qu'aujourd'hui — tant qu'elles ne sont pas validées,
+                l'apprenant reste « En attente de correction des QRC ».
+              </p>
+            </div>
+            <Button variant="destructive" size="sm" onClick={() => { setFilter("blocking"); setCurrentIndex(0); }}>
+              Voir les QRC bloquantes
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {filter === "blocking" && blockingGroups.length > 0 && (
+        <Card className="border-destructive/40">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Résultats actuellement bloqués</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-1 text-sm max-h-64 overflow-auto">
+            {blockingGroups.map((g, idx) => (
+              <div key={idx} className="flex flex-wrap items-center gap-2 border-b last:border-0 py-1">
+                <span className="font-medium">{g.apprenant}</span>
+                <span className="text-muted-foreground">→ {g.quizTitre}</span>
+                <span className="text-muted-foreground">→ tentative {g.tentative}</span>
+                <span className="text-muted-foreground">→ {g.matiereNom}</span>
+                <Badge variant="destructive">{g.count} QRC restantes</Badge>
+                <span className="text-xs text-muted-foreground">
+                  {g.derniere ? new Date(g.derniere).toLocaleDateString("fr-FR") : ""}
+                </span>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
       {sortedFiltered.length === 0 ? (
         filter === "pending" && !searchQuery.trim() && examenFilter === "all" ? (
           <div className="min-h-[340px] rounded-xl border bg-background flex items-center justify-center">
@@ -1543,12 +1585,27 @@ const CorrectionQRCTab = () => {
               <FileText className="w-12 h-12 mx-auto mb-3 opacity-30" />
               <p className="font-medium">
                 {filter === "today-pending"
-                  ? "Aucune QRC en attente aujourd'hui — toutes corrigées ✅"
+                  ? blockingCount > 0
+                    ? `Toutes les QRC d'aujourd'hui sont corrigées, mais ${blockingCount} QRC plus anciennes bloquent encore des résultats.`
+                    : "Aucune QRC en attente aujourd'hui — toutes corrigées ✅"
+                  : filter === "blocking"
+                  ? "Aucune QRC ne bloque de résultat ✅"
                   : filter === "pending"
                   ? "Aucune QRC en attente de correction"
                   : "Aucune QRC trouvée"}
               </p>
-              <p className="text-sm mt-1">Les réponses QRC apparaîtront ici au fur et à mesure des examens</p>
+              {filter === "today-pending" && blockingCount > 0 ? (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="mt-3"
+                  onClick={() => { setFilter("blocking"); setCurrentIndex(0); }}
+                >
+                  Voir les QRC bloquantes
+                </Button>
+              ) : (
+                <p className="text-sm mt-1">Les réponses QRC apparaîtront ici au fur et à mesure des examens</p>
+              )}
             </CardContent>
           </Card>
         )
