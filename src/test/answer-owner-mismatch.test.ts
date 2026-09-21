@@ -6,7 +6,18 @@
  * est celle de l'admin. Chaque interaction mettait en file une réponse qui ne
  * pouvait appartenir qu'à un autre compte → 403 en boucle, file bloquée.
  */
+// @vitest-environment node
 import { describe, it, expect, beforeEach } from "vitest";
+
+if (typeof globalThis.localStorage === "undefined") {
+  const store = new Map<string, string>();
+  (globalThis as any).localStorage = {
+    getItem: (k: string) => (store.has(k) ? store.get(k)! : null),
+    setItem: (k: string, v: string) => void store.set(k, v),
+    removeItem: (k: string) => void store.delete(k),
+    clear: () => store.clear(),
+  };
+}
 import fs from "fs";
 import path from "path";
 import {
