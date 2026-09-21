@@ -18,6 +18,7 @@ import {
 import { computeMoyenneExamen, computeMatiereScore, computeMatiereScoreForAttempt, resolveMatiereForScoring } from "./examens-blancs-scoring";
 import { isExamAttemptPublicationPending, excludeResultPlaceholders, mergePassageSiblingRows } from "./exam-helpers";
 import { toast } from "sonner";
+import { RefaireExamenDialog } from "./RefaireExamenDialog";
 
 /**
  * Retrouve la version ORIGINALE (source statique) d'une matière pour un examen
@@ -35,6 +36,7 @@ function findStaticFallbackMatiere(examId: string, matiereId: string, matiereNom
 }
 
 function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaultBilanId, apprenantType, examensData, apprenantId, isAdmin, refreshKey, pausedExamIds, onPauseToggle }: { onStart: (examen: ExamenBlanc, forceRetake?: boolean) => void; onStartPartial?: (examen: ExamenBlanc) => void; onEdit: () => void; onViewResults: (examen: ExamenBlanc) => void; defaultBilanId?: string | null; apprenantType?: string | null; examensData: ExamenBlanc[]; apprenantId?: string | null; isAdmin?: boolean; refreshKey?: number; pausedExamIds?: Set<string>; onPauseToggle?: (examId: string) => void }) {
+  const [retakeExamen, setRetakeExamen] = useState<ExamenBlanc | null>(null);
   // Determine the forced exam type from the student's formation type
   const forcedType = (() => {
     if (!apprenantType) return null;
@@ -640,8 +642,14 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
                     <Button
                       className="w-full mt-2 gap-2"
                       variant={isCompleted ? "outline" : isStartedNotFinished ? "default" : "default"}
-                      disabled={pausedExamIds?.has(examen.id)}
-                      onClick={(e) => { e.stopPropagation(); onStart(examen, isCompleted); }}
+                      disabled={pausedExamIds?.has(examen.id) || retakeExamen?.id === examen.id}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // « Refaire l'examen » ne crée jamais une nouvelle tentative directement :
+                        // double confirmation explicite obligatoire.
+                        if (isCompleted) { setRetakeExamen(examen); return; }
+                        onStart(examen, false);
+                      }}
                     >
                       {pausedExamIds?.has(examen.id) ? "⏸ Examen en pause" : isCompleted ? "🔄 Refaire l'examen" : isStartedNotFinished ? "Reprendre l'examen" : "Commencer l'examen"}
                       <ChevronRight className="w-4 h-4" />
