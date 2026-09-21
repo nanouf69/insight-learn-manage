@@ -6,7 +6,15 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { CheckCircle2, Clock, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { fetchQrcInstances, loadQrcEngineQuizIds, validateQrcInstance, type QrcInstanceRow } from "@/lib/qrcInstances";
+import {
+  disableQrcEngine,
+  fetchQrcInstances,
+  fetchQrcPilotIntegrity,
+  loadQrcEngineQuizIds,
+  validateQrcInstance,
+  type QrcInstanceRow,
+  type QrcPilotIntegrity,
+} from "@/lib/qrcInstances";
 
 /**
  * FILE DE CORRECTION — NOUVEAU MOTEUR « 1 QRC = 1 IDENTIFIANT UNIQUE ».
@@ -25,11 +33,29 @@ export function QrcInstancesPanel() {
   const [comments, setComments] = useState<Record<string, string>>({});
   const [showCorrected, setShowCorrected] = useState(false);
   const [enabledQuizIds, setEnabledQuizIds] = useState<string[]>([]);
+  const [controls, setControls] = useState<QrcPilotIntegrity[]>([]);
 
   const load = useCallback(async () => {
     const enabled = await loadQrcEngineQuizIds(true);
     setEnabledQuizIds(Array.from(enabled));
-    if (enabled.size === 0) { setRows([]); setLoading(false); return; }
+    if (enabled.size === 0) { setRows([]); setControls([]); setLoading(false); return; }
+
+    // CONTRÔLE AUTOMATIQUE (lecture seule) sur chaque examen branché :
+    // QRC répondues = identifiants créés = en attente + corrigées, 0 doublon,
+    // 0 correction perdue. À la moindre égalité fausse, le moteur est coupé
+    // immédiatement pour les NOUVELLES QRC, sans toucher à l'enregistré.
+    const checks: QrcPilotIntegrity[] = [];
+    for (const quizId of enabled) {
+      const res = await fetchQrcPilotIntegrity(quizId);
+      if (!res) continue;
+      if (res.anomalie) {
+        const coupe = await disableQrcEngine(quizId, "Coupure automatique : contrôle d'intégrité en échec");
+        checks.push({ ...res, coupe });
+      } else {
+        checks.push(res);
+      }
+    }
+    setControls(checks);
     const data = await fetchQrcInstances();
     setRows(data);
     const ids = [...new Set(data.map((r) => r.apprenant_id))];
@@ -77,7 +103,7 @@ export function QrcInstancesPanel() {
     <Card className="border-2 border-blue-400 bg-blue-50/40">
       <CardHeader className="pb-3">
         <CardTitle className="flex flex-wrap items-center gap-2 text-base">
-          🧪 Correction QRC — examen(s) de test branché(s)
+          🧪 Correction QRC — nouveau moteur (examens pilotes)
           <Badge variant="secondary">{enabledQuizIds.join(", ") || "—"}</Badge>
           <Badge className="bg-amber-500 text-white">{pending.length} à corriger</Badge>
           <Badge variant="outline">{corrected.length} corrigée(s)</Badge>
@@ -94,6 +120,23 @@ export function QrcInstancesPanel() {
         </p>
       </CardHeader>
       <CardContent className="space-y-3">
+        {controls.map((c) => (
+          <div
+            key={c.quizId}
+            className={`rounded-lg border-2 p-3 text-xs ${c.anomalie ? "border-red-500 bg-red-50" : "border-green-400 bg-green-50"}`}
+          >
+            <p className={`font-bold ${c.anomalie ? "text-red-700" : "text-green-700"}`}>
+              {c.anomalie
+                ? `🚨 ANOMALIE sur ${c.quizId} — nouveau moteur ${c.coupe ? "COUPÉ automatiquement" : "à couper"} pour les nouvelles QRC (rien n'a été supprimé ni modifié)`
+                : `✅ Contrôle ${c.quizId} : égalités exactes`}
+            </p>
+            <p className="mt-1 text-muted-foreground">
+              passages réels : {c.passages} | QRC répondues : {c.qrcRepondues} | identifiants créés : {c.idsCrees} |
+              corrigées : {c.corrigees} | restantes : {c.enAttente} | doublons : {c.doublons} | manquantes : {c.manquantes} |
+              corrections perdues : {c.correctionsPerdues}
+            </p>
+          </div>
+        ))}
         {loading && <p className="text-sm text-muted-foreground">Chargement…</p>}
         {!loading && visible.length === 0 && (
           <p className="text-sm text-green-700 font-medium">✅ Aucune QRC en attente sur les examens branchés.</p>

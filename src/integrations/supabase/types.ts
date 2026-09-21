@@ -5089,7 +5089,25 @@ export type Database = {
           total: number
         }[]
       }
+      qrc_disable_engine: {
+        Args: { p_quiz_id: string; p_reason?: string }
+        Returns: boolean
+      }
       qrc_engine_enabled: { Args: { _quiz_id: string }; Returns: boolean }
+      qrc_pilot_integrity: {
+        Args: { p_quiz_id: string }
+        Returns: {
+          anomalie: boolean
+          corrections_perdues: number
+          corrigees: number
+          doublons: number
+          en_attente: number
+          ids_crees: number
+          manquantes: number
+          passages: number
+          qrc_repondues: number
+        }[]
+      }
       reset_quiz_attempt: {
         Args: { _apprenant_id: string; _exercice_id: string }
         Returns: {

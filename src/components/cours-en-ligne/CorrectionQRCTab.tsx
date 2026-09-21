@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { tousLesExamens, getPointsParQuestion, type ExamenBlanc, type Matiere } from "./examens-blancs-data";
 import { loadSavedExamens } from "./ExamensBlancsEditor";
 import { buildExamenMap, findMatiereWithFallback, getSourceQuestions, computeReussiForResult, isResultPlaceholder, isQrcAnswerCertainlyEmpty, isExamAttemptPublicationPending, isMatiereQrcPendingForAttempt } from "./exam-helpers";
-import { loadQrcEngineQuizIds } from "@/lib/qrcInstances";
+import { loadQrcEngineQuizIds, fetchQrcEngineAttemptIds, buildQrcAttemptId } from "@/lib/qrcInstances";
 import { QrcInstancesPanel } from "./QrcInstancesPanel";
 
 /** Examens Blancs N°2, toutes filières (VTC, TAXI, VA, TA). */
@@ -719,12 +719,24 @@ const CorrectionQRCTab = () => {
 
     // Les lignes arrivent de la plus récente à la plus ancienne : on les
     // traite de la plus ancienne à la plus récente, sans renuméroter les passages.
-    // Examens branchés sur le nouveau moteur QRC : leur file est servie
-    // exclusivement par `qrc_instances` (panneau dédié ci-dessus), jamais par
-    // l'ancien rapprochement — aucune QRC ne peut donc apparaître deux fois.
+    // PILOTE : seuls les PASSAGES réellement pris en charge par le nouveau
+    // moteur (une ligne existe dans `qrc_instances`) sont retirés de l'ancienne
+    // file — ils sont servis exclusivement par le panneau dédié ci-dessus.
+    // Tout l'historique antérieur du même examen reste traité à l'identique
+    // par l'ancien mécanisme. Une QRC ne peut donc jamais apparaître deux fois,
+    // ni disparaître des deux côtés.
     const engineQuizIds = await loadQrcEngineQuizIds(true);
+    const engineAttemptIds = engineQuizIds.size > 0 ? await fetchQrcEngineAttemptIds() : new Set<string>();
+    const isHandledByEngine = (r: any): boolean => {
+      if (!engineQuizIds.has(String(r.quiz_id))) return false;
+      const t = getStoredTentative(r.tentative);
+      if (t == null) return false;
+      return engineAttemptIds.has(
+        buildQrcAttemptId(String(r.apprenant_id), String(r.quiz_id), String(r.matiere_id || ""), t),
+      );
+    };
     const resultsAsc = (results as any[])
-      .filter((r) => !isResultPlaceholder(r) && !engineQuizIds.has(String(r.quiz_id)))
+      .filter((r) => !isResultPlaceholder(r) && !isHandledByEngine(r))
       .sort(
       (a, b) => (new Date(a.completed_at).getTime() || 0) - (new Date(b.completed_at).getTime() || 0),
     );

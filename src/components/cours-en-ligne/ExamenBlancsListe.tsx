@@ -511,10 +511,11 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
                     {isCompleted && (() => {
                       // RÈGLE : aucune note finale publiée tant qu'une QRC de cette
                       // tentative n'a pas été validée manuellement par le formateur.
+                       // Le nouveau moteur ne peut que bloquer EN PLUS : il ne
+                       // débloque jamais un passage historique en attente.
                        const enginePending = qrcEngine.isExamPending(examen.id);
-                       const publicationPending = enginePending !== null
-                         ? enginePending
-                         : isExamAttemptPublicationPending(scores, examen);
+                       const publicationPending = enginePending === true
+                         || isExamAttemptPublicationPending(scores, examen);
                        if (publicationPending) {
                         return (
                           <div className="flex flex-col items-center gap-1 mt-2 rounded-lg px-3 py-2 border-2 bg-amber-50 border-amber-400">
@@ -614,9 +615,8 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
                         // une matière est « en attente » uniquement si ELLE contient encore
                         // une QRC répondue non validée manuellement pour CE passage.
                         const engineMatierePending = qrcEngine.isMatierePending(examen.id, m.id);
-                        const publicationPending = engineMatierePending !== null
-                          ? (!!scoreData && engineMatierePending)
-                          : (!!scoreData && isMatiereQrcPendingForAttempt(m, {
+                        const publicationPending = (!!scoreData && engineMatierePending === true)
+                          || (!!scoreData && isMatiereQrcPendingForAttempt(m, {
                               ...((scoreData as any)?.details || {}),
                               reponses: (scoreData as any)?.reponses ?? (scoreData as any)?.details?.reponses,
                               correctionsIA: (scoreData as any)?.correctionsIA ?? (scoreData as any)?.details?.correctionsIA,

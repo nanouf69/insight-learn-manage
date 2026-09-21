@@ -153,6 +153,33 @@ export async function fetchQrcInstances(opts?: { quizIds?: string[] }): Promise<
   return (data || []) as unknown as QrcInstanceRow[];
 }
 
+/**
+ * Passages RÉELLEMENT pris en charge par le nouveau moteur.
+ * Sert à exclure ces passages — et EUX SEULS — de l'ancienne file de
+ * correction : l'historique d'un examen piloté reste entièrement lisible et
+ * corrigeable par l'ancien mécanisme, sans jamais créer de doublon.
+ */
+export async function fetchQrcEngineAttemptIds(quizIds?: string[]): Promise<Set<string>> {
+  const enabled = quizIds?.length ? quizIds : Array.from(await loadQrcEngineQuizIds());
+  if (enabled.length === 0) return new Set<string>();
+  const out = new Set<string>();
+  const pageSize = 1000;
+  for (let from = 0; ; from += pageSize) {
+    const { data, error } = await supabase
+      .from("qrc_instances")
+      .select("attempt_id")
+      .in("quiz_id", enabled)
+      .range(from, from + pageSize - 1);
+    if (error) {
+      console.warn("[qrcInstances] lecture des passages branchés impossible:", error.message);
+      break;
+    }
+    (data || []).forEach((r: any) => out.add(String(r.attempt_id)));
+    if (!data || data.length < pageSize) break;
+  }
+  return out;
+}
+
 /** Validation formateur : une seule correction active par identifiant. */
 export async function validateQrcInstance(
   instanceId: string,
@@ -166,6 +193,55 @@ export async function validateQrcInstance(
   });
   if (error) throw error;
   return (Array.isArray(data) ? data[0] : data) as unknown as QrcInstanceRow;
+}
+
+export interface QrcPilotIntegrity {
+  quizId: string;
+  passages: number;
+  qrcRepondues: number;
+  idsCrees: number;
+  enAttente: number;
+  corrigees: number;
+  doublons: number;
+  manquantes: number;
+  correctionsPerdues: number;
+  anomalie: boolean;
+  /** true si le drapeau a été coupé automatiquement suite à l'anomalie. */
+  coupe?: boolean;
+}
+
+/** Contrôle d'intégrité du pilote (lecture seule côté base). */
+export async function fetchQrcPilotIntegrity(quizId: string): Promise<QrcPilotIntegrity | null> {
+  const { data, error } = await supabase.rpc("qrc_pilot_integrity", { p_quiz_id: quizId });
+  if (error) {
+    console.warn("[qrcInstances] contrôle d'intégrité impossible:", error.message);
+    return null;
+  }
+  const row: any = Array.isArray(data) ? data[0] : data;
+  if (!row) return null;
+  return {
+    quizId,
+    passages: Number(row.passages ?? 0),
+    qrcRepondues: Number(row.qrc_repondues ?? 0),
+    idsCrees: Number(row.ids_crees ?? 0),
+    enAttente: Number(row.en_attente ?? 0),
+    corrigees: Number(row.corrigees ?? 0),
+    doublons: Number(row.doublons ?? 0),
+    manquantes: Number(row.manquantes ?? 0),
+    correctionsPerdues: Number(row.corrections_perdues ?? 0),
+    anomalie: Boolean(row.anomalie),
+  };
+}
+
+/** Coupure du moteur pour un examen — les données enregistrées sont conservées. */
+export async function disableQrcEngine(quizId: string, reason: string): Promise<boolean> {
+  const { data, error } = await supabase.rpc("qrc_disable_engine", { p_quiz_id: quizId, p_reason: reason });
+  if (error) {
+    console.error("[qrcInstances] coupure du moteur impossible:", error.message);
+    return false;
+  }
+  enabledQuizIdsPromise = null;
+  return Boolean(data);
 }
 
 /** État de publication d'un passage : source unique, identique à la file. */

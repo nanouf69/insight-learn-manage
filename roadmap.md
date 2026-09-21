@@ -39,3 +39,5 @@
 - [x] Brancher l'interface Correction QRC et le portail apprenant sur qrc_instances — UNIQUEMENT sur l'examen de test EB-TEST-QRC (drapeau par examen conservé pour un déploiement progressif).
 - [x] Test 20 QRC sur l'examen de test : 20 identifiants, renvois multiples, correction 20 → 0, note bloquée puis publiable, nouvelle tentative indépendante.
 - [ ] Migration éventuelle de l'historique QRC (interdite sans accord explicite).
+
+- [x] PILOTE réel : nouveau moteur QRC activé sur Examen Blanc VTC N°2 (EB2) UNIQUEMENT. Contrôle automatique d'intégrité + coupure automatique du drapeau en cas d'anomalie, sans suppression. Ne pas généraliser à TAXI/VA/TA ni aux autres numéros sans accord.

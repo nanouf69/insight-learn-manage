@@ -30,6 +30,6 @@ describe("Moteur QRC — activation strictement par examen", () => {
   it("la file de correction historique ignore les examens branchés (jamais deux fois)", () => {
     const source = readFileSync("src/components/cours-en-ligne/CorrectionQRCTab.tsx", "utf8");
     expect(source).toContain("loadQrcEngineQuizIds");
-    expect(source).toContain("!engineQuizIds.has(String(r.quiz_id))");
+    expect(source).toContain("isHandledByEngine");
   });
 });

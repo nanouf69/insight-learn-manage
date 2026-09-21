@@ -88,9 +88,10 @@ function EcranResultats({
   // identifiants que la file de correction. Sinon : règle historique inchangée.
   const qrcEngine = useQrcEnginePending(apprenantId, [examen?.id].filter(Boolean) as string[]);
   const engineExamPending = qrcEngine.isExamPending(examen?.id || "");
-  const hasQrcPendingValidation = engineExamPending !== null
-    ? engineExamPending
-    : isExamAttemptPublicationPending(
+  // JAMAIS de mélange : le nouveau moteur ne peut QUE bloquer en plus.
+  // Il ne débloque jamais un passage historique encore en attente.
+  const hasQrcPendingValidation = engineExamPending === true
+    || isExamAttemptPublicationPending(
         resultats.map((resultat, index) => ({
           ...resultat,
           correctionsIA: correctionsIA[index] ?? resultat.correctionsIA,
