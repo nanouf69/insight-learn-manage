@@ -1059,9 +1059,10 @@ const CorrectionQRCTab = () => {
       } else {
         toast.success(`QRC corrigée : ${clamped}/${item.pointsMax} pts`);
         setItems(prev => {
-          const updated = prev.map(i => i.resultId === item.resultId && i.questionId === item.questionId
+          const updated = prev.map(i => (i.resultId === item.resultId && i.questionId === item.questionId) || isSameQrcContent(i, item)
             ? { ...i, resultId: savedResultId || i.resultId, source: "result" as const, pointsObtenus: clamped, corrigeManuel: true, commentaire: editingComments[uniqueKey] ?? item.commentaire ?? "", correctedAt: new Date().toISOString(), noteSur20, scoreMatiereObtenu: payload.score_obtenu }
             : i);
+
 
           setTimeout(() => {
             setCurrentIndex(prevIndex => {
