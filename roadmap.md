@@ -36,5 +36,6 @@
 - [x] Écriture idempotente serveur (upsert_qrc_instances) et validation formateur réservée aux admins (validate_qrc_instance).
 - [x] Source unique pour la file de correction et le blocage de note (qrc_attempt_publication_state).
 - [x] Tests sur examen blanc de test EB-TEST-QRC : 10 IDs, double envoi, F5, correction 1 → 9 → 0, nouvelle tentative = 10 nouveaux IDs.
-- [ ] Brancher l'interface Correction QRC et le portail apprenant sur qrc_instances (après accord).
+- [x] Brancher l'interface Correction QRC et le portail apprenant sur qrc_instances — UNIQUEMENT sur l'examen de test EB-TEST-QRC (drapeau par examen conservé pour un déploiement progressif).
+- [x] Test 20 QRC sur l'examen de test : 20 identifiants, renvois multiples, correction 20 → 0, note bloquée puis publiable, nouvelle tentative indépendante.
 - [ ] Migration éventuelle de l'historique QRC (interdite sans accord explicite).
