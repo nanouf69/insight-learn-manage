@@ -120,6 +120,23 @@ export function QrcInstancesPanel() {
         </p>
       </CardHeader>
       <CardContent className="space-y-3">
+        {controls.map((c) => (
+          <div
+            key={c.quizId}
+            className={`rounded-lg border-2 p-3 text-xs ${c.anomalie ? "border-red-500 bg-red-50" : "border-green-400 bg-green-50"}`}
+          >
+            <p className={`font-bold ${c.anomalie ? "text-red-700" : "text-green-700"}`}>
+              {c.anomalie
+                ? `🚨 ANOMALIE sur ${c.quizId} — nouveau moteur ${c.coupe ? "COUPÉ automatiquement" : "à couper"} pour les nouvelles QRC (rien n'a été supprimé ni modifié)`
+                : `✅ Contrôle ${c.quizId} : égalités exactes`}
+            </p>
+            <p className="mt-1 text-muted-foreground">
+              passages réels : {c.passages} | QRC répondues : {c.qrcRepondues} | identifiants créés : {c.idsCrees} |
+              corrigées : {c.corrigees} | restantes : {c.enAttente} | doublons : {c.doublons} | manquantes : {c.manquantes} |
+              corrections perdues : {c.correctionsPerdues}
+            </p>
+          </div>
+        ))}
         {loading && <p className="text-sm text-muted-foreground">Chargement…</p>}
         {!loading && visible.length === 0 && (
           <p className="text-sm text-green-700 font-medium">✅ Aucune QRC en attente sur les examens branchés.</p>
