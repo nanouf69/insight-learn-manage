@@ -23,11 +23,16 @@ export function PreuveFormDialog({ open, onOpenChange, indicateur, remplacePreuv
   const [valideDu, setValideDu] = useState("");
   const [valideAu, setValideAu] = useState("");
   const [lien, setLien] = useState("");
+  const [ceQueDemontre, setCeQueDemontre] = useState("");
+  const [emplacement, setEmplacement] = useState("");
+  const [sourceLibelle, setSourceLibelle] = useState("");
+  const [remarqueInterne, setRemarqueInterne] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const [saving, setSaving] = useState(false);
 
   const reset = () => {
     setTitre(""); setDescription(""); setDatePreuve(""); setValideDu(""); setValideAu(""); setLien(""); setFiles([]);
+    setCeQueDemontre(""); setEmplacement(""); setSourceLibelle(""); setRemarqueInterne("");
   };
 
   const handleSave = async () => {
@@ -39,6 +44,10 @@ export function PreuveFormDialog({ open, onOpenChange, indicateur, remplacePreuv
       const id = await createPreuve({
         titre: titre.trim(),
         description: description.trim() || null,
+        ce_que_demontre: ceQueDemontre.trim() || null,
+        emplacement: emplacement.trim() || null,
+        source_libelle: sourceLibelle.trim() || null,
+        remarque_interne: remarqueInterne.trim() || null,
         date_preuve: datePreuve || null,
         valide_du: valideDu || null,
         valide_au: valideAu || null,
@@ -77,6 +86,22 @@ export function PreuveFormDialog({ open, onOpenChange, indicateur, remplacePreuv
           <div className="space-y-1.5">
             <Label>En quoi cette preuve répond à l'indicateur</Label>
             <Textarea rows={3} value={description} onChange={(e) => setDescription(e.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Ce que démontre la preuve</Label>
+            <Textarea rows={2} value={ceQueDemontre} onChange={(e) => setCeQueDemontre(e.target.value)} placeholder="Ex. Diffusion publique de la durée et des tarifs avant inscription" />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Emplacement de la preuve</Label>
+            <Input value={emplacement} onChange={(e) => setEmplacement(e.target.value)} placeholder="Ex. Site public — page /formation-vtc" />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Source</Label>
+            <Input value={sourceLibelle} onChange={(e) => setSourceLibelle(e.target.value)} placeholder="Ex. Mon Compte Formation / EDOF" />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Remarque interne</Label>
+            <Textarea rows={2} value={remarqueInterne} onChange={(e) => setRemarqueInterne(e.target.value)} />
           </div>
           <div className="space-y-1.5">
             <Label>Date de la preuve</Label>
