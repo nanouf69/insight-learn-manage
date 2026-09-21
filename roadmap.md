@@ -29,3 +29,5 @@
 - [x] Verrouiller atomiquement tous les résultats d’Examens Blancs jusqu’à la dernière QRC validée.
 - [x] Masquer notes, bilans, statuts, révisions et statistiques provisoires sur toutes les vues.
 - [x] Tester 0 QRC, correction partielle, dernière validation, F5 et reconnexion sans écriture apprenant.
+- [x] Aligner toutes les listes et tous les compteurs Correction QRC sur le filtre Tentative sélectionné.
+- [x] Contrôler que toute QRC du jour réellement bloquante existe dans la file QRC bloquantes avec la même identité stable.
