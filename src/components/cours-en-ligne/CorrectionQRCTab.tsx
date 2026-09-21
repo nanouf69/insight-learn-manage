@@ -1758,7 +1758,7 @@ const CorrectionQRCTab = () => {
     setCurrentIndex(0);
     keptKeysRef.current = new Set();
     setKeptVersion((v) => v + 1);
-  }, [filter, searchQuery, sortOrder, examenFilter, activeBlockingGroupKey]);
+  }, [filter, searchQuery, sortOrder, examenFilter, tentativeFilter, activeBlockingGroupKey]);
 
 
   useEffect(() => {
@@ -1951,6 +1951,15 @@ const CorrectionQRCTab = () => {
             <SelectItem value="pending">⏳ En attente uniquement</SelectItem>
             <SelectItem value="done">✅ Déjà corrigées</SelectItem>
             <SelectItem value="all">Toutes</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={tentativeFilter} onValueChange={(v) => setTentativeFilter(v as "1" | "all")}>
+          <SelectTrigger className="w-44">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="1">Tentative 1 uniquement</SelectItem>
+            <SelectItem value="all">Toutes les tentatives</SelectItem>
           </SelectContent>
         </Select>
         {filter === "blocking" ? (
