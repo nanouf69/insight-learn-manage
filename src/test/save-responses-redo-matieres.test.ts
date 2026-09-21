@@ -154,12 +154,12 @@ describe("Reprise déterministe des réponses historiques", () => {
     expect(findBestSavedAnswerRow({ rows, examId: "EB2", matiere, tentative: 2 })?.exercice_id).toBe("EB2__gestion__t2");
   });
 
-  it("départage deux lignes non vides par le nombre de réponses puis l'activité", () => {
+  it("départage deux lignes non vides par la dernière activité", () => {
     const rows = [
       { exercice_id: "EB2_gestion", reponses: { 1: ["A"] }, tentative: 1, updated_at: "2026-04-02T10:00:00Z" },
       { exercice_id: "EB2__gestion", reponses: { 1: ["A"], 2: ["B"] }, tentative: 1, updated_at: "2026-04-01T10:00:00Z" },
     ];
-    expect(findBestSavedAnswerRow({ rows, examId: "EB2", matiere, tentative: 1 })?.exercice_id).toBe("EB2__gestion");
+    expect(findBestSavedAnswerRow({ rows, examId: "EB2", matiere, tentative: 1 })?.exercice_id).toBe("EB2_gestion");
   });
 });
 

@@ -476,11 +476,35 @@ export default function ExamensBlancsPage({
       const savedRows = (((answerRows as unknown) as SavedExamAnswerRow[]) || []).filter((row) =>
         Boolean(extractMatiereKeyFromExerciceId(safeStr(row.exercice_id), latestExamen.id))
       );
-      const maxResultAttempt = allResultRows.reduce((max: number, row: any) => Math.max(max, getAttemptNumber(row)), 1);
-      const maxAnswerAttempt = savedRows.reduce((max, row) => Math.max(max, getSavedAnswerRowAttempt(row, latestExamen.id)), 1);
-      const activeAttempt = Math.max(maxResultAttempt, maxAnswerAttempt, 1);
-      const completedRows = allResultRows.filter((row: any) => getAttemptNumber(row) === activeAttempt);
+      const knownAttempts = new Set<number>([1]);
+      allResultRows.forEach((row: any) => knownAttempts.add(getAttemptNumber(row)));
+      savedRows.forEach((row) => knownAttempts.add(getSavedAnswerRowAttempt(row, latestExamen.id)));
       const validMatieres = (latestExamen.matieres || []).filter((m): m is Matiere => Boolean(m));
+      const attemptStates = Array.from(knownAttempts).map((attempt) => {
+        const resultRows = allResultRows.filter((row: any) => getAttemptNumber(row) === attempt);
+        const resultKeys = new Set<string>();
+        resultRows.forEach((row: any) => buildMatiereLookupKeys(row?.matiere_id, row?.matiere_nom).forEach((key) => resultKeys.add(key)));
+        const completedCount = validMatieres.filter((matiere) =>
+          buildMatiereLookupKeys(matiere.id, matiere.nom).some((key) => resultKeys.has(key))
+        ).length;
+        const answerRowsForAttempt = savedRows.filter((row) => getSavedAnswerRowAttempt(row, latestExamen.id) === attempt);
+        return {
+          attempt,
+          completedCount,
+          hasWork: answerRowsForAttempt.some((row) => getMeaningfulAnswerCount(row.reponses) > 0) || completedCount > 0,
+          lastActivity: Math.max(
+            ...answerRowsForAttempt.map(getSavedAnswerRowTimestamp),
+            ...resultRows.map((row: any) => Math.max(toTimestamp(row.completed_at), toTimestamp(row.created_at))),
+            0,
+          ),
+        };
+      });
+      const unfinishedAttempts = attemptStates
+        .filter((state) => state.hasWork && state.completedCount < validMatieres.length)
+        .sort((a, b) => b.lastActivity - a.lastActivity || b.attempt - a.attempt);
+      const activeAttempt = unfinishedAttempts[0]?.attempt
+        ?? attemptStates.reduce((max, state) => Math.max(max, state.attempt), 1);
+      const completedRows = allResultRows.filter((row: any) => getAttemptNumber(row) === activeAttempt);
       const matieresTotal = Math.max(validMatieres.length || 1, 1);
       const latestByCanonicalKey = new Map<string, any>();
       completedRows.forEach((row: any) => {

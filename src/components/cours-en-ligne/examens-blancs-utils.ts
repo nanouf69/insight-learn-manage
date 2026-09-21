@@ -656,10 +656,10 @@ export function pickBestSavedAnswerRow<T extends SavedExamAnswerRow>(previous: T
   const currentCount = getMeaningfulAnswerCount(current.reponses);
   if (previousCount === 0 && currentCount > 0) return current;
   if (previousCount > 0 && currentCount === 0) return previous;
-  if (currentCount !== previousCount) return currentCount > previousCount ? current : previous;
   const previousTs = getSavedAnswerRowTimestamp(previous);
   const currentTs = getSavedAnswerRowTimestamp(current);
   if (currentTs !== previousTs) return currentTs > previousTs ? current : previous;
+  if (currentCount !== previousCount) return currentCount > previousCount ? current : previous;
   const previousSeq = toFiniteNumber(previous.write_seq, 0);
   const currentSeq = toFiniteNumber(current.write_seq, 0);
   return currentSeq > previousSeq ? current : previous;
