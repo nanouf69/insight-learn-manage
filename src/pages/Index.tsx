@@ -28,6 +28,8 @@ import { ExamenReussitePage } from "@/components/examens/ExamenReussitePage";
 import { PlanningRdvCarteVtc } from "@/components/planning-rdv/PlanningRdvCarteVtc";
 import CoursEnLignePage from "@/components/cours-en-ligne/CoursEnLignePage";
 import { FournisseursPage } from "@/components/fournisseurs/FournisseursPage";
+import { PrestatairesPage } from "@/components/prestataires/PrestatairesPage";
+
 import { ApprenantsCorbeille } from "@/components/apprenants/ApprenantsCorbeille";
 import { DiagnosticAccesGlobal } from "@/components/diagnostic/DiagnosticAccesGlobal";
 import { FournisseurInvoiceAlerts } from "@/components/dashboard/FournisseurInvoiceAlerts";
@@ -72,6 +74,8 @@ const pageConfig = {
   bpf: { title: "BPF", subtitle: "Bilan Pédagogique et Financier" },
   "cours-en-ligne": { title: "Cours en ligne", subtitle: "Gérez vos formations e-learning" },
   fournisseurs: { title: "Fournisseurs", subtitle: "Gérez vos fournisseurs et leurs espaces" },
+  "factures-prestataires": { title: "Factures prestataires manquantes", subtitle: "Demandes, relances, preuves d'envoi et dossiers justificatifs" },
+
   corbeille: { title: "Corbeille", subtitle: "Éléments supprimés — restaurer ou supprimer définitivement" },
   "diagnostic-acces": { title: "Diagnostic accès", subtitle: "État d'accès e-learning de tous les apprenants" },
   renouvellements: { title: "Renouvellements", subtitle: "Échéances véhicules, agréments TAXI/VTC et Qualiopi" },
@@ -431,6 +435,9 @@ const Index = () => {
         return <BPFForm />;
       case "cours-en-ligne":
         return <CoursEnLignePage />;
+      case "factures-prestataires":
+        return <PrestatairesPage />;
+
       case "fournisseurs":
         return <FournisseursPage />;
       case "corbeille":

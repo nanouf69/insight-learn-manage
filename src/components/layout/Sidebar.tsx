@@ -54,6 +54,8 @@ const menuItems = [
   { id: "bpf", label: "BPF", icon: ClipboardList },
   { id: "cours-en-ligne", label: "Cours en ligne", icon: Monitor },
   { id: "fournisseurs", label: "Fournisseurs", icon: Package },
+  { id: "factures-prestataires", label: "Factures prestataires", icon: Receipt },
+
   { id: "renouvellements", label: "Renouvellements", icon: BadgeCheck },
   { id: "satisfaction", label: "Enquêtes de satisfaction", icon: Smile },
   { id: "qualiopi", label: "Qualiopi", icon: ShieldCheck },

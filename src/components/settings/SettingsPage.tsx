@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
-import { User, Building2, CreditCard, Bell, Archive } from "lucide-react";
+import { User, Building2, CreditCard, Bell, Archive, Mail } from "lucide-react";
 import { BackupTab } from "./BackupTab";
+import { PrestataireEmailTemplatesTab } from "./PrestataireEmailTemplatesTab";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -93,7 +95,12 @@ export function SettingsPage() {
             <Archive className="w-4 h-4" />
             Sauvegarde
           </TabsTrigger>
+          <TabsTrigger value="prestataires" className="gap-2">
+            <Mail className="w-4 h-4" />
+            Modèles d'e-mails prestataires
+          </TabsTrigger>
         </TabsList>
+
 
         <TabsContent value="profile" className="space-y-6">
           <div className="stat-card">
@@ -215,6 +222,11 @@ export function SettingsPage() {
         <TabsContent value="backup" className="space-y-6">
           <BackupTab />
         </TabsContent>
+
+        <TabsContent value="prestataires" className="space-y-6">
+          <PrestataireEmailTemplatesTab />
+        </TabsContent>
+
       </Tabs>
     </div>
   );
