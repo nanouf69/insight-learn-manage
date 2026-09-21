@@ -12,6 +12,10 @@ export interface QualiopiPreuve {
   id: string;
   titre: string;
   description: string | null;
+  ce_que_demontre: string | null;
+  emplacement: string | null;
+  remarque_interne: string | null;
+  source_libelle: string | null;
   date_preuve: string | null;
   valide_du: string | null;
   valide_au: string | null;
@@ -32,6 +36,9 @@ export interface QualiopiEtat {
   applicable: boolean;
   responsable: string | null;
   commentaire_auditeur: string | null;
+  script_auditeur: string | null;
+  points_vigilance: string | null;
+  remarques: string | null;
   date_verification: string | null;
   maj_annuelle: boolean;
 }
