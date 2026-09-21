@@ -617,7 +617,7 @@ const CorrectionQRCTab = () => {
       apprenants.push(...(data || []));
     }
 
-    const apprenantMap: Record<string, { nom: string; prenom: string; mode: "presentiel" | "elearning" }> = {};
+    const apprenantMap: Record<string, { nom: string; prenom: string; mode: "presentiel" | "elearning"; formationActive: boolean }> = {};
     (apprenants || []).forEach((a: any) => {
       const t = String(a.type_apprenant || "").toLowerCase();
       const mode: "presentiel" | "elearning" = t.endsWith("-e") || t.includes("-e-") ? "elearning"
