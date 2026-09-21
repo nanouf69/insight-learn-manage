@@ -1658,19 +1658,33 @@ const CorrectionQRCTab = () => {
     ? blockingGroups.find((g) => g.key === activeBlockingGroupKey)
     : null;
 
-  // ── EB N°2 : apprenants sans note définitive + contrôle A − B = 0 ──────
-  // A = passages EB N°2 bloqués par des QRC (règle du portail apprenant)
-  // B = passages réellement présents dans « QRC bloquant des résultats »
+  // ── EB N°2 : apprenants ACTUELLEMENT EN FORMATION bloqués AUJOURD'HUI ──
+  // 5 conditions cumulatives (affichage/filtrage uniquement, aucune écriture) :
+  //  1) formation active aujourd'hui (début ≤ aujourd'hui ≤ fin)
+  //  2) examen = Examen Blanc N°2 (VTC / TAXI / VA / TA)
+  //  3) QRC répondue AUJOURD'HUI
+  //  4) QRC réellement non validée manuellement
+  //  5) résultat réellement bloqué par cette QRC (règle du portail apprenant)
+  // Les QRC plus anciennes restent intactes et accessibles dans les autres filtres.
   const eb2Rows = eb2PendingAttempts
+    .filter((a) => a.formationActive)
     .map((a) => {
       const own = blockingItems.filter(
-        (i) => buildAttemptKey(i.apprenantId, i.quizId, i.dbTentative, i.passageKey) === a.attemptKey,
+        (i) =>
+          buildAttemptKey(i.apprenantId, i.quizId, i.dbTentative, i.passageKey) === a.attemptKey
+          && isAnsweredToday(i),
       );
       const groupKey = own.length ? getBlockingGroupKey(sortBlockingQrcItems(own)[0]) : null;
       const matieresRestantes = Array.from(new Set(own.map((i) => i.matiereNom || i.matiereId)));
-      return { ...a, count: own.length, groupKey, matieresRestantes };
+      const derniereQrc = own.reduce<string>(
+        (acc, i) => ((new Date(i.completedAt).getTime() || 0) > (new Date(acc).getTime() || 0) ? i.completedAt : acc),
+        own[0]?.completedAt || a.completedAt,
+      );
+      return { ...a, count: own.length, groupKey, matieresRestantes, derniereQrc };
     })
-    .filter((r) => r.count > 0 || !r.hasQueueMatch);
+    // Anomalie du jour uniquement : passage du jour bloqué mais absent de la file.
+    .filter((r) => r.count > 0 || (!r.hasQueueMatch && isToday(r.completedAt)))
+    .sort((a, b) => (new Date(b.derniereQrc).getTime() || 0) - (new Date(a.derniereQrc).getTime() || 0));
   const eb2Anomalies = eb2Rows.filter((r) => r.count === 0);
 
   const goToBlockingGroup = (key: string) => {
