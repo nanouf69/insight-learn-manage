@@ -535,6 +535,10 @@ async function sendItem(item: QueueItem): Promise<SendResult> {
             "[answerPersistence] Tentative déjà terminée : réponse en attente non appliquée (journalisée)",
             item.payload.exercice_id,
           );
+          // Refus silencieux impossible : l'apprenant est alerté immédiatement.
+          notifyAnswerSaveRejected(item.payload.exercice_id, "frozen");
+        } else {
+          clearAnswerSaveRejection();
         }
         return "ok";
       }
