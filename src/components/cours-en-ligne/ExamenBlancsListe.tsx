@@ -566,7 +566,14 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
                     <div className="space-y-1">
                       {examen.matieres.map(m => {
                         const scoreData = findScoreForMatiere(scores, m);
-                         const publicationPending = isExamAttemptPublicationPending(scores, examen);
+                        // STATUT PAR MATIÈRE (jamais hérité du blocage global de l'examen) :
+                        // une matière est « en attente » uniquement si ELLE contient encore
+                        // une QRC répondue non validée manuellement pour CE passage.
+                        const publicationPending = !!scoreData && isMatiereQrcPendingForAttempt(m, {
+                          ...((scoreData as any)?.details || {}),
+                          reponses: (scoreData as any)?.reponses ?? (scoreData as any)?.details?.reponses,
+                          correctionsIA: (scoreData as any)?.correctionsIA ?? (scoreData as any)?.details?.correctionsIA,
+                        });
                         return (
                           <div key={m.id} className="flex justify-between text-xs text-muted-foreground">
                             <span className="truncate pr-2">{m.nom.split(" - ")[0]}</span>
