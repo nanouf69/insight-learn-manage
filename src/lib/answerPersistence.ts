@@ -141,6 +141,11 @@ let authUserId: string | null = null;
  */
 let sessionApprenantId: string | null = null;
 let previewReadOnly = false;
+// Le worker global démarre avant que la page sache si elle représente un vrai
+// apprenant ou un aperçu admin. Il reste donc suspendu tant que ce contexte
+// n'est pas explicitement établi. Cela empêche notamment le renvoi au montage
+// d'une ancienne ligne créée par erreur en Vue apprenant.
+let ownershipContextReady = false;
 
 export function setAnswerSaveOwnership(options: {
   apprenantId?: string | null;
@@ -148,16 +153,35 @@ export function setAnswerSaveOwnership(options: {
 }): void {
   sessionApprenantId = options.apprenantId ?? null;
   previewReadOnly = options.previewReadOnly === true;
+  ownershipContextReady = previewReadOnly || sessionApprenantId !== null;
   // Verrou central partagé par toutes les écritures « Vue apprenant ».
   setLearnerPreviewReadOnly(previewReadOnly);
+  // Une fois le véritable dossier de la session apprenant identifié, ses
+  // réponses en attente peuvent repartir. Un aperçu ne déclenche jamais cela.
+  if (ownershipContextReady && !previewReadOnly && authToken) void processQueue();
 }
 
 /** Cette sauvegarde peut-elle légitimement partir sous la session en cours ? */
 export function canQueueAnswerSaveFor(apprenantId: string): boolean {
   if (previewReadOnly || isLearnerPreviewReadOnly()) return false;
-  if (!sessionApprenantId) return true; // aucun rattachement connu : comportement inchangé
+  // Sécurité fermée par défaut : aucune file n'est créée tant que le dossier
+  // réellement lié à la session n'a pas été identifié.
+  if (!ownershipContextReady || !sessionApprenantId) return false;
   return sessionApprenantId === apprenantId;
 }
+
+/** Le worker peut-il envoyer des réponses dans le contexte courant ? */
+const canSynchronizeAnswers = (): boolean =>
+  ownershipContextReady &&
+  !previewReadOnly &&
+  !isLearnerPreviewReadOnly() &&
+  !!sessionApprenantId;
+
+const isSendableInCurrentContext = (item: QueueItem): boolean =>
+  canSynchronizeAnswers() &&
+  item.payload.apprenant_id === sessionApprenantId &&
+  isOwnedByCurrentUser(item) &&
+  !item.blocked;
 
 /**
  * Un élément appartient au compte actuellement connecté (ou provient d'une
@@ -361,7 +385,8 @@ export function answersAreEqual(left: unknown, right: unknown): boolean {
  * tant que la session de leur propriétaire est encore valide).
  */
 export async function flushOwnAnswerSavesBeforeLogout(timeoutMs = 8000): Promise<boolean> {
-  const hasOwn = () => readQueue().some((item) => isOwnedByCurrentUser(item) && !item.blocked);
+  if (!canSynchronizeAnswers()) return true;
+  const hasOwn = () => readQueue().some(isSendableInCurrentContext);
   if (!hasOwn()) return true;
   void processQueue();
   const startedAt = Date.now();
@@ -378,6 +403,7 @@ export async function flushAnswerSavesAndWait(
   exerciceId: string,
   timeoutMs = 20000
 ): Promise<boolean> {
+  if (!canSynchronizeAnswers() || apprenantId !== sessionApprenantId) return false;
   void processQueue();
   const startedAt = Date.now();
   while (Date.now() - startedAt < timeoutMs) {
@@ -385,7 +411,7 @@ export async function flushAnswerSavesAndWait(
       (item) =>
         item.payload.apprenant_id === apprenantId &&
         item.payload.exercice_id === exerciceId &&
-        isActivelyPending(item)
+        isSendableInCurrentContext(item)
     );
     if (!pending) return true;
     await new Promise((resolve) => setTimeout(resolve, 100));
@@ -415,7 +441,7 @@ export function setAnswerSaveAuthToken(token: string | null, userId: string | nu
     }
   }
   emit();
-  if (token && readQueue().some((item) => isOwnedByCurrentUser(item) && !item.blocked)) {
+  if (token && canSynchronizeAnswers() && readQueue().some(isSendableInCurrentContext)) {
     void processQueue();
   }
 }
@@ -440,6 +466,10 @@ const buildHeaders = (): Record<string, string> | null => {
 type SendResult = "ok" | "retry" | "blocked";
 
 async function sendItem(item: QueueItem): Promise<SendResult> {
+  // Dernière barrière immédiatement avant l'Edge Function. Même si un ancien
+  // timer ou événement appelle le worker, Vue apprenant ne peut jamais émettre
+  // la requête réseau.
+  if (!isSendableInCurrentContext(item)) return "blocked";
   const url = endpoint();
   const headers = buildHeaders();
   if (!url || !headers) return "retry";
@@ -483,6 +513,7 @@ async function sendItem(item: QueueItem): Promise<SendResult> {
 
 async function processQueue(): Promise<void> {
   if (processing) return;
+  if (!canSynchronizeAnswers()) return;
   // Sans session valide, on n'envoie rien : la file attend la reconnexion.
   if (!authToken) {
     if (readQueue().some(isActivelyPending)) setState("error");
@@ -491,8 +522,7 @@ async function processQueue(): Promise<void> {
   processing = true;
   try {
     let queue = readQueue();
-    const sendable = (items: QueueItem[]) =>
-      items.filter((q) => isOwnedByCurrentUser(q) && !q.blocked);
+    const sendable = (items: QueueItem[]) => items.filter(isSendableInCurrentContext);
     const itemsToTry = sendable(queue).length;
     let tried = 0;
     let hadFailure = false;
@@ -612,9 +642,10 @@ export function enqueueAnswerSave(payload: AnswerSavePayload): void {
  * l'élément reste dans la file et repartira au prochain chargement.
  */
 export function flushAnswerSavesOnUnload(): void {
+  if (!canSynchronizeAnswers()) return;
   // Uniquement les sauvegardes du compte connecté : celles d'un autre compte
   // seraient refusées (403) et restent en attente de leur propriétaire.
-  const queue = readQueue().filter((item) => isOwnedByCurrentUser(item) && !item.blocked);
+  const queue = readQueue().filter(isSendableInCurrentContext);
   if (queue.length === 0 || !authToken) return;
   const url = endpoint();
   const apikey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -644,9 +675,8 @@ export function installAnswerPersistence(): void {
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") void processQueue();
   });
-  // Renvoi automatique des sauvegardes restées en attente lors d'une session
-  // précédente (onglet fermé, navigateur fermé, réseau coupé…).
-  if (readQueue().length > 0) void processQueue();
+  // Le renvoi attend que CoursPublic ait identifié un véritable apprenant.
+  // Au démarrage, la session peut être celle d'un admin qui va ouvrir un aperçu.
   setInterval(() => {
     if (readQueue().length > 0) void processQueue();
   }, 15000);

@@ -83,4 +83,12 @@ describe("Points d'écriture réellement protégés", () => {
     const src = read("src/pages/CoursPublic.tsx");
     expect(src).toContain("setLearnerPreviewReadOnly(!!embedded)");
   });
+
+  it("la file de réponses bloque aussi montage, reconnexion, F5 et fermeture avant le réseau", () => {
+    const src = read("src/lib/answerPersistence.ts");
+    expect(src).toContain("if (!canSynchronizeAnswers()) return;");
+    expect(src).toContain("if (!isSendableInCurrentContext(item)) return \"blocked\"");
+    expect(src).toContain("if (!canSynchronizeAnswers() || apprenantId !== sessionApprenantId) return false");
+    expect(src).toContain("Le renvoi attend que CoursPublic ait identifié un véritable apprenant");
+  });
 });

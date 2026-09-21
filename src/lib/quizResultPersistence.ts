@@ -11,7 +11,7 @@
  * l'apprenant B — il reste simplement en attente du retour de son propriétaire.
  * Rien n'est jamais supprimé silencieusement.
  */
-import { blockLearnerWrite } from "@/lib/learnerPreviewGuard";
+import { blockLearnerWrite, isLearnerPreviewReadOnly } from "@/lib/learnerPreviewGuard";
 import { supabase } from "@/integrations/supabase/client";
 
 const QUEUE_KEY = "quiz_result_save_queue_v1";
@@ -98,6 +98,8 @@ export function getPendingQuizResultCount(): number {
 
 /** Tente d'envoyer les notes en attente appartenant au compte connecté. */
 export async function flushQuizResultSaves(): Promise<boolean> {
+  // Une consultation admin ne synchronise aucune ancienne note en attente.
+  if (isLearnerPreviewReadOnly()) return true;
   if (processing) return false;
   const initial = readQueue();
   if (initial.length === 0) return true;
