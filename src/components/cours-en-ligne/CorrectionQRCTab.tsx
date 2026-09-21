@@ -456,34 +456,23 @@ function chooseMatiereMatchingResponses(
 }
 
 /**
- * Classement de la file : apprenant → examen → tentative → matière → n° de
- * question croissant, afin de corriger tout le passage d'un élève d'un bloc.
- * Les apprenants sont ordonnés par date de passage (présentiel prioritaire).
+ * Classement de la file : DATE/HEURE RÉELLE de la réponse/passage décroissante
+ * (par défaut — « Plus récent » en premier), indépendamment de la date de
+ * création de l'apprenant ou de l'ordre alphabétique.
+ * À date/heure identique (même passage), on reste dans le bloc de l'élève :
+ * examen → tentative → matière → n° de question croissant.
  */
 function sortQrcItems(list: QrcItem[], sortOrder: "desc" | "asc"): QrcItem[] {
-  const latestByApprenant = new Map<string, number>();
-  list.forEach((i) => {
-    const t = new Date(i.completedAt).getTime() || 0;
-    latestByApprenant.set(i.apprenantId, Math.max(latestByApprenant.get(i.apprenantId) ?? 0, t));
-  });
   return [...list].sort((a, b) => {
-    const prioA = a.apprenantTypeMode === "presentiel" ? 0 : 1;
-    const prioB = b.apprenantTypeMode === "presentiel" ? 0 : 1;
-    if (prioA !== prioB) return prioA - prioB;
-    const dateA = latestByApprenant.get(a.apprenantId) ?? 0;
-    const dateB = latestByApprenant.get(b.apprenantId) ?? 0;
+    const dateA = new Date(a.completedAt).getTime() || 0;
+    const dateB = new Date(b.completedAt).getTime() || 0;
     if (dateA !== dateB) return sortOrder === "desc" ? dateB - dateA : dateA - dateB;
     const nomA = `${a.apprenantNom} ${a.apprenantPrenom}`.toLowerCase();
     const nomB = `${b.apprenantNom} ${b.apprenantPrenom}`.toLowerCase();
     if (nomA !== nomB) return nomA.localeCompare(nomB);
     if (a.apprenantId !== b.apprenantId) return a.apprenantId.localeCompare(b.apprenantId);
-    const numA = parseInt((a.quizTitre?.match(/N°(\d+)/)?.[1]) || "0", 10);
-    const numB = parseInt((b.quizTitre?.match(/N°(\d+)/)?.[1]) || "0", 10);
-    if (numA !== numB) return numA - numB;
     if (a.quizId !== b.quizId) return a.quizId.localeCompare(b.quizId);
     if (a.tentativeSortValue !== b.tentativeSortValue) return a.tentativeSortValue - b.tentativeSortValue;
-    const byPassageDate = (new Date(a.completedAt).getTime() || 0) - (new Date(b.completedAt).getTime() || 0);
-    if (byPassageDate !== 0) return byPassageDate;
     if (a.matiereId !== b.matiereId) return a.matiereId.localeCompare(b.matiereId);
     return a.questionId - b.questionId;
   });
