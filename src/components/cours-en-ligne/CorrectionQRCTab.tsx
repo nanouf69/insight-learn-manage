@@ -801,6 +801,12 @@ const CorrectionQRCTab = () => {
         const qrcKey = attemptKey(row.apprenant_id, quizId, matiereId, tentative, q.id);
         if (seenQrcKeys.has(qrcKey)) continue;
         if (passage && findValidationForGroup(passage, matiereId, q.id)) continue;
+        // Cette réponse exacte a déjà été validée ou déjà listée depuis un
+        // enregistrement de fin : elle ne revient pas dans la file.
+        const autosaveContentKey = answerIdentity(row.apprenant_id, quizId, matiereId, q.id, reponseEleveStr);
+        if (validatedByAnswer.has(autosaveContentKey)) continue;
+        if (itemIndexByContent.has(autosaveContentKey)) continue;
+        itemIndexByContent.set(autosaveContentKey, qrcItems.length);
         seenQrcKeys.add(qrcKey);
 
         const pts = getPointsParQuestion(matiereId, "QRC", matiere);
