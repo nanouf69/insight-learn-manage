@@ -722,8 +722,8 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
                       <Button
                         className="w-full mt-2 gap-2"
                         variant="outline"
-                        disabled={pausedExamIds?.has(examen.id)}
-                        onClick={(e) => { e.stopPropagation(); onStartPartial(examen); }}
+                         disabled={pausedExamIds?.has(examen.id) || retakeBlocked}
+                         onClick={(e) => { e.stopPropagation(); if (retakeBlocked) return; onStartPartial(examen); }}
                       >
                         🎯 Choisir les matières à passer
                         <ChevronRight className="w-4 h-4" />
