@@ -493,6 +493,8 @@ const CorrectionQRCTab = () => {
   const [loadError, setLoadError] = useState<string | null>(null);
   // Contrôle automatique : QRC répondues présentes en base mais absentes de la file.
   const [integrityAlert, setIntegrityAlert] = useState<{ count: number; apprenants: number } | null>(null);
+  // Passages EB N°2 sans note définitive (même règle que le portail apprenant).
+  const [eb2PendingAttempts, setEb2PendingAttempts] = useState<Eb2PendingAttempt[]>([]);
 
   // Mirrors the filter + sort applied to `sortedFiltered` in the render, so that
   // auto-advance after saving picks the correct next item.
