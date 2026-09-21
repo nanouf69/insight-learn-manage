@@ -72,6 +72,9 @@ export async function loadQualiopi(): Promise<{ etats: Record<number, QualiopiEt
       applicable: row.applicable,
       responsable: row.responsable,
       commentaire_auditeur: row.commentaire_auditeur,
+      script_auditeur: row.script_auditeur ?? null,
+      points_vigilance: row.points_vigilance ?? null,
+      remarques: row.remarques ?? null,
       date_verification: row.date_verification,
       maj_annuelle: row.maj_annuelle,
     };
