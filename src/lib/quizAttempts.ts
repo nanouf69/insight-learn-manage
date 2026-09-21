@@ -37,6 +37,19 @@ export const buildExerciceId = (moduleId: number | string, exoId: number | strin
 export const buildInlineQuizId = (moduleId: number | string, coursId: number | string) =>
   `module_${moduleId}_inline_${coursId}`;
 
+/**
+ * Identifiant canonique d'une matière d'examen blanc / bilan.
+ * SEULE fonction autorisée pour construire cette clé (écriture).
+ * La lecture reste compatible avec les identifiants historiques
+ * (`EBx_matiere`, suffixes de tentative) via `parseExamAnswerKey`.
+ */
+export const buildExamMatiereExerciceId = (
+  examenId: string | number | null | undefined,
+  matiereId: string | number,
+  tentative: number = 1
+) => `${examenId || "exam"}__${matiereId}${tentative && tentative > 1 ? `__t${tentative}` : ""}`;
+
+
 /** Seule condition acceptée pour dire « ce quiz est terminé ». */
 export const isAttemptSubmitted = (
   attempt: Pick<QuizAttempt, "status"> | null | undefined

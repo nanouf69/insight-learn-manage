@@ -242,8 +242,14 @@ export function getPendingAnswers(
   apprenantId: string,
   exerciceId: string
 ): Record<string, unknown> | null {
+  // Appareil partagé : on n'expose JAMAIS les réponses en attente d'un autre
+  // compte. Elles restent en file pour leur propriétaire, sans être affichées
+  // ni renvoyées sous une autre session.
   const matches = readQueue().filter(
-    (item) => item.payload.apprenant_id === apprenantId && item.payload.exercice_id === exerciceId
+    (item) =>
+      item.payload.apprenant_id === apprenantId &&
+      item.payload.exercice_id === exerciceId &&
+      isOwnedByCurrentUser(item)
   );
   return matches.length > 0
     ? matches.reduce<Record<string, unknown>>(
@@ -252,6 +258,41 @@ export function getPendingAnswers(
       )
     : null;
 }
+
+/** Une valeur est « réellement saisie » (≠ vide) ? */
+export function isMeaningfulAnswerValue(value: unknown): boolean {
+  if (Array.isArray(value)) return value.length > 0;
+  if (typeof value === "string") return value.trim().length > 0;
+  return value !== null && value !== undefined;
+}
+
+/**
+ * RÈGLE GÉNÉRALE DE CONSERVATION (tous les quiz de l'application) :
+ * une réponse réellement saisie ne peut jamais être masquée ni remplacée par
+ * une valeur vide, ni par une valeur serveur plus ancienne qu'une réponse
+ * locale encore en attente d'envoi.
+ *
+ * Aucune donnée n'est modifiée en base : c'est une règle de LECTURE.
+ */
+export function mergeSavedAndPendingAnswers(
+  saved: Record<string, unknown> | null | undefined,
+  apprenantId: string,
+  exerciceId: string
+): Record<string, unknown> {
+  const base: Record<string, unknown> = { ...(saved ?? {}) };
+  const pending = getPendingAnswers(apprenantId, exerciceId);
+  if (pending) {
+    for (const [key, value] of Object.entries(pending)) {
+      // La réponse locale est plus récente : elle gagne, sauf si elle est vide
+      // alors qu'une réponse non vide existe déjà côté serveur.
+      if (isMeaningfulAnswerValue(value) || !isMeaningfulAnswerValue(base[key])) {
+        base[key] = value;
+      }
+    }
+  }
+  return base;
+}
+
 
 const sortValue = (value: unknown): unknown => {
   if (Array.isArray(value)) return value.map(sortValue);
