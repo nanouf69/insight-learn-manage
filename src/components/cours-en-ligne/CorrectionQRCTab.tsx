@@ -1021,7 +1021,7 @@ const CorrectionQRCTab = () => {
     for (let i = 0; i < missingAutosaveApprenantIds.length; i += 500) {
       const { data } = await supabase
         .from("apprenants")
-        .select("id, nom, prenom, type_apprenant")
+        .select("id, nom, prenom, type_apprenant, date_debut_cours_en_ligne, date_fin_cours_en_ligne")
         .in("id", missingAutosaveApprenantIds.slice(i, i + 500));
       (data || []).forEach((a: any) => {
         const t = String(a.type_apprenant || "").toLowerCase();
