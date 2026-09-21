@@ -19,6 +19,7 @@ import { computeMoyenneExamen, computeMatiereScore, computeMatiereScoreForAttemp
 import { isExamAttemptPublicationPending, isMatiereQrcPendingForAttempt, excludeResultPlaceholders, mergePassageSiblingRows } from "./exam-helpers";
 import { toast } from "sonner";
 import { RefaireExamenDialog } from "./RefaireExamenDialog";
+import { computeExamRetakeLock, examRetakeLockMessage } from "@/lib/examRetakeDelay";
 
 /**
  * Retrouve la version ORIGINALE (source statique) d'une matière pour un examen
@@ -51,6 +52,14 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
   // Passage réellement OUVERT (tentative en cours non terminée), même si l'examen
   // a déjà été terminé lors d'une tentative précédente. Affichage uniquement.
   const [openAttemptIds, setOpenAttemptIds] = useState<Set<string>>(new Set());
+  // Fin de la dernière tentative réellement passée (terminée ou en attente de
+  // correction QRC) — sert au délai de 48 h avant une NOUVELLE tentative.
+  const [lastFinishedByExam, setLastFinishedByExam] = useState<Record<string, number>>({});
+  const [nowTick, setNowTick] = useState<number>(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNowTick(Date.now()), 60_000);
+    return () => clearInterval(id);
+  }, []);
   const [examScores, setExamScores] = useState<Record<string, ExamScoreItem[]>>({});
   const [previousExamAverages, setPreviousExamAverages] = useState<Record<string, number | null>>({});
   // Ref so the score-fetch effect below can read the LATEST exam definitions
@@ -172,6 +181,16 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
           });
 
           setCompletedExamIds(completedIds);
+
+          // Date de fin de la dernière tentative par examen (lecture seule).
+          const finishedAt: Record<string, number> = {};
+          latestRows.forEach((r: any) => {
+            const quizId = r?.quiz_id;
+            if (!quizId) return;
+            const t = toTimestamp(r?.completed_at) || toTimestamp(r?.created_at);
+            if (t > (finishedAt[quizId] ?? 0)) finishedAt[quizId] = t;
+          });
+          setLastFinishedByExam(finishedAt);
 
           const scores: Record<string, ExamScoreItem[]> = {};
           latestRows.forEach((r: any) => {
@@ -462,7 +481,12 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
               const dureeTotal = examen.matieres.reduce((acc, m) => acc + m.duree, 0);
               const isCompleted = completedExamIds.has(examen.id);
               const isStartedNotFinished = !isCompleted && startedNotFinishedIds.has(examen.id);
-              const canRetake = true;
+              // Délai de 48 h : une NOUVELLE tentative n'est possible que
+              // 2 jours complets après la fin de la précédente. La reprise
+              // d'une tentative EN COURS reste toujours autorisée.
+              const retakeLock = computeExamRetakeLock(lastFinishedByExam[examen.id] ?? null, nowTick);
+              const retakeBlocked = isCompleted && !openAttemptIds.has(examen.id) && retakeLock.locked;
+              const canRetake = !retakeBlocked;
               const canStartExam = true;
               const scores = examScores[examen.id] || [];
               return (
@@ -669,27 +693,37 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
                         <ChevronRight className="w-4 h-4" />
                       </Button>
                     )}
+                    {retakeBlocked && (
+                      <div className="mt-2 rounded-lg border-2 border-slate-300 bg-slate-50 px-3 py-2 text-center text-sm font-semibold text-slate-700">
+                        {examRetakeLockMessage(retakeLock.availableAt)}
+                      </div>
+                    )}
                     <Button
                       className="w-full mt-2 gap-2"
                       variant={isCompleted ? "outline" : isStartedNotFinished ? "default" : "default"}
-                      disabled={pausedExamIds?.has(examen.id) || retakeExamen?.id === examen.id}
+                      disabled={pausedExamIds?.has(examen.id) || retakeExamen?.id === examen.id || retakeBlocked}
                       onClick={(e) => {
                         e.stopPropagation();
+                        if (retakeBlocked) return;
                         // « Refaire l'examen » ne crée jamais une nouvelle tentative directement :
                         // double confirmation explicite obligatoire.
                         if (isCompleted) { setRetakeExamen(examen); return; }
                         onStart(examen, false);
                       }}
                     >
-                      {pausedExamIds?.has(examen.id) ? "⏸ Examen en pause" : isCompleted ? "🔄 Refaire l'examen" : isStartedNotFinished ? "Reprendre l'examen" : "Commencer l'examen"}
+                      {pausedExamIds?.has(examen.id)
+                        ? "⏸ Examen en pause"
+                        : retakeBlocked
+                          ? "🔒 Refaire l'examen indisponible"
+                          : isCompleted ? "🔄 Refaire l'examen" : isStartedNotFinished ? "Reprendre l'examen" : "Commencer l'examen"}
                       <ChevronRight className="w-4 h-4" />
                     </Button>
                     {onStartPartial && (
                       <Button
                         className="w-full mt-2 gap-2"
                         variant="outline"
-                        disabled={pausedExamIds?.has(examen.id)}
-                        onClick={(e) => { e.stopPropagation(); onStartPartial(examen); }}
+                         disabled={pausedExamIds?.has(examen.id) || retakeBlocked}
+                         onClick={(e) => { e.stopPropagation(); if (retakeBlocked) return; onStartPartial(examen); }}
                       >
                         🎯 Choisir les matières à passer
                         <ChevronRight className="w-4 h-4" />
