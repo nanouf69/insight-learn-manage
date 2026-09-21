@@ -1185,6 +1185,11 @@ const CorrectionQRCTab = () => {
             }
             return { ...i, ...upd };
           }
+          // Écriture technique jumelle du même passage (même réponse exacte) :
+          // elle suit immédiatement la validation et ne réapparaît pas.
+          if (isSameQrcContent(i, item)) {
+            return { ...i, pointsObtenus: clamped, corrigeManuel: true, commentaire: commentaire || "", correctedAt: new Date().toISOString() };
+          }
           return i;
         });
 
