@@ -3,6 +3,8 @@ import { AlertTriangle, Check, Loader2 } from "lucide-react";
 import {
   subscribeAnswerSaveState,
   onAnswerStorageSaturation,
+  onAnswerSaveRejected,
+  type AnswerSaveRejection,
   type AnswerSaveState,
 } from "@/lib/answerPersistence";
 
