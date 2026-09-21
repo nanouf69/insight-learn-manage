@@ -65,11 +65,49 @@ export function getModuleIdForExamId(examId: string): number {
   return EXAM_ID_TO_MODULE_ID[examId] ?? (EXAMEN_BLANC_MODULE_BASE + 100 + Math.abs(hashCode(examId)));
 }
 
+// Version du schéma d'édition attendue par le serveur. Un onglet chargé avec
+// une version antérieure voit ses écritures refusées côté base de données.
+export const EXAM_EDITOR_SCHEMA_VERSION = "2";
+
+export function describeExamGuardError(error: unknown): string | null {
+  const msg = String((error as { message?: string } | null)?.message ?? "");
+  if (msg.includes("exam_editor_outdated")) {
+    return "Cette page d'administration est obsolète. Rechargez-la avant de modifier les examens.";
+  }
+  if (msg.includes("exam_cross_number_propagation")) {
+    return "Écriture refusée par le serveur : ce contenu reproduit celui d'un AUTRE numéro d'examen. Les examens N°1 à N°6 doivent rester distincts.";
+  }
+  if (msg.includes("exam_identity_mismatch") || msg.includes("exam_unknown_module")) {
+    return "Écriture refusée : l'examen visé ne correspond pas à son identité officielle (filière + numéro).";
+  }
+  if (msg.includes("exam_identity_incomplete")) {
+    return "Écriture refusée : identité incomplète (matière ou question sans identifiant stable).";
+  }
+  if (msg.includes("exam_write_origin_missing")) {
+    return "Écriture refusée : origine de la modification non journalisée.";
+  }
+  return null;
+}
+
+async function logExamWriteRefusal(moduleId: number, origine: string, error: unknown): Promise<void> {
+  try {
+    await supabase.from("exam_content_write_log").insert({
+      module_id: moduleId,
+      action: "ecriture_contenu",
+      origine,
+      statut: "refuse",
+      motif_refus: String((error as { message?: string } | null)?.message ?? "inconnu").slice(0, 500),
+      editor_schema_version: EXAM_EDITOR_SCHEMA_VERSION,
+    });
+  } catch {}
+}
+
 function isStaleModuleEditorStateError(error: unknown): boolean {
   const maybeError = error as { code?: string; message?: string } | null | undefined;
   const msg = String(maybeError?.message ?? "");
   return maybeError?.code === "P0409" || msg.includes("stale_module_editor_state_write");
 }
+
 
 async function saveExamModuleWithCas({
   moduleId,
