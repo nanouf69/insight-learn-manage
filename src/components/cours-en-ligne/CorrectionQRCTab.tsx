@@ -681,13 +681,14 @@ const CorrectionQRCTab = () => {
         let correction = validation ?? getCorrectionForQuestion(g.corrections, questionId);
         let hasManualCorrection = !!validation || isAdminValidatedCorrection(correction, g.completedAt);
 
-        // Rattrapage par identité de contenu : la même réponse de l'élève, pour
-        // le même apprenant, le même examen, la même matière et la même
-        // question, a déjà été validée sur une autre écriture du passage.
-        // La correction existante fait foi — rien n'est recalculé ni réécrit.
+        // Rattrapage à l'intérieur du MÊME passage : la même réponse, pour le
+        // même apprenant, le même examen, la même matière, la même question et
+        // la même tentative, a déjà été validée sur une autre écriture
+        // technique de ce passage. La correction existante fait foi — rien
+        // n'est recalculé ni réécrit, et aucune autre tentative n'est touchée.
         if (!hasManualCorrection && reponseEleveStr.trim()) {
           const dejaValidee = validatedByAnswer.get(
-            answerIdentity(g.apprenantId, g.quizId, effectiveMatiereId, questionId, reponseEleveStr),
+            answerIdentity(g.apprenantId, g.quizId, effectiveMatiereId, g.tentative, questionId, reponseEleveStr),
           );
           if (dejaValidee) {
             correction = dejaValidee;
