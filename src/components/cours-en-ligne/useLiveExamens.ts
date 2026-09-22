@@ -1,32 +1,34 @@
 import { useQuery } from "@tanstack/react-query";
-import { tousLesExamens, type ExamenBlanc } from "./examens-blancs-data";
+import { type ExamenBlanc } from "./examens-blancs-data";
 import { loadSavedExamens } from "./ExamensBlancsEditor";
+import { ExamContentUnavailableError } from "./exam-content-integrity";
 
 export const LIVE_EXAMENS_QUERY_KEY = ["examens-blancs-live"] as const;
 
 /**
- * Définitions d'examens blancs telles qu'ENREGISTRÉES (module_editor_state),
- * identiques à ce que voit l'apprenant. La liste statique du code n'est plus
- * qu'un repli en cas d'échec de chargement.
+ * Définitions d'examens blancs telles qu'ENREGISTRÉES (module_editor_state).
+ *
+ * AUCUN REPLI : si la version active ne peut pas être chargée, on remonte une
+ * erreur. Le contenu statique du code n'est JAMAIS servi à un apprenant.
  *
  * Lecture seule : n'écrit jamais de donnée apprenant.
  */
 export async function fetchLiveExamens(): Promise<ExamenBlanc[]> {
-  try {
-    const rows = await loadSavedExamens();
-    return Array.isArray(rows) && rows.length ? rows : tousLesExamens;
-  } catch {
-    return tousLesExamens;
+  const rows = await loadSavedExamens();
+  if (!Array.isArray(rows) || rows.length === 0) {
+    throw new ExamContentUnavailableError("Aucune version active d'examen blanc chargée");
   }
+  return rows;
 }
 
-export function useLiveExamens(): { examens: ExamenBlanc[]; isLoading: boolean } {
-  const { data, isLoading } = useQuery({
+export function useLiveExamens(): { examens: ExamenBlanc[]; isLoading: boolean; error: unknown; refetch: () => void } {
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: LIVE_EXAMENS_QUERY_KEY,
     queryFn: fetchLiveExamens,
     staleTime: 30_000,
     refetchOnWindowFocus: true,
     refetchOnMount: "always",
+    retry: 1,
   });
-  return { examens: data && data.length ? data : tousLesExamens, isLoading };
+  return { examens: data ?? [], isLoading, error, refetch: () => { void refetch(); } };
 }
