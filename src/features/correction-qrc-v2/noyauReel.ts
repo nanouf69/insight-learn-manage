@@ -109,6 +109,156 @@ export async function listerSessions(mode: "test" | "migre" = "migre"): Promise<
   return Array.from(par.values()).sort((a, b) => (a.jour < b.jour ? 1 : a.jour > b.jour ? -1 : 0));
 }
 
+export type GroupeSessionCrm = {
+  cle: string;
+  type: "crm" | "elearning" | "indetermine" | "conflit";
+  libelle: string;
+  periode: string | null;
+  /** Tri : date de début de la session CRM (ou date du passage le plus récent). */
+  tri: string;
+  nbCandidats: number;
+  examens: SessionListee[];
+};
+
+const jourFr = (j: string) => j.split("-").reverse().join("/");
+
+/**
+ * Regroupement des passages d'Examens Blancs SOUS les sessions réelles du CRM.
+ * Lecture seule : aucune session n'est créée ni déduite depuis la date d'un passage.
+ * Règle de rattachement : parmi les sessions CRM auxquelles l'apprenant est réellement
+ * rattaché, on ne retient que celles dont la période couvre la date du passage.
+ *  - exactement une → rattachement certain
+ *  - aucune → « Session CRM non déterminée »
+ *  - plusieurs qui se chevauchent → « Conflit de sessions CRM » (jamais choisi automatiquement)
+ * Les apprenants e-learning (type se terminant par « -e ») forment un regroupement séparé.
+ */
+export async function listerGroupesCrm(mode: "test" | "migre" = "migre"): Promise<GroupeSessionCrm[]> {
+  const { data: attempts, error } = await supabase
+    .from("exam_attempts_v2")
+    .select("attempt_id, apprenant_id, exam_id, started_at")
+    .eq("is_test", mode === "test")
+    .order("started_at", { ascending: false });
+  if (error) throw error;
+
+  const apprenantIds = Array.from(new Set((attempts ?? []).map((a) => a.apprenant_id as string)));
+  const { data: apprenants } = apprenantIds.length
+    ? await supabase.from("apprenants").select("id, type_apprenant").in("id", apprenantIds)
+    : { data: [] as { id: string; type_apprenant: string | null }[] };
+  const estElearning = new Map(
+    (apprenants ?? []).map((a) => [a.id, /-e$/.test((a.type_apprenant ?? "").trim().toLowerCase())]),
+  );
+
+  const { data: liens } = apprenantIds.length
+    ? await supabase
+        .from("session_apprenants")
+        .select("apprenant_id, session_id, date_debut, date_fin")
+        .in("apprenant_id", apprenantIds)
+    : { data: [] as any[] };
+
+  const sessionIds = Array.from(new Set((liens ?? []).map((l: any) => l.session_id as string)));
+  const { data: sessionsCrm } = sessionIds.length
+    ? await supabase.from("sessions").select("id, nom, date_debut, date_fin").in("id", sessionIds)
+    : { data: [] as any[] };
+  const sessionDe = new Map((sessionsCrm ?? []).map((s: any) => [s.id as string, s]));
+
+  const liensDe = new Map<string, Array<{ session: any; debut: string; fin: string }>>();
+  for (const l of (liens ?? []) as any[]) {
+    const s = sessionDe.get(l.session_id);
+    if (!s) continue;
+    const debut = (l.date_debut ?? s.date_debut) as string;
+    const fin = (l.date_fin ?? s.date_fin) as string;
+    if (!debut || !fin) continue;
+    const arr = liensDe.get(l.apprenant_id) ?? [];
+    arr.push({ session: s, debut, fin });
+    liensDe.set(l.apprenant_id, arr);
+  }
+
+  const groupes = new Map<string, GroupeSessionCrm & { candidats: Set<string> }>();
+  const ajouter = (
+    cle: string,
+    base: Omit<GroupeSessionCrm, "cle" | "examens" | "nbCandidats">,
+    a: any,
+  ) => {
+    const d = new Date(a.started_at as string);
+    const jour = new Intl.DateTimeFormat("fr-CA", { timeZone: "Europe/Paris" }).format(d);
+    const heure = d.toLocaleTimeString("fr-FR", { timeZone: "Europe/Paris", hour: "2-digit", minute: "2-digit" });
+    const g =
+      groupes.get(cle) ??
+      ({ cle, ...base, examens: [], nbCandidats: 0, candidats: new Set<string>() } as GroupeSessionCrm & {
+        candidats: Set<string>;
+      });
+    g.candidats.add(a.apprenant_id as string);
+    const cleEb = `${cle}::${a.exam_id}|${jour}`;
+    let eb = g.examens.find((e) => e.cle === cleEb);
+    if (!eb) {
+      eb = {
+        cle: cleEb,
+        exam_id: a.exam_id as string,
+        date: jourFr(jour),
+        jour,
+        heureMin: heure,
+        heureMax: heure,
+        attemptIds: [],
+      };
+      g.examens.push(eb);
+    }
+    eb.attemptIds.push(a.attempt_id as string);
+    if (heure < eb.heureMin) eb.heureMin = heure;
+    if (heure > eb.heureMax) eb.heureMax = heure;
+    if (base.type !== "crm" && jour > g.tri) g.tri = jour;
+    groupes.set(cle, g);
+  };
+
+  for (const a of (attempts ?? []) as any[]) {
+    const jour = new Intl.DateTimeFormat("fr-CA", { timeZone: "Europe/Paris" }).format(
+      new Date(a.started_at as string),
+    );
+    if (estElearning.get(a.apprenant_id)) {
+      ajouter("elearning", {
+        type: "elearning",
+        libelle: "E-learning — toutes sessions confondues",
+        periode: null,
+        tri: "0000-00-00",
+      }, a);
+      continue;
+    }
+    const couvrantes = (liensDe.get(a.apprenant_id) ?? []).filter((l) => jour >= l.debut && jour <= l.fin);
+    const uniques = Array.from(new Map(couvrantes.map((l) => [l.session.id, l])).values());
+    if (uniques.length === 1) {
+      const s = uniques[0].session;
+      ajouter(`crm:${s.id}`, {
+        type: "crm",
+        libelle: s.nom ?? "Session sans nom",
+        periode: `${jourFr(s.date_debut)} → ${jourFr(s.date_fin)}`,
+        tri: s.date_debut as string,
+      }, a);
+    } else if (uniques.length === 0) {
+      ajouter("indetermine", {
+        type: "indetermine",
+        libelle: "⚠️ Session CRM non déterminée",
+        periode: null,
+        tri: "0000-00-00",
+      }, a);
+    } else {
+      ajouter("conflit", {
+        type: "conflit",
+        libelle: "⚠️ Conflit de sessions CRM (plusieurs sessions se chevauchent)",
+        periode: null,
+        tri: "0000-00-00",
+      }, a);
+    }
+  }
+
+  const rang = { crm: 0, elearning: 1, indetermine: 2, conflit: 3 } as const;
+  return Array.from(groupes.values())
+    .map((g) => {
+      g.nbCandidats = g.candidats.size;
+      g.examens.sort((a, b) => (a.jour < b.jour ? 1 : a.jour > b.jour ? -1 : a.exam_id.localeCompare(b.exam_id)));
+      return g as GroupeSessionCrm;
+    })
+    .sort((a, b) => rang[a.type] - rang[b.type] || (a.tri < b.tri ? 1 : a.tri > b.tri ? -1 : 0));
+}
+
 /**
  * Charge une session depuis la base réelle.
  * - "test"  : tentatives fictives marquées is_test
