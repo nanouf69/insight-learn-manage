@@ -202,15 +202,19 @@ export default function AdminCorrectionQrcV2Reel() {
     return Array.from(m.values()).sort((a, b) => (a.lettre ?? "").localeCompare(b.lettre ?? ""));
   }, [session]);
 
-  const valider = async () => {
-    if (!qrcSel || note === null) return;
+  const valider = async (valeur?: number) => {
+    const n = valeur ?? note;
+    if (!qrcSel || n === null || n === undefined) return;
+    if (etatEnvoi === "encours") return;
+    setNote(n);
     setEtatEnvoi("encours");
     setErreur(null);
     try {
       await corrigerQrc({
-        operationId: crypto.randomUUID(),
+        // identité déterministe : 10 envois = une seule correction
+        operationId: `qrcv2:${qrcSel.qrc_instance_id}:${n}`,
         qrcInstanceId: qrcSel.qrc_instance_id,
-        note,
+        note: n,
         commentaire: commentaire || undefined,
       });
       setEtatEnvoi("ok");
@@ -416,33 +420,112 @@ export default function AdminCorrectionQrcV2Reel() {
         {!qrcSel && <p className="text-sm text-muted-foreground">Sélectionnez une QRC dans le tableau.</p>}
         {qrcSel && questionSel && tentativeSel && (
           <>
-            <div>
-              <p className="text-xs uppercase text-muted-foreground">Candidat</p>
-              <p className="font-semibold">{tentativeSel.candidat}</p>
-              <p className="text-xs text-muted-foreground">
-                {groupeChoisi?.libelle} · {ebChoisi?.exam_id} —{" "}
+            <div className="flex flex-wrap items-baseline gap-x-2 border-b pb-2">
+              <span className="font-semibold">{tentativeSel.candidat}</span>
+              <span className="text-xs text-muted-foreground">
+                {ebChoisi?.exam_id} ·{" "}
                 {tentativeSel.started_at
                   ? new Date(tentativeSel.started_at).toLocaleString("fr-FR", { timeZone: "Europe/Paris" })
                   : "date inconnue"}{" "}
                 · tentative {tentativeSel.attempt_id.slice(0, 8)}
+              </span>
+              <span
+                className={`ml-auto rounded px-2 py-0.5 text-xs font-medium ${
+                  qrcSel.etat === "corrigee"
+                    ? "bg-success/15 text-success"
+                    : baremeSel == null
+                      ? "bg-destructive/15 text-destructive"
+                      : "bg-warning/15 text-warning"
+                }`}
+                data-testid="etat-qrc"
+              >
+                {qrcSel.etat === "corrigee"
+                  ? `🔒 Correction déjà validée : ${qrcSel.note}${baremeSel != null ? `/${baremeSel}` : ""}`
+                  : baremeSel == null
+                    ? "🔴 Correction bloquée"
+                    : "🟠 À corriger"}
+              </span>
+            </div>
+
+            <div className="rounded border bg-muted/40 p-2">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Question</p>
+              <p className="text-sm">{questionSel.enonce}</p>
+            </div>
+
+            <div className="rounded-lg border-2 border-primary/40 bg-primary/5 p-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-primary">Réponse de l'apprenant</p>
+              <p data-testid="reponse-eleve" className="whitespace-pre-wrap text-lg leading-relaxed">
+                {texte(qrcSel.reponse) || "(copie vide)"}
               </p>
             </div>
-            <Card className="p-3 space-y-2 text-sm">
-              <p className="font-medium">QUESTION</p>
-              <p>{questionSel.enonce}</p>
-              <p className="font-medium">RÉPONSE DE L'APPRENANT</p>
-              <p data-testid="reponse-eleve" className="whitespace-pre-wrap">{texte(qrcSel.reponse) || "(vide)"}</p>
-              <p className="font-medium">RÉPONSE OFFICIELLE (snapshot de la tentative)</p>
-              {questionSel.reponseQRC
-                ? <p data-testid="reponse-officielle">{questionSel.reponseQRC}</p>
-                : <p className="text-warning" data-testid="officielle-absente">⚠️ RÉPONSE OFFICIELLE HISTORIQUE ABSENTE</p>}
-              {qrcSel.etat === "corrigee" && (
-                <p className="text-success" data-testid="points-attribues">
-                  Points attribués : {qrcSel.note}{baremeSel != null ? `/${baremeSel}` : " (barème historique absent)"}
-                </p>
+
+            <div className="rounded-lg border border-success/40 bg-success/5 p-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-success">✓ Réponse officielle (snapshot)</p>
+              {questionSel.reponseQRC ? (
+                <p data-testid="reponse-officielle" className="whitespace-pre-wrap text-base">{questionSel.reponseQRC}</p>
+              ) : (
+                <p className="text-warning text-sm" data-testid="officielle-absente">⚠️ RÉPONSE OFFICIELLE HISTORIQUE ABSENTE</p>
               )}
+            </div>
+
+            {qrcSel.etat === "corrigee" ? (
+              <div className="rounded border bg-muted/40 p-3 text-sm" data-testid="correction-verrouillee">
+                <p className="font-medium text-success" data-testid="points-attribues">
+                  🔒 Correction déjà validée : {qrcSel.note}
+                  {baremeSel != null ? `/${baremeSel}` : " (barème historique absent)"}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Une correction validée n'est jamais modifiée silencieusement : toute révision doit être une action Admin
+                  volontaire et journalisée.
+                </p>
+              </div>
+            ) : baremeSel == null ? (
+              <p className="rounded border bg-muted p-2 text-sm text-muted-foreground" data-testid="bareme-absent">
+                🔴 BARÈME HISTORIQUE INTROUVABLE — CORRECTION BLOQUÉE. Le barème doit être défini manuellement ; il n'est
+                jamais repris de la version actuelle de l'examen.
+              </p>
+            ) : (
+              <div className="rounded-lg border p-3 space-y-2">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Notation — barème : {baremeSel} points
+                </p>
+                {videSel && (
+                  <p className="text-xs text-muted-foreground" data-testid="copie-vide-en-attente">
+                    Copie vide — aucune correction historique, aucune note automatique.
+                  </p>
+                )}
+                <div className="flex flex-wrap gap-2">
+                  {Array.from({ length: Math.round((baremeSel ?? 0) / 0.5) + 1 }, (_, i) => i * 0.5).map((v) => (
+                    <Button
+                      key={v}
+                      size="lg"
+                      className="min-w-[56px] text-base font-semibold"
+                      variant={note === v ? "default" : "outline"}
+                      data-testid={`note-${v}`}
+                      disabled={etatEnvoi === "encours"}
+                      onClick={() => void valider(v)}
+                    >
+                      {String(v).replace(".", ",")}
+                    </Button>
+                  ))}
+                </div>
+                <Textarea
+                  placeholder="Commentaire (facultatif)"
+                  rows={2}
+                  value={commentaire}
+                  onChange={(e) => setCommentaire(e.target.value)}
+                />
+                <div className="text-sm" data-testid="etat-correction">
+                  {etatEnvoi === "encours" && <span className="text-warning">🟠 Enregistrement de la correction…</span>}
+                  {etatEnvoi === "ok" && <span className="text-success">🟢 Correction enregistrée</span>}
+                  {etatEnvoi === "echec" && <span className="text-destructive">🔴 CORRECTION NON ENREGISTRÉE</span>}
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-1 border-t pt-2 text-[11px] text-muted-foreground">
               {qrcSel.corrige_email?.startsWith("Correction historique") && (
-                <p className="text-xs text-muted-foreground" data-testid="origine-correction">
+                <p data-testid="origine-correction">
                   {qrcSel.corrige_email}
                   {qrcSel.corrige_at ? ` · ${new Date(qrcSel.corrige_at).toLocaleString("fr-FR")}` : " · date historique inconnue"}
                 </p>
@@ -453,54 +536,12 @@ export default function AdminCorrectionQrcV2Reel() {
                 </p>
               )}
               {restaureSel && (
-                <p className="text-xs text-muted-foreground" data-testid="bareme-restaure">
+                <p data-testid="bareme-restaure">
                   {restaureSel.mention} — barème {restaureSel.bareme} points, {restaureSel.nb_preuves} passage(s) de preuve
                 </p>
               )}
-            </Card>
-
-            {qrcSel.etat !== "corrigee" && baremeSel == null ? (
-              <p className="rounded border bg-muted p-2 text-sm text-muted-foreground" data-testid="bareme-absent">
-                🔴 BARÈME HISTORIQUE INTROUVABLE — CORRECTION BLOQUÉE. Le barème doit être défini manuellement ; il n'est
-                jamais repris de la version actuelle de l'examen.
-              </p>
-            ) : qrcSel.etat !== "corrigee" && videSel ? (
-              <p className="rounded border border-dashed p-2 text-sm text-muted-foreground" data-testid="copie-vide-en-attente">
-                Copie vide — aucune correction historique. Barème disponible ({baremeSel} points) mais aucune note n'est
-                attribuée automatiquement : le comportement des copies vides reste à décider.
-              </p>
-            ) : (
-              <>
-                <div className="flex flex-wrap gap-2">
-                  {Array.from({ length: Math.round((baremeSel ?? 0) / 0.5) + 1 }, (_, i) => i * 0.5).map((v) => (
-                    <Button
-                      key={v}
-                      size="sm"
-                      variant={note === v ? "default" : "outline"}
-                      data-testid={`note-${v}`}
-                      disabled={qrcSel.etat === "corrigee"}
-                      onClick={() => setNote(v)}
-                    >
-                      {String(v).replace(".", ",")}
-                    </Button>
-                  ))}
-                </div>
-                <Textarea placeholder="Commentaire (facultatif)" value={commentaire} onChange={(e) => setCommentaire(e.target.value)} />
-                <div className="text-sm" data-testid="etat-correction">
-                  {etatEnvoi === "encours" && <span className="text-warning">🟠 Enregistrement de la correction…</span>}
-                  {etatEnvoi === "ok" && <span className="text-success">🟢 Correction enregistrée</span>}
-                  {etatEnvoi === "echec" && <span className="text-destructive">🔴 CORRECTION NON ENREGISTRÉE</span>}
-                </div>
-                <Button
-                  className="w-full"
-                  disabled={note === null || qrcSel.etat === "corrigee"}
-                  onClick={valider}
-                  data-testid="valider-correction"
-                >
-                  ✓ Valider
-                </Button>
-              </>
-            )}
+              <p>{groupeChoisi?.libelle}</p>
+            </div>
 
             {(() => {
               const res = session?.resultats.find((r) => r.attempt_id === qrcSel.attempt_id);
