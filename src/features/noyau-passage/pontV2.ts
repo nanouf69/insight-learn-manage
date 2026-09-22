@@ -180,3 +180,80 @@ export async function finaliserMatiere(params: {
   if (erreurNote) return { ok: false, message: erreurNote.message };
   return { ok: true };
 }
+
+// ---------------------------------------------------------------------------
+// FILE D'ATTENTE DURABLE (hors ligne)
+// ---------------------------------------------------------------------------
+// Une réponse saisie hors connexion n'est jamais perdue : elle attend dans le
+// navigateur et repart au retour du réseau. Les identifiants d'opération étant
+// déterministes, un renvoi ne peut pas créer de doublon côté serveur.
+
+const CLE_FILE = "noyau_v2_answer_queue_v1";
+
+type ElementFile = {
+  attemptId: string;
+  matiereId: string;
+  questionId: number | string;
+  valeur: unknown;
+  at: string;
+};
+
+function lireFile(): ElementFile[] {
+  try {
+    const brut = localStorage.getItem(CLE_FILE);
+    const parsed = brut ? JSON.parse(brut) : [];
+    return Array.isArray(parsed) ? (parsed as ElementFile[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function ecrireFile(file: ElementFile[]): void {
+  try {
+    localStorage.setItem(CLE_FILE, JSON.stringify(file));
+  } catch {
+    /* la file bascule en mémoire : rien n'est effacé silencieusement */
+  }
+}
+
+let fileMemoire: ElementFile[] | null = null;
+let envoiEnCours = false;
+
+/** Met une réponse en file puis tente de la transmettre au noyau. */
+export function enfilerReponseNoyau(element: Omit<ElementFile, "at">): void {
+  const file = fileMemoire ?? lireFile();
+  file.push({ ...element, at: new Date().toISOString() });
+  fileMemoire = file;
+  ecrireFile(file);
+  void viderFileNoyau();
+}
+
+/** Vide la file séquentiellement. Une réponse ne quitte la file qu'une fois confirmée. */
+export async function viderFileNoyau(): Promise<{ restantes: number }> {
+  if (envoiEnCours) return { restantes: (fileMemoire ?? lireFile()).length };
+  envoiEnCours = true;
+  try {
+    let file = fileMemoire ?? lireFile();
+    while (file.length > 0) {
+      const premier = file[0];
+      const res = await enregistrerReponse({
+        attemptId: premier.attemptId,
+        matiereId: premier.matiereId,
+        questionId: premier.questionId,
+        valeur: premier.valeur,
+      });
+      if (!res.ok) break; // réseau ou refus serveur : on garde la réponse en file
+      file = file.slice(1);
+      fileMemoire = file;
+      ecrireFile(file);
+    }
+    return { restantes: file.length };
+  } finally {
+    envoiEnCours = false;
+  }
+}
+
+/** Nombre de réponses encore non confirmées par le noyau. */
+export function reponsesNoyauEnAttente(): number {
+  return (fileMemoire ?? lireFile()).length;
+}
