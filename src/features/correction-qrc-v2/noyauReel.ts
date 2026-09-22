@@ -311,42 +311,70 @@ export async function chargerSessionTest(
   mode: "test" | "migre" = "test",
   attemptIdsFiltre?: string[],
 ): Promise<SessionReelle> {
-  let requete = supabase
-    .from("exam_attempts_v2")
-    .select("attempt_id, apprenant_id, exam_id, exam_version_id, etat, snapshot, snapshot_fingerprint, started_at")
-    .eq("is_test", mode === "test");
-  if (attemptIdsFiltre?.length) requete = requete.in("attempt_id", attemptIdsFiltre);
-  const { data: attempts, error } = await requete.order("started_at", { ascending: true });
-  if (error) throw error;
+  // Un EB peut regrouper plusieurs dates : les listes d'identifiants sont lues par lots.
+  const parLots = async <T,>(ids: string[], lire: (lot: string[]) => Promise<T[]>): Promise<T[]> => {
+    const out: T[] = [];
+    for (let i = 0; i < ids.length; i += 150) out.push(...(await lire(ids.slice(i, i + 150))));
+    return out;
+  };
 
-  const ids = (attempts ?? []).map((a) => a.apprenant_id);
-  const { data: apprenants } = ids.length
-    ? await supabase.from("apprenants").select("id, nom, prenom").in("id", ids)
-    : { data: [] as { id: string; nom: string; prenom: string }[] };
-  const nomDe = new Map((apprenants ?? []).map((a) => [a.id, `${a.nom} ${a.prenom}`]));
+  const colonnes = "attempt_id, apprenant_id, exam_id, exam_version_id, etat, snapshot, snapshot_fingerprint, started_at";
+  let attempts: any[] = [];
+  if (attemptIdsFiltre?.length) {
+    attempts = await parLots(attemptIdsFiltre, async (lot) => {
+      const { data, error } = await supabase
+        .from("exam_attempts_v2")
+        .select(colonnes)
+        .eq("is_test", mode === "test")
+        .in("attempt_id", lot)
+        .order("started_at", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as any[];
+    });
+    attempts.sort((a, b) => String(a.started_at).localeCompare(String(b.started_at)));
+  } else {
+    const { data, error } = await supabase
+      .from("exam_attempts_v2")
+      .select(colonnes)
+      .eq("is_test", mode === "test")
+      .order("started_at", { ascending: true });
+    if (error) throw error;
+    attempts = (data ?? []) as any[];
+  }
 
-  const attemptIds = (attempts ?? []).map((a) => a.attempt_id);
-  const { data: qrc } = attemptIds.length
-    ? await supabase
-        .from("qrc_instances_v2")
-        .select("qrc_instance_id, attempt_id, question_id, apprenant_id, reponse, etat, note, corrige_email, corrige_at")
-        .in("attempt_id", attemptIds)
-    : { data: [] as QrcReelle[] };
+  const ids = Array.from(new Set(attempts.map((a) => a.apprenant_id as string)));
+  const apprenants = await parLots(ids, async (lot) => {
+    const { data } = await supabase.from("apprenants").select("id, nom, prenom").in("id", lot);
+    return (data ?? []) as { id: string; nom: string; prenom: string }[];
+  });
+  const nomDe = new Map(apprenants.map((a) => [a.id, `${a.nom} ${a.prenom}`]));
 
-  const { data: resultats } = attemptIds.length
-    ? await supabase
-        .from("core_exam_results")
-        .select("result_id, attempt_id, result_revision, status, score, total, qrc_restantes, published_at")
-        .in("attempt_id", attemptIds)
-    : { data: [] as ResultatReel[] };
+  const attemptIds = attempts.map((a) => a.attempt_id as string);
+  const qrc = await parLots(attemptIds, async (lot) => {
+    const { data } = await supabase
+      .from("qrc_instances_v2")
+      .select("qrc_instance_id, attempt_id, question_id, apprenant_id, reponse, etat, note, corrige_email, corrige_at")
+      .in("attempt_id", lot)
+      .range(0, 4999);
+    return (data ?? []) as QrcReelle[];
+  });
 
-  const qrcIds = (qrc ?? []).map((q) => q.qrc_instance_id);
-  const { data: baremes } = qrcIds.length
-    ? await supabase
-        .from("qrc_bareme_restaure")
-        .select("qrc_instance_id, bareme, mention, nb_preuves")
-        .in("qrc_instance_id", qrcIds)
-    : { data: [] as BaremeRestaure[] };
+  const resultats = await parLots(attemptIds, async (lot) => {
+    const { data } = await supabase
+      .from("core_exam_results")
+      .select("result_id, attempt_id, result_revision, status, score, total, qrc_restantes, published_at")
+      .in("attempt_id", lot);
+    return (data ?? []) as ResultatReel[];
+  });
+
+  const qrcIds = qrc.map((q) => q.qrc_instance_id);
+  const baremes = await parLots(qrcIds, async (lot) => {
+    const { data } = await supabase
+      .from("qrc_bareme_restaure")
+      .select("qrc_instance_id, bareme, mention, nb_preuves")
+      .in("qrc_instance_id", lot);
+    return (data ?? []) as BaremeRestaure[];
+  });
 
   return {
     tentatives: (attempts ?? []).map((a) => ({
