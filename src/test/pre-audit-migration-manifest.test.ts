@@ -81,8 +81,8 @@ describe('Manifest de migration (pré-audit 22/09/2026)', () => {
     expect(anomalies.map((e) => `${e.exam_id}/${e.subject_id}`).sort()).toEqual([
       'EB4-TAXI/reglementation_taxi2',
       'EB5-TAXI/francais',
-      'EB5-TAXI/reglementation_taxi',
       'EB5-TAXI/gestion',
+      'EB5-TAXI/reglementation_taxi',
       'EB5/francais',
       'EB5/gestion',
       'EB6-TAXI/gestion',
