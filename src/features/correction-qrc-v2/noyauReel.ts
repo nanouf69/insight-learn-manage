@@ -40,6 +40,18 @@ export type QrcReelle = {
   reponse: unknown;
   etat: "en_attente" | "corrigee";
   note: number | null;
+  corrige_email?: string | null;
+  corrige_at?: string | null;
+};
+
+export type SessionListee = {
+  cle: string;
+  exam_id: string;
+  date: string;
+  jour: string;
+  heureMin: string;
+  heureMax: string;
+  attemptIds: string[];
 };
 
 export type ResultatReel = {
@@ -66,12 +78,16 @@ const asSnapshot = (v: unknown) => v as SnapshotExamen;
  * - "test"  : tentatives fictives marquées is_test
  * - "migre" : passages réels copiés depuis l'ancien système (pilote contrôlé)
  */
-export async function chargerSessionTest(mode: "test" | "migre" = "test"): Promise<SessionReelle> {
-  const { data: attempts, error } = await supabase
+export async function chargerSessionTest(
+  mode: "test" | "migre" = "test",
+  attemptIdsFiltre?: string[],
+): Promise<SessionReelle> {
+  let requete = supabase
     .from("exam_attempts_v2")
     .select("attempt_id, apprenant_id, exam_id, exam_version_id, etat, snapshot, snapshot_fingerprint")
-    .eq("is_test", mode === "test")
-    .order("started_at", { ascending: true });
+    .eq("is_test", mode === "test");
+  if (attemptIdsFiltre?.length) requete = requete.in("attempt_id", attemptIdsFiltre);
+  const { data: attempts, error } = await requete.order("started_at", { ascending: true });
   if (error) throw error;
 
   const ids = (attempts ?? []).map((a) => a.apprenant_id);
@@ -84,7 +100,7 @@ export async function chargerSessionTest(mode: "test" | "migre" = "test"): Promi
   const { data: qrc } = attemptIds.length
     ? await supabase
         .from("qrc_instances_v2")
-        .select("qrc_instance_id, attempt_id, question_id, apprenant_id, reponse, etat, note")
+        .select("qrc_instance_id, attempt_id, question_id, apprenant_id, reponse, etat, note, corrige_email, corrige_at")
         .in("attempt_id", attemptIds)
     : { data: [] as QrcReelle[] };
 
