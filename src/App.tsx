@@ -181,9 +181,7 @@ function App() {
                 } />
 
                 <Route path="/admin/correction-qrc-v2" element={
-                  <ProtectedRoute>
-                    <ErrorBoundary><AdminCorrectionQrcV2 /></ErrorBoundary>
-                  </ProtectedRoute>
+                  <ErrorBoundary><AdminCorrectionQrcV2 /></ErrorBoundary>
                 } />
 
 
