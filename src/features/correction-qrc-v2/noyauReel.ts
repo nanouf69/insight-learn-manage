@@ -283,7 +283,12 @@ export async function listerGroupesCrm(mode: "test" | "migre" = "migre"): Promis
   return Array.from(groupes.values())
     .map((g) => {
       g.nbCandidats = g.candidats.size;
-      g.examens.sort((a, b) => (a.jour < b.jour ? 1 : a.jour > b.jour ? -1 : a.exam_id.localeCompare(b.exam_id)));
+      // EB1 → EB2 → … puis, à type d'examen égal, ordre alphabétique de la filière (VTC, TAXI, TA, VA).
+      g.examens.sort(
+        (a, b) => numeroEb(a.exam_id) - numeroEb(b.exam_id) || a.exam_id.toUpperCase().localeCompare(b.exam_id.toUpperCase()),
+      );
+      // À l'intérieur d'un EB : dates de la plus ancienne à la plus récente.
+      for (const e of g.examens) e.dates.sort((a, b) => (a.jour < b.jour ? -1 : a.jour > b.jour ? 1 : 0));
       return g as GroupeSessionCrm;
     })
     .sort((a, b) => rang[a.type] - rang[b.type] || (a.tri < b.tri ? 1 : a.tri > b.tri ? -1 : 0));
