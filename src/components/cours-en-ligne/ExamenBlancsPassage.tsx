@@ -25,11 +25,18 @@ import {
   flushAnswerSavesAndWait,
   flushAnswerSavesOnUnload,
   mergeSavedAndPendingAnswers,
-
+  getPendingAnswerSavesFor,
+  getBlockedAnswerSavesFor,
+  getConfirmedWriteSeq,
   subscribeAnswerSaveState,
 } from "@/lib/answerPersistence";
 import { AnswerSaveIndicator } from "./AnswerSaveIndicator";
 import { buildExamMatiereExerciceId } from "@/lib/quizAttempts";
+import {
+  attendreFinalizationReadiness,
+  MESSAGE_SYNCHRONISATION_EN_COURS,
+} from "@/lib/examFinalizationReadiness";
+import { runFinalizationOnce, buildFinalizationKey } from "@/lib/examFinalizationGuard";
 import {
   pontActifPour,
   demarrerTentative,
@@ -38,6 +45,7 @@ import {
   finaliserMatiere,
   reponsesNoyauEnAttente,
 } from "@/features/noyau-passage/pontV2";
+
 
 
 // ===== PASSAGE D'UNE MATIÈRE =====
@@ -348,6 +356,44 @@ function PassageMatiere({
   }, [allAnswered]);
 
   /**
+   * ÉTAPE 3 — contrôle de synchronisation AVANT toute clôture.
+   * On ne compte JAMAIS les questions répondues (une question peut rester
+   * volontairement vide) : on vérifie seulement que les écritures réellement
+   * produites sont confirmées par le serveur.
+   */
+  const ordreClientRef = useRef(0);
+  const synchronisationConfirmee = async (): Promise<boolean> => {
+    if (!apprenantId) return true;
+    ordreClientRef.current = Math.max(
+      ordreClientRef.current,
+      getConfirmedWriteSeq(apprenantId, exerciceKey),
+    );
+    const verdict = await attendreFinalizationReadiness({
+      lire: () => ({
+        apprenantId,
+        examenId: examenId ?? "",
+        matiereId: matiere.id,
+        tentative,
+        attempt: null,
+        ecrituresLocalesEnAttente: getPendingAnswerSavesFor(apprenantId, exerciceKey),
+        ecrituresNoyauEnAttente: attemptV2Ref.current ? reponsesNoyauEnAttente() : 0,
+        dernierOrdreClient: ordreClientRef.current,
+        dernierOrdreConfirme: getConfirmedWriteSeq(apprenantId, exerciceKey),
+        refus:
+          getBlockedAnswerSavesFor(apprenantId, exerciceKey) > 0
+            ? { reason: "refused" }
+            : null,
+      }),
+      relancerSynchronisation: () => void flushAnswerSavesAndWait(apprenantId, exerciceKey, 1000),
+    });
+    if (verdict.pret || verdict.dejaFinalisee) return true;
+    setSaveStatus(verdict.raison === "ecritures_en_attente" ? "saving" : "error");
+    toast.error(verdict.message ?? MESSAGE_SYNCHRONISATION_EN_COURS);
+    return false;
+  };
+
+
+  /**
    * Finalisation côté noyau V2 : une seule finalisation possible, et jamais
    * avant que toutes les réponses aient été confirmées par le serveur.
    * Renvoie false si la matière ne doit PAS être clôturée.
@@ -429,9 +475,26 @@ function PassageMatiere({
       toast.error("Sauvegarde en attente. Vos réponses restent conservées sur cet appareil et seront renvoyées automatiquement.");
       return;
     }
+    if (!(await synchronisationConfirmee())) return;
     if (!(await finaliserNoyau())) return;
     onTerminer(reponses);
   };
+
+  /**
+   * Double-clic, double requête ou réessai : une seule finalisation réelle par
+   * passage (même clé apprenant + examen + matière + tentative).
+   */
+  const terminerUneSeuleFois = async () => {
+    const cle = buildFinalizationKey({
+      apprenantId: apprenantId ?? "anonyme",
+      quizType: isBilan ? "bilan" : "examen_blanc",
+      quizId: examenId ?? "",
+      matiereId: matiere.id,
+      tentative,
+    });
+    await runFinalizationOnce(cle, handleTerminer);
+  };
+
   const handleExpire = async () => {
     setExpire(true);
     toast.warning("Temps écoulé — enregistrement de vos réponses avant la suite.", { duration: 5000 });
@@ -469,6 +532,7 @@ function PassageMatiere({
       toast.error("Connexion indisponible : vos réponses restent conservées et la matière ne sera pas finalisée avant confirmation.");
       return;
     }
+    if (!(await synchronisationConfirmee())) return;
     if (!(await finaliserNoyau())) return;
     onTerminer(reponses);
   };
@@ -495,6 +559,7 @@ function PassageMatiere({
       const flushed = await flushAnswerSavesAndWait(apprenantId, exerciceKey);
       if (!flushed) throw new Error("Réponses encore en attente");
       setSaveStatus("saved");
+      if (!(await synchronisationConfirmee())) return;
       if (!(await finaliserNoyau())) return;
       setShowInterruptConfirm(false);
       onTerminer(reponses);
@@ -791,7 +856,7 @@ function PassageMatiere({
             <ArrowRight className="w-4 h-4" />
           </Button>
         ) : (
-          <Button onClick={handleTerminer} className="gap-2 bg-green-600 hover:bg-green-700">
+          <Button onClick={terminerUneSeuleFois} className="gap-2 bg-green-600 hover:bg-green-700">
             <CheckCircle2 className="w-4 h-4" />
             Terminer la matière
             {!allAnswered && <span className="text-xs">({questionsSafe.filter(q => isQuestionAnswered(q)).length}/{questionsSafe.length})</span>}
