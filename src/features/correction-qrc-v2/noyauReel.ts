@@ -44,6 +44,14 @@ export type QrcReelle = {
   corrige_at?: string | null;
 };
 
+export type DatePassage = {
+  jour: string;
+  date: string;
+  heureMin: string;
+  heureMax: string;
+  attemptIds: string[];
+};
+
 export type SessionListee = {
   cle: string;
   exam_id: string;
@@ -52,6 +60,8 @@ export type SessionListee = {
   heureMin: string;
   heureMax: string;
   attemptIds: string[];
+  /** Dates réelles de passage regroupées sous le même numéro d'Examen Blanc (jamais fusionnées entre EB). */
+  dates: DatePassage[];
 };
 
 export type ResultatReel = {
