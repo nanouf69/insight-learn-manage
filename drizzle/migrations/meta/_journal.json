@@ -379,6 +379,13 @@
       "when": 1790095070662,
       "tag": "0053_fix_revise_qrc_ambiguity",
       "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1790096058554,
+      "tag": "0054_core_note_matiere_qcm_qrc",
+      "breakpoints": true
     }
   ]
 }

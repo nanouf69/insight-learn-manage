@@ -5936,6 +5936,16 @@ export type Database = {
         }
         Returns: Json
       }
+      core_note_attempt: {
+        Args: { p_attempt_id: string }
+        Returns: {
+          points_qcm: number
+          points_qrc: number
+          qrc_restantes: number
+          score20: number
+          total: number
+        }[]
+      }
       core_operation_replay: {
         Args: { p_operation_id: string; p_operation_type: string }
         Returns: Json
