@@ -21,13 +21,15 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
   const [quizResults, setQuizResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   // Définitions d'examens réellement en vigueur (base), identiques à l'espace apprenant
-  const [liveExamens, setLiveExamens] = useState<any[]>(STATIC_EXAMENS_BLANCS);
+  // AUCUN REPLI STATIQUE : tant que la version active n'est pas chargée, rien n'est comparé.
+  const [liveExamens, setLiveExamens] = useState<any[]>([]);
+  const [liveExamensError, setLiveExamensError] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     loadSavedExamens()
       .then((rows) => { if (!cancelled && Array.isArray(rows) && rows.length) setLiveExamens(rows as any[]); })
-      .catch(() => { /* repli sur la définition statique */ });
+      .catch(() => { if (!cancelled) setLiveExamensError(true); });
     return () => { cancelled = true; };
   }, []);
 
