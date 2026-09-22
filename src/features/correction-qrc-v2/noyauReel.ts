@@ -73,6 +73,33 @@ export type SessionReelle = {
 
 const asSnapshot = (v: unknown) => v as SnapshotExamen;
 
+/** Liste des sessions (examen + jour), de la plus récente à la plus ancienne. */
+export async function listerSessions(mode: "test" | "migre" = "migre"): Promise<SessionListee[]> {
+  const { data, error } = await supabase
+    .from("exam_attempts_v2")
+    .select("attempt_id, exam_id, started_at")
+    .eq("is_test", mode === "test")
+    .order("started_at", { ascending: false });
+  if (error) throw error;
+
+  const par = new Map<string, SessionListee>();
+  for (const a of data ?? []) {
+    const d = new Date(a.started_at as string);
+    const jour = d.toISOString().slice(0, 10);
+    const date = d.toLocaleDateString("fr-FR", { timeZone: "Europe/Paris" });
+    const heure = d.toLocaleTimeString("fr-FR", { timeZone: "Europe/Paris", hour: "2-digit", minute: "2-digit" });
+    const cle = `${a.exam_id}|${jour}`;
+    const s = par.get(cle) ?? {
+      cle, exam_id: a.exam_id as string, date, jour, heureMin: heure, heureMax: heure, attemptIds: [],
+    };
+    s.attemptIds.push(a.attempt_id as string);
+    if (heure < s.heureMin) s.heureMin = heure;
+    if (heure > s.heureMax) s.heureMax = heure;
+    par.set(cle, s);
+  }
+  return Array.from(par.values()).sort((a, b) => (a.jour < b.jour ? 1 : a.jour > b.jour ? -1 : 0));
+}
+
 /**
  * Charge une session depuis la base réelle.
  * - "test"  : tentatives fictives marquées is_test
