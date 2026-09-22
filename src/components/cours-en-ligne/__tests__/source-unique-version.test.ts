@@ -77,29 +77,29 @@ describe("Source unique : Admin = version active serveur = apprenant", () => {
     expect(lectures.every((l) => l.fingerprint !== ancienne.fingerprint)).toBe(true);
   });
 
-  it("une tentative d'examen déjà commencée conserve son snapshot figé", () => {
+  it("une tentative déjà commencée garde son snapshot, une nouvelle tentative prend la version active", () => {
     const server = new FakeServer();
-    const matiereAvant: any = { id: "matiere-test", nom: "Matière fictive", questions: server.read().questions };
-    const snapshot = buildAttemptSnapshot(matiereAvant);
-
-    // L'Admin publie une nouvelle version PENDANT l'épreuve
-    server.publish([makeQuestion("C")]);
-
-    // Le snapshot figé ne bouge pas
-    expect(JSON.stringify(snapshot)).toContain("\"A\"");
-    expect(JSON.stringify(snapshot)).not.toContain("\"C\"");
-  });
-
-  it("une NOUVELLE tentative reçoit la version active publiée", () => {
-    const server = new FakeServer();
-    buildAttemptSnapshot({ id: "m", nom: "Matière fictive", questions: server.read().questions } as any);
-    server.publish([makeQuestion("C")]);
-
-    const nouvelleTentative = buildAttemptSnapshot({
-      id: "m",
+    const empreinteAvant = server.read().fingerprint;
+    const snapshotEnCours = buildAttemptSnapshot({
+      id: "matiere-test",
       nom: "Matière fictive",
       questions: server.read().questions,
     } as any);
-    expect(JSON.stringify(nouvelleTentative)).toContain("\"C\"");
+
+    // L'Admin publie une nouvelle version PENDANT l'épreuve
+    server.publish([makeQuestion("C")]);
+    const empreinteApres = server.read().fingerprint;
+    expect(empreinteApres).not.toBe(empreinteAvant);
+
+    // Tentative en cours : snapshot figé, inchangé
+    expect(buildQuestionsFingerprint((snapshotEnCours as any).questions)).toBe(empreinteAvant);
+
+    // Nouvelle tentative : version active
+    const nouvelleTentative = buildAttemptSnapshot({
+      id: "matiere-test",
+      nom: "Matière fictive",
+      questions: server.read().questions,
+    } as any);
+    expect(buildQuestionsFingerprint((nouvelleTentative as any).questions)).toBe(empreinteApres);
   });
 });
