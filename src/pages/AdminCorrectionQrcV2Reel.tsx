@@ -12,6 +12,7 @@ import {
   corrigerQrc,
   lireHistoriqueQrc,
   listerGroupesCrm,
+  origineCorrection,
   reviserQrc,
   souscrireSignal,
   type EvenementCorrection,
