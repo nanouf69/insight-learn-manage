@@ -26,7 +26,7 @@ export default function AdminCorrectionQrcV2Reel() {
 
   const recharger = useCallback(async () => {
     try {
-      setSession(await chargerSessionTest());
+      setSession(await chargerSessionTest(mode));
     } catch (e) {
       setErreur((e as Error).message);
     }
