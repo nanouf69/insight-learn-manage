@@ -94,8 +94,13 @@ export default function AdminCorrectionQrcV2Reel() {
         </header>
 
         {matieres.map((m) => {
-          const questions = (premiere?.snapshot.questions ?? []).filter((q) => q.matiere === m.subject_id);
-          const dansMatiere = (session?.qrc ?? []).filter((q) => questions.some((x) => x.id === q.question_id));
+          const tentatives = (session?.tentatives ?? []).filter((t) =>
+            (t.snapshot.matieres ?? []).some((x) => x.subject_id === m.subject_id),
+          );
+          const questions = (tentatives[0]?.snapshot.questions ?? [])
+            .filter((q) => q.matiere === m.subject_id && q.type === "QRC");
+          const attemptIds = new Set(tentatives.map((t) => t.attempt_id));
+          const dansMatiere = (session?.qrc ?? []).filter((q) => attemptIds.has(q.attempt_id));
           const ok = dansMatiere.filter((q) => q.etat === "corrigee").length;
           return (
             <section key={m.subject_id} className="space-y-2">
