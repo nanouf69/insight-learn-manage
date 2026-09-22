@@ -57,7 +57,9 @@ export default function AdminCorrectionQrcV2Reel() {
         const liste = await listerSessions(mode);
         setSessions(liste);
         // Sans choix mémorisé dans l'URL, on se place sur la session la plus récente
-        setSessionCleState((c) => c ?? liste[0]?.cle ?? null);
+        if (!new URLSearchParams(window.location.search).get("qrc_session")) {
+          setSessionCleState(liste[0]?.cle ?? null);
+        }
       } catch (e) {
         setErreur((e as Error).message);
       }
