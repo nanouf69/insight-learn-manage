@@ -183,14 +183,14 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
                           {isReussi ? "Réussi ✅" : "Échoué ❌"}
                         </Badge>
                       )}
-                      {versionAnterieure && !mauvaisExam && (
+                      {versionAnterieure && !mauvaisExam && !passageContamineDocumente && (
                         <Badge variant="outline" className="text-xs border-amber-400 text-amber-700">
                           ⚠️ Version antérieure de l'examen
                         </Badge>
                       )}
-                      {mauvaisExam && (
+                      {(mauvaisExam || passageContamineDocumente) && (
                         <Badge variant="destructive" className="text-xs">
-                          ⚠️ PASSAGE EFFECTUÉ SUR UNE VERSION ERRONÉE DE L'EXAMEN — contenu {mauvaisExam.sourceExamenNumero != null ? `EB${mauvaisExam.sourceExamenNumero}` : mauvaisExam.sourceExamenTitre} servi dans cet examen
+                          ⚠️ PASSAGE EFFECTUÉ SUR UNE VERSION ERRONÉE DE L'EXAMEN — contenu {mauvaisExam?.sourceExamenNumero != null ? `EB${mauvaisExam.sourceExamenNumero}` : "EB1"} servi dans cet examen{exam.completedAt ? ` (passage du ${new Date(exam.completedAt).toLocaleDateString("fr-FR")})` : ""}
                         </Badge>
                       )}
                     </div>
