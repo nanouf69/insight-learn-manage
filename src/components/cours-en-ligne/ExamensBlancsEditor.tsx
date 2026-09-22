@@ -511,7 +511,9 @@ export async function loadSavedExamens(notifyRepairs: boolean = false): Promise<
     }
   } catch (err) {
     console.error("[ExamensEditor] Error loading saved exams:", err);
-    // On error, return source data (no stale cache)
+    // AUCUN REPLI : on propage l'échec, aucune question n'est servie.
+    if (isExamContentUnavailable(err)) throw err;
+    throw new ExamContentUnavailableError(err instanceof Error ? err.message : "Lecture impossible");
   }
   
   // Repair any missing correct flags (serialization safety net).
