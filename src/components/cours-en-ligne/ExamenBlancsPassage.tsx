@@ -7,7 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  ArrowLeft, ArrowRight, CheckCircle2, XCircle, AlertTriangle,
+  ArrowLeft, ArrowRight, CheckCircle2, AlertTriangle,
   FileText, Timer, RotateCcw, Loader2, Calculator, X, Ban, BookOpen
 } from "lucide-react";
 import { tousLesExamens, getPointsParQuestion, isCalculQuestion, type ExamenBlanc, type Matiere, type Question } from "./examens-blancs-data";
@@ -28,6 +28,7 @@ import {
 
   subscribeAnswerSaveState,
 } from "@/lib/answerPersistence";
+import { AnswerSaveIndicator } from "./AnswerSaveIndicator";
 import { buildExamMatiereExerciceId } from "@/lib/quizAttempts";
 import {
   pontActifPour,
@@ -615,31 +616,13 @@ function PassageMatiere({
         </div>
       </div>
 
+      <AnswerSaveIndicator />
+
       {/* Progression questions */}
       <div className="space-y-1">
         <div className="flex justify-between text-xs text-muted-foreground">
           <span>Question Q{((matiere.questions || []).indexOf(question as Question) + 1) || (safeQuestionIndex + 1)} ({safeQuestionIndex + 1} / {questionsSafe.length})</span>
-          <div className="flex items-center gap-3">
-            {saveStatus === "saving" && (
-              <span className="flex items-center gap-1 text-amber-600 animate-pulse">
-                <Loader2 className="w-3 h-3 animate-spin" />
-                Sauvegarde...
-              </span>
-            )}
-            {saveStatus === "saved" && (
-              <span className="flex items-center gap-1 text-green-600">
-                <CheckCircle2 className="w-3 h-3" />
-                Sauvegardé ✓
-              </span>
-            )}
-            {saveStatus === "error" && (
-              <span className="flex items-center gap-1 text-red-600">
-                <XCircle className="w-3 h-3" />
-                Erreur de sauvegarde
-              </span>
-            )}
-            <span>{Math.round(progress)}%</span>
-          </div>
+          <span>{Math.round(progress)}%</span>
         </div>
         <Progress value={progress} className="h-2" />
       </div>

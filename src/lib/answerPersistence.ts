@@ -124,7 +124,7 @@ interface QueueItem {
   refused_user_ids?: string[];
 }
 
-type Listener = (state: AnswerSaveState, pending: number) => void;
+type Listener = (state: AnswerSaveState, pending: number, pendingAnswers: number) => void;
 
 const listeners = new Set<Listener>();
 let state: AnswerSaveState = "idle";
@@ -330,10 +330,12 @@ const writeQueue = (items: QueueItem[]) => {
 };
 
 const emit = () => {
-  const pending = readQueue().filter(isActivelyPending).length;
+  const activeQueue = readQueue().filter(isActivelyPending);
+  const pending = activeQueue.length;
+  const pendingAnswers = countPendingAnswers(activeQueue);
   listeners.forEach((l) => {
     try {
-      l(state, pending);
+      l(state, pending, pendingAnswers);
     } catch {
       /* noop */
     }
@@ -348,7 +350,8 @@ const setState = (next: AnswerSaveState) => {
 /** Permet à l'UI de suivre l'état réel de l'enregistrement. */
 export function subscribeAnswerSaveState(listener: Listener): () => void {
   listeners.add(listener);
-  listener(state, readQueue().filter(isActivelyPending).length);
+  const activeQueue = readQueue().filter(isActivelyPending);
+  listener(state, activeQueue.length, countPendingAnswers(activeQueue));
   return () => listeners.delete(listener);
 }
 
@@ -387,6 +390,19 @@ export function isMeaningfulAnswerValue(value: unknown): boolean {
   if (Array.isArray(value)) return value.length > 0;
   if (typeof value === "string") return value.trim().length > 0;
   return value !== null && value !== undefined;
+}
+
+/** Nombre informatif de réponses contenues dans les opérations encore actives. */
+function countPendingAnswers(items: QueueItem[]): number {
+  const answers = new Set<string>();
+  for (const item of items) {
+    for (const [questionId, value] of Object.entries(item.payload.reponses ?? {})) {
+      if (isMeaningfulAnswerValue(value)) {
+        answers.add(`${item.payload.apprenant_id}__${item.payload.exercice_id}__${questionId}`);
+      }
+    }
+  }
+  return answers.size;
 }
 
 /**
