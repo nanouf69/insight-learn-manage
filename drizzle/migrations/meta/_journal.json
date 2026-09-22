@@ -330,6 +330,13 @@
       "when": 1790071596616,
       "tag": "0046_core_finalize_attempt_validate_snapshot",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1790071652097,
+      "tag": "0047_core_correct_qrc_append_only_fix",
+      "breakpoints": true
     }
   ]
 }
