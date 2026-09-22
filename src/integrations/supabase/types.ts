@@ -1650,6 +1650,53 @@ export type Database = {
           },
         ]
       }
+      core_exam_results: {
+        Row: {
+          apprenant_id: string
+          attempt_id: string
+          published_at: string | null
+          qrc_restantes: number
+          result_id: string
+          result_revision: number
+          score: number | null
+          status: string
+          total: number | null
+          updated_at: string
+        }
+        Insert: {
+          apprenant_id: string
+          attempt_id: string
+          published_at?: string | null
+          qrc_restantes?: number
+          result_id?: string
+          result_revision?: number
+          score?: number | null
+          status?: string
+          total?: number | null
+          updated_at?: string
+        }
+        Update: {
+          apprenant_id?: string
+          attempt_id?: string
+          published_at?: string | null
+          qrc_restantes?: number
+          result_id?: string
+          result_revision?: number
+          score?: number | null
+          status?: string
+          total?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "core_exam_results_attempt_id_fkey"
+            columns: ["attempt_id"]
+            isOneToOne: true
+            referencedRelation: "exam_attempts_v2"
+            referencedColumns: ["attempt_id"]
+          },
+        ]
+      }
       core_operations: {
         Row: {
           apprenant_id: string | null
@@ -2277,6 +2324,7 @@ export type Database = {
           exam_id: string
           exam_version_id: string
           finished_at: string | null
+          is_test: boolean
           snapshot: Json
           snapshot_fingerprint: string
           started_at: string
@@ -2288,6 +2336,7 @@ export type Database = {
           exam_id: string
           exam_version_id: string
           finished_at?: string | null
+          is_test?: boolean
           snapshot: Json
           snapshot_fingerprint: string
           started_at?: string
@@ -2299,6 +2348,7 @@ export type Database = {
           exam_id?: string
           exam_version_id?: string
           finished_at?: string | null
+          is_test?: boolean
           snapshot?: Json
           snapshot_fingerprint?: string
           started_at?: string
@@ -2399,6 +2449,7 @@ export type Database = {
           filiere: string
           fingerprint: string
           id: string
+          is_test: boolean
           module_id: number | null
           motif: string | null
           published_at: string | null
@@ -2418,6 +2469,7 @@ export type Database = {
           filiere: string
           fingerprint?: string
           id?: string
+          is_test?: boolean
           module_id?: number | null
           motif?: string | null
           published_at?: string | null
@@ -2437,6 +2489,7 @@ export type Database = {
           filiere?: string
           fingerprint?: string
           id?: string
+          is_test?: boolean
           module_id?: number | null
           motif?: string | null
           published_at?: string | null
@@ -5825,6 +5878,20 @@ export type Database = {
         }
         Returns: Json
       }
+      core_correct_qrc_publish: {
+        Args: {
+          p_commentaire?: string
+          p_corrige_email?: string
+          p_note: number
+          p_operation_id: string
+          p_qrc_instance_id: string
+        }
+        Returns: Json
+      }
+      core_est_proprietaire: {
+        Args: { p_apprenant_id: string }
+        Returns: boolean
+      }
       core_finalize_attempt: {
         Args: {
           p_attempt_id: string
@@ -5845,6 +5912,27 @@ export type Database = {
           p_version_id: string
         }
         Returns: Json
+      }
+      core_recalc_result: {
+        Args: { p_attempt_id: string }
+        Returns: {
+          apprenant_id: string
+          attempt_id: string
+          published_at: string | null
+          qrc_restantes: number
+          result_id: string
+          result_revision: number
+          score: number | null
+          status: string
+          total: number | null
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "core_exam_results"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       core_save_answer: {
         Args: {
