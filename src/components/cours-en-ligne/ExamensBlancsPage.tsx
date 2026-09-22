@@ -942,12 +942,12 @@ export default function ExamensBlancsPage({
   const saveMatiereResultInner = async ({ examen, matiere, resultat, dureeSecondes }: { examen: ExamenBlanc; matiere: Matiere; resultat: ResultatMatiere; dureeSecondes: number }) => {
     if (!apprenantId || !userId) return;
     let rawQuestions = matiere?.questions || [];
-    // FIX: fallback to source data when matiere.questions is empty (frozen examenChoisi)
-    if (rawQuestions.length === 0 && matiere?.id) {
-      for (const srcExam of tousLesExamens) {
-        const srcMat = srcExam.matieres.find(m => m.id === matiere.id);
-        if (srcMat?.questions?.length) { rawQuestions = srcMat.questions; break; }
-      }
+    // AUCUN REPLI STATIQUE : si la matière figée ne porte aucune question, on
+    // n'invente rien à partir du fichier d'origine. Aucune écriture n'est faite.
+    if (rawQuestions.length === 0) {
+      console.error("[ExamSubmission][EB] Matière sans question figée — enregistrement refusé", matiere?.id);
+      toast.error(EXAM_CONTENT_UNAVAILABLE_MESSAGE);
+      return false;
     }
     const questionsSafe = rawQuestions.filter(q => q != null);
     const frozenCorrections: Record<string, any> = {};
@@ -991,6 +991,12 @@ export default function ExamensBlancsPage({
     // modification Admin ultérieure ne pourra plus transformer cette tentative.
     const snapshot = {
       version: MATIERE_SNAPSHOT_VERSION,
+      // Empreintes de la version figée au démarrage : permettent de repérer
+      // plus tard un passage réalisé sur une version antérieure de l'examen.
+      examenId: examen.id,
+      examenNumero: (examen as any).numero ?? null,
+      examFingerprint: attemptFingerprintRef.current,
+      matiereFingerprint: buildMatiereFingerprint({ ...matiere, questions: questionsSafe } as any),
       matiereId: matiere.id,
       nom: matiere.nom,
       noteSur: matiere.noteSur,
