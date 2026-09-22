@@ -48,7 +48,15 @@ export default function AdminCorrectionQrcV2Reel() {
   const total = session?.qrc.length ?? 0;
   const corrigees = session?.qrc.filter((q) => q.etat === "corrigee").length ?? 0;
   const premiere = session?.tentatives[0];
-  const matieres = premiere?.snapshot.matieres ?? [];
+  // Toutes les matières présentes dans la session, sans mélanger les tentatives :
+  // chaque ligne d'un tableau est le passage de ce candidat SUR CETTE matière.
+  const matieres = useMemo(() => {
+    const m = new Map<string, { subject_id: string; lettre: string; titre: string; ordre: number }>();
+    for (const t of session?.tentatives ?? []) {
+      for (const mat of t.snapshot.matieres ?? []) if (!m.has(mat.subject_id)) m.set(mat.subject_id, mat);
+    }
+    return Array.from(m.values()).sort((a, b) => (a.lettre ?? "").localeCompare(b.lettre ?? ""));
+  }, [session]);
 
   const valider = async () => {
     if (!qrcSel || note === null) return;
