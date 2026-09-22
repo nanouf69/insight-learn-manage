@@ -99,14 +99,18 @@ async function checkAuth(): Promise<Sonde> {
 }
 
 // ---------------------------------------------------------------- journaux
-async function ecrireJournal(entree: Record<string, unknown>): Promise<{ fichier: string | null; drain: boolean }> {
+async function ecrireJournal(
+  entree: Record<string, unknown>,
+): Promise<{ fichier: string | null; erreur?: string; drain: boolean }> {
   const now = new Date();
   const chemin = `logs/${now.toISOString().slice(0, 10)}/${now.toISOString().replace(/[:.]/g, "-")}-${entree.correlation_id}.json`;
   let fichier: string | null = null;
+  let erreur: string | undefined;
   try {
     const r = await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${chemin}`, {
       method: "POST",
       headers: {
+        apikey: SERVICE_KEY,
         Authorization: `Bearer ${SERVICE_KEY}`,
         "Content-Type": "application/json",
         "x-upsert": "false", // ajout seul : jamais d'écrasement
@@ -114,8 +118,9 @@ async function ecrireJournal(entree: Record<string, unknown>): Promise<{ fichier
       body: JSON.stringify(entree),
     });
     if (r.ok) fichier = chemin;
-  } catch (_) {
-    /* le journal ne doit jamais faire échouer la surveillance */
+    else erreur = `HTTP ${r.status} ${(await r.text()).slice(0, 200)}`;
+  } catch (e) {
+    erreur = String(e).slice(0, 200);
   }
   let drain = false;
   if (LOG_DRAIN_URL) {
