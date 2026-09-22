@@ -167,9 +167,12 @@ export default function AdminCorrectionQrcV2Reel() {
                             (x) => x.attempt_id === t.attempt_id && x.question_id === q.id,
                           );
                           if (!inst) return <td key={q.id} className="px-2 py-1 text-muted-foreground">—</td>;
-                          const points = qt?.points ?? null;
+                          const restaure = baremeRestaureDe.get(inst.qrc_instance_id) ?? null;
+                          const points = qt?.points ?? restaure?.bareme ?? null;
                           const corrigee = inst.etat === "corrigee";
                           const bloquee = !corrigee && points == null;
+                          const vide = !texte(inst.reponse).trim();
+                          const videEnAttente = !corrigee && !bloquee && vide;
                           return (
                             <td key={q.id} className="px-1 py-1">
                               <button
