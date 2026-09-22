@@ -163,6 +163,11 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
                  );
                  if (found) { mauvaisExam = found; break; }
                }
+               // Incident documenté EB1→EB2 VTC (18/09 et 21/09 avant 18h15) :
+               // écritures prouvées par l'audit du 22/09, liste figée en lecture seule.
+               const passageContamineDocumente = exam.matieres.some((m: any) =>
+                 KNOWN_EB1_SERVED_IN_EB2_RESULT_IDS.has(String(m?.id ?? "")),
+               );
 
               return (
                 <div key={quizId} className="border rounded-lg p-4 space-y-3">
