@@ -359,6 +359,13 @@ export default function AdminCorrectionQrcV2Reel() {
           <p className="text-sm text-muted-foreground" data-testid="compteur-session">
             {corrigees}/{total} QRC corrigées — {total - corrigees} restantes
           </p>
+          <p className="text-xs text-muted-foreground" data-testid="legende-origine">
+            <span className="text-success">✓ vert = correction humaine vérifiée</span>
+            {" · "}
+            <span className="text-warning">≈ orange = correction automatique historique</span>
+            {" · "}
+            <span>? gris = origine non tracée</span>
+          </p>
           {(nbIndetermines > 0 || nbConflits > 0) && (
             <p className="text-xs text-warning" data-testid="alerte-rattachement">
               ⚠️ {nbIndetermines} candidat(s) sans session CRM déterminée · {nbConflits} candidat(s) avec des sessions CRM qui se chevauchent (aucun choix automatique).
