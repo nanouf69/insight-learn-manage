@@ -365,6 +365,20 @@
       "when": 1790089004103,
       "tag": "0051_create_qrc_bareme_restaure",
       "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1790094834277,
+      "tag": "0052_core_revise_qrc_publish",
+      "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1790095070662,
+      "tag": "0053_fix_revise_qrc_ambiguity",
+      "breakpoints": true
     }
   ]
 }

@@ -5970,6 +5970,17 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      core_revise_qrc_publish: {
+        Args: {
+          p_commentaire?: string
+          p_corrige_email?: string
+          p_note: number
+          p_note_attendue: number
+          p_operation_id: string
+          p_qrc_instance_id: string
+        }
+        Returns: Json
+      }
       core_save_answer: {
         Args: {
           p_attempt_id: string
