@@ -273,6 +273,30 @@ export default function AdminCorrectionQrcV2Reel() {
               </Button>
             </div>
           </div>
+          {(ebChoisi?.dates.length ?? 0) > 0 && (
+            <div className="flex flex-wrap items-center gap-1" data-testid="dates-eb">
+              <span className="text-xs text-muted-foreground">Dates de passage :</span>
+              <Button
+                size="sm"
+                variant={jourFiltre ? "outline" : "default"}
+                onClick={() => setJourFiltre(null)}
+                data-testid="date-toutes"
+              >
+                Toutes ({ebChoisi?.attemptIds.length})
+              </Button>
+              {(ebChoisi?.dates ?? []).map((d) => (
+                <Button
+                  key={d.jour}
+                  size="sm"
+                  variant={jourFiltre === d.jour ? "default" : "outline"}
+                  onClick={() => setJourFiltre(d.jour)}
+                  data-testid={`date-${d.jour}`}
+                >
+                  {d.date} ({d.attemptIds.length})
+                </Button>
+              ))}
+            </div>
+          )}
           <p className="text-sm text-muted-foreground" data-testid="compteur-session">
             {corrigees}/{total} QRC corrigées — {total - corrigees} restantes
           </p>
