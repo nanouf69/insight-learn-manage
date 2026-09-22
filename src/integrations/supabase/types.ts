@@ -5811,6 +5811,10 @@ export type Database = {
           reason: string
         }[]
       }
+      core_assert_session_owner: {
+        Args: { p_apprenant_id: string }
+        Returns: undefined
+      }
       core_correct_qrc: {
         Args: {
           p_commentaire?: string

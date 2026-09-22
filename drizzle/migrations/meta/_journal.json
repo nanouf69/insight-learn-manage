@@ -337,6 +337,13 @@
       "when": 1790071652097,
       "tag": "0047_core_correct_qrc_append_only_fix",
       "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1790077325396,
+      "tag": "0048_core_session_owner_guard",
+      "breakpoints": true
     }
   ]
 }
