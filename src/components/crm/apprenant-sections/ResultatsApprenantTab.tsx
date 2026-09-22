@@ -166,6 +166,11 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
                           {isReussi ? "Réussi ✅" : "Échoué ❌"}
                         </Badge>
                       )}
+                      {versionAnterieure && (
+                        <Badge variant="outline" className="text-xs border-amber-400 text-amber-700">
+                          ⚠️ Version antérieure de l'examen
+                        </Badge>
+                      )}
                     </div>
                     {enAttenteCorrection ? (
                       <span className="text-sm font-semibold text-amber-600">Note en attente</span>
