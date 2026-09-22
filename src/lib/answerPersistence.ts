@@ -249,8 +249,16 @@ export const isAnswerStorageSaturated = (): boolean => storageSaturated;
  */
 export interface AnswerSaveRejection {
   exerciceId: string;
-  reason: "frozen" | "forbidden";
+  /**
+   * `frozen` / `forbidden` : refus historiques (passage terminé, compte non
+   * propriétaire). `retake_delay` : règle des 48 h. `refused` : tout autre
+   * refus fonctionnel explicite du serveur. Dans TOUS ces cas, répéter la même
+   * requête ne peut pas la faire réussir : le renvoi automatique s'arrête.
+   */
+  reason: "frozen" | "forbidden" | "retake_delay" | "refused";
   at: string;
+  /** Message explicite destiné à l'apprenant (refus définitif). */
+  message?: string;
 }
 
 let lastRejection: AnswerSaveRejection | null = null;
@@ -266,8 +274,12 @@ const emitRejection = () => {
   });
 };
 
-const notifyAnswerSaveRejected = (exerciceId: string, reason: AnswerSaveRejection["reason"]) => {
-  lastRejection = { exerciceId, reason, at: new Date().toISOString() };
+const notifyAnswerSaveRejected = (
+  exerciceId: string,
+  reason: AnswerSaveRejection["reason"],
+  message?: string,
+) => {
+  lastRejection = { exerciceId, reason, at: new Date().toISOString(), message };
   emitRejection();
 };
 
