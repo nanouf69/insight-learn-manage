@@ -57,14 +57,21 @@ export default function AdminCorrectionQrcV2Reel() {
   const setGroupeCle = (cle: string | null) => {
     setGroupeCleState(cle);
     setEbCleState(null);
+    setJourFiltreState(null);
     setSelectionState(null);
     setSession(null);
-    majUrl({ qrc_groupe: cle, qrc_eb: null, qrc: null });
+    majUrl({ qrc_groupe: cle, qrc_eb: null, qrc_date: null, qrc: null });
   };
   const setEbCle = (cle: string | null) => {
     setEbCleState(cle);
+    setJourFiltreState(null);
     setSelectionState(null);
-    majUrl({ qrc_eb: cle, qrc: null });
+    majUrl({ qrc_eb: cle, qrc_date: null, qrc: null });
+  };
+  const setJourFiltre = (jour: string | null) => {
+    setJourFiltreState(jour);
+    setSelectionState(null);
+    majUrl({ qrc_date: jour, qrc: null });
   };
   const setSelection = (qrc: string | null) => {
     setSelectionState(qrc);
