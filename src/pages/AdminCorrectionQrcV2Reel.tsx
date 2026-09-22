@@ -62,10 +62,18 @@ export default function AdminCorrectionQrcV2Reel() {
     return m;
   }, [session]);
 
+  const baremeRestaureDe = useMemo(() => {
+    const m = new Map<string, { bareme: number; mention: string; nb_preuves: number }>();
+    for (const b of session?.baremesRestaures ?? []) m.set(b.qrc_instance_id, b);
+    return m;
+  }, [session]);
+
   const qrcSel: QrcReelle | undefined = session?.qrc.find((q) => q.qrc_instance_id === selection);
   const tentativeSel = qrcSel ? parTentative.get(qrcSel.attempt_id) : undefined;
   const questionSel = tentativeSel?.snapshot.questions.find((q) => q.id === qrcSel?.question_id);
-  const baremeSel = questionSel?.points ?? null;
+  const restaureSel = qrcSel ? baremeRestaureDe.get(qrcSel.qrc_instance_id) ?? null : null;
+  const baremeSel = questionSel?.points ?? restaureSel?.bareme ?? null;
+  const videSel = !texte(qrcSel?.reponse).trim();
 
   const total = session?.qrc.length ?? 0;
   const corrigees = session?.qrc.filter((q) => q.etat === "corrigee").length ?? 0;
@@ -159,9 +167,12 @@ export default function AdminCorrectionQrcV2Reel() {
                             (x) => x.attempt_id === t.attempt_id && x.question_id === q.id,
                           );
                           if (!inst) return <td key={q.id} className="px-2 py-1 text-muted-foreground">—</td>;
-                          const points = qt?.points ?? null;
+                          const restaure = baremeRestaureDe.get(inst.qrc_instance_id) ?? null;
+                          const points = qt?.points ?? restaure?.bareme ?? null;
                           const corrigee = inst.etat === "corrigee";
                           const bloquee = !corrigee && points == null;
+                          const vide = !texte(inst.reponse).trim();
+                          const videEnAttente = !corrigee && !bloquee && vide;
                           return (
                             <td key={q.id} className="px-1 py-1">
                               <button
@@ -172,14 +183,18 @@ export default function AdminCorrectionQrcV2Reel() {
                                     ? "border-success bg-success/10 text-success"
                                     : bloquee
                                       ? "border-muted-foreground/40 bg-muted text-muted-foreground"
-                                      : "border-warning bg-warning/10 text-warning"
+                                      : videEnAttente
+                                        ? "border-dashed border-muted-foreground/60 bg-background text-muted-foreground"
+                                        : "border-warning bg-warning/10 text-warning"
                                 }`}
                               >
                                 {corrigee
                                   ? `✓ ${inst.note}${points != null ? `/${points}` : ""}`
                                   : bloquee
                                     ? "⚠️ Barème absent"
-                                    : "À corriger"}
+                                    : videEnAttente
+                                      ? `Copie vide (/${points})`
+                                      : `À corriger (/${points})`}
                               </button>
                             </td>
                           );
@@ -232,12 +247,22 @@ export default function AdminCorrectionQrcV2Reel() {
                   ⚠️ Correction historique avec points mais sans réponse enregistrée — contrôle manuel requis
                 </p>
               )}
+              {restaureSel && (
+                <p className="text-xs text-muted-foreground" data-testid="bareme-restaure">
+                  {restaureSel.mention} — barème {restaureSel.bareme} points, {restaureSel.nb_preuves} passage(s) de preuve
+                </p>
+              )}
             </Card>
 
             {qrcSel.etat !== "corrigee" && baremeSel == null ? (
               <p className="rounded border bg-muted p-2 text-sm text-muted-foreground" data-testid="bareme-absent">
-                ⚠️ BARÈME HISTORIQUE ABSENT — CORRECTION BLOQUÉE. Le barème doit être défini manuellement ; il n'est
+                🔴 BARÈME HISTORIQUE INTROUVABLE — CORRECTION BLOQUÉE. Le barème doit être défini manuellement ; il n'est
                 jamais repris de la version actuelle de l'examen.
+              </p>
+            ) : qrcSel.etat !== "corrigee" && videSel ? (
+              <p className="rounded border border-dashed p-2 text-sm text-muted-foreground" data-testid="copie-vide-en-attente">
+                Copie vide — aucune correction historique. Barème disponible ({baremeSel} points) mais aucune note n'est
+                attribuée automatiquement : le comportement des copies vides reste à décider.
               </p>
             ) : (
               <>
