@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { tousLesExamens, getPointsParQuestion, applyOfficialCoefficient, type ExamenBlanc, type Matiere, type Question, type Choix } from "./examens-blancs-data";
 import { mergeQuestionsForMatiere, moveQuestionToPosition, normalizeQcmChoiceLetters } from "./examens-blancs-utils";
+import { ExamContentUnavailableError, isExamContentUnavailable } from "./exam-content-integrity";
 import { getSeuilEliminatoireAffiche } from "./examens-blancs-scoring";
 // Contrôle visuel des anomalies — LECTURE SEULE, aucune correction automatique.
 import { detectExamenAnomalies, getCorrectionsMatiere } from "./examens-blancs-anomalies";
