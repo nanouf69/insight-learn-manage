@@ -52,14 +52,15 @@ export type QrcReelle = {
  * « automatique »  : correction automatique historique importée (jamais requalifiée en humaine).
  * Aucune donnée n'est modifiée : la distinction est déduite de la trace existante.
  */
-export type OrigineCorrection = "humaine" | "automatique" | "aucune";
+export type OrigineCorrection = "humaine" | "automatique" | "inconnue" | "aucune";
 
 const MARQUEUR_AUTOMATIQUE = "correction historique importée";
 
 export function origineCorrection(qrc: Pick<QrcReelle, "etat" | "corrige_email">): OrigineCorrection {
   if (qrc.etat !== "corrigee") return "aucune";
   const email = (qrc.corrige_email ?? "").trim().toLowerCase();
-  if (!email) return "automatique";
+  // Trace insuffisante : on n'affirme ni « humaine » ni « automatique ».
+  if (!email) return "inconnue";
   return email.startsWith(MARQUEUR_AUTOMATIQUE) ? "automatique" : "humaine";
 }
 
