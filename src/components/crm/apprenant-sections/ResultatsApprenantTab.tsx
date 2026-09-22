@@ -204,6 +204,15 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
 
                   </div>
 
+                  {/* Décision manuelle Admin pour un passage contaminé : AUCUNE action
+                      automatique (pas de suppression, recalcul, remplacement de questions,
+                      modification de QRC ni création de tentative). */}
+                  {(mauvaisExam || passageContamineDocumente) && (
+                    <p className="text-xs font-medium text-amber-700 border border-amber-300 bg-amber-50 rounded px-2 py-1">
+                      Décision requise (Admin) : conserver le résultat ou demander un nouveau passage EB2 — décision manuelle, aucune action automatique.
+                    </p>
+                  )}
+
                   {/* Notes par matière */}
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                     {exam.matieres.map((m: any, i: number) => {
