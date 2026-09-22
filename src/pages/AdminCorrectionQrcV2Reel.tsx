@@ -401,6 +401,7 @@ export default function AdminCorrectionQrcV2Reel() {
                     <tr>
                       <th className="sticky left-0 bg-background px-2 py-1 text-left">CANDIDAT</th>
                       <th className="px-2 py-1 text-left">PASSAGE</th>
+                      <th className="px-2 py-1 text-left whitespace-nowrap">NOTE /20</th>
                       {questions.map((q, i) => <th key={q.id} className="px-2 py-1">QRC {i + 1}</th>)}
                     </tr>
                   </thead>
