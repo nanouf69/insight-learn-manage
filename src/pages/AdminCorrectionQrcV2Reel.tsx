@@ -39,6 +39,8 @@ export default function AdminCorrectionQrcV2Reel() {
   const [groupes, setGroupes] = useState<GroupeSessionCrm[]>([]);
   const [groupeCle, setGroupeCleState] = useState<string | null>(() => param("qrc_groupe"));
   const [ebCle, setEbCleState] = useState<string | null>(() => param("qrc_eb"));
+  // Filtre facultatif sur une seule date de passage à l'intérieur de l'EB choisi.
+  const [jourFiltre, setJourFiltreState] = useState<string | null>(() => param("qrc_date"));
   const [session, setSession] = useState<SessionReelle | null>(null);
   const [selection, setSelectionState] = useState<string | null>(() => param("qrc"));
   const [zoom, setZoomState] = useState<number>(() => {
@@ -55,14 +57,20 @@ export default function AdminCorrectionQrcV2Reel() {
   const setGroupeCle = (cle: string | null) => {
     setGroupeCleState(cle);
     setEbCleState(null);
+    setJourFiltreState(null);
     setSelectionState(null);
-    setSession(null);
-    majUrl({ qrc_groupe: cle, qrc_eb: null, qrc: null });
+    majUrl({ qrc_groupe: cle, qrc_eb: null, qrc_date: null, qrc: null });
   };
   const setEbCle = (cle: string | null) => {
     setEbCleState(cle);
+    setJourFiltreState(null);
     setSelectionState(null);
-    majUrl({ qrc_eb: cle, qrc: null });
+    majUrl({ qrc_eb: cle, qrc_date: null, qrc: null });
+  };
+  const setJourFiltre = (jour: string | null) => {
+    setJourFiltreState(jour);
+    setSelectionState(null);
+    majUrl({ qrc_date: jour, qrc: null });
   };
   const setSelection = (qrc: string | null) => {
     setSelectionState(qrc);
@@ -102,14 +110,17 @@ export default function AdminCorrectionQrcV2Reel() {
   const groupeChoisi = groupes.find((g) => g.cle === groupeCle) ?? null;
   const ebChoisi = groupeChoisi?.examens.find((e) => e.cle === ebCle) ?? groupeChoisi?.examens[0] ?? null;
 
+  const dateChoisie = ebChoisi?.dates.find((d) => d.jour === jourFiltre) ?? null;
+  const attemptsAffiches = dateChoisie?.attemptIds ?? ebChoisi?.attemptIds ?? null;
+
   const recharger = useCallback(async () => {
-    if (!ebChoisi) return;
+    if (!attemptsAffiches) return;
     try {
-      setSession(await chargerSessionTest(mode, ebChoisi.attemptIds));
+      setSession(await chargerSessionTest(mode, attemptsAffiches));
     } catch (e) {
       setErreur((e as Error).message);
     }
-  }, [mode, ebChoisi]);
+  }, [mode, attemptsAffiches]);
 
   useEffect(() => { void recharger(); }, [recharger]);
   useEffect(() => souscrireSignal("admin-qrc-v2", "qrc_instances_v2", () => void recharger()), [recharger]);
@@ -241,7 +252,9 @@ export default function AdminCorrectionQrcV2Reel() {
             >
               {(groupeChoisi?.examens ?? []).map((e) => (
                 <option key={e.cle} value={e.cle}>
-                  {e.exam_id} — {e.date} · {e.heureMin}–{e.heureMax} ({e.attemptIds.length} passages)
+                  {e.exam_id} — {e.attemptIds.length} passage{e.attemptIds.length > 1 ? "s" : ""}
+                  {" · "}
+                  {e.dates.map((d) => `${d.date.slice(0, 5)} (${d.attemptIds.length})`).join(" • ")}
                 </option>
               ))}
             </select>
@@ -259,6 +272,30 @@ export default function AdminCorrectionQrcV2Reel() {
               </Button>
             </div>
           </div>
+          {(ebChoisi?.dates.length ?? 0) > 0 && (
+            <div className="flex flex-wrap items-center gap-1" data-testid="dates-eb">
+              <span className="text-xs text-muted-foreground">Dates de passage :</span>
+              <Button
+                size="sm"
+                variant={jourFiltre ? "outline" : "default"}
+                onClick={() => setJourFiltre(null)}
+                data-testid="date-toutes"
+              >
+                Toutes ({ebChoisi?.attemptIds.length})
+              </Button>
+              {(ebChoisi?.dates ?? []).map((d) => (
+                <Button
+                  key={d.jour}
+                  size="sm"
+                  variant={jourFiltre === d.jour ? "default" : "outline"}
+                  onClick={() => setJourFiltre(d.jour)}
+                  data-testid={`date-${d.jour}`}
+                >
+                  {d.date} ({d.attemptIds.length})
+                </Button>
+              ))}
+            </div>
+          )}
           <p className="text-sm text-muted-foreground" data-testid="compteur-session">
             {corrigees}/{total} QRC corrigées — {total - corrigees} restantes
           </p>
@@ -274,9 +311,16 @@ export default function AdminCorrectionQrcV2Reel() {
           const tentatives = (session?.tentatives ?? []).filter((t) =>
             (t.snapshot.matieres ?? []).some((x) => x.subject_id === m.subject_id),
           );
-          const questions = (tentatives[0]?.snapshot.questions ?? []).filter(
-            (q) => q.matiere === m.subject_id && q.type === "QRC",
-          );
+          // Plusieurs dates peuvent coexister sous le même EB : on réunit les questions QRC
+          // rencontrées dans les snapshots, sans jamais en inventer ni en fusionner d'un autre EB.
+          const questions: typeof tentatives[number]["snapshot"]["questions"] = [];
+          for (const t of tentatives) {
+            for (const q of t.snapshot.questions ?? []) {
+              if (q.matiere === m.subject_id && q.type === "QRC" && !questions.some((x) => x.id === q.id)) {
+                questions.push(q);
+              }
+            }
+          }
           const attemptIds = new Set(tentatives.map((t) => t.attempt_id));
           const dansMatiere = (session?.qrc ?? []).filter((q) => attemptIds.has(q.attempt_id));
           const ok = dansMatiere.filter((q) => q.etat === "corrigee").length;
@@ -293,6 +337,7 @@ export default function AdminCorrectionQrcV2Reel() {
                   <thead>
                     <tr>
                       <th className="sticky left-0 bg-background px-2 py-1 text-left">CANDIDAT</th>
+                      <th className="px-2 py-1 text-left">PASSAGE</th>
                       {questions.map((q, i) => <th key={q.id} className="px-2 py-1">QRC {i + 1}</th>)}
                     </tr>
                   </thead>
@@ -300,6 +345,16 @@ export default function AdminCorrectionQrcV2Reel() {
                     {tentatives.map((t) => (
                       <tr key={t.attempt_id}>
                         <td className="sticky left-0 bg-background px-2 py-1 font-medium whitespace-nowrap">{t.candidat}</td>
+                        <td className="px-2 py-1 whitespace-nowrap text-xs text-muted-foreground">
+                          {t.started_at
+                            ? new Date(t.started_at).toLocaleString("fr-FR", {
+                                timeZone: "Europe/Paris",
+                                day: "2-digit", month: "2-digit", year: "numeric",
+                                hour: "2-digit", minute: "2-digit",
+                              })
+                            : "date inconnue"}
+                          {" · "}tentative {t.attempt_id.slice(0, 8)}
+                        </td>
                         {questions.map((q) => {
                           const qt = t.snapshot.questions.find((x) => x.id === q.id);
                           const inst = (session?.qrc ?? []).find(
@@ -365,8 +420,11 @@ export default function AdminCorrectionQrcV2Reel() {
               <p className="text-xs uppercase text-muted-foreground">Candidat</p>
               <p className="font-semibold">{tentativeSel.candidat}</p>
               <p className="text-xs text-muted-foreground">
-                {groupeChoisi?.libelle} · {ebChoisi?.exam_id} — {ebChoisi?.date} · tentative{" "}
-                {tentativeSel.attempt_id.slice(0, 8)}
+                {groupeChoisi?.libelle} · {ebChoisi?.exam_id} —{" "}
+                {tentativeSel.started_at
+                  ? new Date(tentativeSel.started_at).toLocaleString("fr-FR", { timeZone: "Europe/Paris" })
+                  : "date inconnue"}{" "}
+                · tentative {tentativeSel.attempt_id.slice(0, 8)}
               </p>
             </div>
             <Card className="p-3 space-y-2 text-sm">
