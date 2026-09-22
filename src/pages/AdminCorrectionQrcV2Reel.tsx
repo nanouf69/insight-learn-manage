@@ -312,9 +312,16 @@ export default function AdminCorrectionQrcV2Reel() {
           const tentatives = (session?.tentatives ?? []).filter((t) =>
             (t.snapshot.matieres ?? []).some((x) => x.subject_id === m.subject_id),
           );
-          const questions = (tentatives[0]?.snapshot.questions ?? []).filter(
-            (q) => q.matiere === m.subject_id && q.type === "QRC",
-          );
+          // Plusieurs dates peuvent coexister sous le même EB : on réunit les questions QRC
+          // rencontrées dans les snapshots, sans jamais en inventer ni en fusionner d'un autre EB.
+          const questions: typeof tentatives[number]["snapshot"]["questions"] = [];
+          for (const t of tentatives) {
+            for (const q of t.snapshot.questions ?? []) {
+              if (q.matiere === m.subject_id && q.type === "QRC" && !questions.some((x) => x.id === q.id)) {
+                questions.push(q);
+              }
+            }
+          }
           const attemptIds = new Set(tentatives.map((t) => t.attempt_id));
           const dansMatiere = (session?.qrc ?? []).filter((q) => attemptIds.has(q.attempt_id));
           const ok = dansMatiere.filter((q) => q.etat === "corrigee").length;
