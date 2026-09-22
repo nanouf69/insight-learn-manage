@@ -5913,6 +5913,7 @@ export type Database = {
         }
         Returns: Json
       }
+      core_purge_donnees_test: { Args: never; Returns: Json }
       core_recalc_result: {
         Args: { p_attempt_id: string }
         Returns: {
