@@ -144,7 +144,13 @@ export default function AdminCorrectionQrcV2() {
             const dm = instances.filter((i) => i.subject_id === m.subject_id);
             const ok = dm.filter((i) => i.etat === "corrigee").length;
             return (
-              <section key={m.subject_id} ref={(el) => (sectionsRef.current[m.subject_id] = el)} className="scroll-mt-32">
+              <section
+                key={m.subject_id}
+                ref={(el) => {
+                  sectionsRef.current[m.subject_id] = el;
+                }}
+                className="scroll-mt-32"
+              >
                 <div className="mb-2 flex items-center gap-2">
                   <h2 className="text-base font-semibold">{m.lettre} — {m.titre}</h2>
                   {ok === dm.length ? (
