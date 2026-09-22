@@ -132,6 +132,12 @@ export type GroupeSessionCrm = {
 
 const jourFr = (j: string) => j.split("-").reverse().join("/");
 
+/** Numéro d'Examen Blanc lu dans l'identifiant (EB1, eb2-ta, EB3-TAXI…). Sert uniquement au tri. */
+const numeroEb = (examId: string) => {
+  const m = /^eb(\d+)/i.exec(examId.trim());
+  return m ? Number(m[1]) : 999;
+};
+
 /**
  * Regroupement des passages d'Examens Blancs SOUS les sessions réelles du CRM.
  * Lecture seule : aucune session n'est créée ni déduite depuis la date d'un passage.
