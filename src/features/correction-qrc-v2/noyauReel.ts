@@ -133,12 +133,19 @@ const jourFr = (j: string) => j.split("-").reverse().join("/");
  * Les apprenants e-learning (type se terminant par « -e ») forment un regroupement séparé.
  */
 export async function listerGroupesCrm(mode: "test" | "migre" = "migre"): Promise<GroupeSessionCrm[]> {
-  const { data: attempts, error } = await supabase
-    .from("exam_attempts_v2")
-    .select("attempt_id, apprenant_id, exam_id, started_at")
-    .eq("is_test", mode === "test")
-    .order("started_at", { ascending: false });
-  if (error) throw error;
+  // Lecture paginée : au-delà de 1000 lignes, une lecture simple serait tronquée.
+  const attempts: any[] = [];
+  for (let de = 0; ; de += 1000) {
+    const { data, error } = await supabase
+      .from("exam_attempts_v2")
+      .select("attempt_id, apprenant_id, exam_id, started_at")
+      .eq("is_test", mode === "test")
+      .order("started_at", { ascending: false })
+      .range(de, de + 999);
+    if (error) throw error;
+    attempts.push(...(data ?? []));
+    if ((data ?? []).length < 1000) break;
+  }
 
   const apprenantIds = Array.from(new Set((attempts ?? []).map((a) => a.apprenant_id as string)));
   const { data: apprenants } = apprenantIds.length
@@ -153,6 +160,7 @@ export async function listerGroupesCrm(mode: "test" | "migre" = "migre"): Promis
         .from("session_apprenants")
         .select("apprenant_id, session_id, date_debut, date_fin")
         .in("apprenant_id", apprenantIds)
+        .range(0, 4999)
     : { data: [] as any[] };
 
   const sessionIds = Array.from(new Set((liens ?? []).map((l: any) => l.session_id as string)));
