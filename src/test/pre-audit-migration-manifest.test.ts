@@ -44,8 +44,8 @@ describe('Manifest de migration (pré-audit 22/09/2026)', () => {
       examens: 24,
       matieres: 108,
       VALIDE: 4,
-      A_CONTROLER: 94,
-      ANOMALIE: 10,
+      A_CONTROLER: 92,
+      ANOMALIE: 12,
     });
   });
 
@@ -76,11 +76,12 @@ describe('Manifest de migration (pré-audit 22/09/2026)', () => {
 
   it('marque en anomalie tout nombre de questions incohérent', () => {
     const anomalies = MANIFEST_MIGRATION.filter((e) => e.statut === 'ANOMALIE');
-    expect(anomalies).toHaveLength(10);
+    expect(anomalies).toHaveLength(12);
     expect(anomalies.every((e) => /Nombre de questions incohérent/.test(e.motif ?? ''))).toBe(true);
     expect(anomalies.map((e) => `${e.exam_id}/${e.subject_id}`).sort()).toEqual([
       'EB4-TAXI/reglementation_taxi2',
       'EB5-TAXI/francais',
+      'EB5-TAXI/reglementation_taxi',
       'EB5-TAXI/gestion',
       'EB5/francais',
       'EB5/gestion',
@@ -89,6 +90,7 @@ describe('Manifest de migration (pré-audit 22/09/2026)', () => {
       'EB6/gestion',
       'EB6/t3p',
       'eb4-ta/reglementation_taxi2',
+      'eb5-ta/reglementation_taxi',
     ]);
   });
 
