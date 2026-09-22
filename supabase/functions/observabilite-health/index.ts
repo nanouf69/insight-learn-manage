@@ -16,7 +16,11 @@ import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-const TRIGGER_TOKEN = Deno.env.get("MONITORING_TRIGGER_TOKEN") ?? "";
+// Jetons acceptés : jeton interne + jeton partagé remis au service externe.
+const TRIGGER_TOKENS = [
+  Deno.env.get("MONITORING_TRIGGER_TOKEN") ?? "",
+  Deno.env.get("MONITORING_SHARED_TOKEN") ?? "",
+].filter((t) => t.length > 0);
 const ALERT_EMAIL = Deno.env.get("MONITORING_ALERT_EMAIL") ?? "";
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") ?? "";
 const ALERT_WEBHOOK_URL = Deno.env.get("ALERT_WEBHOOK_URL") ?? "";
