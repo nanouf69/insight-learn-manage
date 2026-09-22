@@ -149,8 +149,11 @@ export default function ExamensBlancsPage({
   const [lastMatiereResult, setLastMatiereResult] = useState<ResultatMatiere | null>(null);
   const [isViewingSavedResults, setIsViewingSavedResults] = useState(false);
   const [bilanPrefiltre, setBilanPrefiltre] = useState<string | null>(null);
-  const [liveExamens, setLiveExamens] = useState<ExamenBlanc[]>(tousLesExamens);
+  // AUCUN REPLI STATIQUE : tant que la version active n'est pas confirmée,
+  // la liste reste vide et aucune question n'est affichée.
+  const [liveExamens, setLiveExamens] = useState<ExamenBlanc[]>([]);
   const [liveExamensLoaded, setLiveExamensLoaded] = useState(false);
+  const [liveExamensError, setLiveExamensError] = useState(false);
   const [selectionRefreshKey, setSelectionRefreshKey] = useState(0);
   const [isReloadingQuestions, setIsReloadingQuestions] = useState(false);
   const examStartTimeRef = useRef<number>(savedSession?.examStartTime || Date.now());

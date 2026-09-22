@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 import { toast } from "sonner";
 import { tousLesExamens, getPointsParQuestion, type ExamenBlanc, type Matiere } from "./examens-blancs-data";
+import { EXAM_CONTENT_UNAVAILABLE_MESSAGE } from "./exam-content-integrity";
 import { loadSavedExamens } from "./ExamensBlancsEditor";
 import { buildExamenMap, findMatiereWithFallback, getSourceQuestions, computeReussiForResult, isResultPlaceholder, isQrcAnswerCertainlyEmpty, isExamAttemptPublicationPending, isMatiereQrcPendingForAttempt } from "./exam-helpers";
 import { loadQrcEngineQuizIds, fetchQrcEngineAttemptIds, buildQrcAttemptId } from "@/lib/qrcInstances";
