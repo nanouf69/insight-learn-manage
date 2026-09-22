@@ -42,3 +42,8 @@ Voir `docs/snapshot-reference-avant-phase1.md` : empreintes md5 des 5 fichiers d
 - `src/components/cours-en-ligne/AnswerSaveIndicator.tsx` : affiche le message réel du refus.
 - `src/test/retry-classification-etape1.test.ts` : 7 tests (48 h, droits, passage fermé, 5xx/timeout temporaires, jitter, 100 réessais → 1 seul envoi).
 - Non-régression : 456 réussis / 5 échecs préexistants (449+7) ; 20/20 sur les tests critiques ; clés de file locale et format inchangés ; examFinalizationGuard.ts, pontV2.ts, useAutoSaveReponses.ts, ExamenBlancsPassage.tsx : empreintes identiques au snapshot.
+
+## Étape 2 — Indicateur de sauvegarde (préparée, NON DÉPLOYÉE)
+- Indicateur informatif branché sur les états existants : vert après accusé serveur et file vide, orange avec compteur de réponses, rouge sur panne temporaire, refus fonctionnel séparé.
+- Ajout sur le passage des examens blancs ; aucune modification des clés ou du format des files locales.
+- Tests ciblés et non-régression à valider avant tout accord de déploiement.
