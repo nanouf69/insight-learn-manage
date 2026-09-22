@@ -50,6 +50,7 @@ export type QrcReelle = {
  * ORIGINE D'UNE CORRECTION — affichage uniquement, aucune écriture.
  * « humaine »      : correction réellement effectuée/validée par un formateur.
  * « automatique »  : correction automatique historique importée (jamais requalifiée en humaine).
+ * « inconnue »     : trace insuffisante pour trancher — on ne suppose rien.
  * Aucune donnée n'est modifiée : la distinction est déduite de la trace existante.
  */
 export type OrigineCorrection = "humaine" | "automatique" | "inconnue" | "aucune";
