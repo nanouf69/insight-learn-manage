@@ -4515,6 +4515,41 @@ export type Database = {
         }
         Relationships: []
       }
+      qrc_bareme_restaure: {
+        Row: {
+          bareme: number
+          created_at: string
+          mention: string
+          nb_preuves: number
+          preuves: Json
+          qrc_instance_id: string
+        }
+        Insert: {
+          bareme: number
+          created_at?: string
+          mention?: string
+          nb_preuves: number
+          preuves: Json
+          qrc_instance_id: string
+        }
+        Update: {
+          bareme?: number
+          created_at?: string
+          mention?: string
+          nb_preuves?: number
+          preuves?: Json
+          qrc_instance_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "qrc_bareme_restaure_qrc_instance_id_fkey"
+            columns: ["qrc_instance_id"]
+            isOneToOne: true
+            referencedRelation: "qrc_instances_v2"
+            referencedColumns: ["qrc_instance_id"]
+          },
+        ]
+      }
       qrc_correction_events: {
         Row: {
           apprenant_id: string
