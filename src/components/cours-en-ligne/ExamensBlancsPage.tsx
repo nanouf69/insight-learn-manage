@@ -39,6 +39,12 @@ import { computeMatiereScore, computeMatiereScoreForAttempt, resolveMatiereForSc
 import { excludeResultPlaceholders, mergePassageSiblingRows } from "./exam-helpers";
 import { buildFinalizationKey, runFinalizationOnce, resolveIdempotentTentative } from "@/lib/examFinalizationGuard";
 import { syncQrcInstances } from "@/lib/qrcInstances";
+import {
+  buildExamFingerprint,
+  buildMatiereFingerprint,
+  buildAttemptSnapshot,
+  EXAM_CONTENT_UNAVAILABLE_MESSAGE,
+} from "./exam-content-integrity";
 
 /** Texte exact de la réponse QRC de l'élève (jamais reformaté ni corrigé). */
 function safeQrcAnswerText(value: unknown): string {
@@ -158,6 +164,8 @@ export default function ExamensBlancsPage({
   const [isReloadingQuestions, setIsReloadingQuestions] = useState(false);
   const examStartTimeRef = useRef<number>(savedSession?.examStartTime || Date.now());
   const reloadInFlightRef = useRef<Promise<ExamenBlanc[]> | null>(null);
+  /** Empreinte de la version figée pour la tentative en cours (jamais recalculée en cours d'examen). */
+  const attemptFingerprintRef = useRef<string | null>(null);
   const [loadTimeout, setLoadTimeout] = useState(false);
   const [pausedExamIds, setPausedExamIds] = useState<Set<string>>(new Set());
   const [currentTentative, setCurrentTentative] = useState<number>(1);
