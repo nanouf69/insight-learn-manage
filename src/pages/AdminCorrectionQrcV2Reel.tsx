@@ -338,6 +338,7 @@ export default function AdminCorrectionQrcV2Reel() {
                   <thead>
                     <tr>
                       <th className="sticky left-0 bg-background px-2 py-1 text-left">CANDIDAT</th>
+                      <th className="px-2 py-1 text-left">PASSAGE</th>
                       {questions.map((q, i) => <th key={q.id} className="px-2 py-1">QRC {i + 1}</th>)}
                     </tr>
                   </thead>
@@ -345,6 +346,16 @@ export default function AdminCorrectionQrcV2Reel() {
                     {tentatives.map((t) => (
                       <tr key={t.attempt_id}>
                         <td className="sticky left-0 bg-background px-2 py-1 font-medium whitespace-nowrap">{t.candidat}</td>
+                        <td className="px-2 py-1 whitespace-nowrap text-xs text-muted-foreground">
+                          {t.started_at
+                            ? new Date(t.started_at).toLocaleString("fr-FR", {
+                                timeZone: "Europe/Paris",
+                                day: "2-digit", month: "2-digit", year: "numeric",
+                                hour: "2-digit", minute: "2-digit",
+                              })
+                            : "date inconnue"}
+                          {" · "}tentative {t.attempt_id.slice(0, 8)}
+                        </td>
                         {questions.map((q) => {
                           const qt = t.snapshot.questions.find((x) => x.id === q.id);
                           const inst = (session?.qrc ?? []).find(
