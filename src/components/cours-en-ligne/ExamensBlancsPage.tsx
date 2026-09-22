@@ -208,6 +208,12 @@ export default function ExamensBlancsPage({
           return applyMatiereFilter(next, matiereFilterRef.current);
         });
         return saved;
+      } catch (err) {
+        // Version active non confirmée : on n'affiche AUCUNE question.
+        // Le contenu déjà chargé reste inchangé, rien n'est remplacé.
+        console.error("[ExamensBlancs] Version active indisponible", err);
+        setLiveExamensError(true);
+        return [] as ExamenBlanc[];
       } finally {
         clearTimeout(timeoutTimer);
         setLoadTimeout(false);
