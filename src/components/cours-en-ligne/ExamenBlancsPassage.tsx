@@ -346,6 +346,30 @@ function PassageMatiere({
     if (allAnswered) setShowUnansweredAlert(false);
   }, [allAnswered]);
 
+  /**
+   * Finalisation côté noyau V2 : une seule finalisation possible, et jamais
+   * avant que toutes les réponses aient été confirmées par le serveur.
+   * Renvoie false si la matière ne doit PAS être clôturée.
+   */
+  const finaliserNoyau = async (): Promise<boolean> => {
+    const attemptId = attemptV2Ref.current;
+    if (!attemptId) return true; // passage non raccordé : comportement inchangé
+    const { restantes } = await viderFileNoyau();
+    if (restantes > 0 || reponsesNoyauEnAttente() > 0) {
+      setSaveStatus("error");
+      toast.error("Des réponses ne sont pas encore enregistrées : la matière n'est pas clôturée. Elles repartiront automatiquement.");
+      return false;
+    }
+    const qrc = questionsSafe.filter(q => q?.type === "QRC").map(q => q.id);
+    const res = await finaliserMatiere({ attemptId, matiereId: matiere.id, questionsQRC: qrc });
+    if (!res.ok && !/ATTEMPT_CLOSED/.test(res.message ?? "")) {
+      setSaveStatus("error");
+      toast.error("Clôture impossible pour le moment : vos réponses sont conservées, réessayez.");
+      return false;
+    }
+    return true;
+  };
+
   const handleTerminer = async () => {
     if (!allAnswered) {
       // Aucune réponse n'est modifiée ni perdue : on se contente de déplacer
