@@ -656,9 +656,74 @@ function EcranResultats({
       </div>
       )}
 
-      {/* SUPPRIMÉ : ancien avertissement « Examen refait — QRC notées automatiquement
-          par mots-clés ». Plus aucune notation automatique des QRC : toute tentative
-          (1re, 2e, 3e...) attend la correction manuelle du formateur. */}
+      {/* En attente de correction du formateur : on affiche quand même, en LECTURE SEULE,
+          les réponses réellement enregistrées par l'apprenant (aucune note, aucune correction,
+          aucune écriture en base). Sans ce bloc l'apprenant ne voyait plus ses réponses cochées. */}
+      {hasQrcPendingValidation && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <div className="w-1 h-6 rounded-full" style={{ backgroundColor: '#F4A227' }} />
+            <h4 className="font-semibold text-lg" style={{ color: '#0D2540' }}>Vos réponses enregistrées</h4>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Voici exactement ce que vous avez envoyé. Les notes et corrections s'afficheront après la validation de votre formateur.
+          </p>
+          {resultatsAvecIA.map((r, mi) => {
+            const matiere = examen.matieres[mi];
+            if (!matiere || r.nonPassee) return null;
+            const questionsSafe = (matiere.questions || []).filter(q => q && q?.type !== undefined);
+            return (
+              <Card key={`attente-${r.matiereId}`} className="border-l-4 overflow-hidden" style={{ borderLeftColor: '#F4A227' }}>
+                <div className="px-4 py-2" style={{ backgroundColor: '#0D2540' }}>
+                  <span className="text-xs font-semibold text-white">{r.nomMatiere}</span>
+                </div>
+                <CardContent className="py-3 px-4 space-y-3">
+                  {questionsSafe.map((q, qi) => {
+                    const rep = r.reponses?.[q.id] ?? r.reponses?.[String(q.id)];
+                    const repArray = Array.isArray(rep) ? rep : null;
+                    const repTexte = safeStr(rep);
+                    const aRepondu = repArray ? repArray.length > 0 : repTexte.trim() !== "";
+                    return (
+                      <div key={`attente-${r.matiereId}-${q.id}`} className="p-3 rounded-lg border bg-slate-50">
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <Badge variant={q?.type === "QRC" ? "secondary" : "outline"} className="text-xs shrink-0">{q?.type}</Badge>
+                          <span className="text-xs text-muted-foreground">Question {qi + 1}</span>
+                        </div>
+                        <p className="text-sm font-medium mb-2" style={{ color: '#0D2540' }}>{q.enonce}</p>
+                        {q?.type === "QCM" && Array.isArray(q.choix) ? (
+                          <ul className="space-y-1">
+                            {q.choix.map((c, ci) => {
+                              const lettre = String(c?.lettre ?? String.fromCharCode(65 + ci));
+                              const choisi = safeArray<string>(repArray).includes(lettre);
+                              return (
+                                <li
+                                  key={`${q.id}-${lettre}`}
+                                  className={`text-sm px-2 py-1 rounded ${choisi ? "bg-amber-100 font-semibold" : ""}`}
+                                  style={{ color: '#0D2540' }}
+                                >
+                                  {choisi ? "☑" : "☐"} {lettre}. {c?.texte}
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        ) : (
+                          <p className="text-sm whitespace-pre-wrap" style={{ color: '#0D2540' }}>
+                            {aRepondu ? repTexte : "— Aucune réponse enregistrée"}
+                          </p>
+                        )}
+                        {q?.type === "QCM" && !aRepondu && (
+                          <p className="text-xs text-muted-foreground mt-1">— Aucune réponse enregistrée</p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+
 
 
       {!hasQrcPendingValidation && <div className="space-y-4">
