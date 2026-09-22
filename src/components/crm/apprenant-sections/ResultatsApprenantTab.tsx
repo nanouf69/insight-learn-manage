@@ -8,7 +8,7 @@ import { loadSavedExamens } from "@/components/cours-en-ligne/ExamensBlancsEdito
 import { computeMoyenneExamen, computeMatiereScoreForAttempt } from "@/components/cours-en-ligne/examens-blancs-scoring";
 import { findScoreForMatiere, buildMatiereLookupKeys } from "@/components/cours-en-ligne/examens-blancs-utils";
 import { isExamAttemptPublicationPending, excludeResultPlaceholders, mergePassageSiblingRows } from "@/components/cours-en-ligne/exam-helpers";
-import { isSnapshotOutdated, findSnapshotWrongExamSource } from "@/components/cours-en-ligne/exam-content-integrity";
+import { isSnapshotOutdated, findSnapshotWrongExamSource, KNOWN_EB1_SERVED_IN_EB2_RESULT_IDS } from "@/components/cours-en-ligne/exam-content-integrity";
 
 interface ResultatsApprenantTabProps {
   apprenantId: string;
@@ -40,7 +40,7 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
       // Exam blanc scores
       supabase
         .from("apprenant_quiz_results")
-        .select("quiz_id, quiz_titre, matiere_id, matiere_nom, note_sur_20, score_obtenu, score_max, quiz_type, completed_at, created_at, details")
+        .select("id, quiz_id, quiz_titre, matiere_id, matiere_nom, note_sur_20, score_obtenu, score_max, quiz_type, completed_at, created_at, details")
         .eq("apprenant_id", apprenantId)
         .order("completed_at", { ascending: false }),
       // Bilans
