@@ -653,12 +653,12 @@ async function sendItem(item: QueueItem): Promise<SendResult> {
     }
     const text = await res.text();
     console.error("[answerPersistence] Échec sauvegarde", res.status, text);
-    // 403 : le serveur refuse le lien compte ↔ dossier. Réessayer en boucle ne
-    // sert à rien et masque les vraies erreurs ; l'élément est conservé
-    // (aucune réponse n'est supprimée) et sera retenté au prochain changement
-    // de session.
-    if (res.status === 403) {
-      notifyAnswerSaveRejected(item.payload.exercice_id, "forbidden");
+    // Un refus DÉFINITIF n'est jamais renvoyé en boucle : l'élément est
+    // conservé (aucune réponse n'est supprimée) et l'apprenant voit la vraie
+    // raison. Une erreur TEMPORAIRE reste en file et sera réessayée.
+    const verdict = classifyAnswerSaveFailure(res.status, text);
+    if (verdict.definitif) {
+      notifyAnswerSaveRejected(item.payload.exercice_id, verdict.reason, verdict.message);
       return "blocked";
     }
     return "retry";
@@ -722,7 +722,7 @@ async function processQueue(): Promise<void> {
     } else {
       setState("error");
       const attempts = Math.max(...remaining.map((item) => item.attempts ?? 1), 1);
-      const delay = Math.min(30000, 1000 * 2 ** Math.min(attempts, 5));
+      const delay = computeRetryDelay(attempts);
       if (hadFailure) setTimeout(() => void processQueue(), delay);
     }
   } finally {
