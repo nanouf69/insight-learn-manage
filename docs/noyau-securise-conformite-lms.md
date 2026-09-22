@@ -96,3 +96,36 @@ Les trois chemins « risque élevé » sont exactement ceux que le nouveau noyau
 (correction QRC finale en base, réponse versionnée avec refus de révision périmée, tentative immuable).
 Tant que l'application n'est pas basculée, ils restent ouverts : c'est une raison de continuer la migration,
 pas de la précipiter.
+
+## Étape 1b — les 4 invariants manquants + idempotence et atomicité (22/09/2026)
+
+Installés sur le noyau **vide**, en base, avant toute migration de contenu.
+
+- **Propriété apprenant** : `core_enforce_answer_context` / `core_enforce_qrc_context` refusent toute
+  réponse ou QRC dont l'apprenant n'est pas le propriétaire de la tentative (P0477).
+- **Tentative terminée fermée** : plus aucune réponse ni création de QRC après `terminee` (P0478).
+  La **correction formateur reste possible** après la fin : c'est un domaine distinct qui écrit un
+  événement dans `qrc_correction_events` ; la réponse originale de l'élève est figée (P0480).
+- **Question obligatoirement dans le snapshot** : `core_snapshot_has_question` refuse tout
+  `attempt_id + question_id` absent du snapshot immuable (P0479), y compris à la finalisation.
+- **Publication** : `core_publish_exam_version` publie et retire l'ancienne version dans **une seule
+  transaction**, sérialisée par verrou d'examen ; trigger de contrainte différé
+  `trg_exam_version_exactly_one_active` (P0481) → jamais 0 ni 2 versions actives.
+- **Idempotence** : `core_operations` (operation_id unique) ; un rejeu renvoie le résultat de la
+  première opération pour réponse, finalisation, correction QRC et publication (P0482).
+- **Atomicité** : `core_finalize_attempt` fait réponses + QRC + état + résultat + journal en une
+  transaction ; une erreur ne laisse aucun état partiel.
+
+### Tests d'échec volontaire (données fictives, transaction annulée) — 15/15
+1. A écrit dans la tentative de B → REFUS · 2. question EB1 dans tentative EB2 → REFUS ·
+3. même operation_id x10 → 1 seule réponse, révision 1, 1 événement · 4. révision périmée → REFUS
+(historique `A > C` conservé) · 5. finalisation avec question étrangère → REFUS, après rollback
+tentative toujours `en_cours`, 0 QRC, 0 opération · 6. finalisation correcte → `terminee` ·
+7. réponse après fin → REFUS · 8. QRC créée après fin → REFUS · 9. correction formateur après fin →
+autorisée, tracée, réponse élève intacte · 10. rejeu de la correction → 1 seul événement ·
+11. double correction → REFUS · 12. réécriture de la réponse élève → REFUS · 13. deux publications →
+exactement 1 version active · 13b. réactivation d'une version retirée → REFUS · 14. réécriture d'une
+version publiée → REFUS · 15. suppression de tentative → REFUS.
+
+Toutes les tables du noyau sont revenues à **0 ligne** après le test. L'ancien système n'a pas été
+touché. **Étape 2 toujours interdite** jusqu'à validation.

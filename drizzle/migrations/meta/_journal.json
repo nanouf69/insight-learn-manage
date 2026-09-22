@@ -316,6 +316,27 @@
       "when": 1790070021285,
       "tag": "0044_secure_core_step1_empty_structures",
       "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1790071488633,
+      "tag": "0045_secure_core_step1b_invariants",
+      "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "7",
+      "when": 1790071596616,
+      "tag": "0046_core_finalize_attempt_validate_snapshot",
+      "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1790071652097,
+      "tag": "0047_core_correct_qrc_append_only_fix",
+      "breakpoints": true
     }
   ]
 }
