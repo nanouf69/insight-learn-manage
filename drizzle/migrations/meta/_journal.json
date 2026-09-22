@@ -421,6 +421,13 @@
       "when": 1790119116424,
       "tag": "0059_fix_import_passage_audit_journal",
       "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1790121153165,
+      "tag": "0060_core_retirer_version_examen",
+      "breakpoints": true
     }
   ]
 }

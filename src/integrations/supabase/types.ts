@@ -6083,6 +6083,35 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      core_retirer_version_examen: {
+        Args: { p_exam_id: string; p_motif?: string; p_operation_id: string }
+        Returns: {
+          content: Json
+          created_at: string
+          created_by: string | null
+          created_email: string | null
+          exam_id: string
+          exam_numero: string
+          filiere: string
+          fingerprint: string
+          id: string
+          is_test: boolean
+          module_id: number | null
+          motif: string | null
+          published_at: string | null
+          published_by: string | null
+          published_email: string | null
+          retired_at: string | null
+          statut: string
+          version_number: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "exam_content_versions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       core_revise_qrc_publish: {
         Args: {
           p_commentaire?: string

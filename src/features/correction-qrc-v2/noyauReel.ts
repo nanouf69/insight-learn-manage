@@ -46,6 +46,25 @@ export type QrcReelle = {
   corrige_at?: string | null;
 };
 
+/**
+ * ORIGINE D'UNE CORRECTION — affichage uniquement, aucune écriture.
+ * « humaine »      : correction réellement effectuée/validée par un formateur.
+ * « automatique »  : correction automatique historique importée (jamais requalifiée en humaine).
+ * « inconnue »     : trace insuffisante pour trancher — on ne suppose rien.
+ * Aucune donnée n'est modifiée : la distinction est déduite de la trace existante.
+ */
+export type OrigineCorrection = "humaine" | "automatique" | "inconnue" | "aucune";
+
+const MARQUEUR_AUTOMATIQUE = "correction historique importée";
+
+export function origineCorrection(qrc: Pick<QrcReelle, "etat" | "corrige_email">): OrigineCorrection {
+  if (qrc.etat !== "corrigee") return "aucune";
+  const email = (qrc.corrige_email ?? "").trim().toLowerCase();
+  // Trace insuffisante : on n'affirme ni « humaine » ni « automatique ».
+  if (!email) return "inconnue";
+  return email.startsWith(MARQUEUR_AUTOMATIQUE) ? "automatique" : "humaine";
+}
+
 export type DatePassage = {
   jour: string;
   date: string;
