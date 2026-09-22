@@ -29,6 +29,14 @@ import {
   subscribeAnswerSaveState,
 } from "@/lib/answerPersistence";
 import { buildExamMatiereExerciceId } from "@/lib/quizAttempts";
+import {
+  pontActifPour,
+  demarrerTentative,
+  enfilerReponseNoyau,
+  viderFileNoyau,
+  finaliserMatiere,
+  reponsesNoyauEnAttente,
+} from "@/features/noyau-passage/pontV2";
 
 
 // ===== PASSAGE D'UNE MATIÈRE =====
@@ -198,13 +206,41 @@ function PassageMatiere({
   // Dernier état mis en file (pour ne journaliser que les réponses modifiées).
   const lastPersistedRef = useRef<Reponses>({});
 
+  // ===== RACCORDEMENT AU NOYAU V2 =====
+  // Pour un passage raccordé, le noyau est la SOURCE DE VÉRITÉ : tentative +
+  // snapshot figés au démarrage, chaque réponse journalisée côté serveur.
+  // L'ancien circuit continue d'être alimenté en copie de lecture.
+  const attemptV2Ref = useRef<string | null>(null);
+
+  useEffect(() => {
+    let annule = false;
+    if (!apprenantId || !examenId) return;
+    (async () => {
+      if (!(await pontActifPour(apprenantId))) return;
+      const attemptId = await demarrerTentative({ apprenantId, examenId, matiereId: matiere.id, tentative });
+      if (!annule && attemptId) {
+        attemptV2Ref.current = attemptId;
+        void viderFileNoyau();
+      }
+    })();
+    return () => { annule = true; };
+  }, [apprenantId, examenId, matiere.id, tentative]);
+
+  // Retour du réseau : les réponses en attente repartent vers le noyau.
+  useEffect(() => {
+    const auRetour = () => { void viderFileNoyau(); };
+    window.addEventListener("online", auRetour);
+    return () => window.removeEventListener("online", auRetour);
+  }, []);
+
   const persistReponses = (updated: Reponses) => {
     if (!apprenantId) return;
     saveGenerationRef.current++;
     const nowIso = new Date().toISOString();
     const previous = lastPersistedRef.current;
-    const events = Object.entries(updated)
-      .filter(([key, val]) => JSON.stringify((previous as any)[key]) !== JSON.stringify(val))
+    const modifiees = Object.entries(updated)
+      .filter(([key, val]) => JSON.stringify((previous as any)[key]) !== JSON.stringify(val));
+    const events = modifiees
       .map(([key, val]) => ({ question_id: key, valeur: val as unknown, tentative, client_saved_at: nowIso }));
 
     // Mise en file synchrone avant tout autre changement d'écran.
@@ -214,6 +250,15 @@ function PassageMatiere({
       updated_at: nowIso,
       events,
     });
+
+    // Noyau V2 : une file durable par question, idempotente.
+    const attemptId = attemptV2Ref.current;
+    if (attemptId) {
+      for (const [questionId, valeur] of modifiees) {
+        enfilerReponseNoyau({ attemptId, matiereId: matiere.id, questionId, valeur });
+      }
+    }
+
     lastPersistedRef.current = { ...updated };
     hasSavedOnceRef.current = true;
   };
@@ -301,6 +346,30 @@ function PassageMatiere({
     if (allAnswered) setShowUnansweredAlert(false);
   }, [allAnswered]);
 
+  /**
+   * Finalisation côté noyau V2 : une seule finalisation possible, et jamais
+   * avant que toutes les réponses aient été confirmées par le serveur.
+   * Renvoie false si la matière ne doit PAS être clôturée.
+   */
+  const finaliserNoyau = async (): Promise<boolean> => {
+    const attemptId = attemptV2Ref.current;
+    if (!attemptId) return true; // passage non raccordé : comportement inchangé
+    const { restantes } = await viderFileNoyau();
+    if (restantes > 0 || reponsesNoyauEnAttente() > 0) {
+      setSaveStatus("error");
+      toast.error("Des réponses ne sont pas encore enregistrées : la matière n'est pas clôturée. Elles repartiront automatiquement.");
+      return false;
+    }
+    const qrc = questionsSafe.filter(q => q?.type === "QRC").map(q => q.id);
+    const res = await finaliserMatiere({ attemptId, matiereId: matiere.id, questionsQRC: qrc });
+    if (!res.ok && !/ATTEMPT_CLOSED/.test(res.message ?? "")) {
+      setSaveStatus("error");
+      toast.error("Clôture impossible pour le moment : vos réponses sont conservées, réessayez.");
+      return false;
+    }
+    return true;
+  };
+
   const handleTerminer = async () => {
     if (!allAnswered) {
       // Aucune réponse n'est modifiée ni perdue : on se contente de déplacer
@@ -359,6 +428,7 @@ function PassageMatiere({
       toast.error("Sauvegarde en attente. Vos réponses restent conservées sur cet appareil et seront renvoyées automatiquement.");
       return;
     }
+    if (!(await finaliserNoyau())) return;
     onTerminer(reponses);
   };
   const handleExpire = async () => {
@@ -398,6 +468,7 @@ function PassageMatiere({
       toast.error("Connexion indisponible : vos réponses restent conservées et la matière ne sera pas finalisée avant confirmation.");
       return;
     }
+    if (!(await finaliserNoyau())) return;
     onTerminer(reponses);
   };
 
@@ -423,6 +494,7 @@ function PassageMatiere({
       const flushed = await flushAnswerSavesAndWait(apprenantId, exerciceKey);
       if (!flushed) throw new Error("Réponses encore en attente");
       setSaveStatus("saved");
+      if (!(await finaliserNoyau())) return;
       setShowInterruptConfirm(false);
       onTerminer(reponses);
     } catch (error) {

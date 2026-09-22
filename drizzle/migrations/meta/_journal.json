@@ -393,6 +393,20 @@
       "when": 1790096563612,
       "tag": "0055_core_note_attempt_choix_scalaire",
       "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1790097942448,
+      "tag": "0056_core_bridge_passage_v2",
+      "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "7",
+      "when": 1790098014137,
+      "tag": "0057_core_bridge_comptes_test",
+      "breakpoints": true
     }
   ]
 }
