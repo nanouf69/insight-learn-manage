@@ -101,6 +101,63 @@ export function isSnapshotOutdated(
   return buildQuestionsFingerprint((snapshot as any).questions) !== buildQuestionsFingerprint(active);
 }
 
+/**
+ * Détecte un passage dont le snapshot correspond EXACTEMENT à la matière
+ * d'un AUTRE numéro d'examen (ex. contenu EB1 servi dans EB2).
+ * Correspondance stricte par empreinte des questions — aucune similarité,
+ * aucune fusion. LECTURE SEULE : sert uniquement à l'avertissement Admin.
+ */
+export function findSnapshotWrongExamSource(
+  snapshot: { questions?: unknown } | null | undefined,
+  matiereId: string | null | undefined,
+  matiereNom: string | null | undefined,
+  currentExamen: ExamenBlanc | null | undefined,
+  allExamens: ExamenBlanc[] | null | undefined,
+): { sourceExamenTitre: string; sourceExamenNumero: number | null } | null {
+  if (!snapshot || !Array.isArray((snapshot as any).questions) || !currentExamen || !Array.isArray(allExamens)) {
+    return null;
+  }
+  const snapFp = buildQuestionsFingerprint((snapshot as any).questions);
+  const curNum = (currentExamen as any).numero ?? null;
+  const mid = txt(matiereId);
+  const mnom = txt(matiereNom);
+  for (const other of allExamens) {
+    if (!other || (other as any).id === (currentExamen as any).id) continue;
+    if (((other as any).numero ?? null) === curNum) continue;
+    for (const m of (other.matieres ?? []) as Matiere[]) {
+      const sameMatiere = (mid && txt((m as any).id) === mid) || (mnom && txt((m as any).nom) === mnom);
+      if (!sameMatiere) continue;
+      if (!Array.isArray((m as any).questions) || (m as any).questions.length === 0) continue;
+      if (buildQuestionsFingerprint((m as any).questions) === snapFp) {
+        return {
+          sourceExamenTitre: txt((other as any).titre) || `Examen N°${(other as any).numero ?? "?"}`,
+          sourceExamenNumero: (other as any).numero ?? null,
+        };
+      }
+    }
+  }
+  return null;
+}
+
+/**
+ * INCIDENT DOCUMENTÉ (audit en lecture seule du 22/09/2026) :
+ * le 18/09 et le 21/09 avant 18h15, l'Examen Blanc VTC N°2 a servi à ces
+ * passages le contenu de l'Examen Blanc N°1 (preuves : snapshots figés des
+ * tentatives + corrections QRC formateur ; l'EB1 a été retouché depuis, donc
+ * la correspondance exacte automatisée ne peut plus les identifier).
+ * Liste FIGÉE des identifiants d'écritures concernées — sert UNIQUEMENT à
+ * l'avertissement côté Admin. Aucune note, réponse ou tentative n'est modifiée.
+ */
+export const KNOWN_EB1_SERVED_IN_EB2_RESULT_IDS: ReadonlySet<string> = new Set([
+  "e33ed80b-570b-45fb-8387-b1c4abe0e154", // BAISSA Meryem — F(V) — 18/09 11:02
+  "5bc2970c-4fa2-4e0e-a88c-818d9997f781", // HUSSAIN KHAIL Noor — F(V) — 21/09 13:23
+  "17b4b9a4-11bc-4f78-9904-34df74972428", // HUSSAIN KHAIL Noor — G(V) — 21/09 13:33
+  "615b0650-1699-4641-9072-1fd302d8c76c", // muyombo jeremie — F(V) — 21/09 13:24
+  "b7d0c234-c144-43ed-b8a3-60be7c81ab1e", // BARRY Mahmoud — F(V) — 21/09 13:34
+  "52ee1b90-1271-4f2d-b764-cbf2cd2ddffe", // BARRY Mahmoud — F(V) — 21/09 13:34
+  "e6d7100c-8066-4f42-b55a-b75c8fdf46ca", // BARRY Mahmoud — G(V) — 21/09 13:42
+]);
+
 /** Photographie complète et indépendante de la version active (deep clone). */
 export function buildAttemptSnapshot(examen: ExamenBlanc): ExamenBlanc {
   return JSON.parse(JSON.stringify(examen)) as ExamenBlanc;

@@ -8,6 +8,7 @@ import {
   isExamContentUnavailable,
   ExamContentUnavailableError,
   EXAM_CONTENT_UNAVAILABLE_MESSAGE,
+  findSnapshotWrongExamSource,
 } from "../exam-content-integrity";
 
 // ── ENVIRONNEMENT DE TEST 100 % FICTIF ────────────────────────────────────
@@ -119,5 +120,45 @@ describe("Examen blanc — intégrité du contenu (compte TEST fictif)", () => {
       muter(qs);
       expect(buildQuestionsFingerprint(qs)).not.toBe(ref);
     }
+  });
+
+  it("Contenu d'un autre numéro d'examen servi dans celui-ci → signalé (lecture seule)", () => {
+    // EB1 (N°1) : contenu A pour la matière F(V) ; EB2 (N°2) : contenu B distinct.
+    const matiereEB1 = fv();
+    const matiereEB2 = fv();
+    matiereEB2.questions = matiereEB2.questions.map((q: any) => ({ ...q, enonce: q.enonce + " (EB2)" }));
+    const eb1: any = { id: "test-vtc-1", numero: 1, type: "VTC", matieres: [matiereEB1] };
+    const eb2: any = { id: "test-vtc-2", numero: 2, type: "VTC", matieres: [matiereEB2] };
+    const tous = [eb1, eb2];
+
+    // Passage EB2 dont le snapshot = contenu EXACT de F(V) EB1 (contamination)
+    const snapshotContamine = { questions: matiereEB1.questions };
+    const res = findSnapshotWrongExamSource(snapshotContamine as any, "reglementation_vtc", null, eb2, tous);
+    expect(res).not.toBeNull();
+    expect(res?.sourceExamenNumero).toBe(1);
+
+    // Le même contenu dans le BON numéro → aucune alerte
+    const resBon = findSnapshotWrongExamSource(snapshotContamine as any, "reglementation_vtc", null, eb1, tous);
+    expect(resBon).toBeNull();
+
+    // Contenu différent de tout autre examen → aucune alerte
+    const autres = matiereEB1.questions.map((q: any) => ({ ...q, enonce: q.enonce + " (variante)" }));
+    expect(findSnapshotWrongExamSource({ questions: autres } as any, "reglementation_vtc", null, eb2, tous)).toBeNull();
+
+    // Même numéro entre filières (VTC N°2 ↔ VA N°2) : jamais signalé
+    const va2: any = { id: "test-va-2", numero: 2, type: "VA", matieres: [matiereEB2] };
+    const snapshotLegitime = { questions: matiereEB2.questions };
+    expect(findSnapshotWrongExamSource(snapshotLegitime as any, "reglementation_vtc", null, eb2, [eb1, eb2, va2])).toBeNull();
+
+    // Aucune écriture : les données restent intactes
+    expect(snapshotContamine.questions[0].enonce).toBe("Question 1 ?");
+    expect(buildExamFingerprint(eb1)).toBe(buildExamFingerprint({ id: "test-vtc-1", numero: 1, type: "VTC", matieres: [fv()] } as any));
+  });
+
+  it("findSnapshotWrongExamSource tolère les données incomplètes", () => {
+    const eb2 = examenTest();
+    expect(findSnapshotWrongExamSource(null, "reglementation_vtc", null, eb2, [eb2])).toBeNull();
+    expect(findSnapshotWrongExamSource({} as any, "reglementation_vtc", null, eb2, [eb2])).toBeNull();
+    expect(findSnapshotWrongExamSource({ questions: [] } as any, "reglementation_vtc", null, null, null)).toBeNull();
   });
 });

@@ -8,7 +8,7 @@ import { loadSavedExamens } from "@/components/cours-en-ligne/ExamensBlancsEdito
 import { computeMoyenneExamen, computeMatiereScoreForAttempt } from "@/components/cours-en-ligne/examens-blancs-scoring";
 import { findScoreForMatiere, buildMatiereLookupKeys } from "@/components/cours-en-ligne/examens-blancs-utils";
 import { isExamAttemptPublicationPending, excludeResultPlaceholders, mergePassageSiblingRows } from "@/components/cours-en-ligne/exam-helpers";
-import { isSnapshotOutdated } from "@/components/cours-en-ligne/exam-content-integrity";
+import { isSnapshotOutdated, findSnapshotWrongExamSource, KNOWN_EB1_SERVED_IN_EB2_RESULT_IDS } from "@/components/cours-en-ligne/exam-content-integrity";
 
 interface ResultatsApprenantTabProps {
   apprenantId: string;
@@ -40,7 +40,7 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
       // Exam blanc scores
       supabase
         .from("apprenant_quiz_results")
-        .select("quiz_id, quiz_titre, matiere_id, matiere_nom, note_sur_20, score_obtenu, score_max, quiz_type, completed_at, created_at, details")
+        .select("id, quiz_id, quiz_titre, matiere_id, matiere_nom, note_sur_20, score_obtenu, score_max, quiz_type, completed_at, created_at, details")
         .eq("apprenant_id", apprenantId)
         .order("completed_at", { ascending: false }),
       // Bilans
@@ -140,15 +140,34 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
               // les nouveaux résultats → on vérifie AUSSI chaque QRC de la définition
               // d'examen contre les corrections validées manuellement.
                const enAttenteCorrection = isExamAttemptPublicationPending(exam.matieres, examenDef);
-              // LECTURE SEULE : signale un passage réalisé sur une version
-              // antérieure de l'examen. Aucune note n'est recalculée ni corrigée.
-              const versionAnterieure = exam.matieres.some((m: any) => {
-                const snap = m?.details?.snapshot;
-                const def = examenDef?.matieres.find(
-                  (md: any) => md.id === m.matiere_id || md.nom === m.matiere_nom,
-                );
-                return isSnapshotOutdated(snap, def as any);
-              });
+               // LECTURE SEULE : signale un passage réalisé sur une version
+               // antérieure de l'examen. Aucune note n'est recalculée ni corrigée.
+               const versionAnterieure = exam.matieres.some((m: any) => {
+                 const snap = m?.details?.snapshot;
+                 const def = examenDef?.matieres.find(
+                   (md: any) => md.id === m.matiere_id || md.nom === m.matiere_nom,
+                 );
+                 return isSnapshotOutdated(snap, def as any);
+               });
+               // LECTURE SEULE : détecte un passage dont le contenu servi
+               // correspond exactement à la matière d'un AUTRE numéro d'examen
+               // (ex. EB1 servi dans EB2 le 21/09 avant 18h15). Jamais de recalcul.
+               let mauvaisExam: { sourceExamenTitre: string; sourceExamenNumero: number | null } | null = null;
+               for (const m of exam.matieres as any[]) {
+                 const found = findSnapshotWrongExamSource(
+                   m?.details?.snapshot,
+                   m?.matiere_id,
+                   m?.matiere_nom,
+                   examenDef as any,
+                   liveExamens as any,
+                 );
+                 if (found) { mauvaisExam = found; break; }
+               }
+               // Incident documenté EB1→EB2 VTC (18/09 et 21/09 avant 18h15) :
+               // écritures prouvées par l'audit du 22/09, liste figée en lecture seule.
+               const passageContamineDocumente = exam.matieres.some((m: any) =>
+                 KNOWN_EB1_SERVED_IN_EB2_RESULT_IDS.has(String(m?.id ?? "")),
+               );
 
               return (
                 <div key={quizId} className="border rounded-lg p-4 space-y-3">
@@ -164,9 +183,14 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
                           {isReussi ? "Réussi ✅" : "Échoué ❌"}
                         </Badge>
                       )}
-                      {versionAnterieure && (
+                      {versionAnterieure && !mauvaisExam && !passageContamineDocumente && (
                         <Badge variant="outline" className="text-xs border-amber-400 text-amber-700">
                           ⚠️ Version antérieure de l'examen
+                        </Badge>
+                      )}
+                      {(mauvaisExam || passageContamineDocumente) && (
+                        <Badge variant="destructive" className="text-xs">
+                          ⚠️ PASSAGE EFFECTUÉ SUR UNE VERSION ERRONÉE DE L'EXAMEN — contenu {mauvaisExam?.sourceExamenNumero != null ? `EB${mauvaisExam.sourceExamenNumero}` : "EB1"} servi dans cet examen{exam.completedAt ? ` (passage du ${new Date(exam.completedAt).toLocaleDateString("fr-FR")})` : ""}
                         </Badge>
                       )}
                     </div>
