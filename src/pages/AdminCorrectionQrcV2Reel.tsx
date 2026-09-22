@@ -183,14 +183,18 @@ export default function AdminCorrectionQrcV2Reel() {
                                     ? "border-success bg-success/10 text-success"
                                     : bloquee
                                       ? "border-muted-foreground/40 bg-muted text-muted-foreground"
-                                      : "border-warning bg-warning/10 text-warning"
+                                      : videEnAttente
+                                        ? "border-dashed border-muted-foreground/60 bg-background text-muted-foreground"
+                                        : "border-warning bg-warning/10 text-warning"
                                 }`}
                               >
                                 {corrigee
                                   ? `✓ ${inst.note}${points != null ? `/${points}` : ""}`
                                   : bloquee
                                     ? "⚠️ Barème absent"
-                                    : "À corriger"}
+                                    : videEnAttente
+                                      ? `Copie vide (/${points})`
+                                      : `À corriger (/${points})`}
                               </button>
                             </td>
                           );
