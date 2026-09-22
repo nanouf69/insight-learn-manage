@@ -30,6 +30,8 @@ export type TentativeReelle = {
   snapshot: SnapshotExamen;
   snapshot_fingerprint: string;
   candidat: string;
+  /** Date/heure réelle du passage (affichage uniquement). */
+  started_at?: string | null;
 };
 
 export type QrcReelle = {
