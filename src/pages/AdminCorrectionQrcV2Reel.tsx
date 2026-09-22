@@ -421,8 +421,11 @@ export default function AdminCorrectionQrcV2Reel() {
               <p className="text-xs uppercase text-muted-foreground">Candidat</p>
               <p className="font-semibold">{tentativeSel.candidat}</p>
               <p className="text-xs text-muted-foreground">
-                {groupeChoisi?.libelle} · {ebChoisi?.exam_id} — {ebChoisi?.date} · tentative{" "}
-                {tentativeSel.attempt_id.slice(0, 8)}
+                {groupeChoisi?.libelle} · {ebChoisi?.exam_id} —{" "}
+                {tentativeSel.started_at
+                  ? new Date(tentativeSel.started_at).toLocaleString("fr-FR", { timeZone: "Europe/Paris" })
+                  : "date inconnue"}{" "}
+                · tentative {tentativeSel.attempt_id.slice(0, 8)}
               </p>
             </div>
             <Card className="p-3 space-y-2 text-sm">
