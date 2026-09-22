@@ -474,7 +474,38 @@ export default function ExamensBlancsPage({
   const handleStart = async (examen: ExamenBlanc, forceRetake = false, matiereIds?: string[] | null) => {
     // matiereIds === undefined → on conserve le filtre courant ; null → mode complet
     if (matiereIds !== undefined) setMatiereFilter(matiereIds);
-    const latestExamen = applyMatiereFilter(liveExamens.find((live) => live.id === examen.id) ?? examen, matiereFilterRef.current)!;
+
+    // ── CONTRÔLE AVANT DÉMARRAGE ──────────────────────────────────────────
+    // Version base rechargée à l'instant = version affichée = photo attribuée.
+    // Si l'empreinte ne correspond pas : REFUS du démarrage, aucune réparation.
+    let versionBase: ExamenBlanc[];
+    try {
+      versionBase = await loadSavedExamens();
+    } catch (err) {
+      console.error("[ExamensBlancs] Démarrage refusé — version active indisponible", err);
+      setLiveExamensError(true);
+      toast.error(EXAM_CONTENT_UNAVAILABLE_MESSAGE);
+      return;
+    }
+    const examenBase = versionBase.find((e) => e.id === examen.id);
+    if (!examenBase) {
+      toast.error(EXAM_CONTENT_UNAVAILABLE_MESSAGE);
+      return;
+    }
+    const examenAffiche = liveExamens.find((live) => live.id === examen.id);
+    if (examenAffiche && buildExamFingerprint(examenAffiche) !== buildExamFingerprint(examenBase)) {
+      setLiveExamens(versionBase);
+      toast.error("La version de cet examen vient d'être mise à jour. Relancez le démarrage pour recevoir la version officielle.");
+      return;
+    }
+
+    // ── PHOTO EXACTE DE LA VERSION ACTIVE ─────────────────────────────────
+    // Copie complète et indépendante : examen + numéro + matières + IDs +
+    // énoncés + propositions + bonnes réponses + QCM/QRC + barèmes + images.
+    // Cette photo reste attachée à la tentative jusqu'à sa fin.
+    const snapshotExamen = buildAttemptSnapshot(examenBase);
+    attemptFingerprintRef.current = buildExamFingerprint(examenBase);
+    const latestExamen = applyMatiereFilter(snapshotExamen, matiereFilterRef.current)!;
     const quizType = latestExamen.id.startsWith("bilan-") ? "bilan" : "examen_blanc";
 
     let nextTentative = 1;
