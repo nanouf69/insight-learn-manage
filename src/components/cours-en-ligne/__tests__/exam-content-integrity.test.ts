@@ -152,7 +152,7 @@ describe("Examen blanc — intégrité du contenu (compte TEST fictif)", () => {
 
     // Aucune écriture : les données restent intactes
     expect(snapshotContamine.questions[0].enonce).toBe("Question 1 ?");
-    expect(buildExamFingerprint(eb1)).toBe(buildExamFingerprint({ id: "test-vtc-1", numero: 1, type: "VTC", matieres: [fv()] }));
+    expect(buildExamFingerprint(eb1)).toBe(buildExamFingerprint({ id: "test-vtc-1", numero: 1, type: "VTC", matieres: [fv()] } as any));
   });
 
   it("findSnapshotWrongExamSource tolère les données incomplètes", () => {
