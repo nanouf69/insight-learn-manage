@@ -724,6 +724,11 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
                         <ChevronRight className="w-4 h-4" />
                       </Button>
                     )}
+                    {retakeAuthorized && isCompleted && (
+                      <div className="mt-2 rounded-lg border-2 border-blue-300 bg-blue-50 px-3 py-2 text-center text-sm font-semibold text-blue-800">
+                        ✅ Un nouveau passage vous a été autorisé. Votre passage précédent reste conservé.
+                      </div>
+                    )}
                     {retakeBlocked && (
                       <div className="mt-2 rounded-lg border-2 border-slate-300 bg-slate-50 px-3 py-2 text-center text-sm font-semibold text-slate-700">
                         {examRetakeLockMessage(retakeLock.availableAt)}
