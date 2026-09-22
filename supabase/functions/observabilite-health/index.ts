@@ -139,7 +139,7 @@ async function ecrireJournal(
       drain = false;
     }
   }
-  return { fichier, drain };
+  return { fichier, erreur, drain };
 }
 
 // ------------------------------------------------- état de déduplication
