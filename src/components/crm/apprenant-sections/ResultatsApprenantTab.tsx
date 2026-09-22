@@ -9,6 +9,7 @@ import { computeMoyenneExamen, computeMatiereScoreForAttempt } from "@/component
 import { findScoreForMatiere, buildMatiereLookupKeys } from "@/components/cours-en-ligne/examens-blancs-utils";
 import { isExamAttemptPublicationPending, excludeResultPlaceholders, mergePassageSiblingRows } from "@/components/cours-en-ligne/exam-helpers";
 import { isSnapshotOutdated, findSnapshotWrongExamSource, KNOWN_EB1_SERVED_IN_EB2_RESULT_IDS } from "@/components/cours-en-ligne/exam-content-integrity";
+import { AutoriserNouveauPassageButton } from "./AutoriserNouveauPassageButton";
 
 interface ResultatsApprenantTabProps {
   apprenantId: string;
@@ -208,9 +209,24 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
                       automatique (pas de suppression, recalcul, remplacement de questions,
                       modification de QRC ni création de tentative). */}
                   {(mauvaisExam || passageContamineDocumente) && (
-                    <p className="text-xs font-medium text-amber-700 border border-amber-300 bg-amber-50 rounded px-2 py-1">
-                      Décision requise (Admin) : conserver le résultat ou demander un nouveau passage EB2 — décision manuelle, aucune action automatique.
-                    </p>
+                    <div className="space-y-2">
+                      <p className="text-xs font-medium text-amber-700 border border-amber-300 bg-amber-50 rounded px-2 py-1">
+                        Décision requise (Admin) : conserver le résultat ou demander un nouveau passage EB2 — décision manuelle, aucune action automatique.
+                      </p>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <AutoriserNouveauPassageButton
+                          apprenantId={apprenantId}
+                          examId={quizId}
+                          examTitre={exam.titre}
+                          resultIds={exam.matieres
+                            .map((m: any) => String(m?.id ?? ""))
+                            .filter(Boolean)}
+                        />
+                        <span className="text-[11px] text-muted-foreground">
+                          Autorise uniquement une nouvelle tentative (délai de 48 h levé). Aucune donnée existante n'est supprimée, modifiée ni recalculée.
+                        </span>
+                      </div>
+                    </div>
                   )}
 
                   {/* Notes par matière */}
