@@ -9,15 +9,7 @@ import { loadSavedExamens } from "@/components/cours-en-ligne/ExamensBlancsEdito
 import { computeMoyenneExamen, computeMatiereScoreForAttempt } from "@/components/cours-en-ligne/examens-blancs-scoring";
 import { findScoreForMatiere, buildMatiereLookupKeys } from "@/components/cours-en-ligne/examens-blancs-utils";
 import { isExamAttemptPublicationPending, excludeResultPlaceholders, mergePassageSiblingRows } from "@/components/cours-en-ligne/exam-helpers";
-
-// Repli statique uniquement : la source de vérité affichée est la définition
-// enregistrée en base (identique à l'écran apprenant), chargée via loadSavedExamens().
-const STATIC_EXAMENS_BLANCS = [
-  ...EXAMENS_BLANCS_VTC,
-  ...EXAMENS_BLANCS_TAXI,
-  ...EXAMENS_BLANCS_TA,
-  ...EXAMENS_BLANCS_VA,
-];
+import { isSnapshotOutdated } from "@/components/cours-en-ligne/exam-content-integrity";
 
 interface ResultatsApprenantTabProps {
   apprenantId: string;
