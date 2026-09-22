@@ -160,6 +160,7 @@ export async function listerGroupesCrm(mode: "test" | "migre" = "migre"): Promis
         .from("session_apprenants")
         .select("apprenant_id, session_id, date_debut, date_fin")
         .in("apprenant_id", apprenantIds)
+        .range(0, 4999)
     : { data: [] as any[] };
 
   const sessionIds = Array.from(new Set((liens ?? []).map((l: any) => l.session_id as string)));
