@@ -92,6 +92,9 @@ export default function AdminCorrectionQrcV2Reel() {
   const [erreur, setErreur] = useState<string | null>(null);
   // Révision d'une correction déjà validée : action volontaire, jamais un écrasement silencieux.
   const [modeRevision, setModeRevision] = useState(false);
+  // Jeton d'intention : identique pour un double-clic (une seule écriture),
+  // renouvelé après chaque validation pour qu'une révision ultérieure de même valeur soit bien enregistrée.
+  const [jeton, setJeton] = useState(() => Math.random().toString(36).slice(2, 10));
   const [historique, setHistorique] = useState<EvenementCorrection[]>([]);
 
   useEffect(() => {
@@ -567,7 +570,7 @@ export default function AdminCorrectionQrcV2Reel() {
                       value={commentaire}
                       onChange={(e) => setCommentaire(e.target.value)}
                     />
-                    <Button variant="ghost" size="sm" onClick={() => setModeRevision(false)}>Annuler</Button>
+                    <Button variant="ghost" size="sm" data-testid="annuler-revision" onClick={() => setModeRevision(false)}>Annuler</Button>
                   </>
                 )}
                 <p className="text-xs text-muted-foreground">
