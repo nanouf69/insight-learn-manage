@@ -221,7 +221,7 @@ Deno.serve(async (req) => {
 
   const url = new URL(req.url);
   const token = req.headers.get("x-monitoring-token") ?? url.searchParams.get("token") ?? "";
-  if (!TRIGGER_TOKEN || token !== TRIGGER_TOKEN) {
+  if (TRIGGER_TOKENS.length === 0 || !TRIGGER_TOKENS.includes(token)) {
     return json({ error: "unauthorized" }, 401);
   }
 
