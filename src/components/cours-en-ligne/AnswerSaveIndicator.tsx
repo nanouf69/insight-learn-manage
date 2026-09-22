@@ -28,7 +28,8 @@ export function AnswerSaveIndicator({ className = "" }: { className?: string }) 
   useEffect(() => onAnswerSaveRejected((r) => setRejection(r)), []);
 
   // Le serveur a refusé d'appliquer la réponse : alerte immédiate, jamais
-  // « enregistré ». La sauvegarde repart automatiquement sur le bon passage.
+  // « enregistré ». Sur un refus définitif (règle des 48 h, droits, passage
+  // fermé), la vraie raison est affichée et aucun renvoi automatique n'a lieu.
   if (rejection) {
     return (
       <div
@@ -37,8 +38,9 @@ export function AnswerSaveIndicator({ className = "" }: { className?: string }) 
       >
         <AlertTriangle className="h-4 w-4 shrink-0" />
         <span>
-          🔴 Votre réponse n'a pas encore été enregistrée. Ne fermez pas cette page.
-          Nouvelle tentative de sauvegarde en cours.
+          🔴{" "}
+          {rejection.message ??
+            "Votre réponse n'a pas encore été enregistrée. Ne fermez pas cette page. Nouvelle tentative de sauvegarde en cours."}
         </span>
       </div>
     );
