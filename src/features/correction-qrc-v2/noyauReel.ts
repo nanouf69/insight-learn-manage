@@ -313,7 +313,7 @@ export async function chargerSessionTest(
 ): Promise<SessionReelle> {
   let requete = supabase
     .from("exam_attempts_v2")
-    .select("attempt_id, apprenant_id, exam_id, exam_version_id, etat, snapshot, snapshot_fingerprint")
+    .select("attempt_id, apprenant_id, exam_id, exam_version_id, etat, snapshot, snapshot_fingerprint, started_at")
     .eq("is_test", mode === "test");
   if (attemptIdsFiltre?.length) requete = requete.in("attempt_id", attemptIdsFiltre);
   const { data: attempts, error } = await requete.order("started_at", { ascending: true });
