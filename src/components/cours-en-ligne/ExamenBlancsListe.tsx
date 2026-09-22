@@ -509,7 +509,8 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
               // 2 jours complets après la fin de la précédente. La reprise
               // d'une tentative EN COURS reste toujours autorisée.
               const retakeLock = computeExamRetakeLock(lastFinishedByExam[examen.id] ?? null, nowTick);
-              const retakeBlocked = isCompleted && !openAttemptIds.has(examen.id) && retakeLock.locked;
+              const retakeAuthorized = retakeAuthorizedExamIds.has(examen.id);
+              const retakeBlocked = isCompleted && !openAttemptIds.has(examen.id) && retakeLock.locked && !retakeAuthorized;
               const canRetake = !retakeBlocked;
               const canStartExam = true;
               const scores = examScores[examen.id] || [];
