@@ -309,6 +309,13 @@
       "when": 1790069409622,
       "tag": "0043_exam_retake_authorizations",
       "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1790070021285,
+      "tag": "0044_secure_core_step1_empty_structures",
+      "breakpoints": true
     }
   ]
 }
