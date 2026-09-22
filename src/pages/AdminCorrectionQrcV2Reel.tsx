@@ -56,7 +56,8 @@ export default function AdminCorrectionQrcV2Reel() {
       try {
         const liste = await listerSessions(mode);
         setSessions(liste);
-        setSessionCle((c) => c ?? liste[0]?.cle ?? null);
+        // Sans choix mémorisé dans l'URL, on se place sur la session la plus récente
+        setSessionCleState((c) => c ?? liste[0]?.cle ?? null);
       } catch (e) {
         setErreur((e as Error).message);
       }
@@ -76,6 +77,22 @@ export default function AdminCorrectionQrcV2Reel() {
 
   useEffect(() => { void recharger(); }, [recharger]);
   useEffect(() => souscrireSignal("admin-qrc-v2", "qrc_instances_v2", () => void recharger()), [recharger]);
+
+  // Position de défilement : mémorisée localement, restaurée une fois les données serveur chargées
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const onScroll = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => sessionStorage.setItem("qrc_v2_scroll", String(window.scrollY)), 200);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => { window.removeEventListener("scroll", onScroll); if (timer) clearTimeout(timer); };
+  }, []);
+  useEffect(() => {
+    if (!session) return;
+    const y = Number(sessionStorage.getItem("qrc_v2_scroll") ?? 0);
+    if (y > 0) requestAnimationFrame(() => window.scrollTo(0, y));
+  }, [session]);
 
   const parTentative = useMemo(() => {
     const m = new Map<string, TentativeReelle>();
