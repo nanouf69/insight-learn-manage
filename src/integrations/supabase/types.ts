@@ -5993,6 +5993,14 @@ export type Database = {
         }
         Returns: Json
       }
+      core_import_passage_finalise: {
+        Args: { p_result_id: string }
+        Returns: Json
+      }
+      core_import_passages_finalises: {
+        Args: { p_exam_prefix?: string; p_limit?: number }
+        Returns: Json
+      }
       core_note_attempt: {
         Args: { p_attempt_id: string }
         Returns: {
