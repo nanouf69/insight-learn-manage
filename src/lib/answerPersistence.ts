@@ -364,6 +364,35 @@ export function getBlockedAnswerSaves(): number {
   return readQueue().filter((item) => item.blocked === true).length;
 }
 
+/**
+ * ÉTAPE 3 (lecture seule) — écritures encore en attente POUR UN PASSAGE précis.
+ * Ne modifie ni la file, ni les réponses, ni l'ordre d'envoi.
+ */
+export function getPendingAnswerSavesFor(apprenantId: string, exerciceId: string): number {
+  return readQueue().filter(
+    (item) =>
+      item.payload.apprenant_id === apprenantId &&
+      item.payload.exercice_id === exerciceId &&
+      isActivelyPending(item),
+  ).length;
+}
+
+/** ÉTAPE 3 (lecture seule) — écritures conservées mais refusées pour ce passage. */
+export function getBlockedAnswerSavesFor(apprenantId: string, exerciceId: string): number {
+  return readQueue().filter(
+    (item) =>
+      item.payload.apprenant_id === apprenantId &&
+      item.payload.exercice_id === exerciceId &&
+      item.blocked === true,
+  ).length;
+}
+
+/** ÉTAPE 3 (lecture seule) — dernier numéro d'ordre confirmé par le serveur. */
+export function getConfirmedWriteSeq(apprenantId: string, exerciceId: string): number {
+  return getKnownWriteSeq(apprenantId, exerciceId);
+}
+
+
 export function getPendingAnswers(
   apprenantId: string,
   exerciceId: string
