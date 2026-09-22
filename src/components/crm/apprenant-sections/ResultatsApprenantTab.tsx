@@ -178,9 +178,14 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
                           {isReussi ? "Réussi ✅" : "Échoué ❌"}
                         </Badge>
                       )}
-                      {versionAnterieure && (
+                      {versionAnterieure && !mauvaisExam && (
                         <Badge variant="outline" className="text-xs border-amber-400 text-amber-700">
                           ⚠️ Version antérieure de l'examen
+                        </Badge>
+                      )}
+                      {mauvaisExam && (
+                        <Badge variant="destructive" className="text-xs">
+                          ⚠️ PASSAGE EFFECTUÉ SUR UNE VERSION ERRONÉE DE L'EXAMEN — contenu {mauvaisExam.sourceExamenNumero != null ? `EB${mauvaisExam.sourceExamenNumero}` : mauvaisExam.sourceExamenTitre} servi dans cet examen
                         </Badge>
                       )}
                     </div>
