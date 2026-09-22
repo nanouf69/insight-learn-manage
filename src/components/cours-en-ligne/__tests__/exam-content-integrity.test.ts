@@ -8,6 +8,7 @@ import {
   isExamContentUnavailable,
   ExamContentUnavailableError,
   EXAM_CONTENT_UNAVAILABLE_MESSAGE,
+  findSnapshotWrongExamSource,
 } from "../exam-content-integrity";
 
 // ── ENVIRONNEMENT DE TEST 100 % FICTIF ────────────────────────────────────
@@ -119,5 +120,37 @@ describe("Examen blanc — intégrité du contenu (compte TEST fictif)", () => {
       muter(qs);
       expect(buildQuestionsFingerprint(qs)).not.toBe(ref);
     }
+  });
+
+  it("Contenu d'un autre numéro d'examen servi dans celui-ci → signalé (lecture seule)", () => {
+    // EB1 (N°1) et EB2 (N°2) partagent la même matière F(V) fictive.
+    const eb1 = autreExamen();
+    const eb2 = examenTest();
+    const tous = [eb1, eb2];
+
+    // Passage EB2 dont le snapshot = contenu EXACT de F(V) EB1 (contamination)
+    const snapshotContamine = { questions: fv().questions };
+    const res = findSnapshotWrongExamSource(snapshotContamine as any, "reglementation_vtc", null, eb2, tous);
+    expect(res).not.toBeNull();
+    expect(res?.sourceExamenNumero).toBe(1);
+
+    // Même contenu dans le BON numéro → aucune alerte
+    const resBon = findSnapshotWrongExamSource(snapshotContamine as any, "reglementation_vtc", null, eb1, tous);
+    expect(resBon).toBeNull();
+
+    // Contenu différent de tout autre examen → aucune alerte
+    const autres = fv().questions.map((q: any) => ({ ...q, enonce: q.enonce + " (variante)" }));
+    expect(findSnapshotWrongExamSource({ questions: autres } as any, "reglementation_vtc", null, eb2, tous)).toBeNull();
+
+    // Aucune écriture : les données restent intactes
+    expect(snapshotContamine.questions[0].enonce).toBe("Question 1 ?");
+    expect(buildExamFingerprint(eb1)).toBe(buildExamFingerprint(autreExamen()));
+  });
+
+  it("findSnapshotWrongExamSource tolère les données incomplètes", () => {
+    const eb2 = examenTest();
+    expect(findSnapshotWrongExamSource(null, "reglementation_vtc", null, eb2, [eb2])).toBeNull();
+    expect(findSnapshotWrongExamSource({} as any, "reglementation_vtc", null, eb2, [eb2])).toBeNull();
+    expect(findSnapshotWrongExamSource({ questions: [] } as any, "reglementation_vtc", null, null, null)).toBeNull();
   });
 });
