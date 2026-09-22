@@ -1567,8 +1567,9 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
       console.error("[ExamensEditor] Chargement impossible", err);
       toast.error(EXAM_CONTENT_UNAVAILABLE_MESSAGE);
       return null;
-    }).then(async (loadedExamens) => {
-      if (!loadedExamens) return;
+    }).then(async (loaded) => {
+      if (!loaded) return;
+      const loadedExamens: ExamenBlanc[] = loaded as ExamenBlanc[];
       setExamens(loadedExamens);
       lastSavedFingerprintRef.current = JSON.stringify(loadedExamens);
       lastSavedModuleFingerprintsRef.current = loadedExamens.reduce<Record<number, string>>((acc, ex) => {
