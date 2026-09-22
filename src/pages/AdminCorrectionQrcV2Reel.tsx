@@ -119,7 +119,7 @@ export default function AdminCorrectionQrcV2Reel() {
                     </tr>
                   </thead>
                   <tbody>
-                    {(session?.tentatives ?? []).map((t) => (
+                    {tentatives.map((t) => (
                       <tr key={t.attempt_id}>
                         <td className="sticky left-0 bg-background px-2 py-1 font-medium whitespace-nowrap">{t.candidat}</td>
                         {questions.map((q) => {
