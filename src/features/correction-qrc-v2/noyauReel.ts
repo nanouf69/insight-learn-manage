@@ -109,7 +109,7 @@ export async function listerSessions(mode: "test" | "migre" = "migre"): Promise<
     const heure = d.toLocaleTimeString("fr-FR", { timeZone: "Europe/Paris", hour: "2-digit", minute: "2-digit" });
     const cle = `${a.exam_id}|${jour}`;
     const s = par.get(cle) ?? {
-      cle, exam_id: a.exam_id as string, date, jour, heureMin: heure, heureMax: heure, attemptIds: [],
+      cle, exam_id: a.exam_id as string, date, jour, heureMin: heure, heureMax: heure, attemptIds: [], dates: [],
     };
     s.attemptIds.push(a.attempt_id as string);
     if (heure < s.heureMin) s.heureMin = heure;
