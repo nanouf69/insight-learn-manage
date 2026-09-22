@@ -11,12 +11,16 @@ import { buildQuestionsFingerprint, buildAttemptSnapshot } from "../exam-content
 
 type Q = any;
 
-function makeQuestion(bonne: string): Q {
+function makeQuestion(bonne: "A" | "B" | "C"): Q {
   return {
     id: "TEST-Q1",
-    type: "qcm",
-    question: "Question fictive de test ?",
-    propositions: ["A fictif", "B fictif", "C fictif"],
+    type: "QCM",
+    enonce: "Question fictive de test ?",
+    choix: ["A", "B", "C"].map((lettre) => ({
+      lettre,
+      texte: `${lettre} fictif`,
+      correct: lettre === bonne,
+    })),
     bonneReponse: bonne,
     points: 1,
   };
