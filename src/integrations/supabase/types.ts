@@ -1650,6 +1650,27 @@ export type Database = {
           },
         ]
       }
+      core_bridge_comptes_test: {
+        Row: {
+          apprenant_id: string
+          created_at: string
+          created_email: string | null
+          libelle: string | null
+        }
+        Insert: {
+          apprenant_id: string
+          created_at?: string
+          created_email?: string | null
+          libelle?: string | null
+        }
+        Update: {
+          apprenant_id?: string
+          created_at?: string
+          created_email?: string | null
+          libelle?: string | null
+        }
+        Relationships: []
+      }
       core_bridge_flags: {
         Row: {
           actif: boolean
@@ -5931,6 +5952,14 @@ export type Database = {
         Returns: undefined
       }
       core_bridge_actif: { Args: { p_is_test: boolean }; Returns: boolean }
+      core_bridge_actif_pour: {
+        Args: { p_apprenant_id: string }
+        Returns: boolean
+      }
+      core_bridge_compte_test: {
+        Args: { p_apprenant_id: string }
+        Returns: boolean
+      }
       core_correct_qrc: {
         Args: {
           p_commentaire?: string
