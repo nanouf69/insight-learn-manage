@@ -1,7 +1,13 @@
 # Feuille de route
 
 ## Bloqué — en attente de la fin de la session EB3 et des 15 resynchronisations
-Aucun déploiement tant que des élèves passent EB3.
+Aucun déploiement tant que des élèves passent EB3. Surveillance lecture seule uniquement.
+
+Pré-requis avant Phase 1 (demande du 22/09, 21h22) :
+- Snapshot/état de référence du système actuel à figer AVANT Phase 1 : file locale, accusé de réception serveur, numéro d'ordre, idempotence réponses, idempotence finalisation, snapshots V2, journaux append-only, résultats actuels des tests automatiques.
+- Phase 1 ne reconstruit PAS la file locale ; périmètre : indicateur 🟢/🟠/🔴, arrêt définitif des retries sur erreurs fonctionnelles non récupérables (règle 48 h), backoff avec jitter, durcissement du contrôle serveur avant « Terminer la matière », message clair du mode dégradé.
+- Après Phase 1 : tests existants + tests spécifiques panne/récupération ; si un seul mécanisme existant régresse → pas de déploiement.
+- Aucune modification des réponses, tentatives, notes, corrections ou historiques existants.
 
 1. Réparer l'écriture des alertes (`alertes_systeme` : RLS refuse toute insertion).
 2. Distinguer « identifiants incorrects » et « service temporairement indisponible » sur l'écran de connexion.
