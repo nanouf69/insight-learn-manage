@@ -1,5 +1,23 @@
 import { useState, useEffect, useCallback, memo, useRef, useMemo } from "react";
-import { useNavigate, Navigate } from "react-router-dom";
+import { useNavigate, Navigate, useLocation } from "react-router-dom";
+
+// Évite tout va-et-vient infini si un admin est renvoyé ici par erreur :
+// on ne tente le retour vers la page d'origine qu'une seule fois par chargement.
+let adminRetourOrigineDejaTente = false;
+
+const lireDestinationRetour = (state: unknown): string => {
+  const from = (state as { from?: string } | null)?.from;
+  if (
+    from &&
+    from.startsWith("/") &&
+    !from.startsWith("//") &&
+    !from.startsWith("/cours-public") &&
+    !from.startsWith("/login")
+  ) {
+    return from;
+  }
+  return "/";
+};
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
