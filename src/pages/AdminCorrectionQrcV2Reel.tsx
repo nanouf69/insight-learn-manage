@@ -111,14 +111,17 @@ export default function AdminCorrectionQrcV2Reel() {
   const groupeChoisi = groupes.find((g) => g.cle === groupeCle) ?? null;
   const ebChoisi = groupeChoisi?.examens.find((e) => e.cle === ebCle) ?? groupeChoisi?.examens[0] ?? null;
 
+  const dateChoisie = ebChoisi?.dates.find((d) => d.jour === jourFiltre) ?? null;
+  const attemptsAffiches = dateChoisie?.attemptIds ?? ebChoisi?.attemptIds ?? null;
+
   const recharger = useCallback(async () => {
-    if (!ebChoisi) return;
+    if (!attemptsAffiches) return;
     try {
-      setSession(await chargerSessionTest(mode, ebChoisi.attemptIds));
+      setSession(await chargerSessionTest(mode, attemptsAffiches));
     } catch (e) {
       setErreur((e as Error).message);
     }
-  }, [mode, ebChoisi]);
+  }, [mode, attemptsAffiches]);
 
   useEffect(() => { void recharger(); }, [recharger]);
   useEffect(() => souscrireSignal("admin-qrc-v2", "qrc_instances_v2", () => void recharger()), [recharger]);
