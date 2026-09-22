@@ -241,6 +241,10 @@ const ApprenantSearchPreview = () => {
             <MessageSquareText className="w-4 h-4" />
             Correction QRC
           </TabsTrigger>
+          <TabsTrigger value="correction-qrc-archive" className="flex items-center gap-2">
+            <MessageSquareText className="w-4 h-4" />
+            Ancienne correction QRC — archive
+          </TabsTrigger>
         </TabsList>
 
         {/* Accueil */}
