@@ -419,6 +419,27 @@ export default function AdminCorrectionQrcV2Reel() {
                             : "date inconnue"}
                           {" · "}tentative {t.attempt_id.slice(0, 8)}
                         </td>
+                        {(() => {
+                          // Note /20 : résultat serveur de CETTE tentative (QCM du snapshot + dernière
+                          // correction de chaque QRC). Aucun calcul local, aucune lecture de la version actuelle.
+                          const res = (session?.resultats ?? []).find((r) => r.attempt_id === t.attempt_id);
+                          const defin = res != null && (res.qrc_restantes ?? 0) === 0;
+                          return (
+                            <td
+                              key="note20"
+                              data-testid={`note20-${t.attempt_id}`}
+                              className={`px-2 py-1 whitespace-nowrap font-semibold ${
+                                res == null ? "text-muted-foreground" : defin ? "text-success" : "text-warning"
+                              }`}
+                            >
+                              {res == null || res.score == null
+                                ? "—"
+                                : defin
+                                  ? `✓ ${String(res.score).replace(".", ",")}/20 définitive`
+                                  : `⏳ ${String(res.score).replace(".", ",")}/20 provisoire — ${res.qrc_restantes} QRC restante(s)`}
+                            </td>
+                          );
+                        })()}
                         {questions.map((q) => {
                           const qt = t.snapshot.questions.find((x) => x.id === q.id);
                           const inst = (session?.qrc ?? []).find(
