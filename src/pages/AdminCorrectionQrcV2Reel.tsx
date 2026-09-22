@@ -1,51 +1,79 @@
 // Correction QRC V2 — branchée sur le VRAI noyau sécurisé en base.
 // Aucune donnée historique n'est complétée ni recalculée : ce qui manque est signalé.
-import { useCallback, useEffect, useMemo, useState } from "react";
+// Le regroupement des passages suit les sessions réelles du CRM (lecture seule),
+// jamais une session reconstruite à partir de la date ou de l'heure d'un passage.
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { Maximize2, Minimize2, ZoomIn, ZoomOut } from "lucide-react";
 import {
   chargerSessionTest,
   corrigerQrc,
-  listerSessions,
+  listerGroupesCrm,
   souscrireSignal,
+  type GroupeSessionCrm,
   type QrcReelle,
-  type SessionListee,
   type SessionReelle,
   type TentativeReelle,
 } from "@/features/correction-qrc-v2/noyauReel";
 
 const texte = (v: unknown) => (typeof v === "string" ? v : v == null ? "" : JSON.stringify(v));
 
+const param = (cle: string) => new URLSearchParams(window.location.search).get(cle);
+
 export default function AdminCorrectionQrcV2Reel() {
-  const mode: "test" | "migre" =
-    new URLSearchParams(window.location.search).get("mode") === "test" ? "test" : "migre";
+  const mode: "test" | "migre" = param("mode") === "test" ? "test" : "migre";
 
   // Préférences d'interface mémorisées dans l'URL pour survivre à un F5.
   // Les données pédagogiques sont TOUJOURS rechargées depuis le serveur ; l'URL ne porte que la navigation.
-  const majUrl = (cle: string | null, qrc: string | null) => {
+  const majUrl = (maj: Record<string, string | null>) => {
     const params = new URLSearchParams(window.location.search);
-    if (cle) params.set("qrc_session", cle); else params.delete("qrc_session");
-    if (qrc) params.set("qrc", qrc); else params.delete("qrc");
+    for (const [k, v] of Object.entries(maj)) {
+      if (v) params.set(k, v);
+      else params.delete(k);
+    }
     window.history.replaceState(null, "", `${window.location.pathname}?${params.toString()}`);
   };
 
-  const [sessions, setSessions] = useState<SessionListee[]>([]);
-  const [sessionCle, setSessionCleState] = useState<string | null>(
-    () => new URLSearchParams(window.location.search).get("qrc_session"),
-  );
-  const setSessionCle = (cle: string | null) => {
-    setSessionCleState(cle);
-    majUrl(cle, null);
-  };
+  const [groupes, setGroupes] = useState<GroupeSessionCrm[]>([]);
+  const [groupeCle, setGroupeCleState] = useState<string | null>(() => param("qrc_groupe"));
+  const [ebCle, setEbCleState] = useState<string | null>(() => param("qrc_eb"));
   const [session, setSession] = useState<SessionReelle | null>(null);
-  const [selection, setSelectionState] = useState<string | null>(
-    () => new URLSearchParams(window.location.search).get("qrc"),
-  );
+  const [selection, setSelectionState] = useState<string | null>(() => param("qrc"));
+  const [zoom, setZoomState] = useState<number>(() => {
+    const z = Number(param("qrc_zoom"));
+    return Number.isFinite(z) && z >= 70 && z <= 150 ? z : 100;
+  });
+  const [largeurPanneau, setLargeurPanneau] = useState<number>(() => {
+    const l = Number(sessionStorage.getItem("qrc_v2_panneau"));
+    return Number.isFinite(l) && l >= 280 && l <= 900 ? l : 380;
+  });
+  const [pleinEcran, setPleinEcran] = useState(false);
+  const conteneurRef = useRef<HTMLDivElement>(null);
+
+  const setGroupeCle = (cle: string | null) => {
+    setGroupeCleState(cle);
+    setEbCleState(null);
+    setSelectionState(null);
+    setSession(null);
+    majUrl({ qrc_groupe: cle, qrc_eb: null, qrc: null });
+  };
+  const setEbCle = (cle: string | null) => {
+    setEbCleState(cle);
+    setSelectionState(null);
+    majUrl({ qrc_eb: cle, qrc: null });
+  };
   const setSelection = (qrc: string | null) => {
     setSelectionState(qrc);
-    majUrl(sessionCle, qrc);
+    majUrl({ qrc });
   };
+  const setZoom = (z: number) => {
+    const v = Math.min(150, Math.max(70, z));
+    setZoomState(v);
+    majUrl({ qrc_zoom: String(v) });
+  };
+
   const [note, setNote] = useState<number | null>(null);
   const [commentaire, setCommentaire] = useState("");
   const [etatEnvoi, setEtatEnvoi] = useState<"vide" | "encours" | "ok" | "echec">("vide");
@@ -54,11 +82,11 @@ export default function AdminCorrectionQrcV2Reel() {
   useEffect(() => {
     void (async () => {
       try {
-        const liste = await listerSessions(mode);
-        setSessions(liste);
-        // Sans choix mémorisé dans l'URL, on se place sur la session la plus récente
-        if (!new URLSearchParams(window.location.search).get("qrc_session")) {
-          setSessionCleState(liste[0]?.cle ?? null);
+        const liste = await listerGroupesCrm(mode);
+        setGroupes(liste);
+        if (!param("qrc_groupe")) {
+          setGroupeCleState(liste[0]?.cle ?? null);
+          setEbCleState(liste[0]?.examens[0]?.cle ?? null);
         }
       } catch (e) {
         setErreur((e as Error).message);
@@ -66,19 +94,51 @@ export default function AdminCorrectionQrcV2Reel() {
     })();
   }, [mode]);
 
-  const sessionChoisie = sessions.find((s) => s.cle === sessionCle) ?? null;
+  const groupeChoisi = groupes.find((g) => g.cle === groupeCle) ?? null;
+  const ebChoisi = groupeChoisi?.examens.find((e) => e.cle === ebCle) ?? groupeChoisi?.examens[0] ?? null;
 
   const recharger = useCallback(async () => {
-    if (!sessionChoisie) return;
+    if (!ebChoisi) return;
     try {
-      setSession(await chargerSessionTest(mode, sessionChoisie.attemptIds));
+      setSession(await chargerSessionTest(mode, ebChoisi.attemptIds));
     } catch (e) {
       setErreur((e as Error).message);
     }
-  }, [mode, sessionChoisie]);
+  }, [mode, ebChoisi]);
 
   useEffect(() => { void recharger(); }, [recharger]);
   useEffect(() => souscrireSignal("admin-qrc-v2", "qrc_instances_v2", () => void recharger()), [recharger]);
+
+  // Plein écran natif du navigateur sur la zone de correction
+  const basculerPleinEcran = async () => {
+    if (!document.fullscreenElement) await conteneurRef.current?.requestFullscreen();
+    else await document.exitFullscreen();
+  };
+  useEffect(() => {
+    const onFs = () => setPleinEcran(Boolean(document.fullscreenElement));
+    document.addEventListener("fullscreenchange", onFs);
+    return () => document.removeEventListener("fullscreenchange", onFs);
+  }, []);
+
+  // Redimensionnement du panneau droit
+  const demarrerRedim = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const departX = e.clientX;
+    const departL = largeurPanneau;
+    const move = (ev: MouseEvent) => {
+      const l = Math.min(900, Math.max(280, departL + (departX - ev.clientX)));
+      setLargeurPanneau(l);
+    };
+    const up = () => {
+      window.removeEventListener("mousemove", move);
+      window.removeEventListener("mouseup", up);
+      sessionStorage.setItem("qrc_v2_panneau", String(largeurPanneauRef.current));
+    };
+    window.addEventListener("mousemove", move);
+    window.addEventListener("mouseup", up);
+  };
+  const largeurPanneauRef = useRef(largeurPanneau);
+  useEffect(() => { largeurPanneauRef.current = largeurPanneau; }, [largeurPanneau]);
 
   // Position de défilement : mémorisée localement, restaurée une fois les données serveur chargées
   useEffect(() => {
@@ -147,30 +207,64 @@ export default function AdminCorrectionQrcV2Reel() {
     }
   };
 
+  const nbIndetermines = groupes.find((g) => g.type === "indetermine")?.nbCandidats ?? 0;
+  const nbConflits = groupes.find((g) => g.type === "conflit")?.nbCandidats ?? 0;
+
   return (
-    <div className="flex min-h-screen">
-      <div className="flex-1 p-4 space-y-6">
+    <div ref={conteneurRef} className="flex min-h-screen bg-background">
+      <div className="flex-1 p-4 space-y-6 overflow-x-auto">
         <header className="sticky top-0 z-10 bg-background/95 py-2 space-y-2">
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-lg font-semibold">Correction QRC V2</h1>
             <select
               data-testid="choix-session"
-              className="rounded border bg-background px-2 py-1 text-sm"
-              value={sessionCle ?? ""}
-              onChange={(e) => { setSessionCle(e.target.value); setSelection(null); setSession(null); }}
+              className="rounded border bg-background px-2 py-1 text-sm max-w-[420px]"
+              value={groupeCle ?? ""}
+              onChange={(e) => setGroupeCle(e.target.value)}
             >
-              {sessions.map((s) => (
-                <option key={s.cle} value={s.cle}>
-                  {s.date} · {s.heureMin}–{s.heureMax} · {s.exam_id} ({s.attemptIds.length} passages)
+              {groupes.map((g) => (
+                <option key={g.cle} value={g.cle}>
+                  {g.libelle}{g.periode ? ` (${g.periode})` : ""} · {g.nbCandidats} candidat{g.nbCandidats > 1 ? "s" : ""}
                 </option>
               ))}
             </select>
+            <select
+              data-testid="choix-eb"
+              className="rounded border bg-background px-2 py-1 text-sm"
+              value={ebChoisi?.cle ?? ""}
+              onChange={(e) => setEbCle(e.target.value)}
+            >
+              {(groupeChoisi?.examens ?? []).map((e) => (
+                <option key={e.cle} value={e.cle}>
+                  {e.exam_id} — {e.date} · {e.heureMin}–{e.heureMax} ({e.attemptIds.length} passages)
+                </option>
+              ))}
+            </select>
+
+            <div className="ml-auto flex items-center gap-1">
+              <Button size="icon" variant="outline" onClick={() => setZoom(zoom - 10)} aria-label="Réduire le zoom">
+                <ZoomOut className="h-4 w-4" />
+              </Button>
+              <span className="w-12 text-center text-sm tabular-nums" data-testid="niveau-zoom">{zoom}%</span>
+              <Button size="icon" variant="outline" onClick={() => setZoom(zoom + 10)} aria-label="Augmenter le zoom">
+                <ZoomIn className="h-4 w-4" />
+              </Button>
+              <Button size="icon" variant="outline" onClick={() => void basculerPleinEcran()} aria-label="Plein écran">
+                {pleinEcran ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+              </Button>
+            </div>
           </div>
           <p className="text-sm text-muted-foreground" data-testid="compteur-session">
             {corrigees}/{total} QRC corrigées — {total - corrigees} restantes
           </p>
+          {(nbIndetermines > 0 || nbConflits > 0) && (
+            <p className="text-xs text-warning" data-testid="alerte-rattachement">
+              ⚠️ {nbIndetermines} candidat(s) sans session CRM déterminée · {nbConflits} candidat(s) avec des sessions CRM qui se chevauchent (aucun choix automatique).
+            </p>
+          )}
         </header>
 
+        <div style={{ zoom: `${zoom}%` }} className="space-y-6">
         {matieres.map((m) => {
           const tentatives = (session?.tentatives ?? []).filter((t) =>
             (t.snapshot.matieres ?? []).some((x) => x.subject_id === m.subject_id),
@@ -247,10 +341,18 @@ export default function AdminCorrectionQrcV2Reel() {
             </section>
           );
         })}
+        </div>
         {erreur && <p className="text-sm text-destructive" data-testid="erreur-admin">{erreur}</p>}
       </div>
 
-      <aside className="w-[380px] shrink-0 border-l p-4 space-y-3">
+      <div
+        onMouseDown={demarrerRedim}
+        role="separator"
+        aria-orientation="vertical"
+        aria-label="Redimensionner le panneau"
+        className="w-1.5 shrink-0 cursor-col-resize bg-border hover:bg-primary/40"
+      />
+      <aside className="shrink-0 border-l p-4 space-y-3 overflow-y-auto" style={{ width: largeurPanneau }}>
         {!qrcSel && <p className="text-sm text-muted-foreground">Sélectionnez une QRC dans le tableau.</p>}
         {qrcSel && questionSel && tentativeSel && (
           <>
@@ -258,8 +360,8 @@ export default function AdminCorrectionQrcV2Reel() {
               <p className="text-xs uppercase text-muted-foreground">Candidat</p>
               <p className="font-semibold">{tentativeSel.candidat}</p>
               <p className="text-xs text-muted-foreground">
-                {tentativeSel.snapshot.session?.date} {tentativeSel.snapshot.session?.heure} ·{" "}
-                {tentativeSel.exam_id} · tentative {tentativeSel.attempt_id.slice(0, 8)}
+                {groupeChoisi?.libelle} · {ebChoisi?.exam_id} — {ebChoisi?.date} · tentative{" "}
+                {tentativeSel.attempt_id.slice(0, 8)}
               </p>
             </div>
             <Card className="p-3 space-y-2 text-sm">
