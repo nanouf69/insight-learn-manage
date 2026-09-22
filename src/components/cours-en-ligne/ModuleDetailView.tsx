@@ -9401,6 +9401,13 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             <ArrowLeft className="w-4 h-4" />
           </Button>
           <h2 className="text-2xl font-bold">Détail du module</h2>
+          {!studentOnly && (
+            <span className="text-xs text-muted-foreground" title="Version active lue par les apprenants">
+              {lastDbUpdatedAt
+                ? `Version active : ${new Date(lastDbUpdatedAt).getTime()} — publiée le ${new Date(lastDbUpdatedAt).toLocaleString("fr-FR")}`
+                : "Version active : non publiée"}
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-2">
           {[4, 9, 81, 82].includes(Number(module.id)) && (

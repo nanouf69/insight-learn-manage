@@ -25,8 +25,13 @@ export function useLiveExamens(): { examens: ExamenBlanc[]; isLoading: boolean; 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: LIVE_EXAMENS_QUERY_KEY,
     queryFn: fetchLiveExamens,
-    staleTime: 30_000,
+    // SOURCE UNIQUE : aucune fenêtre de fraîcheur. Chaque ouverture, montage,
+    // F5 ou retour d'onglet relit la version active serveur. Aucune version
+    // conservée en cache entre deux affichages.
+    staleTime: 0,
+    gcTime: 0,
     refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
     refetchOnMount: "always",
     retry: 1,
   });
