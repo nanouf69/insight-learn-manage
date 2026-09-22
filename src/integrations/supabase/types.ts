@@ -1650,6 +1650,30 @@ export type Database = {
           },
         ]
       }
+      core_bridge_flags: {
+        Row: {
+          actif: boolean
+          cle: string
+          motif: string | null
+          updated_at: string
+          updated_email: string | null
+        }
+        Insert: {
+          actif?: boolean
+          cle: string
+          motif?: string | null
+          updated_at?: string
+          updated_email?: string | null
+        }
+        Update: {
+          actif?: boolean
+          cle?: string
+          motif?: string | null
+          updated_at?: string
+          updated_email?: string | null
+        }
+        Relationships: []
+      }
       core_exam_results: {
         Row: {
           apprenant_id: string
@@ -5272,6 +5296,7 @@ export type Database = {
           reponses: Json
           reponses_meta: Json
           score: number | null
+          source_noyau: string | null
           status: string
           submitted_at: string | null
           tentative: number
@@ -5291,6 +5316,7 @@ export type Database = {
           reponses?: Json
           reponses_meta?: Json
           score?: number | null
+          source_noyau?: string | null
           status?: string
           submitted_at?: string | null
           tentative?: number
@@ -5310,6 +5336,7 @@ export type Database = {
           reponses?: Json
           reponses_meta?: Json
           score?: number | null
+          source_noyau?: string | null
           status?: string
           submitted_at?: string | null
           tentative?: number
@@ -5903,6 +5930,7 @@ export type Database = {
         Args: { p_apprenant_id: string }
         Returns: undefined
       }
+      core_bridge_actif: { Args: { p_is_test: boolean }; Returns: boolean }
       core_correct_qrc: {
         Args: {
           p_commentaire?: string
@@ -5958,6 +5986,44 @@ export type Database = {
         }
         Returns: Json
       }
+      core_publish_version_contenu: {
+        Args: {
+          p_content: Json
+          p_email?: string
+          p_exam_id: string
+          p_exam_numero: string
+          p_filiere: string
+          p_is_test?: boolean
+          p_module_id: number
+          p_operation_id: string
+        }
+        Returns: {
+          content: Json
+          created_at: string
+          created_by: string | null
+          created_email: string | null
+          exam_id: string
+          exam_numero: string
+          filiere: string
+          fingerprint: string
+          id: string
+          is_test: boolean
+          module_id: number | null
+          motif: string | null
+          published_at: string | null
+          published_by: string | null
+          published_email: string | null
+          retired_at: string | null
+          statut: string
+          version_number: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "exam_content_versions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       core_purge_donnees_test: { Args: never; Returns: Json }
       core_recalc_result: {
         Args: { p_attempt_id: string }
@@ -6007,6 +6073,33 @@ export type Database = {
         Returns: boolean
       }
       core_snapshot_question_ids: { Args: { p_node: Json }; Returns: string[] }
+      core_start_attempt: {
+        Args: {
+          p_apprenant_id: string
+          p_exam_id: string
+          p_is_test?: boolean
+          p_matiere: string
+          p_operation_id: string
+        }
+        Returns: {
+          apprenant_id: string
+          attempt_id: string
+          etat: string
+          exam_id: string
+          exam_version_id: string
+          finished_at: string | null
+          is_test: boolean
+          snapshot: Json
+          snapshot_fingerprint: string
+          started_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "exam_attempts_v2"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       daitch_mokotoff: { Args: { "": string }; Returns: string[] }
       dmetaphone: { Args: { "": string }; Returns: string }
       dmetaphone_alt: { Args: { "": string }; Returns: string }
@@ -6254,6 +6347,7 @@ export type Database = {
           reponses: Json
           reponses_meta: Json
           score: number | null
+          source_noyau: string | null
           status: string
           submitted_at: string | null
           tentative: number
@@ -6487,6 +6581,7 @@ export type Database = {
           reponses: Json
           reponses_meta: Json
           score: number | null
+          source_noyau: string | null
           status: string
           submitted_at: string | null
           tentative: number
