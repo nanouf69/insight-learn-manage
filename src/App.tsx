@@ -35,6 +35,8 @@ import AdminAuditModules from "./pages/AdminAuditModules";
 import AdminAuditDBvsLearner from "./pages/AdminAuditDBvsLearner";
 import AdminCorrectionQrcV2Reel from "./pages/AdminCorrectionQrcV2Reel";
 import PiloteApprenantTest from "./pages/PiloteApprenantTest";
+import PiloteCorrectionTest from "./pages/PiloteCorrectionTest";
+
 import AdminCorrectionQrcV2 from "./pages/AdminCorrectionQrcV2";
 
 import DocumentASignerPublic from "./pages/DocumentASignerPublic";
