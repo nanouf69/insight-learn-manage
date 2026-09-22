@@ -1209,6 +1209,35 @@ export default function ExamensBlancsPage({
     return <ExamensBlancsEditor onBack={() => setPhase("selection")} pausedExamIds={pausedExamIds} onPauseToggle={handlePauseToggle} />;
   }
 
+  // BLOCAGE STRICT : aucune question tant que la version exacte n'est pas confirmée.
+  if (phase === "selection" && !liveExamensLoaded) {
+    return (
+      <div className="max-w-xl mx-auto">
+        <Card className={liveExamensError ? "border-red-300" : undefined}>
+          <CardContent className="py-10 text-center space-y-4">
+            {liveExamensError ? (
+              <>
+                <AlertTriangle className="w-10 h-10 mx-auto text-red-600" />
+                <p className="font-semibold text-red-700">{EXAM_CONTENT_UNAVAILABLE_MESSAGE}</p>
+                <Button
+                  onClick={() => { setLiveExamensError(false); void refreshLiveExamens({ force: true }); }}
+                  className="gap-2"
+                >
+                  <RotateCcw className="w-4 h-4" /> Réessayer
+                </Button>
+              </>
+            ) : (
+              <>
+                <Loader2 className="w-8 h-8 mx-auto animate-spin text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">Chargement de la version officielle de l'examen…</p>
+              </>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   if (phase === "selection") {
     return (
       <>
