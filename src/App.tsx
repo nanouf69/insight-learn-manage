@@ -34,6 +34,7 @@ import AdminAuditT3P from "./pages/AdminAuditT3P";
 import AdminAuditModules from "./pages/AdminAuditModules";
 import AdminAuditDBvsLearner from "./pages/AdminAuditDBvsLearner";
 import AdminCorrectionQrcV2Reel from "./pages/AdminCorrectionQrcV2Reel";
+import AdminPublicationV2 from "./pages/AdminPublicationV2";
 import PiloteApprenantTest from "./pages/PiloteApprenantTest";
 import PiloteCorrectionTest from "./pages/PiloteCorrectionTest";
 
@@ -192,6 +193,11 @@ function App() {
                 <Route path="/admin/correction-qrc-v2-maquette" element={
                   <ProtectedRoute>
                     <ErrorBoundary><AdminCorrectionQrcV2 /></ErrorBoundary>
+                  </ProtectedRoute>
+                } />
+                <Route path="/admin/publication-v2" element={
+                  <ProtectedRoute>
+                    <ErrorBoundary><AdminPublicationV2 /></ErrorBoundary>
                   </ProtectedRoute>
                 } />
                 <Route path="/pilote-apprenant-test" element={
