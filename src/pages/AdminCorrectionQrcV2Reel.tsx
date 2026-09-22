@@ -453,7 +453,7 @@ export default function AdminCorrectionQrcV2Reel() {
             </div>
 
             <div className="rounded-lg border-2 border-primary/40 bg-primary/5 p-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-primary">🧑 Réponse de l'apprenant</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-primary">Réponse de l'apprenant</p>
               <p data-testid="reponse-eleve" className="whitespace-pre-wrap text-lg leading-relaxed">
                 {texte(qrcSel.reponse) || "(copie vide)"}
               </p>
