@@ -18,7 +18,7 @@ Pré-requis avant Phase 1 (demande du 22/09, 21h22) :
 7. Test de charge sur données fictives : charge du 22/09 puis ×2 et ×3 ; dimensionnement de l'instance décidé APRÈS ce test.
 
 ## Suivi en cours (lecture seule, sans modification)
-- 15 matières EB3 en cours à 19h46 : confirmer la resynchronisation élève par élève (🟢/🟠/🔴).
+- Point 21h28 : MTIMET Chokri 🟢 (matière EB3 complète envoyée et finalisée à 21h12 Paris). SAWADOGO : 1 seule écriture réussie à 21h23 Paris, plus aucune boucle détectée. Les 15 élèves restent 🟠 — dernière écriture serveur toujours 19h35–19h45 Paris, aucun retour depuis le rétablissement. MTIMET prouve que la chaîne fonctionne ; il ne valide pas les files locales des 15.
 
 ## Décisions utilisateur en attente
 - Affichage des QRC corrigées automatiquement (2 333) en orange plutôt qu'en vert.
