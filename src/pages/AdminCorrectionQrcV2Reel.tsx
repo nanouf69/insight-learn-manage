@@ -455,28 +455,49 @@ export default function AdminCorrectionQrcV2Reel() {
                           }
                           const restaure = baremeRestaureDe.get(inst.qrc_instance_id) ?? null;
                           const points = qt?.points ?? restaure?.bareme ?? null;
-                          // 🟢 corrigée (même 0 point) · 🟠 problème à traiter · 🔴 travail restant
+                          // 🟢 corrigée par un formateur · 🟠 correction automatique historique
+                          // ◻️ origine non tracée · ⚠️ barème absent · 🔴 travail restant
                           const corrigee = inst.etat === "corrigee";
+                          const origine = origineCorrection(inst);
                           const probleme = !corrigee && points == null;
                           const vide = !texte(inst.reponse).trim();
+                          const note = `${String(inst.note).replace(".", ",")}${points != null ? `/${points}` : ""}`;
+                          const style = corrigee
+                            ? origine === "humaine"
+                              ? "border-success bg-success/20 text-success"
+                              : origine === "automatique"
+                                ? "border-warning bg-warning/20 text-warning"
+                                : "border-muted-foreground/50 bg-muted text-muted-foreground"
+                            : probleme
+                              ? "border-warning border-dashed bg-transparent text-warning"
+                              : "border-destructive bg-destructive/15 text-destructive";
+                          const libelle = corrigee
+                            ? origine === "humaine"
+                              ? `✓ ${note}`
+                              : origine === "automatique"
+                                ? `≈ ${note} · auto`
+                                : `? ${note} · origine à vérifier`
+                            : probleme
+                              ? "⚠️ Barème absent"
+                              : `À corriger (/${points})${vide ? " · copie vide" : ""}`;
                           return (
                             <td key={q.id} className="px-1 py-1">
                               <button
                                 data-testid={`cellule-${inst.qrc_instance_id}`}
-                                onClick={() => { setSelection(inst.qrc_instance_id); setNote(null); setEtatEnvoi("vide"); }}
-                                className={`rounded border-2 px-2 py-1 font-medium whitespace-nowrap ${
+                                data-origine={corrigee ? origine : "aucune"}
+                                title={
                                   corrigee
-                                    ? "border-success bg-success/20 text-success"
-                                    : probleme
-                                      ? "border-warning bg-warning/20 text-warning"
-                                      : "border-destructive bg-destructive/15 text-destructive"
-                                }`}
+                                    ? origine === "humaine"
+                                      ? "Correction humaine vérifiée"
+                                      : origine === "automatique"
+                                        ? "Correction automatique historique (non validée par un formateur)"
+                                        : "Origine de la correction non tracée"
+                                    : undefined
+                                }
+                                onClick={() => { setSelection(inst.qrc_instance_id); setNote(null); setEtatEnvoi("vide"); }}
+                                className={`rounded border-2 px-2 py-1 font-medium whitespace-nowrap ${style}`}
                               >
-                                {corrigee
-                                  ? `✓ ${String(inst.note).replace(".", ",")}${points != null ? `/${points}` : ""}`
-                                  : probleme
-                                    ? "⚠️ Barème absent"
-                                    : `À corriger (/${points})${vide ? " · copie vide" : ""}`}
+                                {libelle}
                               </button>
                             </td>
                           );
