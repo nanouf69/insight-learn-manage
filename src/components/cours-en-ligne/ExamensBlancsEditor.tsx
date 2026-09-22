@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { tousLesExamens, getPointsParQuestion, applyOfficialCoefficient, type ExamenBlanc, type Matiere, type Question, type Choix } from "./examens-blancs-data";
 import { mergeQuestionsForMatiere, moveQuestionToPosition, normalizeQcmChoiceLetters } from "./examens-blancs-utils";
+import { ExamContentUnavailableError, isExamContentUnavailable, EXAM_CONTENT_UNAVAILABLE_MESSAGE } from "./exam-content-integrity";
 import { getSeuilEliminatoireAffiche } from "./examens-blancs-scoring";
 // Contrôle visuel des anomalies — LECTURE SEULE, aucune correction automatique.
 import { detectExamenAnomalies, getCorrectionsMatiere } from "./examens-blancs-anomalies";
@@ -361,12 +362,13 @@ export async function loadSavedExamens(notifyRepairs: boolean = false): Promise<
     
     if (error) {
       console.error("[ExamensEditor] Error loading saved exams:", error);
-      // On error, return source data (no stale cache)
-      repairCorrectFlags(examens, notifyRepairs);
-      syncVtcTaxiMatieres(examens);
-      syncVtcVaMatieres(examens);
-      syncTaxiTaMatieres(examens);
-      return examens;
+      // AUCUN REPLI : jamais de contenu statique ni de copie par position.
+      // Tant que la version active n'est pas confirmée, rien n'est servi.
+      throw new ExamContentUnavailableError(error.message);
+    }
+
+    if (!data || data.length === 0) {
+      throw new ExamContentUnavailableError("Aucune version active enregistrée");
     }
 
     if (data && data.length > 0) {
@@ -510,7 +512,9 @@ export async function loadSavedExamens(notifyRepairs: boolean = false): Promise<
     }
   } catch (err) {
     console.error("[ExamensEditor] Error loading saved exams:", err);
-    // On error, return source data (no stale cache)
+    // AUCUN REPLI : on propage l'échec, aucune question n'est servie.
+    if (isExamContentUnavailable(err)) throw err;
+    throw new ExamContentUnavailableError(err instanceof Error ? err.message : "Lecture impossible");
   }
   
   // Repair any missing correct flags (serialization safety net).
@@ -1559,7 +1563,13 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
 
 
   useEffect(() => {
-    loadSavedExamens(true).then(async (loadedExamens) => {
+    loadSavedExamens(true).catch((err) => {
+      console.error("[ExamensEditor] Chargement impossible", err);
+      toast.error(EXAM_CONTENT_UNAVAILABLE_MESSAGE);
+      return null;
+    }).then(async (loaded) => {
+      if (!loaded) return;
+      const loadedExamens: ExamenBlanc[] = loaded as ExamenBlanc[];
       setExamens(loadedExamens);
       lastSavedFingerprintRef.current = JSON.stringify(loadedExamens);
       lastSavedModuleFingerprintsRef.current = loadedExamens.reduce<Record<number, string>>((acc, ex) => {

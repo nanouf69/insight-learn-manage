@@ -39,6 +39,12 @@ import { computeMatiereScore, computeMatiereScoreForAttempt, resolveMatiereForSc
 import { excludeResultPlaceholders, mergePassageSiblingRows } from "./exam-helpers";
 import { buildFinalizationKey, runFinalizationOnce, resolveIdempotentTentative } from "@/lib/examFinalizationGuard";
 import { syncQrcInstances } from "@/lib/qrcInstances";
+import {
+  buildExamFingerprint,
+  buildMatiereFingerprint,
+  buildAttemptSnapshot,
+  EXAM_CONTENT_UNAVAILABLE_MESSAGE,
+} from "./exam-content-integrity";
 
 /** Texte exact de la réponse QRC de l'élève (jamais reformaté ni corrigé). */
 function safeQrcAnswerText(value: unknown): string {
@@ -149,12 +155,17 @@ export default function ExamensBlancsPage({
   const [lastMatiereResult, setLastMatiereResult] = useState<ResultatMatiere | null>(null);
   const [isViewingSavedResults, setIsViewingSavedResults] = useState(false);
   const [bilanPrefiltre, setBilanPrefiltre] = useState<string | null>(null);
-  const [liveExamens, setLiveExamens] = useState<ExamenBlanc[]>(tousLesExamens);
+  // AUCUN REPLI STATIQUE : tant que la version active n'est pas confirmée,
+  // la liste reste vide et aucune question n'est affichée.
+  const [liveExamens, setLiveExamens] = useState<ExamenBlanc[]>([]);
   const [liveExamensLoaded, setLiveExamensLoaded] = useState(false);
+  const [liveExamensError, setLiveExamensError] = useState(false);
   const [selectionRefreshKey, setSelectionRefreshKey] = useState(0);
   const [isReloadingQuestions, setIsReloadingQuestions] = useState(false);
   const examStartTimeRef = useRef<number>(savedSession?.examStartTime || Date.now());
   const reloadInFlightRef = useRef<Promise<ExamenBlanc[]> | null>(null);
+  /** Empreinte de la version figée pour la tentative en cours (jamais recalculée en cours d'examen). */
+  const attemptFingerprintRef = useRef<string | null>(null);
   const [loadTimeout, setLoadTimeout] = useState(false);
   const [pausedExamIds, setPausedExamIds] = useState<Set<string>>(new Set());
   const [currentTentative, setCurrentTentative] = useState<number>(1);
@@ -193,6 +204,7 @@ export default function ExamensBlancsPage({
         const saved = await loadSavedExamens();
         logSecurityImageDebug(saved, force ? "manual-refetch" : "auto-refetch");
         setLiveExamens(saved);
+        setLiveExamensError(false);
         setLiveExamensLoaded(true);
         // CRITICAL: Never replace examenChoisi during an active exam or results display
         // to prevent question reordering that causes answer mismatches
@@ -204,6 +216,12 @@ export default function ExamensBlancsPage({
           return applyMatiereFilter(next, matiereFilterRef.current);
         });
         return saved;
+      } catch (err) {
+        // Version active non confirmée : on n'affiche AUCUNE question.
+        // Le contenu déjà chargé reste inchangé, rien n'est remplacé.
+        console.error("[ExamensBlancs] Version active indisponible", err);
+        setLiveExamensError(true);
+        return [] as ExamenBlanc[];
       } finally {
         clearTimeout(timeoutTimer);
         setLoadTimeout(false);
@@ -464,7 +482,38 @@ export default function ExamensBlancsPage({
   const handleStart = async (examen: ExamenBlanc, forceRetake = false, matiereIds?: string[] | null) => {
     // matiereIds === undefined → on conserve le filtre courant ; null → mode complet
     if (matiereIds !== undefined) setMatiereFilter(matiereIds);
-    const latestExamen = applyMatiereFilter(liveExamens.find((live) => live.id === examen.id) ?? examen, matiereFilterRef.current)!;
+
+    // ── CONTRÔLE AVANT DÉMARRAGE ──────────────────────────────────────────
+    // Version base rechargée à l'instant = version affichée = photo attribuée.
+    // Si l'empreinte ne correspond pas : REFUS du démarrage, aucune réparation.
+    let versionBase: ExamenBlanc[];
+    try {
+      versionBase = await loadSavedExamens();
+    } catch (err) {
+      console.error("[ExamensBlancs] Démarrage refusé — version active indisponible", err);
+      setLiveExamensError(true);
+      toast.error(EXAM_CONTENT_UNAVAILABLE_MESSAGE);
+      return;
+    }
+    const examenBase = versionBase.find((e) => e.id === examen.id);
+    if (!examenBase) {
+      toast.error(EXAM_CONTENT_UNAVAILABLE_MESSAGE);
+      return;
+    }
+    const examenAffiche = liveExamens.find((live) => live.id === examen.id);
+    if (examenAffiche && buildExamFingerprint(examenAffiche) !== buildExamFingerprint(examenBase)) {
+      setLiveExamens(versionBase);
+      toast.error("La version de cet examen vient d'être mise à jour. Relancez le démarrage pour recevoir la version officielle.");
+      return;
+    }
+
+    // ── PHOTO EXACTE DE LA VERSION ACTIVE ─────────────────────────────────
+    // Copie complète et indépendante : examen + numéro + matières + IDs +
+    // énoncés + propositions + bonnes réponses + QCM/QRC + barèmes + images.
+    // Cette photo reste attachée à la tentative jusqu'à sa fin.
+    const snapshotExamen = buildAttemptSnapshot(examenBase);
+    attemptFingerprintRef.current = buildExamFingerprint(examenBase);
+    const latestExamen = applyMatiereFilter(snapshotExamen, matiereFilterRef.current)!;
     const quizType = latestExamen.id.startsWith("bilan-") ? "bilan" : "examen_blanc";
 
     let nextTentative = 1;
@@ -893,12 +942,12 @@ export default function ExamensBlancsPage({
   const saveMatiereResultInner = async ({ examen, matiere, resultat, dureeSecondes }: { examen: ExamenBlanc; matiere: Matiere; resultat: ResultatMatiere; dureeSecondes: number }) => {
     if (!apprenantId || !userId) return;
     let rawQuestions = matiere?.questions || [];
-    // FIX: fallback to source data when matiere.questions is empty (frozen examenChoisi)
-    if (rawQuestions.length === 0 && matiere?.id) {
-      for (const srcExam of tousLesExamens) {
-        const srcMat = srcExam.matieres.find(m => m.id === matiere.id);
-        if (srcMat?.questions?.length) { rawQuestions = srcMat.questions; break; }
-      }
+    // AUCUN REPLI STATIQUE : si la matière figée ne porte aucune question, on
+    // n'invente rien à partir du fichier d'origine. Aucune écriture n'est faite.
+    if (rawQuestions.length === 0) {
+      console.error("[ExamSubmission][EB] Matière sans question figée — enregistrement refusé", matiere?.id);
+      toast.error(EXAM_CONTENT_UNAVAILABLE_MESSAGE);
+      return false;
     }
     const questionsSafe = rawQuestions.filter(q => q != null);
     const frozenCorrections: Record<string, any> = {};
@@ -942,6 +991,12 @@ export default function ExamensBlancsPage({
     // modification Admin ultérieure ne pourra plus transformer cette tentative.
     const snapshot = {
       version: MATIERE_SNAPSHOT_VERSION,
+      // Empreintes de la version figée au démarrage : permettent de repérer
+      // plus tard un passage réalisé sur une version antérieure de l'examen.
+      examenId: examen.id,
+      examenNumero: (examen as any).numero ?? null,
+      examFingerprint: attemptFingerprintRef.current,
+      matiereFingerprint: buildMatiereFingerprint({ ...matiere, questions: questionsSafe } as any),
       matiereId: matiere.id,
       nom: matiere.nom,
       noteSur: matiere.noteSur,
@@ -1197,6 +1252,35 @@ export default function ExamensBlancsPage({
   // ===== RENDER =====
   if (phase === "edition") {
     return <ExamensBlancsEditor onBack={() => setPhase("selection")} pausedExamIds={pausedExamIds} onPauseToggle={handlePauseToggle} />;
+  }
+
+  // BLOCAGE STRICT : aucune question tant que la version exacte n'est pas confirmée.
+  if (phase === "selection" && !liveExamensLoaded) {
+    return (
+      <div className="max-w-xl mx-auto">
+        <Card className={liveExamensError ? "border-red-300" : undefined}>
+          <CardContent className="py-10 text-center space-y-4">
+            {liveExamensError ? (
+              <>
+                <AlertTriangle className="w-10 h-10 mx-auto text-red-600" />
+                <p className="font-semibold text-red-700">{EXAM_CONTENT_UNAVAILABLE_MESSAGE}</p>
+                <Button
+                  onClick={() => { setLiveExamensError(false); void refreshLiveExamens({ force: true }); }}
+                  className="gap-2"
+                >
+                  <RotateCcw className="w-4 h-4" /> Réessayer
+                </Button>
+              </>
+            ) : (
+              <>
+                <Loader2 className="w-8 h-8 mx-auto animate-spin text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">Chargement de la version officielle de l'examen…</p>
+              </>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   if (phase === "selection") {

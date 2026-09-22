@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 import { toast } from "sonner";
 import { tousLesExamens, getPointsParQuestion, type ExamenBlanc, type Matiere } from "./examens-blancs-data";
+import { EXAM_CONTENT_UNAVAILABLE_MESSAGE } from "./exam-content-integrity";
 import { loadSavedExamens } from "./ExamensBlancsEditor";
 import { buildExamenMap, findMatiereWithFallback, getSourceQuestions, computeReussiForResult, isResultPlaceholder, isQrcAnswerCertainlyEmpty, isExamAttemptPublicationPending, isMatiereQrcPendingForAttempt } from "./exam-helpers";
 import { loadQrcEngineQuizIds, fetchQrcEngineAttemptIds, buildQrcAttemptId } from "@/lib/qrcInstances";
@@ -643,8 +644,14 @@ const CorrectionQRCTab = () => {
   // Load examens (source + saved)
   useEffect(() => {
     const load = async () => {
-      const saved = await loadSavedExamens(true);
-      setExamenMap(buildExamenMap(tousLesExamens, saved));
+      try {
+        const saved = await loadSavedExamens(true);
+        setExamenMap(buildExamenMap(tousLesExamens, saved));
+      } catch (err) {
+        // Version active non confirmée : on n'affiche aucune question.
+        console.error("[CorrectionQRC] Chargement des examens impossible", err);
+        toast.error(EXAM_CONTENT_UNAVAILABLE_MESSAGE);
+      }
     };
     load();
   }, []);

@@ -4,20 +4,11 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BarChart3, Bot, CheckCircle2, XCircle, Trophy, BookOpen } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { EXAMENS_BLANCS_VTC, EXAMENS_BLANCS_TAXI, EXAMENS_BLANCS_TA, EXAMENS_BLANCS_VA } from "@/components/cours-en-ligne/examens-blancs-data";
 import { loadSavedExamens } from "@/components/cours-en-ligne/ExamensBlancsEditor";
 import { computeMoyenneExamen, computeMatiereScoreForAttempt } from "@/components/cours-en-ligne/examens-blancs-scoring";
 import { findScoreForMatiere, buildMatiereLookupKeys } from "@/components/cours-en-ligne/examens-blancs-utils";
 import { isExamAttemptPublicationPending, excludeResultPlaceholders, mergePassageSiblingRows } from "@/components/cours-en-ligne/exam-helpers";
-
-// Repli statique uniquement : la source de vérité affichée est la définition
-// enregistrée en base (identique à l'écran apprenant), chargée via loadSavedExamens().
-const STATIC_EXAMENS_BLANCS = [
-  ...EXAMENS_BLANCS_VTC,
-  ...EXAMENS_BLANCS_TAXI,
-  ...EXAMENS_BLANCS_TA,
-  ...EXAMENS_BLANCS_VA,
-];
+import { isSnapshotOutdated } from "@/components/cours-en-ligne/exam-content-integrity";
 
 interface ResultatsApprenantTabProps {
   apprenantId: string;
@@ -29,13 +20,15 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
   const [quizResults, setQuizResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   // Définitions d'examens réellement en vigueur (base), identiques à l'espace apprenant
-  const [liveExamens, setLiveExamens] = useState<any[]>(STATIC_EXAMENS_BLANCS);
+  // AUCUN REPLI STATIQUE : tant que la version active n'est pas chargée, rien n'est comparé.
+  const [liveExamens, setLiveExamens] = useState<any[]>([]);
+  const [liveExamensError, setLiveExamensError] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     loadSavedExamens()
       .then((rows) => { if (!cancelled && Array.isArray(rows) && rows.length) setLiveExamens(rows as any[]); })
-      .catch(() => { /* repli sur la définition statique */ });
+      .catch(() => { if (!cancelled) setLiveExamensError(true); });
     return () => { cancelled = true; };
   }, []);
 
@@ -114,6 +107,11 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          {liveExamensError && (
+            <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-3 py-2 text-sm">
+              🔴 Impossible de charger la version officielle des examens. Les notes affichées peuvent être incomplètes. Vérifiez votre connexion puis rechargez la page.
+            </div>
+          )}
           {sortedExams.length === 0 ? (
             <p className="text-muted-foreground text-sm">Aucun examen blanc réalisé pour le moment.</p>
           ) : (
@@ -142,6 +140,15 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
               // les nouveaux résultats → on vérifie AUSSI chaque QRC de la définition
               // d'examen contre les corrections validées manuellement.
                const enAttenteCorrection = isExamAttemptPublicationPending(exam.matieres, examenDef);
+              // LECTURE SEULE : signale un passage réalisé sur une version
+              // antérieure de l'examen. Aucune note n'est recalculée ni corrigée.
+              const versionAnterieure = exam.matieres.some((m: any) => {
+                const snap = m?.details?.snapshot;
+                const def = examenDef?.matieres.find(
+                  (md: any) => md.id === m.matiere_id || md.nom === m.matiere_nom,
+                );
+                return isSnapshotOutdated(snap, def as any);
+              });
 
               return (
                 <div key={quizId} className="border rounded-lg p-4 space-y-3">
@@ -155,6 +162,11 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
                       ) : (
                         <Badge variant={isReussi ? "default" : "destructive"} className="text-xs">
                           {isReussi ? "Réussi ✅" : "Échoué ❌"}
+                        </Badge>
+                      )}
+                      {versionAnterieure && (
+                        <Badge variant="outline" className="text-xs border-amber-400 text-amber-700">
+                          ⚠️ Version antérieure de l'examen
                         </Badge>
                       )}
                     </div>
