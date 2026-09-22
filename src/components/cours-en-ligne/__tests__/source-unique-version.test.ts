@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect } from "vitest";
 import { buildQuestionsFingerprint, buildAttemptSnapshot } from "../exam-content-integrity";
 
@@ -75,6 +76,25 @@ describe("Source unique : Admin = version active serveur = apprenant", () => {
     server.publish([makeQuestion("C")]);
     const lectures = [server.read(), server.read(), server.read()];
     expect(lectures.every((l) => l.fingerprint !== ancienne.fingerprint)).toBe(true);
+  });
+
+  it("TEST PERMANENT : modification Admin -> sauvegarde confirmée -> F5 apprenant -> empreinte apprenant = empreinte serveur", () => {
+    // Si ce test échoue un jour, le déploiement doit être considéré comme NON VALIDE.
+    const server = new FakeServer();
+
+    // Admin modifie et la sauvegarde est confirmée par le serveur
+    const nouvelleVersion = server.publish([makeQuestion("C")]);
+    expect(nouvelleVersion).toBeGreaterThan(1);
+
+    // Empreinte officielle côté serveur après sauvegarde confirmée
+    const empreinteServeur = server.read().fingerprint;
+
+    // F5 apprenant : nouvelle lecture de la version active
+    const lectureApprenant = server.read();
+
+    // Égalité stricte : l'apprenant voit exactement ce que le serveur a confirmé
+    expect(lectureApprenant.fingerprint).toBe(empreinteServeur);
+    expect(lectureApprenant.version).toBe(nouvelleVersion);
   });
 
   it("une tentative déjà commencée garde son snapshot, une nouvelle tentative prend la version active", () => {
