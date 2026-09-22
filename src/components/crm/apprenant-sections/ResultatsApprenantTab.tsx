@@ -107,6 +107,11 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          {liveExamensError && (
+            <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-3 py-2 text-sm">
+              🔴 Impossible de charger la version officielle des examens. Les notes affichées peuvent être incomplètes. Vérifiez votre connexion puis rechargez la page.
+            </div>
+          )}
           {sortedExams.length === 0 ? (
             <p className="text-muted-foreground text-sm">Aucun examen blanc réalisé pour le moment.</p>
           ) : (
