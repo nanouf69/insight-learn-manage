@@ -29,6 +29,14 @@ import {
   subscribeAnswerSaveState,
 } from "@/lib/answerPersistence";
 import { buildExamMatiereExerciceId } from "@/lib/quizAttempts";
+import {
+  pontActifPour,
+  demarrerTentative,
+  enfilerReponseNoyau,
+  viderFileNoyau,
+  finaliserMatiere,
+  reponsesNoyauEnAttente,
+} from "@/features/noyau-passage/pontV2";
 
 
 // ===== PASSAGE D'UNE MATIÈRE =====
