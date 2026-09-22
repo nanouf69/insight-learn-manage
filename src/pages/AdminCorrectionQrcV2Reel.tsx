@@ -202,15 +202,19 @@ export default function AdminCorrectionQrcV2Reel() {
     return Array.from(m.values()).sort((a, b) => (a.lettre ?? "").localeCompare(b.lettre ?? ""));
   }, [session]);
 
-  const valider = async () => {
-    if (!qrcSel || note === null) return;
+  const valider = async (valeur?: number) => {
+    const n = valeur ?? note;
+    if (!qrcSel || n === null || n === undefined) return;
+    if (etatEnvoi === "encours") return;
+    setNote(n);
     setEtatEnvoi("encours");
     setErreur(null);
     try {
       await corrigerQrc({
-        operationId: crypto.randomUUID(),
+        // identité déterministe : 10 envois = une seule correction
+        operationId: `qrcv2:${qrcSel.qrc_instance_id}:${n}`,
         qrcInstanceId: qrcSel.qrc_instance_id,
-        note,
+        note: n,
         commentaire: commentaire || undefined,
       });
       setEtatEnvoi("ok");
