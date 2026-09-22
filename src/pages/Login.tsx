@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Eye, EyeOff, Loader2, ArrowLeft, KeyRound } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -35,10 +35,17 @@ export default function Login() {
   const [forgotEmail, setForgotEmail] = useState('');
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
 
+  // Revenir sur la page demandée initialement (section, onglet, session…), sinon l'accueil.
   const redirectAfterLogin = useCallback(() => {
-    navigate('/', { replace: true });
-  }, [navigate]);
+    const from = (location.state as { from?: string } | null)?.from;
+    const cible =
+      from && from.startsWith('/') && !from.startsWith('//') && !from.startsWith('/login')
+        ? from
+        : '/';
+    navigate(cible, { replace: true });
+  }, [navigate, location.state]);
 
   useEffect(() => {
     let isActive = true;
