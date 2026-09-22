@@ -302,6 +302,13 @@
       "when": 1790023839775,
       "tag": "0042_canonical_update_question_refusal_logging",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1790069409622,
+      "tag": "0043_exam_retake_authorizations",
+      "breakpoints": true
     }
   ]
 }

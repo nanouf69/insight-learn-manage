@@ -2186,6 +2186,45 @@ export type Database = {
         }
         Relationships: []
       }
+      exam_retake_authorizations: {
+        Row: {
+          apprenant_id: string
+          consumed_at: string | null
+          created_at: string
+          exam_id: string
+          granted_by: string | null
+          granted_email: string | null
+          id: string
+          motif: string
+          result_ids: Json
+          revoked_at: string | null
+        }
+        Insert: {
+          apprenant_id: string
+          consumed_at?: string | null
+          created_at?: string
+          exam_id: string
+          granted_by?: string | null
+          granted_email?: string | null
+          id?: string
+          motif?: string
+          result_ids?: Json
+          revoked_at?: string | null
+        }
+        Update: {
+          apprenant_id?: string
+          consumed_at?: string | null
+          created_at?: string
+          exam_id?: string
+          granted_by?: string | null
+          granted_email?: string | null
+          id?: string
+          motif?: string
+          result_ids?: Json
+          revoked_at?: string | null
+        }
+        Relationships: []
+      }
       examens_blancs_audit_log: {
         Row: {
           action: string

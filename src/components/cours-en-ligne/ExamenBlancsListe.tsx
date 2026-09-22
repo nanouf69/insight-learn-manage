@@ -60,6 +60,25 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
   // Fin de la dernière tentative réellement passée (terminée ou en attente de
   // correction QRC) — sert au délai de 48 h avant une NOUVELLE tentative.
   const [lastFinishedByExam, setLastFinishedByExam] = useState<Record<string, number>>({});
+  // Autorisations exceptionnelles accordées par un Admin (passage effectué sur
+  // une version erronée) : elles lèvent UNIQUEMENT le délai de 48 h.
+  // Aucune ancienne tentative, note ou QRC n'est touchée.
+  const [retakeAuthorizedExamIds, setRetakeAuthorizedExamIds] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    if (!apprenantId) return;
+    let cancelled = false;
+    supabase
+      .from("exam_retake_authorizations" as any)
+      .select("exam_id")
+      .eq("apprenant_id", apprenantId)
+      .is("consumed_at", null)
+      .is("revoked_at", null)
+      .then(({ data }) => {
+        if (cancelled || !data) return;
+        setRetakeAuthorizedExamIds(new Set((data as any[]).map((r) => String(r.exam_id))));
+      });
+    return () => { cancelled = true; };
+  }, [apprenantId, refreshKey]);
   const [nowTick, setNowTick] = useState<number>(() => Date.now());
   useEffect(() => {
     const id = setInterval(() => setNowTick(Date.now()), 60_000);
@@ -490,7 +509,8 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
               // 2 jours complets après la fin de la précédente. La reprise
               // d'une tentative EN COURS reste toujours autorisée.
               const retakeLock = computeExamRetakeLock(lastFinishedByExam[examen.id] ?? null, nowTick);
-              const retakeBlocked = isCompleted && !openAttemptIds.has(examen.id) && retakeLock.locked;
+              const retakeAuthorized = retakeAuthorizedExamIds.has(examen.id);
+              const retakeBlocked = isCompleted && !openAttemptIds.has(examen.id) && retakeLock.locked && !retakeAuthorized;
               const canRetake = !retakeBlocked;
               const canStartExam = true;
               const scores = examScores[examen.id] || [];
@@ -703,6 +723,11 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
                         ▶ Reprendre ma tentative en cours
                         <ChevronRight className="w-4 h-4" />
                       </Button>
+                    )}
+                    {retakeAuthorized && isCompleted && (
+                      <div className="mt-2 rounded-lg border-2 border-blue-300 bg-blue-50 px-3 py-2 text-center text-sm font-semibold text-blue-800">
+                        ✅ Un nouveau passage vous a été autorisé. Votre passage précédent reste conservé.
+                      </div>
                     )}
                     {retakeBlocked && (
                       <div className="mt-2 rounded-lg border-2 border-slate-300 bg-slate-50 px-3 py-2 text-center text-sm font-semibold text-slate-700">
