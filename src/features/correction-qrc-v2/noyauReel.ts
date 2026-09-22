@@ -147,6 +147,14 @@ export async function chargerSessionTest(
         .in("attempt_id", attemptIds)
     : { data: [] as ResultatReel[] };
 
+  const qrcIds = (qrc ?? []).map((q) => q.qrc_instance_id);
+  const { data: baremes } = qrcIds.length
+    ? await supabase
+        .from("qrc_bareme_restaure")
+        .select("qrc_instance_id, bareme, mention, nb_preuves")
+        .in("qrc_instance_id", qrcIds)
+    : { data: [] as BaremeRestaure[] };
+
   return {
     tentatives: (attempts ?? []).map((a) => ({
       ...a,
@@ -155,6 +163,7 @@ export async function chargerSessionTest(
     })),
     qrc: (qrc ?? []) as QrcReelle[],
     resultats: (resultats ?? []) as ResultatReel[],
+    baremesRestaures: (baremes ?? []) as BaremeRestaure[],
   };
 }
 
