@@ -16,7 +16,11 @@ import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-const TRIGGER_TOKEN = Deno.env.get("MONITORING_TRIGGER_TOKEN") ?? "";
+// Jetons acceptés : jeton interne + jeton partagé remis au service externe.
+const TRIGGER_TOKENS = [
+  Deno.env.get("MONITORING_TRIGGER_TOKEN") ?? "",
+  Deno.env.get("MONITORING_SHARED_TOKEN") ?? "",
+].filter((t) => t.length > 0);
 const ALERT_EMAIL = Deno.env.get("MONITORING_ALERT_EMAIL") ?? "";
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") ?? "";
 const ALERT_WEBHOOK_URL = Deno.env.get("ALERT_WEBHOOK_URL") ?? "";
@@ -95,14 +99,18 @@ async function checkAuth(): Promise<Sonde> {
 }
 
 // ---------------------------------------------------------------- journaux
-async function ecrireJournal(entree: Record<string, unknown>): Promise<{ fichier: string | null; drain: boolean }> {
+async function ecrireJournal(
+  entree: Record<string, unknown>,
+): Promise<{ fichier: string | null; erreur?: string; drain: boolean }> {
   const now = new Date();
   const chemin = `logs/${now.toISOString().slice(0, 10)}/${now.toISOString().replace(/[:.]/g, "-")}-${entree.correlation_id}.json`;
   let fichier: string | null = null;
+  let erreur: string | undefined;
   try {
     const r = await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${chemin}`, {
       method: "POST",
       headers: {
+        apikey: SERVICE_KEY,
         Authorization: `Bearer ${SERVICE_KEY}`,
         "Content-Type": "application/json",
         "x-upsert": "false", // ajout seul : jamais d'écrasement
@@ -110,8 +118,9 @@ async function ecrireJournal(entree: Record<string, unknown>): Promise<{ fichier
       body: JSON.stringify(entree),
     });
     if (r.ok) fichier = chemin;
-  } catch (_) {
-    /* le journal ne doit jamais faire échouer la surveillance */
+    else erreur = `HTTP ${r.status} ${(await r.text()).slice(0, 200)}`;
+  } catch (e) {
+    erreur = String(e).slice(0, 200);
   }
   let drain = false;
   if (LOG_DRAIN_URL) {
@@ -130,7 +139,7 @@ async function ecrireJournal(entree: Record<string, unknown>): Promise<{ fichier
       drain = false;
     }
   }
-  return { fichier, drain };
+  return { fichier, erreur, drain };
 }
 
 // ------------------------------------------------- état de déduplication
@@ -217,7 +226,7 @@ Deno.serve(async (req) => {
 
   const url = new URL(req.url);
   const token = req.headers.get("x-monitoring-token") ?? url.searchParams.get("token") ?? "";
-  if (!TRIGGER_TOKEN || token !== TRIGGER_TOKEN) {
+  if (TRIGGER_TOKENS.length === 0 || !TRIGGER_TOKENS.includes(token)) {
     return json({ error: "unauthorized" }, 401);
   }
 
