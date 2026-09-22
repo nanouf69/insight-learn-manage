@@ -58,3 +58,41 @@ REALTIME : signal « nouvelle donnée serveur » uniquement → l'app relit le s
 
 Ces quatre points sont additifs, se posent en base (triggers/contraintes) et ne touchent aucune
 donnée existante. Ils restent en attente d'accord, comme l'étape 2.
+
+## Inventaire (lecture seule) des écritures directes encore possibles dans l'ancien système
+
+Classement par risque. Aucun de ces chemins n'a été modifié.
+
+### Risque élevé
+1. `src/components/cours-en-ligne/CorrectionQRCTab.tsx` (1511-1541, 1596-1605, 1638-1652) — `.update()` direct de
+   `apprenant_quiz_results.details.correctionsIA`. Aucune protection en base n'empêche de réécrire une QRC déjà
+   `validatedByAdmin`. C'est le chemin de correction réellement utilisé en production (le moteur `qrc_instances`
+   n'est actif que si `qrc_engine_flags.enabled` est vrai pour le quiz).
+2. `CorrectionQCMTab.tsx:327-335` et `CorrectionQRCTab.tsx:1511-1541` — `.update()` direct de `score_obtenu`,
+   `note_sur_20`, `reussi`. Seule protection : `protect_nonzero_quiz_score_on_update` (empêche seulement le retour à 0).
+   Pas de compare-and-swap : deux corrections concurrentes s'écrasent silencieusement.
+3. `ExamensBlancsResetTab.tsx` (117, 266-345) — suite de `.delete()`/`.update()` non transactionnels sur
+   `reponses_apprenants` puis `apprenant_quiz_results`. Un échec partiel laisse un état incohérent.
+
+### Risque moyen
+4. `CorrectionQCMTab.tsx:306-314` — `.update()` direct des réponses QCM dans `reponses_apprenants`, y compris sur une
+   ligne `completed=true`. Garde d'antériorité sur `updated_at`, mais pas de journal dédié.
+5. `ExamenBlancsResultats.tsx` (330, 508, 1271, 1395, 1412, 1453) — `.update()/.upsert()/.insert()/.delete()` côté
+   apprenant en fin d'examen. Les triggers `protect_reponses_apprenants_terminal` et
+   `prevent_duplicate_quiz_result_insert_for_learners` corrigent silencieusement au lieu de rejeter.
+
+### Risque faible
+6. `ModuleDetailView.tsx`, `ExamensBlancsEditor.tsx` sur `module_editor_state` / `quiz_questions_overrides` :
+   RLS admin stricte + trigger `enforce_exam_content_integrity` (refuse notamment la propagation d'une même matière
+   entre deux numéros d'examen différents) + compare-and-swap de `save_module_editor_state`.
+7. `canonical_update_question`, `canonical_exam_attempts`, `qrc_instances` : bien protégés (verrou de version,
+   snapshot immuable, correction finale) mais pilotes non branchés au parcours réel — protection non effective
+   aujourd'hui en production.
+8. `supabase/functions/backup-restore/index.ts`, `delete-apprenant-account` : écritures en masse en service_role,
+   hors parcours normal.
+
+### Conclusion
+Les trois chemins « risque élevé » sont exactement ceux que le nouveau noyau neutralise par construction
+(correction QRC finale en base, réponse versionnée avec refus de révision périmée, tentative immuable).
+Tant que l'application n'est pas basculée, ils restent ouverts : c'est une raison de continuer la migration,
+pas de la précipiter.
