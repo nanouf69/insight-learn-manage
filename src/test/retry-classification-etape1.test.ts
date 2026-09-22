@@ -1,4 +1,16 @@
+// @vitest-environment node
 import { describe, expect, it } from "vitest";
+
+// Stub minimal de localStorage (aucun DOM requis, aucune donnée réelle).
+if (typeof globalThis.localStorage === "undefined") {
+  const store = new Map<string, string>();
+  (globalThis as any).localStorage = {
+    getItem: (k: string) => (store.has(k) ? store.get(k)! : null),
+    setItem: (k: string, v: string) => void store.set(k, v),
+    removeItem: (k: string) => void store.delete(k),
+    clear: () => store.clear(),
+  };
+}
 import { classifyAnswerSaveFailure, computeRetryDelay } from "@/lib/answerPersistence";
 
 /**
