@@ -195,6 +195,10 @@ function App() {
                 <Route path="/pilote-apprenant-test" element={
                   <ErrorBoundary><PiloteApprenantTest /></ErrorBoundary>
                 } />
+                <Route path="/pilote-correction-test" element={
+                  <ErrorBoundary><PiloteCorrectionTest /></ErrorBoundary>
+                } />
+
 
 
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
