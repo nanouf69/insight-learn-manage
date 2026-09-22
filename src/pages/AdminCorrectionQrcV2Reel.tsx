@@ -39,6 +39,8 @@ export default function AdminCorrectionQrcV2Reel() {
   const [groupes, setGroupes] = useState<GroupeSessionCrm[]>([]);
   const [groupeCle, setGroupeCleState] = useState<string | null>(() => param("qrc_groupe"));
   const [ebCle, setEbCleState] = useState<string | null>(() => param("qrc_eb"));
+  // Filtre facultatif sur une seule date de passage à l'intérieur de l'EB choisi.
+  const [jourFiltre, setJourFiltreState] = useState<string | null>(() => param("qrc_date"));
   const [session, setSession] = useState<SessionReelle | null>(null);
   const [selection, setSelectionState] = useState<string | null>(() => param("qrc"));
   const [zoom, setZoomState] = useState<number>(() => {
