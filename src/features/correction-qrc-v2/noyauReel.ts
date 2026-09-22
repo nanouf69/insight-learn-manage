@@ -65,10 +65,19 @@ export type ResultatReel = {
   published_at: string | null;
 };
 
+export type BaremeRestaure = {
+  qrc_instance_id: string;
+  bareme: number;
+  mention: string;
+  nb_preuves: number;
+};
+
 export type SessionReelle = {
   tentatives: TentativeReelle[];
   qrc: QrcReelle[];
   resultats: ResultatReel[];
+  /** Barèmes historiques retrouvés par preuve concordante (jamais devinés, jamais pris sur la version actuelle). */
+  baremesRestaures: BaremeRestaure[];
 };
 
 const asSnapshot = (v: unknown) => v as SnapshotExamen;
