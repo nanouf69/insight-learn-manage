@@ -388,6 +388,30 @@ export async function chargerSessionTest(
   };
 }
 
+/**
+ * Identifiant d'opération déterministe (UUID) construit à partir d'une clé stable.
+ * Le serveur attend un uuid : la même clé produit toujours le même identifiant,
+ * donc un double-clic ou 10 envois réseau ne créent qu'une seule écriture.
+ */
+export function uuidDeterministe(cle: string): string {
+  let h1 = 0x9e3779b1, h2 = 0x85ebca6b, h3 = 0xc2b2ae35, h4 = 0x27d4eb2f;
+  for (let i = 0; i < cle.length; i++) {
+    const c = cle.charCodeAt(i);
+    h1 = Math.imul(h1 ^ c, 2654435761);
+    h2 = Math.imul(h2 ^ c, 1597334677);
+    h3 = Math.imul(h3 ^ (c + i), 2246822519);
+    h4 = Math.imul(h4 ^ (c + h1), 3266489917);
+  }
+  const hex = [h1, h2, h3, h4].map((h) => (h >>> 0).toString(16).padStart(8, "0")).join("");
+  return [
+    hex.slice(0, 8),
+    hex.slice(8, 12),
+    `5${hex.slice(13, 16)}`,
+    ((parseInt(hex.slice(16, 17), 16) & 0x3) | 0x8).toString(16) + hex.slice(17, 20),
+    hex.slice(20, 32),
+  ].join("-");
+}
+
 /** Correction formateur : événement séparé, recalcul et publication côté serveur. */
 export async function corrigerQrc(params: {
   operationId: string;
@@ -397,7 +421,7 @@ export async function corrigerQrc(params: {
   email?: string;
 }) {
   const { data, error } = await supabase.rpc("core_correct_qrc_publish", {
-    p_operation_id: params.operationId,
+    p_operation_id: uuidDeterministe(params.operationId),
     p_qrc_instance_id: params.qrcInstanceId,
     p_note: params.note,
     p_commentaire: params.commentaire ?? null,
@@ -405,6 +429,50 @@ export async function corrigerQrc(params: {
   });
   if (error) throw error;
   return data as Record<string, unknown>;
+}
+
+/**
+ * Révision volontaire d'une correction déjà validée.
+ * L'ancienne correction n'est jamais effacée : elle reste dans l'historique
+ * (qrc_correction_events) et dans le journal d'audit.
+ */
+export async function reviserQrc(params: {
+  operationId: string;
+  qrcInstanceId: string;
+  note: number;
+  noteAttendue: number;
+  commentaire?: string;
+  email?: string;
+}) {
+  const { data, error } = await supabase.rpc("core_revise_qrc_publish", {
+    p_operation_id: uuidDeterministe(params.operationId),
+    p_qrc_instance_id: params.qrcInstanceId,
+    p_note: params.note,
+    p_note_attendue: params.noteAttendue,
+    p_commentaire: params.commentaire ?? null,
+    p_corrige_email: params.email ?? null,
+  });
+  if (error) throw error;
+  return data as Record<string, unknown>;
+}
+
+export type EvenementCorrection = {
+  etat_precedent: string | null;
+  etat_nouveau: string | null;
+  note_precedente: number | null;
+  note_nouvelle: number | null;
+  corrige_email: string | null;
+  created_at: string;
+};
+
+/** Historique complet des corrections d'une QRC (lecture seule). */
+export async function lireHistoriqueQrc(qrcInstanceId: string): Promise<EvenementCorrection[]> {
+  const { data } = await supabase
+    .from("qrc_correction_events")
+    .select("etat_precedent, etat_nouveau, note_precedente, note_nouvelle, corrige_email, created_at")
+    .eq("qrc_instance_id", qrcInstanceId)
+    .order("created_at", { ascending: true });
+  return (data ?? []) as EvenementCorrection[];
 }
 
 /** Réponse apprenant : journal d'événements + révision, confirmée par le serveur. */

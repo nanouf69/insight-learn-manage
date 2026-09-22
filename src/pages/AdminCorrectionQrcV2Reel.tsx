@@ -10,8 +10,11 @@ import { Maximize2, Minimize2, ZoomIn, ZoomOut } from "lucide-react";
 import {
   chargerSessionTest,
   corrigerQrc,
+  lireHistoriqueQrc,
   listerGroupesCrm,
+  reviserQrc,
   souscrireSignal,
+  type EvenementCorrection,
   type GroupeSessionCrm,
   type QrcReelle,
   type SessionReelle,
@@ -47,9 +50,10 @@ export default function AdminCorrectionQrcV2Reel() {
     const z = Number(param("qrc_zoom"));
     return Number.isFinite(z) && z >= 70 && z <= 150 ? z : 100;
   });
-  const [largeurPanneau, setLargeurPanneau] = useState<number>(() => {
-    const l = Number(sessionStorage.getItem("qrc_v2_panneau"));
-    return Number.isFinite(l) && l >= 280 && l <= 900 ? l : 380;
+  // Répartition de l'écran en pourcentage : 50/50 par défaut, ajustable de 35/65 à 65/35.
+  const [partPanneau, setPartPanneau] = useState<number>(() => {
+    const l = Number(sessionStorage.getItem("qrc_v2_part_panneau"));
+    return Number.isFinite(l) && l >= 35 && l <= 65 ? l : 50;
   });
   const [pleinEcran, setPleinEcran] = useState(false);
   const conteneurRef = useRef<HTMLDivElement>(null);
@@ -86,6 +90,9 @@ export default function AdminCorrectionQrcV2Reel() {
   const [commentaire, setCommentaire] = useState("");
   const [etatEnvoi, setEtatEnvoi] = useState<"vide" | "encours" | "ok" | "echec">("vide");
   const [erreur, setErreur] = useState<string | null>(null);
+  // Révision d'une correction déjà validée : action volontaire, jamais un écrasement silencieux.
+  const [modeRevision, setModeRevision] = useState(false);
+  const [historique, setHistorique] = useState<EvenementCorrection[]>([]);
 
   useEffect(() => {
     void (async () => {
@@ -136,25 +143,25 @@ export default function AdminCorrectionQrcV2Reel() {
     return () => document.removeEventListener("fullscreenchange", onFs);
   }, []);
 
-  // Redimensionnement du panneau droit
+  // Redimensionnement de la séparation gauche/droite (35/65 → 65/35)
   const demarrerRedim = (e: React.MouseEvent) => {
     e.preventDefault();
-    const departX = e.clientX;
-    const departL = largeurPanneau;
+    const largeurTotale = conteneurRef.current?.getBoundingClientRect().width || window.innerWidth;
     const move = (ev: MouseEvent) => {
-      const l = Math.min(900, Math.max(280, departL + (departX - ev.clientX)));
-      setLargeurPanneau(l);
+      const gauche = conteneurRef.current?.getBoundingClientRect().left ?? 0;
+      const part = ((largeurTotale - (ev.clientX - gauche)) / largeurTotale) * 100;
+      setPartPanneau(Math.min(65, Math.max(35, part)));
     };
     const up = () => {
       window.removeEventListener("mousemove", move);
       window.removeEventListener("mouseup", up);
-      sessionStorage.setItem("qrc_v2_panneau", String(largeurPanneauRef.current));
+      sessionStorage.setItem("qrc_v2_part_panneau", String(partPanneauRef.current));
     };
     window.addEventListener("mousemove", move);
     window.addEventListener("mouseup", up);
   };
-  const largeurPanneauRef = useRef(largeurPanneau);
-  useEffect(() => { largeurPanneauRef.current = largeurPanneau; }, [largeurPanneau]);
+  const partPanneauRef = useRef(partPanneau);
+  useEffect(() => { partPanneauRef.current = partPanneau; }, [partPanneau]);
 
   // Position de défilement : mémorisée localement, restaurée une fois les données serveur chargées
   useEffect(() => {
@@ -191,6 +198,15 @@ export default function AdminCorrectionQrcV2Reel() {
   const baremeSel = questionSel?.points ?? restaureSel?.bareme ?? null;
   const videSel = !texte(qrcSel?.reponse).trim();
 
+  // Historique des corrections (lecture seule) : l'ancienne note n'est jamais effacée.
+  useEffect(() => {
+    if (!selection) { setHistorique([]); return; }
+    let vivant = true;
+    void lireHistoriqueQrc(selection).then((h) => { if (vivant) setHistorique(h); }).catch(() => undefined);
+    return () => { vivant = false; };
+  }, [selection, session]);
+  useEffect(() => { setModeRevision(false); }, [selection]);
+
   const total = session?.qrc.length ?? 0;
   const corrigees = session?.qrc.filter((q) => q.etat === "corrigee").length ?? 0;
 
@@ -206,20 +222,38 @@ export default function AdminCorrectionQrcV2Reel() {
     const n = valeur ?? note;
     if (!qrcSel || n === null || n === undefined) return;
     if (etatEnvoi === "encours") return;
+    const revision = qrcSel.etat === "corrigee";
+    const ancienne = qrcSel.note;
+    if (revision) {
+      const fmt = (v: number | null) => `${String(v).replace(".", ",")}${baremeSel != null ? `/${baremeSel}` : ""}`;
+      if (!window.confirm(`Modifier la correction de ${fmt(ancienne)} à ${fmt(n)} ?`)) return;
+    }
     setNote(n);
     setEtatEnvoi("encours");
     setErreur(null);
     try {
-      await corrigerQrc({
-        // identité déterministe : 10 envois = une seule correction
-        operationId: `qrcv2:${qrcSel.qrc_instance_id}:${n}`,
-        qrcInstanceId: qrcSel.qrc_instance_id,
-        note: n,
-        commentaire: commentaire || undefined,
-      });
+      if (revision) {
+        await reviserQrc({
+          // identité déterministe : double-clic ou 10 envois = une seule révision
+          operationId: `qrcv2rev:${qrcSel.qrc_instance_id}:${ancienne}:${n}`,
+          qrcInstanceId: qrcSel.qrc_instance_id,
+          note: n,
+          noteAttendue: ancienne as number,
+          commentaire: commentaire || undefined,
+        });
+      } else {
+        await corrigerQrc({
+          // identité déterministe : 10 envois = une seule correction
+          operationId: `qrcv2:${qrcSel.qrc_instance_id}:${n}`,
+          qrcInstanceId: qrcSel.qrc_instance_id,
+          note: n,
+          commentaire: commentaire || undefined,
+        });
+      }
       setEtatEnvoi("ok");
       setNote(null);
       setCommentaire("");
+      setModeRevision(false);
       await recharger();
     } catch (e) {
       setEtatEnvoi("echec");
@@ -231,8 +265,8 @@ export default function AdminCorrectionQrcV2Reel() {
   const nbConflits = groupes.find((g) => g.type === "conflit")?.nbCandidats ?? 0;
 
   return (
-    <div ref={conteneurRef} className="flex min-h-screen bg-background">
-      <div className="flex-1 p-4 space-y-6 overflow-x-auto">
+    <div ref={conteneurRef} className="flex min-h-screen w-full bg-background">
+      <div className="min-w-0 p-4 space-y-6 overflow-x-auto" style={{ width: `${100 - partPanneau}%` }}>
         <header className="sticky top-0 z-10 bg-background/95 py-2 space-y-2">
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-lg font-semibold">Correction QRC V2</h1>
@@ -364,35 +398,38 @@ export default function AdminCorrectionQrcV2Reel() {
                           const inst = (session?.qrc ?? []).find(
                             (x) => x.attempt_id === t.attempt_id && x.question_id === q.id,
                           );
-                          if (!inst) return <td key={q.id} className="px-2 py-1 text-muted-foreground">—</td>;
+                          // ⚪ GRIS : aucune QRC pour ce couple candidat / question.
+                          if (!inst) {
+                            return (
+                              <td key={q.id} className="px-1 py-1">
+                                <span className="rounded border border-muted bg-muted px-2 py-1 text-muted-foreground">—</span>
+                              </td>
+                            );
+                          }
                           const restaure = baremeRestaureDe.get(inst.qrc_instance_id) ?? null;
                           const points = qt?.points ?? restaure?.bareme ?? null;
+                          // 🟢 corrigée (même 0 point) · 🟠 problème à traiter · 🔴 travail restant
                           const corrigee = inst.etat === "corrigee";
-                          const bloquee = !corrigee && points == null;
+                          const probleme = !corrigee && points == null;
                           const vide = !texte(inst.reponse).trim();
-                          const videEnAttente = !corrigee && !bloquee && vide;
                           return (
                             <td key={q.id} className="px-1 py-1">
                               <button
                                 data-testid={`cellule-${inst.qrc_instance_id}`}
                                 onClick={() => { setSelection(inst.qrc_instance_id); setNote(null); setEtatEnvoi("vide"); }}
-                                className={`rounded border px-2 py-1 whitespace-nowrap ${
+                                className={`rounded border-2 px-2 py-1 font-medium whitespace-nowrap ${
                                   corrigee
-                                    ? "border-success bg-success/10 text-success"
-                                    : bloquee
-                                      ? "border-muted-foreground/40 bg-muted text-muted-foreground"
-                                      : videEnAttente
-                                        ? "border-dashed border-muted-foreground/60 bg-background text-muted-foreground"
-                                        : "border-warning bg-warning/10 text-warning"
+                                    ? "border-success bg-success/20 text-success"
+                                    : probleme
+                                      ? "border-warning bg-warning/20 text-warning"
+                                      : "border-destructive bg-destructive/15 text-destructive"
                                 }`}
                               >
                                 {corrigee
-                                  ? `✓ ${inst.note}${points != null ? `/${points}` : ""}`
-                                  : bloquee
+                                  ? `✓ ${String(inst.note).replace(".", ",")}${points != null ? `/${points}` : ""}`
+                                  : probleme
                                     ? "⚠️ Barème absent"
-                                    : videEnAttente
-                                      ? `Copie vide (/${points})`
-                                      : `À corriger (/${points})`}
+                                    : `À corriger (/${points})${vide ? " · copie vide" : ""}`}
                               </button>
                             </td>
                           );
@@ -416,7 +453,11 @@ export default function AdminCorrectionQrcV2Reel() {
         aria-label="Redimensionner le panneau"
         className="w-1.5 shrink-0 cursor-col-resize bg-border hover:bg-primary/40"
       />
-      <aside className="shrink-0 border-l p-4 space-y-3 overflow-y-auto" style={{ width: largeurPanneau }}>
+      <aside
+        data-testid="panneau-correction"
+        className="min-w-0 shrink-0 border-l p-3 space-y-2 overflow-y-auto sticky top-0 max-h-screen"
+        style={{ width: `${partPanneau}%` }}
+      >
         {!qrcSel && <p className="text-sm text-muted-foreground">Sélectionnez une QRC dans le tableau.</p>}
         {qrcSel && questionSel && tentativeSel && (
           <>
@@ -440,7 +481,7 @@ export default function AdminCorrectionQrcV2Reel() {
                 data-testid="etat-qrc"
               >
                 {qrcSel.etat === "corrigee"
-                  ? `🔒 Correction déjà validée : ${qrcSel.note}${baremeSel != null ? `/${baremeSel}` : ""}`
+                  ? `🔒 Correction déjà validée : ${String(qrcSel.note).replace(".", ",")}${baremeSel != null ? `/${baremeSel}` : ""}`
                   : baremeSel == null
                     ? "🔴 Correction bloquée"
                     : "🟠 À corriger"}
@@ -469,15 +510,53 @@ export default function AdminCorrectionQrcV2Reel() {
             </div>
 
             {qrcSel.etat === "corrigee" ? (
-              <div className="rounded border bg-muted/40 p-3 text-sm" data-testid="correction-verrouillee">
-                <p className="font-medium text-success" data-testid="points-attribues">
-                  🔒 Correction déjà validée : {qrcSel.note}
-                  {baremeSel != null ? `/${baremeSel}` : " (barème historique absent)"}
+              <div className="rounded-lg border p-3 space-y-2 text-sm" data-testid="correction-verrouillee">
+                <p className="font-semibold text-success" data-testid="points-attribues">
+                  NOTE : {String(qrcSel.note).replace(".", ",")}
+                  {baremeSel != null ? ` / ${baremeSel}` : " (barème historique absent)"}
                 </p>
+                {!modeRevision ? (
+                  <Button variant="outline" size="sm" data-testid="modifier-note" onClick={() => setModeRevision(true)}>
+                    ✏️ Modifier la note
+                  </Button>
+                ) : baremeSel == null ? (
+                  <p className="text-xs text-muted-foreground">
+                    Barème historique absent : la note ne peut pas être révisée tant que le barème n'est pas défini.
+                  </p>
+                ) : (
+                  <>
+                    <div className="flex flex-wrap gap-2">
+                      {Array.from({ length: Math.round(baremeSel / 0.5) + 1 }, (_, i) => i * 0.5).map((v) => (
+                        <Button
+                          key={v}
+                          size="lg"
+                          className="min-w-[56px] text-base font-semibold"
+                          variant={qrcSel.note === v ? "default" : "outline"}
+                          data-testid={`revision-note-${v}`}
+                          disabled={etatEnvoi === "encours"}
+                          onClick={() => void valider(v)}
+                        >
+                          {String(v).replace(".", ",")}
+                        </Button>
+                      ))}
+                    </div>
+                    <Textarea
+                      placeholder="Motif de la révision (facultatif)"
+                      rows={2}
+                      value={commentaire}
+                      onChange={(e) => setCommentaire(e.target.value)}
+                    />
+                    <Button variant="ghost" size="sm" onClick={() => setModeRevision(false)}>Annuler</Button>
+                  </>
+                )}
                 <p className="text-xs text-muted-foreground">
-                  Une correction validée n'est jamais modifiée silencieusement : toute révision doit être une action Admin
-                  volontaire et journalisée.
+                  Une révision crée une nouvelle correction tracée : l'ancienne note reste dans l'historique.
                 </p>
+                <div className="text-sm" data-testid="etat-revision">
+                  {etatEnvoi === "encours" && <span className="text-warning">🟠 Enregistrement…</span>}
+                  {etatEnvoi === "ok" && <span className="text-success">🟢 Correction enregistrée</span>}
+                  {etatEnvoi === "echec" && <span className="text-destructive">🔴 NON ENREGISTRÉE</span>}
+                </div>
               </div>
             ) : baremeSel == null ? (
               <p className="rounded border bg-muted p-2 text-sm text-muted-foreground" data-testid="bareme-absent">
@@ -524,6 +603,21 @@ export default function AdminCorrectionQrcV2Reel() {
             )}
 
             <div className="space-y-1 border-t pt-2 text-[11px] text-muted-foreground">
+              {historique.length > 0 && (
+                <div data-testid="historique-corrections">
+                  <p className="font-medium">Historique des corrections</p>
+                  {historique.map((h, i) => (
+                    <p key={i}>
+                      {h.note_precedente == null
+                        ? `${String(h.note_nouvelle).replace(".", ",")}`
+                        : `${String(h.note_precedente).replace(".", ",")} → ${String(h.note_nouvelle).replace(".", ",")}`}
+                      {" — "}
+                      {new Date(h.created_at).toLocaleString("fr-FR", { timeZone: "Europe/Paris" })}
+                      {h.corrige_email ? ` par ${h.corrige_email}` : " par correcteur non renseigné"}
+                    </p>
+                  ))}
+                </div>
+              )}
               {qrcSel.corrige_email?.startsWith("Correction historique") && (
                 <p data-testid="origine-correction">
                   {qrcSel.corrige_email}
