@@ -33,6 +33,8 @@ import AdminErrorLogs from "./pages/AdminErrorLogs";
 import AdminAuditT3P from "./pages/AdminAuditT3P";
 import AdminAuditModules from "./pages/AdminAuditModules";
 import AdminAuditDBvsLearner from "./pages/AdminAuditDBvsLearner";
+import AdminCorrectionQrcV2Reel from "./pages/AdminCorrectionQrcV2Reel";
+import PiloteApprenantTest from "./pages/PiloteApprenantTest";
 import AdminCorrectionQrcV2 from "./pages/AdminCorrectionQrcV2";
 
 import DocumentASignerPublic from "./pages/DocumentASignerPublic";
@@ -182,8 +184,16 @@ function App() {
 
                 <Route path="/admin/correction-qrc-v2" element={
                   <ProtectedRoute>
+                    <ErrorBoundary><AdminCorrectionQrcV2Reel /></ErrorBoundary>
+                  </ProtectedRoute>
+                } />
+                <Route path="/admin/correction-qrc-v2-maquette" element={
+                  <ProtectedRoute>
                     <ErrorBoundary><AdminCorrectionQrcV2 /></ErrorBoundary>
                   </ProtectedRoute>
+                } />
+                <Route path="/pilote-apprenant-test" element={
+                  <ErrorBoundary><PiloteApprenantTest /></ErrorBoundary>
                 } />
 
 
