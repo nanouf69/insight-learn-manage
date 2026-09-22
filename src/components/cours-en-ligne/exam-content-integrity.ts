@@ -101,6 +101,44 @@ export function isSnapshotOutdated(
   return buildQuestionsFingerprint((snapshot as any).questions) !== buildQuestionsFingerprint(active);
 }
 
+/**
+ * Détecte un passage dont le snapshot correspond EXACTEMENT à la matière
+ * d'un AUTRE numéro d'examen (ex. contenu EB1 servi dans EB2).
+ * Correspondance stricte par empreinte des questions — aucune similarité,
+ * aucune fusion. LECTURE SEULE : sert uniquement à l'avertissement Admin.
+ */
+export function findSnapshotWrongExamSource(
+  snapshot: { questions?: unknown } | null | undefined,
+  matiereId: string | null | undefined,
+  matiereNom: string | null | undefined,
+  currentExamen: ExamenBlanc | null | undefined,
+  allExamens: ExamenBlanc[] | null | undefined,
+): { sourceExamenTitre: string; sourceExamenNumero: number | null } | null {
+  if (!snapshot || !Array.isArray((snapshot as any).questions) || !currentExamen || !Array.isArray(allExamens)) {
+    return null;
+  }
+  const snapFp = buildQuestionsFingerprint((snapshot as any).questions);
+  const curNum = (currentExamen as any).numero ?? null;
+  const mid = txt(matiereId);
+  const mnom = txt(matiereNom);
+  for (const other of allExamens) {
+    if (!other || (other as any).id === (currentExamen as any).id) continue;
+    if (((other as any).numero ?? null) === curNum) continue;
+    for (const m of (other.matieres ?? []) as Matiere[]) {
+      const sameMatiere = (mid && txt((m as any).id) === mid) || (mnom && txt((m as any).nom) === mnom);
+      if (!sameMatiere) continue;
+      if (!Array.isArray((m as any).questions) || (m as any).questions.length === 0) continue;
+      if (buildQuestionsFingerprint((m as any).questions) === snapFp) {
+        return {
+          sourceExamenTitre: txt((other as any).titre) || `Examen N°${(other as any).numero ?? "?"}`,
+          sourceExamenNumero: (other as any).numero ?? null,
+        };
+      }
+    }
+  }
+  return null;
+}
+
 /** Photographie complète et indépendante de la version active (deep clone). */
 export function buildAttemptSnapshot(examen: ExamenBlanc): ExamenBlanc {
   return JSON.parse(JSON.stringify(examen)) as ExamenBlanc;
