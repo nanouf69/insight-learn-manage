@@ -39,7 +39,13 @@ export default function AdminCorrectionQrcV2Reel() {
     majUrl(cle, null);
   };
   const [session, setSession] = useState<SessionReelle | null>(null);
-  const [selection, setSelection] = useState<string | null>(null);
+  const [selection, setSelectionState] = useState<string | null>(
+    () => new URLSearchParams(window.location.search).get("qrc"),
+  );
+  const setSelection = (qrc: string | null) => {
+    setSelectionState(qrc);
+    majUrl(sessionCle, qrc);
+  };
   const [note, setNote] = useState<number | null>(null);
   const [commentaire, setCommentaire] = useState("");
   const [etatEnvoi, setEtatEnvoi] = useState<"vide" | "encours" | "ok" | "echec">("vide");
