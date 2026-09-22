@@ -92,6 +92,9 @@ export default function AdminCorrectionQrcV2Reel() {
   const [erreur, setErreur] = useState<string | null>(null);
   // Révision d'une correction déjà validée : action volontaire, jamais un écrasement silencieux.
   const [modeRevision, setModeRevision] = useState(false);
+  // Jeton d'intention : identique pour un double-clic (une seule écriture),
+  // renouvelé après chaque validation pour qu'une révision ultérieure de même valeur soit bien enregistrée.
+  const [jeton, setJeton] = useState(() => Math.random().toString(36).slice(2, 10));
   const [historique, setHistorique] = useState<EvenementCorrection[]>([]);
 
   useEffect(() => {
@@ -163,7 +166,8 @@ export default function AdminCorrectionQrcV2Reel() {
   const partPanneauRef = useRef(partPanneau);
   useEffect(() => { partPanneauRef.current = partPanneau; }, [partPanneau]);
 
-  // Position de défilement : mémorisée localement, restaurée une fois les données serveur chargées
+  // Position de défilement : mémorisée localement, restaurée UNE SEULE FOIS (au retour F5).
+  // Un rafraîchissement de données après une correction ne doit jamais déplacer la page.
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | null = null;
     const onScroll = () => {
@@ -173,10 +177,22 @@ export default function AdminCorrectionQrcV2Reel() {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => { window.removeEventListener("scroll", onScroll); if (timer) clearTimeout(timer); };
   }, []);
+  const scrollRestaure = useRef(false);
   useEffect(() => {
-    if (!session) return;
+    if (!session || scrollRestaure.current) return;
+    scrollRestaure.current = true;
     const y = Number(sessionStorage.getItem("qrc_v2_scroll") ?? 0);
     if (y > 0) requestAnimationFrame(() => window.scrollTo(0, y));
+  }, [session]);
+
+  // Défilement horizontal des tableaux : conservé à l'identique lors d'un rafraîchissement de données.
+  const scrollsX = useRef(new Map<string, number>());
+  const tableauxRef = useRef(new Map<string, HTMLDivElement | null>());
+  useEffect(() => {
+    for (const [cle, el] of tableauxRef.current) {
+      const x = scrollsX.current.get(cle);
+      if (el && x != null && el.scrollLeft !== x) el.scrollLeft = x;
+    }
   }, [session]);
 
   const parTentative = useMemo(() => {
@@ -235,7 +251,7 @@ export default function AdminCorrectionQrcV2Reel() {
       if (revision) {
         await reviserQrc({
           // identité déterministe : double-clic ou 10 envois = une seule révision
-          operationId: `qrcv2rev:${qrcSel.qrc_instance_id}:${ancienne}:${n}`,
+          operationId: `qrcv2rev:${qrcSel.qrc_instance_id}:${ancienne}:${n}:${jeton}`,
           qrcInstanceId: qrcSel.qrc_instance_id,
           note: n,
           noteAttendue: ancienne as number,
@@ -254,6 +270,7 @@ export default function AdminCorrectionQrcV2Reel() {
       setNote(null);
       setCommentaire("");
       setModeRevision(false);
+      setJeton(Math.random().toString(36).slice(2, 10));
       await recharger();
     } catch (e) {
       setEtatEnvoi("echec");
@@ -266,7 +283,11 @@ export default function AdminCorrectionQrcV2Reel() {
 
   return (
     <div ref={conteneurRef} className="flex min-h-screen w-full bg-background">
-      <div className="min-w-0 p-4 space-y-6 overflow-x-auto" style={{ width: `${100 - partPanneau}%` }}>
+      <div
+        data-testid="zone-tableau"
+        className="min-w-0 shrink-0 grow-0 p-4 space-y-6 overflow-x-auto"
+        style={{ flex: `0 0 calc(${100 - partPanneau}% - 3px)`, width: `calc(${100 - partPanneau}% - 3px)` }}
+      >
         <header className="sticky top-0 z-10 bg-background/95 py-2 space-y-2">
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-lg font-semibold">Correction QRC V2</h1>
@@ -370,7 +391,11 @@ export default function AdminCorrectionQrcV2Reel() {
                   {dansMatiere.length > 0 && ok === dansMatiere.length ? "✓ TERMINÉE" : `${ok}/${dansMatiere.length}`}
                 </span>
               </h2>
-              <div className="overflow-x-auto">
+              <div
+                className="overflow-x-auto"
+                ref={(el) => { tableauxRef.current.set(m.subject_id, el); }}
+                onScroll={(e) => scrollsX.current.set(m.subject_id, e.currentTarget.scrollLeft)}
+              >
                 <table className="text-sm">
                   <thead>
                     <tr>
@@ -456,7 +481,7 @@ export default function AdminCorrectionQrcV2Reel() {
       <aside
         data-testid="panneau-correction"
         className="min-w-0 shrink-0 border-l p-3 space-y-2 overflow-y-auto sticky top-0 max-h-screen"
-        style={{ width: `${partPanneau}%` }}
+        style={{ flex: `0 0 calc(${partPanneau}% - 3px)`, width: `calc(${partPanneau}% - 3px)` }}
       >
         {!qrcSel && <p className="text-sm text-muted-foreground">Sélectionnez une QRC dans le tableau.</p>}
         {qrcSel && questionSel && tentativeSel && (
@@ -546,7 +571,7 @@ export default function AdminCorrectionQrcV2Reel() {
                       value={commentaire}
                       onChange={(e) => setCommentaire(e.target.value)}
                     />
-                    <Button variant="ghost" size="sm" onClick={() => setModeRevision(false)}>Annuler</Button>
+                    <Button variant="ghost" size="sm" data-testid="annuler-revision" onClick={() => setModeRevision(false)}>Annuler</Button>
                   </>
                 )}
                 <p className="text-xs text-muted-foreground">
