@@ -160,11 +160,12 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (!user) {
-    return <Navigate to="/login" replace />;
+    // Conserver la page demandée (avec ses paramètres) pour y revenir après la vérification de session.
+    return <Navigate to="/login" replace state={{ from: location.pathname + location.search }} />;
   }
 
   if (!isAdmin) {
-    return <Navigate to="/cours-public" replace state={{ from: location.pathname }} />;
+    return <Navigate to="/cours-public" replace state={{ from: location.pathname + location.search }} />;
   }
 
   return <>{children}</>;

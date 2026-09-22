@@ -1,5 +1,23 @@
 import { useState, useEffect, useCallback, memo, useRef, useMemo } from "react";
-import { useNavigate, Navigate } from "react-router-dom";
+import { useNavigate, Navigate, useLocation } from "react-router-dom";
+
+// Évite tout va-et-vient infini si un admin est renvoyé ici par erreur :
+// on ne tente le retour vers la page d'origine qu'une seule fois par chargement.
+let adminRetourOrigineDejaTente = false;
+
+const lireDestinationRetour = (state: unknown): string => {
+  const from = (state as { from?: string } | null)?.from;
+  if (
+    from &&
+    from.startsWith("/") &&
+    !from.startsWith("//") &&
+    !from.startsWith("/cours-public") &&
+    !from.startsWith("/login")
+  ) {
+    return from;
+  }
+  return "/";
+};
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
@@ -896,6 +914,7 @@ const ChangePasswordDialog = () => {
 
 const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, loading: authLoading, profile, signOut } = useAuth();
   const lastKnownUserIdRef = useRef<string | null>(null);
   if (user?.id) lastKnownUserIdRef.current = user.id;
@@ -1016,7 +1035,11 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
       setApprenantFetchError(null);
       if (!adminRedirectedRef.current) {
         adminRedirectedRef.current = true;
-        navigate("/", { replace: true });
+        const destination = adminRetourOrigineDejaTente
+          ? "/"
+          : lireDestinationRetour(location.state);
+        if (destination !== "/") adminRetourOrigineDejaTente = true;
+        navigate(destination, { replace: true });
       }
       return;
     }
@@ -1100,7 +1123,11 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
 
           if (!cancelled && !roleError && isAdmin === true) {
             setApprenantLoading(false);
-            navigate("/", { replace: true });
+            const destination = adminRetourOrigineDejaTente
+              ? "/"
+              : lireDestinationRetour(location.state);
+            if (destination !== "/") adminRetourOrigineDejaTente = true;
+            navigate(destination, { replace: true });
             return;
           }
 

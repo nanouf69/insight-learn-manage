@@ -297,6 +297,11 @@ const Index = () => {
       setPageHistory(prev => [...prev, currentPage]);
     }
     setCurrentPage(page);
+    // Mémorise la page dans l'URL pour survivre à un F5 (préférence d'interface uniquement)
+    const params = new URLSearchParams(window.location.search);
+    params.set("section", page);
+    if (page !== "crm") params.delete("apprenant");
+    window.history.replaceState(null, "", `${window.location.pathname}?${params.toString()}`);
   };
 
   const handleGoBack = () => {

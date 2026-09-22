@@ -29,7 +29,16 @@ const BILAN_MODULE_IDS: Record<number, string> = {
 };
 
 const CoursEnLignePage = () => {
-  const [activeTab, setActiveTab] = useState("accueil");
+  // Onglet mémorisé dans l'URL (?onglet=...) pour survivre à un F5 — préférence d'interface uniquement
+  const [activeTab, setActiveTabState] = useState(
+    () => new URLSearchParams(window.location.search).get("onglet") || "accueil"
+  );
+  const setActiveTab = (tab: string) => {
+    setActiveTabState(tab);
+    const params = new URLSearchParams(window.location.search);
+    params.set("onglet", tab);
+    window.history.replaceState(null, "", `${window.location.pathname}?${params.toString()}`);
+  };
   const [selectedFormation, setSelectedFormation] = useState("vtc");
   const [editingModule, setEditingModule] = useState<{ id: number; nom: string } | null>(null);
   const [bilanActif, setBilanActif] = useState<string | null>(null);
