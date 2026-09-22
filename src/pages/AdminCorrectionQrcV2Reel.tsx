@@ -251,7 +251,7 @@ export default function AdminCorrectionQrcV2Reel() {
       if (revision) {
         await reviserQrc({
           // identité déterministe : double-clic ou 10 envois = une seule révision
-          operationId: `qrcv2rev:${qrcSel.qrc_instance_id}:${ancienne}:${n}`,
+          operationId: `qrcv2rev:${qrcSel.qrc_instance_id}:${ancienne}:${n}:${jeton}`,
           qrcInstanceId: qrcSel.qrc_instance_id,
           note: n,
           noteAttendue: ancienne as number,
@@ -270,6 +270,7 @@ export default function AdminCorrectionQrcV2Reel() {
       setNote(null);
       setCommentaire("");
       setModeRevision(false);
+      setJeton(Math.random().toString(36).slice(2, 10));
       await recharger();
     } catch (e) {
       setEtatEnvoi("echec");
