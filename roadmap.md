@@ -36,3 +36,9 @@ Phases (ordre imposé) : 1 données → 2 observabilité → 3 corrections → 4
 ## Étape 0 — Snapshot de référence figé (22/09, 21h40)
 Voir `docs/snapshot-reference-avant-phase1.md` : empreintes md5 des 5 fichiers de protection, description figée des mécanismes (file locale, accusé serveur, write_seq, anti-écrasement, idempotences, snapshots V2, journaux), et résultats des tests AVANT modification (449 réussis / 5 échecs préexistants / 50 fichiers non collectés faute du module natif canvas ; 20/20 sur les tests de sauvegarde).
 Étapes 1 à 5 de la Phase 1 : EN ATTENTE de l'accord explicite de l'utilisateur après lecture du snapshot.
+
+## Étape 1 — Politique de réessai (faite, EN ATTENTE D'ACCORD pour déploiement)
+- `src/lib/answerPersistence.ts` : ajout de `classifyAnswerSaveFailure()` (définitif vs temporaire) et `computeRetryDelay()` (backoff existant + jitter ±30 %, plafond 30 s). Le bloc 403 est remplacé par la classification ; un refus définitif marque l'élément « blocked » (conservé, jamais supprimé) et affiche la vraie raison. Nouvelle empreinte : df05119856fc6c6ba7dff21daaa489b4.
+- `src/components/cours-en-ligne/AnswerSaveIndicator.tsx` : affiche le message réel du refus.
+- `src/test/retry-classification-etape1.test.ts` : 7 tests (48 h, droits, passage fermé, 5xx/timeout temporaires, jitter, 100 réessais → 1 seul envoi).
+- Non-régression : 456 réussis / 5 échecs préexistants (449+7) ; 20/20 sur les tests critiques ; clés de file locale et format inchangés ; examFinalizationGuard.ts, pontV2.ts, useAutoSaveReponses.ts, ExamenBlancsPassage.tsx : empreintes identiques au snapshot.
