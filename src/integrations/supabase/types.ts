@@ -1650,6 +1650,39 @@ export type Database = {
           },
         ]
       }
+      core_operations: {
+        Row: {
+          apprenant_id: string | null
+          attempt_id: string | null
+          auteur: string | null
+          cible: Json
+          created_at: string
+          operation_id: string
+          operation_type: string
+          resultat: Json
+        }
+        Insert: {
+          apprenant_id?: string | null
+          attempt_id?: string | null
+          auteur?: string | null
+          cible?: Json
+          created_at?: string
+          operation_id: string
+          operation_type: string
+          resultat?: Json
+        }
+        Update: {
+          apprenant_id?: string | null
+          attempt_id?: string | null
+          auteur?: string | null
+          cible?: Json
+          created_at?: string
+          operation_id?: string
+          operation_type?: string
+          resultat?: Json
+        }
+        Relationships: []
+      }
       creneaux_rdv: {
         Row: {
           apprenant_id: string | null
@@ -4429,6 +4462,65 @@ export type Database = {
         }
         Relationships: []
       }
+      qrc_correction_events: {
+        Row: {
+          apprenant_id: string
+          attempt_id: string
+          commentaire: string | null
+          correction_event_id: number
+          corrige_email: string | null
+          corrige_par: string | null
+          created_at: string
+          etat_nouveau: string
+          etat_precedent: string | null
+          note_nouvelle: number | null
+          note_precedente: number | null
+          operation_id: string | null
+          qrc_instance_id: string
+          question_id: string
+        }
+        Insert: {
+          apprenant_id: string
+          attempt_id: string
+          commentaire?: string | null
+          correction_event_id?: never
+          corrige_email?: string | null
+          corrige_par?: string | null
+          created_at?: string
+          etat_nouveau: string
+          etat_precedent?: string | null
+          note_nouvelle?: number | null
+          note_precedente?: number | null
+          operation_id?: string | null
+          qrc_instance_id: string
+          question_id: string
+        }
+        Update: {
+          apprenant_id?: string
+          attempt_id?: string
+          commentaire?: string | null
+          correction_event_id?: never
+          corrige_email?: string | null
+          corrige_par?: string | null
+          created_at?: string
+          etat_nouveau?: string
+          etat_precedent?: string | null
+          note_nouvelle?: number | null
+          note_precedente?: number | null
+          operation_id?: string | null
+          qrc_instance_id?: string
+          question_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "qrc_correction_events_qrc_instance_id_fkey"
+            columns: ["qrc_instance_id"]
+            isOneToOne: false
+            referencedRelation: "qrc_instances_v2"
+            referencedColumns: ["qrc_instance_id"]
+          },
+        ]
+      }
       qrc_engine_flags: {
         Row: {
           created_at: string
@@ -5719,6 +5811,53 @@ export type Database = {
           reason: string
         }[]
       }
+      core_correct_qrc: {
+        Args: {
+          p_commentaire?: string
+          p_corrige_email?: string
+          p_note: number
+          p_operation_id: string
+          p_qrc_instance_id: string
+        }
+        Returns: Json
+      }
+      core_finalize_attempt: {
+        Args: {
+          p_attempt_id: string
+          p_operation_id: string
+          p_qrc_questions?: string[]
+          p_resultat?: Json
+        }
+        Returns: Json
+      }
+      core_operation_replay: {
+        Args: { p_operation_id: string; p_operation_type: string }
+        Returns: Json
+      }
+      core_publish_exam_version: {
+        Args: {
+          p_operation_id: string
+          p_published_email?: string
+          p_version_id: string
+        }
+        Returns: Json
+      }
+      core_save_answer: {
+        Args: {
+          p_attempt_id: string
+          p_expected_revision: number
+          p_operation_id: string
+          p_question_id: string
+          p_session_origine?: string
+          p_valeur: Json
+        }
+        Returns: Json
+      }
+      core_snapshot_has_question: {
+        Args: { p_question_id: string; p_snapshot: Json }
+        Returns: boolean
+      }
+      core_snapshot_question_ids: { Args: { p_node: Json }; Returns: string[] }
       daitch_mokotoff: { Args: { "": string }; Returns: string[] }
       dmetaphone: { Args: { "": string }; Returns: string }
       dmetaphone_alt: { Args: { "": string }; Returns: string }
