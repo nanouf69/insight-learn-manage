@@ -527,6 +527,9 @@ const ApprenantSearchPreview = () => {
           <NotationPratiqueTab />
         </TabsContent>
         <TabsContent value="correction-qrc" className="mt-6">
+          <AdminCorrectionQrcV2Reel />
+        </TabsContent>
+        <TabsContent value="correction-qrc-archive" className="mt-6">
           <CorrectionQRCTab />
         </TabsContent>
       </Tabs>
