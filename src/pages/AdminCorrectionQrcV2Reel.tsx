@@ -59,7 +59,6 @@ export default function AdminCorrectionQrcV2Reel() {
     setEbCleState(null);
     setJourFiltreState(null);
     setSelectionState(null);
-    setSession(null);
     majUrl({ qrc_groupe: cle, qrc_eb: null, qrc_date: null, qrc: null });
   };
   const setEbCle = (cle: string | null) => {
