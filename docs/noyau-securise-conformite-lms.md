@@ -164,3 +164,41 @@ Permissions : 8/8.
 
 Après contrôle : espace de test supprimé, tables du noyau remises à 0 ligne.
 Aucune donnée de l'ancien système lue en écriture, modifiée ou supprimée. Étape 2 non lancée.
+
+## Étape 2 — migration à blanc du contenu validé (22/09/2026)
+
+### Manifest v2 (le manifest v1 n'était pas reproductible)
+L'expression d'empreinte du pré-audit du matin n'avait pas été consignée : elle n'a pas pu
+être reproduite, et ses comptages de questions divergeaient sur 12 matières (les contenus
+actuels ont bien le nombre attendu). Un contrat de migration doit être reproductible :
+`src/migration/manifest-migration-noyau-v2.ts` fige donc une expression écrite noir sur blanc,
+recalculée en lecture seule sur la source de production :
+
+```
+par question : id | TYPE | énoncé | choix(lettre~texte~true/false séparés par #) | reponseQRC | points | image
+par matière  : md5( questions jointes par un retour à la ligne, ordre de stockage )
+normalisation: btrim + regexp_replace('\s+',' ') ; type en majuscules
+```
+
+Décompte v2 : 24 examens, 108 matières, 4 🟢 VALIDÉ, 104 🟠 À CONTRÔLER, 0 🔴 ANOMALIE.
+
+### Contenu copié
+Uniquement les 4 entrées 🟢 (Examen Blanc N°2, F(V) 16 questions et G(V) 8 questions, filières
+VTC et VA), recontrôlées question par question : F(V) commence par « DÉFINISSEZ LA NOTION DE
+MARGE DE GESTION ? », G(V) par la signalétique VTC ; aucune trace de « marché de niche » ni de
+« définition de l'activité de VTC » (contenu EB1). Chaque examen reçoit une VERSION INITIALE
+PUBLIÉE, partielle par construction (2 matières sur 7 pour l'EB2), motif explicite dans la ligne.
+
+Contrôle 3/3 (source = manifest = noyau) : 4/4 identiques. Un seul écart aurait déclenché le
+ROLLBACK de la transaction entière — aucune réparation automatique n'est prévue.
+
+### Contamination croisée
+Aucune empreinte identique entre deux numéros d'examen différents (0 doublon suspect).
+54 partages détectés, tous entre filières d'un MÊME numéro. Aucun n'est déduit automatiquement :
+seuls les 2 partages réellement copiés (EB2 → eb2-va, F(V) et G(V)) sont déclarés dans
+`exam_content_shares`.
+
+### Aucune bascule
+Le nouveau noyau reste en observation : l'application, l'Admin, les apprenants et la correction
+QRC continuent de lire exclusivement l'ancien système. Aucune double écriture. Aucune donnée
+apprenant copiée (0 tentative, 0 réponse, 0 QRC, 0 correction, 0 note, 0 progression).
