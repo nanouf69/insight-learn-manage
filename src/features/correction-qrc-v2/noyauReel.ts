@@ -377,14 +377,14 @@ export async function chargerSessionTest(
   });
 
   return {
-    tentatives: (attempts ?? []).map((a) => ({
+    tentatives: attempts.map((a) => ({
       ...a,
       snapshot: asSnapshot(a.snapshot),
       candidat: nomDe.get(a.apprenant_id) ?? "(apprenant)",
-    })),
-    qrc: (qrc ?? []) as QrcReelle[],
-    resultats: (resultats ?? []) as ResultatReel[],
-    baremesRestaures: (baremes ?? []) as BaremeRestaure[],
+    })) as TentativeReelle[],
+    qrc,
+    resultats,
+    baremesRestaures: baremes,
   };
 }
 
