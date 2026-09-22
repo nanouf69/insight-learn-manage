@@ -247,12 +247,22 @@ export default function AdminCorrectionQrcV2Reel() {
                   ⚠️ Correction historique avec points mais sans réponse enregistrée — contrôle manuel requis
                 </p>
               )}
+              {restaureSel && (
+                <p className="text-xs text-muted-foreground" data-testid="bareme-restaure">
+                  {restaureSel.mention} — barème {restaureSel.bareme} points, {restaureSel.nb_preuves} passage(s) de preuve
+                </p>
+              )}
             </Card>
 
             {qrcSel.etat !== "corrigee" && baremeSel == null ? (
               <p className="rounded border bg-muted p-2 text-sm text-muted-foreground" data-testid="bareme-absent">
-                ⚠️ BARÈME HISTORIQUE ABSENT — CORRECTION BLOQUÉE. Le barème doit être défini manuellement ; il n'est
+                🔴 BARÈME HISTORIQUE INTROUVABLE — CORRECTION BLOQUÉE. Le barème doit être défini manuellement ; il n'est
                 jamais repris de la version actuelle de l'examen.
+              </p>
+            ) : qrcSel.etat !== "corrigee" && videSel ? (
+              <p className="rounded border border-dashed p-2 text-sm text-muted-foreground" data-testid="copie-vide-en-attente">
+                Copie vide — aucune correction historique. Barème disponible ({baremeSel} points) mais aucune note n'est
+                attribuée automatiquement : le comportement des copies vides reste à décider.
               </p>
             ) : (
               <>
