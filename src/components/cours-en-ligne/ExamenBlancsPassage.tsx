@@ -404,6 +404,7 @@ function PassageMatiere({
       toast.error("Sauvegarde en attente. Vos réponses restent conservées sur cet appareil et seront renvoyées automatiquement.");
       return;
     }
+    if (!(await finaliserNoyau())) return;
     onTerminer(reponses);
   };
   const handleExpire = async () => {
