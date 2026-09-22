@@ -142,6 +142,15 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
               // les nouveaux résultats → on vérifie AUSSI chaque QRC de la définition
               // d'examen contre les corrections validées manuellement.
                const enAttenteCorrection = isExamAttemptPublicationPending(exam.matieres, examenDef);
+              // LECTURE SEULE : signale un passage réalisé sur une version
+              // antérieure de l'examen. Aucune note n'est recalculée ni corrigée.
+              const versionAnterieure = exam.matieres.some((m: any) => {
+                const snap = m?.details?.snapshot;
+                const def = examenDef?.matieres.find(
+                  (md: any) => md.id === m.matiere_id || md.nom === m.matiere_nom,
+                );
+                return isSnapshotOutdated(snap, def as any);
+              });
 
               return (
                 <div key={quizId} className="border rounded-lg p-4 space-y-3">
