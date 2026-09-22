@@ -196,6 +196,7 @@ export default function ExamensBlancsPage({
         const saved = await loadSavedExamens();
         logSecurityImageDebug(saved, force ? "manual-refetch" : "auto-refetch");
         setLiveExamens(saved);
+        setLiveExamensError(false);
         setLiveExamensLoaded(true);
         // CRITICAL: Never replace examenChoisi during an active exam or results display
         // to prevent question reordering that causes answer mismatches
