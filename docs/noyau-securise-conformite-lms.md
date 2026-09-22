@@ -129,3 +129,38 @@ version publiée → REFUS · 15. suppression de tentative → REFUS.
 
 Toutes les tables du noyau sont revenues à **0 ligne** après le test. L'ancien système n'a pas été
 touché. **Étape 2 toujours interdite** jusqu'à validation.
+
+## Contrôle sauvegarde / restauration du noyau (22/09/2026) — données 100 % fictives
+
+Jeu d'essai : 2 examens fictifs (TEST-EB1, TEST-EB2), 2 versions publiées par examen
+(1 active + 1 retirée), 2 apprenants fictifs, 3 tentatives (1 terminée, 2 en cours),
+réponses modifiées jusqu'à 3 fois, 2 QRC dont 1 corrigée, journal d'audit alimenté.
+
+Sauvegarde complète (8 tables) dans un espace séparé, puis restauration intégrale
+(déclencheurs désactivés le temps de la restauration, comme une restauration réelle,
+puis réactivés et séquences repositionnées).
+
+| Contrôle | Résultat |
+| --- | --- |
+| Empreintes de table avant / après restauration | 8/8 identiques |
+| Identifiants conservés (versions, tentatives, réponses, événements, QRC, corrections, opérations, audit) | 46/46 |
+| Événements perdus | 0 |
+| Changement d'ordre | 0 |
+| Modification d'empreinte | 0 |
+
+Protections rejouées **sur la base restaurée** : 15/15 refus attendus obtenus
+(question EB1 dans tentative EB2 P0479, réponse A dans tentative B P0477, révision périmée P0409,
+réponse après fin P0478, QRC après fin P0478, version publiée P0472, version retirée P0472,
+suppression de tentative P0473, réouverture P0473, même operation_id ×10 → 1 seul événement,
+QRC corrigée → en attente P0476, double correction P0476, réécriture réponse élève P0480,
+correction formateur après fin autorisée et tracée, effacement du journal d'audit P0474).
+
+Permissions : 8/8.
+- Apprenant : écriture dans sa propre tentative autorisée ; dans celle d'un autre refusée
+  (P0477 SESSION_NON_AUTORISEE, ajouté par la migration 0048) ; réécriture d'une version publiée refusée.
+- Formateur : correction d'une QRC en attente autorisée et tracée ; réponse originale de l'élève
+  impossible à modifier (P0480) ; tentative terminée impossible à modifier (P0473).
+- Rôle le plus privilégié de la base : version publiée et tentative terminée toujours impossibles à réécrire.
+
+Après contrôle : espace de test supprimé, tables du noyau remises à 0 ligne.
+Aucune donnée de l'ancien système lue en écriture, modifiée ou supprimée. Étape 2 non lancée.
