@@ -414,6 +414,13 @@
       "when": 1790099117034,
       "tag": "0058_core_import_incremental_passages_finalises",
       "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1790119116424,
+      "tag": "0059_fix_import_passage_audit_journal",
+      "breakpoints": true
     }
   ]
 }
