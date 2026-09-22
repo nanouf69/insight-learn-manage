@@ -62,10 +62,18 @@ export default function AdminCorrectionQrcV2Reel() {
     return m;
   }, [session]);
 
+  const baremeRestaureDe = useMemo(() => {
+    const m = new Map<string, { bareme: number; mention: string; nb_preuves: number }>();
+    for (const b of session?.baremesRestaures ?? []) m.set(b.qrc_instance_id, b);
+    return m;
+  }, [session]);
+
   const qrcSel: QrcReelle | undefined = session?.qrc.find((q) => q.qrc_instance_id === selection);
   const tentativeSel = qrcSel ? parTentative.get(qrcSel.attempt_id) : undefined;
   const questionSel = tentativeSel?.snapshot.questions.find((q) => q.id === qrcSel?.question_id);
-  const baremeSel = questionSel?.points ?? null;
+  const restaureSel = qrcSel ? baremeRestaureDe.get(qrcSel.qrc_instance_id) ?? null : null;
+  const baremeSel = questionSel?.points ?? restaureSel?.bareme ?? null;
+  const videSel = !texte(qrcSel?.reponse).trim();
 
   const total = session?.qrc.length ?? 0;
   const corrigees = session?.qrc.filter((q) => q.etat === "corrigee").length ?? 0;
