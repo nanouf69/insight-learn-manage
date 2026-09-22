@@ -253,7 +253,9 @@ export default function AdminCorrectionQrcV2Reel() {
             >
               {(groupeChoisi?.examens ?? []).map((e) => (
                 <option key={e.cle} value={e.cle}>
-                  {e.exam_id} — {e.date} · {e.heureMin}–{e.heureMax} ({e.attemptIds.length} passages)
+                  {e.exam_id} — {e.attemptIds.length} passage{e.attemptIds.length > 1 ? "s" : ""}
+                  {" · "}
+                  {e.dates.map((d) => `${d.date.slice(0, 5)} (${d.attemptIds.length})`).join(" • ")}
                 </option>
               ))}
             </select>
