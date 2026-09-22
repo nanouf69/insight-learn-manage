@@ -361,12 +361,13 @@ export async function loadSavedExamens(notifyRepairs: boolean = false): Promise<
     
     if (error) {
       console.error("[ExamensEditor] Error loading saved exams:", error);
-      // On error, return source data (no stale cache)
-      repairCorrectFlags(examens, notifyRepairs);
-      syncVtcTaxiMatieres(examens);
-      syncVtcVaMatieres(examens);
-      syncTaxiTaMatieres(examens);
-      return examens;
+      // AUCUN REPLI : jamais de contenu statique ni de copie par position.
+      // Tant que la version active n'est pas confirmée, rien n'est servi.
+      throw new ExamContentUnavailableError(error.message);
+    }
+
+    if (!data || data.length === 0) {
+      throw new ExamContentUnavailableError("Aucune version active enregistrée");
     }
 
     if (data && data.length > 0) {
