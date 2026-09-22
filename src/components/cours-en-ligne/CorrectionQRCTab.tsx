@@ -643,8 +643,14 @@ const CorrectionQRCTab = () => {
   // Load examens (source + saved)
   useEffect(() => {
     const load = async () => {
-      const saved = await loadSavedExamens(true);
-      setExamenMap(buildExamenMap(tousLesExamens, saved));
+      try {
+        const saved = await loadSavedExamens(true);
+        setExamenMap(buildExamenMap(tousLesExamens, saved));
+      } catch (err) {
+        // Version active non confirmée : on n'affiche aucune question.
+        console.error("[CorrectionQRC] Chargement des examens impossible", err);
+        toast.error(EXAM_CONTENT_UNAVAILABLE_MESSAGE);
+      }
     };
     load();
   }, []);

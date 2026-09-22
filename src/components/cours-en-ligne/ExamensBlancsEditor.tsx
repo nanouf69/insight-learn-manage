@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { tousLesExamens, getPointsParQuestion, applyOfficialCoefficient, type ExamenBlanc, type Matiere, type Question, type Choix } from "./examens-blancs-data";
 import { mergeQuestionsForMatiere, moveQuestionToPosition, normalizeQcmChoiceLetters } from "./examens-blancs-utils";
-import { ExamContentUnavailableError, isExamContentUnavailable } from "./exam-content-integrity";
+import { ExamContentUnavailableError, isExamContentUnavailable, EXAM_CONTENT_UNAVAILABLE_MESSAGE } from "./exam-content-integrity";
 import { getSeuilEliminatoireAffiche } from "./examens-blancs-scoring";
 // Contrôle visuel des anomalies — LECTURE SEULE, aucune correction automatique.
 import { detectExamenAnomalies, getCorrectionsMatiere } from "./examens-blancs-anomalies";
@@ -1563,7 +1563,12 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
 
 
   useEffect(() => {
-    loadSavedExamens(true).then(async (loadedExamens) => {
+    loadSavedExamens(true).catch((err) => {
+      console.error("[ExamensEditor] Chargement impossible", err);
+      toast.error(EXAM_CONTENT_UNAVAILABLE_MESSAGE);
+      return null;
+    }).then(async (loadedExamens) => {
+      if (!loadedExamens) return;
       setExamens(loadedExamens);
       lastSavedFingerprintRef.current = JSON.stringify(loadedExamens);
       lastSavedModuleFingerprintsRef.current = loadedExamens.reduce<Record<number, string>>((acc, ex) => {
