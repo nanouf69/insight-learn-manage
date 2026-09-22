@@ -386,6 +386,13 @@
       "when": 1790096058554,
       "tag": "0054_core_note_matiere_qcm_qrc",
       "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1790096563612,
+      "tag": "0055_core_note_attempt_choix_scalaire",
+      "breakpoints": true
     }
   ]
 }
