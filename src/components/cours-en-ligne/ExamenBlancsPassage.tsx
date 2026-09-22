@@ -470,6 +470,7 @@ function PassageMatiere({
       const flushed = await flushAnswerSavesAndWait(apprenantId, exerciceKey);
       if (!flushed) throw new Error("Réponses encore en attente");
       setSaveStatus("saved");
+      if (!(await finaliserNoyau())) return;
       setShowInterruptConfirm(false);
       onTerminer(reponses);
     } catch (error) {
