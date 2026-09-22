@@ -12,7 +12,7 @@ import {
 
 // ── ENVIRONNEMENT DE TEST 100 % FICTIF ────────────────────────────────────
 // Aucune donnée réelle, aucun apprenant réel, aucune écriture en base.
-const fv = () => ({
+const fv = (): any => ({
   id: "reglementation_vtc",
   nom: "F(V) — Développement commercial",
   noteSur: 20,
@@ -22,7 +22,7 @@ const fv = () => ({
     { id: "q2", type: "qrc", enonce: "Expliquez.", reponseQRC: "Réponse attendue", points: 2 },
   ],
 });
-const gv = () => ({
+const gv = (): any => ({
   id: "reglementation_vtc2",
   nom: "G(V) — Réglementation nationale VTC",
   noteSur: 20,
@@ -31,8 +31,8 @@ const gv = () => ({
     { id: "g1", type: "qcm", enonce: "Question G ?", choix: [{ lettre: "A", texte: "Non", correct: true }], points: 1 },
   ],
 });
-const examenTest = () => ({ id: "test-vtc-2", numero: 2, type: "VTC", matieres: [fv(), gv()] });
-const autreExamen = () => ({ id: "test-vtc-1", numero: 1, type: "VTC", matieres: [fv()] });
+const examenTest = (): any => ({ id: "test-vtc-2", numero: 2, type: "VTC", matieres: [fv(), gv()] });
+const autreExamen = (): any => ({ id: "test-vtc-1", numero: 1, type: "VTC", matieres: [fv()] });
 
 describe("Examen blanc — intégrité du contenu (compte TEST fictif)", () => {
   it("Admin = Base = nouvelle tentative : F(V) et G(V) identiques", () => {
