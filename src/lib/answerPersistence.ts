@@ -249,8 +249,16 @@ export const isAnswerStorageSaturated = (): boolean => storageSaturated;
  */
 export interface AnswerSaveRejection {
   exerciceId: string;
-  reason: "frozen" | "forbidden";
+  /**
+   * `frozen` / `forbidden` : refus historiques (passage terminé, compte non
+   * propriétaire). `retake_delay` : règle des 48 h. `refused` : tout autre
+   * refus fonctionnel explicite du serveur. Dans TOUS ces cas, répéter la même
+   * requête ne peut pas la faire réussir : le renvoi automatique s'arrête.
+   */
+  reason: "frozen" | "forbidden" | "retake_delay" | "refused";
   at: string;
+  /** Message explicite destiné à l'apprenant (refus définitif). */
+  message?: string;
 }
 
 let lastRejection: AnswerSaveRejection | null = null;
@@ -266,8 +274,12 @@ const emitRejection = () => {
   });
 };
 
-const notifyAnswerSaveRejected = (exerciceId: string, reason: AnswerSaveRejection["reason"]) => {
-  lastRejection = { exerciceId, reason, at: new Date().toISOString() };
+const notifyAnswerSaveRejected = (
+  exerciceId: string,
+  reason: AnswerSaveRejection["reason"],
+  message?: string,
+) => {
+  lastRejection = { exerciceId, reason, at: new Date().toISOString(), message };
   emitRejection();
 };
 
@@ -508,6 +520,101 @@ const buildHeaders = (): Record<string, string> | null => {
 
 type SendResult = "ok" | "retry" | "blocked";
 
+/**
+ * ÉTAPE 1 DU PLAN ANTI-PANNE — classification des erreurs serveur.
+ *
+ * DÉFINITIF : répéter exactement la même requête ne peut pas la faire réussir
+ * (règle des 48 h, passage déjà terminé, examen fermé, tentative non
+ * autorisée, absence de droits, refus fonctionnel explicite, requête invalide).
+ * → aucun renvoi automatique. L'élément reste CONSERVÉ en file (jamais
+ *   supprimé) et l'apprenant voit la vraie raison.
+ *
+ * TEMPORAIRE : réseau, timeout, serveur/base momentanément indisponibles,
+ * 5xx sans refus fonctionnel identifié. → conservé en file + réessais espacés.
+ */
+export function classifyAnswerSaveFailure(
+  status: number,
+  body: string,
+): { definitif: boolean; reason: AnswerSaveRejection["reason"]; message: string } {
+  const t = (body ?? "").toLowerCase();
+
+  // Règle des 48 h (trigger enforce_exam_retake_delay, SQLSTATE P0471).
+  if (
+    t.includes("p0471") ||
+    t.includes("48 h") ||
+    t.includes("48h") ||
+    t.includes("délai") ||
+    t.includes("delai")
+  ) {
+    return {
+      definitif: true,
+      reason: "retake_delay",
+      message:
+        "Nouveau passage non autorisé avant 48 h. Vos réponses de ce nouveau passage ne peuvent pas être enregistrées. Contactez le centre si vous pensez que c'est une erreur.",
+    };
+  }
+
+  // Refus de droits / propriété du dossier.
+  if (status === 401 || status === 403 || t.includes("permission denied") || t.includes("row-level security")) {
+    return {
+      definitif: true,
+      reason: "forbidden",
+      message:
+        "Le serveur a refusé cette sauvegarde (droits insuffisants pour ce dossier). Vos réponses sont conservées sur cet appareil. Contactez le centre.",
+    };
+  }
+
+  // Autres refus fonctionnels explicites annoncés par le serveur.
+  const refusFonctionnel = [
+    "tentative non autoris",
+    "passage non autoris",
+    "non autoris",
+    "déjà terminé",
+    "deja termine",
+    "already finalized",
+    "examen fermé",
+    "examen ferme",
+    "attempt_closed",
+    "attempt is closed",
+    "snapshot",
+    "immutable",
+    "violates check constraint",
+    "violates foreign key",
+  ];
+  if (refusFonctionnel.some((k) => t.includes(k))) {
+    return {
+      definitif: true,
+      reason: "refused",
+      message:
+        "Le serveur a refusé cette sauvegarde. Elle ne sera pas renvoyée automatiquement et vos réponses restent conservées sur cet appareil. Contactez le centre.",
+    };
+  }
+
+  // Requête invalide : la réémettre à l'identique échouera toujours.
+  if (status >= 400 && status < 500 && status !== 408 && status !== 429) {
+    return {
+      definitif: true,
+      reason: "refused",
+      message:
+        "Le serveur a refusé cette sauvegarde. Vos réponses restent conservées sur cet appareil. Contactez le centre.",
+    };
+  }
+
+  return {
+    definitif: false,
+    reason: "refused",
+    message:
+      "Service temporairement indisponible. Vos réponses sont conservées sur cet appareil et seront envoyées automatiquement dès le rétablissement.",
+  };
+}
+
+/** Délai de réessai : croissance existante (plafond 30 s) + jitter ±30 %. */
+export function computeRetryDelay(attempts: number, random: () => number = Math.random): number {
+  const base = Math.min(30000, 1000 * 2 ** Math.min(Math.max(attempts, 1), 5));
+  const jitter = 1 + (random() - 0.5) * 0.6; // 0,7× à 1,3×
+  return Math.max(500, Math.round(base * jitter));
+}
+
 async function sendItem(item: QueueItem): Promise<SendResult> {
   // Dernière barrière immédiatement avant l'Edge Function. Même si un ancien
   // timer ou événement appelle le worker, Vue apprenant ne peut jamais émettre
@@ -546,12 +653,12 @@ async function sendItem(item: QueueItem): Promise<SendResult> {
     }
     const text = await res.text();
     console.error("[answerPersistence] Échec sauvegarde", res.status, text);
-    // 403 : le serveur refuse le lien compte ↔ dossier. Réessayer en boucle ne
-    // sert à rien et masque les vraies erreurs ; l'élément est conservé
-    // (aucune réponse n'est supprimée) et sera retenté au prochain changement
-    // de session.
-    if (res.status === 403) {
-      notifyAnswerSaveRejected(item.payload.exercice_id, "forbidden");
+    // Un refus DÉFINITIF n'est jamais renvoyé en boucle : l'élément est
+    // conservé (aucune réponse n'est supprimée) et l'apprenant voit la vraie
+    // raison. Une erreur TEMPORAIRE reste en file et sera réessayée.
+    const verdict = classifyAnswerSaveFailure(res.status, text);
+    if (verdict.definitif) {
+      notifyAnswerSaveRejected(item.payload.exercice_id, verdict.reason, verdict.message);
       return "blocked";
     }
     return "retry";
@@ -615,7 +722,7 @@ async function processQueue(): Promise<void> {
     } else {
       setState("error");
       const attempts = Math.max(...remaining.map((item) => item.attempts ?? 1), 1);
-      const delay = Math.min(30000, 1000 * 2 ** Math.min(attempts, 5));
+      const delay = computeRetryDelay(attempts);
       if (hadFailure) setTimeout(() => void processQueue(), delay);
     }
   } finally {
