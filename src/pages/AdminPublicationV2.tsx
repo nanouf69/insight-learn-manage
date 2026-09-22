@@ -92,7 +92,7 @@ export default function AdminPublicationV2() {
     if (!examen || !c?.publiable || EXCLUS.has(id)) return;
     setOccupe(id);
     try {
-      const v = (await publierVersionExamen(examen, MODULE_PAR_EXAMEN[id] ?? null, user?.email ?? null ?? undefined)) as unknown as VersionPubliee;
+      const v = (await publierVersionExamen(examen, MODULE_PAR_EXAMEN[id] ?? null, user?.email ?? undefined)) as unknown as VersionPubliee;
       const ctrl = controlerVersionPubliee(examen, v);
       await refetch();
       noter(
