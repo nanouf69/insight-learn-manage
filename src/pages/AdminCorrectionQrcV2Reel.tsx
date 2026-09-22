@@ -163,7 +163,8 @@ export default function AdminCorrectionQrcV2Reel() {
   const partPanneauRef = useRef(partPanneau);
   useEffect(() => { partPanneauRef.current = partPanneau; }, [partPanneau]);
 
-  // Position de défilement : mémorisée localement, restaurée une fois les données serveur chargées
+  // Position de défilement : mémorisée localement, restaurée UNE SEULE FOIS (au retour F5).
+  // Un rafraîchissement de données après une correction ne doit jamais déplacer la page.
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | null = null;
     const onScroll = () => {
@@ -173,10 +174,22 @@ export default function AdminCorrectionQrcV2Reel() {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => { window.removeEventListener("scroll", onScroll); if (timer) clearTimeout(timer); };
   }, []);
+  const scrollRestaure = useRef(false);
   useEffect(() => {
-    if (!session) return;
+    if (!session || scrollRestaure.current) return;
+    scrollRestaure.current = true;
     const y = Number(sessionStorage.getItem("qrc_v2_scroll") ?? 0);
     if (y > 0) requestAnimationFrame(() => window.scrollTo(0, y));
+  }, [session]);
+
+  // Défilement horizontal des tableaux : conservé à l'identique lors d'un rafraîchissement de données.
+  const scrollsX = useRef(new Map<string, number>());
+  const tableauxRef = useRef(new Map<string, HTMLDivElement | null>());
+  useEffect(() => {
+    for (const [cle, el] of tableauxRef.current) {
+      const x = scrollsX.current.get(cle);
+      if (el && x != null && el.scrollLeft !== x) el.scrollLeft = x;
+    }
   }, [session]);
 
   const parTentative = useMemo(() => {
