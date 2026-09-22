@@ -206,7 +206,9 @@ export async function listerGroupesCrm(mode: "test" | "migre" = "migre"): Promis
         candidats: Set<string>;
       });
     g.candidats.add(a.apprenant_id as string);
-    const cleEb = `${cle}::${a.exam_id}|${jour}`;
+    // Un seul bloc par numéro d'Examen Blanc dans la session CRM ; les dates réelles
+    // de passage sont conservées à l'intérieur (jamais de fusion entre EB différents).
+    const cleEb = `${cle}::${a.exam_id}`;
     let eb = g.examens.find((e) => e.cle === cleEb);
     if (!eb) {
       eb = {
@@ -217,10 +219,20 @@ export async function listerGroupesCrm(mode: "test" | "migre" = "migre"): Promis
         heureMin: heure,
         heureMax: heure,
         attemptIds: [],
+        dates: [],
       };
       g.examens.push(eb);
     }
     eb.attemptIds.push(a.attempt_id as string);
+    let dt = eb.dates.find((x) => x.jour === jour);
+    if (!dt) {
+      dt = { jour, date: jourFr(jour), heureMin: heure, heureMax: heure, attemptIds: [] };
+      eb.dates.push(dt);
+    }
+    dt.attemptIds.push(a.attempt_id as string);
+    if (heure < dt.heureMin) dt.heureMin = heure;
+    if (heure > dt.heureMax) dt.heureMax = heure;
+    if (jour < eb.jour) { eb.jour = jour; eb.date = jourFr(jour); }
     if (heure < eb.heureMin) eb.heureMin = heure;
     if (heure > eb.heureMax) eb.heureMax = heure;
     if (base.type !== "crm" && jour > g.tri) g.tri = jour;
