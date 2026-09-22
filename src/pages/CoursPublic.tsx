@@ -914,6 +914,7 @@ const ChangePasswordDialog = () => {
 
 const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, loading: authLoading, profile, signOut } = useAuth();
   const lastKnownUserIdRef = useRef<string | null>(null);
   if (user?.id) lastKnownUserIdRef.current = user.id;
@@ -1034,7 +1035,11 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
       setApprenantFetchError(null);
       if (!adminRedirectedRef.current) {
         adminRedirectedRef.current = true;
-        navigate("/", { replace: true });
+        const destination = adminRetourOrigineDejaTente
+          ? "/"
+          : lireDestinationRetour(location.state);
+        if (destination !== "/") adminRetourOrigineDejaTente = true;
+        navigate(destination, { replace: true });
       }
       return;
     }
