@@ -21,8 +21,23 @@ export default function AdminCorrectionQrcV2Reel() {
   const mode: "test" | "migre" =
     new URLSearchParams(window.location.search).get("mode") === "test" ? "test" : "migre";
 
+  // Préférences d'interface mémorisées dans l'URL pour survivre à un F5.
+  // Les données pédagogiques sont TOUJOURS rechargées depuis le serveur ; l'URL ne porte que la navigation.
+  const majUrl = (cle: string | null, qrc: string | null) => {
+    const params = new URLSearchParams(window.location.search);
+    if (cle) params.set("qrc_session", cle); else params.delete("qrc_session");
+    if (qrc) params.set("qrc", qrc); else params.delete("qrc");
+    window.history.replaceState(null, "", `${window.location.pathname}?${params.toString()}`);
+  };
+
   const [sessions, setSessions] = useState<SessionListee[]>([]);
-  const [sessionCle, setSessionCle] = useState<string | null>(null);
+  const [sessionCle, setSessionCleState] = useState<string | null>(
+    () => new URLSearchParams(window.location.search).get("qrc_session"),
+  );
+  const setSessionCle = (cle: string | null) => {
+    setSessionCleState(cle);
+    majUrl(cle, null);
+  };
   const [session, setSession] = useState<SessionReelle | null>(null);
   const [selection, setSelection] = useState<string | null>(null);
   const [note, setNote] = useState<number | null>(null);
