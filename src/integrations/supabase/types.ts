@@ -100,6 +100,98 @@ export type Database = {
         }
         Relationships: []
       }
+      answer_events: {
+        Row: {
+          apprenant_id: string
+          attempt_id: string
+          auteur: string | null
+          created_at: string
+          event_id: number
+          origine: string | null
+          question_id: string
+          response_id: string
+          revision_nouvelle: number
+          revision_precedente: number | null
+          session_origine: string | null
+          valeur_nouvelle: Json | null
+          valeur_precedente: Json | null
+        }
+        Insert: {
+          apprenant_id: string
+          attempt_id: string
+          auteur?: string | null
+          created_at?: string
+          event_id?: number
+          origine?: string | null
+          question_id: string
+          response_id: string
+          revision_nouvelle: number
+          revision_precedente?: number | null
+          session_origine?: string | null
+          valeur_nouvelle?: Json | null
+          valeur_precedente?: Json | null
+        }
+        Update: {
+          apprenant_id?: string
+          attempt_id?: string
+          auteur?: string | null
+          created_at?: string
+          event_id?: number
+          origine?: string | null
+          question_id?: string
+          response_id?: string
+          revision_nouvelle?: number
+          revision_precedente?: number | null
+          session_origine?: string | null
+          valeur_nouvelle?: Json | null
+          valeur_precedente?: Json | null
+        }
+        Relationships: []
+      }
+      answer_state: {
+        Row: {
+          apprenant_id: string
+          attempt_id: string
+          question_id: string
+          response_id: string
+          revision: number
+          session_origine: string | null
+          updated_at: string
+          updated_by: string | null
+          valeur: Json | null
+        }
+        Insert: {
+          apprenant_id: string
+          attempt_id: string
+          question_id: string
+          response_id?: string
+          revision?: number
+          session_origine?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          valeur?: Json | null
+        }
+        Update: {
+          apprenant_id?: string
+          attempt_id?: string
+          question_id?: string
+          response_id?: string
+          revision?: number
+          session_origine?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          valeur?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "answer_state_attempt_id_fkey"
+            columns: ["attempt_id"]
+            isOneToOne: false
+            referencedRelation: "exam_attempts_v2"
+            referencedColumns: ["attempt_id"]
+          },
+        ]
+      }
       app_version: {
         Row: {
           created_at: string
@@ -865,6 +957,60 @@ export type Database = {
           type_examen?: string | null
           updated_at?: string
           ville?: string | null
+        }
+        Relationships: []
+      }
+      audit_journal: {
+        Row: {
+          apprenant_id: string | null
+          apres: Json | null
+          attempt_id: string | null
+          auteur: string | null
+          auteur_email: string | null
+          avant: Json | null
+          cible_id: string | null
+          cible_type: string
+          created_at: string
+          event_id: number
+          exam_id: string | null
+          exam_version_id: string | null
+          operation: string
+          origine: string | null
+          session_technique: string | null
+        }
+        Insert: {
+          apprenant_id?: string | null
+          apres?: Json | null
+          attempt_id?: string | null
+          auteur?: string | null
+          auteur_email?: string | null
+          avant?: Json | null
+          cible_id?: string | null
+          cible_type: string
+          created_at?: string
+          event_id?: number
+          exam_id?: string | null
+          exam_version_id?: string | null
+          operation: string
+          origine?: string | null
+          session_technique?: string | null
+        }
+        Update: {
+          apprenant_id?: string | null
+          apres?: Json | null
+          attempt_id?: string | null
+          auteur?: string | null
+          auteur_email?: string | null
+          avant?: Json | null
+          cible_id?: string | null
+          cible_type?: string
+          created_at?: string
+          event_id?: number
+          exam_id?: string | null
+          exam_version_id?: string | null
+          operation?: string
+          origine?: string | null
+          session_technique?: string | null
         }
         Relationships: []
       }
@@ -2090,6 +2236,50 @@ export type Database = {
         }
         Relationships: []
       }
+      exam_attempts_v2: {
+        Row: {
+          apprenant_id: string
+          attempt_id: string
+          etat: string
+          exam_id: string
+          exam_version_id: string
+          finished_at: string | null
+          snapshot: Json
+          snapshot_fingerprint: string
+          started_at: string
+        }
+        Insert: {
+          apprenant_id: string
+          attempt_id?: string
+          etat?: string
+          exam_id: string
+          exam_version_id: string
+          finished_at?: string | null
+          snapshot: Json
+          snapshot_fingerprint: string
+          started_at?: string
+        }
+        Update: {
+          apprenant_id?: string
+          attempt_id?: string
+          etat?: string
+          exam_id?: string
+          exam_version_id?: string
+          finished_at?: string | null
+          snapshot?: Json
+          snapshot_fingerprint?: string
+          started_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exam_attempts_v2_exam_version_id_fkey"
+            columns: ["exam_version_id"]
+            isOneToOne: false
+            referencedRelation: "exam_content_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       exam_content_backup_20260921: {
         Row: {
           backup_at: string
@@ -2120,6 +2310,108 @@ export type Database = {
           module_id?: number
           source_fingerprint?: string | null
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      exam_content_shares: {
+        Row: {
+          actif: boolean
+          created_at: string
+          declared_by: string | null
+          declared_email: string | null
+          id: string
+          motif: string | null
+          revoked_at: string | null
+          source_exam_id: string
+          source_matiere: string
+          target_exam_id: string
+          target_matiere: string
+        }
+        Insert: {
+          actif?: boolean
+          created_at?: string
+          declared_by?: string | null
+          declared_email?: string | null
+          id?: string
+          motif?: string | null
+          revoked_at?: string | null
+          source_exam_id: string
+          source_matiere: string
+          target_exam_id: string
+          target_matiere: string
+        }
+        Update: {
+          actif?: boolean
+          created_at?: string
+          declared_by?: string | null
+          declared_email?: string | null
+          id?: string
+          motif?: string | null
+          revoked_at?: string | null
+          source_exam_id?: string
+          source_matiere?: string
+          target_exam_id?: string
+          target_matiere?: string
+        }
+        Relationships: []
+      }
+      exam_content_versions: {
+        Row: {
+          content: Json
+          created_at: string
+          created_by: string | null
+          created_email: string | null
+          exam_id: string
+          exam_numero: string
+          filiere: string
+          fingerprint: string
+          id: string
+          module_id: number | null
+          motif: string | null
+          published_at: string | null
+          published_by: string | null
+          published_email: string | null
+          retired_at: string | null
+          statut: string
+          version_number: number
+        }
+        Insert: {
+          content?: Json
+          created_at?: string
+          created_by?: string | null
+          created_email?: string | null
+          exam_id: string
+          exam_numero: string
+          filiere: string
+          fingerprint?: string
+          id?: string
+          module_id?: number | null
+          motif?: string | null
+          published_at?: string | null
+          published_by?: string | null
+          published_email?: string | null
+          retired_at?: string | null
+          statut?: string
+          version_number: number
+        }
+        Update: {
+          content?: Json
+          created_at?: string
+          created_by?: string | null
+          created_email?: string | null
+          exam_id?: string
+          exam_numero?: string
+          filiere?: string
+          fingerprint?: string
+          id?: string
+          module_id?: number | null
+          motif?: string | null
+          published_at?: string | null
+          published_by?: string | null
+          published_email?: string | null
+          retired_at?: string | null
+          statut?: string
+          version_number?: number
         }
         Relationships: []
       }
@@ -4211,6 +4503,56 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      qrc_instances_v2: {
+        Row: {
+          apprenant_id: string
+          attempt_id: string
+          corrige_at: string | null
+          corrige_email: string | null
+          corrige_par: string | null
+          created_at: string
+          etat: string
+          note: number | null
+          qrc_instance_id: string
+          question_id: string
+          reponse: Json | null
+        }
+        Insert: {
+          apprenant_id: string
+          attempt_id: string
+          corrige_at?: string | null
+          corrige_email?: string | null
+          corrige_par?: string | null
+          created_at?: string
+          etat?: string
+          note?: number | null
+          qrc_instance_id?: string
+          question_id: string
+          reponse?: Json | null
+        }
+        Update: {
+          apprenant_id?: string
+          attempt_id?: string
+          corrige_at?: string | null
+          corrige_email?: string | null
+          corrige_par?: string | null
+          created_at?: string
+          etat?: string
+          note?: number | null
+          qrc_instance_id?: string
+          question_id?: string
+          reponse?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "qrc_instances_v2_attempt_id_fkey"
+            columns: ["attempt_id"]
+            isOneToOne: false
+            referencedRelation: "exam_attempts_v2"
+            referencedColumns: ["attempt_id"]
+          },
+        ]
       }
       qualiopi_indicateurs_etat: {
         Row: {
