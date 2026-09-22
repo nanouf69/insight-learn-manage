@@ -33,6 +33,7 @@ import AdminErrorLogs from "./pages/AdminErrorLogs";
 import AdminAuditT3P from "./pages/AdminAuditT3P";
 import AdminAuditModules from "./pages/AdminAuditModules";
 import AdminAuditDBvsLearner from "./pages/AdminAuditDBvsLearner";
+import AdminCorrectionQrcV2 from "./pages/AdminCorrectionQrcV2";
 
 import DocumentASignerPublic from "./pages/DocumentASignerPublic";
 import IdentifiantsT3PPublic from "./pages/IdentifiantsT3PPublic";
@@ -176,6 +177,12 @@ function App() {
                 <Route path="/admin/audit-db-vs-apprenant" element={
                   <ProtectedRoute>
                     <ErrorBoundary><AdminAuditDBvsLearner /></ErrorBoundary>
+                  </ProtectedRoute>
+                } />
+
+                <Route path="/admin/correction-qrc-v2" element={
+                  <ProtectedRoute>
+                    <ErrorBoundary><AdminCorrectionQrcV2 /></ErrorBoundary>
                   </ProtectedRoute>
                 } />
 
