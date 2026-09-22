@@ -61,12 +61,16 @@ export type SessionReelle = {
 
 const asSnapshot = (v: unknown) => v as SnapshotExamen;
 
-/** Charge la session TEST depuis la base réelle (tentatives marquées is_test). */
-export async function chargerSessionTest(): Promise<SessionReelle> {
+/**
+ * Charge une session depuis la base réelle.
+ * - "test"  : tentatives fictives marquées is_test
+ * - "migre" : passages réels copiés depuis l'ancien système (pilote contrôlé)
+ */
+export async function chargerSessionTest(mode: "test" | "migre" = "test"): Promise<SessionReelle> {
   const { data: attempts, error } = await supabase
     .from("exam_attempts_v2")
     .select("attempt_id, apprenant_id, exam_id, exam_version_id, etat, snapshot, snapshot_fingerprint")
-    .eq("is_test", true)
+    .eq("is_test", mode === "test")
     .order("started_at", { ascending: true });
   if (error) throw error;
 

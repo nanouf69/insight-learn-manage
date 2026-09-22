@@ -15,6 +15,8 @@ import {
 const texte = (v: unknown) => (typeof v === "string" ? v : v == null ? "" : JSON.stringify(v));
 
 export default function AdminCorrectionQrcV2Reel() {
+  const mode: "test" | "migre" =
+    new URLSearchParams(window.location.search).get("mode") === "migre" ? "migre" : "test";
   const [session, setSession] = useState<SessionReelle | null>(null);
   const [selection, setSelection] = useState<string | null>(null);
   const [note, setNote] = useState<number | null>(null);
@@ -24,11 +26,11 @@ export default function AdminCorrectionQrcV2Reel() {
 
   const recharger = useCallback(async () => {
     try {
-      setSession(await chargerSessionTest());
+      setSession(await chargerSessionTest(mode));
     } catch (e) {
       setErreur((e as Error).message);
     }
-  }, []);
+  }, [mode]);
 
   useEffect(() => { void recharger(); }, [recharger]);
   useEffect(() => souscrireSignal("admin-qrc-v2", "qrc_instances_v2", () => void recharger()), [recharger]);
@@ -46,7 +48,15 @@ export default function AdminCorrectionQrcV2Reel() {
   const total = session?.qrc.length ?? 0;
   const corrigees = session?.qrc.filter((q) => q.etat === "corrigee").length ?? 0;
   const premiere = session?.tentatives[0];
-  const matieres = premiere?.snapshot.matieres ?? [];
+  // Toutes les matières présentes dans la session, sans mélanger les tentatives :
+  // chaque ligne d'un tableau est le passage de ce candidat SUR CETTE matière.
+  const matieres = useMemo(() => {
+    const m = new Map<string, { subject_id: string; lettre: string; titre: string; ordre: number }>();
+    for (const t of session?.tentatives ?? []) {
+      for (const mat of t.snapshot.matieres ?? []) if (!m.has(mat.subject_id)) m.set(mat.subject_id, mat);
+    }
+    return Array.from(m.values()).sort((a, b) => (a.lettre ?? "").localeCompare(b.lettre ?? ""));
+  }, [session]);
 
   const valider = async () => {
     if (!qrcSel || note === null) return;
@@ -84,8 +94,13 @@ export default function AdminCorrectionQrcV2Reel() {
         </header>
 
         {matieres.map((m) => {
-          const questions = (premiere?.snapshot.questions ?? []).filter((q) => q.matiere === m.subject_id);
-          const dansMatiere = (session?.qrc ?? []).filter((q) => questions.some((x) => x.id === q.question_id));
+          const tentatives = (session?.tentatives ?? []).filter((t) =>
+            (t.snapshot.matieres ?? []).some((x) => x.subject_id === m.subject_id),
+          );
+          const questions = (tentatives[0]?.snapshot.questions ?? [])
+            .filter((q) => q.matiere === m.subject_id && q.type === "QRC");
+          const attemptIds = new Set(tentatives.map((t) => t.attempt_id));
+          const dansMatiere = (session?.qrc ?? []).filter((q) => attemptIds.has(q.attempt_id));
           const ok = dansMatiere.filter((q) => q.etat === "corrigee").length;
           return (
             <section key={m.subject_id} className="space-y-2">
@@ -104,7 +119,7 @@ export default function AdminCorrectionQrcV2Reel() {
                     </tr>
                   </thead>
                   <tbody>
-                    {(session?.tentatives ?? []).map((t) => (
+                    {tentatives.map((t) => (
                       <tr key={t.attempt_id}>
                         <td className="sticky left-0 bg-background px-2 py-1 font-medium whitespace-nowrap">{t.candidat}</td>
                         {questions.map((q) => {
