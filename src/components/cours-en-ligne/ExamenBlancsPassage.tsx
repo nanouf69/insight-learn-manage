@@ -444,6 +444,7 @@ function PassageMatiere({
       toast.error("Connexion indisponible : vos réponses restent conservées et la matière ne sera pas finalisée avant confirmation.");
       return;
     }
+    if (!(await finaliserNoyau())) return;
     onTerminer(reponses);
   };
 
