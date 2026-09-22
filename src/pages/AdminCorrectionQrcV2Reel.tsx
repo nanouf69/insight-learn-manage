@@ -30,7 +30,7 @@ export default function AdminCorrectionQrcV2Reel() {
     } catch (e) {
       setErreur((e as Error).message);
     }
-  }, []);
+  }, [mode]);
 
   useEffect(() => { void recharger(); }, [recharger]);
   useEffect(() => souscrireSignal("admin-qrc-v2", "qrc_instances_v2", () => void recharger()), [recharger]);
