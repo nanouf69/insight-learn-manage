@@ -31,7 +31,7 @@ export default function AdminCorrectionQrcV2() {
   const [commentaire, setCommentaire] = useState("");
   const [ecriture, setEcriture] = useState<EtatEcriture>("idle");
   const [messageErreur, setMessageErreur] = useState<string | null>(null);
-  const sectionsRef = useRef<Record<string, HTMLDivElement | null>>({});
+  const sectionsRef = useRef<Record<string, HTMLElement | null>>({});
 
   // Toute la vérité vient du serveur : aucun compteur parallèle côté navigateur.
   const instances = useMemo(() => serveur.lireQrcSession(session.session_id), [serveur, session, tick]);
