@@ -80,6 +80,27 @@ export function buildExamFingerprint(examen: ExamenBlanc | null | undefined): st
   return hashString(`${head}\n${body}`);
 }
 
+/** Empreinte des seules questions (utilisée pour comparer un ancien passage à la version active). */
+export function buildQuestionsFingerprint(questions: unknown): string {
+  const list = Array.isArray(questions) ? questions : [];
+  return hashString(list.map((q) => questionFingerprintParts(q as Question)).join("\n"));
+}
+
+/**
+ * Un passage a-t-il été réalisé sur une version ANTÉRIEURE de l'examen ?
+ * LECTURE SEULE : ne modifie ni la note ni le passage, sert uniquement
+ * à afficher un avertissement côté Admin.
+ */
+export function isSnapshotOutdated(
+  snapshot: { questions?: unknown } | null | undefined,
+  matiereActive: Matiere | null | undefined,
+): boolean {
+  if (!snapshot || !Array.isArray((snapshot as any).questions) || !matiereActive) return false;
+  const active = (matiereActive as any).questions;
+  if (!Array.isArray(active) || active.length === 0) return false;
+  return buildQuestionsFingerprint((snapshot as any).questions) !== buildQuestionsFingerprint(active);
+}
+
 /** Photographie complète et indépendante de la version active (deep clone). */
 export function buildAttemptSnapshot(examen: ExamenBlanc): ExamenBlanc {
   return JSON.parse(JSON.stringify(examen)) as ExamenBlanc;
