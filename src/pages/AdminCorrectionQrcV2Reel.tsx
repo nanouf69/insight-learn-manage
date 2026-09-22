@@ -15,6 +15,8 @@ import {
 const texte = (v: unknown) => (typeof v === "string" ? v : v == null ? "" : JSON.stringify(v));
 
 export default function AdminCorrectionQrcV2Reel() {
+  const mode: "test" | "migre" =
+    new URLSearchParams(window.location.search).get("mode") === "migre" ? "migre" : "test";
   const [session, setSession] = useState<SessionReelle | null>(null);
   const [selection, setSelection] = useState<string | null>(null);
   const [note, setNote] = useState<number | null>(null);
