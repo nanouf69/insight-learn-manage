@@ -1123,7 +1123,11 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
 
           if (!cancelled && !roleError && isAdmin === true) {
             setApprenantLoading(false);
-            navigate("/", { replace: true });
+            const destination = adminRetourOrigineDejaTente
+              ? "/"
+              : lireDestinationRetour(location.state);
+            if (destination !== "/") adminRetourOrigineDejaTente = true;
+            navigate(destination, { replace: true });
             return;
           }
 
