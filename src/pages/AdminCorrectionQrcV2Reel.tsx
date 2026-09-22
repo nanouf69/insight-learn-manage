@@ -279,7 +279,11 @@ export default function AdminCorrectionQrcV2Reel() {
 
   return (
     <div ref={conteneurRef} className="flex min-h-screen w-full bg-background">
-      <div className="min-w-0 p-4 space-y-6 overflow-x-auto" style={{ width: `${100 - partPanneau}%` }}>
+      <div
+        data-testid="zone-tableau"
+        className="min-w-0 shrink-0 grow-0 p-4 space-y-6 overflow-x-auto"
+        style={{ flex: `0 0 calc(${100 - partPanneau}% - 3px)`, width: `calc(${100 - partPanneau}% - 3px)` }}
+      >
         <header className="sticky top-0 z-10 bg-background/95 py-2 space-y-2">
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-lg font-semibold">Correction QRC V2</h1>
@@ -383,7 +387,11 @@ export default function AdminCorrectionQrcV2Reel() {
                   {dansMatiere.length > 0 && ok === dansMatiere.length ? "✓ TERMINÉE" : `${ok}/${dansMatiere.length}`}
                 </span>
               </h2>
-              <div className="overflow-x-auto">
+              <div
+                className="overflow-x-auto"
+                ref={(el) => { tableauxRef.current.set(m.subject_id, el); }}
+                onScroll={(e) => scrollsX.current.set(m.subject_id, e.currentTarget.scrollLeft)}
+              >
                 <table className="text-sm">
                   <thead>
                     <tr>
@@ -469,7 +477,7 @@ export default function AdminCorrectionQrcV2Reel() {
       <aside
         data-testid="panneau-correction"
         className="min-w-0 shrink-0 border-l p-3 space-y-2 overflow-y-auto sticky top-0 max-h-screen"
-        style={{ width: `${partPanneau}%` }}
+        style={{ flex: `0 0 calc(${partPanneau}% - 3px)`, width: `calc(${partPanneau}% - 3px)` }}
       >
         {!qrcSel && <p className="text-sm text-muted-foreground">Sélectionnez une QRC dans le tableau.</p>}
         {qrcSel && questionSel && tentativeSel && (
