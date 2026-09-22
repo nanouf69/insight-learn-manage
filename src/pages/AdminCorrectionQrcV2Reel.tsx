@@ -87,6 +87,11 @@ export default function AdminCorrectionQrcV2Reel() {
         if (!param("qrc_groupe")) {
           setGroupeCleState(liste[0]?.cle ?? null);
           setEbCleState(liste[0]?.examens[0]?.cle ?? null);
+          majUrl({ qrc_groupe: liste[0]?.cle ?? null, qrc_eb: liste[0]?.examens[0]?.cle ?? null });
+        } else if (!param("qrc_eb")) {
+          const g = liste.find((x) => x.cle === param("qrc_groupe"));
+          setEbCleState(g?.examens[0]?.cle ?? null);
+          majUrl({ qrc_eb: g?.examens[0]?.cle ?? null });
         }
       } catch (e) {
         setErreur((e as Error).message);
