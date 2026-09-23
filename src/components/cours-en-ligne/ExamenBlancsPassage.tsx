@@ -383,7 +383,8 @@ function PassageMatiere({
   };
 
 
-  const allAnswered = questionsSafe.every(q => isQuestionAnswered(q));
+  // Une matière vide n'est jamais « entièrement répondue ».
+  const allAnswered = questionsSafe.length > 0 && questionsSafe.every(q => isQuestionAnswered(q));
   const unansweredIndexes = questionsSafe
     .map((q, i) => (isQuestionAnswered(q) ? -1 : i))
     .filter(i => i >= 0);
@@ -439,6 +440,14 @@ function PassageMatiere({
   const finaliserNoyau = async (): Promise<boolean> => {
     const attemptId = attemptV2Ref.current;
     if (!attemptId) return true; // passage non raccordé : comportement inchangé
+    // Incident Thierno BAH (23/09/2026) : Array.every([]) vaut true. Une matière
+    // hydratée sans questions pouvait donc atteindre le noyau et être clôturée
+    // vide alors que son snapshot serveur contenait bien les questions.
+    if (questionsSafe.length === 0) {
+      setSaveStatus("error");
+      toast.error("Le contenu de cette matière n'est pas chargé. La matière reste ouverte : rechargez la page avant de continuer.");
+      return false;
+    }
     const { restantes } = await viderFileNoyau(attemptId);
     if (restantes > 0 || reponsesNoyauEnAttente(attemptId) > 0) {
       setSaveStatus("error");
@@ -455,20 +464,37 @@ function PassageMatiere({
     // Sécurité anti-note 0 technique (hotfix 23/09/2026) : on ne clôture JAMAIS
     // une matière dont les réponses ne sont pas présentes côté noyau. On tente
     // d'abord un rattrapage, puis on bloque si l'écart persiste.
-    const attendues = reponsesRenseignees().length;
+    const attendues = questionsSafe.length;
     if (attendues > 0) {
-      const compter = async () => {
-        const { count } = await supabase
+      const lireConfirmationNoyau = async () => {
+        const [{ data: tentativeServeur, error: tentativeError }, { data: reponsesServeur, error: reponsesError }] = await Promise.all([
+          supabase.from("exam_attempts_v2").select("snapshot").eq("attempt_id", attemptId).maybeSingle(),
+          supabase
           .from("answer_state")
-          .select("question_id", { count: "exact", head: true })
-          .eq("attempt_id", attemptId);
-        return count ?? 0;
+          .select("question_id")
+          .eq("attempt_id", attemptId),
+        ]);
+        if (tentativeError || reponsesError) return null;
+        const snapshot = (tentativeServeur as any)?.snapshot;
+        const idsSnapshot = Array.isArray(snapshot?.questions)
+          ? snapshot.questions
+              .filter((q: any) => String(q?.matiere ?? "") === String(matiere.id))
+              .map((q: any) => String(q?.id ?? ""))
+              .filter(Boolean)
+          : [];
+        const idsServeur = new Set(((reponsesServeur as any[]) ?? []).map((r) => String(r?.question_id ?? "")));
+        return {
+          contenuConforme: idsSnapshot.length === attendues,
+          toutesConfirmees: idsSnapshot.length > 0 && idsSnapshot.every((id: string) => idsServeur.has(id)),
+        };
       };
-      if ((await compter()) < attendues) {
+      let confirmation = await lireConfirmationNoyau();
+      if (!confirmation?.toutesConfirmees) {
         rattraperReponsesNoyau(attemptId);
         await viderFileNoyau(attemptId);
+        confirmation = await lireConfirmationNoyau();
       }
-      if ((await compter()) < attendues) {
+      if (!confirmation?.contenuConforme || !confirmation.toutesConfirmees) {
         setSaveStatus("error");
         toast.error("Vos réponses ne sont pas toutes enregistrées côté serveur : la matière n'est pas clôturée. Rien n'est perdu, réessayez dans un instant.");
         return false;
