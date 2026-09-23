@@ -1282,6 +1282,7 @@ export default function ExamensBlancsPage({
 
       // Le succès serveur remplace immédiatement tout ancien message d'échec
       // de cette matière ; aucun toast ne traverse vers la matière suivante.
+      toast.dismiss();
       toast.success("Matière enregistrée avec succès. Vous pouvez passer à la matière suivante.", {
         id: finalizationToastId,
         duration: 3500,
