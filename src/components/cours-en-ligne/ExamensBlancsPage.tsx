@@ -548,6 +548,11 @@ export default function ExamensBlancsPage({
       if (resultError || answerError || resetError) { toast.error("Vérification de sécurité impossible. Réessayez."); return; }
 
       const cutoff = latestExamResetCutoffs(resetRows)[latestExamen.id];
+      const historicalMaximumAttempt = Math.max(
+        1,
+        ...((tRows as any[]) ?? []).map((row: any) => getAttemptNumber(row)),
+        ...((((answerRows as unknown) as SavedExamAnswerRow[]) ?? []).map((row) => getSavedAnswerRowAttempt(row, latestExamen.id))),
+      );
       const allResultRows = mergePassageSiblingRows(excludeResultPlaceholders(((tRows as any[]) ?? []).filter((row: any) =>
         isAfterExamReset(row?.completed_at ?? row?.created_at, cutoff),
       )));
@@ -621,6 +626,7 @@ export default function ExamensBlancsPage({
         resultRows: allResultRows,
         savedRows,
         forceRetake,
+        minimumTentative: cutoff ? historicalMaximumAttempt : 1,
       });
 
       const bestRowsByMatiere = new Map<string, SavedExamAnswerRow>();

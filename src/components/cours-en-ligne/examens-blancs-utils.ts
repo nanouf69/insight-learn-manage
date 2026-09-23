@@ -1311,12 +1311,14 @@ export function resolveExamPassage({
   resultRows,
   savedRows,
   forceRetake = false,
+  minimumTentative = 1,
 }: {
   examId: string;
   matieres: Array<Pick<Matiere, "id" | "nom">>;
   resultRows: any[];
   savedRows: SavedExamAnswerRow[];
   forceRetake?: boolean;
+  minimumTentative?: number;
 }): ExamPassageResolution {
   const validMatieres = safeArray(matieres).filter(Boolean) as Array<Pick<Matiere, "id" | "nom">>;
   const results = safeArray(resultRows).filter(Boolean);
@@ -1331,7 +1333,7 @@ export function resolveExamPassage({
       .map((row) => safeStr(row.exercice_id)),
   );
 
-  const knownAttempts = new Set<number>([1]);
+  const knownAttempts = new Set<number>([Math.max(1, Math.trunc(minimumTentative))]);
   results.forEach((row: any) => knownAttempts.add(getAttemptNumber(row)));
   answers.forEach((row) => knownAttempts.add(getSavedAnswerRowAttempt(row, examId)));
 
@@ -1411,7 +1413,7 @@ export function resolveExamPassage({
   // Nouveau passage : numéro strictement libre pour TOUTES les matières.
   const maxKnown = Array.from(knownAttempts).reduce((max, n) => Math.max(max, n), 1);
   const usedResultAttempts = new Set(results.map((row: any) => getAttemptNumber(row)));
-  let tentative = forceRetake || attemptStates.some((s) => s.hasWork) ? maxKnown + 1 : 1;
+  let tentative = forceRetake || attemptStates.some((s) => s.hasWork) || minimumTentative > 1 ? maxKnown + 1 : 1;
   for (let guard = 0; guard < 500; guard += 1) {
     const collides =
       usedResultAttempts.has(tentative) ||
