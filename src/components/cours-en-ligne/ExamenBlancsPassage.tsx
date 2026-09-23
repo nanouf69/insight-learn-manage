@@ -266,12 +266,12 @@ function PassageMatiere({
         // la même tentative conserve exactement la même fenêtre serveur.
         const { data: tentativesV2 } = await supabase
           .from("exam_attempts_v2")
-          .select("attempt_id, started_at")
+          .select("attempt_id, started_at, snapshot")
           .eq("apprenant_id", apprenantId)
           .eq("exam_id", examenId)
           .order("started_at", { ascending: true });
-        const matiereTentatives = ((tentativesV2 as { attempt_id?: string }[] | null) ?? [])
-          .filter((row) => Boolean(row.attempt_id));
+        const matiereTentatives = ((tentativesV2 as { attempt_id?: string; snapshot?: { matiere?: string } }[] | null) ?? [])
+          .filter((row) => Boolean(row.attempt_id) && String(row.snapshot?.matiere ?? "") === String(matiere.id));
         const indexTentative = matiereTentatives.findIndex((row) => row.attempt_id === decision.attemptId);
         setTentativeChrono(indexTentative >= 0 ? indexTentative + 1 : Math.max(1, Number(tentative) || 1));
         setBlocageV2(null);
