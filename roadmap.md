@@ -93,3 +93,17 @@ Supprimer la nécessité de publier manuellement chaque modification pédagogiqu
 - [ ] Nouveau passage → dernière version enregistrée
 - [ ] Conserver l'historique / version précédente pour audit et retour arrière
 - Invariant : une modification ne doit jamais changer le sujet d'un élève en cours d'examen.
+
+## Garanties permanentes anti-récidive (exigence 23/09, 21h01) — à intégrer à A/B/C/D + C1/C5, RIEN développé pendant que des élèves composent
+Règle : chaque incident réel (Kevin, Thierno, Léa, Seydou, BOUDJORF) = protection permanente + test bloquant avant publication, reproduit de façon anonymisée.
+- Sauvegarde (Phase 2/4) : aucune réponse perdue ; coupure réseau → conservation locale → renvoi auto ; F5/reconnexion → reprise correcte ; une réponse en erreur ne bloque jamais les suivantes ; P0409/ancienne révision ne bloque jamais la file.
+- Terminer (Phase 2/3 + B) : clôture refusée avec 0 réponse serveur si l'élève a répondu ; attente des réponses en transit ; double-clic = une seule finalisation ; coupure pendant Terminer = reprise idempotente ; jamais de note 0 due à une panne.
+- Tentatives (C1 + Phase 2) : une seule OPEN par élève/examen/matière (contrainte base) ; double-clic Commencer impossible ; tentative CLOSED jamais réactivée par le navigateur ; après reset/réouverture l'ancienne session locale est rejetée ; serveur interrogé avant toute reprise locale.
+- Chrono (Phase 3) : F5 ne remet jamais à zéro ; réouverture admin = nouveau chrono complet ; 00:00 = gel → envoi → confirmation serveur → finalisation ; panne serveur à 00:00 = « finalisation en attente », jamais 0 technique.
+- 48 h : uniquement pour une vraie nouvelle tentative ; jamais entre matières d'un même examen ; jamais pendant sauvegarde/reprise/finalisation.
+- Affichage (Phase 2) : statut, progression, Commencer/Reprendre, tentative active = V2 uniquement ; aucune ancienne session navigateur ne réaffiche un examen avant reset ; date examen CRM = même info côté apprenant.
+- Surveillance (FAIT 23/09, à maintenir) : aucun comptage limité à 500/1 000 ; agrégat serveur ; erreur de lecture = alerte technique, jamais « 0 réponse » ; distinguer abandon / import ancien circuit / vrai incident V2.
+- Tests de non-régression (Phase 4) : 2 onglets ; double-clic ; réseau coupé/rétabli ; F5 ; fermeture navigateur ; réponse à 00:00 ; 20 réponses simultanées ; CLOSED + nouvelle OPEN ; reset administratif ; 10 000 réponses en surveillance.
+- C5 (Phase 1c) : publication du moteur IMPOSSIBLE si un seul test critique échoue (pas seulement « tests verts conseillés »).
+- Démonstration attendue après stabilisation : perte de réponse impossible (scénarios couverts) — 0 technique impossible — double tentative impossible — ancienne tentative après reset impossible — blocage Terminer récupérable automatiquement — faux incident surveillance protégé — tests critiques obligatoires avant publication : OUI.
+- Priorité : ces barrières avant toute nouvelle fonction d'examen.
