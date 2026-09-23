@@ -42,13 +42,31 @@ const json = (body: unknown, status = 200) =>
 /** Identifiant tronqué : traçable pour l'équipe, non nominatif. */
 const anonymiser = (id: string | null | undefined) => (id ? `${String(id).slice(0, 8)}…` : "—");
 
+// Lecture COMPLÈTE par paquets de 1 000 (la base ne renvoie jamais plus par demande).
+const PAGE = 1000;
 async function lire<T = Record<string, unknown>>(chemin: string): Promise<T[]> {
-  const r = await fetch(`${SUPABASE_URL}/rest/v1/${chemin}`, {
-    headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}` },
-    signal: AbortSignal.timeout(15000),
-  });
-  if (!r.ok) throw new Error(`lecture ${chemin.split("?")[0]} : HTTP ${r.status}`);
-  return (await r.json()) as T[];
+  const base = chemin.replace(/&limit=\d+/g, "");
+  const tout: T[] = [];
+  for (let offset = 0; ; offset += PAGE) {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/${base}&limit=${PAGE}&offset=${offset}`, {
+      headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}` },
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!r.ok) throw new Error(`lecture ${chemin.split("?")[0]} : HTTP ${r.status}`);
+    const page = (await r.json()) as T[];
+    tout.push(...page);
+    if (page.length < PAGE) break;
+  }
+  return tout;
+}
+
+// Liste d'identifiants découpée en lots de 100 (URL raisonnable), chaque lot paginé.
+async function lireParLots<T>(ids: string[], chemin: (lot: string) => string): Promise<T[]> {
+  const tout: T[] = [];
+  for (let i = 0; i < ids.length; i += 100) {
+    tout.push(...(await lire<T>(chemin(ids.slice(i, i + 100).join(",")))));
+  }
+  return tout;
 }
 
 type Anomalie = { code: string; gravite: "critique" | "avertissement"; details: string[] };
@@ -68,24 +86,22 @@ async function detecter(): Promise<{ anomalies: Anomalie[]; controles: Record<st
     started_at: string;
     snapshot: { questions?: unknown[]; matiere?: string } | null;
   }>(
-    `exam_attempts_v2?select=attempt_id,exam_id,etat,is_test,started_at,snapshot&started_at=gte.${depuis}&is_test=eq.false&order=started_at.desc&limit=500`,
+    `exam_attempts_v2?select=attempt_id,exam_id,etat,is_test,started_at,snapshot&started_at=gte.${depuis}&is_test=eq.false&order=started_at.desc,attempt_id.asc`,
   );
   const neutralisees = new Set(
-    (await lire<{ attempt_id: string }>("core_tentatives_neutralisees?select=attempt_id")).map((n) => n.attempt_id),
+    (await lire<{ attempt_id: string }>("core_tentatives_neutralisees?select=attempt_id&order=attempt_id.asc")).map((n) => n.attempt_id),
   );
   const suivies = tentatives.filter((t) => !neutralisees.has(t.attempt_id));
   const ids = suivies.map((t) => t.attempt_id);
 
-  const reponses = ids.length
-    ? await lire<{ attempt_id: string; question_id: string }>(
-        `answer_state?select=attempt_id,question_id&attempt_id=in.(${ids.join(",")})&limit=20000`,
-      )
-    : [];
-  const resultats = ids.length
-    ? await lire<{ attempt_id: string; result_id: string; score: number | null }>(
-        `core_exam_results?select=attempt_id,result_id,score&attempt_id=in.(${ids.join(",")})&limit=2000`,
-      )
-    : [];
+  const reponses = await lireParLots<{ attempt_id: string; question_id: string }>(
+    ids,
+    (lot) => `answer_state?select=attempt_id,question_id&attempt_id=in.(${lot})&order=response_id.asc`,
+  );
+  const resultats = await lireParLots<{ attempt_id: string; result_id: string; score: number | null }>(
+    ids,
+    (lot) => `core_exam_results?select=attempt_id,result_id,score&attempt_id=in.(${lot})&order=result_id.asc`,
+  );
 
   const parTentative = new Map<string, Set<string>>();
   for (const r of reponses) {
