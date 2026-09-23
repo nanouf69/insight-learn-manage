@@ -81,6 +81,10 @@ export type SessionListee = {
   heureMin: string;
   heureMax: string;
   attemptIds: string[];
+  /** Circuit de correction à utiliser. EB3 reste toujours dans le circuit historique. */
+  circuit?: "v2" | "ancien";
+  /** Lignes historiques finalisées autorisées dans le correcteur ancien. */
+  legacyResultIds?: string[];
   /** Dates réelles de passage regroupées sous le même numéro d'Examen Blanc (jamais fusionnées entre EB). */
   dates: DatePassage[];
 };
@@ -187,7 +191,33 @@ export async function listerGroupesCrm(mode: "test" | "migre" = "migre"): Promis
     if ((data ?? []).length < 1000) break;
   }
 
-  const apprenantIds = Array.from(new Set((attempts ?? []).map((a) => a.apprenant_id as string)));
+  // EB3 reste volontairement hors V2. On lit uniquement ses résultats historiques
+  // déjà finalisés afin de l'afficher dans le même menu, sans copie ni migration.
+  const legacyResults: any[] = [];
+  if (mode === "migre") {
+    for (let de = 0; ; de += 1000) {
+      const { data, error } = await supabase
+        .from("apprenant_quiz_results")
+        .select("id, apprenant_id, quiz_id, completed_at")
+        .in("quiz_type", ["examen_blanc", "bilan"])
+        .ilike("quiz_id", "eb3%")
+        .order("completed_at", { ascending: false })
+        .range(de, de + 999);
+      if (error) throw error;
+      const eb3 = (data ?? []).filter((r: any) => /^eb3(?:$|-)/i.test(String(r.quiz_id ?? "")));
+      legacyResults.push(...eb3.map((r: any) => ({
+        ...r,
+        attempt_id: `ancien:${r.id}`,
+        started_at: r.completed_at,
+        circuit: "ancien" as const,
+      })));
+      if ((data ?? []).length < 1000) break;
+    }
+  }
+
+  const passages = [...attempts.map((a) => ({ ...a, circuit: "v2" as const })), ...legacyResults];
+
+  const apprenantIds = Array.from(new Set(passages.map((a) => a.apprenant_id as string)));
   const { data: apprenants } = apprenantIds.length
     ? await supabase.from("apprenants").select("id, type_apprenant").in("id", apprenantIds)
     : { data: [] as { id: string; type_apprenant: string | null }[] };
@@ -238,7 +268,8 @@ export async function listerGroupesCrm(mode: "test" | "migre" = "migre"): Promis
     g.candidats.add(a.apprenant_id as string);
     // Un seul bloc par numéro d'Examen Blanc dans la session CRM ; les dates réelles
     // de passage sont conservées à l'intérieur (jamais de fusion entre EB différents).
-    const cleEb = `${cle}::${a.exam_id}`;
+    const ancien = a.circuit === "ancien";
+    const cleEb = `${cle}::${a.exam_id}${ancien ? "::ancien" : ""}`;
     let eb = g.examens.find((e) => e.cle === cleEb);
     if (!eb) {
       eb = {
@@ -249,11 +280,14 @@ export async function listerGroupesCrm(mode: "test" | "migre" = "migre"): Promis
         heureMin: heure,
         heureMax: heure,
         attemptIds: [],
+        circuit: ancien ? "ancien" : "v2",
+        legacyResultIds: ancien ? [] : undefined,
         dates: [],
       };
       g.examens.push(eb);
     }
     eb.attemptIds.push(a.attempt_id as string);
+    if (ancien && a.id) eb.legacyResultIds?.push(a.id as string);
     let dt = eb.dates.find((x) => x.jour === jour);
     if (!dt) {
       dt = { jour, date: jourFr(jour), heureMin: heure, heureMax: heure, attemptIds: [] };
@@ -269,7 +303,7 @@ export async function listerGroupesCrm(mode: "test" | "migre" = "migre"): Promis
     groupes.set(cle, g);
   };
 
-  for (const a of (attempts ?? []) as any[]) {
+  for (const a of passages as any[]) {
     const jour = new Intl.DateTimeFormat("fr-CA", { timeZone: "Europe/Paris" }).format(
       new Date(a.started_at as string),
     );

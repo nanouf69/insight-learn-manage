@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Maximize2, Minimize2, ZoomIn, ZoomOut } from "lucide-react";
+import CorrectionQRCTab from "@/components/cours-en-ligne/CorrectionQRCTab";
 import {
   chargerSessionTest,
   corrigerQrc,
@@ -122,10 +123,16 @@ export default function AdminCorrectionQrcV2Reel() {
   const ebChoisi = groupeChoisi?.examens.find((e) => e.cle === ebCle) ?? groupeChoisi?.examens[0] ?? null;
 
   const dateChoisie = ebChoisi?.dates.find((d) => d.jour === jourFiltre) ?? null;
-  const attemptsAffiches = dateChoisie?.attemptIds ?? ebChoisi?.attemptIds ?? null;
+  const ancienCircuit = ebChoisi?.circuit === "ancien";
+  const attemptsAffiches = ancienCircuit ? null : (dateChoisie?.attemptIds ?? ebChoisi?.attemptIds ?? null);
+  const legacyResultIds = ancienCircuit
+    ? (jourFiltre
+        ? ebChoisi?.legacyResultIds?.filter((id) => dateChoisie?.attemptIds.includes(`ancien:${id}`))
+        : ebChoisi?.legacyResultIds)
+    : undefined;
 
   const recharger = useCallback(async () => {
-    if (!attemptsAffiches) return;
+    if (!attemptsAffiches) { setSession(null); return; }
     try {
       setSession(await chargerSessionTest(mode, attemptsAffiches));
     } catch (e) {
@@ -320,7 +327,7 @@ export default function AdminCorrectionQrcV2Reel() {
             >
               {(groupeChoisi?.examens ?? []).map((e) => (
                 <option key={e.cle} value={e.cle}>
-                  {e.exam_id} — {e.attemptIds.length} passage{e.attemptIds.length > 1 ? "s" : ""}
+                  {e.exam_id}{e.circuit === "ancien" ? " — ANCIEN CIRCUIT" : ""} — {e.attemptIds.length} passage{e.attemptIds.length > 1 ? "s" : ""}
                   {" · "}
                   {e.dates.map((d) => `${d.date.slice(0, 5)} (${d.attemptIds.length})`).join(" • ")}
                 </option>
@@ -364,9 +371,9 @@ export default function AdminCorrectionQrcV2Reel() {
               ))}
             </div>
           )}
-          <p className="text-sm text-muted-foreground" data-testid="compteur-session">
+          {!ancienCircuit && <p className="text-sm text-muted-foreground" data-testid="compteur-session">
             {corrigees}/{total} QRC corrigées — {total - corrigees} restantes
-          </p>
+          </p>}
           <p className="text-xs text-muted-foreground" data-testid="legende-origine">
             <span className="text-success">✓ vert = correction humaine vérifiée</span>
             {" · "}
@@ -381,7 +388,14 @@ export default function AdminCorrectionQrcV2Reel() {
           )}
         </header>
 
-        <div style={{ zoom: `${zoom}%` }} className="space-y-6">
+        {ancienCircuit ? (
+          <div style={{ zoom: `${zoom}%` }}>
+            <CorrectionQRCTab
+              resultIds={legacyResultIds ?? []}
+              embeddedLabel={`${ebChoisi?.exam_id ?? "EB3"} — ANCIEN CIRCUIT`}
+            />
+          </div>
+        ) : <div style={{ zoom: `${zoom}%` }} className="space-y-6">
         {matieres.map((m) => {
           const tentatives = (session?.tentatives ?? []).filter((t) =>
             (t.snapshot.matieres ?? []).some((x) => x.subject_id === m.subject_id),
@@ -526,7 +540,7 @@ export default function AdminCorrectionQrcV2Reel() {
             </section>
           );
         })}
-        </div>
+        </div>}
         {erreur && <p className="text-sm text-destructive" data-testid="erreur-admin">{erreur}</p>}
       </div>
 

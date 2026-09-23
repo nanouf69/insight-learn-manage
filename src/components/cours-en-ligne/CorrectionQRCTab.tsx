@@ -558,7 +558,13 @@ function sortQrcItems(list: QrcItem[], sortOrder: "desc" | "asc"): QrcItem[] {
   });
 }
 
-const CorrectionQRCTab = () => {
+type CorrectionQRCTabProps = {
+  /** Restreint l'écran aux seules lignes historiques finalisées explicitement autorisées. */
+  resultIds?: string[];
+  embeddedLabel?: string;
+};
+
+const CorrectionQRCTab = ({ resultIds, embeddedLabel }: CorrectionQRCTabProps = {}) => {
   const [items, setItems] = useState<QrcItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "pending" | "done" | "today" | "today-pending" | "blocking">("pending");
@@ -675,15 +681,21 @@ const CorrectionQRCTab = () => {
     // Fetch all exam_blanc results that have QRC questions (Supabase client is capped at 1000 rows per request)
     const pageSize = 1000;
     const results: any[] = [];
-    for (let from = 0, retried = false; ; from += pageSize) {
-      const { data, error } = await supabase
-        .from("apprenant_quiz_results")
-        .select("id, apprenant_id, user_id, quiz_id, quiz_type, quiz_titre, matiere_id, matiere_nom, details, completed_at, score_obtenu, score_max, note_sur_20, tentative")
-        .in("quiz_type", ["examen_blanc", "bilan"])
-        .order("completed_at", { ascending: false })
-        .range(from, from + pageSize - 1);
+    const idsAutorises = resultIds ? Array.from(new Set(resultIds)) : null;
+    const lots = idsAutorises ? Array.from({ length: Math.ceil(idsAutorises.length / 150) }, (_, i) => idsAutorises.slice(i * 150, i * 150 + 150)) : [null];
+    for (const lot of lots) {
+      if (lot && lot.length === 0) continue;
+      for (let from = 0, retried = false; ; from += pageSize) {
+        let query = supabase
+          .from("apprenant_quiz_results")
+          .select("id, apprenant_id, user_id, quiz_id, quiz_type, quiz_titre, matiere_id, matiere_nom, details, completed_at, score_obtenu, score_max, note_sur_20, tentative")
+          .in("quiz_type", ["examen_blanc", "bilan"])
+          .order("completed_at", { ascending: false })
+          .range(from, from + pageSize - 1);
+        if (lot) query = query.in("id", lot);
+        const { data, error } = await query;
 
-      if (error) {
+        if (error) {
         // Une seule tentative de renouvellement de session, puis erreur explicite.
         if (!retried) {
           retried = true;
@@ -693,10 +705,11 @@ const CorrectionQRCTab = () => {
         console.error("Erreur chargement résultats:", error);
         setLoadError(`Chargement impossible : ${error.message}. Aucune QRC n'a pu être lue (ce n'est pas un écran vide).`);
         if (!opts?.silent) setLoading(false);
-        return;
+          return;
+        }
+        results.push(...(data || []));
+        if (!data || data.length < pageSize) break;
       }
-      results.push(...(data || []));
-      if (!data || data.length < pageSize) break;
     }
     setLoadError(null);
 
@@ -1145,7 +1158,9 @@ const CorrectionQRCTab = () => {
     // qu'elle n'a jamais été validée et qu'aucun enregistrement de fin ne la
     // porte déjà. Aucune réponse n'est créée : on lit ce qui existe.
     const autosaves: any[] = [];
-    for (let from = 0; ; from += 1000) {
+    // Dans la vue EB3 intégrée, seules les matières ayant une ligne de résultat
+    // finalisée sont autorisées. Les sauvegardes de matières ouvertes sont exclues.
+    for (let from = 0; !idsAutorises && ; from += 1000) {
       const { data, error } = await supabase
         .from("reponses_apprenants" as any)
         .select("id, apprenant_id, user_id, exercice_id, exercice_type, reponses, completed, updated_at, submitted_at, tentative")
@@ -1367,7 +1382,7 @@ const CorrectionQRCTab = () => {
     }
 
     if (!opts?.silent) setLoading(false);
-  }, [examenMap]);
+  }, [examenMap, resultIds]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
@@ -1948,7 +1963,7 @@ const CorrectionQRCTab = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h2 className="text-2xl font-bold">Correction QRC</h2>
+          <h2 className="text-2xl font-bold">{embeddedLabel ?? "Correction QRC"}</h2>
           <p className="text-sm text-muted-foreground mt-1">
             Corrigez manuellement les réponses QRC des examens blancs
           </p>
