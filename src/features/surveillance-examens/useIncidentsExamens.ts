@@ -10,6 +10,7 @@
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { lireParLotsEtPages, lireToutesLesPages } from "./lectureComplete";
 
 export type GraviteIncident = "critique" | "avertissement";
 
@@ -96,13 +97,17 @@ export function useIncidentsExamens() {
   const charger = useCallback(async () => {
     try {
       const depuis = new Date(Date.now() - FENETRE_HEURES * 3600_000).toISOString();
-      const { data: tentatives } = await supabase
-        .from("exam_attempts_v2")
-        .select("attempt_id, apprenant_id, exam_id, etat, started_at, snapshot")
-        .eq("is_test", false)
-        .gte("started_at", depuis)
-        .order("started_at", { ascending: false })
-        .limit(500);
+      // Lecture complète par paquets : jamais de coupure à 1 000 lignes.
+      const tentatives = await lireToutesLesPages<any>((d, f) =>
+        supabase
+          .from("exam_attempts_v2")
+          .select("attempt_id, apprenant_id, exam_id, etat, started_at, snapshot")
+          .eq("is_test", false)
+          .gte("started_at", depuis)
+          .order("started_at", { ascending: false })
+          .order("attempt_id", { ascending: true })
+          .range(d, f) as any,
+      );
 
       const lignes = (tentatives ?? []) as unknown as Tentative[];
       if (lignes.length === 0) {
@@ -112,11 +117,33 @@ export function useIncidentsExamens() {
       }
       const ids = lignes.map((t) => t.attempt_id);
 
-      const [{ data: reponses }, { data: resultats }, { data: neutralisees }, { data: statuts }] = await Promise.all([
-        supabase.from("answer_state").select("attempt_id, question_id").in("attempt_id", ids).limit(20000),
-        supabase.from("core_exam_results").select("attempt_id, result_id").in("attempt_id", ids).limit(2000),
-        supabase.from("core_tentatives_neutralisees").select("attempt_id"),
-        supabase.from("incidents_examens_statut").select("incident_cle, resolu, resolu_le"),
+      const [reponses, resultats, neutralisees, statuts] = await Promise.all([
+        lireParLotsEtPages<any>(ids, (lot, d, f) =>
+          supabase
+            .from("answer_state")
+            .select("attempt_id, question_id")
+            .in("attempt_id", lot)
+            .order("response_id", { ascending: true })
+            .range(d, f) as any,
+        ),
+        lireParLotsEtPages<any>(ids, (lot, d, f) =>
+          supabase
+            .from("core_exam_results")
+            .select("attempt_id, result_id")
+            .in("attempt_id", lot)
+            .order("result_id", { ascending: true })
+            .range(d, f) as any,
+        ),
+        lireToutesLesPages<any>((d, f) =>
+          supabase.from("core_tentatives_neutralisees").select("attempt_id").order("attempt_id").range(d, f) as any,
+        ),
+        lireToutesLesPages<any>((d, f) =>
+          supabase
+            .from("incidents_examens_statut")
+            .select("incident_cle, resolu, resolu_le")
+            .order("incident_cle")
+            .range(d, f) as any,
+        ),
       ]);
 
       const neutres = new Set((neutralisees ?? []).map((n: any) => n.attempt_id));
