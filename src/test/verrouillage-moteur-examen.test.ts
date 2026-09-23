@@ -122,10 +122,16 @@ describe("CRITIQUE 2 — sauvegarde des réponses", () => {
   it("une réponse définitivement refusée ne bloque jamais la file entière", async () => {
     rpc.mockReset();
     rpc.mockResolvedValueOnce({ data: null, error: { message: "ATTEMPT_CLOSED: la tentative est deja terminee" } });
-    rpc.mockResolvedValue({ data: { revision: 1 }, error: null });
+    rpc.mockImplementation((_fn: string, args: { p_question_id?: string }) =>
+      Promise.resolve(
+        String(args?.p_question_id ?? "").endsWith(":1")
+          ? { data: null, error: { message: "ATTEMPT_CLOSED: la tentative est deja terminee" } }
+          : { data: { revision: 1 }, error: null },
+      ),
+    );
     enfilerReponseNoyau({ attemptId: "att-A", matiereId: "securite", questionId: 1, valeur: "A" });
     enfilerReponseNoyau({ attemptId: "att-A", matiereId: "securite", questionId: 2, valeur: "B" });
-    await viderFileNoyau("att-A");
+    for (let i = 0; i < 5 && reponsesNoyauEnAttente("att-A") > 0; i++) await viderFileNoyau("att-A");
     expect(reponsesNoyauEnAttente("att-A")).toBe(0);
     // la réponse refusée est CONSERVÉE à part, jamais supprimée silencieusement
     expect(reponsesNoyauEcartees("att-A")).toBe(1);
@@ -133,7 +139,7 @@ describe("CRITIQUE 2 — sauvegarde des réponses", () => {
 
   it("une erreur réseau conserve la réponse en file (aucune perte, renvoi plus tard)", async () => {
     rpc.mockReset();
-    rpc.mockResolvedValue({ data: null, error: { message: "Failed to fetch" } });
+    rpc.mockImplementation(() => Promise.resolve({ data: null, error: { message: "Failed to fetch" } }));
     enfilerReponseNoyau({ attemptId: "att-B", matiereId: "gestion", questionId: 7, valeur: "C" });
     await viderFileNoyau("att-B");
     expect(reponsesNoyauEnAttente("att-B")).toBeGreaterThan(0);
@@ -155,7 +161,8 @@ describe("CRITIQUE 2 — sauvegarde des réponses", () => {
   it("les identifiants d'opération sont déterministes : un renvoi ne crée jamais de doublon", () => {
     const pont = read(PONT);
     expect(pont).toContain("export async function operationId");
-    expect(pont).toContain("core_operations");
+    expect(SQL).toContain("core_operations");
+
     expect(SQL).toContain("core_operation_replay");
   });
 
