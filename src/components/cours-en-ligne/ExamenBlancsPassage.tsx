@@ -220,20 +220,39 @@ function PassageMatiere({
   // snapshot figés au démarrage, chaque réponse journalisée côté serveur.
   // L'ancien circuit continue d'être alimenté en copie de lecture.
   const attemptV2Ref = useRef<string | null>(null);
+  const [blocageV2, setBlocageV2] = useState<string | null>(null);
 
   useEffect(() => {
     let annule = false;
-    if (!apprenantId || !examenId) return;
+    // On attend d'avoir lu l'éventuel passage déjà engagé sur l'ancien circuit :
+    // un passage commencé ne change jamais de moteur.
+    if (!apprenantId || !examenId || !initialLoaded) return;
     (async () => {
-      if (!(await pontActifPour(apprenantId))) return;
-      const attemptId = await demarrerTentative({ apprenantId, examenId, matiereId: matiere.id, tentative });
-      if (!annule && attemptId) {
-        attemptV2Ref.current = attemptId;
+      const decision = await routerPassage({
+        apprenantId,
+        examenId,
+        matiereId: matiere.id,
+        tentative,
+        passageDejaEngage: Object.keys(latestReponsesRef.current ?? {}).length > 0,
+      });
+      if (annule) return;
+      if (decision.moteur === "v2") {
+        attemptV2Ref.current = decision.attemptId;
+        setBlocageV2(null);
         void viderFileNoyau();
+        return;
+      }
+      if (decision.moteur === "bloque") {
+        setBlocageV2(decision.message);
+        void captureError({
+          message: `[NoyauV2] démarrage bloqué : ${decision.message}`,
+          source: "passage-examen-blanc",
+          context: { examenId, matiere: matiere.id, tentative, apprenantId },
+        });
       }
     })();
     return () => { annule = true; };
-  }, [apprenantId, examenId, matiere.id, tentative]);
+  }, [apprenantId, examenId, matiere.id, tentative, initialLoaded]);
 
   // Retour du réseau : les réponses en attente repartent vers le noyau.
   useEffect(() => {
