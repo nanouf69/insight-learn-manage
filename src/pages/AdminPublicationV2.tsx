@@ -201,6 +201,18 @@ export default function AdminPublicationV2() {
                               : `recalcul ultérieur incomplet : ${c.snapshot.manques.slice(0, 3).join(" ; ")}`}
                           </span>
                         </p>
+                        {c.aVerifier.length > 0 && (
+                          <div className="rounded border border-destructive/40 bg-destructive/5 p-2 text-xs text-destructive">
+                            <p className="font-semibold">À VÉRIFIER — publication bloquée sur ce sujet :</p>
+                            <ul className="list-disc pl-4">
+                              {c.aVerifier.map((q) => (
+                                <li key={`${q.matiere}-${q.questionId}`}>
+                                  {q.matiere} · question n°{q.questionId} — {q.motif}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
                         <table className="w-full text-xs">
                           <thead className="text-muted-foreground">
                             <tr>
