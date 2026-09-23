@@ -183,18 +183,44 @@ export async function demarrerTentative(params: {
   const op = await operationId(
     `start:${params.apprenantId}:${params.examenId}:${params.matiereId}:t${params.tentative}`,
   );
-  const { data, error } = await supabase.rpc("core_start_attempt", {
-    p_operation_id: op,
+  const demarrer = (operationIdValue: string) => supabase.rpc("core_start_attempt", {
+    p_operation_id: operationIdValue,
     p_apprenant_id: params.apprenantId,
     p_exam_id: params.examenId,
     p_matiere: params.matiereId,
   });
+  const { data, error } = await demarrer(op);
   if (error) {
     console.warn("[PontV2] démarrage refusé:", error.message);
     return null;
   }
   const att = data as unknown as { attempt_id?: string } | null;
-  return att?.attempt_id ?? null;
+  const attemptId = att?.attempt_id ?? null;
+  if (!attemptId) return null;
+
+  // Une opération de démarrage idempotente peut rejouer une ancienne tentative
+  // désormais neutralisée après incident. Elle ne doit jamais être réutilisée :
+  // ses réponses seraient refusées avec ATTEMPT_CLOSED. Une réouverture n'est
+  // permise que si cette tentative figure explicitement au journal append-only
+  // des neutralisations administratives.
+  const [{ data: etat }, { data: neutralisation }] = await Promise.all([
+    supabase.from("exam_attempts_v2").select("etat").eq("attempt_id", attemptId).maybeSingle(),
+    supabase
+      .from("core_tentatives_neutralisees")
+      .select("attempt_id")
+      .eq("attempt_id", attemptId)
+      .maybeSingle(),
+  ]);
+  if ((etat as { etat?: string } | null)?.etat === "terminee" && neutralisation) {
+    const reopenOp = await operationId(`reopen:${attemptId}`);
+    const { data: reopened, error: reopenError } = await demarrer(reopenOp);
+    if (reopenError) {
+      console.warn("[PontV2] réouverture administrative refusée:", reopenError.message);
+      return null;
+    }
+    return (reopened as unknown as { attempt_id?: string } | null)?.attempt_id ?? null;
+  }
+  return attemptId;
 }
 
 /** Enregistre une réponse dans le noyau (append-only + révision serveur). */

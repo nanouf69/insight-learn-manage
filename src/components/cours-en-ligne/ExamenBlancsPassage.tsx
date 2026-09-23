@@ -229,6 +229,7 @@ function PassageMatiere({
   // snapshot figés au démarrage, chaque réponse journalisée côté serveur.
   // L'ancien circuit continue d'être alimenté en copie de lecture.
   const attemptV2Ref = useRef<string | null>(null);
+  const [tentativeChrono, setTentativeChrono] = useState(Math.max(1, Number(tentative) || 1));
   const [blocageV2, setBlocageV2] = useState<string | null>(null);
 
   /** Questions réellement répondues par l'élève dans cette matière. */
@@ -260,6 +261,19 @@ function PassageMatiere({
       if (annule) return;
       if (decision.moteur === "v2") {
         attemptV2Ref.current = decision.attemptId;
+        // Le chrono suit la tentative V2 réellement ouverte. Une réouverture
+        // administrative obtient donc une nouvelle fenêtre ; F5/reconnexion sur
+        // la même tentative conserve exactement la même fenêtre serveur.
+        const { data: tentativesV2 } = await supabase
+          .from("exam_attempts_v2")
+          .select("attempt_id, started_at, snapshot")
+          .eq("apprenant_id", apprenantId)
+          .eq("exam_id", examenId)
+          .order("started_at", { ascending: true });
+        const matiereTentatives = ((tentativesV2 as { attempt_id?: string; snapshot?: { matiere?: string } }[] | null) ?? [])
+          .filter((row) => Boolean(row.attempt_id) && String(row.snapshot?.matiere ?? "") === String(matiere.id));
+        const indexTentative = matiereTentatives.findIndex((row) => row.attempt_id === decision.attemptId);
+        setTentativeChrono(indexTentative >= 0 ? indexTentative + 1 : Math.max(1, Number(tentative) || 1));
         setBlocageV2(null);
         // HOTFIX 23/09/2026 : les réponses déjà saisies AVANT l'ouverture de la
         // tentative V2 (saisie pendant le routage, reprise après F5) sont
@@ -566,14 +580,19 @@ function PassageMatiere({
       });
       const flushed = await flushAnswerSavesAndWait(apprenantId, exerciceKey);
       if (!flushed) throw new Error("Réponses encore en attente");
-      const { data, error } = await supabase
-        .from("reponses_apprenants" as any)
-        .select("reponses, completed")
-        .eq("apprenant_id", apprenantId)
-        .eq("exercice_id", exerciceKey)
-        .maybeSingle();
-      if (error || !(data as any)?.completed || !answersAreEqual(normalizeReponses((data as any)?.reponses), reponses)) {
-        throw new Error("Confirmation en base incomplète");
+      // Pour un passage V2, la projection historique peut être figée après un
+      // incident neutralisé. Elle ne doit jamais empêcher les réponses d'être
+      // confirmées par le noyau, qui est l'unique autorité de finalisation.
+      if (!attemptV2Ref.current) {
+        const { data, error } = await supabase
+          .from("reponses_apprenants" as any)
+          .select("reponses, completed")
+          .eq("apprenant_id", apprenantId)
+          .eq("exercice_id", exerciceKey)
+          .maybeSingle();
+        if (error || !(data as any)?.completed || !answersAreEqual(normalizeReponses((data as any)?.reponses), reponses)) {
+          throw new Error("Confirmation en base incomplète");
+        }
       }
       setSaveStatus("saved");
     } catch (error) {
@@ -638,14 +657,16 @@ function PassageMatiere({
         });
         const flushed = await flushAnswerSavesAndWait(apprenantId, exerciceKey);
         if (!flushed) throw new Error("Réponses encore en attente");
-        const { data, error } = await supabase
-          .from("reponses_apprenants" as any)
-          .select("reponses, completed")
-          .eq("apprenant_id", apprenantId)
-          .eq("exercice_id", exerciceKey)
-          .maybeSingle();
-        if (error || !(data as any)?.completed || !answersAreEqual((data as any)?.reponses, reponses)) {
-          throw new Error("Confirmation en base incomplète");
+        if (!attemptV2Ref.current) {
+          const { data, error } = await supabase
+            .from("reponses_apprenants" as any)
+            .select("reponses, completed")
+            .eq("apprenant_id", apprenantId)
+            .eq("exercice_id", exerciceKey)
+            .maybeSingle();
+          if (error || !(data as any)?.completed || !answersAreEqual((data as any)?.reponses, reponses)) {
+            throw new Error("Confirmation en base incomplète");
+          }
         }
         setSaveStatus("saved");
       } catch (error) {
@@ -740,7 +761,7 @@ function PassageMatiere({
           _apprenant_id: apprenantId,
           _exercice_id: exerciceKey,
           _duree_secondes: dureeSecondes,
-          _tentative: Math.max(1, Number(tentative) || 1),
+          _tentative: tentativeChrono,
         } as any);
 
         if (cancelled) return;
@@ -773,7 +794,7 @@ function PassageMatiere({
       window.removeEventListener("online", sync);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [apprenantId, exerciceKey, dureeSecondes, isBilan, tentative]);
+  }, [apprenantId, exerciceKey, dureeSecondes, isBilan, tentativeChrono]);
 
   // « Finalisation en attente » : le temps est écoulé, les réponses sont figées
   // mais le serveur n'a pas encore confirmé. On réessaie automatiquement
