@@ -498,6 +498,13 @@
       "when": 1790188239430,
       "tag": "0070_g1_sms_envois_journal",
       "breakpoints": true
+    },
+    {
+      "idx": 71,
+      "version": "7",
+      "when": 1790189652430,
+      "tag": "0071_surveillance_compte_reponses",
+      "breakpoints": true
     }
   ]
 }
