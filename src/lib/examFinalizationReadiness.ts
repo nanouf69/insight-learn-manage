@@ -94,7 +94,7 @@ export function assessFinalizationReadiness(ctx: FinalizationContext): Finalizat
       raison: "refus_serveur",
       message:
         ctx.refus.message ??
-        "Le serveur a refusé une sauvegarde. Vos réponses sont conservées sur cet appareil : contactez le centre avant de terminer.",
+        "Un problème de synchronisation a été détecté. Vos réponses sont conservées sur cet appareil. Une alerte technique a été envoyée automatiquement.",
     };
   }
 

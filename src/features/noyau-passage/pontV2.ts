@@ -211,6 +211,10 @@ export async function demarrerTentative(params: {
       .eq("attempt_id", attemptId)
       .maybeSingle(),
   ]);
+  if ((etat as { etat?: string } | null)?.etat === "terminee" && !neutralisation) {
+    console.warn("[PontV2] tentative clôturée sans réouverture administrative autorisée:", attemptId);
+    return null;
+  }
   if ((etat as { etat?: string } | null)?.etat === "terminee" && neutralisation) {
     const reopenOp = await operationId(`reopen:${attemptId}`);
     const { data: reopened, error: reopenError } = await demarrer(reopenOp);

@@ -255,8 +255,27 @@ function PassageMatiere({
       .select("question_id")
       .eq("attempt_id", attemptId);
     if (error || attemptV2Ref.current !== attemptId) return;
-    setQuestionsConfirmees(new Set(((data as { question_id?: string }[] | null) ?? []).map((r) => String(r.question_id ?? ""))));
-    setQuestionsRefusees(questionsNoyauEcartees(attemptId));
+    const confirmees = new Set(((data as { question_id?: string }[] | null) ?? []).map((r) => String(r.question_id ?? "")));
+    const refusees = questionsNoyauEcartees(attemptId);
+    setQuestionsConfirmees(confirmees);
+    setQuestionsRefusees(refusees);
+    if (refusees.size > 0) {
+      void captureError({
+        message: "[NoyauV2] synchronisation refusée — réponses conservées localement",
+        source: "passage-examen-blanc",
+        fingerprint: `exam-sync-refused:${attemptId}`,
+        context: {
+          apprenantId,
+          examenId,
+          matiere: matiere.id,
+          attemptId,
+          code: "SYNCHRONISATION_REFUSEE",
+          reponsesNonSynchronisees: refusees.size,
+          reponsesServeur: confirmees.size,
+          heure: new Date().toISOString(),
+        },
+      });
+    }
   };
 
   useEffect(() => {
@@ -310,6 +329,22 @@ function PassageMatiere({
           });
           if (!remappage.ok && remappage.correspondance > 0) {
             setBlocageV2(`Récupération arrêtée : la question ${remappage.questionInvalide ?? "inconnue"} ne correspond pas au sujet officiel.`);
+            void captureError({
+              message: "[NoyauV2] remappage local refusé — snapshot non conforme",
+              source: "passage-examen-blanc",
+              fingerprint: `exam-remap-mismatch:${apprenantId}:${examenId}:${matiere.id}`,
+              context: {
+                apprenantId,
+                examenId,
+                matiere: matiere.id,
+                attemptId: decision.attemptId,
+                code: "REMAPPAGE_SNAPSHOT_INCOMPLET",
+                correspondance: remappage.correspondance,
+                attendues: idsSnapshot.length,
+                questionInvalide: remappage.questionInvalide,
+                heure: new Date().toISOString(),
+              },
+            });
             return;
           }
         }
