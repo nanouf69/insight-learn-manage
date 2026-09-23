@@ -48,12 +48,13 @@ if (typeof globalThis.localStorage === "undefined") {
 }
 
 const rpc = vi.fn();
+const from = vi.fn<(...args: unknown[]) => any>(() => ({
+  select: () => ({ eq: () => ({ eq: () => ({ is: () => ({ limit: async () => ({ data: [], error: null }) }) }) }) }),
+}));
 vi.mock("@/integrations/supabase/client", () => ({
   supabase: {
     rpc: (...args: unknown[]) => rpc(...args),
-    from: () => ({
-      select: () => ({ eq: () => ({ eq: () => ({ is: () => ({ limit: async () => ({ data: [], error: null }) }) }) }) }),
-    }),
+    from: (...args: unknown[]) => from(...args),
   },
 }));
 
@@ -170,6 +171,69 @@ describe("CRITIQUE 2 — sauvegarde des réponses", () => {
 
     expect(reponsesNoyauEnAttente("ouverte-courante")).toBe(0);
     expect(reponsesNoyauEnAttente("ancienne-hors-ligne")).toBe(1);
+  });
+
+  it("P0409 identique sur 1–5 ne bloque pas l'envoi des réponses 6–20", async () => {
+    localStorage.clear();
+    rpc.mockReset();
+    from.mockReset();
+    rpc.mockImplementation((_fn: string, args: { p_question_id?: string }) => {
+      const numero = Number(String(args?.p_question_id ?? "").split(":")[1]);
+      return Promise.resolve(numero <= 5
+        ? { data: null, error: { message: "ANSWER_STALE_REVISION (P0409)" } }
+        : { data: { revision: 1 }, error: null });
+    });
+    from.mockImplementation(() => ({
+      select: () => ({
+        eq: () => ({
+          eq: () => ({
+            maybeSingle: async () => ({ data: { revision: 2, valeur: ["A"], updated_at: new Date().toISOString() }, error: null }),
+          }),
+        }),
+      }),
+    }));
+    for (let i = 1; i <= 20; i++) {
+      enfilerReponseNoyau({ attemptId: "ouverte-5-sur-20", matiereId: "securite", questionId: i, valeur: ["A"] });
+    }
+    for (let i = 0; i < 30 && reponsesNoyauEnAttente("ouverte-5-sur-20") > 0; i++) {
+      await new Promise((r) => setTimeout(r, 5));
+      await viderFileNoyau("ouverte-5-sur-20");
+    }
+
+    expect(reponsesNoyauEnAttente("ouverte-5-sur-20")).toBe(0);
+    expect(reponsesNoyauEcartees("ouverte-5-sur-20")).toBe(0);
+    const questionsEnvoyees = rpc.mock.calls.map((call) => call[1]?.p_question_id);
+    for (let i = 6; i <= 20; i++) expect(questionsEnvoyees).toContain(`securite:${i}`);
+  });
+
+  it("P0409 différent conserve le conflit sans écraser et continue la file", async () => {
+    localStorage.clear();
+    rpc.mockReset();
+    from.mockReset();
+    rpc.mockImplementation((_fn: string, args: { p_question_id?: string }) =>
+      Promise.resolve(String(args?.p_question_id).endsWith(":1")
+        ? { data: null, error: { message: "ANSWER_STALE_REVISION (P0409)" } }
+        : { data: { revision: 1 }, error: null }),
+    );
+    from.mockImplementation(() => ({
+      select: () => ({
+        eq: () => ({
+          eq: () => ({
+            maybeSingle: async () => ({ data: { revision: 3, valeur: ["B"], updated_at: new Date().toISOString() }, error: null }),
+          }),
+        }),
+      }),
+    }));
+    enfilerReponseNoyau({ attemptId: "ouverte-conflit", matiereId: "securite", questionId: 1, valeur: ["A"] });
+    enfilerReponseNoyau({ attemptId: "ouverte-conflit", matiereId: "securite", questionId: 2, valeur: ["C"] });
+    for (let i = 0; i < 10 && reponsesNoyauEnAttente("ouverte-conflit") > 0; i++) {
+      await new Promise((r) => setTimeout(r, 5));
+      await viderFileNoyau("ouverte-conflit");
+    }
+
+    expect(reponsesNoyauEnAttente("ouverte-conflit")).toBe(0);
+    expect(reponsesNoyauEcartees("ouverte-conflit")).toBe(1);
+    expect(rpc.mock.calls.some((call) => call[1]?.p_question_id === "securite:2")).toBe(true);
   });
 
   it("une réponse écartée bloque la clôture : aucune note 0 technique possible", () => {
