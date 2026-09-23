@@ -33,6 +33,7 @@ import { PrestatairesPage } from "@/components/prestataires/PrestatairesPage";
 import { ApprenantsCorbeille } from "@/components/apprenants/ApprenantsCorbeille";
 import { DiagnosticAccesGlobal } from "@/components/diagnostic/DiagnosticAccesGlobal";
 import { FournisseurInvoiceAlerts } from "@/components/dashboard/FournisseurInvoiceAlerts";
+import { IncidentsExamensPanel } from "@/components/dashboard/IncidentsExamensPanel";
 import { SmallTransfersTable } from "@/components/dashboard/SmallTransfersTable";
 import { PersonalFinancingTransfersTable } from "@/components/dashboard/PersonalFinancingTransfersTable";
 import { ApprenantQuestionsPanel } from "@/components/dashboard/ApprenantQuestionsPanel";
@@ -353,6 +354,9 @@ const Index = () => {
                 subtitle={fluxPeriode || undefined}
               />
             </div>
+
+            {/* Incidents techniques des examens blancs (diagnostic, lecture seule) */}
+            <IncidentsExamensPanel onNavigateToApprenant={handleNavigateToApprenant} />
 
             {/* Actions rapides */}
             <div className="flex flex-wrap gap-3">

@@ -3692,6 +3692,48 @@ export type Database = {
         }
         Relationships: []
       }
+      incidents_examens_statut: {
+        Row: {
+          apprenant_id: string | null
+          attempt_id: string | null
+          code: string
+          exam_id: string | null
+          id: string
+          incident_cle: string
+          matiere: string | null
+          note: string | null
+          resolu: boolean
+          resolu_le: string
+          resolu_par: string | null
+        }
+        Insert: {
+          apprenant_id?: string | null
+          attempt_id?: string | null
+          code: string
+          exam_id?: string | null
+          id?: string
+          incident_cle: string
+          matiere?: string | null
+          note?: string | null
+          resolu?: boolean
+          resolu_le?: string
+          resolu_par?: string | null
+        }
+        Update: {
+          apprenant_id?: string | null
+          attempt_id?: string | null
+          code?: string
+          exam_id?: string | null
+          id?: string
+          incident_cle?: string
+          matiere?: string | null
+          note?: string | null
+          resolu?: boolean
+          resolu_le?: string
+          resolu_par?: string | null
+        }
+        Relationships: []
+      }
       justificatifs: {
         Row: {
           categorie: string | null
