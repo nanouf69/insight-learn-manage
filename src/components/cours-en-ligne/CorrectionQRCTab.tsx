@@ -572,7 +572,7 @@ const CorrectionQRCTab = ({ resultIds, embeddedLabel, hideV2Panel = false }: Cor
   const [searchQuery, setSearchQuery] = useState("");
   // Filtre par défaut : tentative 1 uniquement (les refontes — tentative 2+ —
   // restent accessibles via « Toutes les tentatives », sans jamais les modifier).
-  const [tentativeFilter, setTentativeFilter] = useState<"1" | "all">("1");
+  const [tentativeFilter, setTentativeFilter] = useState<"1" | "all">(() => resultIds ? "all" : "1");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingPoints, setEditingPoints] = useState(0);
   const [savingId, setSavingId] = useState<string | null>(null);
