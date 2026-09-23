@@ -654,6 +654,26 @@ function PassageMatiere({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [apprenantId, exerciceKey, dureeSecondes, isBilan]);
 
+  // Le nouveau moteur n'a pas pu ouvrir la tentative : on bloque le démarrage
+  // plutôt que de basculer silencieusement sur l'ancien circuit.
+  if (blocageV2) {
+    return (
+      <Card className="border-destructive">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-destructive">
+            <Ban className="h-5 w-5" /> Examen indisponible
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2 text-sm">
+          <p>{blocageV2}</p>
+          <p className="text-muted-foreground">
+            Aucune réponse n'a été perdue et aucun passage n'a été enregistré. L'incident a été signalé automatiquement.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   const safeQuestionsCount = questionsSafe.length || 1;
   const safeQuestionIndex = Math.min(questionIndex, safeQuestionsCount - 1);
   const progress = ((safeQuestionIndex + 1) / safeQuestionsCount) * 100;
