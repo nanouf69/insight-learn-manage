@@ -79,6 +79,14 @@ function PassageMatiere({
   const [reponses, setReponses] = useState<Reponses>({});
   const [questionIndex, setQuestionIndex] = useState(0);
   const [expire, setExpire] = useState(false);
+  // Gel immédiat à 00:00 (lecture synchrone, sans attendre un re-rendu) et état
+  // technique « finalisation en attente » si le serveur est momentanément
+  // indisponible : aucune réponse perdue, aucune note 0 technique.
+  const expireRef = useRef(false);
+  const [finalisationEnAttente, setFinalisationEnAttente] = useState(false);
+  const expirationEnCoursRef = useRef(false);
+  const matiereTermineeRef = useRef(false);
+
   const [initialLoaded, setInitialLoaded] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [showCalculator, setShowCalculator] = useState(false);
