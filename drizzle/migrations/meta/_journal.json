@@ -435,6 +435,13 @@
       "when": 1790150540431,
       "tag": "0061_dossier_bienvenue_date_examen_prioritaire",
       "breakpoints": true
+    },
+    {
+      "idx": 62,
+      "version": "7",
+      "when": 1790157209690,
+      "tag": "0062_retake_delay_only_after_completed_attempt",
+      "breakpoints": true
     }
   ]
 }
