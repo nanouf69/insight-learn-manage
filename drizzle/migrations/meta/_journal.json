@@ -484,6 +484,13 @@
       "when": 1790171639257,
       "tag": "0068_core_restart_matiere",
       "breakpoints": true
+    },
+    {
+      "idx": 69,
+      "version": "7",
+      "when": 1790174974854,
+      "tag": "0069_admin_exam_reset_archive",
+      "breakpoints": true
     }
   ]
 }
