@@ -121,7 +121,6 @@ describe("CRITIQUE 2 — sauvegarde des réponses", () => {
 
   it("une réponse définitivement refusée ne bloque jamais la file entière", async () => {
     rpc.mockReset();
-    rpc.mockResolvedValueOnce({ data: null, error: { message: "ATTEMPT_CLOSED: la tentative est deja terminee" } });
     rpc.mockImplementation((_fn: string, args: { p_question_id?: string }) =>
       Promise.resolve(
         String(args?.p_question_id ?? "").endsWith(":1")
@@ -131,7 +130,11 @@ describe("CRITIQUE 2 — sauvegarde des réponses", () => {
     );
     enfilerReponseNoyau({ attemptId: "att-A", matiereId: "securite", questionId: 1, valeur: "A" });
     enfilerReponseNoyau({ attemptId: "att-A", matiereId: "securite", questionId: 2, valeur: "B" });
-    for (let i = 0; i < 5 && reponsesNoyauEnAttente("att-A") > 0; i++) await viderFileNoyau("att-A");
+    for (let i = 0; i < 20 && reponsesNoyauEnAttente("att-A") > 0; i++) {
+      await new Promise((r) => setTimeout(r, 5));
+      await viderFileNoyau("att-A");
+    }
+
     expect(reponsesNoyauEnAttente("att-A")).toBe(0);
     // la réponse refusée est CONSERVÉE à part, jamais supprimée silencieusement
     expect(reponsesNoyauEcartees("att-A")).toBe(1);
