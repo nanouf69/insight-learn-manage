@@ -405,11 +405,10 @@ export function remapperFileApresReouverture(params: {
     dernierParQuestion.set(id, element);
   }
   const idsLocales = new Set(dernierParQuestion.keys());
-  const exact = idsLocales.size === attendues.size && [...attendues].every((id) => idsLocales.has(id));
-  if (!exact) {
-    const manquante = [...attendues].find((id) => !idsLocales.has(id));
-    return { ok: false, correspondance: idsLocales.size, recuperees: 0, questionInvalide: manquante };
-  }
+  // Couverture partielle acceptée : chaque réponse locale appartient déjà au
+  // snapshot officiel (contrôle ci-dessus). Les questions absentes restent
+  // simplement à répondre ; aucune réponse n'est inventée ni écrasée.
+  if (idsLocales.size === 0) return { ok: false, correspondance: 0, recuperees: 0 };
 
   // Toute ancienne entrée encore active est d'abord conservée dans la file
   // écartée. Elle ne sera donc plus jamais envoyée vers ATTEMPT_CLOSED.
