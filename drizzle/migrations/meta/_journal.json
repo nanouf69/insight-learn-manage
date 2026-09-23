@@ -505,6 +505,13 @@
       "when": 1790189652430,
       "tag": "0071_surveillance_compte_reponses",
       "breakpoints": true
+    },
+    {
+      "idx": 72,
+      "version": "7",
+      "when": 1790189719604,
+      "tag": "0072_surveillance_compte_reponses_service",
+      "breakpoints": true
     }
   ]
 }

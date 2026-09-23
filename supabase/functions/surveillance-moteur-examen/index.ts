@@ -194,7 +194,7 @@ async function detecter(): Promise<{ anomalies: Anomalie[]; controles: Record<st
     anomalies,
     controles: {
       tentatives_examinees: suivies.length,
-      reponses_serveur: reponses.length,
+      reponses_serveur: comptes.reduce((a, c) => a + (Number(c.nb_reponses) || 0), 0),
       resultats: resultats.length,
       neutralisees_ignorees: neutralisees.size,
     },
