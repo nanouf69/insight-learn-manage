@@ -145,6 +145,17 @@ export function IncidentsExamensPanel({
         </DialogContent>
       </Dialog>
 
+      <Dialog open={voirTout} onOpenChange={setVoirTout}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>🚨 {incidents.length} incidents examens en cours</DialogTitle>
+          </DialogHeader>
+          <div className="max-h-[70vh] space-y-2 overflow-y-auto">
+            {incidents.map((i) => ligne(i))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={voirHistorique} onOpenChange={setVoirHistorique}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
