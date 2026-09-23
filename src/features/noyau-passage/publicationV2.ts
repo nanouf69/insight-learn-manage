@@ -347,6 +347,10 @@ export async function comparerAvantPublication(examen: ExamenBlanc): Promise<Com
 
   const nbEcarts = matieres.reduce((n, m) => n + m.ecarts.length, 0);
   const nbQCM = contenu.questions.filter((q) => String(q.type).toUpperCase() === "QCM").length;
+  const snapshot = controlerAutosuffisanceSnapshot(contenu);
+  const aVerifier = questionsAVerifier(examen);
+  const defautsTechniques =
+    matieres.some((m) => m.idsManquants > 0 || m.idsDoublons.length > 0) || !snapshot.suffisant;
   return {
     examId: contenu.exam_id,
     matieres,
@@ -356,9 +360,13 @@ export async function comparerAvantPublication(examen: ExamenBlanc): Promise<Com
     nbQRC: contenu.questions.length - nbQCM,
     nbEcarts,
     nbSansReference: matieres.filter((m) => m.reference === "aucune").length,
-    publiable: nbEcarts === 0,
+    // Source de vérité décidée : le contenu ACTUEL de l'éditeur.
+    // Les écarts avec l'historique sont informatifs et ne bloquent plus ;
+    // seules une anomalie technique ou une question « à vérifier » bloquent.
+    publiable: !defautsTechniques && aVerifier.length === 0,
     resultat: nbEcarts === 0 ? "IDENTIQUE" : "ECART",
-    snapshot: controlerAutosuffisanceSnapshot(contenu),
+    snapshot,
+    aVerifier,
   };
 }
 
