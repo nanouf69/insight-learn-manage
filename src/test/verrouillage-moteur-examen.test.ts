@@ -363,7 +363,8 @@ describe("CRITIQUE 9 — chrono et expiration", () => {
 
   it("F5 / reconnexion : le chrono n'est jamais réinitialisé (même tentative = même fenêtre)", () => {
     const src = read(PASSAGE);
-    expect(src).toContain("_tentative: Math.max(1, Number(tentative) || 1)");
+    expect(src).toContain("_tentative: tentativeChrono");
+    expect(src).toContain("setTentativeChrono(indexTentative >= 0 ? indexTentative + 1");
     // le temps restant reste calculé à partir de l'heure de début serveur
     expect(MIGS).toContain("v_row.duree_secondes - FLOOR(EXTRACT(EPOCH FROM (clock_timestamp() - v_row.started_at)))");
   });
