@@ -114,6 +114,65 @@ export async function pontActifPour(apprenantId: string): Promise<boolean> {
   return data === true;
 }
 
+/** Le sujet est-il publié dans le noyau (version active non retirée) ? */
+export async function sujetPublieDansNoyau(examenId: string): Promise<boolean> {
+  const { data, error } = await supabase
+    .from("exam_content_versions")
+    .select("id")
+    .eq("exam_id", examenId)
+    .eq("statut", "publiee")
+    .is("retired_at", null)
+    .limit(1);
+  if (error) return false;
+  return (data ?? []).length > 0;
+}
+
+/** Une tentative V2 existe-t-elle déjà pour ce passage ? (reprise, jamais changement de moteur) */
+export async function tentativeV2Existante(apprenantId: string, examenId: string): Promise<boolean> {
+  const { data, error } = await supabase
+    .from("exam_attempts_v2")
+    .select("attempt_id")
+    .eq("apprenant_id", apprenantId)
+    .eq("exam_id", examenId)
+    .limit(1);
+  if (error) return false;
+  return (data ?? []).length > 0;
+}
+
+export type DecisionRoutage =
+  | { moteur: "v2"; attemptId: string }
+  | { moteur: "ancien"; motif: "pont_inactif" | "sujet_non_publie" | "passage_deja_engage" }
+  | { moteur: "bloque"; message: string };
+
+/**
+ * Décide, côté serveur, quel moteur sert ce passage.
+ *  - pont inactif ou sujet non publié (EB3, EB3-TAXI) → ancien circuit ;
+ *  - passage déjà engagé sur l'ancien circuit → il y reste (jamais de changement
+ *    de moteur en cours de passage) ;
+ *  - sinon V2 ; si le noyau refuse d'ouvrir la tentative, on BLOQUE le
+ *    démarrage et on journalise : aucune bascule silencieuse vers l'ancien.
+ */
+export async function routerPassage(params: {
+  apprenantId: string;
+  examenId: string;
+  matiereId: string;
+  tentative: number;
+  passageDejaEngage: boolean;
+}): Promise<DecisionRoutage> {
+  if (!(await pontActifPour(params.apprenantId))) return { moteur: "ancien", motif: "pont_inactif" };
+  if (!(await sujetPublieDansNoyau(params.examenId))) return { moteur: "ancien", motif: "sujet_non_publie" };
+
+  const reprise = await tentativeV2Existante(params.apprenantId, params.examenId);
+  if (!reprise && params.passageDejaEngage) return { moteur: "ancien", motif: "passage_deja_engage" };
+
+  const attemptId = await demarrerTentative(params);
+  if (attemptId) return { moteur: "v2", attemptId };
+  return {
+    moteur: "bloque",
+    message: "Le nouveau moteur d'examen n'a pas pu ouvrir la tentative. Le démarrage est bloqué : contactez le centre.",
+  };
+}
+
 /** Démarre (ou reprend) la tentative V2 d'une matière : snapshot figé côté serveur. */
 export async function demarrerTentative(params: {
   apprenantId: string;
