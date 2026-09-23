@@ -136,6 +136,8 @@ export type ControleSnapshot = {
   manques: string[];
 };
 
+export type QuestionAVerifier = { matiere: string; questionId: string; motif: string };
+
 export type Comparaison = {
   examId: string;
   matieres: ComparaisonMatiere[];
@@ -148,7 +150,30 @@ export type Comparaison = {
   publiable: boolean;
   resultat: "IDENTIQUE" | "ECART";
   snapshot: ControleSnapshot;
+  aVerifier: QuestionAVerifier[];
 };
+
+/**
+ * Questions explicitement marquées « à vérifier » dans le contenu actif
+ * (arbitrage pédagogique non tranché) : tant qu'il en reste une, le sujet
+ * n'est pas publiable dans le noyau V2.
+ */
+export function questionsAVerifier(examen: ExamenBlanc): QuestionAVerifier[] {
+  const matieres = (examen as unknown as { matieres?: unknown[] }).matieres ?? [];
+  const sortie: QuestionAVerifier[] = [];
+  for (const m of matieres as { id?: string; questions?: unknown[] }[]) {
+    for (const q of (m?.questions ?? []) as { id?: unknown; verificationV2?: { aVerifier?: boolean; motif?: string } }[]) {
+      if (q?.verificationV2?.aVerifier) {
+        sortie.push({
+          matiere: String(m?.id ?? ""),
+          questionId: String(q?.id ?? ""),
+          motif: String(q.verificationV2.motif ?? "arbitrage pédagogique requis"),
+        });
+      }
+    }
+  }
+  return sortie;
+}
 
 const natureVide = (): Record<NatureEcart, number> => ({
   enonce: 0, type: 0, points: 0, propositions: 0, bonnes_reponses: 0, reponse_qrc: 0, ajoutee: 0, supprimee: 0,
