@@ -581,6 +581,29 @@ export function persistExamSession(
   } catch { }
 }
 
+export interface StoredExamSessionBoundary {
+  examenId?: string | null;
+  examStartTime?: number | string | null;
+}
+
+/**
+ * Une session navigateur antérieure à une remise à zéro administrative est
+ * uniquement un historique local : elle ne peut jamais redevenir le passage
+ * courant après F5 ou reconnexion.
+ */
+export function isStoredExamSessionAfterReset(
+  session: StoredExamSessionBoundary | null | undefined,
+  examId: string,
+  resetCutoff: number | null | undefined,
+): boolean {
+  if (!session || session.examenId !== examId) return false;
+  if (!resetCutoff) return true;
+  const startedAt = typeof session.examStartTime === "number"
+    ? session.examStartTime
+    : new Date(String(session.examStartTime ?? "")).getTime();
+  return Number.isFinite(startedAt) && startedAt > resetCutoff;
+}
+
 export interface SavedExamAnswerRow {
   exercice_id: string;
   reponses?: Record<string, unknown> | null;
