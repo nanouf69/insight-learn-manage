@@ -340,13 +340,12 @@ function PassageMatiere({
           .filter((row) => row.etat === "terminee" && row.attempt_id !== decision.attemptId)
           .map((row) => String(row.attempt_id));
         if (ancienneIds.length > 0) {
-          const { data: neutralisations } = await supabase
-            .from("core_tentatives_neutralisees")
-            .select("attempt_id")
-            .in("attempt_id", ancienneIds);
-          const idsNeutralises = new Set(((neutralisations as { attempt_id?: string }[] | null) ?? []).map((n) => String(n.attempt_id)));
+          // Toute tentative clôturée de la MÊME matière (neutralisée ou non)
+          // peut détenir des réponses locales non envoyées : elles sont
+          // rattachées à la tentative ouverte, uniquement si chaque question
+          // figure à l'identique dans le snapshot officiel.
           const remappage = remapperFileApresReouverture({
-            anciensAttemptIds: ancienneIds.filter((id) => idsNeutralises.has(id)),
+            anciensAttemptIds: ancienneIds,
             nouvelAttemptId: decision.attemptId,
             matiereId: matiere.id,
             questionIdsSnapshot: idsSnapshot,
