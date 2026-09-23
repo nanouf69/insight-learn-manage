@@ -302,7 +302,7 @@ export default function AdminCorrectionQrcV2Reel() {
             <h1 className="text-lg font-semibold">Correction QRC V2</h1>
             <select
               data-testid="choix-session"
-              className="rounded border bg-background px-2 py-1 text-sm max-w-[420px]"
+              className={`rounded border bg-background px-2 py-1 text-sm max-w-[420px] ${estEnCours(groupeChoisi ?? groupes.find((g) => g.cle === groupeCle) ?? null as never) ? "text-red-600 font-semibold" : ""}`}
               value={groupeCle ?? ""}
               onChange={(e) => setGroupeCle(e.target.value)}
             >
