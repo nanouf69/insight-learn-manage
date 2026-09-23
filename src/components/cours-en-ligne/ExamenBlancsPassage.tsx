@@ -561,6 +561,9 @@ function PassageMatiere({
   const ordreClientRef = useRef(0);
   const synchronisationConfirmee = async (): Promise<boolean> => {
     if (!apprenantId) return true;
+    // RÈGLE 1 — le serveur possède déjà 100 % des réponses de la matière :
+    // aucun marqueur technique local ne peut plus retenir la clôture.
+    if (attemptV2Ref.current && serveurCompletRef.current) return true;
     ordreClientRef.current = Math.max(
       ordreClientRef.current,
       getConfirmedWriteSeq(apprenantId, exerciceKey),
