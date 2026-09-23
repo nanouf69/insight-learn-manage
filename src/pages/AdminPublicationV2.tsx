@@ -186,40 +186,84 @@ export default function AdminPublicationV2() {
                     )}
 
                     {c && (
-                      <table className="mt-3 w-full text-xs">
-                        <thead className="text-muted-foreground">
-                          <tr>
-                            <th className="text-left">Matière</th>
-                            <th className="text-left">Dernière variante servie</th>
-                            <th className="text-left">Questions servies / actives</th>
-                            <th className="text-left">Écarts</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {c.matieres.map((m) => (
-                            <tr key={m.matiere} className="border-t">
-                              <td className="py-1">{m.matiere}</td>
-                              <td>
-                                {m.reference === "aucune"
-                                  ? "jamais servie"
-                                  : new Date(m.dateReference!).toLocaleString("fr-FR")}
-                              </td>
-                              <td>
-                                {m.nbServi} / {m.nbActif}
-                              </td>
-                              <td className={m.ecarts.length ? "text-destructive" : "text-success"}>
-                                {m.ecarts.length === 0
-                                  ? "aucun"
-                                  : m.ecarts
-                                      .slice(0, 3)
-                                      .map((e) => `n°${e.position} (${e.nature}${e.detail ? ` : ${e.detail}` : ""})`)
-                                      .join(" · ") + (m.ecarts.length > 3 ? ` … +${m.ecarts.length - 3}` : "")}
-                              </td>
+                      <div className="mt-3 space-y-2" data-testid={`rapport-${id}`}>
+                        <p className="text-xs text-muted-foreground">
+                          {c.nbMatieres} matières · {c.nbQuestions} questions ({c.nbQCM} QCM / {c.nbQRC} QRC) ·{" "}
+                          <span className={c.resultat === "IDENTIQUE" ? "font-semibold text-success" : "font-semibold text-destructive"}>
+                            {c.resultat}
+                          </span>
+                          {" · "}
+                          <span className={c.snapshot.suffisant ? "text-success" : "text-destructive"}>
+                            {c.snapshot.suffisant
+                              ? "recalcul de note possible plus tard sans le sujet courant"
+                              : `recalcul ultérieur incomplet : ${c.snapshot.manques.slice(0, 3).join(" ; ")}`}
+                          </span>
+                        </p>
+                        <table className="w-full text-xs">
+                          <thead className="text-muted-foreground">
+                            <tr>
+                              <th className="text-left">Matière</th>
+                              <th className="text-left">Questions</th>
+                              <th className="text-left">QCM/QRC</th>
+                              <th className="text-left">Barème</th>
+                              <th className="text-left">Variantes</th>
+                              <th className="text-left">Variante servie</th>
+                              <th className="text-left">Identiques</th>
+                              <th className="text-left">Écarts</th>
+                              <th className="text-left">Identifiants</th>
+                              <th className="text-left">Résultat</th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                          </thead>
+                          <tbody>
+                            {c.matieres.map((m) => (
+                              <tr key={m.matiere} className="border-t align-top">
+                                <td className="py-1">{m.matiere}</td>
+                                <td>
+                                  {m.nbServi} servies / {m.nbActif} actives
+                                </td>
+                                <td>
+                                  {m.nbQCM} / {m.nbQRC}
+                                </td>
+                                <td>
+                                  {m.baremeTotal} (sur {m.noteSur})
+                                </td>
+                                <td>{m.nbVariantes}</td>
+                                <td>
+                                  {m.varianteServie ?? "—"}
+                                  {m.dateReference ? ` · ${new Date(m.dateReference).toLocaleString("fr-FR")}` : " · jamais servie"}
+                                </td>
+                                <td>{m.nbIdentiques}</td>
+                                <td className={m.ecarts.length ? "text-destructive" : "text-success"}>
+                                  {m.ecarts.length === 0
+                                    ? "aucun"
+                                    : Object.entries(m.parNature)
+                                        .filter(([, n]) => n > 0)
+                                        .map(([nature, n]) => `${nature}: ${n}`)
+                                        .join(" · ")}
+                                </td>
+                                <td className={m.idsManquants || m.idsDoublons.length ? "text-destructive" : "text-success"}>
+                                  {m.idsManquants || m.idsDoublons.length
+                                    ? `${m.idsManquants} manquant(s), ${m.idsDoublons.length} doublon(s)`
+                                    : "complets"}
+                                </td>
+                                <td
+                                  className={
+                                    m.resultat === "IDENTIQUE"
+                                      ? "text-success"
+                                      : m.resultat === "ECART"
+                                        ? "text-destructive"
+                                        : "text-muted-foreground"
+                                  }
+                                >
+                                  {m.resultat === "SANS_REFERENCE" ? "SANS RÉFÉRENCE" : m.resultat}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                     )}
+
                   </div>
                 );
               })}

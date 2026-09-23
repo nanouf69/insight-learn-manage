@@ -49,34 +49,140 @@ export const versionActive = (versions: VersionPubliee[], examId: string) =>
 // COMPARAISON AVEC LA DERNIÈRE VARIANTE RÉELLEMENT SERVIE
 // ---------------------------------------------------------------------------
 
-type QuestionSnapshot = { id?: string; matiere?: string; ordre?: number; type?: string; enonce?: string; points?: number };
+type ChoixSnapshot = { lettre?: string; texte?: string; correct?: boolean; correcte?: boolean };
+type QuestionSnapshot = {
+  id?: string;
+  matiere?: string;
+  ordre?: number;
+  type?: string;
+  enonce?: string;
+  points?: number;
+  choix?: ChoixSnapshot[] | null;
+  reponseQRC?: string | null;
+};
 
 const normaliser = (t: unknown) => String(t ?? "").replace(/\s+/g, " ").trim().toLowerCase();
+
+const signatureChoix = (choix: unknown) =>
+  Array.isArray(choix)
+    ? JSON.stringify(
+        (choix as ChoixSnapshot[]).map((c, i) => ({
+          l: String(c?.lettre ?? String.fromCharCode(65 + i)).trim().toUpperCase(),
+          t: normaliser(c?.texte),
+        })),
+      )
+    : "[]";
+
+const signatureBonnes = (choix: unknown) =>
+  Array.isArray(choix)
+    ? (choix as ChoixSnapshot[])
+        .map((c, i) => (c?.correct ?? c?.correcte ? String(c?.lettre ?? String.fromCharCode(65 + i)).trim().toUpperCase() : null))
+        .filter(Boolean)
+        .join(",")
+    : "";
+
+/** Empreinte complète d'une question : sert au comptage de variantes. */
+const signatureQuestion = (q: QuestionSnapshot) =>
+  [
+    normaliser(q.type),
+    normaliser(q.enonce),
+    signatureChoix(q.choix),
+    signatureBonnes(q.choix),
+    normaliser(q.reponseQRC),
+    String(Number(q.points ?? 0)),
+  ].join("::");
+
+export type NatureEcart =
+  | "enonce"
+  | "type"
+  | "points"
+  | "propositions"
+  | "bonnes_reponses"
+  | "reponse_qrc"
+  | "ajoutee"
+  | "supprimee";
 
 export type EcartQuestion = {
   position: number;
   servi: string | null;
   actif: string | null;
-  nature: "enonce" | "type" | "points" | "ajoutee" | "supprimee";
+  nature: NatureEcart;
   detail?: string;
 };
 
 export type ComparaisonMatiere = {
   matiere: string;
+  titre: string;
   reference: "snapshot" | "aucune";
   dateReference: string | null;
   nbServi: number;
   nbActif: number;
+  nbQCM: number;
+  nbQRC: number;
+  baremeTotal: number;
+  noteSur: number;
+  nbVariantes: number;
+  varianteServie: string | null;
+  nbIdentiques: number;
   ecarts: EcartQuestion[];
+  parNature: Record<NatureEcart, number>;
+  idsManquants: number;
+  idsDoublons: string[];
+  resultat: "IDENTIQUE" | "ECART" | "SANS_REFERENCE";
+};
+
+export type ControleSnapshot = {
+  suffisant: boolean;
+  manques: string[];
 };
 
 export type Comparaison = {
   examId: string;
   matieres: ComparaisonMatiere[];
+  nbMatieres: number;
+  nbQuestions: number;
+  nbQCM: number;
+  nbQRC: number;
   nbEcarts: number;
   nbSansReference: number;
   publiable: boolean;
+  resultat: "IDENTIQUE" | "ECART";
+  snapshot: ControleSnapshot;
 };
+
+const natureVide = (): Record<NatureEcart, number> => ({
+  enonce: 0, type: 0, points: 0, propositions: 0, bonnes_reponses: 0, reponse_qrc: 0, ajoutee: 0, supprimee: 0,
+});
+
+/**
+ * Contrôle d'autosuffisance : le contenu qui sera figé dans le snapshot V2
+ * permet-il de recalculer la note plus tard SANS relire le sujet courant ?
+ */
+export function controlerAutosuffisanceSnapshot(contenu: ContenuVersion): ControleSnapshot {
+  const manques: string[] = [];
+  if (!contenu.matieres.length) manques.push("aucune matière");
+  contenu.matieres.forEach((m) => {
+    if (!m.subject_id) manques.push("matière sans identifiant");
+    if (!Number(m.coefficient)) manques.push(`${m.subject_id} : coefficient absent`);
+    if (!Number(m.note_sur)) manques.push(`${m.subject_id} : note sur absente`);
+  });
+  contenu.questions.forEach((q, i) => {
+    const ref = `${q.matiere} n°${q.ordre ?? i + 1}`;
+    if (!q.id) manques.push(`${ref} : identifiant absent`);
+    if (!q.type) manques.push(`${ref} : type absent`);
+    if (!Number(q.points)) manques.push(`${ref} : barème absent`);
+    if (String(q.type).toUpperCase() === "QCM") {
+      const choix = Array.isArray(q.choix) ? q.choix : [];
+      if (choix.length === 0) manques.push(`${ref} : propositions absentes`);
+      else if (!choix.some((c) => (c as ChoixSnapshot)?.correct ?? (c as ChoixSnapshot)?.correcte)) {
+        manques.push(`${ref} : aucune bonne réponse marquée`);
+      }
+    } else if (!q.reponseQRC) {
+      manques.push(`${ref} : réponse officielle QRC absente`);
+    }
+  });
+  return { suffisant: manques.length === 0, manques: manques.slice(0, 30) };
+}
 
 /**
  * Compare le contenu actif d'un examen avec la dernière variante servie.
@@ -90,80 +196,157 @@ export async function comparerAvantPublication(examen: ExamenBlanc): Promise<Com
     .select("attempt_id, snapshot, started_at")
     .eq("exam_id", contenu.exam_id)
     .order("started_at", { ascending: false })
-    .limit(300);
+    .limit(500);
   if (error) throw error;
 
-  // Dernière tentative contenant chaque matière = variante réellement servie.
-  const derniere = new Map<string, { questions: QuestionSnapshot[]; date: string }>();
+  // Dernière tentative contenant chaque matière = variante réellement servie,
+  // et recensement de TOUTES les variantes distinctes déjà servies.
+  const derniere = new Map<string, { questions: QuestionSnapshot[]; date: string; empreinte: string }>();
+  const variantes = new Map<string, Set<string>>();
   for (const ligne of (data ?? []) as { snapshot: unknown; started_at: string }[]) {
     const snap = ligne.snapshot as { questions?: QuestionSnapshot[] } | null;
     const questions = Array.isArray(snap?.questions) ? (snap!.questions as QuestionSnapshot[]) : [];
+    const parMatiere = new Map<string, QuestionSnapshot[]>();
     for (const q of questions) {
       const m = String(q.matiere ?? "");
-      if (!m || derniere.has(m)) continue;
-      derniere.set(m, {
-        date: ligne.started_at,
-        questions: questions
-          .filter((x) => String(x.matiere ?? "") === m)
-          .sort((a, b) => (a.ordre ?? 0) - (b.ordre ?? 0)),
-      });
+      if (!m) continue;
+      parMatiere.set(m, [...(parMatiere.get(m) ?? []), q]);
+    }
+    for (const [m, qs] of parMatiere) {
+      const triees = [...qs].sort((a, b) => (a.ordre ?? 0) - (b.ordre ?? 0));
+      const empreinte = triees.map(signatureQuestion).join("|").slice(0, 100000);
+      const court = empreinte.length.toString(36) + ":" + hachageCourt(empreinte);
+      if (!variantes.has(m)) variantes.set(m, new Set());
+      variantes.get(m)!.add(court);
+      if (!derniere.has(m)) derniere.set(m, { date: ligne.started_at, questions: triees, empreinte: court });
     }
   }
 
   const matieres: ComparaisonMatiere[] = contenu.matieres.map((m) => {
     const actives = contenu.questions.filter((q) => q.matiere === m.subject_id);
+    const nbQCM = actives.filter((q) => String(q.type).toUpperCase() === "QCM").length;
+    const bareme = actives.reduce((n, q) => n + Number(q.points ?? 0), 0);
+    const compteIds = new Map<string, number>();
+    let idsManquants = 0;
+    actives.forEach((q) => {
+      if (!q.id) idsManquants += 1;
+      else compteIds.set(q.id, (compteIds.get(q.id) ?? 0) + 1);
+    });
+    const idsDoublons = [...compteIds.entries()].filter(([, n]) => n > 1).map(([id]) => id);
+
+    const base = {
+      matiere: m.subject_id,
+      titre: m.titre,
+      nbActif: actives.length,
+      nbQCM,
+      nbQRC: actives.length - nbQCM,
+      baremeTotal: Math.round(bareme * 100) / 100,
+      noteSur: Number(m.note_sur ?? 0),
+      nbVariantes: variantes.get(m.subject_id)?.size ?? 0,
+      idsManquants,
+      idsDoublons,
+    };
+
     const ref = derniere.get(m.subject_id) ?? null;
     if (!ref) {
       return {
-        matiere: m.subject_id,
-        reference: "aucune",
+        ...base,
+        reference: "aucune" as const,
         dateReference: null,
         nbServi: 0,
-        nbActif: actives.length,
+        varianteServie: null,
+        nbIdentiques: 0,
         ecarts: [],
+        parNature: natureVide(),
+        resultat: "SANS_REFERENCE" as const,
       };
     }
+
     const ecarts: EcartQuestion[] = [];
+    const parNature = natureVide();
+    let nbIdentiques = 0;
+    const ajouter = (e: EcartQuestion) => {
+      ecarts.push(e);
+      parNature[e.nature] += 1;
+    };
     const taille = Math.max(ref.questions.length, actives.length);
     for (let i = 0; i < taille; i++) {
       const s = ref.questions[i];
       const a = actives[i];
       if (s && !a) {
-        ecarts.push({ position: i + 1, servi: s.enonce ?? "", actif: null, nature: "supprimee" });
+        ajouter({ position: i + 1, servi: s.enonce ?? "", actif: null, nature: "supprimee" });
         continue;
       }
       if (a && !s) {
-        ecarts.push({ position: i + 1, servi: null, actif: a.enonce, nature: "ajoutee" });
+        ajouter({ position: i + 1, servi: null, actif: a.enonce, nature: "ajoutee" });
         continue;
       }
       if (!a || !s) continue;
+      const avant = ecarts.length;
       if (normaliser(s.enonce) !== normaliser(a.enonce)) {
-        ecarts.push({ position: i + 1, servi: s.enonce ?? "", actif: a.enonce, nature: "enonce" });
-      } else if (normaliser(s.type) !== normaliser(a.type)) {
-        ecarts.push({ position: i + 1, servi: s.enonce ?? "", actif: a.enonce, nature: "type", detail: `${s.type} → ${a.type}` });
-      } else if (Number(s.points ?? 0) !== Number(a.points ?? 0)) {
-        ecarts.push({ position: i + 1, servi: s.enonce ?? "", actif: a.enonce, nature: "points", detail: `${s.points} → ${a.points}` });
+        ajouter({ position: i + 1, servi: s.enonce ?? "", actif: a.enonce, nature: "enonce" });
       }
+      if (normaliser(s.type) !== normaliser(a.type)) {
+        ajouter({ position: i + 1, servi: s.enonce ?? "", actif: a.enonce, nature: "type", detail: `${s.type} → ${a.type}` });
+      }
+      if (signatureChoix(s.choix) !== signatureChoix(a.choix)) {
+        ajouter({ position: i + 1, servi: s.enonce ?? "", actif: a.enonce, nature: "propositions" });
+      }
+      if (signatureBonnes(s.choix) !== signatureBonnes(a.choix)) {
+        ajouter({
+          position: i + 1, servi: s.enonce ?? "", actif: a.enonce, nature: "bonnes_reponses",
+          detail: `${signatureBonnes(s.choix) || "—"} → ${signatureBonnes(a.choix) || "—"}`,
+        });
+      }
+      if (normaliser(s.reponseQRC) !== normaliser(a.reponseQRC)) {
+        ajouter({ position: i + 1, servi: s.enonce ?? "", actif: a.enonce, nature: "reponse_qrc" });
+      }
+      if (Number(s.points ?? 0) !== Number(a.points ?? 0)) {
+        ajouter({ position: i + 1, servi: s.enonce ?? "", actif: a.enonce, nature: "points", detail: `${s.points} → ${a.points}` });
+      }
+      if (ecarts.length === avant) nbIdentiques += 1;
     }
+
     return {
-      matiere: m.subject_id,
-      reference: "snapshot",
+      ...base,
+      reference: "snapshot" as const,
       dateReference: ref.date,
       nbServi: ref.questions.length,
-      nbActif: actives.length,
+      varianteServie: ref.empreinte,
+      nbIdentiques,
       ecarts,
+      parNature,
+      resultat: ecarts.length === 0 ? ("IDENTIQUE" as const) : ("ECART" as const),
     };
   });
 
   const nbEcarts = matieres.reduce((n, m) => n + m.ecarts.length, 0);
+  const nbQCM = contenu.questions.filter((q) => String(q.type).toUpperCase() === "QCM").length;
   return {
     examId: contenu.exam_id,
     matieres,
+    nbMatieres: contenu.matieres.length,
+    nbQuestions: contenu.questions.length,
+    nbQCM,
+    nbQRC: contenu.questions.length - nbQCM,
     nbEcarts,
     nbSansReference: matieres.filter((m) => m.reference === "aucune").length,
     publiable: nbEcarts === 0,
+    resultat: nbEcarts === 0 ? "IDENTIQUE" : "ECART",
+    snapshot: controlerAutosuffisanceSnapshot(contenu),
   };
 }
+
+/** Hachage court non cryptographique : sert uniquement à nommer une variante. */
+function hachageCourt(texte: string): string {
+  let h = 2166136261;
+  for (let i = 0; i < texte.length; i++) {
+    h ^= texte.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return (h >>> 0).toString(16).padStart(8, "0");
+}
+
 
 // ---------------------------------------------------------------------------
 // CONTRÔLE APRÈS PUBLICATION
