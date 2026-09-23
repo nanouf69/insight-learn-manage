@@ -229,6 +229,7 @@ function PassageMatiere({
   // snapshot figés au démarrage, chaque réponse journalisée côté serveur.
   // L'ancien circuit continue d'être alimenté en copie de lecture.
   const attemptV2Ref = useRef<string | null>(null);
+  const [tentativeChrono, setTentativeChrono] = useState(Math.max(1, Number(tentative) || 1));
   const [blocageV2, setBlocageV2] = useState<string | null>(null);
 
   /** Questions réellement répondues par l'élève dans cette matière. */
@@ -260,6 +261,19 @@ function PassageMatiere({
       if (annule) return;
       if (decision.moteur === "v2") {
         attemptV2Ref.current = decision.attemptId;
+        // Le chrono suit la tentative V2 réellement ouverte. Une réouverture
+        // administrative obtient donc une nouvelle fenêtre ; F5/reconnexion sur
+        // la même tentative conserve exactement la même fenêtre serveur.
+        const { data: tentativesV2 } = await supabase
+          .from("exam_attempts_v2")
+          .select("attempt_id, started_at")
+          .eq("apprenant_id", apprenantId)
+          .eq("exam_id", examenId)
+          .order("started_at", { ascending: true });
+        const matiereTentatives = ((tentativesV2 as { attempt_id?: string }[] | null) ?? [])
+          .filter((row) => Boolean(row.attempt_id));
+        const indexTentative = matiereTentatives.findIndex((row) => row.attempt_id === decision.attemptId);
+        setTentativeChrono(indexTentative >= 0 ? indexTentative + 1 : Math.max(1, Number(tentative) || 1));
         setBlocageV2(null);
         // HOTFIX 23/09/2026 : les réponses déjà saisies AVANT l'ouverture de la
         // tentative V2 (saisie pendant le routage, reprise après F5) sont
@@ -740,7 +754,7 @@ function PassageMatiere({
           _apprenant_id: apprenantId,
           _exercice_id: exerciceKey,
           _duree_secondes: dureeSecondes,
-          _tentative: Math.max(1, Number(tentative) || 1),
+          _tentative: tentativeChrono,
         } as any);
 
         if (cancelled) return;
@@ -773,7 +787,7 @@ function PassageMatiere({
       window.removeEventListener("online", sync);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [apprenantId, exerciceKey, dureeSecondes, isBilan, tentative]);
+  }, [apprenantId, exerciceKey, dureeSecondes, isBilan, tentativeChrono]);
 
   // « Finalisation en attente » : le temps est écoulé, les réponses sont figées
   // mais le serveur n'a pas encore confirmé. On réessaie automatiquement
