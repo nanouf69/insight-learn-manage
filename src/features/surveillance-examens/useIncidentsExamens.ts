@@ -17,6 +17,7 @@ export type IncidentExamen = {
   cle: string;
   code: string;
   libelle: string;
+  explication: string;
   gravite: GraviteIncident;
   apprenantId: string | null;
   apprenantNom: string;
@@ -148,6 +149,7 @@ export function useIncidentsExamens() {
           cle: `${code}:${t.attempt_id}`,
           code,
           libelle: meta.libelle,
+          explication: meta.explication,
           gravite: meta.gravite,
           apprenantId: t.apprenant_id,
           apprenantNom: noms.get(t.apprenant_id ?? "") ?? "Apprenant",
