@@ -599,7 +599,7 @@ export function classifyAnswerSaveFailure(
       definitif: true,
       reason: "retake_delay",
       message:
-        "Nouveau passage non autorisé avant 48 h. Vos réponses de ce nouveau passage ne peuvent pas être enregistrées. Contactez le centre si vous pensez que c'est une erreur.",
+        "Nouveau passage non autorisé avant 48 h. Vos réponses de ce nouveau passage restent conservées sur cet appareil. Une alerte technique a été envoyée automatiquement.",
     };
   }
 
@@ -609,7 +609,7 @@ export function classifyAnswerSaveFailure(
       definitif: true,
       reason: "forbidden",
       message:
-        "Le serveur a refusé cette sauvegarde (droits insuffisants pour ce dossier). Vos réponses sont conservées sur cet appareil. Contactez le centre.",
+        "Un problème de synchronisation a été détecté. Vos réponses sont conservées sur cet appareil. Une alerte technique a été envoyée automatiquement.",
     };
   }
 
@@ -635,7 +635,7 @@ export function classifyAnswerSaveFailure(
       definitif: true,
       reason: "refused",
       message:
-        "Le serveur a refusé cette sauvegarde. Elle ne sera pas renvoyée automatiquement et vos réponses restent conservées sur cet appareil. Contactez le centre.",
+        "Un problème de synchronisation a été détecté. Vos réponses sont conservées sur cet appareil. Une alerte technique a été envoyée automatiquement.",
     };
   }
 
@@ -645,7 +645,7 @@ export function classifyAnswerSaveFailure(
       definitif: true,
       reason: "refused",
       message:
-        "Le serveur a refusé cette sauvegarde. Vos réponses restent conservées sur cet appareil. Contactez le centre.",
+        "Un problème de synchronisation a été détecté. Vos réponses sont conservées sur cet appareil. Une alerte technique a été envoyée automatiquement.",
     };
   }
 

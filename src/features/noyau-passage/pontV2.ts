@@ -211,6 +211,10 @@ export async function demarrerTentative(params: {
       .eq("attempt_id", attemptId)
       .maybeSingle(),
   ]);
+  if ((etat as { etat?: string } | null)?.etat === "terminee" && !neutralisation) {
+    console.warn("[PontV2] tentative clôturée sans réouverture administrative autorisée:", attemptId);
+    return null;
+  }
   if ((etat as { etat?: string } | null)?.etat === "terminee" && neutralisation) {
     const reopenOp = await operationId(`reopen:${attemptId}`);
     const { data: reopened, error: reopenError } = await demarrer(reopenOp);
@@ -421,6 +425,15 @@ function refusDefinitif(message?: string): boolean {
 export function reponsesNoyauEcartees(attemptId?: string | null): number {
   const ecartees = lireEcartees();
   return attemptId ? ecartees.filter((e) => e.attemptId === attemptId).length : ecartees.length;
+}
+
+/** Identifiants stables des réponses refusées pour colorer honnêtement l'écran. */
+export function questionsNoyauEcartees(attemptId?: string | null): Set<string> {
+  return new Set(
+    lireEcartees()
+      .filter((e) => !attemptId || e.attemptId === attemptId)
+      .map((e) => idQuestionNoyau(e.matiereId, e.questionId)),
+  );
 }
 
 /** Vide la file séquentiellement. Une réponse ne quitte la file qu'une fois confirmée. */

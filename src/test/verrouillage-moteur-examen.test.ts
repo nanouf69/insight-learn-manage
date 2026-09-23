@@ -186,6 +186,19 @@ describe("CRITIQUE 2 — sauvegarde des réponses", () => {
     expect(reponsesNoyauEnAttente("nouvelle-ouverte")).toBe(20);
   });
 
+  it("une tentative clôturée non neutralisée n'est jamais rendue au navigateur comme tentative active", () => {
+    const pont = read(PONT);
+    expect(pont).toContain('etat === "terminee" && !neutralisation');
+    expect(pont).toContain("return null");
+  });
+
+  it("les statuts des questions distinguent confirmé, local et refusé", () => {
+    const src = read(PASSAGE);
+    expect(src).toContain("questionsConfirmees.has(stableId)");
+    expect(src).toContain("questionsRefusees.has(stableId)");
+    expect(src).toContain("sauvegardées sur le serveur");
+  });
+
   it("le remappage s'arrête si une seule question ne correspond pas au snapshot", () => {
     localStorage.clear();
     enfilerReponseNoyau({ attemptId: "ancienne-invalide", matiereId: "securite", questionId: 99, valeur: ["B"] });
