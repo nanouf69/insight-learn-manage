@@ -395,7 +395,7 @@ function PassageMatiere({
         tentative,
         attempt: null,
         ecrituresLocalesEnAttente: getPendingAnswerSavesFor(apprenantId, exerciceKey),
-        ecrituresNoyauEnAttente: attemptV2Ref.current ? reponsesNoyauEnAttente() : 0,
+        ecrituresNoyauEnAttente: attemptV2Ref.current ? reponsesNoyauEnAttente(attemptV2Ref.current) : 0,
         dernierOrdreClient: ordreClientRef.current,
         dernierOrdreConfirme: getConfirmedWriteSeq(apprenantId, exerciceKey),
         refus:
@@ -420,10 +420,17 @@ function PassageMatiere({
   const finaliserNoyau = async (): Promise<boolean> => {
     const attemptId = attemptV2Ref.current;
     if (!attemptId) return true; // passage non raccordé : comportement inchangé
-    const { restantes } = await viderFileNoyau();
-    if (restantes > 0 || reponsesNoyauEnAttente() > 0) {
+    const { restantes } = await viderFileNoyau(attemptId);
+    if (restantes > 0 || reponsesNoyauEnAttente(attemptId) > 0) {
       setSaveStatus("error");
       toast.error("Des réponses ne sont pas encore enregistrées : la matière n'est pas clôturée. Elles repartiront automatiquement.");
+      return false;
+    }
+    // Sécurité anti-note 0 technique : si une réponse de CETTE matière a été
+    // définitivement refusée par le serveur, on ne clôture pas.
+    if (reponsesNoyauEcartees(attemptId) > 0) {
+      setSaveStatus("error");
+      toast.error("Une réponse n'a pas pu être enregistrée par le serveur : la matière n'est pas clôturée. Contactez le centre, vos réponses sont conservées.");
       return false;
     }
     const qrc = questionsSafe.filter(q => q?.type === "QRC").map(q => q.id);
