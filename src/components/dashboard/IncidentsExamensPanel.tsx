@@ -24,6 +24,8 @@ export function IncidentsExamensPanel({
   const { incidents, historique, loading, marquerResolu } = useIncidentsExamens();
   const [detail, setDetail] = useState<IncidentExamen | null>(null);
   const [voirHistorique, setVoirHistorique] = useState(false);
+  const [voirTout, setVoirTout] = useState(false);
+  const visibles = incidents.slice(0, 3);
 
   const ligne = (i: IncidentExamen, resolu = false) => (
     <div
