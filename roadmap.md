@@ -59,6 +59,15 @@ Voir `docs/snapshot-reference-avant-phase1.md` : empreintes md5 des 5 fichiers d
 - Terminé : suite de non-régression bloquante `src/test/verrouillage-moteur-examen.test.ts` (41 tests critiques, 8 axes) + `npm run test:critique` (96 tests, bloquant avant déploiement du moteur d'examen).
 - Terminé : surveillance production `supabase/functions/surveillance-moteur-examen` — détection seule, lecture seule, alertes e-mail/webhook, journaux anonymisés.
 
+## Plan de stabilisation validé (23/09, 19h36) — une phase à la fois : TEST → rapport → accord → production → contrôle
+- [ ] Phase 1a — C2+C3 isolation stricte entre candidats (serveur/base) — EN ATTENTE : choix d'un environnement TEST isolé
+- [ ] Phase 1b — C1 unicité OPEN en base (audit préalable, aucune suppression)
+- [ ] Phase 1c — C5 publication interdite si test critique échoue
+- [ ] Phase 2 — serveur d'abord au chargement/F5 + double-clic Commencer ; V2 seule source d'état
+- [ ] Phase 3 — C4 chrono serveur, tolérance 30 s transmission uniquement (arrêt si non garantissable)
+- [ ] Phase 4 — 7 scénarios manquants (serveur/intégration/navigateur réel), alerte double OPEN, 4 alertes hautes
+- Ne pas nettoyer l'ancien circuit.
+
 ## Stabilisation moteur EB (après pause — pas avant, sauf bug critique ; TEST → validation → production)
 - [ ] Serveur interrogé avant toute reprise locale (le navigateur ne choisit jamais la tentative)
 - [ ] V2 seule source du statut / progression / Commencer-Reprendre pour les EB V2
