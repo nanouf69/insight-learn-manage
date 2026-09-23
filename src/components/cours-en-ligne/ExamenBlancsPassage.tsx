@@ -38,13 +38,13 @@ import {
 } from "@/lib/examFinalizationReadiness";
 import { runFinalizationOnce, buildFinalizationKey } from "@/lib/examFinalizationGuard";
 import {
-  pontActifPour,
-  demarrerTentative,
+  routerPassage,
   enfilerReponseNoyau,
   viderFileNoyau,
   finaliserMatiere,
   reponsesNoyauEnAttente,
 } from "@/features/noyau-passage/pontV2";
+import { captureError } from "@/lib/monitoring/errorLogger";
 
 
 
