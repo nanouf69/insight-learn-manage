@@ -536,3 +536,83 @@ export function reponsesNoyauEnAttente(attemptId?: string | null): number {
   return attemptId ? file.filter((e) => e.attemptId === attemptId).length : file.length;
 }
 
+
+// ---------------------------------------------------------------------------
+// RÈGLE 1 — LE SERVEUR FAIT FOI QUAND IL POSSÈDE TOUTES LES RÉPONSES
+// ---------------------------------------------------------------------------
+// Quand le serveur confirme 100 % des réponses d'une matière, les marqueurs
+// techniques locaux (file en attente, refus historiques) sont obsolètes : ils
+// ne doivent plus afficher d'alerte ni bloquer la clôture. Ils sont ARCHIVÉS
+// (jamais supprimés) dans une clé dédiée, et AUCUNE réponse n'est effacée.
+
+const CLE_FILE_RESOLUE = "noyau_v2_answer_queue_resolved_v1";
+
+function archiver(elements: ElementFile[]): void {
+  if (elements.length === 0) return;
+  try {
+    const brut = localStorage.getItem(CLE_FILE_RESOLUE);
+    const parsed = brut ? JSON.parse(brut) : [];
+    const precedent = Array.isArray(parsed) ? (parsed as ElementFile[]) : [];
+    localStorage.setItem(CLE_FILE_RESOLUE, JSON.stringify([...precedent, ...elements]));
+  } catch {
+    /* archive impossible : on ne supprime alors rien */
+  }
+}
+
+/**
+ * Retire des files techniques les éléments dont la réponse est DÉJÀ confirmée
+ * par le serveur pour cette tentative. Renvoie le nombre d'éléments archivés.
+ */
+export function archiverMarqueursObsoletes(
+  attemptId: string,
+  questionsConfirmees: Set<string>,
+): number {
+  const estObsolete = (e: ElementFile) =>
+    e.attemptId === attemptId && questionsConfirmees.has(idQuestionNoyau(e.matiereId, e.questionId));
+
+  const ecartees = lireEcartees();
+  const ecarteesObsoletes = ecartees.filter(estObsolete);
+  if (ecarteesObsoletes.length > 0) {
+    archiver(ecarteesObsoletes);
+    try {
+      localStorage.setItem(
+        CLE_FILE_ECARTEE,
+        JSON.stringify(ecartees.filter((e) => !estObsolete(e))),
+      );
+    } catch {
+      /* rien n'est supprimé si l'écriture échoue */
+    }
+  }
+
+  const file = fileMemoire ?? lireFile();
+  const fileObsolete = file.filter(estObsolete);
+  if (fileObsolete.length > 0) {
+    archiver(fileObsolete);
+    const restante = file.filter((e) => !estObsolete(e));
+    fileMemoire = restante;
+    ecrireFile(restante);
+  }
+
+  return ecarteesObsoletes.length + fileObsolete.length;
+}
+
+/**
+ * RÈGLE 2 — secours anti-blocage : archive l'ancienne tentative et ouvre une
+ * nouvelle tentative propre pour CETTE matière uniquement (chrono complet,
+ * snapshot officiel). Aucune donnée n'est supprimée, aucun doublon possible.
+ */
+export async function recommencerMatiereNoyau(
+  attemptId: string,
+  motif = "synchronisation_impossible",
+): Promise<{ ok: boolean; attemptId?: string; message?: string }> {
+  const op = await operationId(`restart-matiere:${attemptId}:${Date.now()}`);
+  const { data, error } = await supabase.rpc("core_restart_matiere", {
+    p_operation_id: op,
+    p_attempt_id: attemptId,
+    p_motif: motif,
+  });
+  if (error) return { ok: false, message: error.message };
+  const nouvelle = (data as unknown as { attempt_id?: string } | null)?.attempt_id ?? null;
+  if (!nouvelle) return { ok: false, message: "REPRISE_IMPOSSIBLE" };
+  return { ok: true, attemptId: nouvelle };
+}
