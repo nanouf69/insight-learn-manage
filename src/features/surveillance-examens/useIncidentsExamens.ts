@@ -11,6 +11,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { lireParLotsEtPages, lireToutesLesPages } from "./lectureComplete";
+import { diagnostiquer } from "./classification";
 
 export type GraviteIncident = "critique" | "avertissement";
 
@@ -117,15 +118,15 @@ export function useIncidentsExamens() {
       }
       const ids = lignes.map((t) => t.attempt_id);
 
-      const [reponses, resultats, neutralisees, statuts] = await Promise.all([
-        lireParLotsEtPages<any>(ids, (lot, d, f) =>
-          supabase
-            .from("answer_state")
-            .select("attempt_id, question_id")
-            .in("attempt_id", lot)
-            .order("response_id", { ascending: true })
-            .range(d, f) as any,
-        ),
+      const [comptes, resultats, neutralisees, statuts] = await Promise.all([
+        // Comptage fait EN BASE par tentative (1 ligne par tentative, jamais tronqué).
+        lireParLotsEtPages<{ attempt_id: string; nb_reponses: number }>(ids, async (lot, d, f) => {
+          if (d > 0) return { data: [], error: null };
+          const { data, error } = await (supabase.rpc as any)("surveillance_compte_reponses", {
+            p_attempt_ids: lot,
+          });
+          return { data: data ?? [], error };
+        }),
         lireParLotsEtPages<any>(ids, (lot, d, f) =>
           supabase
             .from("core_exam_results")
@@ -151,11 +152,8 @@ export function useIncidentsExamens() {
         (statuts ?? []).filter((s: any) => s.resolu).map((s: any) => [s.incident_cle, s.resolu_le as string]),
       );
 
-      const parTentative = new Map<string, Set<string>>();
-      for (const r of (reponses ?? []) as any[]) {
-        if (!parTentative.has(r.attempt_id)) parTentative.set(r.attempt_id, new Set());
-        parTentative.get(r.attempt_id)!.add(r.question_id);
-      }
+      const compteParTentative = new Map<string, number>();
+      for (const c of comptes) compteParTentative.set(c.attempt_id, Number(c.nb_reponses) || 0);
       const nbResultats = new Map<string, number>();
       for (const r of (resultats ?? []) as any[]) {
         nbResultats.set(r.attempt_id, (nbResultats.get(r.attempt_id) ?? 0) + 1);
@@ -190,25 +188,26 @@ export function useIncidentsExamens() {
         });
       };
 
-      const limiteOuverture = Date.now() - 2 * 3600_000;
       for (const t of lignes) {
-        if (neutres.has(t.attempt_id)) continue;
         const attendues = nbQuestions(t.snapshot);
-        const obtenues = parTentative.get(t.attempt_id)?.size ?? 0;
-        const termine = t.etat === "terminee";
+        const obtenues = compteParTentative.get(t.attempt_id) ?? 0;
         const debut = t.started_at ? new Date(t.started_at).getTime() : Date.now();
-
-        if (termine && attendues === 0) pousser(t, "TENTATIVE_VIDE", obtenues, attendues);
-        else if (termine && obtenues === 0) pousser(t, "RESULTAT_SANS_REPONSE_SERVEUR", obtenues, attendues);
-        else if (termine && obtenues !== attendues) pousser(t, "MAUVAIS_NOMBRE_DE_QUESTIONS", obtenues, attendues);
-
-        if ((nbResultats.get(t.attempt_id) ?? 0) > 1) pousser(t, "RESULTATS_MULTIPLES", obtenues, attendues);
-        if (termine && (nbResultats.get(t.attempt_id) ?? 0) === 0) pousser(t, "FINALISATION_EN_ATTENTE", obtenues, attendues);
-        if (!termine && obtenues === 0 && debut < limiteOuverture) pousser(t, "SAUVEGARDE_BLOQUEE", obtenues, attendues);
+        for (const code of diagnostiquer({
+          etat: t.etat,
+          questionsAttendues: attendues,
+          reponsesServeur: obtenues,
+          nbResultats: nbResultats.get(t.attempt_id) ?? 0,
+          neutralisee: neutres.has(t.attempt_id),
+          ouverteDepuisMs: Date.now() - debut,
+        })) {
+          pousser(t, code, obtenues, attendues);
+        }
       }
 
-      setIncidents(detectes.filter((i) => !resolus.has(i.cle)));
-      setHistorique(detectes.filter((i) => resolus.has(i.cle)));
+      // Les anciens vrais incidents neutralisés restent visibles dans l'historique,
+      // clairement distingués des alertes actives.
+      setIncidents(detectes.filter((i) => i.code !== "NEUTRALISEE" && !resolus.has(i.cle)));
+      setHistorique(detectes.filter((i) => i.code === "NEUTRALISEE" || resolus.has(i.cle)));
     } catch (e) {
       console.error("[IncidentsExamens] lecture impossible", e);
     } finally {
