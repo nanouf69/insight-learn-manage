@@ -73,3 +73,13 @@ Voir `docs/snapshot-reference-avant-phase1.md` : empreintes md5 des 5 fichiers d
 - [ ] V2 seule source du statut / progression / Commencer-Reprendre pour les EB V2
 - [ ] Déploiement bloqué si un test critique échoue
 - [ ] Test + alerte tableau de bord « 2 tentatives OPEN même candidat/examen » (vu transitoirement le 23/09, candidat non identifié)
+
+## Après C1/C2/C3/C5 — fonctionnement type Formative (exigence 23/09, 19h56, à NE PAS développer maintenant)
+Supprimer la nécessité de publier manuellement chaque modification pédagogique :
+- [ ] Enregistrement d'une modification d'un examen blanc → création/publication AUTOMATIQUE d'une nouvelle version pour les futurs passages uniquement (plus de bouton « Publier » pour les modifications ordinaires)
+- [ ] Passage déjà commencé → snapshot inchangé
+- [ ] Passage terminé → inchangé
+- [ ] Notes/corrections existantes → jamais recalculées
+- [ ] Nouveau passage → dernière version enregistrée
+- [ ] Conserver l'historique / version précédente pour audit et retour arrière
+- Invariant : une modification ne doit jamais changer le sujet d'un élève en cours d'examen.
