@@ -145,6 +145,9 @@ export type GroupeSessionCrm = {
   type: "crm" | "elearning" | "indetermine" | "conflit";
   libelle: string;
   periode: string | null;
+  /** Dates de la session CRM (brutes ISO) — servent à la mise en évidence « EN COURS ». */
+  debut: string | null;
+  fin: string | null;
   /** Tri : date de début de la session CRM (ou date du passage le plus récent). */
   tri: string;
   nbCandidats: number;
@@ -275,6 +278,8 @@ export async function listerGroupesCrm(mode: "test" | "migre" = "migre"): Promis
         type: "elearning",
         libelle: "E-learning — toutes sessions confondues",
         periode: null,
+        debut: null,
+        fin: null,
         tri: "0000-00-00",
       }, a);
       continue;
@@ -287,6 +292,8 @@ export async function listerGroupesCrm(mode: "test" | "migre" = "migre"): Promis
         type: "crm",
         libelle: s.nom ?? "Session sans nom",
         periode: `${jourFr(s.date_debut)} → ${jourFr(s.date_fin)}`,
+        debut: (s.date_debut as string) ?? null,
+        fin: (s.date_fin as string) ?? null,
         tri: s.date_debut as string,
       }, a);
     } else if (uniques.length === 0) {
@@ -294,6 +301,8 @@ export async function listerGroupesCrm(mode: "test" | "migre" = "migre"): Promis
         type: "indetermine",
         libelle: "⚠️ Session CRM non déterminée",
         periode: null,
+        debut: null,
+        fin: null,
         tri: "0000-00-00",
       }, a);
     } else {
@@ -301,6 +310,8 @@ export async function listerGroupesCrm(mode: "test" | "migre" = "migre"): Promis
         type: "conflit",
         libelle: "⚠️ Conflit de sessions CRM (plusieurs sessions se chevauchent)",
         periode: null,
+        debut: null,
+        fin: null,
         tri: "0000-00-00",
       }, a);
     }

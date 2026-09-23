@@ -282,6 +282,14 @@ export default function AdminCorrectionQrcV2Reel() {
   const nbIndetermines = groupes.find((g) => g.type === "indetermine")?.nbCandidats ?? 0;
   const nbConflits = groupes.find((g) => g.type === "conflit")?.nbCandidats ?? 0;
 
+  // Mise en évidence des sessions CRM en cours : date du jour (Paris) comprise
+  // entre la date de début et la date de fin incluses — détection dynamique.
+  const jourActuel = new Intl.DateTimeFormat("fr-CA", { timeZone: "Europe/Paris" }).format(new Date());
+  const estEnCours = (g: GroupeSessionCrm) =>
+    g.type === "crm" && !!g.debut && !!g.fin && jourActuel >= g.debut && jourActuel <= g.fin;
+  const libelleGroupe = (g: GroupeSessionCrm) =>
+    `${estEnCours(g) ? "🔴 EN COURS — " : ""}${g.libelle}${g.periode ? ` (${g.periode})` : ""} · ${g.nbCandidats} candidat${g.nbCandidats > 1 ? "s" : ""}`;
+
   return (
     <div ref={conteneurRef} className="flex min-h-screen w-full bg-background">
       <div
@@ -294,13 +302,13 @@ export default function AdminCorrectionQrcV2Reel() {
             <h1 className="text-lg font-semibold">Correction QRC V2</h1>
             <select
               data-testid="choix-session"
-              className="rounded border bg-background px-2 py-1 text-sm max-w-[420px]"
+              className={`rounded border bg-background px-2 py-1 text-sm max-w-[420px] ${groupeChoisi && estEnCours(groupeChoisi) ? "text-red-600 font-semibold" : ""}`}
               value={groupeCle ?? ""}
               onChange={(e) => setGroupeCle(e.target.value)}
             >
               {groupes.map((g) => (
-                <option key={g.cle} value={g.cle}>
-                  {g.libelle}{g.periode ? ` (${g.periode})` : ""} · {g.nbCandidats} candidat{g.nbCandidats > 1 ? "s" : ""}
+                <option key={g.cle} value={g.cle} className={estEnCours(g) ? "text-red-600 font-semibold" : undefined}>
+                  {libelleGroupe(g)}
                 </option>
               ))}
             </select>
@@ -710,7 +718,13 @@ export default function AdminCorrectionQrcV2Reel() {
                   {restaureSel.mention} — barème {restaureSel.bareme} points, {restaureSel.nb_preuves} passage(s) de preuve
                 </p>
               )}
-              <p>{groupeChoisi?.libelle}</p>
+              {groupeChoisi && (
+                <p className={estEnCours(groupeChoisi) ? "text-red-600 font-semibold" : undefined}>
+                  {estEnCours(groupeChoisi) ? "🔴 EN COURS — " : ""}
+                  {groupeChoisi.libelle}
+                  {groupeChoisi.periode ? ` (${groupeChoisi.periode})` : ""}
+                </p>
+              )}
             </div>
 
             {(() => {
