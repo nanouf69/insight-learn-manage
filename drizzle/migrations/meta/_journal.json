@@ -449,6 +449,13 @@
       "when": 1790161224759,
       "tag": "0063_core_tentatives_neutralisees",
       "breakpoints": true
+    },
+    {
+      "idx": 64,
+      "version": "7",
+      "when": 1790163550685,
+      "tag": "0064_exam_timer_per_tentative",
+      "breakpoints": true
     }
   ]
 }

@@ -79,6 +79,14 @@ function PassageMatiere({
   const [reponses, setReponses] = useState<Reponses>({});
   const [questionIndex, setQuestionIndex] = useState(0);
   const [expire, setExpire] = useState(false);
+  // Gel immédiat à 00:00 (lecture synchrone, sans attendre un re-rendu) et état
+  // technique « finalisation en attente » si le serveur est momentanément
+  // indisponible : aucune réponse perdue, aucune note 0 technique.
+  const expireRef = useRef(false);
+  const [finalisationEnAttente, setFinalisationEnAttente] = useState(false);
+  const expirationEnCoursRef = useRef(false);
+  const matiereTermineeRef = useRef(false);
+
   const [initialLoaded, setInitialLoaded] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [showCalculator, setShowCalculator] = useState(false);
@@ -356,7 +364,11 @@ function PassageMatiere({
   }, [apprenantId, exerciceKey, isBilan, userId]);
 
   // Core logic extracted to applyQCMChange in examens-blancs-utils.ts (BUG #10 FIX)
+  // À 00:00 l'état des réponses est FIGÉ : plus aucune modification n'est
+  // acceptée, mais rien n'est perdu ni clôturé tant que le serveur n'a pas
+  // confirmé les réponses déjà saisies.
   const handleQCMChange = (qId: number, lettre: string, checked: boolean, isMultipleQ: boolean) => {
+    if (expireRef.current) return;
     onLearnerActivity?.();
     setReponses(prev => {
       const next = applyQCMChange(prev, qId, lettre, checked, isMultipleQ);
@@ -367,6 +379,7 @@ function PassageMatiere({
   };
 
   const handleQRCChange = (qId: number, val: string) => {
+    if (expireRef.current) return;
     onLearnerActivity?.();
     setReponses(prev => {
       const next = { ...prev, [qId]: val };
@@ -374,6 +387,7 @@ function PassageMatiere({
       return next;
     });
   };
+
 
   // Robust check: question answered? Works with both number and string keys from DB
   const isQuestionAnswered = (q: Question | null | undefined): boolean => {
@@ -588,47 +602,75 @@ function PassageMatiere({
     await runFinalizationOnce(cle, handleTerminer);
   };
 
+  /**
+   * Expiration du temps. Ordre imposé, jamais l'inverse :
+   * 1) gel immédiat (plus aucune réponse modifiable),
+   * 2) envoi des sauvegardes encore en attente,
+   * 3) confirmation serveur,
+   * 4) seulement ensuite finalisation et résultat unique.
+   * Si le serveur est indisponible, la matière reste en « finalisation en
+   * attente » : rien n'est clôturé, rien n'est détruit, la finalisation
+   * reprend automatiquement dès le rétablissement.
+   */
   const handleExpire = async () => {
+    expireRef.current = true;
     setExpire(true);
-    toast.warning("Temps écoulé — enregistrement de vos réponses avant la suite.", { duration: 5000 });
-    if (!apprenantId) {
-      onTerminer(reponses);
-      return;
-    }
+    if (matiereTermineeRef.current || expirationEnCoursRef.current) return;
+    expirationEnCoursRef.current = true;
     try {
-      setSaveStatus("saving");
-      if (!userIdRef.current) {
-        const sessionRes = await supabase.auth.getSession();
-        userIdRef.current = sessionRes.data?.session?.user?.id ?? userId ?? null;
-        jwtTokenRef.current = sessionRes.data?.session?.access_token ?? jwtTokenRef.current;
+      toast.warning("Temps écoulé — enregistrement de vos réponses avant la suite.", { duration: 5000 });
+      if (!apprenantId) {
+        matiereTermineeRef.current = true;
+        onTerminer(reponses);
+        return;
       }
-      enqueueAnswerSave({
-        ...buildAutosavePayload(reponses, true),
-        user_id: userIdRef.current || userId || undefined,
-        updated_at: new Date().toISOString(),
-      });
-      const flushed = await flushAnswerSavesAndWait(apprenantId, exerciceKey);
-      if (!flushed) throw new Error("Réponses encore en attente");
-      const { data, error } = await supabase
-        .from("reponses_apprenants" as any)
-        .select("reponses, completed")
-        .eq("apprenant_id", apprenantId)
-        .eq("exercice_id", exerciceKey)
-        .maybeSingle();
-      if (error || !(data as any)?.completed || !answersAreEqual((data as any)?.reponses, reponses)) {
-        throw new Error("Confirmation en base incomplète");
+      try {
+        setSaveStatus("saving");
+        if (!userIdRef.current) {
+          const sessionRes = await supabase.auth.getSession();
+          userIdRef.current = sessionRes.data?.session?.user?.id ?? userId ?? null;
+          jwtTokenRef.current = sessionRes.data?.session?.access_token ?? jwtTokenRef.current;
+        }
+        enqueueAnswerSave({
+          ...buildAutosavePayload(reponses, true),
+          user_id: userIdRef.current || userId || undefined,
+          updated_at: new Date().toISOString(),
+        });
+        const flushed = await flushAnswerSavesAndWait(apprenantId, exerciceKey);
+        if (!flushed) throw new Error("Réponses encore en attente");
+        const { data, error } = await supabase
+          .from("reponses_apprenants" as any)
+          .select("reponses, completed")
+          .eq("apprenant_id", apprenantId)
+          .eq("exercice_id", exerciceKey)
+          .maybeSingle();
+        if (error || !(data as any)?.completed || !answersAreEqual((data as any)?.reponses, reponses)) {
+          throw new Error("Confirmation en base incomplète");
+        }
+        setSaveStatus("saved");
+      } catch (error) {
+        console.error("[AutoSave] Expiration: finalisation en attente", error);
+        setSaveStatus("error");
+        setFinalisationEnAttente(true);
+        toast.error("Temps écoulé. Vos réponses sont figées et conservées : la matière sera finalisée dès le rétablissement de la connexion.");
+        return;
       }
-      setSaveStatus("saved");
-    } catch (error) {
-      console.error("[AutoSave] Expiration: sauvegarde en attente", error);
-      setSaveStatus("error");
-      toast.error("Connexion indisponible : vos réponses restent conservées et la matière ne sera pas finalisée avant confirmation.");
-      return;
+      if (!(await synchronisationConfirmee())) {
+        setFinalisationEnAttente(true);
+        return;
+      }
+      if (!(await finaliserNoyau())) {
+        setFinalisationEnAttente(true);
+        return;
+      }
+      setFinalisationEnAttente(false);
+      matiereTermineeRef.current = true;
+      onTerminer(reponses);
+    } finally {
+      expirationEnCoursRef.current = false;
     }
-    if (!(await synchronisationConfirmee())) return;
-    if (!(await finaliserNoyau())) return;
-    onTerminer(reponses);
   };
+
 
   const handleInterruption = async () => {
     if (!apprenantId) {
@@ -691,11 +733,16 @@ function PassageMatiere({
         return;
       }
       try {
+        // La fenêtre de temps est liée à la TENTATIVE : une réouverture
+        // administrative (nouvelle tentative) ouvre une durée complète, alors
+        // qu'un F5 / une reconnexion reprend toujours la fenêtre en cours.
         const { data, error } = await supabase.rpc("start_or_get_exam_timer" as any, {
           _apprenant_id: apprenantId,
           _exercice_id: exerciceKey,
           _duree_secondes: dureeSecondes,
+          _tentative: Math.max(1, Number(tentative) || 1),
         } as any);
+
         if (cancelled) return;
         const row = Array.isArray(data) ? (data as any[])[0] : (data as any);
         const remaining = Number(row?.remaining_seconds);
@@ -726,7 +773,23 @@ function PassageMatiere({
       window.removeEventListener("online", sync);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [apprenantId, exerciceKey, dureeSecondes, isBilan]);
+  }, [apprenantId, exerciceKey, dureeSecondes, isBilan, tentative]);
+
+  // « Finalisation en attente » : le temps est écoulé, les réponses sont figées
+  // mais le serveur n'a pas encore confirmé. On réessaie automatiquement
+  // (intervalle + retour du réseau) jusqu'à obtenir une finalisation propre.
+  useEffect(() => {
+    if (!finalisationEnAttente || matiereTermineeRef.current) return;
+    const retry = () => { void handleExpireRef.current(); };
+    const interval = setInterval(retry, 15_000);
+    window.addEventListener("online", retry);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("online", retry);
+    };
+  }, [finalisationEnAttente]);
+
+
 
   // Le nouveau moteur n'a pas pu ouvrir la tentative : on bloque le démarrage
   // plutôt que de basculer silencieusement sur l'ancien circuit.

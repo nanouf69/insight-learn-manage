@@ -348,3 +348,63 @@ describe("CRITIQUE 8 — incidents réels devenus tests permanents (anonymisés)
     expect(SQL).toContain("core_neutralisation_append_only");
   });
 });
+
+// ============================================================================
+// CRITIQUE 9 — CHRONO D'EXAMEN (incident du 23/09/2026 : chrono expiré survivant
+// à une réouverture, puis refus ATTEMPT_CLOSED sur les réponses saisies).
+// ============================================================================
+describe("CRITIQUE 9 — chrono et expiration", () => {
+  const MIGS = sqlMigrations();
+
+  it("réouverture administrative (nouvelle tentative) → fenêtre de temps complète", () => {
+    expect(MIGS).toContain("apprenant_examen_timers_unique_tentative");
+    expect(MIGS).toMatch(/ON CONFLICT \(apprenant_id, exercice_id, tentative\) DO NOTHING/);
+  });
+
+  it("F5 / reconnexion : le chrono n'est jamais réinitialisé (même tentative = même fenêtre)", () => {
+    const src = read(PASSAGE);
+    expect(src).toContain("_tentative: Math.max(1, Number(tentative) || 1)");
+    // le temps restant reste calculé à partir de l'heure de début serveur
+    expect(MIGS).toContain("v_row.duree_secondes - FLOOR(EXTRACT(EPOCH FROM (clock_timestamp() - v_row.started_at)))");
+  });
+
+  it("l'ancienne signature ne remet jamais le chrono à zéro (dernière tentative connue)", () => {
+    expect(MIGS).toContain("COALESCE(MAX(t.tentative), 1)");
+  });
+
+  it("à 00:00 les réponses sont figées avant toute clôture", () => {
+    const src = read(PASSAGE);
+    expect(src).toContain("if (expireRef.current) return;");
+    expect(src).toMatch(/expireRef\.current = true;\s*\n\s*setExpire\(true\);/);
+  });
+
+  it("00:00 avec sauvegardes en attente : aucune clôture prématurée", () => {
+    const src = read(PASSAGE);
+    const bloc = src.slice(src.indexOf("const handleExpire"), src.indexOf("const handleInterruption"));
+    expect(bloc).toContain("flushAnswerSavesAndWait");
+    expect(bloc.indexOf("flushAnswerSavesAndWait")).toBeLessThan(bloc.indexOf("finaliserNoyau"));
+    expect(bloc.indexOf("synchronisationConfirmee")).toBeLessThan(bloc.indexOf("finaliserNoyau"));
+  });
+
+  it("00:00 avec serveur indisponible : état « finalisation en attente », aucun 0 technique", () => {
+    const src = read(PASSAGE);
+    const bloc = src.slice(src.indexOf("const handleExpire"), src.indexOf("const handleInterruption"));
+    expect(bloc).toContain("setFinalisationEnAttente(true)");
+    expect(bloc).not.toContain("note_sur_20: 0");
+    expect(src).toContain('window.addEventListener("online", retry)');
+  });
+
+  it("double événement d'expiration → une seule finalisation", () => {
+    const src = read(PASSAGE);
+    const bloc = src.slice(src.indexOf("const handleExpire"), src.indexOf("const handleInterruption"));
+    expect(bloc).toContain("if (matiereTermineeRef.current || expirationEnCoursRef.current) return;");
+    expect(bloc).toContain("matiereTermineeRef.current = true");
+  });
+
+  it("aucune réponse à l'expiration : la matière n'est pas clôturée en tentative vide", () => {
+    const src = read(PASSAGE);
+    // finaliserNoyau refuse une matière sans contenu et sans réponses confirmées
+    expect(src).toContain("if (questionsSafe.length === 0) {");
+    expect(src).toContain("toutesConfirmees");
+  });
+});
