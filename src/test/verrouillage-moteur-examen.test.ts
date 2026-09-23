@@ -65,6 +65,7 @@ import {
   reponsesNoyauEcartees,
   idQuestionNoyau,
   remapperFileApresReouverture,
+  archiverMarqueursObsoletes,
 } from "@/features/noyau-passage/pontV2";
 
 // ============================================================ 1. CHARGEMENT
@@ -309,6 +310,46 @@ describe("CRITIQUE 2 — sauvegarde des réponses", () => {
 
   it("l'identifiant de question est stable (matière + numéro)", () => {
     expect(idQuestionNoyau("securite", 3)).toBe("securite:3");
+  });
+
+  it("RÈGLE 1 — quand le serveur confirme tout, les marqueurs techniques sont archivés sans perte", () => {
+    localStorage.clear();
+    localStorage.setItem(
+      "noyau_v2_answer_queue_v1",
+      JSON.stringify([
+        { attemptId: "ouverte", matiereId: "securite", questionId: 1, valeur: "a", at: "2026-09-23T10:00:00Z" },
+        { attemptId: "autre", matiereId: "securite", questionId: 9, valeur: "b", at: "2026-09-23T10:00:00Z" },
+      ]),
+    );
+    localStorage.setItem(
+      "noyau_v2_answer_queue_parked_v1",
+      JSON.stringify([
+        { attemptId: "ouverte", matiereId: "securite", questionId: 2, valeur: "c", at: "2026-09-23T10:00:00Z" },
+      ]),
+    );
+    const archives = archiverMarqueursObsoletes("ouverte", new Set(["securite:1", "securite:2"]));
+    expect(archives).toBeGreaterThanOrEqual(1);
+    // Plus aucun refus obsolète ne peut bloquer la clôture de cette tentative.
+    expect(reponsesNoyauEcartees("ouverte")).toBe(0);
+    // Rien n'est supprimé : les éléments sont conservés en archive.
+    expect(
+      (JSON.parse(localStorage.getItem("noyau_v2_answer_queue_resolved_v1") ?? "[]") as unknown[]).length,
+    ).toBeGreaterThanOrEqual(1);
+    localStorage.clear();
+  });
+
+  it("RÈGLE 1 — la clôture n'est plus retenue par un marqueur local quand le serveur a tout", () => {
+    const src = read(PASSAGE);
+    expect(src).toContain("serveurCompletRef.current) return true");
+    expect(src).toContain("archiverMarqueursObsoletes");
+    expect(src).toContain("!serveurComplet && <AnswerSaveIndicator />");
+  });
+
+  it("RÈGLE 2 — une matière non récupérable propose de recommencer sans rien supprimer", () => {
+    const src = read(PASSAGE);
+    expect(src).toContain("Recommencer cette matière");
+    expect(src).toContain("recommencerMatiereNoyau");
+    expect(src).toContain("echecsSynchronisation >= 3");
   });
 });
 

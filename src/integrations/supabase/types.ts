@@ -6166,6 +6166,27 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      core_restart_matiere: {
+        Args: { p_attempt_id: string; p_motif?: string; p_operation_id: string }
+        Returns: {
+          apprenant_id: string
+          attempt_id: string
+          etat: string
+          exam_id: string
+          exam_version_id: string
+          finished_at: string | null
+          is_test: boolean
+          snapshot: Json
+          snapshot_fingerprint: string
+          started_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "exam_attempts_v2"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       core_retirer_version_examen: {
         Args: { p_exam_id: string; p_motif?: string; p_operation_id: string }
         Returns: {
