@@ -54,3 +54,7 @@ Voir `docs/snapshot-reference-avant-phase1.md` : empreintes md5 des 5 fichiers d
 - Suite exécutable complète : 463 réussis / 5 échecs préexistants ; 50 fichiers restent non collectés à cause de `canvas`, comme au snapshot. Aucun nouvel échec.
 - Empreintes protégées inchangées pour `examFinalizationGuard.ts`, `pontV2.ts` et `useAutoSaveReponses.ts`. `answerPersistence.ts` change uniquement pour exposer le compteur informatif ; `ExamenBlancsPassage.tsx` change uniquement pour afficher l'indicateur commun.
 - Statut : EN ATTENTE D'ACCORD, aucun déploiement.
+
+## Verrouillage moteur d'examen — 23/09/2026
+- Terminé : suite de non-régression bloquante `src/test/verrouillage-moteur-examen.test.ts` (41 tests critiques, 8 axes) + `npm run test:critique` (96 tests, bloquant avant déploiement du moteur d'examen).
+- Terminé : surveillance production `supabase/functions/surveillance-moteur-examen` — détection seule, lecture seule, alertes e-mail/webhook, journaux anonymisés.

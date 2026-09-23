@@ -106,3 +106,6 @@ verify_jwt = false
 
 [functions.send-prestataire-facture-request]
 verify_jwt = false
+
+[functions.surveillance-moteur-examen]
+verify_jwt = false
