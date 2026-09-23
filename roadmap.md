@@ -58,3 +58,9 @@ Voir `docs/snapshot-reference-avant-phase1.md` : empreintes md5 des 5 fichiers d
 ## Verrouillage moteur d'examen — 23/09/2026
 - Terminé : suite de non-régression bloquante `src/test/verrouillage-moteur-examen.test.ts` (41 tests critiques, 8 axes) + `npm run test:critique` (96 tests, bloquant avant déploiement du moteur d'examen).
 - Terminé : surveillance production `supabase/functions/surveillance-moteur-examen` — détection seule, lecture seule, alertes e-mail/webhook, journaux anonymisés.
+
+## Stabilisation moteur EB (après pause — pas avant, sauf bug critique ; TEST → validation → production)
+- [ ] Serveur interrogé avant toute reprise locale (le navigateur ne choisit jamais la tentative)
+- [ ] V2 seule source du statut / progression / Commencer-Reprendre pour les EB V2
+- [ ] Déploiement bloqué si un test critique échoue
+- [ ] Test + alerte tableau de bord « 2 tentatives OPEN même candidat/examen » (vu transitoirement le 23/09, candidat non identifié)
