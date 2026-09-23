@@ -46,6 +46,8 @@ import {
   reponsesNoyauEcartees,
   questionsNoyauEcartees,
   remapperFileApresReouverture,
+  archiverMarqueursObsoletes,
+  recommencerMatiereNoyau,
 } from "@/features/noyau-passage/pontV2";
 import { captureError } from "@/lib/monitoring/errorLogger";
 
