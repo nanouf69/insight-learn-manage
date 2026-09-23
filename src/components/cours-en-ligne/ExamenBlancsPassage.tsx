@@ -602,47 +602,75 @@ function PassageMatiere({
     await runFinalizationOnce(cle, handleTerminer);
   };
 
+  /**
+   * Expiration du temps. Ordre imposé, jamais l'inverse :
+   * 1) gel immédiat (plus aucune réponse modifiable),
+   * 2) envoi des sauvegardes encore en attente,
+   * 3) confirmation serveur,
+   * 4) seulement ensuite finalisation et résultat unique.
+   * Si le serveur est indisponible, la matière reste en « finalisation en
+   * attente » : rien n'est clôturé, rien n'est détruit, la finalisation
+   * reprend automatiquement dès le rétablissement.
+   */
   const handleExpire = async () => {
+    expireRef.current = true;
     setExpire(true);
-    toast.warning("Temps écoulé — enregistrement de vos réponses avant la suite.", { duration: 5000 });
-    if (!apprenantId) {
-      onTerminer(reponses);
-      return;
-    }
+    if (matiereTermineeRef.current || expirationEnCoursRef.current) return;
+    expirationEnCoursRef.current = true;
     try {
-      setSaveStatus("saving");
-      if (!userIdRef.current) {
-        const sessionRes = await supabase.auth.getSession();
-        userIdRef.current = sessionRes.data?.session?.user?.id ?? userId ?? null;
-        jwtTokenRef.current = sessionRes.data?.session?.access_token ?? jwtTokenRef.current;
+      toast.warning("Temps écoulé — enregistrement de vos réponses avant la suite.", { duration: 5000 });
+      if (!apprenantId) {
+        matiereTermineeRef.current = true;
+        onTerminer(reponses);
+        return;
       }
-      enqueueAnswerSave({
-        ...buildAutosavePayload(reponses, true),
-        user_id: userIdRef.current || userId || undefined,
-        updated_at: new Date().toISOString(),
-      });
-      const flushed = await flushAnswerSavesAndWait(apprenantId, exerciceKey);
-      if (!flushed) throw new Error("Réponses encore en attente");
-      const { data, error } = await supabase
-        .from("reponses_apprenants" as any)
-        .select("reponses, completed")
-        .eq("apprenant_id", apprenantId)
-        .eq("exercice_id", exerciceKey)
-        .maybeSingle();
-      if (error || !(data as any)?.completed || !answersAreEqual((data as any)?.reponses, reponses)) {
-        throw new Error("Confirmation en base incomplète");
+      try {
+        setSaveStatus("saving");
+        if (!userIdRef.current) {
+          const sessionRes = await supabase.auth.getSession();
+          userIdRef.current = sessionRes.data?.session?.user?.id ?? userId ?? null;
+          jwtTokenRef.current = sessionRes.data?.session?.access_token ?? jwtTokenRef.current;
+        }
+        enqueueAnswerSave({
+          ...buildAutosavePayload(reponses, true),
+          user_id: userIdRef.current || userId || undefined,
+          updated_at: new Date().toISOString(),
+        });
+        const flushed = await flushAnswerSavesAndWait(apprenantId, exerciceKey);
+        if (!flushed) throw new Error("Réponses encore en attente");
+        const { data, error } = await supabase
+          .from("reponses_apprenants" as any)
+          .select("reponses, completed")
+          .eq("apprenant_id", apprenantId)
+          .eq("exercice_id", exerciceKey)
+          .maybeSingle();
+        if (error || !(data as any)?.completed || !answersAreEqual((data as any)?.reponses, reponses)) {
+          throw new Error("Confirmation en base incomplète");
+        }
+        setSaveStatus("saved");
+      } catch (error) {
+        console.error("[AutoSave] Expiration: finalisation en attente", error);
+        setSaveStatus("error");
+        setFinalisationEnAttente(true);
+        toast.error("Temps écoulé. Vos réponses sont figées et conservées : la matière sera finalisée dès le rétablissement de la connexion.");
+        return;
       }
-      setSaveStatus("saved");
-    } catch (error) {
-      console.error("[AutoSave] Expiration: sauvegarde en attente", error);
-      setSaveStatus("error");
-      toast.error("Connexion indisponible : vos réponses restent conservées et la matière ne sera pas finalisée avant confirmation.");
-      return;
+      if (!(await synchronisationConfirmee())) {
+        setFinalisationEnAttente(true);
+        return;
+      }
+      if (!(await finaliserNoyau())) {
+        setFinalisationEnAttente(true);
+        return;
+      }
+      setFinalisationEnAttente(false);
+      matiereTermineeRef.current = true;
+      onTerminer(reponses);
+    } finally {
+      expirationEnCoursRef.current = false;
     }
-    if (!(await synchronisationConfirmee())) return;
-    if (!(await finaliserNoyau())) return;
-    onTerminer(reponses);
   };
+
 
   const handleInterruption = async () => {
     if (!apprenantId) {
