@@ -37,7 +37,13 @@ import { PassageMatiere, TransitionMatiere } from "./ExamenBlancsPassage";
 import { EcranResultats, RevisionFausses } from "./ExamenBlancsResultats";
 import { computeMatiereScore, computeMatiereScoreForAttempt, resolveMatiereForScoring, MATIERE_SNAPSHOT_VERSION } from "./examens-blancs-scoring";
 import { excludeResultPlaceholders, mergePassageSiblingRows } from "./exam-helpers";
-import { buildFinalizationKey, runFinalizationOnce, resolveIdempotentTentative } from "@/lib/examFinalizationGuard";
+import {
+  buildFinalizationKey,
+  buildFinalizationToastId,
+  isFinalizationConfirmed,
+  runFinalizationOnce,
+  resolveIdempotentTentative,
+} from "@/lib/examFinalizationGuard";
 import { syncQrcInstances } from "@/lib/qrcInstances";
 import {
   buildExamFingerprint,
@@ -1156,6 +1162,11 @@ export default function ExamensBlancsPage({
       if (!examenChoisi) return;
       const matiere = examenChoisi.matieres[matiereIndex];
       if (!matiere) { toast.error("Matière introuvable. Veuillez relancer l'examen."); return; }
+      const finalizationToastId = buildFinalizationToastId({
+        apprenantId,
+        examenId: examenChoisi.id,
+        matiereId: matiere.id,
+      });
 
       // La matière a déjà été mise en file et confirmée par PassageMatiere.
       // On relit la base avant tout calcul de résultat : aucune progression si
@@ -1167,6 +1178,7 @@ export default function ExamensBlancsPage({
       // terminer la matière alors que toutes les réponses sont confirmées
       // côté noyau. Aucune réponse n'est écrasée ni recalculée ici.
       let confirmeParNoyau = false;
+      let tentativeNoyauId: string | null = null;
       if (apprenantId) {
         try {
           const { data: tentativeNoyau } = await supabase
@@ -1181,6 +1193,7 @@ export default function ExamensBlancsPage({
             (row) => String(row?.snapshot?.matiere ?? "") === String(matiere.id),
           );
           if (tentative?.attempt_id) {
+            tentativeNoyauId = tentative.attempt_id;
             const { count } = await supabase
               .from("answer_state")
               .select("question_id", { count: "exact", head: true })
@@ -1237,7 +1250,16 @@ export default function ExamensBlancsPage({
         const completedCount = newResultats.filter(r => r != null).length;
         // Await the save - don't fire-and-forget, to ensure results persist
         const saved = await saveMatiereResult({ examen: examenChoisi, matiere, resultat, dureeSecondes: elapsedSeconds / Math.max(completedCount, 1) });
-        if (!saved) {
+        let coreResultCount = 0;
+        if (!saved && tentativeNoyauId) {
+          const { count, error: coreResultError } = await supabase
+            .from("core_exam_results")
+            .select("result_id", { count: "exact", head: true })
+            .eq("attempt_id", tentativeNoyauId);
+          if (!coreResultError) coreResultCount = count ?? 0;
+        }
+        const finalisationConfirmee = isFinalizationConfirmed({ saveReported: saved, coreResultCount });
+        if (!finalisationConfirmee) {
           console.warn("[ExamenBlanc] Failed to save result for", matiere.id, "- result kept in memory");
           // BUG #7 FIX: backup result to localStorage for recovery
           try {
@@ -1252,11 +1274,18 @@ export default function ExamensBlancsPage({
           setTousResultats(newResultats);
           toast.error(
             "Impossible d'enregistrer votre résultat pour cette matière. Vérifiez votre connexion puis cliquez à nouveau sur « Terminer la matière ».",
-            { duration: 8000 }
+            { id: finalizationToastId, duration: 8000 }
           );
           return;
         }
       }
+
+      // Le succès serveur remplace immédiatement tout ancien message d'échec
+      // de cette matière ; aucun toast ne traverse vers la matière suivante.
+      toast.success("Matière enregistrée avec succès. Vous pouvez passer à la matière suivante.", {
+        id: finalizationToastId,
+        duration: 3500,
+      });
 
       // Find next uncompleted matière (skip already-done ones from resume)
       let nextIndex = -1;
