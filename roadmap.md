@@ -61,12 +61,19 @@ Voir `docs/snapshot-reference-avant-phase1.md` : empreintes md5 des 5 fichiers d
 
 ## Plan de stabilisation validé (23/09, 19h36) — une phase à la fois : TEST → rapport → accord → production → contrôle
 - [ ] Phase 1a — C2+C3 isolation stricte entre candidats (serveur/base) — EN ATTENTE : choix d'un environnement TEST isolé
+  - Étape C inclut désormais le **retrait physique des corrigés V2 de `examens-blancs-data.ts` et du bundle public compilé** ; écrans Admin/Correction QRC V2 alimentés par une fonction serveur protégée ; contrôle post-compilation : 0 corrigé V2 dans le JavaScript servi (23/09, 20h10). Détail : `phase1-c2c3-plan-deploiement-2026-09-23.md`.
+  - A n'est PAS lancé : accord explicite + créneau vérifié sans examen en cours requis. Premier travail = A uniquement, puis test et arrêt avant B.
 - [ ] Phase 1b — C1 unicité OPEN en base (audit préalable, aucune suppression)
 - [ ] Phase 1c — C5 publication interdite si test critique échoue
 - [ ] Phase 2 — serveur d'abord au chargement/F5 + double-clic Commencer ; V2 seule source d'état
 - [ ] Phase 3 — C4 chrono serveur, tolérance 30 s transmission uniquement (arrêt si non garantissable)
 - [ ] Phase 4 — 7 scénarios manquants (serveur/intégration/navigateur réel), alerte double OPEN, 4 alertes hautes
 - Ne pas nettoyer l'ancien circuit.
+
+## Chantiers séparés — après stabilisation V2 uniquement (23/09, 20h10), hors A→B→C→D
+- [ ] S1 — Sécurisation EB3 / EB3-TAXI : retrait des corrigés du code servi au navigateur + correction QCM côté serveur ; hors session EB3, sauvegarde + tests fictifs préalables.
+- [ ] S2 — Sécurisation des Bilans e-learning : même logique, corrigés exposés dans le code du site ; traitement séparé.
+- Aucun diagnostic supplémentaire : cartographie jugée suffisante (23/09).
 
 ## Stabilisation moteur EB (après pause — pas avant, sauf bug critique ; TEST → validation → production)
 - [ ] Serveur interrogé avant toute reprise locale (le navigateur ne choisit jamais la tentative)
