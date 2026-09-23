@@ -208,6 +208,7 @@ export async function listerGroupesCrm(mode: "test" | "migre" = "migre"): Promis
       legacyResults.push(...eb3.map((r: any) => ({
         ...r,
         attempt_id: `ancien:${r.id}`,
+        exam_id: r.quiz_id,
         started_at: r.completed_at,
         circuit: "ancien" as const,
       })));
