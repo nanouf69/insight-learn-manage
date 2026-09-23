@@ -356,7 +356,11 @@ function PassageMatiere({
   }, [apprenantId, exerciceKey, isBilan, userId]);
 
   // Core logic extracted to applyQCMChange in examens-blancs-utils.ts (BUG #10 FIX)
+  // À 00:00 l'état des réponses est FIGÉ : plus aucune modification n'est
+  // acceptée, mais rien n'est perdu ni clôturé tant que le serveur n'a pas
+  // confirmé les réponses déjà saisies.
   const handleQCMChange = (qId: number, lettre: string, checked: boolean, isMultipleQ: boolean) => {
+    if (expireRef.current) return;
     onLearnerActivity?.();
     setReponses(prev => {
       const next = applyQCMChange(prev, qId, lettre, checked, isMultipleQ);
@@ -367,6 +371,7 @@ function PassageMatiere({
   };
 
   const handleQRCChange = (qId: number, val: string) => {
+    if (expireRef.current) return;
     onLearnerActivity?.();
     setReponses(prev => {
       const next = { ...prev, [qId]: val };
@@ -374,6 +379,7 @@ function PassageMatiere({
       return next;
     });
   };
+
 
   // Robust check: question answered? Works with both number and string keys from DB
   const isQuestionAnswered = (q: Question | null | undefined): boolean => {
