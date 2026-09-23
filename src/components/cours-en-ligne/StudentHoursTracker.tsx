@@ -1,5 +1,3 @@
-import { blockLearnerWrite } from "@/lib/learnerPreviewGuard";
-import { useEffect, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
@@ -7,7 +5,6 @@ import { Clock, AlertCircle, CheckCircle2, CalendarDays } from "lucide-react";
 import { useStudentEffectiveHours } from "@/hooks/useStudentEffectiveHours";
 import { ALL_DATES_EXAMEN_THEORIQUE } from "@/lib/examDatesConfig";
 import { parseFrenchDate } from "@/lib/filterPastDates";
-import { supabase } from "@/integrations/supabase/client";
 
 interface StudentHoursTrackerProps {
   apprenantId: string | null | undefined;
@@ -52,33 +49,11 @@ export default function StudentHoursTracker({
     return r === "oui" || r === "admis" || r === "non" || r === "ajourne" || r === "ajourné";
   })();
 
-  // Auto-update DB: si la date enregistrée est passée, basculer sur la prochaine session
-  const updatedKeyRef = useRef<string | null>(null);
-  useEffect(() => {
-    if (!apprenantId) return;
-    // Consultation admin : aucun champ du dossier élève n'est modifié.
-    if (blockLearnerWrite("apprenants.date_examen_theorique")) return;
-    if (examAlreadyTaken) return;
-    const saved = (dateExamenTheorique || "").trim();
-    if (!saved) return;
-    const savedParsed = parseFrenchDate(saved);
-    if (!savedParsed) return;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    if (savedParsed >= today) return;
-    const next = getNextUpcomingExamTheorique();
-    if (!next || next === saved) return;
-    const key = `${apprenantId}::${saved}->${next}`;
-    if (updatedKeyRef.current === key) return;
-    updatedKeyRef.current = key;
-    supabase
-      .from("apprenants")
-      .update({ date_examen_theorique: next })
-      .eq("id", apprenantId)
-      .then(({ error }) => {
-        if (error) console.error("[StudentHoursTracker] auto-update date_examen_theorique failed", error);
-      });
-  }, [apprenantId, dateExamenTheorique, examAlreadyTaken]);
+  // La date d'examen du dossier (CRM) est la seule source de vérité :
+  // aucune écriture, aucun remplacement automatique par une date du calendrier général.
+
+
+
 
   if (loading || !apprenantId) {
     return null;
@@ -154,10 +129,10 @@ export default function StudentHoursTracker({
           const today = new Date();
           today.setHours(0, 0, 0, 0);
           const isPast = savedParsed ? savedParsed < today : false;
-          // Si l'élève a déjà passé l'examen, on garde sa date d'origine et on n'affiche pas de "prochaine session"
-          const displayDate = examAlreadyTaken
-            ? (saved || null)
-            : (!saved || isPast ? getNextUpcomingExamTheorique() : saved);
+          // Source de vérité : la date du dossier. Sans date au dossier, on indique
+          // explicitement qu'il s'agit d'une prochaine session du calendrier général.
+          const indicative = !saved ? getNextUpcomingExamTheorique() : null;
+          const displayDate = saved || indicative;
           if (!displayDate) return null;
           const r = (resultatExamen || "").trim().toLowerCase();
           const isAdmis = r === "oui" || r === "admis";
@@ -165,7 +140,9 @@ export default function StudentHoursTracker({
           return (
             <div className="mt-4 pt-4 border-t flex flex-wrap items-center gap-2 text-sm">
               <CalendarDays className="w-4 h-4 text-primary shrink-0" />
-              <span className="text-muted-foreground">Date d'examen théorique :</span>
+              <span className="text-muted-foreground">
+                {indicative ? "Prochaine session d'examen théorique :" : "Date d'examen théorique :"}
+              </span>
               <span className="font-semibold">{displayDate}</span>
               {examAlreadyTaken ? (
                 <Badge variant="outline" className={isAdmis
@@ -173,9 +150,13 @@ export default function StudentHoursTracker({
                   : "text-orange-600 border-orange-200 bg-orange-50 dark:bg-orange-950/30"}>
                   {isAdmis ? "Examen passé — Admis" : isAjourne ? "Examen passé — Ajourné" : "Examen passé"}
                 </Badge>
-              ) : isPast && saved ? (
+              ) : indicative ? (
+                <Badge variant="outline" className="text-muted-foreground">
+                  Aucune date à votre dossier
+                </Badge>
+              ) : isPast ? (
                 <Badge variant="outline" className="text-orange-600 border-orange-200 bg-orange-50 dark:bg-orange-950/30">
-                  Prochaine session (votre date {saved} est passée)
+                  Date passée
                 </Badge>
               ) : null}
             </div>
