@@ -199,6 +199,15 @@ describe("CRITIQUE 2 — sauvegarde des réponses", () => {
     expect(src).toContain("sauvegardées sur le serveur");
   });
 
+  it("aucune réponse locale n'est renvoyée si le sujet affiché diffère du snapshot", () => {
+    const src = read(PASSAGE);
+    const controle = src.indexOf("const sujetExact");
+    const rattrapage = src.indexOf("rattraperReponsesNoyau(decision.attemptId)");
+    expect(controle).toBeGreaterThan(-1);
+    expect(rattrapage).toBeGreaterThan(controle);
+    expect(src).toContain("SNAPSHOT_AFFICHAGE_NON_CONFORME");
+  });
+
   it("le remappage s'arrête si une seule question ne correspond pas au snapshot", () => {
     localStorage.clear();
     enfilerReponseNoyau({ attemptId: "ancienne-invalide", matiereId: "securite", questionId: 99, valeur: ["B"] });
