@@ -277,13 +277,10 @@ export async function enregistrerReponse(params: {
     if (JSON.stringify(courant.valeur) === JSON.stringify(params.valeur ?? null)) {
       return { ok: true, revision: courant.revision };
     }
-    const clientMs = Date.parse(params.clientSavedAt ?? "");
-    const serveurMs = Date.parse(courant.updated_at ?? "");
-    if (!Number.isFinite(clientMs) || !Number.isFinite(serveurMs) || clientMs < serveurMs) {
-      return { ok: false, message: "ANSWER_LOCAL_OLDER_THAN_SERVER" };
-    }
-    const opRevision = await operationId(`answer-revision:${params.attemptId}:${qid}:${courant.revision}:${JSON.stringify(params.valeur ?? null)}`);
-    ({ data, error } = await sauvegarder(opRevision, courant.revision));
+    // Le serveur possède une autre réponse plus récente : aucun arbitrage
+    // automatique. La réponse locale sera conservée dans la file écartée et le
+    // conflit journalisé, mais elle ne doit pas bloquer les questions suivantes.
+    return { ok: false, message: "ANSWER_STALE_REVISION_CONFLICT" };
   }
   if (error) return { ok: false, message: error.message };
   const res = data as unknown as { revision?: number } | null;
@@ -500,6 +497,17 @@ export async function viderFileNoyau(attemptId?: string | null): Promise<{ resta
         clientSavedAt: element.at,
       });
       if (!res.ok) {
+        if (res.message === "ANSWER_STALE_REVISION_CONFLICT") {
+          ecarter(element);
+          console.warn("[PontV2] conflit P0409 conservé sans écrasement", {
+            attemptId: element.attemptId,
+            questionId: idQuestionNoyau(element.matiereId, element.questionId),
+          });
+          file = [...file.slice(0, index), ...file.slice(index + 1)];
+          fileMemoire = file;
+          ecrireFile(file);
+          continue;
+        }
         if (!refusDefinitif(res.message)) {
           console.warn("[PontV2] réponse conservée pour nouvel essai", {
             attemptId: element.attemptId,
