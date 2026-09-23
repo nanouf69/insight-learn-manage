@@ -235,6 +235,12 @@ function PassageMatiere({
   const [blocageV2, setBlocageV2] = useState<string | null>(null);
   const [questionsConfirmees, setQuestionsConfirmees] = useState<Set<string>>(new Set());
   const [questionsRefusees, setQuestionsRefusees] = useState<Set<string>>(new Set());
+  // RÈGLE 1 : si le serveur possède 100 % des réponses de la matière, l'état
+  // technique local devient obsolète (plus d'alerte, plus de blocage).
+  const [serveurComplet, setServeurComplet] = useState(false);
+  const serveurCompletRef = useRef(false);
+  const [echecsSynchronisation, setEchecsSynchronisation] = useState(0);
+  const [recommenceEnCours, setRecommenceEnCours] = useState(false);
 
   /** Questions réellement répondues par l'élève dans cette matière. */
   const reponsesRenseignees = (source?: Reponses): [string, unknown][] =>
@@ -256,8 +262,26 @@ function PassageMatiere({
       .eq("attempt_id", attemptId);
     if (error || attemptV2Ref.current !== attemptId) return;
     const confirmees = new Set(((data as { question_id?: string }[] | null) ?? []).map((r) => String(r.question_id ?? "")));
-    const refusees = questionsNoyauEcartees(attemptId);
     setQuestionsConfirmees(confirmees);
+
+    // RÈGLE 1 — toutes les réponses de la matière sont confirmées côté serveur :
+    // on archive (sans rien supprimer) les marqueurs techniques devenus faux et
+    // on efface l'alerte rouge héritée d'une ancienne erreur.
+    const questionsMatiere = (matiere.questions ?? []).map((q: any) => String(q?.id ?? "")).filter(Boolean);
+    const complet =
+      questionsMatiere.length > 0 &&
+      questionsMatiere.every((id) => confirmees.has(`${matiere.id}:${id}`) || confirmees.has(id));
+    serveurCompletRef.current = complet;
+    setServeurComplet(complet);
+    if (complet) {
+      archiverMarqueursObsoletes(attemptId, confirmees);
+      setQuestionsRefusees(new Set());
+      setEchecsSynchronisation(0);
+      setSaveStatus("saved");
+      return;
+    }
+
+    const refusees = questionsNoyauEcartees(attemptId);
     setQuestionsRefusees(refusees);
     if (refusees.size > 0) {
       void captureError({
