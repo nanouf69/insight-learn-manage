@@ -611,56 +611,80 @@ function PassageMatiere({
       toast.error("Le contenu de cette matière n'est pas chargé. La matière reste ouverte : rechargez la page avant de continuer.");
       return false;
     }
-    const { restantes } = await viderFileNoyau(attemptId);
-    if (restantes > 0 || reponsesNoyauEnAttente(attemptId) > 0) {
-      setSaveStatus("error");
-      toast.error("Des réponses ne sont pas encore enregistrées : la matière n'est pas clôturée. Elles repartiront automatiquement.");
-      return false;
-    }
-    // Sécurité anti-note 0 technique : si une réponse de CETTE matière a été
-    // définitivement refusée par le serveur, on ne clôture pas.
-    if (reponsesNoyauEcartees(attemptId) > 0) {
-      setSaveStatus("error");
-      toast.error("Un problème de synchronisation a été détecté. Vos réponses sont conservées sur cet appareil. Une alerte technique a été envoyée automatiquement.");
-      return false;
-    }
-    // Sécurité anti-note 0 technique (hotfix 23/09/2026) : on ne clôture JAMAIS
-    // une matière dont les réponses ne sont pas présentes côté noyau. On tente
-    // d'abord un rattrapage, puis on bloque si l'écart persiste.
+    // RÈGLE 1 — on interroge D'ABORD le serveur : s'il possède déjà toutes les
+    // réponses de la matière, aucun marqueur technique local (file, refus
+    // ancien) ne peut retenir la clôture. La finalisation part alors
+    // exclusivement des réponses confirmées côté serveur.
     const attendues = questionsSafe.length;
-    if (attendues > 0) {
-      const lireConfirmationNoyau = async () => {
-        const [{ data: tentativeServeur, error: tentativeError }, { data: reponsesServeur, error: reponsesError }] = await Promise.all([
-          supabase.from("exam_attempts_v2").select("snapshot").eq("attempt_id", attemptId).maybeSingle(),
-          supabase
-          .from("answer_state")
-          .select("question_id")
-          .eq("attempt_id", attemptId),
-        ]);
-        if (tentativeError || reponsesError) return null;
-        const snapshot = (tentativeServeur as any)?.snapshot;
-        const idsSnapshot = Array.isArray(snapshot?.questions)
-          ? snapshot.questions
-              .filter((q: any) => String(q?.matiere ?? "") === String(matiere.id))
-              .map((q: any) => String(q?.id ?? ""))
-              .filter(Boolean)
-          : [];
-        const idsServeur = new Set(((reponsesServeur as any[]) ?? []).map((r) => String(r?.question_id ?? "")));
-        return {
-          contenuConforme: idsSnapshot.length === attendues,
-          toutesConfirmees: idsSnapshot.length > 0 && idsSnapshot.every((id: string) => idsServeur.has(id)),
-        };
+    const lireConfirmationNoyau = async () => {
+      const [{ data: tentativeServeur, error: tentativeError }, { data: reponsesServeur, error: reponsesError }] = await Promise.all([
+        supabase.from("exam_attempts_v2").select("snapshot").eq("attempt_id", attemptId).maybeSingle(),
+        supabase
+        .from("answer_state")
+        .select("question_id")
+        .eq("attempt_id", attemptId),
+      ]);
+      if (tentativeError || reponsesError) return null;
+      const snapshot = (tentativeServeur as any)?.snapshot;
+      const idsSnapshot = Array.isArray(snapshot?.questions)
+        ? snapshot.questions
+            .filter((q: any) => String(q?.matiere ?? "") === String(matiere.id))
+            .map((q: any) => String(q?.id ?? ""))
+            .filter(Boolean)
+        : [];
+      const idsServeur = new Set(((reponsesServeur as any[]) ?? []).map((r) => String(r?.question_id ?? "")));
+      return {
+        contenuConforme: idsSnapshot.length === attendues,
+        toutesConfirmees: idsSnapshot.length > 0 && idsSnapshot.every((id: string) => idsServeur.has(id)),
+        idsServeur,
       };
-      let confirmation = await lireConfirmationNoyau();
-      if (!confirmation?.toutesConfirmees) {
-        rattraperReponsesNoyau(attemptId);
-        await viderFileNoyau(attemptId);
-        confirmation = await lireConfirmationNoyau();
-      }
-      if (!confirmation?.contenuConforme || !confirmation.toutesConfirmees) {
+    };
+
+    let confirmation = await lireConfirmationNoyau();
+    const serveurFaitFoi = Boolean(confirmation?.contenuConforme && confirmation?.toutesConfirmees);
+    if (serveurFaitFoi) {
+      // Les marqueurs techniques encore présents sont obsolètes : on les archive
+      // (jamais de suppression de réponse) et on efface l'alerte rouge.
+      archiverMarqueursObsoletes(attemptId, confirmation!.idsServeur);
+      setQuestionsRefusees(new Set());
+      serveurCompletRef.current = true;
+      setServeurComplet(true);
+      setEchecsSynchronisation(0);
+      setSaveStatus("saved");
+    } else {
+      const { restantes } = await viderFileNoyau(attemptId);
+      if (restantes > 0 || reponsesNoyauEnAttente(attemptId) > 0) {
         setSaveStatus("error");
-        toast.error("Vos réponses ne sont pas toutes enregistrées côté serveur : la matière n'est pas clôturée. Rien n'est perdu, réessayez dans un instant.");
+        setEchecsSynchronisation((n) => n + 1);
+        toast.error("Des réponses ne sont pas encore enregistrées : la matière n'est pas clôturée. Elles repartiront automatiquement.");
         return false;
+      }
+      // Sécurité anti-note 0 technique : si une réponse de CETTE matière a été
+      // définitivement refusée par le serveur, on ne clôture pas.
+      if (reponsesNoyauEcartees(attemptId) > 0) {
+        setSaveStatus("error");
+        setEchecsSynchronisation((n) => n + 1);
+        toast.error("Un problème de synchronisation a été détecté. Vos réponses sont conservées sur cet appareil. Une alerte technique a été envoyée automatiquement.");
+        return false;
+      }
+      // Rattrapage puis nouveau contrôle serveur avant tout blocage.
+      if (attendues > 0) {
+        if (!confirmation?.toutesConfirmees) {
+          rattraperReponsesNoyau(attemptId);
+          await viderFileNoyau(attemptId);
+          confirmation = await lireConfirmationNoyau();
+        }
+        if (!confirmation?.contenuConforme || !confirmation.toutesConfirmees) {
+          setSaveStatus("error");
+          setEchecsSynchronisation((n) => n + 1);
+          toast.error("Vos réponses ne sont pas toutes enregistrées côté serveur : la matière n'est pas clôturée. Rien n'est perdu, réessayez dans un instant.");
+          return false;
+        }
+        archiverMarqueursObsoletes(attemptId, confirmation.idsServeur);
+        serveurCompletRef.current = true;
+        setServeurComplet(true);
+        setEchecsSynchronisation(0);
+        setSaveStatus("saved");
       }
     }
     const qrc = questionsSafe.filter(q => q?.type === "QRC").map(q => q.id);
