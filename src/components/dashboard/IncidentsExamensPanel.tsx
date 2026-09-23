@@ -100,7 +100,14 @@ export function IncidentsExamensPanel({
             <CheckCircle2 className="h-4 w-4 text-emerald-600" /> 🟢 Aucun incident examen en cours
           </p>
         ) : (
-          incidents.map((i) => ligne(i))
+          <>
+            {visibles.map((i) => ligne(i))}
+            {incidents.length > 3 && (
+              <Button size="sm" variant="outline" onClick={() => setVoirTout(true)}>
+                Voir les {incidents.length} incidents
+              </Button>
+            )}
+          </>
         )}
       </CardContent>
 
