@@ -26,7 +26,7 @@ export function getAnswerSaveIndicatorView({
       tone: "rejected",
       message:
         rejection.message ??
-        "Le serveur a refusé cette sauvegarde. Vos réponses restent conservées sur cet appareil. Contactez le centre.",
+        "Un problème de synchronisation a été détecté. Vos réponses sont conservées sur cet appareil. Une alerte technique a été envoyée automatiquement.",
     };
   }
 

@@ -44,6 +44,7 @@ import {
   finaliserMatiere,
   reponsesNoyauEnAttente,
   reponsesNoyauEcartees,
+  questionsNoyauEcartees,
   remapperFileApresReouverture,
 } from "@/features/noyau-passage/pontV2";
 import { captureError } from "@/lib/monitoring/errorLogger";
@@ -232,6 +233,8 @@ function PassageMatiere({
   const attemptV2Ref = useRef<string | null>(null);
   const [tentativeChrono, setTentativeChrono] = useState(Math.max(1, Number(tentative) || 1));
   const [blocageV2, setBlocageV2] = useState<string | null>(null);
+  const [questionsConfirmees, setQuestionsConfirmees] = useState<Set<string>>(new Set());
+  const [questionsRefusees, setQuestionsRefusees] = useState<Set<string>>(new Set());
 
   /** Questions réellement répondues par l'élève dans cette matière. */
   const reponsesRenseignees = (source?: Reponses): [string, unknown][] =>
@@ -244,6 +247,16 @@ function PassageMatiere({
     for (const [questionId, valeur] of reponsesRenseignees()) {
       enfilerReponseNoyau({ attemptId, matiereId: matiere.id, questionId, valeur });
     }
+  };
+
+  const actualiserConfirmationsNoyau = async (attemptId: string) => {
+    const { data, error } = await supabase
+      .from("answer_state")
+      .select("question_id")
+      .eq("attempt_id", attemptId);
+    if (error || attemptV2Ref.current !== attemptId) return;
+    setQuestionsConfirmees(new Set(((data as { question_id?: string }[] | null) ?? []).map((r) => String(r.question_id ?? ""))));
+    setQuestionsRefusees(questionsNoyauEcartees(attemptId));
   };
 
   useEffect(() => {
@@ -305,7 +318,7 @@ function PassageMatiere({
         // renvoyées vers le noyau. Sans cela la matière pouvait être clôturée
         // avec zéro réponse côté V2 → note 0 technique.
         rattraperReponsesNoyau(decision.attemptId);
-        void viderFileNoyau(decision.attemptId);
+        void viderFileNoyau(decision.attemptId).then(() => actualiserConfirmationsNoyau(decision.attemptId));
         return;
       }
       if (decision.moteur === "bloque") {
@@ -319,6 +332,14 @@ function PassageMatiere({
     })();
     return () => { annule = true; };
   }, [apprenantId, examenId, matiere.id, tentative, initialLoaded]);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      const attemptId = attemptV2Ref.current;
+      if (attemptId) void viderFileNoyau(attemptId).then(() => actualiserConfirmationsNoyau(attemptId));
+    }, 5000);
+    return () => window.clearInterval(interval);
+  }, [matiere.id]);
 
   // Retour du réseau : les réponses en attente repartent vers le noyau.
   useEffect(() => {
@@ -467,12 +488,14 @@ function PassageMatiere({
         matiereId: matiere.id,
         tentative,
         attempt: null,
-        ecrituresLocalesEnAttente: getPendingAnswerSavesFor(apprenantId, exerciceKey),
+        // En V2, seule la file du noyau fait autorité. Une projection historique
+        // refusée ne doit jamais bloquer une tentative V2 OPEN saine.
+        ecrituresLocalesEnAttente: attemptV2Ref.current ? 0 : getPendingAnswerSavesFor(apprenantId, exerciceKey),
         ecrituresNoyauEnAttente: attemptV2Ref.current ? reponsesNoyauEnAttente(attemptV2Ref.current) : 0,
         dernierOrdreClient: ordreClientRef.current,
         dernierOrdreConfirme: getConfirmedWriteSeq(apprenantId, exerciceKey),
         refus:
-          getBlockedAnswerSavesFor(apprenantId, exerciceKey) > 0
+          !attemptV2Ref.current && getBlockedAnswerSavesFor(apprenantId, exerciceKey) > 0
             ? { reason: "refused" }
             : null,
       }),
@@ -511,7 +534,7 @@ function PassageMatiere({
     // définitivement refusée par le serveur, on ne clôture pas.
     if (reponsesNoyauEcartees(attemptId) > 0) {
       setSaveStatus("error");
-      toast.error("Une réponse n'a pas pu être enregistrée par le serveur : la matière n'est pas clôturée. Contactez le centre, vos réponses sont conservées.");
+      toast.error("Un problème de synchronisation a été détecté. Vos réponses sont conservées sur cet appareil. Une alerte technique a été envoyée automatiquement.");
       return false;
     }
     // Sécurité anti-note 0 technique (hotfix 23/09/2026) : on ne clôture JAMAIS
@@ -598,13 +621,15 @@ function PassageMatiere({
         jwtTokenRef.current = sessionRes.data?.session?.access_token ?? jwtTokenRef.current;
       }
       const nowIso = new Date().toISOString();
-      enqueueAnswerSave({
-        ...buildAutosavePayload(reponses, true),
-        user_id: userIdRef.current || userId || undefined,
-        updated_at: nowIso,
-      });
-      const flushed = await flushAnswerSavesAndWait(apprenantId, exerciceKey);
-      if (!flushed) throw new Error("Réponses encore en attente");
+      if (!attemptV2Ref.current) {
+        enqueueAnswerSave({
+          ...buildAutosavePayload(reponses, true),
+          user_id: userIdRef.current || userId || undefined,
+          updated_at: nowIso,
+        });
+        const flushed = await flushAnswerSavesAndWait(apprenantId, exerciceKey);
+        if (!flushed) throw new Error("Réponses encore en attente");
+      }
       // Pour un passage V2, la projection historique peut être figée après un
       // incident neutralisé. Elle ne doit jamais empêcher les réponses d'être
       // confirmées par le noyau, qui est l'unique autorité de finalisation.
@@ -675,13 +700,15 @@ function PassageMatiere({
           userIdRef.current = sessionRes.data?.session?.user?.id ?? userId ?? null;
           jwtTokenRef.current = sessionRes.data?.session?.access_token ?? jwtTokenRef.current;
         }
-        enqueueAnswerSave({
-          ...buildAutosavePayload(reponses, true),
-          user_id: userIdRef.current || userId || undefined,
-          updated_at: new Date().toISOString(),
-        });
-        const flushed = await flushAnswerSavesAndWait(apprenantId, exerciceKey);
-        if (!flushed) throw new Error("Réponses encore en attente");
+        if (!attemptV2Ref.current) {
+          enqueueAnswerSave({
+            ...buildAutosavePayload(reponses, true),
+            user_id: userIdRef.current || userId || undefined,
+            updated_at: new Date().toISOString(),
+          });
+          const flushed = await flushAnswerSavesAndWait(apprenantId, exerciceKey);
+          if (!flushed) throw new Error("Réponses encore en attente");
+        }
         if (!attemptV2Ref.current) {
           const { data, error } = await supabase
             .from("reponses_apprenants" as any)
@@ -904,6 +931,12 @@ function PassageMatiere({
       </div>
 
       <AnswerSaveIndicator />
+
+      {attemptV2Ref.current && (
+        <p className="text-sm font-medium text-muted-foreground">
+          {questionsSafe.filter(q => isQuestionAnswered(q)).length}/{questionsSafe.length} réponses saisies — {questionsConfirmees.size}/{questionsSafe.length} sauvegardées sur le serveur
+        </p>
+      )}
 
       {/* Progression questions */}
       <div className="space-y-1">
@@ -1150,6 +1183,9 @@ function PassageMatiere({
             {questionsSafe.map((q, i) => {
               if (!q) return null;
               const isAnswered = isQuestionAnswered(q);
+              const stableId = `${matiere.id}:${q.id}`;
+              const isConfirmed = questionsConfirmees.has(stableId);
+              const isRejected = questionsRefusees.has(stableId);
               const isCurrent = i === safeQuestionIndex;
               return (
                 <button
@@ -1158,12 +1194,16 @@ function PassageMatiere({
                   className={`w-full aspect-square rounded-md text-xs font-bold transition-colors flex items-center justify-center ${
                     isCurrent
                       ? "bg-primary text-primary-foreground ring-2 ring-primary/50"
-                      : isAnswered
-                        ? "bg-green-500 text-white border border-green-600 hover:bg-green-600"
+                      : isRejected
+                        ? "bg-destructive text-destructive-foreground border border-destructive"
+                        : isConfirmed
+                          ? "bg-success text-success-foreground border border-success"
+                          : isAnswered
+                            ? "bg-warning text-warning-foreground border border-warning"
                         : "bg-red-500 text-white border border-red-600 hover:bg-red-600"
                   } ${!isAnswered && showUnansweredAlert ? "ring-2 ring-red-600 ring-offset-1 animate-pulse" : ""}`}
 
-                  title={isAnswered ? `Q${i + 1} — répondue ✓` : `Q${i + 1} — non répondue ✗`}
+                  title={isRejected ? `Q${i + 1} — synchronisation refusée` : isConfirmed ? `Q${i + 1} — confirmée serveur` : isAnswered ? `Q${i + 1} — conservée localement, synchronisation en cours` : `Q${i + 1} — non répondue`}
                 >
                   {i + 1}
                 </button>
@@ -1173,11 +1213,15 @@ function PassageMatiere({
           <div className="mt-3 space-y-1.5 text-[10px] text-muted-foreground border-t pt-2">
             <div className="flex items-center gap-1.5">
               <span className="w-3 h-3 rounded bg-green-500 border border-green-600" />
-              <span>Répondu</span>
+              <span>Confirmée serveur</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded bg-red-500 border border-red-600" />
-              <span>À faire</span>
+              <span className="w-3 h-3 rounded bg-warning border border-warning" />
+              <span>Locale / en cours</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-3 h-3 rounded bg-destructive border border-destructive" />
+              <span>Refusée</span>
             </div>
           </div>
         </div>

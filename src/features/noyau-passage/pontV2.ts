@@ -423,6 +423,15 @@ export function reponsesNoyauEcartees(attemptId?: string | null): number {
   return attemptId ? ecartees.filter((e) => e.attemptId === attemptId).length : ecartees.length;
 }
 
+/** Identifiants stables des réponses refusées pour colorer honnêtement l'écran. */
+export function questionsNoyauEcartees(attemptId?: string | null): Set<string> {
+  return new Set(
+    lireEcartees()
+      .filter((e) => !attemptId || e.attemptId === attemptId)
+      .map((e) => idQuestionNoyau(e.matiereId, e.questionId)),
+  );
+}
+
 /** Vide la file séquentiellement. Une réponse ne quitte la file qu'une fois confirmée. */
 export async function viderFileNoyau(attemptId?: string | null): Promise<{ restantes: number }> {
   const compter = (f: ElementFile[]) => (attemptId ? f.filter((e) => e.attemptId === attemptId).length : f.length);
