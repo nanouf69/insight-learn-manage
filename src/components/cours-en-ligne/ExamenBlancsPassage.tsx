@@ -240,7 +240,12 @@ function PassageMatiere({
       if (decision.moteur === "v2") {
         attemptV2Ref.current = decision.attemptId;
         setBlocageV2(null);
-        void viderFileNoyau();
+        // HOTFIX 23/09/2026 : les réponses déjà saisies AVANT l'ouverture de la
+        // tentative V2 (saisie pendant le routage, reprise après F5) sont
+        // renvoyées vers le noyau. Sans cela la matière pouvait être clôturée
+        // avec zéro réponse côté V2 → note 0 technique.
+        rattraperReponsesNoyau(decision.attemptId);
+        void viderFileNoyau(decision.attemptId);
         return;
       }
       if (decision.moteur === "bloque") {
