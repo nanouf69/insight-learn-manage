@@ -1041,12 +1041,48 @@ function PassageMatiere({
         </div>
       </div>
 
-      <AnswerSaveIndicator />
+      {/* RÈGLE 1 : quand le serveur possède toutes les réponses, aucune alerte
+          technique héritée ne reste affichée. */}
+      {!serveurComplet && <AnswerSaveIndicator />}
 
       {attemptV2Ref.current && (
-        <p className="text-sm font-medium text-muted-foreground">
+        <p className={`text-sm font-medium ${serveurComplet ? "text-green-700" : "text-muted-foreground"}`}>
           {questionsSafe.filter(q => isQuestionAnswered(q)).length}/{questionsSafe.length} réponses saisies — {questionsConfirmees.size}/{questionsSafe.length} sauvegardées sur le serveur
+          {serveurComplet && " ✅ toutes vos réponses sont sécurisées sur le serveur"}
         </p>
+      )}
+
+      {/* RÈGLE 2 : jamais de blocage indéfini. Après plusieurs tentatives de
+          synchronisation réellement infructueuses, l'élève peut recommencer
+          CETTE matière uniquement. Rien n'est supprimé : l'ancienne tentative
+          est archivée. */}
+      {attemptV2Ref.current && !serveurComplet && echecsSynchronisation >= 3 && (
+        <div className="rounded-lg border-2 border-amber-300 bg-amber-50 px-4 py-3 space-y-2">
+          <p className="text-sm text-amber-900">
+            Nous n'avons pas pu synchroniser correctement cette matière. Vos autres matières et
+            résultats sont conservés. Vous pouvez recommencer uniquement cette matière.
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={recommenceEnCours}
+            onClick={async () => {
+              const attemptId = attemptV2Ref.current;
+              if (!attemptId) return;
+              setRecommenceEnCours(true);
+              const res = await recommencerMatiereNoyau(attemptId, "synchronisation_impossible");
+              setRecommenceEnCours(false);
+              if (!res.ok) {
+                toast.error("Reprise impossible pour le moment. Aucune donnée n'a été modifiée : prévenez le centre.");
+                return;
+              }
+              toast.success("Nouvelle tentative ouverte pour cette matière. L'ancienne est conservée.");
+              window.location.reload();
+            }}
+          >
+            Recommencer cette matière
+          </Button>
+        </div>
       )}
 
       {/* Progression questions */}
