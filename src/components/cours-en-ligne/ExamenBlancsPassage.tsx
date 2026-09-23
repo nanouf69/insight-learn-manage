@@ -733,11 +733,16 @@ function PassageMatiere({
         return;
       }
       try {
+        // La fenêtre de temps est liée à la TENTATIVE : une réouverture
+        // administrative (nouvelle tentative) ouvre une durée complète, alors
+        // qu'un F5 / une reconnexion reprend toujours la fenêtre en cours.
         const { data, error } = await supabase.rpc("start_or_get_exam_timer" as any, {
           _apprenant_id: apprenantId,
           _exercice_id: exerciceKey,
           _duree_secondes: dureeSecondes,
+          _tentative: Math.max(1, Number(tentative) || 1),
         } as any);
+
         if (cancelled) return;
         const row = Array.isArray(data) ? (data as any[])[0] : (data as any);
         const remaining = Number(row?.remaining_seconds);
