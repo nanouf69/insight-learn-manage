@@ -115,6 +115,7 @@ export function IncidentsExamensPanel({
               <p><strong>Examen / matière :</strong> {detail.examen} — {detail.matiere}</p>
               <p><strong>Heure de début :</strong> {heureFr(detail.heure)}</p>
               <p><strong>Problème :</strong> {detail.libelle}</p>
+              <p><strong>Ce que cela veut dire :</strong> {detail.explication}</p>
               <p><strong>Réponses confirmées côté serveur :</strong> {detail.reponsesServeur}/{detail.reponsesAttendues}</p>
               <p><strong>État :</strong> {detail.etat}</p>
               <p className="text-xs text-muted-foreground">
@@ -142,7 +143,7 @@ export function IncidentsExamensPanel({
           </DialogHeader>
           <div className="max-h-[60vh] space-y-2 overflow-y-auto">
             {historique.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Aucun incident résolu sur les 3 derniers jours.</p>
+              <p className="text-sm text-muted-foreground">Aucun incident résolu sur les 2 derniers jours.</p>
             ) : (
               historique.map((i) => ligne(i, true))
             )}
