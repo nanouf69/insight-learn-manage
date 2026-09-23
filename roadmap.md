@@ -64,6 +64,9 @@ Voir `docs/snapshot-reference-avant-phase1.md` : empreintes md5 des 5 fichiers d
   - Étape C inclut désormais le **retrait physique des corrigés V2 de `examens-blancs-data.ts` et du bundle public compilé** ; écrans Admin/Correction QRC V2 alimentés par une fonction serveur protégée ; contrôle post-compilation : 0 corrigé V2 dans le JavaScript servi (23/09, 20h10). Détail : `phase1-c2c3-plan-deploiement-2026-09-23.md`.
   - A n'est PAS lancé : accord explicite + créneau vérifié sans examen en cours requis. Premier travail = A uniquement, puis test et arrêt avant B.
 - [ ] Phase 1b — C1 unicité OPEN en base (audit préalable, aucune suppression)
+  - Cas de test de référence : BOUDJORF DOUBAA Kamel, EB2 T3P, 2 passages créés à 19 ms d'écart le 22/09 09:16:32 (ancien circuit, ne pas corriger individuellement) — la protection doit rendre ce cas impossible.
+- [ ] Plus tard — règle propre pour tentatives abandonnées encore ouvertes (HOMAWOO eb3-ta, VALENTIN EB5/EB6-TAXI) ; ne pas les fermer manuellement.
+- [ ] Phase 1a étape A — en attente : ne lancer que si 0 élève en train de composer (activité < 30 min).
 - [ ] Phase 1c — C5 publication interdite si test critique échoue
 - [ ] Phase 2 — serveur d'abord au chargement/F5 + double-clic Commencer ; V2 seule source d'état
 - [ ] Phase 3 — C4 chrono serveur, tolérance 30 s transmission uniquement (arrêt si non garantissable)
