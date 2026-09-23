@@ -308,6 +308,34 @@ function PassageMatiere({
         const indexTentative = matiereTentatives.findIndex((row) => row.attempt_id === decision.attemptId);
         setTentativeChrono(indexTentative >= 0 ? indexTentative + 1 : Math.max(1, Number(tentative) || 1));
         setBlocageV2(null);
+        const nouvelle = matiereTentatives.find((row) => row.attempt_id === decision.attemptId);
+        const idsSnapshot = (nouvelle?.snapshot?.questions ?? [])
+          .filter((q) => typeof q?.id === "string")
+          .map((q) => String(q.id));
+        const idsAffiches = questionsSafe.map((q) => `${matiere.id}:${q.id}`);
+        const sujetExact =
+          idsSnapshot.length === idsAffiches.length &&
+          new Set(idsSnapshot).size === idsSnapshot.length &&
+          idsAffiches.every((id) => idsSnapshot.includes(id));
+        if (!sujetExact) {
+          setBlocageV2("Le sujet affiché ne correspond pas exactement à l'instantané serveur. Vos réponses restent conservées et aucun transfert n'a été effectué.");
+          void captureError({
+            message: "[NoyauV2] synchronisation bloquée — sujet affiché différent du snapshot",
+            source: "passage-examen-blanc",
+            fingerprint: `exam-snapshot-display-mismatch:${apprenantId}:${examenId}:${matiere.id}`,
+            context: {
+              apprenantId,
+              examenId,
+              matiere: matiere.id,
+              attemptId: decision.attemptId,
+              code: "SNAPSHOT_AFFICHAGE_NON_CONFORME",
+              questionsAffichees: idsAffiches.length,
+              questionsSnapshot: idsSnapshot.length,
+              heure: new Date().toISOString(),
+            },
+          });
+          return;
+        }
         const ancienneIds = matiereTentatives
           .filter((row) => row.etat === "terminee" && row.attempt_id !== decision.attemptId)
           .map((row) => String(row.attempt_id));
@@ -317,10 +345,6 @@ function PassageMatiere({
             .select("attempt_id")
             .in("attempt_id", ancienneIds);
           const idsNeutralises = new Set(((neutralisations as { attempt_id?: string }[] | null) ?? []).map((n) => String(n.attempt_id)));
-          const nouvelle = matiereTentatives.find((row) => row.attempt_id === decision.attemptId);
-          const idsSnapshot = (nouvelle?.snapshot?.questions ?? [])
-            .filter((q) => typeof q?.id === "string")
-            .map((q) => String(q.id));
           const remappage = remapperFileApresReouverture({
             anciensAttemptIds: ancienneIds.filter((id) => idsNeutralises.has(id)),
             nouvelAttemptId: decision.attemptId,
