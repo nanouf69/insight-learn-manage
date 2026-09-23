@@ -163,7 +163,7 @@ async function detecter(): Promise<{ anomalies: Anomalie[]; controles: Record<st
   let erreurs: { message: string | null; created_at: string }[] = [];
   try {
     erreurs = await lire<{ message: string | null; created_at: string }>(
-      `error_logs?select=message,created_at&created_at=gte.${depuis}&limit=2000`,
+      `error_logs?select=message,created_at&created_at=gte.${depuis}&order=created_at.asc`,
     );
   } catch (_) {
     erreurs = [];
