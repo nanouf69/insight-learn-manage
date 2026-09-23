@@ -117,6 +117,16 @@ export type SessionReelle = {
 
 const asSnapshot = (v: unknown) => v as SnapshotExamen;
 
+/**
+ * Tentatives neutralisées (notes 0 techniques : clôture sans aucune réponse serveur).
+ * Elles restent en base, intactes, mais ne sont plus affichées ni à corriger.
+ */
+async function idsNeutralises(): Promise<Set<string>> {
+  const { data } = await supabase.from("core_tentatives_neutralisees").select("attempt_id").range(0, 4999);
+  return new Set((data ?? []).map((r: any) => r.attempt_id as string));
+}
+
+
 /** Liste des sessions (examen + jour), de la plus récente à la plus ancienne. */
 export async function listerSessions(mode: "test" | "migre" = "migre"): Promise<SessionListee[]> {
   const { data, error } = await supabase
@@ -125,9 +135,10 @@ export async function listerSessions(mode: "test" | "migre" = "migre"): Promise<
     .eq("is_test", mode === "test")
     .order("started_at", { ascending: false });
   if (error) throw error;
+  const neutralises = await idsNeutralises();
 
   const par = new Map<string, SessionListee>();
-  for (const a of data ?? []) {
+  for (const a of (data ?? []).filter((a: any) => !neutralises.has(a.attempt_id as string))) {
     const d = new Date(a.started_at as string);
     const jour = d.toISOString().slice(0, 10);
     const date = d.toLocaleDateString("fr-FR", { timeZone: "Europe/Paris" });
@@ -216,7 +227,11 @@ export async function listerGroupesCrm(mode: "test" | "migre" = "migre"): Promis
     }
   }
 
-  const passages = [...attempts.map((a) => ({ ...a, circuit: "v2" as const })), ...legacyResults];
+  const neutralises = await idsNeutralises();
+  const passages = [
+    ...attempts.filter((a) => !neutralises.has(a.attempt_id as string)).map((a) => ({ ...a, circuit: "v2" as const })),
+    ...legacyResults,
+  ];
 
   const apprenantIds = Array.from(new Set(passages.map((a) => a.apprenant_id as string)));
   const { data: apprenants } = apprenantIds.length
@@ -406,6 +421,11 @@ export async function chargerSessionTest(
     if (error) throw error;
     attempts = (data ?? []) as any[];
   }
+
+  const neutralises = await idsNeutralises();
+  attempts = attempts.filter((a) => !neutralises.has(a.attempt_id as string));
+
+
 
   const ids = Array.from(new Set(attempts.map((a) => a.apprenant_id as string)));
   const apprenants = await parLots(ids, async (lot) => {
