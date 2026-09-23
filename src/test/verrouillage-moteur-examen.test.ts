@@ -150,6 +150,28 @@ describe("CRITIQUE 2 — sauvegarde des réponses", () => {
     expect(reponsesNoyauEcartees("att-B")).toBe(0);
   });
 
+  it("une ancienne file étrangère ne bloque pas le vidage de la tentative OPEN ciblée", async () => {
+    localStorage.clear();
+    rpc.mockReset();
+    rpc.mockImplementation((_fn: string, args: { p_attempt_id?: string }) =>
+      Promise.resolve(
+        args?.p_attempt_id === "ancienne-hors-ligne"
+          ? { data: null, error: { message: "Failed to fetch" } }
+          : { data: { revision: 1 }, error: null },
+      ),
+    );
+    enfilerReponseNoyau({ attemptId: "ancienne-hors-ligne", matiereId: "gestion", questionId: 1, valeur: ["A"] });
+    enfilerReponseNoyau({ attemptId: "ouverte-courante", matiereId: "securite", questionId: 6, valeur: ["C"] });
+
+    for (let i = 0; i < 20 && reponsesNoyauEnAttente("ouverte-courante") > 0; i++) {
+      await new Promise((r) => setTimeout(r, 5));
+      await viderFileNoyau("ouverte-courante");
+    }
+
+    expect(reponsesNoyauEnAttente("ouverte-courante")).toBe(0);
+    expect(reponsesNoyauEnAttente("ancienne-hors-ligne")).toBe(1);
+  });
+
   it("une réponse écartée bloque la clôture : aucune note 0 technique possible", () => {
     const src = read(PASSAGE);
     expect(src).toContain("reponsesNoyauEcartees(attemptId) > 0");

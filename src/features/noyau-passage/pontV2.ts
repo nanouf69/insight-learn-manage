@@ -464,6 +464,13 @@ export async function viderFileNoyau(attemptId?: string | null): Promise<{ resta
     let index = 0;
     while (index < file.length) {
       const element = file[index];
+      // Un vidage ciblé ne doit jamais être bloqué par une ancienne file d'un
+      // autre passage. Ces éléments restent conservés à leur place et seront
+      // traités lorsqu'ils redeviendront la cible active.
+      if (attemptId && element.attemptId !== attemptId) {
+        index += 1;
+        continue;
+      }
       const res = await enregistrerReponse({
         attemptId: element.attemptId,
         matiereId: element.matiereId,
@@ -471,7 +478,14 @@ export async function viderFileNoyau(attemptId?: string | null): Promise<{ resta
         valeur: element.valeur,
       });
       if (!res.ok) {
-        if (!refusDefinitif(res.message)) break; // réseau : on garde l'ordre et on réessaiera
+        if (!refusDefinitif(res.message)) {
+          console.warn("[PontV2] réponse conservée pour nouvel essai", {
+            attemptId: element.attemptId,
+            questionId: idQuestionNoyau(element.matiereId, element.questionId),
+            message: res.message,
+          });
+          break; // réseau/conflit : on garde l'ordre et on réessaiera
+        }
         // Refus définitif : la réponse est conservée à part, la file continue.
         ecarter(element);
         console.warn("[PontV2] réponse mise de côté (refus définitif):", res.message);
