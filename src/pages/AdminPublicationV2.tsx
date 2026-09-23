@@ -76,8 +76,10 @@ export default function AdminPublicationV2() {
         id,
         c.publiable ? "ok" : "ko",
         c.publiable
-          ? `Aucun écart. ${c.nbSansReference > 0 ? `${c.nbSansReference} matière(s) jamais servie(s) : aucune référence de comparaison.` : "Contenu actif identique à la dernière variante servie."}`
-          : `${c.nbEcarts} écart(s) détecté(s) : publication bloquée, rien n'a été modifié.`,
+          ? `Contenu actuel sain : publiable. ${c.nbEcarts} différence(s) avec l'historique servi (information seulement, l'historique n'est pas la référence).`
+          : c.aVerifier.length > 0
+            ? `Publication bloquée : ${c.aVerifier.length} question(s) marquée(s) À VÉRIFIER (${c.aVerifier.map((q) => `${q.matiere} n°${q.questionId}`).join(", ")}).`
+            : `Publication bloquée : anomalie technique dans le contenu actuel. Rien n'a été modifié.`,
       );
     } catch (e) {
       noter(id, "ko", `Vérification impossible : ${(e as Error).message}`);
