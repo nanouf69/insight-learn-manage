@@ -10,7 +10,9 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:critique": "vitest run src/test/verrouillage-moteur-examen.test.ts src/test/examens-blancs-sauvegarde-partielle.test.ts src/test/examen-blanc-delai-48h.test.ts src/test/finalisation-matiere-etape3.test.ts src/test/terminer-matiere-panne-recuperation.test.ts src/test/examens-blancs-snapshot-fige.test.ts src/test/qrc-a-corriger-aujourdhui-ne-revient-pas.test.ts src/test/note-20-qcm-qrc-non-regression.test.ts",
+    "predeploy": "npm run test:critique"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
