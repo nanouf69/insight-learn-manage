@@ -39,11 +39,25 @@ export function IncidentsExamensPanel({
           <Badge variant="outline">{i.matiere}</Badge>
           <span className="text-sm text-muted-foreground">{heureFr(i.heure)}</span>
         </div>
-        <p className={`text-sm ${resolu ? "text-muted-foreground" : i.gravite === "critique" ? "text-destructive" : ""}`}>
-          {i.libelle}
-        </p>
+        <div className="flex flex-wrap items-center gap-2">
+          <span
+            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${
+              resolu
+                ? "bg-emerald-100 text-emerald-700"
+                : i.gravite === "critique"
+                  ? "bg-destructive text-destructive-foreground"
+                  : "bg-amber-100 text-amber-800"
+            }`}
+          >
+            {resolu ? "🟢 Résolu" : i.gravite === "critique" ? "🔴 Critique" : "🟠 À surveiller"}
+          </span>
+          <span className={`text-sm font-medium ${resolu ? "text-muted-foreground" : i.gravite === "critique" ? "text-destructive" : "text-amber-800"}`}>
+            {i.libelle}
+          </span>
+        </div>
+        <p className="text-xs text-muted-foreground">{i.explication}</p>
         <p className="text-xs text-muted-foreground">
-          Réponses serveur {i.reponsesServeur}/{i.reponsesAttendues} — {i.etat}
+          Réponses enregistrées sur nos serveurs : {i.reponsesServeur}/{i.reponsesAttendues} — {i.etat}
         </p>
       </div>
       <div className="flex shrink-0 flex-wrap gap-2">
@@ -101,6 +115,7 @@ export function IncidentsExamensPanel({
               <p><strong>Examen / matière :</strong> {detail.examen} — {detail.matiere}</p>
               <p><strong>Heure de début :</strong> {heureFr(detail.heure)}</p>
               <p><strong>Problème :</strong> {detail.libelle}</p>
+              <p><strong>Ce que cela veut dire :</strong> {detail.explication}</p>
               <p><strong>Réponses confirmées côté serveur :</strong> {detail.reponsesServeur}/{detail.reponsesAttendues}</p>
               <p><strong>État :</strong> {detail.etat}</p>
               <p className="text-xs text-muted-foreground">
@@ -128,7 +143,7 @@ export function IncidentsExamensPanel({
           </DialogHeader>
           <div className="max-h-[60vh] space-y-2 overflow-y-auto">
             {historique.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Aucun incident résolu sur les 3 derniers jours.</p>
+              <p className="text-sm text-muted-foreground">Aucun incident résolu sur les 2 derniers jours.</p>
             ) : (
               historique.map((i) => ligne(i, true))
             )}
