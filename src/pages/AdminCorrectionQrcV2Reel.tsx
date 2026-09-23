@@ -302,7 +302,9 @@ export default function AdminCorrectionQrcV2Reel() {
       <div
         data-testid="zone-tableau"
         className="min-w-0 shrink-0 grow-0 p-4 space-y-6 overflow-x-auto"
-        style={{ flex: `0 0 calc(${100 - partPanneau}% - 3px)`, width: `calc(${100 - partPanneau}% - 3px)` }}
+        style={ancienCircuit
+          ? { flex: "0 0 100%", width: "100%" }
+          : { flex: `0 0 calc(${100 - partPanneau}% - 3px)`, width: `calc(${100 - partPanneau}% - 3px)` }}
       >
         <header className="sticky top-0 z-10 bg-background/95 py-2 space-y-2">
           <div className="flex flex-wrap items-center gap-2">
@@ -393,6 +395,7 @@ export default function AdminCorrectionQrcV2Reel() {
             <CorrectionQRCTab
               resultIds={legacyResultIds ?? []}
               embeddedLabel={`${ebChoisi?.exam_id ?? "EB3"} — ANCIEN CIRCUIT`}
+              hideV2Panel
             />
           </div>
         ) : <div style={{ zoom: `${zoom}%` }} className="space-y-6">
@@ -544,14 +547,14 @@ export default function AdminCorrectionQrcV2Reel() {
         {erreur && <p className="text-sm text-destructive" data-testid="erreur-admin">{erreur}</p>}
       </div>
 
-      <div
+      {!ancienCircuit && <div
         onMouseDown={demarrerRedim}
         role="separator"
         aria-orientation="vertical"
         aria-label="Redimensionner le panneau"
         className="w-1.5 shrink-0 cursor-col-resize bg-border hover:bg-primary/40"
-      />
-      <aside
+      />}
+      {!ancienCircuit && <aside
         data-testid="panneau-correction"
         className="min-w-0 shrink-0 border-l p-3 space-y-2 overflow-y-auto sticky top-0 max-h-screen"
         style={{ flex: `0 0 calc(${partPanneau}% - 3px)`, width: `calc(${partPanneau}% - 3px)` }}
@@ -756,7 +759,7 @@ export default function AdminCorrectionQrcV2Reel() {
             })()}
           </>
         )}
-      </aside>
+      </aside>}
     </div>
   );
 }

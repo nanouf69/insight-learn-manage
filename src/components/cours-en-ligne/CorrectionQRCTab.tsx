@@ -562,9 +562,10 @@ type CorrectionQRCTabProps = {
   /** Restreint l'écran aux seules lignes historiques finalisées explicitement autorisées. */
   resultIds?: string[];
   embeddedLabel?: string;
+  hideV2Panel?: boolean;
 };
 
-const CorrectionQRCTab = ({ resultIds, embeddedLabel }: CorrectionQRCTabProps = {}) => {
+const CorrectionQRCTab = ({ resultIds, embeddedLabel, hideV2Panel = false }: CorrectionQRCTabProps = {}) => {
   const [items, setItems] = useState<QrcItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "pending" | "done" | "today" | "today-pending" | "blocking">("pending");
@@ -1160,17 +1161,19 @@ const CorrectionQRCTab = ({ resultIds, embeddedLabel }: CorrectionQRCTabProps = 
     const autosaves: any[] = [];
     // Dans la vue EB3 intégrée, seules les matières ayant une ligne de résultat
     // finalisée sont autorisées. Les sauvegardes de matières ouvertes sont exclues.
-    for (let from = 0; !idsAutorises && ; from += 1000) {
-      const { data, error } = await supabase
-        .from("reponses_apprenants" as any)
-        .select("id, apprenant_id, user_id, exercice_id, exercice_type, reponses, completed, updated_at, submitted_at, tentative")
-        .eq("exercice_type", "examen_blanc")
-        .like("exercice_id", "%__%")
-        .order("updated_at", { ascending: false })
-        .range(from, from + 999);
-      if (error) break;
-      autosaves.push(...(data || []));
-      if (!data || data.length < 1000) break;
+    if (!idsAutorises) {
+      for (let from = 0; ; from += 1000) {
+        const { data, error } = await supabase
+          .from("reponses_apprenants" as any)
+          .select("id, apprenant_id, user_id, exercice_id, exercice_type, reponses, completed, updated_at, submitted_at, tentative")
+          .eq("exercice_type", "examen_blanc")
+          .like("exercice_id", "%__%")
+          .order("updated_at", { ascending: false })
+          .range(from, from + 999);
+        if (error) break;
+        autosaves.push(...(data || []));
+        if (!data || data.length < 1000) break;
+      }
     }
 
     const missingAutosaveApprenantIds = [...new Set(autosaves.map(row => row.apprenant_id))]
@@ -2000,7 +2003,7 @@ const CorrectionQRCTab = ({ resultIds, embeddedLabel }: CorrectionQRCTabProps = 
       )}
 
       {/* Nouveau moteur QRC : examens explicitement branchés uniquement. */}
-      <QrcInstancesPanel />
+      {!hideV2Panel && <QrcInstancesPanel />}
 
       {todayBlockingMissingItems.length > 0 ? (
         <div className="rounded-lg border border-destructive bg-destructive/10 p-4">
