@@ -12,7 +12,7 @@ import {
   normalizeNoteSur20, normalizeMatiereLookupValue,
   buildMatiereLookupKeys, getMatiereCanonicalKey, shareLookupKey,
   pickBestScoreRow, recoverCorruptedScoreRow, findScoreForMatiere,
-  computeAdmisForMatiere,
+  computeAdmisForMatiere, getMeaningfulAnswerCount,
   selectLatestAttemptRows, parseExamAnswerKey,
 } from "./examens-blancs-utils";
 import { computeMoyenneExamen, computeMatiereScore, computeMatiereScoreForAttempt, resolveMatiereForScoring } from "./examens-blancs-scoring";
@@ -455,12 +455,13 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
                   const quizId = examensDataRef.current.find((exam) => parseExamAnswerKey(id, exam.id))?.id ?? "";
                   if (!quizId) return;
                   if (!isAfterExamReset(r?.updated_at ?? r?.created_at, resetCutoffs[quizId])) return;
+                  const nbReponses = getMeaningfulAnswerCount(r?.reponses);
+                  if (nbReponses === 0) return;
                   if (!mergedCompleted.has(quizId)) {
                     started.add(quizId);
                   }
                   // Un passage ouvert (non finalisé, avec au moins une réponse) reste
                   // reprenable même si une tentative précédente est terminée.
-                  const nbReponses = r?.reponses && typeof r.reponses === "object" ? Object.keys(r.reponses).length : 0;
                   if (r?.completed !== true && nbReponses > 0) {
                     open.add(quizId);
                   }
