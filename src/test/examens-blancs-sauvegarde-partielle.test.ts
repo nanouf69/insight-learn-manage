@@ -50,6 +50,21 @@ describe("Réponse enregistrée ≠ matière terminée", () => {
     expect(guard).not.toContain("upsert");
   });
 
+  it("une matière affichée sans questions n'est jamais considérée comme terminable", () => {
+    const src = read(SRC);
+    expect(src).toContain("const allAnswered = questionsSafe.length > 0 && questionsSafe.every");
+    expect(src).toContain("if (questionsSafe.length === 0) {");
+    expect(src).toContain("Le contenu de cette matière n'est pas chargé. La matière reste ouverte");
+  });
+
+  it("le noyau exige les identifiants exacts du snapshot côté serveur avant de clôturer", () => {
+    const src = read(SRC);
+    expect(src).toContain('supabase.from("exam_attempts_v2").select("snapshot")');
+    expect(src).toContain('supabase\n          .from("answer_state")');
+    expect(src).toContain("idsSnapshot.every");
+    expect(src).toContain("!confirmation?.contenuConforme || !confirmation.toutesConfirmees");
+  });
+
   it("les réponses partielles sont rechargées au retour (fusion base + file locale)", () => {
     const src = read(SRC);
     expect(src).toContain("mergeSavedAndPendingAnswers(rawReponses as any, apprenantId, exerciceKey)");
