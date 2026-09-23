@@ -5,7 +5,7 @@
  * et la logique d'initialisation de phase (useState("selection") toujours).
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { isStoredExamSessionAfterReset, persistExamSession } from "@/components/cours-en-ligne/examens-blancs-utils";
+import { persistExamSession } from "@/components/cours-en-ligne/examens-blancs-utils";
 
 // Mock sessionStorage
 const sessionStorageData: Record<string, string> = {};
@@ -87,30 +87,5 @@ describe("BUG #2 — Détection de fin d'examen (vrai code)", () => {
     const initialPhase = "selection"; // C'est ce que le code fait maintenant (hardcodé)
     expect(initialPhase).toBe("selection");
     expect(initialPhase).not.toBe("examen");
-  });
-});
-
-describe("Remise à zéro administrative — reprise navigateur", () => {
-  const resetAt = new Date("2026-09-23T14:51:22.727Z").getTime();
-
-  it("refuse une ancienne session EB1 après F5 ou reconnexion", () => {
-    expect(isStoredExamSessionAfterReset({
-      examenId: "EB1",
-      examStartTime: new Date("2026-09-23T14:45:00Z").getTime(),
-    }, "EB1", resetAt)).toBe(false);
-  });
-
-  it("accepte uniquement une nouvelle session EB1 créée après le reset", () => {
-    expect(isStoredExamSessionAfterReset({
-      examenId: "EB1",
-      examStartTime: new Date("2026-09-23T15:00:00Z").getTime(),
-    }, "EB1", resetAt)).toBe(true);
-  });
-
-  it("ne mélange jamais les examens", () => {
-    expect(isStoredExamSessionAfterReset({
-      examenId: "EB2",
-      examStartTime: new Date("2026-09-23T15:00:00Z").getTime(),
-    }, "EB1", resetAt)).toBe(false);
   });
 });

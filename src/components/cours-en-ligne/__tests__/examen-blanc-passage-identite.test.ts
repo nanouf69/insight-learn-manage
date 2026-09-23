@@ -4,7 +4,7 @@
  * Aucun de ces tests n'écrit, ne migre ni ne renumérote la moindre donnée.
  */
 import { describe, expect, it } from "vitest";
-import { resolveExamPassage } from "../examens-blancs-utils";
+import { isStoredExamSessionAfterReset, resolveExamPassage } from "../examens-blancs-utils";
 
 const MATIERES = [
   { id: "t3p", nom: "A - T3P" },
@@ -119,5 +119,30 @@ describe("Identité d'un passage d'examen blanc", () => {
     });
     const suffixes = new Set(Object.values(p.exerciceIds).map((id) => id.split("__").slice(2).join("__")));
     expect(suffixes).toEqual(new Set([`t${p.tentative}`]));
+  });
+});
+
+describe("Remise à zéro administrative — reprise navigateur", () => {
+  const resetAt = new Date("2026-09-23T14:51:22.727Z").getTime();
+
+  it("refuse une ancienne session EB1 après F5 ou reconnexion", () => {
+    expect(isStoredExamSessionAfterReset({
+      examenId: "EB1",
+      examStartTime: new Date("2026-09-23T14:45:00Z").getTime(),
+    }, "EB1", resetAt)).toBe(false);
+  });
+
+  it("accepte uniquement une nouvelle session EB1 créée après le reset", () => {
+    expect(isStoredExamSessionAfterReset({
+      examenId: "EB1",
+      examStartTime: new Date("2026-09-23T15:00:00Z").getTime(),
+    }, "EB1", resetAt)).toBe(true);
+  });
+
+  it("ne mélange jamais les examens", () => {
+    expect(isStoredExamSessionAfterReset({
+      examenId: "EB2",
+      examStartTime: new Date("2026-09-23T15:00:00Z").getTime(),
+    }, "EB1", resetAt)).toBe(false);
   });
 });
