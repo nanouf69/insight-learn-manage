@@ -1160,7 +1160,40 @@ export default function ExamensBlancsPage({
       // La matière a déjà été mise en file et confirmée par PassageMatiere.
       // On relit la base avant tout calcul de résultat : aucune progression si
       // les réponses confirmées ne correspondent pas exactement à l'écran.
-      if (apprenantId && userId) {
+      // CAUSE COMMUNE Kevin/Thierno (23/09/2026) : lorsque le passage est
+      // raccordé au noyau V2, c'est LUI l'autorité de confirmation. La
+      // projection historique (reponses_apprenants) peut rester « non
+      // terminée » après une coupure réseau : elle ne doit plus interdire de
+      // terminer la matière alors que toutes les réponses sont confirmées
+      // côté noyau. Aucune réponse n'est écrasée ni recalculée ici.
+      let confirmeParNoyau = false;
+      if (apprenantId) {
+        try {
+          const { data: tentativeNoyau } = await supabase
+            .from("exam_attempts_v2")
+            .select("attempt_id, snapshot")
+            .eq("apprenant_id", apprenantId)
+            .eq("exam_id", examenChoisi.id)
+            .in("etat", ["en_cours", "terminee"])
+            .order("started_at", { ascending: false })
+            .limit(5);
+          const tentative = ((tentativeNoyau as { attempt_id: string; snapshot: any }[] | null) ?? []).find(
+            (row) => String(row?.snapshot?.matiere ?? "") === String(matiere.id),
+          );
+          if (tentative?.attempt_id) {
+            const { count } = await supabase
+              .from("answer_state")
+              .select("question_id", { count: "exact", head: true })
+              .eq("attempt_id", tentative.attempt_id);
+            const saisies = Object.keys(reponses ?? {}).length;
+            confirmeParNoyau = (count ?? 0) >= saisies && (count ?? 0) > 0;
+          }
+        } catch (erreurNoyau) {
+          console.warn("[ExamSubmission][EB] Vérification noyau impossible:", erreurNoyau);
+        }
+      }
+
+      if (apprenantId && userId && !confirmeParNoyau) {
         const exerciceKey =
           resumeExerciceIds[matiere.id] ||
           buildExamMatiereExerciceId(examenChoisi.id, matiere.id, currentTentative);
