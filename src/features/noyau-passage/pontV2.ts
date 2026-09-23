@@ -169,7 +169,7 @@ export async function routerPassage(params: {
   if (attemptId) return { moteur: "v2", attemptId };
   return {
     moteur: "bloque",
-    message: "Le nouveau moteur d'examen n'a pas pu ouvrir la tentative. Le démarrage est bloqué : contactez le centre.",
+    message: "Le nouveau moteur d'examen n'a pas pu ouvrir la tentative. Vos réponses et résultats sont conservés. Le centre a été prévenu automatiquement ; réessayez dans quelques instants.",
   };
 }
 

@@ -35,7 +35,7 @@ export function getAnswerSaveIndicatorView({
       tone: "saturated",
       message: `La mémoire de cet appareil est saturée. Aucune réponse n'a été supprimée${
         pendingAnswers > 0 ? ` (${pendingAnswers} en attente)` : ""
-      }. Restez connecté(e) et prévenez le centre si ce message persiste.`,
+      }. Restez connecté(e) : vos réponses sont conservées sur cet appareil et renvoyées automatiquement. Le centre est prévenu automatiquement.`,
     };
   }
 
