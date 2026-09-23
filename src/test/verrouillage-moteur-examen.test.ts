@@ -48,7 +48,7 @@ if (typeof globalThis.localStorage === "undefined") {
 }
 
 const rpc = vi.fn();
-const from = vi.fn(() => ({
+const from = vi.fn<(...args: unknown[]) => any>(() => ({
   select: () => ({ eq: () => ({ eq: () => ({ is: () => ({ limit: async () => ({ data: [], error: null }) }) }) }) }),
 }));
 vi.mock("@/integrations/supabase/client", () => ({
