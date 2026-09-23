@@ -212,8 +212,27 @@ export async function demarrerTentative(params: {
       .maybeSingle(),
   ]);
   if ((etat as { etat?: string } | null)?.etat === "terminee" && !neutralisation) {
-    console.warn("[PontV2] tentative clôturée sans réouverture administrative autorisée:", attemptId);
-    return null;
+    // CAUSE COMMUNE Kevin/Thierno : le rejeu idempotent renvoie une tentative
+    // clôturée. On ne la réutilise JAMAIS (ses réponses seraient refusées avec
+    // ATTEMPT_CLOSED) et on ne bloque plus l'apprenant : on redemande au noyau
+    // une ouverture avec une nouvelle opération. Le serveur reste l'autorité
+    // (règle des 48 h, propriété, version publiée) : s'il refuse, on bloque.
+    console.warn("[PontV2] tentative clôturée rejouée, nouvelle ouverture demandée:", attemptId);
+    const opFraiche = await operationId(`start-after-closed:${attemptId}:${Date.now()}`);
+    const { data: recree, error: erreurRecree } = await demarrer(opFraiche);
+    if (erreurRecree) {
+      console.warn("[PontV2] ouverture après tentative clôturée refusée:", erreurRecree.message);
+      return null;
+    }
+    const nouvelId = (recree as unknown as { attempt_id?: string } | null)?.attempt_id ?? null;
+    if (!nouvelId || nouvelId === attemptId) return null;
+    const { data: etatNouveau } = await supabase
+      .from("exam_attempts_v2")
+      .select("etat")
+      .eq("attempt_id", nouvelId)
+      .maybeSingle();
+    if ((etatNouveau as { etat?: string } | null)?.etat !== "en_cours") return null;
+    return nouvelId;
   }
   if ((etat as { etat?: string } | null)?.etat === "terminee" && neutralisation) {
     const reopenOp = await operationId(`reopen:${attemptId}`);
@@ -386,11 +405,10 @@ export function remapperFileApresReouverture(params: {
     dernierParQuestion.set(id, element);
   }
   const idsLocales = new Set(dernierParQuestion.keys());
-  const exact = idsLocales.size === attendues.size && [...attendues].every((id) => idsLocales.has(id));
-  if (!exact) {
-    const manquante = [...attendues].find((id) => !idsLocales.has(id));
-    return { ok: false, correspondance: idsLocales.size, recuperees: 0, questionInvalide: manquante };
-  }
+  // Couverture partielle acceptée : chaque réponse locale appartient déjà au
+  // snapshot officiel (contrôle ci-dessus). Les questions absentes restent
+  // simplement à répondre ; aucune réponse n'est inventée ni écrasée.
+  if (idsLocales.size === 0) return { ok: false, correspondance: 0, recuperees: 0 };
 
   // Toute ancienne entrée encore active est d'abord conservée dans la file
   // écartée. Elle ne sera donc plus jamais envoyée vers ATTEMPT_CLOSED.
