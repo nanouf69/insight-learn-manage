@@ -1081,7 +1081,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         const { data, error: fetchError } = await withTimeout(
           supabase
             .from("apprenants")
-            .select("id, nom, prenom, type_apprenant, formation_choisie, date_debut_cours_en_ligne, date_fin_cours_en_ligne, date_debut_formation, date_fin_formation, creneau_horaire, modules_autorises, email, telephone, adresse, code_postal, ville, date_naissance")
+            .select("id, nom, prenom, type_apprenant, formation_choisie, date_debut_cours_en_ligne, date_fin_cours_en_ligne, date_debut_formation, date_fin_formation, creneau_horaire, modules_autorises, email, telephone, adresse, code_postal, ville, date_naissance, date_examen_theorique, resultat_examen")
             .eq("auth_user_id", user.id)
             .maybeSingle(),
           12000,
@@ -1192,7 +1192,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     const refreshApprenant = async () => {
       const { data, error } = await supabase
         .from("apprenants")
-        .select("id, nom, prenom, type_apprenant, formation_choisie, date_debut_cours_en_ligne, date_fin_cours_en_ligne, date_debut_formation, date_fin_formation, creneau_horaire, modules_autorises, email, telephone, adresse, code_postal, ville, date_naissance")
+        .select("id, nom, prenom, type_apprenant, formation_choisie, date_debut_cours_en_ligne, date_fin_cours_en_ligne, date_debut_formation, date_fin_formation, creneau_horaire, modules_autorises, email, telephone, adresse, code_postal, ville, date_naissance, date_examen_theorique, resultat_examen")
         .eq("id", apprenantOverride.id)
         .maybeSingle();
 
