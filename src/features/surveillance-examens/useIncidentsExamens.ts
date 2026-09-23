@@ -71,6 +71,12 @@ const LIBELLES: Record<string, { libelle: string; explication: string; gravite: 
       "Les réponses sont bien enregistrées, la note est en attente de création. Elle se termine normalement toute seule ; à surveiller si cela dure.",
     gravite: "avertissement",
   },
+  NEUTRALISEE: {
+    libelle: "Ancien incident réel — passage neutralisé",
+    explication:
+      "Vrai incident confirmé et déjà neutralisé (ancienne tentative conservée, non prise en compte). Affiché pour mémoire uniquement.",
+    gravite: "avertissement",
+  },
 };
 
 type Tentative = {
