@@ -24,6 +24,8 @@ export function IncidentsExamensPanel({
   const { incidents, historique, loading, marquerResolu } = useIncidentsExamens();
   const [detail, setDetail] = useState<IncidentExamen | null>(null);
   const [voirHistorique, setVoirHistorique] = useState(false);
+  const [voirTout, setVoirTout] = useState(false);
+  const visibles = incidents.slice(0, 3);
 
   const ligne = (i: IncidentExamen, resolu = false) => (
     <div
@@ -98,7 +100,14 @@ export function IncidentsExamensPanel({
             <CheckCircle2 className="h-4 w-4 text-emerald-600" /> 🟢 Aucun incident examen en cours
           </p>
         ) : (
-          incidents.map((i) => ligne(i))
+          <>
+            {visibles.map((i) => ligne(i))}
+            {incidents.length > 3 && (
+              <Button size="sm" variant="outline" onClick={() => setVoirTout(true)}>
+                Voir les {incidents.length} incidents
+              </Button>
+            )}
+          </>
         )}
       </CardContent>
 
@@ -133,6 +142,17 @@ export function IncidentsExamensPanel({
               </Button>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={voirTout} onOpenChange={setVoirTout}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>🚨 {incidents.length} incidents examens en cours</DialogTitle>
+          </DialogHeader>
+          <div className="max-h-[70vh] space-y-2 overflow-y-auto">
+            {incidents.map((i) => ligne(i))}
+          </div>
         </DialogContent>
       </Dialog>
 
