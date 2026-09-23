@@ -5847,6 +5847,54 @@ export type Database = {
           },
         ]
       }
+      sms_envois: {
+        Row: {
+          created_at: string
+          declencheur_email: string | null
+          declencheur_type: string
+          declencheur_user_id: string | null
+          destinataire_hash: string | null
+          destinataire_masque: string | null
+          detail: string | null
+          id: string
+          nb_caracteres: number | null
+          nb_destinataires: number
+          ovh_ids: Json | null
+          resultat: string
+          type_sms: string | null
+        }
+        Insert: {
+          created_at?: string
+          declencheur_email?: string | null
+          declencheur_type: string
+          declencheur_user_id?: string | null
+          destinataire_hash?: string | null
+          destinataire_masque?: string | null
+          detail?: string | null
+          id?: string
+          nb_caracteres?: number | null
+          nb_destinataires?: number
+          ovh_ids?: Json | null
+          resultat: string
+          type_sms?: string | null
+        }
+        Update: {
+          created_at?: string
+          declencheur_email?: string | null
+          declencheur_type?: string
+          declencheur_user_id?: string | null
+          destinataire_hash?: string | null
+          destinataire_masque?: string | null
+          detail?: string | null
+          id?: string
+          nb_caracteres?: number | null
+          nb_destinataires?: number
+          ovh_ids?: Json | null
+          resultat?: string
+          type_sms?: string | null
+        }
+        Relationships: []
+      }
       taches: {
         Row: {
           created_at: string
