@@ -93,6 +93,23 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
   // re-run every few seconds and produce a visible flicker in scores).
   const examensDataRef = useRef(examensData);
   examensDataRef.current = examensData;
+  const [resetRefreshKey, setResetRefreshKey] = useState(0);
+
+  // Une remise à zéro administrative peut arriver pendant que la liste est
+  // déjà ouverte. Elle invalide immédiatement les états calculés en mémoire ;
+  // les historiques restent en base mais ne doivent plus piloter la carte.
+  useEffect(() => {
+    if (!apprenantId) return;
+    const channel = supabase
+      .channel(`exam-reset-list-${apprenantId}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "core_exam_resets", filter: `apprenant_id=eq.${apprenantId}` },
+        () => setResetRefreshKey((value) => value + 1),
+      )
+      .subscribe();
+    return () => { void supabase.removeChannel(channel); };
+  }, [apprenantId]);
 
   // Fetch completed exams with scores from DB + started-but-not-finished.
   // IMPORTANT: only re-run when the STUDENT changes, not on every question-
@@ -164,7 +181,7 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
             try {
               const { data: rawRows } = await supabase
                 .from("reponses_apprenants" as any)
-                .select("exercice_id, reponses")
+                .select("exercice_id, reponses, created_at, updated_at")
                 .eq("apprenant_id", apprenantId)
                 .in(
                   "exercice_id",
@@ -417,7 +434,7 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
           //    on considère l'examen comme terminé si toutes ses matières ont completed=true dans reponses_apprenants.
           supabase
             .from("reponses_apprenants" as any)
-            .select("exercice_id, completed, reponses")
+            .select("exercice_id, completed, reponses, created_at, updated_at")
             .eq("apprenant_id", apprenantId)
             .eq("exercice_type", "examen_blanc")
             .then(({ data: repData }) => {
@@ -454,7 +471,7 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
             });
         }
       });
-  }, [apprenantId]);
+  }, [apprenantId, refreshKey, resetRefreshKey]);
 
   const examens = examensData.filter(e => {
     const typeOk = typeFiltre === "tous" || e?.type === typeFiltre;

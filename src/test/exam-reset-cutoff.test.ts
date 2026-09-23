@@ -19,4 +19,8 @@ describe("remise à zéro administrative d'un examen", () => {
     expect(isAfterExamReset("2026-09-23T13:59:59Z", cutoff)).toBe(false);
     expect(isAfterExamReset("2026-09-23T14:00:01Z", cutoff)).toBe(true);
   });
+
+  it("écarte une ligne sans date plutôt que de reprendre un ancien état", () => {
+    expect(isAfterExamReset(undefined, Date.now())).toBe(false);
+  });
 });
