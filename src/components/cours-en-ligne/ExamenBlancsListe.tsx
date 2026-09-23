@@ -21,6 +21,7 @@ import { toast } from "sonner";
 import { RefaireExamenDialog } from "./RefaireExamenDialog";
 import { computeExamRetakeLock, examRetakeLockMessage } from "@/lib/examRetakeDelay";
 import { useQrcEnginePending } from "@/hooks/useQrcEnginePending";
+import { isAfterExamReset, latestExamResetCutoffs } from "@/lib/examResetCutoff";
 
 /**
  * Retrouve la version ORIGINALE (source statique) d'une matière pour un examen
@@ -127,12 +128,21 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
       return lastResult;
     };
 
-    fetchQuizResultsWithRetry()
-      .then(async ({ data }) => {
+    Promise.all([
+      fetchQuizResultsWithRetry(),
+      supabase
+        .from("core_exam_resets")
+        .select("exam_id, cutoff_at")
+        .eq("apprenant_id", apprenantId),
+    ])
+      .then(async ([{ data }, { data: resetRows }]) => {
         if (data) {
+          const resetCutoffs = latestExamResetCutoffs(resetRows);
           // Les lignes techniques « en attente de finalisation » (score 0 créé
           // par le filet de sécurité) ne sont jamais des notes.
-          const allRows = mergePassageSiblingRows(excludeResultPlaceholders(data as any[]));
+          const allRows = mergePassageSiblingRows(excludeResultPlaceholders((data as any[]).filter((row: any) =>
+            isAfterExamReset(row?.completed_at ?? row?.created_at, resetCutoffs[String(row?.quiz_id ?? "")]),
+          )));
           const allRowsByQuiz = new Map<string, any[]>();
           allRows.forEach((r: any) => {
             if (!r.quiz_id) return;
@@ -427,6 +437,7 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
                   const id: string = r?.exercice_id || "";
                   const quizId = examensDataRef.current.find((exam) => parseExamAnswerKey(id, exam.id))?.id ?? "";
                   if (!quizId) return;
+                  if (!isAfterExamReset(r?.updated_at ?? r?.created_at, resetCutoffs[quizId])) return;
                   if (!mergedCompleted.has(quizId)) {
                     started.add(quizId);
                   }

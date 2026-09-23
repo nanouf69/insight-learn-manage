@@ -1698,6 +1698,51 @@ export type Database = {
         }
         Relationships: []
       }
+      core_exam_resets: {
+        Row: {
+          apprenant_id: string
+          archived_attempt_ids: Json
+          archived_core_result_ids: Json
+          archived_legacy_result_ids: Json
+          created_at: string
+          created_by: string | null
+          created_email: string | null
+          cutoff_at: string
+          exam_id: string
+          motif: string
+          operation_id: string
+          reset_id: string
+        }
+        Insert: {
+          apprenant_id: string
+          archived_attempt_ids?: Json
+          archived_core_result_ids?: Json
+          archived_legacy_result_ids?: Json
+          created_at?: string
+          created_by?: string | null
+          created_email?: string | null
+          cutoff_at?: string
+          exam_id: string
+          motif: string
+          operation_id: string
+          reset_id?: string
+        }
+        Update: {
+          apprenant_id?: string
+          archived_attempt_ids?: Json
+          archived_core_result_ids?: Json
+          archived_legacy_result_ids?: Json
+          created_at?: string
+          created_by?: string | null
+          created_email?: string | null
+          cutoff_at?: string
+          exam_id?: string
+          motif?: string
+          operation_id?: string
+          reset_id?: string
+        }
+        Relationships: []
+      }
       core_exam_results: {
         Row: {
           apprenant_id: string
@@ -6029,6 +6074,35 @@ export type Database = {
           ended_at: string
           reason: string
         }[]
+      }
+      core_admin_reset_exam: {
+        Args: {
+          p_admin_email?: string
+          p_apprenant_id: string
+          p_exam_id: string
+          p_motif: string
+          p_operation_id: string
+        }
+        Returns: {
+          apprenant_id: string
+          archived_attempt_ids: Json
+          archived_core_result_ids: Json
+          archived_legacy_result_ids: Json
+          created_at: string
+          created_by: string | null
+          created_email: string | null
+          cutoff_at: string
+          exam_id: string
+          motif: string
+          operation_id: string
+          reset_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "core_exam_resets"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       core_assert_session_owner: {
         Args: { p_apprenant_id: string }
