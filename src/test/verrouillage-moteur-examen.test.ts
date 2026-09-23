@@ -354,7 +354,7 @@ describe("CRITIQUE 8 — incidents réels devenus tests permanents (anonymisés)
 // à une réouverture, puis refus ATTEMPT_CLOSED sur les réponses saisies).
 // ============================================================================
 describe("CRITIQUE 9 — chrono et expiration", () => {
-  const MIGS = readMigrations();
+  const MIGS = sqlMigrations();
 
   it("réouverture administrative (nouvelle tentative) → fenêtre de temps complète", () => {
     expect(MIGS).toContain("apprenant_examen_timers_unique_tentative");
