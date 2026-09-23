@@ -253,17 +253,38 @@ export async function enregistrerReponse(params: {
   questionId: number | string;
   valeur: unknown;
   revisionAttendue?: number | null;
+  clientSavedAt?: string;
 }): Promise<{ ok: boolean; revision?: number; message?: string }> {
   const qid = idQuestionNoyau(params.matiereId, params.questionId);
   const op = await operationId(`answer:${params.attemptId}:${qid}:${JSON.stringify(params.valeur ?? null)}`);
-  const { data, error } = await supabase.rpc("core_save_answer", {
-    p_operation_id: op,
+  const sauvegarder = (operation: string, revision: number | null) => supabase.rpc("core_save_answer", {
+    p_operation_id: operation,
     p_attempt_id: params.attemptId,
     p_question_id: qid,
     p_valeur: (params.valeur ?? null) as unknown as never,
-    p_expected_revision: params.revisionAttendue ?? null,
+    p_expected_revision: revision,
     p_session_origine: "passage_apprenant",
   });
+  let { data, error } = await sauvegarder(op, params.revisionAttendue ?? null);
+  if (error && /ANSWER_STALE_REVISION|P0409/i.test(error.message)) {
+    const { data: courant, error: lectureError } = await supabase
+      .from("answer_state")
+      .select("revision, valeur, updated_at")
+      .eq("attempt_id", params.attemptId)
+      .eq("question_id", qid)
+      .maybeSingle();
+    if (lectureError || !courant) return { ok: false, message: error.message };
+    if (JSON.stringify(courant.valeur) === JSON.stringify(params.valeur ?? null)) {
+      return { ok: true, revision: courant.revision };
+    }
+    const clientMs = Date.parse(params.clientSavedAt ?? "");
+    const serveurMs = Date.parse(courant.updated_at ?? "");
+    if (!Number.isFinite(clientMs) || !Number.isFinite(serveurMs) || clientMs < serveurMs) {
+      return { ok: false, message: "ANSWER_LOCAL_OLDER_THAN_SERVER" };
+    }
+    const opRevision = await operationId(`answer-revision:${params.attemptId}:${qid}:${courant.revision}:${JSON.stringify(params.valeur ?? null)}`);
+    ({ data, error } = await sauvegarder(opRevision, courant.revision));
+  }
   if (error) return { ok: false, message: error.message };
   const res = data as unknown as { revision?: number } | null;
   return { ok: true, revision: res?.revision };
@@ -476,6 +497,7 @@ export async function viderFileNoyau(attemptId?: string | null): Promise<{ resta
         matiereId: element.matiereId,
         questionId: element.questionId,
         valeur: element.valeur,
+        clientSavedAt: element.at,
       });
       if (!res.ok) {
         if (!refusDefinitif(res.message)) {
