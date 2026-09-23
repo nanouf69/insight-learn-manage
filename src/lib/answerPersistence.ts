@@ -526,11 +526,15 @@ export async function flushAnswerSavesAndWait(
  */
 export function setAnswerSaveAuthToken(token: string | null, userId: string | null = null) {
   const userChanged = userId !== authUserId;
+  // Nouvelle session ouverte (rechargement de l'application) : les éléments
+  // refusés précédemment méritent un nouvel essai, car la cause du refus a pu
+  // être corrigée côté serveur entre-temps.
+  const sessionOuverte = !authToken && !!token;
   authToken = token;
   authUserId = userId;
-  if (userChanged) {
-    // Nouveau compte connecté : ses éventuels éléments bloqués sont réessayés
-    // une fois (rien n'est supprimé).
+  if (userChanged || sessionOuverte) {
+    // Les éventuels éléments bloqués du compte sont réessayés une fois
+    // (rien n'est jamais supprimé de la file).
     const queue = readQueue();
     if (queue.some((item) => item.blocked && isOwnedByCurrentUser(item))) {
       writeQueue(
