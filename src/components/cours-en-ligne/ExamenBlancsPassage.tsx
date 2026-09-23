@@ -223,6 +223,19 @@ function PassageMatiere({
   const attemptV2Ref = useRef<string | null>(null);
   const [blocageV2, setBlocageV2] = useState<string | null>(null);
 
+  /** Questions réellement répondues par l'élève dans cette matière. */
+  const reponsesRenseignees = (source?: Reponses): [string, unknown][] =>
+    Object.entries(source ?? latestReponsesRef.current ?? {}).filter(([, v]) =>
+      Array.isArray(v) ? v.length > 0 : typeof v === "string" ? v.trim() !== "" : v != null,
+    );
+
+  /** Renvoie vers le noyau toutes les réponses déjà saisies (idempotent). */
+  const rattraperReponsesNoyau = (attemptId: string) => {
+    for (const [questionId, valeur] of reponsesRenseignees()) {
+      enfilerReponseNoyau({ attemptId, matiereId: matiere.id, questionId, valeur });
+    }
+  };
+
   useEffect(() => {
     let annule = false;
     // On attend d'avoir lu l'éventuel passage déjà engagé sur l'ancien circuit :
