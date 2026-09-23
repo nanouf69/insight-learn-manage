@@ -14,7 +14,13 @@ import {
   MESSAGE_SYNCHRONISATION_EN_COURS,
   type FinalizationContext,
 } from "@/lib/examFinalizationReadiness";
-import { runFinalizationOnce, buildFinalizationKey, resolveIdempotentTentative } from "@/lib/examFinalizationGuard";
+import {
+  runFinalizationOnce,
+  buildFinalizationKey,
+  buildFinalizationToastId,
+  isFinalizationConfirmed,
+  resolveIdempotentTentative,
+} from "@/lib/examFinalizationGuard";
 
 const base = (over: Partial<FinalizationContext> = {}): FinalizationContext => ({
   apprenantId: "A1",
@@ -199,5 +205,18 @@ describe("Double-clic, F5, requête rejouée", () => {
   it("réponse modifiée juste avant « Terminer » : l'écriture doit être confirmée d'abord", () => {
     const v = assessFinalizationReadiness(base({ ecrituresLocalesEnAttente: 1, dernierOrdreClient: 13, dernierOrdreConfirme: 12 }));
     expect(v.pret).toBe(false);
+  });
+});
+
+describe("Message de finalisation", () => {
+  it("un résultat serveur unique rend obsolète un ancien échec réseau", () => {
+    expect(isFinalizationConfirmed({ saveReported: false, coreResultCount: 1 })).toBe(true);
+    expect(isFinalizationConfirmed({ saveReported: false, coreResultCount: 0 })).toBe(false);
+  });
+
+  it("l'échec puis le succès de la même matière utilisent le même message", () => {
+    const input = { apprenantId: "A1", examenId: "EB1", matiereId: "francais" };
+    expect(buildFinalizationToastId(input)).toBe(buildFinalizationToastId(input));
+    expect(buildFinalizationToastId({ ...input, matiereId: "anglais" })).not.toBe(buildFinalizationToastId(input));
   });
 });

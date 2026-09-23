@@ -31,6 +31,31 @@ export function buildFinalizationKey(input: {
 
 const inflight = new Map<string, Promise<any>>();
 
+/** Identifiant Sonner stable : un succès remplace l'ancien échec de la même matière. */
+export function buildFinalizationToastId(input: {
+  apprenantId?: string | null;
+  examenId: string;
+  matiereId: string;
+}): string {
+  return [
+    "finalisation-matiere",
+    input.apprenantId ?? "sans-apprenant",
+    input.examenId,
+    normalizeMatiereId(input.matiereId),
+  ].join("|");
+}
+
+/**
+ * Une erreur du dernier appel réseau est obsolète si le serveur possède déjà
+ * l'unique résultat de cette tentative. Le serveur reste l'autorité finale.
+ */
+export function isFinalizationConfirmed(input: {
+  saveReported: boolean;
+  coreResultCount: number;
+}): boolean {
+  return input.saveReported || input.coreResultCount === 1;
+}
+
 /**
  * Exécute une finalisation au plus une fois à la fois pour une même clé.
  * Un second appel concurrent (double clic, double requête) reçoit exactement le
