@@ -1073,7 +1073,7 @@ function PassageMatiere({
               const res = await recommencerMatiereNoyau(attemptId, "synchronisation_impossible");
               setRecommenceEnCours(false);
               if (!res.ok) {
-                toast.error("Reprise impossible pour le moment. Aucune donnée n'a été modifiée : prévenez le centre.");
+                toast.error("Reprise impossible pour le moment. Aucune donnée n'a été modifiée et le centre a été prévenu automatiquement ; réessayez dans quelques instants.");
                 return;
               }
               toast.success("Nouvelle tentative ouverte pour cette matière. L'ancienne est conservée.");
