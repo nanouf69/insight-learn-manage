@@ -151,8 +151,13 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
         .from("core_exam_resets")
         .select("exam_id, cutoff_at")
         .eq("apprenant_id", apprenantId),
+      supabase
+        .from("exam_attempts_v2")
+        .select("attempt_id, exam_id, etat, started_at")
+        .eq("apprenant_id", apprenantId)
+        .eq("etat", "en_cours"),
     ])
-      .then(async ([{ data }, { data: resetRows }]) => {
+      .then(async ([{ data }, { data: resetRows }, { data: openV2Rows }]) => {
         if (data) {
           const resetCutoffs = latestExamResetCutoffs(resetRows);
           // Les lignes techniques « en attente de finalisation » (score 0 créé
@@ -449,6 +454,12 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
 
 
               const open = new Set<string>();
+              ((openV2Rows as any[]) ?? []).forEach((attempt: any) => {
+                const quizId = String(attempt?.exam_id ?? "");
+                if (!quizId || !isAfterExamReset(attempt?.started_at, resetCutoffs[quizId])) return;
+                started.add(quizId);
+                open.add(quizId);
+              });
               if (repData) {
                 (repData as any[]).forEach((r: any) => {
                   const id: string = r?.exercice_id || "";
@@ -457,6 +468,10 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
                   if (!isAfterExamReset(r?.updated_at ?? r?.created_at, resetCutoffs[quizId])) return;
                   const nbReponses = getMeaningfulAnswerCount(r?.reponses);
                   if (nbReponses === 0) return;
+                  // Après une remise à zéro complète, seul le nouveau passage V2
+                  // ouvert fait foi. Une écriture historique tardive ne peut donc
+                  // jamais remettre la carte en « NON TERMINÉ ».
+                  if (resetCutoffs[quizId]) return;
                   if (!mergedCompleted.has(quizId)) {
                     started.add(quizId);
                   }
