@@ -773,7 +773,23 @@ function PassageMatiere({
       window.removeEventListener("online", sync);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [apprenantId, exerciceKey, dureeSecondes, isBilan]);
+  }, [apprenantId, exerciceKey, dureeSecondes, isBilan, tentative]);
+
+  // « Finalisation en attente » : le temps est écoulé, les réponses sont figées
+  // mais le serveur n'a pas encore confirmé. On réessaie automatiquement
+  // (intervalle + retour du réseau) jusqu'à obtenir une finalisation propre.
+  useEffect(() => {
+    if (!finalisationEnAttente || matiereTermineeRef.current) return;
+    const retry = () => { void handleExpireRef.current(); };
+    const interval = setInterval(retry, 15_000);
+    window.addEventListener("online", retry);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("online", retry);
+    };
+  }, [finalisationEnAttente]);
+
+
 
   // Le nouveau moteur n'a pas pu ouvrir la tentative : on bloque le démarrage
   // plutôt que de basculer silencieusement sur l'ancien circuit.
