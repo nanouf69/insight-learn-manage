@@ -43,6 +43,7 @@ import {
   viderFileNoyau,
   finaliserMatiere,
   reponsesNoyauEnAttente,
+  reponsesNoyauEcartees,
 } from "@/features/noyau-passage/pontV2";
 import { captureError } from "@/lib/monitoring/errorLogger";
 
@@ -222,6 +223,19 @@ function PassageMatiere({
   const attemptV2Ref = useRef<string | null>(null);
   const [blocageV2, setBlocageV2] = useState<string | null>(null);
 
+  /** Questions réellement répondues par l'élève dans cette matière. */
+  const reponsesRenseignees = (source?: Reponses): [string, unknown][] =>
+    Object.entries(source ?? latestReponsesRef.current ?? {}).filter(([, v]) =>
+      Array.isArray(v) ? v.length > 0 : typeof v === "string" ? v.trim() !== "" : v != null,
+    );
+
+  /** Renvoie vers le noyau toutes les réponses déjà saisies (idempotent). */
+  const rattraperReponsesNoyau = (attemptId: string) => {
+    for (const [questionId, valeur] of reponsesRenseignees()) {
+      enfilerReponseNoyau({ attemptId, matiereId: matiere.id, questionId, valeur });
+    }
+  };
+
   useEffect(() => {
     let annule = false;
     // On attend d'avoir lu l'éventuel passage déjà engagé sur l'ancien circuit :
@@ -239,7 +253,12 @@ function PassageMatiere({
       if (decision.moteur === "v2") {
         attemptV2Ref.current = decision.attemptId;
         setBlocageV2(null);
-        void viderFileNoyau();
+        // HOTFIX 23/09/2026 : les réponses déjà saisies AVANT l'ouverture de la
+        // tentative V2 (saisie pendant le routage, reprise après F5) sont
+        // renvoyées vers le noyau. Sans cela la matière pouvait être clôturée
+        // avec zéro réponse côté V2 → note 0 technique.
+        rattraperReponsesNoyau(decision.attemptId);
+        void viderFileNoyau(decision.attemptId);
         return;
       }
       if (decision.moteur === "bloque") {
@@ -395,7 +414,7 @@ function PassageMatiere({
         tentative,
         attempt: null,
         ecrituresLocalesEnAttente: getPendingAnswerSavesFor(apprenantId, exerciceKey),
-        ecrituresNoyauEnAttente: attemptV2Ref.current ? reponsesNoyauEnAttente() : 0,
+        ecrituresNoyauEnAttente: attemptV2Ref.current ? reponsesNoyauEnAttente(attemptV2Ref.current) : 0,
         dernierOrdreClient: ordreClientRef.current,
         dernierOrdreConfirme: getConfirmedWriteSeq(apprenantId, exerciceKey),
         refus:
@@ -420,11 +439,40 @@ function PassageMatiere({
   const finaliserNoyau = async (): Promise<boolean> => {
     const attemptId = attemptV2Ref.current;
     if (!attemptId) return true; // passage non raccordé : comportement inchangé
-    const { restantes } = await viderFileNoyau();
-    if (restantes > 0 || reponsesNoyauEnAttente() > 0) {
+    const { restantes } = await viderFileNoyau(attemptId);
+    if (restantes > 0 || reponsesNoyauEnAttente(attemptId) > 0) {
       setSaveStatus("error");
       toast.error("Des réponses ne sont pas encore enregistrées : la matière n'est pas clôturée. Elles repartiront automatiquement.");
       return false;
+    }
+    // Sécurité anti-note 0 technique : si une réponse de CETTE matière a été
+    // définitivement refusée par le serveur, on ne clôture pas.
+    if (reponsesNoyauEcartees(attemptId) > 0) {
+      setSaveStatus("error");
+      toast.error("Une réponse n'a pas pu être enregistrée par le serveur : la matière n'est pas clôturée. Contactez le centre, vos réponses sont conservées.");
+      return false;
+    }
+    // Sécurité anti-note 0 technique (hotfix 23/09/2026) : on ne clôture JAMAIS
+    // une matière dont les réponses ne sont pas présentes côté noyau. On tente
+    // d'abord un rattrapage, puis on bloque si l'écart persiste.
+    const attendues = reponsesRenseignees().length;
+    if (attendues > 0) {
+      const compter = async () => {
+        const { count } = await supabase
+          .from("answer_state")
+          .select("question_id", { count: "exact", head: true })
+          .eq("attempt_id", attemptId);
+        return count ?? 0;
+      };
+      if ((await compter()) < attendues) {
+        rattraperReponsesNoyau(attemptId);
+        await viderFileNoyau(attemptId);
+      }
+      if ((await compter()) < attendues) {
+        setSaveStatus("error");
+        toast.error("Vos réponses ne sont pas toutes enregistrées côté serveur : la matière n'est pas clôturée. Rien n'est perdu, réessayez dans un instant.");
+        return false;
+      }
     }
     const qrc = questionsSafe.filter(q => q?.type === "QRC").map(q => q.id);
     const res = await finaliserMatiere({ attemptId, matiereId: matiere.id, questionsQRC: qrc });

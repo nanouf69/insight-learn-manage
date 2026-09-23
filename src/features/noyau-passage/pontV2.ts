@@ -287,32 +287,80 @@ export function enfilerReponseNoyau(element: Omit<ElementFile, "at">): void {
   void viderFileNoyau();
 }
 
+/**
+ * HOTFIX 23/09/2026 — une réponse définitivement refusée (tentative déjà
+ * clôturée, question hors snapshot, passage d'un autre examen) ne doit plus
+ * bloquer la file entière : elle est MISE DE CÔTÉ (jamais supprimée) pour que
+ * les réponses de la matière en cours puissent partir et que « Terminer la
+ * matière » redevienne possible.
+ */
+const CLE_FILE_ECARTEE = "noyau_v2_answer_queue_parked_v1";
+
+function lireEcartees(): ElementFile[] {
+  try {
+    const brut = localStorage.getItem(CLE_FILE_ECARTEE);
+    const parsed = brut ? JSON.parse(brut) : [];
+    return Array.isArray(parsed) ? (parsed as ElementFile[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function ecarter(element: ElementFile): void {
+  try {
+    localStorage.setItem(CLE_FILE_ECARTEE, JSON.stringify([...lireEcartees(), element]));
+  } catch {
+    /* rien n'est effacé : au pire l'élément reste seulement en mémoire */
+  }
+}
+
+/** Refus définitif du serveur : réessayer à l'infini n'y changera rien. */
+function refusDefinitif(message?: string): boolean {
+  const m = String(message ?? "");
+  return /ATTEMPT_CLOSED|ATTEMPT_NOT_FOUND|QUESTION_NOT_IN_SNAPSHOT|NOT_OWNER|P0001|permission denied/i.test(m);
+}
+
+/** Réponses définitivement refusées et conservées pour la tentative donnée. */
+export function reponsesNoyauEcartees(attemptId?: string | null): number {
+  const ecartees = lireEcartees();
+  return attemptId ? ecartees.filter((e) => e.attemptId === attemptId).length : ecartees.length;
+}
+
 /** Vide la file séquentiellement. Une réponse ne quitte la file qu'une fois confirmée. */
-export async function viderFileNoyau(): Promise<{ restantes: number }> {
-  if (envoiEnCours) return { restantes: (fileMemoire ?? lireFile()).length };
+export async function viderFileNoyau(attemptId?: string | null): Promise<{ restantes: number }> {
+  const compter = (f: ElementFile[]) => (attemptId ? f.filter((e) => e.attemptId === attemptId).length : f.length);
+  if (envoiEnCours) return { restantes: compter(fileMemoire ?? lireFile()) };
   envoiEnCours = true;
   try {
     let file = fileMemoire ?? lireFile();
-    while (file.length > 0) {
-      const premier = file[0];
+    let index = 0;
+    while (index < file.length) {
+      const element = file[index];
       const res = await enregistrerReponse({
-        attemptId: premier.attemptId,
-        matiereId: premier.matiereId,
-        questionId: premier.questionId,
-        valeur: premier.valeur,
+        attemptId: element.attemptId,
+        matiereId: element.matiereId,
+        questionId: element.questionId,
+        valeur: element.valeur,
       });
-      if (!res.ok) break; // réseau ou refus serveur : on garde la réponse en file
-      file = file.slice(1);
+      if (!res.ok) {
+        if (!refusDefinitif(res.message)) break; // réseau : on garde l'ordre et on réessaiera
+        // Refus définitif : la réponse est conservée à part, la file continue.
+        ecarter(element);
+        console.warn("[PontV2] réponse mise de côté (refus définitif):", res.message);
+      }
+      file = [...file.slice(0, index), ...file.slice(index + 1)];
       fileMemoire = file;
       ecrireFile(file);
     }
-    return { restantes: file.length };
+    return { restantes: compter(file) };
   } finally {
     envoiEnCours = false;
   }
 }
 
-/** Nombre de réponses encore non confirmées par le noyau. */
-export function reponsesNoyauEnAttente(): number {
-  return (fileMemoire ?? lireFile()).length;
+/** Nombre de réponses encore non confirmées par le noyau (pour cette tentative si précisée). */
+export function reponsesNoyauEnAttente(attemptId?: string | null): number {
+  const file = fileMemoire ?? lireFile();
+  return attemptId ? file.filter((e) => e.attemptId === attemptId).length : file.length;
 }
+
