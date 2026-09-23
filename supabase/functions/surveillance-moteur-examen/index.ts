@@ -94,27 +94,32 @@ async function detecter(): Promise<{ anomalies: Anomalie[]; controles: Record<st
   const suivies = tentatives.filter((t) => !neutralisees.has(t.attempt_id));
   const ids = suivies.map((t) => t.attempt_id);
 
-  const reponses = await lireParLots<{ attempt_id: string; question_id: string }>(
-    ids,
-    (lot) => `answer_state?select=attempt_id,question_id&attempt_id=in.(${lot})&order=response_id.asc`,
-  );
+  // Comptage fait EN BASE par tentative (1 ligne par tentative, jamais tronqué).
+  const comptes: { attempt_id: string; nb_reponses: number }[] = [];
+  for (let i = 0; i < ids.length; i += 100) {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/surveillance_compte_reponses_service`, {
+      method: "POST",
+      headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ p_attempt_ids: ids.slice(i, i + 100) }),
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!r.ok) throw new Error(`comptage réponses : HTTP ${r.status}`);
+    comptes.push(...((await r.json()) as typeof comptes));
+  }
   const resultats = await lireParLots<{ attempt_id: string; result_id: string; score: number | null }>(
     ids,
     (lot) => `core_exam_results?select=attempt_id,result_id,score&attempt_id=in.(${lot})&order=result_id.asc`,
   );
 
-  const parTentative = new Map<string, Set<string>>();
-  for (const r of reponses) {
-    if (!parTentative.has(r.attempt_id)) parTentative.set(r.attempt_id, new Set());
-    parTentative.get(r.attempt_id)!.add(r.question_id);
-  }
+  const compteParTentative = new Map<string, number>();
+  for (const c of comptes) compteParTentative.set(c.attempt_id, Number(c.nb_reponses) || 0);
 
   const clotureesSansQuestion: string[] = [];
   const resultatsSansReponse: string[] = [];
   const questionsDifferentes: string[] = [];
   for (const t of suivies) {
     const attendues = Array.isArray(t.snapshot?.questions) ? t.snapshot!.questions!.length : 0;
-    const obtenues = parTentative.get(t.attempt_id)?.size ?? 0;
+    const obtenues = compteParTentative.get(t.attempt_id) ?? 0;
     const termine = t.etat === "terminee";
     if (termine && attendues === 0) {
       clotureesSansQuestion.push(`${t.exam_id} / tentative ${anonymiser(t.attempt_id)} : 0 question au snapshot`);
@@ -154,7 +159,7 @@ async function detecter(): Promise<{ anomalies: Anomalie[]; controles: Record<st
         (t) =>
           t.etat === "en_cours" &&
           new Date(t.started_at).getTime() < limite &&
-          (parTentative.get(t.attempt_id)?.size ?? 0) === 0,
+          (compteParTentative.get(t.attempt_id) ?? 0) === 0,
       )
       .map((t) => `${t.exam_id} / tentative ${anonymiser(t.attempt_id)} ouverte depuis plus de 2 h sans réponse serveur`),
   );
@@ -189,7 +194,7 @@ async function detecter(): Promise<{ anomalies: Anomalie[]; controles: Record<st
     anomalies,
     controles: {
       tentatives_examinees: suivies.length,
-      reponses_serveur: reponses.length,
+      reponses_serveur: comptes.reduce((a, c) => a + (Number(c.nb_reponses) || 0), 0),
       resultats: resultats.length,
       neutralisees_ignorees: neutralisees.size,
     },

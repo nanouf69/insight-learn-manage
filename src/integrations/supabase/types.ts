@@ -6904,6 +6904,20 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      surveillance_compte_reponses: {
+        Args: { p_attempt_ids: string[] }
+        Returns: {
+          attempt_id: string
+          nb_reponses: number
+        }[]
+      }
+      surveillance_compte_reponses_service: {
+        Args: { p_attempt_ids: string[] }
+        Returns: {
+          attempt_id: string
+          nb_reponses: number
+        }[]
+      }
       sync_admin_canonical_quiz_questions: {
         Args: { p_exercises: Json; p_module_id: number }
         Returns: undefined
