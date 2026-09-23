@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect } from "vitest";
 import { computeExamRetakeLock, formatRetakeAvailability, examRetakeLockMessage, EXAM_RETAKE_DELAY_MS } from "@/lib/examRetakeDelay";
 
