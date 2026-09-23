@@ -820,6 +820,10 @@ const CorrectionQRCTab = ({ resultIds, embeddedLabel, hideV2Panel = false }: Cor
     const engineQuizIds = await loadQrcEngineQuizIds(true);
     const engineAttemptIds = engineQuizIds.size > 0 ? await fetchQrcEngineAttemptIds() : new Set<string>();
     const isHandledByEngine = (r: any): boolean => {
+      // La vue EB3 intégrée est explicitement celle de l'ancien circuit : ses
+      // lignes historiques autorisées ne doivent jamais être masquées au profit
+      // d'un moteur V2/pilote, même si une ancienne trace technique existe.
+      if (idsAutorises) return false;
       if (!engineQuizIds.has(String(r.quiz_id))) return false;
       const t = getStoredTentative(r.tentative);
       if (t == null) return false;
