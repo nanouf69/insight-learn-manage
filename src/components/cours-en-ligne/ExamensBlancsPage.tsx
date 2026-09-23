@@ -60,6 +60,7 @@ function safeQrcAnswerText(value: unknown): string {
 }
 import { auditQrcCoherence, reportQrcIncoherence } from "@/lib/examPassageIdentity";
 import { recoverMatiereFromSavedAnswers, canFinalizeMatiere } from "@/lib/examMatiereRecovery";
+import { isAfterExamReset, latestExamResetCutoffs } from "@/lib/examResetCutoff";
 
 /**
  * Retrouve la version ORIGINALE (source statique, jamais éditée) d'une matière
@@ -524,7 +525,7 @@ export default function ExamensBlancsPage({
 
     let nextTentative = 1;
     if (apprenantId && !isAdmin) {
-      const [{ data: tRows, error: resultError }, { data: answerRows, error: answerError }] = await Promise.all([
+      const [{ data: tRows, error: resultError }, { data: answerRows, error: answerError }, { data: resetRows, error: resetError }] = await Promise.all([
         supabase
         .from("apprenant_quiz_results" as any)
         .select("id, matiere_id, matiere_nom, score_obtenu, score_max, reussi, details, tentative, completed_at, created_at")
@@ -537,13 +538,22 @@ export default function ExamensBlancsPage({
           .eq("apprenant_id", apprenantId)
           .eq("exercice_type", quizType)
           .like("exercice_id", `${latestExamen.id}_%`),
+        supabase
+          .from("core_exam_resets")
+          .select("exam_id, cutoff_at")
+          .eq("apprenant_id", apprenantId)
+          .eq("exam_id", latestExamen.id),
       ]);
 
-      if (resultError || answerError) { toast.error("Vérification de sécurité impossible. Réessayez."); return; }
+      if (resultError || answerError || resetError) { toast.error("Vérification de sécurité impossible. Réessayez."); return; }
 
-      const allResultRows = mergePassageSiblingRows(excludeResultPlaceholders(tRows as any[]));
+      const cutoff = latestExamResetCutoffs(resetRows)[latestExamen.id];
+      const allResultRows = mergePassageSiblingRows(excludeResultPlaceholders(((tRows as any[]) ?? []).filter((row: any) =>
+        isAfterExamReset(row?.completed_at ?? row?.created_at, cutoff),
+      )));
       const savedRows = (((answerRows as unknown) as SavedExamAnswerRow[]) || []).filter((row) =>
         Boolean(extractMatiereKeyFromExerciceId(safeStr(row.exercice_id), latestExamen.id))
+        && isAfterExamReset(row?.updated_at ?? row?.created_at, cutoff)
       );
       const knownAttempts = new Set<number>([1]);
       allResultRows.forEach((row: any) => knownAttempts.add(getAttemptNumber(row)));
