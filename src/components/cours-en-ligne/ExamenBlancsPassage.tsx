@@ -43,6 +43,7 @@ import {
   viderFileNoyau,
   finaliserMatiere,
   reponsesNoyauEnAttente,
+  reponsesNoyauEcartees,
 } from "@/features/noyau-passage/pontV2";
 import { captureError } from "@/lib/monitoring/errorLogger";
 
