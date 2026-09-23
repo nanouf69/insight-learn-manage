@@ -63,6 +63,7 @@ import {
   reponsesNoyauEnAttente,
   reponsesNoyauEcartees,
   idQuestionNoyau,
+  remapperFileApresReouverture,
 } from "@/features/noyau-passage/pontV2";
 
 // ============================================================ 1. CHARGEMENT
@@ -167,6 +168,35 @@ describe("CRITIQUE 2 — sauvegarde des réponses", () => {
     expect(SQL).toContain("core_operations");
 
     expect(SQL).toContain("core_operation_replay");
+  });
+
+  it("une file locale neutralisée est remappée uniquement avec 20/20 identifiants exacts", () => {
+    localStorage.clear();
+    for (let i = 1; i <= 20; i++) {
+      enfilerReponseNoyau({ attemptId: "ancienne-fermee", matiereId: "securite", questionId: i, valeur: ["A"] });
+    }
+    const resultat = remapperFileApresReouverture({
+      anciensAttemptIds: ["ancienne-fermee"],
+      nouvelAttemptId: "nouvelle-ouverte",
+      matiereId: "securite",
+      questionIdsSnapshot: Array.from({ length: 20 }, (_, i) => `securite:${i + 1}`),
+    });
+    expect(resultat).toMatchObject({ ok: true, correspondance: 20, recuperees: 20 });
+    expect(reponsesNoyauEnAttente("ancienne-fermee")).toBe(0);
+    expect(reponsesNoyauEnAttente("nouvelle-ouverte")).toBe(20);
+  });
+
+  it("le remappage s'arrête si une seule question ne correspond pas au snapshot", () => {
+    localStorage.clear();
+    enfilerReponseNoyau({ attemptId: "ancienne-invalide", matiereId: "securite", questionId: 99, valeur: ["B"] });
+    const resultat = remapperFileApresReouverture({
+      anciensAttemptIds: ["ancienne-invalide"],
+      nouvelAttemptId: "nouvelle-protegee",
+      matiereId: "securite",
+      questionIdsSnapshot: ["securite:1"],
+    });
+    expect(resultat).toMatchObject({ ok: false, recuperees: 0, questionInvalide: "securite:99" });
+    expect(reponsesNoyauEnAttente("nouvelle-protegee")).toBe(0);
   });
 
   it("l'identifiant de question est stable (matière + numéro)", () => {
