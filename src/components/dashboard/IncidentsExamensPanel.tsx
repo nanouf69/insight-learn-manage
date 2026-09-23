@@ -37,8 +37,8 @@ export function IncidentsExamensPanel({
       <div className="min-w-0 space-y-1">
         <div className="flex flex-wrap items-center gap-2">
           <span className="font-medium">{i.apprenantNom}</span>
-          <Badge variant="outline">{i.examen}</Badge>
-          <Badge variant="outline">{i.matiere}</Badge>
+          <Badge variant="outline">Quiz / examen : {i.examen}</Badge>
+          <Badge variant="outline">Matière : {i.matiere}</Badge>
           <span className="text-sm text-muted-foreground">{heureFr(i.heure)}</span>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -121,7 +121,8 @@ export function IncidentsExamensPanel({
           {detail && (
             <div className="space-y-2 text-sm">
               <p><strong>Apprenant :</strong> {detail.apprenantNom}</p>
-              <p><strong>Examen / matière :</strong> {detail.examen} — {detail.matiere}</p>
+              <p><strong>Quiz / examen :</strong> {detail.examen}</p>
+              <p><strong>Matière :</strong> {detail.matiere}</p>
               <p><strong>Heure de début :</strong> {heureFr(detail.heure)}</p>
               <p><strong>Problème :</strong> {detail.libelle}</p>
               <p><strong>Ce que cela veut dire :</strong> {detail.explication}</p>
