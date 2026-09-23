@@ -29,15 +29,45 @@ export type IncidentExamen = {
   attemptId: string;
 };
 
-const FENETRE_HEURES = 72;
+const FENETRE_HEURES = 48;
 
-const LIBELLES: Record<string, { libelle: string; gravite: GraviteIncident }> = {
-  TENTATIVE_VIDE: { libelle: "Tentative vide (aucune question chargée)", gravite: "critique" },
-  RESULTAT_SANS_REPONSE_SERVEUR: { libelle: "Risque de 0 technique : aucune réponse côté serveur", gravite: "critique" },
-  MAUVAIS_NOMBRE_DE_QUESTIONS: { libelle: "Mauvais nombre de questions par rapport à l'instantané", gravite: "critique" },
-  RESULTATS_MULTIPLES: { libelle: "Finalisation impossible : plusieurs résultats pour la même tentative", gravite: "critique" },
-  SAUVEGARDE_BLOQUEE: { libelle: "Sauvegarde impossible : matière ouverte sans aucune réponse enregistrée", gravite: "critique" },
-  FINALISATION_EN_ATTENTE: { libelle: "Finalisation en attente : matière terminée, résultat manquant", gravite: "avertissement" },
+const LIBELLES: Record<string, { libelle: string; explication: string; gravite: GraviteIncident }> = {
+  TENTATIVE_VIDE: {
+    libelle: "La matière s'est ouverte sans aucune question",
+    explication:
+      "L'élève a validé la matière alors qu'aucune question ne s'était affichée. Sa note ne veut rien dire : il faut neutraliser ce passage et lui rouvrir la matière.",
+    gravite: "critique",
+  },
+  RESULTAT_SANS_REPONSE_SERVEUR: {
+    libelle: "Matière terminée sans aucune réponse enregistrée (note 0 technique)",
+    explication:
+      "L'élève a terminé la matière mais aucune de ses réponses n'est arrivée jusqu'à nos serveurs. La note obtenue est un 0 technique, pas un vrai résultat : à neutraliser et à faire refaire.",
+    gravite: "critique",
+  },
+  MAUVAIS_NOMBRE_DE_QUESTIONS: {
+    libelle: "Il manque des réponses par rapport au nombre de questions",
+    explication:
+      "La matière a été clôturée alors que certaines réponses ne sont pas arrivées. La note est calculée sur une partie seulement des questions : à vérifier avant de la considérer valable.",
+    gravite: "critique",
+  },
+  RESULTATS_MULTIPLES: {
+    libelle: "Plusieurs notes créées pour le même passage",
+    explication:
+      "Le même passage a produit plus d'une note. Il faut décider laquelle conserver avant d'utiliser ce résultat.",
+    gravite: "critique",
+  },
+  SAUVEGARDE_BLOQUEE: {
+    libelle: "Les réponses de l'élève n'arrivent pas (sauvegarde bloquée)",
+    explication:
+      "La matière est ouverte depuis plus de 2 heures et aucune réponse n'est encore enregistrée sur nos serveurs. L'élève risque de tout perdre : lui demander de recharger sa page sans fermer l'onglet.",
+    gravite: "critique",
+  },
+  FINALISATION_EN_ATTENTE: {
+    libelle: "Matière terminée mais la note n'a pas encore été créée",
+    explication:
+      "Les réponses sont bien enregistrées, la note est en attente de création. Elle se termine normalement toute seule ; à surveiller si cela dure.",
+    gravite: "avertissement",
+  },
 };
 
 type Tentative = {
