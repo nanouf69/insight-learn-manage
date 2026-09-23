@@ -52,33 +52,11 @@ export default function StudentHoursTracker({
     return r === "oui" || r === "admis" || r === "non" || r === "ajourne" || r === "ajourné";
   })();
 
-  // Auto-update DB: si la date enregistrée est passée, basculer sur la prochaine session
+  // La date d'examen du dossier (CRM) est la seule source de vérité :
+  // aucune écriture, aucun remplacement automatique par une date du calendrier général.
   const updatedKeyRef = useRef<string | null>(null);
-  useEffect(() => {
-    if (!apprenantId) return;
-    // Consultation admin : aucun champ du dossier élève n'est modifié.
-    if (blockLearnerWrite("apprenants.date_examen_theorique")) return;
-    if (examAlreadyTaken) return;
-    const saved = (dateExamenTheorique || "").trim();
-    if (!saved) return;
-    const savedParsed = parseFrenchDate(saved);
-    if (!savedParsed) return;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    if (savedParsed >= today) return;
-    const next = getNextUpcomingExamTheorique();
-    if (!next || next === saved) return;
-    const key = `${apprenantId}::${saved}->${next}`;
-    if (updatedKeyRef.current === key) return;
-    updatedKeyRef.current = key;
-    supabase
-      .from("apprenants")
-      .update({ date_examen_theorique: next })
-      .eq("id", apprenantId)
-      .then(({ error }) => {
-        if (error) console.error("[StudentHoursTracker] auto-update date_examen_theorique failed", error);
-      });
-  }, [apprenantId, dateExamenTheorique, examAlreadyTaken]);
+  void updatedKeyRef;
+
 
   if (loading || !apprenantId) {
     return null;
