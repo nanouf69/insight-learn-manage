@@ -1,8 +1,8 @@
 # Feuille de route
 
-## En cours — écran unique Correction QRC
-- Afficher EB3 finalisé depuis l'ancien circuit dans le menu Correction QRC, sans migration ni copie.
-- Exclure strictement les matières EB3 ouvertes et vérifier le compte exact des QRC affichées.
+## Terminé — écran unique Correction QRC (23/09/2026)
+- EB3 finalisé apparaît dans le menu sous « EB3 — ANCIEN CIRCUIT », sans migration ni copie.
+- Les 9 matières EB3 ouvertes sont exclues ; les 50 QRC finalisées uniques de la session sont affichées (50/50 avec le contrôle en base).
 
 ## Bloqué — en attente de la fin de la session EB3 et des 15 resynchronisations
 Aucun déploiement tant que des élèves passent EB3. Surveillance lecture seule uniquement.
