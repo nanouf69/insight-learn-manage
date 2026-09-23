@@ -340,6 +340,77 @@ function ecarter(element: ElementFile): void {
   }
 }
 
+export type ResultatRemappageFileNoyau = {
+  ok: boolean;
+  correspondance: number;
+  recuperees: number;
+  questionInvalide?: string;
+};
+
+/**
+ * Réouverture administrative après incident : rattache les réponses locales de
+ * la tentative neutralisée à la nouvelle tentative, mais uniquement si les
+ * identifiants correspondent EXACTEMENT au snapshot officiel.
+ *
+ * Les éléments d'origine restent dans la file écartée (preuve locale, aucune
+ * suppression). Une seule copie, la plus récente par question, est ajoutée à
+ * la file active avec le nouvel attemptId. Aucun rapprochement par position ou
+ * par texte n'est permis.
+ */
+export function remapperFileApresReouverture(params: {
+  anciensAttemptIds: string[];
+  nouvelAttemptId: string;
+  matiereId: string;
+  questionIdsSnapshot: string[];
+}): ResultatRemappageFileNoyau {
+  const anciens = new Set(params.anciensAttemptIds.filter((id) => id && id !== params.nouvelAttemptId));
+  const attendues = new Set(params.questionIdsSnapshot.map(String));
+  if (anciens.size === 0 || attendues.size === 0) return { ok: false, correspondance: 0, recuperees: 0 };
+
+  const active = fileMemoire ?? lireFile();
+  const parked = lireEcartees();
+  const candidates = [...parked, ...active]
+    .filter((e) => anciens.has(e.attemptId) && String(e.matiereId) === String(params.matiereId))
+    .sort((a, b) => String(a.at).localeCompare(String(b.at)));
+
+  const dernierParQuestion = new Map<string, ElementFile>();
+  for (const element of candidates) {
+    const id = idQuestionNoyau(params.matiereId, element.questionId);
+    if (!attendues.has(id)) {
+      return { ok: false, correspondance: dernierParQuestion.size, recuperees: 0, questionInvalide: id };
+    }
+    dernierParQuestion.set(id, element);
+  }
+  const idsLocales = new Set(dernierParQuestion.keys());
+  const exact = idsLocales.size === attendues.size && [...attendues].every((id) => idsLocales.has(id));
+  if (!exact) {
+    const manquante = [...attendues].find((id) => !idsLocales.has(id));
+    return { ok: false, correspondance: idsLocales.size, recuperees: 0, questionInvalide: manquante };
+  }
+
+  // Toute ancienne entrée encore active est d'abord conservée dans la file
+  // écartée. Elle ne sera donc plus jamais envoyée vers ATTEMPT_CLOSED.
+  const anciennesActives = active.filter(
+    (e) => anciens.has(e.attemptId) && String(e.matiereId) === String(params.matiereId),
+  );
+  for (const element of anciennesActives) ecarter(element);
+  const autresActives = active.filter(
+    (e) => !(anciens.has(e.attemptId) && String(e.matiereId) === String(params.matiereId)),
+  );
+  const dejaNouvelles = new Set(
+    autresActives
+      .filter((e) => e.attemptId === params.nouvelAttemptId && String(e.matiereId) === String(params.matiereId))
+      .map((e) => idQuestionNoyau(params.matiereId, e.questionId)),
+  );
+  const remappees = [...dernierParQuestion.entries()]
+    .filter(([id]) => !dejaNouvelles.has(id))
+    .map(([, element]) => ({ ...element, attemptId: params.nouvelAttemptId, at: new Date().toISOString() }));
+  const prochaine = [...autresActives, ...remappees];
+  fileMemoire = prochaine;
+  ecrireFile(prochaine);
+  return { ok: true, correspondance: attendues.size, recuperees: dernierParQuestion.size };
+}
+
 /** Refus définitif du serveur : réessayer à l'infini n'y changera rien. */
 function refusDefinitif(message?: string): boolean {
   const m = String(message ?? "");

@@ -44,6 +44,7 @@ import {
   finaliserMatiere,
   reponsesNoyauEnAttente,
   reponsesNoyauEcartees,
+  remapperFileApresReouverture,
 } from "@/features/noyau-passage/pontV2";
 import { captureError } from "@/lib/monitoring/errorLogger";
 
@@ -266,15 +267,39 @@ function PassageMatiere({
         // la même tentative conserve exactement la même fenêtre serveur.
         const { data: tentativesV2 } = await supabase
           .from("exam_attempts_v2")
-          .select("attempt_id, started_at, snapshot")
+          .select("attempt_id, started_at, snapshot, etat")
           .eq("apprenant_id", apprenantId)
           .eq("exam_id", examenId)
           .order("started_at", { ascending: true });
-        const matiereTentatives = ((tentativesV2 as { attempt_id?: string; snapshot?: { matiere?: string } }[] | null) ?? [])
+        const matiereTentatives = ((tentativesV2 as { attempt_id?: string; etat?: string; snapshot?: { matiere?: string; questions?: { id?: string }[] } }[] | null) ?? [])
           .filter((row) => Boolean(row.attempt_id) && String(row.snapshot?.matiere ?? "") === String(matiere.id));
         const indexTentative = matiereTentatives.findIndex((row) => row.attempt_id === decision.attemptId);
         setTentativeChrono(indexTentative >= 0 ? indexTentative + 1 : Math.max(1, Number(tentative) || 1));
         setBlocageV2(null);
+        const ancienneIds = matiereTentatives
+          .filter((row) => row.etat === "terminee" && row.attempt_id !== decision.attemptId)
+          .map((row) => String(row.attempt_id));
+        if (ancienneIds.length > 0) {
+          const { data: neutralisations } = await supabase
+            .from("core_tentatives_neutralisees")
+            .select("attempt_id")
+            .in("attempt_id", ancienneIds);
+          const idsNeutralises = new Set(((neutralisations as { attempt_id?: string }[] | null) ?? []).map((n) => String(n.attempt_id)));
+          const nouvelle = matiereTentatives.find((row) => row.attempt_id === decision.attemptId);
+          const idsSnapshot = (nouvelle?.snapshot?.questions ?? [])
+            .filter((q) => typeof q?.id === "string")
+            .map((q) => String(q.id));
+          const remappage = remapperFileApresReouverture({
+            anciensAttemptIds: ancienneIds.filter((id) => idsNeutralises.has(id)),
+            nouvelAttemptId: decision.attemptId,
+            matiereId: matiere.id,
+            questionIdsSnapshot: idsSnapshot,
+          });
+          if (!remappage.ok && remappage.correspondance > 0) {
+            setBlocageV2(`Récupération arrêtée : la question ${remappage.questionInvalide ?? "inconnue"} ne correspond pas au sujet officiel.`);
+            return;
+          }
+        }
         // HOTFIX 23/09/2026 : les réponses déjà saisies AVANT l'ouverture de la
         // tentative V2 (saisie pendant le routage, reprise après F5) sont
         // renvoyées vers le noyau. Sans cela la matière pouvait être clôturée
