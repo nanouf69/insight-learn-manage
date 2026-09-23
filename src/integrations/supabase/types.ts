@@ -374,6 +374,7 @@ export type Database = {
           exercice_id: string
           id: string
           started_at: string
+          tentative: number
           user_id: string | null
         }
         Insert: {
@@ -383,6 +384,7 @@ export type Database = {
           exercice_id: string
           id?: string
           started_at?: string
+          tentative?: number
           user_id?: string | null
         }
         Update: {
@@ -392,6 +394,7 @@ export type Database = {
           exercice_id?: string
           id?: string
           started_at?: string
+          tentative?: number
           user_id?: string | null
         }
         Relationships: [
@@ -6651,19 +6654,34 @@ export type Database = {
               started_at: string
             }[]
           }
-      start_or_get_exam_timer: {
-        Args: {
-          _apprenant_id: string
-          _duree_secondes: number
-          _exercice_id: string
-        }
-        Returns: {
-          duree_secondes: number
-          remaining_seconds: number
-          server_now: string
-          started_at: string
-        }[]
-      }
+      start_or_get_exam_timer:
+        | {
+            Args: {
+              _apprenant_id: string
+              _duree_secondes: number
+              _exercice_id: string
+            }
+            Returns: {
+              duree_secondes: number
+              remaining_seconds: number
+              server_now: string
+              started_at: string
+            }[]
+          }
+        | {
+            Args: {
+              _apprenant_id: string
+              _duree_secondes: number
+              _exercice_id: string
+              _tentative: number
+            }
+            Returns: {
+              duree_secondes: number
+              remaining_seconds: number
+              server_now: string
+              started_at: string
+            }[]
+          }
       submit_quiz_attempt: {
         Args: {
           _apprenant_id: string
