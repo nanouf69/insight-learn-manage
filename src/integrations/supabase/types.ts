@@ -1775,6 +1775,44 @@ export type Database = {
         }
         Relationships: []
       }
+      core_tentatives_neutralisees: {
+        Row: {
+          apprenant_id: string
+          attempt_id: string
+          exam_id: string
+          motif: string
+          neutralise_at: string
+          neutralise_par: string | null
+          resultat_avant: Json | null
+        }
+        Insert: {
+          apprenant_id: string
+          attempt_id: string
+          exam_id: string
+          motif: string
+          neutralise_at?: string
+          neutralise_par?: string | null
+          resultat_avant?: Json | null
+        }
+        Update: {
+          apprenant_id?: string
+          attempt_id?: string
+          exam_id?: string
+          motif?: string
+          neutralise_at?: string
+          neutralise_par?: string | null
+          resultat_avant?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "core_tentatives_neutralisees_attempt_id_fkey"
+            columns: ["attempt_id"]
+            isOneToOne: true
+            referencedRelation: "exam_attempts_v2"
+            referencedColumns: ["attempt_id"]
+          },
+        ]
+      }
       creneaux_rdv: {
         Row: {
           apprenant_id: string | null
