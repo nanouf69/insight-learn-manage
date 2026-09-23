@@ -580,14 +580,19 @@ function PassageMatiere({
       });
       const flushed = await flushAnswerSavesAndWait(apprenantId, exerciceKey);
       if (!flushed) throw new Error("Réponses encore en attente");
-      const { data, error } = await supabase
-        .from("reponses_apprenants" as any)
-        .select("reponses, completed")
-        .eq("apprenant_id", apprenantId)
-        .eq("exercice_id", exerciceKey)
-        .maybeSingle();
-      if (error || !(data as any)?.completed || !answersAreEqual(normalizeReponses((data as any)?.reponses), reponses)) {
-        throw new Error("Confirmation en base incomplète");
+      // Pour un passage V2, la projection historique peut être figée après un
+      // incident neutralisé. Elle ne doit jamais empêcher les réponses d'être
+      // confirmées par le noyau, qui est l'unique autorité de finalisation.
+      if (!attemptV2Ref.current) {
+        const { data, error } = await supabase
+          .from("reponses_apprenants" as any)
+          .select("reponses, completed")
+          .eq("apprenant_id", apprenantId)
+          .eq("exercice_id", exerciceKey)
+          .maybeSingle();
+        if (error || !(data as any)?.completed || !answersAreEqual(normalizeReponses((data as any)?.reponses), reponses)) {
+          throw new Error("Confirmation en base incomplète");
+        }
       }
       setSaveStatus("saved");
     } catch (error) {
@@ -652,14 +657,16 @@ function PassageMatiere({
         });
         const flushed = await flushAnswerSavesAndWait(apprenantId, exerciceKey);
         if (!flushed) throw new Error("Réponses encore en attente");
-        const { data, error } = await supabase
-          .from("reponses_apprenants" as any)
-          .select("reponses, completed")
-          .eq("apprenant_id", apprenantId)
-          .eq("exercice_id", exerciceKey)
-          .maybeSingle();
-        if (error || !(data as any)?.completed || !answersAreEqual((data as any)?.reponses, reponses)) {
-          throw new Error("Confirmation en base incomplète");
+        if (!attemptV2Ref.current) {
+          const { data, error } = await supabase
+            .from("reponses_apprenants" as any)
+            .select("reponses, completed")
+            .eq("apprenant_id", apprenantId)
+            .eq("exercice_id", exerciceKey)
+            .maybeSingle();
+          if (error || !(data as any)?.completed || !answersAreEqual((data as any)?.reponses, reponses)) {
+            throw new Error("Confirmation en base incomplète");
+          }
         }
         setSaveStatus("saved");
       } catch (error) {
