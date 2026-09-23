@@ -1174,7 +1174,7 @@ export default function ExamensBlancsPage({
             .select("attempt_id, snapshot")
             .eq("apprenant_id", apprenantId)
             .eq("exam_id", examenChoisi.id)
-            .eq("etat", "en_cours")
+            .in("etat", ["en_cours", "terminee"])
             .order("started_at", { ascending: false })
             .limit(5);
           const tentative = ((tentativeNoyau as { attempt_id: string; snapshot: any }[] | null) ?? []).find(
