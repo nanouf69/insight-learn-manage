@@ -452,6 +452,28 @@ function PassageMatiere({
       toast.error("Une réponse n'a pas pu être enregistrée par le serveur : la matière n'est pas clôturée. Contactez le centre, vos réponses sont conservées.");
       return false;
     }
+    // Sécurité anti-note 0 technique (hotfix 23/09/2026) : on ne clôture JAMAIS
+    // une matière dont les réponses ne sont pas présentes côté noyau. On tente
+    // d'abord un rattrapage, puis on bloque si l'écart persiste.
+    const attendues = reponsesRenseignees().length;
+    if (attendues > 0) {
+      const compter = async () => {
+        const { count } = await supabase
+          .from("answer_state")
+          .select("question_id", { count: "exact", head: true })
+          .eq("attempt_id", attemptId);
+        return count ?? 0;
+      };
+      if ((await compter()) < attendues) {
+        rattraperReponsesNoyau(attemptId);
+        await viderFileNoyau(attemptId);
+      }
+      if ((await compter()) < attendues) {
+        setSaveStatus("error");
+        toast.error("Vos réponses ne sont pas toutes enregistrées côté serveur : la matière n'est pas clôturée. Rien n'est perdu, réessayez dans un instant.");
+        return false;
+      }
+    }
     const qrc = questionsSafe.filter(q => q?.type === "QRC").map(q => q.id);
     const res = await finaliserMatiere({ attemptId, matiereId: matiere.id, questionsQRC: qrc });
     if (!res.ok && !/ATTEMPT_CLOSED/.test(res.message ?? "")) {
