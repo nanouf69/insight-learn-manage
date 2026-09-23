@@ -29,6 +29,7 @@ import {
   selectLatestAttemptRows, getAttemptNumber, findBestSavedAnswerRow,
   getSavedAnswerRowAttempt, getSavedAnswerRowTimestamp, getMeaningfulAnswerCount,
   allocateFreshExamMatiereExerciceId, resolveExamPassage,
+  isStoredExamSessionAfterReset,
   type SavedExamAnswerRow,
 } from "./examens-blancs-utils";
 import { recoverCorruptedScoreRow, isCorruptedZeroRow, persistExamSession as persistExamSessionUtil, shouldTriggerPollingRefresh } from "./examens-blancs-utils";
@@ -283,20 +284,60 @@ export default function ExamensBlancsPage({
         return;
       }
 
-      // Priority check: DB state is source of truth for completed/partial exams
+      // Priority check: DB state is source of truth for completed/partial exams.
+      // Une session navigateur créée avant une remise à zéro ne peut jamais
+      // rouvrir l'ancien passage après F5 ou reconnexion.
       if (!isAdmin && apprenantId) {
         const quizType = found.id.startsWith("bilan-") ? "bilan" : "examen_blanc";
-        const { data, error } = await supabase
-          .from("apprenant_quiz_results" as any)
+        const [{ data, error }, { data: resetRows, error: resetError }] = await Promise.all([
+          supabase
+            .from("apprenant_quiz_results" as any)
             .select("id, matiere_id, matiere_nom, score_obtenu, score_max, reussi, details, tentative, completed_at, created_at")
-          .eq("apprenant_id", apprenantId)
-          .eq("quiz_id", found.id)
-          .eq("quiz_type", quizType);
+            .eq("apprenant_id", apprenantId)
+            .eq("quiz_id", found.id)
+            .eq("quiz_type", quizType),
+          supabase
+            .from("core_exam_resets")
+            .select("exam_id, cutoff_at")
+            .eq("apprenant_id", apprenantId)
+            .eq("exam_id", found.id),
+        ]);
+
+        if (resetError) {
+          // Échec fermé : sans frontière serveur confirmée, aucune ancienne
+          // reprise locale n'est restaurée automatiquement.
+          try {
+            sessionStorage.removeItem(EXAM_SESSION_KEY);
+            sessionStorage.removeItem(MATIERE_FILTER_KEY);
+          } catch {}
+          if (!cancelled) setSessionRestored(true);
+          return;
+        }
+
+        const resetCutoff = latestExamResetCutoffs(resetRows)[found.id];
+        if (!isStoredExamSessionAfterReset(savedSession, found.id, resetCutoff)) {
+          try {
+            sessionStorage.removeItem(EXAM_SESSION_KEY);
+            sessionStorage.removeItem(MATIERE_FILTER_KEY);
+          } catch {}
+          if (!cancelled) {
+            setExamenChoisi(null);
+            setMatiereIndex(0);
+            setTousResultats([]);
+            setResumeExerciceIds({});
+            currentPassageModeRef.current = "new";
+            setPhase("selection");
+            setSessionRestored(true);
+          }
+          return;
+        }
 
         if (!cancelled && !error) {
           // Même logique de passage que la file Correction QRC et l'écran récapitulatif :
           // les écritures techniques d'un même passage réel sont lues ensemble (lecture seule).
-          const rows = mergePassageSiblingRows(excludeResultPlaceholders(data as any[]));
+          const rows = mergePassageSiblingRows(excludeResultPlaceholders(((data as any[]) ?? []).filter((row: any) =>
+            isAfterExamReset(row?.completed_at ?? row?.created_at, resetCutoff),
+          )));
           const validMatieres = (found.matieres || []).filter((m): m is Matiere => Boolean(m));
           const required = Math.max(validMatieres.length || 1, 1);
 
