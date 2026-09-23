@@ -76,8 +76,10 @@ export default function AdminPublicationV2() {
         id,
         c.publiable ? "ok" : "ko",
         c.publiable
-          ? `Aucun écart. ${c.nbSansReference > 0 ? `${c.nbSansReference} matière(s) jamais servie(s) : aucune référence de comparaison.` : "Contenu actif identique à la dernière variante servie."}`
-          : `${c.nbEcarts} écart(s) détecté(s) : publication bloquée, rien n'a été modifié.`,
+          ? `Contenu actuel sain : publiable. ${c.nbEcarts} différence(s) avec l'historique servi (information seulement, l'historique n'est pas la référence).`
+          : c.aVerifier.length > 0
+            ? `Publication bloquée : ${c.aVerifier.length} question(s) marquée(s) À VÉRIFIER (${c.aVerifier.map((q) => `${q.matiere} n°${q.questionId}`).join(", ")}).`
+            : `Publication bloquée : anomalie technique dans le contenu actuel. Rien n'a été modifié.`,
       );
     } catch (e) {
       noter(id, "ko", `Vérification impossible : ${(e as Error).message}`);
@@ -199,6 +201,18 @@ export default function AdminPublicationV2() {
                               : `recalcul ultérieur incomplet : ${c.snapshot.manques.slice(0, 3).join(" ; ")}`}
                           </span>
                         </p>
+                        {c.aVerifier.length > 0 && (
+                          <div className="rounded border border-destructive/40 bg-destructive/5 p-2 text-xs text-destructive">
+                            <p className="font-semibold">À VÉRIFIER — publication bloquée sur ce sujet :</p>
+                            <ul className="list-disc pl-4">
+                              {c.aVerifier.map((q) => (
+                                <li key={`${q.matiere}-${q.questionId}`}>
+                                  {q.matiere} · question n°{q.questionId} — {q.motif}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
                         <table className="w-full text-xs">
                           <thead className="text-muted-foreground">
                             <tr>
