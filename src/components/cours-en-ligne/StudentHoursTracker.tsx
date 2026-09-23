@@ -54,8 +54,8 @@ export default function StudentHoursTracker({
 
   // La date d'examen du dossier (CRM) est la seule source de vérité :
   // aucune écriture, aucun remplacement automatique par une date du calendrier général.
-  const updatedKeyRef = useRef<string | null>(null);
-  void updatedKeyRef;
+
+
 
 
   if (loading || !apprenantId) {
