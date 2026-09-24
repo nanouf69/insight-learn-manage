@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, memo, useRef, useMemo } from "react";
 import { useNavigate, Navigate, useLocation } from "react-router-dom";
 import MonDossierFormation from "@/components/cours-en-ligne/MonDossierFormation";
+import { ChangementMotDePasseObligatoire } from "@/components/cours-en-ligne/ChangementMotDePasseObligatoire";
 import { isElearningType } from "@/lib/dossierFormation";
 
 // Évite tout va-et-vient infini si un admin est renvoyé ici par erreur :
@@ -2333,6 +2334,11 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                  </>
                );
             })()}
+
+            {/* Étape 2 sécurité : inactive tant qu'aucune demande n'est enregistrée */}
+            {isStudentSession && (
+              <ChangementMotDePasseObligatoire surTableauDeBord={!selectedModule} apercu={!!embedded} />
+            )}
 
             {/* E-learning : « Mon dossier de formation » remplace « Modules à réviser » */}
             {apprenant?.id && isElearningType(apprenant?.type_apprenant) && (
