@@ -1,5 +1,5 @@
 /** Affichage compact d'une cellule de la matrice Correction QRC (présentation seule, aucune règle). */
-export type OrigineCorrection = "humaine" | "automatique" | "inconnue" | string;
+export type OrigineCorrection = "humaine" | "automatique" | "ia" | "inconnue" | string;
 
 export interface CelluleEntree {
   corrigee: boolean;
@@ -7,10 +7,12 @@ export interface CelluleEntree {
   note: number | string | null;
   points: number | null;
   vide: boolean;
+  /** Vérification demandée par l'élève (QRC prioritaire). */
+  verificationDemandee?: boolean;
 }
 
 export interface CelluleSortie {
-  couleur: "vert" | "orange" | "gris" | "rouge" | "bareme";
+  couleur: "vert" | "orange" | "gris" | "rouge" | "bareme" | "violet";
   libelle: string;
   detail: string;
 }
@@ -21,6 +23,11 @@ export function celluleCompacte(c: CelluleEntree): CelluleSortie {
   const note = `${fr(c.note)}${c.points != null ? `/${c.points}` : ""}`;
   if (c.corrigee) {
     if (c.origine === "humaine") return { couleur: "vert", libelle: `✓ ${note}`, detail: `Correction humaine vérifiée — ${note}` };
+    if (c.origine === "ia") {
+      return c.verificationDemandee
+        ? { couleur: "violet", libelle: `⚠️🤖 ${note}`, detail: `⚠️ Vérification demandée par l'élève — Correction IA — Gemini 3.8 Flash (non vérifiée) — ${note}` }
+        : { couleur: "violet", libelle: `🤖 ${note}`, detail: `Correction IA — Gemini 3.8 Flash (non vérifiée par un formateur) — ${note}` };
+    }
     if (c.origine === "automatique") return { couleur: "orange", libelle: `≈ ${note}`, detail: `Correction automatique historique (non validée par un formateur) — ${note}` };
     return { couleur: "gris", libelle: `? ${note}`, detail: `Origine de la correction à vérifier — ${note}` };
   }

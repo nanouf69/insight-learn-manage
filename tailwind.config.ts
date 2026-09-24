@@ -50,6 +50,10 @@ export default {
           DEFAULT: "hsl(var(--success))",
           foreground: "hsl(var(--success-foreground))",
         },
+        ia: {
+          DEFAULT: "hsl(var(--ia))",
+          foreground: "hsl(var(--ia-foreground))",
+        },
         popover: {
           DEFAULT: "hsl(var(--popover))",
           foreground: "hsl(var(--popover-foreground))",

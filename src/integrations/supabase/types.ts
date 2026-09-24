@@ -5415,6 +5415,108 @@ export type Database = {
         }
         Relationships: []
       }
+      qrc_ia_config: {
+        Row: {
+          actif: boolean
+          actif_depuis: string | null
+          id: boolean
+          modele: string
+          pause_depuis: string | null
+          pause_motif: string | null
+          updated_at: string
+          updated_by: string | null
+          updated_email: string | null
+        }
+        Insert: {
+          actif?: boolean
+          actif_depuis?: string | null
+          id?: boolean
+          modele?: string
+          pause_depuis?: string | null
+          pause_motif?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          updated_email?: string | null
+        }
+        Update: {
+          actif?: boolean
+          actif_depuis?: string | null
+          id?: boolean
+          modele?: string
+          pause_depuis?: string | null
+          pause_motif?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          updated_email?: string | null
+        }
+        Relationships: []
+      }
+      qrc_ia_corrections: {
+        Row: {
+          apprenant_id: string
+          attempt_id: string
+          bareme: number | null
+          cle_idempotence: string
+          cout_estime: number | null
+          created_at: string
+          exam_id: string | null
+          http_status: number | null
+          id: string
+          justification: string | null
+          matiere: string | null
+          modele: string | null
+          motif: string | null
+          note: number | null
+          qrc_instance_id: string
+          question_id: string
+          reponse_hash: string
+          statut: string
+          termine_at: string | null
+        }
+        Insert: {
+          apprenant_id: string
+          attempt_id: string
+          bareme?: number | null
+          cle_idempotence: string
+          cout_estime?: number | null
+          created_at?: string
+          exam_id?: string | null
+          http_status?: number | null
+          id?: string
+          justification?: string | null
+          matiere?: string | null
+          modele?: string | null
+          motif?: string | null
+          note?: number | null
+          qrc_instance_id: string
+          question_id: string
+          reponse_hash: string
+          statut?: string
+          termine_at?: string | null
+        }
+        Update: {
+          apprenant_id?: string
+          attempt_id?: string
+          bareme?: number | null
+          cle_idempotence?: string
+          cout_estime?: number | null
+          created_at?: string
+          exam_id?: string | null
+          http_status?: number | null
+          id?: string
+          justification?: string | null
+          matiere?: string | null
+          modele?: string | null
+          motif?: string | null
+          note?: number | null
+          qrc_instance_id?: string
+          question_id?: string
+          reponse_hash?: string
+          statut?: string
+          termine_at?: string | null
+        }
+        Relationships: []
+      }
       qrc_instances: {
         Row: {
           apprenant_id: string
@@ -5518,6 +5620,51 @@ export type Database = {
             referencedColumns: ["attempt_id"]
           },
         ]
+      }
+      qrc_verification_demandes: {
+        Row: {
+          apprenant_id: string
+          attempt_id: string
+          created_at: string
+          id: string
+          note_finale: number | null
+          note_ia: number | null
+          qrc_instance_id: string
+          question_id: string
+          statut: string
+          traitee_at: string | null
+          traitee_email: string | null
+          traitee_par: string | null
+        }
+        Insert: {
+          apprenant_id: string
+          attempt_id: string
+          created_at?: string
+          id?: string
+          note_finale?: number | null
+          note_ia?: number | null
+          qrc_instance_id: string
+          question_id: string
+          statut?: string
+          traitee_at?: string | null
+          traitee_email?: string | null
+          traitee_par?: string | null
+        }
+        Update: {
+          apprenant_id?: string
+          attempt_id?: string
+          created_at?: string
+          id?: string
+          note_finale?: number | null
+          note_ia?: number | null
+          qrc_instance_id?: string
+          question_id?: string
+          statut?: string
+          traitee_at?: string | null
+          traitee_email?: string | null
+          traitee_par?: string | null
+        }
+        Relationships: []
       }
       qualiopi_indicateurs_etat: {
         Row: {
@@ -7345,11 +7492,19 @@ export type Database = {
           total: number
         }[]
       }
+      qrc_demander_verification: {
+        Args: { p_qrc_instance_id: string }
+        Returns: Json
+      }
       qrc_disable_engine: {
         Args: { p_quiz_id: string; p_reason?: string }
         Returns: boolean
       }
       qrc_engine_enabled: { Args: { _quiz_id: string }; Returns: boolean }
+      qrc_ia_definir_actif: {
+        Args: { p_actif: boolean; p_email?: string }
+        Returns: Json
+      }
       qrc_pilot_integrity: {
         Args: { p_quiz_id: string }
         Returns: {
