@@ -16,7 +16,7 @@ export type SnapshotRow = {
 export type EtatSnapshotsEleve =
   | { statut: "inactif" }
   | { statut: "chargement" }
-  | { statut: "pret"; parExo: Record<number, { snapshotId: string; empreinte: string; questions: any[] }> }
+  | { statut: "pret"; parExo: Record<number, { snapshotId: string; empreinte: string; questions: any[] }>; rouges?: number[] }
   | { statut: "bloque"; raison: string };
 
 /** Convertit un snapshot en questions affichables ; null si le snapshot est incomplet. */
@@ -58,16 +58,33 @@ export function calculerEtatSnapshots(
       return { statut: "bloque", raison: "snapshot_manquant" };
     }
   }
-  return { statut: "pret", parExo };
+  // Ancien passage ROUGE conservé : matière fermée tant qu'aucune tentative autorisée n'est figée.
+  const derniereCat: Record<number, { tentative: number; categorie: string }> = {};
+  for (const c of categories) {
+    const cur = derniereCat[c.exercice_id];
+    if (!cur || c.tentative > cur.tentative) derniereCat[c.exercice_id] = c;
+  }
+  const rouges = Object.entries(derniereCat)
+    .filter(([exo, c]) => c.categorie === "ROUGE" && !(dernier[Number(exo)] && dernier[Number(exo)].tentative > c.tentative))
+    .map(([exo]) => Number(exo));
+  return { statut: "pret", parExo, rouges };
 }
 
-export function useBilanSnapshotsEleve(apprenantId: string | undefined, moduleId: number, actif: boolean): EtatSnapshotsEleve {
+/** Ouverture d'une matière Bilan : le serveur fige un nouveau passage ou ouvre une tentative autorisée. */
+export async function ouvrirPassageEleve(moduleId: number, exoId: number): Promise<"fige" | "ancien" | "rouge_bloque" | "erreur"> {
+  const { data, error } = await (supabase as any).rpc("bilan_ouvrir_passage_eleve", { p_module_id: moduleId, p_exercice_id: exoId });
+  if (error) { console.error("[BilanSnapshot] ouverture passage", error); return "erreur"; }
+  return (data?.statut as any) ?? "erreur";
+}
+
+export function useBilanSnapshotsEleve(apprenantId: string | undefined, moduleId: number, actif: boolean, rev = 0): EtatSnapshotsEleve {
   const concerne = actif && !!apprenantId && MODULES_BILAN_SNAPSHOT.has(moduleId);
   const [etat, setEtat] = useState<EtatSnapshotsEleve>(concerne ? { statut: "chargement" } : { statut: "inactif" });
   useEffect(() => {
     if (!concerne) { setEtat({ statut: "inactif" }); return; }
     let annule = false;
-    setEtat({ statut: "chargement" });
+    // Rechargement après ouverture d'un passage : silencieux (pas de démontage de l'écran).
+    if (rev === 0) setEtat({ statut: "chargement" });
     (async () => {
       const [s, c] = await Promise.all([
         (supabase as any).from("bilan_passage_snapshots")
@@ -83,7 +100,7 @@ export function useBilanSnapshotsEleve(apprenantId: string | undefined, moduleId
       setEtat(e);
     })();
     return () => { annule = true; };
-  }, [concerne, apprenantId, moduleId]);
+  }, [concerne, apprenantId, moduleId, rev]);
   return etat;
 }
 

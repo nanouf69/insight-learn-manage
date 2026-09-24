@@ -150,7 +150,7 @@ import {
 } from "./shared-exercise-overrides";
 import { resolveOverrideConflict, buildAdminEditJournalMap } from "@/components/fournisseurs/quiz-editor-utils";
 import { questionAvecCleFigee, exoIdDepuisArchive, type PassageFige } from "./passagesFiges";
-import { useBilanSnapshotsEleve, questionsComptees, type EtatSnapshotsEleve } from "./bilanSnapshotsEleve";
+import { useBilanSnapshotsEleve, questionsComptees, ouvrirPassageEleve, MODULES_BILAN_SNAPSHOT, type EtatSnapshotsEleve } from "./bilanSnapshotsEleve";
 import { reponsesVerrouilleesDepuis, separerQuestionsVerrouillees, type StatutRow, type CategorieRow } from "./bilanReponsesVerrouillees";
 import { ReponsesHistoriquesVerrouillees } from "./ReponsesHistoriquesVerrouillees";
 import {
@@ -6249,7 +6249,21 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   // frais, mais sans invalider l'identité du composant.
   const moduleDataRef = useRef(moduleData);
   // Passages figés (snapshots) : l'élève lit exclusivement son snapshot quand il existe.
-  const etatSnapshotsEleve = useBilanSnapshotsEleve(apprenantId, module.id, studentOnly);
+  const [snapshotsRev, setSnapshotsRev] = useState(0);
+  const etatSnapshotsEleve = useBilanSnapshotsEleve(apprenantId, module.id, studentOnly, snapshotsRev);
+  // Ouverture d'une matière Bilan par l'élève : une seule demande par matière et par écran.
+  const ouverturesDemandeesRef = useRef<Set<number>>(new Set());
+  const ouvrirMatiereBilanRef = useRef<(exoId: number) => void>(() => {});
+  ouvrirMatiereBilanRef.current = (exoId: number) => {
+    if (!studentOnly || !apprenantId || !MODULES_BILAN_SNAPSHOT.has(module.id)) return;
+    const etat = etatSnapshotsRef.current;
+    if (etat.statut !== "pret" || etat.parExo[exoId]) return;
+    if (ouverturesDemandeesRef.current.has(exoId)) return;
+    ouverturesDemandeesRef.current.add(exoId);
+    void ouvrirPassageEleve(module.id, exoId).then((res) => {
+      if (res === "fige") setSnapshotsRev((v) => v + 1);
+    });
+  };
   const etatSnapshotsRef = useRef<EtatSnapshotsEleve>(etatSnapshotsEleve);
   etatSnapshotsRef.current = etatSnapshotsEleve;
   // La ref doit être synchronisée AVANT le rendu de LearnerPreview. Un useEffect
@@ -6573,6 +6587,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
     const totalPages = pages.length;
     const currentPageData = pages[currentPage];
+    const exoCourantId = currentPageData?.type === "exercice-single" ? Number(currentPageData.exercice.id) : null;
+    useEffect(() => {
+      if (exoCourantId != null) ouvrirMatiereBilanRef.current(exoCourantId);
+    }, [exoCourantId]);
     const progressPercent = totalPages > 0 ? Math.round((completedPages.size / totalPages) * 100) : 0;
 
     // --- Restore learner UI state (page + results) to prevent unwanted reset ---
@@ -8127,6 +8145,15 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     };
 
     const renderSingleExercicePage = (exo: ExerciceItem) => {
+      const etatSnap = etatSnapshotsRef.current;
+      if (etatSnap.statut === "pret" && etatSnap.rouges?.includes(Number(exo.id))) {
+        return (
+          <div className="m-6 p-6 rounded-lg border bg-muted/40 text-center space-y-2">
+            <p className="font-semibold">{exo.titre}</p>
+            <p className="text-sm text-muted-foreground">Votre passage précédent de cette matière est conservé. Pour la refaire, une nouvelle tentative doit être ouverte par votre centre de formation.</p>
+          </div>
+        );
+      }
       const handleQrcCorrection = async (exoId: number, q: any, key: string) => {
         const existingAnswer = selectedAnswers[key];
         const reponse = (qrcAnswers[key] ?? (typeof existingAnswer === "string" ? existingAnswer : "")).trim();
