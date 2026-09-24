@@ -1482,6 +1482,54 @@ export type Database = {
         }
         Relationships: []
       }
+      bilan_reponse_reclassements: {
+        Row: {
+          ancien_statut: string
+          apprenant_id: string
+          cle: string
+          created_at: string
+          exercice_id: number
+          id: string
+          module_id: number
+          motif: string
+          nouveau_statut: string
+          operation_id: string
+          preuve: Json
+          tentative: number
+          uid: string
+        }
+        Insert: {
+          ancien_statut: string
+          apprenant_id: string
+          cle: string
+          created_at?: string
+          exercice_id: number
+          id?: string
+          module_id: number
+          motif: string
+          nouveau_statut: string
+          operation_id: string
+          preuve?: Json
+          tentative: number
+          uid: string
+        }
+        Update: {
+          ancien_statut?: string
+          apprenant_id?: string
+          cle?: string
+          created_at?: string
+          exercice_id?: number
+          id?: string
+          module_id?: number
+          motif?: string
+          nouveau_statut?: string
+          operation_id?: string
+          preuve?: Json
+          tentative?: number
+          uid?: string
+        }
+        Relationships: []
+      }
       bilan_reponse_statuts: {
         Row: {
           apprenant_id: string
@@ -6542,7 +6590,23 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      bilan_reponse_statuts_effectifs: {
+        Row: {
+          apprenant_id: string | null
+          cle: string | null
+          created_at: string | null
+          exercice_id: number | null
+          id: string | null
+          module_id: number | null
+          reclasse: boolean | null
+          reponse: Json | null
+          statut: string | null
+          statut_initial: string | null
+          tentative: number | null
+          uid: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       apply_admin_canonical_quiz_actions: {

@@ -6944,7 +6944,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       let annule = false;
       (async () => {
         const [st, cat] = await Promise.all([
-          (supabase as any).from("bilan_reponse_statuts")
+          (supabase as any).from("bilan_reponse_statuts_effectifs")
             .select("exercice_id, tentative, cle, statut, reponse")
             .eq("apprenant_id", apprenantId).eq("module_id", module.id).eq("statut", "VERSION_NON_PROUVEE"),
           (supabase as any).from("bilan_passage_categories")
