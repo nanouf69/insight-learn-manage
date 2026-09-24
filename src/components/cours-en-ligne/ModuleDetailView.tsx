@@ -7157,7 +7157,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       autoSaveTimerRef.current = setTimeout(async () => {
 
         try {
-          const questionDetails = activeExercices.flatMap(e =>
+          const questionDetails = exercicesCorriges.flatMap(e =>
             (e.questions || []).map(q => {
               const key = `${e.id}-${q.id}`;
               const selected = answers[key];
@@ -7177,7 +7177,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             })
           );
           const answeredCount = Object.keys(answers).length;
-          const totalQ = activeExercices.reduce((s, e) => s + (e.questions?.length || 0), 0);
+          const totalQ = exercicesCorriges.reduce((s, e) => s + (e.questions?.length || 0), 0);
           const correctC = questionDetails.filter(d => d.correct).length;
           // Progress-only autosave: goes through the atomic RPC, which can
           // NEVER downgrade an already-completed module nor lower progress.
@@ -7329,8 +7329,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       });
     };
 
-    const totalQuestions = activeExercices.reduce((sum, e) => sum + (e.questions?.length || 0), 0);
-    const correctCount = activeExercices.reduce((sum, e) => {
+    const totalQuestions = exercicesCorriges.reduce((sum, e) => sum + (e.questions?.length || 0), 0);
+    const correctCount = exercicesCorriges.reduce((sum, e) => {
       if (!e.questions) return sum;
       return sum + e.questions.filter(q => {
         const key = `${e.id}-${q.id}`;
@@ -7393,7 +7393,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
       try {
         // Build question-level details
-        const questionDetails = activeExercices.flatMap(e =>
+        const questionDetails = exercicesCorriges.flatMap(e =>
           (e.questions || []).map(q => {
             const key = `${e.id}-${q.id}`;
             const selected = selectedAnswers[key];
@@ -8475,7 +8475,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                         // sans marquer le module comme terminé.
                         if (apprenantId) {
                           try {
-                            const questionDetails = activeExercices.flatMap(e =>
+                            const questionDetails = exercicesCorriges.flatMap(e =>
                               (e.questions || []).map(q => {
                                 const key = `${e.id}-${q.id}`;
                                 const sel = selectedAnswers[key];
@@ -8492,7 +8492,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                                 };
                               })
                             );
-                            const totalQ = activeExercices.reduce((s, e) => s + (e.questions?.length || 0), 0);
+                            const totalQ = exercicesCorriges.reduce((s, e) => s + (e.questions?.length || 0), 0);
                             const correctC = questionDetails.filter(d => d.correct).length;
                             await saveModuleCompletion({
                               apprenantId,
@@ -9163,8 +9163,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
         {/* Quiz completion rate */}
         {(() => {
-          const totalQ = activeExercices.reduce((s, e) => s + (e.questions?.length || 0), 0);
-          const answeredQ = activeExercices.reduce((s, e) => {
+          const totalQ = exercicesCorriges.reduce((s, e) => s + (e.questions?.length || 0), 0);
+          const answeredQ = exercicesCorriges.reduce((s, e) => {
             if (!e.questions) return s;
             return s + e.questions.filter(q => selectedAnswers[`${e.id}-${q.id}`]).length;
           }, 0);
