@@ -48,7 +48,8 @@ export function trouverExamenTheorique(valeur: string | null | undefined): Exame
   if (!v) return null;
   const matches = ALL_DATES_EXAMEN_THEORIQUE.filter((e) => {
     const [y, m, d] = e.iso.split("-");
-    return v.includes(deaccentExam(e.date)) || v.includes(e.iso) || v.includes(`${d}/${m}/${y}`);
+    const txt = new RegExp(`(^|\\D)${deaccentExam(e.date)}($|\\D)`);
+    return txt.test(v) || v.includes(e.iso) || new RegExp(`(^|\\D)${d}/${m}/${y}`).test(v);
   });
   return matches.length === 1 ? matches[0] : null;
 }
@@ -79,22 +80,31 @@ export function getProchaineDateExamenTheorique(now: Date = new Date()) {
 // Version courte (sans adresse complète) pour les vues compactes
 export const ALL_DATES_EXAMEN_THEORIQUE_SHORT = ALL_DATES_EXAMEN_THEORIQUE.map(d => ({
   ...d,
-  lieu: d.lieu.includes("Villeurbanne") ? "Villeurbanne – Double Mixte" : d.lieu.includes("Clermont-Ferrand") ? "Clermont-Ferrand – Polydome" : d.lieu,
+  lieu: d.lieu.includes("Double Mixte") ? "Villeurbanne – Double Mixte"
+    : d.lieu.includes("Matmut") ? "Villeurbanne – Matmut Stadium"
+    : d.lieu.includes("Villefranche") ? "Villefranche-sur-Saône – ParcExpo"
+    : d.lieu.includes("Clermont-Ferrand") ? "Clermont-Ferrand – Polydome" : d.lieu,
 }));
 
 // Version pour les selects onboarding (value/label/lieu)
 export const ALL_DATES_EXAMEN_THEORIQUE_VALUES = ALL_DATES_EXAMEN_THEORIQUE.map(d => ({
   value: d.date,
-  label: `${d.date} (${d.horaire})`,
+  label: d.horaire ? `${d.date} (${d.horaire})` : d.date,
   lieu: d.lieu,
 }));
 
 // Version pour Step5 onboarding (id/date/label/location)
-export const ALL_DATES_EXAMEN_STEP5 = [
-  { id: '2026-07-21-pm', date: new Date(2026, 6, 21, 14, 0), label: '21 juillet 2026 (après-midi)', location: 'Rhône – Double Mixte, 10 Avenue Gaston Berger, 69100 Villeurbanne' },
-  { id: '2026-09-29-pm', date: new Date(2026, 8, 29, 14, 0), label: '29 septembre 2026 (après-midi)', location: 'Rhône – Double Mixte, 10 Avenue Gaston Berger, 69100 Villeurbanne' },
-  { id: '2026-11-17-pm', date: new Date(2026, 10, 17, 14, 0), label: '17 novembre 2026 (après-midi)', location: 'Rhône – Double Mixte, 10 Avenue Gaston Berger, 69100 Villeurbanne' },
-];
+export const ALL_DATES_EXAMEN_STEP5 = ALL_DATES_EXAMEN_THEORIQUE
+  .filter((d) => d.iso >= "2026-07-21")
+  .map((d) => {
+    const [y, m, j] = d.iso.split("-").map(Number);
+    return {
+      id: `${d.iso}${d.horaire === "après-midi" ? "-pm" : ""}`,
+      date: new Date(y, m - 1, j, 14, 0),
+      label: d.horaire ? `${d.date} (${d.horaire})` : d.date,
+      location: d.lieu,
+    };
+  });
 
 // Version ExamenReussitePage (avec pratiqueIndex)
 export const ALL_DATES_EXAMEN_REUSSITE = [
