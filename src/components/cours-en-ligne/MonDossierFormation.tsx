@@ -76,8 +76,8 @@ export default function MonDossierFormation({ apprenantId, onOpenIntro }: Props)
 
   const bienvenueOk = !!data.bienvenue_signe;
   const inscription = etatInscriptionExamen(bienvenueOk, data.statut_suivi);
-  const lignes = [
-    { label: "Document de bienvenue complété et signé", ok: bienvenueOk, okTxt: "Complété et signé", action: ouvrirBienvenue },
+  const lignes: { label: string; ok: boolean; okTxt: string; action: () => void; okAction?: () => void; okActionLabel?: string }[] = [
+    { label: "Document de bienvenue complété et signé", ok: bienvenueOk, okTxt: "Complété et signé", action: ouvrirBienvenue, okAction: voirDocument, okActionLabel: "Voir le document" },
     { label: "Projet professionnel", ok: !!data.projet_professionnel, okTxt: "OK", action: onOpenIntro },
     { label: "Analyse des besoins", ok: !!data.analyse_besoin, okTxt: "OK", action: onOpenIntro },
     { label: "Test de compétences avant formation", ok: !!data.test_competences, okTxt: "OK", action: onOpenIntro },
