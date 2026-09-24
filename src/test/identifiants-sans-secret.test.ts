@@ -76,7 +76,7 @@ describe("Les 3 services d'accès", () => {
 
   it("création de compte : mot de passe ni renvoyé à l'écran ni modifié sur un compte existant", () => {
     const src = F("create-apprenant-account");
-    expect(src).not.toMatch(/^\s*password,\s*$/m.source.includes("x") ? /$^/ : /jsonResponse\(200,[\s\S]{0,80}password/);
+    expect(src).not.toMatch(/jsonResponse\(200,[\s\S]{0,80}password/);
     expect(src).not.toMatch(/Mot de passe : \$\{password\}/);
     expect(src).not.toMatch(/updateUserById\(existingUser\.id,\s*\{\s*password/);
   });
