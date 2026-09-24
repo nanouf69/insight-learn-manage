@@ -6926,6 +6926,13 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       })();
       return () => { annule = true; };
     }, [apprenantId, module.id]);
+    // Exercices utilisés pour la correction et le score : sans les réponses historiques verrouillées.
+    const exercicesCorriges = Object.keys(reponsesVerrouillees).length === 0
+      ? activeExercices
+      : activeExercices.map((e) => ({
+          ...e,
+          questions: separerQuestionsVerrouillees(e.id, (e.questions ?? []) as any[], reponsesVerrouillees).actives,
+        })) as ExerciceItem[];
 
     // --- Load saved partial answers from DB on mount ---
     useEffect(() => {
