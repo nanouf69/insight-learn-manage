@@ -16,6 +16,7 @@ import {
   selectLatestAttemptRows, parseExamAnswerKey,
 } from "./examens-blancs-utils";
 import { computeMoyenneExamen, computeMatiereScore, computeMatiereScoreForAttempt, resolveMatiereForScoring } from "./examens-blancs-scoring";
+import { fetchCoreMatiereStates, matchCoreState } from "@/lib/coreExamPublication";
 import { isExamAttemptPublicationPending, isMatiereQrcPendingForAttempt, excludeResultPlaceholders, mergePassageSiblingRows } from "./exam-helpers";
 import { toast } from "sonner";
 import { RefaireExamenDialog } from "./RefaireExamenDialog";
@@ -156,8 +157,9 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
         .select("attempt_id, exam_id, etat, started_at")
         .eq("apprenant_id", apprenantId)
         .eq("etat", "en_cours"),
+      fetchCoreMatiereStates(apprenantId),
     ])
-      .then(async ([{ data }, { data: resetRows }, { data: openV2Rows }]) => {
+      .then(async ([{ data }, { data: resetRows }, { data: openV2Rows }, coreStates]) => {
         if (data) {
           const resetCutoffs = latestExamResetCutoffs(resetRows);
           // Les lignes techniques « en attente de finalisation » (score 0 créé
@@ -268,7 +270,9 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
               reponses: r?.details?.reponses ?? null,
               correctionsIA: r?.details?.correctionsIA ?? null,
               details: r?.details ?? null,
-            });
+              // Source unique : état serveur du passage nouveau système, s'il existe.
+              __core: matchCoreState(coreStates, r.quiz_id, r.matiere_id, r.completed_at),
+            } as ExamScoreItem);
 
             if (recovered && recovered.score_obtenu > toFiniteNumber(r.score_obtenu, 0)) {
               console.warn(
