@@ -257,6 +257,50 @@ export type Database = {
           },
         ]
       }
+      apprenant_changement_mdp_requis: {
+        Row: {
+          annule_le: string | null
+          annule_par: string | null
+          apprenant_id: string
+          demande_le: string
+          demande_par: string | null
+          effectue_le: string | null
+          id: string
+          lot: string | null
+          motif: string
+        }
+        Insert: {
+          annule_le?: string | null
+          annule_par?: string | null
+          apprenant_id: string
+          demande_le?: string
+          demande_par?: string | null
+          effectue_le?: string | null
+          id?: string
+          lot?: string | null
+          motif?: string
+        }
+        Update: {
+          annule_le?: string | null
+          annule_par?: string | null
+          apprenant_id?: string
+          demande_le?: string
+          demande_par?: string | null
+          effectue_le?: string | null
+          id?: string
+          lot?: string | null
+          motif?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "apprenant_changement_mdp_requis_apprenant_id_fkey"
+            columns: ["apprenant_id"]
+            isOneToOne: true
+            referencedRelation: "apprenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       apprenant_connexions: {
         Row: {
           apprenant_id: string
@@ -6070,6 +6114,10 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      apprenant_examen_blanc_en_cours: {
+        Args: { _apprenant_id: string }
+        Returns: boolean
+      }
       autovalidate_module_if_complete: {
         Args: {
           _apprenant_id: string
@@ -6123,6 +6171,7 @@ export type Database = {
           reason: string
         }[]
       }
+      confirmer_changement_mdp_effectue: { Args: never; Returns: boolean }
       core_admin_reset_exam: {
         Args: {
           p_admin_email?: string
@@ -6553,6 +6602,7 @@ export type Database = {
         }
         Returns: string
       }
+      mon_changement_mdp_requis: { Args: never; Returns: Json }
       persist_answer_batch: {
         Args: {
           p_apprenant_id: string
