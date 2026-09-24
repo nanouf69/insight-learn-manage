@@ -6251,6 +6251,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       return JSON.stringify([...selectedLetters].sort()) === JSON.stringify(correctLetters);
     };
     const [showResultsFor, setShowResultsFor] = useState<Set<number>>(new Set());
+    const [passagesFiges, setPassagesFiges] = useState<Record<number, PassageFige>>({});
     const [showCalculator, setShowCalculator] = useState(false);
     // Revision mode: per exo, set of question IDs to display (only the wrong ones)
     const [revisionQuestionsFor, setRevisionQuestionsFor] = useState<Record<number, Set<number | string>>>({});
@@ -6831,6 +6832,40 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         });
       }
     };
+
+    // --- Passages historiques figés : lecture seule de l'archive ---
+    useEffect(() => {
+      if (!apprenantId) return;
+      let annule = false;
+      (async () => {
+        const { data, error } = await (supabase as any)
+          .from("bilan_passages_figes")
+          .select("exercice_id, reponses, cle_figee, score_bonnes, nb_repondues, nb_questions, fige_at")
+          .eq("apprenant_id", apprenantId)
+          .eq("module_id", module.id);
+        if (annule || error || !Array.isArray(data) || data.length === 0) return;
+        const parExo: Record<number, PassageFige> = {};
+        const reponsesFigees: Record<string, string | string[]> = {};
+        (data as PassageFige[]).forEach((p) => {
+          const exoId = exoIdDepuisArchive(p.exercice_id);
+          if (exoId == null) return;
+          parExo[exoId] = p;
+          Object.assign(reponsesFigees, p.reponses || {});
+        });
+        if (Object.keys(parExo).length === 0) return;
+        // Aucune nouvelle écriture depuis l'écran pour un passage archivé (garde serveur en plus).
+        moduleAlreadyValidatedRef.current = true;
+        completionPersistedRef.current = true;
+        setPassagesFiges(parExo);
+        setSelectedAnswers((prev) => ({ ...prev, ...reponsesFigees }));
+        setShowResultsFor((prev) => {
+          const next = new Set(prev);
+          Object.keys(parExo).forEach((id) => next.add(Number(id)));
+          return next;
+        });
+      })();
+      return () => { annule = true; };
+    }, [apprenantId, module.id]);
 
     // --- Load saved partial answers from DB on mount ---
     useEffect(() => {
@@ -8026,8 +8061,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         }
       };
 
-      const exoQuestionsNormalized = (exo.questions ?? []).map((q: any) => {
-        if (!q) return q;
+      const passageFigeExo = passagesFiges[Number(exo.id)] ?? null;
+      const exoQuestionsNormalized = (exo.questions ?? []).map((qBrut: any) => {
+        if (!qBrut) return qBrut;
+        // Passage historique figé : propositions + correction issues de l'archive, jamais du contenu actuel.
+        const q = questionAvecCleFigee(qBrut, Number(exo.id), passageFigeExo);
         const choix = getQuestionChoices(q);
         return {
           ...q,
