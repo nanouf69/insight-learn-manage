@@ -320,7 +320,11 @@ export function isExamAttemptPublicationPending(
   examen?: { matieres?: any[] } | null,
 ): boolean {
   const list = (rows || []).filter((row) => row && !row?.nonPassee);
-  if (list.some((row) => isQrcPendingCorrection(row?.details))) return true;
+  // Source unique : une matière ayant un passage dans le nouveau système est
+  // jugée UNIQUEMENT sur l'état serveur de ce passage (même source que
+  // l'écran Correction QRC). Les autres gardent la règle historique.
+  if (list.some((row) => row?.__core && row.__core.pending === true)) return true;
+  if (list.some((row) => !row?.__core && isQrcPendingCorrection(row?.details))) return true;
   const matieres = Array.isArray(examen?.matieres) ? examen.matieres : [];
   return matieres.some((matiere) => {
     const row = list.find((candidate) =>
@@ -328,6 +332,7 @@ export function isExamAttemptPublicationPending(
       String(candidate?.nomMatiere ?? candidate?.matiere_nom ?? "") === String(matiere?.nom ?? "")
     );
     if (!row) return false;
+    if (row.__core) return row.__core.pending === true;
     return isMatiereQrcPendingForAttempt(matiere, {
       ...(row?.details || {}),
       reponses: row?.reponses ?? row?.details?.reponses,
