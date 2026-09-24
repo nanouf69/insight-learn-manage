@@ -68,10 +68,11 @@ function EcranResultats({
     fetchCoreMatiereStates(apprenantId).then((st) => { if (!cancelled) setCoreStates(st); });
     return () => { cancelled = true; };
   }, [apprenantId, examen?.id]);
-  resultats = resultats.map((r) => ({
+  const resultatsSource = resultats;
+  resultats = useMemo(() => resultatsSource.map((r) => ({
     ...r,
     __core: matchCoreState(coreStates, r.quizId ?? examen?.id, r.matiereId, r.completedAt),
-  }));
+  })), [resultatsSource, coreStates, examen?.id]);
   // Check if corrections are already cached in the resultats (from DB)
   const hasPreloadedCorrections = resultats.some(
     (r) => r.correctionsIA && Object.values(r.correctionsIA).some((value) => value && value !== "loading")
