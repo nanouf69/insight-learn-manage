@@ -683,7 +683,10 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
                         // une matière est « en attente » uniquement si ELLE contient encore
                         // une QRC répondue non validée manuellement pour CE passage.
                         const engineMatierePending = qrcEngine.isMatierePending(examen.id, m.id);
-                        const publicationPending = (!!scoreData && engineMatierePending === true)
+                        const coreRow = (scoreData as any)?.__core ?? null;
+                        const publicationPending = coreRow
+                          ? coreRow.pending === true
+                          : (!!scoreData && engineMatierePending === true)
                           || (!!scoreData && isMatiereQrcPendingForAttempt(m, {
                               ...((scoreData as any)?.details || {}),
                               reponses: (scoreData as any)?.reponses ?? (scoreData as any)?.details?.reponses,
