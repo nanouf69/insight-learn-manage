@@ -1195,6 +1195,66 @@ export type Database = {
         }
         Relationships: []
       }
+      bilan_passages_figes: {
+        Row: {
+          apprenant_id: string | null
+          cle_figee: Json
+          empreinte_passage: string
+          exercice_id: string
+          fige_at: string
+          id: string
+          module_id: number
+          motif: string
+          nb_questions: number
+          nb_repondues: number
+          passage_created_at: string | null
+          passage_updated_at: string | null
+          reponse_apprenant_id: string
+          reponses: Json
+          score_bonnes: number
+          statut_passage: string | null
+          tentative: number | null
+        }
+        Insert: {
+          apprenant_id?: string | null
+          cle_figee: Json
+          empreinte_passage: string
+          exercice_id: string
+          fige_at?: string
+          id?: string
+          module_id: number
+          motif: string
+          nb_questions: number
+          nb_repondues: number
+          passage_created_at?: string | null
+          passage_updated_at?: string | null
+          reponse_apprenant_id: string
+          reponses: Json
+          score_bonnes: number
+          statut_passage?: string | null
+          tentative?: number | null
+        }
+        Update: {
+          apprenant_id?: string | null
+          cle_figee?: Json
+          empreinte_passage?: string
+          exercice_id?: string
+          fige_at?: string
+          id?: string
+          module_id?: number
+          motif?: string
+          nb_questions?: number
+          nb_repondues?: number
+          passage_created_at?: string | null
+          passage_updated_at?: string | null
+          reponse_apprenant_id?: string
+          reponses?: Json
+          score_bonnes?: number
+          statut_passage?: string | null
+          tentative?: number | null
+        }
+        Relationships: []
+      }
       bilan_sync_backups: {
         Row: {
           created_at: string
