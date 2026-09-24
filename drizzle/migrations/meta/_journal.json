@@ -638,6 +638,13 @@
       "when": 1790258069476,
       "tag": "0090_bilan_migration_passages_statuts_autorisations",
       "breakpoints": true
+    },
+    {
+      "idx": 91,
+      "version": "7",
+      "when": 1790260777734,
+      "tag": "0091_bilan_finalisation_snapshots_eleve",
+      "breakpoints": true
     }
   ]
 }
