@@ -26,6 +26,23 @@ export default function MonDossierFormation({ apprenantId, onOpenIntro }: Props)
     staleTime: 60_000,
   });
 
+  const voirDocument = async () => {
+    try {
+      const { data: s } = await supabase.auth.getSession();
+      const res = await callOnboardingInvitation(
+        { action: "dossier_bienvenue_pdf", apprenant_id: apprenantId },
+        s.session?.access_token,
+      );
+      if (res?.url && typeof res.url === "string") {
+        window.open(res.url, "_blank", "noopener,noreferrer");
+      } else {
+        toast.error("Le document n'est pas disponible pour le moment.");
+      }
+    } catch {
+      toast.error("Le document n'est pas disponible pour le moment.");
+    }
+  };
+
   const ouvrirBienvenue = () => {
     const p = data?.parcours;
     if (!p?.session_token || p.dossier?.id !== apprenantId) {
