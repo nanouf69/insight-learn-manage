@@ -3,17 +3,56 @@
  * Modifier ce fichier met à jour TOUTE l'application.
  */
 
-// ── Dates d'examen théorique 2026 ──
+// ── Dates d'examen théorique 2026 + 2027 ──
+// Source : calendrier publié sur ftransport.fr (section « Dates des examens »).
+// Aucune date 2026 n'est supprimée. `dateLimite` = date limite d'inscription publiée
+// (null quand la source ne la publie pas : on ne l'invente jamais).
 // Note: la date précédente (26 mai 2026) est conservée pour permettre la sélection
 // d'apprenants inscrits sur cette session même après son passage.
-export const ALL_DATES_EXAMEN_THEORIQUE = [
-  { date: "27 janvier 2026", lieu: "Rhône – Double Mixte, 10 Avenue Gaston Berger, 69100 Villeurbanne", horaire: "après-midi" },
-  { date: "31 mars 2026", lieu: "Puy-de-Dôme – Polydome, Place du 1er Mai, 63000 Clermont-Ferrand", horaire: "après-midi" },
-  { date: "26 mai 2026", lieu: "Rhône – Double Mixte, 10 Avenue Gaston Berger, 69100 Villeurbanne", horaire: "après-midi" },
-  { date: "21 juillet 2026", lieu: "Rhône – Double Mixte, 10 Avenue Gaston Berger, 69100 Villeurbanne", horaire: "après-midi" },
-  { date: "29 septembre 2026", lieu: "Rhône – Double Mixte, 10 Avenue Gaston Berger, 69100 Villeurbanne", horaire: "après-midi" },
-  { date: "17 novembre 2026", lieu: "Rhône – Double Mixte, 10 Avenue Gaston Berger, 69100 Villeurbanne", horaire: "après-midi" },
+export interface ExamenTheoriqueDate {
+  date: string;
+  lieu: string;
+  horaire: string;
+  /** ISO YYYY-MM-DD de l'examen */
+  iso: string;
+  /** ISO YYYY-MM-DD de la date limite d'inscription, ou null si non publiée */
+  dateLimite: string | null;
+  /** Texte exact de la date limite (ex. « 8 janvier 2027 à 12h ») */
+  dateLimiteLibelle: string | null;
+}
+
+export const ALL_DATES_EXAMEN_THEORIQUE: ExamenTheoriqueDate[] = [
+  { date: "27 janvier 2026", iso: "2026-01-27", lieu: "Rhône – Double Mixte, 10 Avenue Gaston Berger, 69100 Villeurbanne", horaire: "après-midi", dateLimite: null, dateLimiteLibelle: null },
+  { date: "31 mars 2026", iso: "2026-03-31", lieu: "Puy-de-Dôme – Polydome, Place du 1er Mai, 63000 Clermont-Ferrand", horaire: "après-midi", dateLimite: null, dateLimiteLibelle: null },
+  { date: "26 mai 2026", iso: "2026-05-26", lieu: "Rhône – Double Mixte, 10 Avenue Gaston Berger, 69100 Villeurbanne", horaire: "après-midi", dateLimite: "2026-05-06", dateLimiteLibelle: "6 mai 2026" },
+  { date: "21 juillet 2026", iso: "2026-07-21", lieu: "Rhône – Double Mixte, 10 Avenue Gaston Berger, 69100 Villeurbanne", horaire: "après-midi", dateLimite: "2026-07-03", dateLimiteLibelle: "3 juillet 2026" },
+  { date: "29 septembre 2026", iso: "2026-09-29", lieu: "Rhône – Double Mixte, 10 Avenue Gaston Berger, 69100 Villeurbanne", horaire: "après-midi", dateLimite: "2026-09-11", dateLimiteLibelle: "11 septembre 2026" },
+  { date: "17 novembre 2026", iso: "2026-11-17", lieu: "Rhône – Double Mixte, 10 Avenue Gaston Berger, 69100 Villeurbanne", horaire: "après-midi", dateLimite: "2026-10-30", dateLimiteLibelle: "30 octobre 2026" },
+  { date: "26 janvier 2027", iso: "2027-01-26", lieu: "Rhône – ParcExpo, 21 Avenue de l'Europe, 69400 Villefranche-sur-Saône", horaire: "", dateLimite: "2027-01-08", dateLimiteLibelle: "8 janvier 2027 à 12h" },
+  { date: "30 mars 2027", iso: "2027-03-30", lieu: "Rhône – ParcExpo, 21 Avenue de l'Europe, 69400 Villefranche-sur-Saône", horaire: "", dateLimite: "2027-03-12", dateLimiteLibelle: "12 mars 2027 à 12h" },
+  { date: "25 mai 2027", iso: "2027-05-25", lieu: "Puy-de-Dôme – Polydome, Place du 1er mai, 63100 Clermont-Ferrand", horaire: "", dateLimite: "2027-05-07", dateLimiteLibelle: "7 mai 2027 à 12h" },
+  { date: "20 juillet 2027", iso: "2027-07-20", lieu: "Rhône – Matmut Stadium, 353 avenue Jean Jaurès, 69100 Villeurbanne", horaire: "", dateLimite: "2027-07-02", dateLimiteLibelle: "2 juillet 2027 à 12h" },
+  { date: "28 septembre 2027", iso: "2027-09-28", lieu: "Lieu à confirmer", horaire: "", dateLimite: "2027-09-10", dateLimiteLibelle: "10 septembre 2027 à 12h" },
+  { date: "7 décembre 2027", iso: "2027-12-07", lieu: "Rhône – ParcExpo, 21 Avenue de l'Europe, 69400 Villefranche-sur-Saône", horaire: "", dateLimite: "2027-11-19", dateLimiteLibelle: "19 novembre 2027 à 12h" },
 ];
+
+const deaccentExam = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim();
+
+/**
+ * Retrouve l'examen EXACT correspondant à la date enregistrée sur la fiche de l'élève.
+ * Accepte « 17 novembre 2026 », « 17 novembre 2026 (après-midi) », « 2026-11-17 » ou « 17/11/2026 ».
+ * Retourne null si aucune correspondance certaine (jamais de « prochaine date » devinée).
+ */
+export function trouverExamenTheorique(valeur: string | null | undefined): ExamenTheoriqueDate | null {
+  const v = deaccentExam(String(valeur || ""));
+  if (!v) return null;
+  const matches = ALL_DATES_EXAMEN_THEORIQUE.filter((e) => {
+    const [y, m, d] = e.iso.split("-");
+    const txt = new RegExp(`(^|\\D)${deaccentExam(e.date)}($|\\D)`);
+    return txt.test(v) || v.includes(e.iso) || new RegExp(`(^|\\D)${d}/${m}/${y}`).test(v);
+  });
+  return matches.length === 1 ? matches[0] : null;
+}
 
 /**
  * Prochaine date d'examen théorique (la plus proche encore à venir).
@@ -41,22 +80,31 @@ export function getProchaineDateExamenTheorique(now: Date = new Date()) {
 // Version courte (sans adresse complète) pour les vues compactes
 export const ALL_DATES_EXAMEN_THEORIQUE_SHORT = ALL_DATES_EXAMEN_THEORIQUE.map(d => ({
   ...d,
-  lieu: d.lieu.includes("Villeurbanne") ? "Villeurbanne – Double Mixte" : d.lieu.includes("Clermont-Ferrand") ? "Clermont-Ferrand – Polydome" : d.lieu,
+  lieu: d.lieu.includes("Double Mixte") ? "Villeurbanne – Double Mixte"
+    : d.lieu.includes("Matmut") ? "Villeurbanne – Matmut Stadium"
+    : d.lieu.includes("Villefranche") ? "Villefranche-sur-Saône – ParcExpo"
+    : d.lieu.includes("Clermont-Ferrand") ? "Clermont-Ferrand – Polydome" : d.lieu,
 }));
 
 // Version pour les selects onboarding (value/label/lieu)
 export const ALL_DATES_EXAMEN_THEORIQUE_VALUES = ALL_DATES_EXAMEN_THEORIQUE.map(d => ({
   value: d.date,
-  label: `${d.date} (${d.horaire})`,
+  label: d.horaire ? `${d.date} (${d.horaire})` : d.date,
   lieu: d.lieu,
 }));
 
 // Version pour Step5 onboarding (id/date/label/location)
-export const ALL_DATES_EXAMEN_STEP5 = [
-  { id: '2026-07-21-pm', date: new Date(2026, 6, 21, 14, 0), label: '21 juillet 2026 (après-midi)', location: 'Rhône – Double Mixte, 10 Avenue Gaston Berger, 69100 Villeurbanne' },
-  { id: '2026-09-29-pm', date: new Date(2026, 8, 29, 14, 0), label: '29 septembre 2026 (après-midi)', location: 'Rhône – Double Mixte, 10 Avenue Gaston Berger, 69100 Villeurbanne' },
-  { id: '2026-11-17-pm', date: new Date(2026, 10, 17, 14, 0), label: '17 novembre 2026 (après-midi)', location: 'Rhône – Double Mixte, 10 Avenue Gaston Berger, 69100 Villeurbanne' },
-];
+export const ALL_DATES_EXAMEN_STEP5 = ALL_DATES_EXAMEN_THEORIQUE
+  .filter((d) => d.iso >= "2026-07-21")
+  .map((d) => {
+    const [y, m, j] = d.iso.split("-").map(Number);
+    return {
+      id: `${d.iso}${d.horaire === "après-midi" ? "-pm" : ""}`,
+      date: new Date(y, m - 1, j, 14, 0),
+      label: d.horaire ? `${d.date} (${d.horaire})` : d.date,
+      location: d.lieu,
+    };
+  });
 
 // Version ExamenReussitePage (avec pratiqueIndex)
 export const ALL_DATES_EXAMEN_REUSSITE = [

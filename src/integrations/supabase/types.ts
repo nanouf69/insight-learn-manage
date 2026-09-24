@@ -2445,6 +2445,69 @@ export type Database = {
           },
         ]
       }
+      demandes_inscription_urgentes: {
+        Row: {
+          apprenant_id: string
+          apprenant_nom: string | null
+          apprenant_prenom: string | null
+          created_at: string
+          date_examen: string
+          date_limite: string
+          email_destinataire: string
+          email_envoye_at: string | null
+          email_erreur: string | null
+          email_statut: string
+          examen_libelle: string
+          formation: string | null
+          id: string
+          jours_restants: number | null
+          statut: string
+          statut_inscription: string | null
+          traitee_at: string | null
+          traitee_par: string | null
+        }
+        Insert: {
+          apprenant_id: string
+          apprenant_nom?: string | null
+          apprenant_prenom?: string | null
+          created_at?: string
+          date_examen: string
+          date_limite: string
+          email_destinataire?: string
+          email_envoye_at?: string | null
+          email_erreur?: string | null
+          email_statut?: string
+          examen_libelle: string
+          formation?: string | null
+          id?: string
+          jours_restants?: number | null
+          statut?: string
+          statut_inscription?: string | null
+          traitee_at?: string | null
+          traitee_par?: string | null
+        }
+        Update: {
+          apprenant_id?: string
+          apprenant_nom?: string | null
+          apprenant_prenom?: string | null
+          created_at?: string
+          date_examen?: string
+          date_limite?: string
+          email_destinataire?: string
+          email_envoye_at?: string | null
+          email_erreur?: string | null
+          email_statut?: string
+          examen_libelle?: string
+          formation?: string | null
+          id?: string
+          jours_restants?: number | null
+          statut?: string
+          statut_inscription?: string | null
+          traitee_at?: string | null
+          traitee_par?: string | null
+        }
+        Relationships: []
+      }
       devis_envois: {
         Row: {
           apprenant_id: string | null
