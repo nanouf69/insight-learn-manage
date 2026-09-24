@@ -1195,6 +1195,60 @@ export type Database = {
         }
         Relationships: []
       }
+      bilan_passage_snapshots: {
+        Row: {
+          apprenant_id: string
+          bareme: Json | null
+          created_at: string
+          empreinte: string
+          empreinte_source: string
+          exercice_id: number
+          filiere: string
+          id: string
+          matiere: string
+          module_id: number
+          nb_questions: number
+          operation_id: string | null
+          passage_cle: string
+          questions: Json
+          tentative: number
+        }
+        Insert: {
+          apprenant_id: string
+          bareme?: Json | null
+          created_at?: string
+          empreinte: string
+          empreinte_source: string
+          exercice_id: number
+          filiere: string
+          id?: string
+          matiere: string
+          module_id: number
+          nb_questions: number
+          operation_id?: string | null
+          passage_cle: string
+          questions: Json
+          tentative: number
+        }
+        Update: {
+          apprenant_id?: string
+          bareme?: Json | null
+          created_at?: string
+          empreinte?: string
+          empreinte_source?: string
+          exercice_id?: number
+          filiere?: string
+          id?: string
+          matiere?: string
+          module_id?: number
+          nb_questions?: number
+          operation_id?: string | null
+          passage_cle?: string
+          questions?: Json
+          tentative?: number
+        }
+        Relationships: []
+      }
       bilan_passages_figes: {
         Row: {
           apprenant_id: string | null
@@ -1252,6 +1306,24 @@ export type Database = {
           score_bonnes?: number
           statut_passage?: string | null
           tentative?: number | null
+        }
+        Relationships: []
+      }
+      bilan_snapshot_flags: {
+        Row: {
+          actif: boolean
+          module_id: number
+          updated_at: string
+        }
+        Insert: {
+          actif?: boolean
+          module_id: number
+          updated_at?: string
+        }
+        Update: {
+          actif?: boolean
+          module_id?: number
+          updated_at?: string
         }
         Relationships: []
       }
@@ -6302,6 +6374,42 @@ export type Database = {
           total: number
           validated: boolean
         }[]
+      }
+      bilan_demarrer_passage: {
+        Args: {
+          p_apprenant_id: string
+          p_exercice_id: number
+          p_module_id: number
+          p_operation_id?: string
+          p_tentative: number
+        }
+        Returns: {
+          apprenant_id: string
+          bareme: Json | null
+          created_at: string
+          empreinte: string
+          empreinte_source: string
+          exercice_id: number
+          filiere: string
+          id: string
+          matiere: string
+          module_id: number
+          nb_questions: number
+          operation_id: string | null
+          passage_cle: string
+          questions: Json
+          tentative: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "bilan_passage_snapshots"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      bilan_snapshot_question_valide: {
+        Args: { p_cle: string; p_snapshot_id: string }
+        Returns: boolean
       }
       bilan_sync_champs: { Args: never; Returns: string[] }
       bilan_sync_empreinte: { Args: { q: Json }; Returns: string }

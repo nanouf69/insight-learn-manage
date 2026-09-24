@@ -582,6 +582,13 @@
       "when": 1790254346475,
       "tag": "0082_bilan_examen_block_new_qrc",
       "breakpoints": true
+    },
+    {
+      "idx": 83,
+      "version": "7",
+      "when": 1790255208761,
+      "tag": "0083_bilan_passage_snapshots",
+      "breakpoints": true
     }
   ]
 }
