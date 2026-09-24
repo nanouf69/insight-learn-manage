@@ -53,15 +53,18 @@ export type QrcReelle = {
  * « inconnue »     : trace insuffisante pour trancher — on ne suppose rien.
  * Aucune donnée n'est modifiée : la distinction est déduite de la trace existante.
  */
-export type OrigineCorrection = "humaine" | "automatique" | "inconnue" | "aucune";
+export type OrigineCorrection = "humaine" | "automatique" | "ia" | "inconnue" | "aucune";
 
 const MARQUEUR_AUTOMATIQUE = "correction historique importée";
+/** Correction IA (Gemini) non vérifiée humainement — voir supabase/functions/_shared/qrcIaRegles.ts. */
+export const MARQUEUR_IA_PREFIXE = "ia:";
 
 export function origineCorrection(qrc: Pick<QrcReelle, "etat" | "corrige_email">): OrigineCorrection {
   if (qrc.etat !== "corrigee") return "aucune";
   const email = (qrc.corrige_email ?? "").trim().toLowerCase();
   // Trace insuffisante : on n'affirme ni « humaine » ni « automatique ».
   if (!email) return "inconnue";
+  if (email.startsWith(MARQUEUR_IA_PREFIXE)) return "ia";
   return email.startsWith(MARQUEUR_AUTOMATIQUE) ? "automatique" : "humaine";
 }
 

@@ -304,7 +304,24 @@ export async function finaliserMatiere(params: {
 
   const { error: erreurNote } = await supabase.rpc("core_recalc_result", { p_attempt_id: params.attemptId });
   if (erreurNote) return { ok: false, message: erreurNote.message };
+  demanderCorrectionIa(params.attemptId);
   return { ok: true };
+}
+
+/**
+ * Demande (sans attendre) la correction IA des QRC du passage. Le serveur
+ * décide seul : interrupteur, e-learning, nouveau passage, règles d'exclusion,
+ * idempotence. Un échec n'a aucun effet sur la copie : les QRC restent à
+ * corriger par le formateur.
+ */
+export function demanderCorrectionIa(attemptId: string): void {
+  try {
+    void supabase.functions
+      .invoke("qrc-ia-correction", { body: { attempt_id: attemptId } })
+      .catch(() => undefined);
+  } catch {
+    /* jamais bloquant */
+  }
 }
 
 // ---------------------------------------------------------------------------
