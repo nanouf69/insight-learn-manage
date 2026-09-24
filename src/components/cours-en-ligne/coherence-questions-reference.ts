@@ -48,13 +48,14 @@ export function detecterDivergencesCorrection(
   reference: Question[],
 ): DivergenceCorrection[] {
   // énoncé → (proposition → ensemble des statuts observés en référence)
-  const ref = new Map<string, { statuts: Map<string, Set<boolean>>; bonnes: Set<string> }>();
+  const ref = new Map<string, { statuts: Map<string, Set<boolean>>; bonnes: Set<string>; variantes: Question[] }>();
   for (const q of reference) {
     if ((q as any)?.type !== "QCM" || !Array.isArray((q as any).choix)) continue;
     const cle = compact(q.enonce);
     // Une question de référence sans aucune bonne réponse n'est pas une référence.
     if (!cle || bonnesReponsesTexte(q).length === 0) continue;
-    const entree = ref.get(cle) ?? { statuts: new Map(), bonnes: new Set<string>() };
+    const entree = ref.get(cle) ?? { statuts: new Map(), bonnes: new Set<string>(), variantes: [] as Question[] };
+    entree.variantes.push(q);
     for (const c of (q as any).choix) {
       const t = compact(c?.texte);
       if (!t) continue;
@@ -77,7 +78,17 @@ export function detecterDivergencesCorrection(
           const statuts = entree.statuts.get(compact(c?.texte));
           return !!statuts && statuts.size === 1 && [...statuts][0] !== (c?.correct === true);
         });
-        if (diverge) {
+        // Repli par lettre : même nombre de propositions, textes majoritairement
+        // identiques (ex. « tous ans » / « tous les ans ») → on compare les
+        // lettres marquées correctes.
+        const lettres = (x: any) =>
+          (x?.choix ?? []).filter((c: any) => c?.correct === true).map((c: any) => String(c?.lettre)).sort().join(",");
+        const divergeLettre = entree.variantes.every((v: any) => {
+          if (!Array.isArray(v.choix) || v.choix.length !== q.choix.length) return false;
+          const communs = q.choix.filter((c: any, i: number) => compact(c?.texte) === compact(v.choix[i]?.texte)).length;
+          return communs * 2 >= q.choix.length && lettres(v) !== lettres(q);
+        });
+        if (diverge || divergeLettre) {
           out.push({
             examenId: ex.id,
             matiereId: (m as any).id,
