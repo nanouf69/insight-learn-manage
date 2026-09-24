@@ -519,6 +519,13 @@
       "when": 1790240495111,
       "tag": "0073_preparation_changement_mdp_obligatoire",
       "breakpoints": true
+    },
+    {
+      "idx": 74,
+      "version": "7",
+      "when": 1790241149028,
+      "tag": "0074_retrait_version_essai_vide",
+      "breakpoints": true
     }
   ]
 }
