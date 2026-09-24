@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import {
   applyFournisseurOverridesToExamens,
   FOURNISSEUR_QUIZ_TO_EXAM,
@@ -43,7 +43,7 @@ describe("applyFournisseurOverridesToExamens — dernière version enregistrée"
     ["bilan-examen-vtc", "bilan-vtc",  500],
     ["bilan-examen-taxi","bilan-taxi", 600],
     ["bilan-examen-va",  "bilan-va",   600],
-  ])("applique le fournisseur sur %s quand l'admin n'a pas de date", (quizId, examId, base) => {
+  ])("%s : sans date Admin fiable, rien n'est écrasé (conflit signalé)", (quizId, examId, base) => {
     const examens = [makeExam(examId, oneMatiere([makeQ(1, "Version admin", "C")]))] as any;
 
     const overrides = [
@@ -61,10 +61,20 @@ describe("applyFournisseurOverridesToExamens — dernière version enregistrée"
       },
     ];
 
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     const result = applyFournisseurOverridesToExamens(examens, overrides);
     const q1 = result[0].matieres[0].questions[0];
-    expect(q1.enonce).toBe("Ancienne réponse fournisseur");
-    expect(q1.choix.find((c: any) => c.correct)?.lettre).toBe("A");
+    // Règle actuelle : aucune version écrasée sans preuve d'antériorité.
+    expect(q1.enonce).toBe("Version admin");
+    expect(q1.choix.find((c: any) => c.correct)?.lettre).toBe("C");
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
+
+    // Avec la date réelle de dernière écriture Admin (plus ancienne), le fournisseur s'applique.
+    const examens2 = [makeExam(examId, oneMatiere([makeQ(1, "Version admin", "C")]))] as any;
+    const r2 = applyFournisseurOverridesToExamens(examens2, overrides, "2026-07-23T10:00:00Z");
+    expect(r2[0].matieres[0].questions[0].enonce).toBe("Ancienne réponse fournisseur");
+    expect(r2[0].matieres[0].questions[0].choix.find((c: any) => c.correct)?.lettre).toBe("A");
   });
 
   it("applique le fournisseur quand son updated_at est plus récent", () => {
@@ -110,9 +120,17 @@ describe("applyFournisseurOverridesToExamens — dernière version enregistrée"
       },
     ];
 
-    const result = applyFournisseurOverridesToExamens(examens, overrides);
+    // Date Admin connue et plus ancienne → la suppression fournisseur s'applique.
+    const result = applyFournisseurOverridesToExamens(examens, overrides, "2026-07-23T10:00:00Z");
     const ids = result[0].matieres[0].questions.map((q: any) => q.id);
     expect(ids).toEqual([1, 3]);
+
+    // Sans date Admin fiable → aucune suppression automatique.
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const examens2 = [makeExam("bilan-taxi", oneMatiere([makeQ(1, "Q1"), makeQ(2, "Q2"), makeQ(3, "Q3")]))] as any;
+    const r2 = applyFournisseurOverridesToExamens(examens2, overrides);
+    expect(r2[0].matieres[0].questions.map((q: any) => q.id)).toEqual([1, 2, 3]);
+    warn.mockRestore();
   });
 
   it("ignore les overrides sans mapping (quiz_id inconnu)", () => {

@@ -66,8 +66,10 @@ describe("Bug 1: sourceFingerprint mismatch — students must still see admin ed
     expect(merged[0].questions![0].choix.find(c => c.correct)?.lettre).toBe("B");
     expect(merged[0].questions![0].image).toBe("https://example.com/admin-image.png");
     expect(merged[0].questions![1].enonce).toBe("Also edited");
-    // New question from source must appear
-    expect(merged[0].questions![2].enonce).toBe("New question added in v10");
+    // Règle actuelle : la version enregistrée fait foi — une question présente
+    // uniquement dans le code n'est PAS réinjectée (évite de ressusciter une
+    // question supprimée par l'Admin).
+    expect(merged[0].questions).toHaveLength(2);
   });
 
   it("should preserve admin image when source has no image", () => {
@@ -249,7 +251,7 @@ describe("Bug 3: Image modifications — merge must preserve admin images consis
     expect(q.choix[1].texte).toBe("New B");
   });
 
-  it("should NOT lose admin questions when source adds new questions", () => {
+  it("should NOT lose admin questions when source adds new questions (saved list authoritative)", () => {
     // Admin has edited 2 questions
     const saved = [makeExercice(1, [
       makeQuestion(1, "Admin Q1", "B", "https://img1.jpg"),
@@ -264,11 +266,12 @@ describe("Bug 3: Image modifications — merge must preserve admin images consis
 
     const merged = mergeSourceExercices(saved, source);
 
-    expect(merged[0].questions!.length).toBe(3);
+    expect(merged[0].questions!.length).toBe(2);
     expect(merged[0].questions![0].enonce).toBe("Admin Q1"); // admin edit preserved
     expect(merged[0].questions![0].image).toBe("https://img1.jpg");
     expect(merged[0].questions![1].enonce).toBe("Admin Q2"); // admin edit preserved
-    expect(merged[0].questions![2].enonce).toBe("Source Q3 (new)"); // new from source
+    // Source Q3 n'est pas réinjectée : la liste enregistrée fait foi.
+    expect(merged[0].questions!.map((q) => q.enonce)).not.toContain("Source Q3 (new)");
   });
 });
 
