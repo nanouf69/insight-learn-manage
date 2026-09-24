@@ -526,6 +526,13 @@
       "when": 1790241149028,
       "tag": "0074_retrait_version_essai_vide",
       "breakpoints": true
+    },
+    {
+      "idx": 75,
+      "version": "7",
+      "when": 1790242927668,
+      "tag": "0075_eb2_retrait_version_essai_vide",
+      "breakpoints": true
     }
   ]
 }
