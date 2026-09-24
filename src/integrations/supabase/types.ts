@@ -6653,6 +6653,10 @@ export type Database = {
         Args: { p_exercice_id: number; p_module_id: number; p_question: Json }
         Returns: Json
       }
+      bilan_ouvrir_passage_eleve: {
+        Args: { p_exercice_id: number; p_module_id: number }
+        Returns: Json
+      }
       bilan_reponse_identite_valide: {
         Args: {
           p_cle_historique: string
