@@ -575,6 +575,13 @@
       "when": 1790251391644,
       "tag": "0081_bilan_sync_branchement_editeur",
       "breakpoints": true
+    },
+    {
+      "idx": 82,
+      "version": "7",
+      "when": 1790254346475,
+      "tag": "0082_bilan_examen_block_new_qrc",
+      "breakpoints": true
     }
   ]
 }
