@@ -603,7 +603,7 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
                               ⏳ En attente de correction des QRC
                             </span>
                             <span className="text-xs text-amber-700 text-center">
-                              La note finale sera publiée après validation de toutes les QRC par le formateur.
+                              La note finale sera publiée dès que toutes les QRC restantes auront été corrigées.
                             </span>
                           </div>
                         );

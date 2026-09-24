@@ -626,10 +626,10 @@ function EcranResultats({
           <div className="p-8 text-center text-white" style={{ backgroundColor: '#0D2540' }}>
             <Clock className="w-14 h-14 mx-auto mb-3 text-amber-400" />
             <h3 className="text-3xl font-black mb-2 text-amber-400">
-              En attente de validation du formateur
+              En attente de correction des QRC
             </h3>
             <p className="text-lg text-gray-300 mt-2">
-              Vos réponses aux questions ouvertes (QRC) doivent être corrigées par votre formateur avant d'obtenir votre résultat final.
+              Certaines réponses aux questions ouvertes (QRC) n'ont pas encore été corrigées. Votre résultat final sera publié dès qu'elles le seront.
             </p>
             <p className="text-sm text-gray-400 mt-3">{examen.titre}</p>
           </div>
@@ -1027,7 +1027,7 @@ function EcranResultats({
           <Card className="border-2 border-amber-400">
             <CardContent className="py-6 px-5 text-center">
               <Clock className="w-8 h-8 mx-auto mb-2 text-amber-500" />
-              <p className="text-xl font-black text-amber-600">En attente de validation du formateur</p>
+              <p className="text-xl font-black text-amber-600">En attente de correction des QRC</p>
               <p className="text-sm text-muted-foreground mt-1">Votre bilan et votre résultat final seront disponibles après la correction de toutes les QRC.</p>
             </CardContent>
           </Card>
