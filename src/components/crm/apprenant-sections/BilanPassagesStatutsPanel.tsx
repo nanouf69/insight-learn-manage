@@ -42,7 +42,7 @@ export function BilanPassagesStatutsPanel({ apprenantId }: { apprenantId: string
   const charger = useCallback(async () => {
     const [c, s, a] = await Promise.all([
       (supabase as any).from("bilan_passage_categories").select("module_id, exercice_id, tentative, categorie, created_at").eq("apprenant_id", apprenantId),
-      (supabase as any).from("bilan_reponse_statuts").select("module_id, exercice_id, tentative, cle, uid, statut, reponse").eq("apprenant_id", apprenantId),
+      (supabase as any).from("bilan_reponse_statuts_effectifs").select("module_id, exercice_id, tentative, cle, uid, statut, reponse").eq("apprenant_id", apprenantId),
       (supabase as any).from("bilan_nouvelle_tentative_autorisations").select("module_id, exercice_id, tentative_source, tentative_autorisee, motif, created_at").eq("apprenant_id", apprenantId),
     ]);
     setCats(c.data ?? []); setStatuts(s.data ?? []); setAutos(a.data ?? []);
