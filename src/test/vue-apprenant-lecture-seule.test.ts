@@ -60,6 +60,8 @@ describe("Verrou central Vue apprenant", () => {
 });
 
 describe("Points d'écriture réellement protégés", () => {
+  // NB : l'encadré « Mes heures e-learning » n'écrit plus la date d'examen
+  // (date_examen_theorique) — cette écriture a été retirée, donc plus de test.
   const cases: Array<[string, string]> = [
     ["src/lib/moduleCompletion.ts", "save_module_completion"],
     ["src/lib/quizAttempts.ts", "submit_quiz_attempt"],
@@ -70,7 +72,6 @@ describe("Points d'écriture réellement protégés", () => {
     ["src/components/cours-en-ligne/ModuleDetailView.tsx", "save_module_pages_progress"],
     ["src/components/cours-en-ligne/ExamensBlancsPage.tsx", "apprenant_quiz_results"],
     ["src/components/cours-en-ligne/ExamenBlancsResultats.tsx", "bilan_examen_blanc"],
-    ["src/components/cours-en-ligne/StudentHoursTracker.tsx", "date_examen_theorique"],
   ];
 
   it.each(cases)("%s appelle blockLearnerWrite pour %s", (file, op) => {
