@@ -119,6 +119,46 @@ export default function MonDossierFormation({ apprenantId, onOpenIntro }: Props)
           )}
         </div>
       </CardContent>
-    </Card>
+      </Card>
+
+      {/* Rappel important – engagements de formation (informatif uniquement) */}
+      <div
+        className="mt-4 rounded-xl border bg-muted/30 p-4"
+        data-testid="rappel-engagements-formation"
+      >
+        <p className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+          <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+          ⚠️ Rappel important – Respect de vos engagements de formation
+        </p>
+        <p className="mt-2 text-xs text-muted-foreground leading-relaxed">
+          En cas d'abandon de la formation, d'absence injustifiée ou de manquement à vos
+          engagements, des conséquences peuvent s'appliquer selon votre situation :
+        </p>
+        <ul className="mt-2 space-y-1.5 text-xs text-muted-foreground leading-relaxed">
+          <li>
+            <span className="font-medium text-foreground">CPF :</span> un manquement aux
+            engagements souscrits peut entraîner des mesures de la Caisse des dépôts,
+            notamment une suspension temporaire de la prise en charge de formations
+            (article R.6333-7 du Code du travail).
+          </li>
+          <li>
+            <span className="font-medium text-foreground">
+              Absence à l'examen ou aux évaluations sans motif légitime :
+            </span>{" "}
+            les droits CPF peuvent ne pas pouvoir être mobilisés pour régler la formation
+            et les sommes déjà utilisées peuvent, le cas échéant, faire l'objet d'une
+            demande de remboursement (article 59 de la loi n° 2026-534 du 25 juin 2026).
+          </li>
+          <li>
+            <span className="font-medium text-foreground">
+              Apprenants suivis par France Travail :
+            </span>{" "}
+            une absence ou un abandon sans motif légitime peut entraîner des sanctions sur
+            l'inscription et/ou l'indemnisation, selon la situation et la nature du
+            manquement.
+          </li>
+        </ul>
+      </div>
+    </>
   );
 }
