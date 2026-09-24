@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import { filterFutureExamDates, filterFutureDateStrings } from "@/lib/filterPastDates";
-import { ALL_DATES_EXAMEN_REUSSITE, ALL_DATES_EXAMEN_PRATIQUE_NO_ACCENT } from '@/lib/examDatesConfig';
+import { ALL_DATES_EXAMEN_REUSSITE, ALL_DATES_EXAMEN_PRATIQUE_NO_ACCENT, trouverExamenTheorique } from '@/lib/examDatesConfig';
+import { limiteCourte } from '@/lib/examDateLimiteAffichage';
 import { safeDateParse, formatDateFR, formatDateShortFR } from "@/lib/safeDateParse";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -2159,12 +2160,15 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
             {fullscreen ? "Réduire" : "Plein écran"}
           </Button>
           <Select value={selectedExamDate} onValueChange={handleExamDateChange}>
-            <SelectTrigger className="w-64">
+            <SelectTrigger className="w-96 max-w-full">
               <SelectValue placeholder="Date d'examen" />
             </SelectTrigger>
             <SelectContent>
               {datesExamenTheorique.map(e => (
-                <SelectItem key={e.date} value={e.date}>{e.date} — {e.lieu}</SelectItem>
+                <SelectItem key={e.date} value={e.date}>
+                  {e.date} — {e.lieu}
+                  {limiteCourte(e.date) && <span className="text-destructive font-semibold"> — {limiteCourte(e.date)}</span>}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -2217,6 +2221,11 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
             <span className="flex items-center gap-2">
               <ClipboardCheck className="h-5 w-5" />
               Résultats et inscriptions examen théorique - {selectedExamDate}
+            </span>
+            <span data-testid="date-limite-inscription-crm" className={trouverExamenTheorique(selectedExamDate)?.dateLimiteLibelle ? "text-destructive font-bold text-base uppercase" : "text-muted-foreground text-sm font-medium"}>
+              {trouverExamenTheorique(selectedExamDate)?.dateLimiteLibelle
+                ? `🔴 Date limite d'inscription : ${trouverExamenTheorique(selectedExamDate)!.dateLimiteLibelle}`
+                : "Date limite d'inscription : non renseignée"}
             </span>
             <Popover>
               <PopoverTrigger asChild>
