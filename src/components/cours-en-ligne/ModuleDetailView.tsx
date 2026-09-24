@@ -3114,7 +3114,8 @@ function MoveQuestionDialog({
       const existing: ExerciceQuestion[] = Array.isArray(exercices[targetIdx].questions)
         ? exercices[targetIdx].questions
         : [];
-      const newId = Math.max(0, ...existing.map((q: any) => Number(q.id) || 0)) + 1;
+      const plancher = Number(exercices[targetIdx]?.numero_plancher) || 0;
+      const newId = Math.max(0, plancher, ...existing.map((q: any) => Number(q.id) || 0)) + 1;
 
       const moved: any = {
         ...JSON.parse(JSON.stringify(question)),
@@ -3123,6 +3124,7 @@ function MoveQuestionDialog({
       delete moved.question_id;
       delete moved._canonicalUpdatedAt;
       delete moved._baseChoix;
+      delete moved.uid; // l'identité permanente reste attachée à la question d'origine
 
       const nextModuleData = {
         ...baseModuleData,
@@ -3338,7 +3340,10 @@ function ExerciceCard({
 
   const addQuestion = () => {
     const existing = item.questions || [];
-    const newId = Math.max(0, ...existing.map(q => q.id)) + 1;
+    // Identité permanente : ne jamais réutiliser un numéro technique déjà attribué
+    // (supprimé, masqué, historique). Le plancher est fourni par le serveur.
+    const plancher = Number((item as any).numero_plancher) || 0;
+    const newId = Math.max(0, plancher, ...existing.map(q => Number(q.id) || 0)) + 1;
     const newQ: ExerciceQuestion = {
       id: newId,
       enonce: "Nouvelle question",
