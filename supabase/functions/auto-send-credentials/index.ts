@@ -160,24 +160,14 @@ serve(async (req) => {
       "passage-pratique": "Passage examen pratique",
     };
 
-    const generatePassword = () => {
-      const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
-      let pwd = "";
-      const randomBytes = new Uint8Array(8);
-      crypto.getRandomValues(randomBytes);
-      for (let i = 0; i < 8; i++) {
-        pwd += chars[randomBytes[i] % chars.length];
-      }
-      return pwd;
-    };
-
     const results: { id: string; email: string; success: boolean; accountCreated?: boolean; error?: string }[] = [];
     const senderEmail = "contact@ftransport.fr";
     const coursUrl = "https://insight-learn-manage.lovable.app/cours-public";
 
     for (const apprenant of toProcess) {
       try {
-        let newPassword = generatePassword();
+        // Mot de passe interne aléatoire, jamais communiqué (nouveau compte uniquement).
+        const newPassword = generateUnsharedPassword();
         let authUserId = apprenant.auth_user_id;
 
         // ===== STEP 1: Create account if needed =====
@@ -202,8 +192,7 @@ serve(async (req) => {
               const existingUser = listData?.users?.find((u: any) => u.email === apprenant.email);
 
               if (existingUser) {
-                // Update password
-                await supabaseAdmin.auth.admin.updateUserById(existingUser.id, { password: newPassword });
+                // Réutilisation sans modifier le mot de passe existant.
                 authUserId = existingUser.id;
               } else {
                 console.error(`[auto-send-credentials] Could not find existing user for ${apprenant.email}`);
@@ -246,22 +235,16 @@ serve(async (req) => {
 
 
           console.log(`[auto-send-credentials] ✅ Account created for ${apprenant.email} (${authUserId})`);
-        } else {
-          // ===== Account exists, just reset password =====
-          const { error: updateErr } = await supabaseAdmin.auth.admin.updateUserById(
-            authUserId,
-            { password: newPassword }
-          );
-
-          if (updateErr) {
-            console.error(`[auto-send-credentials] Password reset failed for ${apprenant.email}:`, updateErr);
-            results.push({ id: apprenant.id, email: apprenant.email, success: false, error: updateErr.message });
-            continue;
-          }
         }
+        // Compte existant : son mot de passe actuel n'est JAMAIS modifié.
 
         // Le mot de passe n'est jamais stocké dans le CRM : le service
-        // d'authentification est la seule référence.
+        // d'authentification est la seule référence. L'élève reçoit un lien
+        // sécurisé à usage unique pour définir lui-même son mot de passe.
+        const setPasswordLink = await generateSetPasswordLink(
+          supabaseAdmin,
+          String(apprenant.email).trim().toLowerCase(),
+        );
 
         // ===== STEP 2: Send email =====
         const rawFormation = apprenant.formation_choisie || "";
@@ -308,13 +291,7 @@ serve(async (req) => {
                 <p><strong>Période des cours :</strong> du <strong>${dateDebut}</strong> au <strong>${dateFin}</strong></p>
               </div>
               
-              <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0; border-radius: 4px;">
-                <h3 style="color: #92400e; margin-top: 0;">🔐 Vos identifiants de connexion</h3>
-                <p><strong>Email :</strong> ${apprenant.email}</p>
-                <p><strong>Mot de passe :</strong> <code style="background: #e5e7eb; padding: 2px 8px; border-radius: 4px; font-size: 16px; letter-spacing: 1px;">${newPassword}</code></p>
-              </div>
-
-              <p style="color: #6b7280; font-size: 14px;">🔑 Vous pouvez modifier votre mot de passe à tout moment depuis votre espace apprenant.</p>
+              ${setPasswordBlock(apprenant.email, setPasswordLink)}
               
               <div style="text-align: center; margin: 30px 0;">
                 <a href="${coursUrl}" style="background-color: #3b82f6; color: #ffffff; text-decoration: none; padding: 14px 30px; border-radius: 8px; font-size: 16px; font-weight: bold; display: inline-block;">
@@ -345,12 +322,12 @@ serve(async (req) => {
           html: emailBody,
           replyTo: senderEmail,
         });
-          // Log email
+          // Log email — sans aucun secret exploitable
           await supabaseAdmin.from("emails").insert({
             apprenant_id: apprenant.id,
             subject: subjectLine,
-            body_preview: `Bonjour ${prenom}, ${startPhrase.toLowerCase()} ! Voici vos identifiants.`,
-            body_html: emailBody,
+            body_preview: `Bonjour ${prenom}, ${startPhrase.toLowerCase()} ! ${HISTORY_ACCESS_NOTE}.`,
+            body_html: redactForHistory(emailBody, [setPasswordLink]),
             sender_email: senderEmail,
             sender_name: "FTRANSPORT",
             recipients: [apprenant.email],
