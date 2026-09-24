@@ -86,7 +86,9 @@ export function detecterDivergencesCorrection(
         const divergeLettre = entree.variantes.every((v: any) => {
           if (!Array.isArray(v.choix) || v.choix.length !== q.choix.length) return false;
           const communs = q.choix.filter((c: any, i: number) => compact(c?.texte) === compact(v.choix[i]?.texte)).length;
-          return communs * 2 >= q.choix.length && lettres(v) !== lettres(q);
+          const memesTextes =
+            JSON.stringify(bonnesReponsesTexte(v).map(compact)) === JSON.stringify(bonnesReponsesTexte(q).map(compact));
+          return communs * 2 >= q.choix.length && lettres(v) !== lettres(q) && !memesTextes;
         });
         if (diverge || divergeLettre) {
           out.push({
