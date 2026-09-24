@@ -1195,6 +1195,24 @@ export type Database = {
         }
         Relationships: []
       }
+      bilan_identite_flags: {
+        Row: {
+          actif: boolean
+          module_id: number
+          updated_at: string
+        }
+        Insert: {
+          actif?: boolean
+          module_id: number
+          updated_at?: string
+        }
+        Update: {
+          actif?: boolean
+          module_id?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       bilan_passage_snapshots: {
         Row: {
           apprenant_id: string
@@ -1306,6 +1324,89 @@ export type Database = {
           score_bonnes?: number
           statut_passage?: string | null
           tentative?: number | null
+        }
+        Relationships: []
+      }
+      bilan_question_identite_etats: {
+        Row: {
+          created_at: string
+          empreinte_contenu: string | null
+          etat: string
+          id: number
+          motif: string | null
+          numero_affiche: string | null
+          uid: string
+        }
+        Insert: {
+          created_at?: string
+          empreinte_contenu?: string | null
+          etat: string
+          id?: number
+          motif?: string | null
+          numero_affiche?: string | null
+          uid: string
+        }
+        Update: {
+          created_at?: string
+          empreinte_contenu?: string | null
+          etat?: string
+          id?: number
+          motif?: string | null
+          numero_affiche?: string | null
+          uid?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bilan_question_identite_etats_uid_fkey"
+            columns: ["uid"]
+            isOneToOne: false
+            referencedRelation: "bilan_question_identites"
+            referencedColumns: ["uid"]
+          },
+        ]
+      }
+      bilan_question_identites: {
+        Row: {
+          created_at: string
+          date_connue: string | null
+          empreinte_contenu: string | null
+          etat_initial: string
+          exercice_id: number
+          filiere: string
+          litigieux: boolean
+          matiere: string | null
+          module_id: number
+          motif: string | null
+          numero_technique: string
+          uid: string
+        }
+        Insert: {
+          created_at?: string
+          date_connue?: string | null
+          empreinte_contenu?: string | null
+          etat_initial?: string
+          exercice_id: number
+          filiere: string
+          litigieux?: boolean
+          matiere?: string | null
+          module_id: number
+          motif?: string | null
+          numero_technique: string
+          uid?: string
+        }
+        Update: {
+          created_at?: string
+          date_connue?: string | null
+          empreinte_contenu?: string | null
+          etat_initial?: string
+          exercice_id?: number
+          filiere?: string
+          litigieux?: boolean
+          matiere?: string | null
+          module_id?: number
+          motif?: string | null
+          numero_technique?: string
+          uid?: string
         }
         Relationships: []
       }
@@ -6375,6 +6476,10 @@ export type Database = {
           validated: boolean
         }[]
       }
+      bilan_corriger_snapshot: {
+        Args: { p_reponses: Json; p_snapshot_id: string }
+        Returns: Json
+      }
       bilan_demarrer_passage: {
         Args: {
           p_apprenant_id: string
@@ -6406,6 +6511,19 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      bilan_identite_creer: {
+        Args: { p_exercice_id: number; p_module_id: number; p_question: Json }
+        Returns: string
+      }
+      bilan_reponse_identite_valide: {
+        Args: {
+          p_cle_historique: string
+          p_exercice_id: number
+          p_module_id: number
+          p_uid: string
+        }
+        Returns: boolean
       }
       bilan_snapshot_question_valide: {
         Args: { p_cle: string; p_snapshot_id: string }

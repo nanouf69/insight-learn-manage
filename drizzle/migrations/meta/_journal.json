@@ -589,6 +589,13 @@
       "when": 1790255208761,
       "tag": "0083_bilan_passage_snapshots",
       "breakpoints": true
+    },
+    {
+      "idx": 84,
+      "version": "7",
+      "when": 1790255959750,
+      "tag": "0084_bilan_identites_permanentes",
+      "breakpoints": true
     }
   ]
 }
