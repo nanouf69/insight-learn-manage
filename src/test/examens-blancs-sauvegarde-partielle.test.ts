@@ -2,6 +2,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { readFileSync } from "fs";
 import { join } from "path";
+import { transformSync } from "esbuild";
 
 if (typeof globalThis.localStorage === "undefined") {
   const store = new Map<string, string>();
@@ -57,17 +58,66 @@ describe("Réponse enregistrée ≠ matière terminée", () => {
     expect(src).toContain("Le contenu de cette matière n'est pas chargé. La matière reste ouverte");
   });
 
-  it("le noyau exige les identifiants exacts du snapshot côté serveur avant de clôturer", () => {
-    const src = read(SRC);
+  it("1b — le noyau exige les identifiants exacts du snapshot côté serveur avant de clôturer (tolérant à la mise en page)", () => {
+    const src = read(SRC).replace(/\s+/g, "");
     expect(src).toContain('supabase.from("exam_attempts_v2").select("snapshot")');
-    expect(src).toContain('supabase\n          .from("answer_state")');
+    expect(src).toContain('supabase.from("answer_state").select("question_id")');
     expect(src).toContain("idsSnapshot.every");
-    expect(src).toContain("!confirmation?.contenuConforme || !confirmation.toutesConfirmees");
+    expect(src).toContain("!confirmation?.contenuConforme||!confirmation.toutesConfirmees");
   });
 
   it("les réponses partielles sont rechargées au retour (fusion base + file locale)", () => {
     const src = read(SRC);
     expect(src).toContain("mergeSavedAndPendingAnswers(rawReponses as any, apprenantId, exerciceKey)");
+  });
+});
+
+// 1a — test COMPORTEMENTAL : on exécute la vraie fonction de contrôle serveur
+// extraite de l'écran de passage (aucune copie de la logique), avec un
+// serveur simulé, puis la règle de clôture réelle (contenuConforme && toutesConfirmees).
+describe("1a — clôture autorisée seulement si le serveur possède toutes les réponses", () => {
+  const chargerControle = () => {
+    const src = read(SRC);
+    const debut = src.indexOf("const lireConfirmationNoyau = async () => {");
+    const fin = src.indexOf("let confirmation = await lireConfirmationNoyau();");
+    expect(debut).toBeGreaterThan(0);
+    expect(fin).toBeGreaterThan(debut);
+    const js = transformSync(src.slice(debut, fin), { loader: "ts" }).code;
+    return new Function("supabase", "attemptId", "matiere", "attendues", `${js}; return lireConfirmationNoyau;`);
+  };
+  const serveur = (nbQuestions: number, nbReponses: number) => {
+    const snapshot = { questions: Array.from({ length: nbQuestions }, (_, i) => ({ id: `q${i + 1}`, matiere: "t3p" })) };
+    const reponses = Array.from({ length: nbReponses }, (_, i) => ({ question_id: `q${i + 1}` }));
+    return {
+      from: (table: string) => ({
+        select: () => ({
+          eq: () =>
+            table === "exam_attempts_v2"
+              ? { maybeSingle: async () => ({ data: { snapshot }, error: null }) }
+              : Promise.resolve({ data: reponses, error: null }),
+        }),
+      }),
+    };
+  };
+  const clotureAutorisee = async (nbReponses: number) => {
+    const lire = chargerControle()(serveur(15, nbReponses), "att-1", { id: "t3p" }, 15);
+    const c = await lire();
+    return Boolean(c?.contenuConforme && c?.toutesConfirmees);
+  };
+
+  it("0/15 réponses serveur → clôture refusée", async () => {
+    expect(await clotureAutorisee(0)).toBe(false);
+  });
+  it("14/15 réponses serveur → clôture refusée", async () => {
+    expect(await clotureAutorisee(14)).toBe(false);
+  });
+  it("15/15 réponses serveur → clôture autorisée", async () => {
+    expect(await clotureAutorisee(15)).toBe(true);
+  });
+  it("erreur de lecture serveur → aucune confirmation (jamais interprétée comme complète)", async () => {
+    const enPanne = { from: () => ({ select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: null, error: { message: "panne" } }), then: (r: any) => r({ data: null, error: { message: "panne" } }) }) }) }) };
+    const c = await chargerControle()(enPanne, "att-1", { id: "t3p" }, 15)();
+    expect(Boolean(c?.contenuConforme && c?.toutesConfirmees)).toBe(false);
   });
 });
 
