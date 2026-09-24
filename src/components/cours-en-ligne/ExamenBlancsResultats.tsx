@@ -28,6 +28,7 @@ import {
 import { computeMoyenneExamen, computeResultatMatiereScore, getSeuilEliminatoireAffiche } from "./examens-blancs-scoring";
 import { isExamAttemptPublicationPending } from "./exam-helpers";
 import { fetchCoreMatiereStates, matchCoreState, type CoreMatiereState } from "@/lib/coreExamPublication";
+import { useCoreChangeTick } from "@/hooks/useCoreChangeTick";
 import { useQrcEnginePending } from "@/hooks/useQrcEnginePending";
 
 
@@ -63,11 +64,12 @@ function EcranResultats({
   // Source unique : état serveur des passages du nouveau système (même source
   // que l'écran Correction QRC et la fiche Admin). Lecture seule.
   const [coreStates, setCoreStates] = useState<CoreMatiereState[] | null>(null);
+  const coreTick = useCoreChangeTick(apprenantId);
   useEffect(() => {
     let cancelled = false;
     fetchCoreMatiereStates(apprenantId).then((st) => { if (!cancelled) setCoreStates(st); });
     return () => { cancelled = true; };
-  }, [apprenantId, examen?.id]);
+  }, [apprenantId, examen?.id, coreTick]);
   const resultatsSource = resultats;
   resultats = useMemo(() => resultatsSource.map((r) => ({
     ...r,
