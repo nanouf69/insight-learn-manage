@@ -8,6 +8,15 @@ import {
   type AnswerSaveState,
 } from "@/lib/answerPersistence";
 import { getAnswerSaveIndicatorView } from "./answerSaveIndicatorModel";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 /**
  * Indicateur honnête de l'état d'enregistrement des réponses.
@@ -31,7 +40,21 @@ export function AnswerSaveIndicator({ className = "" }: { className?: string }) 
   useEffect(() => onAnswerSaveRejected((r) => setRejection(r)), []);
 
   const view = getAnswerSaveIndicatorView({ state, pendingAnswers, saturated, rejection });
-  if (view.tone === "hidden") return null;
+  const identityBlocked = rejection?.reason === "identity";
+  const blocker = identityBlocked ? (
+    <AlertDialog open>
+      <AlertDialogContent onEscapeKeyDown={(e) => e.preventDefault()}>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Enregistrement impossible</AlertDialogTitle>
+          <AlertDialogDescription>{rejection?.message}</AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogAction onClick={() => window.location.reload()}>Recharger la page</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  ) : null;
+  if (view.tone === "hidden") return blocker;
 
   const isAlert = view.tone === "unavailable" || view.tone === "rejected" || view.tone === "saturated";
   const toneClass = view.tone === "saved"
@@ -56,6 +79,7 @@ export function AnswerSaveIndicator({ className = "" }: { className?: string }) 
         <AlertTriangle className="h-4 w-4 shrink-0" />
       )}
       <span>{view.message}</span>
+      {blocker}
     </div>
   );
 }

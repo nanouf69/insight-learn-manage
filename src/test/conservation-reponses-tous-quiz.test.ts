@@ -17,6 +17,9 @@ import {
   setAnswerSaveAuthToken,
   setAnswerSaveOwnership,
   onAnswerSaveRejected,
+  subscribeAnswerSaveState,
+  clearAnswerSaveRejection,
+  ANSWER_IDENTITY_REJECTION_MESSAGE,
 } from "@/lib/answerPersistence";
 import { buildExamMatiereExerciceId } from "@/lib/quizAttempts";
 
@@ -184,9 +187,40 @@ describe("Sécurité — identité élève indisponible", () => {
     expect(getPendingAnswers("appr-B", "EB2__gestion")).toBeNull();
   });
 
-  // EN ATTENTE D'ACCORD (modification du code fonctionnel nécessaire) :
-  // aujourd'hui le refus n'est signalé que dans la console ; aucune alerte
-  // visible n'est déclenchée pour l'élève.
-  it.todo("déclenche une erreur visible (onAnswerSaveRejected) quand l'identité élève est absente");
-  void onAnswerSaveRejected;
+  it("déclenche une alerte visible (onAnswerSaveRejected) et jamais « sauvegardé »", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const seen: any[] = [];
+    const states: string[] = [];
+    const off = onAnswerSaveRejected((r) => seen.push(r));
+    const off2 = subscribeAnswerSaveState((s) => states.push(s));
+    setAnswerSaveOwnership({ apprenantId: null, previewReadOnly: false });
+    enqueueAnswerSave({ apprenant_id: "appr-A", exercice_id: "EB2__gestion", exercice_type: "examen_blanc", reponses: { "1": ["A"] } });
+    const last = seen.at(-1);
+    expect(last?.reason).toBe("identity");
+    expect(last?.message).toBe(ANSWER_IDENTITY_REJECTION_MESSAGE);
+    expect(states.at(-1)).toBe("error");
+    // Dossier différent de celui de la session : même alerte
+    clearAnswerSaveRejection();
+    setAnswerSaveOwnership({ apprenantId: "appr-A", previewReadOnly: false });
+    enqueueAnswerSave({ apprenant_id: "appr-B", exercice_id: "EB2__gestion", exercice_type: "examen_blanc", reponses: { "1": ["A"] } });
+    expect(seen.at(-1)?.reason).toBe("identity");
+    // Identification correcte : fonctionnement normal
+    clearAnswerSaveRejection();
+    enqueueAnswerSave({ apprenant_id: "appr-A", exercice_id: "EB2__gestion", exercice_type: "examen_blanc", reponses: { "1": ["A"] } });
+    expect(seen.at(-1)).toBeNull();
+    expect(getPendingAnswers("appr-A", "EB2__gestion")).toEqual({ "1": ["A"] });
+    off(); off2(); warn.mockRestore();
+  });
+
+  it("aperçu admin/formateur : refus silencieux, aucune alerte élève", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    clearAnswerSaveRejection();
+    const seen: any[] = [];
+    const off = onAnswerSaveRejected((r) => seen.push(r));
+    setAnswerSaveOwnership({ apprenantId: null, previewReadOnly: true });
+    enqueueAnswerSave({ apprenant_id: "appr-A", exercice_id: "EB2__gestion", exercice_type: "examen_blanc", reponses: { "1": ["A"] } });
+    expect(seen.every((r) => r === null)).toBe(true);
+    setAnswerSaveOwnership({ apprenantId: "appr-A", previewReadOnly: false });
+    off(); warn.mockRestore();
+  });
 });

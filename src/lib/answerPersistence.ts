@@ -255,7 +255,7 @@ export interface AnswerSaveRejection {
    * refus fonctionnel explicite du serveur. Dans TOUS ces cas, répéter la même
    * requête ne peut pas la faire réussir : le renvoi automatique s'arrête.
    */
-  reason: "frozen" | "forbidden" | "retake_delay" | "refused";
+  reason: "frozen" | "forbidden" | "retake_delay" | "refused" | "identity";
   at: string;
   /** Message explicite destiné à l'apprenant (refus définitif). */
   message?: string;
@@ -693,7 +693,8 @@ async function sendItem(item: QueueItem): Promise<SendResult> {
           );
           // Refus silencieux impossible : l'apprenant est alerté immédiatement.
           notifyAnswerSaveRejected(item.payload.exercice_id, "frozen");
-        } else {
+        } else if (lastRejection?.reason !== "identity") {
+          // Un refus d'identité reste affiché jusqu'au rechargement de la page.
           clearAnswerSaveRejection();
         }
         return "ok";
@@ -783,6 +784,9 @@ async function processQueue(): Promise<void> {
  * Enregistre durablement une réponse (ou un lot de réponses d'un exercice).
  * Retourne immédiatement : la file garantit l'envoi, même après rechargement.
  */
+export const ANSWER_IDENTITY_REJECTION_MESSAGE =
+  "Vos réponses ne peuvent pas être enregistrées. Rechargez la page avant de continuer.";
+
 export function enqueueAnswerSave(payload: AnswerSavePayload): void {
   if (!payload?.apprenant_id || !payload?.exercice_id) return;
   // RÈGLE COMMUNE DE PROPRIÉTÉ : une réponse n'est mise en file que si le
@@ -790,6 +794,13 @@ export function enqueueAnswerSave(payload: AnswerSavePayload): void {
   // de consultation (aperçu admin/formateur), rien n'est mis en file : on
   // n'écrit jamais sous le compte d'un autre apprenant.
   if (!canQueueAnswerSaveFor(payload.apprenant_id)) {
+    // Aperçu admin/formateur : refus silencieux (aucune saisie élève réelle).
+    // Session élève sans identité fiable ou dossier différent : l'élève doit
+    // le voir IMMÉDIATEMENT, jamais d'état « sauvegardé » trompeur.
+    if (!previewReadOnly && !isLearnerPreviewReadOnly()) {
+      notifyAnswerSaveRejected(payload.exercice_id, "identity", ANSWER_IDENTITY_REJECTION_MESSAGE);
+      setState("error");
+    }
     console.warn(
       "[answerPersistence] Sauvegarde ignorée : la session en cours n'est pas propriétaire de ce dossier apprenant.",
       { exercice_id: payload.exercice_id },
