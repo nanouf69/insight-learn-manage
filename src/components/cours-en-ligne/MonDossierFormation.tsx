@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { FolderOpen, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,6 +26,23 @@ export default function MonDossierFormation({ apprenantId, onOpenIntro }: Props)
     },
     staleTime: 60_000,
   });
+
+  const voirDocument = async () => {
+    try {
+      const { data: s } = await supabase.auth.getSession();
+      const res = await callOnboardingInvitation(
+        { action: "dossier_bienvenue_pdf", apprenant_id: apprenantId },
+        s.session?.access_token,
+      );
+      if (res?.url && typeof res.url === "string") {
+        window.open(res.url, "_blank", "noopener,noreferrer");
+      } else {
+        toast.error("Le document n'est pas disponible pour le moment.");
+      }
+    } catch {
+      toast.error("Le document n'est pas disponible pour le moment.");
+    }
+  };
 
   const ouvrirBienvenue = () => {
     const p = data?.parcours;
@@ -58,8 +76,8 @@ export default function MonDossierFormation({ apprenantId, onOpenIntro }: Props)
 
   const bienvenueOk = !!data.bienvenue_signe;
   const inscription = etatInscriptionExamen(bienvenueOk, data.statut_suivi);
-  const lignes = [
-    { label: "Document de bienvenue complété et signé", ok: bienvenueOk, okTxt: "Complété et signé", action: ouvrirBienvenue },
+  const lignes: { label: string; ok: boolean; okTxt: string; action: () => void; okAction?: () => void; okActionLabel?: string }[] = [
+    { label: "Document de bienvenue complété et signé", ok: bienvenueOk, okTxt: "Complété et signé", action: ouvrirBienvenue, okAction: voirDocument, okActionLabel: "Voir le document" },
     { label: "Projet professionnel", ok: !!data.projet_professionnel, okTxt: "OK", action: onOpenIntro },
     { label: "Analyse des besoins", ok: !!data.analyse_besoin, okTxt: "OK", action: onOpenIntro },
     { label: "Test de compétences avant formation", ok: !!data.test_competences, okTxt: "OK", action: onOpenIntro },
@@ -82,6 +100,9 @@ export default function MonDossierFormation({ apprenantId, onOpenIntro }: Props)
             </div>
             {!l.ok && (
               <Button variant="outline" size="sm" onClick={l.action}>Compléter</Button>
+            )}
+            {l.ok && l.okAction && (
+              <Button variant="outline" size="sm" onClick={l.okAction}>{l.okActionLabel ?? "Voir"}</Button>
             )}
           </div>
         ))}
