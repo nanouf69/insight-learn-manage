@@ -3346,6 +3346,65 @@ export type Database = {
         }
         Relationships: []
       }
+      examen_theorique_decalages: {
+        Row: {
+          ancienne_date: string
+          ancienne_session_id: string | null
+          apprenant_id: string
+          apprenant_nom: string | null
+          apprenant_prenom: string | null
+          auteur: string | null
+          auteur_email: string | null
+          created_at: string
+          demandes_urgentes_closes: number
+          id: string
+          nouvelle_date: string
+          nouvelle_session_id: string | null
+          operation_id: string
+          type_apprenant: string | null
+        }
+        Insert: {
+          ancienne_date: string
+          ancienne_session_id?: string | null
+          apprenant_id: string
+          apprenant_nom?: string | null
+          apprenant_prenom?: string | null
+          auteur?: string | null
+          auteur_email?: string | null
+          created_at?: string
+          demandes_urgentes_closes?: number
+          id?: string
+          nouvelle_date: string
+          nouvelle_session_id?: string | null
+          operation_id: string
+          type_apprenant?: string | null
+        }
+        Update: {
+          ancienne_date?: string
+          ancienne_session_id?: string | null
+          apprenant_id?: string
+          apprenant_nom?: string | null
+          apprenant_prenom?: string | null
+          auteur?: string | null
+          auteur_email?: string | null
+          created_at?: string
+          demandes_urgentes_closes?: number
+          id?: string
+          nouvelle_date?: string
+          nouvelle_session_id?: string | null
+          operation_id?: string
+          type_apprenant?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "examen_theorique_decalages_apprenant_id_fkey"
+            columns: ["apprenant_id"]
+            isOneToOne: false
+            referencedRelation: "apprenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       examens_blancs_audit_log: {
         Row: {
           action: string
@@ -7277,6 +7336,39 @@ export type Database = {
         }
       }
       daitch_mokotoff: { Args: { "": string }; Returns: string[] }
+      decaler_examen_theorique: {
+        Args: {
+          p_ancienne_date: string
+          p_apprenant_id: string
+          p_email?: string
+          p_nouveau_lieu?: string
+          p_nouvelle_date: string
+          p_nouvelle_iso: string
+          p_operation_id: string
+        }
+        Returns: {
+          ancienne_date: string
+          ancienne_session_id: string | null
+          apprenant_id: string
+          apprenant_nom: string | null
+          apprenant_prenom: string | null
+          auteur: string | null
+          auteur_email: string | null
+          created_at: string
+          demandes_urgentes_closes: number
+          id: string
+          nouvelle_date: string
+          nouvelle_session_id: string | null
+          operation_id: string
+          type_apprenant: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "examen_theorique_decalages"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       dmetaphone: { Args: { "": string }; Returns: string }
       dmetaphone_alt: { Args: { "": string }; Returns: string }
       enforce_apprenant_session_limits: {
