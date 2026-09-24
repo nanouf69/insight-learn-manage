@@ -152,3 +152,24 @@ describe("Correction IA — interrupteur, historique, demande de vérification",
     expect(migration).toMatch(/uniq_qrc_verification_active .* WHERE statut = 'a_traiter'/);
   });
 });
+
+describe("Correction IA — espace élève (sans sollicitation du formateur)", () => {
+  const eleve = readFileSync(join(process.cwd(), "src/components/cours-en-ligne/CorrectionsIaEleve.tsx"), "utf8");
+  const jsx = eleve.slice(eleve.indexOf("return ("));
+  it("aucun bouton ni texte pour solliciter le formateur ou le centre", () => {
+    expect(eleve).not.toMatch(/demanderVerification|qrc_verification_demandes|Demander une vérification/);
+    expect(jsx).not.toMatch(/formateur|centre de formation|contacte/i);
+  });
+  it("ordre : réponse → corrigé officiel → note IA → explication → avertissement", () => {
+    const ordre = ["bloc-reponse", "bloc-corrige-officiel", "bloc-note-ia", "bloc-explication-ia", "avertissement-ia"].map((t) => jsx.indexOf(t));
+    expect(ordre.every((i) => i > 0)).toBe(true);
+    expect([...ordre].sort((a, b) => a - b)).toEqual(ordre);
+  });
+  it("corrigé officiel mis au premier plan (grand encadré, gros titre, texte agrandi, éléments attendus)", () => {
+    expect(jsx).toMatch(/border-4 border-success/);
+    expect(jsx).toMatch(/text-xl font-extrabold text-success">✅ CORRIGÉ OFFICIEL/);
+    expect(jsx).toMatch(/text-lg font-medium/);
+    expect(jsx).toMatch(/Éléments attendus/);
+    expect(jsx).toContain("Comparez votre réponse avec le corrigé officiel ci-dessus.");
+  });
+});
