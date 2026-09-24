@@ -7265,6 +7265,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     const { trackQuestion } = useQuestionTimeTracking(apprenantId);
 
     const handleAnswer = (exoId: number, qId: number, lettre: string, multi?: boolean, target?: HTMLElement | null) => {
+      if (Object.prototype.hasOwnProperty.call(reponsesVerrouilleesRef.current, `${exoId}-${qId}`)) return;
       if (showResultsFor.has(exoId)) return;
       onLearnerActivity?.();
       captureAnswerScrollPosition(target);
@@ -7302,6 +7303,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     };
 
     const handleQrcAnswerChange = (key: string, value: string) => {
+      if (Object.prototype.hasOwnProperty.call(reponsesVerrouilleesRef.current, key)) return;
       onLearnerActivity?.();
       captureAnswerScrollPosition(document.activeElement instanceof HTMLElement ? document.activeElement : null);
       flushSync(() => {
@@ -8133,7 +8135,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           type: q?.type ?? (choix.length > 0 ? "qcm" : "qrc"),
         };
       });
-      const questionsSafe = (exoQuestionsNormalized ?? []).filter((q: any) => q != null && q?.type != null);
+      const questionsToutes = (exoQuestionsNormalized ?? []).filter((q: any) => q != null && q?.type != null);
+      // Les réponses historiques verrouillées sont retirées de la correction et de la saisie.
+      const { actives: questionsSafe, verrouillees: questionsVerrouilleesExo } =
+        separerQuestionsVerrouillees(exo.id, questionsToutes, reponsesVerrouillees);
       const exoTotalQ = questionsSafe.length;
       const questionPrompts = buildExerciseQuestionPrompts(questionsSafe);
       const exoCorrect = questionsSafe.filter((q: any) => {
@@ -8239,6 +8244,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 </div>
               </div>
               {exo.sousTitre && <p className="text-sm text-muted-foreground">{syncSousTitreQuestionCount(exo.sousTitre, exoTotalQ)}</p>}
+              <ReponsesHistoriquesVerrouillees exoId={exo.id} questions={questionsVerrouilleesExo as any} reponses={reponsesVerrouillees} />
               {pendingWrongQuestionRevision?.exoId === exo.id && (
                 <div className="rounded-lg border-2 border-amber-300 bg-amber-50 dark:bg-amber-950/20 p-4 space-y-3 text-sm text-amber-900 dark:text-amber-200">
                   <div className="font-bold text-base">📖 Que souhaitez-vous faire ?</div>
