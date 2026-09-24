@@ -547,6 +547,13 @@
       "when": 1790245800132,
       "tag": "0077_garde_passages_bilan_figes",
       "breakpoints": true
+    },
+    {
+      "idx": 78,
+      "version": "7",
+      "when": 1790247795557,
+      "tag": "0078_bilan_sync_vtc_taxi_etape1_infrastructure",
+      "breakpoints": true
     }
   ]
 }
