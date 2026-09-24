@@ -1279,6 +1279,113 @@ export type Database = {
         }
         Relationships: []
       }
+      bilan_sync_journal: {
+        Row: {
+          apres: Json | null
+          auteur: string | null
+          avant: Json | null
+          cible_module_id: number | null
+          created_at: string
+          empreinte_apres: string | null
+          empreinte_avant: string | null
+          evenement: string
+          id: string
+          lien_id: string | null
+          motif: string | null
+          question_id: number | null
+          sens: string | null
+          source_module_id: number | null
+        }
+        Insert: {
+          apres?: Json | null
+          auteur?: string | null
+          avant?: Json | null
+          cible_module_id?: number | null
+          created_at?: string
+          empreinte_apres?: string | null
+          empreinte_avant?: string | null
+          evenement: string
+          id?: string
+          lien_id?: string | null
+          motif?: string | null
+          question_id?: number | null
+          sens?: string | null
+          source_module_id?: number | null
+        }
+        Update: {
+          apres?: Json | null
+          auteur?: string | null
+          avant?: Json | null
+          cible_module_id?: number | null
+          created_at?: string
+          empreinte_apres?: string | null
+          empreinte_avant?: string | null
+          evenement?: string
+          id?: string
+          lien_id?: string | null
+          motif?: string | null
+          question_id?: number | null
+          sens?: string | null
+          source_module_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bilan_sync_journal_lien_id_fkey"
+            columns: ["lien_id"]
+            isOneToOne: false
+            referencedRelation: "bilan_sync_liens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bilan_sync_liens: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          matiere_key: string
+          motif: string | null
+          statut: string
+          taxi_exercice_id: number
+          taxi_module_id: number
+          taxi_question_id: number
+          updated_at: string
+          vtc_exercice_id: number
+          vtc_module_id: number
+          vtc_question_id: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          matiere_key: string
+          motif?: string | null
+          statut?: string
+          taxi_exercice_id: number
+          taxi_module_id?: number
+          taxi_question_id: number
+          updated_at?: string
+          vtc_exercice_id: number
+          vtc_module_id?: number
+          vtc_question_id: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          matiere_key?: string
+          motif?: string | null
+          statut?: string
+          taxi_exercice_id?: number
+          taxi_module_id?: number
+          taxi_question_id?: number
+          updated_at?: string
+          vtc_exercice_id?: number
+          vtc_module_id?: number
+          vtc_question_id?: number
+        }
+        Relationships: []
+      }
       bilan_sync_removed_questions: {
         Row: {
           created_at: string
