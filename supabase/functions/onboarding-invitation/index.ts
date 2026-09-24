@@ -458,7 +458,8 @@ Deno.serve(async (req) => {
       const nomComplet = `${apprenant.prenom || ""} ${String(apprenant.nom || "").toUpperCase()}`.trim();
       const lien = `${DEFAULT_BASE_URL}/?apprenant=${apprenant.id}`;
       const quand = new Intl.DateTimeFormat("fr-FR", { timeZone: "Europe/Paris", dateStyle: "short", timeStyle: "short" }).format(new Date(created.created_at));
-      const statutLib = statut || "En attente d'inscription";
+      const LIB: Record<string, string> = { manque_document: "Manque un document", manque_piece_identite: "Manque pièce d'identité", manque_justificatif_domicile: "Manque justificatif domicile", manque_permis: "Manque permis", manque_signature: "Manque signature", manque_photo: "Manque photo", document_complet: "Dossier complet", mdp_change: "MDP changé", email_non_valide: "Email non validé", injoignable: "Injoignable", a_rappeler: "À rappeler", a_payer: "À payer", paye: "Payé" };
+      const statutLib = statut ? (LIB[statut] ?? statut) : "En attente d'inscription";
       const html = `<p><strong>⚠️ DEMANDE URGENTE — DATE LIMITE D'INSCRIPTION PROCHE</strong></p>
 <ul>
 <li>Élève : ${escHtml(nomComplet)}</li>
