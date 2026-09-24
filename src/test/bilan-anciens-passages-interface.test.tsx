@@ -88,7 +88,7 @@ describe("Vue Admin — statuts et autorisation ROUGE", () => {
   it("ORANGE : badge « À VÉRIFIER — version historique non prouvée », aucun bouton de rattachement", async () => {
     tables = {
       bilan_passage_categories: [{ module_id: 5, exercice_id: 1, tentative: 1, categorie: "ORANGE", created_at: "" }],
-      bilan_reponse_statuts: withMod(statuts.ORANGE),
+      bilan_reponse_statuts_effectifs: withMod(statuts.ORANGE),
       bilan_nouvelle_tentative_autorisations: [],
     };
     render(<BilanPassagesStatutsPanel apprenantId="fictif" />);
@@ -101,7 +101,7 @@ describe("Vue Admin — statuts et autorisation ROUGE", () => {
   it("ROUGE disparue + réutilisée : orpheline / litigieuse distinguées, non rattachables", async () => {
     tables = {
       bilan_passage_categories: [{ module_id: 5, exercice_id: 1, tentative: 1, categorie: "ROUGE", created_at: "" }],
-      bilan_reponse_statuts: withMod([...statuts.ROUGE_DISPARUE, ...statuts.ROUGE_REUTILISE]),
+      bilan_reponse_statuts_effectifs: withMod([...statuts.ROUGE_DISPARUE, ...statuts.ROUGE_REUTILISE]),
       bilan_nouvelle_tentative_autorisations: [],
     };
     render(<BilanPassagesStatutsPanel apprenantId="fictif" />);
@@ -114,7 +114,7 @@ describe("Vue Admin — statuts et autorisation ROUGE", () => {
   it("ROUGE : autorisation avec confirmation + motif, double-clic = un seul envoi", async () => {
     tables = {
       bilan_passage_categories: [{ module_id: 5, exercice_id: 1, tentative: 1, categorie: "ROUGE", created_at: "" }],
-      bilan_reponse_statuts: [], bilan_nouvelle_tentative_autorisations: [],
+      bilan_reponse_statuts_effectifs: [], bilan_nouvelle_tentative_autorisations: [],
     };
     let resolve!: (v: any) => void;
     rpc.mockImplementation(() => new Promise((r) => { resolve = r; }));
