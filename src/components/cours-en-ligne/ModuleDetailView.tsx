@@ -150,6 +150,8 @@ import {
 } from "./shared-exercise-overrides";
 import { resolveOverrideConflict, buildAdminEditJournalMap } from "@/components/fournisseurs/quiz-editor-utils";
 import { questionAvecCleFigee, exoIdDepuisArchive, type PassageFige } from "./passagesFiges";
+import { reponsesVerrouilleesDepuis, separerQuestionsVerrouillees, type StatutRow, type CategorieRow } from "./bilanReponsesVerrouillees";
+import { ReponsesHistoriquesVerrouillees } from "./ReponsesHistoriquesVerrouillees";
 import {
   rebaseCanonicalActions,
   toRpcCanonicalActions,
@@ -6895,6 +6897,32 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           Object.keys(parExo).forEach((id) => next.add(Number(id)));
           return next;
         });
+      })();
+      return () => { annule = true; };
+    }, [apprenantId, module.id]);
+
+    // Réponses historiques verrouillées (anciens passages ORANGE) : lecture seule,
+    // jamais recorrigées ; le serveur conserve la valeur d'origine.
+    const [reponsesVerrouillees, setReponsesVerrouillees] = useState<Record<string, string | string[]>>({});
+    const reponsesVerrouilleesRef = useRef<Record<string, string | string[]>>({});
+    useEffect(() => {
+      if (!apprenantId) return;
+      let annule = false;
+      (async () => {
+        const [st, cat] = await Promise.all([
+          (supabase as any).from("bilan_reponse_statuts")
+            .select("exercice_id, tentative, cle, statut, reponse")
+            .eq("apprenant_id", apprenantId).eq("module_id", module.id).eq("statut", "VERSION_NON_PROUVEE"),
+          (supabase as any).from("bilan_passage_categories")
+            .select("exercice_id, tentative, categorie")
+            .eq("apprenant_id", apprenantId).eq("module_id", module.id),
+        ]);
+        if (annule || st.error || cat.error) return;
+        const verrou = reponsesVerrouilleesDepuis((st.data ?? []) as StatutRow[], (cat.data ?? []) as CategorieRow[]);
+        if (Object.keys(verrou).length === 0) return;
+        reponsesVerrouilleesRef.current = verrou;
+        setReponsesVerrouillees(verrou);
+        setSelectedAnswers((prev) => ({ ...prev, ...verrou }));
       })();
       return () => { annule = true; };
     }, [apprenantId, module.id]);
