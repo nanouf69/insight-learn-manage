@@ -294,6 +294,79 @@ Deno.serve(async (req) => {
       return json({ donnees: data?.donnees ?? null, updated_at: data?.updated_at ?? null });
     }
 
+    // ---------- APPRENANT CONNECTÉ : « Mon dossier de formation » (lecture seule) ----------
+    // Aucune écriture. Seul le dossier lié au compte connecté est lu ; un admin peut
+    // consulter un dossier précis (aperçu) mais ne reçoit jamais de jeton de parcours.
+    if (action === "dossier_formation_self") {
+      const jwt = (req.headers.get("Authorization") || "").replace("Bearer ", "");
+      const { data: userData } = await supabase.auth.getUser(jwt);
+      const userId = userData?.user?.id;
+      if (!userId) return json({ error: "Non autorisé" }, 401);
+
+      let apprenantId: string | null = null;
+      let isSelf = false;
+      const requested = typeof body?.apprenant_id === "string" ? body.apprenant_id : "";
+      const { data: own } = await supabase
+        .from("apprenants").select("id").eq("auth_user_id", userId).is("deleted_at", null).limit(1).maybeSingle();
+      if (own?.id && (!requested || requested === own.id)) {
+        apprenantId = String(own.id);
+        isSelf = true;
+      } else if (requested) {
+        const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
+        if (!isAdmin) return json({ error: "Non autorisé" }, 403);
+        apprenantId = requested;
+      }
+      if (!apprenantId) return json({ error: "Dossier introuvable" }, 404);
+
+      const { data: apprenant } = await supabase
+        .from("apprenants")
+        .select("id, nom, prenom, email, telephone, adresse, code_postal, ville, type_apprenant, formation_choisie, statut_suivi")
+        .eq("id", apprenantId).maybeSingle();
+      if (!apprenant) return json({ error: "Dossier introuvable" }, 404);
+
+      const { data: docs } = await supabase
+        .from("apprenant_documents_completes")
+        .select("type_document, donnees")
+        .eq("apprenant_id", apprenantId)
+        .in("type_document", ["dossier-bienvenue", "projet-professionnel", "analyse-besoin", "test-competences"]);
+
+      const isImg = (v: unknown) => typeof v === "string" && v.trim().startsWith("data:image/");
+      const sigKeys = ["signature", "_signature_image", "signature_apprenant", "signatureDataUrl", "signature_data_url", "onboarding_signature"];
+      const list = docs || [];
+      const bienvenueSigne = list.some((d: any) =>
+        d.type_document === "dossier-bienvenue" && d.donnees && sigKeys.some((k) => isImg(d.donnees[k])));
+      const has = (t: string) => list.some((d: any) => d.type_document === t);
+
+      // Statut CRM : même source que la page Examens (session de l'apprenant, sinon fiche)
+      const { data: links } = await supabase
+        .from("session_apprenants")
+        .select("statut_suivi, created_at, sessions:session_id(date_debut)")
+        .eq("apprenant_id", apprenantId);
+      const withStatut = (links || [])
+        .filter((l: any) => l.statut_suivi)
+        .sort((a: any, b: any) =>
+          String(b.sessions?.date_debut || b.created_at || "").localeCompare(String(a.sessions?.date_debut || a.created_at || "")));
+      const statutSuivi = (withStatut[0] as any)?.statut_suivi ?? (apprenant as any).statut_suivi ?? null;
+
+      const blob = `${apprenant.type_apprenant || ""} ${apprenant.formation_choisie || ""}`.toLowerCase();
+      return json({
+        bienvenue_existe: has("dossier-bienvenue"),
+        bienvenue_signe: bienvenueSigne,
+        projet_professionnel: has("projet-professionnel"),
+        analyse_besoin: has("analyse-besoin"),
+        test_competences: has("test-competences"),
+        statut_suivi: statutSuivi,
+        parcours: isSelf ? {
+          dossier: {
+            id: apprenant.id, nom: apprenant.nom, prenom: apprenant.prenom, email: apprenant.email,
+            telephone: apprenant.telephone, adresse: apprenant.adresse, code_postal: apprenant.code_postal, ville: apprenant.ville,
+          },
+          is_fc: /continu|\bfc\b|formation\s*continue/.test(blob),
+          session_token: await issueSessionToken(String(apprenant.id)),
+        } : null,
+      });
+    }
+
     return json({ error: "Action inconnue" }, 400);
   } catch (err) {
     console.error("onboarding-invitation", err);
