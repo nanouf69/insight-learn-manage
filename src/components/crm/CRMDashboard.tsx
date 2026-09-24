@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import DemandesInscriptionUrgentes from "@/components/crm/DemandesInscriptionUrgentes";
 import { Search, Filter, MoreVertical, Mail, Phone, Calendar, GraduationCap, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -209,6 +210,7 @@ export function CRMDashboard({ initialApprenantId, onApprenantClosed }: CRMDashb
 
   return (
     <div className="space-y-6 animate-fade-in">
+      <DemandesInscriptionUrgentes onOpenApprenant={setSelectedApprenantId} />
       {/* Pipeline Overview */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {pipelineStages.map((stage) => (
