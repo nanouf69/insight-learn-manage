@@ -561,6 +561,13 @@
       "when": 1790249843834,
       "tag": "0079_bilan_sync_moteur_inactif",
       "breakpoints": true
+    },
+    {
+      "idx": 80,
+      "version": "7",
+      "when": 1790249879388,
+      "tag": "0080_bilan_sync_moteur_reset_flags",
+      "breakpoints": true
     }
   ]
 }
