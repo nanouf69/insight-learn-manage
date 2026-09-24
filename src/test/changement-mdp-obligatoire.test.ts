@@ -56,8 +56,9 @@ describe("Aucun secret conservé, aucune donnée pédagogique touchée", () => {
   });
 
   it("la table de suivi ne contient aucune colonne de mot de passe", () => {
-    const table = sql.split("GRANT")[0];
-    expect(table).not.toMatch(/mot_de_passe|password|mdp\s+text/i);
+    const bloc = sql.slice(sql.indexOf("CREATE TABLE"), sql.indexOf(");", sql.indexOf("CREATE TABLE")));
+    const colonnes = bloc.split("\n").slice(1).map((l) => l.trim().split(/\s+/)[0]).filter(Boolean);
+    expect(colonnes).toEqual(["id", "apprenant_id", "motif", "lot", "demande_le", "demande_par", "effectue_le", "annule_le", "annule_par"]);
   });
 
   it("la préparation n'active personne et ne touche pas aux données pédagogiques", () => {
