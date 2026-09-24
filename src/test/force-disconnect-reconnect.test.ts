@@ -37,7 +37,11 @@ beforeEach(() => {
   // fetch (ipify) shouldn't affect the test; make it fail fast.
   (globalThis as any).fetch = vi.fn().mockRejectedValue(new Error("no net"));
   // Stub crypto.randomUUID for stable client_session_id.
-  (globalThis as any).crypto = { randomUUID: () => "client-session-xyz" };
+  // (l'objet crypto du navigateur est en lecture seule : on espionne la méthode
+  // au lieu de remplacer l'objet, ce qui faisait planter l'ancien simulateur)
+  vi.spyOn(globalThis.crypto, "randomUUID").mockReturnValue(
+    "client-session-xyz" as `${string}-${string}-${string}-${string}-${string}`,
+  );
 });
 
 afterEach(() => {
