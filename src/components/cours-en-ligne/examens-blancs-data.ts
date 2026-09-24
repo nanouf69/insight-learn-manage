@@ -3860,7 +3860,7 @@ Enfin, il existe un lien marqué entre la précarité, qui touche plus particuli
         enonce: "Le renouvellement de l'inscription au registre des VTC doit avoir lieu :",
         choix: [
           { lettre: "A", texte: "elle se fait automatiquement" },
-          { lettre: "B", texte: "tous les ans", correct: true },
+          { lettre: "B", texte: "tous les ans" },
           { lettre: "C", texte: "tous les 5 ans", correct: true },
         ],
       },

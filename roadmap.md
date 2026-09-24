@@ -107,3 +107,11 @@ Règle : chaque incident réel (Kevin, Thierno, Léa, Seydou, BOUDJORF) = protec
 - C5 (Phase 1c) : publication du moteur IMPOSSIBLE si un seul test critique échoue (pas seulement « tests verts conseillés »).
 - Démonstration attendue après stabilisation : perte de réponse impossible (scénarios couverts) — 0 technique impossible — double tentative impossible — ancienne tentative après reset impossible — blocage Terminer récupérable automatiquement — faux incident surveillance protégé — tests critiques obligatoires avant publication : OUI.
 - Priorité : ces barrières avant toute nouvelle fonction d'examen.
+
+## Terminé — EB2 G(V) Q5 clé unique C (24/09/2026)
+- Source code corrigée (B n'est plus correcte), contrôle générique + 4 tests de non-régression. Historique intact.
+
+## En attente de décision
+- Déblocage EB2 / Kevin FERNANDES (version V2 incomplète) — traité séparément.
+- 8 passages EB2 G(V) sous-notés de 2 points (Q5) — correction contrôlée ultérieure.
+- 11 divergences de correction détectées dans les versions actives (liste dans le bilan du 24/09).
