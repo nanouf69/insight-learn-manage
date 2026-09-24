@@ -1,4 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { FolderOpen, Loader2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
@@ -6,7 +7,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { callOnboardingInvitation } from "@/lib/onboardingInvitation";
-import { etatInscriptionExamen } from "@/lib/dossierFormation";
+import { etatInscriptionExamen, alerteDateLimiteDisponible } from "@/lib/dossierFormation";
+import { trouverExamenTheorique } from "@/lib/examDatesConfig";
 
 interface Props {
   apprenantId: string;
@@ -15,6 +17,8 @@ interface Props {
 
 export default function MonDossierFormation({ apprenantId, onOpenIntro }: Props) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [envoiEnCours, setEnvoiEnCours] = useState(false);
   const { data, isLoading, isError } = useQuery({
     queryKey: ["mon-dossier-formation", apprenantId],
     queryFn: async () => {
@@ -41,6 +45,28 @@ export default function MonDossierFormation({ apprenantId, onOpenIntro }: Props)
       }
     } catch {
       toast.error("Le document n'est pas disponible pour le moment.");
+    }
+  };
+
+  const demanderTraitementUrgent = async () => {
+    if (envoiEnCours) return;
+    setEnvoiEnCours(true);
+    try {
+      const { data: s } = await supabase.auth.getSession();
+      const res = await callOnboardingInvitation(
+        { action: "demande_urgente_inscription", apprenant_id: apprenantId },
+        s.session?.access_token,
+      );
+      if (res?.ok) {
+        toast.success(res.deja_envoyee ? "Votre demande a déjà été transmise au centre." : "Votre demande a été transmise au centre.");
+        await queryClient.invalidateQueries({ queryKey: ["mon-dossier-formation", apprenantId] });
+      } else {
+        toast.error(res?.error || "La demande n'a pas pu être envoyée.");
+      }
+    } catch {
+      toast.error("La demande n'a pas pu être envoyée. Réessayez plus tard.");
+    } finally {
+      setEnvoiEnCours(false);
     }
   };
 
@@ -82,6 +108,9 @@ export default function MonDossierFormation({ apprenantId, onOpenIntro }: Props)
     { label: "Analyse des besoins", ok: !!data.analyse_besoin, okTxt: "OK", action: onOpenIntro },
     { label: "Test de compétences avant formation", ok: !!data.test_competences, okTxt: "OK", action: onOpenIntro },
   ];
+  const examen = trouverExamenTheorique(data.date_examen_theorique);
+  const alerteUrgente = alerteDateLimiteDisponible(examen?.dateLimite, data.statut_suivi);
+  const demandeActive = data.demande_urgente_active;
   const pastille = inscription.niveau === "vert" ? "🟢" : inscription.niveau === "orange" ? "🟠" : "🔴";
 
   return (
@@ -110,6 +139,32 @@ export default function MonDossierFormation({ apprenantId, onOpenIntro }: Props)
         <div className="p-3 rounded-xl bg-muted/30 space-y-2" data-testid="ligne-inscription-examen">
           <p className="font-medium text-sm text-foreground">Inscription à l'examen</p>
           <p className="text-sm">{pastille} {inscription.libelle}</p>
+          {inscription.niveau !== "vert" && (
+            <div className="text-xs text-muted-foreground space-y-0.5" data-testid="infos-date-examen">
+              {examen ? (
+                <>
+                  <p><span className="font-medium text-foreground">Examen :</span> {examen.date}</p>
+                  <p><span className="font-medium text-foreground">Date limite d'inscription :</span> {examen.dateLimiteLibelle ?? "non communiquée"}</p>
+                </>
+              ) : (
+                <p>Date d'examen : à confirmer avec le centre.</p>
+              )}
+            </div>
+          )}
+          {alerteUrgente && (
+            <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 space-y-2" data-testid="alerte-date-limite">
+              <p className="text-sm font-semibold text-destructive">⚠️ Date limite d'inscription proche</p>
+              <p className="text-xs text-foreground">Votre inscription à l'examen n'est pas encore indiquée comme validée et la date limite approche.</p>
+              {demandeActive ? (
+                <p className="text-xs text-muted-foreground">✅ Demande transmise au centre. Nous traitons votre dossier.</p>
+              ) : (
+                <Button size="sm" variant="destructive" disabled={envoiEnCours} onClick={demanderTraitementUrgent}>
+                  {envoiEnCours && <Loader2 className="w-3 h-3 animate-spin mr-1" />}
+                  Demander au centre de traiter mon inscription rapidement
+                </Button>
+              )}
+            </div>
+          )}
           {inscription.bloque && (
             <>
               <p className="text-xs text-destructive">
