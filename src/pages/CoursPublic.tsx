@@ -2330,8 +2330,16 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                );
             })()}
 
+            {/* E-learning : « Mon dossier de formation » remplace « Modules à réviser » */}
+            {apprenant?.id && isElearningType(apprenant?.type_apprenant) && (
+              <MonDossierFormation
+                apprenantId={apprenant.id}
+                onOpenIntro={() => { if (modules[0]) setSelectedModule(modules[0]); }}
+              />
+            )}
+
             {/* Modules à revoir */}
-            {lowModules.length > 0 && (
+            {!isElearningType(apprenant?.type_apprenant) && lowModules.length > 0 && (
               <Card className="border-0 shadow-sm mb-8 overflow-hidden">
                 <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 px-6 py-3 border-b">
                   <h3 className="font-bold text-amber-800 dark:text-amber-200 flex items-center gap-2">
