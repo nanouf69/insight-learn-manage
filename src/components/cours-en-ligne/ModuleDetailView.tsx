@@ -6926,6 +6926,13 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       })();
       return () => { annule = true; };
     }, [apprenantId, module.id]);
+    // Exercices utilisés pour la correction et le score : sans les réponses historiques verrouillées.
+    const exercicesCorriges = Object.keys(reponsesVerrouillees).length === 0
+      ? activeExercices
+      : activeExercices.map((e) => ({
+          ...e,
+          questions: separerQuestionsVerrouillees(e.id, (e.questions ?? []) as any[], reponsesVerrouillees).actives,
+        })) as ExerciceItem[];
 
     // --- Load saved partial answers from DB on mount ---
     useEffect(() => {
@@ -7157,7 +7164,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       autoSaveTimerRef.current = setTimeout(async () => {
 
         try {
-          const questionDetails = activeExercices.flatMap(e =>
+          const questionDetails = exercicesCorriges.flatMap(e =>
             (e.questions || []).map(q => {
               const key = `${e.id}-${q.id}`;
               const selected = answers[key];
@@ -7177,7 +7184,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             })
           );
           const answeredCount = Object.keys(answers).length;
-          const totalQ = activeExercices.reduce((s, e) => s + (e.questions?.length || 0), 0);
+          const totalQ = exercicesCorriges.reduce((s, e) => s + (e.questions?.length || 0), 0);
           const correctC = questionDetails.filter(d => d.correct).length;
           // Progress-only autosave: goes through the atomic RPC, which can
           // NEVER downgrade an already-completed module nor lower progress.
@@ -7265,6 +7272,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     const { trackQuestion } = useQuestionTimeTracking(apprenantId);
 
     const handleAnswer = (exoId: number, qId: number, lettre: string, multi?: boolean, target?: HTMLElement | null) => {
+      if (Object.prototype.hasOwnProperty.call(reponsesVerrouilleesRef.current, `${exoId}-${qId}`)) return;
       if (showResultsFor.has(exoId)) return;
       onLearnerActivity?.();
       captureAnswerScrollPosition(target);
@@ -7302,6 +7310,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     };
 
     const handleQrcAnswerChange = (key: string, value: string) => {
+      if (Object.prototype.hasOwnProperty.call(reponsesVerrouilleesRef.current, key)) return;
       onLearnerActivity?.();
       captureAnswerScrollPosition(document.activeElement instanceof HTMLElement ? document.activeElement : null);
       flushSync(() => {
@@ -7327,8 +7336,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       });
     };
 
-    const totalQuestions = activeExercices.reduce((sum, e) => sum + (e.questions?.length || 0), 0);
-    const correctCount = activeExercices.reduce((sum, e) => {
+    const totalQuestions = exercicesCorriges.reduce((sum, e) => sum + (e.questions?.length || 0), 0);
+    const correctCount = exercicesCorriges.reduce((sum, e) => {
       if (!e.questions) return sum;
       return sum + e.questions.filter(q => {
         const key = `${e.id}-${q.id}`;
@@ -7391,7 +7400,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
       try {
         // Build question-level details
-        const questionDetails = activeExercices.flatMap(e =>
+        const questionDetails = exercicesCorriges.flatMap(e =>
           (e.questions || []).map(q => {
             const key = `${e.id}-${q.id}`;
             const selected = selectedAnswers[key];
@@ -8133,7 +8142,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           type: q?.type ?? (choix.length > 0 ? "qcm" : "qrc"),
         };
       });
-      const questionsSafe = (exoQuestionsNormalized ?? []).filter((q: any) => q != null && q?.type != null);
+      const questionsToutes = (exoQuestionsNormalized ?? []).filter((q: any) => q != null && q?.type != null);
+      // Les réponses historiques verrouillées sont retirées de la correction et de la saisie.
+      const { actives: questionsSafe, verrouillees: questionsVerrouilleesExo } =
+        separerQuestionsVerrouillees(exo.id, questionsToutes, reponsesVerrouillees);
       const exoTotalQ = questionsSafe.length;
       const questionPrompts = buildExerciseQuestionPrompts(questionsSafe);
       const exoCorrect = questionsSafe.filter((q: any) => {
@@ -8239,6 +8251,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 </div>
               </div>
               {exo.sousTitre && <p className="text-sm text-muted-foreground">{syncSousTitreQuestionCount(exo.sousTitre, exoTotalQ)}</p>}
+              <ReponsesHistoriquesVerrouillees exoId={exo.id} questions={questionsVerrouilleesExo as any} reponses={reponsesVerrouillees} />
               {pendingWrongQuestionRevision?.exoId === exo.id && (
                 <div className="rounded-lg border-2 border-amber-300 bg-amber-50 dark:bg-amber-950/20 p-4 space-y-3 text-sm text-amber-900 dark:text-amber-200">
                   <div className="font-bold text-base">📖 Que souhaitez-vous faire ?</div>
@@ -8469,7 +8482,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                         // sans marquer le module comme terminé.
                         if (apprenantId) {
                           try {
-                            const questionDetails = activeExercices.flatMap(e =>
+                            const questionDetails = exercicesCorriges.flatMap(e =>
                               (e.questions || []).map(q => {
                                 const key = `${e.id}-${q.id}`;
                                 const sel = selectedAnswers[key];
@@ -8486,7 +8499,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                                 };
                               })
                             );
-                            const totalQ = activeExercices.reduce((s, e) => s + (e.questions?.length || 0), 0);
+                            const totalQ = exercicesCorriges.reduce((s, e) => s + (e.questions?.length || 0), 0);
                             const correctC = questionDetails.filter(d => d.correct).length;
                             await saveModuleCompletion({
                               apprenantId,
@@ -9157,8 +9170,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
         {/* Quiz completion rate */}
         {(() => {
-          const totalQ = activeExercices.reduce((s, e) => s + (e.questions?.length || 0), 0);
-          const answeredQ = activeExercices.reduce((s, e) => {
+          const totalQ = exercicesCorriges.reduce((s, e) => s + (e.questions?.length || 0), 0);
+          const answeredQ = exercicesCorriges.reduce((s, e) => {
             if (!e.questions) return s;
             return s + e.questions.filter(q => selectedAnswers[`${e.id}-${q.id}`]).length;
           }, 0);
