@@ -1342,6 +1342,8 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string | null
+          empreinte_taxi_ref: string | null
+          empreinte_vtc_ref: string | null
           id: string
           matiere_key: string
           motif: string | null
@@ -1357,6 +1359,8 @@ export type Database = {
         Insert: {
           created_at?: string
           created_by?: string | null
+          empreinte_taxi_ref?: string | null
+          empreinte_vtc_ref?: string | null
           id?: string
           matiere_key: string
           motif?: string | null
@@ -1372,6 +1376,8 @@ export type Database = {
         Update: {
           created_at?: string
           created_by?: string | null
+          empreinte_taxi_ref?: string | null
+          empreinte_vtc_ref?: string | null
           id?: string
           matiere_key?: string
           motif?: string | null
@@ -6297,7 +6303,20 @@ export type Database = {
           validated: boolean
         }[]
       }
+      bilan_sync_champs: { Args: never; Returns: string[] }
+      bilan_sync_empreinte: { Args: { q: Json }; Returns: string }
+      bilan_sync_enregistrer: {
+        Args: {
+          p_cote_source: string
+          p_empreinte_attendue: string
+          p_lien_id: string
+          p_motif?: string
+          p_question: Json
+        }
+        Returns: Json
+      }
       bilan_sync_mapping: { Args: never; Returns: Json }
+      bilan_sync_payload: { Args: { q: Json }; Returns: Json }
       canonical_get_quiz_questions: {
         Args: { p_quiz_id: string }
         Returns: Json
