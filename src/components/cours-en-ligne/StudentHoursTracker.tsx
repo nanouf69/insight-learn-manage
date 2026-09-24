@@ -15,7 +15,22 @@ interface StudentHoursTrackerProps {
   dateFinCoursEnLigne?: string | null;
   dateExamenTheorique?: string | null;
   resultatExamen?: string | null;
+  /** Modules terminés (données serveur) */
+  modulesCompleted?: number;
+  /** Modules obligatoires du parcours */
+  modulesTotal?: number;
 }
+
+export type EtatFormation = "terminee" | "presque" | "en_cours";
+
+/** Formation terminée = heures requises atteintes ET 100 % des modules terminés. */
+export function etatFormation(pctHeures: number, modulesCompleted?: number, modulesTotal?: number): EtatFormation {
+  if (pctHeures < 100) return "en_cours";
+  const total = Number(modulesTotal) || 0;
+  const done = Number(modulesCompleted) || 0;
+  return total > 0 && done >= total ? "terminee" : "presque";
+}
+
 
 function getNextUpcomingExamTheorique(): string | null {
   const today = new Date();
