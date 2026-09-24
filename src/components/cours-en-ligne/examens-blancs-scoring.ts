@@ -294,7 +294,7 @@ export function computeMatiereScore(
  */
 export function computeMatiereScoreForAttempt(
   matiereCourante: Matiere,
-  row: { details?: any; score_obtenu?: unknown; score_max?: unknown; note_sur_20?: unknown } | null | undefined,
+  row: { details?: any; score_obtenu?: unknown; score_max?: unknown; note_sur_20?: unknown; __core?: unknown } | null | undefined,
   staticFallbackMatiere?: Matiere | null,
 ): MatiereScore | null {
   if (!row) return null;
