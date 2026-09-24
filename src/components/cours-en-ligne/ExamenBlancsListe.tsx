@@ -581,7 +581,10 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
                       // tentative n'a pas été validée manuellement par le formateur.
                        // Le nouveau moteur ne peut que bloquer EN PLUS : il ne
                        // débloque jamais un passage historique en attente.
-                       const enginePending = qrcEngine.isExamPending(examen.id);
+                       // Passage entièrement présent dans le nouveau système → son état
+                       // serveur est la seule source (ancien moteur ignoré).
+                       const allCore = scores.length > 0 && scores.every((s: any) => !!s?.__core);
+                       const enginePending = allCore ? null : qrcEngine.isExamPending(examen.id);
                        const publicationPending = enginePending === true
                          || isExamAttemptPublicationPending(scores, examen);
                        if (publicationPending) {
@@ -609,6 +612,7 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
                             score_obtenu: scoreData.score_obtenu,
                             score_max: scoreData.score_max,
                             note_sur_20: (scoreData as any).note_sur_20,
+                            __core: (scoreData as any).__core ?? null,
                           },
                           findStaticFallbackMatiere(examen.id, m.id, m.nom),
                         );
@@ -705,6 +709,7 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
                                   score_obtenu: scoreData.score_obtenu,
                                   score_max: scoreData.score_max,
                                   note_sur_20: scoreData.note_sur_20,
+                                  __core: (scoreData as any).__core ?? null,
                                 },
                                 findStaticFallbackMatiere(examen.id, m.id, m.nom),
                               );
