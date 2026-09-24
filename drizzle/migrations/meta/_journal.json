@@ -512,6 +512,13 @@
       "when": 1790189719604,
       "tag": "0072_surveillance_compte_reponses_service",
       "breakpoints": true
+    },
+    {
+      "idx": 73,
+      "version": "7",
+      "when": 1790240495111,
+      "tag": "0073_preparation_changement_mdp_obligatoire",
+      "breakpoints": true
     }
   ]
 }
