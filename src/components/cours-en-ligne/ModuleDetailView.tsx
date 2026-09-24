@@ -7285,6 +7285,12 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       if (completionPersistedRef.current) return true;
 
       if (!apprenantId) {
+        // Côté élève : jamais de fausse réussite sans identité (rien n'est enregistré).
+        // Côté éditeur Admin (studentOnly = false) : comportement inchangé.
+        if (studentOnly) {
+          toast.error("Votre progression n'a pas pu être enregistrée : identité non reconnue. Reconnectez-vous puis réessayez.");
+          return false;
+        }
         return true;
       }
 
