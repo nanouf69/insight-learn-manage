@@ -15,6 +15,11 @@ export type CorrectionCache = { [questionId: number]: CorrectionQRC | "loading" 
 
 export interface ResultatMatiere {
   resultId?: string;
+  /** Fin du passage (ligne de résultat) — sert au rapprochement avec le nouveau système. */
+  completedAt?: string;
+  quizId?: string;
+  /** État serveur du passage nouveau système (source unique), s'il existe. */
+  __core?: import("@/lib/coreExamPublication").CoreMatiereState | null;
   matiereId: string;
   nomMatiere: string;
   noteObtenue: number;
@@ -46,6 +51,7 @@ export interface ExamScoreItem {
   correctionsIA?: CorrectionCache | null;
   /** Contenu brut `details` (contient le snapshot figé de la tentative). */
   details?: any;
+  __core?: import("@/lib/coreExamPublication").CoreMatiereState | null;
 }
 
 export type { ExamenBlanc, Matiere, Question };
