@@ -1,3 +1,4 @@
+import { coreStateScore } from "@/lib/coreExamPublication";
 // Barème centralisé — utilisé par TOUTES les vues (liste, résultats détaillés,
 // bilan texte) pour garantir la MÊME note globale partout.
 //
@@ -297,6 +298,15 @@ export function computeMatiereScoreForAttempt(
   staticFallbackMatiere?: Matiere | null,
 ): MatiereScore | null {
   if (!row) return null;
+  // Passage du nouveau système publié : note serveur définitive, jamais recalculée.
+  const core = coreStateScore((row as any).__core);
+  if (core) {
+    return {
+      ...core,
+      admis: computeAdmisForMatiere(core.noteSur20, 20, matiereCourante.noteEliminatoire, matiereCourante.noteSur || 20, false),
+      passee: true,
+    };
+  }
   const details = (row as any).details;
 
   if (hasMatiereSnapshot(details)) {
@@ -346,6 +356,14 @@ export function computeResultatMatiereScore(
   correctionsIA?: CorrectionCache | null,
 ): MatiereScore | null {
   if (!resultat) return null;
+  const core = coreStateScore((resultat as any).__core);
+  if (core) {
+    return {
+      ...core,
+      admis: computeAdmisForMatiere(core.noteSur20, 20, matiere.noteEliminatoire, matiere.noteSur || 20, false),
+      passee: true,
+    };
+  }
   return computeMatiereScore(
     matiere,
     resultat.reponses as Record<string, any> | null | undefined,
