@@ -1,6 +1,13 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { sendBrandedEmail } from "../_shared/send-branded-email.ts";
+import {
+  generateSetPasswordLink,
+  generateUnsharedPassword,
+  redactForHistory,
+  setPasswordBlock,
+  HISTORY_ACCESS_NOTE,
+} from "../_shared/credential-secrets.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",

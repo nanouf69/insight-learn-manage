@@ -1025,9 +1025,13 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
                     });
 
                     if (error) throw error;
-                    setGeneratedPassword(data?.password || "");
-                    toast.success("Compte créé avec succès !");
+                    if ((data as any)?.emailSent === false) {
+                      toast.warning((data as any)?.message || "Compte créé, mais l'e-mail n'a pas pu être envoyé.");
+                    } else {
+                      toast.success("Compte créé : lien sécurisé envoyé à l'apprenant.");
+                    }
                     queryClient.invalidateQueries({ queryKey: ["apprenant-detail", apprenantId] });
+                    setShowCreateDialog(false);
                   } catch (err: any) {
                     toast.error(await readEdgeFunctionError(err));
                   } finally {
