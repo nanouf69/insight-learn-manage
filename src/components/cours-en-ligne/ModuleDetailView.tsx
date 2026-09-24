@@ -5872,6 +5872,23 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       const code = err?.code ? ` [${err.code}]` : "";
       const exactMsg = rawMsg ? `${rawMsg}${code}` : "Erreur inconnue";
 
+      // Moteur Bilan Examen VTC ↔ TAXI : conflit réel → aucune écriture (transaction annulée côté serveur).
+      if (/BILAN_SYNC_(CONFLIT|VERSION_PERIMEE)/.test(rawMsg)) {
+        toast.error(
+          "Enregistrement impossible : cette question a été modifiée de l'autre côté depuis votre dernière ouverture. Rechargez la question avant de recommencer. Aucune modification n'a été enregistrée.",
+          { duration: 15000 },
+        );
+        saveErrorShownRef.current = true;
+        return;
+      }
+      if (/BILAN_SYNC_SUPPRESSION_LIEE/.test(rawMsg)) {
+        toast.error(
+          "Enregistrement impossible : cette question est liée entre le Bilan Examen VTC et le Bilan Examen TAXI et ne peut pas être supprimée ici. Aucune modification n'a été enregistrée.",
+          { duration: 15000 },
+        );
+        saveErrorShownRef.current = true;
+        return;
+      }
       if (isStaleModuleEditorStateError(err)) {
         console.warn("[ModuleEditor] Stale write blocked by DB compare-and-swap", {
           moduleId: dataToSave.module_id,
