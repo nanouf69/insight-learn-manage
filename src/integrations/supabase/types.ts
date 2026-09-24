@@ -6514,7 +6514,7 @@ export type Database = {
       }
       bilan_identite_creer: {
         Args: { p_exercice_id: number; p_module_id: number; p_question: Json }
-        Returns: string
+        Returns: Json
       }
       bilan_reponse_identite_valide: {
         Args: {
