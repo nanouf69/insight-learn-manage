@@ -15,6 +15,8 @@ import {
   mergeSavedAndPendingAnswers,
   isMeaningfulAnswerValue,
   setAnswerSaveAuthToken,
+  setAnswerSaveOwnership,
+  onAnswerSaveRejected,
 } from "@/lib/answerPersistence";
 import { buildExamMatiereExerciceId } from "@/lib/quizAttempts";
 
@@ -32,6 +34,8 @@ beforeEach(() => {
   vi.stubGlobal("fetch", vi.fn(async () => ({ ok: false, status: 0, text: async () => "offline" })) as any);
   vi.stubGlobal("navigator", { onLine: false });
   setAnswerSaveAuthToken(null, null);
+  // Identification réelle de l'élève avant toute sauvegarde (comme CoursPublic).
+  setAnswerSaveOwnership({ apprenantId: "appr-A", previewReadOnly: false });
 });
 
 describe("1 — File hors ligne rattachée à son propriétaire", () => {
@@ -155,4 +159,34 @@ describe("Protection — sauvegarder ≠ terminer", () => {
     // Après rechargement de page (nouvelle lecture du stockage), tout est là
     expect(getPendingAnswers("appr-A", exercice)).toEqual(pending);
   });
+});
+
+describe("Sécurité — identité élève indisponible", () => {
+  it("aucune réponse n'est mise en file ni considérée comme sauvegardée", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    setAnswerSaveOwnership({ apprenantId: null, previewReadOnly: false });
+    setAnswerSaveAuthToken("tok-A", "user-A");
+    enqueueAnswerSave({
+      apprenant_id: "appr-A",
+      exercice_id: "EB2__gestion",
+      exercice_type: "examen_blanc",
+      reponses: { "1": ["A"] },
+    });
+    expect(getPendingAnswers("appr-A", "EB2__gestion")).toBeNull();
+    expect(store.size === 0 || !String([...store.values()]).includes("EB2__gestion")).toBe(true);
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it("un autre dossier que celui de la session n'est jamais mis en file", () => {
+    setAnswerSaveAuthToken("tok-A", "user-A");
+    enqueueAnswerSave({ apprenant_id: "appr-B", exercice_id: "EB2__gestion", exercice_type: "examen_blanc", reponses: { "1": ["A"] } });
+    expect(getPendingAnswers("appr-B", "EB2__gestion")).toBeNull();
+  });
+
+  // EN ATTENTE D'ACCORD (modification du code fonctionnel nécessaire) :
+  // aujourd'hui le refus n'est signalé que dans la console ; aucune alerte
+  // visible n'est déclenchée pour l'élève.
+  it.todo("déclenche une erreur visible (onAnswerSaveRejected) quand l'identité élève est absente");
+  void onAnswerSaveRejected;
 });
