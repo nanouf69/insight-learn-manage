@@ -6317,6 +6317,14 @@ export type Database = {
       }
       bilan_sync_mapping: { Args: never; Returns: Json }
       bilan_sync_payload: { Args: { q: Json }; Returns: Json }
+      bilan_sync_router_editeur: {
+        Args: {
+          p_expected_updated_at: string
+          p_module_data: Json
+          p_module_id: number
+        }
+        Returns: Json
+      }
       canonical_get_quiz_questions: {
         Args: { p_quiz_id: string }
         Returns: Json

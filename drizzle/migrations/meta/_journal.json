@@ -568,6 +568,13 @@
       "when": 1790249879388,
       "tag": "0080_bilan_sync_moteur_reset_flags",
       "breakpoints": true
+    },
+    {
+      "idx": 81,
+      "version": "7",
+      "when": 1790251391644,
+      "tag": "0081_bilan_sync_branchement_editeur",
+      "breakpoints": true
     }
   ]
 }
