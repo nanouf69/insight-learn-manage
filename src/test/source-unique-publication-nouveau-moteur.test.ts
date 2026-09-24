@@ -36,7 +36,7 @@ const examen = { matieres: [matiere] };
 
 /** Ligne ANCIEN système telle que trouvée dans l'incident : drapeau en attente,
  *  corrections automatiques sans validation formateur. */
-const ligneAncienne = (extra: Record<string, any> = {}) => ({
+const ligneAncienne = (extra: Record<string, any> = {}): any => ({
   matiere_id: "t3p", matiereId: "t3p", quiz_id: "EB4", completed_at: LIGNE,
   score_obtenu: 12, score_max: 20, note_sur_20: 12,
   details: {
