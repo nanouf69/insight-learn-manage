@@ -10,6 +10,7 @@ import { findScoreForMatiere, buildMatiereLookupKeys } from "@/components/cours-
 import { isExamAttemptPublicationPending, excludeResultPlaceholders, mergePassageSiblingRows } from "@/components/cours-en-ligne/exam-helpers";
 import { isSnapshotOutdated, findSnapshotWrongExamSource, KNOWN_EB1_SERVED_IN_EB2_RESULT_IDS } from "@/components/cours-en-ligne/exam-content-integrity";
 import { AutoriserNouveauPassageButton } from "./AutoriserNouveauPassageButton";
+import { BilanPassagesStatutsPanel } from "./BilanPassagesStatutsPanel";
 
 interface ResultatsApprenantTabProps {
   apprenantId: string;
@@ -99,6 +100,7 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
 
   return (
     <div className="space-y-6">
+      <BilanPassagesStatutsPanel apprenantId={apprenantId} />
       {/* Examens blancs */}
       <Card>
         <CardHeader>
