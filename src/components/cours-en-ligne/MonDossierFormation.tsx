@@ -85,7 +85,8 @@ export default function MonDossierFormation({ apprenantId, onOpenIntro }: Props)
   const pastille = inscription.niveau === "vert" ? "🟢" : inscription.niveau === "orange" ? "🟠" : "🔴";
 
   return (
-    <Card className="border shadow-sm mb-8 overflow-hidden" data-testid="mon-dossier-formation">
+    <>
+      <Card className="border shadow-sm mb-4 overflow-hidden" data-testid="mon-dossier-formation">
       <div className="bg-muted/40 px-6 py-3 border-b">
         <h3 className="font-bold text-foreground flex items-center gap-2">
           <FolderOpen className="w-4 h-4" /> Mon dossier de formation
