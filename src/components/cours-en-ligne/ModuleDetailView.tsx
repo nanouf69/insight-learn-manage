@@ -149,6 +149,7 @@ import {
   type ModuleInitialData,
 } from "./shared-exercise-overrides";
 import { resolveOverrideConflict, buildAdminEditJournalMap } from "@/components/fournisseurs/quiz-editor-utils";
+import { questionAvecCleFigee, exoIdDepuisArchive, type PassageFige } from "./passagesFiges";
 import {
   rebaseCanonicalActions,
   toRpcCanonicalActions,
@@ -6252,6 +6253,15 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     };
     const [showResultsFor, setShowResultsFor] = useState<Set<number>>(new Set());
     const [passagesFiges, setPassagesFiges] = useState<Record<number, PassageFige>>({});
+    // Les réponses archivées priment toujours sur toute restauration ultérieure.
+    useEffect(() => {
+      const figees: Record<string, string | string[]> = {};
+      Object.values(passagesFiges).forEach((p) => Object.assign(figees, p.reponses || {}));
+      const cles = Object.keys(figees);
+      if (cles.length === 0) return;
+      const differe = cles.some((k) => JSON.stringify(selectedAnswers[k]) !== JSON.stringify(figees[k]));
+      if (differe) setSelectedAnswers((prev) => ({ ...prev, ...figees }));
+    }, [passagesFiges, selectedAnswers]);
     const [showCalculator, setShowCalculator] = useState(false);
     // Revision mode: per exo, set of question IDs to display (only the wrong ones)
     const [revisionQuestionsFor, setRevisionQuestionsFor] = useState<Record<number, Set<number | string>>>({});
@@ -8516,6 +8526,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                           <span className={`text-4xl font-black ${circleColor}`}>{pct}%</span>
                         </div>
                         <p className="text-lg font-bold">Points : {exoCorrect} / {exoTotalQ}</p>
+                        {passageFigeExo && (
+                          <p className="text-xs text-muted-foreground">Résultat historique figé — non recalculé</p>
+                        )}
                       </div>
 
                       {/* Answer grid */}
