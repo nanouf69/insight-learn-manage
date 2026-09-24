@@ -36,9 +36,29 @@ afterEach(() => {
 });
 
 describe("BUG #3 — Maintien session tablette (non-régression)", () => {
-  it("devrait vérifier la session toutes les 5 min sans forcer refreshSession", async () => {
+  it("mode examen : vérifie la session toutes les 2 min sans forcer refreshSession", async () => {
     const { useSessionKeepAlive } = await import("@/hooks/useSessionKeepAlive");
     renderHook(() => useSessionKeepAlive(true, true));
+
+    await act(async () => {
+      await Promise.resolve();
+      vi.advanceTimersByTime(2 * 60 * 1000);
+      await Promise.resolve();
+    });
+    expect(mockGetSession).toHaveBeenCalledTimes(2);
+    expect(mockRefreshSession).not.toHaveBeenCalled();
+
+    await act(async () => {
+      vi.advanceTimersByTime(2 * 60 * 1000);
+      await Promise.resolve();
+    });
+    expect(mockGetSession).toHaveBeenCalledTimes(3);
+    expect(mockRefreshSession).not.toHaveBeenCalled();
+  });
+
+  it("mode normal : vérifie la session toutes les 5 min", async () => {
+    const { useSessionKeepAlive } = await import("@/hooks/useSessionKeepAlive");
+    renderHook(() => useSessionKeepAlive(true, false));
 
     await act(async () => {
       await Promise.resolve();
@@ -47,26 +67,19 @@ describe("BUG #3 — Maintien session tablette (non-régression)", () => {
     });
     expect(mockGetSession).toHaveBeenCalledTimes(2);
     expect(mockRefreshSession).not.toHaveBeenCalled();
-
-    await act(async () => {
-      vi.advanceTimersByTime(5 * 60 * 1000);
-      await Promise.resolve();
-    });
-    expect(mockGetSession).toHaveBeenCalledTimes(3);
-    expect(mockRefreshSession).not.toHaveBeenCalled();
   });
 
-  it("devrait refresher MÊME après 20 min sans interaction en mode examen", async () => {
+  it("mode examen : continue MÊME après 20 min sans interaction (toutes les 2 min)", async () => {
     const { useSessionKeepAlive } = await import("@/hooks/useSessionKeepAlive");
     renderHook(() => useSessionKeepAlive(true, true));
 
-    // 20 min sans aucun événement user → le hook doit quand même refresher
+    // 20 min sans aucun événement → 1 contrôle initial + 10 contrôles
     await act(async () => {
       await Promise.resolve();
       vi.advanceTimersByTime(20 * 60 * 1000);
       await Promise.resolve();
     });
-    expect(mockGetSession).toHaveBeenCalledTimes(5);
+    expect(mockGetSession).toHaveBeenCalledTimes(11);
     expect(mockRefreshSession).not.toHaveBeenCalled();
   });
 
