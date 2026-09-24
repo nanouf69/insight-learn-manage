@@ -17,6 +17,7 @@ import {
 } from "./examens-blancs-utils";
 import { computeMoyenneExamen, computeMatiereScore, computeMatiereScoreForAttempt, resolveMatiereForScoring } from "./examens-blancs-scoring";
 import { fetchCoreMatiereStates, matchCoreState } from "@/lib/coreExamPublication";
+import { useCoreChangeTick } from "@/hooks/useCoreChangeTick";
 import { isExamAttemptPublicationPending, isMatiereQrcPendingForAttempt, excludeResultPlaceholders, mergePassageSiblingRows } from "./exam-helpers";
 import { toast } from "sonner";
 import { RefaireExamenDialog } from "./RefaireExamenDialog";
@@ -45,6 +46,7 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
   // exactement des mêmes identifiants que la file de correction du formateur.
   // Pour tous les autres examens, la règle historique est conservée telle quelle.
   const qrcEngine = useQrcEnginePending(apprenantId, (examensData || []).map((e) => e.id));
+  const coreTick = useCoreChangeTick(apprenantId);
   // Determine the forced exam type from the student's formation type
   const forcedType = (() => {
     if (!apprenantType) return null;
@@ -491,7 +493,7 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
             });
         }
       });
-  }, [apprenantId, refreshKey, resetRefreshKey]);
+  }, [apprenantId, refreshKey, resetRefreshKey, coreTick]);
 
   const examens = examensData.filter(e => {
     const typeOk = typeFiltre === "tous" || e?.type === typeFiltre;

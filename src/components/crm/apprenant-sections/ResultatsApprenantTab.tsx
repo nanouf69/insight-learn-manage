@@ -8,6 +8,7 @@ import { loadSavedExamens } from "@/components/cours-en-ligne/ExamensBlancsEdito
 import { computeMoyenneExamen, computeMatiereScoreForAttempt } from "@/components/cours-en-ligne/examens-blancs-scoring";
 import { findScoreForMatiere, buildMatiereLookupKeys } from "@/components/cours-en-ligne/examens-blancs-utils";
 import { fetchCoreMatiereStates, matchCoreState } from "@/lib/coreExamPublication";
+import { useCoreChangeTick } from "@/hooks/useCoreChangeTick";
 import { isExamAttemptPublicationPending, excludeResultPlaceholders, mergePassageSiblingRows } from "@/components/cours-en-ligne/exam-helpers";
 import { isSnapshotOutdated, findSnapshotWrongExamSource, KNOWN_EB1_SERVED_IN_EB2_RESULT_IDS } from "@/components/cours-en-ligne/exam-content-integrity";
 import { AutoriserNouveauPassageButton } from "./AutoriserNouveauPassageButton";
@@ -35,6 +36,7 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
     return () => { cancelled = true; };
   }, []);
 
+  const coreTick = useCoreChangeTick(apprenantId);
   useEffect(() => {
     if (!apprenantId) return;
     setLoading(true);
@@ -69,7 +71,7 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
       }
       setLoading(false);
     });
-  }, [apprenantId]);
+  }, [apprenantId, coreTick]);
 
   if (loading) {
     return (
