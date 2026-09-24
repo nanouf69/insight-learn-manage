@@ -117,4 +117,5 @@ Règle : chaque incident réel (Kevin, Thierno, Léa, Seydou, BOUDJORF) = protec
 - 11 divergences de correction détectées dans les versions actives (liste dans le bilan du 24/09).
 
 - [x] 24/09 : 17 passages Bilan Sécurité routière figés à l affichage + garde serveur (aucune nouvelle réponse)
-- [ ] Réparation des 44 questions Q1-Q49 (Bilans VTC/TAXI) depuis Partie 1 — en attente d accord
+
+- [x] 24/09 : 44 questions Q1-Q49 réparées (Bilans VTC/TAXI) depuis Partie 1
