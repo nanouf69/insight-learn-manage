@@ -58,6 +58,9 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
   const [typeFiltre, setTypeFiltre] = useState<"tous" | "TAXI" | "VTC" | "TA" | "VA">(forcedType || "tous");
   const [completedExamIds, setCompletedExamIds] = useState<Set<string>>(new Set());
   const [startedNotFinishedIds, setStartedNotFinishedIds] = useState<Set<string>>(new Set());
+  // Examens dont AU MOINS une matière est terminée (mais pas toutes) : l'élève
+  // peut consulter la correction des seules matières terminées.
+  const [partialExamIds, setPartialExamIds] = useState<Set<string>>(new Set());
   // Passage réellement OUVERT (tentative en cours non terminée), même si l'examen
   // a déjà été terminé lors d'une tentative précédente. Affichage uniquement.
   const [openAttemptIds, setOpenAttemptIds] = useState<Set<string>>(new Set());
@@ -212,6 +215,7 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
           }
 
           const completedIds = new Set<string>();
+          const partialIds = new Set<string>();
           const rowsByQuiz = new Map<string, any[]>();
 
           latestRows.forEach((row: any) => {
@@ -237,10 +241,13 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
 
             if (completedMatiereCount >= requiredMatieres) {
               completedIds.add(quizId);
+            } else if (completedMatiereCount > 0) {
+              partialIds.add(quizId);
             }
           });
 
           setCompletedExamIds(completedIds);
+          setPartialExamIds(partialIds);
 
           // Date de fin de la dernière tentative par examen (lecture seule).
           const finishedAt: Record<string, number> = {};
@@ -769,6 +776,12 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
                       <Button className="w-full mt-2 gap-2" variant="secondary" onClick={(e) => { e.stopPropagation(); onViewResults(examen); }}>
                         <Trophy className="w-4 h-4" />
                         Voir mes résultats
+                      </Button>
+                    )}
+                    {!isCompleted && partialExamIds.has(examen.id) && (
+                      <Button className="w-full mt-2 gap-2" variant="secondary" data-testid="voir-resultats-matieres-terminees" onClick={(e) => { e.stopPropagation(); onViewResults(examen); }}>
+                        <Trophy className="w-4 h-4" />
+                        Voir les résultats des matières terminées
                       </Button>
                     )}
                     {isCompleted && openAttemptIds.has(examen.id) && (
