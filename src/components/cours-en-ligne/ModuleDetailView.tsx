@@ -150,6 +150,7 @@ import {
 } from "./shared-exercise-overrides";
 import { resolveOverrideConflict, buildAdminEditJournalMap } from "@/components/fournisseurs/quiz-editor-utils";
 import { questionAvecCleFigee, exoIdDepuisArchive, type PassageFige } from "./passagesFiges";
+import { useBilanSnapshotsEleve, type EtatSnapshotsEleve } from "./bilanSnapshotsEleve";
 import { reponsesVerrouilleesDepuis, separerQuestionsVerrouillees, type StatutRow, type CategorieRow } from "./bilanReponsesVerrouillees";
 import { ReponsesHistoriquesVerrouillees } from "./ReponsesHistoriquesVerrouillees";
 import {
@@ -6247,6 +6248,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   // On lit désormais `moduleData` via un ref lu à chaque render → toujours
   // frais, mais sans invalider l'identité du composant.
   const moduleDataRef = useRef(moduleData);
+  // Passages figés (snapshots) : l'élève lit exclusivement son snapshot quand il existe.
+  const etatSnapshotsEleve = useBilanSnapshotsEleve(apprenantId, module.id, studentOnly);
+  const etatSnapshotsRef = useRef<EtatSnapshotsEleve>(etatSnapshotsEleve);
+  etatSnapshotsRef.current = etatSnapshotsEleve;
   // La ref doit être synchronisée AVANT le rendu de LearnerPreview. Un useEffect
   // arrive après ce rendu et laissait donc systématiquement l'apprenant sur la
   // version précédente des questions jusqu'à une seconde mise à jour.
@@ -6254,7 +6259,18 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
   const LearnerPreview = useMemo(() => {
     const LearnerPreviewComponent = ({ secureMode = true }: { secureMode?: boolean }) => {
-    const moduleData = moduleDataRef.current;
+    const moduleData = (() => {
+      const base = moduleDataRef.current;
+      const etat = etatSnapshotsRef.current;
+      if (etat.statut !== "pret" || Object.keys(etat.parExo).length === 0) return base;
+      return {
+        ...base,
+        exercices: base.exercices.map((e) => {
+          const snap = etat.parExo[Number(e.id)];
+          return snap ? { ...e, questions: snap.questions } : e;
+        }),
+      };
+    })();
     const [selectedAnswers, setSelectedAnswers] = useState<Record<string, string | string[]>>({});
     const preserveScrollRef = useRef<{ top: number; left: number; anchorId?: string; anchorTop?: number; capturedAt: number } | null>(null);
     const restoreScrollFrameRef = useRef<number | null>(null);
@@ -9300,7 +9316,17 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           {/* Sync silencieuse côté apprenant : aucun indicateur ni bouton visible.
               Le realtime + refetch initial assurent l'actualisation automatique. */}
         </div>
-        <LearnerPreview secureMode />
+        {etatSnapshotsEleve.statut === "chargement" ? (
+          <div className="p-8 text-center text-muted-foreground">Chargement de votre passage…</div>
+        ) : etatSnapshotsEleve.statut === "bloque" ? (
+          <div className="m-6 p-6 rounded-lg border border-destructive/40 bg-destructive/5 text-center space-y-3">
+            <p className="font-semibold">Votre passage n'a pas pu être chargé.</p>
+            <p className="text-sm text-muted-foreground">Vos réponses sont conservées. Rechargez la page ; si le problème persiste, contactez votre centre de formation.</p>
+            <Button variant="outline" onClick={() => window.location.reload()}>Recharger</Button>
+          </div>
+        ) : (
+          <LearnerPreview secureMode />
+        )}
       </div>
     );
   }
