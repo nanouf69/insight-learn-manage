@@ -28,6 +28,7 @@ import {
 import { computeMoyenneExamen, computeResultatMatiereScore, getSeuilEliminatoireAffiche } from "./examens-blancs-scoring";
 import { isExamAttemptPublicationPending } from "./exam-helpers";
 import { fetchCoreMatiereStates, matchCoreState, type CoreMatiereState } from "@/lib/coreExamPublication";
+import CorrectionsIaEleve from "@/components/cours-en-ligne/CorrectionsIaEleve";
 import { useCoreChangeTick } from "@/hooks/useCoreChangeTick";
 import { useQrcEnginePending } from "@/hooks/useQrcEnginePending";
 
@@ -609,6 +610,7 @@ function EcranResultats({
       </TabsList>
 
       <TabsContent value="resultats" className="space-y-6">
+        <CorrectionsIaEleve attemptIds={resultats.map((r: any) => r.__core?.attemptId).filter(Boolean) as string[]} />
         {/* Bandeau correction IA en cours */}
       {!hasQrcPendingValidation && correctionEnCours && (
         <div className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg text-blue-700 text-sm">
