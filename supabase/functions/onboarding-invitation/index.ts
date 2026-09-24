@@ -367,6 +367,57 @@ Deno.serve(async (req) => {
       });
     }
 
+    // ---------- APPRENANT CONNECTÉ : lien temporaire vers SON PDF signé (lecture seule) ----------
+    // Aucune écriture. Le serveur vérifie l'identité : l'apprenant ne reçoit que son
+    // propre document ; un admin peut obtenir l'aperçu d'un dossier précis.
+    // Jamais de PDF d'un autre apprenant : en cas de doute, erreur.
+    if (action === "dossier_bienvenue_pdf") {
+      const jwt = (req.headers.get("Authorization") || "").replace("Bearer ", "");
+      const { data: userData } = await supabase.auth.getUser(jwt);
+      const userId = userData?.user?.id;
+      if (!userId) return json({ error: "Non autorisé" }, 401);
+
+      let apprenantId: string | null = null;
+      const requested = typeof body?.apprenant_id === "string" ? body.apprenant_id : "";
+      const { data: own } = await supabase
+        .from("apprenants").select("id").eq("auth_user_id", userId).is("deleted_at", null).limit(1).maybeSingle();
+      if (own?.id && (!requested || requested === own.id)) {
+        apprenantId = String(own.id);
+      } else if (requested) {
+        const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
+        if (!isAdmin) return json({ error: "Non autorisé" }, 403);
+        apprenantId = requested;
+      }
+      if (!apprenantId) return json({ error: "Document introuvable" }, 404);
+
+      // Dernier récapitulatif d'inscription (PDF signé) de CET apprenant uniquement
+      const { data: docRow, error: docErr } = await supabase
+        .from("documents_inscription")
+        .select("url")
+        .eq("apprenant_id", apprenantId)
+        .eq("type_document", "recapitulatif_inscription")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (docErr) {
+        console.error("dossier_bienvenue_pdf lookup", docErr);
+        return json({ error: "Document indisponible" }, 500);
+      }
+      const path = docRow?.url;
+      if (!path || typeof path !== "string" || !path.startsWith(`${apprenantId}/`)) {
+        return json({ error: "Document introuvable" }, 404);
+      }
+
+      const { data: signed, error: signErr } = await supabase.storage
+        .from("documents-inscription")
+        .createSignedUrl(path, 120); // lien valable 2 minutes, jamais public
+      if (signErr || !signed?.signedUrl) {
+        console.error("dossier_bienvenue_pdf sign", signErr);
+        return json({ error: "Document indisponible" }, 404);
+      }
+      return json({ url: signed.signedUrl });
+    }
+
     return json({ error: "Action inconnue" }, 400);
   } catch (err) {
     console.error("onboarding-invitation", err);
