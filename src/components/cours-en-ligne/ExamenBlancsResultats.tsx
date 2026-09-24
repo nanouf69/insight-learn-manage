@@ -686,7 +686,7 @@ function EcranResultats({
             <h4 className="font-semibold text-lg" style={{ color: '#0D2540' }}>Vos réponses enregistrées</h4>
           </div>
           <p className="text-sm text-muted-foreground">
-            Voici exactement ce que vous avez envoyé. Les notes et corrections s'afficheront après la validation de votre formateur.
+            Voici exactement ce que vous avez envoyé. Les notes et corrections s'afficheront dès que toutes les QRC auront été corrigées.
           </p>
           {resultatsAvecIA.map((r, mi) => {
             const matiere = examen.matieres[mi];
