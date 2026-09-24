@@ -52,7 +52,8 @@ export function detecterDivergencesCorrection(
   for (const q of reference) {
     if ((q as any)?.type !== "QCM" || !Array.isArray((q as any).choix)) continue;
     const cle = compact(q.enonce);
-    if (!cle) continue;
+    // Une question de référence sans aucune bonne réponse n'est pas une référence.
+    if (!cle || bonnesReponsesTexte(q).length === 0) continue;
     const entree = ref.get(cle) ?? { statuts: new Map(), bonnes: new Set<string>() };
     for (const c of (q as any).choix) {
       const t = compact(c?.texte);
