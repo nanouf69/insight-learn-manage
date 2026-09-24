@@ -25,6 +25,8 @@ import { Eye, Edit, IdCard, Car, Copy, KeyRound } from "lucide-react";
 import { generateEmargementPratiquePDF } from "@/lib/pdf/emargement-pratique";
 import { fetchPratiqueSignatures } from "@/lib/pratiqueEmargements";
 import { PRATIQUE_TYPES, THEORIQUE_TYPES } from "@/lib/sessionTypes";
+import { DecalerExamenButton } from "./DecalerExamenButton";
+import { DecalesExamenTheorique } from "./DecalesExamenTheorique";
 import listeMedecinsAgrees from "@/assets/medecins/liste-medecins-agrees.pdf.asset.json";
 
 // Conteneur compact : le tableau tient dans la largeur disponible sans barre horizontale.
@@ -2527,7 +2529,8 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                         <TableCell>
                           <Badge className="whitespace-normal break-words bg-primary/10 px-1.5 text-[10px] leading-tight text-primary">{apprenant.date_examen_theorique}</Badge>
                         </TableCell>
-                        <TableCell className="text-center">
+                        <TableCell className="text-center whitespace-nowrap">
+                          <DecalerExamenButton apprenant={apprenant as any} />
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
                               <Button
@@ -5002,6 +5005,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
       })()}
 
       <div id="anchor-decales" className="scroll-mt-24" />
+      {selectedExamDate && <DecalesExamenTheorique dateExamen={selectedExamDate} />}
       {/* Décalés à la prochaine session */}
       {(() => {
         const deplacesAff = (allApprenants || []).filter(a =>
