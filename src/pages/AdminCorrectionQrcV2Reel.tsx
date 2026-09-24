@@ -23,6 +23,17 @@ import {
   type SessionReelle,
   type TentativeReelle,
 } from "@/features/correction-qrc-v2/noyauReel";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  definirIaActif,
+  LIBELLES_MOTIF_IA,
+  lireConfigIa,
+  lireCorrectionsIa,
+  lireDemandesVerification,
+  type ConfigIa,
+  type CorrectionIa,
+  type DemandeVerification,
+} from "@/features/correction-qrc-v2/correctionIa";
 
 const texte = (v: unknown) => (typeof v === "string" ? v : v == null ? "" : JSON.stringify(v));
 
@@ -223,6 +234,46 @@ export default function AdminCorrectionQrcV2Reel() {
   const baremeSel = questionSel?.points ?? restaureSel?.bareme ?? null;
   const videSel = !texte(qrcSel?.reponse).trim();
 
+  // ——— Correction IA (lecture seule ici ; l'écriture se fait côté serveur) ———
+  const [configIa, setConfigIa] = useState<ConfigIa | null>(null);
+  const [emailAdmin, setEmailAdmin] = useState<string | undefined>(undefined);
+  const [correctionsIa, setCorrectionsIa] = useState<CorrectionIa[]>([]);
+  const [demandes, setDemandes] = useState<DemandeVerification[]>([]);
+  useEffect(() => {
+    void lireConfigIa().then(setConfigIa);
+    void supabase.auth.getUser().then(({ data }) => setEmailAdmin(data.user?.email ?? undefined));
+  }, []);
+  useEffect(() => {
+    const ids = (session?.qrc ?? []).map((q) => q.qrc_instance_id);
+    if (!ids.length) { setCorrectionsIa([]); setDemandes([]); return; }
+    let vivant = true;
+    void Promise.all([lireCorrectionsIa(ids), lireDemandesVerification(ids)]).then(([c, d]) => {
+      if (vivant) { setCorrectionsIa(c); setDemandes(d); }
+    });
+    return () => { vivant = false; };
+  }, [session]);
+  const demandesOuvertes = useMemo(() => new Set(demandes.filter((d) => d.statut === "a_traiter").map((d) => d.qrc_instance_id)), [demandes]);
+  const nbDemandesOuvertes = demandesOuvertes.size;
+  const origineSel = qrcSel ? origineCorrection(qrcSel) : "aucune";
+  const iaSel = qrcSel ? correctionsIa.filter((c) => c.qrc_instance_id === qrcSel.qrc_instance_id) : [];
+  const iaAppliqueeSel = iaSel.find((c) => c.statut === "appliquee");
+  const demandesSel = qrcSel ? demandes.filter((d) => d.qrc_instance_id === qrcSel.qrc_instance_id) : [];
+  const demandeOuverteSel = demandesSel.some((d) => d.statut === "a_traiter");
+  const basculerIa = async () => {
+    if (!configIa) return;
+    const cible = !configIa.actif;
+    const msg = cible
+      ? "ACTIVER la correction IA automatique des QRC e-learning ?\n\nSeuls les passages terminés À PARTIR DE MAINTENANT seront corrigés par Gemini 3.8 Flash. Aucune ancienne copie ne sera touchée."
+      : "DÉSACTIVER la correction IA ? Les corrections déjà enregistrées restent inchangées.";
+    if (!window.confirm(msg)) return;
+    try {
+      await definirIaActif(cible, emailAdmin);
+      setConfigIa(await lireConfigIa());
+    } catch (e) {
+      setErreur((e as Error).message);
+    }
+  };
+
   // Historique des corrections (lecture seule) : l'ancienne note n'est jamais effacée.
   useEffect(() => {
     if (!selection) { setHistorique([]); return; }
@@ -248,7 +299,7 @@ export default function AdminCorrectionQrcV2Reel() {
     return Array.from(m.values()).sort((a, b) => (a.lettre ?? "").localeCompare(b.lettre ?? ""));
   }, [session]);
 
-  const valider = async (valeur?: number) => {
+  const valider = async (valeur?: number, confirmationIa = false) => {
     const n = valeur ?? note;
     if (!qrcSel || n === null || n === undefined) return;
     if (etatEnvoi === "encours") return;
@@ -256,7 +307,10 @@ export default function AdminCorrectionQrcV2Reel() {
     const ancienne = qrcSel.note;
     if (revision) {
       const fmt = (v: number | null) => `${String(v).replace(".", ",")}${baremeSel != null ? `/${baremeSel}` : ""}`;
-      if (!window.confirm(`Modifier la correction de ${fmt(ancienne)} à ${fmt(n)} ?`)) return;
+      const msg = confirmationIa
+        ? `Confirmer la note IA ${fmt(n)} ? Elle deviendra une correction humaine vérifiée.`
+        : `Modifier la correction de ${fmt(ancienne)} à ${fmt(n)} ?`;
+      if (!window.confirm(msg)) return;
     }
     setNote(n);
     setEtatEnvoi("encours");
@@ -269,7 +323,8 @@ export default function AdminCorrectionQrcV2Reel() {
           qrcInstanceId: qrcSel.qrc_instance_id,
           note: n,
           noteAttendue: ancienne as number,
-          commentaire: commentaire || undefined,
+          commentaire: commentaire || (confirmationIa ? "Note IA confirmée par le formateur" : undefined),
+          email: emailAdmin,
         });
       } else {
         await corrigerQrc({
@@ -278,6 +333,7 @@ export default function AdminCorrectionQrcV2Reel() {
           qrcInstanceId: qrcSel.qrc_instance_id,
           note: n,
           commentaire: commentaire || undefined,
+          email: emailAdmin,
         });
       }
       setEtatEnvoi("ok");
@@ -391,14 +447,35 @@ export default function AdminCorrectionQrcV2Reel() {
             )}
           </p>}
           <p className="text-xs text-muted-foreground" data-testid="legende-origine">
+            <span className="text-destructive font-semibold">rouge = à corriger (∅ copie vide)</span>
+            {" · "}
+            <span className="text-ia font-semibold">🤖 violet = corrigée par IA, non vérifiée</span>
+            {" · "}
             <span className="text-success">✓ vert = correction humaine vérifiée</span>
             {" · "}
             <span className="text-warning">≈ orange = correction automatique historique</span>
             {" · "}
             <span>? gris = origine à vérifier</span>
-            {" · "}
-            <span className="text-destructive font-semibold">rouge = à corriger (∅ copie vide)</span>
           </p>
+          <div className="flex flex-wrap items-center gap-2 text-xs" data-testid="interrupteur-ia">
+            <span className="font-medium">Correction IA automatique des QRC e-learning :</span>
+            <span className={`rounded px-2 py-0.5 font-semibold ${configIa?.actif ? "bg-ia/15 text-ia" : "bg-muted text-muted-foreground"}`} data-testid="etat-interrupteur-ia">
+              {configIa == null ? "…" : configIa.actif ? "ACTIVÉ" : "DÉSACTIVÉ"}
+            </span>
+            {configIa?.pause_depuis && (
+              <span className="text-destructive font-semibold" data-testid="pause-ia">
+                ⏸ En pause ({configIa.pause_motif === "credits_ia_epuises" ? "crédits IA épuisés" : "service IA refusé"}) — les QRC restent à corriger par le formateur
+              </span>
+            )}
+            {configIa && (
+              <Button size="sm" variant="outline" className="h-6 px-2 text-xs" data-testid="basculer-ia" onClick={() => void basculerIa()}>
+                {configIa.actif ? "Désactiver" : "Activer"}
+              </Button>
+            )}
+            {nbDemandesOuvertes > 0 && (
+              <span className="text-destructive font-semibold" data-testid="compteur-verifications">⚠️ {nbDemandesOuvertes} vérification(s) demandée(s) par des élèves</span>
+            )}
+          </div>
           {(nbIndetermines > 0 || nbConflits > 0) && (
             <p className="text-xs text-warning" data-testid="alerte-rattachement">
               ⚠️ {nbIndetermines} candidat(s) sans session CRM déterminée · {nbConflits} candidat(s) avec des sessions CRM qui se chevauchent (aucun choix automatique).
@@ -524,16 +601,19 @@ export default function AdminCorrectionQrcV2Reel() {
                           const probleme = !corrigee && points == null;
                           const vide = !texte(inst.reponse).trim();
                           const note = `${String(inst.note).replace(".", ",")}${points != null ? `/${points}` : ""}`;
+                          const verificationDemandee = demandesOuvertes.has(inst.qrc_instance_id);
                           const style = corrigee
                             ? origine === "humaine"
                               ? "border-success bg-success/20 text-success"
+                              : origine === "ia"
+                                ? `border-ia bg-ia/15 text-ia${verificationDemandee ? " ring-2 ring-destructive" : ""}`
                               : origine === "automatique"
                                 ? "border-warning bg-warning/20 text-warning"
                                 : "border-muted-foreground/50 bg-muted text-muted-foreground"
                             : probleme
                               ? "border-warning border-dashed bg-transparent text-warning"
                               : "border-destructive bg-destructive/15 text-destructive";
-                          const compact = celluleCompacte({ corrigee, origine, note: inst.note, points, vide });
+                          const compact = celluleCompacte({ corrigee, origine, note: inst.note, points, vide, verificationDemandee });
                           return (
                             <td key={q.id} className="px-0.5 py-0.5">
                               <button
@@ -600,7 +680,9 @@ export default function AdminCorrectionQrcV2Reel() {
                 }`}
                 data-testid="etat-qrc"
               >
-                {qrcSel.etat === "corrigee"
+                {qrcSel.etat === "corrigee" && origineSel === "ia"
+                  ? `🤖 Correction IA : ${String(qrcSel.note).replace(".", ",")}${baremeSel != null ? `/${baremeSel}` : ""}`
+                  : qrcSel.etat === "corrigee"
                   ? `🔒 Correction déjà validée : ${String(qrcSel.note).replace(".", ",")}${baremeSel != null ? `/${baremeSel}` : ""}`
                   : baremeSel == null
                     ? "🔴 Correction bloquée"
@@ -629,9 +711,28 @@ export default function AdminCorrectionQrcV2Reel() {
               )}
             </div>
 
+            {origineSel === "ia" && (
+              <div className="rounded-lg border-2 border-ia/50 bg-ia/10 p-3 space-y-1 text-sm" data-testid="proposition-ia">
+                {demandeOuverteSel && (
+                  <p className="font-semibold text-destructive" data-testid="verification-demandee">⚠️ Vérification demandée par l'élève</p>
+                )}
+                <p className="font-semibold text-ia">🤖 Correction IA — Gemini 3.8 Flash (non vérifiée par un formateur)</p>
+                <p>Note proposée : <strong>{String(qrcSel.note).replace(".", ",")}{baremeSel != null ? `/${baremeSel}` : ""}</strong></p>
+                {iaAppliqueeSel?.justification && <p className="text-muted-foreground">Explication de l'IA : {iaAppliqueeSel.justification}</p>}
+                <Button
+                  size="sm"
+                  className="bg-success text-success-foreground hover:bg-success/90"
+                  data-testid="confirmer-note-ia"
+                  disabled={etatEnvoi === "encours"}
+                  onClick={() => void valider(qrcSel.note as number, true)}
+                >
+                  ✓ Confirmer la note IA (devient vérifiée humainement)
+                </Button>
+              </div>
+            )}
             {qrcSel.etat === "corrigee" ? (
               <div className="rounded-lg border p-3 space-y-2 text-sm" data-testid="correction-verrouillee">
-                <p className="font-semibold text-success" data-testid="points-attribues">
+                <p className={`font-semibold ${origineSel === "ia" ? "text-ia" : "text-success"}`} data-testid="points-attribues">
                   NOTE : {String(qrcSel.note).replace(".", ",")}
                   {baremeSel != null ? ` / ${baremeSel}` : " (barème historique absent)"}
                 </p>
@@ -723,6 +824,24 @@ export default function AdminCorrectionQrcV2Reel() {
             )}
 
             <div className="space-y-1 border-t pt-2 text-[11px] text-muted-foreground">
+              {iaSel.length > 0 && (
+                <div data-testid="historique-ia">
+                  <p className="font-medium text-ia">Historique IA (conservé)</p>
+                  {iaSel.map((c, i) => (
+                    <p key={i}>
+                      🤖 {c.statut === "appliquee" ? `${String(c.note).replace(".", ",")}/${c.bareme}` : (LIBELLES_MOTIF_IA[c.motif ?? ""] ?? c.motif ?? c.statut)}
+                      {" — "}{new Date(c.created_at).toLocaleString("fr-FR", { timeZone: "Europe/Paris" })}
+                    </p>
+                  ))}
+                </div>
+              )}
+              {demandesSel.filter((d) => d.statut === "traitee").map((d) => (
+                <p key={d.id} data-testid="verification-traitee">
+                  Vérification élève traitée : IA {String(d.note_ia).replace(".", ",")} → {String(d.note_finale).replace(".", ",")}
+                  {d.traitee_email ? ` par ${d.traitee_email}` : ""}
+                  {d.traitee_at ? ` · ${new Date(d.traitee_at).toLocaleString("fr-FR", { timeZone: "Europe/Paris" })}` : ""}
+                </p>
+              ))}
               {historique.length > 0 && (
                 <div data-testid="historique-corrections">
                   <p className="font-medium">Historique des corrections</p>
