@@ -150,7 +150,7 @@ import {
 } from "./shared-exercise-overrides";
 import { resolveOverrideConflict, buildAdminEditJournalMap } from "@/components/fournisseurs/quiz-editor-utils";
 import { questionAvecCleFigee, exoIdDepuisArchive, type PassageFige } from "./passagesFiges";
-import { useBilanSnapshotsEleve, type EtatSnapshotsEleve } from "./bilanSnapshotsEleve";
+import { useBilanSnapshotsEleve, questionsComptees, type EtatSnapshotsEleve } from "./bilanSnapshotsEleve";
 import { reponsesVerrouilleesDepuis, separerQuestionsVerrouillees, type StatutRow, type CategorieRow } from "./bilanReponsesVerrouillees";
 import { ReponsesHistoriquesVerrouillees } from "./ReponsesHistoriquesVerrouillees";
 import {
@@ -6344,7 +6344,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     // chaque sauvegarde de réponse pour permettre la validation automatique
     // du module dès que toutes les questions sont réellement répondues.
     const totalQuestionsModule = activeExercices.reduce(
-      (sum, exo) => sum + (exo.questions?.length || 0),
+      (sum, exo) => sum + questionsComptees(etatSnapshotsEleve, exo.id, (exo.questions ?? []) as any[]).length,
       0,
     );
     const totalQuestionsModuleRef = useRef(totalQuestionsModule);
@@ -6943,12 +6943,17 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       return () => { annule = true; };
     }, [apprenantId, module.id]);
     // Exercices utilisés pour la correction et le score : sans les réponses historiques verrouillées.
-    const exercicesCorriges = Object.keys(reponsesVerrouillees).length === 0
-      ? activeExercices
-      : activeExercices.map((e) => ({
-          ...e,
-          questions: separerQuestionsVerrouillees(e.id, (e.questions ?? []) as any[], reponsesVerrouillees).actives,
-        })) as ExerciceItem[];
+    // Les anciennes QRC informatives d'un passage figé ne comptent jamais (ni progression ni note).
+    const exercicesCorriges = activeExercices.map((e) => ({
+      ...e,
+      questions: questionsComptees(
+        etatSnapshotsEleve,
+        e.id,
+        Object.keys(reponsesVerrouillees).length === 0
+          ? ((e.questions ?? []) as any[])
+          : separerQuestionsVerrouillees(e.id, (e.questions ?? []) as any[], reponsesVerrouillees).actives,
+      ),
+    })) as ExerciceItem[];
 
     // --- Load saved partial answers from DB on mount ---
     useEffect(() => {
@@ -8162,9 +8167,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       // Les réponses historiques verrouillées sont retirées de la correction et de la saisie.
       const { actives: questionsSafe, verrouillees: questionsVerrouilleesExo } =
         separerQuestionsVerrouillees(exo.id, questionsToutes, reponsesVerrouillees);
-      const exoTotalQ = questionsSafe.length;
+      const questionsCompteesExo = questionsComptees(etatSnapshotsEleve, Number(exo.id), questionsSafe);
+      const exoTotalQ = questionsCompteesExo.length;
       const questionPrompts = buildExerciseQuestionPrompts(questionsSafe);
-      const exoCorrect = questionsSafe.filter((q: any) => {
+      const exoCorrect = questionsCompteesExo.filter((q: any) => {
         const key = `${exo.id}-${q.id}`;
         return isAnswerCorrect(selectedAnswers[key], q as any);
       }).length;
@@ -8441,6 +8447,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                         const unansweredQcmKeys: string[] = [];
                         let firstMissingIndex = -1;
                         questionsSafe.forEach((q: any, qi: number) => {
+                          if (!questionsCompteesExo.includes(q)) return;
                           const k = `${exo.id}-${q.id}`;
                           const isQrc = q?.type === "qrc" || (q.choix?.length === 0 && q.reponsesAttendues);
                           const ans = selectedAnswers[k];

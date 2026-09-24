@@ -86,3 +86,23 @@ export function useBilanSnapshotsEleve(apprenantId: string | undefined, moduleId
   }, [concerne, apprenantId, moduleId]);
   return etat;
 }
+
+/**
+ * Ancienne QRC conservée dans un passage figé (ex. les 48 QRC de H) : visible
+ * pour respecter le contenu historique, mais jamais exigée, jamais comptée
+ * comme non répondue, jamais dans la progression ni dans la note.
+ * Même critère que l'écran : ce n'est pas une QRC saisissable et elle n'a aucune proposition.
+ */
+export function estAncienneQrcInformative(q: any): boolean {
+  if (!q) return false;
+  const choix = Array.isArray(q.choix) ? q.choix : [];
+  if (choix.length > 0) return false;
+  if (q.type === "qrc" || (Array.isArray(q.reponsesAttendues) && q.reponsesAttendues.length > 0)) return false;
+  return String(q.type ?? "").toUpperCase() === "QRC";
+}
+
+/** Retire les anciennes QRC informatives des questions comptées, uniquement pour un exercice figé. */
+export function questionsComptees<T>(etat: EtatSnapshotsEleve, exoId: number, questions: T[]): T[] {
+  if (etat.statut !== "pret" || !etat.parExo[Number(exoId)]) return questions;
+  return questions.filter((q) => !estAncienneQrcInformative(q));
+}
