@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback, memo, useRef, useMemo } from "react";
 import { useNavigate, Navigate, useLocation } from "react-router-dom";
+import MonDossierFormation from "@/components/cours-en-ligne/MonDossierFormation";
+import { isElearningType } from "@/lib/dossierFormation";
 
 // Évite tout va-et-vient infini si un admin est renvoyé ici par erreur :
 // on ne tente le retour vers la page d'origine qu'une seule fois par chargement.
