@@ -1213,6 +1213,78 @@ export type Database = {
         }
         Relationships: []
       }
+      bilan_nouvelle_tentative_autorisations: {
+        Row: {
+          apprenant_id: string
+          autorise_par: string | null
+          created_at: string
+          exercice_id: number
+          id: string
+          module_id: number
+          motif: string
+          tentative_autorisee: number
+          tentative_source: number
+        }
+        Insert: {
+          apprenant_id: string
+          autorise_par?: string | null
+          created_at?: string
+          exercice_id: number
+          id?: string
+          module_id: number
+          motif: string
+          tentative_autorisee: number
+          tentative_source: number
+        }
+        Update: {
+          apprenant_id?: string
+          autorise_par?: string | null
+          created_at?: string
+          exercice_id?: number
+          id?: string
+          module_id?: number
+          motif?: string
+          tentative_autorisee?: number
+          tentative_source?: number
+        }
+        Relationships: []
+      }
+      bilan_passage_categories: {
+        Row: {
+          apprenant_id: string
+          categorie: string
+          created_at: string
+          created_by: string | null
+          exercice_id: number
+          id: string
+          module_id: number
+          motif: string | null
+          tentative: number
+        }
+        Insert: {
+          apprenant_id: string
+          categorie: string
+          created_at?: string
+          created_by?: string | null
+          exercice_id: number
+          id?: string
+          module_id: number
+          motif?: string | null
+          tentative?: number
+        }
+        Update: {
+          apprenant_id?: string
+          categorie?: string
+          created_at?: string
+          created_by?: string | null
+          exercice_id?: number
+          id?: string
+          module_id?: number
+          motif?: string | null
+          tentative?: number
+        }
+        Relationships: []
+      }
       bilan_passage_snapshots: {
         Row: {
           apprenant_id: string
@@ -1407,6 +1479,45 @@ export type Database = {
           motif?: string | null
           numero_technique?: string
           uid?: string
+        }
+        Relationships: []
+      }
+      bilan_reponse_statuts: {
+        Row: {
+          apprenant_id: string
+          cle: string
+          created_at: string
+          exercice_id: number
+          id: string
+          module_id: number
+          reponse: Json | null
+          statut: string
+          tentative: number
+          uid: string | null
+        }
+        Insert: {
+          apprenant_id: string
+          cle: string
+          created_at?: string
+          exercice_id: number
+          id?: string
+          module_id: number
+          reponse?: Json | null
+          statut: string
+          tentative?: number
+          uid?: string | null
+        }
+        Update: {
+          apprenant_id?: string
+          cle?: string
+          created_at?: string
+          exercice_id?: number
+          id?: string
+          module_id?: number
+          reponse?: Json | null
+          statut?: string
+          tentative?: number
+          uid?: string | null
         }
         Relationships: []
       }
@@ -6475,6 +6586,32 @@ export type Database = {
           total: number
           validated: boolean
         }[]
+      }
+      bilan_autoriser_nouvelle_tentative: {
+        Args: {
+          p_apprenant_id: string
+          p_confirmation: string
+          p_exercice_id: number
+          p_module_id: number
+          p_motif: string
+        }
+        Returns: {
+          apprenant_id: string
+          autorise_par: string | null
+          created_at: string
+          exercice_id: number
+          id: string
+          module_id: number
+          motif: string
+          tentative_autorisee: number
+          tentative_source: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "bilan_nouvelle_tentative_autorisations"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       bilan_corriger_snapshot: {
         Args: { p_reponses: Json; p_snapshot_id: string }
