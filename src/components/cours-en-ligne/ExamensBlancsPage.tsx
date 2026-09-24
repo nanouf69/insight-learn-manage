@@ -389,6 +389,8 @@ export default function ExamensBlancsPage({
                 const safeScoreObtenu = clamp(toFiniteNumber(row.score_obtenu, 0), 0, safeScoreMax || maxPts);
                 preloadedResults.push({
                   resultId: row.id,
+                  completedAt: row.completed_at,
+                  quizId: row.quiz_id,
                   matiereId: m.id,
                   nomMatiere: m.nom,
                   noteObtenue: safeScoreObtenu,
@@ -702,6 +704,8 @@ export default function ExamensBlancsPage({
             const safeScoreObtenu = clamp(toFiniteNumber(row.score_obtenu, 0), 0, safeScoreMax || maxPts);
             preloadedResults.push({
               resultId: row.id,
+                  completedAt: row.completed_at,
+                  quizId: row.quiz_id,
               matiereId: m.id,
               nomMatiere: m.nom,
               noteObtenue: safeScoreObtenu,
@@ -939,6 +943,8 @@ export default function ExamensBlancsPage({
 
       return {
         resultId: row.id,
+                  completedAt: row.completed_at,
+                  quizId: row.quiz_id,
         matiereId: row.matiere_id || matiere.id,
         nomMatiere: row.matiere_nom || matiere.nom,
         noteObtenue: safeScoreObtenu,

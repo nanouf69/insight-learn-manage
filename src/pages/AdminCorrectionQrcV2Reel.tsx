@@ -233,6 +233,11 @@ export default function AdminCorrectionQrcV2Reel() {
 
   const total = session?.qrc.length ?? 0;
   const corrigees = session?.qrc.filter((q) => q.etat === "corrigee").length ?? 0;
+  // Périmètre candidat : QRC du seul candidat sélectionné pour cet examen
+  // (toutes ses matières), distinct du total de la session affichée.
+  const qrcCandidat = qrcSel ? (session?.qrc ?? []).filter((q) => q.apprenant_id === qrcSel.apprenant_id) : [];
+  const totalCandidat = qrcCandidat.length;
+  const corrigeesCandidat = qrcCandidat.filter((q) => q.etat === "corrigee").length;
 
   const matieres = useMemo(() => {
     const m = new Map<string, { subject_id: string; lettre: string; titre: string }>();
@@ -374,7 +379,12 @@ export default function AdminCorrectionQrcV2Reel() {
             </div>
           )}
           {!ancienCircuit && <p className="text-sm text-muted-foreground" data-testid="compteur-session">
-            {corrigees}/{total} QRC corrigées — {total - corrigees} restantes
+            Session affichée (tous les candidats) : {corrigees}/{total} QRC corrigées — {total - corrigees} restantes
+            {qrcSel && (
+              <span className="block font-medium text-foreground" data-testid="compteur-candidat">
+                Candidat sélectionné : {corrigeesCandidat}/{totalCandidat} QRC corrigées — {totalCandidat - corrigeesCandidat} restantes
+              </span>
+            )}
           </p>}
           <p className="text-xs text-muted-foreground" data-testid="legende-origine">
             <span className="text-success">✓ vert = correction humaine vérifiée</span>

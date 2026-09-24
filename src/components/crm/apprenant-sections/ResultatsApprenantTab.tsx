@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { loadSavedExamens } from "@/components/cours-en-ligne/ExamensBlancsEditor";
 import { computeMoyenneExamen, computeMatiereScoreForAttempt } from "@/components/cours-en-ligne/examens-blancs-scoring";
 import { findScoreForMatiere, buildMatiereLookupKeys } from "@/components/cours-en-ligne/examens-blancs-utils";
+import { fetchCoreMatiereStates, matchCoreState } from "@/lib/coreExamPublication";
 import { isExamAttemptPublicationPending, excludeResultPlaceholders, mergePassageSiblingRows } from "@/components/cours-en-ligne/exam-helpers";
 import { isSnapshotOutdated, findSnapshotWrongExamSource, KNOWN_EB1_SERVED_IN_EB2_RESULT_IDS } from "@/components/cours-en-ligne/exam-content-integrity";
 import { AutoriserNouveauPassageButton } from "./AutoriserNouveauPassageButton";
@@ -45,6 +46,7 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
         .select("id, quiz_id, quiz_titre, matiere_id, matiere_nom, note_sur_20, score_obtenu, score_max, quiz_type, completed_at, created_at, details")
         .eq("apprenant_id", apprenantId)
         .order("completed_at", { ascending: false }),
+      fetchCoreMatiereStates(apprenantId),
       // Bilans
       supabase
         .from("apprenant_documents_completes")
@@ -52,8 +54,12 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
         .eq("apprenant_id", apprenantId)
         .eq("type_document", "bilan_examen_blanc")
         .order("completed_at", { ascending: false }),
-    ]).then(([scoresRes, bilansRes]) => {
-      if (scoresRes.data) setExamScores(mergePassageSiblingRows(excludeResultPlaceholders(scoresRes.data)) as any[]);
+    ]).then(([scoresRes, coreStates, bilansRes]) => {
+      if (scoresRes.data) {
+        // Source unique : même état serveur que la carte élève et l'écran Correction QRC.
+        const rows = mergePassageSiblingRows(excludeResultPlaceholders(scoresRes.data)) as any[];
+        setExamScores(rows.map((r: any) => ({ ...r, __core: matchCoreState(coreStates, r.quiz_id, r.matiere_id, r.completed_at) })));
+      }
       if (bilansRes.data) {
         const map: Record<string, string> = {};
         (bilansRes.data as any[]).forEach((b: any) => {
