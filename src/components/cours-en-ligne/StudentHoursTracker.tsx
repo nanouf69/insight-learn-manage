@@ -15,7 +15,22 @@ interface StudentHoursTrackerProps {
   dateFinCoursEnLigne?: string | null;
   dateExamenTheorique?: string | null;
   resultatExamen?: string | null;
+  /** Modules terminés (données serveur) */
+  modulesCompleted?: number;
+  /** Modules obligatoires du parcours */
+  modulesTotal?: number;
 }
+
+export type EtatFormation = "terminee" | "presque" | "en_cours";
+
+/** Formation terminée = heures requises atteintes ET 100 % des modules terminés. */
+export function etatFormation(pctHeures: number, modulesCompleted?: number, modulesTotal?: number): EtatFormation {
+  if (pctHeures < 100) return "en_cours";
+  const total = Number(modulesTotal) || 0;
+  const done = Number(modulesCompleted) || 0;
+  return total > 0 && done >= total ? "terminee" : "presque";
+}
+
 
 function getNextUpcomingExamTheorique(): string | null {
   const today = new Date();
@@ -36,6 +51,8 @@ export default function StudentHoursTracker({
   dateFinCoursEnLigne,
   dateExamenTheorique,
   resultatExamen,
+  modulesCompleted,
+  modulesTotal,
 }: StudentHoursTrackerProps) {
   const { loading, formattedDone, formattedRemaining, requis, pct } = useStudentEffectiveHours(
     apprenantId,
@@ -52,9 +69,6 @@ export default function StudentHoursTracker({
   // La date d'examen du dossier (CRM) est la seule source de vérité :
   // aucune écriture, aucun remplacement automatique par une date du calendrier général.
 
-
-
-
   if (loading || !apprenantId) {
     return null;
   }
@@ -63,21 +77,36 @@ export default function StudentHoursTracker({
     return null;
   }
 
-  const isComplete = pct >= 100;
-  const isLow = !isComplete && pct < 50;
+  const etat = etatFormation(pct, modulesCompleted, modulesTotal);
+  const isComplete = etat === "terminee";
+  const isPresque = etat === "presque";
+  const isLow = etat === "en_cours" && pct < 50;
+  // 100 % uniquement si la formation est réellement terminée (heures + modules)
+  const displayPct = isComplete ? 100 : Math.min(99, Math.round(pct));
 
   return (
     <Card className="mb-8 border shadow-sm overflow-hidden">
       <CardContent className="p-5">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="flex-1">
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-2 mb-2 flex-wrap">
               <Clock className="w-5 h-5 text-primary" />
               <h3 className="font-bold text-lg">Mes heures e-learning</h3>
               {isComplete ? (
-                <Badge className="bg-green-600 text-white border-green-600">
-                  <CheckCircle2 className="w-3 h-3 mr-1" />
-                  Objectif atteint
+                <>
+                  <Badge className="bg-green-600 text-white border-green-600">
+                    <CheckCircle2 className="w-3 h-3 mr-1" />
+                    Objectif atteint
+                  </Badge>
+                  <Badge className="bg-green-600 text-white border-green-600">
+                    <CheckCircle2 className="w-3 h-3 mr-1" />
+                    Formation terminée
+                  </Badge>
+                </>
+              ) : isPresque ? (
+                <Badge variant="outline" className="text-orange-600 border-orange-200 bg-orange-50 dark:bg-orange-950/30">
+                  <AlertCircle className="w-3 h-3 mr-1" />
+                  Vous y êtes presque !
                 </Badge>
               ) : isLow ? (
                 <Badge variant="outline" className="text-orange-600 border-orange-200 bg-orange-50 dark:bg-orange-950/30">
@@ -86,15 +115,25 @@ export default function StudentHoursTracker({
                 </Badge>
               ) : null}
             </div>
+            {isPresque && (
+              <p className="text-sm text-orange-600 font-semibold mb-1" data-testid="formation-presque">
+                Vous avez atteint le nombre d'heures requis. Pour terminer votre formation, vous devez maintenant valider tous les modules restants.
+                {typeof modulesTotal === "number" && modulesTotal > 0 && (
+                  <> ({Math.min(modulesCompleted ?? 0, modulesTotal)}/{modulesTotal} modules terminés)</>
+                )}
+              </p>
+            )}
             <p className="text-sm text-muted-foreground">
               Le temps affiché correspond à vos <strong>sessions de connexion pendant lesquelles vous avez consulté un module, un exercice ou un quiz</strong> (plafonné à 7h par session), <strong>uniquement sur la période de votre formation</strong>.
             </p>
             <p className="text-sm text-orange-600 font-semibold mt-1">
               ⚠️ Attention : le compteur ne se déclenche pas tant que vous n'avez pas ouvert un module. Rester sur la page d'accueil ne compte pas.
             </p>
-            <p className="text-sm text-red-600 font-semibold mt-1">
-              Vous devez terminer tous les modules pour valider votre formation.
-            </p>
+            {!isComplete && (
+              <p className="text-sm text-red-600 font-semibold mt-1">
+                Vous devez terminer tous les modules pour valider votre formation.
+              </p>
+            )}
           </div>
 
           <div className="flex items-center gap-6 shrink-0">
@@ -108,8 +147,8 @@ export default function StudentHoursTracker({
               <div className="text-xs text-muted-foreground uppercase tracking-wide">Requises</div>
             </div>
             <div className="text-center">
-              <div className={`text-2xl font-bold ${isComplete ? "text-green-600" : isLow ? "text-orange-600" : ""}`}>
-                {isComplete ? "Terminé" : formattedRemaining}
+              <div className={`text-2xl font-bold ${isComplete ? "text-green-600" : isPresque || isLow ? "text-orange-600" : ""}`}>
+                {isComplete ? "Terminé" : isPresque ? "Modules à valider" : formattedRemaining}
               </div>
               <div className="text-xs text-muted-foreground uppercase tracking-wide">Restantes</div>
             </div>
@@ -118,8 +157,8 @@ export default function StudentHoursTracker({
 
         <div className="mt-4">
           <div className="flex items-center gap-3">
-            <Progress value={pct} className="h-2.5 flex-1" />
-            <span className="text-sm font-semibold w-12 text-right">{Math.round(pct)}%</span>
+            <Progress value={displayPct} className="h-2.5 flex-1" />
+            <span className="text-sm font-semibold w-12 text-right">{displayPct}%</span>
           </div>
         </div>
 
