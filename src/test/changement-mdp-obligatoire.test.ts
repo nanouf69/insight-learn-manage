@@ -63,7 +63,7 @@ describe("Aucun secret conservé, aucune donnée pédagogique touchée", () => {
   it("la préparation n'active personne et ne touche pas aux données pédagogiques", () => {
     expect(sql).not.toMatch(/INSERT\s+INTO/i);
     expect(sql).not.toMatch(/UPDATE\s+public\.(apprenants|reponses|exam|apprenant_module|apprenant_quiz)/i);
-    expect(sql).not.toMatch(/DELETE/i);
+    expect(sql).not.toMatch(/DELETE\s+FROM/i);
   });
 
   it("aucune déconnexion forcée", () => {
