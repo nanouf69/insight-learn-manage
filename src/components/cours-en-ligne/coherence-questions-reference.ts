@@ -34,43 +34,56 @@ export function bonnesReponsesTexte(q: Question | null | undefined): string[] {
     .sort();
 }
 
+const compact = (v: unknown) => normaliserTexte(v).replace(/[^a-z0-9€]/g, "");
+
 /**
- * Compare chaque QCM des examens avec la référence. Une question n'est
- * signalée que si la référence est UNIVOQUE (toutes ses occurrences ont les
- * mêmes bonnes réponses) et que l'examen en diffère.
+ * Compare chaque QCM des examens avec la référence, proposition par
+ * proposition (même texte compacté). Une question est signalée seulement si
+ * une MÊME proposition est correcte d'un côté et incorrecte de l'autre, et si
+ * la référence est univoque pour cette proposition. Les différences de simple
+ * formulation ou de découpage ne sont pas signalées.
  */
 export function detecterDivergencesCorrection(
   examens: ExamenBlanc[],
   reference: Question[],
 ): DivergenceCorrection[] {
-  const refParEnonce = new Map<string, Set<string>>();
+  // énoncé → (proposition → ensemble des statuts observés en référence)
+  const ref = new Map<string, { statuts: Map<string, Set<boolean>>; bonnes: Set<string> }>();
   for (const q of reference) {
-    if ((q as any)?.type !== "QCM") continue;
-    const cle = normaliserTexte(q.enonce);
-    const bonnes = bonnesReponsesTexte(q);
-    if (!cle || bonnes.length === 0) continue;
-    const set = refParEnonce.get(cle) ?? new Set<string>();
-    set.add(JSON.stringify(bonnes));
-    refParEnonce.set(cle, set);
+    if ((q as any)?.type !== "QCM" || !Array.isArray((q as any).choix)) continue;
+    const cle = compact(q.enonce);
+    if (!cle) continue;
+    const entree = ref.get(cle) ?? { statuts: new Map(), bonnes: new Set<string>() };
+    for (const c of (q as any).choix) {
+      const t = compact(c?.texte);
+      if (!t) continue;
+      const set = entree.statuts.get(t) ?? new Set<boolean>();
+      set.add(c?.correct === true);
+      entree.statuts.set(t, set);
+    }
+    for (const b of bonnesReponsesTexte(q)) entree.bonnes.add(b);
+    ref.set(cle, entree);
   }
 
   const out: DivergenceCorrection[] = [];
   for (const ex of examens) {
     for (const m of ex?.matieres ?? []) {
       for (const q of (m as any)?.questions ?? []) {
-        if (q?.type !== "QCM") continue;
-        const variantes = refParEnonce.get(normaliserTexte(q.enonce));
-        if (!variantes || variantes.size !== 1) continue;
-        const bonnesRef: string[] = JSON.parse([...variantes][0]);
-        const bonnesEx = bonnesReponsesTexte(q);
-        if (JSON.stringify(bonnesEx) !== JSON.stringify(bonnesRef)) {
+        if (q?.type !== "QCM" || !Array.isArray(q.choix)) continue;
+        const entree = ref.get(compact(q.enonce));
+        if (!entree) continue;
+        const diverge = q.choix.some((c: any) => {
+          const statuts = entree.statuts.get(compact(c?.texte));
+          return !!statuts && statuts.size === 1 && [...statuts][0] !== (c?.correct === true);
+        });
+        if (diverge) {
           out.push({
             examenId: ex.id,
             matiereId: (m as any).id,
             questionId: q.id,
             enonce: q.enonce,
-            bonnesExamen: bonnesEx,
-            bonnesReference: bonnesRef,
+            bonnesExamen: bonnesReponsesTexte(q),
+            bonnesReference: [...entree.bonnes].sort(),
           });
         }
       }
