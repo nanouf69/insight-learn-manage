@@ -101,6 +101,9 @@ export default function MonDossierFormation({ apprenantId, onOpenIntro }: Props)
             {!l.ok && (
               <Button variant="outline" size="sm" onClick={l.action}>Compléter</Button>
             )}
+            {l.ok && l.okAction && (
+              <Button variant="outline" size="sm" onClick={l.okAction}>{l.okActionLabel ?? "Voir"}</Button>
+            )}
           </div>
         ))}
         <div className="p-3 rounded-xl bg-muted/30 space-y-2" data-testid="ligne-inscription-examen">
