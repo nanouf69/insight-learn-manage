@@ -672,7 +672,9 @@ export default function AdminCorrectionQrcV2Reel() {
               </span>
               <span
                 className={`ml-auto rounded px-2 py-0.5 text-xs font-medium ${
-                  qrcSel.etat === "corrigee"
+                  qrcSel.etat === "corrigee" && origineSel === "ia"
+                    ? "bg-ia/15 text-ia"
+                    : qrcSel.etat === "corrigee"
                     ? "bg-success/15 text-success"
                     : baremeSel == null
                       ? "bg-destructive/15 text-destructive"
