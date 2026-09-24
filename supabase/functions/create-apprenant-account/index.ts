@@ -1,6 +1,13 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { sendBrandedEmail } from "../_shared/send-branded-email.ts";
+import {
+  generateSetPasswordLink,
+  generateUnsharedPassword,
+  redactForHistory,
+  setPasswordBlock,
+  HISTORY_ACCESS_NOTE,
+} from "../_shared/credential-secrets.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -186,15 +193,9 @@ serve(async (req) => {
     }
     console.log(`${LOG_PREFIX}[${requestId}] Step 8 - Fetch apprenant (done)`);
 
-    console.log(`${LOG_PREFIX}[${requestId}] Step 9 - Generate password (start)`);
-    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
-    let password = "";
-    const randomBytes = new Uint8Array(8);
-    crypto.getRandomValues(randomBytes);
-    for (let i = 0; i < 8; i++) {
-      password += chars[randomBytes[i] % chars.length];
-    }
-    console.log(`${LOG_PREFIX}[${requestId}] Step 9 - Generate password (done)`);
+    // Mot de passe interne aléatoire, jamais communiqué ni stocké : l'élève
+    // définit le sien via le lien sécurisé envoyé par e-mail.
+    const password = generateUnsharedPassword();
 
     console.log(`${LOG_PREFIX}[${requestId}] Step 10 - Create auth user (start)`);
     let authUser: { user: { id: string } } | null = null;
@@ -312,25 +313,13 @@ serve(async (req) => {
         }
 
         // Compte existant NON rattaché (ou déjà rattaché à cette même fiche) :
-        // on peut le réutiliser sans créer de doublon.
-        console.log(`${LOG_PREFIX}[${requestId}] Step 11 - Reuse unlinked existing account (start)`, {
+        // on le réutilise sans créer de doublon et SANS modifier son mot de
+        // passe actuel ; l'élève recevra un lien sécurisé s'il veut le changer.
+        console.log(`${LOG_PREFIX}[${requestId}] Step 11 - Reuse unlinked existing account`, {
           existingUserId: existingUser.id,
         });
 
-        const { error: updateErr } = await supabaseAdmin.auth.admin.updateUserById(existingUser.id, {
-          password,
-        });
-
-        if (updateErr) {
-          return jsonResponse(500, {
-            error: "Échec de mise à jour du mot de passe utilisateur",
-            details: updateErr.message,
-            requestId,
-          });
-        }
-
         authUser = { user: { id: existingUser.id } };
-        console.log(`${LOG_PREFIX}[${requestId}] Step 11 - Reuse unlinked existing account (done)`);
 
       } else {
         return jsonResponse(400, {
@@ -439,8 +428,11 @@ serve(async (req) => {
     }
 
     console.log(`${LOG_PREFIX}[${requestId}] Step 14 - Send welcome email flow (start)`);
+    let emailSent = false;
     try {
       if (fullApprenant) {
+          // Lien sécurisé à usage unique : aucun mot de passe n'est envoyé.
+          const setPasswordLink = await generateSetPasswordLink(supabaseAdmin, email.trim().toLowerCase());
           const formationLabels: Record<string, string> = {
             "vtc": "Formation VTC Présentiel",
             "vtc-exam": "Formation VTC Présentiel (avec examen)",
@@ -493,13 +485,7 @@ serve(async (req) => {
                   <p><strong>Période des cours :</strong> du <strong>${dateDebut}</strong> au <strong>${dateFin}</strong></p>
                 </div>
 
-                <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0; border-radius: 4px;">
-                  <h3 style="color: #92400e; margin-top: 0;">🔐 Vos identifiants de connexion</h3>
-                  <p><strong>Email :</strong> ${email}</p>
-                  <p><strong>Mot de passe :</strong> <code style="background: #e5e7eb; padding: 2px 8px; border-radius: 4px; font-size: 16px; letter-spacing: 1px;">${password}</code></p>
-                </div>
-
-                <p style="color: #6b7280; font-size: 14px;">🔑 Vous pouvez modifier votre mot de passe à tout moment depuis votre espace apprenant.</p>
+                ${setPasswordBlock(email, setPasswordLink)}
 
                 <div style="text-align: center; margin: 30px 0;">
                   <a href="${coursUrl}" style="background-color: #3b82f6; color: #ffffff; text-decoration: none; padding: 14px 30px; border-radius: 8px; font-size: 16px; font-weight: bold; display: inline-block;">
@@ -532,13 +518,14 @@ serve(async (req) => {
             html: emailBody,
             replyTo: "contact@ftransport.fr",
           });
+          emailSent = true;
           console.log(`${LOG_PREFIX}[${requestId}] Step 14.2 - Send welcome email (done)`);
           console.log(`${LOG_PREFIX}[${requestId}] Step 14.3 - Insert email log in DB (start)`);
           const { error: emailInsertErr } = await supabaseAdmin.from("emails").insert({
               apprenant_id: apprenant_id,
               subject: emailSubject,
-              body_preview: `Bonjour ${prenom}, votre compte de cours en ligne a été créé.`,
-              body_html: emailBody,
+              body_preview: `Bonjour ${prenom}, votre compte de cours en ligne a été créé. ${HISTORY_ACCESS_NOTE}.`,
+              body_html: redactForHistory(emailBody, [setPasswordLink]),
               sender_email: "contact@ftransport.fr",
               sender_name: "FTRANSPORT",
               recipients: [email],
@@ -561,9 +548,11 @@ serve(async (req) => {
     console.log(`${LOG_PREFIX}[${requestId}] Success response`);
     return jsonResponse(200, {
       success: true,
-      password,
       email,
-      message: `Compte créé pour ${email}. Mot de passe : ${password}`,
+      emailSent,
+      message: emailSent
+        ? `Compte créé pour ${email}. Un lien sécurisé pour définir son mot de passe lui a été envoyé.`
+        : `Compte créé pour ${email}, mais l'e-mail n'a pas pu être envoyé. Utilisez « Renvoyer les identifiants ».`,
       requestId,
     });
   } catch (err) {
