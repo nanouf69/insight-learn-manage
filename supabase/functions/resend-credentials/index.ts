@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { sendBrandedEmail } from "../_shared/send-branded-email.ts";
+import { redactForHistory, HISTORY_ACCESS_NOTE } from "../_shared/credential-secrets.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -283,11 +284,12 @@ serve(async (req) => {
         replyTo: senderEmail,
       });
       emailSent = true;
+      // Historique : jamais le mot de passe temporaire ni le lien personnel.
       await supabaseAdmin.from("emails").insert({
         apprenant_id: apprenant_id,
         subject: emailSubject,
-        body_preview: `Bonjour ${prenom}, voici vos accès à la plateforme de cours en ligne.`,
-        body_html: emailBody,
+        body_preview: `Bonjour ${prenom}, voici vos accès à la plateforme de cours en ligne. ${HISTORY_ACCESS_NOTE}.`,
+        body_html: redactForHistory(emailBody, [tempPassword, resetLink]),
         sender_email: senderEmail,
         sender_name: "FTRANSPORT",
         recipients: [apprenant.email],
