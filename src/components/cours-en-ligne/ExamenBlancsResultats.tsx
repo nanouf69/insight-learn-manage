@@ -27,6 +27,7 @@ import {
 } from "./examens-blancs-utils";
 import { computeMoyenneExamen, computeResultatMatiereScore, getSeuilEliminatoireAffiche } from "./examens-blancs-scoring";
 import { isExamAttemptPublicationPending } from "./exam-helpers";
+import { fetchCoreMatiereStates, matchCoreState, type CoreMatiereState } from "@/lib/coreExamPublication";
 import { useQrcEnginePending } from "@/hooks/useQrcEnginePending";
 
 
@@ -59,6 +60,18 @@ function EcranResultats({
 }) {
   // Ensure resultats is always a proper array (DB data can be malformed)
   resultats = safeArray<ResultatMatiere>(resultats);
+  // Source unique : état serveur des passages du nouveau système (même source
+  // que l'écran Correction QRC et la fiche Admin). Lecture seule.
+  const [coreStates, setCoreStates] = useState<CoreMatiereState[] | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    fetchCoreMatiereStates(apprenantId).then((st) => { if (!cancelled) setCoreStates(st); });
+    return () => { cancelled = true; };
+  }, [apprenantId, examen?.id]);
+  resultats = resultats.map((r) => ({
+    ...r,
+    __core: matchCoreState(coreStates, r.quizId ?? examen?.id, r.matiereId, r.completedAt),
+  }));
   // Check if corrections are already cached in the resultats (from DB)
   const hasPreloadedCorrections = resultats.some(
     (r) => r.correctionsIA && Object.values(r.correctionsIA).some((value) => value && value !== "loading")
@@ -87,7 +100,9 @@ function EcranResultats({
   // Examen branché sur le nouveau moteur QRC → le blocage vient des mêmes
   // identifiants que la file de correction. Sinon : règle historique inchangée.
   const qrcEngine = useQrcEnginePending(apprenantId, [examen?.id].filter(Boolean) as string[]);
-  const engineExamPending = qrcEngine.isExamPending(examen?.id || "");
+  const allCore = resultats.filter((r) => !r.nonPassee).length > 0
+    && resultats.filter((r) => !r.nonPassee).every((r) => !!r.__core);
+  const engineExamPending = allCore ? null : qrcEngine.isExamPending(examen?.id || "");
   // JAMAIS de mélange : le nouveau moteur ne peut QUE bloquer en plus.
   // Il ne débloque jamais un passage historique encore en attente.
   const hasQrcPendingValidation = engineExamPending === true
