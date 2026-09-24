@@ -2,6 +2,7 @@
 // Aucune donnée historique n'est complétée ni recalculée : ce qui manque est signalé.
 // Le regroupement des passages suit les sessions réelles du CRM (lecture seule),
 // jamais une session reconstruite à partir de la date ou de l'heure d'un passage.
+import { celluleCompacte, LARGEURS_MATRICE, largeurMinimaleMatrice } from "@/features/correction-qrc-v2/celluleCompacte";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -302,16 +303,17 @@ export default function AdminCorrectionQrcV2Reel() {
   const libelleGroupe = (g: GroupeSessionCrm) =>
     `${estEnCours(g) ? "🔴 EN COURS — " : ""}${g.libelle}${g.periode ? ` (${g.periode})` : ""} · ${g.nbCandidats} candidat${g.nbCandidats > 1 ? "s" : ""}`;
 
+  const panneauOuvert = !ancienCircuit && !!qrcSel;
   return (
     <div ref={conteneurRef} className="flex min-h-screen w-full bg-background">
       <div
         data-testid="zone-tableau"
-        className="min-w-0 shrink-0 grow-0 p-4 space-y-6 overflow-x-auto"
-        style={ancienCircuit
+        className="min-w-0 shrink-0 grow-0 px-2 py-1 space-y-3 overflow-x-auto"
+        style={!panneauOuvert
           ? { flex: "0 0 100%", width: "100%" }
           : { flex: `0 0 calc(${100 - partPanneau}% - 3px)`, width: `calc(${100 - partPanneau}% - 3px)` }}
       >
-        <header className="sticky top-0 z-10 bg-background/95 py-2 space-y-2">
+        <header className="sticky top-0 z-10 bg-background/95 py-1 space-y-1">
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-lg font-semibold">Correction QRC V2</h1>
             <select
@@ -355,10 +357,11 @@ export default function AdminCorrectionQrcV2Reel() {
             </div>
           </div>
           {(ebChoisi?.dates.length ?? 0) > 0 && (
-            <div className="flex flex-wrap items-center gap-1" data-testid="dates-eb">
+            <div className="flex items-center gap-1 overflow-x-auto whitespace-nowrap" data-testid="dates-eb">
               <span className="text-xs text-muted-foreground">Dates de passage :</span>
               <Button
                 size="sm"
+                className="h-6 px-2 text-xs"
                 variant={jourFiltre ? "outline" : "default"}
                 onClick={() => setJourFiltre(null)}
                 data-testid="date-toutes"
@@ -369,6 +372,7 @@ export default function AdminCorrectionQrcV2Reel() {
                 <Button
                   key={d.jour}
                   size="sm"
+                  className="h-6 px-2 text-xs"
                   variant={jourFiltre === d.jour ? "default" : "outline"}
                   onClick={() => setJourFiltre(d.jour)}
                   data-testid={`date-${d.jour}`}
@@ -378,7 +382,7 @@ export default function AdminCorrectionQrcV2Reel() {
               ))}
             </div>
           )}
-          {!ancienCircuit && <p className="text-sm text-muted-foreground" data-testid="compteur-session">
+          {!ancienCircuit && <p className="text-xs text-muted-foreground" data-testid="compteur-session">
             Session affichée (tous les candidats) : {corrigees}/{total} QRC corrigées — {total - corrigees} restantes
             {qrcSel && (
               <span className="block font-medium text-foreground" data-testid="compteur-candidat">
@@ -391,7 +395,9 @@ export default function AdminCorrectionQrcV2Reel() {
             {" · "}
             <span className="text-warning">≈ orange = correction automatique historique</span>
             {" · "}
-            <span>? gris = origine non tracée</span>
+            <span>? gris = origine à vérifier</span>
+            {" · "}
+            <span className="text-destructive font-semibold">rouge = à corriger (∅ copie vide)</span>
           </p>
           {(nbIndetermines > 0 || nbConflits > 0) && (
             <p className="text-xs text-warning" data-testid="alerte-rattachement">
@@ -427,8 +433,8 @@ export default function AdminCorrectionQrcV2Reel() {
           const dansMatiere = (session?.qrc ?? []).filter((q) => attemptIds.has(q.attempt_id));
           const ok = dansMatiere.filter((q) => q.etat === "corrigee").length;
           return (
-            <section key={m.subject_id} className="space-y-2">
-              <h2 className="text-base font-semibold">
+            <section key={m.subject_id} className="space-y-1">
+              <h2 className="text-sm font-semibold">
                 {m.lettre} — {m.titre}{" "}
                 <span className="text-sm text-muted-foreground">
                   {dansMatiere.length > 0 && ok === dansMatiere.length ? "✓ TERMINÉE" : `${ok}/${dansMatiere.length}`}
@@ -439,28 +445,40 @@ export default function AdminCorrectionQrcV2Reel() {
                 ref={(el) => { tableauxRef.current.set(m.subject_id, el); }}
                 onScroll={(e) => scrollsX.current.set(m.subject_id, e.currentTarget.scrollLeft)}
               >
-                <table className="text-sm">
+                <table
+                  className="w-full table-fixed border-collapse text-xs"
+                  data-testid={`matrice-${m.subject_id}`}
+                  style={{ minWidth: `${largeurMinimaleMatrice(questions.length)}rem` }}
+                >
+                  <colgroup>
+                    <col style={{ width: `${LARGEURS_MATRICE.candidat}rem` }} />
+                    <col style={{ width: `${LARGEURS_MATRICE.passage}rem` }} />
+                    <col style={{ width: `${LARGEURS_MATRICE.note}rem` }} />
+                    {questions.map((q) => <col key={q.id} />)}
+                  </colgroup>
                   <thead>
-                    <tr>
-                      <th className="sticky left-0 bg-background px-2 py-1 text-left">CANDIDAT</th>
-                      <th className="px-2 py-1 text-left">PASSAGE</th>
-                      <th className="px-2 py-1 text-left whitespace-nowrap">NOTE /20</th>
-                      {questions.map((q, i) => <th key={q.id} className="px-2 py-1">QRC {i + 1}</th>)}
+                    <tr className="border-b">
+                      <th className="sticky left-0 z-[1] bg-background px-1 py-0.5 text-left">Candidat</th>
+                      <th className="px-1 py-0.5 text-left">Passage</th>
+                      <th className="px-1 py-0.5 text-left whitespace-nowrap">Note /20</th>
+                      {questions.map((q, i) => <th key={q.id} className="px-0.5 py-0.5 text-center" title={`QRC ${i + 1}`}>Q{i + 1}</th>)}
                     </tr>
                   </thead>
                   <tbody>
                     {tentatives.map((t) => (
                       <tr key={t.attempt_id}>
-                        <td className="sticky left-0 bg-background px-2 py-1 font-medium whitespace-nowrap">{t.candidat}</td>
-                        <td className="px-2 py-1 whitespace-nowrap text-xs text-muted-foreground">
+                        <td className="sticky left-0 z-[1] bg-background px-1 py-0.5 font-medium truncate" title={t.candidat}>{t.candidat}</td>
+                        <td
+                          className="px-1 py-0.5 whitespace-nowrap text-muted-foreground truncate"
+                          title={`${t.started_at ? new Date(t.started_at).toLocaleString("fr-FR", { timeZone: "Europe/Paris" }) : "date inconnue"} · tentative ${t.attempt_id.slice(0, 8)}`}
+                        >
                           {t.started_at
                             ? new Date(t.started_at).toLocaleString("fr-FR", {
                                 timeZone: "Europe/Paris",
-                                day: "2-digit", month: "2-digit", year: "numeric",
+                                day: "2-digit", month: "2-digit",
                                 hour: "2-digit", minute: "2-digit",
                               })
                             : "date inconnue"}
-                          {" · "}tentative {t.attempt_id.slice(0, 8)}
                         </td>
                         {(() => {
                           // Note /20 : résultat serveur de CETTE tentative (QCM du snapshot + dernière
@@ -471,15 +489,16 @@ export default function AdminCorrectionQrcV2Reel() {
                             <td
                               key="note20"
                               data-testid={`note20-${t.attempt_id}`}
-                              className={`px-2 py-1 whitespace-nowrap font-semibold ${
+                              title={res == null || res.score == null ? undefined : defin ? "Note définitive" : `Note provisoire — ${res.qrc_restantes} QRC restante(s)`}
+                              className={`px-1 py-0.5 whitespace-nowrap truncate font-semibold ${
                                 res == null ? "text-muted-foreground" : defin ? "text-success" : "text-warning"
                               }`}
                             >
                               {res == null || res.score == null
                                 ? "—"
                                 : defin
-                                  ? `✓ ${String(res.score).replace(".", ",")}/20 définitive`
-                                  : `⏳ ${String(res.score).replace(".", ",")}/20 provisoire — ${res.qrc_restantes} QRC restante(s)`}
+                                  ? `✓ ${String(res.score).replace(".", ",")} déf.`
+                                  : `⏳ ${String(res.score).replace(".", ",")} · ${res.qrc_restantes} rest.`}
                             </td>
                           );
                         })()}
@@ -491,8 +510,8 @@ export default function AdminCorrectionQrcV2Reel() {
                           // ⚪ GRIS : aucune QRC pour ce couple candidat / question.
                           if (!inst) {
                             return (
-                              <td key={q.id} className="px-1 py-1">
-                                <span className="rounded border border-muted bg-muted px-2 py-1 text-muted-foreground">—</span>
+                              <td key={q.id} className="px-0.5 py-0.5 text-center">
+                                <span className="block rounded border border-muted bg-muted px-1 py-0.5 text-muted-foreground">—</span>
                               </td>
                             );
                           }
@@ -514,33 +533,19 @@ export default function AdminCorrectionQrcV2Reel() {
                             : probleme
                               ? "border-warning border-dashed bg-transparent text-warning"
                               : "border-destructive bg-destructive/15 text-destructive";
-                          const libelle = corrigee
-                            ? origine === "humaine"
-                              ? `✓ ${note}`
-                              : origine === "automatique"
-                                ? `≈ ${note} · auto`
-                                : `? ${note} · origine à vérifier`
-                            : probleme
-                              ? "⚠️ Barème absent"
-                              : `À corriger (/${points})${vide ? " · copie vide" : ""}`;
+                          const compact = celluleCompacte({ corrigee, origine, note: inst.note, points, vide });
                           return (
-                            <td key={q.id} className="px-1 py-1">
+                            <td key={q.id} className="px-0.5 py-0.5">
                               <button
                                 data-testid={`cellule-${inst.qrc_instance_id}`}
                                 data-origine={corrigee ? origine : "aucune"}
-                                title={
-                                  corrigee
-                                    ? origine === "humaine"
-                                      ? "Correction humaine vérifiée"
-                                      : origine === "automatique"
-                                        ? "Correction automatique historique (non validée par un formateur)"
-                                        : "Origine de la correction non tracée"
-                                    : undefined
-                                }
+                                data-couleur={compact.couleur}
+                                title={compact.detail}
+                                aria-label={compact.detail}
                                 onClick={() => { setSelection(inst.qrc_instance_id); setNote(null); setEtatEnvoi("vide"); }}
-                                className={`rounded border-2 px-2 py-1 font-medium whitespace-nowrap ${style}`}
+                                className={`block w-full truncate rounded border-2 px-1 py-0.5 text-center font-semibold tabular-nums whitespace-nowrap ${style} ${qrcSel?.qrc_instance_id === inst.qrc_instance_id ? "ring-2 ring-primary ring-offset-1" : ""}`}
                               >
-                                {libelle}
+                                {compact.libelle}
                               </button>
                             </td>
                           );
@@ -557,19 +562,23 @@ export default function AdminCorrectionQrcV2Reel() {
         {erreur && <p className="text-sm text-destructive" data-testid="erreur-admin">{erreur}</p>}
       </div>
 
-      {!ancienCircuit && <div
+      {panneauOuvert && <div
         onMouseDown={demarrerRedim}
         role="separator"
         aria-orientation="vertical"
         aria-label="Redimensionner le panneau"
         className="w-1.5 shrink-0 cursor-col-resize bg-border hover:bg-primary/40"
       />}
-      {!ancienCircuit && <aside
+      {panneauOuvert && <aside
         data-testid="panneau-correction"
         className="min-w-0 shrink-0 border-l p-3 space-y-2 overflow-y-auto sticky top-0 max-h-screen"
         style={{ flex: `0 0 calc(${partPanneau}% - 3px)`, width: `calc(${partPanneau}% - 3px)` }}
       >
-        {!qrcSel && <p className="text-sm text-muted-foreground">Sélectionnez une QRC dans le tableau.</p>}
+        <div className="flex justify-end">
+          <Button size="sm" variant="ghost" className="h-6 px-2 text-xs" onClick={() => setSelection(null)} data-testid="fermer-panneau">
+            Fermer ✕
+          </Button>
+        </div>
         {qrcSel && questionSel && tentativeSel && (
           <>
             <div className="flex flex-wrap items-baseline gap-x-2 border-b pb-2">
