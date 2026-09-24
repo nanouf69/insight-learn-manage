@@ -107,11 +107,18 @@ export const ALL_DATES_EXAMEN_STEP5 = ALL_DATES_EXAMEN_THEORIQUE
   });
 
 // Version ExamenReussitePage (avec pratiqueIndex)
-export const ALL_DATES_EXAMEN_REUSSITE = [
-  { date: "21 juillet 2026", lieu: "Villeurbanne", pratiqueIndex: 0 },
-  { date: "29 septembre 2026", lieu: "Villeurbanne", pratiqueIndex: 1 },
-  { date: "17 novembre 2026", lieu: "Villeurbanne", pratiqueIndex: 2 },
-];
+// Dérivée de la source commune (2026 à partir de juillet + 2027) : aucune liste séparée.
+// pratiqueIndex : index dans ALL_DATES_EXAMEN_PRATIQUE ; -1 = période pratique non publiée.
+const PRATIQUE_INDEX: Record<string, number> = { "2026-07-21": 0, "2026-09-29": 1, "2026-11-17": 2 };
+export const ALL_DATES_EXAMEN_REUSSITE = ALL_DATES_EXAMEN_THEORIQUE
+  .filter((d) => d.iso >= "2026-07-21")
+  .map((d) => ({
+    date: d.date,
+    lieu: ALL_DATES_EXAMEN_THEORIQUE_SHORT.find((x) => x.iso === d.iso)!.lieu.split(" – ")[0],
+    pratiqueIndex: PRATIQUE_INDEX[d.iso] ?? -1,
+    dateLimite: d.dateLimite,
+    dateLimiteLibelle: d.dateLimiteLibelle,
+  }));
 
 // ── Dates d'examen pratique 2026 ──
 export const ALL_DATES_EXAMEN_PRATIQUE = [
