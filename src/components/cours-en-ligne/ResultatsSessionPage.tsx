@@ -224,7 +224,7 @@ const ResultatsSessionPage = () => {
           // coreMap null = lecture impossible → ligne marquée comme en attente (fail-closed)
           __core: coreMap === null
             ? { pending: true }
-            : matchCoreState(coreMap.get(String(r.apprenant_id)) ?? [], r.quiz_id, r.matiere_id, r.completed_at),
+            : matchCoreState(coreMap.get(String(r.apprenant_id)) ?? [], r.quiz_id, r.matiere_id, r.completed_at, r.id),
         }));
         setCompletions(completionRows as CompletionRow[]);
         setQuizResults(rowsWithCore as QuizResultRow[]);

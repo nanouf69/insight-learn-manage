@@ -280,7 +280,7 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
               correctionsIA: r?.details?.correctionsIA ?? null,
               details: r?.details ?? null,
               // Source unique : état serveur du passage nouveau système, s'il existe.
-              __core: matchCoreState(coreStates, r.quiz_id, r.matiere_id, r.completed_at),
+              __core: matchCoreState(coreStates, r.quiz_id, r.matiere_id, r.completed_at, r.id),
             } as ExamScoreItem);
 
             if (recovered && recovered.score_obtenu > toFiniteNumber(r.score_obtenu, 0)) {
