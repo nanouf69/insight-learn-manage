@@ -952,12 +952,18 @@ function EcranResultats({
                                     <span>Vous avez trouvé le bon résultat mais le détail du calcul est manquant → {pointsObtenus}/{pts} pts</span>
                                   </div>
                                 )}
-                                {correctionDetail && (
-                                  <div className="flex items-start gap-1 text-xs text-blue-700 bg-blue-50 rounded p-1.5">
-                                    <Bot className="w-3 h-3 shrink-0 mt-0.5" /><span>{correctionDetail}</span>
-                                  </div>
-                                )}
-                                <p className="text-xs text-green-700 font-medium">Réponse attendue : {q.reponseQRC || (q.reponses_possibles || []).join(" / ") || "—"}</p>
+                                 {correctionDetail && (
+                                   <div className="flex items-start gap-1 text-xs text-blue-700 bg-blue-50 rounded p-1.5">
+                                     <Bot className="w-3 h-3 shrink-0 mt-0.5" /><span>{correctionDetail}</span>
+                                   </div>
+                                 )}
+                                 {isCorrectionIA && (
+                                   <div className="rounded border border-violet-300 bg-violet-50 p-1.5 space-y-1">
+                                     <p className="text-xs font-bold text-violet-800">🟣 Correction réalisée par intelligence artificielle</p>
+                                     <p className="text-xs text-amber-800">⚠️ Cette correction a été réalisée automatiquement par intelligence artificielle. Une IA peut commettre des erreurs. Vérifiez votre réponse en la comparant avec le corrigé officiel.</p>
+                                   </div>
+                                 )}
+                                 <p className="text-xs text-green-700 font-medium">Réponse attendue : {q.reponseQRC || (q.reponses_possibles || []).join(" / ") || "—"}</p>
                                 {/* Admin manual QRC override */}
                                 {isAdmin && !isLoadingIA && (
                                   <div className="mt-2">
