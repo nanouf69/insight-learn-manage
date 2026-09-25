@@ -183,11 +183,7 @@ export function generateEmargementSemainePdf(
       doc.setTextColor(40, 40, 40);
       doc.text(DEMI_LABELS[demi] || demi, margin + dateColW + 2, y + 8);
       if (sig) {
-        doc.setFontSize(7);
-        doc.setTextColor(120, 120, 120);
-        try {
-          doc.text(`Signé le ${format(new Date(sig.signed_at), 'dd/MM HH:mm', { locale: fr })}`, margin + dateColW + 2, y + 14);
-        } catch {}
+        // La date/heure de signature reste enregistrée en base (traçabilité) mais n'est plus affichée sur la feuille.
         // Mention de confirmation (uniquement si le stagiaire a bien coché les cases)
         if (sig.confirme_presence_lieu && sig.confirme_identite) {
           doc.setFontSize(6.5);
