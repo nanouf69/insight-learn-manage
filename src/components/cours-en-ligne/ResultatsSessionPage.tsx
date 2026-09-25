@@ -354,7 +354,7 @@ const ResultatsSessionPage = () => {
           // Passage nouveau système : réussite calculée sur la note serveur, sans
           // relire l'état QRC historique de l'ancienne ligne.
           const reussiMat = (coreScore
-            ? computeReussiForResult({ ...(r as any), score_obtenu: coreScore.noteSur20, score_max: 20, details: { ...((r as any).details || {}), qrcEnAttente: false, pendingQrcCorrection: false, correctionsIA: undefined } })
+            ? computeReussiForResult({ ...(r as any), score_obtenu: coreScore.noteSur20, score_max: 20, details: { ...((r as any).details || {}), qrc_pending_correction: false } })
             : computeReussiForResult(r as any)) ?? false;
 
           if (!matieres[mKey]) matieres[mKey] = { nom: matNom, totalNote: 0, count: 0, pass: 0, fail: 0 };
