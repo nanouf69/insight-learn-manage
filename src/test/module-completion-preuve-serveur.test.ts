@@ -38,6 +38,13 @@ describe("Validation Terminé — preuve serveur (incidents GOUEPO)", () => {
     expect(sql).not.toMatch(/\bDELETE\b|\bTRUNCATE\b/i);
   });
 
+  it("un ancien état client ne peut rétrograder Terminé ni diminuer sa progression", () => {
+    const sql = sqlOf("module_completion_preuve_serveur");
+    expect(sql).toMatch(/amc\.status\s*=\s*'completed'\s+OR\s+_completed/);
+    expect(sql).toMatch(/GREATEST\s*\(\s*COALESCE\(amc\.progress/);
+    expect(sql).toMatch(/WHEN amc\.status = 'completed' THEN amc\.completed_at/);
+  });
+
   it("A — identifiant long 1785332774763 : plus de conversion integer dans les protections Bilan", () => {
     const sql = sqlOf("bilan_garde_ids_longs");
     expect(sql).toMatch(/length\(m\[2\]\) > 9/);

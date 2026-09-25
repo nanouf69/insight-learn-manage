@@ -1001,6 +1001,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   });
 
   const fetchAttemptRef = useRef(0);
+  const completionsRequestRef = useRef(0);
   const lastFetchedUserIdRef = useRef<string | null>(null);
   const adminRedirectedRef = useRef(false);
   useEffect(() => {
@@ -1190,6 +1191,8 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   // Fetch completed modules + exam blanc results + last module
   useEffect(() => {
     if (!apprenant?.id) return;
+    const requestId = ++completionsRequestRef.current;
+    let cancelled = false;
     const fetchCompletions = async () => {
       const [completionsResult, { data: examData }, { data: lastActivityData }, { data: lastConnData }] = await Promise.all([
         // Source of truth: DB progression, with retries so a transient failure
@@ -1218,7 +1221,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
           .limit(1),
       ]);
 
-      if (completionsResult.ok) {
+      if (completionsResult.ok && !cancelled && requestId === completionsRequestRef.current) {
         const completionRows = completionsResult.rows as any[];
 
         // Self-healing: rows whose activities are all done but not flagged
@@ -1244,7 +1247,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
       }
 
 
-      if (examData) {
+      if (examData && !cancelled && requestId === completionsRequestRef.current) {
         const ids = new Set<string>((examData as any[]).map((r: any) => r.quiz_id));
         setExamBlancCompletedIds(ids);
       }
@@ -1254,9 +1257,14 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         (lastActivityData && (lastActivityData as any[]).length > 0 && (lastActivityData as any[])[0].module_nom) ||
         (lastConnData && (lastConnData as any[]).length > 0 && (lastConnData as any[])[0].current_module) ||
         null;
-      setLastModuleName(lastModName);
+      if (!cancelled && requestId === completionsRequestRef.current) {
+        setLastModuleName(lastModName);
+      }
     };
     fetchCompletions();
+    return () => {
+      cancelled = true;
+    };
   }, [apprenant?.id]);
 
   // Vérifier si une signature d'émargement est requise pour le créneau en cours
@@ -1464,6 +1472,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     setSelectedModule(null);
     // Re-fetch completions to pick up any quiz results saved during the module
     if (apprenant?.id) {
+      const requestId = ++completionsRequestRef.current;
       const [completionsResult, { data: examData }] = await Promise.all([
         fetchModuleCompletions(apprenant.id),
         supabase
@@ -1472,7 +1481,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
           .eq("apprenant_id", apprenant.id)
           .eq("quiz_type", "examen_blanc"),
       ]);
-      if (completionsResult.ok) {
+      if (completionsResult.ok && requestId === completionsRequestRef.current) {
         const completionRows = completionsResult.rows as any[];
         await repairInconsistentCompletions(
           apprenant.id,
@@ -1491,7 +1500,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         setCompletionsLoaded(true);
       }
 
-      if (examData) {
+      if (examData && requestId === completionsRequestRef.current) {
         const ids = new Set<string>((examData as any[]).map((r: any) => r.quiz_id));
         setExamBlancCompletedIds(ids);
       }
