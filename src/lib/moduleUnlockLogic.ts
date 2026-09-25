@@ -147,3 +147,58 @@ export function isModuleLocked(
     !state.effectivelyCompletedIds.has(modId)
   );
 }
+
+// ---------------------------------------------------------------------------
+// Source unique d'affichage d'un module côté apprenant.
+// Tous les écrans élève doivent passer par cette fonction : un Terminé serveur
+// n'est jamais rétrogradé par un compteur actuel, une sous-ligne ancienne ou
+// un chargement en retard ; pendant le chargement on n'invente aucun statut.
+// ---------------------------------------------------------------------------
+export type LearnerModuleStatus = "chargement" | "termine" | "en_cours" | "a_faire";
+export type LearnerModuleAction = "revoir" | "reprendre" | "commencer" | null;
+
+export interface LearnerModuleDisplayInput {
+  loaded: boolean;
+  serverCompleted: boolean;
+  quizStats?: QuizStatsLite;
+  examStats?: ExamStatsLite;
+  hasProgress: boolean;
+  locked?: boolean;
+}
+
+export interface LearnerModuleDisplayState {
+  status: LearnerModuleStatus;
+  action: LearnerModuleAction;
+  isDone: boolean;
+  locked: boolean;
+}
+
+export function isModuleDoneForDisplay(
+  serverCompleted: boolean,
+  quizStats?: QuizStatsLite,
+  examStats?: ExamStatsLite,
+): boolean {
+  if (serverCompleted) return true; // monotone : le serveur a le dernier mot
+  const hasQuizzes = (quizStats?.totalQuizzes ?? 0) > 0;
+  const hasExams = (examStats?.total ?? 0) > 0;
+  if (!hasQuizzes && !hasExams) return false;
+  const allQuizzes = !hasQuizzes || quizStats!.completedQuizzes >= quizStats!.totalQuizzes;
+  const allExams = !hasExams || examStats!.completed >= examStats!.total;
+  return allQuizzes && allExams;
+}
+
+export function getLearnerModuleDisplayState(input: LearnerModuleDisplayInput): LearnerModuleDisplayState {
+  if (!input.loaded) {
+    return { status: "chargement", action: null, isDone: false, locked: true };
+  }
+  const isDone = isModuleDoneForDisplay(input.serverCompleted, input.quizStats, input.examStats);
+  if (isDone) {
+    // Un module terminé n'est jamais verrouillé par un ancien état client.
+    return { status: "termine", action: "revoir", isDone: true, locked: false };
+  }
+  const locked = !!input.locked;
+  if (input.hasProgress) {
+    return { status: "en_cours", action: locked ? null : "reprendre", isDone: false, locked };
+  }
+  return { status: "a_faire", action: locked ? null : "commencer", isDone: false, locked };
+}
