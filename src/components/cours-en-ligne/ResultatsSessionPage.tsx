@@ -218,14 +218,17 @@ const ResultatsSessionPage = () => {
         const examAppIds = Array.from(new Set(quizRows
           .filter((r: any) => r.quiz_type === "examen_blanc" || r.quiz_type === "examen_blanc_taxi")
           .map((r: any) => String(r.apprenant_id))));
-        const coreMap = await fetchCoreMatiereStatesBulk(examAppIds);
+        const coreMap = await fetchCoreMatiereStatesBulk(examAppIds, { inclureNeutralises: true });
         const rowsWithCore = quizRows.map((r: any) => ({
           ...r,
           // coreMap null = lecture impossible → ligne marquée comme en attente (fail-closed)
           __core: coreMap === null
             ? { pending: true }
             : matchCoreState(coreMap.get(String(r.apprenant_id)) ?? [], r.quiz_id, r.matiere_id, r.completed_at, r.id),
-        }));
+        }))
+          // Ligne liée à une tentative neutralisée (technique/incomplète) : conservée
+          // en base, jamais comptée comme résultat.
+          .filter((r: any) => !(r.__core && r.__core.neutralise === true));
         setCompletions(completionRows as CompletionRow[]);
         setQuizResults(rowsWithCore as QuizResultRow[]);
       } else {

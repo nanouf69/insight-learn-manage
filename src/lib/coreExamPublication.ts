@@ -21,6 +21,8 @@ export interface CoreMatiereState {
   status: string | null;
   /** Passage copié depuis l'ancien système : identifiant de la ligne d'origine (apprenant_quiz_results.id). */
   resultId: string | null;
+  /** Tentative neutralisée (renvoyée seulement sur demande explicite, pour être écartée). */
+  neutralise?: boolean;
   note20: number | null;
   /** true tant que la note serveur n'est pas publiée définitivement. */
   pending: boolean;
@@ -43,6 +45,7 @@ export async function fetchCoreMatiereStates(apprenantId: string | null | undefi
  */
 export async function fetchCoreMatiereStatesBulk(
   apprenantIds: string[],
+  opts?: { inclureNeutralises?: boolean },
 ): Promise<Map<string, CoreMatiereState[]> | null> {
   const out = new Map<string, CoreMatiereState[]>();
   const ids = Array.from(new Set((apprenantIds || []).filter(Boolean)));
@@ -92,7 +95,7 @@ export async function fetchCoreMatiereStatesBulk(
           }
           return a;
         })
-        .filter((a) => a?.finished_at && a?.matiere && !neutralises.has(String(a.attempt_id)))
+        .filter((a) => a?.finished_at && a?.matiere && (opts?.inclureNeutralises || !neutralises.has(String(a.attempt_id))))
         .forEach((a) => {
           const q = qrcByAttempt.get(a.attempt_id) || { total: 0, pending: 0 };
           const r = latestResult.get(a.attempt_id);
@@ -112,6 +115,7 @@ export async function fetchCoreMatiereStatesBulk(
             qrcRestantes,
             status: r?.status ?? null,
             resultId: a.result_id ? String(a.result_id) : null,
+            ...(neutralises.has(String(a.attempt_id)) ? { neutralise: true } : {}),
             note20,
             pending,
           });
