@@ -2574,7 +2574,7 @@ const CorrectionQRCTab = ({ resultIds, embeddedLabel, hideV2Panel = false }: Cor
                       }}
                       className="w-16 px-2 py-1 text-xs border rounded text-center font-bold"
                     />
-                    <span className="text-xs text-amber-700">/ {item.pointsMax}</span>
+                    <span className="text-xs text-amber-700">/ {item.pointsMax}{item.questionHistoriqueIndisponible ? " (maximum de saisie actuel — barème historique non disponible)" : ""}</span>
                     <Button
                       size="sm"
                       className="h-6 px-2 text-xs"
