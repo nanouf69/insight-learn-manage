@@ -2489,7 +2489,7 @@ const CorrectionQRCTab = ({ resultIds, embeddedLabel, hideV2Panel = false }: Cor
 
                   {/* Question */}
                   <div className="space-y-2">
-                    {item.questionSupprimee && !item.corrigeManuel && !item.enonce && (
+                    {item.questionSupprimee && !item.corrigeManuel && !item.enonce && !item.questionHistoriqueIndisponible && (
                       <div className="flex items-center gap-2 p-2 rounded-md bg-red-50 border border-red-200 flex-wrap">
                         <span className="text-sm font-bold text-red-700">⚠️ Q{item.questionId} — QUESTION SUPPRIMÉE</span>
                         <Button
