@@ -135,3 +135,11 @@ describe("Source unique : nouveau passage = nouveau moteur partout", () => {
     }
   });
 });
+
+describe("Tentatives neutralisées exclues de la source unique", () => {
+  it("fetchCoreMatiereStates lit core_tentatives_neutralisees et les écarte", () => {
+    const src = fs.readFileSync(path.resolve(__dirname, "../lib/coreExamPublication.ts"), "utf8");
+    expect(src).toContain('from("core_tentatives_neutralisees"');
+    expect(src).toMatch(/!neutralises\.has\(String\(a\.attempt_id\)\)/);
+  });
+});

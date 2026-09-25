@@ -70,6 +70,8 @@ interface QrcItem {
   pointsMax: number;
   pointsObtenus: number | null; // null = pas encore corrigé manuellement
   corrigeManuel: boolean;
+  /** Origine prouvée en base : correction Gemini (correctedBy « ia:… »). */
+  corrigeParIa?: boolean;
   completedAt: string;
   autoScore: number;
   autoExplication: string | null;
@@ -384,6 +386,13 @@ export const DEBUT_JOURNAL_CONTENU_EXAMENS = Date.parse("2026-09-21T16:37:10Z");
 export function estCorrigeHistoriqueNonReconstituable(completedAt?: string | null): boolean {
   const t = completedAt ? Date.parse(completedAt) : NaN;
   return !Number.isFinite(t) || t < DEBUT_JOURNAL_CONTENU_EXAMENS;
+}
+
+/** Vrai UNIQUEMENT si l'origine IA est enregistrée en base (jamais déduite d'une date). */
+export function estCorrectionIaEnregistree(correction: unknown): boolean {
+  if (!correction || typeof correction !== "object") return false;
+  const c = correction as Record<string, unknown>;
+  return typeof c.correctedBy === "string" && c.correctedBy.startsWith("ia:") && c.validatedByAdmin !== true;
 }
 
 function isAdminValidatedCorrection(correction: unknown, completedAt?: string | null): boolean {
@@ -1144,6 +1153,7 @@ const CorrectionQRCTab = ({ resultIds, embeddedLabel, hideV2Panel = false }: Cor
           pointsMax: pts,
           pointsObtenus: hasManualCorrection ? clampToHalfStep(correction?.pointsObtenus ?? 0, pts) : null,
           corrigeManuel: hasManualCorrection,
+          corrigeParIa: estCorrectionIaEnregistree(correction),
           completedAt: g.completedAt,
           autoScore,
           autoExplication,
@@ -2431,7 +2441,11 @@ const CorrectionQRCTab = ({ resultIds, embeddedLabel, hideV2Panel = false }: Cor
                       </p>
                     </div>
                     <div className="flex items-center gap-2 flex-wrap">
-                      {item.corrigeManuel ? (
+                      {item.corrigeManuel && item.corrigeParIa ? (
+                        <Badge data-testid="badge-correction-ia-archive" className="bg-violet-100 text-violet-800 border-violet-300">
+                          🟣 Correction IA : {(item.pointsObtenus ?? item.autoScore)}/{item.pointsMax} pts
+                        </Badge>
+                      ) : item.corrigeManuel ? (
                         <Badge className="bg-green-100 text-green-800 border-green-300">
                           ✅ Corrigé : {(item.pointsObtenus ?? item.autoScore)}/{item.pointsMax} pts
                         </Badge>

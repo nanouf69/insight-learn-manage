@@ -29,7 +29,7 @@ export const CORE_MATCH_WINDOW_MS = 2 * 60 * 1000;
 
 export async function fetchCoreMatiereStates(apprenantId: string | null | undefined): Promise<CoreMatiereState[] | null> {
   if (!apprenantId) return [];
-  const [attemptsRes, qrcRes, resultsRes] = await Promise.all([
+  const [attemptsRes, qrcRes, resultsRes, neutresRes] = await Promise.all([
     supabase
       .from("exam_attempts_v2" as any)
       .select("attempt_id, exam_id, finished_at, etat, is_test, matiere:snapshot->>matiere")
@@ -43,12 +43,19 @@ export async function fetchCoreMatiereStates(apprenantId: string | null | undefi
       .from("core_exam_results" as any)
       .select("attempt_id, result_revision, status, score, total, qrc_restantes")
       .eq("apprenant_id", apprenantId),
+    // Tentatives neutralisées (techniques/incomplètes) : conservées en base mais
+    // jamais prises en compte dans la notation ni l'affichage.
+    supabase
+      .from("core_tentatives_neutralisees" as any)
+      .select("attempt_id")
+      .eq("apprenant_id", apprenantId),
   ]);
-  if (attemptsRes.error || qrcRes.error || resultsRes.error) {
-    console.warn("[coreExamPublication] lecture impossible:", attemptsRes.error || qrcRes.error || resultsRes.error);
+  if (attemptsRes.error || qrcRes.error || resultsRes.error || neutresRes.error) {
+    console.warn("[coreExamPublication] lecture impossible:", attemptsRes.error || qrcRes.error || resultsRes.error || neutresRes.error);
     // null = état serveur inconnu → l'appelant doit rester bloquant (fail-closed).
     return null;
   }
+  const neutralises = new Set(((neutresRes.data as any[]) || []).map((n) => String(n.attempt_id)));
   const qrcByAttempt = new Map<string, { total: number; pending: number }>();
   ((qrcRes.data as any[]) || []).forEach((q) => {
     const e = qrcByAttempt.get(q.attempt_id) || { total: 0, pending: 0 };
@@ -62,7 +69,7 @@ export async function fetchCoreMatiereStates(apprenantId: string | null | undefi
     if (!prev || Number(r.result_revision) > Number(prev.result_revision)) latestResult.set(r.attempt_id, r);
   });
   return ((attemptsRes.data as any[]) || [])
-    .filter((a) => a?.finished_at && a?.matiere)
+    .filter((a) => a?.finished_at && a?.matiere && !neutralises.has(String(a.attempt_id)))
     .map((a) => {
       const q = qrcByAttempt.get(a.attempt_id) || { total: 0, pending: 0 };
       const r = latestResult.get(a.attempt_id);
