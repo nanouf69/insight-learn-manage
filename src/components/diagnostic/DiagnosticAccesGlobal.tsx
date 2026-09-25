@@ -20,6 +20,7 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { findMissingModules, mergeMissingModules } from "@/lib/modulesIntegrity";
 import { MODULE_NAME_BY_ID } from "@/components/cours-en-ligne/modules-config";
+import SignalementsValidationModules from "./SignalementsValidationModules";
 
 interface Apprenant {
   id: string;
@@ -289,6 +290,7 @@ export function DiagnosticAccesGlobal({ onOpenApprenant }: Props) {
 
   return (
     <div className="space-y-4">
+      <SignalementsValidationModules />
       <div className="flex flex-wrap justify-end gap-2">
         {[
           { href: "/admin/audit-modules", label: "Audit parité (tous modules)" },
