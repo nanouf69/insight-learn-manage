@@ -189,6 +189,8 @@ export default function AdminCorrectionQrcV2Reel() {
 
   const recharger = useCallback(async () => {
     if (!attemptsAffiches) { setSession(null); return; }
+    // Recherche sans passage dans cet EB : session vide (jamais de chargement global).
+    if (attemptsAffiches.length === 0) { setSession({ tentatives: [], qrc: [], resultats: [], baremesRestaures: [] } as SessionReelle); return; }
     try {
       setSession(await chargerSessionTest(mode, attemptsAffiches));
     } catch (e) {
@@ -442,6 +444,29 @@ export default function AdminCorrectionQrcV2Reel() {
                 </option>
               ))}
             </select>
+            <div className="relative">
+              <input
+                data-testid="recherche-candidat"
+                type="search"
+                value={recherche}
+                onChange={(e) => setRecherche(e.target.value)}
+                placeholder="Rechercher un candidat par nom ou prénom"
+                aria-label="Rechercher un candidat par nom ou prénom"
+                className="w-72 rounded border bg-background px-2 py-1 pr-7 text-sm"
+              />
+              {recherche && (
+                <button
+                  type="button"
+                  data-testid="effacer-recherche"
+                  aria-label="Effacer la recherche"
+                  onClick={() => setRecherche("")}
+                  className="absolute right-1 top-1/2 -translate-y-1/2 px-1 text-muted-foreground hover:text-foreground"
+                >
+                  ×
+                </button>
+              )}
+            </div>
+
 
             <div className="ml-auto flex items-center gap-1">
               <Button size="icon" variant="outline" onClick={() => setZoom(zoom - 10)} aria-label="Réduire le zoom">
