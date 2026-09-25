@@ -7,3 +7,4 @@
 - Affichage progression monotone : une ligne serveur `completed` reste « Terminé » même si les compteurs actuels de quiz/examens ou les anciennes sous-lignes divergent ; why: une évolution de contenu ou un état client ancien ne doit jamais rétrograder un acquis.
 - Affichage module apprenant : toujours via `getLearnerModuleDisplayState` / `isModuleDoneForDisplay` (moduleUnlockLogic) ; why: une seule règle, Terminé serveur jamais rétrogradé, aucun faux statut pendant le chargement.
 - Tableau de bord apprenant = lecture seule des statuts (aucune réparation/validation navigateur) ; why: le serveur est la seule autorité de validation.
+- Notes corrigées par un formateur : trigger `trg_garde_correction_admin_quiz` refuse (42501) toute modification élève de score/note/réussite/correctionsIA si une correction porte validatedByAdmin ou manuel ; why: une note en attente sur un appareil ne doit jamais écraser une correction admin.
