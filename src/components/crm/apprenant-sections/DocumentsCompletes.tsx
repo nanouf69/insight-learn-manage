@@ -17,6 +17,7 @@ import { useState } from "react";
 import { format, startOfWeek, endOfWeek, getISOWeek, getYear } from "date-fns";
 import { fr } from "date-fns/locale";
 import { computePresenceHours, formatPresenceHours, isEveningTrainingValue, isFormationContinueValue } from "@/lib/emargementHours";
+import { etatDepotDossierBienvenue, libelleDepotDossierBienvenue } from "@/lib/dossierBienvenueDepot";
 
 interface Props {
   apprenant: any;
@@ -713,15 +714,27 @@ export function DocumentsCompletes({ apprenant }: Props) {
     );
   }
 
+  const etatDepotBienvenue = etatDepotDossierBienvenue(documents || []);
+  const libelleDepotBienvenue = libelleDepotDossierBienvenue(etatDepotBienvenue);
+
   if (!documents || documents.length === 0) {
     return (
-      <Card>
-        <CardContent className="p-6 text-center text-muted-foreground">
-          <FileText className="w-12 h-12 mx-auto mb-3 opacity-30" />
-          <p className="font-medium">Aucun document complété</p>
-          <p className="text-sm mt-1">Les formulaires remplis par l'apprenant apparaîtront ici.</p>
-        </CardContent>
-      </Card>
+      <div className="space-y-4">
+        <Card className="border-primary/30 bg-primary/5" data-testid="date-depot-dossier-bienvenue">
+          <CardContent className="p-4">
+            <p className="text-sm font-semibold text-foreground">
+              Dossier de bienvenue : <span className="font-medium">{libelleDepotBienvenue}</span>
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6 text-center text-muted-foreground">
+            <FileText className="w-12 h-12 mx-auto mb-3 opacity-30" />
+            <p className="font-medium">Aucun document complété</p>
+            <p className="text-sm mt-1">Les formulaires remplis par l'apprenant apparaîtront ici.</p>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
@@ -762,6 +775,14 @@ export function DocumentsCompletes({ apprenant }: Props) {
   }
   return (
     <div className="space-y-4">
+      <Card className="border-primary/30 bg-primary/5" data-testid="date-depot-dossier-bienvenue">
+        <CardContent className="p-4">
+          <p className="text-sm font-semibold text-foreground">
+            Dossier de bienvenue : <span className="font-medium">{libelleDepotBienvenue}</span>
+          </p>
+        </CardContent>
+      </Card>
+
       <Card className="border-primary/30 bg-primary/5">
         <CardContent className="p-4 flex items-center justify-between flex-wrap gap-3">
           <div>
