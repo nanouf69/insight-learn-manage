@@ -6882,7 +6882,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       const submittedInlineIds: number[] = [];
       attempts.forEach((row) => {
         if (!isAttemptSubmitted(row as any)) return;
-        const exoMatch = /_exo_(\d+)$/.exec(row.exercice_id);
+        // Une ligne de révision ne marque JAMAIS le quiz d'origine comme validé.
+        if (exoIdDepuisRevision(row.exercice_id) != null) return;
+        const exoMatch = /^module_\d+_exo_(\d+)$/.exec(row.exercice_id);
         if (exoMatch) {
           submittedExoIds.push(Number(exoMatch[1]));
           submittedExoIdsRef.current.add(Number(exoMatch[1]));
@@ -6926,7 +6928,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       const soumis: number[] = [];
       attempts.forEach((row) => {
         if (!isAttemptSubmitted(row as any)) return;
-        const m = /_exo_(\d+)$/.exec(row.exercice_id);
+        const m = /^module_\d+_exo_(\d+)$/.exec(row.exercice_id);
         if (m) soumis.push(Number(m[1]));
       });
       if (soumis.length === 0) return;
