@@ -64,3 +64,15 @@ describe("Révision d'un quiz déjà validé", () => {
     expect(src).toContain("if (submittedExoIdsRef.current.has(pending.exoId)) revisionActiveRef.current.add(pending.exoId);");
   });
 });
+
+describe("révision jamais comptée comme validation", () => {
+  it("applySubmittedAttempts ignore les lignes de révision", async () => {
+    const fs = await import("node:fs");
+    const src = fs.readFileSync("src/components/cours-en-ligne/ModuleDetailView.tsx", "utf8");
+    const i = src.indexOf("const applySubmittedAttempts");
+    const bloc = src.slice(i, i + 900);
+    expect(bloc).toContain("exoIdDepuisRevision(row.exercice_id) != null) return;");
+    expect(bloc).toContain("/^module_\\d+_exo_(\\d+)$/");
+    expect(/^module_\d+_exo_(\d+)$/.test("module_2_revision_exo_61")).toBe(false);
+  });
+});
