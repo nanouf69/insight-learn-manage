@@ -398,6 +398,12 @@ Deno.serve(async (req) => {
       return json({
         bienvenue_existe: has("dossier-bienvenue"),
         bienvenue_signe: bienvenueSigne,
+        // Date réelle de finalisation signée (jamais updated_at/created_at).
+        bienvenue_date_depot: (() => {
+          const d: any = list.find((x: any) => x.type_document === "dossier-bienvenue" && x.donnees && sigKeys.some((k) => isImg(x.donnees[k])));
+          const v = d?.donnees?.date_completion;
+          return typeof v === "string" && v.trim() && !Number.isNaN(new Date(v).getTime()) ? v : null;
+        })(),
         projet_professionnel: has("projet-professionnel"),
         analyse_besoin: has("analyse-besoin"),
         test_competences: has("test-competences"),
