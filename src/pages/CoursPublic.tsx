@@ -2374,7 +2374,12 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
               </Button>
             </div>
 
-            {/* Modules grid: À faire + Réalisés */}
+            {/* Modules grid: À faire + Réalisés — jamais affichée avant la progression serveur */}
+            {!completionsLoaded ? (
+              <Card className="border-0 shadow-sm p-8 text-center">
+                <p className="text-muted-foreground text-sm animate-pulse">Chargement de vos modules…</p>
+              </Card>
+            ) : (
             <div className="grid md:grid-cols-2 gap-6">
               {/* À faire */}
               <div className="space-y-3">
@@ -2484,8 +2489,8 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                             <h3 className={`font-bold text-sm transition-colors ${introLockedDone ? "text-muted-foreground" : "text-foreground group-hover:text-emerald-600"}`}>
                               {mod.nom}
                               {lastMod && !introLockedDone && (
-                                <Badge className="ml-2 text-[10px] px-1.5 py-0 bg-red-500 text-white border-red-500">
-                                  ▶ Reprendre
+                                <Badge variant="outline" className="ml-2 text-[10px] px-1.5 py-0 text-emerald-600 border-emerald-200 bg-emerald-50 dark:bg-emerald-950/30">
+                                  Dernier consulté — Revoir
                                 </Badge>
                               )}
                             </h3>
