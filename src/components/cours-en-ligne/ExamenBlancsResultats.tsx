@@ -764,6 +764,12 @@ function EcranResultats({
           const cacheMatiere = correctionsIA[mi] || {};
           const questionsSafe = matiere ? (matiere.questions || []).filter(q => q && q?.type !== undefined) : [];
           const isExpanded = !!expandedMatieres[mi];
+          // Fiche historique sans copie des questions posées : la question actuelle
+          // ne doit jamais être présentée comme celle réellement posée (affichage seul).
+          const detailsR = (r as any).details;
+          const ficheSansCopie = !!detailsR
+            && !(Array.isArray(detailsR.questions) && detailsR.questions.length > 0)
+            && !detailsR.snapshot;
           if (r.nonPassee) {
             return (
               <Card key={r.matiereId} className="border-l-4 overflow-hidden opacity-70" style={{ borderLeftColor: '#94a3b8' }}>
@@ -841,6 +847,12 @@ function EcranResultats({
                     if (!q || !q?.type) return null;
                     const qIdx = (matiere?.questions || []).indexOf(q);
                     const rep = r.reponses?.[q.id];
+                    const corrLue: any = cacheMatiere[q.id] ?? cacheMatiere[String(q.id)];
+                    const corrObj = corrLue && typeof corrLue === "object" ? corrLue : null;
+                    const estReconstituee = ficheSansCopie && q?.type === "QRC" && !!corrObj
+                      && (!!corrObj.enonceUtilise || corrObj.corrigeUtilise === "actuel");
+                    const historiqueAbsent = ficheSansCopie && !estReconstituee;
+                    const enonceAffiche = estReconstituee ? (corrObj.enonceUtilise || q.enonce) : q.enonce;
                     const pts = getPointsParQuestion(matiere?.id ?? "", q?.type, matiere);
                     let isCorrect = false;
                     let pointsObtenus = 0;
@@ -888,8 +900,18 @@ function EcranResultats({
                             <div className="flex items-start justify-between gap-2 mb-1">
                               <div className="flex items-center gap-1.5 flex-1">
                                 <Badge variant={q?.type === "QRC" ? "secondary" : "outline"} className="text-xs shrink-0">{q?.type}</Badge>
-                                <p className="text-sm font-bold">Q{qIdx + 1}. {q.enonce}</p>
-                                {q?.image && (
+                                {historiqueAbsent ? (
+                                  <div>
+                                    <p className="text-sm font-bold">Q{qIdx + 1}. Question historique non disponible</p>
+                                    <p className="text-xs text-muted-foreground italic">Le texte original de cette question n'a pas été conservé lors de ce passage. La réponse enregistrée de l'apprenant est conservée ci-dessous.</p>
+                                  </div>
+                                ) : (
+                                  <div>
+                                    <p className="text-sm font-bold">Q{qIdx + 1}. {enonceAffiche}</p>
+                                    {estReconstituee && <p className="text-xs font-semibold text-amber-700">Question historique reconstituée</p>}
+                                  </div>
+                                )}
+                                {q?.image && !historiqueAbsent && (
                                   <ExamQuestionImage
                                     image={q.image}
                                     alt={`Illustration de la question Q${qIdx + 1}`}
@@ -908,7 +930,10 @@ function EcranResultats({
                               </div>
                             </div>
 
-                            {q?.type === "QCM" && (
+                            {q?.type === "QCM" && historiqueAbsent && (
+                              <p className="mt-1 text-sm font-medium text-muted-foreground">Votre réponse : <strong>{Array.isArray(rep) && rep.length > 0 ? rep.join(", ") : "Aucune"}</strong></p>
+                            )}
+                            {q?.type === "QCM" && !historiqueAbsent && (
                               <div className="mt-2 space-y-1.5">
                                 {(q.choix || []).map(c => {
                                   const isSelected = Array.isArray(rep) && rep.includes(c.lettre);
@@ -963,7 +988,16 @@ function EcranResultats({
                                      <p className="text-xs text-amber-800">⚠️ Cette correction a été réalisée automatiquement par intelligence artificielle. Une IA peut commettre des erreurs. Vérifiez votre réponse en la comparant avec le corrigé officiel.</p>
                                    </div>
                                  )}
-                                 <p className="text-xs text-green-700 font-medium">Réponse attendue : {q.reponseQRC || (q.reponses_possibles || []).join(" / ") || "—"}</p>
+                                 {!historiqueAbsent && (
+                                   <p className="text-xs text-green-700 font-medium">Réponse attendue : {(estReconstituee && corrObj?.corrigeTexte) || q.reponseQRC || (q.reponses_possibles || []).join(" / ") || "—"}</p>
+                                 )}
+                                 {estReconstituee && (
+                                   <p className="text-xs text-amber-700 italic">
+                                     {corrObj?.corrigeUtilise === "actuel"
+                                       ? "Corrigé actuel utilisé pour le rattrapage IA — peut différer du corrigé disponible lors du passage initial."
+                                       : "Corrigé utilisé pour la correction de la question historique reconstituée."}
+                                   </p>
+                                 )}
                                 {/* Admin manual QRC override */}
                                 {isAdmin && !isLoadingIA && (
                                   <div className="mt-2">
