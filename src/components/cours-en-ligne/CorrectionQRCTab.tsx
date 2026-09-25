@@ -1661,11 +1661,16 @@ const CorrectionQRCTab = ({ resultIds, embeddedLabel, hideV2Panel = false }: Cor
       estCorrect: clamped >= item.pointsMax,
       pointsObtenus: clamped,
       nombrefautes: 0,
-      explication: `Correction manuelle par l'administrateur : ${clamped}/${item.pointsMax} pts`,
+      explication: item.questionHistoriqueIndisponible
+        ? `Correction manuelle par l'administrateur : ${clamped}/${item.pointsMax} pts — barème de rattrapage (${item.pointsMax} pts), barème historique non disponible`
+        : `Correction manuelle par l'administrateur : ${clamped}/${item.pointsMax} pts`,
       commentaire: commentaire || "",
       correctedAt: new Date().toISOString(),
       manuel: true,
       validatedByAdmin: true,
+      ...(item.questionHistoriqueIndisponible
+        ? { baremeRattrapage: item.pointsMax, baremeHistorique: "non_disponible", questionHistorique: "non_disponible" }
+        : {}),
     };
 
     // Recalculate total score for this matiere
