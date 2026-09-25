@@ -7446,6 +7446,11 @@ export type Database = {
           closed_no_response: number
         }[]
       }
+      est_compte_test: { Args: { _apprenant_id: string }; Returns: boolean }
+      est_proprietaire_apprenant: {
+        Args: { _apprenant_id: string }
+        Returns: boolean
+      }
       exam_editor_required_schema_version: { Args: never; Returns: string }
       exam_id_for_module: { Args: { _module_id: number }; Returns: string }
       exam_matiere_signature: { Args: { _matiere: Json }; Returns: string }
