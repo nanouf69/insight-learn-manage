@@ -59,7 +59,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { flushOwnAnswerSavesBeforeLogout, setAnswerSaveOwnership } from "@/lib/answerPersistence";
 import { isLearnerPreviewReadOnly, setLearnerPreviewReadOnly } from "@/lib/learnerPreviewGuard";
-import { computeUnlockState, isModuleLocked as computeIsModuleLocked } from "@/lib/moduleUnlockLogic";
+import { computeServerCompletedModuleIds, computeUnlockState, isModuleLocked as computeIsModuleLocked } from "@/lib/moduleUnlockLogic";
 import {
   fetchModuleCompletions,
   repairInconsistentCompletions,
@@ -409,34 +409,11 @@ const computeFullyCompletedModuleIds = (completionRows: any[]): Set<number> => {
   // Introduction : toute ligne `apprenant_module_completion` existante = module terminé.
   // (Éviter de "perdre" une complétion historique qui redemanderait à l'apprenant de refaire le module.)
 
-  // Group done rows by their RAW module_id
-  const doneRawIds = new Set(
-    completionRows
-      .filter(isModuleCompletionFullyDone)
-      .map((d) => Number(d.module_id)),
+  return computeServerCompletedModuleIds(
+    completionRows.filter(isModuleCompletionFullyDone),
+    PARENT_TO_CHILDREN,
+    normalizeModuleIdForDashboard,
   );
-
-
-  // All normalized IDs that have at least one done row
-  const candidateIds = new Set(
-    completionRows
-      .filter(isModuleCompletionFullyDone)
-      .map((d) => normalizeModuleIdForDashboard(Number(d.module_id))),
-  );
-
-  const result = new Set<number>();
-  for (const id of candidateIds) {
-    const children = PARENT_TO_CHILDREN[id];
-    if (children && children.length > 0) {
-      // Parent module: only fully done if ALL children have done rows
-      if (children.every((childId) => doneRawIds.has(childId))) {
-        result.add(id);
-      }
-    } else {
-      result.add(id);
-    }
-  }
-  return result;
 };
 
 const getCompletionAnsweredCount = (completion: any): number => {
@@ -2082,19 +2059,8 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
       isDone = true;
     }
 
-    // If module has quiz stats, require ALL quizzes completed
-    if (isDone && quizStats && quizStats.totalQuizzes > 0) {
-      if (quizStats.completedQuizzes < quizStats.totalQuizzes) {
-        isDone = false;
-      }
-    }
-
-    // If module has exam blanc stats, require ALL exams completed
-    if (isDone && examStats && examStats.total > 0) {
-      if (examStats.completed < examStats.total) {
-        isDone = false;
-      }
-    }
+    // A terminal server row is monotonic. Current quiz/exam counters may grow
+    // after a content update, but must never visually downgrade that snapshot.
 
     acc[module.id] = {
       isDone,
