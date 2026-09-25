@@ -8,3 +8,5 @@
 - Affichage module apprenant : toujours via `getLearnerModuleDisplayState` / `isModuleDoneForDisplay` (moduleUnlockLogic) ; why: une seule règle, Terminé serveur jamais rétrogradé, aucun faux statut pendant le chargement.
 - Tableau de bord apprenant = lecture seule des statuts (aucune réparation/validation navigateur) ; why: le serveur est la seule autorité de validation.
 - Notes corrigées par un formateur : trigger `trg_garde_correction_admin_quiz` refuse (42501) toute modification élève de score/note/réussite/correctionsIA si une correction porte validatedByAdmin ou manuel ; why: une note en attente sur un appareil ne doit jamais écraser une correction admin.
+
+- Quiz de module : résultat « OK » affiché seulement après envoi + relecture + submitQuizAttempt ; révision d’un quiz validé sous `module_X_revision_exo_Y` (jamais la ligne validée) ; why: un quiz ne doit jamais paraître validé sans preuve serveur, et une révision ne doit jamais toucher une validation.
