@@ -20,7 +20,7 @@ export interface CoreMatiereState {
   qrcRestantes: number;
   status: string | null;
   /** Passage copié depuis l'ancien système : identifiant de la ligne d'origine (apprenant_quiz_results.id). */
-  resultId: string | null;
+  resultId?: string | null;
   /** Tentative neutralisée (renvoyée seulement sur demande explicite, pour être écartée). */
   neutralise?: boolean;
   note20: number | null;
