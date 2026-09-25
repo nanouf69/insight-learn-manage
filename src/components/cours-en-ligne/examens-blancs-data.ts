@@ -5267,12 +5267,12 @@ const eb4Matieres: Matiere[] = [
         id: 10,
         type: "QRC",
         enonce: "Un client est avec son chien d'aveugle et vous appelle pour une course ?",
-        reponseQRC: "J'ai le droit de refuser la course",
+        reponseQRC: "Je suis dans l'obligation de l'accepter lui et son chien",
         reponses_possibles: [
           "J'ai le droit de refuser la course",
           "Je suis dans l'obligation de l'accepter lui et son chien",
           "Je n'accepte que le client",
-          "Je risque une amende de 135€, si je refuse de les transporter",
+          "Je risque une contravention de 3e classe si je refuse",
         ],
       },
       {
