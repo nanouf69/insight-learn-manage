@@ -497,7 +497,7 @@ export default function AdminCorrectionQrcV2Reel() {
                   type="button"
                   data-testid="effacer-recherche"
                   aria-label="Effacer la recherche"
-                  onClick={() => setRecherche("")}
+                  onClick={() => { setRecherche(""); setArchiveOuverte(null); }}
                   className="absolute right-1 top-1/2 -translate-y-1/2 px-1 text-muted-foreground hover:text-foreground"
                 >
                   ×
@@ -519,6 +519,18 @@ export default function AdminCorrectionQrcV2Reel() {
               </Button>
             </div>
           </div>
+          {rechercheNorm && archivesTrouvees.length > 0 && (
+            <div className="rounded border bg-muted/40 px-2 py-1 text-xs space-y-1" data-testid="resultats-archives">
+              <p className="font-semibold text-muted-foreground">Archives de l'ancien circuit (lecture de l'existant, aucune migration) :</p>
+              {archivesTrouvees.map((a) => (
+                <div key={a.cle} className="flex flex-wrap items-center gap-1" data-testid="archive-trouvee">
+                  <span className="font-semibold">{a.nom}</span><span className="text-muted-foreground">—</span>
+                  <Button size="sm" variant={archiveOuverte?.cle === a.cle ? "default" : "outline"} className="h-6 px-2 text-xs"
+                    onClick={() => setArchiveOuverte(a)}>{a.libelle} — ancien circuit</Button>
+                </div>
+              ))}
+            </div>
+          )}
           {candidatsTrouves && (
             <div className="rounded border bg-muted/40 px-2 py-1 text-xs space-y-1" data-testid="resultats-recherche">
               {candidatsTrouves.length === 0 ? (
@@ -614,7 +626,16 @@ export default function AdminCorrectionQrcV2Reel() {
           )}
         </header>
 
-        {ancienCircuit ? (
+        {archiveOuverte ? (
+          <div style={{ zoom: `${zoom}%` }} data-testid="archive-ouverte">
+            <div className="mb-2 flex items-center gap-2 text-sm">
+              <span className="font-semibold">Archive : {archiveOuverte.nom} — {archiveOuverte.libelle}</span>
+              <Button size="sm" variant="outline" className="h-6 px-2 text-xs" onClick={() => setArchiveOuverte(null)}>Fermer l'archive</Button>
+            </div>
+            <CorrectionQRCTab key={archiveOuverte.cle} resultIds={archiveOuverte.resultIds}
+              embeddedLabel={`${archiveOuverte.libelle} — ANCIEN CIRCUIT`} hideV2Panel />
+          </div>
+        ) : ancienCircuit ? (
           <div style={{ zoom: `${zoom}%` }}>
             <CorrectionQRCTab
               resultIds={legacyResultIds ?? []}
