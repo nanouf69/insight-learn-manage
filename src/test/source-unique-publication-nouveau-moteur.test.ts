@@ -139,7 +139,27 @@ describe("Source unique : nouveau passage = nouveau moteur partout", () => {
 describe("Tentatives neutralisées exclues de la source unique", () => {
   it("fetchCoreMatiereStates lit core_tentatives_neutralisees et les écarte", () => {
     const src = fs.readFileSync(path.resolve(__dirname, "../lib/coreExamPublication.ts"), "utf8");
-    expect(src).toContain('from("core_tentatives_neutralisees"');
+    expect(src).toContain('all("core_tentatives_neutralisees"');
     expect(src).toMatch(/!neutralises\.has\(String\(a\.attempt_id\)\)/);
+  });
+});
+
+describe("CRM « Résultats par session » lit la source unique", () => {
+  it("rattache le passage nouveau système et affiche sa note", () => {
+    const src = fs.readFileSync(path.resolve(__dirname, "../components/cours-en-ligne/ResultatsSessionPage.tsx"), "utf8");
+    expect(src).toContain("fetchCoreMatiereStatesBulk");
+    expect(src).toContain("matchCoreState(coreMap.get(String(r.apprenant_id))");
+    expect(src).toContain("coreStateScore(core)");
+  });
+});
+
+describe("Passage copié depuis l'ancien système : rapprochement par identifiant réel", () => {
+  const base = { examId: "EB5-TAXI", matiereId: "t3p", qrcTotal: 5, qrcRestantes: 0, status: "definitif", pending: false } as const;
+  const copie: CoreMatiereState = { ...base, attemptId: "a1", finishedAt: "2026-09-22T12:36:42Z", resultId: "row-1", note20: 9 };
+  it("retrouve le passage par l'identifiant de la ligne d'origine", () => {
+    expect(matchCoreState([copie], "EB5-TAXI", "t3p", "2026-09-01T00:00:00Z", "row-1")?.note20).toBe(9);
+  });
+  it("ne rattache jamais un passage copié à une autre ligne par l'heure", () => {
+    expect(matchCoreState([copie], "EB5-TAXI", "t3p", "2026-09-22T12:36:42Z", "row-2")).toBeNull();
   });
 });

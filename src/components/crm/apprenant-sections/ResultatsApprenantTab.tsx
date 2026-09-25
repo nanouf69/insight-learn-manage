@@ -60,7 +60,7 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
       if (scoresRes.data) {
         // Source unique : même état serveur que la carte élève et l'écran Correction QRC.
         const rows = mergePassageSiblingRows(excludeResultPlaceholders(scoresRes.data)) as any[];
-        setExamScores(rows.map((r: any) => ({ ...r, __core: matchCoreState(coreStates, r.quiz_id, r.matiere_id, r.completed_at) })));
+        setExamScores(rows.map((r: any) => ({ ...r, __core: matchCoreState(coreStates, r.quiz_id, r.matiere_id, r.completed_at, r.id) })));
       }
       if (bilansRes.data) {
         const map: Record<string, string> = {};
