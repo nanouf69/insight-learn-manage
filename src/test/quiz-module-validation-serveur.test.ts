@@ -13,7 +13,7 @@ const src = readFileSync(resolve(__dirname, "../components/cours-en-ligne/Module
 
 describe("Quiz de module — résultat seulement après confirmation serveur", () => {
   it("le résultat n'est affiché qu'après envoi, relecture et validation serveur", () => {
-    const start = src.indexOf("VALIDATION DÉFINITIVE CÔTÉ SERVEUR");
+    const start = src.indexOf("VALIDATION DÉFINITIVE CÔTÉ SERVEUR (status = submitted).");
     const flush = src.indexOf("flushAnswerSavesAndWait(apprenantId, exerciceId)", start);
     const relecture = src.indexOf("answersAreEqual(aComparer, exoAnswers)", start);
     const submit = src.indexOf("submitQuizAttempt({", start);
@@ -53,7 +53,7 @@ describe("Révision d'un quiz déjà validé", () => {
   });
 
   it("une révision ne crée jamais de nouvelle validation ni ne réécrit la ligne validée", () => {
-    const start = src.indexOf("VALIDATION DÉFINITIVE CÔTÉ SERVEUR");
+    const start = src.indexOf("VALIDATION DÉFINITIVE CÔTÉ SERVEUR (status = submitted).");
     const bloc = src.slice(start, src.indexOf("afficherResultatValide();", start));
     expect(bloc).toMatch(/if \(!enRevision\) \{\s*const submitted = await submitQuizAttempt/);
     expect(bloc).toContain("buildRevisionExerciceId(module.id, exo.id)");
