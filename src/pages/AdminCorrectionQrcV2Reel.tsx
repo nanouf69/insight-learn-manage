@@ -142,9 +142,9 @@ export default function AdminCorrectionQrcV2Reel() {
   const [nomsCandidats, setNomsCandidats] = useState<Record<string, string>>({});
   const idsGroupe = useMemo(() => {
     const s = new Set<string>();
-    for (const e of groupeChoisi?.examens ?? []) for (const id of Object.values(e.apprenantParAttempt ?? {})) s.add(id);
+    for (const g of groupes) for (const e of g.examens) for (const id of Object.values(e.apprenantParAttempt ?? {})) s.add(id);
     return Array.from(s);
-  }, [groupeChoisi]);
+  }, [groupes]);
   useEffect(() => {
     const manquants = idsGroupe.filter((id) => !(id in nomsCandidats));
     if (!manquants.length) return;
@@ -169,10 +169,12 @@ export default function AdminCorrectionQrcV2Reel() {
       .map((id) => ({
         id,
         nom: nomsCandidats[id] ?? "(apprenant)",
-        examens: (groupeChoisi?.examens ?? []).filter((e) => Object.values(e.apprenantParAttempt ?? {}).includes(id)),
+        examens: groupes.flatMap((g) => g.examens
+          .filter((e) => Object.values(e.apprenantParAttempt ?? {}).includes(id))
+          .map((e) => ({ ...e, groupeCle: g.cle, groupeLibelle: g.libelle }))),
       }))
       .sort((a, b) => a.nom.localeCompare(b.nom));
-  }, [rechercheNorm, idsGroupe, nomsCandidats, groupeChoisi]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [rechercheNorm, idsGroupe, nomsCandidats, groupes]); // eslint-disable-line react-hooks/exhaustive-deps
   const idsTrouves = useMemo(() => candidatsTrouves ? new Set(candidatsTrouves.map((c) => c.id)) : null, [candidatsTrouves]);
 
   const attemptsBase = ancienCircuit ? null : (dateChoisie?.attemptIds ?? ebChoisi?.attemptIds ?? null);
@@ -495,9 +497,10 @@ export default function AdminCorrectionQrcV2Reel() {
                       size="sm"
                       variant={ebChoisi?.cle === e.cle ? "default" : "outline"}
                       className="h-6 px-2 text-xs"
-                      onClick={() => setEbCle(e.cle)}
+                      title={e.groupeLibelle}
+                      onClick={() => { if (e.groupeCle !== groupeCle) setGroupeCle(e.groupeCle); setTimeout(() => setEbCle(e.cle), 0); }}
                     >
-                      {e.exam_id}{e.circuit === "ancien" ? " (ancien circuit)" : ""}
+                      {e.exam_id}{e.circuit === "ancien" ? " (ancien circuit)" : ""}{e.groupeCle !== groupeCle ? ` · ${e.groupeLibelle}` : ""}
                     </Button>
                   ))}
                 </div>
