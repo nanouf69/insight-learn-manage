@@ -2083,6 +2083,24 @@ export type Database = {
         }
         Relationships: []
       }
+      comptes_test_techniques: {
+        Row: {
+          apprenant_id: string
+          created_at: string
+          libelle: string
+        }
+        Insert: {
+          apprenant_id: string
+          created_at?: string
+          libelle: string
+        }
+        Update: {
+          apprenant_id?: string
+          created_at?: string
+          libelle?: string
+        }
+        Relationships: []
+      }
       contacts: {
         Row: {
           created_at: string
@@ -4817,6 +4835,42 @@ export type Database = {
           },
         ]
       }
+      module_regles_validation: {
+        Row: {
+          contient_questions: boolean | null
+          module_id: number
+          nom: string
+          note: string | null
+          protection_serveur: boolean
+          regle_fin: string
+          source_questions: string
+          type_activite: string
+          updated_at: string
+        }
+        Insert: {
+          contient_questions?: boolean | null
+          module_id: number
+          nom: string
+          note?: string | null
+          protection_serveur?: boolean
+          regle_fin: string
+          source_questions?: string
+          type_activite: string
+          updated_at?: string
+        }
+        Update: {
+          contient_questions?: boolean | null
+          module_id?: number
+          nom?: string
+          note?: string | null
+          protection_serveur?: boolean
+          regle_fin?: string
+          source_questions?: string
+          type_activite?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       notes_frais: {
         Row: {
           categorie: string | null
@@ -6878,6 +6932,18 @@ export type Database = {
       }
     }
     Functions: {
+      admin_signalements_validation_modules: {
+        Args: never
+        Returns: {
+          apprenant_id: string
+          completed_at: string
+          est_compte_test: boolean
+          module_id: number
+          nom: string
+          prenom: string
+          type_signalement: string
+        }[]
+      }
       apply_admin_canonical_quiz_actions: {
         Args: { p_actions: Json; p_module_id: number }
         Returns: {
