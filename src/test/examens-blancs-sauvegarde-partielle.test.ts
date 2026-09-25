@@ -84,7 +84,13 @@ describe("1a — clôture autorisée seulement si le serveur possède toutes les
     expect(debut).toBeGreaterThan(0);
     expect(fin).toBeGreaterThan(debut);
     const js = transformSync(src.slice(debut, fin), { loader: "ts" }).code;
-    return new Function("supabase", "attemptId", "matiere", "attendues", `${js}; return lireConfirmationNoyau;`);
+    // La fonction extraite lit deux éléments de la portée englobante :
+    // `clotureForcee` (clôture normale vs forcée) et `idsSaisis` (réponses
+    // réellement saisies par l'élève). On les fournit comme paramètres.
+    return new Function(
+      "supabase", "attemptId", "matiere", "attendues", "clotureForcee", "idsSaisis",
+      `${js}; return lireConfirmationNoyau;`,
+    );
   };
   const serveur = (nbQuestions: number, nbReponses: number) => {
     const snapshot = { questions: Array.from({ length: nbQuestions }, (_, i) => ({ id: `q${i + 1}`, matiere: "t3p" })) };
@@ -101,7 +107,7 @@ describe("1a — clôture autorisée seulement si le serveur possède toutes les
     };
   };
   const clotureAutorisee = async (nbReponses: number) => {
-    const lire = chargerControle()(serveur(15, nbReponses), "att-1", { id: "t3p" }, 15);
+    const lire = chargerControle()(serveur(15, nbReponses), "att-1", { id: "t3p" }, 15, false, new Set<string>());
     const c = await lire();
     return Boolean(c?.contenuConforme && c?.toutesConfirmees);
   };
@@ -117,8 +123,27 @@ describe("1a — clôture autorisée seulement si le serveur possède toutes les
   });
   it("erreur de lecture serveur → aucune confirmation (jamais interprétée comme complète)", async () => {
     const enPanne = { from: () => ({ select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: null, error: { message: "panne" } }), then: (r: any) => r({ data: null, error: { message: "panne" } }) }) }) }) };
-    const c = await chargerControle()(enPanne, "att-1", { id: "t3p" }, 15)();
+    const c = await chargerControle()(enPanne, "att-1", { id: "t3p" }, 15, false, new Set<string>())();
     expect(Boolean(c?.contenuConforme && c?.toutesConfirmees)).toBe(false);
+  });
+
+  // Clôture forcée (interruption / temps écoulé) : seules les réponses
+  // RÉELLEMENT saisies doivent être confirmées par le serveur. Une question
+  // laissée vide n'est jamais exigée (elle vaudra 0 côté serveur).
+  const clotureForceeAutorisee = async (idsSaisis: string[], idsConfirmes: number) => {
+    const lire = chargerControle()(serveur(15, idsConfirmes), "att-1", { id: "t3p" }, 15, true, new Set(idsSaisis));
+    const c = await lire();
+    return Boolean(c?.contenuConforme && c?.toutesConfirmees);
+  };
+
+  it("clôture forcée : réponse saisie mais non confirmée serveur → clôture refusée", async () => {
+    // q15 saisie par l'élève mais le serveur n'a confirmé que q1..q14
+    expect(await clotureForceeAutorisee(["q15"], 14)).toBe(false);
+  });
+  it("clôture forcée : question laissée vide → ne bloque pas la clôture (vaut 0)", async () => {
+    // q1..q14 saisies et confirmées, q15 laissée vide : clôture autorisée
+    const saisies = Array.from({ length: 14 }, (_, i) => `q${i + 1}`);
+    expect(await clotureForceeAutorisee(saisies, 14)).toBe(true);
   });
 });
 
