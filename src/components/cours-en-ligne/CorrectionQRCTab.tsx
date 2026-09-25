@@ -82,6 +82,10 @@ interface QrcItem {
   correctedAt: string | null;
   apprenantTypeMode: "presentiel" | "elearning";
   questionSupprimee: boolean;
+  /** Fiche d'archive sans copie des questions posées : question/corrigé/barème actuels non fiables. */
+  questionHistoriqueIndisponible?: boolean;
+  /** Ancienne correction automatique réellement enregistrée (affichage seul). */
+  ancienneCorrectionAuto?: { points: number | null; explication: string | null } | null;
 }
 
 function safeStr(v: unknown): string {
@@ -1112,11 +1116,19 @@ const CorrectionQRCTab = ({ resultIds, embeddedLabel, hideV2Panel = false }: Cor
           ? safeStr(q.reponseCorrecte)
           : safeStr(questionDef?.reponseQRC || (questionDef?.reponses_possibles || []).join(" / "));
 
+        // Fiche sans copie des questions : jamais de recalcul avec la question actuelle.
+        const questionHistoriqueIndisponible = !g.questions;
+        const ancienneCorrectionAuto = questionHistoriqueIndisponible && correction && typeof correction === "object"
+          ? { points: typeof correction.pointsObtenus === "number" ? correction.pointsObtenus : null, explication: correction.explication || null }
+          : null;
         let autoScore = 0;
         let autoExplication: string | null = null;
         if (correction && typeof correction === "object" && hasManualCorrection) {
           autoScore = clampToHalfStep(correction.pointsObtenus ?? 0, pts);
           autoExplication = correction.explication || null;
+        } else if (questionHistoriqueIndisponible) {
+          autoScore = 0;
+          autoExplication = null;
         } else if (questionDef) {
           const recomputed = recomputeQrcAutoScore(questionDef, reponseEleveStr, pts);
           autoScore = recomputed.autoScore;
@@ -1164,6 +1176,8 @@ const CorrectionQRCTab = ({ resultIds, embeddedLabel, hideV2Panel = false }: Cor
           correctedAt: hasManualCorrection ? (correction?.correctedAt || g.completedAt || null) : null,
           apprenantTypeMode: app.mode,
           questionSupprimee,
+          questionHistoriqueIndisponible,
+          ancienneCorrectionAuto,
         };
 
         // Même réponse déjà présente (deuxième écriture technique du passage) :
@@ -2451,7 +2465,7 @@ const CorrectionQRCTab = ({ resultIds, embeddedLabel, hideV2Panel = false }: Cor
                         </Badge>
                       ) : (
                         <Badge className="bg-amber-100 text-amber-800 border-amber-300">
-                          ⏳ En attente (auto: {item.autoScore}/{item.pointsMax})
+                          ⏳ En attente{item.questionHistoriqueIndisponible ? "" : ` (auto: ${item.autoScore}/${item.pointsMax})`}
                         </Badge>
                       )}
                       {matierePending ? (
@@ -2483,7 +2497,17 @@ const CorrectionQRCTab = ({ resultIds, embeddedLabel, hideV2Panel = false }: Cor
                         </Button>
                       </div>
                     )}
-                    {item.enonce && (
+                    {item.questionHistoriqueIndisponible ? (
+                      <div data-testid="question-historique-indisponible" className="space-y-1">
+                        <p className="text-sm font-bold text-foreground">
+                          <span className="text-primary mr-1">Q{item.questionId} —</span>
+                          Question historique non disponible
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          La copie des questions posées lors de ce passage n'a pas été conservée. La question, le corrigé et le barème actuels peuvent différer de ceux de l'époque : ils ne sont pas affichés.
+                        </p>
+                      </div>
+                    ) : item.enonce && (
                       <p className="text-sm font-bold text-foreground">
                         <span className="text-primary mr-1">Q{item.questionId} —</span>
                         {item.enonce}
@@ -2498,11 +2522,23 @@ const CorrectionQRCTab = ({ resultIds, embeddedLabel, hideV2Panel = false }: Cor
 
                   {/* Réponse élève */}
                   <div className="bg-background border rounded-lg p-3">
-                    <p className="text-xs font-semibold text-muted-foreground mb-1">📝 Réponse de l'élève :</p>
+                    <p className="text-xs font-semibold text-muted-foreground mb-1">📝 {item.questionHistoriqueIndisponible ? "Réponse enregistrée de l'élève :" : "Réponse de l'élève :"}</p>
                     <p className="text-sm whitespace-pre-wrap">{item.reponseEleve || <span className="italic text-muted-foreground">Pas de réponse</span>}</p>
                   </div>
 
-                  {/* Réponse correcte */}
+                  {item.questionHistoriqueIndisponible ? (
+                    <div data-testid="ancienne-correction-auto" className="bg-muted border rounded-lg p-3">
+                      <p className="text-xs font-semibold text-muted-foreground mb-1">🗂️ Ancienne correction automatique enregistrée (historique, non validée) :</p>
+                      {item.ancienneCorrectionAuto ? (
+                        <p className="text-sm whitespace-pre-wrap">
+                          {item.ancienneCorrectionAuto.points != null ? `${item.ancienneCorrectionAuto.points} point(s)` : "Points non enregistrés"}
+                          {item.ancienneCorrectionAuto.explication ? ` — ${item.ancienneCorrectionAuto.explication}` : ""}
+                        </p>
+                      ) : (
+                        <p className="text-sm italic text-muted-foreground">Aucune ancienne correction enregistrée</p>
+                      )}
+                    </div>
+                  ) : (
                   <div className="bg-green-50 border border-green-200 rounded-lg p-3">
                     <p className="text-xs font-semibold text-green-700 mb-1">✓ Réponse attendue :</p>
                     {estCorrigeHistoriqueNonReconstituable(item.completedAt) && (
@@ -2512,11 +2548,14 @@ const CorrectionQRCTab = ({ resultIds, embeddedLabel, hideV2Panel = false }: Cor
                     )}
                     <p className="text-sm whitespace-pre-wrap text-green-900">{item.reponseCorrecte}</p>
                   </div>
+                  )}
 
                   {/* Correction directe */}
                   <div className="flex items-center gap-2 p-2 bg-amber-50 border border-amber-300 rounded-lg flex-wrap">
-                    <span className="text-xs text-blue-700 font-medium">🤖 Mots clés : {item.autoScore}/{item.pointsMax}</span>
-                    <span className="text-amber-300">|</span>
+                    {!item.questionHistoriqueIndisponible && (
+                      <span className="text-xs text-blue-700 font-medium">🤖 Mots clés : {item.autoScore}/{item.pointsMax}</span>
+                    )}
+                    {!item.questionHistoriqueIndisponible && <span className="text-amber-300">|</span>}
                     <Pencil className="w-3.5 h-3.5 text-amber-600 shrink-0" />
                     <span className="text-xs font-medium text-amber-800">Points :</span>
                     <input
@@ -2535,7 +2574,7 @@ const CorrectionQRCTab = ({ resultIds, embeddedLabel, hideV2Panel = false }: Cor
                       }}
                       className="w-16 px-2 py-1 text-xs border rounded text-center font-bold"
                     />
-                    <span className="text-xs text-amber-700">/ {item.pointsMax}</span>
+                    <span className="text-xs text-amber-700">/ {item.pointsMax}{item.questionHistoriqueIndisponible ? " (maximum de saisie actuel — barème historique non disponible)" : ""}</span>
                     <Button
                       size="sm"
                       className="h-6 px-2 text-xs"
