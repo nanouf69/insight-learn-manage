@@ -177,6 +177,42 @@ export default function AdminCorrectionQrcV2Reel() {
   }, [rechercheNorm, idsGroupe, nomsCandidats, groupes]); // eslint-disable-line react-hooks/exhaustive-deps
   const idsTrouves = useMemo(() => candidatsTrouves ? new Set(candidatsTrouves.map((c) => c.id)) : null, [candidatsTrouves]);
 
+  // Recherche dans les archives de l'ancien circuit (lecture seule, aucune copie ni migration).
+  type ArchivePassage = { cle: string; apprenantId: string; nom: string; libelle: string; resultIds: string[] };
+  const [archivesTrouvees, setArchivesTrouvees] = useState<ArchivePassage[]>([]);
+  const [archiveOuverte, setArchiveOuverte] = useState<ArchivePassage | null>(null);
+  useEffect(() => {
+    const mots = rechercheNorm.split(" ").filter((m) => m.length >= 2);
+    if (!mots.length) { setArchivesTrouvees([]); return; }
+    let annule = false;
+    const t = setTimeout(async () => {
+      const { data: apps } = await supabase.from("apprenants").select("id, nom, prenom")
+        .or(`nom.ilike.%${mots[0]}%,prenom.ilike.%${mots[0]}%`).limit(50);
+      const retenus = (apps ?? []).filter((a: any) => {
+        const n = normaliser(`${a.nom ?? ""} ${a.prenom ?? ""}`);
+        return mots.every((m) => n.includes(m));
+      });
+      if (!retenus.length) { if (!annule) setArchivesTrouvees([]); return; }
+      const { data: res } = await supabase.from("apprenant_quiz_results")
+        .select("id, apprenant_id, quiz_id, quiz_titre, completed_at")
+        .eq("quiz_type", "examen_blanc").in("apprenant_id", retenus.map((a: any) => a.id))
+        .order("completed_at", { ascending: false }).limit(500);
+      const groupesArch = new Map<string, ArchivePassage>();
+      for (const r of (res ?? []) as any[]) {
+        const jour = (r.completed_at ?? "").slice(0, 10);
+        const cle = `${r.apprenant_id}|${r.quiz_id}|${jour}`;
+        const a: any = retenus.find((x: any) => x.id === r.apprenant_id);
+        if (!groupesArch.has(cle)) {
+          const d = jour ? jour.split("-").reverse().join("/") : "date inconnue";
+          groupesArch.set(cle, { cle, apprenantId: r.apprenant_id, nom: `${a?.nom ?? ""} ${a?.prenom ?? ""}`.trim(), libelle: `${r.quiz_titre ?? r.quiz_id} — ${d}`, resultIds: [] });
+        }
+        groupesArch.get(cle)!.resultIds.push(r.id);
+      }
+      if (!annule) setArchivesTrouvees(Array.from(groupesArch.values()));
+    }, 300);
+    return () => { annule = true; clearTimeout(t); };
+  }, [rechercheNorm]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const attemptsBase = ancienCircuit ? null : (dateChoisie?.attemptIds ?? ebChoisi?.attemptIds ?? null);
   const cleAttempts = idsTrouves
     ? (attemptsBase ?? []).filter((a) => idsTrouves.has(ebChoisi?.apprenantParAttempt?.[a] ?? "")).join(",")
@@ -461,7 +497,7 @@ export default function AdminCorrectionQrcV2Reel() {
                   type="button"
                   data-testid="effacer-recherche"
                   aria-label="Effacer la recherche"
-                  onClick={() => setRecherche("")}
+                  onClick={() => { setRecherche(""); setArchiveOuverte(null); }}
                   className="absolute right-1 top-1/2 -translate-y-1/2 px-1 text-muted-foreground hover:text-foreground"
                 >
                   ×
@@ -483,6 +519,18 @@ export default function AdminCorrectionQrcV2Reel() {
               </Button>
             </div>
           </div>
+          {rechercheNorm && archivesTrouvees.length > 0 && (
+            <div className="rounded border bg-muted/40 px-2 py-1 text-xs space-y-1" data-testid="resultats-archives">
+              <p className="font-semibold text-muted-foreground">Archives de l'ancien circuit (lecture de l'existant, aucune migration) :</p>
+              {archivesTrouvees.map((a) => (
+                <div key={a.cle} className="flex flex-wrap items-center gap-1" data-testid="archive-trouvee">
+                  <span className="font-semibold">{a.nom}</span><span className="text-muted-foreground">—</span>
+                  <Button size="sm" variant={archiveOuverte?.cle === a.cle ? "default" : "outline"} className="h-6 px-2 text-xs"
+                    onClick={() => setArchiveOuverte(a)}>{a.libelle} — ancien circuit</Button>
+                </div>
+              ))}
+            </div>
+          )}
           {candidatsTrouves && (
             <div className="rounded border bg-muted/40 px-2 py-1 text-xs space-y-1" data-testid="resultats-recherche">
               {candidatsTrouves.length === 0 ? (
@@ -578,7 +626,16 @@ export default function AdminCorrectionQrcV2Reel() {
           )}
         </header>
 
-        {ancienCircuit ? (
+        {archiveOuverte ? (
+          <div style={{ zoom: `${zoom}%` }} data-testid="archive-ouverte">
+            <div className="mb-2 flex items-center gap-2 text-sm">
+              <span className="font-semibold">Archive : {archiveOuverte.nom} — {archiveOuverte.libelle}</span>
+              <Button size="sm" variant="outline" className="h-6 px-2 text-xs" onClick={() => setArchiveOuverte(null)}>Fermer l'archive</Button>
+            </div>
+            <CorrectionQRCTab key={archiveOuverte.cle} resultIds={archiveOuverte.resultIds}
+              embeddedLabel={`${archiveOuverte.libelle} — ANCIEN CIRCUIT`} hideV2Panel />
+          </div>
+        ) : ancienCircuit ? (
           <div style={{ zoom: `${zoom}%` }}>
             <CorrectionQRCTab
               resultIds={legacyResultIds ?? []}
