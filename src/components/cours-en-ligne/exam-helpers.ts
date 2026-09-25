@@ -183,6 +183,8 @@ export function getQuestionKey(value: any): string {
 export function isQrcCorrectionValidated(correction: any): boolean {
   if (!correction || typeof correction !== "object") return false;
   if (correction.validatedByAdmin === true) return true;
+  // Correction IA (rattrapage autorisé) : correction finale, comme dans le nouveau moteur.
+  if (typeof correction.correctedBy === "string" && correction.correctedBy.startsWith("ia:")) return true;
   const explication = String(correction.explication ?? "").toLowerCase();
   const legacyAdminMarker =
     explication.includes("correction manuelle par l'administrateur") ||

@@ -379,6 +379,7 @@ function isAdminValidatedCorrection(correction: unknown, completedAt?: string | 
   if (!correction || typeof correction !== "object") return false;
   const correctionRecord = correction as Record<string, unknown>;
   if (correctionRecord.validatedByAdmin === true) return true;
+  if (typeof correctionRecord.correctedBy === "string" && correctionRecord.correctedBy.startsWith("ia:")) return true;
 
   const explication = safeStr(correctionRecord.explication).toLowerCase();
   const hasLegacyAdminMarker =
