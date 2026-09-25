@@ -449,7 +449,7 @@ export default function AdminCorrectionQrcV2Reel() {
             <div className="relative">
               <input
                 data-testid="recherche-candidat"
-                type="search"
+                type="text"
                 value={recherche}
                 onChange={(e) => setRecherche(e.target.value)}
                 placeholder="Rechercher un candidat par nom ou prénom"
