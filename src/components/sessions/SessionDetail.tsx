@@ -463,6 +463,8 @@ function NotesPopover({
   );
 }
 
+import { resumePaiement } from "@/lib/resumePaiement";
+
 function PaiementPopover({ 
   apprenantId,
   montantTotal, 
@@ -507,11 +509,12 @@ function PaiementPopover({
     }
   };
 
+  // Chargé dès l'affichage : le résumé sur la fiche lit la même source que la fenêtre.
   useEffect(() => {
-    if (!open) return;
     loadPaiements();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, apprenantId]);
+  const resume = resumePaiement(montantTotal, paiements);
 
   // Recherche de virements reçus correspondant à l'apprenant à l'ouverture
   useEffect(() => {
@@ -612,6 +615,14 @@ function PaiementPopover({
           {montantPaye > 0 ? `${montantPaye}€ payé` : "Paiement"}
         </Button>
       </PopoverTrigger>
+      {!loadingPaiements || paiements.length > 0 ? (
+        <span
+          data-testid="resume-paiement"
+          className={`text-xs font-medium self-center ${resume.integral ? "text-green-600" : "text-orange-600"}`}
+        >
+          {resume.libelle}
+        </span>
+      ) : null}
       <PopoverContent className="w-96 max-h-[80vh] overflow-y-auto">
         <div className="space-y-4">
           <h4 className="font-medium">Gestion des paiements</h4>
