@@ -90,6 +90,8 @@ export type SessionListee = {
   legacyResultIds?: string[];
   /** Dates réelles de passage regroupées sous le même numéro d'Examen Blanc (jamais fusionnées entre EB). */
   dates: DatePassage[];
+  /** Apprenant de chaque passage (recherche de candidat, affichage seul). */
+  apprenantParAttempt?: Record<string, string>;
 };
 
 export type ResultatReel = {
@@ -306,6 +308,7 @@ export async function listerGroupesCrm(mode: "test" | "migre" = "migre"): Promis
       g.examens.push(eb);
     }
     eb.attemptIds.push(a.attempt_id as string);
+    (eb.apprenantParAttempt ??= {})[a.attempt_id as string] = a.apprenant_id as string;
     if (ancien && a.id) eb.legacyResultIds?.push(a.id as string);
     let dt = eb.dates.find((x) => x.jour === jour);
     if (!dt) {

@@ -136,7 +136,53 @@ export default function AdminCorrectionQrcV2Reel() {
 
   const dateChoisie = ebChoisi?.dates.find((d) => d.jour === jourFiltre) ?? null;
   const ancienCircuit = ebChoisi?.circuit === "ancien";
-  const attemptsAffiches = ancienCircuit ? null : (dateChoisie?.attemptIds ?? ebChoisi?.attemptIds ?? null);
+
+  // Recherche de candidat (filtrage d'affichage uniquement, aucune écriture).
+  const [recherche, setRecherche] = useState("");
+  const [nomsCandidats, setNomsCandidats] = useState<Record<string, string>>({});
+  const idsGroupe = useMemo(() => {
+    const s = new Set<string>();
+    for (const g of groupes) for (const e of g.examens) for (const id of Object.values(e.apprenantParAttempt ?? {})) s.add(id);
+    return Array.from(s);
+  }, [groupes]);
+  useEffect(() => {
+    const manquants = idsGroupe.filter((id) => !(id in nomsCandidats));
+    if (!manquants.length) return;
+    let vivant = true;
+    void (async () => {
+      const out: Record<string, string> = {};
+      for (let i = 0; i < manquants.length; i += 150) {
+        const { data } = await supabase.from("apprenants").select("id, nom, prenom").in("id", manquants.slice(i, i + 150));
+        for (const a of data ?? []) out[a.id] = `${a.nom ?? ""} ${a.prenom ?? ""}`.trim();
+      }
+      if (vivant) setNomsCandidats((p) => ({ ...p, ...out }));
+    })();
+    return () => { vivant = false; };
+  }, [idsGroupe]); // eslint-disable-line react-hooks/exhaustive-deps
+  const normaliser = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
+  const rechercheNorm = normaliser(recherche);
+  const candidatsTrouves = useMemo(() => {
+    if (!rechercheNorm) return null;
+    const mots = rechercheNorm.split(" ");
+    return idsGroupe
+      .filter((id) => { const n = normaliser(nomsCandidats[id] ?? ""); return mots.every((m) => n.includes(m)); })
+      .map((id) => ({
+        id,
+        nom: nomsCandidats[id] ?? "(apprenant)",
+        examens: groupes.flatMap((g) => g.examens
+          .filter((e) => Object.values(e.apprenantParAttempt ?? {}).includes(id))
+          .map((e) => ({ ...e, groupeCle: g.cle, groupeLibelle: g.libelle }))),
+      }))
+      .sort((a, b) => a.nom.localeCompare(b.nom));
+  }, [rechercheNorm, idsGroupe, nomsCandidats, groupes]); // eslint-disable-line react-hooks/exhaustive-deps
+  const idsTrouves = useMemo(() => candidatsTrouves ? new Set(candidatsTrouves.map((c) => c.id)) : null, [candidatsTrouves]);
+
+  const attemptsBase = ancienCircuit ? null : (dateChoisie?.attemptIds ?? ebChoisi?.attemptIds ?? null);
+  const cleAttempts = idsTrouves
+    ? (attemptsBase ?? []).filter((a) => idsTrouves.has(ebChoisi?.apprenantParAttempt?.[a] ?? "")).join(",")
+    : (attemptsBase ?? []).join(",");
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const attemptsAffiches = useMemo(() => (attemptsBase ? (cleAttempts ? cleAttempts.split(",") : []) : null), [cleAttempts, attemptsBase == null]);
   const legacyResultIds = ancienCircuit
     ? (jourFiltre
         ? ebChoisi?.legacyResultIds?.filter((id) => dateChoisie?.attemptIds.includes(`ancien:${id}`))
@@ -145,6 +191,8 @@ export default function AdminCorrectionQrcV2Reel() {
 
   const recharger = useCallback(async () => {
     if (!attemptsAffiches) { setSession(null); return; }
+    // Recherche sans passage dans cet EB : session vide (jamais de chargement global).
+    if (attemptsAffiches.length === 0) { setSession({ tentatives: [], qrc: [], resultats: [], baremesRestaures: [] } as SessionReelle); return; }
     try {
       setSession(await chargerSessionTest(mode, attemptsAffiches));
     } catch (e) {
@@ -398,6 +446,29 @@ export default function AdminCorrectionQrcV2Reel() {
                 </option>
               ))}
             </select>
+            <div className="relative">
+              <input
+                data-testid="recherche-candidat"
+                type="text"
+                value={recherche}
+                onChange={(e) => setRecherche(e.target.value)}
+                placeholder="Rechercher un candidat par nom ou prénom"
+                aria-label="Rechercher un candidat par nom ou prénom"
+                className="w-72 rounded border bg-background px-2 py-1 pr-7 text-sm"
+              />
+              {recherche && (
+                <button
+                  type="button"
+                  data-testid="effacer-recherche"
+                  aria-label="Effacer la recherche"
+                  onClick={() => setRecherche("")}
+                  className="absolute right-1 top-1/2 -translate-y-1/2 px-1 text-muted-foreground hover:text-foreground"
+                >
+                  ×
+                </button>
+              )}
+            </div>
+
 
             <div className="ml-auto flex items-center gap-1">
               <Button size="icon" variant="outline" onClick={() => setZoom(zoom - 10)} aria-label="Réduire le zoom">
@@ -412,6 +483,30 @@ export default function AdminCorrectionQrcV2Reel() {
               </Button>
             </div>
           </div>
+          {candidatsTrouves && (
+            <div className="rounded border bg-muted/40 px-2 py-1 text-xs space-y-1" data-testid="resultats-recherche">
+              {candidatsTrouves.length === 0 ? (
+                <p className="font-semibold text-muted-foreground">Aucun candidat trouvé</p>
+              ) : candidatsTrouves.map((c) => (
+                <div key={c.id} className="flex flex-wrap items-center gap-1" data-testid="candidat-trouve">
+                  <span className="font-semibold">{c.nom}</span>
+                  <span className="text-muted-foreground">—</span>
+                  {c.examens.map((e) => (
+                    <Button
+                      key={e.cle}
+                      size="sm"
+                      variant={ebChoisi?.cle === e.cle ? "default" : "outline"}
+                      className="h-6 px-2 text-xs"
+                      title={e.groupeLibelle}
+                      onClick={() => { if (e.groupeCle !== groupeCle) setGroupeCle(e.groupeCle); setTimeout(() => setEbCle(e.cle), 0); }}
+                    >
+                      {e.exam_id}{e.circuit === "ancien" ? " (ancien circuit)" : ""}{e.groupeCle !== groupeCle ? ` · ${e.groupeLibelle}` : ""}
+                    </Button>
+                  ))}
+                </div>
+              ))}
+            </div>
+          )}
           {(ebChoisi?.dates.length ?? 0) > 0 && (
             <div className="flex items-center gap-1 overflow-x-auto whitespace-nowrap" data-testid="dates-eb">
               <span className="text-xs text-muted-foreground">Dates de passage :</span>
