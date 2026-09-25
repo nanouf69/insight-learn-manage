@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { MODULES_DATA } from "./formations-data";
 import { computeReussiForResult, isExamAttemptPublicationPending } from "./exam-helpers";
+import { fetchCoreMatiereStatesBulk, matchCoreState, coreStateScore, type CoreMatiereState } from "@/lib/coreExamPublication";
 
 interface SessionOption {
   id: string;
@@ -212,8 +213,21 @@ const ResultatsSessionPage = () => {
           completionRows.push(...c);
           quizRows.push(...q);
         }
+        // Source unique : passages du nouveau système (même lecture que
+        // Correction QRC et l'espace élève). Lecture seule, rien n'est recopié.
+        const examAppIds = Array.from(new Set(quizRows
+          .filter((r: any) => r.quiz_type === "examen_blanc" || r.quiz_type === "examen_blanc_taxi")
+          .map((r: any) => String(r.apprenant_id))));
+        const coreMap = await fetchCoreMatiereStatesBulk(examAppIds);
+        const rowsWithCore = quizRows.map((r: any) => ({
+          ...r,
+          // coreMap null = lecture impossible → ligne marquée comme en attente (fail-closed)
+          __core: coreMap === null
+            ? { pending: true }
+            : matchCoreState(coreMap.get(String(r.apprenant_id)) ?? [], r.quiz_id, r.matiere_id, r.completed_at),
+        }));
         setCompletions(completionRows as CompletionRow[]);
-        setQuizResults(quizRows as QuizResultRow[]);
+        setQuizResults(rowsWithCore as QuizResultRow[]);
       } else {
         setCompletions([]);
         setQuizResults([]);
@@ -331,9 +345,17 @@ const ResultatsSessionPage = () => {
         let appTotal = 0, appCount = 0;
 
         for (const [mKey, r] of Object.entries(lastPerMatiere)) {
-          const note = r.note_sur_20 != null ? Math.min(r.note_sur_20, 20) : (r.score_max > 0 ? Math.min((r.score_obtenu / r.score_max) * 20, 20) : 0);
+          const core = (r as any).__core as CoreMatiereState | null | undefined;
+          const coreScore = coreStateScore(core);
+          const note = coreScore
+            ? coreScore.noteSur20
+            : r.note_sur_20 != null ? Math.min(r.note_sur_20, 20) : (r.score_max > 0 ? Math.min((r.score_obtenu / r.score_max) * 20, 20) : 0);
           const matNom = r.matiere_nom || r.quiz_titre;
-          const reussiMat = computeReussiForResult(r as any) ?? false;
+          // Passage nouveau système : réussite calculée sur la note serveur, sans
+          // relire l'état QRC historique de l'ancienne ligne.
+          const reussiMat = (coreScore
+            ? computeReussiForResult({ ...(r as any), score_obtenu: coreScore.noteSur20, score_max: 20, details: { ...((r as any).details || {}), qrcEnAttente: false, pendingQrcCorrection: false, correctionsIA: undefined } })
+            : computeReussiForResult(r as any)) ?? false;
 
           if (!matieres[mKey]) matieres[mKey] = { nom: matNom, totalNote: 0, count: 0, pass: 0, fail: 0 };
           matieres[mKey].totalNote += note;
