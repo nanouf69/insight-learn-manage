@@ -29,7 +29,8 @@ describe("Chaîne de validation des quiz", () => {
     const src = read("src/components/cours-en-ligne/ModuleDetailView.tsx");
     // Exercice
     expect(src).toContain("submitQuizAttempt({");
-    expect(src).toContain("exerciceId: buildExerciceId(module.id, exo.id)");
+    // Identifiant canonique du quiz validé (révision = identifiant distinct, jamais validée)
+    expect(src).toContain(": buildExerciceId(module.id, exo.id);");
     // Quiz intégré au cours
     expect(src).toContain("exerciceId: buildInlineQuizId(module.id, cours.id)");
     // Échec serveur => pas de validation silencieuse
