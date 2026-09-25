@@ -2537,6 +2537,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                 </div>
               </div>
             </div>
+            )}
           </>
         )}
       </div>
