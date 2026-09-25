@@ -1,3 +1,4 @@
+import { resumePaiement } from "@/lib/resumePaiement";
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useMdpChangeMail } from "@/components/examens/MdpChangeMailDialog";
 import { ALL_DATES_EXAMEN_THEORIQUE } from "@/lib/examDatesConfig";
@@ -463,7 +464,6 @@ function NotesPopover({
   );
 }
 
-import { resumePaiement } from "@/lib/resumePaiement";
 
 function PaiementPopover({ 
   apprenantId,
