@@ -849,7 +849,8 @@ function PassageMatiere({
         setFinalisationEnAttente(true);
         return;
       }
-      if (!(await finaliserNoyau())) {
+      // Temps écoulé : les questions vides sont autorisées (0 serveur).
+      if (!(await finaliserNoyau(true))) {
         setFinalisationEnAttente(true);
         return;
       }
@@ -876,16 +877,20 @@ function PassageMatiere({
         jwtTokenRef.current = sessionRes.data?.session?.access_token ?? jwtTokenRef.current;
       }
       if (!userIdRef.current && !userId) throw new Error("Session apprenant indisponible");
-      enqueueAnswerSave({
-        ...buildAutosavePayload(reponses, true),
-        user_id: userIdRef.current || userId || undefined,
-        updated_at: new Date().toISOString(),
-      });
-      const flushed = await flushAnswerSavesAndWait(apprenantId, exerciceKey);
-      if (!flushed) throw new Error("Réponses encore en attente");
+      // En V2, seul le noyau fait autorité (même règle que Terminer / expiration).
+      if (!attemptV2Ref.current) {
+        enqueueAnswerSave({
+          ...buildAutosavePayload(reponses, true),
+          user_id: userIdRef.current || userId || undefined,
+          updated_at: new Date().toISOString(),
+        });
+        const flushed = await flushAnswerSavesAndWait(apprenantId, exerciceKey);
+        if (!flushed) throw new Error("Réponses encore en attente");
+      }
       setSaveStatus("saved");
       if (!(await synchronisationConfirmee())) return;
-      if (!(await finaliserNoyau())) return;
+      // Interruption volontaire : les questions vides sont autorisées (0 serveur).
+      if (!(await finaliserNoyau(true))) return;
       setShowInterruptConfirm(false);
       onTerminer(reponses);
     } catch (error) {
