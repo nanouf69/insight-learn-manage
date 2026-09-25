@@ -59,7 +59,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { flushOwnAnswerSavesBeforeLogout, setAnswerSaveOwnership } from "@/lib/answerPersistence";
 import { isLearnerPreviewReadOnly, setLearnerPreviewReadOnly } from "@/lib/learnerPreviewGuard";
-import { computeServerCompletedModuleIds, computeUnlockState, isModuleLocked as computeIsModuleLocked } from "@/lib/moduleUnlockLogic";
+import { computeServerCompletedModuleIds, computeUnlockState, getLearnerModuleDisplayState, isModuleLocked as computeIsModuleLocked } from "@/lib/moduleUnlockLogic";
 import {
   fetchModuleCompletions,
   repairInconsistentCompletions,
@@ -2051,29 +2051,20 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     return acc;
   }, {});
 
-  // A module is truly "done" only if ALL its quizzes/exams are completed
+  // Source unique d'affichage (getLearnerModuleDisplayState) : Terminé serveur
+  // monotone, compteurs actuels seulement en complément, jamais en rétrogradation.
   const moduleProgressById = modules.reduce<Record<number, { isDone: boolean; hasProgress: boolean }>>((acc, module) => {
     const rows = completionsByModuleId[module.id] || [];
-    let isDone = completedModuleIds.has(module.id);
-
-    const quizStats = moduleQuizStatsById[module.id];
-    const examStats = examBlancStatsById[module.id];
-
-    // Fallback: if module has quizzes/exams and ALL are completed, consider module done
-    // (covers modules where the explicit "module completion" row is missing)
-    const allQuizzesDone = !quizStats || quizStats.totalQuizzes === 0 || quizStats.completedQuizzes >= quizStats.totalQuizzes;
-    const allExamsDone = !examStats || examStats.total === 0 || examStats.completed >= examStats.total;
-    const hasAnyTracked = (quizStats?.totalQuizzes ?? 0) > 0 || (examStats?.total ?? 0) > 0;
-    if (!isDone && hasAnyTracked && allQuizzesDone && allExamsDone) {
-      isDone = true;
-    }
-
-    // A terminal server row is monotonic. Current quiz/exam counters may grow
-    // after a content update, but must never visually downgrade that snapshot.
-
-    acc[module.id] = {
-      isDone,
+    const display = getLearnerModuleDisplayState({
+      loaded: true,
+      serverCompleted: completedModuleIds.has(module.id),
+      quizStats: moduleQuizStatsById[module.id],
+      examStats: examBlancStatsById[module.id],
       hasProgress: rows.some(hasModuleCompletionProgress),
+    });
+    acc[module.id] = {
+      isDone: display.isDone,
+      hasProgress: display.status === "en_cours" || display.isDone,
     };
     return acc;
   }, {});
@@ -2383,7 +2374,12 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
               </Button>
             </div>
 
-            {/* Modules grid: À faire + Réalisés */}
+            {/* Modules grid: À faire + Réalisés — jamais affichée avant la progression serveur */}
+            {!completionsLoaded ? (
+              <Card className="border-0 shadow-sm p-8 text-center">
+                <p className="text-muted-foreground text-sm animate-pulse">Chargement de vos modules…</p>
+              </Card>
+            ) : (
             <div className="grid md:grid-cols-2 gap-6">
               {/* À faire */}
               <div className="space-y-3">
@@ -2493,8 +2489,8 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                             <h3 className={`font-bold text-sm transition-colors ${introLockedDone ? "text-muted-foreground" : "text-foreground group-hover:text-emerald-600"}`}>
                               {mod.nom}
                               {lastMod && !introLockedDone && (
-                                <Badge className="ml-2 text-[10px] px-1.5 py-0 bg-red-500 text-white border-red-500">
-                                  ▶ Reprendre
+                                <Badge variant="outline" className="ml-2 text-[10px] px-1.5 py-0 text-emerald-600 border-emerald-200 bg-emerald-50 dark:bg-emerald-950/30">
+                                  Dernier consulté — Revoir
                                 </Badge>
                               )}
                             </h3>
@@ -2541,6 +2537,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                 </div>
               </div>
             </div>
+            )}
           </>
         )}
       </div>
