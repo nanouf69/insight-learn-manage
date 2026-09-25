@@ -375,6 +375,17 @@ export function isSameQrcContent(
 }
 
 
+/**
+ * Les modifications des examens blancs ne sont journalisées que depuis le
+ * 21/09/2026 16:37 UTC : pour un passage antérieur, le corrigé affiché est le
+ * corrigé actuel, pas forcément celui en vigueur le jour du passage.
+ */
+export const DEBUT_JOURNAL_CONTENU_EXAMENS = Date.parse("2026-09-21T16:37:10Z");
+export function estCorrigeHistoriqueNonReconstituable(completedAt?: string | null): boolean {
+  const t = completedAt ? Date.parse(completedAt) : NaN;
+  return !Number.isFinite(t) || t < DEBUT_JOURNAL_CONTENU_EXAMENS;
+}
+
 function isAdminValidatedCorrection(correction: unknown, completedAt?: string | null): boolean {
   if (!correction || typeof correction !== "object") return false;
   const correctionRecord = correction as Record<string, unknown>;
@@ -2480,6 +2491,11 @@ const CorrectionQRCTab = ({ resultIds, embeddedLabel, hideV2Panel = false }: Cor
                   {/* Réponse correcte */}
                   <div className="bg-green-50 border border-green-200 rounded-lg p-3">
                     <p className="text-xs font-semibold text-green-700 mb-1">✓ Réponse attendue :</p>
+                    {estCorrigeHistoriqueNonReconstituable(item.completedAt) && (
+                      <p data-testid="avertissement-corrige-actuel" className="text-xs font-semibold text-amber-800 bg-amber-100 border border-amber-300 rounded px-2 py-1 mb-2">
+                        ⚠️ Corrigé ACTUEL — le corrigé en vigueur le {new Date(item.completedAt).toLocaleDateString("fr-FR", { timeZone: "Europe/Paris" })} n'est pas reconstituable avec certitude.
+                      </p>
+                    )}
                     <p className="text-sm whitespace-pre-wrap text-green-900">{item.reponseCorrecte}</p>
                   </div>
 
