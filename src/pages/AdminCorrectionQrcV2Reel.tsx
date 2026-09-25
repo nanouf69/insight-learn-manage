@@ -481,6 +481,29 @@ export default function AdminCorrectionQrcV2Reel() {
               </Button>
             </div>
           </div>
+          {candidatsTrouves && (
+            <div className="rounded border bg-muted/40 px-2 py-1 text-xs space-y-1" data-testid="resultats-recherche">
+              {candidatsTrouves.length === 0 ? (
+                <p className="font-semibold text-muted-foreground">Aucun candidat trouvé</p>
+              ) : candidatsTrouves.map((c) => (
+                <div key={c.id} className="flex flex-wrap items-center gap-1" data-testid="candidat-trouve">
+                  <span className="font-semibold">{c.nom}</span>
+                  <span className="text-muted-foreground">—</span>
+                  {c.examens.map((e) => (
+                    <Button
+                      key={e.cle}
+                      size="sm"
+                      variant={ebChoisi?.cle === e.cle ? "default" : "outline"}
+                      className="h-6 px-2 text-xs"
+                      onClick={() => setEbCle(e.cle)}
+                    >
+                      {e.exam_id}{e.circuit === "ancien" ? " (ancien circuit)" : ""}
+                    </Button>
+                  ))}
+                </div>
+              ))}
+            </div>
+          )}
           {(ebChoisi?.dates.length ?? 0) > 0 && (
             <div className="flex items-center gap-1 overflow-x-auto whitespace-nowrap" data-testid="dates-eb">
               <span className="text-xs text-muted-foreground">Dates de passage :</span>
