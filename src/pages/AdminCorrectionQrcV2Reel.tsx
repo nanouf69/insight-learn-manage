@@ -136,7 +136,51 @@ export default function AdminCorrectionQrcV2Reel() {
 
   const dateChoisie = ebChoisi?.dates.find((d) => d.jour === jourFiltre) ?? null;
   const ancienCircuit = ebChoisi?.circuit === "ancien";
-  const attemptsAffiches = ancienCircuit ? null : (dateChoisie?.attemptIds ?? ebChoisi?.attemptIds ?? null);
+
+  // Recherche de candidat (filtrage d'affichage uniquement, aucune écriture).
+  const [recherche, setRecherche] = useState("");
+  const [nomsCandidats, setNomsCandidats] = useState<Record<string, string>>({});
+  const idsGroupe = useMemo(() => {
+    const s = new Set<string>();
+    for (const e of groupeChoisi?.examens ?? []) for (const id of Object.values(e.apprenantParAttempt ?? {})) s.add(id);
+    return Array.from(s);
+  }, [groupeChoisi]);
+  useEffect(() => {
+    const manquants = idsGroupe.filter((id) => !(id in nomsCandidats));
+    if (!manquants.length) return;
+    let vivant = true;
+    void (async () => {
+      const out: Record<string, string> = {};
+      for (let i = 0; i < manquants.length; i += 150) {
+        const { data } = await supabase.from("apprenants").select("id, nom, prenom").in("id", manquants.slice(i, i + 150));
+        for (const a of data ?? []) out[a.id] = `${a.nom ?? ""} ${a.prenom ?? ""}`.trim();
+      }
+      if (vivant) setNomsCandidats((p) => ({ ...p, ...out }));
+    })();
+    return () => { vivant = false; };
+  }, [idsGroupe]); // eslint-disable-line react-hooks/exhaustive-deps
+  const normaliser = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
+  const rechercheNorm = normaliser(recherche);
+  const candidatsTrouves = useMemo(() => {
+    if (!rechercheNorm) return null;
+    const mots = rechercheNorm.split(" ");
+    return idsGroupe
+      .filter((id) => { const n = normaliser(nomsCandidats[id] ?? ""); return mots.every((m) => n.includes(m)); })
+      .map((id) => ({
+        id,
+        nom: nomsCandidats[id] ?? "(apprenant)",
+        examens: (groupeChoisi?.examens ?? []).filter((e) => Object.values(e.apprenantParAttempt ?? {}).includes(id)),
+      }))
+      .sort((a, b) => a.nom.localeCompare(b.nom));
+  }, [rechercheNorm, idsGroupe, nomsCandidats, groupeChoisi]); // eslint-disable-line react-hooks/exhaustive-deps
+  const idsTrouves = useMemo(() => candidatsTrouves ? new Set(candidatsTrouves.map((c) => c.id)) : null, [candidatsTrouves]);
+
+  const attemptsBase = ancienCircuit ? null : (dateChoisie?.attemptIds ?? ebChoisi?.attemptIds ?? null);
+  const cleAttempts = idsTrouves
+    ? (attemptsBase ?? []).filter((a) => idsTrouves.has(ebChoisi?.apprenantParAttempt?.[a] ?? "")).join(",")
+    : (attemptsBase ?? []).join(",");
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const attemptsAffiches = useMemo(() => (attemptsBase ? (cleAttempts ? cleAttempts.split(",") : []) : null), [cleAttempts, attemptsBase == null]);
   const legacyResultIds = ancienCircuit
     ? (jourFiltre
         ? ebChoisi?.legacyResultIds?.filter((id) => dateChoisie?.attemptIds.includes(`ancien:${id}`))
