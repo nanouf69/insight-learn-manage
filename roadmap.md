@@ -1,5 +1,12 @@
 # Feuille de route
 
+## Incident prioritaire — GOUEPO Stéphane, modules terminés affichés non faits (25/09/2026)
+- [ ] Figer l’état logique et reconstituer chaque module depuis les données serveur et l’activité.
+- [ ] Identifier avec certitude la cause des retours visuels « non faits », sans modifier son historique.
+- [ ] Appliquer uniquement un correctif général non destructif si la cause est prouvée.
+- [ ] Vérifier fermeture, reconnexion, F5, retour au tableau de bord et refus d’une rétrogradation obsolète avec le compte TEST.
+- [ ] Relever les mêmes compteurs avant/après et produire un rapport unique.
+
 ## Terminé — écran unique Correction QRC (23/09/2026)
 - EB3 finalisé apparaît dans le menu sous « EB3 — ANCIEN CIRCUIT », sans migration ni copie.
 - Les 9 matières EB3 ouvertes sont exclues ; les 50 QRC finalisées uniques de la session sont affichées (50/50 avec le contrôle en base).
