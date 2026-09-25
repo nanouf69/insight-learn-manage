@@ -2555,7 +2555,7 @@ const CorrectionQRCTab = ({ resultIds, embeddedLabel, hideV2Panel = false }: Cor
                     {!item.questionHistoriqueIndisponible && (
                       <span className="text-xs text-blue-700 font-medium">🤖 Mots clés : {item.autoScore}/{item.pointsMax}</span>
                     )}
-                    <span className="text-amber-300">|</span>
+                    {!item.questionHistoriqueIndisponible && <span className="text-amber-300">|</span>}
                     <Pencil className="w-3.5 h-3.5 text-amber-600 shrink-0" />
                     <span className="text-xs font-medium text-amber-800">Points :</span>
                     <input
