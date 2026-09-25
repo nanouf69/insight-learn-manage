@@ -983,7 +983,12 @@ const ResultatsSessionPage = () => {
                 Object.entries(examStats).map(([qId, s]) => {
                   const isExpanded = !collapsedExams.has(qId);
                   const tauxReussite = s.nbCandidats > 0 ? Math.round((s.nbReussi / s.nbCandidats) * 100) : 0;
-                  const matieresArr = Object.values(s.matieres).sort((a, b) => a.nom.localeCompare(b.nom));
+                  // Affichage seulement : une clé technique « xxx__tN » (reliquat de tentative)
+                  // n'est pas une matière de l'examen ; masquée si aucun élève affiché n'y a de note.
+                  // Les vraies matières (jamais de suffixe __tN) restent toujours visibles.
+                  const matieresArr = Object.values(s.matieres)
+                    .filter((m) => !/__t\d+$/.test(m.nom) || s.apprenantDetails.some((ad) => ad.matieres.some((x) => x.nom === m.nom)))
+                    .sort((a, b) => a.nom.localeCompare(b.nom));
 
                   return (
                     <Card key={qId} className="overflow-hidden">
