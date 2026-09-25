@@ -7476,7 +7476,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
         if (!ok) {
           completionPersistedRef.current = false;
-          toast.error("Votre progression n'a pas pu être enregistrée. Vérifiez votre connexion et réessayez.");
+          if (wasLastCompletionRefusedIncomplete()) {
+            toast.error("Module non terminé : aucune réponse n'est encore enregistrée. Vos réponses sont conservées, reprenez les questions du module.");
+          } else {
+            toast.error("Votre progression n'a pas pu être enregistrée. Vérifiez votre connexion et réessayez.");
+          }
           return false;
         }
 

@@ -78,7 +78,7 @@ async function saveWithRetry(
           donnees: params.donnees,
           module_id: params.moduleId || null,
           updated_at: new Date().toISOString(),
-        } as any, { onConflict: "apprenant_id,type_document,user_id" });
+        } as any, { onConflict: "apprenant_id,type_document,titre" });
 
       if (error) {
         console.error(`[AutoSave] Attempt ${attempt}/${retries} failed:`, error);
