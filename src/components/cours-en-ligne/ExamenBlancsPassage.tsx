@@ -600,7 +600,7 @@ function PassageMatiere({
    * avant que toutes les réponses aient été confirmées par le serveur.
    * Renvoie false si la matière ne doit PAS être clôturée.
    */
-  const finaliserNoyau = async (): Promise<boolean> => {
+  const finaliserNoyau = async (clotureForcee = false): Promise<boolean> => {
     const attemptId = attemptV2Ref.current;
     if (!attemptId) return true; // passage non raccordé : comportement inchangé
     // Incident Thierno BAH (23/09/2026) : Array.every([]) vaut true. Une matière
@@ -611,10 +611,13 @@ function PassageMatiere({
       toast.error("Le contenu de cette matière n'est pas chargé. La matière reste ouverte : rechargez la page avant de continuer.");
       return false;
     }
-    // RÈGLE 1 — on interroge D'ABORD le serveur : s'il possède déjà toutes les
-    // réponses de la matière, aucun marqueur technique local (file, refus
-    // ancien) ne peut retenir la clôture. La finalisation part alors
-    // exclusivement des réponses confirmées côté serveur.
+    // Interruption / temps écoulé : seules les réponses RÉELLEMENT saisies doivent
+    // être confirmées par le serveur. Une question laissée vide n'est jamais
+    // exigée (elle vaudra 0 côté serveur). Une réponse saisie mais non encore
+    // confirmée bloque toujours la clôture : jamais transformée en 0.
+    const idsSaisis = new Set(
+      questionsSafe.filter(q => isQuestionAnswered(q)).map(q => String(q.id)),
+    );
     const attendues = questionsSafe.length;
     const lireConfirmationNoyau = async () => {
       const [{ data: tentativeServeur, error: tentativeError }, { data: reponsesServeur, error: reponsesError }] = await Promise.all([
@@ -633,9 +636,12 @@ function PassageMatiere({
             .filter(Boolean)
         : [];
       const idsServeur = new Set(((reponsesServeur as any[]) ?? []).map((r) => String(r?.question_id ?? "")));
+      const requis = clotureForcee
+        ? idsSnapshot.filter((id: string) => idsSaisis.has(id))
+        : idsSnapshot;
       return {
         contenuConforme: idsSnapshot.length === attendues,
-        toutesConfirmees: idsSnapshot.length > 0 && idsSnapshot.every((id: string) => idsServeur.has(id)),
+        toutesConfirmees: idsSnapshot.length > 0 && requis.every((id: string) => idsServeur.has(id)),
         idsServeur,
       };
     };
