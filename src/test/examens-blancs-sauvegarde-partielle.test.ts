@@ -62,7 +62,8 @@ describe("Réponse enregistrée ≠ matière terminée", () => {
     const src = read(SRC).replace(/\s+/g, "");
     expect(src).toContain('supabase.from("exam_attempts_v2").select("snapshot")');
     expect(src).toContain('supabase.from("answer_state").select("question_id")');
-    expect(src).toContain("idsSnapshot.every");
+    expect(src).toContain("requis.every");
+    expect(src).toContain("clotureForcee?idsSnapshot.filter");
     expect(src).toContain("!confirmation?.contenuConforme||!confirmation.toutesConfirmees");
   });
 
