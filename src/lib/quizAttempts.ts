@@ -34,6 +34,31 @@ export interface QuizAttempt {
 export const buildExerciceId = (moduleId: number | string, exoId: number | string) =>
   `module_${moduleId}_exo_${exoId}`;
 
+/**
+ * Identifiant d'une révision « Refaire les fausses » sur un quiz DÉJÀ validé.
+ * Format volontairement hors du motif `module_X_exo_%` : jamais compté par la
+ * validation automatique du module ni par les rapports `^module_X_exo_Y$`.
+ */
+export const buildRevisionExerciceId = (moduleId: number | string, exoId: number | string) =>
+  `module_${moduleId}_revision_exo_${exoId}`;
+
+export const exoIdDepuisRevision = (exerciceId: string): number | null => {
+  const m = /^module_\d+_revision_exo_(\d+)$/.exec(exerciceId || "");
+  return m ? Number(m[1]) : null;
+};
+
+/** Trace un échec de validation de quiz de module (journal d'erreurs, invisible pour l'élève). */
+export const journaliserEchecValidationQuiz = (p: {
+  apprenantId: string;
+  moduleId: number | string;
+  exerciceId: string;
+  etape: string;
+}) => {
+  console.error(
+    `[QuizModule] Échec validation quiz — apprenant=${p.apprenantId} module=${p.moduleId} exercice=${p.exerciceId} etape=${p.etape}`,
+  );
+};
+
 /** Identifiant canonique d'un quiz intégré à une page de cours. */
 export const buildInlineQuizId = (moduleId: number | string, coursId: number | string) =>
   `module_${moduleId}_inline_${coursId}`;
