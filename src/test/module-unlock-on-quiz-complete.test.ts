@@ -1,9 +1,52 @@
 // @vitest-environment node
 import { describe, it, expect } from "vitest";
 import {
+  computeServerCompletedModuleIds,
   computeUnlockState,
   isModuleLocked,
 } from "@/lib/moduleUnlockLogic";
+
+describe("Server module completion is monotonic", () => {
+  const parentToChildren = { 2: [14, 15, 16, 17, 18, 19, 25] };
+  const normalize = (id: number) => parentToChildren[2].includes(id) ? 2 : id;
+
+  it("keeps an explicitly completed parent completed without child rows", () => {
+    const completed = computeServerCompletedModuleIds(
+      [{ module_id: 2, status: "completed", completed_at: "2026-09-10T23:06:00Z" }],
+      parentToChildren,
+      normalize,
+    );
+    expect(completed.has(2)).toBe(true);
+  });
+
+  it("uses all child rows only as a legacy fallback", () => {
+    const completed = computeServerCompletedModuleIds(
+      parentToChildren[2].map((module_id) => ({ module_id, status: "completed" })),
+      parentToChildren,
+      normalize,
+    );
+    expect(completed.has(2)).toBe(true);
+
+    const incomplete = computeServerCompletedModuleIds(
+      parentToChildren[2].slice(0, -1).map((module_id) => ({ module_id, status: "completed" })),
+      parentToChildren,
+      normalize,
+    );
+    expect(incomplete.has(2)).toBe(false);
+  });
+
+  it("ignores a stale in-progress row when a terminal row exists", () => {
+    const completed = computeServerCompletedModuleIds(
+      [
+        { module_id: 2, status: "completed", completed_at: "2026-09-10T23:06:00Z" },
+        { module_id: 2, status: "in_progress", completed_at: null },
+      ],
+      parentToChildren,
+      normalize,
+    );
+    expect(completed.has(2)).toBe(true);
+  });
+});
 
 /**
  * Non-regression test for the bug where module N+1 stayed locked even though

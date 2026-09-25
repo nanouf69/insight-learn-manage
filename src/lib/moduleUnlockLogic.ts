@@ -30,6 +30,44 @@ export interface UnlockComputationResult {
   unlockedModuleIds: Set<number>;
 }
 
+export interface CompletionLite {
+  module_id: number;
+  status?: string | null;
+  completed_at?: string | null;
+}
+
+/**
+ * Server terminal states are authoritative. A completed parent row is enough;
+ * child rows are only a legacy fallback when the parent row is absent.
+ */
+export function computeServerCompletedModuleIds(
+  completionRows: CompletionLite[],
+  parentToChildren: Record<number, number[]>,
+  normalizeModuleId: (moduleId: number) => number,
+): Set<number> {
+  const doneRawIds = new Set(
+    completionRows
+      .filter((row) => row.status === "completed" || (row.status == null && !!row.completed_at))
+      .map((row) => Number(row.module_id)),
+  );
+  const result = new Set<number>();
+
+  doneRawIds.forEach((rawId) => {
+    const normalizedId = normalizeModuleId(rawId);
+    if (rawId === normalizedId) {
+      result.add(normalizedId);
+      return;
+    }
+
+    const children = parentToChildren[normalizedId] ?? [];
+    if (children.length > 0 && children.every((childId) => doneRawIds.has(childId))) {
+      result.add(normalizedId);
+    }
+  });
+
+  return result;
+}
+
 const DEFAULT_INTRO_MODULE_IDS = new Set([1, 26, 31, 32, 33, 34]);
 const DEFAULT_ALWAYS_UNLOCKED_IDS = new Set([70, 71, 72, 73]);
 
