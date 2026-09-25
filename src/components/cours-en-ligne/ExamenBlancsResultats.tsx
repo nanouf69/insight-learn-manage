@@ -860,11 +860,12 @@ function EcranResultats({
                       const fallback = evaluateQrcDeterministic(q, rep, pts);
                       if (corrIA === "loading") {
                         isLoadingIA = true;
-                      } else if (corrIA && corrIA !== "error") {
-                        pointsObtenus = clampToQuestionMax(corrIA.pointsObtenus, pts);
-                        isCorrect = Boolean(corrIA.estCorrect) && pointsObtenus >= pts;
-                        correctionDetail = corrIA.explication;
-                      } else {
+                       } else if (corrIA && corrIA !== "error") {
+                         pointsObtenus = clampToQuestionMax(corrIA.pointsObtenus, pts);
+                         isCorrect = Boolean(corrIA.estCorrect) && pointsObtenus >= pts;
+                         correctionDetail = corrIA.explication;
+                         isCorrectionIA = estCorrectionIaEnregistree(corrIA);
+                       } else {
                         isCorrect = fallback.estCorrect;
                         pointsObtenus = fallback.pointsObtenus;
                         correctionDetail = corrIA === "error"
@@ -898,7 +899,7 @@ function EcranResultats({
                                 )}
                               </div>
                               <div className="flex items-center gap-1 shrink-0">
-                                {q?.type === "QRC" && <Bot className="w-3 h-3 text-blue-500" aria-label="Corrigé par IA" />}
+                                {isCorrectionIA && <Bot className="w-3 h-3 text-violet-500" aria-label="Corrigé par IA" />}
                                 {isLoadingIA ? (
                                   <span className="text-xs font-bold px-1.5 py-0.5 rounded bg-blue-200 text-blue-800">? / {pts} pt{pts > 1 ? "s" : ""}</span>
                                 ) : (
