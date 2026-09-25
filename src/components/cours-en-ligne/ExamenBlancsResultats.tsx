@@ -27,6 +27,7 @@ import {
 } from "./examens-blancs-utils";
 import { computeMoyenneExamen, computeResultatMatiereScore, getSeuilEliminatoireAffiche } from "./examens-blancs-scoring";
 import { isExamAttemptPublicationPending } from "./exam-helpers";
+import { estCorrectionIaEnregistree } from "./CorrectionQRCTab";
 import { fetchCoreMatiereStates, matchCoreState, type CoreMatiereState } from "@/lib/coreExamPublication";
 import CorrectionsIaEleve from "@/components/cours-en-ligne/CorrectionsIaEleve";
 import { useCoreChangeTick } from "@/hooks/useCoreChangeTick";
@@ -843,8 +844,11 @@ function EcranResultats({
                     const pts = getPointsParQuestion(matiere?.id ?? "", q?.type, matiere);
                     let isCorrect = false;
                     let pointsObtenus = 0;
-                    let correctionDetail: string | null = null;
-                    let isLoadingIA = false;
+                     let correctionDetail: string | null = null;
+                     let isLoadingIA = false;
+                     // Vrai UNIQUEMENT si l'origine IA est prouvée en base (correctedBy « ia:… »).
+                     // Une correction humaine ou un 0 automatique (QRC vide) ne porte jamais cette mention.
+                     let isCorrectionIA = false;
 
                     if (q?.type === "QCM" && q.choix) {
                       const correctes = safeArray<string>(q.choix?.filter(c => c.correct).map(c => c.lettre)).sort();
