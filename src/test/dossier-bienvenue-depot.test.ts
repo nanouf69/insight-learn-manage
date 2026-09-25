@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
 import {
   etatDepotDossierBienvenue,
   libelleDepotDossierBienvenue,
@@ -47,5 +48,13 @@ describe("Date de dépôt du dossier de bienvenue", () => {
     }]);
 
     expect(etat).toEqual({ statut: "date_indisponible" });
+  });
+
+  it("conserve côté serveur la première date de finalisation signée", () => {
+    const source = readFileSync("supabase/functions/save-public-form/index.ts", "utf8");
+    expect(source).toContain('typeDocument === "dossier-bienvenue"');
+    expect(source).toContain("hasValidSignature(ancienEtat)");
+    expect(source).toContain("date_completion: premiereDateDepot");
+    expect(source).toContain("donnees: donneesAPersister");
   });
 });

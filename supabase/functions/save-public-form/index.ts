@@ -5,6 +5,24 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const signatureKeys = [
+  "signature",
+  "_signature_image",
+  "signature_apprenant",
+  "signatureDataUrl",
+  "signature_data_url",
+  "onboarding_signature",
+];
+
+const hasValidSignature = (value: unknown): boolean => {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const fields = value as Record<string, unknown>;
+  return signatureKeys.some((key) => {
+    const signature = fields[key];
+    return typeof signature === "string" && signature.trim().startsWith("data:image/");
+  });
+};
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -115,12 +133,22 @@ Deno.serve(async (req) => {
         .maybeSingle();
 
       const ancienEtat = (existing as any)?.donnees ?? null;
+      const premiereDateDepot =
+        typeDocument === "dossier-bienvenue" &&
+        hasValidSignature(ancienEtat) &&
+        typeof ancienEtat?.date_completion === "string" &&
+        ancienEtat.date_completion.trim()
+          ? ancienEtat.date_completion
+          : null;
+      const donneesAPersister = premiereDateDepot
+        ? { ...donnees, date_completion: premiereDateDepot }
+        : donnees;
 
       if (existing) {
         const { error } = await supabase
           .from("apprenant_documents_completes")
           .update({
-            donnees,
+            donnees: donneesAPersister,
             titre,
             updated_at: new Date().toISOString(),
             completed_at: new Date().toISOString(),
@@ -142,7 +170,7 @@ Deno.serve(async (req) => {
             user_id: userId,
             type_document: typeDocument,
             titre,
-            donnees,
+            donnees: donneesAPersister,
           });
 
         if (error) {
