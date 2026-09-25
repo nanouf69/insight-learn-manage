@@ -3,7 +3,7 @@
 ## Chantier global affichage apprenant (25/09)
 - [x] Règle unique d'affichage + tableau de bord/déblocage branchés dessus + tests de cohérence.
 - [ ] Tests navigateur F5/reconnexion : NON PROUVÉS (portes identité/émargement/session unique).
-- [ ] Réparation automatique depuis le navigateur (tableau de bord) : signalée, en attente de décision.
+- [x] Réparation automatique des statuts par le tableau de bord supprimée (lecture seule).
 
 ## Incident prioritaire — GOUEPO Stéphane, modules terminés affichés non faits (25/09/2026)
 - [x] État logique figé et parcours reconstitué depuis les données serveur et l’activité.
