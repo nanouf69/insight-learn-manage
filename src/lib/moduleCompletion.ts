@@ -40,6 +40,12 @@ export interface SaveModuleCompletionParams {
 
 const RETRY_BASE_DELAY = 800;
 
+/** Vrai si la dernière demande « Terminé » a été refusée par le serveur (module incomplet). */
+let lastCompletionRefusedIncomplete = false;
+export function wasLastCompletionRefusedIncomplete(): boolean {
+  return lastCompletionRefusedIncomplete;
+}
+
 /** True when the DB row means "module validated" (terminal state). */
 export function isCompletionDone(row: ModuleCompletionRow | null | undefined): boolean {
   if (!row) return false;
@@ -80,10 +86,16 @@ export async function saveModuleCompletion(
     _details: details ?? null,
   };
 
+  lastCompletionRefusedIncomplete = false;
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
       const { error } = await (supabase as any).rpc("save_module_completion", payload);
       if (!error) return true;
+      // Refus définitif du serveur : module incomplet. Pas de nouvel essai, rien n'est effacé.
+      if ((error as any)?.code === "P0501" || /MODULE_INCOMPLET/.test((error as any)?.message ?? "")) {
+        lastCompletionRefusedIncomplete = true;
+        return false;
+      }
       console.error(
         `[moduleCompletion] save attempt ${attempt}/${retries} failed for module ${moduleId}:`,
         error,
