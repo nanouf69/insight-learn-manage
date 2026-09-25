@@ -23,6 +23,9 @@ import { saveModuleCompletion, isCompletionDone, wasLastCompletionRefusedIncompl
 import {
   buildExerciceId,
   buildInlineQuizId,
+  buildRevisionExerciceId,
+  exoIdDepuisRevision,
+  journaliserEchecValidationQuiz,
   fetchQuizAttempts,
   isAttemptSubmitted,
   submitQuizAttempt,
@@ -6319,6 +6322,16 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     const [showCalculator, setShowCalculator] = useState(false);
     // Revision mode: per exo, set of question IDs to display (only the wrong ones)
     const [revisionQuestionsFor, setRevisionQuestionsFor] = useState<Record<number, Set<number | string>>>({});
+    // Validation de quiz : « OK » affiché seulement après confirmation serveur.
+    const [validatingExo, setValidatingExo] = useState<number | null>(null);
+    const [validationFailedFor, setValidationFailedFor] = useState<Set<number>>(new Set());
+    // Quiz validés côté serveur (status submitted) et révisions en cours sur ces quiz.
+    const submittedExoIdsRef = useRef<Set<number>>(new Set());
+    const revisionActiveRef = useRef<Set<number>>(new Set());
+    const exerciceIdPourSauvegarde = (exoId: number) =>
+      revisionActiveRef.current.has(exoId)
+        ? buildRevisionExerciceId(module.id, exoId)
+        : buildExerciceId(module.id, exoId);
     type PendingWrongQuestionRevision = {
       exoId: number;
       total: number;
@@ -6444,6 +6457,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         setPendingWrongQuestionRevision(null);
       });
 
+      // Quiz déjà validé : la révision part sous son propre identifiant,
+      // la tentative validée reste intacte (« Refaire les fausses » toujours cliquable).
+      if (submittedExoIdsRef.current.has(pending.exoId)) revisionActiveRef.current.add(pending.exoId);
       // Persist the wiped selections after state has settled.
       autoSaveAnswers(clearedSelected, [pending.exoId]);
 
@@ -6869,6 +6885,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         const exoMatch = /_exo_(\d+)$/.exec(row.exercice_id);
         if (exoMatch) {
           submittedExoIds.push(Number(exoMatch[1]));
+          submittedExoIdsRef.current.add(Number(exoMatch[1]));
           return;
         }
         const inlineMatch = /_inline_(\d+)$/.exec(row.exercice_id);
@@ -6899,6 +6916,42 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           return next;
         });
       }
+    };
+
+    // --- Révisions « Refaire les fausses » d'un quiz déjà validé ---
+    // Relues depuis leur identifiant distinct et réaffichées par-dessus la
+    // tentative validée (affichage seulement ; la ligne validée n'est jamais modifiée).
+    const appliquerRevisions = async (attempts: { exercice_id: string; status?: string }[]) => {
+      if (!apprenantId) return;
+      const soumis: number[] = [];
+      attempts.forEach((row) => {
+        if (!isAttemptSubmitted(row as any)) return;
+        const m = /_exo_(\d+)$/.exec(row.exercice_id);
+        if (m) soumis.push(Number(m[1]));
+      });
+      if (soumis.length === 0) return;
+      const revisions = await fetchQuizAttempts(apprenantId, soumis.map((id) => buildRevisionExerciceId(module.id, id)));
+      revisions.forEach((row) => {
+        const exoId = exoIdDepuisRevision(row.exercice_id);
+        if (exoId == null) return;
+        const base = row.reponses && typeof row.reponses === "object" ? { ...(row.reponses as Record<string, any>) } : {};
+        const rep = { ...base, ...mergeSavedAndPendingAnswers(base, apprenantId, row.exercice_id) };
+        revisionActiveRef.current.add(exoId);
+        setSelectedAnswers((prev) => {
+          const next = { ...prev };
+          Object.keys(next).forEach((k) => { if (k.startsWith(`${exoId}-`)) delete next[k]; });
+          return { ...next, ...rep };
+        });
+        const exo = activeExercices.find((e: any) => e.id === exoId);
+        const manquantes = ((exo?.questions ?? []) as any[])
+          .filter((q) => Array.isArray(q?.choix) && q.choix.length > 0)
+          .map((q) => q.id)
+          .filter((qid) => { const v = rep[`${exoId}-${qid}`]; return Array.isArray(v) ? v.length === 0 : !v; });
+        if (manquantes.length > 0) {
+          setShowResultsFor((prev) => { const n = new Set(prev); n.delete(exoId); return n; });
+          setRevisionQuestionsFor((prev) => ({ ...prev, [exoId]: new Set(manquantes) }));
+        }
+      });
     };
 
     // --- Passages historiques figés : lecture seule de l'archive ---
@@ -7087,6 +7140,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                   setSelectedAnswers((prev) => ({ ...prev, ...reconciledRedo }));
                 }
                 applySubmittedAttempts(attempts);
+                await appliquerRevisions(attempts);
               }
             }
 
@@ -7125,6 +7179,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 }
                 // RÈGLE : seul status='submitted' vaut « quiz validé ».
                 applySubmittedAttempts(attempts);
+                await appliquerRevisions(attempts);
               }
             }
           }
@@ -7182,7 +7237,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               user_id: userIdForSaveRef.current || undefined,
               module_id: module.id,
               module_total_questions: totalQuestionsModuleRef.current,
-              exercice_id: `module_${module.id}_exo_${exoId}`,
+              exercice_id: exerciceIdPourSauvegarde(exoId),
               exercice_type: "quiz",
               reponses: exoAnswers,
               completed: false,
@@ -7274,7 +7329,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             user_id: userIdForSaveRef.current as string,
             module_id: module.id,
             module_total_questions: totalQuestionsModuleRef.current,
-            exercice_id: `module_${module.id}_exo_${exoId}`,
+            exercice_id: exerciceIdPourSauvegarde(exoId),
             exercice_type: "quiz",
             reponses: exoAnswers,
             completed: false,
@@ -8471,6 +8526,12 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               {exoTotalQ > 0 && (
                 <div className="flex justify-center gap-4">
                   {!showResultsFor.has(exo.id) ? (
+                    <div className="flex flex-col items-center gap-3 w-full">
+                    {validationFailedFor.has(exo.id) && validatingExo !== exo.id && (
+                      <div role="alert" className="w-full rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm text-center">
+                        Vos réponses sont conservées sur cet écran mais n'ont pas encore été confirmées par le serveur.
+                      </div>
+                    )}
                     <Button
                       size="lg"
                       onClick={async () => {
@@ -8501,6 +8562,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                           return;
                         }
                         setUnansweredKeys(new Set());
+                        if (validatingExo === exo.id) return;
+                        setValidatingExo(exo.id);
+                        // Affichage du résultat : appelé UNIQUEMENT après confirmation serveur.
+                        const afficherResultatValide = () => {
                         const validatedResultState = { exoId: exo.id, page: currentPage, validatedAt: Date.now() };
 
                         const nextShowResults = new Set(showResultsFor);
@@ -8531,6 +8596,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                         } catch (error) {
                           console.error("Erreur snapshot UI module:", error);
                         }
+                        };
 
                         // Persist partiel en DB pour garder les réponses/scores intermédiaires
                         // sans marquer le module comme terminé.
@@ -8570,59 +8636,85 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                           }
                         }
 
-                        // VALIDATION DÉFINITIVE CÔTÉ SERVEUR (status = submitted)
+                        // VALIDATION DÉFINITIVE CÔTÉ SERVEUR (status = submitted).
+                        // Le résultat « OK » n'est affiché qu'APRÈS : envoi confirmé,
+                        // relecture identique en base, puis validation serveur.
+                        // Quiz déjà validé (révision « Refaire les fausses ») : les réponses
+                        // partent sous l'identifiant de révision, la ligne validée,
+                        // sa note et le statut du module ne sont jamais touchés.
                         if (apprenantId) {
+                          const enRevision = revisionActiveRef.current.has(exo.id);
                           const exoAnswers: Record<string, any> = {};
                           Object.entries(selectedAnswers).forEach(([k, v]) => {
                             if (k.startsWith(`${exo.id}-`)) exoAnswers[k] = v;
                           });
-                          const exerciceId = buildExerciceId(module.id, exo.id);
-                          enqueueAnswerSave({
-                            apprenant_id: apprenantId,
-                            user_id: userIdForSaveRef.current || undefined,
-                            module_id: module.id,
-                            module_total_questions: totalQuestionsModuleRef.current,
-                            exercice_id: exerciceId,
-                            exercice_type: "quiz",
-                            reponses: exoAnswers,
-                            completed: false,
-                            updated_at: new Date().toISOString(),
-                          });
-                          const flushed = await flushAnswerSavesAndWait(apprenantId, exerciceId);
-                          if (!flushed) {
-                            toast.error("Réponses en attente de connexion — validation bloquée sans perte de données.");
+                          const exerciceId = enRevision
+                            ? buildRevisionExerciceId(module.id, exo.id)
+                            : buildExerciceId(module.id, exo.id);
+                          const echec = (etape: string) => {
+                            journaliserEchecValidationQuiz({ apprenantId, moduleId: module.id, exerciceId, etape });
+                            setValidationFailedFor((prev) => new Set(prev).add(exo.id));
+                          };
+                          try {
+                            enqueueAnswerSave({
+                              apprenant_id: apprenantId,
+                              user_id: userIdForSaveRef.current || undefined,
+                              module_id: module.id,
+                              module_total_questions: totalQuestionsModuleRef.current,
+                              exercice_id: exerciceId,
+                              exercice_type: "quiz",
+                              reponses: exoAnswers,
+                              completed: false,
+                              updated_at: new Date().toISOString(),
+                            });
+                            const flushed = await flushAnswerSavesAndWait(apprenantId, exerciceId);
+                            if (!flushed) { echec("envoi"); return; }
+                            const { data: confirmedRow, error: confirmedError } = await supabase
+                              .from("reponses_apprenants" as any)
+                              .select("reponses")
+                              .eq("apprenant_id", apprenantId)
+                              .eq("exercice_id", exerciceId)
+                              .maybeSingle();
+                            const stored = ((confirmedRow as any)?.reponses ?? {}) as Record<string, any>;
+                            const aComparer = enRevision
+                              ? Object.fromEntries(Object.keys(exoAnswers).map((k) => [k, stored[k]]))
+                              : stored;
+                            if (confirmedError || !answersAreEqual(aComparer, exoAnswers)) { echec("relecture"); return; }
+                            if (!enRevision) {
+                              const submitted = await submitQuizAttempt({
+                                apprenantId,
+                                exerciceId,
+                                exerciceType: "quiz",
+                                reponses: exoAnswers,
+                                bonnesReponses: exoCorrect,
+                                totalQuestions: exoTotalQ,
+                              });
+                              if (!submitted) { echec("validation_serveur"); return; }
+                              submittedExoIdsRef.current.add(exo.id);
+                            }
+                          } catch (e) {
+                            echec("exception");
                             return;
-                          }
-                          const { data: confirmedRow, error: confirmedError } = await supabase
-                            .from("reponses_apprenants" as any)
-                            .select("reponses")
-                            .eq("apprenant_id", apprenantId)
-                            .eq("exercice_id", exerciceId)
-                            .maybeSingle();
-                          if (confirmedError || !answersAreEqual((confirmedRow as any)?.reponses, exoAnswers)) {
-                            toast.error("La base n'a pas confirmé toutes les réponses — validation bloquée.");
-                            return;
-                          }
-                          const submitted = await submitQuizAttempt({
-                            apprenantId,
-                            exerciceId: buildExerciceId(module.id, exo.id),
-                            exerciceType: "quiz",
-                            reponses: exoAnswers,
-                            bonnesReponses: exoCorrect,
-                            totalQuestions: exoTotalQ,
-                          });
-                          if (!submitted) {
-                            toast.error("⚠️ Validation non enregistrée sur le serveur — vérifiez votre connexion et revalidez.");
-                            return;
+                          } finally {
+                            setValidatingExo((cur) => (cur === exo.id ? null : cur));
                           }
                         }
 
+                        setValidationFailedFor((prev) => { const n = new Set(prev); n.delete(exo.id); return n; });
+                        afficherResultatValide();
                         toast.success("✅ Quiz validé ! Consultez vos résultats puis cliquez sur Suivant.");
                       }}
+                      disabled={validatingExo === exo.id}
                       className="gap-2"
                     >
-                      <CheckCircle2 className="w-5 h-5" /> Valider les QCM
+                      <CheckCircle2 className="w-5 h-5" />
+                      {validatingExo === exo.id
+                        ? "Enregistrement en cours…"
+                        : validationFailedFor.has(exo.id)
+                          ? "Réessayer la validation"
+                          : "Valider les QCM"}
                     </Button>
+                    </div>
                   ) : (() => {
                     const pct = exoTotalQ > 0 ? Math.round((exoCorrect / exoTotalQ) * 100) : 0;
                     const circleColor = pct >= 80 ? "text-emerald-500" : pct >= 50 ? "text-amber-500" : "text-destructive";
