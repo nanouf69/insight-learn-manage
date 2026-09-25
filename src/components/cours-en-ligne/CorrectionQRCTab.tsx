@@ -1044,8 +1044,14 @@ const CorrectionQRCTab = ({ resultIds, embeddedLabel, hideV2Panel = false }: Cor
       const matiere = chooseMatiereMatchingResponses(defaultMatiere, examenMap, g.matiereId, g.reponses);
 
       let questionList = g.questions;
-      if (!questionList && matiere && (Object.keys(g.corrections).length > 0 || Object.keys(g.reponses).length > 0)) {
-        questionList = buildQuestionListFromMatiere(matiere, g.reponses);
+      if (!questionList && Object.keys(g.reponses || {}).length > 0) {
+        // Archive sans copie des questions : seule la donnée enregistrée du passage fait foi.
+        // Une réponse rédigée (texte non vide) = QRC historique ; réponse vide ou lettres
+        // (QCM) = ignorée. Le type de la question actuelle n'intervient plus.
+        questionList = Object.entries(g.reponses)
+          .filter(([, v]) => typeof v === "string" && v.trim() !== "")
+          .map(([k]) => ({ id: Number.isFinite(Number(k)) ? Number(k) : k, type: "QRC", enonce: "" }))
+          .sort((a: any, b: any) => Number(a.id) - Number(b.id)) as any;
       }
       if (!questionList) continue;
 
