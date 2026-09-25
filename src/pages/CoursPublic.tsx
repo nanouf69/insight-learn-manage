@@ -2051,29 +2051,20 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     return acc;
   }, {});
 
-  // A module is truly "done" only if ALL its quizzes/exams are completed
+  // Source unique d'affichage (getLearnerModuleDisplayState) : Terminé serveur
+  // monotone, compteurs actuels seulement en complément, jamais en rétrogradation.
   const moduleProgressById = modules.reduce<Record<number, { isDone: boolean; hasProgress: boolean }>>((acc, module) => {
     const rows = completionsByModuleId[module.id] || [];
-    let isDone = completedModuleIds.has(module.id);
-
-    const quizStats = moduleQuizStatsById[module.id];
-    const examStats = examBlancStatsById[module.id];
-
-    // Fallback: if module has quizzes/exams and ALL are completed, consider module done
-    // (covers modules where the explicit "module completion" row is missing)
-    const allQuizzesDone = !quizStats || quizStats.totalQuizzes === 0 || quizStats.completedQuizzes >= quizStats.totalQuizzes;
-    const allExamsDone = !examStats || examStats.total === 0 || examStats.completed >= examStats.total;
-    const hasAnyTracked = (quizStats?.totalQuizzes ?? 0) > 0 || (examStats?.total ?? 0) > 0;
-    if (!isDone && hasAnyTracked && allQuizzesDone && allExamsDone) {
-      isDone = true;
-    }
-
-    // A terminal server row is monotonic. Current quiz/exam counters may grow
-    // after a content update, but must never visually downgrade that snapshot.
-
-    acc[module.id] = {
-      isDone,
+    const display = getLearnerModuleDisplayState({
+      loaded: true,
+      serverCompleted: completedModuleIds.has(module.id),
+      quizStats: moduleQuizStatsById[module.id],
+      examStats: examBlancStatsById[module.id],
       hasProgress: rows.some(hasModuleCompletionProgress),
+    });
+    acc[module.id] = {
+      isDone: display.isDone,
+      hasProgress: display.status === "en_cours" || display.isDone,
     };
     return acc;
   }, {});
