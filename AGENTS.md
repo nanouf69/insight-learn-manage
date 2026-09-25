@@ -5,3 +5,4 @@
 - Comptes de test exclus des lectures via policies RESTRICTIVE `est_compte_test()` (apprenants, reponses, progression, notes) ; why: exclusion centrale de tous les écrans/statistiques, le compte ne voit que lui-même.
 - Bilans protégés : trigger `trg_bilan_aa_controle_ids` refuse (P0510) un id d'exercice hors entier 32 bits ; why: empêcher silencieusement un futur Bilan incompatible sans toucher aux anciens IDs.
 - Affichage progression monotone : une ligne serveur `completed` reste « Terminé » même si les compteurs actuels de quiz/examens ou les anciennes sous-lignes divergent ; why: une évolution de contenu ou un état client ancien ne doit jamais rétrograder un acquis.
+- Affichage module apprenant : toujours via `getLearnerModuleDisplayState` / `isModuleDoneForDisplay` (moduleUnlockLogic) ; why: une seule règle, Terminé serveur jamais rétrogradé, aucun faux statut pendant le chargement.
