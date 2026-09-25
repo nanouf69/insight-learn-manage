@@ -27,6 +27,7 @@ import {
 } from "./examens-blancs-utils";
 import { computeMoyenneExamen, computeResultatMatiereScore, getSeuilEliminatoireAffiche } from "./examens-blancs-scoring";
 import { isExamAttemptPublicationPending } from "./exam-helpers";
+import { estCorrectionIaEnregistree } from "./CorrectionQRCTab";
 import { fetchCoreMatiereStates, matchCoreState, type CoreMatiereState } from "@/lib/coreExamPublication";
 import CorrectionsIaEleve from "@/components/cours-en-ligne/CorrectionsIaEleve";
 import { useCoreChangeTick } from "@/hooks/useCoreChangeTick";
@@ -843,8 +844,11 @@ function EcranResultats({
                     const pts = getPointsParQuestion(matiere?.id ?? "", q?.type, matiere);
                     let isCorrect = false;
                     let pointsObtenus = 0;
-                    let correctionDetail: string | null = null;
-                    let isLoadingIA = false;
+                     let correctionDetail: string | null = null;
+                     let isLoadingIA = false;
+                     // Vrai UNIQUEMENT si l'origine IA est prouvée en base (correctedBy « ia:… »).
+                     // Une correction humaine ou un 0 automatique (QRC vide) ne porte jamais cette mention.
+                     let isCorrectionIA = false;
 
                     if (q?.type === "QCM" && q.choix) {
                       const correctes = safeArray<string>(q.choix?.filter(c => c.correct).map(c => c.lettre)).sort();
@@ -856,11 +860,12 @@ function EcranResultats({
                       const fallback = evaluateQrcDeterministic(q, rep, pts);
                       if (corrIA === "loading") {
                         isLoadingIA = true;
-                      } else if (corrIA && corrIA !== "error") {
-                        pointsObtenus = clampToQuestionMax(corrIA.pointsObtenus, pts);
-                        isCorrect = Boolean(corrIA.estCorrect) && pointsObtenus >= pts;
-                        correctionDetail = corrIA.explication;
-                      } else {
+                       } else if (corrIA && corrIA !== "error") {
+                         pointsObtenus = clampToQuestionMax(corrIA.pointsObtenus, pts);
+                         isCorrect = Boolean(corrIA.estCorrect) && pointsObtenus >= pts;
+                         correctionDetail = corrIA.explication;
+                         isCorrectionIA = estCorrectionIaEnregistree(corrIA);
+                       } else {
                         isCorrect = fallback.estCorrect;
                         pointsObtenus = fallback.pointsObtenus;
                         correctionDetail = corrIA === "error"
@@ -894,7 +899,7 @@ function EcranResultats({
                                 )}
                               </div>
                               <div className="flex items-center gap-1 shrink-0">
-                                {q?.type === "QRC" && <Bot className="w-3 h-3 text-blue-500" aria-label="Corrigé par IA" />}
+                                {isCorrectionIA && <Bot className="w-3 h-3 text-violet-500" aria-label="Corrigé par IA" />}
                                 {isLoadingIA ? (
                                   <span className="text-xs font-bold px-1.5 py-0.5 rounded bg-blue-200 text-blue-800">? / {pts} pt{pts > 1 ? "s" : ""}</span>
                                 ) : (
@@ -947,12 +952,18 @@ function EcranResultats({
                                     <span>Vous avez trouvé le bon résultat mais le détail du calcul est manquant → {pointsObtenus}/{pts} pts</span>
                                   </div>
                                 )}
-                                {correctionDetail && (
-                                  <div className="flex items-start gap-1 text-xs text-blue-700 bg-blue-50 rounded p-1.5">
-                                    <Bot className="w-3 h-3 shrink-0 mt-0.5" /><span>{correctionDetail}</span>
-                                  </div>
-                                )}
-                                <p className="text-xs text-green-700 font-medium">Réponse attendue : {q.reponseQRC || (q.reponses_possibles || []).join(" / ") || "—"}</p>
+                                 {correctionDetail && (
+                                   <div className="flex items-start gap-1 text-xs text-blue-700 bg-blue-50 rounded p-1.5">
+                                     <Bot className="w-3 h-3 shrink-0 mt-0.5" /><span>{correctionDetail}</span>
+                                   </div>
+                                 )}
+                                 {isCorrectionIA && (
+                                   <div className="rounded border border-violet-300 bg-violet-50 p-1.5 space-y-1">
+                                     <p className="text-xs font-bold text-violet-800">🟣 Correction réalisée par intelligence artificielle</p>
+                                     <p className="text-xs text-amber-800">⚠️ Cette correction a été réalisée automatiquement par intelligence artificielle. Une IA peut commettre des erreurs. Vérifiez votre réponse en la comparant avec le corrigé officiel.</p>
+                                   </div>
+                                 )}
+                                 <p className="text-xs text-green-700 font-medium">Réponse attendue : {q.reponseQRC || (q.reponses_possibles || []).join(" / ") || "—"}</p>
                                 {/* Admin manual QRC override */}
                                 {isAdmin && !isLoadingIA && (
                                   <div className="mt-2">
