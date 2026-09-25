@@ -36,13 +36,19 @@ Deno.serve(async (req) => {
     const auth = req.headers.get("Authorization") ?? "";
     const utilisateur = createClient(url, Deno.env.get("SUPABASE_ANON_KEY")!, { global: { headers: { Authorization: auth } } });
 
-    const { attempt_id } = await req.json().catch(() => ({}));
+    const { attempt_id, rattrapage } = await req.json().catch(() => ({}));
+    // RATTRAPAGE EXCEPTIONNEL (autorisé le 25/09/2026) : passages e-learning de
+    // septembre 2026 uniquement, déclenché par un administrateur. L'interrupteur
+    // général n'est ni lu ni modifié ; toutes les autres règles restent actives.
+    const estRattrapage = rattrapage === true;
+    const DEBUT_RATTRAPAGE = new Date("2026-08-31T22:00:00Z");
+    const FIN_RATTRAPAGE = new Date("2026-09-30T22:00:00Z");
     if (!attempt_id || typeof attempt_id !== "string") return json({ ok: false, message: "attempt_id requis" }, 400);
 
     // 1. Interrupteur général
     const { data: cfg } = await service.from("qrc_ia_config").select("*").eq("id", true).maybeSingle();
-    if (!cfg?.actif) return json({ ok: true, statut: "desactive" });
-    if (cfg.pause_depuis) return json({ ok: true, statut: "en_pause", motif: cfg.pause_motif });
+    if (!estRattrapage && !cfg?.actif) return json({ ok: true, statut: "desactive" });
+    if (cfg?.pause_depuis) return json({ ok: true, statut: "en_pause", motif: cfg.pause_motif });
 
     // 2. Passage + propriétaire
     const { data: att } = await service.from("exam_attempts_v2")
@@ -56,10 +62,14 @@ Deno.serve(async (req) => {
       admin = !!r;
     }
     if (!proprio && !admin) return json({ ok: false, message: "non autorisé" }, 403);
+    if (estRattrapage && !admin) return json({ ok: false, message: "rattrapage réservé à un administrateur" }, 403);
 
     if (att.etat !== "terminee" || !att.finished_at) return json({ ok: true, statut: "passage_non_termine" });
     if (att.is_test) return json({ ok: true, statut: "compte_test_exclu" });
-    if (!cfg.actif_depuis || new Date(att.finished_at) < new Date(cfg.actif_depuis)) {
+    if (estRattrapage) {
+      const fin = new Date(att.finished_at);
+      if (fin < DEBUT_RATTRAPAGE || fin >= FIN_RATTRAPAGE) return json({ ok: true, statut: "hors_periode_rattrapage" });
+    } else if (!cfg.actif_depuis || new Date(att.finished_at) < new Date(cfg.actif_depuis)) {
       return json({ ok: true, statut: "passage_anterieur_activation" });
     }
 
