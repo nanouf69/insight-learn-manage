@@ -139,7 +139,16 @@ describe("Source unique : nouveau passage = nouveau moteur partout", () => {
 describe("Tentatives neutralisées exclues de la source unique", () => {
   it("fetchCoreMatiereStates lit core_tentatives_neutralisees et les écarte", () => {
     const src = fs.readFileSync(path.resolve(__dirname, "../lib/coreExamPublication.ts"), "utf8");
-    expect(src).toContain('from("core_tentatives_neutralisees"');
+    expect(src).toContain('all("core_tentatives_neutralisees"');
     expect(src).toMatch(/!neutralises\.has\(String\(a\.attempt_id\)\)/);
+  });
+});
+
+describe("CRM « Résultats par session » lit la source unique", () => {
+  it("rattache le passage nouveau système et affiche sa note", () => {
+    const src = fs.readFileSync(path.resolve(__dirname, "../components/cours-en-ligne/ResultatsSessionPage.tsx"), "utf8");
+    expect(src).toContain("fetchCoreMatiereStatesBulk");
+    expect(src).toContain("matchCoreState(coreMap.get(String(r.apprenant_id))");
+    expect(src).toContain("coreStateScore(core)");
   });
 });
