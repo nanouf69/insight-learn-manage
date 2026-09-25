@@ -1,4 +1,4 @@
-import { resumePaiement } from "@/lib/resumePaiement";
+import { resumePaiement, virementsCorrespondants } from "@/lib/resumePaiement";
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useMdpChangeMail } from "@/components/examens/MdpChangeMailDialog";
 import { ALL_DATES_EXAMEN_THEORIQUE } from "@/lib/examDatesConfig";
@@ -491,8 +491,7 @@ function PaiementPopover({
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
 
-  const totalPaye = paiements.reduce((s, p) => s + Number(p.montant || 0), 0);
-  const resteAPayer = montantTotal - totalPaye;
+  const [virementsRecus, setVirementsRecus] = useState<any[]>([]);
 
   const loadPaiements = async () => {
     if (!apprenantId) return;
@@ -514,11 +513,12 @@ function PaiementPopover({
     loadPaiements();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, apprenantId]);
-  const resume = resumePaiement(montantTotal, paiements);
+  const resume = resumePaiement(montantTotal, paiements, virementsRecus);
+  const totalPaye = resume.paye;
+  const resteAPayer = resume.reste;
 
-  // Recherche de virements reçus correspondant à l'apprenant à l'ouverture
+  // Recherche de virements reçus correspondant à l'apprenant (dès l'affichage)
   useEffect(() => {
-    if (!open) return;
     const nom = (apprenantNom || "").trim();
     const prenom = (apprenantPrenom || "").trim();
     if (!nom && !prenom) {
@@ -538,14 +538,21 @@ function PaiementPopover({
           .or(orClauses.join(","))
           .order("date_operation", { ascending: false })
           .limit(10);
-        if (!error && data) setMatches(data as any[]);
+        if (!error && data) {
+          setMatches(data as any[]);
+          // Seuls les virements au NOM + PRÉNOM de l'élève, reçus au plus 60 j avant son inscription, comptent comme payés.
+          const { data: ap } = await supabase.from("apprenants").select("created_at").eq("id", apprenantId).maybeSingle();
+          const c = (ap as any)?.created_at ? new Date((ap as any).created_at) : null;
+          const depuis = c ? new Date(c.getTime() - 60 * 86400000).toISOString().slice(0, 10) : null;
+          setVirementsRecus(virementsCorrespondants(data as any[], apprenantNom, apprenantPrenom, depuis));
+        }
       } catch (e) {
         console.error("[PaiementPopover] match err", e);
       } finally {
         setLoadingMatches(false);
       }
     })();
-  }, [open, apprenantNom, apprenantPrenom]);
+  }, [open, apprenantId, apprenantNom, apprenantPrenom]);
 
   const applyMatch = (tx: any) => {
     setNewMontant(String(Number(tx.montant) || 0));
