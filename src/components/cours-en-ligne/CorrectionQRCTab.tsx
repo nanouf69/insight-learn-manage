@@ -2465,7 +2465,7 @@ const CorrectionQRCTab = ({ resultIds, embeddedLabel, hideV2Panel = false }: Cor
                         </Badge>
                       ) : (
                         <Badge className="bg-amber-100 text-amber-800 border-amber-300">
-                          ⏳ En attente (auto: {item.autoScore}/{item.pointsMax})
+                          ⏳ En attente{item.questionHistoriqueIndisponible ? "" : ` (auto: ${item.autoScore}/${item.pointsMax})`}
                         </Badge>
                       )}
                       {matierePending ? (
