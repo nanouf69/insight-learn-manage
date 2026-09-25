@@ -7128,6 +7128,7 @@ export type Database = {
         }
         Returns: Json
       }
+      core_est_elearning: { Args: { p_type: string }; Returns: boolean }
       core_est_proprietaire: {
         Args: { p_apprenant_id: string }
         Returns: boolean
@@ -7231,6 +7232,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      core_reponse_qrc_vide: { Args: { p: Json }; Returns: boolean }
       core_restart_matiere: {
         Args: { p_attempt_id: string; p_motif?: string; p_operation_id: string }
         Returns: {
