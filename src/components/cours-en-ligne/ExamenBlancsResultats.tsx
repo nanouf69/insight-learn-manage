@@ -74,7 +74,7 @@ function EcranResultats({
   const resultatsSource = resultats;
   resultats = useMemo(() => resultatsSource.map((r) => ({
     ...r,
-    __core: matchCoreState(coreStates, r.quizId ?? examen?.id, r.matiereId, r.completedAt),
+    __core: matchCoreState(coreStates, r.quizId ?? examen?.id, r.matiereId, r.completedAt, r.resultId),
   })), [resultatsSource, coreStates, examen?.id]);
   // Check if corrections are already cached in the resultats (from DB)
   const hasPreloadedCorrections = resultats.some(

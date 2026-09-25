@@ -152,3 +152,14 @@ describe("CRM « Résultats par session » lit la source unique", () => {
     expect(src).toContain("coreStateScore(core)");
   });
 });
+
+describe("Passage copié depuis l'ancien système : rapprochement par identifiant réel", () => {
+  const base = { examId: "EB5-TAXI", matiereId: "t3p", qrcTotal: 5, qrcRestantes: 0, status: "definitif", pending: false } as const;
+  const copie: CoreMatiereState = { ...base, attemptId: "a1", finishedAt: "2026-09-22T12:36:42Z", resultId: "row-1", note20: 9 };
+  it("retrouve le passage par l'identifiant de la ligne d'origine", () => {
+    expect(matchCoreState([copie], "EB5-TAXI", "t3p", "2026-09-01T00:00:00Z", "row-1")?.note20).toBe(9);
+  });
+  it("ne rattache jamais un passage copié à une autre ligne par l'heure", () => {
+    expect(matchCoreState([copie], "EB5-TAXI", "t3p", "2026-09-22T12:36:42Z", "row-2")).toBeNull();
+  });
+});
