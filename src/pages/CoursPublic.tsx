@@ -62,7 +62,6 @@ import { isLearnerPreviewReadOnly, setLearnerPreviewReadOnly } from "@/lib/learn
 import { computeServerCompletedModuleIds, computeUnlockState, getLearnerModuleDisplayState, isModuleLocked as computeIsModuleLocked } from "@/lib/moduleUnlockLogic";
 import {
   fetchModuleCompletions,
-  repairInconsistentCompletions,
   isCompletionDone,
 } from "@/lib/moduleCompletion";
 
@@ -1223,14 +1222,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
 
       if (completionsResult.ok && !cancelled && requestId === completionsRequestRef.current) {
         const completionRows = completionsResult.rows as any[];
-
-        // Self-healing: rows whose activities are all done but not flagged
-        // completed server-side are validated now (repairs broken accounts).
-        await repairInconsistentCompletions(
-          apprenant.id!,
-          completionRows,
-          (row) => isLegacyCompletionDone(row),
-        );
+        // Lecture seule : le tableau de bord n'écrit jamais de statut (serveur seule autorité).
 
         setCompletedModuleIds(computeFullyCompletedModuleIds(completionRows));
 
@@ -1483,11 +1475,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
       ]);
       if (completionsResult.ok && requestId === completionsRequestRef.current) {
         const completionRows = completionsResult.rows as any[];
-        await repairInconsistentCompletions(
-          apprenant.id,
-          completionRows,
-          (row) => isLegacyCompletionDone(row),
-        );
+        // Lecture seule : le tableau de bord n'écrit jamais de statut (serveur seule autorité).
         setCompletedModuleIds(computeFullyCompletedModuleIds(completionRows));
 
         const scores: Record<number, { score_obtenu: number | null; score_max: number | null }> = {};
