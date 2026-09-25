@@ -19,6 +19,8 @@ export interface CoreMatiereState {
   qrcTotal: number;
   qrcRestantes: number;
   status: string | null;
+  /** Passage copié depuis l'ancien système : identifiant de la ligne d'origine (apprenant_quiz_results.id). */
+  resultId: string | null;
   note20: number | null;
   /** true tant que la note serveur n'est pas publiée définitivement. */
   pending: boolean;
@@ -62,7 +64,7 @@ export async function fetchCoreMatiereStatesBulk(
     for (let i = 0; i < ids.length; i += CHUNK) {
       const chunk = ids.slice(i, i + CHUNK);
       const [attempts, qrcs, results, neutres] = await Promise.all([
-        all("exam_attempts_v2", "attempt_id, apprenant_id, exam_id, finished_at, etat, is_test, matiere:snapshot->>matiere", chunk, (q) => q.eq("etat", "terminee")),
+        all("exam_attempts_v2", "attempt_id, apprenant_id, exam_id, finished_at, etat, is_test, matiere:snapshot->>matiere, matieres:snapshot->matieres, result_id:snapshot->source_historique->>result_id", chunk, (q) => q.eq("etat", "terminee")),
         all("qrc_instances_v2", "attempt_id, etat", chunk),
         all("core_exam_results", "attempt_id, result_revision, status, score, total, qrc_restantes", chunk),
         // Tentatives neutralisées (techniques/incomplètes) : conservées en base mais
@@ -83,6 +85,13 @@ export async function fetchCoreMatiereStatesBulk(
         if (!prev || Number(r.result_revision) > Number(prev.result_revision)) latestResult.set(r.attempt_id, r);
       });
       attempts
+        .map((a) => {
+          // Passage historique copié : matière unique déclarée dans le snapshot.
+          if (!a?.matiere && Array.isArray(a?.matieres) && a.matieres.length === 1) {
+            return { ...a, matiere: a.matieres[0]?.subject_id ?? null };
+          }
+          return a;
+        })
         .filter((a) => a?.finished_at && a?.matiere && !neutralises.has(String(a.attempt_id)))
         .forEach((a) => {
           const q = qrcByAttempt.get(a.attempt_id) || { total: 0, pending: 0 };
@@ -102,6 +111,7 @@ export async function fetchCoreMatiereStatesBulk(
             qrcTotal: q.total,
             qrcRestantes,
             status: r?.status ?? null,
+            resultId: a.result_id ? String(a.result_id) : null,
             note20,
             pending,
           });
@@ -121,14 +131,23 @@ export function matchCoreState(
   quizId: unknown,
   matiereId: unknown,
   completedAt: unknown,
+  resultId?: unknown,
 ): CoreMatiereState | null {
-  if (!states || !quizId || !matiereId || !completedAt) return null;
+  if (!states) return null;
+  // 1) Identifiant réel : passage copié depuis cette ligne précise de l'ancien système.
+  if (resultId) {
+    const exact = states.find((s) => s.resultId && s.resultId === String(resultId));
+    if (exact) return exact;
+  }
+  if (!quizId || !matiereId || !completedAt) return null;
   const t = new Date(String(completedAt)).getTime();
   if (!Number.isFinite(t)) return null;
   let best: CoreMatiereState | null = null;
   let bestDiff = Infinity;
   for (const s of states) {
     if (s.examId !== String(quizId) || s.matiereId !== String(matiereId)) continue;
+    // Un passage copié est lié à SA ligne d'origine : jamais rapproché par l'heure.
+    if (s.resultId) continue;
     const diff = Math.abs(new Date(s.finishedAt).getTime() - t);
     if (diff <= CORE_MATCH_WINDOW_MS && diff < bestDiff) { best = s; bestDiff = diff; }
   }
