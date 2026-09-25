@@ -401,6 +401,7 @@ export default function ExamensBlancsPage({
                   admis: computeAdmisForMatiere(safeScoreObtenu, safeScoreMax || maxPts, m.noteEliminatoire, m.noteSur, Boolean(row.reussi)),
                   reponses: row.details?.reponses || {},
                   correctionsIA: row.details?.correctionsIA || null,
+                  details: row.details,
                   tentative: getAttemptNumber(row),
                 });
               } else {
@@ -716,6 +717,7 @@ export default function ExamensBlancsPage({
               admis: computeAdmisForMatiere(safeScoreObtenu, safeScoreMax || maxPts, m.noteEliminatoire, m.noteSur, Boolean(row.reussi)),
               reponses: row.details?.reponses || {},
               correctionsIA: row.details?.correctionsIA || null,
+              details: row.details,
               tentative: getAttemptNumber(row),
             });
           } else {
