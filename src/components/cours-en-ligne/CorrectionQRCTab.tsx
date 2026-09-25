@@ -82,6 +82,10 @@ interface QrcItem {
   correctedAt: string | null;
   apprenantTypeMode: "presentiel" | "elearning";
   questionSupprimee: boolean;
+  /** Fiche d'archive sans copie des questions posées : question/corrigé/barème actuels non fiables. */
+  questionHistoriqueIndisponible?: boolean;
+  /** Ancienne correction automatique réellement enregistrée (affichage seul). */
+  ancienneCorrectionAuto?: { points: number | null; explication: string | null } | null;
 }
 
 function safeStr(v: unknown): string {
@@ -1112,11 +1116,19 @@ const CorrectionQRCTab = ({ resultIds, embeddedLabel, hideV2Panel = false }: Cor
           ? safeStr(q.reponseCorrecte)
           : safeStr(questionDef?.reponseQRC || (questionDef?.reponses_possibles || []).join(" / "));
 
+        // Fiche sans copie des questions : jamais de recalcul avec la question actuelle.
+        const questionHistoriqueIndisponible = !g.questions;
+        const ancienneCorrectionAuto = questionHistoriqueIndisponible && correction && typeof correction === "object"
+          ? { points: typeof correction.pointsObtenus === "number" ? correction.pointsObtenus : null, explication: correction.explication || null }
+          : null;
         let autoScore = 0;
         let autoExplication: string | null = null;
         if (correction && typeof correction === "object" && hasManualCorrection) {
           autoScore = clampToHalfStep(correction.pointsObtenus ?? 0, pts);
           autoExplication = correction.explication || null;
+        } else if (questionHistoriqueIndisponible) {
+          autoScore = 0;
+          autoExplication = null;
         } else if (questionDef) {
           const recomputed = recomputeQrcAutoScore(questionDef, reponseEleveStr, pts);
           autoScore = recomputed.autoScore;
@@ -1164,6 +1176,8 @@ const CorrectionQRCTab = ({ resultIds, embeddedLabel, hideV2Panel = false }: Cor
           correctedAt: hasManualCorrection ? (correction?.correctedAt || g.completedAt || null) : null,
           apprenantTypeMode: app.mode,
           questionSupprimee,
+          questionHistoriqueIndisponible,
+          ancienneCorrectionAuto,
         };
 
         // Même réponse déjà présente (deuxième écriture technique du passage) :
