@@ -95,17 +95,7 @@ export function computeUnlockState(
 
   const effectivelyCompletedIds = new Set<number>(completedModuleIds);
   modules.forEach((m) => {
-    const quizStats = moduleQuizStatsById[m.id];
-    const examStats = examBlancStatsById[m.id];
-    const hasQuizzes = !!quizStats && quizStats.totalQuizzes > 0;
-    const hasExams = !!examStats && examStats.total > 0;
-    const allQuizzesDone = hasQuizzes
-      ? quizStats!.completedQuizzes >= quizStats!.totalQuizzes
-      : true;
-    const allExamsDone = hasExams
-      ? examStats!.completed >= examStats!.total
-      : true;
-    if ((hasQuizzes || hasExams) && allQuizzesDone && allExamsDone) {
+    if (isModuleDoneForDisplay(completedModuleIds.has(m.id), moduleQuizStatsById[m.id], examBlancStatsById[m.id])) {
       effectivelyCompletedIds.add(m.id);
     }
   });
