@@ -122,11 +122,18 @@ export default function MonDossierFormation({ apprenantId, onOpenIntro }: Props)
         </h3>
       </div>
       <CardContent className="p-4 space-y-2">
-        {lignes.map((l) => (
+        {lignes.map((l, i) => (
           <div key={l.label} className="flex items-center justify-between gap-3 p-3 rounded-xl bg-muted/30">
             <div>
               <p className="font-medium text-sm text-foreground">{l.label}</p>
               <p className="text-xs text-muted-foreground">{l.ok ? `✅ ${l.okTxt}` : "❌ À compléter"}</p>
+              {i === 0 && l.ok && (
+                <p className="text-xs text-muted-foreground" data-testid="date-depot-bienvenue">
+                  📅 Déposé le : {data.bienvenue_date_depot
+                    ? new Intl.DateTimeFormat("fr-FR", { timeZone: "Europe/Paris", day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(data.bienvenue_date_depot))
+                    : "date non disponible"}
+                </p>
+              )}
             </div>
             {!l.ok && (
               <Button variant="outline" size="sm" onClick={l.action}>Compléter</Button>
@@ -139,6 +146,13 @@ export default function MonDossierFormation({ apprenantId, onOpenIntro }: Props)
         <div className="p-3 rounded-xl bg-muted/30 space-y-2" data-testid="ligne-inscription-examen">
           <p className="font-medium text-sm text-foreground">Inscription à l'examen</p>
           <p className="text-sm">{pastille} {inscription.libelle}</p>
+          {inscription.niveau !== "vert" && (
+            <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-3" data-testid="avertissement-cma">
+              <p className="text-xs font-semibold text-destructive">
+                ⚠️ IMPORTANT : si vous n'avez pas reçu d'e-mail de la Chambre de Métiers et de l'Artisanat (CMA) confirmant votre inscription à l'examen, vous n'êtes pas encore inscrit(e) à l'examen.
+              </p>
+            </div>
+          )}
           {inscription.niveau !== "vert" && (
             <div className="text-xs text-muted-foreground space-y-0.5" data-testid="infos-date-examen">
               {examen ? (
