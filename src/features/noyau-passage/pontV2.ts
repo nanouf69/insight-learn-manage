@@ -511,6 +511,8 @@ export function questionsNoyauEcartees(attemptId?: string | null): Set<string> {
 const CLE_REVISIONS = "noyau_v2_revisions_confirmees_v1";
 const cleRevision = (attemptId: string, qid: string) => `${attemptId}|${qid}`;
 const revisionsChargees = new Set<string>();
+/** Dernière valeur confirmée par le serveur (mémoire de page) : un renvoi identique ne crée pas de nouvelle révision. */
+const valeursConfirmees = new Map<string, string>();
 
 function lireRevisions(): Record<string, number> {
   try {
@@ -539,11 +541,14 @@ async function chargerRevisionsServeur(attemptId: string): Promise<void> {
   try {
     const { data, error } = await supabase
       .from("answer_state")
-      .select("question_id, revision")
+      .select("question_id, revision, valeur")
       .eq("attempt_id", attemptId);
     if (error) return; // nouvel essai au prochain vidage
-    for (const r of (data as { question_id?: string; revision?: number }[] | null) ?? []) {
-      if (r?.question_id && typeof r.revision === "number") memoriserRevision(cleRevision(attemptId, String(r.question_id)), r.revision);
+    for (const r of (data as { question_id?: string; revision?: number; valeur?: unknown }[] | null) ?? []) {
+      if (!r?.question_id || typeof r.revision !== "number") continue;
+      const cle = cleRevision(attemptId, String(r.question_id));
+      memoriserRevision(cle, r.revision);
+      valeursConfirmees.set(cle, JSON.stringify(r.valeur ?? null));
     }
     revisionsChargees.add(attemptId);
   } catch {
@@ -554,6 +559,7 @@ async function chargerRevisionsServeur(attemptId: string): Promise<void> {
 /** Réservé aux tests : simule un rechargement de page. */
 export function __simulerRechargementPourTests(): void {
   revisionsChargees.clear();
+  valeursConfirmees.clear();
   fileMemoire = null;
 }
 
@@ -579,15 +585,21 @@ export async function viderFileNoyau(attemptId?: string | null): Promise<{ resta
       await chargerRevisionsServeur(element.attemptId);
       const cleRev = cleRevision(element.attemptId, idQuestionNoyau(element.matiereId, element.questionId));
       const revisionConnue = lireRevisions()[cleRev];
+      // Valeur identique à la dernière confirmée : envoi sans numéro, le serveur
+      // répond « déjà enregistré » sans créer de nouvelle révision.
+      const identique = valeursConfirmees.get(cleRev) === JSON.stringify(element.valeur ?? null);
       const res = await enregistrerReponse({
         attemptId: element.attemptId,
         matiereId: element.matiereId,
         questionId: element.questionId,
         valeur: element.valeur,
-        revisionAttendue: typeof revisionConnue === "number" ? revisionConnue : null,
+        revisionAttendue: !identique && typeof revisionConnue === "number" ? revisionConnue : null,
         clientSavedAt: element.at,
       });
-      if (res.ok && typeof res.revision === "number") memoriserRevision(cleRev, res.revision);
+      if (res.ok && typeof res.revision === "number") {
+        memoriserRevision(cleRev, res.revision);
+        valeursConfirmees.set(cleRev, JSON.stringify(element.valeur ?? null));
+      }
       if (!res.ok) {
         if (res.message === "ANSWER_STALE_REVISION_CONFLICT") {
           ecarter(element);
