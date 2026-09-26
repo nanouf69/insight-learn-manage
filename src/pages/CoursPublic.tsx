@@ -903,6 +903,8 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   // computed from an empty/optimistic progression before this is true.
   const [completionsLoaded, setCompletionsLoaded] = useState(false);
   const [completionsError, setCompletionsError] = useState(false);
+  const emptyRetryRef = useRef(0);
+  const completionsLoadedRef = useRef(false);
   const [completionsReloadToken, setCompletionsReloadToken] = useState(0);
 
   const [apprenant, setApprenant] = useState<ApprenantInfo | null>(null);
@@ -1222,6 +1224,24 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
           .limit(1),
       ]);
 
+      // Liste vide = peut-être une lecture faite avant que la connexion soit prête
+      // (le serveur renvoie alors 0 ligne, sans erreur). On relit jusqu'à 3 fois
+      // (1 s, 3 s, 6 s) en restant sur « Chargement… ». Lecture seule.
+      if (
+        completionsResult.ok &&
+        (completionsResult.rows as any[]).length === 0 &&
+        emptyRetryRef.current < 3 &&
+        !cancelled && requestId === completionsRequestRef.current
+      ) {
+        const delay = [1000, 3000, 6000][emptyRetryRef.current];
+        emptyRetryRef.current += 1;
+        setTimeout(() => {
+          if (!cancelled && requestId === completionsRequestRef.current) {
+            setCompletionsReloadToken((t) => t + 1);
+          }
+        }, delay);
+        return;
+      }
       if (completionsResult.ok && !cancelled && requestId === completionsRequestRef.current) {
         const completionRows = completionsResult.rows as any[];
         // Lecture seule : le tableau de bord n'écrit jamais de statut (serveur seule autorité).
@@ -1262,7 +1282,22 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     return () => {
       cancelled = true;
     };
-  }, [apprenant?.id, completionsReloadToken]);
+  }, [apprenant?.id, completionsReloadToken, user?.id]);
+
+  // Relire la progression quand la connexion arrive ou se renouvelle
+  // (sinon une première lecture faite trop tôt n'était jamais refaite).
+  useEffect(() => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "INITIAL_SESSION") {
+        if (!completionsLoadedRef.current) {
+          emptyRetryRef.current = 0;
+          setCompletionsReloadToken((t) => t + 1);
+        }
+      }
+    });
+    return () => sub.subscription.unsubscribe();
+  }, []);
+  useEffect(() => { completionsLoadedRef.current = completionsLoaded; }, [completionsLoaded]);
 
   // Vérifier si une signature d'émargement est requise pour le créneau en cours
   // - Formation continue : matin / aprem (selon l'heure)

@@ -116,15 +116,10 @@ export async function pontActifPour(apprenantId: string): Promise<boolean> {
 
 /** Le sujet est-il publié dans le noyau (version active non retirée) ? */
 export async function sujetPublieDansNoyau(examenId: string): Promise<boolean> {
-  const { data, error } = await supabase
-    .from("exam_content_versions")
-    .select("id")
-    .eq("exam_id", examenId)
-    .eq("statut", "publiee")
-    .is("retired_at", null)
-    .limit(1);
+  // Fonction serveur : les élèves n'ont plus accès direct aux versions d'examen.
+  const { data, error } = await supabase.rpc("core_sujet_publie" as never, { p_exam_id: examenId } as never);
   if (error) return false;
-  return (data ?? []).length > 0;
+  return data === true;
 }
 
 /** Une tentative V2 existe-t-elle déjà pour ce passage ? (reprise, jamais changement de moteur) */
