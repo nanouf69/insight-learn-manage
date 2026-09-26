@@ -14,6 +14,7 @@ vi.mock("@/integrations/supabase/client", () => {
       from: () => chain,
       rpc: (nom: string, args: unknown) => {
         if (nom === "core_bridge_actif_pour") return Promise.resolve({ data: etat.pont, error: null });
+        if (nom === "core_sujet_publie") return Promise.resolve({ data: etat.versionsActives.length > 0, error: null });
         etat.rpcDemarrage(nom, args);
         return Promise.resolve({ data: null, error: { message: "ne doit pas être appelé" } });
       },
