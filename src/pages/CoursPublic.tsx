@@ -2317,7 +2317,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
             )}
 
             {/* Modules à revoir */}
-            {!isElearningType(apprenant?.type_apprenant) && lowModules.length > 0 && (
+            {completionsLoaded && !isElearningType(apprenant?.type_apprenant) && lowModules.length > 0 && (
               <Card className="border-0 shadow-sm mb-8 overflow-hidden">
                 <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 px-6 py-3 border-b">
                   <h3 className="font-bold text-amber-800 dark:text-amber-200 flex items-center gap-2">
@@ -2379,7 +2379,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
             {/* Modules grid: À faire + Réalisés — jamais affichée avant la progression serveur */}
             {!completionsLoaded ? (
               <Card className="border-0 shadow-sm p-8 text-center">
-                <p className="text-muted-foreground text-sm animate-pulse">Chargement de vos modules…</p>
+                <p className="text-muted-foreground text-sm animate-pulse">{completionsError ? "Impossible de charger votre progression — réessayer" : "Chargement…"}</p>
               </Card>
             ) : (
             <div className="grid md:grid-cols-2 gap-6">
