@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { sendBrandedEmail } from "../_shared/send-branded-email.ts";
-import { redactForHistory, HISTORY_ACCESS_NOTE } from "../_shared/credential-secrets.ts";
+import { redactForHistory, HISTORY_ACCESS_NOTE, generateSetPasswordLink, setPasswordBlock } from "../_shared/credential-secrets.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -163,18 +163,14 @@ serve(async (req) => {
       tempPassword = generated;
     } else {
       // Lien sécurisé : l'élève définit lui-même son mot de passe.
-      const { data: linkData, error: linkErr } = await supabaseAdmin.auth.admin.generateLink({
-        type: "recovery",
-        email: targetEmail,
-        options: { redirectTo: "https://insight-learn-manage.lovable.app/reset-password" },
-      });
-      if (linkErr || !linkData?.properties?.action_link) {
+      try {
+        resetLink = await generateSetPasswordLink(supabaseAdmin, targetEmail);
+      } catch (linkErr: any) {
         return new Response(
           JSON.stringify({ error: linkErr?.message || "Impossible de générer le lien sécurisé" }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      resetLink = linkData.properties.action_link;
     }
 
     const formationLabels: Record<string, string> = {
@@ -215,18 +211,7 @@ serve(async (req) => {
           <p><strong>Mot de passe temporaire :</strong> <code style="background: #e5e7eb; padding: 2px 8px; border-radius: 4px; font-size: 16px; letter-spacing: 1px;">${tempPassword}</code></p>
           <p style="color: #92400e; font-size: 14px;">🔑 Pour votre sécurité, changez ce mot de passe dès votre première connexion (bouton « Changer le mot de passe » dans votre espace).</p>
         </div>`
-      : `
-        <div style="background-color: #ecfdf5; border-left: 4px solid #10b981; padding: 15px; margin: 20px 0; border-radius: 4px;">
-          <h3 style="color: #065f46; margin-top: 0;">🔐 Définissez votre mot de passe</h3>
-          <p><strong>Votre email de connexion :</strong> ${apprenant.email}</p>
-          <p>Cliquez sur le bouton ci-dessous pour choisir vous-même votre mot de passe. Ce lien personnel est à usage unique et à durée limitée.</p>
-          <div style="text-align: center; margin: 20px 0;">
-            <a href="${resetLink}" style="background-color: #10b981; color: #ffffff; text-decoration: none; padding: 14px 30px; border-radius: 8px; font-size: 16px; font-weight: bold; display: inline-block;">
-              🔑 Définir mon mot de passe
-            </a>
-          </div>
-          <p style="color: #6b7280; font-size: 13px;">Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :<br>${resetLink}</p>
-        </div>`;
+      : setPasswordBlock(apprenant.email, resetLink ?? "");
 
     const emailBody = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">

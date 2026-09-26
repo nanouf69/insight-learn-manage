@@ -14,15 +14,32 @@ export function generateUnsharedPassword(): string {
   return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
 }
 
+/**
+ * Durée unique du lien « Définir mon mot de passe ».
+ * Source unique : sert au texte de l'e-mail ET à l'heure limite portée par le
+ * lien (paramètre `expire`), vérifiée par la page /reset-password.
+ */
+export const DUREE_LIEN_MOT_DE_PASSE_MINUTES = 60;
+
+/** Texte lisible calculé depuis la durée unique (jamais écrit à la main). */
+export function dureeLienLisible(minutes: number = DUREE_LIEN_MOT_DE_PASSE_MINUTES): string {
+  if (minutes % 60 === 0) {
+    const h = minutes / 60;
+    return `${h} heure${h > 1 ? "s" : ""}`;
+  }
+  return `${minutes} minute${minutes > 1 ? "s" : ""}`;
+}
+
 /** Lien sécurisé (usage unique, durée limitée) pour définir son mot de passe. */
 export async function generateSetPasswordLink(
   supabaseAdmin: any,
   email: string,
 ): Promise<string> {
+  const expire = Date.now() + DUREE_LIEN_MOT_DE_PASSE_MINUTES * 60_000;
   const { data, error } = await supabaseAdmin.auth.admin.generateLink({
     type: "recovery",
     email,
-    options: { redirectTo: "https://insight-learn-manage.lovable.app/reset-password" },
+    options: { redirectTo: `https://insight-learn-manage.lovable.app/reset-password?expire=${expire}` },
   });
   const link = data?.properties?.action_link;
   if (error || !link) throw new Error(error?.message || "Impossible de générer le lien sécurisé");
@@ -55,7 +72,8 @@ export function setPasswordBlock(email: string, link: string): string {
     <div style="background-color: #ecfdf5; border-left: 4px solid #10b981; padding: 15px; margin: 20px 0; border-radius: 4px;">
       <h3 style="color: #065f46; margin-top: 0;">🔐 Définissez votre mot de passe</h3>
       <p><strong>Votre email de connexion :</strong> ${email}</p>
-      <p>Cliquez sur le bouton ci-dessous pour choisir vous-même votre mot de passe. Ce lien personnel est à usage unique et à durée limitée.</p>
+      <p>Cliquez sur le bouton ci-dessous pour choisir vous-même votre mot de passe.</p>
+      <p style="color: #dc2626; font-weight: bold;">⏱️ Attention : ce lien est valable ${dureeLienLisible()} après la réception de cet e-mail et ne fonctionne qu'une seule fois. Passé ce délai, allez sur la page de connexion et cliquez sur « Mot de passe oublié » pour en recevoir un nouveau.</p>
       <div style="text-align: center; margin: 20px 0;">
         <a href="${link}" style="background-color: #10b981; color: #ffffff; text-decoration: none; padding: 14px 30px; border-radius: 8px; font-size: 16px; font-weight: bold; display: inline-block;">🔑 Définir mon mot de passe</a>
       </div>

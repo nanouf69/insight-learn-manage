@@ -14,10 +14,20 @@ export default function ResetPassword() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [sessionReady, setSessionReady] = useState(false);
+  // Heure limite portée par le lien d'accès (même durée que celle annoncée dans l'e-mail).
+  const [lienExpire] = useState(() => {
+    const expire = Number(new URLSearchParams(window.location.search).get("expire"));
+    return Number.isFinite(expire) && expire > 0 && Date.now() > expire;
+  });
   const { toast } = useToast();
   const navigate = useNavigate();
 
   useEffect(() => {
+    if (lienExpire) {
+      // Lien trop ancien : on ne garde pas la session ouverte par ce lien.
+      supabase.auth.signOut({ scope: "local" });
+      return;
+    }
     // Supabase auto-signs-in the user from the recovery link hash
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === "PASSWORD_RECOVERY" || event === "SIGNED_IN") {
@@ -70,6 +80,24 @@ export default function ResetPassword() {
             <p className="text-muted-foreground">Vous pouvez maintenant vous connecter avec votre nouveau mot de passe.</p>
             <Button className="w-full" onClick={() => navigate("/cours")}>
               Retour à la connexion
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (lienExpire) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md text-center">
+          <CardHeader>
+            <CardTitle className="text-2xl">Lien expiré</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-muted-foreground">Ce lien a expiré. Cliquez sur « Mot de passe oublié » pour en recevoir un nouveau.</p>
+            <Button className="w-full" onClick={() => navigate("/cours")}>
+              Aller à la page de connexion
             </Button>
           </CardContent>
         </Card>
