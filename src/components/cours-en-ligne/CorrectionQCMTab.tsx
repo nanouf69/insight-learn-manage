@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { ajouterMarqueurCorrectionQCMAdmin } from "@/lib/correctionQCMAdminMarqueur";
+import { ajouterMarqueurCorrectionQCMAdmin, relireDetailsFiche } from "@/lib/correctionQCMAdminMarqueur";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -283,6 +283,19 @@ const CorrectionQCMTab = () => {
       const noteSur20 = totalMax > 0 ? Number(((totalScore / totalMax) * 20).toFixed(1)) : 0;
       const admis = computeAdmisForMatiere(totalScore, totalMax, matiere.noteEliminatoire, matiere.noteSur);
 
+      // Relecture obligatoire de details AVANT toute écriture : si elle échoue
+      // ou si la fiche est absente, on annule tout (jamais de details reconstruit).
+      const relectureDetails = await relireDetailsFiche(
+        () => supabase.from("apprenant_quiz_results").select("details").eq("id", editingRow.resultId).maybeSingle(),
+      );
+      if (!relectureDetails.ok) {
+        toast.error("Correction non enregistrée, réessayez");
+        setSaving(false);
+        return;
+      }
+      const { data: authData } = await supabase.auth.getUser();
+      const authUserId = authData?.user?.id ?? null;
+
       // Update reponses_apprenants
       if (editingRow.reponseId) {
         // Merge edited QCM responses with existing data
@@ -326,13 +339,10 @@ const CorrectionQCMTab = () => {
 
       // Update apprenant_quiz_results (+ marqueur de correction QCM admin,
       // reconnu par trg_garde_correction_admin_quiz ; calcul de note inchangé).
-      const [{ data: currentRes }, { data: authData }] = await Promise.all([
-        supabase.from("apprenant_quiz_results").select("details").eq("id", editingRow.resultId).maybeSingle(),
-        supabase.auth.getUser(),
-      ]);
+      // details relu AVANT toute écriture (voir relectureDetails ci-dessus).
       const detailsAvecMarqueur = ajouterMarqueurCorrectionQCMAdmin(
-        currentRes?.details,
-        authData?.user?.id ?? null,
+        relectureDetails.details,
+        authUserId,
         new Date().toISOString(),
       );
       const { error: resError } = await supabase
