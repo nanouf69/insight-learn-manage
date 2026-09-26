@@ -211,7 +211,7 @@ serve(async (req) => {
           <p><strong>Mot de passe temporaire :</strong> <code style="background: #e5e7eb; padding: 2px 8px; border-radius: 4px; font-size: 16px; letter-spacing: 1px;">${tempPassword}</code></p>
           <p style="color: #92400e; font-size: 14px;">🔑 Pour votre sécurité, changez ce mot de passe dès votre première connexion (bouton « Changer le mot de passe » dans votre espace).</p>
         </div>`
-      : setPasswordBlock(apprenant.email, resetLink);
+      : setPasswordBlock(apprenant.email, resetLink ?? "");
 
     const emailBody = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
