@@ -14,17 +14,14 @@ export default function ResetPassword() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [sessionReady, setSessionReady] = useState(false);
-  // Heure limite portée par le lien d'accès (même durée que celle annoncée dans l'e-mail).
+  // Lien refusé par le serveur (déjà utilisé, expiré, etc.) : erreur dans l'adresse.
   const [lienExpire] = useState(() => {
-    const expire = Number(new URLSearchParams(window.location.search).get("expire"));
-    const heureDepassee = Number.isFinite(expire) && expire > 0 && Date.now() > expire;
-    // Lien refusé par le serveur (déjà utilisé, expiré avant l'heure annoncée, etc.)
     const params = new URLSearchParams(window.location.search);
     const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
-    const erreurDansAdresse =
+    return (
       params.has("error") || params.has("error_code") || params.has("error_description") ||
-      hash.has("error") || hash.has("error_code") || hash.has("error_description");
-    return heureDepassee || erreurDansAdresse;
+      hash.has("error") || hash.has("error_code") || hash.has("error_description")
+    );
   });
   const [delaiDepasse, setDelaiDepasse] = useState(false);
   const { toast } = useToast();
