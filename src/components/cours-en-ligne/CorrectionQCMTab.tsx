@@ -278,11 +278,7 @@ const CorrectionQCMTab = () => {
           // QRC: points lus depuis la relecture unique de details (aucune
           // requête supplémentaire par QRC).
           totalMax += pts;
-          const corrections = safeRecord(detailsFiche?.correctionsIA);
-          const corr = corrections[String(q.id)];
-          if (corr && typeof corr === "object" && "pointsObtenus" in (corr as any)) {
-            totalScore += Number((corr as any).pointsObtenus) || 0;
-          }
+          totalScore += pointsQRCDepuisDetails(detailsFiche, q.id);
         }
       }
 

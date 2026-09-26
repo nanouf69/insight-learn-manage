@@ -31,3 +31,23 @@ export async function relireDetailsFiche(
     return { ok: false };
   }
 }
+
+/**
+ * Points QRC lus depuis le details de la relecture unique (jamais depuis une
+ * requête séparée par QRC, qui pourrait échouer silencieusement et compter 0).
+ */
+export function pointsQRCDepuisDetails(details: unknown, questionId: number): number {
+  const d =
+    details && typeof details === "object" && !Array.isArray(details)
+      ? (details as Record<string, unknown>)
+      : null;
+  const corrections =
+    d?.correctionsIA && typeof d.correctionsIA === "object" && !Array.isArray(d.correctionsIA)
+      ? (d.correctionsIA as Record<string, unknown>)
+      : null;
+  const corr = corrections?.[String(questionId)];
+  if (corr && typeof corr === "object" && "pointsObtenus" in (corr as Record<string, unknown>)) {
+    return Number((corr as Record<string, unknown>).pointsObtenus) || 0;
+  }
+  return 0;
+}
