@@ -272,7 +272,11 @@ export async function enregistrerReponse(params: {
     p_expected_revision: revision,
     p_session_origine: "passage_apprenant",
   });
-  let { data, error } = await sauvegarder(op, params.revisionAttendue ?? null);
+  // Réponse absente (coupure) : traitée comme une erreur réseau, la réponse reste en file.
+  let { data, error } = (await sauvegarder(op, params.revisionAttendue ?? null)) ?? {
+    data: null,
+    error: { message: "Failed to fetch" },
+  };
   if (error && /ANSWER_STALE_REVISION|P0409/i.test(error.message)) {
     const { data: courant, error: lectureError } = await supabase
       .from("answer_state")

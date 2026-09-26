@@ -65,12 +65,15 @@ vi.mock("@/integrations/supabase/client", () => ({
   },
 }));
 
-import { enfilerReponseNoyau, viderFileNoyau, __simulerRechargementPourTests } from "@/features/noyau-passage/pontV2";
+import { reponsesNoyauEnAttente, enfilerReponseNoyau, viderFileNoyau, __simulerRechargementPourTests } from "@/features/noyau-passage/pontV2";
 
 const A = "att-1";
 const envoyer = async (questionId: number, valeur: unknown) => {
   enfilerReponseNoyau({ attemptId: A, matiereId: "securite", questionId, valeur });
-  await viderFileNoyau(A);
+  for (let i = 0; i < 50 && reponsesNoyauEnAttente(A) > 0; i++) {
+    await new Promise((r) => setTimeout(r, 2));
+    await viderFileNoyau(A);
+  }
 };
 const val = (q: number) => serveur.get(k(A, `securite:${q}`));
 const ecartees = () => JSON.parse(store.get("noyau_v2_answer_queue_parked_v1") ?? "[]");
