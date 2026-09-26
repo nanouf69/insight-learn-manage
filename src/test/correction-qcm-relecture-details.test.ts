@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, it, expect, vi } from "vitest";
 import { readFileSync } from "node:fs";
-import { relireDetailsFiche } from "@/lib/correctionQCMAdminMarqueur";
+import { relireDetailsFiche, pointsQRCDepuisDetails } from "@/lib/correctionQCMAdminMarqueur";
 
 /** Reproduit l'enchaînement de CorrectionQCMTab : relecture puis écriture seulement si ok. */
 async function enregistrer(lire: Parameters<typeof relireDetailsFiche>[0], ecrire: (d: unknown) => void) {
