@@ -17,8 +17,16 @@ export default function ResetPassword() {
   // Heure limite portée par le lien d'accès (même durée que celle annoncée dans l'e-mail).
   const [lienExpire] = useState(() => {
     const expire = Number(new URLSearchParams(window.location.search).get("expire"));
-    return Number.isFinite(expire) && expire > 0 && Date.now() > expire;
+    const heureDepassee = Number.isFinite(expire) && expire > 0 && Date.now() > expire;
+    // Lien refusé par le serveur (déjà utilisé, expiré avant l'heure annoncée, etc.)
+    const params = new URLSearchParams(window.location.search);
+    const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    const erreurDansAdresse =
+      params.has("error") || params.has("error_code") || params.has("error_description") ||
+      hash.has("error") || hash.has("error_code") || hash.has("error_description");
+    return heureDepassee || erreurDansAdresse;
   });
+  const [delaiDepasse, setDelaiDepasse] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -38,7 +46,12 @@ export default function ResetPassword() {
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) setSessionReady(true);
     });
-    return () => subscription.unsubscribe();
+    // Aucune session au bout de 10 s : lien considéré comme refusé (jamais de chargement infini).
+    const minuterie = window.setTimeout(() => setDelaiDepasse(true), 10_000);
+    return () => {
+      window.clearTimeout(minuterie);
+      subscription.unsubscribe();
+    };
   }, []);
 
   const handleReset = async (e: React.FormEvent) => {
@@ -87,15 +100,15 @@ export default function ResetPassword() {
     );
   }
 
-  if (lienExpire) {
+  if (lienExpire || (delaiDepasse && !sessionReady)) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
         <Card className="w-full max-w-md text-center">
           <CardHeader>
-            <CardTitle className="text-2xl">Lien expiré</CardTitle>
+            <CardTitle className="text-2xl">Lien expiré ou déjà utilisé</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <p className="text-muted-foreground">Ce lien a expiré. Cliquez sur « Mot de passe oublié » pour en recevoir un nouveau.</p>
+            <p className="text-muted-foreground">Ce lien n'est plus valable. Allez sur la page de connexion et cliquez sur « Mot de passe oublié » pour en recevoir un nouveau.</p>
             <Button className="w-full" onClick={() => navigate("/cours")}>
               Aller à la page de connexion
             </Button>
