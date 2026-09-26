@@ -56,7 +56,7 @@ vi.mock("@/integrations/supabase/client", () => ({
         },
         then: (ok: any) => ok({
           data: [...serveur.entries()].filter(([c]) => c.startsWith(`${f.attempt_id}|`))
-            .map(([c, l]) => ({ question_id: c.split("|")[1], revision: l.revision })),
+            .map(([c, l]) => ({ question_id: c.split("|")[1], revision: l.revision, valeur: l.valeur })),
           error: null,
         }),
       };
@@ -103,6 +103,13 @@ describe("pontV2 — numéro de version connu", () => {
   it("texte QRC complété accepté", async () => {
     await envoyer(4, "Le conduc"); await envoyer(4, "Le conducteur doit céder le passage.");
     expect(val(4)?.valeur).toBe("Le conducteur doit céder le passage.");
+  });
+
+  it("renvoi d'une valeur identique : aucune nouvelle révision", async () => {
+    await envoyer(6, ["A"]); await envoyer(6, ["A"]);
+    __simulerRechargementPourTests();
+    await envoyer(6, ["A"]);
+    expect(val(6)).toEqual({ valeur: ["A"], revision: 1 });
   });
 
   it("conflit réel avec un autre appareil : refus, mise de côté, aucun écrasement", async () => {
