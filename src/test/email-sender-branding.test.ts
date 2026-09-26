@@ -37,13 +37,23 @@ describe("Identité d'expéditeur FTRANSPORT", () => {
 
   describe("renvoi des identifiants (lien sécurisé / mot de passe temporaire)", () => {
     const source = readFileSync(resolve(FUNCTIONS_ROOT, "resend-credentials/index.ts"), "utf8");
+    const shared = readFileSync(resolve(FUNCTIONS_ROOT, "_shared/credential-secrets.ts"), "utf8");
     const accessBlock = source.slice(source.indexOf("const accessBlock"), source.indexOf("const emailBody"));
-    const [blocTemp, blocLien] = accessBlock.split(/\n\s*:\s*`/);
+    const [blocTemp, blocLien] = accessBlock.split(/\n\s*:\s*/);
+    // Corps du générateur de lien et du bloc « lien » dans le fichier partagé
+    const genLink = shared.slice(shared.indexOf("export async function generateSetPasswordLink"), shared.indexOf("export function redactForHistory"));
+    const sharedBloc = shared.slice(shared.indexOf("export function setPasswordBlock"));
 
     it("lien sécurisé : contient le lien personnel et aucun mot de passe", () => {
-      expect(source).toContain('type: "recovery"');
-      expect(blocLien).toContain("${resetLink}");
+      // (1) Le lien est de type recovery, généré dans le fichier partagé
+      expect(genLink).toMatch(/auth\.admin\.generateLink\(\{\s*type: "recovery"/);
+      // resend-credentials utilise bien ce générateur et ce bloc pour le lien
+      expect(source).toMatch(/resetLink = await generateSetPasswordLink\(supabaseAdmin, targetEmail\)/);
+      expect(blocLien).toMatch(/^setPasswordBlock\(apprenant\.email, resetLink/);
       expect(blocLien).not.toMatch(/Password\}|mot de passe temporaire :/i);
+      // Le bloc partagé contient le lien personnel et aucun mot de passe
+      expect(sharedBloc).toContain("${link}");
+      expect(sharedBloc).not.toMatch(/Password\}|mot de passe temporaire :/i);
     });
 
     it("mot de passe temporaire : uniquement celui qui vient d'être généré et appliqué au compte", () => {
@@ -62,11 +72,17 @@ describe("Identité d'expéditeur FTRANSPORT", () => {
 
     it("refuse tout appelant non administrateur avant toute action", () => {
       const adminCheck = source.indexOf('_role: "admin"');
+      const firstUpdate = source.indexOf("updateUserById");
+      const firstLink = source.indexOf("generateSetPasswordLink(supabaseAdmin");
       expect(source).toContain('"Réservé aux administrateurs"');
       expect(source).toMatch(/if \(!isAdmin\)[\s\S]{0,120}status: 403/);
       expect(adminCheck).toBeGreaterThan(0);
-      expect(adminCheck).toBeLessThan(source.indexOf("updateUserById"));
-      expect(adminCheck).toBeLessThan(source.indexOf("generateLink"));
+      expect(firstUpdate).toBeGreaterThan(0);
+      expect(firstLink).toBeGreaterThan(0);
+      expect(adminCheck).toBeLessThan(firstUpdate);
+      expect(adminCheck).toBeLessThan(firstLink);
+      // aucun appel direct à generateLink ne contourne le contrôle
+      expect(source).not.toContain("generateLink(");
     });
   });
 });
