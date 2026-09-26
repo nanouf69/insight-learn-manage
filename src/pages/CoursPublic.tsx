@@ -902,6 +902,8 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   // True once the DB progression has actually been fetched. Locks are NEVER
   // computed from an empty/optimistic progression before this is true.
   const [completionsLoaded, setCompletionsLoaded] = useState(false);
+  const [completionsError, setCompletionsError] = useState(false);
+  const [completionsReloadToken, setCompletionsReloadToken] = useState(0);
 
   const [apprenant, setApprenant] = useState<ApprenantInfo | null>(null);
   const [apprenantFetchError, setApprenantFetchError] = useState<string | null>(null);
@@ -1234,8 +1236,9 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         setModuleScores(scores);
         setModuleCompletionsForNotes(completionRows as any);
         setCompletionsLoaded(true);
-      } else {
+      } else if (!cancelled && requestId === completionsRequestRef.current) {
         console.error("[CoursPublic] Impossible de charger la progression — verrouillage conservé");
+        setCompletionsError(true);
       }
 
 
@@ -1253,11 +1256,13 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         setLastModuleName(lastModName);
       }
     };
-    fetchCompletions();
+    fetchCompletions().catch(() => {
+      if (!cancelled && requestId === completionsRequestRef.current) setCompletionsError(true);
+    });
     return () => {
       cancelled = true;
     };
-  }, [apprenant?.id]);
+  }, [apprenant?.id, completionsReloadToken]);
 
   // Vérifier si une signature d'émargement est requise pour le créneau en cours
   // - Formation continue : matin / aprem (selon l'heure)
@@ -2044,7 +2049,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const moduleProgressById = modules.reduce<Record<number, { isDone: boolean; hasProgress: boolean }>>((acc, module) => {
     const rows = completionsByModuleId[module.id] || [];
     const display = getLearnerModuleDisplayState({
-      loaded: true,
+      loaded: completionsLoaded,
       serverCompleted: completedModuleIds.has(module.id),
       quizStats: moduleQuizStatsById[module.id],
       examStats: examBlancStatsById[module.id],
@@ -2222,14 +2227,23 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
           <>
             {!completionsLoaded && (
               <div className="mx-auto max-w-6xl px-4 pt-4">
-                <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 animate-pulse">
-                  Récupération de votre progression…
-                </div>
+                {completionsError ? (
+                  <div role="alert" className="rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive flex flex-wrap items-center justify-between gap-3">
+                    <span>Impossible de charger votre progression — réessayer</span>
+                    <Button size="sm" variant="outline" onClick={() => { setCompletionsError(false); setCompletionsReloadToken((t) => t + 1); }}>
+                      Réessayer
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="rounded-lg border bg-muted px-4 py-3 text-sm text-muted-foreground animate-pulse">
+                    Chargement…
+                  </div>
+                )}
               </div>
             )}
 
-            {/* Gamification: Welcome Banner + XP + Badges + Quiz */}
-            {(() => {
+            {/* Gamification: Welcome Banner + XP + Badges + Quiz — jamais avant la progression serveur */}
+            {completionsLoaded && (() => {
               const xp = calculateXP(completedModuleIds, moduleScores);
               const badges = buildBadges(completedModuleIds, modules.length, moduleScores);
               // Estimate streak (simplified: always show 1 if user is active today)
