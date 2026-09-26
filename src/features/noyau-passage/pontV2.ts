@@ -496,6 +496,63 @@ export function questionsNoyauEcartees(attemptId?: string | null): Set<string> {
   );
 }
 
+// ---------------------------------------------------------------------------
+// NUMÉROS DE VERSION CONFIRMÉS (correctif 26/09/2026)
+// ---------------------------------------------------------------------------
+// Sans numéro, core_save_answer refuse toute modification (P0409) : seule la
+// première réponse arrivait au noyau. Chaque tablette retient le dernier numéro
+// confirmé par le serveur pour chaque question et l'envoie avec la réponse.
+// Si un autre appareil a modifié la réponse, le numéro ne correspond plus :
+// refus serveur, mise de côté, jamais d'écrasement.
+const CLE_REVISIONS = "noyau_v2_revisions_confirmees_v1";
+const cleRevision = (attemptId: string, qid: string) => `${attemptId}|${qid}`;
+const revisionsChargees = new Set<string>();
+
+function lireRevisions(): Record<string, number> {
+  try {
+    const brut = localStorage.getItem(CLE_REVISIONS);
+    const parsed = brut ? JSON.parse(brut) : {};
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function memoriserRevision(cle: string, revision: number): void {
+  const courant = lireRevisions();
+  // Un numéro ne recule jamais.
+  if (typeof courant[cle] === "number" && courant[cle] >= revision) return;
+  try {
+    localStorage.setItem(CLE_REVISIONS, JSON.stringify({ ...courant, [cle]: revision }));
+  } catch {
+    /* au pire, envoi sans numéro : le serveur refuse, rien n'est écrasé */
+  }
+}
+
+/** Charge une fois par page les numéros de version serveur d'un passage (lecture seule). */
+async function chargerRevisionsServeur(attemptId: string): Promise<void> {
+  if (revisionsChargees.has(attemptId)) return;
+  try {
+    const { data, error } = await supabase
+      .from("answer_state")
+      .select("question_id, revision")
+      .eq("attempt_id", attemptId);
+    if (error) return; // nouvel essai au prochain vidage
+    for (const r of (data as { question_id?: string; revision?: number }[] | null) ?? []) {
+      if (r?.question_id && typeof r.revision === "number") memoriserRevision(cleRevision(attemptId, String(r.question_id)), r.revision);
+    }
+    revisionsChargees.add(attemptId);
+  } catch {
+    /* nouvel essai au prochain vidage */
+  }
+}
+
+/** Réservé aux tests : simule un rechargement de page. */
+export function __simulerRechargementPourTests(): void {
+  revisionsChargees.clear();
+  fileMemoire = null;
+}
+
 /** Vide la file séquentiellement. Une réponse ne quitte la file qu'une fois confirmée. */
 export async function viderFileNoyau(attemptId?: string | null): Promise<{ restantes: number }> {
   const compter = (f: ElementFile[]) => (attemptId ? f.filter((e) => e.attemptId === attemptId).length : f.length);
