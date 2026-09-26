@@ -743,6 +743,13 @@
       "when": 1790441161635,
       "tag": "0105_securite_resserrement_acces",
       "breakpoints": true
+    },
+    {
+      "idx": 106,
+      "version": "7",
+      "when": 1790441186832,
+      "tag": "0106_transition_lecture_versions_publiees",
+      "breakpoints": true
     }
   ]
 }
