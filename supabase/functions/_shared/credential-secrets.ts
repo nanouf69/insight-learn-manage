@@ -16,8 +16,9 @@ export function generateUnsharedPassword(): string {
 
 /**
  * Durée unique du lien « Définir mon mot de passe ».
- * Source unique : sert au texte de l'e-mail ET à l'heure limite portée par le
- * lien (paramètre `expire`), vérifiée par la page /reset-password.
+ * Source unique : sert au texte de l'e-mail. L'expiration réelle est appliquée
+ * par le serveur d'authentification ; la page /reset-password affiche
+ * « Lien expiré ou déjà utilisé » si le lien est refusé.
  */
 export const DUREE_LIEN_MOT_DE_PASSE_MINUTES = 60;
 
@@ -35,11 +36,10 @@ export async function generateSetPasswordLink(
   supabaseAdmin: any,
   email: string,
 ): Promise<string> {
-  const expire = Date.now() + DUREE_LIEN_MOT_DE_PASSE_MINUTES * 60_000;
   const { data, error } = await supabaseAdmin.auth.admin.generateLink({
     type: "recovery",
     email,
-    options: { redirectTo: `https://insight-learn-manage.lovable.app/reset-password?expire=${expire}` },
+    options: { redirectTo: `https://insight-learn-manage.lovable.app/reset-password` },
   });
   const link = data?.properties?.action_link;
   if (error || !link) throw new Error(error?.message || "Impossible de générer le lien sécurisé");
