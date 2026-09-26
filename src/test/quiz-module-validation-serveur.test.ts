@@ -81,7 +81,7 @@ describe("Délai 20 s, révision après rechargement, chargement", () => {
   const s = readFileSync(resolve(__dirname, "../components/cours-en-ligne/ModuleDetailView.tsx"), "utf8");
   it("délai global de 20 s avec étape journalisée", () => {
     expect(s).toContain("const VALIDATION_QUIZ_DELAI_MS = 20_000;");
-    expect(s).toContain("Promise.race([sequence(), delai])");
+    expect(s).toContain("await Promise.race([sequence(), delai]);");
     expect(s).toContain("delai_depasse_20s_pendant_${etapeEnCours}");
   });
   it("révision : liste d'exercices récente et jamais de page vide", () => {
