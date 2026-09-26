@@ -513,13 +513,20 @@ export async function viderFileNoyau(attemptId?: string | null): Promise<{ resta
         index += 1;
         continue;
       }
+      // Reprise (F5, autre tablette) : numéros de version de ce passage lus une
+      // fois depuis le serveur avant le premier envoi.
+      await chargerRevisionsServeur(element.attemptId);
+      const cleRev = cleRevision(element.attemptId, idQuestionNoyau(element.matiereId, element.questionId));
+      const revisionConnue = lireRevisions()[cleRev];
       const res = await enregistrerReponse({
         attemptId: element.attemptId,
         matiereId: element.matiereId,
         questionId: element.questionId,
         valeur: element.valeur,
+        revisionAttendue: typeof revisionConnue === "number" ? revisionConnue : null,
         clientSavedAt: element.at,
       });
+      if (res.ok && typeof res.revision === "number") memoriserRevision(cleRev, res.revision);
       if (!res.ok) {
         if (res.message === "ANSWER_STALE_REVISION_CONFLICT") {
           ecarter(element);
