@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { ajouterMarqueurCorrectionQCMAdmin, relireDetailsFiche } from "@/lib/correctionQCMAdminMarqueur";
+import { ajouterMarqueurCorrectionQCMAdmin, relireDetailsFiche, pointsQRCDepuisDetails } from "@/lib/correctionQCMAdminMarqueur";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -247,6 +247,19 @@ const CorrectionQCMTab = () => {
       const matiere = examen?.matieres.find(m => m.id === editingRow.matiereId);
       if (!matiere) throw new Error("Matière introuvable");
 
+      // Relecture obligatoire de details AVANT tout calcul et toute écriture :
+      // si elle échoue ou si la fiche est absente, on annule tout (jamais de
+      // details reconstruit, jamais de points QRC à 0 par défaut).
+      const relectureDetails = await relireDetailsFiche(
+        () => supabase.from("apprenant_quiz_results").select("details").eq("id", editingRow.resultId).maybeSingle(),
+      );
+      if (!relectureDetails.ok) {
+        toast.error("Correction non enregistrée, réessayez");
+        setSaving(false);
+        return;
+      }
+      const detailsFiche = safeRecord(relectureDetails.details);
+
       // Recalculate score for QCM questions
       let totalScore = 0;
       let totalMax = 0;
@@ -262,37 +275,15 @@ const CorrectionQCMTab = () => {
             correctLetters.every(l => selected.includes(l));
           if (isCorrect) totalScore += pts;
         } else {
-          // QRC: keep existing score from details
+          // QRC: points lus depuis la relecture unique de details (aucune
+          // requête supplémentaire par QRC).
           totalMax += pts;
-          const details = safeRecord(
-            (await supabase
-              .from("apprenant_quiz_results")
-              .select("details")
-              .eq("id", editingRow.resultId)
-              .maybeSingle()
-            ).data?.details
-          );
-          const corrections = safeRecord(details?.correctionsIA);
-          const corr = corrections[String(q.id)];
-          if (corr && typeof corr === "object" && "pointsObtenus" in (corr as any)) {
-            totalScore += Number((corr as any).pointsObtenus) || 0;
-          }
+          totalScore += pointsQRCDepuisDetails(detailsFiche, q.id);
         }
       }
 
       const noteSur20 = totalMax > 0 ? Number(((totalScore / totalMax) * 20).toFixed(1)) : 0;
       const admis = computeAdmisForMatiere(totalScore, totalMax, matiere.noteEliminatoire, matiere.noteSur);
-
-      // Relecture obligatoire de details AVANT toute écriture : si elle échoue
-      // ou si la fiche est absente, on annule tout (jamais de details reconstruit).
-      const relectureDetails = await relireDetailsFiche(
-        () => supabase.from("apprenant_quiz_results").select("details").eq("id", editingRow.resultId).maybeSingle(),
-      );
-      if (!relectureDetails.ok) {
-        toast.error("Correction non enregistrée, réessayez");
-        setSaving(false);
-        return;
-      }
       const { data: authData } = await supabase.auth.getUser();
       const authUserId = authData?.user?.id ?? null;
 
