@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { ajouterMarqueurCorrectionQCMAdmin } from "@/lib/correctionQCMAdminMarqueur";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -323,16 +324,28 @@ const CorrectionQCMTab = () => {
       }
 
 
-      // Update apprenant_quiz_results
-      await supabase
+      // Update apprenant_quiz_results (+ marqueur de correction QCM admin,
+      // reconnu par trg_garde_correction_admin_quiz ; calcul de note inchangé).
+      const [{ data: currentRes }, { data: authData }] = await Promise.all([
+        supabase.from("apprenant_quiz_results").select("details").eq("id", editingRow.resultId).maybeSingle(),
+        supabase.auth.getUser(),
+      ]);
+      const detailsAvecMarqueur = ajouterMarqueurCorrectionQCMAdmin(
+        currentRes?.details,
+        authData?.user?.id ?? null,
+        new Date().toISOString(),
+      );
+      const { error: resError } = await supabase
         .from("apprenant_quiz_results")
         .update({
           score_obtenu: totalScore,
           score_max: totalMax,
           note_sur_20: noteSur20,
           reussi: admis,
+          details: detailsAvecMarqueur as any,
         })
         .eq("id", editingRow.resultId);
+      if (resError) throw resError;
 
       toast.success(`Score recalculé : ${noteSur20}/20 (${totalScore}/${totalMax})`);
       cancelEditing();
