@@ -8653,11 +8653,18 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                           const exerciceId = enRevision
                             ? buildRevisionExerciceId(module.id, exo.id)
                             : buildExerciceId(module.id, exo.id);
+                          // Délai global de 20 s (envoi + relecture + validation serveur).
+                          // Au-delà, on cesse d'attendre À L'ÉCRAN seulement : la file
+                          // d'envoi existante garde les réponses et continue seule.
+                          let termine = false;
+                          let etapeEnCours = "envoi";
                           const echec = (etape: string) => {
+                            if (termine) return;
+                            termine = true;
                             journaliserEchecValidationQuiz({ apprenantId, moduleId: module.id, exerciceId, etape });
                             setValidationFailedFor((prev) => new Set(prev).add(exo.id));
                           };
-                          try {
+                          const sequence = async (): Promise<boolean> => {
                             enqueueAnswerSave({
                               apprenant_id: apprenantId,
                               user_id: userIdForSaveRef.current || undefined,
@@ -8670,7 +8677,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                               updated_at: new Date().toISOString(),
                             });
                             const flushed = await flushAnswerSavesAndWait(apprenantId, exerciceId);
-                            if (!flushed) { echec("envoi"); return; }
+                            if (!flushed) { echec("envoi"); return false; }
+                            etapeEnCours = "relecture";
                             const { data: confirmedRow, error: confirmedError } = await supabase
                               .from("reponses_apprenants" as any)
                               .select("reponses")
@@ -8681,7 +8689,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                             const aComparer = enRevision
                               ? Object.fromEntries(Object.keys(exoAnswers).map((k) => [k, stored[k]]))
                               : stored;
-                            if (confirmedError || !answersAreEqual(aComparer, exoAnswers)) { echec("relecture"); return; }
+                            if (confirmedError || !answersAreEqual(aComparer, exoAnswers)) { echec("relecture"); return false; }
+                            etapeEnCours = "validation_serveur";
                             if (!enRevision) {
                               const submitted = await submitQuizAttempt({
                                 apprenantId,
@@ -8691,13 +8700,27 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                                 bonnesReponses: exoCorrect,
                                 totalQuestions: exoTotalQ,
                               });
-                              if (!submitted) { echec("validation_serveur"); return; }
+                              if (!submitted) { echec("validation_serveur"); return false; }
                               submittedExoIdsRef.current.add(exo.id);
                             }
+                            return true;
+                          };
+                          let timer: ReturnType<typeof setTimeout> | undefined;
+                          try {
+                            const delai = new Promise<boolean>((resolve) => {
+                              timer = setTimeout(() => {
+                                echec(`delai_depasse_20s_pendant_${etapeEnCours}`);
+                                resolve(false);
+                              }, VALIDATION_QUIZ_DELAI_MS);
+                            });
+                            const ok = await Promise.race([sequence(), delai]);
+                            if (!ok || termine) return;
+                            termine = true;
                           } catch (e) {
                             echec("exception");
                             return;
                           } finally {
+                            if (timer) clearTimeout(timer);
                             setValidatingExo((cur) => (cur === exo.id ? null : cur));
                           }
                         }
