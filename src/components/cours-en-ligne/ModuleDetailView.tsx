@@ -169,6 +169,9 @@ import {
   shouldForceBilanReset,
 } from "./bilan-reset-utils";
 
+/** Délai global d'attente à l'écran pour « Valider les QCM » (envoi + relecture + validation serveur). */
+const VALIDATION_QUIZ_DELAI_MS = 20_000;
+
 interface InlineQuizQuestion {
   id: number;
   enonce: string;
