@@ -256,7 +256,14 @@ export async function enregistrerReponse(params: {
   clientSavedAt?: string;
 }): Promise<{ ok: boolean; revision?: number; message?: string }> {
   const qid = idQuestionNoyau(params.matiereId, params.questionId);
-  const op = await operationId(`answer:${params.attemptId}:${qid}:${JSON.stringify(params.valeur ?? null)}`);
+  // La révision attendue fait partie de la clé d'idempotence : sans cela, revenir
+  // à une valeur déjà envoyée (A → B → A) rejouerait l'ancienne opération.
+  const rev = params.revisionAttendue ?? null;
+  const op = await operationId(
+    rev == null
+      ? `answer:${params.attemptId}:${qid}:${JSON.stringify(params.valeur ?? null)}`
+      : `answer:${params.attemptId}:${qid}:r${rev}:${JSON.stringify(params.valeur ?? null)}`,
+  );
   const sauvegarder = (operation: string, revision: number | null) => supabase.rpc("core_save_answer", {
     p_operation_id: operation,
     p_attempt_id: params.attemptId,
