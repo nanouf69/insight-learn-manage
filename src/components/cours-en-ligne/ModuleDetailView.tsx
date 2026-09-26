@@ -9193,7 +9193,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       const coursPages = pages.map((p, i) => ({ p, i })).filter(({ p }) => p?.type === "cours");
       const quizPages = pages.map((p, i) => ({ p, i })).filter(({ p }) => p?.type === "exercice-single" && p.exercice?.questions?.length > 0);
       const coursCompleted = coursPages.filter(({ i }) => completedPages.has(i)).length;
-      const quizCompleted = quizPages.filter(({ i, p }) => completedPages.has(i) && quizValideServeur(p.exercice.id)).length;
+      const quizCompleted = quizPages.filter(({ i, p }) => completedPages.has(i) && quizValideServeur((p as any).exercice.id)).length;
 
       return (
         <div className="pt-4 mt-3 border-t space-y-2">
