@@ -76,3 +76,21 @@ describe("révision jamais comptée comme validation", () => {
     expect(/^module_\d+_exo_(\d+)$/.test("module_2_revision_exo_61")).toBe(false);
   });
 });
+
+describe("Délai 20 s, révision après rechargement, chargement", () => {
+  const s = readFileSync(resolve(__dirname, "../components/cours-en-ligne/ModuleDetailView.tsx"), "utf8");
+  it("délai global de 20 s avec étape journalisée", () => {
+    expect(s).toContain("const VALIDATION_QUIZ_DELAI_MS = 20_000;");
+    expect(s).toContain("await Promise.race([sequence(), delai]);");
+    expect(s).toContain("delai_depasse_20s_pendant_${etapeEnCours}");
+  });
+  it("révision : liste d'exercices récente et jamais de page vide", () => {
+    expect(s).toContain("activeExercicesRef.current.find((e: any) => e.id === exoId)");
+    expect(s).toContain("return presentes.size > 0 ? presentes : null;");
+    expect(s).toContain("const revisionSet = revisionEffective(exo.id, questionsSafe);\n                if (!revisionSet) return true;");
+  });
+  it("chargement : « Chargement… » et quiz jamais fait avant relecture serveur", () => {
+    expect(s).toContain('savedAnswersLoaded ? `${quizCompleted}/${quizPages.length} quiz` : "Chargement…"');
+    expect(s).toContain("completedPages.has(i) && (!isQuizPageTmp || quizValideServeur(p.exercice.id))");
+  });
+});

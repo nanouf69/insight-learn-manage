@@ -169,6 +169,9 @@ import {
   shouldForceBilanReset,
 } from "./bilan-reset-utils";
 
+/** Délai global d'attente à l'écran pour « Valider les QCM » (envoi + relecture + validation serveur). */
+const VALIDATION_QUIZ_DELAI_MS = 20_000;
+
 interface InlineQuizQuestion {
   id: number;
   enonce: string;
@@ -6322,6 +6325,15 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     const [showCalculator, setShowCalculator] = useState(false);
     // Revision mode: per exo, set of question IDs to display (only the wrong ones)
     const [revisionQuestionsFor, setRevisionQuestionsFor] = useState<Record<number, Set<number | string>>>({});
+    // Questions à refaire RÉELLEMENT présentes à l'écran (comparaison par texte
+    // de l'identifiant). null = aucune correspondance → afficher toutes les questions.
+    const revisionEffective = (exoId: number, questions: any[]): Set<string> | null => {
+      const brut = revisionQuestionsFor[exoId];
+      if (!brut || brut.size === 0) return null;
+      const voulues = new Set(Array.from(brut).map((v) => String(v)));
+      const presentes = new Set((questions ?? []).map((q: any) => String(q?.id)).filter((id) => voulues.has(id)));
+      return presentes.size > 0 ? presentes : null;
+    };
     // Validation de quiz : « OK » affiché seulement après confirmation serveur.
     const [validatingExo, setValidatingExo] = useState<number | null>(null);
     const [validationFailedFor, setValidationFailedFor] = useState<Set<number>>(new Set());
@@ -6366,6 +6378,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     const HIDDEN_CHECKLIST_TYPES = ["analyse-besoin", "projet-professionnel", "competences", "cgv", "cgv-reglement"];
     const activeCours = moduleData.cours.filter(c => c.actif && !(hideFormulaires && c.checklistType && HIDDEN_CHECKLIST_TYPES.includes(c.checklistType)));
     const activeExercices = moduleData.exercices.filter(e => e.actif) as ExerciceItem[];
+    // Toujours la liste d'exercices la plus récente (évite un calcul de révision
+    // fait sur une liste pas encore chargée après rechargement).
+    const activeExercicesRef = useRef<ExerciceItem[]>(activeExercices);
+    activeExercicesRef.current = activeExercices;
 
     // Nombre total de questions actives du module : transmis au serveur avec
     // chaque sauvegarde de réponse pour permettre la validation automatique
@@ -6944,7 +6960,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           Object.keys(next).forEach((k) => { if (k.startsWith(`${exoId}-`)) delete next[k]; });
           return { ...next, ...rep };
         });
-        const exo = activeExercices.find((e: any) => e.id === exoId);
+        const exo = activeExercicesRef.current.find((e: any) => e.id === exoId);
         const manquantes = ((exo?.questions ?? []) as any[])
           .filter((q) => Array.isArray(q?.choix) && q.choix.length > 0)
           .map((q) => q.id)
@@ -8394,8 +8410,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 </div>
               )}
               {(() => {
-                const revisionSet = revisionQuestionsFor[exo.id];
-                const isRevisionMode = revisionSet && revisionSet.size > 0;
+                const revisionSet = revisionEffective(exo.id, questionsSafe);
+                const isRevisionMode = !!revisionSet;
                 if (isRevisionMode) {
                   return (
                     <div className="rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/20 p-3 text-sm text-amber-800 dark:text-amber-300 space-y-2">
@@ -8414,17 +8430,18 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 return null;
               })()}
               {questionsSafe.map((q: any, originalIdx: number) => ({ q, originalIdx })).filter(({ q }: any) => {
-                const revisionSet = revisionQuestionsFor[exo.id];
-                if (!revisionSet || revisionSet.size === 0) return true;
-                return revisionSet.has(q.id);
+                // Jamais de page vide : si aucune question à refaire ne correspond
+                // aux questions affichées, on affiche toutes les questions.
+                const revisionSet = revisionEffective(exo.id, questionsSafe);
+                if (!revisionSet) return true;
+                return revisionSet.has(String(q.id));
               }).map(({ q, originalIdx }: any, _filteredIdx: number) => {
                 const qi = originalIdx;
                 const key = `${exo.id}-${q.id}`;
                 const isQrc = q?.type === "qrc" || (q.choix?.length === 0 && q.reponsesAttendues);
                 const selected = selectedAnswers[key];
                 const qrcResult = qrcResults[key];
-                const revisionSet = revisionQuestionsFor[exo.id];
-                const isInRevision = revisionSet && revisionSet.size > 0;
+                const isInRevision = !!revisionEffective(exo.id, questionsSafe);
 
                 if (isQrc) {
                   const isQrcWrong = isInRevision || (qrcResult && qrcResult !== "loading" && !qrcResult.estCorrect);
@@ -8653,11 +8670,18 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                           const exerciceId = enRevision
                             ? buildRevisionExerciceId(module.id, exo.id)
                             : buildExerciceId(module.id, exo.id);
+                          // Délai global de 20 s (envoi + relecture + validation serveur).
+                          // Au-delà, on cesse d'attendre À L'ÉCRAN seulement : la file
+                          // d'envoi existante garde les réponses et continue seule.
+                          let termine = false;
+                          let etapeEnCours = "envoi";
                           const echec = (etape: string) => {
+                            if (termine) return;
+                            termine = true;
                             journaliserEchecValidationQuiz({ apprenantId, moduleId: module.id, exerciceId, etape });
                             setValidationFailedFor((prev) => new Set(prev).add(exo.id));
                           };
-                          try {
+                          const sequence = async (): Promise<boolean> => {
                             enqueueAnswerSave({
                               apprenant_id: apprenantId,
                               user_id: userIdForSaveRef.current || undefined,
@@ -8670,7 +8694,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                               updated_at: new Date().toISOString(),
                             });
                             const flushed = await flushAnswerSavesAndWait(apprenantId, exerciceId);
-                            if (!flushed) { echec("envoi"); return; }
+                            if (!flushed) { echec("envoi"); return false; }
+                            etapeEnCours = "relecture";
                             const { data: confirmedRow, error: confirmedError } = await supabase
                               .from("reponses_apprenants" as any)
                               .select("reponses")
@@ -8681,7 +8706,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                             const aComparer = enRevision
                               ? Object.fromEntries(Object.keys(exoAnswers).map((k) => [k, stored[k]]))
                               : stored;
-                            if (confirmedError || !answersAreEqual(aComparer, exoAnswers)) { echec("relecture"); return; }
+                            if (confirmedError || !answersAreEqual(aComparer, exoAnswers)) { echec("relecture"); return false; }
+                            etapeEnCours = "validation_serveur";
                             if (!enRevision) {
                               const submitted = await submitQuizAttempt({
                                 apprenantId,
@@ -8691,13 +8717,27 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                                 bonnesReponses: exoCorrect,
                                 totalQuestions: exoTotalQ,
                               });
-                              if (!submitted) { echec("validation_serveur"); return; }
+                              if (!submitted) { echec("validation_serveur"); return false; }
                               submittedExoIdsRef.current.add(exo.id);
                             }
+                            return true;
+                          };
+                          let timer: ReturnType<typeof setTimeout> | undefined;
+                          try {
+                            const delai = new Promise<boolean>((resolve) => {
+                              timer = setTimeout(() => {
+                                echec(`delai_depasse_20s_pendant_${etapeEnCours}`);
+                                resolve(false);
+                              }, VALIDATION_QUIZ_DELAI_MS);
+                            });
+                            const ok = await Promise.race([sequence(), delai]);
+                            if (!ok || termine) return;
+                            termine = true;
                           } catch (e) {
                             echec("exception");
                             return;
                           } finally {
+                            if (timer) clearTimeout(timer);
                             setValidatingExo((cur) => (cur === exo.id ? null : cur));
                           }
                         }
@@ -8996,8 +9036,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 const sidebarKey = `${exo.id}-${q.id}`;
                 const isQrcQ = q?.type === "qrc" || (q.choix?.length === 0 && q.reponsesAttendues);
                 const sidebarShowResults = showResultsFor.has(exo.id);
-                const sidebarRevisionSet = revisionQuestionsFor[exo.id];
-                const sidebarInRevision = sidebarRevisionSet && sidebarRevisionSet.size > 0;
+                const sidebarInRevision = !!revisionEffective(exo.id, questionsSafe) && revisionEffective(exo.id, questionsSafe)!.has(String(q.id));
                 let isWrong = false;
                 if (isQrcQ) {
                   const qr = qrcResults[sidebarKey];
@@ -9057,12 +9096,17 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
     const [mobileProgressOpen, setMobileProgressOpen] = useState(false);
 
+    // Quiz « fait » seulement si le serveur l'a validé (relu), ou passage figé / module terminé serveur.
+    const quizValideServeur = (exoId: number) =>
+      savedAnswersLoaded && (submittedExoIdsRef.current.has(exoId) || !!passagesFiges?.[exoId] || moduleAlreadyValidatedRef.current);
     const renderProgressionSteps = (isMobileView = false) => (
       <div className={isMobileView ? "space-y-1" : "space-y-1.5"}>
         {pages.map((p, i) => {
           const unlocked = isPageUnlocked(i);
           const isCurrent = i === currentPage;
-          const isCompleted = completedPages.has(i);
+          const isQuizPageTmp = p?.type === "exercice-single" && p.exercice?.questions?.length > 0;
+          // Un quiz n'est jamais « fait » avant la relecture des validations serveur.
+          const isCompleted = completedPages.has(i) && (!isQuizPageTmp || quizValideServeur(p.exercice.id));
           const isQuizPage = p?.type === "exercice-single" && p.exercice.questions && p.exercice.questions.length > 0;
           const rawLabel = p?.type === "cours"
             ? `📖 ${p.cours.titre}`
@@ -9149,7 +9193,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       const coursPages = pages.map((p, i) => ({ p, i })).filter(({ p }) => p?.type === "cours");
       const quizPages = pages.map((p, i) => ({ p, i })).filter(({ p }) => p?.type === "exercice-single" && p.exercice?.questions?.length > 0);
       const coursCompleted = coursPages.filter(({ i }) => completedPages.has(i)).length;
-      const quizCompleted = quizPages.filter(({ i }) => completedPages.has(i)).length;
+      const quizCompleted = quizPages.filter(({ i, p }) => completedPages.has(i) && quizValideServeur(p.exercice.id)).length;
 
       return (
         <div className="pt-4 mt-3 border-t space-y-2">
@@ -9174,7 +9218,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               {quizPages.length > 0 && (
                 <span className="flex items-center gap-1">
                   <span className="inline-block w-2 h-2 rounded-full bg-amber-500" />
-                  {quizCompleted}/{quizPages.length} quiz
+                  {savedAnswersLoaded ? `${quizCompleted}/${quizPages.length} quiz` : "Chargement…"}
                 </span>
               )}
             </div>
