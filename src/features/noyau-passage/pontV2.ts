@@ -256,7 +256,14 @@ export async function enregistrerReponse(params: {
   clientSavedAt?: string;
 }): Promise<{ ok: boolean; revision?: number; message?: string }> {
   const qid = idQuestionNoyau(params.matiereId, params.questionId);
-  const op = await operationId(`answer:${params.attemptId}:${qid}:${JSON.stringify(params.valeur ?? null)}`);
+  // La révision attendue fait partie de la clé d'idempotence : sans cela, revenir
+  // à une valeur déjà envoyée (A → B → A) rejouerait l'ancienne opération.
+  const rev = params.revisionAttendue ?? null;
+  const op = await operationId(
+    rev == null
+      ? `answer:${params.attemptId}:${qid}:${JSON.stringify(params.valeur ?? null)}`
+      : `answer:${params.attemptId}:${qid}:r${rev}:${JSON.stringify(params.valeur ?? null)}`,
+  );
   const sauvegarder = (operation: string, revision: number | null) => supabase.rpc("core_save_answer", {
     p_operation_id: operation,
     p_attempt_id: params.attemptId,
@@ -265,7 +272,11 @@ export async function enregistrerReponse(params: {
     p_expected_revision: revision,
     p_session_origine: "passage_apprenant",
   });
-  let { data, error } = await sauvegarder(op, params.revisionAttendue ?? null);
+  // Réponse absente (coupure) : traitée comme une erreur réseau, la réponse reste en file.
+  let { data, error } = (await sauvegarder(op, params.revisionAttendue ?? null)) ?? {
+    data: null,
+    error: { message: "Failed to fetch" },
+  };
   if (error && /ANSWER_STALE_REVISION|P0409/i.test(error.message)) {
     const { data: courant, error: lectureError } = await supabase
       .from("answer_state")
@@ -489,6 +500,63 @@ export function questionsNoyauEcartees(attemptId?: string | null): Set<string> {
   );
 }
 
+// ---------------------------------------------------------------------------
+// NUMÉROS DE VERSION CONFIRMÉS (correctif 26/09/2026)
+// ---------------------------------------------------------------------------
+// Sans numéro, core_save_answer refuse toute modification (P0409) : seule la
+// première réponse arrivait au noyau. Chaque tablette retient le dernier numéro
+// confirmé par le serveur pour chaque question et l'envoie avec la réponse.
+// Si un autre appareil a modifié la réponse, le numéro ne correspond plus :
+// refus serveur, mise de côté, jamais d'écrasement.
+const CLE_REVISIONS = "noyau_v2_revisions_confirmees_v1";
+const cleRevision = (attemptId: string, qid: string) => `${attemptId}|${qid}`;
+const revisionsChargees = new Set<string>();
+
+function lireRevisions(): Record<string, number> {
+  try {
+    const brut = localStorage.getItem(CLE_REVISIONS);
+    const parsed = brut ? JSON.parse(brut) : {};
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function memoriserRevision(cle: string, revision: number): void {
+  const courant = lireRevisions();
+  // Un numéro ne recule jamais.
+  if (typeof courant[cle] === "number" && courant[cle] >= revision) return;
+  try {
+    localStorage.setItem(CLE_REVISIONS, JSON.stringify({ ...courant, [cle]: revision }));
+  } catch {
+    /* au pire, envoi sans numéro : le serveur refuse, rien n'est écrasé */
+  }
+}
+
+/** Charge une fois par page les numéros de version serveur d'un passage (lecture seule). */
+async function chargerRevisionsServeur(attemptId: string): Promise<void> {
+  if (revisionsChargees.has(attemptId)) return;
+  try {
+    const { data, error } = await supabase
+      .from("answer_state")
+      .select("question_id, revision")
+      .eq("attempt_id", attemptId);
+    if (error) return; // nouvel essai au prochain vidage
+    for (const r of (data as { question_id?: string; revision?: number }[] | null) ?? []) {
+      if (r?.question_id && typeof r.revision === "number") memoriserRevision(cleRevision(attemptId, String(r.question_id)), r.revision);
+    }
+    revisionsChargees.add(attemptId);
+  } catch {
+    /* nouvel essai au prochain vidage */
+  }
+}
+
+/** Réservé aux tests : simule un rechargement de page. */
+export function __simulerRechargementPourTests(): void {
+  revisionsChargees.clear();
+  fileMemoire = null;
+}
+
 /** Vide la file séquentiellement. Une réponse ne quitte la file qu'une fois confirmée. */
 export async function viderFileNoyau(attemptId?: string | null): Promise<{ restantes: number }> {
   const compter = (f: ElementFile[]) => (attemptId ? f.filter((e) => e.attemptId === attemptId).length : f.length);
@@ -506,13 +574,20 @@ export async function viderFileNoyau(attemptId?: string | null): Promise<{ resta
         index += 1;
         continue;
       }
+      // Reprise (F5, autre tablette) : numéros de version de ce passage lus une
+      // fois depuis le serveur avant le premier envoi.
+      await chargerRevisionsServeur(element.attemptId);
+      const cleRev = cleRevision(element.attemptId, idQuestionNoyau(element.matiereId, element.questionId));
+      const revisionConnue = lireRevisions()[cleRev];
       const res = await enregistrerReponse({
         attemptId: element.attemptId,
         matiereId: element.matiereId,
         questionId: element.questionId,
         valeur: element.valeur,
+        revisionAttendue: typeof revisionConnue === "number" ? revisionConnue : null,
         clientSavedAt: element.at,
       });
+      if (res.ok && typeof res.revision === "number") memoriserRevision(cleRev, res.revision);
       if (!res.ok) {
         if (res.message === "ANSWER_STALE_REVISION_CONFLICT") {
           ecarter(element);
