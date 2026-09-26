@@ -736,6 +736,13 @@
       "when": 1790434629851,
       "tag": "0104_garde_correction_qcm_admin",
       "breakpoints": true
+    },
+    {
+      "idx": 105,
+      "version": "7",
+      "when": 1790441161635,
+      "tag": "0105_securite_resserrement_acces",
+      "breakpoints": true
     }
   ]
 }

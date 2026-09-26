@@ -7403,6 +7403,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      core_sujet_publie: { Args: { p_exam_id: string }; Returns: boolean }
       daitch_mokotoff: { Args: { "": string }; Returns: string[] }
       decaler_examen_theorique: {
         Args: {
