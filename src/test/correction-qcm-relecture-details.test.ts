@@ -45,3 +45,42 @@ describe("correction QCM : relecture de details obligatoire", () => {
     expect(src).not.toMatch(/currentRes\?\.details/);
   });
 });
+
+describe("correction QCM : points QRC issus de la relecture unique", () => {
+  const details = {
+    correctionsIA: {
+      "101": { pointsObtenus: 3 },
+      "102": { pointsObtenus: 0 },
+    },
+  };
+
+  it("les points QRC viennent du details relu, question par question", () => {
+    expect(pointsQRCDepuisDetails(details, 101)).toBe(3);
+    expect(pointsQRCDepuisDetails(details, 102)).toBe(0);
+    expect(pointsQRCDepuisDetails(details, 999)).toBe(0); // absente → 0
+  });
+
+  it("relecture en échec → annulation avant tout calcul de note", async () => {
+    const calculer = vi.fn();
+    const r = await relireDetailsFiche(async () => ({ data: null, error: { message: "x" } }));
+    if (r.ok) calculer(pointsQRCDepuisDetails(r.details, 101));
+    expect(r.ok).toBe(false);
+    expect(calculer).not.toHaveBeenCalled();
+  });
+
+  it("CorrectionQCMTab : une seule relecture, aucune requête par QRC dans la boucle", () => {
+    const src = readFileSync("src/components/cours-en-ligne/CorrectionQCMTab.tsx", "utf8");
+    // La relecture a lieu avant la boucle de calcul.
+    const iRelecture = src.indexOf("relireDetailsFiche(\n");
+    const iBoucle = src.indexOf("for (const q of matiere.questions)");
+    expect(iRelecture).toBeGreaterThan(0);
+    expect(iBoucle).toBeGreaterThan(iRelecture);
+    // La boucle n'a aucun appel réseau : les points QRC passent par pointsQRCDepuisDetails.
+    const boucle = src.slice(iBoucle, src.indexOf("noteSur20", iBoucle));
+    expect(boucle).not.toContain("supabase");
+    expect(boucle).not.toContain("await");
+    expect(boucle).toContain("pointsQRCDepuisDetails(detailsFiche, q.id)");
+    // detailsFiche provient de la relecture, jamais reconstruit à partir de {}.
+    expect(src).toContain("safeRecord(relectureDetails.details)");
+  });
+});
