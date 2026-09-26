@@ -585,14 +585,16 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
     return [...connRows, ...pratRows].sort((a, b) => b.sortKey.localeCompare(a.sortKey));
   }, [connexions, pratiqueRows]);
   const resolveExerciceTitle = (exerciceId: string): string => {
-    // Check static map first
     const mapped = EXERCICE_TITLE_MAP.get(exerciceId);
     if (mapped) return mapped;
-    // Fallback: parse module_X_exo_Y → module name
-    const match = exerciceId.match(/^module_(\d+)_exo_(\d+)$/);
-    if (match) {
-      const modName = MODULE_NAME_MAP.get(parseInt(match[1]));
-      if (modName) return `${modName} — Exo ${match[2]}`;
+    // module_X_exo_Y ou module_X_revision_exo_Y → même module / exercice
+    const id = lireIdentifiantExerciceModule(exerciceId);
+    if (id) {
+      const suffixe = id.revision ? " (révision)" : "";
+      const titre = EXERCICE_TITLE_MAP.get(`module_${id.moduleId}_exo_${id.exoId}`);
+      if (titre) return `${titre}${suffixe}`;
+      const modName = MODULE_NAME_MAP.get(id.moduleId);
+      if (modName) return `${modName} — Exo ${id.exoId}${suffixe}`;
     }
     return exerciceId;
   };
@@ -1160,9 +1162,9 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
                         return t >= start && t <= end;
                       })
                       .forEach(e => {
-                        const match = e.exercice_id.match(/^module_(\d+)_exo_\d+$/);
-                        if (match) {
-                          const name = MODULE_NAME_MAP.get(parseInt(match[1]));
+                        const idExo = lireIdentifiantExerciceModule(e.exercice_id);
+                        if (idExo) {
+                          const name = MODULE_NAME_MAP.get(idExo.moduleId);
                           if (name) inferredModules.add(name);
                         }
                       });

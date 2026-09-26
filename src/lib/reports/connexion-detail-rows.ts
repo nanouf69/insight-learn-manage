@@ -22,6 +22,7 @@ import { CONNAISSANCES_VILLE_TAXI_DATA } from "@/components/cours-en-ligne/conna
 import { CONTROLE_CONNAISSANCES_TAXI_DATA } from "@/components/cours-en-ligne/controle-connaissances-taxi-data";
 import { EQUIPEMENTS_TAXI_DATA } from "@/components/cours-en-ligne/equipements-taxi-data";
 import { getSessionEndMs, getSessionDurationMinutes } from "@/lib/reports/session-duration";
+import { lireIdentifiantExerciceModule } from "@/lib/quizAttempts";
 
 const EXERCICE_TITLE_MAP = new Map<string, string>();
 const registerModuleExercises = (moduleId: number, exercices: { id: number; titre: string }[] = []) => {
@@ -46,10 +47,13 @@ export const resolveExerciceTitle = (exerciceId: string): string => {
   if (!exerciceId) return "Exercice";
   const mapped = EXERCICE_TITLE_MAP.get(exerciceId);
   if (mapped) return mapped;
-  const match = exerciceId.match(/^module_(\d+)_exo_(\d+)$/);
-  if (match) {
-    const modName = MODULE_NAME_MAP.get(parseInt(match[1]));
-    if (modName) return `${modName} — Exo ${match[2]}`;
+  const id = lireIdentifiantExerciceModule(exerciceId);
+  if (id) {
+    const suffixe = id.revision ? " (révision)" : "";
+    const titre = EXERCICE_TITLE_MAP.get(`module_${id.moduleId}_exo_${id.exoId}`);
+    if (titre) return `${titre}${suffixe}`;
+    const modName = MODULE_NAME_MAP.get(id.moduleId);
+    if (modName) return `${modName} — Exo ${id.exoId}${suffixe}`;
   }
   return exerciceId;
 };
@@ -136,9 +140,9 @@ export function computeConnexionDetail(
 
   const inferred = new Set<string>();
   exos.filter((e) => inWindow(e.updated_at)).forEach((e) => {
-    const match = String(e.exercice_id || "").match(/^module_(\d+)_exo_\d+$/);
-    if (match) {
-      const name = MODULE_NAME_MAP.get(parseInt(match[1]));
+    const id = lireIdentifiantExerciceModule(String(e.exercice_id || ""));
+    if (id) {
+      const name = MODULE_NAME_MAP.get(id.moduleId);
       if (name) inferred.add(name);
     }
   });

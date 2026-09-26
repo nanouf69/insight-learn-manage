@@ -47,6 +47,17 @@ export const exoIdDepuisRevision = (exerciceId: string): number | null => {
   return m ? Number(m[1]) : null;
 };
 
+/**
+ * LECTURE SEULE (rapports) : rattache `module_X_exo_Y` ET `module_X_revision_exo_Y`
+ * au même module X / exercice Y. Ne sert jamais à décider une validation.
+ */
+export const lireIdentifiantExerciceModule = (
+  exerciceId: string,
+): { moduleId: number; exoId: string; revision: boolean } | null => {
+  const m = /^module_(\d+)_(revision_)?exo_(\d+)$/.exec(exerciceId || "");
+  return m ? { moduleId: Number(m[1]), exoId: m[3], revision: !!m[2] } : null;
+};
+
 /** Trace un échec de validation de quiz de module (journal d'erreurs, invisible pour l'élève). */
 export const journaliserEchecValidationQuiz = (p: {
   apprenantId: string;
