@@ -7069,11 +7069,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       const nouveaux = listeExercicesAttendus().filter((id) => !exercicesChargesRef.current.has(id));
       if (nouveaux.length === 0) return;
       nouveaux.forEach((id) => exercicesChargesRef.current.add(id));
-      let annule = false;
+      // Pas d'annulation au changement de dépendances : la liste des exercices change de
+      // référence à chaque rendu, une annulation ferait perdre ce rechargement.
       (async () => {
         try {
           const attempts = await fetchQuizAttempts(apprenantId, nouveaux);
-          if (annule) return;
           const restored: Record<string, string | string[]> = {};
           attempts.forEach((row) => {
             if (row.reponses && typeof row.reponses === "object") Object.assign(restored, row.reponses);
@@ -7093,9 +7093,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           applySubmittedAttempts(attempts);
         } catch (e) {
           console.error("Erreur rechargement réponses (exercice ajouté):", e);
+          // Échec de lecture : on autorise une nouvelle tentative au prochain rendu.
+          nouveaux.forEach((id) => exercicesChargesRef.current.delete(id));
         }
       })();
-      return () => { annule = true; };
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [apprenantId, module.id, savedAnswersLoaded, activeExercices, pages]);
 
