@@ -6372,7 +6372,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     const [inlineQuizValidated, setInlineQuizValidated] = useState<Set<number>>(new Set());
     const [qrcAnswers, setQrcAnswers] = useState<Record<string, string>>({});
     const [unansweredKeys, setUnansweredKeys] = useState<Set<string>>(new Set());
-    const [qrcResults, setQrcResults] = useState<Record<string, { estCorrect: boolean; pointsObtenus: number; explication: string } | "loading">>({});
+    const [qrcResults, setQrcResults] = useState<Record<string, { estCorrect: boolean; pointsObtenus: number; explication: string; indisponible?: boolean } | { indisponible: true; estCorrect?: undefined; pointsObtenus?: undefined; explication?: undefined } | "loading">>({});
 
     const [introAcknowledged, setIntroAcknowledged] = useState<Set<number>>(new Set());
     const [savedAnswersLoaded, setSavedAnswersLoaded] = useState(false);
@@ -8258,8 +8258,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           setQrcResults(prev => ({ ...prev, [key]: data }));
         } catch (e) {
           console.error(e);
-          setQrcResults(prev => ({ ...prev, [key]: { estCorrect: false, pointsObtenus: 0, explication: "Erreur de correction" } }));
-          toast.error("Erreur lors de la correction IA");
+          // Échec ou délai dépassé : aucune note inventée, la réponse reste enregistrée, l'élève peut réessayer.
+          setQrcResults(prev => ({ ...prev, [key]: { indisponible: true } }));
+          toast.error("Correction indisponible, réessayez");
         }
       };
 
@@ -8452,7 +8453,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 const isInRevision = !!revisionEffective(exo.id, questionsSafe);
 
                 if (isQrc) {
-                  const isQrcWrong = isInRevision || (qrcResult && qrcResult !== "loading" && !qrcResult.estCorrect);
+                  const isQrcWrong = isInRevision || (qrcResult && qrcResult !== "loading" && !qrcResult.indisponible && !qrcResult.estCorrect);
                   return (
                     <div key={q.id} id={`exo-q-${exo.id}-${qi}`} className={`space-y-2 p-4 border rounded-lg scroll-mt-20 ${isQrcWrong ? 'border-destructive border-4 bg-destructive/10' : ''}`}>
                       {renderExerciseQuestionPrompt(qi + 1, questionPrompts[qi] ?? parseExerciseQuestionPrompt(q.enonce))}
@@ -8461,9 +8462,17 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                         placeholder="Écrivez votre réponse ici..."
                         value={qrcAnswers[key] ?? (typeof selected === "string" ? selected : "")}
                         onChange={(e) => handleQrcAnswerChange(key, e.target.value)}
-                        disabled={qrcResult !== undefined && qrcResult !== "loading"}
+                        disabled={qrcResult !== undefined && qrcResult !== "loading" && !qrcResult?.indisponible}
                         className="mt-2"
                       />
+                      {qrcResult && qrcResult !== "loading" && qrcResult.indisponible && (
+                        <div className="flex items-center gap-2 mt-1 text-sm text-destructive">
+                          <span>⚠️ Correction indisponible, réessayez</span>
+                          <Button size="sm" variant="outline" onClick={() => handleQrcCorrection(exo.id, q, key)}>
+                            🔄 Réessayer
+                          </Button>
+                        </div>
+                      )}
                       {!qrcResult && (
                         <Button size="sm" onClick={() => handleQrcCorrection(exo.id, q, key)} className="gap-2 mt-1">
                           🤖 Corriger par IA
@@ -8474,7 +8483,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                           <Loader2 className="w-4 h-4 animate-spin" /> Correction en cours...
                         </div>
                       )}
-                      {qrcResult && qrcResult !== "loading" && (
+                      {qrcResult && qrcResult !== "loading" && !qrcResult.indisponible && (
                         <div className={`p-3 rounded-lg border-2 mt-2 ${qrcResult.estCorrect ? "bg-emerald-50 border-emerald-500 dark:bg-emerald-950" : qrcResult.pointsObtenus > 0 ? "bg-amber-50 border-amber-500 dark:bg-amber-950" : "bg-destructive/10 border-destructive"}`}>
                           <p className="font-semibold text-sm">
                             🤖 {qrcResult.estCorrect ? "✅ Correct" : qrcResult.pointsObtenus > 0 ? "⚠️ Partiellement correct" : "❌ Incorrect"} — {qrcResult.pointsObtenus}/2 pts
@@ -9048,7 +9057,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 let isWrong = false;
                 if (isQrcQ) {
                   const qr = qrcResults[sidebarKey];
-                  isWrong = !!sidebarInRevision || (!!qr && qr !== "loading" && !qr.estCorrect);
+                  isWrong = !!sidebarInRevision || (!!qr && qr !== "loading" && !qr.indisponible && !qr.estCorrect);
                 } else {
                   const sel = selectedAnswers[sidebarKey];
                   const selArr = Array.isArray(sel) ? sel : sel ? [sel] : [];

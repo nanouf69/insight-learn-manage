@@ -98,14 +98,20 @@ Compte combien de réponses attendues l'étudiant a mentionnées (ignore orthogr
       },
     };
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    // Attente limitée à 60 secondes : au-delà, l'élève voit « Correction indisponible, réessayez ».
+    const controleur = new AbortController();
+    const minuterie = setTimeout(() => controleur.abort(), 60_000);
+    let response: Response;
+    try {
+    response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
+      signal: controleur.signal,
       headers: {
         Authorization: `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash-lite",
+        model: "google/gemini-3.8-flash",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
@@ -115,6 +121,13 @@ Compte combien de réponses attendues l'étudiant a mentionnées (ignore orthogr
         stream: false,
       }),
     });
+    } catch (_e) {
+      return new Response(JSON.stringify({ error: "Correction indisponible, réessayez", indisponible: true }), {
+        status: 504, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    } finally {
+      clearTimeout(minuterie);
+    }
 
     if (!response.ok) {
       if (response.status === 429) {
