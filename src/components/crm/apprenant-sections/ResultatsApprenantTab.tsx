@@ -199,6 +199,9 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
                           {isReussi ? "Réussi ✅" : "Échoué ❌"}
                         </Badge>
                       )}
+                      {exam.matieres.some((m: any) => m?.__noteRecalculee) && (
+                        <Badge variant="outline" className="text-xs">{MENTION_NOTE_RECALCULEE}</Badge>
+                      )}
                       {versionAnterieure && !mauvaisExam && !passageContamineDocumente && (
                         <Badge variant="outline" className="text-xs border-amber-400 text-amber-700">
                           ⚠️ Version antérieure de l'examen
