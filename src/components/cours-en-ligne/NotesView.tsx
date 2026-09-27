@@ -6,6 +6,9 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { MODULES_DATA } from "./formations-data";
 import { isExamAttemptPublicationPending, computeReussiForResult, excludeResultPlaceholders, mergePassageSiblingRows } from "./exam-helpers";
+import { fetchCoreMatiereStates } from "@/lib/coreExamPublication";
+import { fetchPassagesV2NonFiables } from "@/lib/passagesV2NonFiables";
+import { attacherSourceUnique, noteExamenAffichee } from "@/lib/noteExamenAffichee";
 
 interface QuizResult {
   id: string;
@@ -66,18 +69,10 @@ const MODULE_TO_MATIERE: Record<number, string> = {
   8: "Pratique VTC",
 };
 
+// Fonction commune avec l'écran admin (source unique note/statut).
 const normalizeQuizNoteSur20 = (result: QuizResult): number | null => {
-  const score = Number(result.score_obtenu ?? 0);
-  const max = Number(result.score_max ?? 0);
-  if (Number.isFinite(max) && max > 0) {
-    const safeScore = Math.min(Math.max(Number.isFinite(score) ? score : 0, 0), max);
-    return Number(((safeScore / max) * 20).toFixed(1));
-  }
-
-  if (result.note_sur_20 == null) return null;
-  const fallback = Number(result.note_sur_20);
-  if (!Number.isFinite(fallback)) return null;
-  return Number(Math.min(Math.max(fallback, 0), 20).toFixed(1));
+  const n = noteExamenAffichee(result);
+  return n.etat === "note" ? n.note20 : null;
 };
 
 const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: NotesViewProps) => {
@@ -126,7 +121,13 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
         if (quizRes.error) {
           console.error("NotesView: erreur chargement quiz", quizRes.error);
         } else {
-          setQuizResults(mergePassageSiblingRows(excludeResultPlaceholders(quizRes.data || [])) as any);
+          // Source unique : même état serveur que l'écran admin (lecture seule).
+          const coreStates = await fetchCoreMatiereStates(apprenantId);
+          const nonFiables = coreStates === null
+            ? null
+            : await fetchPassagesV2NonFiables(new Map([[apprenantId, coreStates]]));
+          const rows = mergePassageSiblingRows(excludeResultPlaceholders(quizRes.data || [])) as any[];
+          setQuizResults(rows.map((r) => attacherSourceUnique(r, coreStates, nonFiables)) as any);
         }
 
         if (moduleRes.error) {
