@@ -757,6 +757,13 @@
       "when": 1790505990370,
       "tag": "0107_regle_examens_blancs_6_sur_6",
       "breakpoints": true
+    },
+    {
+      "idx": 108,
+      "version": "7",
+      "when": 1790508710253,
+      "tag": "0108_regle_serveur_examens_blancs_6_sur_6_auto",
+      "breakpoints": true
     }
   ]
 }

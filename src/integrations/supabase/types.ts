@@ -7475,6 +7475,10 @@ export type Database = {
         Args: { _apprenant_id: string; _module_id: number }
         Returns: Json
       }
+      examens_blancs_valider_si_complet: {
+        Args: { _apprenant_id: string; _exam_id: string }
+        Returns: undefined
+      }
       get_active_apprenant_connexion_info: {
         Args: { _apprenant_id: string; _client_session_id?: string }
         Returns: {
