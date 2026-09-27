@@ -916,25 +916,30 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const [completedModuleIds, setCompletedModuleIds] = useState<Set<number>>(new Set());
   const [moduleScores, setModuleScores] = useState<Record<number, { score_obtenu: number | null; score_max: number | null }>>({});
   // Liste réelle des quiz de chaque module (contenu serveur), lecture seule — affichage uniquement.
-  const [quizAttendusParModule, setQuizAttendusParModule] = useState<Record<number, string[]>>({});
+  // Quiz attendus = un élément PAR QUIZ réel du module (même compte que la page du module).
+  const [quizAttendusParModule, setQuizAttendusParModule] = useState<Record<number, Array<{ id: string; label: string }>>>({});
   useEffect(() => {
     let annule = false;
     (async () => {
       const { data, error } = await supabase.from("module_editor_state").select("module_id, module_data, deleted_exercices");
       if (annule || error || !data) return;
-      const res: Record<number, string[]> = {};
+      const res: Record<number, Array<{ id: string; label: string }>> = {};
       for (const row of data as any[]) {
         const mid = normalizeModuleIdForDashboard(Number(row.module_id));
         const supprimes = new Set((Array.isArray(row.deleted_exercices) ? row.deleted_exercices : []).map((x: any) => String(x)));
         const exos = Array.isArray(row.module_data?.exercices) ? row.module_data.exercices : [];
-        const labels = new Set<string>();
+        const liste = res[mid] ? [...res[mid]] : [];
+        const vus = new Set(liste.map((q) => q.id));
         for (const e of exos) {
           if (!e || e.actif === false || supprimes.has(String(e.id))) continue;
           if (!Array.isArray(e.questions) || e.questions.length === 0) continue;
-          const l = getPointLabelFromExerciseTitle(String(e.titre || ""), mid);
-          if (l) labels.add(l);
+          const id = String(e.id);
+          if (vus.has(id)) continue;
+          vus.add(id);
+          const titre = String(e.titre || "");
+          liste.push({ id, label: getPointLabelFromExerciseTitle(titre, mid) || titre || `Quiz ${id}` });
         }
-        if (labels.size > 0) res[mid] = Array.from(new Set([...(res[mid] || []), ...labels]));
+        if (liste.length > 0) res[mid] = liste;
       }
       setQuizAttendusParModule(res);
     })();
