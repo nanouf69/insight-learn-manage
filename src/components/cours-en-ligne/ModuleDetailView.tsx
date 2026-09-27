@@ -8465,7 +8465,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                         disabled={qrcResult !== undefined && qrcResult !== "loading" && !qrcResult?.indisponible}
                         className="mt-2"
                       />
-                      {qrcResult?.indisponible && (
+                      {qrcResult && qrcResult !== "loading" && qrcResult.indisponible && (
                         <div className="flex items-center gap-2 mt-1 text-sm text-destructive">
                           <span>⚠️ Correction indisponible, réessayez</span>
                           <Button size="sm" variant="outline" onClick={() => handleQrcCorrection(exo.id, q, key)}>
