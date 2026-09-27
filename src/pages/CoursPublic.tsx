@@ -42,6 +42,9 @@ import StudentHoursTracker from "@/components/cours-en-ligne/StudentHoursTracker
 import StudentLogin from "@/components/cours-en-ligne/StudentLogin";
 import { FORMATIONS, MODULES_DATA, expandModulesAutorises, type FormationId } from "@/components/cours-en-ligne/formations-data";
 import { useLiveExamens } from "@/components/cours-en-ligne/useLiveExamens";
+import { buildMatiereLookupKeys, selectLatestAttemptRows } from "@/components/cours-en-ligne/examens-blancs-utils";
+import { excludeResultPlaceholders, mergePassageSiblingRows } from "@/components/cours-en-ligne/exam-helpers";
+import { isAfterExamReset, latestExamResetCutoffs } from "@/lib/examResetCutoff";
 import { supabase } from "@/integrations/supabase/client";
 import { safeDateParse } from "@/lib/safeDateParse";
 import { sendAdminNotification } from "@/lib/sendAdminNotification";
@@ -957,9 +960,42 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     return () => { annule = true; };
   }, []);
   const [moduleCompletionsForNotes, setModuleCompletionsForNotes] = useState<Array<{ id: string; module_id: number; score_obtenu: number | null; score_max: number | null; completed_at: string; details: any; status?: string | null; progress?: number | null }>>([]);
-  const [examBlancCompletedIds, setExamBlancCompletedIds] = useState<Set<string>>(new Set());
+  const [examBlancRows, setExamBlancRows] = useState<any[]>([]);
+  const [examResetRows, setExamResetRows] = useState<any[]>([]);
+  useEffect(() => {
+    if (!apprenant?.id) return;
+    let annule = false;
+    supabase.from("core_exam_resets").select("exam_id, cutoff_at").eq("apprenant_id", apprenant.id)
+      .then(({ data }) => { if (!annule && data) setExamResetRows(data as any[]); });
+    return () => { annule = true; };
+  }, [apprenant?.id]);
   // Liste ACTUELLE des examens blancs enregistrés (jamais une liste figée du code).
   const { examens: examensActuels } = useLiveExamens();
+  // Examen blanc « réalisé » = TOUTES ses matières remises dans la dernière tentative
+  // (même règle que la liste du module 35). Affichage uniquement, lecture seule.
+  const examBlancCompletedIds = useMemo(() => {
+    const cutoffs = latestExamResetCutoffs(examResetRows);
+    const rows = mergePassageSiblingRows(excludeResultPlaceholders(examBlancRows.filter((r: any) =>
+      isAfterExamReset(r?.completed_at ?? r?.created_at, cutoffs[String(r?.quiz_id ?? "")]),
+    )));
+    const parQuiz = new Map<string, any[]>();
+    rows.forEach((r: any) => {
+      if (!r?.quiz_id) return;
+      if (!parQuiz.has(r.quiz_id)) parQuiz.set(r.quiz_id, []);
+      parQuiz.get(r.quiz_id)!.push(r);
+    });
+    const ids = new Set<string>();
+    parQuiz.forEach((list, quizId) => {
+      const def = examensActuels.find((e: any) => e.id === quizId);
+      const matieres = ((def?.matieres || []) as any[]).filter(Boolean);
+      if (matieres.length === 0) return;
+      const cles = new Set<string>();
+      selectLatestAttemptRows(list).forEach((r: any) => buildMatiereLookupKeys(r?.matiere_id, r?.matiere_nom).forEach((k) => cles.add(k)));
+      const remises = matieres.filter((m: any) => buildMatiereLookupKeys(m.id, m.nom).some((k) => cles.has(k))).length;
+      if (remises >= matieres.length) ids.add(quizId);
+    });
+    return ids;
+  }, [examBlancRows, examResetRows, examensActuels]);
   const [lastModuleName, setLastModuleName] = useState<string | null>(null);
   const [isInExam, setIsInExam] = useState(false);
   const [emargementFCStatus, setEmargementFCStatus] = useState<"checking" | "needed" | "signed" | "skipped" | "n/a">("checking");
@@ -1244,7 +1280,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         fetchModuleCompletions(apprenant.id!),
         supabase
           .from("apprenant_quiz_results" as any)
-          .select("quiz_id")
+          .select("id, quiz_id, matiere_id, matiere_nom, note_sur_20, score_obtenu, score_max, tentative, completed_at, created_at, details")
           .eq("apprenant_id", apprenant.id!)
           .eq("quiz_type", "examen_blanc"),
         // Primary: use apprenant_module_activites (works even without active connexion)
@@ -1304,8 +1340,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
 
 
       if (examData && !cancelled && requestId === completionsRequestRef.current) {
-        const ids = new Set<string>((examData as any[]).map((r: any) => r.quiz_id));
-        setExamBlancCompletedIds(ids);
+        setExamBlancRows(examData as any[]);
       }
 
       // Use activity log as primary source, fall back to connexion current_module
@@ -1550,7 +1585,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         fetchModuleCompletions(apprenant.id),
         supabase
           .from("apprenant_quiz_results" as any)
-          .select("quiz_id")
+          .select("id, quiz_id, matiere_id, matiere_nom, note_sur_20, score_obtenu, score_max, tentative, completed_at, created_at, details")
           .eq("apprenant_id", apprenant.id)
           .eq("quiz_type", "examen_blanc"),
       ]);
@@ -1570,8 +1605,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
       }
 
       if (examData && requestId === completionsRequestRef.current) {
-        const ids = new Set<string>((examData as any[]).map((r: any) => r.quiz_id));
-        setExamBlancCompletedIds(ids);
+        setExamBlancRows(examData as any[]);
       }
     }
   }, [apprenant?.id]);
