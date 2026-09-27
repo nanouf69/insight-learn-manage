@@ -44,6 +44,8 @@ export type QrcReelle = {
   note: number | null;
   corrige_email?: string | null;
   corrige_at?: string | null;
+  /** Texte complet de la fiche élève quand le nouveau moteur n'a gardé qu'un début (défaut du 23/09). Affichage seul. */
+  reponseComplete?: string | null;
 };
 
 /**
@@ -449,6 +451,39 @@ export async function chargerSessionTest(
       .range(0, 4999);
     return (data ?? []) as QrcReelle[];
   });
+
+  // Texte complet (fiche élève) : lecture seule, affiché quand le moteur diffère.
+  try {
+    const parAttempt = new Map(attempts.map((a) => [a.attempt_id as string, a]));
+    const exoIds = Array.from(new Set(attempts.map((a) => `${a.exam_id}__${a.snapshot?.matiere ?? a.snapshot?.matieres?.[0]?.subject_id ?? ""}`)));
+    const fiches = await parLots(ids, async (lot) => {
+      const { data } = await supabase
+        .from("reponses_apprenants")
+        .select("apprenant_id, exercice_id, reponses, updated_at")
+        .in("apprenant_id", lot)
+        .in("exercice_id", exoIds);
+      return (data ?? []) as any[];
+    });
+    const derniere = new Map<string, any>();
+    fiches.forEach((f) => {
+      const k = `${f.apprenant_id}|${f.exercice_id}`;
+      const p = derniere.get(k);
+      if (!p || String(f.updated_at) > String(p.updated_at)) derniere.set(k, f);
+    });
+    qrc.forEach((q) => {
+      const a = parAttempt.get(q.attempt_id);
+      if (!a) return;
+      const mat = a.snapshot?.matiere ?? a.snapshot?.matieres?.[0]?.subject_id ?? "";
+      const f = derniere.get(`${a.apprenant_id}|${a.exam_id}__${mat}`);
+      const cle = String(q.question_id).includes(":") ? String(q.question_id).split(":").pop()! : String(q.question_id);
+      const complet = f?.reponses?.[cle];
+      const txt = typeof complet === "string" ? complet.trim() : "";
+      const moteur = typeof q.reponse === "string" ? q.reponse.trim() : String(q.reponse ?? "").trim();
+      if (txt && txt !== moteur) q.reponseComplete = txt;
+    });
+  } catch (e) {
+    console.warn("[noyauReel] texte complet non lu:", e);
+  }
 
   const resultats = await parLots(attemptIds, async (lot) => {
     const { data } = await supabase

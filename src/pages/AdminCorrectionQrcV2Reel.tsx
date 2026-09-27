@@ -852,7 +852,12 @@ export default function AdminCorrectionQrcV2Reel() {
             <div className="rounded-lg border-2 border-primary/40 bg-primary/5 p-3">
               <p className="text-xs font-semibold uppercase tracking-wide text-primary">Réponse de l'apprenant</p>
               <p data-testid="reponse-eleve" className="whitespace-pre-wrap text-lg leading-relaxed">
-                {texte(qrcSel.reponse) || "(copie vide)"}
+                {qrcSel.reponseComplete ? (
+                  <>
+                    {qrcSel.reponseComplete}
+                    <span className="block mt-2 text-xs text-muted-foreground">Texte complet de la fiche élève (le nouveau moteur n'a gardé que : « {texte(qrcSel.reponse) || "vide"} »).</span>
+                  </>
+                ) : (texte(qrcSel.reponse) || "(copie vide)")}
               </p>
             </div>
 
