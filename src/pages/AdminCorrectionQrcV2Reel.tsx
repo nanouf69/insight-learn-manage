@@ -316,7 +316,7 @@ export default function AdminCorrectionQrcV2Reel() {
   const questionSel = tentativeSel?.snapshot.questions.find((q) => q.id === qrcSel?.question_id);
   const restaureSel = qrcSel ? baremeRestaureDe.get(qrcSel.qrc_instance_id) ?? null : null;
   const baremeSel = questionSel?.points ?? restaureSel?.bareme ?? null;
-  const videSel = !texte(qrcSel?.reponse).trim();
+  const videSel = !texte(qrcSel?.reponseComplete ?? qrcSel?.reponse).trim();
 
   // ——— Correction IA (lecture seule ici ; l'écriture se fait côté serveur) ———
   const [configIa, setConfigIa] = useState<ConfigIa | null>(null);
@@ -751,7 +751,7 @@ export default function AdminCorrectionQrcV2Reel() {
                           const corrigee = inst.etat === "corrigee";
                           const origine = origineCorrection(inst);
                           const probleme = !corrigee && points == null;
-                          const vide = !texte(inst.reponse).trim();
+                          const vide = !texte(inst.reponseComplete ?? inst.reponse).trim();
                           const note = `${String(inst.note).replace(".", ",")}${points != null ? `/${points}` : ""}`;
                           const verificationDemandee = demandesOuvertes.has(inst.qrc_instance_id);
                           const style = corrigee
