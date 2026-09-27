@@ -42,6 +42,9 @@ import StudentHoursTracker from "@/components/cours-en-ligne/StudentHoursTracker
 import StudentLogin from "@/components/cours-en-ligne/StudentLogin";
 import { FORMATIONS, MODULES_DATA, expandModulesAutorises, type FormationId } from "@/components/cours-en-ligne/formations-data";
 import { useLiveExamens } from "@/components/cours-en-ligne/useLiveExamens";
+import { buildMatiereLookupKeys, selectLatestAttemptRows } from "@/components/cours-en-ligne/examens-blancs-utils";
+import { excludeResultPlaceholders, mergePassageSiblingRows } from "@/components/cours-en-ligne/exam-helpers";
+import { isAfterExamReset, latestExamResetCutoffs } from "@/lib/examResetCutoff";
 import { supabase } from "@/integrations/supabase/client";
 import { safeDateParse } from "@/lib/safeDateParse";
 import { sendAdminNotification } from "@/lib/sendAdminNotification";
@@ -1270,7 +1273,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         fetchModuleCompletions(apprenant.id!),
         supabase
           .from("apprenant_quiz_results" as any)
-          .select("quiz_id")
+          .select("id, quiz_id, matiere_id, matiere_nom, note_sur_20, score_obtenu, score_max, tentative, completed_at, created_at, details")
           .eq("apprenant_id", apprenant.id!)
           .eq("quiz_type", "examen_blanc"),
         // Primary: use apprenant_module_activites (works even without active connexion)
@@ -1330,8 +1333,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
 
 
       if (examData && !cancelled && requestId === completionsRequestRef.current) {
-        const ids = new Set<string>((examData as any[]).map((r: any) => r.quiz_id));
-        setExamBlancCompletedIds(ids);
+        setExamBlancRows(examData as any[]);
       }
 
       // Use activity log as primary source, fall back to connexion current_module
@@ -1576,7 +1578,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         fetchModuleCompletions(apprenant.id),
         supabase
           .from("apprenant_quiz_results" as any)
-          .select("quiz_id")
+          .select("id, quiz_id, matiere_id, matiere_nom, note_sur_20, score_obtenu, score_max, tentative, completed_at, created_at, details")
           .eq("apprenant_id", apprenant.id)
           .eq("quiz_type", "examen_blanc"),
       ]);
@@ -1596,8 +1598,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
       }
 
       if (examData && requestId === completionsRequestRef.current) {
-        const ids = new Set<string>((examData as any[]).map((r: any) => r.quiz_id));
-        setExamBlancCompletedIds(ids);
+        setExamBlancRows(examData as any[]);
       }
     }
   }, [apprenant?.id]);
