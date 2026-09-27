@@ -77,7 +77,8 @@ describe("Module unlocking — quiz-based completion (TAXI e-learning)", () => {
       isElearning: true,
     });
 
-    expect(state.effectivelyCompletedIds.has(2)).toBe(true);
+    // Terminé = serveur uniquement ; le module suivant reste accessible (« Validation en cours »).
+    expect(state.effectivelyCompletedIds.has(2)).toBe(false);
     expect(state.unlockedModuleIds.has(3)).toBe(true);
     expect(isModuleLocked(3, state)).toBe(false);
   });
