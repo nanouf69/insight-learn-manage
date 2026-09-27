@@ -3471,6 +3471,21 @@ export type Database = {
         }
         Relationships: []
       }
+      examens_blancs_parcours: {
+        Row: {
+          exam_id: string
+          module_id: number
+        }
+        Insert: {
+          exam_id: string
+          module_id: number
+        }
+        Update: {
+          exam_id?: string
+          module_id?: number
+        }
+        Relationships: []
+      }
       facture_electronique_evenements: {
         Row: {
           created_at: string
@@ -7456,6 +7471,10 @@ export type Database = {
       exam_id_for_module: { Args: { _module_id: number }; Returns: string }
       exam_matiere_signature: { Args: { _matiere: Json }; Returns: string }
       exam_numero_from_id: { Args: { _exam_id: string }; Returns: number }
+      examens_blancs_controle: {
+        Args: { _apprenant_id: string; _module_id: number }
+        Returns: Json
+      }
       get_active_apprenant_connexion_info: {
         Args: { _apprenant_id: string; _client_session_id?: string }
         Returns: {
