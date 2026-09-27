@@ -7,7 +7,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { loadSavedExamens } from "@/components/cours-en-ligne/ExamensBlancsEditor";
 import { computeMoyenneExamen, computeMatiereScoreForAttempt } from "@/components/cours-en-ligne/examens-blancs-scoring";
 import { findScoreForMatiere, buildMatiereLookupKeys } from "@/components/cours-en-ligne/examens-blancs-utils";
-import { fetchCoreMatiereStates, matchCoreState } from "@/lib/coreExamPublication";
+import { fetchCoreMatiereStates } from "@/lib/coreExamPublication";
+import { fetchPassagesV2NonFiables, MENTION_NOTE_RECALCULEE } from "@/lib/passagesV2NonFiables";
+import { attacherSourceUnique } from "@/lib/noteExamenAffichee";
 import { useCoreChangeTick } from "@/hooks/useCoreChangeTick";
 import { isExamAttemptPublicationPending, excludeResultPlaceholders, mergePassageSiblingRows } from "@/components/cours-en-ligne/exam-helpers";
 import { isSnapshotOutdated, findSnapshotWrongExamSource, KNOWN_EB1_SERVED_IN_EB2_RESULT_IDS } from "@/components/cours-en-ligne/exam-content-integrity";
@@ -56,11 +58,14 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
         .eq("apprenant_id", apprenantId)
         .eq("type_document", "bilan_examen_blanc")
         .order("completed_at", { ascending: false }),
-    ]).then(([scoresRes, coreStates, bilansRes]) => {
+    ]).then(async ([scoresRes, coreStates, bilansRes]) => {
       if (scoresRes.data) {
-        // Source unique : même état serveur que la carte élève et l'écran Correction QRC.
+        // Source unique : même fonction commune que « Mes notes » (élève).
+        const nonFiables = coreStates === null
+          ? null
+          : await fetchPassagesV2NonFiables(new Map([[apprenantId, coreStates]]));
         const rows = mergePassageSiblingRows(excludeResultPlaceholders(scoresRes.data)) as any[];
-        setExamScores(rows.map((r: any) => ({ ...r, __core: matchCoreState(coreStates, r.quiz_id, r.matiere_id, r.completed_at, r.id) })));
+        setExamScores(rows.map((r: any) => attacherSourceUnique(r, coreStates, nonFiables)));
       }
       if (bilansRes.data) {
         const map: Record<string, string> = {};

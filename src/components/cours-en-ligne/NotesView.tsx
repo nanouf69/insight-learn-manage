@@ -631,12 +631,19 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
                       <div className="md:col-span-3 font-medium text-slate-800">{r.quiz_titre}</div>
                       <div className="md:col-span-2 text-slate-500 text-xs">{r.matiere_nom || "—"}</div>
                       <div className="md:col-span-2 text-center">
-                         {pendingResultIds.has(r.id) ? (
+                         {noteExamenAffichee(r).etat === "lecture_impossible" ? (
+                          <span className="text-xs font-semibold text-amber-600">Note en attente</span>
+                        ) : pendingResultIds.has(r.id) ? (
                           <span className="text-xs font-semibold text-amber-600">⏳ En attente</span>
                         ) : (
-                          <span className={`font-bold ${(noteSur20 ?? 0) >= 10 ? "text-emerald-600" : "text-red-500"}`}>
-                            {noteSur20 != null ? `${noteSur20.toFixed(1)}/20` : "—"}
-                          </span>
+                          <>
+                            <span className={`font-bold ${(noteSur20 ?? 0) >= 10 ? "text-emerald-600" : "text-red-500"}`}>
+                              {noteSur20 != null ? `${noteSur20.toFixed(1)}/20` : "—"}
+                            </span>
+                            {noteExamenAffichee(r).mention && (
+                              <div className="text-[10px] text-muted-foreground">{noteExamenAffichee(r).mention}</div>
+                            )}
+                          </>
                         )}
                       </div>
 
