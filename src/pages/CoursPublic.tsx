@@ -920,13 +920,13 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const [moduleScores, setModuleScores] = useState<Record<number, { score_obtenu: number | null; score_max: number | null }>>({});
   // Liste réelle des quiz de chaque module (contenu serveur), lecture seule — affichage uniquement.
   // Quiz attendus = un élément PAR QUIZ réel du module (même compte que la page du module).
-  const [quizAttendusParModule, setQuizAttendusParModule] = useState<Record<number, Array<{ id: string; label: string }>>>({});
+  const [quizAttendusParModule, setQuizAttendusParModule] = useState<Record<number, Array<{ id: string; label: string; questionIds: string[] }>>>({});
   useEffect(() => {
     let annule = false;
     (async () => {
       const { data, error } = await supabase.from("module_editor_state").select("module_id, module_data, deleted_exercices");
       if (annule || error || !data) return;
-      const res: Record<number, Array<{ id: string; label: string }>> = {};
+      const res: Record<number, Array<{ id: string; label: string; questionIds: string[] }>> = {};
       for (const row of data as any[]) {
         const mid = normalizeModuleIdForDashboard(Number(row.module_id));
         const supprimes = new Set((Array.isArray(row.deleted_exercices) ? row.deleted_exercices : []).map((x: any) => String(x)));
@@ -940,7 +940,11 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
           if (vus.has(id)) continue;
           vus.add(id);
           const titre = String(e.titre || "");
-          liste.push({ id, label: getPointLabelFromExerciseTitle(titre, mid) || titre || `Quiz ${id}` });
+          // Questions actives du quiz : le quiz ne compte « fait » que si toutes ont une réponse.
+          const questionIds = e.questions
+            .filter((q: any) => q && q.actif !== false)
+            .map((q: any) => String(q.id));
+          liste.push({ id, label: getPointLabelFromExerciseTitle(titre, mid) || titre || `Quiz ${id}`, questionIds });
         }
         // Libellés identiques (ex. Anglais Part 1 à 4) : numérotés .1, .2, .3… pour les distinguer.
         const parLabel = new Map<string, number>();
@@ -2108,6 +2112,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     const allLabels = new Set<string>();
     const doneLabels = new Set<string>();
     const exosRepondus = new Set<string>();
+    const questionsRepondues = new Map<string, Set<string>>();
 
     rows.forEach((row) => {
       const details = Array.isArray(row?.details) ? row.details : [];
@@ -2116,6 +2121,11 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         const repondu = answer !== null && answer !== undefined && `${answer}`.trim() !== "";
         if (repondu && detail?.exerciceId !== undefined && detail?.exerciceId !== null) {
           exosRepondus.add(String(detail.exerciceId));
+          if (detail?.questionId !== undefined && detail?.questionId !== null) {
+            const cle = String(detail.exerciceId);
+            if (!questionsRepondues.has(cle)) questionsRepondues.set(cle, new Set());
+            questionsRepondues.get(cle)!.add(String(detail.questionId));
+          }
         }
         const exerciseTitle = typeof detail?.exerciceTitre === "string" ? detail.exerciceTitre : "";
         const pointLabel = getPointLabelFromExerciseTitle(exerciseTitle, module.id);
@@ -2129,8 +2139,15 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     // Quiz attendus = liste réelle du module, comptée quiz par quiz (comme la page du module).
     const attendus = quizAttendusParModule[module.id];
     if (attendus && attendus.length > 0) {
-      const faits = attendus.filter((q) => exosRepondus.has(q.id));
-      const restants = attendus.filter((q) => !exosRepondus.has(q.id));
+      // Un quiz est « fait » seulement si toutes ses questions actives ont une réponse (affichage uniquement).
+      const quizFini = (q: { id: string; questionIds: string[] }) => {
+        if (!exosRepondus.has(q.id)) return false;
+        if (!q.questionIds || q.questionIds.length === 0) return true;
+        const rep = questionsRepondues.get(q.id);
+        return !!rep && q.questionIds.every((qid) => rep.has(qid));
+      };
+      const faits = attendus.filter(quizFini);
+      const restants = attendus.filter((q) => !quizFini(q));
       acc[module.id] = {
         completedQuizzes: faits.length,
         totalQuizzes: attendus.length,
