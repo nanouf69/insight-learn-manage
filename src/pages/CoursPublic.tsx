@@ -2455,6 +2455,11 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                                   ▶ Reprendre
                                 </Badge>
                               )}
+                              {moduleProgressById[mod.id]?.enValidation && (
+                                <Badge variant="secondary" className="ml-2 text-[10px] px-1.5 py-0">
+                                  ⏳ Validation en cours
+                                </Badge>
+                              )}
                             </h3>
                             <p className="text-xs text-muted-foreground line-clamp-2">
                               {locked ? (INTRO_MODULE_IDS.has(modules[0]?.id) && !introCompleted ? "🔒 Terminez l'Introduction pour débloquer" : "🔒 Terminez le module précédent pour débloquer") : (
