@@ -10,3 +10,7 @@
 - Notes corrigées par un formateur : trigger `trg_garde_correction_admin_quiz` refuse (42501) toute modification élève de score/note/réussite/correctionsIA si une correction porte validatedByAdmin ou manuel ; why: une note en attente sur un appareil ne doit jamais écraser une correction admin.
 
 - Quiz de module : résultat « OK » affiché seulement après envoi + relecture + submitQuizAttempt ; révision d’un quiz validé sous `module_X_revision_exo_Y` (jamais la ligne validée) ; why: un quiz ne doit jamais paraître validé sans preuve serveur, et une révision ne doit jamais toucher une validation.
+- Note/statut d'examen blanc affichés via `src/lib/noteExamenAffichee.ts` (attacherSourceUnique + noteExamenAffichee) dans « Mes notes » et la fiche admin ; why: les deux écrans ne doivent jamais diverger.
+- Passages du nouveau moteur « non fiables » (défaut du 23/09) repérés à l'affichage par `src/lib/passagesV2NonFiables.ts` : note de l'ancien système + mention ; why: le moteur n'a parfois gardé que la première valeur.
+- « Terminé » d'un module = statut serveur uniquement ; compteurs complets sans serveur = « Validation en cours » (le module suivant reste ouvert) ; why: le navigateur ne décide jamais seul.
+- Modules Examens blancs 35–38 : déclencheur serveur `trg_zz_examens_blancs_6_sur_6` (écrit seulement « completed », jamais bloquant) ; why: validation 6/6 automatique côté serveur.

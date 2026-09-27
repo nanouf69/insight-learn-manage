@@ -17,6 +17,7 @@ import {
 } from "./examens-blancs-utils";
 import { computeMoyenneExamen, computeMatiereScore, computeMatiereScoreForAttempt, resolveMatiereForScoring } from "./examens-blancs-scoring";
 import { fetchCoreMatiereStates, matchCoreState } from "@/lib/coreExamPublication";
+import { fetchPassagesV2NonFiables } from "@/lib/passagesV2NonFiables";
 import { useCoreChangeTick } from "@/hooks/useCoreChangeTick";
 import { isExamAttemptPublicationPending, isMatiereQrcPendingForAttempt, excludeResultPlaceholders, mergePassageSiblingRows } from "./exam-helpers";
 import { toast } from "sonner";
@@ -164,7 +165,10 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
         .eq("etat", "en_cours"),
       fetchCoreMatiereStates(apprenantId),
     ])
-      .then(async ([{ data }, { data: resetRows }, { data: openV2Rows }, coreStates]) => {
+      .then(async ([{ data }, { data: resetRows }, { data: openV2Rows }, coreStatesBruts]) => {
+        // Passages non fiables (défaut du 23/09) : note de l'ancien système.
+        const nonFiablesV2 = coreStatesBruts ? await fetchPassagesV2NonFiables(new Map([[apprenantId, coreStatesBruts]])) : null;
+        const coreStates = coreStatesBruts && nonFiablesV2 ? coreStatesBruts.filter((s) => !nonFiablesV2.has(s.attemptId)) : coreStatesBruts;
         if (data) {
           const resetCutoffs = latestExamResetCutoffs(resetRows);
           // Les lignes techniques « en attente de finalisation » (score 0 créé

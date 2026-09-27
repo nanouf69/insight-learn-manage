@@ -2081,7 +2081,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
 
   // Source unique d'affichage (getLearnerModuleDisplayState) : Terminé serveur
   // monotone, compteurs actuels seulement en complément, jamais en rétrogradation.
-  const moduleProgressById = modules.reduce<Record<number, { isDone: boolean; hasProgress: boolean }>>((acc, module) => {
+  const moduleProgressById = modules.reduce<Record<number, { isDone: boolean; hasProgress: boolean; enValidation: boolean }>>((acc, module) => {
     const rows = completionsByModuleId[module.id] || [];
     const display = getLearnerModuleDisplayState({
       loaded: completionsLoaded,
@@ -2092,7 +2092,8 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     });
     acc[module.id] = {
       isDone: display.isDone,
-      hasProgress: display.status === "en_cours" || display.isDone,
+      hasProgress: display.status === "en_cours" || display.status === "validation_en_cours" || display.isDone,
+      enValidation: display.status === "validation_en_cours",
     };
     return acc;
   }, {});
@@ -2452,6 +2453,11 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                               {lastMod && !locked && (
                                 <Badge className="ml-2 text-[10px] px-1.5 py-0 bg-red-500 text-white border-red-500">
                                   ▶ Reprendre
+                                </Badge>
+                              )}
+                              {moduleProgressById[mod.id]?.enValidation && (
+                                <Badge variant="secondary" className="ml-2 text-[10px] px-1.5 py-0">
+                                  ⏳ Validation en cours
                                 </Badge>
                               )}
                             </h3>

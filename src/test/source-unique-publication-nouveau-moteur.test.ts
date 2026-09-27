@@ -129,7 +129,8 @@ describe("Source unique : nouveau passage = nouveau moteur partout", () => {
     for (const f of files) {
       const src = fs.readFileSync(path.resolve(__dirname, f), "utf8");
       expect(src, f).toContain("fetchCoreMatiereStates");
-      expect(src, f).toContain("matchCoreState");
+      // Fiche Admin : rapprochement via la fonction commune (qui appelle matchCoreState).
+      expect(/matchCoreState|attacherSourceUnique/.test(src), f).toBe(true);
       expect(src, f).toContain("useCoreChangeTick");
       expect(src, f).toContain("isExamAttemptPublicationPending");
     }

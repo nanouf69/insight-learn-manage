@@ -7,7 +7,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { loadSavedExamens } from "@/components/cours-en-ligne/ExamensBlancsEditor";
 import { computeMoyenneExamen, computeMatiereScoreForAttempt } from "@/components/cours-en-ligne/examens-blancs-scoring";
 import { findScoreForMatiere, buildMatiereLookupKeys } from "@/components/cours-en-ligne/examens-blancs-utils";
-import { fetchCoreMatiereStates, matchCoreState } from "@/lib/coreExamPublication";
+import { fetchCoreMatiereStates } from "@/lib/coreExamPublication";
+import { fetchPassagesV2NonFiables, MENTION_NOTE_RECALCULEE } from "@/lib/passagesV2NonFiables";
+import { attacherSourceUnique } from "@/lib/noteExamenAffichee";
 import { useCoreChangeTick } from "@/hooks/useCoreChangeTick";
 import { isExamAttemptPublicationPending, excludeResultPlaceholders, mergePassageSiblingRows } from "@/components/cours-en-ligne/exam-helpers";
 import { isSnapshotOutdated, findSnapshotWrongExamSource, KNOWN_EB1_SERVED_IN_EB2_RESULT_IDS } from "@/components/cours-en-ligne/exam-content-integrity";
@@ -56,11 +58,14 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
         .eq("apprenant_id", apprenantId)
         .eq("type_document", "bilan_examen_blanc")
         .order("completed_at", { ascending: false }),
-    ]).then(([scoresRes, coreStates, bilansRes]) => {
+    ]).then(async ([scoresRes, coreStates, bilansRes]) => {
       if (scoresRes.data) {
-        // Source unique : même état serveur que la carte élève et l'écran Correction QRC.
+        // Source unique : même fonction commune que « Mes notes » (élève).
+        const nonFiables = coreStates === null
+          ? null
+          : await fetchPassagesV2NonFiables(new Map([[apprenantId, coreStates]]));
         const rows = mergePassageSiblingRows(excludeResultPlaceholders(scoresRes.data)) as any[];
-        setExamScores(rows.map((r: any) => ({ ...r, __core: matchCoreState(coreStates, r.quiz_id, r.matiere_id, r.completed_at, r.id) })));
+        setExamScores(rows.map((r: any) => attacherSourceUnique(r, coreStates, nonFiables)));
       }
       if (bilansRes.data) {
         const map: Record<string, string> = {};
@@ -114,7 +119,15 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Trophy className="w-5 h-5 text-primary" />
-            Examens blancs ({sortedExams.length} réalisé{sortedExams.length > 1 ? "s" : ""})
+            {(() => {
+              // Un examen blanc n'est « réalisé » que si TOUTES ses matières sont remises.
+              const n = sortedExams.filter(([qid, ex]) => {
+                const def = liveExamens.find((e: any) => e.id === qid);
+                const mats = Array.isArray(def?.matieres) ? def.matieres : [];
+                return mats.length > 0 && mats.every((md: any) => ex.matieres.some((m: any) => m.matiere_id === md.id || m.matiere_nom === md.nom));
+              }).length;
+              return <>Examens blancs ({n} réalisé{n > 1 ? "s" : ""}{sortedExams.length > n ? `, ${sortedExams.length - n} incomplet${sortedExams.length - n > 1 ? "s" : ""}` : ""})</>;
+            })()}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -193,6 +206,9 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
                         <Badge variant={isReussi ? "default" : "destructive"} className="text-xs">
                           {isReussi ? "Réussi ✅" : "Échoué ❌"}
                         </Badge>
+                      )}
+                      {exam.matieres.some((m: any) => m?.__noteRecalculee) && (
+                        <Badge variant="outline" className="text-xs">{MENTION_NOTE_RECALCULEE}</Badge>
                       )}
                       {versionAnterieure && !mauvaisExam && !passageContamineDocumente && (
                         <Badge variant="outline" className="text-xs border-amber-400 text-amber-700">
