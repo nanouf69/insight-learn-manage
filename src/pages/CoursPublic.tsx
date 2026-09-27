@@ -2062,28 +2062,37 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     const rows = completionsByModuleId[module.id] || [];
     const allLabels = new Set<string>();
     const doneLabels = new Set<string>();
+    const exosRepondus = new Set<string>();
 
     rows.forEach((row) => {
       const details = Array.isArray(row?.details) ? row.details : [];
       details.forEach((detail: any) => {
+        const answer = detail?.reponseEleve;
+        const repondu = answer !== null && answer !== undefined && `${answer}`.trim() !== "";
+        if (repondu && detail?.exerciceId !== undefined && detail?.exerciceId !== null) {
+          exosRepondus.add(String(detail.exerciceId));
+        }
         const exerciseTitle = typeof detail?.exerciceTitre === "string" ? detail.exerciceTitre : "";
         const pointLabel = getPointLabelFromExerciseTitle(exerciseTitle, module.id);
         if (pointLabel) {
           allLabels.add(pointLabel);
-          const answer = detail?.reponseEleve;
-          if (answer !== null && answer !== undefined && `${answer}`.trim() !== "") {
-            doneLabels.add(pointLabel);
-          }
+          if (repondu) doneLabels.add(pointLabel);
         }
       });
     });
 
-    // Quiz attendus = liste réelle du module si connue (jamais déduite des réponses enregistrées).
+    // Quiz attendus = liste réelle du module, comptée quiz par quiz (comme la page du module).
     const attendus = quizAttendusParModule[module.id];
     if (attendus && attendus.length > 0) {
-      allLabels.clear();
-      attendus.forEach((l) => allLabels.add(l));
-      Array.from(doneLabels).forEach((l) => { if (!allLabels.has(l)) doneLabels.delete(l); });
+      const faits = attendus.filter((q) => exosRepondus.has(q.id));
+      const restants = attendus.filter((q) => !exosRepondus.has(q.id));
+      acc[module.id] = {
+        completedQuizzes: faits.length,
+        totalQuizzes: attendus.length,
+        completedLabels: faits.map((q) => q.label),
+        remainingLabels: restants.map((q) => q.label),
+      };
+      return acc;
     }
     const completedLabelsArr = Array.from(doneLabels).sort();
     const remainingLabelsArr = Array.from(allLabels).filter(l => !doneLabels.has(l)).sort();
