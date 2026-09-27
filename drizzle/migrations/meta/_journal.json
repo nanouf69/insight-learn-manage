@@ -750,6 +750,13 @@
       "when": 1790441186832,
       "tag": "0106_transition_lecture_versions_publiees",
       "breakpoints": true
+    },
+    {
+      "idx": 107,
+      "version": "7",
+      "when": 1790505990370,
+      "tag": "0107_regle_examens_blancs_6_sur_6",
+      "breakpoints": true
     }
   ]
 }
