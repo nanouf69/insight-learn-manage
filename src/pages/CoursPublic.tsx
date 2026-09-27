@@ -939,6 +939,17 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
           const titre = String(e.titre || "");
           liste.push({ id, label: getPointLabelFromExerciseTitle(titre, mid) || titre || `Quiz ${id}` });
         }
+        // Libellés identiques (ex. Anglais Part 1 à 4) : numérotés .1, .2, .3… pour les distinguer.
+        const parLabel = new Map<string, number>();
+        liste.forEach((q) => parLabel.set(q.label, (parLabel.get(q.label) ?? 0) + 1));
+        const rang = new Map<string, number>();
+        liste.forEach((q) => {
+          if ((parLabel.get(q.label) ?? 0) < 2) return;
+          const n = (rang.get(q.label) ?? 0) + 1;
+          rang.set(q.label, n);
+          const m = q.label.match(/^(\d+)(?:\.\d+)?\s*(.*)$/);
+          q.label = m ? `${m[1]}.${n} ${m[2]}`.trim() : `${q.label} (${n})`;
+        });
         if (liste.length > 0) res[mid] = liste;
       }
       setQuizAttendusParModule(res);
