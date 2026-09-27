@@ -119,7 +119,15 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Trophy className="w-5 h-5 text-primary" />
-            Examens blancs ({sortedExams.length} réalisé{sortedExams.length > 1 ? "s" : ""})
+            {(() => {
+              // Un examen blanc n'est « réalisé » que si TOUTES ses matières sont remises.
+              const n = sortedExams.filter(([qid, ex]) => {
+                const def = liveExamens.find((e: any) => e.id === qid);
+                const mats = Array.isArray(def?.matieres) ? def.matieres : [];
+                return mats.length > 0 && mats.every((md: any) => ex.matieres.some((m: any) => m.matiere_id === md.id || m.matiere_nom === md.nom));
+              }).length;
+              return <>Examens blancs ({n} réalisé{n > 1 ? "s" : ""}{sortedExams.length > n ? `, ${sortedExams.length - n} incomplet${sortedExams.length - n > 1 ? "s" : ""}` : ""})</>;
+            })()}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
