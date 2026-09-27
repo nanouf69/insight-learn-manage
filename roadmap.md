@@ -140,3 +140,6 @@ Règle : chaque incident réel (Kevin, Thierno, Léa, Seydou, BOUDJORF) = protec
 - [x] Étape 5 — Contenu indisponible élève + bandeau brouillon local admin
 - [ ] Étape 6 — 8 questions en double des Bilans : définition du « 8 » non retrouvée (attente utilisateur)
 - [ ] Étape 7 — Essais écran TEST/admin + publication : bloquée, élèves actifs (dernière activité 11:33 UTC)
+
+- [x] 27/09 Contrôle de connaissances TAXI (module 13) : exercice 13100 créé (1 237 questions), exercices 1–5 désactivés.
+- [ ] Publication du lot : en attente (examen blanc en cours à 20:49 UTC) ; essais écran du module 13 à faire.
