@@ -6372,7 +6372,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     const [inlineQuizValidated, setInlineQuizValidated] = useState<Set<number>>(new Set());
     const [qrcAnswers, setQrcAnswers] = useState<Record<string, string>>({});
     const [unansweredKeys, setUnansweredKeys] = useState<Set<string>>(new Set());
-    const [qrcResults, setQrcResults] = useState<Record<string, { estCorrect: boolean; pointsObtenus: number; explication: string } | "loading">>({});
+    const [qrcResults, setQrcResults] = useState<Record<string, { estCorrect: boolean; pointsObtenus: number; explication: string; indisponible?: boolean } | { indisponible: true; estCorrect?: undefined; pointsObtenus?: undefined; explication?: undefined } | "loading">>({});
 
     const [introAcknowledged, setIntroAcknowledged] = useState<Set<number>>(new Set());
     const [savedAnswersLoaded, setSavedAnswersLoaded] = useState(false);
@@ -8453,7 +8453,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 const isInRevision = !!revisionEffective(exo.id, questionsSafe);
 
                 if (isQrc) {
-                  const isQrcWrong = isInRevision || (qrcResult && qrcResult !== "loading" && !qrcResult.estCorrect);
+                  const isQrcWrong = isInRevision || (qrcResult && qrcResult !== "loading" && !qrcResult.indisponible && !qrcResult.estCorrect);
                   return (
                     <div key={q.id} id={`exo-q-${exo.id}-${qi}`} className={`space-y-2 p-4 border rounded-lg scroll-mt-20 ${isQrcWrong ? 'border-destructive border-4 bg-destructive/10' : ''}`}>
                       {renderExerciseQuestionPrompt(qi + 1, questionPrompts[qi] ?? parseExerciseQuestionPrompt(q.enonce))}
@@ -9057,7 +9057,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 let isWrong = false;
                 if (isQrcQ) {
                   const qr = qrcResults[sidebarKey];
-                  isWrong = !!sidebarInRevision || (!!qr && qr !== "loading" && !qr.estCorrect);
+                  isWrong = !!sidebarInRevision || (!!qr && qr !== "loading" && !qr.indisponible && !qr.estCorrect);
                 } else {
                   const sel = selectedAnswers[sidebarKey];
                   const selArr = Array.isArray(sel) ? sel : sel ? [sel] : [];
