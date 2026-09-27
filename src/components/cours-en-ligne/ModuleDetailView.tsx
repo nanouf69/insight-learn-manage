@@ -8258,8 +8258,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           setQrcResults(prev => ({ ...prev, [key]: data }));
         } catch (e) {
           console.error(e);
-          setQrcResults(prev => ({ ...prev, [key]: { estCorrect: false, pointsObtenus: 0, explication: "Erreur de correction" } }));
-          toast.error("Erreur lors de la correction IA");
+          // Échec ou délai dépassé : aucune note inventée, la réponse reste enregistrée, l'élève peut réessayer.
+          setQrcResults(prev => ({ ...prev, [key]: { indisponible: true } }));
+          toast.error("Correction indisponible, réessayez");
         }
       };
 
@@ -8461,9 +8462,17 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                         placeholder="Écrivez votre réponse ici..."
                         value={qrcAnswers[key] ?? (typeof selected === "string" ? selected : "")}
                         onChange={(e) => handleQrcAnswerChange(key, e.target.value)}
-                        disabled={qrcResult !== undefined && qrcResult !== "loading"}
+                        disabled={qrcResult !== undefined && qrcResult !== "loading" && !qrcResult?.indisponible}
                         className="mt-2"
                       />
+                      {qrcResult?.indisponible && (
+                        <div className="flex items-center gap-2 mt-1 text-sm text-destructive">
+                          <span>⚠️ Correction indisponible, réessayez</span>
+                          <Button size="sm" variant="outline" onClick={() => handleQrcCorrection(exo.id, q, key)}>
+                            🔄 Réessayer
+                          </Button>
+                        </div>
+                      )}
                       {!qrcResult && (
                         <Button size="sm" onClick={() => handleQrcCorrection(exo.id, q, key)} className="gap-2 mt-1">
                           🤖 Corriger par IA
@@ -8474,7 +8483,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                           <Loader2 className="w-4 h-4 animate-spin" /> Correction en cours...
                         </div>
                       )}
-                      {qrcResult && qrcResult !== "loading" && (
+                      {qrcResult && qrcResult !== "loading" && !qrcResult.indisponible && (
                         <div className={`p-3 rounded-lg border-2 mt-2 ${qrcResult.estCorrect ? "bg-emerald-50 border-emerald-500 dark:bg-emerald-950" : qrcResult.pointsObtenus > 0 ? "bg-amber-50 border-amber-500 dark:bg-amber-950" : "bg-destructive/10 border-destructive"}`}>
                           <p className="font-semibold text-sm">
                             🤖 {qrcResult.estCorrect ? "✅ Correct" : qrcResult.pointsObtenus > 0 ? "⚠️ Partiellement correct" : "❌ Incorrect"} — {qrcResult.pointsObtenus}/2 pts
