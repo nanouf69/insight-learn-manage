@@ -934,7 +934,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
           const l = getPointLabelFromExerciseTitle(String(e.titre || ""), mid);
           if (l) labels.add(l);
         }
-        if (labels.size > 0) res[mid] = Array.from(labels);
+        if (labels.size > 0) res[mid] = Array.from(new Set([...(res[mid] || []), ...labels]));
       }
       setQuizAttendusParModule(res);
     })();
