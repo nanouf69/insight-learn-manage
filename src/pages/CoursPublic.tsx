@@ -962,6 +962,13 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const [moduleCompletionsForNotes, setModuleCompletionsForNotes] = useState<Array<{ id: string; module_id: number; score_obtenu: number | null; score_max: number | null; completed_at: string; details: any; status?: string | null; progress?: number | null }>>([]);
   const [examBlancRows, setExamBlancRows] = useState<any[]>([]);
   const [examResetRows, setExamResetRows] = useState<any[]>([]);
+  useEffect(() => {
+    if (!apprenant?.id) return;
+    let annule = false;
+    supabase.from("core_exam_resets").select("exam_id, cutoff_at").eq("apprenant_id", apprenant.id)
+      .then(({ data }) => { if (!annule && data) setExamResetRows(data as any[]); });
+    return () => { annule = true; };
+  }, [apprenant?.id]);
   // Liste ACTUELLE des examens blancs enregistrés (jamais une liste figée du code).
   const { examens: examensActuels } = useLiveExamens();
   // Examen blanc « réalisé » = TOUTES ses matières remises dans la dernière tentative
