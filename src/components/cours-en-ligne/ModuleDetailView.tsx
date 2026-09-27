@@ -4166,6 +4166,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   const [deletedCours, setDeletedCours] = useState<ContentItem[]>([]);
   const [deletedExercices, setDeletedExercices] = useState<ExerciceItem[]>([]);
   const [editorStateHydrated, setEditorStateHydrated] = useState(false);
+  // Étape 5 : élève = version serveur uniquement ; admin = bandeau si copie locale affichée.
+  const [contenuIndisponible, setContenuIndisponible] = useState(false);
+  const [brouillonLocalAffiche, setBrouillonLocalAffiche] = useState(false);
+  const [rechargeContenuTick, setRechargeContenuTick] = useState(0);
   const [loadedModuleEditorState, setLoadedModuleEditorState] = useState(false);
   const [trainerOverrideWarnings, setTrainerOverrideWarnings] = useState<Map<string, TrainerOverrideInfo>>(new Map());
   // Trigger pour forcer la réapplication des overrides fournisseur après chaque
@@ -4720,6 +4724,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       }
     };
 
+    setContenuIndisponible(false);
+    setBrouillonLocalAffiche(false);
     (async () => {
       try {
         const fetchStartedAt = Date.now();
@@ -4941,7 +4947,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           }
         }
 
-        if (!studentOnly && loadLocalState()) return;
+        if (!studentOnly && loadLocalState()) { setBrouillonLocalAffiche(true); return; }
 
         // FC Bilan fallback: modules 81 (FC VTC) and 82 (FC TAXI) doivent refléter
         // exactement le bilan complet 4 (VTC) / 9 (TAXI) — sans Gestion (exo id 101).
@@ -4997,7 +5003,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       } catch (err) {
         console.error("Error loading module editor state:", err);
 
-        if (!studentOnly && loadLocalState()) return;
+        if (!studentOnly && loadLocalState()) { setBrouillonLocalAffiche(true); return; }
+        // Élève : jamais un cours ancien ou vide à la place de la version serveur.
+        if (studentOnly) setContenuIndisponible(true);
 
         setModuleData(initialData);
         setDeletedCours([]);
@@ -5007,7 +5015,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         setEditorStateHydrated(true);
       }
     })();
-  }, [module.id, apprenantType, studentOnly, moduleEditorStorageKey]);
+  }, [module.id, apprenantType, studentOnly, moduleEditorStorageKey, rechargeContenuTick]);
 
   // === REALTIME: live sync when admin changes questions ===
   useEffect(() => {
@@ -9703,8 +9711,23 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
   const exercicePartNumberById = computeExercicePartNumbers(Number(moduleData.id), moduleData.cours, moduleData.exercices);
 
+  if (studentOnly && contenuIndisponible) {
+    return (
+      <div role="alert" className="rounded-lg border bg-card p-6 text-center space-y-3">
+        <p className="font-semibold">Contenu indisponible</p>
+        <p className="text-sm text-muted-foreground">Le cours n'a pas pu être chargé. Vérifiez votre connexion puis réessayez.</p>
+        <Button onClick={() => setRechargeContenuTick((t) => t + 1)}>Réessayer</Button>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 animate-fade-in">
+      {!studentOnly && brouillonLocalAffiche && (
+        <div role="status" className="rounded-lg border border-amber-400 bg-amber-50 px-4 py-2 text-sm text-amber-900">
+          Brouillon local non enregistré : cet écran montre une copie gardée dans ce navigateur, différente de la version enregistrée que voient les élèves.
+        </div>
+      )}
       {studentOnly && maintenanceActive && (
         <div
           role="status"
