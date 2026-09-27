@@ -30,6 +30,7 @@ import { isExamAttemptPublicationPending } from "./exam-helpers";
 import { estCorrectionIaEnregistree } from "./CorrectionQRCTab";
 import { fetchCoreMatiereStates, matchCoreState, type CoreMatiereState } from "@/lib/coreExamPublication";
 import CorrectionsIaEleve from "@/components/cours-en-ligne/CorrectionsIaEleve";
+import { fetchPassagesV2NonFiables } from "@/lib/passagesV2NonFiables";
 import { useCoreChangeTick } from "@/hooks/useCoreChangeTick";
 import { useQrcEnginePending } from "@/hooks/useQrcEnginePending";
 
@@ -69,7 +70,11 @@ function EcranResultats({
   const coreTick = useCoreChangeTick(apprenantId);
   useEffect(() => {
     let cancelled = false;
-    fetchCoreMatiereStates(apprenantId).then((st) => { if (!cancelled) setCoreStates(st); });
+    fetchCoreMatiereStates(apprenantId).then(async (st) => {
+      // Passages non fiables (défaut du 23/09) : note de l'ancien système.
+      const nf = st && apprenantId ? await fetchPassagesV2NonFiables(new Map([[apprenantId, st]])) : null;
+      if (!cancelled) setCoreStates(st && nf ? st.filter((s) => !nf.has(s.attemptId)) : st);
+    });
     return () => { cancelled = true; };
   }, [apprenantId, examen?.id, coreTick]);
   const resultatsSource = resultats;
