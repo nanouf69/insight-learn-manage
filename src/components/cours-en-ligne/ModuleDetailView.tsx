@@ -7053,8 +7053,56 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     })) as ExerciceItem[];
 
     // --- Load saved partial answers from DB on mount ---
+    // Exercices dont les réponses serveur ont déjà été lues (rechargement seulement).
+    const exercicesChargesRef = useRef<Set<string>>(new Set());
+    const listeExercicesAttendus = (): string[] => [
+      ...activeExercices.map(e => buildExerciceId(module.id, e.id)),
+      ...(pages as any[])
+        .filter((p) => p?.cours?.quiz?.length)
+        .map((p) => buildInlineQuizId(module.id, p.cours.id)),
+    ];
+    // Un exercice qui apparaît APRÈS le premier chargement (contenu serveur arrivé plus tard,
+    // ex. autre appareil sans file locale) : on recharge ses réponses depuis le serveur.
+    // Lecture seule : on ne remplit que les cases encore vides, jamais d'écrasement.
+    useEffect(() => {
+      if (!apprenantId || !savedAnswersLoaded) return;
+      const nouveaux = listeExercicesAttendus().filter((id) => !exercicesChargesRef.current.has(id));
+      if (nouveaux.length === 0) return;
+      nouveaux.forEach((id) => exercicesChargesRef.current.add(id));
+      // Pas d'annulation au changement de dépendances : la liste des exercices change de
+      // référence à chaque rendu, une annulation ferait perdre ce rechargement.
+      (async () => {
+        try {
+          const attempts = await fetchQuizAttempts(apprenantId, nouveaux);
+          const restored: Record<string, string | string[]> = {};
+          attempts.forEach((row) => {
+            if (row.reponses && typeof row.reponses === "object") Object.assign(restored, row.reponses);
+          });
+          nouveaux.forEach((exerciceId) => {
+            Object.assign(restored, mergeSavedAndPendingAnswers(restored, apprenantId, exerciceId));
+          });
+          if (Object.keys(restored).length > 0) {
+            setSelectedAnswers((prev) => {
+              const suite = { ...prev };
+              for (const [k, v] of Object.entries(restored)) {
+                if (suite[k] === undefined) suite[k] = v;
+              }
+              return suite;
+            });
+          }
+          applySubmittedAttempts(attempts);
+        } catch (e) {
+          console.error("Erreur rechargement réponses (exercice ajouté):", e);
+          // Échec de lecture : on autorise une nouvelle tentative au prochain rendu.
+          nouveaux.forEach((id) => exercicesChargesRef.current.delete(id));
+        }
+      })();
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [apprenantId, module.id, savedAnswersLoaded, activeExercices, pages]);
+
     useEffect(() => {
       if (!apprenantId || savedAnswersLoaded) return;
+      listeExercicesAttendus().forEach((id) => exercicesChargesRef.current.add(id));
       (async () => {
         try {
           // 1) Check FIRST if the module is already validated
