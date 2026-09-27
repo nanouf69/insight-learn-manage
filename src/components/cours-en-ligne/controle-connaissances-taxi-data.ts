@@ -697,17 +697,19 @@ const PARTIE_5: ExerciceItem = {
 export const CONTROLE_CONNAISSANCES_TAXI_DATA: ModuleData = {
   id: 13,
   nom: "CONTRÔLE DE CONNAISSANCES TAXI",
-  description: "211 questions (QCM et QRC) en 1 exercice : Réglementation nationale, Réglementation locale, Connaissance de la ville (stations, ponts, musées, cimetières, hôpitaux).",
+  description: "65 questions (QCM et QRC) réparties en 5 parties : Réglementation générale, Carte professionnelle, Tarification, Exploitation ADS, Connaissance du territoire (Lyon & Rhône).",
   cours: [
     {
       id: 1,
       titre: "Présentation du contrôle de connaissances",
-      description: `Ce module regroupe 211 questions en 1 exercice pour vérifier vos connaissances en vue de l'examen TAXI.
+      description: `Ce module regroupe 65 questions pour vérifier vos connaissances en vue de l'examen TAXI.
 
-📋 Contenu :
-1. Réglementation nationale (76 QCM + 20 QRC)
-2. Réglementation locale (49 QCM)
-3. Connaissance de la ville (66 QCM) : stations de taxi, ponts, musées, cimetières, hôpitaux
+📋 5 parties :
+1. Réglementation générale du taxi (Q1-Q13)
+2. Carte professionnelle & obligations (Q14-Q28)
+3. Tarification (Q29-Q37)
+4. Exploitation & gestion de l'ADS (Q38-Q45)
+5. Connaissance du territoire — Lyon & Rhône (Q46-Q65)
 
 📝 Types de questions :
 • QCM : Questions à choix multiples (une ou plusieurs bonnes réponses)
@@ -715,7 +717,7 @@ export const CONTROLE_CONNAISSANCES_TAXI_DATA: ModuleData = {
 
 Les QRC sont corrigées par IA. Pour les matières techniques, l'orthographe et les abréviations sont tolérées.
 
-📌 Commencez par l'exercice ci-dessous pour vous entraîner !`,
+📌 Commencez par les exercices ci-dessous pour vous entraîner !`,
       actif: true,
     },
   ],
