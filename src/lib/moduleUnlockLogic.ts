@@ -93,10 +93,14 @@ export function computeUnlockState(
     alwaysUnlockedIds = DEFAULT_ALWAYS_UNLOCKED_IDS,
   } = input;
 
+  // Terminé = décision du serveur uniquement (jamais les compteurs du navigateur).
   const effectivelyCompletedIds = new Set<number>(completedModuleIds);
+  // « Validation en cours » : toutes les activités remises, en attente du serveur.
+  // Le module suivant n'est pas bloqué pendant ce délai (jamais d'élève bloqué à tort).
+  const enValidationIds = new Set<number>();
   modules.forEach((m) => {
-    if (isModuleDoneForDisplay(completedModuleIds.has(m.id), moduleQuizStatsById[m.id], examBlancStatsById[m.id])) {
-      effectivelyCompletedIds.add(m.id);
+    if (isModuleAwaitingValidation(completedModuleIds.has(m.id), moduleQuizStatsById[m.id], examBlancStatsById[m.id])) {
+      enValidationIds.add(m.id);
     }
   });
 
@@ -109,7 +113,7 @@ export function computeUnlockState(
     for (let i = 0; i < modules.length; i++) {
       if (i === 0 || alwaysUnlockedIds.has(modules[i].id)) {
         unlockedModuleIds.add(modules[i].id);
-      } else if (effectivelyCompletedIds.has(modules[i - 1].id)) {
+      } else if (effectivelyCompletedIds.has(modules[i - 1].id) || enValidationIds.has(modules[i - 1].id)) {
         unlockedModuleIds.add(modules[i].id);
       }
     }
@@ -144,7 +148,7 @@ export function isModuleLocked(
 // n'est jamais rétrogradé par un compteur actuel, une sous-ligne ancienne ou
 // un chargement en retard ; pendant le chargement on n'invente aucun statut.
 // ---------------------------------------------------------------------------
-export type LearnerModuleStatus = "chargement" | "termine" | "en_cours" | "a_faire";
+export type LearnerModuleStatus = "chargement" | "termine" | "validation_en_cours" | "en_cours" | "a_faire";
 export type LearnerModuleAction = "revoir" | "reprendre" | "commencer" | null;
 
 export interface LearnerModuleDisplayInput {
@@ -165,10 +169,20 @@ export interface LearnerModuleDisplayState {
 
 export function isModuleDoneForDisplay(
   serverCompleted: boolean,
+  _quizStats?: QuizStatsLite,
+  _examStats?: ExamStatsLite,
+): boolean {
+  // Terminé = uniquement le statut serveur (monotone, jamais rétrogradé).
+  return serverCompleted;
+}
+
+/** Toutes les activités remises côté élève, mais le serveur n'a pas encore validé. */
+export function isModuleAwaitingValidation(
+  serverCompleted: boolean,
   quizStats?: QuizStatsLite,
   examStats?: ExamStatsLite,
 ): boolean {
-  if (serverCompleted) return true; // monotone : le serveur a le dernier mot
+  if (serverCompleted) return false;
   const hasQuizzes = (quizStats?.totalQuizzes ?? 0) > 0;
   const hasExams = (examStats?.total ?? 0) > 0;
   if (!hasQuizzes && !hasExams) return false;
@@ -187,6 +201,9 @@ export function getLearnerModuleDisplayState(input: LearnerModuleDisplayInput): 
     return { status: "termine", action: "revoir", isDone: true, locked: false };
   }
   const locked = !!input.locked;
+  if (isModuleAwaitingValidation(input.serverCompleted, input.quizStats, input.examStats)) {
+    return { status: "validation_en_cours", action: locked ? null : "reprendre", isDone: false, locked };
+  }
   if (input.hasProgress) {
     return { status: "en_cours", action: locked ? null : "reprendre", isDone: false, locked };
   }
