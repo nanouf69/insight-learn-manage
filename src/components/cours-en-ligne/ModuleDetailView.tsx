@@ -5561,6 +5561,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       } catch (readError) {
         console.warn("[ModuleEditor] Lecture pré-sauvegarde impossible:", readError);
       }
+      // Le serveur est la source : on n'envoie jamais un exercice absent du serveur
+      // (vieille copie embarquée dans l'application), sauf s'il a été ajouté
+      // volontairement dans cette session.
+      normalizedModuleData = garderExercicesDuServeur(normalizedModuleData, previousModuleData, exercicesAjoutesSessionRef.current);
 
       // Compare-and-swap: refuse d'écraser une version en base plus récente que
       // celle que cet onglet a lue (protection contre les onglets admin restés
