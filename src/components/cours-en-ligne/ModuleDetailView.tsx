@@ -2818,38 +2818,49 @@ function QuestionEditor({
   moduleId: number;
 }) {
 
+  const isQrc = String((question as any).type || "").toLowerCase() === "qrc";
   const [enonce, setEnonce] = useState(question.enonce);
-  const [choix, setChoix] = useState<ExerciceChoix[]>([...question.choix]);
+  const [choix, setChoix] = useState<ExerciceChoix[]>([...(question.choix || [])]);
   const [image, setImage] = useState<string | null>(question.image ?? null);
   const [imageSize, setImageSize] = useState<ImageSize>((question.imageSize as ImageSize) ?? "sm");
   const [explication, setExplication] = useState<string>(question.explication ?? "");
+  const initialReponses: string[] = Array.isArray((question as any).reponsesAttendues)
+    ? ((question as any).reponsesAttendues as string[])
+    : String((question as any).reponseQRC || "").split(/\s*;\s*/).filter(Boolean);
+  const [reponsesTexte, setReponsesTexte] = useState<string>(initialReponses.join("\n"));
 
-  // Auto-save live: propage chaque modification (énoncé, choix, bonne réponse)
-  // vers le parent qui déclenche la persistance DB debouncée.
-  // ⚠️ On utilise onDraftSave (ne ferme PAS l'éditeur) et non onSave.
-  const isFirstAutoSaveRef = useRef(true);
+  // Champs propres aux QRC : les réponses attendues ne sont renvoyées que si l'admin
+  // les a modifiées ; sinon la question garde exactement ses valeurs d'origine.
+  const reponsesEditeesRef = useRef(false);
+  const extraQrc = (): Record<string, unknown> => {
+    if (!isQrc || !reponsesEditeesRef.current) return {};
+    const liste = reponsesTexte.split("\n").map((s) => s.trim()).filter(Boolean);
+    return { reponsesAttendues: liste, reponseQRC: liste.join(" ; ") };
+  };
+  const construire = (over: Partial<ExerciceQuestion> = {}): ExerciceQuestion => ({
+    ...question,
+    enonce,
+    choix,
+    image: image as any,
+    imageSize,
+    explication: explication || undefined,
+    ...extraQrc(),
+    ...over,
+    _editedAt: new Date().toISOString(),
+  } as ExerciceQuestion);
+
+  // Auto-save live : uniquement après une vraie saisie de l'admin.
+  // Ouvrir une question (ou une normalisation interne d'un champ) n'enregistre jamais rien.
+  const saisieUtilisateurRef = useRef(false);
+  const marquerSaisie = () => { saisieUtilisateurRef.current = true; };
   useEffect(() => {
-    if (isFirstAutoSaveRef.current) {
-      isFirstAutoSaveRef.current = false;
-      return;
-    }
+    if (!saisieUtilisateurRef.current) return;
     const t = setTimeout(() => {
-      onDraftSave({
-        ...question,
-        enonce,
-        choix,
-        // ⚠️ image: null = suppression explicite par l'admin (le merge côté apprenant
-        // doit conserver null et NE PAS re-hydrater l'image source). undefined serait
-        // supprimé par JSON.stringify → le merge retomberait sur l'image source.
-        image: image as any,
-        imageSize,
-        explication: explication || undefined,
-        _editedAt: new Date().toISOString(),
-      } as ExerciceQuestion);
+      onDraftSave(construire());
     }, 400);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enonce, choix, image, imageSize, explication]);
+  }, [enonce, choix, image, imageSize, explication, reponsesTexte]);
 
 
   const handleChoixTexte = (i: number, val: string) => {
@@ -2871,13 +2882,18 @@ function QuestionEditor({
 
 
   return (
-    <div className="border-2 border-primary/30 rounded-lg p-4 bg-primary/5 space-y-3">
+    <div
+      className="border-2 border-primary/30 rounded-lg p-4 bg-primary/5 space-y-3"
+      onInputCapture={marquerSaisie}
+      onChangeCapture={marquerSaisie}
+      onPasteCapture={marquerSaisie}
+    >
       <div className="flex items-center justify-between">
-        <Badge>QCM — Q{question.id}</Badge>
+        <Badge>{isQrc ? "QRC" : "QCM"} — Q{question.id}</Badge>
         <div className="flex gap-2">
           <Button size="sm" variant="ghost" onClick={onCancel}><X className="w-4 h-4" /></Button>
           <Button size="sm" variant="destructive" onClick={onDelete}><Trash2 className="w-3 h-3" /></Button>
-          <Button size="sm" onClick={() => onSave({ ...question, enonce, choix, image: image as any, imageSize, explication: explication || undefined, _editedAt: new Date().toISOString() } as ExerciceQuestion)} className="gap-1">
+          <Button size="sm" onClick={() => (saisieUtilisateurRef.current ? onSave(construire()) : onCancel())} className="gap-1">
             <Save className="w-3 h-3" /> Enregistrer
           </Button>
         </div>
@@ -2891,19 +2907,36 @@ function QuestionEditor({
         image={image}
         imageSize={imageSize}
         onImageSizeChange={(sz) => {
+          if (sz === imageSize) return;
+          marquerSaisie();
           setImageSize(sz);
-          onDraftSave({ ...question, enonce, choix, image: image as any, imageSize: sz, explication: explication || undefined, _editedAt: new Date().toISOString() } as ExerciceQuestion);
+          onDraftSave(construire({ imageSize: sz }));
         }}
         context="module"
         contextId={moduleId}
         questionId={question.id}
         onImageChange={(newImage) => {
+          if ((newImage ?? null) === (image ?? null)) return;
+          marquerSaisie();
           setImage(newImage);
           // newImage === null ⇒ suppression explicite (doit être persistée telle quelle).
-          onDraftSave({ ...question, enonce, choix, image: newImage as any, imageSize, explication: explication || undefined, _editedAt: new Date().toISOString() } as ExerciceQuestion);
+          onDraftSave(construire({ image: newImage as any }));
         }}
 
       />
+      {isQrc && (
+        <div className="space-y-1">
+          <label className="text-xs font-semibold">Réponses attendues (une réponse par ligne)</label>
+          <Textarea
+            value={reponsesTexte}
+            onChange={(e) => { reponsesEditeesRef.current = true; setReponsesTexte(e.target.value); }}
+            rows={Math.max(3, reponsesTexte.split("\n").length + 1)}
+            className="text-sm"
+            placeholder="Une réponse attendue par ligne"
+          />
+        </div>
+      )}
+      {!isQrc && (
       <div className="space-y-3">
         <label className="text-xs font-semibold">Réponses (cochez les bonnes réponses — plusieurs possibles)</label>
         {choix.map((c, i) => (
@@ -2929,10 +2962,11 @@ function QuestionEditor({
             />
           </div>
         ))}
-        <Button size="sm" variant="outline" onClick={addChoix} className="gap-1">
+        <Button size="sm" variant="outline" onClick={() => { marquerSaisie(); addChoix(); }} className="gap-1">
           <Plus className="w-3 h-3" /> Ajouter un choix
         </Button>
       </div>
+      )}
       <div className="space-y-1">
         <label className="text-xs font-semibold">💡 Information / explication de la question (affichée à l'apprenant après validation)</label>
         <Textarea

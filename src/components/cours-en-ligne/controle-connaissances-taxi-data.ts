@@ -697,7 +697,7 @@ const PARTIE_5: ExerciceItem = {
 export const CONTROLE_CONNAISSANCES_TAXI_DATA: ModuleData = {
   id: 13,
   nom: "CONTRÔLE DE CONNAISSANCES TAXI",
-  description: "65 questions (QCM et QRC) réparties en 5 parties : Réglementation générale, Carte professionnelle, Tarification, Exploitation ADS, Connaissance du territoire (Lyon & Rhône).",
+  description: "211 questions (QCM et QRC) : réglementation nationale, réglementation locale et connaissance de la ville de Lyon.",
   cours: [
     {
       id: 1,
