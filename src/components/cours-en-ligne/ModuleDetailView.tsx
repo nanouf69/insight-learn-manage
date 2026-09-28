@@ -4612,6 +4612,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       const moduleBindings = (bindings ?? []) as unknown as CanonicalQuestionBinding[];
       const rows = mapCanonicalRowsToModuleExercises(sourceRows, moduleBindings);
       const sectionIds = new Set(moduleBindings.map((binding) => Number(binding.exercise_id)));
+      if (questionsEnEditionOuvertes > 0) {
+        relectureEnAttente = true;
+        return;
+      }
       canonicalRowsRef.current = rows;
       canonicalSectionIdsRef.current = sectionIds;
       setModuleData((previous) => applyCanonicalQuestionsToModule(previous, rows, sectionIds));
