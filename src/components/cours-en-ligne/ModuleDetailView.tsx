@@ -4767,8 +4767,15 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       // Le contenu vient toujours de la version enregistrée (DB + realtime +
       // rafraîchissement au focus), pour qu'un onglet ouvert longtemps ne
       // montre jamais une ancienne version.
-      if (studentOnly) {
-        window.localStorage.removeItem(moduleEditorStorageKey);
+      // Admin aussi (28/09) : plus aucune copie navigateur. L'éditeur part
+      // uniquement de la version du serveur ; toute ancienne copie est effacée.
+      try {
+        for (let i = window.localStorage.length - 1; i >= 0; i--) {
+          const k = window.localStorage.key(i);
+          if (k && k.startsWith("module-editor-state:")) window.localStorage.removeItem(k);
+        }
+      } catch {}
+      if (studentOnly || true) {
         return false;
       }
 
@@ -6101,7 +6108,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
       // Les Bilans et modules FC sont DB-only : un cache local stale a déjà
       // réinjecté d'anciennes réponses après retour dans le module.
-      if (usesDatabaseOnlyEditorState(module.id)) {
+      if (true) {
         try {
           window.localStorage.removeItem(moduleEditorStorageKey);
         } catch {}
