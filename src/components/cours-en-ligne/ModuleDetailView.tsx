@@ -4583,8 +4583,14 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     const quizIds = CANONICAL_QUIZ_IDS_BY_MODULE_ID[Number(module.id)];
     if (!editorStateHydrated || !quizIds?.length) return;
     let cancelled = false;
+    let relectureEnAttente = false;
 
     const loadCanonicalQuestions = async () => {
+      if (questionsEnEditionOuvertes > 0) {
+        relectureEnAttente = true;
+        return;
+      }
+      relectureEnAttente = false;
       const [{ data, error }, { data: bindings, error: bindingsError }] = await Promise.all([
         supabase
           .from("quiz_questions")
@@ -4644,14 +4650,19 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     const pollInterval = window.setInterval(() => {
       if (!document.hidden) void loadCanonicalQuestions();
     }, 15_000);
+    const onEditionFermee = () => {
+      if (relectureEnAttente) void loadCanonicalQuestions();
+    };
     window.addEventListener("focus", onFocus);
     document.addEventListener("visibilitychange", onVisibilityChange);
+    window.addEventListener(EVENEMENT_EDITION_QUESTION_FERMEE, onEditionFermee);
     return () => {
       cancelled = true;
       if (reconnectTimer) clearTimeout(reconnectTimer);
       window.clearInterval(pollInterval);
       window.removeEventListener("focus", onFocus);
       document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener(EVENEMENT_EDITION_QUESTION_FERMEE, onEditionFermee);
       void supabase.removeChannel(channel);
     };
   }, [editorStateHydrated, module.id, canonicalRefreshKey]);
