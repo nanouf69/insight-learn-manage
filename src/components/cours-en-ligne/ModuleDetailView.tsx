@@ -527,6 +527,20 @@ const getTrainerQuizIdsForModule = (moduleId: number | string) =>
   TRAINER_QUIZ_IDS_BY_MODULE_ID[Number(moduleId)] || [];
 
 // Nombre de questions actuellement ouvertes en édition (Admin).
+/**
+ * Ne garde que les exercices présents sur le serveur (plus ceux ajoutés dans la
+ * session). Sans version serveur, rien n'est retiré.
+ */
+function garderExercicesDuServeur<T extends { exercices?: any[] }>(data: T, serveur: any, ajoutes: Set<number>): T {
+  const exosServeur = Array.isArray(serveur?.exercices) ? serveur.exercices : null;
+  if (!data || !Array.isArray(data.exercices) || !exosServeur || exosServeur.length === 0) return data;
+  const ids = new Set(exosServeur.map((e: any) => Number(e?.id)));
+  const garde = data.exercices.filter((e: any) => ids.has(Number(e?.id)) || ajoutes.has(Number(e?.id)));
+  if (garde.length === data.exercices.length) return data;
+  console.warn("[ModuleEditor] Exercices absents du serveur ignorés:", data.exercices.filter((e: any) => !garde.includes(e)).map((e: any) => e?.id));
+  return { ...data, exercices: garde };
+}
+
 let questionsEnEditionOuvertes = 0;
 const EVENEMENT_EDITION_QUESTION_FERMEE = "editeur-question-fermee";
 
@@ -5548,6 +5562,23 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     } | null;
   };
 
+  const exercicesAjoutesSessionRef = useRef<Set<number>>(new Set());
+  // À l'ouverture : l'affichage part aussi de la version serveur (retire les
+  // exercices d'une vieille copie embarquée qui n'existent plus sur le serveur).
+  const nettoyageOuvertureFaitRef = useRef<number | null>(null);
+  useEffect(() => {
+    const id = Number(module?.id);
+    if (!id || nettoyageOuvertureFaitRef.current === id) return;
+    if (!Array.isArray(moduleData?.exercices) || moduleData.exercices.length === 0) return;
+    nettoyageOuvertureFaitRef.current = id;
+    loadModuleEditorStateRow(id)
+      .then((row) => {
+        if (!row?.module_data) return;
+        setModuleData((prev) => garderExercicesDuServeur(prev, row.module_data, exercicesAjoutesSessionRef.current));
+      })
+      .catch(() => { nettoyageOuvertureFaitRef.current = null; });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [module?.id, moduleData?.exercices?.length]);
   const performDbSave = async (dataToSave: ModuleEditorSavePayload, options: { retryStaleOnce?: boolean } = {}) => {
     isSavingToDbRef.current = true;
     try {
@@ -5561,6 +5592,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       } catch (readError) {
         console.warn("[ModuleEditor] Lecture pré-sauvegarde impossible:", readError);
       }
+      // Le serveur est la source : on n'envoie jamais un exercice absent du serveur
+      // (vieille copie embarquée dans l'application), sauf s'il a été ajouté
+      // volontairement dans cette session.
+      normalizedModuleData = garderExercicesDuServeur(normalizedModuleData, previousModuleData, exercicesAjoutesSessionRef.current);
 
       // Compare-and-swap: refuse d'écraser une version en base plus récente que
       // celle que cet onglet a lue (protection contre les onglets admin restés
@@ -5591,6 +5626,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             dataToSave.deleted_exercices,
           ),
         );
+        normalizedModuleData = garderExercicesDuServeur(normalizedModuleData, latestRow?.module_data ?? null, exercicesAjoutesSessionRef.current);
 
         console.warn("[ModuleEditor] P0409 détecté : dernière version rechargée, modification locale refusionnée, retry unique", {
           moduleId: dataToSave.module_id,
@@ -6178,6 +6214,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     } else {
       const item = deletedExercices.find((i) => i.id === id);
       if (item) {
+        exercicesAjoutesSessionRef.current.add(Number(item.id));
         setModuleData((prev) => ({ ...prev, exercices: [...prev.exercices, item] }));
         setDeletedExercices((d) => d.filter((i) => i.id !== id));
       }
@@ -6205,6 +6242,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             { id: 1, enonce: "Nouvelle question", choix: [{ lettre: "A", texte: "Choix A", correct: true }, { lettre: "B", texte: "Choix B" }, { lettre: "C", texte: "Choix C" }] },
           ],
         };
+        exercicesAjoutesSessionRef.current.add(Number(newExo.id));
         return { ...prev, exercices: [...prev.exercices, newExo] };
       }
       const newItem: ContentItem = { id: newId, titre: type === "cours" ? "Nouveau cours" : "Nouvel exercice", actif: true };
