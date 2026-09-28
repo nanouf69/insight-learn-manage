@@ -592,7 +592,7 @@ function appliquerSeulementQuestionsModifiees<T extends { exercices?: any[] }>(d
       const id = Number(sq?.id);
       const lq = locParId.get(id);
       if (!lq) {
-        if (supprimees.has(id) && questionsModifieesSession.has(`${exId}-${id}`)) continue;
+        if (supprimees.has(id)) continue;
         qs.push(sq);
         continue;
       }
