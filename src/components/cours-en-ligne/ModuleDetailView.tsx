@@ -2818,38 +2818,49 @@ function QuestionEditor({
   moduleId: number;
 }) {
 
+  const isQrc = String((question as any).type || "").toLowerCase() === "qrc";
   const [enonce, setEnonce] = useState(question.enonce);
-  const [choix, setChoix] = useState<ExerciceChoix[]>([...question.choix]);
+  const [choix, setChoix] = useState<ExerciceChoix[]>([...(question.choix || [])]);
   const [image, setImage] = useState<string | null>(question.image ?? null);
   const [imageSize, setImageSize] = useState<ImageSize>((question.imageSize as ImageSize) ?? "sm");
   const [explication, setExplication] = useState<string>(question.explication ?? "");
+  const initialReponses: string[] = Array.isArray((question as any).reponsesAttendues)
+    ? ((question as any).reponsesAttendues as string[])
+    : String((question as any).reponseQRC || "").split(/\s*;\s*/).filter(Boolean);
+  const [reponsesTexte, setReponsesTexte] = useState<string>(initialReponses.join("\n"));
 
-  // Auto-save live: propage chaque modification (énoncé, choix, bonne réponse)
-  // vers le parent qui déclenche la persistance DB debouncée.
-  // ⚠️ On utilise onDraftSave (ne ferme PAS l'éditeur) et non onSave.
-  const isFirstAutoSaveRef = useRef(true);
+  // Champs propres aux QRC : les réponses attendues ne sont renvoyées que si l'admin
+  // les a modifiées ; sinon la question garde exactement ses valeurs d'origine.
+  const reponsesEditeesRef = useRef(false);
+  const extraQrc = (): Record<string, unknown> => {
+    if (!isQrc || !reponsesEditeesRef.current) return {};
+    const liste = reponsesTexte.split("\n").map((s) => s.trim()).filter(Boolean);
+    return { reponsesAttendues: liste, reponseQRC: liste.join(" ; ") };
+  };
+  const construire = (over: Partial<ExerciceQuestion> = {}): ExerciceQuestion => ({
+    ...question,
+    enonce,
+    choix,
+    image: image as any,
+    imageSize,
+    explication: explication || undefined,
+    ...extraQrc(),
+    ...over,
+    _editedAt: new Date().toISOString(),
+  } as ExerciceQuestion);
+
+  // Auto-save live : uniquement après une vraie saisie de l'admin.
+  // Ouvrir une question (ou une normalisation interne d'un champ) n'enregistre jamais rien.
+  const saisieUtilisateurRef = useRef(false);
+  const marquerSaisie = () => { saisieUtilisateurRef.current = true; };
   useEffect(() => {
-    if (isFirstAutoSaveRef.current) {
-      isFirstAutoSaveRef.current = false;
-      return;
-    }
+    if (!saisieUtilisateurRef.current) return;
     const t = setTimeout(() => {
-      onDraftSave({
-        ...question,
-        enonce,
-        choix,
-        // ⚠️ image: null = suppression explicite par l'admin (le merge côté apprenant
-        // doit conserver null et NE PAS re-hydrater l'image source). undefined serait
-        // supprimé par JSON.stringify → le merge retomberait sur l'image source.
-        image: image as any,
-        imageSize,
-        explication: explication || undefined,
-        _editedAt: new Date().toISOString(),
-      } as ExerciceQuestion);
+      onDraftSave(construire());
     }, 400);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enonce, choix, image, imageSize, explication]);
+  }, [enonce, choix, image, imageSize, explication, reponsesTexte]);
 
 
   const handleChoixTexte = (i: number, val: string) => {
