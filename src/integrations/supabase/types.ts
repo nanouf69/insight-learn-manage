@@ -4814,6 +4814,36 @@ export type Database = {
         }
         Relationships: []
       }
+      module_editor_state_reference_20260928: {
+        Row: {
+          captured_at: string | null
+          deleted_cours: Json | null
+          deleted_exercices: Json | null
+          module_data: Json | null
+          module_id: number | null
+          source_fingerprint: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          captured_at?: string | null
+          deleted_cours?: Json | null
+          deleted_exercices?: Json | null
+          module_data?: Json | null
+          module_id?: number | null
+          source_fingerprint?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          captured_at?: string | null
+          deleted_cours?: Json | null
+          deleted_exercices?: Json | null
+          module_data?: Json | null
+          module_id?: number | null
+          source_fingerprint?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       module_notification_dismissals: {
         Row: {
           apprenant_id: string
