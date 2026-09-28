@@ -195,7 +195,7 @@ export const MODULES_DATA: ModuleInfo[] = [
   {
     id: 13,
     nom: "CONTRÔLE DE CONNAISSANCES TAXI",
-    description: "65 questions QCM et QRC pour vérifier vos connaissances taxi (réglementation, tarification, territoire)",
+    description: "211 questions (QCM et QRC) : réglementation nationale, réglementation locale et connaissance de la ville de Lyon.",
     formations: TAXI_FORMATIONS,
   },
   // === Modules spécifiques TA (passerelle taxi pour VTC) ===
