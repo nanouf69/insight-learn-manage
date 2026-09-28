@@ -559,6 +559,59 @@ function garderExercicesDuServeur<T extends { exercices?: any[] }>(data: T, serv
   return { ...data, exercices: garde };
 }
 
+// Questions réellement modifiées par l'admin dans cette séance ("exo-question").
+const questionsModifieesSession = new Set<string>();
+const META_QUESTION = ["_editedAt", "manually_edited", "_canonicalChoix", "_canonicalUpdatedAt", "imageSize"];
+function sansMeta(q: any) {
+  if (!q || typeof q !== "object") return q;
+  const c: any = { ...q };
+  for (const k of META_QUESTION) delete c[k];
+  return c;
+}
+
+/**
+ * L'éditeur n'envoie que les questions modifiées : on repart de la version
+ * serveur et on n'y remplace que les questions touchées dans cette séance
+ * (ou ajoutées). Les autres questions restent exactement celles du serveur.
+ */
+function appliquerSeulementQuestionsModifiees<T extends { exercices?: any[] }>(data: T, serveur: any): T {
+  const exosServeur = Array.isArray(serveur?.exercices) ? serveur.exercices : null;
+  if (!data || !Array.isArray(data.exercices) || !exosServeur) return data;
+  const localParId = new Map<number, any>(data.exercices.map((e: any) => [Number(e?.id), e]));
+  const resultat: any[] = [];
+  for (const srv of exosServeur) {
+    const loc = localParId.get(Number(srv?.id));
+    if (!loc) { resultat.push(srv); continue; }
+    const exId = Number(srv.id);
+    const srvQs: any[] = Array.isArray(srv.questions) ? srv.questions : [];
+    const locQs: any[] = Array.isArray(loc.questions) ? loc.questions : [];
+    const locParId = new Map<number, any>(locQs.map((q: any) => [Number(q?.id), q]));
+    const supprimees = new Set<number>((Array.isArray(loc.deletedQuestionIds) ? loc.deletedQuestionIds : []).map(Number));
+    const qs: any[] = [];
+    for (const sq of srvQs) {
+      const id = Number(sq?.id);
+      const lq = locParId.get(id);
+      if (!lq) {
+        if (supprimees.has(id)) continue;
+        qs.push(sq);
+        continue;
+      }
+      qs.push(questionsModifieesSession.has(`${exId}-${id}`) ? lq : sq);
+    }
+    const srvIds = new Set(srvQs.map((q: any) => Number(q?.id)));
+    for (const lq of locQs) {
+      const k = `${exId}-${Number(lq?.id)}`;
+      if (!srvIds.has(Number(lq?.id)) && (questionsAjouteesSession.has(k) || questionsModifieesSession.has(k))) qs.push(lq);
+    }
+    const { questions: _ignore, ...metaLocal } = loc;
+    resultat.push({ ...metaLocal, questions: qs });
+  }
+  // Exercices ajoutés dans la séance (déjà filtrés par garderExercicesDuServeur)
+  const srvExIds = new Set(exosServeur.map((e: any) => Number(e?.id)));
+  for (const e of data.exercices) if (!srvExIds.has(Number(e?.id))) resultat.push(e);
+  return { ...data, exercices: resultat };
+}
+
 let questionsEnEditionOuvertes = 0;
 const EVENEMENT_EDITION_QUESTION_FERMEE = "editeur-question-fermee";
 
@@ -5622,6 +5675,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       // (vieille copie embarquée dans l'application), sauf s'il a été ajouté
       // volontairement dans cette session.
       normalizedModuleData = garderExercicesDuServeur(normalizedModuleData, previousModuleData, exercicesAjoutesSessionRef.current);
+      normalizedModuleData = appliquerSeulementQuestionsModifiees(normalizedModuleData, previousModuleData);
 
       // Compare-and-swap: refuse d'écraser une version en base plus récente que
       // celle que cet onglet a lue (protection contre les onglets admin restés
@@ -5653,6 +5707,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           ),
         );
         normalizedModuleData = garderExercicesDuServeur(normalizedModuleData, latestRow?.module_data ?? null, exercicesAjoutesSessionRef.current);
+        normalizedModuleData = appliquerSeulementQuestionsModifiees(normalizedModuleData, latestRow?.module_data ?? null);
 
         console.warn("[ModuleEditor] P0409 détecté : dernière version rechargée, modification locale refusionnée, retry unique", {
           moduleId: dataToSave.module_id,
@@ -6320,9 +6375,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             JSON.stringify(prevQ.choix) !== JSON.stringify(q.choix) ||
             (prevQ as any).image !== (q as any).image ||
             previousPosition !== nextPosition;
+          const contenuChange = !prevQ || JSON.stringify(sansMeta(prevQ)) !== JSON.stringify(sansMeta(q));
+          if (changed || contenuChange) questionsModifieesSession.add(`${Number(exerciceId)}-${Number(q.id)}`);
           // Mark as manually_edited when admin changes the question, so the cross-module
           // propagation system never overwrites it. Once true, the flag is preserved.
-            if (changed) return { ...q, _editedAt: now, manually_edited: true } as any;
+            if (changed || contenuChange) return { ...q, _editedAt: now, manually_edited: true } as any;
           return {
             ...q,
             ...(((q as any)._editedAt ?? (prevQ as any)?._editedAt) ? { _editedAt: (q as any)._editedAt ?? (prevQ as any)?._editedAt } : {}),
